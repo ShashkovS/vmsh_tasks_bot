@@ -12,6 +12,9 @@
 - Устранён production-сбой после успешной сборки SVG: клиент безопасно принимает
   известную форму weak ETag от nginx и восстанавливает opaque strong `If-Match`
   version-token. Brotli остаётся включённым для скорости больших API-ответов.
+- Вместо текстовой ссылки прикреплённые raster/SVG показываются компактным
+  превью оригинала; клик открывает увеличенный оригинал в Dialog без отдельной
+  thumbnail-копии или нового backend endpoint.
 - Proof, проверки и известные unrelated baseline failures:
   [`phase2-production-upload-recovery-2026-08-13.md`](../../../pwa_tests/reports/phase2-production-upload-recovery-2026-08-13.md).
 

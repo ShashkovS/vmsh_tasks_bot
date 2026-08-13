@@ -101,6 +101,9 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   the external figure and then retries compilation. The content client accepts
   the exact weak form which a compression filter may produce from the opaque
   version ETag and restores the strong database version token for `If-Match`.
+- Attached raster and SVG resources are shown from their original public URL in
+  a bounded Staff preview. Activating the preview opens the same original asset
+  in a large modal; no thumbnail object or duplicate media pipeline is created.
 - Diagnostics grouped by errors/warnings with source location and recovery action.
 - Missing asset: search content-addressed library, upload replacement, reuse exact hash, rerun compile.
 - LaTeX в браузере не редактируется. Metadata grid содержит название, task/answer type, validation/wrong/congratulation messages и optional topic tags; поддерживает keyboard edits, TSV paste preview, cell errors и optimistic version conflict.

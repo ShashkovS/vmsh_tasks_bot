@@ -20,12 +20,14 @@
 Implemented:
   lesson creation for all active course groups; condition as the bulk-upload
   default; direct recovery links and explicit missing-asset instructions;
-  clearer material-card action naming. Existing art direction is unchanged.
+  clearer material-card action naming; compact original-asset previews with an
+  enlarged Dialog view. Existing art direction is unchanged.
 Evidence:
   Staff /lessons creation form, bulk upload panel and lesson material cards;
   vmshpwa/apps/staff/src/staff-lessons-page.tsx;
   vmshpwa/apps/staff/src/bulk-content-upload.tsx;
-  vmshpwa/apps/staff/src/content-page.tsx.
+  vmshpwa/apps/staff/src/content-page.tsx;
+  Product/Staff-admin--missing-assets-resolved.
 Checks:
   focused unit 22/22, nginx structure 26/26, lint/typecheck/build PASS.
   Full unit baseline remains 611/622: 11 pre-existing auth/session/search-schema

@@ -9,6 +9,9 @@
 - Missing-assets не выглядит потерянной загрузкой: revision остаётся сохранённой,
   строка ведёт в соответствующую карточку материала, где можно собрать TikZ SVG
   или загрузить внешний рисунок и повторить сборку.
+- Прикреплённые raster/SVG показываются небольшим превью исходного public asset;
+  клик открывает тот же оригинал в увеличенном Dialog. Отдельный thumbnail не
+  создаётся и новый backend endpoint не нужен.
 - Реальный production-кейс подтвердил, что одна TikZ-производная сохранилась, а
   следующая загрузка списка ресурсов сломалась из-за преобразования strong ETag
   в `W/`-ETag фильтром сжатия nginx. Клиент нормализует только строгий известный
@@ -21,6 +24,7 @@
 - [`bulk-content-upload-model.ts`](../../vmshpwa/apps/staff/src/bulk-content-upload-model.ts)
 - [`content-page.tsx`](../../vmshpwa/apps/staff/src/content-page.tsx)
 - [`content-client.ts`](../../vmshpwa/packages/content/src/content-client.ts)
+- [`staff-publishing.tsx`](../../vmshpwa/packages/product/src/staff-publishing.tsx)
 
 ## Пруфы
 

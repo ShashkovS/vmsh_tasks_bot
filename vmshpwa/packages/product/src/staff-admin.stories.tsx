@@ -212,6 +212,14 @@ const assetState = (
   ...rest,
 })
 
+const attachedAssetPreview = `data:image/svg+xml,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+    <rect width="320" height="180" fill="#ffffff"/>
+    <path d="M30 145 L110 35 L190 145 Z" fill="none" stroke="#176b87" stroke-width="8"/>
+    <circle cx="245" cy="90" r="48" fill="none" stroke="#724e91" stroke-width="8"/>
+  </svg>
+`)}`
+
 export const MissingAssetUploading: Story = {
   name: 'Недостающий ресурс · обработка',
   render: () => (
@@ -244,7 +252,7 @@ export const MissingAssetReused: Story = {
       <MissingAssetsFlow
         assets={[
           assetState('reused', {
-            assetHref: 'https://assets.example.test/content/rook.webp',
+            assetHref: attachedAssetPreview,
           }),
         ]}
       />
@@ -259,7 +267,7 @@ export const MissingAssetsResolved: Story = {
       <MissingAssetsFlow
         assets={[
           assetState('attached', {
-            assetHref: 'https://assets.example.test/content/rook.webp',
+            assetHref: attachedAssetPreview,
           }),
           {
             id: 'asset-tikz-attached',
@@ -268,10 +276,23 @@ export const MissingAssetsResolved: Story = {
             acceptedUploadKinds: ['tikz'],
             selectedUploadKind: 'tikz',
             status: 'attached',
-            assetHref: 'https://assets.example.test/content/diagram-2.svg',
+            assetHref: attachedAssetPreview,
           },
         ]}
       />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(canvasElement.ownerDocument.body)
+    await expect(
+      await canvas.findByRole('button', { name: 'Увеличить ресурс figures/rook.png' }),
+    ).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Увеличить ресурс figures/rook.png' }))
+    const dialog = within(await body.findByRole('dialog'))
+    await expect(dialog.getByRole('heading', { name: 'figures/rook.png' })).toBeInTheDocument()
+    await expect(
+      dialog.getByRole('img', { name: 'Прикреплённый ресурс figures/rook.png' }),
+    ).toBeInTheDocument()
+  },
 }

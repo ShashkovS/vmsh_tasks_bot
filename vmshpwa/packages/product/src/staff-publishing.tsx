@@ -1,4 +1,11 @@
-import { AlertTriangle, CheckCircle2, FileWarning, LoaderCircle, Upload } from 'lucide-react'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Expand,
+  FileWarning,
+  LoaderCircle,
+  Upload,
+} from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -8,6 +15,12 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
   Input,
   Label,
   Progress,
@@ -334,6 +347,66 @@ function assetFileAccept(kind: 'raster' | 'svg' | 'tikz'): string | undefined {
   return undefined
 }
 
+/** Compact Staff preview from the original attached asset; see the Phase 2
+ * missing-assets flow in dev/development-plan/06-phase-2-content.md. */
+function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: string } }) {
+  const [previewFailed, setPreviewFailed] = useState(false)
+  const imageAlt = `Прикреплённый ресурс ${asset.ref}`
+
+  if (previewFailed) {
+    return (
+      <a
+        className="inline-flex text-small font-medium text-link underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        href={asset.assetHref}
+        rel="noreferrer"
+        target="_blank"
+      >
+        Открыть прикреплённый ресурс
+      </a>
+    )
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger
+        render={
+          <button
+            aria-label={`Увеличить ресурс ${asset.ref}`}
+            className="group relative grid h-28 w-44 max-w-full place-items-center overflow-hidden rounded-md border border-border bg-surface-sunken p-1 outline-none transition-colors hover:border-border-strong focus-visible:ring-3 focus-visible:ring-ring/50"
+            type="button"
+          >
+            <img
+              alt={imageAlt}
+              className="max-h-full max-w-full object-contain"
+              decoding="async"
+              loading="lazy"
+              onError={() => setPreviewFailed(true)}
+              src={asset.assetHref}
+            />
+            <span className="absolute right-1 bottom-1 inline-flex items-center gap-1 rounded-sm bg-surface/90 px-1.5 py-0.5 text-caption text-muted-foreground shadow-sm group-hover:text-foreground">
+              <Expand aria-hidden="true" className="size-3" /> Увеличить
+            </span>
+          </button>
+        }
+      />
+      <DialogContent className="max-h-[calc(100svh-2rem)] overflow-hidden sm:max-w-[min(92vw,72rem)]">
+        <DialogHeader>
+          <DialogTitle>{asset.ref}</DialogTitle>
+          <DialogDescription>Оригинальный прикреплённый ресурс</DialogDescription>
+        </DialogHeader>
+        <div className="grid min-h-0 place-items-center overflow-auto rounded-md bg-surface-sunken p-2">
+          <img
+            alt={imageAlt}
+            className="max-h-[calc(100svh-9rem)] max-w-full object-contain"
+            decoding="async"
+            src={asset.assetHref}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function MissingAssetsFlow({
   assets,
   disabled = false,
@@ -399,14 +472,7 @@ export function MissingAssetsFlow({
 
               {resolved ? (
                 asset.assetHref ? (
-                  <a
-                    className="inline-flex text-small font-medium text-link underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                    href={asset.assetHref}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Открыть прикреплённый ресурс
-                  </a>
+                  <AttachedAssetPreview asset={{ ...asset, assetHref: asset.assetHref }} />
                 ) : null
               ) : (
                 <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(10rem,0.7fr)_minmax(12rem,1fr)_auto] sm:items-end">
