@@ -5012,6 +5012,25 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
         "weight": 0.95,
     }
 
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, answer, res_type) "
+            "VALUES (?, ?, 'content-a', 41, ?, '2026-09-20T12:06:00Z', 14, '', 1)",
+            (STUDENT_USER_ID, problems_a[1]["id"], TEACHER_USER_ID),
+        )
+    )
+    rechecked = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/lessons/"
+        f"{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert rechecked.status == 200, await rechecked.text()
+    rechecked_payload = await rechecked.json()
+    assert rechecked_payload["problems"][1]["status"] == "rejected"
+    assert rechecked_payload["problems"][1]["verdict"]["verdictId"] == 14
+
 
 async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
     content_http: ContentHttpFixture,

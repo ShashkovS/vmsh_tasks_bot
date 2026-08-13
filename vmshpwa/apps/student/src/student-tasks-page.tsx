@@ -126,16 +126,15 @@ function StudentProblemList({
           {query.data.problems.map((problem) => (
             <TaskListItem
               key={problem.problemId}
-              onOpen={(problemId) => {
+              onOpen={() => {
                 void navigate({
-                  to: '/tasks/$taskId',
-                  params: { taskId: problemId },
-                  search: {
-                    course: enrollment.course.courseId,
-                    group: groupId,
-                    groupLesson: lesson.groupLessonId,
-                    material: 'condition',
+                  to: '/tasks/$courseCode/$groupCode/$lessonNumber',
+                  params: {
+                    courseCode: enrollment.course.code,
+                    groupCode: group.code,
+                    lessonNumber: String(lesson.lessonNumber),
                   },
+                  search: { task: problem.displayNumber },
                 })
               }}
               task={toStudentTaskView(problem, lesson.lessonNumber, group.code)}
@@ -165,6 +164,7 @@ function StudentLessonArchive({
   const navigate = useNavigate({ from: '/tasks/' })
   const query = useStudentLessonArchiveQuery(client, principal, enrollment.course.courseId, groupId)
   const enrollmentView = toCourseEnrollmentView(enrollment)
+  const selectedGroup = enrollment.allowedGroups.find((candidate) => candidate.groupId === groupId)
 
   if (query.isPending) return <PageStatePanel state="loading" />
   if (query.error) {
@@ -178,6 +178,7 @@ function StudentLessonArchive({
       />
     )
   }
+  if (!selectedGroup) return <PageStatePanel state="forbidden" />
 
   const lessons = query.data.pages.flatMap((page) => page.lessons)
   const visibleLessons = search.lesson
@@ -256,14 +257,13 @@ function StudentLessonArchive({
                 lesson={lesson}
                 onOpen={() => {
                   void navigate({
-                    to: '/tasks/$taskId',
-                    params: { taskId: `lesson-${lesson.lessonNumber}` },
-                    search: {
-                      course: enrollment.course.courseId,
-                      group: groupId,
-                      groupLesson: lesson.groupLessonId,
-                      material: 'condition',
+                    to: '/tasks/$courseCode/$groupCode/$lessonNumber',
+                    params: {
+                      courseCode: enrollment.course.code,
+                      groupCode: selectedGroup.code,
+                      lessonNumber: String(lesson.lessonNumber),
                     },
+                    search: {},
                   })
                 }}
               />

@@ -69,7 +69,7 @@ server {
     # `default-src 'none'` keeps an omitted deployment allowance closed.
     # MEDIA is exactly one public Hetzner object origin. SENTRY is either one
     # exact ingest origin or an empty replacement; wildcards are forbidden.
-    add_header Content-Security-Policy "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://@@PUBLIC_HOST@@ @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests" always;
+    add_header Content-Security-Policy "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://@@PUBLIC_HOST@@ @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests" always;
     add_header Referrer-Policy "no-referrer" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;

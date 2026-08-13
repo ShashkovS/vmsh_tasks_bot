@@ -37,6 +37,9 @@ export function StudentPublishedContentPage({
   problemOrdinal,
   displayTitle,
   afterDocument,
+  beforeDocument,
+  documentClassName,
+  pageWidth,
   renderAfterProblem,
 }: {
   taskId: string
@@ -45,6 +48,9 @@ export function StudentPublishedContentPage({
   problemOrdinal?: number
   displayTitle?: string
   afterDocument?: ReactNode
+  beforeDocument?: ReactNode
+  documentClassName?: string
+  pageWidth?: 'reading' | 'content' | 'wide'
   renderAfterProblem?: (problem: WebContentProblem) => ReactNode
 }) {
   const authentication = useAuthentication()
@@ -152,10 +158,12 @@ export function StudentPublishedContentPage({
       description={`Опубликовано ${new Date(query.data.publishedAt).toLocaleString('ru-RU')}`}
       eyebrow={materialLabels[kind]}
       title={visibleTitle}
-      width="reading"
+      width={pageWidth ?? 'reading'}
     >
       <ContentUpdateMarker visible={contentWasReplaced} />
+      {beforeDocument}
       <SemanticMathDocument
+        {...(documentClassName ? { className: documentClassName } : {})}
         document={visibleDocument}
         {...(renderAfterProblem ? { renderAfterProblem } : {})}
       />

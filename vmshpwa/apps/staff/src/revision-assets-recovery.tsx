@@ -1,5 +1,5 @@
 import { AlertTriangle, RefreshCw } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   ContentNetworkError,
@@ -15,6 +15,8 @@ import {
 } from '@vmsh/contracts'
 import { MissingAssetsFlow, type MissingAsset } from '@vmsh/product'
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button, Skeleton } from '@vmsh/ui'
+
+import { stableBrowserFile } from './stable-browser-file'
 
 interface AssetDraft {
   kind: ContentAssetUploadKind
@@ -73,6 +75,7 @@ export function RevisionAssetsRecovery({
   const [compilePending, setCompilePending] = useState(false)
   const [resolvePending, setResolvePending] = useState(false)
   const [compileError, setCompileError] = useState<string>()
+  const automaticAttemptRef = useRef<string | undefined>(undefined)
 
   const items = useMemo<MissingAsset[]>(() => {
     if (!assetsQuery.data) return []
@@ -169,29 +172,88 @@ export function RevisionAssetsRecovery({
     }
   }
 
-  const resolveKnownAssets = async () => {
+  useEffect(() => {
     const resource = assetsQuery.data
-    if (!resource || !client.resolveRevisionAssets || resolvePending || busyAssetId) return
-    setResolvePending(true)
-    setCompileError(undefined)
-    try {
-      const resolved = await client.resolveRevisionAssets(revisionId, resource.etag)
-      for (const slot of resolved.data.assets) {
-        const previous = resource.data.assets.find(
-          (candidate) => candidate.logicalName === slot.logicalName,
-        )
-        if (previous?.status === 'missing' && slot.status === 'attached') {
-          updateDraft(slot.logicalName, { phase: 'reused', errorMessage: undefined })
-        }
-      }
-      await assetsQuery.refetch()
-    } catch (error) {
-      setCompileError(describeError(error))
-      if (error instanceof ApiResponseError && error.status === 409) await assetsQuery.refetch()
-    } finally {
-      setResolvePending(false)
+    const missing = resource?.data.assets.filter((asset) => asset.status === 'missing') ?? []
+    if (
+      !resource ||
+      missing.length === 0 ||
+      !client.resolveRevisionAssets ||
+      resolvePending ||
+      busyAssetId
+    ) {
+      return
     }
-  }
+    const attemptKey = `${revisionId}:${missing.map((asset) => asset.logicalName).join('|')}`
+    if (automaticAttemptRef.current === attemptKey) return
+    automaticAttemptRef.current = attemptKey
+
+    const resolveAutomatically = async () => {
+      setResolvePending(true)
+      setCompileError(undefined)
+      try {
+        const resolved = await client.resolveRevisionAssets!(revisionId, resource.etag)
+        let etag = resolved.etag
+        for (const slot of resolved.data.assets) {
+          const previous = resource.data.assets.find(
+            (candidate) => candidate.logicalName === slot.logicalName,
+          )
+          if (previous?.status === 'missing' && slot.status === 'attached') {
+            setDrafts((current) => ({
+              ...current,
+              [slot.logicalName]: {
+                kind: slot.acceptedUploadKinds[0]!,
+                phase: 'reused',
+              },
+            }))
+          }
+        }
+
+        for (const slot of resolved.data.assets.filter(
+          (asset) => asset.status === 'missing' && asset.sourceKind === 'tikz',
+        )) {
+          setBusyAssetId(slot.logicalName)
+          setDrafts((current) => ({
+            ...current,
+            [slot.logicalName]: { kind: 'tikz', phase: 'uploading' },
+          }))
+          const uploaded = await client.uploadRevisionAsset({
+            revisionId,
+            etag,
+            logicalName: slot.logicalName,
+            kind: 'tikz',
+          })
+          etag = uploaded.etag
+          setDrafts((current) => ({
+            ...current,
+            [slot.logicalName]: {
+              kind: 'tikz',
+              phase: uploaded.data.reused ? 'reused' : 'attached',
+            },
+          }))
+        }
+        const refreshed = await assetsQuery.refetch()
+        if (refreshed.error) throw refreshed.error
+        if (refreshed.data?.data.missingAssets.length === 0) {
+          setCompilePending(true)
+          const revision = await client.diagnostics(revisionId)
+          await onCompile(revision)
+        }
+      } catch (error) {
+        setCompileError(describeError(error))
+        if (error instanceof ApiResponseError && error.status === 409) {
+          automaticAttemptRef.current = undefined
+          await assetsQuery.refetch()
+        }
+      } finally {
+        setBusyAssetId(undefined)
+        setCompilePending(false)
+        setResolvePending(false)
+      }
+    }
+
+    void resolveAutomatically()
+  }, [assetsQuery, busyAssetId, client, onCompile, resolvePending, revisionId])
 
   if (assetsQuery.isPending) {
     return (
@@ -223,28 +285,30 @@ export function RevisionAssetsRecovery({
 
   return (
     <section aria-label="Ресурсы revision" className="space-y-3">
-      {!allResolved && client.resolveRevisionAssets ? (
-        <Button
-          disabled={busyAssetId !== undefined || compilePending || resolvePending}
-          onClick={() => void resolveKnownAssets()}
-          size="sm"
-          variant="outline"
-        >
-          <RefreshCw aria-hidden="true" />
-          {resolvePending ? 'Ищем в банке…' : 'Найти уже загруженные картинки'}
-        </Button>
-      ) : null}
       <MissingAssetsFlow
         assets={items}
         disabled={busyAssetId !== undefined || compilePending || resolvePending}
-        onFileSelect={(logicalName, file) =>
-          updateDraft(logicalName, {
-            ...(file ? { kind: uploadKindForFile(file) } : {}),
-            file,
-            phase: undefined,
-            errorMessage: undefined,
-          })
-        }
+        onFileSelect={(logicalName, file) => {
+          if (!file) {
+            updateDraft(logicalName, { file: undefined, phase: undefined })
+            return
+          }
+          void stableBrowserFile(file)
+            .then((stableFile) =>
+              updateDraft(logicalName, {
+                kind: uploadKindForFile(stableFile),
+                file: stableFile,
+                phase: undefined,
+                errorMessage: undefined,
+              }),
+            )
+            .catch(() =>
+              updateDraft(logicalName, {
+                phase: 'error',
+                errorMessage: 'Не удалось прочитать файл. Выберите его ещё раз.',
+              }),
+            )
+        }}
         onResolve={(logicalName) => void resolveAsset(logicalName)}
       />
       {allResolved ? (

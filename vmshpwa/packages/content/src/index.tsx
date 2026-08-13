@@ -49,6 +49,10 @@ export function TelegramMathHtml({ html, className }: MathHtmlProps) {
   const browserHtml = useMemo(
     () =>
       html
+        .replace(/<b>/gu, '<strong>')
+        .replace(/<\/b>/gu, '</strong>')
+        .replace(/<i>/gu, '<em>')
+        .replace(/<\/i>/gu, '</em>')
         .replace(
           /<tg-math-block>([\s\S]*?)<\/tg-math-block>/gu,
           (_match, latex: string) => String.raw`<div>\[${latex}\]</div>`,

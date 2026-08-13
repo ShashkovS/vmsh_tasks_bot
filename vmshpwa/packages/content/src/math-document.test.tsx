@@ -9,6 +9,7 @@ import {
   MathExpression,
   MathHtml,
   SemanticMathDocument,
+  TelegramMathHtml,
   ZoomableAssetFigure,
 } from './index'
 
@@ -33,6 +34,37 @@ describe('browser math content renderer', () => {
     expect(await screen.findByRole('alert')).not.toBeNull()
     expect(screen.queryByText('Безопасный остаток')).toBeNull()
     expect(document.querySelector('script')).toBeNull()
+  })
+
+  it('renders the Telegram bold and italic dialect through the safe browser preview', async () => {
+    render(
+      <TelegramMathHtml html="<h2>Задача</h2><p><b>Важно</b> и <i>курсив</i>: <tg-math>2+2</tg-math></p>" />,
+    )
+
+    expect(await screen.findByText('Важно')).not.toBeNull()
+    expect(screen.getByText('курсив')).not.toBeNull()
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('adds the visible closing parenthesis to semantic subpart labels', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [
+            {
+              type: 'subpart',
+              label: 'а',
+              blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Первый пункт' }] }],
+            },
+          ],
+          problems: [],
+        }}
+      />,
+    )
+
+    expect(screen.getByText('а)')).not.toBeNull()
   })
 
   it('keeps the rest of a document visible when one formula is invalid', async () => {

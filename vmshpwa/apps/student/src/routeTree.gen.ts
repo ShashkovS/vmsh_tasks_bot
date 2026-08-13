@@ -25,7 +25,7 @@ import { Route as QuestionsThreadIdRouteImport } from './routes/questions.$threa
 import { Route as QuestionsNewRouteImport } from './routes/questions.new'
 import { Route as SubmissionsSubmissionIdRouteImport } from './routes/submissions.$submissionId'
 import { Route as TasksIndexRouteImport } from './routes/tasks.index'
-import { Route as TasksTaskIdRouteImport } from './routes/tasks.$taskId'
+import { Route as TasksCourseCodeGroupCodeLessonNumberRouteImport } from './routes/tasks.$courseCode.$groupCode.$lessonNumber'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -107,11 +107,12 @@ const TasksIndexRoute = TasksIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TasksRoute,
 } as any)
-const TasksTaskIdRoute = TasksTaskIdRouteImport.update({
-  id: '/$taskId',
-  path: '/$taskId',
-  getParentRoute: () => TasksRoute,
-} as any)
+const TasksCourseCodeGroupCodeLessonNumberRoute =
+  TasksCourseCodeGroupCodeLessonNumberRouteImport.update({
+    id: '/$courseCode/$groupCode/$lessonNumber',
+    path: '/$courseCode/$groupCode/$lessonNumber',
+    getParentRoute: () => TasksRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -126,11 +127,11 @@ export interface FileRoutesByFullPath {
   '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
-  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/tasks/': typeof TasksIndexRoute
+  '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,11 +142,11 @@ export interface FileRoutesByTo {
   '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
-  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/news': typeof NewsIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/questions': typeof QuestionsIndexRoute
   '/tasks': typeof TasksIndexRoute
+  '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,11 +162,11 @@ export interface FileRoutesById {
   '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
-  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/tasks/': typeof TasksIndexRoute
+  '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -182,11 +183,11 @@ export interface FileRouteTypes {
     | '/questions/$threadId'
     | '/questions/new'
     | '/submissions/$submissionId'
-    | '/tasks/$taskId'
     | '/news/'
     | '/profile/'
     | '/questions/'
     | '/tasks/'
+    | '/tasks/$courseCode/$groupCode/$lessonNumber'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -197,11 +198,11 @@ export interface FileRouteTypes {
     | '/questions/$threadId'
     | '/questions/new'
     | '/submissions/$submissionId'
-    | '/tasks/$taskId'
     | '/news'
     | '/profile'
     | '/questions'
     | '/tasks'
+    | '/tasks/$courseCode/$groupCode/$lessonNumber'
   id:
     | '__root__'
     | '/'
@@ -216,11 +217,11 @@ export interface FileRouteTypes {
     | '/questions/$threadId'
     | '/questions/new'
     | '/submissions/$submissionId'
-    | '/tasks/$taskId'
     | '/news/'
     | '/profile/'
     | '/questions/'
     | '/tasks/'
+    | '/tasks/$courseCode/$groupCode/$lessonNumber'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -348,11 +349,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksIndexRouteImport
       parentRoute: typeof TasksRoute
     }
-    '/tasks/$taskId': {
-      id: '/tasks/$taskId'
-      path: '/$taskId'
-      fullPath: '/tasks/$taskId'
-      preLoaderRoute: typeof TasksTaskIdRouteImport
+    '/tasks/$courseCode/$groupCode/$lessonNumber': {
+      id: '/tasks/$courseCode/$groupCode/$lessonNumber'
+      path: '/$courseCode/$groupCode/$lessonNumber'
+      fullPath: '/tasks/$courseCode/$groupCode/$lessonNumber'
+      preLoaderRoute: typeof TasksCourseCodeGroupCodeLessonNumberRouteImport
       parentRoute: typeof TasksRoute
     }
   }
@@ -400,13 +401,14 @@ const QuestionsRouteWithChildren = QuestionsRoute._addFileChildren(
 )
 
 interface TasksRouteChildren {
-  TasksTaskIdRoute: typeof TasksTaskIdRoute
   TasksIndexRoute: typeof TasksIndexRoute
+  TasksCourseCodeGroupCodeLessonNumberRoute: typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 
 const TasksRouteChildren: TasksRouteChildren = {
-  TasksTaskIdRoute: TasksTaskIdRoute,
   TasksIndexRoute: TasksIndexRoute,
+  TasksCourseCodeGroupCodeLessonNumberRoute:
+    TasksCourseCodeGroupCodeLessonNumberRoute,
 }
 
 const TasksRouteWithChildren = TasksRoute._addFileChildren(TasksRouteChildren)

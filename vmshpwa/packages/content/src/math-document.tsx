@@ -67,9 +67,23 @@ function HeadingBlock({
   path: string
 }) {
   const content = <InlineNodes nodes={block.children} path={`${path}-inline`} />
-  if (block.level === 2) return <h2 id={block.anchor}>{content}</h2>
-  if (block.level === 3) return <h3 id={block.anchor}>{content}</h3>
-  return <h4 id={block.anchor}>{content}</h4>
+  if (block.level === 2)
+    return (
+      <h2 className="vmsh-content-heading" id={block.anchor}>
+        {content}
+      </h2>
+    )
+  if (block.level === 3)
+    return (
+      <h3 className="vmsh-content-heading" id={block.anchor}>
+        {content}
+      </h3>
+    )
+  return (
+    <h4 className="vmsh-content-heading" id={block.anchor}>
+      {content}
+    </h4>
+  )
 }
 
 function TableCell({ cell, path }: { cell: WebContentTableCell; path: string }) {
@@ -185,7 +199,7 @@ function ContentBlocks({ blocks, path }: { blocks: WebContentBlock[]; path: stri
       case 'subpart':
         return (
           <div className="vmsh-subpart" key={key}>
-            <strong className="vmsh-subpart-label">{block.label}</strong>
+            <strong className="vmsh-subpart-label">{block.label})</strong>
             <ContentBlocks blocks={block.blocks} path={`${key}-blocks`} />
           </div>
         )

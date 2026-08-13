@@ -76,14 +76,6 @@ class ContentVersionConflict(ContentConflict):
     """A mutable record changed after the caller read its version."""
 
 
-class ContentSourceLineageConflict(ContentConflict):
-    """An upload tried to split the sole active material source lineage."""
-
-    def __init__(self, source: "ContentSourceRecord") -> None:
-        self.source = source
-        super().__init__("material source filename or encoding changed")
-
-
 @dataclass(frozen=True, slots=True)
 class CourseLessonRecord:
     id: int
@@ -1352,14 +1344,20 @@ def _student_problem_summary(
 
     verdict = None
     queue_checking = row["queue_checking"]
-    if queue_checking is not None:
+    verdict_id = row["verdict_id"]
+    queue_is_newer = queue_checking is not None and (
+        verdict_id is None
+        or parse_utc_timestamp(str(row["latest_queue_at"]))
+        > parse_utc_timestamp(str(row["verdict_at"]))
+    )
+    if queue_is_newer:
         status = "checking" if int(queue_checking) == 1 else "sent"
-    elif row["verdict_id"] is not None:
+    elif verdict_id is not None:
         weight = float(row["verdict_weight"])
         if not 0 <= weight <= 1:
             raise ContentRepositoryError("published problem verdict weight is invalid")
         verdict = StudentProblemVerdictRecord(
-            verdict_id=int(row["verdict_id"]),
+            verdict_id=int(verdict_id),
             symbol=str(row["verdict_symbol"]),
             weight=weight,
         )
@@ -1660,7 +1658,8 @@ logical_member AS (
 ),
 queue_state AS (
     SELECT logical_member.visible_problem_id,
-           max(CASE WHEN queue.cur_status > 0 THEN 1 ELSE 0 END) AS checking
+           max(CASE WHEN queue.cur_status > 0 THEN 1 ELSE 0 END) AS checking,
+           max(queue.ts) AS latest_queue_at
     FROM logical_member
     JOIN written_tasks_queue AS queue
       ON queue.problem_id = logical_member.member_problem_id
@@ -1670,11 +1669,12 @@ queue_state AS (
 ranked_result AS (
     SELECT logical_member.visible_problem_id,
            result.verdict AS verdict_id,
+           result.ts AS verdict_at,
            verdict.tick AS verdict_symbol,
            verdict.val AS verdict_weight,
            row_number() OVER (
                PARTITION BY logical_member.visible_problem_id
-               ORDER BY verdict.val DESC, result.ts DESC, result.id DESC
+               ORDER BY result.ts DESC, result.id DESC
            ) AS result_rank
     FROM logical_member
     JOIN results AS result
@@ -1697,7 +1697,9 @@ SELECT published_scope.group_lesson_public_id,
        published_scope.condition_revision_public_id,
        visible_problem.*,
        queue_state.checking AS queue_checking,
+       queue_state.latest_queue_at,
        ranked_result.verdict_id,
+       ranked_result.verdict_at,
        ranked_result.verdict_symbol,
        ranked_result.verdict_weight,
        discussion_state.has_discussion,
@@ -2453,11 +2455,10 @@ class PwaContentRepository:
             try:
                 if source_rows:
                     source = _content_source(source_rows[0])
-                    if (
-                        source.logical_filename != logical_filename
-                        or source.source_encoding != payload.source_encoding
-                    ):
-                        raise ContentSourceLineageConflict(source)
+                    # The lesson/material slot is the lineage boundary. The
+                    # concrete filename and encoding of this upload remain in
+                    # revision provenance, so a corrected local filename must
+                    # not fork or rename the stored source identity.
                 else:
                     source_row = connection.execute(
                         "INSERT INTO content_sources "

@@ -21,6 +21,7 @@ import {
 } from '@vmsh/product'
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh/ui'
 
+import { automaticProblemMatchPlan } from './automatic-problem-match-plan'
 import { problemReviewDraftStorageKey } from './problem-review-draft'
 
 /**
@@ -364,21 +365,21 @@ export function ProblemReviewWorkflow({
       setMatchResource(current)
       let allMatched = current.data.items.every((item) => item.match !== null)
       if (!allMatched) {
-        const firstConditionUpload = kind === 'condition' && current.data.candidates.length === 0
-        const exactExistingStructure =
-          current.data.candidates.length === current.data.items.length &&
-          current.data.items.every((item) => item.suggestedProblemId !== null)
-        if (firstConditionUpload || exactExistingStructure) {
-          current = await client.resolveProblemMatches({
-            revisionId,
-            etag: current.etag,
-            matches: current.data.items.map((item) => ({
-              sourceOrdinal: item.sourceOrdinal,
-              sourceItem: item.sourceItem,
-              decision: firstConditionUpload ? 'insert_new' : 'auto_position',
-              problemId: firstConditionUpload ? null : item.suggestedProblemId,
-            })),
-          })
+        const automaticPlan = automaticProblemMatchPlan(current.data, kind === 'condition')
+        if (automaticPlan) {
+          try {
+            current = await client.resolveProblemMatches({
+              revisionId,
+              etag: current.etag,
+              matches: automaticPlan,
+            })
+          } catch (error) {
+            if (!(error instanceof ApiResponseError) || error.status !== 409) throw error
+            // React development effects and two open Staff tabs may race on
+            // the same harmless automatic transition. Read the winner instead
+            // of turning that race into a dead-end form.
+            current = await client.problemMatches(revisionId)
+          }
           setMatchResource(current)
           allMatched = current.data.items.every((item) => item.match !== null)
         } else if (kind !== 'condition') {
@@ -474,9 +475,15 @@ export function ProblemReviewWorkflow({
     } catch (error) {
       if (error instanceof ApiResponseError && error.status === 409) {
         const current = await client.problemMatches(revisionId)
-        setMatchResource(current)
-        setStaleDraft(true)
-        setMessage('Сопоставление уже изменилось. Локальный черновик сохранён — проверьте его.')
+        clearStoredObject(matchDraftKey)
+        setSelections({})
+        setStaleDraft(false)
+        await advanceAfterMatching(current)
+        if (current.data.items.some((item) => item.match === null)) {
+          setMessage(
+            'Сервер уже принял другое изменение. Текущее состояние загружено заново; проверьте только строки, которые нельзя сопоставить автоматически.',
+          )
+        }
       } else {
         setMessage(readableError(error))
       }

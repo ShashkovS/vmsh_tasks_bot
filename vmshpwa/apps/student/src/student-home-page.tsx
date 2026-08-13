@@ -198,6 +198,9 @@ export function StudentHomePage() {
               const classroom = classroomQuery.data?.items.find(
                 (item) => item.coursePublicId === course.enrollment.course.courseId,
               )
+              const activeGroup = course.enrollment.allowedGroups.find(
+                (group) => group.groupId === course.enrollment.activeGroupId,
+              )
               if (course.phase === 'no_lesson') {
                 return <EmptyCourseCard course={course} key={course.enrollment.enrollmentId} />
               }
@@ -212,13 +215,15 @@ export function StudentHomePage() {
                   lessonDate={formatCalendarDate(lesson.cycleAnchorDate)}
                   lessonNumber={lesson.lessonNumber}
                   onOpen={() => {
+                    if (!activeGroup) return
                     void navigate({
-                      to: '/tasks/$taskId',
-                      params: { taskId: `lesson-${lesson.lessonNumber}` },
-                      search: {
-                        groupLesson: lesson.groupLessonId,
-                        material: 'condition',
+                      to: '/tasks/$courseCode/$groupCode/$lessonNumber',
+                      params: {
+                        courseCode: course.enrollment.course.code,
+                        groupCode: activeGroup.code,
+                        lessonNumber: String(lesson.lessonNumber),
                       },
+                      search: {},
                     })
                   }}
                   phase={studentPhaseLabel(course)}

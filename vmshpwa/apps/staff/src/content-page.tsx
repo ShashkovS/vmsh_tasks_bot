@@ -64,6 +64,7 @@ import { RevisionAssetsRecovery } from './revision-assets-recovery'
 import { ProblemReviewWorkflow } from './problem-review-workflow'
 import { BulkContentUpload } from './bulk-content-upload'
 import { FamilyDigestPanel } from './family-digest-panel'
+import { stableBrowserFile } from './stable-browser-file'
 
 const materialOrder: ContentMaterialKind[] = ['condition', 'hint', 'solution']
 const materialLabels: Record<ContentMaterialKind, string> = {
@@ -692,21 +693,34 @@ function MaterialWorkflowCard({
               accept=".tex,text/plain,application/x-tex"
               id={inputId}
               onChange={(event) => {
-                const file = event.target.files?.[0]
-                setState((current) => ({
-                  ...current,
-                  file,
-                  phase: 'idle',
-                  invalidRevision: undefined,
-                  webDocument: undefined,
-                  telegramHtml: undefined,
-                  pdfPreview: undefined,
-                  pdfCheckedRevisionId: undefined,
-                  pdfErrorMessage: undefined,
-                  previewRevisionId: undefined,
-                  previewLoading: false,
-                  errorMessage: undefined,
-                }))
+                const selected = event.currentTarget.files?.[0]
+                if (!selected) return
+                void stableBrowserFile(selected).then(
+                  (file) => {
+                    setState((current) => ({
+                      ...current,
+                      file,
+                      phase: 'idle',
+                      invalidRevision: undefined,
+                      webDocument: undefined,
+                      telegramHtml: undefined,
+                      pdfPreview: undefined,
+                      pdfCheckedRevisionId: undefined,
+                      pdfErrorMessage: undefined,
+                      previewRevisionId: undefined,
+                      previewLoading: false,
+                      errorMessage: undefined,
+                    }))
+                  },
+                  () => {
+                    patchState({
+                      file: undefined,
+                      phase: 'error',
+                      errorMessage:
+                        'Не удалось прочитать выбранный файл. Скопируйте его на локальный диск и выберите ещё раз.',
+                    })
+                  },
+                )
               }}
               type="file"
             />

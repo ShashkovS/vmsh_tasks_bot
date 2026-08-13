@@ -17,7 +17,6 @@ from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.content import (
     ContentConflict,
     ContentNotFound,
-    ContentSourceLineageConflict,
     ContentVersionConflict,
     PwaContentRepository,
     TextDerivativeDraft,
@@ -2081,10 +2080,7 @@ async def test_first_upload_race_keeps_one_active_source_lineage(content_fixture
         upload("first"), upload("second"), return_exceptions=True
     )
 
-    assert sum(not isinstance(result, BaseException) for result in results) == 1
-    assert (
-        sum(isinstance(result, ContentSourceLineageConflict) for result in results) == 1
-    )
+    assert all(not isinstance(result, BaseException) for result in results)
     counts = fixture.factory.run_read(
         lambda connection: (
             connection.execute(
@@ -2101,7 +2097,45 @@ async def test_first_upload_race_keeps_one_active_source_lineage(content_fixture
             ).fetchone()["count"],
         )
     )
-    assert counts == (1, 1)
+    assert counts == (1, 2)
+
+
+async def test_existing_material_slot_accepts_corrected_filename(content_fixture):
+    fixture = content_fixture
+    _, group_lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="course-lesson-corrected-source",
+        course_id=fixture.course_id,
+        lesson_number=59,
+        group_id="content-a",
+        group_lesson_public_id="group-lesson-corrected-source",
+    )
+    first = await fixture.repository.resolve_source_and_append_revision(
+        source_public_id="source-corrected-source",
+        revision_public_id="revision-corrected-source-1",
+        group_lesson_id=group_lesson.id,
+        kind=ContentKind.HINT,
+        logical_filename="usl-00-n-sol.tex",
+        payload=SourceRevisionPayload.from_bytes(
+            b"first", encoding="utf-8", provenance={"logicalFilename": "wrong"}
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+    corrected = await fixture.repository.resolve_source_and_append_revision(
+        source_public_id="unused-source-corrected-source",
+        revision_public_id="revision-corrected-source-2",
+        group_lesson_id=group_lesson.id,
+        kind=ContentKind.HINT,
+        logical_filename="usl-00-p-sol.tex",
+        payload=SourceRevisionPayload.from_bytes(
+            b"second", encoding="utf-8", provenance={"logicalFilename": "correct"}
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+
+    assert corrected.source.id == first.source.id
+    assert corrected.revision.revision_number == 2
+    assert corrected.revision.provenance["logicalFilename"] == "correct"
 
 
 async def test_source_archive_and_publication_terminal_guards_block_sql_bypass(

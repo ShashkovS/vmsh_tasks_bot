@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { MessageCircleQuestion } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   PageLayout,
@@ -379,16 +379,185 @@ export function StudentProblemQuestionLink({
   groupLessonId: string
   problemId: string
 }) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'student') throw new Error('Student questions require Student auth')
+  const client = useMemo(
+    () =>
+      createSupportClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const list = useStudentSupportThreadsInfiniteQuery(client, principal)
+  const matchingThread = list.data?.pages
+    .flatMap((page) => page.items)
+    .find(
+      (thread) =>
+        thread.context.groupLessonId === groupLessonId && thread.context.problemId === problemId,
+    )
+  const [createdThreadId, setCreatedThreadId] = useState<string>()
+
+  useEffect(() => {
+    if (!matchingThread && list.hasNextPage && !list.isFetchingNextPage) {
+      void list.fetchNextPage()
+    }
+  }, [list, matchingThread])
+
+  const threadId = createdThreadId ?? matchingThread?.threadId
   return (
-    <div className="mt-5 border-t border-border pt-4">
-      <Link
-        className={buttonVariants({ variant: 'outline' })}
-        search={{ groupLesson: groupLessonId, problem: problemId }}
-        to="/questions/new"
-      >
-        <MessageCircleQuestion aria-hidden="true" />
-        Задать вопрос по задаче
-      </Link>
+    <section aria-label="Обсуждение задачи" className="mt-5 border-t border-border pt-4">
+      <h3 className="mb-3 flex items-center gap-2 font-sans text-base font-semibold">
+        <MessageCircleQuestion aria-hidden="true" className="size-4" />
+        Обсуждение с преподавателем
+      </h3>
+      {threadId ? (
+        <InlineStudentSupportThread client={client} threadId={threadId} />
+      ) : list.isPending || list.hasNextPage ? (
+        <p className="text-small text-muted-foreground">Загружаем предыдущие вопросы…</p>
+      ) : (
+        <InlineNewProblemQuestion
+          client={client}
+          groupLessonId={groupLessonId}
+          onCreated={setCreatedThreadId}
+          problemId={problemId}
+        />
+      )}
+    </section>
+  )
+}
+
+function InlineNewProblemQuestion({
+  client,
+  groupLessonId,
+  onCreated,
+  problemId,
+}: {
+  client: ReturnType<typeof createSupportClient>
+  groupLessonId: string
+  onCreated: (threadId: string) => void
+  problemId: string
+}) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'student') throw new Error('Student questions require Student auth')
+  const descriptor = useMemo<SupportDraftDescriptor>(
+    () => ({
+      ownerAccountId: principal.accountId,
+      target: { kind: 'new_problem_question', groupLessonId, problemId },
+    }),
+    [groupLessonId, principal.accountId, problemId],
+  )
+  const editor = useSupportDraftEditor(
+    { audience: 'student', instance: authentication.client.runtime.instance },
+    descriptor,
+  )
+  const mutation = useCreateSupportThreadMutation(client, principal)
+  const submit = async () => {
+    mutation.reset()
+    try {
+      const response = await mutation.mutateAsync({
+        schemaVersion: 1,
+        idempotencyKey: editor.delivery.idempotencyKey,
+        kind: 'problem_question',
+        groupLessonId,
+        problemId,
+        text: editor.text,
+        clientCreatedAt: editor.delivery.clientCreatedAt,
+      })
+      editor.clearAfterConfirmedSend()
+      onCreated(response.thread.threadId)
+    } catch (error) {
+      authentication.handleApiError(error)
+    }
+  }
+  return (
+    <SupportComposer
+      busy={mutation.isPending}
+      error={mutation.error ? describeSupportError(mutation.error) : null}
+      onSubmit={() => void submit()}
+      onValueChange={(value) => {
+        mutation.reset()
+        editor.setText(value)
+      }}
+      saveState={editor.saveState}
+      submitLabel="Отправить вопрос"
+      value={editor.text}
+    />
+  )
+}
+
+function InlineStudentSupportThread({
+  client,
+  threadId,
+}: {
+  client: ReturnType<typeof createSupportClient>
+  threadId: string
+}) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'student') throw new Error('Student questions require Student auth')
+  const query = useSupportThreadQuery(client, principal, threadId)
+  const mutation = useAppendSupportEntryMutation(client, principal, threadId)
+  const descriptor = useMemo<SupportDraftDescriptor>(
+    () => ({
+      ownerAccountId: principal.accountId,
+      target: { kind: 'existing_thread', threadId },
+    }),
+    [principal.accountId, threadId],
+  )
+  const editor = useSupportDraftEditor(
+    { audience: 'student', instance: authentication.client.runtime.instance },
+    descriptor,
+  )
+  if (query.isPending) {
+    return <p className="text-small text-muted-foreground">Загружаем переписку…</p>
+  }
+  if (query.error) {
+    return (
+      <p className="text-small text-danger" role="alert">
+        {describeSupportError(query.error)}
+      </p>
+    )
+  }
+  const submit = async () => {
+    mutation.reset()
+    try {
+      await mutation.mutateAsync({
+        schemaVersion: 1,
+        idempotencyKey: editor.delivery.idempotencyKey,
+        text: editor.text,
+        clientCreatedAt: editor.delivery.clientCreatedAt,
+      })
+      editor.clearAfterConfirmedSend()
+    } catch (error) {
+      authentication.handleApiError(error)
+    }
+  }
+  return (
+    <div className="space-y-4">
+      <FeedbackThread
+        messages={query.data.thread.entries.map((entry) => studentMessage(entry, principal.userId))}
+      />
+      <SupportComposer
+        busy={mutation.isPending}
+        error={mutation.error ? describeSupportError(mutation.error) : null}
+        onSubmit={() => void submit()}
+        onValueChange={(value) => {
+          mutation.reset()
+          editor.setText(value)
+        }}
+        saveState={editor.saveState}
+        submitLabel="Дополнить вопрос"
+        value={editor.text}
+      />
     </div>
   )
 }

@@ -764,6 +764,20 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - Это functional checkpoint, не новое визуальное принятие. Snapshots не
   обновлялись; owner visual review остаётся открытым.
 
+## Pilot content owner review — 14 августа 2026
+
+- Student sheet теперь выглядит как единый читаемый листок: состояния задач
+  остаются на виду, а формы ответа, фото и переписка открываются отдельно или
+  одной общей кнопкой. Обсуждение показывается рядом с условием и не уводит на
+  страницу с opaque ID.
+- Семантические пункты имеют привычные подписи `а)`, `б)`, компактный ритм и
+  явные отступы перед следующим разделом. PWA и Telegram preview используют
+  один безопасный визуальный результат; изображения разрешены по фактическому
+  production bucket origin.
+- Это owner-review correction, а не новый Storybook snapshot checkpoint.
+  Проверка выполнена целевыми unit/typecheck/integration gates; визуальные
+  snapshots не обновлялись.
+
 ## Development Phase 9 — Family course achievements · 3 августа 2026
 
 - Production `FamilyCourseAchievements` показывает только известные спокойные

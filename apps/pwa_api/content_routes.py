@@ -31,7 +31,6 @@ from db_methods.pwa.content import (
     ContentNotFound,
     ContentRepositoryError,
     ContentRevisionContext,
-    ContentSourceLineageConflict,
     ContentVersionConflict,
     GroupLessonContentScope,
     LessonWindowRecord,
@@ -394,20 +393,6 @@ def _translate_content_errors(
                 status=409,
                 code="version_conflict",
                 message="Материал уже изменился. Обновите страницу.",
-            ) from error
-        except ContentSourceLineageConflict as error:
-            raise PwaApiError(
-                status=409,
-                code="source_lineage_conflict",
-                message=(
-                    "У этого материала уже есть исходный файл. "
-                    "Сохраните прежнее имя и кодировку."
-                ),
-                details={
-                    "sourceId": error.source.public_id,
-                    "logicalFilename": error.source.logical_filename,
-                    "sourceEncoding": error.source.source_encoding,
-                },
             ) from error
         except ContentConflict as error:
             raise PwaApiError(

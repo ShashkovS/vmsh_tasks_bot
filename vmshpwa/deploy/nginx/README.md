@@ -15,7 +15,10 @@ Before installation replace every marker in `vmshpwa.conf.template`:
   site's TLS policy;
 - `@@STATIC_ROOT@@`: atomic release root containing `landing/`, `student/`,
   `family/` and `staff/` production builds;
-- `@@CSP_MEDIA_ORIGIN@@`: one exact public Hetzner media origin, without path;
+- `@@CSP_MEDIA_ORIGIN@@`: exact public bucket origin that appears in generated
+  media URLs (for production:
+  `https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud`), without a
+  path; the S3 API endpoint is not sufficient for browser CSP;
 - `@@CSP_SENTRY_ORIGIN@@`: one exact Sentry ingest origin or the empty string.
 
 Wildcards, unresolved markers and client-derived values are forbidden. Install

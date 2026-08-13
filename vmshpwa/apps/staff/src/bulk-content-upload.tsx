@@ -35,6 +35,7 @@ import {
   createBulkContentUploadRows,
   validateBulkContentUploadRows,
 } from './bulk-content-upload-model'
+import { stableBrowserFile } from './stable-browser-file'
 
 const materialLabels: Record<BulkContentMaterialKind, string> = {
   condition: 'Условие',
@@ -194,7 +195,14 @@ export function BulkContentUpload({
             id="bulk-content-files"
             multiple
             onChange={(event) => {
-              setRows(createBulkContentUploadRows(Array.from(event.target.files ?? [])))
+              const selected = Array.from(event.currentTarget.files ?? [])
+              void Promise.all(selected.map(stableBrowserFile)).then(
+                (files) => setRows(createBulkContentUploadRows(files)),
+                () =>
+                  setBatchError(
+                    'Не удалось прочитать один из выбранных файлов. Скопируйте его на локальный диск и выберите набор ещё раз.',
+                  ),
+              )
             }}
             type="file"
           />

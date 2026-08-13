@@ -1172,8 +1172,8 @@ map $uri $vmshpwa_service_worker_scope {
 # Legacy-сайт продолжает работать со своей прежней политикой.
 map $uri $vmshpwa_csp {
     default "";
-    / "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
-    ~^/(landing|student|family|staff)(/|$) "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+    / "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+    ~^/(landing|student|family|staff)(/|$) "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
 }
 
 map $uri $vmshpwa_referrer_policy {
@@ -1535,7 +1535,7 @@ server {
 NGINX
 
 sudo sed -i \
-  's#@@CSP_MEDIA_ORIGIN@@#https://s3.ru1.storage.beget.cloud#g' \
+  's#@@CSP_MEDIA_ORIGIN@@#https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud#g' \
   /web/vmsh_tasks_bot/vmsh_tasks_bot.conf
 
 sudo sed -i \

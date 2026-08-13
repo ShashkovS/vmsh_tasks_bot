@@ -12,13 +12,13 @@ import {
 import { ContentNetworkError, SemanticMathDocument, createContentApiClient } from '@vmsh/content'
 import {
   ApiResponseError,
-  publicIdSchema,
   type StudentProblemReveal,
   type StudentProblemSummary,
   type StudentRevealKind,
 } from '@vmsh/contracts'
 import { useOfflineDatabase, type VmshOfflineDatabase } from '@vmsh/offline'
 import { HintDisclosure, SolutionDisclosure } from '@vmsh/product'
+import { Badge, Button } from '@vmsh/ui'
 
 import { StudentPublishedContentPage } from './content-page'
 import {
@@ -136,14 +136,22 @@ function StudentProblemActions({
   courseId,
   groupLessonId,
   problem,
+  compact = false,
 }: {
   conditionRevisionId: string
   courseId: string
   groupLessonId: string
   problem: StudentProblemSummary
+  compact?: boolean
 }) {
   return (
-    <div className="mt-4 space-y-4 rounded-lg border border-border bg-surface p-3 sm:p-4">
+    <div
+      className={
+        compact
+          ? 'mt-3 space-y-4 border-t border-border pt-3'
+          : 'mt-4 space-y-4 rounded-lg border border-border bg-surface p-3 sm:p-4'
+      }
+    >
       {problem.type === 'test' ? <StudentTestAnswer problemId={problem.problemId} /> : null}
       {problem.type === 'oral' ? (
         <StudentOralAdmission courseId={courseId} groupLessonId={groupLessonId} />
@@ -247,7 +255,7 @@ function StudentTaskMaterialsReady({
   )
 }
 
-function CanonicalStudentTask({
+export function CanonicalStudentTask({
   courseId,
   groupId,
   groupLessonId,
@@ -348,7 +356,7 @@ function CanonicalStudentTask({
   )
 }
 
-function CanonicalStudentWorksheet({
+export function CanonicalStudentWorksheet({
   courseId,
   groupId,
   groupLessonId,
@@ -383,6 +391,7 @@ function CanonicalStudentWorksheet({
     groupId,
     groupLessonId,
   )
+  const [expandedProblemIds, setExpandedProblemIds] = useState<Set<string>>(() => new Set())
 
   if (query.isPending) {
     return (
@@ -407,8 +416,32 @@ function CanonicalStudentWorksheet({
 
   return (
     <StudentPublishedContentPage
+      beforeDocument={
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface p-3">
+          <p className="text-small text-muted-foreground">
+            Статусы видны сразу. Ответы, решения и переписка открываются по задаче.
+          </p>
+          <Button
+            onClick={() =>
+              setExpandedProblemIds((current) =>
+                current.size === query.data.problems.length
+                  ? new Set()
+                  : new Set(query.data.problems.map((problem) => problem.problemId)),
+              )
+            }
+            size="sm"
+            variant="outline"
+          >
+            {expandedProblemIds.size === query.data.problems.length
+              ? 'Свернуть всё'
+              : 'Открыть все ответы'}
+          </Button>
+        </div>
+      }
+      documentClassName="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 shadow-sm sm:px-6"
       groupLessonId={groupLessonId}
       kind="condition"
+      pageWidth="content"
       renderAfterProblem={(documentProblem) => {
         const problems = query.data.problems.filter(
           (problem) => problem.sourceOrdinal === documentProblem.ordinal,
@@ -417,16 +450,43 @@ function CanonicalStudentWorksheet({
         return (
           <div className="space-y-3">
             {problems.map((problem) => (
-              <section aria-label={`Сдать ${problem.displayNumber}`} key={problem.problemId}>
+              <section
+                aria-label={`Работа с задачей ${problem.displayNumber}`}
+                className="my-3 rounded-md border border-border bg-surface-subtle p-3 font-sans"
+                key={problem.problemId}
+              >
                 {problems.length > 1 ? (
-                  <h3 className="mb-2 text-base font-semibold">Пункт {problem.displayNumber}</h3>
+                  <h3 className="mb-2 text-base font-semibold">Пункт {problem.displayNumber})</h3>
                 ) : null}
-                <StudentProblemActions
-                  conditionRevisionId={query.data.conditionRevisionId}
-                  courseId={courseId}
-                  groupLessonId={groupLessonId}
-                  problem={problem}
-                />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <ProblemStatusBadge problem={problem} />
+                  <Button
+                    aria-expanded={expandedProblemIds.has(problem.problemId)}
+                    onClick={() =>
+                      setExpandedProblemIds((current) => {
+                        const next = new Set(current)
+                        if (next.has(problem.problemId)) next.delete(problem.problemId)
+                        else next.add(problem.problemId)
+                        return next
+                      })
+                    }
+                    size="sm"
+                    variant="outline"
+                  >
+                    {expandedProblemIds.has(problem.problemId)
+                      ? 'Скрыть ответ и переписку'
+                      : 'Ответить или обсудить'}
+                  </Button>
+                </div>
+                {expandedProblemIds.has(problem.problemId) ? (
+                  <StudentProblemActions
+                    compact
+                    conditionRevisionId={query.data.conditionRevisionId}
+                    courseId={courseId}
+                    groupLessonId={groupLessonId}
+                    problem={problem}
+                  />
+                ) : null}
               </section>
             ))}
           </div>
@@ -437,63 +497,21 @@ function CanonicalStudentWorksheet({
   )
 }
 
-/** Resolves an opaque problem identity against the exact published list. */
-export function StudentTaskDetailPage({
-  taskId,
-  courseId,
-  groupId,
-  groupLessonId,
-  material,
-  legacyProblemOrdinal,
-}: {
-  taskId: string
-  courseId?: string
-  groupId?: string
-  groupLessonId?: string
-  material: 'condition' | 'hint' | 'solution'
-  legacyProblemOrdinal?: number
-}) {
-  const canonicalContext =
-    publicIdSchema.safeParse(taskId).success &&
-    courseId !== undefined &&
-    groupId !== undefined &&
-    groupLessonId !== undefined &&
-    material === 'condition'
+const problemStatusView = {
+  'not-started': { label: 'Не начата', variant: 'neutral' },
+  sent: { label: 'Отправлено', variant: 'info' },
+  checking: { label: 'На проверке', variant: 'info' },
+  accepted: { label: 'Зачтено', variant: 'success' },
+  'needs-work': { label: 'Нужна доработка', variant: 'warning' },
+  rejected: { label: 'Ответ не принят', variant: 'danger' },
+} as const
 
-  if (
-    taskId.startsWith('lesson-') &&
-    courseId !== undefined &&
-    groupId !== undefined &&
-    groupLessonId !== undefined &&
-    material === 'condition'
-  ) {
-    return (
-      <CanonicalStudentWorksheet
-        courseId={courseId}
-        groupId={groupId}
-        groupLessonId={groupLessonId}
-        taskId={taskId}
-      />
-    )
-  }
-
-  if (canonicalContext) {
-    return (
-      <CanonicalStudentTask
-        courseId={courseId}
-        groupId={groupId}
-        groupLessonId={groupLessonId}
-        taskId={taskId}
-      />
-    )
-  }
-
+function ProblemStatusBadge({ problem }: { problem: StudentProblemSummary }) {
+  const view = problemStatusView[problem.status]
   return (
-    <StudentPublishedContentPage
-      kind={material}
-      taskId={taskId}
-      {...(groupLessonId ? { groupLessonId } : {})}
-      {...(legacyProblemOrdinal ? { problemOrdinal: legacyProblemOrdinal } : {})}
-    />
+    <Badge variant={view.variant}>
+      {problem.verdict ? `${problem.verdict.symbol} ` : ''}
+      {view.label}
+    </Badge>
   )
 }
