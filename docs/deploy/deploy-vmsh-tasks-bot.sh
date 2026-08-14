@@ -13,6 +13,7 @@ CONFIG_PATH=/web/vmsh_tasks_bot/vmsh_tasks_bot/creds_prod/vmsh_bot_config_prod.j
 REVISION_FILE=/web/vmsh_tasks_bot/deploy/runtime/deploy/vmsh-tasks-bot.revision
 LOCK_FILE=/web/vmsh_tasks_bot/deploy/runtime/deploy/vmsh-tasks-bot.lock
 RUN_LOG=/web/vmsh_tasks_bot/deploy/logs/runs/vmsh-tasks-bot.log
+PUBLIC_MEDIA_ORIGIN=https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud
 
 export HOME=/home/vmsh_tasks_bot
 export PATH=/home/vmsh_tasks_bot/.local/bin:/usr/local/texlive/2026/bin/x86_64-linux:/usr/local/bin:/usr/bin:/bin
@@ -103,6 +104,17 @@ check_http_200() {
   echo "Health response for ${name}:"
   sed -n '1,20p' "$body_file" 2>/dev/null || true
   return 1
+}
+
+check_public_media_csp() {
+  local headers_file="$DEPLOY_DIR/runtime/deploy/health-student.headers"
+  /usr/bin/curl -fsS --max-time 15 -D "$headers_file" -o /dev/null \
+    https://vmsh.shashkovs.ru/student/
+  if ! grep -Fi 'content-security-policy:' "$headers_file" | grep -Fq "$PUBLIC_MEDIA_ORIGIN"; then
+    echo "Student CSP does not allow the production media origin: $PUBLIC_MEDIA_ORIGIN"
+    return 1
+  fi
+  echo "Student CSP allows the production media origin."
 }
 
 make_db_backup() {
@@ -213,7 +225,7 @@ if [[ "$FRONTEND_CHANGED" == true ]]; then
   PWA_RELEASE_ID="${TARGET_REV:0:12}-$(date -u +%Y%m%d%H%M%S)"
   make pwa-production-build \
     PWA_RELEASE_ID="$PWA_RELEASE_ID" \
-    VITE_PUBLIC_MEDIA_ORIGIN=https://s3.ru1.storage.beget.cloud \
+    VITE_PUBLIC_MEDIA_ORIGIN="$PUBLIC_MEDIA_ORIGIN" \
     VITE_SENTRY_DSN=https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io/4511885728088064
 
   find \
@@ -293,6 +305,7 @@ if [[ "$FRONTEND_CHANGED" == true ]]; then
   check_http_200 student https://vmsh.shashkovs.ru/student/
   check_http_200 family https://vmsh.shashkovs.ru/family/
   check_http_200 staff https://vmsh.shashkovs.ru/staff/
+  check_public_media_csp
 fi
 
 if [[ "$MIGRATIONS_CHANGED" == true ]]; then

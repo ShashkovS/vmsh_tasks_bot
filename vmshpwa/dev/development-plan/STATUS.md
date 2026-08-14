@@ -1888,3 +1888,25 @@
   [`phase2-content-archive-all-errors.md`](../../../pwa_tests/reports/phase2-content-archive-all-errors.md).
   Краткий proof:
   [`phase2-content-archive-recursive-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-archive-recursive-2026-08-13.md).
+
+## Pilot follow-up: листок, дедлайн и production media — 14 августа 2026
+
+- Ручное изменение дедлайна разрешено и для окна, материализованного из
+  шаблона: отдельное подтверждение, optimistic version и audit сохранены.
+- Solution web document теперь явно разделяет условие, «Ответ» и «Решение».
+- Student после дедлайна не видит редактор сдачи; переписка свёрнута, старый
+  thread переиспользуется, `Cmd/Ctrl+Enter` отправляет сообщение или письменное
+  решение. Hint/solution вынесены из блока ответа.
+- Zoom viewer переведён с обрезаемого `transform` на реальный scroll-backed
+  canvas. Локально просмотрен desktop light story
+  `product-mathematical-document--zoom-canvas`; snapshots не обновлялись.
+- Архив доступной неактивной группы принудительно перепроверяется при открытии.
+  Production API отдельно подтвердил наличие опубликованного листка; stale
+  client archive больше не должен скрывать его.
+- Deploy использует и проверяет точный origin
+  `https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud`. Live nginx
+  всё ещё требует обновления CSP и reload при следующем deploy.
+- Focused Python **3 PASS**, frontend unit **10 PASS**, focused Storybook
+  interaction **10 PASS**, ESLint, Stylelint, strict TypeScript, production
+  build, shell syntax и `git diff --check` — **PASS**. Полная frontend suite
+  сохраняет известные baseline failures auth/session/realtime.

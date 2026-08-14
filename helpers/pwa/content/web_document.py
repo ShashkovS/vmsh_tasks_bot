@@ -321,6 +321,33 @@ def _selected_blocks(problem: ProblemNode, role: ContentRole) -> tuple[BlockNode
     raise WebDocumentError("full_preview has no browser wire representation")
 
 
+def _problem_blocks(
+    problem: ProblemNode,
+    role: ContentRole,
+    *,
+    assets: Mapping[str, WebAssetDescriptor],
+) -> list[dict[str, Any]]:
+    """Project one problem while preserving answer/solution semantics."""
+
+    if role is not ContentRole.SOLUTION:
+        return _blocks(_selected_blocks(problem, role), assets=assets)
+
+    blocks = _blocks(problem.statement + problem.trailing, assets=assets)
+    for label, section in (("Ответ", problem.answer), ("Решение", problem.solution)):
+        rendered = _blocks(section, assets=assets)
+        if not rendered:
+            continue
+        blocks.append(
+            {
+                "type": "heading",
+                "level": 3,
+                "children": [{"type": "text", "value": label}],
+            }
+        )
+        blocks.extend(rendered)
+    return blocks
+
+
 def render_web_document(
     document: DocumentAst,
     *,
@@ -345,7 +372,7 @@ def render_web_document(
     mapping = assets or {}
     problems = []
     for problem in document.problems:
-        blocks = _blocks(_selected_blocks(problem, role), assets=mapping)
+        blocks = _problem_blocks(problem, role, assets=mapping)
         if not blocks:
             continue
         problems.append(

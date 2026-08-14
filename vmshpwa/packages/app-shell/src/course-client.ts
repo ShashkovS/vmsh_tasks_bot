@@ -392,6 +392,8 @@ export function useStudentLessonArchiveQuery(
         signal,
       }),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 }
 

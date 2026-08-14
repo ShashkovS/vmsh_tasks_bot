@@ -189,20 +189,13 @@ function StatefulPage({
 export function StudentTodayPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
     <StatefulPage state={state} title="Сейчас">
-      <PageLayout
-        description="У каждого курса своё занятие, расписание и режим участия."
-        eyebrow="Ваши курсы"
-        title="Сейчас"
-      >
+      <PageLayout eyebrow="Ваши курсы" title="Сейчас">
         <div className="space-y-5">
           <div className="flex flex-wrap items-center justify-end gap-2">
             <ConnectionBanner state="online" />
           </div>
 
-          <PageSection
-            description="Курс — основной контекст; группа и режим меняются независимо в каждом курсе."
-            title="Сейчас по курсам"
-          >
+          <PageSection title="Сейчас по курсам">
             <div className="grid gap-3 lg:grid-cols-2">
               <CourseCard
                 classroomName="201"

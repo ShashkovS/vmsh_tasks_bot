@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { webContentDocumentSchema, type WebContentDocument } from '@vmsh/contracts'
 
@@ -358,7 +358,7 @@ export const MissingAsset: Story = {
 }
 
 export const ZoomCanvas: Story = {
-  name: 'Zoom canvas: keyboard and pinch',
+  name: 'Zoom canvas: scroll-backed keyboard zoom',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const viewport = canvas.getByRole('region', { name: /Просмотр рисунка/u })
@@ -368,18 +368,11 @@ export const ZoomCanvas: Story = {
     await userEvent.click(viewport)
     await userEvent.keyboard('+')
     await expect(zoom).toHaveTextContent('150%')
-    await expect(transformedCanvas.style.transform).toContain('scale(1.5)')
+    await expect(transformedCanvas.style.width).toContain('150%')
 
     await userEvent.keyboard('0')
     await expect(zoom).toHaveTextContent('100%')
-
-    await fireEvent.pointerDown(viewport, { pointerId: 1, clientX: 100, clientY: 100 })
-    await fireEvent.pointerDown(viewport, { pointerId: 2, clientX: 200, clientY: 100 })
-    await fireEvent.pointerMove(viewport, { pointerId: 2, clientX: 260, clientY: 100 })
-    await waitFor(() => expect(zoom).toHaveTextContent('160%'))
-    await expect(transformedCanvas.style.transform).toContain('scale(1.6)')
-    await fireEvent.pointerUp(viewport, { pointerId: 1 })
-    await fireEvent.pointerUp(viewport, { pointerId: 2 })
+    await expect(transformedCanvas.style.width).toContain('100%')
   },
 }
 

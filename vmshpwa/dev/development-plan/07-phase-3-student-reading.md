@@ -266,3 +266,24 @@ Proof:
 «Сейчас» показывает карточку каждого course enrollment. Tasks и focused task используют validated `course/group/lesson`; query/cache/draft keys не смешивают курсы. Отозванный group access скрывает новые материалы, но сохраняет собственную старую историю.
 
 Дополнительный proof: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`, offline cache isolation и deep links двух курсов; `Pages/Family--activity-by-course` read-only parity.
+
+## Pilot correction: читаемый листок — 14 августа 2026
+
+- Читаемый URL показывает номер и название занятия; статус каждой задачи
+  остаётся виден, а формы ответа свёрнуты. Подсказка, решение и компактная
+  кнопка переписки находятся вне формы сдачи.
+- После дедлайна редакторы тестового и письменного ответа не создаются;
+  ранее отправленные ответы и проверки остаются доступны.
+- Рисунок масштабируется реальным размером canvas внутри прокручиваемой области,
+  поэтому увеличение не создаёт пустой отступ и не обрезает края.
+- Открытие вопроса по задаче сначала находит существующий thread; composer
+  открывается только по кнопке. Сообщение и письменное решение отправляются по
+  `Cmd+Enter`/`Ctrl+Enter`.
+- Архив выбранной доступной группы перепроверяется при открытии страницы и
+  возвращении в окно; offline-копия используется только при сетевой ошибке.
+
+Реализация: [`student-readable-task-page.tsx`](../../apps/student/src/student-readable-task-page.tsx),
+[`student-task-detail-page.tsx`](../../apps/student/src/student-task-detail-page.tsx),
+[`student-support-pages.tsx`](../../apps/student/src/student-support-pages.tsx),
+[`zoomable-asset-figure.tsx`](../../packages/content/src/zoomable-asset-figure.tsx),
+[`course-client.ts`](../../packages/app-shell/src/course-client.ts).

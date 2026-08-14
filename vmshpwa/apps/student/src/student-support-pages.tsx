@@ -165,6 +165,26 @@ export function StudentNewSupportPage({
     descriptor,
   )
   const mutation = useCreateSupportThreadMutation(client, principal)
+  const threadList = useStudentSupportThreadsInfiniteQuery(client, principal)
+  const existingThread = threadList.data?.pages
+    .flatMap((page) => page.items)
+    .find(
+      (thread) =>
+        thread.context.groupLessonId === groupLessonId &&
+        thread.context.problemId === (problemId ?? null),
+    )
+
+  useEffect(() => {
+    if (existingThread) {
+      void navigate({
+        to: '/questions/$threadId',
+        params: { threadId: existingThread.threadId },
+        replace: true,
+      })
+    } else if (threadList.hasNextPage && !threadList.isFetchingNextPage) {
+      void threadList.fetchNextPage()
+    }
+  }, [existingThread, navigate, threadList])
 
   const submit = async () => {
     mutation.reset()
@@ -187,6 +207,14 @@ export function StudentNewSupportPage({
     } catch (error) {
       authentication.handleApiError(error)
     }
+  }
+
+  if (threadList.isPending || threadList.hasNextPage || existingThread) {
+    return (
+      <PageLayout title="Вопрос" width="reading">
+        <PageStatePanel state="loading" />
+      </PageLayout>
+    )
   }
 
   return (
@@ -404,6 +432,7 @@ export function StudentProblemQuestionLink({
         thread.context.groupLessonId === groupLessonId && thread.context.problemId === problemId,
     )
   const [createdThreadId, setCreatedThreadId] = useState<string>()
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     if (!matchingThread && list.hasNextPage && !list.isFetchingNextPage) {
@@ -413,23 +442,32 @@ export function StudentProblemQuestionLink({
 
   const threadId = createdThreadId ?? matchingThread?.threadId
   return (
-    <section aria-label="Обсуждение задачи" className="mt-5 border-t border-border pt-4">
-      <h3 className="mb-3 flex items-center gap-2 font-sans text-base font-semibold">
+    <section aria-label="Обсуждение задачи" className="mt-4 border-t border-border pt-3">
+      <Button
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        size="sm"
+        variant="ghost"
+      >
         <MessageCircleQuestion aria-hidden="true" className="size-4" />
-        Обсуждение с преподавателем
-      </h3>
-      {threadId ? (
-        <InlineStudentSupportThread client={client} threadId={threadId} />
-      ) : list.isPending || list.hasNextPage ? (
-        <p className="text-small text-muted-foreground">Загружаем предыдущие вопросы…</p>
-      ) : (
-        <InlineNewProblemQuestion
-          client={client}
-          groupLessonId={groupLessonId}
-          onCreated={setCreatedThreadId}
-          problemId={problemId}
-        />
-      )}
+        {threadId ? 'Переписка с преподавателем' : 'Задать вопрос'}
+      </Button>
+      {open ? (
+        <div className="mt-3">
+          {threadId ? (
+            <InlineStudentSupportThread client={client} threadId={threadId} />
+          ) : list.isPending || list.hasNextPage ? (
+            <p className="text-small text-muted-foreground">Загружаем предыдущие вопросы…</p>
+          ) : (
+            <InlineNewProblemQuestion
+              client={client}
+              groupLessonId={groupLessonId}
+              onCreated={setCreatedThreadId}
+              problemId={problemId}
+            />
+          )}
+        </div>
+      ) : null}
     </section>
   )
 }

@@ -136,12 +136,14 @@ function StudentProblemActions({
   courseId,
   groupLessonId,
   problem,
+  submissionClosed = false,
   compact = false,
 }: {
   conditionRevisionId: string
   courseId: string
   groupLessonId: string
   problem: StudentProblemSummary
+  submissionClosed?: boolean
   compact?: boolean
 }) {
   return (
@@ -152,7 +154,9 @@ function StudentProblemActions({
           : 'mt-4 space-y-4 rounded-lg border border-border bg-surface p-3 sm:p-4'
       }
     >
-      {problem.type === 'test' ? <StudentTestAnswer problemId={problem.problemId} /> : null}
+      {problem.type === 'test' ? (
+        <StudentTestAnswer closed={submissionClosed} problemId={problem.problemId} />
+      ) : null}
       {problem.type === 'oral' ? (
         <StudentOralAdmission courseId={courseId} groupLessonId={groupLessonId} />
       ) : null}
@@ -162,11 +166,25 @@ function StudentProblemActions({
           configVersion={problem.configVersion}
           problemId={problem.problemId}
           problemType={problem.type}
+          closed={submissionClosed}
         />
       ) : null}
+    </div>
+  )
+}
+
+function StudentProblemMaterialsAndQuestion({
+  groupLessonId,
+  problem,
+}: {
+  groupLessonId: string
+  problem: StudentProblemSummary
+}) {
+  return (
+    <>
       <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
       <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
-    </div>
+    </>
   )
 }
 
@@ -260,11 +278,13 @@ export function CanonicalStudentTask({
   groupId,
   groupLessonId,
   taskId,
+  submissionClosed = false,
 }: {
   courseId: string
   groupId: string
   groupLessonId: string
   taskId: string
+  submissionClosed?: boolean
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -340,12 +360,16 @@ export function CanonicalStudentTask({
   return (
     <StudentPublishedContentPage
       afterDocument={
-        <StudentProblemActions
-          conditionRevisionId={query.data.conditionRevisionId}
-          courseId={courseId}
-          groupLessonId={groupLessonId}
-          problem={problem}
-        />
+        <>
+          <StudentProblemActions
+            conditionRevisionId={query.data.conditionRevisionId}
+            courseId={courseId}
+            groupLessonId={groupLessonId}
+            problem={problem}
+            submissionClosed={submissionClosed}
+          />
+          <StudentProblemMaterialsAndQuestion groupLessonId={groupLessonId} problem={problem} />
+        </>
       }
       displayTitle={problem.title || `Задача ${problem.displayNumber}`}
       groupLessonId={groupLessonId}
@@ -361,11 +385,15 @@ export function CanonicalStudentWorksheet({
   groupId,
   groupLessonId,
   taskId,
+  displayTitle,
+  submissionClosed = false,
 }: {
   courseId: string
   groupId: string
   groupLessonId: string
   taskId: string
+  displayTitle?: string
+  submissionClosed?: boolean
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -417,10 +445,7 @@ export function CanonicalStudentWorksheet({
   return (
     <StudentPublishedContentPage
       beforeDocument={
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface p-3">
-          <p className="text-small text-muted-foreground">
-            Статусы видны сразу. Ответы, решения и переписка открываются по задаче.
-          </p>
+        <div className="mb-4 flex justify-end">
           <Button
             onClick={() =>
               setExpandedProblemIds((current) =>
@@ -434,11 +459,14 @@ export function CanonicalStudentWorksheet({
           >
             {expandedProblemIds.size === query.data.problems.length
               ? 'Свернуть всё'
-              : 'Открыть все ответы'}
+              : submissionClosed
+                ? 'Показать все отправленные ответы'
+                : 'Ответить на все задачи'}
           </Button>
         </div>
       }
-      documentClassName="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 shadow-sm sm:px-6"
+      {...(displayTitle === undefined ? {} : { displayTitle })}
+      documentClassName="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-6"
       groupLessonId={groupLessonId}
       kind="condition"
       pageWidth="content"
@@ -474,8 +502,10 @@ export function CanonicalStudentWorksheet({
                     variant="outline"
                   >
                     {expandedProblemIds.has(problem.problemId)
-                      ? 'Скрыть ответ и переписку'
-                      : 'Ответить или обсудить'}
+                      ? 'Свернуть'
+                      : submissionClosed
+                        ? 'Посмотреть ответы'
+                        : 'Ответить'}
                   </Button>
                 </div>
                 {expandedProblemIds.has(problem.problemId) ? (
@@ -485,8 +515,13 @@ export function CanonicalStudentWorksheet({
                     courseId={courseId}
                     groupLessonId={groupLessonId}
                     problem={problem}
+                    submissionClosed={submissionClosed}
                   />
                 ) : null}
+                <StudentProblemMaterialsAndQuestion
+                  groupLessonId={groupLessonId}
+                  problem={problem}
+                />
               </section>
             ))}
           </div>

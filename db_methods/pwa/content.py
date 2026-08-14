@@ -3031,17 +3031,6 @@ class PwaContentRepository:
         values = self._window_values(draft)
 
         def write(connection):
-            materialized = connection.execute(
-                "SELECT 1 FROM lesson_windows AS window "
-                "JOIN lesson_window_schedule_sources AS schedule_source "
-                "ON schedule_source.lesson_window_id = window.id "
-                "WHERE window.public_id = ? LIMIT 1",
-                (public_id,),
-            ).fetchone()
-            if materialized is not None:
-                raise ContentConflict(
-                    "materialized schedule is immutable; create an explicit replacement"
-                )
             row = connection.execute(
                 "UPDATE lesson_windows SET opens_at = ?, submission_closes_at = ?, "
                 "hint_scheduled_at = ?, solution_scheduled_at = ?, timezone = ?, "
@@ -3160,15 +3149,6 @@ class PwaContentRepository:
                 raise ContentNotFound("lesson window does not exist")
             if int(current["version"]) != expected_version:
                 raise ContentVersionConflict("lesson window version changed")
-            materialized = connection.execute(
-                "SELECT 1 FROM lesson_window_schedule_sources "
-                "WHERE lesson_window_id = ? LIMIT 1",
-                (current["id"],),
-            ).fetchone()
-            if materialized is not None:
-                raise ContentConflict(
-                    "materialized schedule is immutable; create an explicit replacement"
-                )
             draft = LessonWindowDraft(
                 opens_at=opens_at,
                 submission_closes_at=parse_utc_timestamp(
@@ -3185,7 +3165,7 @@ class PwaContentRepository:
                 and values[2] == current["hint_scheduled_at"]
                 and values[3] == current["solution_scheduled_at"]
             ):
-                raise ContentConflict("lesson window schedule did not change")
+                return _window(current)
             row = connection.execute(
                 "UPDATE lesson_windows SET opens_at = ?, hint_scheduled_at = ?, "
                 "solution_scheduled_at = ?, updated_by_user_id = ?, updated_at = ?, "
@@ -3253,15 +3233,6 @@ class PwaContentRepository:
                 raise ContentNotFound("lesson window does not exist")
             if int(current["version"]) != expected_version:
                 raise ContentVersionConflict("lesson window version changed")
-            materialized = connection.execute(
-                "SELECT 1 FROM lesson_window_schedule_sources "
-                "WHERE lesson_window_id = ? LIMIT 1",
-                (current["id"],),
-            ).fetchone()
-            if materialized is not None:
-                raise ContentConflict(
-                    "materialized schedule is immutable; create an explicit replacement"
-                )
             draft = LessonWindowDraft(
                 opens_at=_optional_timestamp(current["opens_at"]),
                 submission_closes_at=submission_closes_at,
@@ -3274,7 +3245,7 @@ class PwaContentRepository:
             )
             cutoff = self._window_values(draft)[1]
             if cutoff == current["submission_closes_at"]:
-                raise ContentConflict("submission cutoff did not change")
+                return _window(current)
             row = connection.execute(
                 "UPDATE lesson_windows SET submission_closes_at = ?, "
                 "updated_by_user_id = ?, updated_at = ?, version = version + 1 "

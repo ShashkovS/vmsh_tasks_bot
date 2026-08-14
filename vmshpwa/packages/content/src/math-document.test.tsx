@@ -144,10 +144,10 @@ describe('browser math content renderer', () => {
     const canvas = screen.getByTestId('figure-canvas')
     fireEvent.keyDown(viewport, { key: '+' })
     expect(screen.getByTestId('figure-zoom').textContent).toContain('150%')
-    expect(canvas.style.transform).toContain('scale(1.5)')
+    expect(canvas.style.width).toContain('150%')
     fireEvent.keyDown(viewport, { key: '0' })
     expect(screen.getByTestId('figure-zoom').textContent).toContain('100%')
-    expect(canvas.style.transform).toContain('scale(1)')
+    expect(canvas.style.width).toContain('100%')
   })
 
   it('shows a stable missing-image fallback without dropping the caption', () => {

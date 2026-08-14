@@ -1093,6 +1093,38 @@ def test_web_document_available_asset_requires_explicit_published_metadata() -> 
     }
 
 
+def test_solution_web_document_separates_answer_and_explanation() -> None:
+    result = _compile(
+        r"\задача Условие. \кзадача"
+        r"\ответ 17 человек. \кответ"
+        r"\решение Слева шесть, справа десять. \крешение"
+    )
+
+    document = render_web_document(
+        result.ast,
+        role=ContentRole.SOLUTION,
+        revision_id="revision:solution-sections",
+    )
+
+    blocks = document["problems"][0]["blocks"]
+    assert [block["type"] for block in blocks] == [
+        "paragraph",
+        "heading",
+        "paragraph",
+        "heading",
+        "paragraph",
+    ]
+    assert [blocks[index]["children"][0]["value"] for index in (1, 3)] == [
+        "Ответ",
+        "Решение",
+    ]
+    assert [blocks[index]["children"][0]["value"].strip() for index in (0, 2, 4)] == [
+        "Условие.",
+        "17 человек.",
+        "Слева шесть, справа десять.",
+    ]
+
+
 def test_web_document_rejects_oversized_table_instead_of_truncating_content() -> None:
     cells = "&".join(str(index) for index in range(21))
     result = _compile(

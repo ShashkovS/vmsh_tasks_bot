@@ -770,7 +770,7 @@ PWA_RELEASE_ID="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
 
 make pwa-production-build \
   PWA_RELEASE_ID="$PWA_RELEASE_ID" \
-  VITE_PUBLIC_MEDIA_ORIGIN=https://s3.ru1.storage.beget.cloud \
+  VITE_PUBLIC_MEDIA_ORIGIN=https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud \
   VITE_SENTRY_DSN=https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io/4511885728088064
 
 # nginx с brotli_static отдаст эти файлы без сжатия на каждом запросе.

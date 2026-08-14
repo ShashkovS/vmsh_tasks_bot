@@ -1,5 +1,5 @@
 import { Send } from 'lucide-react'
-import type { FormEvent } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
 
 import { Alert, AlertContent, AlertDescription, Button, Label, Textarea, cn } from '@vmsh/ui'
 
@@ -37,12 +37,12 @@ export function SupportComposer({
     event.preventDefault()
     if (!busy && !disabled && value.trim()) onSubmit()
   }
-  const status =
-    saveState === 'saved'
-      ? 'Черновик сохранён на этом устройстве.'
-      : saveState === 'unavailable'
-        ? 'Черновик не сохраняется. Не закрывайте страницу до отправки.'
-        : 'Текст сохранится на этом устройстве после ввода.'
+  const submitFromKeyboard = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault()
+      if (!busy && !disabled && value.trim()) onSubmit()
+    }
+  }
 
   return (
     <form className={cn('space-y-2', className)} onSubmit={submit}>
@@ -52,21 +52,25 @@ export function SupportComposer({
         id="support-message"
         maxLength={100_000}
         onChange={(event) => onValueChange(event.target.value)}
+        onKeyDown={submitFromKeyboard}
         placeholder="Опишите, что именно осталось непонятно…"
         rows={density === 'compact' ? 3 : 5}
         value={value}
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p
-          className={cn(
-            'text-caption',
-            saveState === 'unavailable' ? 'text-danger' : 'text-muted-foreground',
-          )}
-          role="status"
+        {saveState === 'unavailable' ? (
+          <p className="text-caption text-danger" role="status">
+            Черновик не сохраняется. Не закрывайте страницу до отправки.
+          </p>
+        ) : (
+          <span />
+        )}
+        <Button
+          disabled={disabled || busy || !value.trim()}
+          size="sm"
+          title={`${submitLabel} (Ctrl/Cmd+Enter)`}
+          type="submit"
         >
-          {status}
-        </p>
-        <Button disabled={disabled || busy || !value.trim()} size="sm" type="submit">
           <Send aria-hidden="true" />
           {busy ? 'Отправляем…' : submitLabel}
         </Button>

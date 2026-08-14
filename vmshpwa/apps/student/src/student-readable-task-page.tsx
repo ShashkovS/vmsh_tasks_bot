@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   CourseNetworkError,
@@ -120,6 +120,7 @@ function ReadableLesson({
   lessonNumber: number
   principal: { audience: 'student'; accountId: string }
 }) {
+  const [openedAt] = useState(() => Date.now())
   const archive = useStudentLessonArchiveQuery(client, principal, courseId, groupId)
   const lesson = archive.data?.pages
     .flatMap((page) => page.lessons)
@@ -153,11 +154,20 @@ function ReadableLesson({
     )
   }
   if (!displayNumber) {
+    const submissionClosed = lesson.window
+      ? openedAt >= Date.parse(lesson.window.submissionClosesAt)
+      : false
     return (
       <CanonicalStudentWorksheet
         courseId={courseId}
+        displayTitle={
+          lesson.title?.trim()
+            ? `Занятие ${lesson.lessonNumber} · ${lesson.title.trim()}`
+            : `Занятие ${lesson.lessonNumber}`
+        }
         groupId={groupId}
         groupLessonId={lesson.groupLessonId}
+        submissionClosed={submissionClosed}
         taskId={`lesson-${lessonNumber}`}
       />
     )
@@ -169,6 +179,9 @@ function ReadableLesson({
       displayNumber={displayNumber}
       groupId={groupId}
       groupLessonId={lesson.groupLessonId}
+      submissionClosed={
+        lesson.window ? openedAt >= Date.parse(lesson.window.submissionClosesAt) : false
+      }
       principal={principal}
     />
   )
@@ -181,6 +194,7 @@ function ReadableProblem({
   groupId,
   groupLessonId,
   principal,
+  submissionClosed,
 }: {
   client: ReturnType<typeof createOfflineStudentCourseClient>
   courseId: string
@@ -188,6 +202,7 @@ function ReadableProblem({
   groupId: string
   groupLessonId: string
   principal: { audience: 'student'; accountId: string }
+  submissionClosed: boolean
 }) {
   const problems = useStudentProblemsQuery(client, principal, courseId, groupId, groupLessonId)
   if (problems.isPending) {
@@ -219,6 +234,7 @@ function ReadableProblem({
       courseId={courseId}
       groupId={groupId}
       groupLessonId={groupLessonId}
+      submissionClosed={submissionClosed}
       taskId={problem.problemId}
     />
   )

@@ -841,3 +841,19 @@ sent|No recipients|Loading|Error` документирует ручной previe
   `MachPortRendezvous` code 141; interaction/a11y не объявлены пройденными.
 - Unit **594 PASS**, lint, strict TypeScript и production build — PASS.
   Snapshots не обновлялись; owner visual acceptance остаётся открытым.
+
+## Pilot follow-up: компактный листок и scroll-backed zoom — 14 августа 2026
+
+- Заголовок читаемого листка соединяет номер и название занятия; условие,
+  статус и действия образуют один ритм, а ответ, обсуждение и решение больше не
+  вложены друг в друга.
+- Переписка открывается компактной кнопкой и по умолчанию не занимает экран.
+  Служебные подписи о localStorage и порядке фотографий удалены.
+- Изображение при увеличении получает реальный размер внутри прокручиваемого
+  viewport. Desktop light story
+  `product-mathematical-document--zoom-canvas` просмотрен вручную на 100%; его
+  interaction проверяет увеличение и сброс. Visual snapshots не обновлялись.
+- После дедлайна форма сдачи скрыта, но история остаётся видна. Solution
+  renderer выводит отдельные семантические заголовки «Ответ» и «Решение».
+- Focused content/product unit **10 PASS**, focused Storybook interaction
+  **10 PASS**, lint, strict TypeScript и production build — **PASS**.

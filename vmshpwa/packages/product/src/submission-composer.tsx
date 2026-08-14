@@ -1,5 +1,5 @@
 import { ImagePlus, Info, WifiOff } from 'lucide-react'
-import { useId } from 'react'
+import { useId, type KeyboardEvent } from 'react'
 
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button, Textarea, cn } from '@vmsh/ui'
 
@@ -47,7 +47,6 @@ export function SubmissionComposer({
   onSubmit,
   maxPhotos = 10,
   totalSizeLabel,
-  draftSavedAt,
   offline,
   queued,
   closed,
@@ -61,6 +60,12 @@ export function SubmissionComposer({
   const empty = text.trim() === '' && attachments.length === 0
   const atLimit = attachments.length >= maxPhotos
   const editingDisabled = closed || queued || submitting
+  const submitFromKeyboard = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault()
+      if (!editingDisabled && !empty) onSubmit?.()
+    }
+  }
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -74,6 +79,7 @@ export function SubmissionComposer({
           disabled={editingDisabled}
           id={textId}
           onChange={(event) => onTextChange(event.target.value)}
+          onKeyDown={submitFromKeyboard}
           placeholder="Опишите решение. Формулы можно приложить фотографией."
           value={text}
         />
@@ -124,8 +130,7 @@ export function SubmissionComposer({
           Добавить фото
         </Button>
         <p className="text-caption text-muted-foreground">
-          Камера или файлы · JPG, PNG, HEIC · до {maxPhotos} страниц. Порядок фото — это порядок
-          страниц.
+          Камера или файлы · JPG, PNG, HEIC · до {maxPhotos} страниц.
         </p>
       </section>
 
@@ -141,16 +146,16 @@ export function SubmissionComposer({
         </Alert>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-caption text-muted-foreground" role="status">
-          {draftSavedAt
-            ? `Черновик сохранён в ${draftSavedAt}`
-            : 'Черновик сохраняется автоматически'}
-        </p>
+      <div className="flex items-center justify-end gap-3">
         {closed ? (
           <span className="text-small font-medium text-status-danger">Приём закрыт</span>
         ) : (
-          <Button disabled={submitting || queued || empty} onClick={onSubmit} size="lg">
+          <Button
+            disabled={submitting || queued || empty}
+            onClick={onSubmit}
+            size="lg"
+            title="Отправить (Ctrl/Cmd+Enter)"
+          >
             {queued
               ? 'В очереди'
               : submitting

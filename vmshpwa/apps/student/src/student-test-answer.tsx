@@ -86,7 +86,13 @@ function queueState(item: TestAnswerOutboxItem | null): SendState {
   return item.status
 }
 
-export function StudentTestAnswer({ problemId }: { problemId: string }) {
+export function StudentTestAnswer({
+  problemId,
+  closed = false,
+}: {
+  problemId: string
+  closed?: boolean
+}) {
   const authentication = useAuthentication()
   const principal =
     authentication.state.status === 'authenticated' ||
@@ -359,7 +365,7 @@ export function StudentTestAnswer({ problemId }: { problemId: string }) {
         <CardTitle>Ваш ответ</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {incompatibleDraft ? (
+        {!closed && incompatibleDraft ? (
           <Alert tone="warning">
             <TriangleAlert aria-hidden="true" />
             <AlertContent>
@@ -374,7 +380,7 @@ export function StudentTestAnswer({ problemId }: { problemId: string }) {
           </Alert>
         ) : null}
 
-        {storageError ? (
+        {!closed && storageError ? (
           <Alert role="alert" tone="danger">
             <TriangleAlert aria-hidden="true" />
             <AlertContent>
@@ -387,36 +393,46 @@ export function StudentTestAnswer({ problemId }: { problemId: string }) {
           </Alert>
         ) : null}
 
-        <TestAnswer
-          key={`${identity}:${editorEpoch}`}
-          defaultValue={answer}
-          disabled={fieldLocked}
-          onChange={saveAnswer}
-          showFormatError={showFormatError}
-          spec={spec}
-        />
+        {closed ? (
+          <p className="text-small text-muted-foreground">Приём ответов завершён.</p>
+        ) : (
+          <>
+            <TestAnswer
+              key={`${identity}:${editorEpoch}`}
+              defaultValue={answer}
+              disabled={fieldLocked}
+              onChange={saveAnswer}
+              showFormatError={showFormatError}
+              spec={spec}
+            />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            disabled={!answer.trim() || sendState === 'sending'}
-            onClick={() => void submit()}
-          >
-            {sendState === 'sending' ? (
-              <>
-                <RefreshCw className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                Отправляем…
-              </>
-            ) : pendingItem && ['queued', 'retrying', 'sending'].includes(pendingItem.status) ? (
-              'Повторить отправку'
-            ) : (
-              'Проверить'
-            )}
-          </Button>
-          <SyncIndicator
-            queuedCount={pendingItem && pendingItem.status !== 'synced' ? 1 : 0}
-            syncing={sendState === 'sending'}
-          />
-        </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                disabled={!answer.trim() || sendState === 'sending'}
+                onClick={() => void submit()}
+              >
+                {sendState === 'sending' ? (
+                  <>
+                    <RefreshCw
+                      className="animate-spin motion-reduce:animate-none"
+                      aria-hidden="true"
+                    />
+                    Отправляем…
+                  </>
+                ) : pendingItem &&
+                  ['queued', 'retrying', 'sending'].includes(pendingItem.status) ? (
+                  'Повторить отправку'
+                ) : (
+                  'Проверить'
+                )}
+              </Button>
+              <SyncIndicator
+                queuedCount={pendingItem && pendingItem.status !== 'synced' ? 1 : 0}
+                syncing={sendState === 'sending'}
+              />
+            </div>
+          </>
+        )}
 
         {sendState === 'queued' ? (
           <Alert tone="warning">

@@ -452,3 +452,22 @@ approval остаются открытыми gates Phase 2.
 Ввести `course_lesson` по `(course_id, lesson_number)` и независимые `group_lesson`. Course schedule rules и group overrides материализуют concrete windows; позднее изменение шаблона требует impact preview/confirm. Condition, hint и solution имеют отдельные group-scoped publish/rollback state и LaTeX revisions.
 
 Дополнительный proof: две группы одного номера с разными source/schedule; отсутствующий номер у третьей группы; snapshot stability; независимые publication actions; stories `Product/Staff-admin--independent-schedules` и `Pages/Staff--course-and-group-administration`.
+
+## Pilot correction: ручной дедлайн и семантика решений — 14 августа 2026
+
+- Материализованное из шаблона окно занятия остаётся snapshot-ом, но admin
+  может в любой момент отдельно изменить дедлайн. Действие требует явного
+  подтверждения, текущего `ETag` и записывается в `lesson_window_changes`;
+  повтор того же значения идемпотентен.
+- Solution derivative сохраняет условие задачи и явно разделяет непустые
+  блоки «Ответ» и «Решение». Пустой блок не создаёт служебный заголовок.
+- Browser CSP обязан разрешать точный virtual-hosted origin production bucket,
+  а deploy smoke проверяет этот origin после активации frontend-релиза.
+
+Реализация: [`content.py`](../../../db_methods/pwa/content.py),
+[`content_routes.py`](../../../apps/pwa_api/content_routes.py),
+[`web_document.py`](../../../helpers/pwa/content/web_document.py),
+[`deploy-vmsh-tasks-bot.sh`](../../../docs/deploy/deploy-vmsh-tasks-bot.sh).
+Проверки: [`test_content_repository.py`](../../../pwa_tests/integration/test_content_repository.py),
+[`test_content_http_api.py`](../../../pwa_tests/integration/test_content_http_api.py),
+[`test_content_compiler.py`](../../../pwa_tests/domain/test_content_compiler.py).

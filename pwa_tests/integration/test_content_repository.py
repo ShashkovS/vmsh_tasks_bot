@@ -571,19 +571,20 @@ async def test_schedule_rules_materialize_once_with_override_provenance(
     assert preview.materialized_window_count == 1
     assert stored["opens_at"] == "2026-09-14T13:00:00.000000Z"
     assert sources_after == sources_before
-    with pytest.raises(ContentConflict, match="materialized schedule is immutable"):
-        await fixture.repository.update_lesson_window(
-            public_id=window.public_id,
-            expected_version=window.version,
-            draft=LessonWindowDraft(
-                opens_at=NOW,
-                submission_closes_at=NOW + timedelta(days=2),
-                hint_scheduled_at=None,
-                solution_scheduled_at=None,
-                timezone=BUSINESS_TIMEZONE,
-            ),
-            actor_user_id=fixture.actor_user_id,
-        )
+    manually_changed = await fixture.repository.update_lesson_window(
+        public_id=window.public_id,
+        expected_version=window.version,
+        draft=LessonWindowDraft(
+            opens_at=NOW,
+            submission_closes_at=NOW + timedelta(days=2),
+            hint_scheduled_at=None,
+            solution_scheduled_at=None,
+            timezone=BUSINESS_TIMEZONE,
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert manually_changed.opens_at == NOW
+    assert manually_changed.submission_closes_at == NOW + timedelta(days=2)
     assert course_lesson.course_id == fixture.course_id
 
 

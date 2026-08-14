@@ -164,11 +164,7 @@ export function StudentHomePage() {
   }
 
   return (
-    <PageLayout
-      description="У каждого курса своё занятие, расписание и режим участия."
-      eyebrow="Ваши курсы"
-      title="Сейчас"
-    >
+    <PageLayout eyebrow="Ваши курсы" title="Сейчас">
       {bannerQuery.data ? (
         <div className="space-y-2" aria-label="Объявления">
           {bannerQuery.data.items
@@ -182,10 +178,7 @@ export function StudentHomePage() {
             ))}
         </div>
       ) : null}
-      <PageSection
-        description="Показываем последнее опубликованное занятие активной группы каждого курса."
-        title="Сейчас по курсам"
-      >
+      <PageSection title="Сейчас по курсам">
         {query.data.courses.length === 0 ? (
           <PageStatePanel
             description="Когда вас добавят на курс, он появится здесь."
@@ -234,10 +227,7 @@ export function StudentHomePage() {
           </div>
         )}
       </PageSection>
-      <PageSection
-        description="Показываем только подтверждённое распределение. Рассылка выполняется отдельно."
-        title="Очные занятия"
-      >
+      <PageSection title="Очные занятия">
         {classroomQuery.isPending ? <PageStatePanel state="loading" /> : null}
         {classroomQuery.error ? (
           <PageStatePanel

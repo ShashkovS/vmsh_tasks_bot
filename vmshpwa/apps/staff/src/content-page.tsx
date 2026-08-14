@@ -1243,6 +1243,12 @@ function LessonWindowEditor({
     }
   }
 
+  function confirmCutoffChange(value = draft.submissionClosesLocalTime) {
+    if (!value) return
+    if (!globalThis.confirm(`Изменить дедлайн сдачи на ${value.replace('T', ' ')}?`)) return
+    void saveCutoff(value)
+  }
+
   const timezone = window.businessTimezone
   return (
     <Card>
@@ -1303,12 +1309,12 @@ function LessonWindowEditor({
               value={draft.submissionClosesLocalTime}
             />
           </Label>
-          <Button disabled={pending !== null} onClick={() => void saveCutoff()} size="sm">
+          <Button disabled={pending !== null} onClick={() => confirmCutoffChange()} size="sm">
             Изменить дедлайн
           </Button>
           <Button
             disabled={pending !== null}
-            onClick={() => void saveCutoff(nowLocal(timezone))}
+            onClick={() => confirmCutoffChange(nowLocal(timezone))}
             size="sm"
             variant="outline"
           >

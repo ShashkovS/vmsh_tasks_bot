@@ -51,6 +51,7 @@ interface StudentWrittenSubmissionProps {
   problemType: Extract<StudentProblemType, 'written' | 'oral'>
   conditionRevisionId: string
   configVersion: number
+  closed?: boolean
 }
 
 function formatBytes(bytes: number): string {
@@ -99,6 +100,7 @@ export function StudentWrittenSubmission({
   problemType,
   conditionRevisionId,
   configVersion,
+  closed = false,
 }: StudentWrittenSubmissionProps) {
   const authentication = useAuthentication()
   const principal =
@@ -177,7 +179,6 @@ export function StudentWrittenSubmission({
     reviewId: string
     message: string
   } | null>(null)
-  const [savedAt, setSavedAt] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [online, setOnline] = useState(() => navigator.onLine)
   const previewUrls = usePhotoPreviewUrls(photos)
@@ -336,6 +337,36 @@ export function StudentWrittenSubmission({
     )
   }
 
+  if (closed) {
+    const closedThread = threadQuery.data?.thread ?? null
+    return (
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Отправленные решения</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {closedThread?.reviews.length ? (
+            <WrittenReviewHistory
+              entries={closedThread.entries}
+              onStudentReactionChange={(reviewId, reactionId, expectedVersion) =>
+                void changeStudentReaction(reviewId, reactionId, expectedVersion)
+              }
+              pendingStudentReactionReviewId={
+                studentReactionMutation.isPending
+                  ? studentReactionMutation.variables?.reviewId
+                  : null
+              }
+              reviews={closedThread.reviews}
+              studentReactionError={studentReactionError}
+            />
+          ) : (
+            <p className="text-small text-muted-foreground">Приём решений завершён.</p>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (!draftStore.value || !outbox) {
     return (
       <Alert className="mt-5" role="alert" tone="danger">
@@ -356,7 +387,6 @@ export function StudentWrittenSubmission({
     setSent(false)
     try {
       draftStore.value.saveText(descriptor, value)
-      setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
       setStorageError(null)
     } catch (error) {
       setStorageError(error)
@@ -384,7 +414,6 @@ export function StudentWrittenSubmission({
         setPendingPhotos((current) => current.filter((photo) => photo.id !== id))
         setSent(false)
         await reloadDraft()
-        setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           setPendingPhotos((current) => current.filter((photo) => photo.id !== id))
@@ -532,7 +561,6 @@ export function StudentWrittenSubmission({
         })
       }
       await reloadDraft()
-      setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
     } catch {
       setSendError(
         'Не удалось полностью скопировать прежнюю версию. Уже сохранённые страницы не потеряны; проверьте черновик и добавьте недостающие.',
@@ -677,7 +705,6 @@ export function StudentWrittenSubmission({
         />
         <SubmissionComposer
           attachments={attachments}
-          {...(savedAt ? { draftSavedAt: savedAt } : {})}
           maxPhotos={10}
           offline={!online}
           onAddPhotos={() => inputRef.current?.click()}
