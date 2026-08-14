@@ -27,7 +27,7 @@ privacy-safe report.
 ## До остановки writers
 
 - [ ] `make pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test
-      pwa-build` завершены успешно на точном revision.
+    pwa-build` завершены успешно на точном revision.
 - [ ] `make python-test telegram-history-test` завершены успешно.
 - [ ] Production-build Playwright matrix завершена в Chromium, Firefox и
       WebKit; launcher failure не записывается как pass.

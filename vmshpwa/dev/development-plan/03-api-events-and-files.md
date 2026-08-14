@@ -210,6 +210,7 @@ Backend API этого пункта реализован в
 возвращает code-owned defaults с version `0`, первый PUT материализует row, а
 следующие PUT требуют matching ETag. Staff contract/UI и Telegram compatibility
 read остаются отдельным инкрементом.
+
 - `POST /staff/api/v1/imports/student-accounts/preview|apply` — Student batch с
   ФИО, nullable birthday/grade, login/password и collision suffix preview
 - `POST /staff/api/v1/imports/family-accounts/preview|apply` — Family batch с
@@ -227,6 +228,7 @@ Apply принимает исходные `rows`, просмотренные `re
 course enrollment — третий batch: `login, course, allowed_groups`, preview
 явно показывает active group, выбранную по `groups.sort_order`, и apply повторно
 проверяет тот же порядок.
+
 - `GET/POST /staff/api/v1/courses/{coursePublicId}/groups`, `PATCH /staff/api/v1/groups/{groupPublicId}`, `POST /staff/api/v1/groups/{groupPublicId}/archive`
 - `GET/PUT /staff/api/v1/courses/{coursePublicId}/schedule-rules`, `GET/PUT /staff/api/v1/groups/{groupPublicId}/schedule-overrides`
 - `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-preview`, `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-confirm`

@@ -92,7 +92,7 @@ DraftPersistence — не отдельная декоративная карто
 - FamilyLessonDigest: компактный Staff preview показывает группу, занятие,
   число школьников/семей, уже уведомлённых, ожидающих и школьников без Family
   account. Отправка требует отдельного confirm; состояния `ready|late-family|
-  already-sent|no-recipients|loading|error` не маскируют отсутствие адресатов.
+already-sent|no-recipients|loading|error` не маскируют отсутствие адресатов.
   Family видит одно событие «Итоги занятия», но не отдельные per-problem review
   pushes. Реализация: [`FamilyDigestPanel`](../../apps/staff/src/family-digest-panel.tsx)
   и [`FamilyNotificationSettingsView`](../../apps/family/src/family-notifications-page.tsx).

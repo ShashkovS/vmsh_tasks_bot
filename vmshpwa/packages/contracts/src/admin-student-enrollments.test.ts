@@ -36,8 +36,8 @@ describe('admin student enrollment contracts', () => {
     imported.students[0]!.familyAccounts[0]!.relationshipLabel = null
 
     expect(
-      adminStudentEnrollmentDirectoryResponseSchema.parse(imported).students[0]
-        ?.familyAccounts[0]?.relationshipLabel,
+      adminStudentEnrollmentDirectoryResponseSchema.parse(imported).students[0]?.familyAccounts[0]
+        ?.relationshipLabel,
     ).toBeNull()
   })
 

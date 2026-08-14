@@ -51,6 +51,7 @@ Systemd и nginx получают только symlink в своих станд�
    package/verify/activate/rollback требуют явный `PWA_RELEASE_ROOT`; на сервере
    это отдельный каталог статических релизов вне deployment checkout, и тот же
    путь с `/current` передаётся в nginx как `@@STATIC_ROOT@@`.
+
 7. Для schema maintenance остановить и дождаться завершения Gunicorn master/workers, Telegram adapter и всех background jobs, которые могут открыть общую SQLite. Rolling HUP для этого шага запрещён: перекрывающиеся shared locks намеренно не оставляют окна для migration.
 8. Получить exclusive database lifecycle lock и применить yoyo migrations до переключения backend revision. Каждая migration имеет backup/rollback procedure; занятый lock прерывает deploy до любого DDL.
 9. Атомарно переключить static assets и запустить gunicorn/связанные workers только при соответствующих изменениях.
@@ -82,6 +83,7 @@ Systemd и nginx получают только symlink в своих станд�
     локальный Prometheus scrape; Telegram/Google остаются в отдельном legacy
     service. Environment file имеет exact mode `0600`; unresolved markers и
     adapter/profile overrides блокируют deploy.
+
 14. Проверить три audience health/runtime URL, static history fallback,
     WebSocket upgrade, spoofed forwarding rejection, настоящий login `429` с
     `Retry-After`, CSP/security headers и service-worker files.

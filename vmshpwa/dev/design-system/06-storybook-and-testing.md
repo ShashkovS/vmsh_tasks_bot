@@ -133,7 +133,7 @@ Classroom visual set фиксирует catalog active/hidden/duplicate, inherit
 
 - Page stories: [`Pages/Student`](../../apps/student/src/pages.stories.tsx), [`Pages/Family`](../../apps/family/src/pages.stories.tsx), [`Pages/Staff`](../../apps/staff/src/pages.stories.tsx). Они покрывают основные ready flows, loading/empty/error/offline, login/reveal, validation, read-only Family, course achievements без ranking, Staff verdict и classroom tab interaction. Точный Family proof — `Pages/Family--course-achievements`; он использует production-компонент, скрывает неизвестный rule code и проходит addon-a11y в режиме error.
 - Family digest proof: `Product/Staff admin/Family digest--Ready to send|Late
-  family pending|Already sent|No recipients|Loading|Error`,
+family pending|Already sent|No recipients|Loading|Error`,
   `Pages/Staff/Content publication--Explicit Family digest after review` и
   `Pages/Family/Notifications--Ready`. Production-build flow находится в
   [`news-notifications.spec.ts`](../../e2e/news-notifications.spec.ts).
