@@ -153,14 +153,16 @@ export function CourseCard({
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <div className="space-y-1.5">
-          <p className="inline-flex items-center gap-1.5 text-small text-foreground">
-            <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
-            {phase}
-          </p>
-          <p className="inline-flex items-center gap-1.5 text-small text-muted-foreground">
-            <BookOpen aria-hidden="true" className="size-4" />
-            {progressLabel}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="inline-flex items-center gap-1.5 text-small text-foreground">
+              <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
+              {phase}
+            </p>
+            <p className="inline-flex items-center gap-1.5 text-small text-muted-foreground">
+              <BookOpen aria-hidden="true" className="size-4" />
+              {progressLabel}
+            </p>
+          </div>
           {classroomName ? (
             <p className="text-small text-muted-foreground">Аудитория: {classroomName}</p>
           ) : null}
