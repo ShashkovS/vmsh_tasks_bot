@@ -286,7 +286,9 @@ function publishedHistory(
         revisions: [
           {
             ...readyRevision,
-            etag: contentEtagSchema.parse(`"${revisionId}:v2"`),
+            revisionId: publishedRevisionId,
+            revisionNumber: version,
+            etag: contentEtagSchema.parse(`"${publishedRevisionId}:v2"`),
           },
         ],
         currentPublished: publication,
@@ -456,20 +458,19 @@ export const UploadPreviewPublish: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const conditionInput = (await canvas.findAllByLabelText('LaTeX-файл'))[0]!
+    const workflow = within(await canvas.findByTestId('content-workflow-condition'))
+    const conditionInput = await workflow.findByLabelText('LaTeX-файл')
     await userEvent.upload(
       conditionInput,
       new File(['\\задача Загаданное число \\кзадача'], 'condition.tex', {
         type: 'text/plain',
       }),
     )
-    await userEvent.click(
-      canvas
-        .getAllByRole('button', { name: 'Загрузить и проверить' })
-        .find((button) => !button.hasAttribute('disabled'))!,
-    )
+    const uploadButton = await workflow.findByRole('button', { name: 'Загрузить и проверить' })
+    await expect(uploadButton).toBeEnabled()
+    await userEvent.click(uploadButton)
 
-    await expect(canvas.getByText('Занятие 41 · Начинающие')).toBeVisible()
+    await expect(await canvas.findByText('Занятие 41 · Начинающие')).toBeVisible()
     await expect(canvas.getByText(/3:1 · Команда вертикального отступа/)).toBeVisible()
     await expect(canvas.getByRole('tab', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
@@ -479,10 +480,10 @@ export const UploadPreviewPublish: Story = {
       `/staff/api/v1/content/revisions/${revisionId}/pdf`,
     )
     await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
-    await expect(canvas.getByText(/Опубликовать условие revision 1 сейчас/)).toBeVisible()
+    await expect(canvas.getByText(/Опубликовать условие версии 1 сейчас/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
     await expect(canvas.getByText('Опубликовано')).toBeVisible()
-    await expect(canvas.getByText(`Публичная revision: ${revisionId}`)).toBeVisible()
+    await expect(canvas.getByText(/Опубликована версия 1 · condition\.tex/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Скрыть опубликованное' }))
     await expect(canvas.getByText(/Скрыть опубликованное условие/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Отмена' }))
@@ -601,10 +602,10 @@ export const BulkUploadExplicitMapping: Story = {
       }),
     ])
 
-    await userEvent.click(canvas.getByLabelText('Группа для файла beginners.tex'))
+    await userEvent.click(await canvas.findByLabelText('Группа для файла beginners.tex'))
     await userEvent.click(await body.findByRole('option', { name: /Начинающие/ }))
 
-    await userEvent.click(canvas.getByLabelText('Группа для файла continuing.tex'))
+    await userEvent.click(await canvas.findByLabelText('Группа для файла continuing.tex'))
     await userEvent.click(await body.findByRole('option', { name: /Продолжающие/ }))
 
     await expect(canvas.getByText('Начинающие')).toBeVisible()
@@ -629,14 +630,14 @@ export const ResumeInterruptedRevision: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByRole('button', { name: 'Найти недостающие рисунки revision 1' }),
+      await canvas.findByRole('button', { name: 'Найти недостающие рисунки в версии 1' }),
     ).toBeVisible()
     await expect(
-      canvas.getByRole('button', { name: 'Найти недостающие рисунки revision 2' }),
+      canvas.getByRole('button', { name: 'Найти недостающие рисунки в версии 2' }),
     ).toBeVisible()
-    await expect(canvas.getByText(/Revision 3 проверяется/)).toBeVisible()
+    await expect(canvas.getByText(/Версия 3 проверяется/)).toBeVisible()
     await userEvent.click(
-      canvas.getByRole('button', { name: 'Найти недостающие рисунки revision 1' }),
+      canvas.getByRole('button', { name: 'Найти недостающие рисунки в версии 1' }),
     )
     await expect(await canvas.findByRole('tab', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
@@ -748,7 +749,7 @@ export const RecoverMissingAsset: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(
-      await canvas.findByRole('button', { name: 'Найти недостающие рисунки revision 1' }),
+      await canvas.findByRole('button', { name: 'Найти недостающие рисунки в версии 1' }),
     )
     await expect(await canvas.findByText('figures/rook.png')).toBeVisible()
     await userEvent.upload(
@@ -851,15 +852,15 @@ export const RollbackReadyHistory: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const selector = await canvas.findByLabelText('Revision для отката')
-    await expect(selector).toHaveTextContent('Revision 2')
+    const selector = await canvas.findByLabelText('Версия для отката')
+    await expect(selector).toHaveTextContent('Версия 2')
     await userEvent.click(selector)
     const body = within(canvasElement.ownerDocument.body)
-    await userEvent.click(await body.findByRole('option', { name: /Revision 1/ }))
+    await userEvent.click(await body.findByRole('option', { name: /Версия 1/ }))
     await userEvent.click(canvas.getByRole('button', { name: 'Откатить опубликованное' }))
-    await expect(canvas.getByText(/Вернуть опубликованный материал к revision 1/)).toBeVisible()
+    await expect(canvas.getByText(/Вернуть опубликованный материал к версии 1/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
-    await expect(canvas.getByText('Публичная revision: revision-ready-1')).toBeVisible()
+    await expect(canvas.getByText(/Опубликована версия 1/)).toBeVisible()
   },
 }
 
@@ -926,9 +927,7 @@ export const OptimisticConflictRefetch: Story = {
     await expect(
       await canvas.findByText('Материал уже изменён. Обновляем версии и публикации…'),
     ).toBeVisible()
-    await expect(
-      await canvas.findByText('Публичная revision: revision-after-conflict'),
-    ).toBeVisible()
+    await expect(await canvas.findByText(/Опубликована версия/)).toBeVisible()
   },
 }
 
@@ -1052,7 +1051,7 @@ export const MatchThenReviewMetadata: Story = {
     )
     const title = await canvas.findByLabelText('Название, строка 1')
     await userEvent.type(title, 'Орехи и клетки')
-    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить метаданные' }))
     await expect(await canvas.findByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
     await expect(storage?.getItem(matchingKey)).toBeNull()
     await expect(storage?.getItem(metadataKey)).toBeNull()
@@ -1527,7 +1526,7 @@ export const MetadataConflictKeepsDraft: Story = {
     storage?.removeItem(key)
 
     await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Не потерять')
-    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить метаданные' }))
     await expect(await canvas.findByText('Серверная версия изменилась')).toBeVisible()
     await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
     await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))

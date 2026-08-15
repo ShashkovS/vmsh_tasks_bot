@@ -2678,6 +2678,28 @@ async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(
     assert missing.status == 404
 
 
+async def test_identical_source_upload_is_idempotent(content_http: ContentHttpFixture):
+    fixture = content_http
+    source = "\\задача Одинаковый файл. \\кзадача".encode()
+    first = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="same.tex",
+        source=source,
+    )
+    repeated = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="same.tex",
+        source=source,
+    )
+
+    assert first.status == repeated.status == 201
+    assert (await first.json())["revisionId"] == (await repeated.json())["revisionId"]
+
+
 async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     content_http: ContentHttpFixture,
 ):

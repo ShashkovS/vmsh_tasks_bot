@@ -105,7 +105,7 @@ async function uploadReviewAndPublish({
         new URL(response.url()).pathname ===
           `/staff/api/v1/group-lessons/${target.groupLessonPublicId}/metadata-grid`,
     )
-    await workflow.getByRole('button', { name: 'Сохранить' }).click()
+    await workflow.getByRole('button', { name: 'Подтвердить метаданные' }).click()
     const metadataResponse = await metadataResponsePromise
     expect(metadataResponse.status()).toBe(200)
     await expect(workflow.getByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
@@ -143,7 +143,9 @@ async function uploadReviewAndPublish({
     revisionId: uploadPayload.revisionId,
     kind,
   })
-  await expect(workflow.getByText(`Публичная revision: ${uploadPayload.revisionId}`)).toBeVisible()
+  await expect(
+    workflow.getByText(new RegExp(`Опубликована версия \\d+ · ${kind}\\.tex`, 'u')),
+  ).toBeVisible()
   return uploadPayload.revisionId
 }
 
@@ -393,8 +395,8 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
 
   await page.goto(staffUrl)
   const workflow = page.getByTestId('content-workflow-condition')
-  await expect(workflow.getByText(`Публичная revision: ${secondRevisionId}`)).toBeVisible()
-  await expect(workflow.getByLabel('Revision для отката')).toBeVisible()
+  await expect(workflow.getByText(/Опубликована версия \d+ · condition\.tex/)).toBeVisible()
+  await expect(workflow.getByLabel('Версия для отката')).toBeVisible()
 
   await workflow.getByRole('button', { name: 'Откатить опубликованное' }).click()
   const rollbackResponsePromise = page.waitForResponse(
@@ -407,7 +409,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   expect(rollbackResponse.status()).toBe(201)
   const rollback = (await rollbackResponse.json()) as { revisionId: string }
   expect(rollback.revisionId).toBe(firstRevisionId)
-  await expect(workflow.getByText(`Публичная revision: ${firstRevisionId}`)).toBeVisible()
+  await expect(workflow.getByText(/Опубликована версия \d+ · condition\.tex/)).toBeVisible()
 
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()

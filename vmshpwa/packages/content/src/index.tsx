@@ -63,7 +63,12 @@ export function TelegramMathHtml({ html, className }: MathHtmlProps) {
         ),
     [html],
   )
-  return <MathHtml html={browserHtml} {...(className ? { className } : {})} />
+  return (
+    <MathHtml
+      className={['vmsh-telegram-preview', className].filter(Boolean).join(' ')}
+      html={browserHtml}
+    />
+  )
 }
 
 const mathDelimiters = [

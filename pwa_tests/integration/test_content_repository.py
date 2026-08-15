@@ -2139,6 +2139,69 @@ async def test_existing_material_slot_accepts_corrected_filename(content_fixture
     assert corrected.revision.provenance["logicalFilename"] == "correct"
 
 
+async def test_repeated_identical_upload_reuses_revision(content_fixture):
+    fixture = content_fixture
+    _, group_lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="course-lesson-repeat-upload",
+        course_id=fixture.course_id,
+        lesson_number=60,
+        group_id="content-a",
+        group_lesson_public_id="group-lesson-repeat-upload",
+    )
+    payload = SourceRevisionPayload.from_bytes(
+        b"same source",
+        encoding="utf-8",
+        provenance={"logicalFilename": "usl-60-n.tex"},
+    )
+    first = await fixture.repository.resolve_source_and_append_revision(
+        source_public_id="source-repeat-upload",
+        revision_public_id="revision-repeat-upload-1",
+        group_lesson_id=group_lesson.id,
+        kind=ContentKind.CONDITION,
+        logical_filename="usl-60-n.tex",
+        payload=payload,
+        actor_user_id=fixture.actor_user_id,
+        parser_version="compiler-v1",
+    )
+    repeated = await fixture.repository.resolve_source_and_append_revision(
+        source_public_id="unused-source-repeat-upload",
+        revision_public_id="unused-revision-repeat-upload",
+        group_lesson_id=group_lesson.id,
+        kind=ContentKind.CONDITION,
+        logical_filename="usl-60-n.tex",
+        payload=payload,
+        actor_user_id=fixture.actor_user_id,
+        parser_version="compiler-v1",
+    )
+
+    assert repeated.source.id == first.source.id
+    assert repeated.revision.id == first.revision.id
+    assert repeated.revision.revision_number == 1
+    count = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(*) AS count FROM content_revisions WHERE source_id = ?",
+            (first.source.id,),
+        ).fetchone()["count"]
+    )
+    assert count == 1
+
+    reopened = await fixture.repository.resolve_source_and_append_revision(
+        source_public_id="unused-source-repeat-upload-2",
+        revision_public_id="unused-revision-repeat-upload-2",
+        group_lesson_id=group_lesson.id,
+        kind=ContentKind.CONDITION,
+        logical_filename="usl-60-n.tex",
+        payload=payload,
+        actor_user_id=fixture.actor_user_id,
+        parser_version="compiler-v2",
+    )
+    assert reopened.revision.id == first.revision.id
+    assert reopened.revision.status is RevisionStatus.UPLOADED
+    assert reopened.revision.parser_version == "compiler-v2"
+    assert reopened.revision.version == first.revision.version + 1
+
+
 async def test_source_archive_and_publication_terminal_guards_block_sql_bypass(
     content_fixture,
 ):

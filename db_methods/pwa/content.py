@@ -2482,6 +2482,26 @@ class PwaContentRepository:
                     "WHERE source_id = ? ORDER BY revision_number DESC LIMIT 1",
                     (source.id,),
                 ).fetchone()
+                existing_revision = connection.execute(
+                    "SELECT * FROM content_revisions "
+                    "WHERE source_id = ? AND source_sha256 = ?",
+                    (source.id, payload.source_sha256),
+                ).fetchone()
+                if existing_revision is not None:
+                    if str(existing_revision["parser_version"]) != parser_version:
+                        existing_revision = connection.execute(
+                            "UPDATE content_revisions SET status = 'uploaded', "
+                            "parser_version = ?, diagnostics_json = '[]', canonical_json = NULL, "
+                            "compile_claim_token = NULL, compile_claimed_at = NULL, "
+                            "compile_lease_expires_at = NULL, compile_completed_at = NULL, "
+                            "version = version + 1 WHERE id = ? RETURNING *",
+                            (parser_version, existing_revision["id"]),
+                        ).fetchone()
+                    return ContentRevisionContext(
+                        revision=_content_revision(existing_revision),
+                        source=source,
+                        scope=_scope_by_group_lesson_id(connection, group_lesson_id),
+                    )
                 current_number = 0 if latest is None else int(latest["revision_number"])
                 revision_row = connection.execute(
                     "INSERT INTO content_revisions "

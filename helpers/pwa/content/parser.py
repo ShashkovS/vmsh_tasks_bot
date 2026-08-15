@@ -140,7 +140,6 @@ _DISCARD_ONE_GROUP_COMMANDS = {
     "НомерЛистка",
     "ДатаЛистка",
     "Подзаголовок",
-    "УстановитьГраницы",
     "УвеличитьВысоту",
     "УвеличитьШирину",
     "bans",
@@ -1839,6 +1838,18 @@ class LatexAstParser:
             line_end = end if newline < 0 else newline
             next_command = self.text.find("\\", command.end, line_end)
             return line_end if next_command < 0 else next_command
+        if command.name == "УстановитьГраницы":
+            first = read_group(
+                self.text, command.end, end, max_depth=self.limits.max_group_depth
+            )
+            second = (
+                read_group(
+                    self.text, first.end, end, max_depth=self.limits.max_group_depth
+                )
+                if first is not None
+                else None
+            )
+            return second.end if second is not None else (first.end if first else command.end)
         if command.name in _DISCARD_ONE_GROUP_COMMANDS:
             group = read_group(
                 self.text,

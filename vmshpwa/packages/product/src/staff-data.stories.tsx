@@ -171,7 +171,7 @@ export const Metadata: Story = {
 
     const nameCell = canvas.getByLabelText('Название, строка 1')
     await userEvent.clear(nameCell)
-    await userEvent.click(canvas.getByRole('button', { name: 'Проверить (dry-run)' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Проверить таблицу' }))
     await expect(canvas.getByRole('alert')).toHaveTextContent('Заполните название')
 
     // Правка убирает ошибку.

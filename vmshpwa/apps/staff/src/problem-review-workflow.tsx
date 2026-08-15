@@ -548,7 +548,8 @@ export function ProblemReviewWorkflow({
           </h3>
           <p className="text-caption text-muted-foreground">
             Проверьте названия, способы сдачи и сообщения проверки. Таблица сохраняется локально до
-            подтверждения.
+            подтверждения. Если всё верно, нажмите «Подтвердить метаданные» — после этого появятся
+            кнопки публикации.
           </p>
         </div>
         {staleDraft ? (
@@ -562,7 +563,9 @@ export function ProblemReviewWorkflow({
           </Alert>
         ) : null}
         <MetadataGrid
+          allowPristineCommit
           columns={metadataColumns}
+          commitLabel="Подтвердить метаданные"
           {...(draft ? { initialDraftRows: draft.rows } : {})}
           initialRows={baseline}
           key={metadataResource.etag}

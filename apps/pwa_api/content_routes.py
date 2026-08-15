@@ -1579,6 +1579,7 @@ async def upload_content_source(request: web.Request) -> web.Response:
         logical_filename=filename,
         payload=payload,
         actor_user_id=actor_user_id,
+        parser_version=COMPILER_VERSION,
     )
     context, _reused_count = await _resolve_reusable_revision_assets(
         request,

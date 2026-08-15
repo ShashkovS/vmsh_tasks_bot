@@ -634,6 +634,24 @@ def test_common_inline_and_layout_compatibility_commands_are_bounded() -> None:
     assert "0mm" not in result.web.content
 
 
+def test_two_argument_page_boundary_macro_does_not_leak_dimensions() -> None:
+    result = _compile(
+        r"""
+\УстановитьГраницы{0mm}{54mm}
+\задача Первая задача. \кзадача
+\УстановитьГраницы{0mm}{50mm}
+\задача Вторая задача. \кзадача
+"""
+    )
+
+    assert not result.has_errors
+    for derivative in (result.web.content, result.telegram.content):
+        assert "Первая задача" in derivative
+        assert "Вторая задача" in derivative
+        assert "54mm" not in derivative
+        assert "50mm" not in derivative
+
+
 def test_structural_content_inside_print_wrappers_remains_visible() -> None:
     result = _compile(
         r"""

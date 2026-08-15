@@ -475,3 +475,31 @@ approval остаются открытыми gates Phase 2.
 Проверки: [`test_content_repository.py`](../../../pwa_tests/integration/test_content_repository.py),
 [`test_content_http_api.py`](../../../pwa_tests/integration/test_content_http_api.py),
 [`test_content_compiler.py`](../../../pwa_tests/domain/test_content_compiler.py).
+
+## Pilot correction: идемпотентная загрузка и явная публикация — 15 августа 2026
+
+- Source hash вместе с source slot определяет одну revision. Повторная загрузка
+  тех же байтов возвращает её идемпотентно; изменение compiler version повторно
+  собирает эту revision без искусственного изменения файла и без накопления
+  дубликатов.
+- Готовая новая версия выбирается для preview автоматически. Staff оперирует
+  номером версии и именем файла; raw public ID остаётся только внутренним
+  контрактом API.
+- Автоматически заполненная корректная metadata grid может быть подтверждена
+  сразу. Проверка таблицы показывает явный успешный результат, а после
+  подтверждения интерфейс открывает действия публикации.
+- Двухаргументные layout-команды TeX не создают текстовых узлов. Одинаковая
+  структурная производная служит основой для читаемого PWA и Telegram preview.
+
+Реализация: [`content.py`](../../../db_methods/pwa/content.py),
+[`content_routes.py`](../../../apps/pwa_api/content_routes.py),
+[`parser.py`](../../../helpers/pwa/content/parser.py),
+[`content-page.tsx`](../../apps/staff/src/content-page.tsx),
+[`bulk-content-upload.tsx`](../../apps/staff/src/bulk-content-upload.tsx),
+[`metadata-grid.tsx`](../../packages/product/src/metadata-grid.tsx),
+[`content.css`](../../packages/content/src/content.css).
+Проверки: [`test_content_repository.py`](../../../pwa_tests/integration/test_content_repository.py),
+[`test_content_http_api.py`](../../../pwa_tests/integration/test_content_http_api.py),
+[`test_content_compiler.py`](../../../pwa_tests/domain/test_content_compiler.py),
+[`metadata-grid.test.tsx`](../../packages/product/src/metadata-grid.test.tsx),
+[`math-document.test.tsx`](../../packages/content/src/math-document.test.tsx).

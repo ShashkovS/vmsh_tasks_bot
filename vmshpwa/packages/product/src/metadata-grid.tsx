@@ -24,6 +24,7 @@ export interface MetadataError {
 export type MetadataRow = Record<string, string>
 
 export interface MetadataGridProps {
+  allowPristineCommit?: boolean
   columns: MetadataColumn[]
   initialRows: MetadataRow[]
   initialDraftRows?: MetadataRow[]
@@ -32,9 +33,11 @@ export interface MetadataGridProps {
   onDiscard?: () => void
   onCommit?: (rows: MetadataRow[]) => void | Promise<void>
   className?: string
+  commitLabel?: string
 }
 
 export function MetadataGrid({
+  allowPristineCommit = false,
   columns,
   initialRows,
   initialDraftRows,
@@ -43,17 +46,20 @@ export function MetadataGrid({
   onDiscard,
   onCommit,
   className,
+  commitLabel = 'Сохранить',
 }: MetadataGridProps) {
   const [rows, setRows] = useState<MetadataRow[]>(initialDraftRows ?? initialRows)
   const [baseline, setBaseline] = useState<MetadataRow[]>(initialRows)
   const [errors, setErrors] = useState<MetadataError[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string>()
+  const [validationSucceeded, setValidationSucceeded] = useState(false)
   const dirty = rows !== baseline
 
   const setCell = (rowIndex: number, colId: string, value: string) => {
     setErrors([])
     setSaveError(undefined)
+    setValidationSucceeded(false)
     const next = rows.map((row, index) => (index === rowIndex ? { ...row, [colId]: value } : row))
     setRows(next)
     onRowsChange?.(next)
@@ -64,6 +70,7 @@ export function MetadataGrid({
     if (!text.includes('\t') && !text.includes('\n')) return
     event.preventDefault()
     setErrors([])
+    setValidationSucceeded(false)
     const grid = text
       .replace(/\r/g, '')
       .split('\n')
@@ -87,11 +94,16 @@ export function MetadataGrid({
     onRowsChange?.(next)
   }
 
-  const runDryRun = () => setErrors(validate ? validate(rows) : [])
+  const runDryRun = () => {
+    const nextErrors = validate ? validate(rows) : []
+    setErrors(nextErrors)
+    setValidationSucceeded(nextErrors.length === 0)
+  }
   const undo = () => {
     setRows(baseline)
     setErrors([])
     setSaveError(undefined)
+    setValidationSucceeded(false)
     onRowsChange?.(baseline)
     onDiscard?.()
   }
@@ -105,6 +117,7 @@ export function MetadataGrid({
       await onCommit?.(rows)
       setBaseline(rows)
       setErrors([])
+      setValidationSucceeded(false)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить изменения')
     } finally {
@@ -188,17 +201,17 @@ export function MetadataGrid({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={runDryRun} size="sm" variant="outline">
-          Проверить (dry-run)
+          Проверить таблицу
         </Button>
         <Button disabled={!dirty || saving} onClick={undo} size="sm" variant="ghost">
           Отменить правки
         </Button>
         <Button
-          disabled={!dirty || errors.length > 0 || saving}
+          disabled={(!dirty && !allowPristineCommit) || errors.length > 0 || saving}
           onClick={() => void save()}
           size="sm"
         >
-          {saving ? 'Сохраняем…' : 'Сохранить'}
+          {saving ? 'Сохраняем…' : commitLabel}
         </Button>
         <span className="text-caption text-muted-foreground">
           Можно вставить прямоугольный фрагмент из таблицы (TSV).
@@ -214,6 +227,11 @@ export function MetadataGrid({
             </li>
           ))}
         </ul>
+      ) : null}
+      {validationSucceeded ? (
+        <p className="text-small text-status-success" role="status">
+          Ошибок не найдено. Можно подтверждать метаданные.
+        </p>
       ) : null}
       {saveError ? (
         <p className="text-small text-status-danger" role="alert">

@@ -44,6 +44,12 @@ describe('browser math content renderer', () => {
     expect(await screen.findByText('Важно')).not.toBeNull()
     expect(screen.getByText('курсив')).not.toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
+    expect(
+      screen
+        .getByText('Задача')
+        .closest('.vmsh-math-content')
+        ?.classList.contains('vmsh-telegram-preview'),
+    ).toBe(true)
   })
 
   it('adds the visible closing parenthesis to semantic subpart labels', () => {

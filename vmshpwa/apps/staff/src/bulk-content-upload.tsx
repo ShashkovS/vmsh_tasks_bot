@@ -118,9 +118,11 @@ export function BulkContentUpload({
               source: row.file,
             })
             updateRow(row.id, { phase: 'compiling', revisionId: uploaded.data.revisionId })
-            const compiled = await client.compileRevision(uploaded.data.revisionId, uploaded.etag)
-            if (compiled.data.status !== 'ready') {
-              throw new Error('Revision сохранена, но требует отдельной проверки.')
+            if (uploaded.data.status !== 'ready') {
+              const compiled = await client.compileRevision(uploaded.data.revisionId, uploaded.etag)
+              if (compiled.data.status !== 'ready') {
+                throw new Error('Версия сохранена, но требует отдельной проверки.')
+              }
             }
           }
           updateRow(row.id, { phase: 'ready', message: undefined })
@@ -150,6 +152,7 @@ export function BulkContentUpload({
 
   const readyCount = rows.filter((row) => row.phase === 'ready').length
   const attentionCount = rows.filter((row) => row.phase === 'attention').length
+  const allReady = rows.length > 0 && readyCount === rows.length
 
   return (
     <Card>
@@ -362,8 +365,9 @@ export function BulkContentUpload({
             <AlertContent>
               <AlertTitle>Загрузка сохранена, но нужны рисунки</AlertTitle>
               <AlertDescription>
-                Откройте нужное занятие по ссылке у файла, загрузите отсутствующий внешний рисунок и
-                повторите сборку материала. TikZ обрабатывается автоматически.
+                У каждого такого файла выше есть ссылка «Открыть недостающие рисунки». Нажмите её,
+                загрузите внешний рисунок и повторите сборку материала. TikZ обрабатывается
+                автоматически.
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -371,7 +375,7 @@ export function BulkContentUpload({
 
         <div className="flex flex-wrap gap-2">
           <Button
-            disabled={running || rows.length === 0 || Boolean(validationMessage)}
+            disabled={running || rows.length === 0 || Boolean(validationMessage) || allReady}
             onClick={() => void runBatch()}
             size="sm"
           >
@@ -380,7 +384,11 @@ export function BulkContentUpload({
             ) : (
               <Files aria-hidden="true" />
             )}
-            {running ? 'Обрабатываем набор…' : 'Загрузить набор и проверить'}
+            {running
+              ? 'Обрабатываем набор…'
+              : allReady
+                ? 'Набор готов'
+                : 'Загрузить набор и проверить'}
           </Button>
           {rows.length > 0 ? (
             <Button disabled={running} onClick={() => setRows([])} size="sm" variant="ghost">

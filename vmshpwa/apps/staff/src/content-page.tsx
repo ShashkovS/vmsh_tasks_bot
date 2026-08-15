@@ -326,6 +326,11 @@ function MaterialWorkflowCard({
   const rollbackRevision = readyRevisions.find(
     (revision) => revision.data.revisionId === state.rollbackRevisionId,
   )
+  const publishedRevision = state.currentPublication
+    ? state.revisions.find(
+        (revision) => revision.data.revisionId === state.currentPublication?.data.revisionId,
+      )
+    : undefined
   const readyForPublication =
     selectedRevision !== undefined &&
     state.reviewReadyRevisionId === selectedRevision.data.revisionId
@@ -368,11 +373,14 @@ function MaterialWorkflowCard({
       )
       const ready = revisions.filter((revision) => revision.data.status === 'ready')
       const currentRevisionId = history.currentPublished?.revisionId
-      const selectedRevisionId = ready.some(
-        (revision) => revision.data.revisionId === current.selectedRevisionId,
-      )
-        ? current.selectedRevisionId
-        : ready.at(-1)?.data.revisionId
+      const previousLatestNumber = current.revisions.at(-1)?.data.revisionNumber ?? 0
+      const latestReady = ready.at(-1)
+      const selectedRevisionId =
+        latestReady && latestReady.data.revisionNumber > previousLatestNumber
+          ? latestReady.data.revisionId
+          : ready.some((revision) => revision.data.revisionId === current.selectedRevisionId)
+            ? current.selectedRevisionId
+            : latestReady?.data.revisionId
       const rollbackRevisionId = ready.some(
         (revision) => revision.data.revisionId === current.rollbackRevisionId,
       )
@@ -512,11 +520,15 @@ function MaterialWorkflowCard({
       })
       setState((current) => ({
         ...current,
-        revisions: [...current.revisions, uploaded].sort(
-          (left, right) => left.data.revisionNumber - right.data.revisionNumber,
-        ),
+        revisions: [
+          ...current.revisions.filter(
+            (revision) => revision.data.revisionId !== uploaded.data.revisionId,
+          ),
+          uploaded,
+        ].sort((left, right) => left.data.revisionNumber - right.data.revisionNumber),
       }))
-      await compileStoredRevision(uploaded)
+      if (uploaded.data.status === 'ready') await inspectCompiledRevision(uploaded.data.revisionId)
+      else await compileStoredRevision(uploaded)
     } catch (error) {
       patchState({ phase: 'error' })
       handleMutationError(error)
@@ -770,7 +782,7 @@ function MaterialWorkflowCard({
                   key={revision.data.revisionId}
                 >
                   <span>
-                    Revision {revision.data.revisionNumber} · {revision.data.logicalFilename}
+                    Версия {revision.data.revisionNumber} · {revision.data.logicalFilename}
                     <span className="ml-1 text-muted-foreground">
                       {revision.data.status === 'uploaded'
                         ? 'загружена, но не проверена'
@@ -778,7 +790,7 @@ function MaterialWorkflowCard({
                     </span>
                   </span>
                   <Button
-                    aria-label={`Найти недостающие рисунки revision ${revision.data.revisionNumber}`}
+                    aria-label={`Найти недостающие рисунки в версии ${revision.data.revisionNumber}`}
                     disabled={state.phase === 'processing'}
                     onClick={() => void compileStoredRevision(revision)}
                     size="xs"
@@ -790,8 +802,8 @@ function MaterialWorkflowCard({
               ))}
               {activeCompilations.map((revision) => (
                 <li className="text-small text-muted-foreground" key={revision.data.revisionId}>
-                  Revision {revision.data.revisionNumber} проверяется. Повтор станет доступен после
-                  окончания lease.
+                  Версия {revision.data.revisionNumber} проверяется. Повтор станет доступен после
+                  завершения текущей сборки.
                 </li>
               ))}
             </ul>
@@ -800,7 +812,7 @@ function MaterialWorkflowCard({
 
         {readyRevisions.length > 1 ? (
           <div className="max-w-md space-y-1">
-            <Label htmlFor={`ready-revision-${kind}`}>Revision для preview и публикации</Label>
+            <Label htmlFor={`ready-revision-${kind}`}>Версия для проверки и публикации</Label>
             <Select
               onValueChange={(value) =>
                 patchState({
@@ -819,14 +831,14 @@ function MaterialWorkflowCard({
               <SelectTrigger className="w-full" id={`ready-revision-${kind}`}>
                 <SelectValue>
                   {selectedRevision
-                    ? `Revision ${selectedRevision.data.revisionNumber} · ${selectedRevision.data.logicalFilename}`
-                    : 'Выберите revision'}
+                    ? `Версия ${selectedRevision.data.revisionNumber} · ${selectedRevision.data.logicalFilename}`
+                    : 'Выберите версию'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {[...readyRevisions].reverse().map((revision) => (
                   <SelectItem key={revision.data.revisionId} value={revision.data.revisionId}>
-                    Revision {revision.data.revisionNumber} · {revision.data.logicalFilename}
+                    Версия {revision.data.revisionNumber} · {revision.data.logicalFilename}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -845,7 +857,7 @@ function MaterialWorkflowCard({
           >
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Диагностика revision {visibleRevision?.revisionNumber}</AlertTitle>
+              <AlertTitle>Диагностика версии {visibleRevision?.revisionNumber}</AlertTitle>
               <div className="mt-0.5 text-muted-foreground">
                 <ul className="list-disc space-y-1 pl-5">
                   {diagnosticMessages.map((message) => (
@@ -898,7 +910,7 @@ function MaterialWorkflowCard({
             size="sm"
             variant="outline"
           >
-            {state.previewLoading ? 'Загружаем preview…' : 'Показать PWA и Telegram preview'}
+            {state.previewLoading ? 'Загружаем предпросмотр…' : 'Показать PWA и Telegram'}
           </Button>
         ) : null}
 
@@ -946,9 +958,7 @@ function MaterialWorkflowCard({
                       PDF не удалось проверить: {state.pdfErrorMessage}
                     </p>
                   ) : (
-                    <p className="text-muted-foreground">
-                      PDF-производная для этой revision пока не сохранена.
-                    </p>
+                    <p className="text-muted-foreground">PDF для этой версии пока не сохранён.</p>
                   )}
                 </div>
               </TabsContent>
@@ -1017,7 +1027,7 @@ function MaterialWorkflowCard({
             ) ? (
               <div className="grid max-w-xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="space-y-1">
-                  <Label htmlFor={`rollback-revision-${kind}`}>Revision для отката</Label>
+                  <Label htmlFor={`rollback-revision-${kind}`}>Версия для отката</Label>
                   <Select
                     onValueChange={(value) => value && patchState({ rollbackRevisionId: value })}
                     value={state.rollbackRevisionId}
@@ -1025,8 +1035,8 @@ function MaterialWorkflowCard({
                     <SelectTrigger className="w-full" id={`rollback-revision-${kind}`}>
                       <SelectValue>
                         {rollbackRevision
-                          ? `Revision ${rollbackRevision.data.revisionNumber} · ${rollbackRevision.data.logicalFilename}`
-                          : 'Выберите revision'}
+                          ? `Версия ${rollbackRevision.data.revisionNumber} · ${rollbackRevision.data.logicalFilename}`
+                          : 'Выберите версию'}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -1041,8 +1051,7 @@ function MaterialWorkflowCard({
                             key={revision.data.revisionId}
                             value={revision.data.revisionId}
                           >
-                            Revision {revision.data.revisionNumber} ·{' '}
-                            {revision.data.logicalFilename}
+                            Версия {revision.data.revisionNumber} · {revision.data.logicalFilename}
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -1066,11 +1075,11 @@ function MaterialWorkflowCard({
               >
                 <p className="font-medium" id={`publication-confirmation-${kind}`}>
                   {confirmation === 'publish'
-                    ? `Опубликовать ${materialLabels[kind].toLocaleLowerCase('ru-RU')} revision ${selectedRevision?.data.revisionNumber} сейчас?`
+                    ? `Опубликовать ${materialLabels[kind].toLocaleLowerCase('ru-RU')} версии ${selectedRevision?.data.revisionNumber} сейчас?`
                     : confirmation === 'schedule'
-                      ? `Запланировать revision ${selectedRevision?.data.revisionNumber} на ${state.scheduleAt.replace('T', ' ')} (${businessTimezone})?`
+                      ? `Запланировать версию ${selectedRevision?.data.revisionNumber} на ${state.scheduleAt.replace('T', ' ')} (${businessTimezone})?`
                       : confirmation === 'rollback'
-                        ? `Вернуть опубликованный материал к revision ${rollbackRevision?.data.revisionNumber}?`
+                        ? `Вернуть опубликованный материал к версии ${rollbackRevision?.data.revisionNumber}?`
                         : `Скрыть опубликованное ${materialLabels[kind].toLocaleLowerCase('ru-RU')} у школьников и семей?`}
                 </p>
                 <p className="text-caption text-muted-foreground">
@@ -1107,7 +1116,10 @@ function MaterialWorkflowCard({
             {state.currentPublication ? (
               <p className="flex items-center gap-1 text-caption text-status-success" role="status">
                 <CheckCircle2 aria-hidden="true" className="size-3.5" />
-                Публичная revision: {state.currentPublication.data.revisionId}
+                Опубликована{' '}
+                {publishedRevision
+                  ? `версия ${publishedRevision.data.revisionNumber} · ${publishedRevision.data.logicalFilename}`
+                  : 'текущая версия'}
               </p>
             ) : null}
             {state.scheduledPublication ? (
@@ -1386,7 +1398,7 @@ export function StaffContentWorkspace({
 
   return (
     <PageLayout
-      description="Условие, подсказка и решение имеют отдельные revision, preview и действия публикации."
+      description="Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации."
       eyebrow={`Групповое занятие ${groupLessonId}`}
       title="LaTeX и публикации"
       width="wide"
@@ -1396,7 +1408,7 @@ export function StaffContentWorkspace({
         <AlertContent>
           <AlertTitle>LaTeX — единственный источник</AlertTitle>
           <AlertDescription>
-            Сначала проверьте PWA и Telegram preview. Изменение времени решения не меняет дедлайн
+            Сначала проверьте версии для PWA и Telegram. Изменение времени решения не меняет дедлайн
             сдачи.
           </AlertDescription>
         </AlertContent>
