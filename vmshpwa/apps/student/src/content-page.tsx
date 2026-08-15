@@ -144,7 +144,11 @@ export function StudentPublishedContentPage({
     )
   }
   const visibleDocument = selectedProblem
-    ? { ...document, introduction: [], problems: [selectedProblem] }
+    ? {
+        ...document,
+        introduction: [],
+        problems: [{ ...selectedProblem, trailingBlocks: [] }],
+      }
     : document
   const visibleTitle =
     displayTitle ||

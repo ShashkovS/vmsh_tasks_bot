@@ -66,7 +66,11 @@ function countBlockMath(blocks: WebContentBlock[]): number {
 export function countDocumentMathExpressions(document: WebContentDocument): number {
   return (
     countBlockMath(document.introduction) +
-    document.problems.reduce((count, problem) => count + countBlockMath(problem.blocks), 0)
+    document.problems.reduce(
+      (count, problem) =>
+        count + countBlockMath(problem.blocks) + countBlockMath(problem.trailingBlocks ?? []),
+      0,
+    )
   )
 }
 
@@ -79,6 +83,7 @@ export function buildLongRealCorpusDocument(): WebContentDocument {
         // The contract rejects repeated object references as potentially cyclic;
         // each stress copy must therefore remain a genuine JSON tree.
         const blocks: WebContentBlock[] = structuredClone(problem.blocks)
+        const trailingBlocks: WebContentBlock[] = structuredClone(problem.trailingBlocks ?? [])
         if (ordinal === 1) {
           blocks.push({
             type: 'figure',
@@ -100,6 +105,7 @@ export function buildLongRealCorpusDocument(): WebContentDocument {
           ordinal,
           sourceItem: `${entry.lessonNumber}н.${problem.ordinal} · проход ${cycleIndex + 1}`,
           blocks,
+          trailingBlocks,
         }
       }),
     ),

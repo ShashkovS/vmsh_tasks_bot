@@ -1893,7 +1893,10 @@
 
 - Ручное изменение дедлайна разрешено и для окна, материализованного из
   шаблона: отдельное подтверждение, optimistic version и audit сохранены.
-- Solution web document теперь явно разделяет условие, «Ответ» и «Решение».
+- Solution web document теперь не повторяет условие и явно разделяет «Ответ» и
+  «Решение». Межзадачные разделы остаются в полной простыне отдельным потоком:
+  status/actions предыдущей задачи выводятся перед ними, а её решение их не
+  захватывает.
 - Student после дедлайна не видит редактор сдачи; переписка свёрнута, старый
   thread переиспользуется, `Cmd/Ctrl+Enter` отправляет сообщение или письменное
   решение. Hint/solution вынесены из блока ответа.
@@ -1910,3 +1913,18 @@
   interaction **10 PASS**, ESLint, Stylelint, strict TypeScript, production
   build, shell syntax и `git diff --check` — **PASS**. Полная frontend suite
   сохраняет известные baseline failures auth/session/realtime.
+
+## Pilot fix: границы задачи и межзадачного текста — 15 августа 2026
+
+- Browser derivative разделяет statement задачи и следующий document-level
+  текст. Разделы «Письменные/Устные задачи», пояснения и относящиеся к ним
+  рисунки остаются в полной простыне между задачами, но status/actions
+  предыдущей задачи появляются до них.
+- В раскрытом Student solution больше нет второй копии условия и нет общего
+  текста между задачами: остаются только непустые блоки «Ответ» и «Решение».
+- Реальные `usl-00-n.tex` и `usl-00-n-sol.tex` проверены локальным compiler:
+  у задачи 4 общий раздел находится только в `trailingBlocks`, а solution
+  содержит четыре блока Answer/Solution. Focused Python **4 PASS**, contracts +
+  content frontend **47 PASS**, lint, strict TypeScript, production build и
+  `git diff --check` — **PASS**. Полная frontend suite сохраняет известные
+  date-sensitive baseline failures auth/session/realtime.

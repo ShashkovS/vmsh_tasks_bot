@@ -157,7 +157,13 @@ def test_each_material_role_projects_only_its_approved_branch() -> None:
     assert condition.web_document is not None
     document = json.loads(condition.web_document.content)
     assert document["materialKind"] == "condition"
-    assert set(document["problems"][0]) == {"ordinal", "sourceItem", "title", "blocks"}
+    assert set(document["problems"][0]) == {
+        "ordinal",
+        "sourceItem",
+        "title",
+        "blocks",
+        "trailingBlocks",
+    }
     assert "answer" not in condition.web_document.content
     assert "solution" not in condition.web_document.content
 
@@ -1108,21 +1114,40 @@ def test_solution_web_document_separates_answer_and_explanation() -> None:
 
     blocks = document["problems"][0]["blocks"]
     assert [block["type"] for block in blocks] == [
-        "paragraph",
         "heading",
         "paragraph",
         "heading",
         "paragraph",
     ]
-    assert [blocks[index]["children"][0]["value"] for index in (1, 3)] == [
+    assert [blocks[index]["children"][0]["value"] for index in (0, 2)] == [
         "Ответ",
         "Решение",
     ]
-    assert [blocks[index]["children"][0]["value"].strip() for index in (0, 2, 4)] == [
-        "Условие.",
+    assert [blocks[index]["children"][0]["value"].strip() for index in (1, 3)] == [
         "17 человек.",
         "Слева шесть, справа десять.",
     ]
+    assert document["problems"][0]["trailingBlocks"] == []
+
+
+def test_condition_keeps_inter_problem_content_outside_problem_blocks() -> None:
+    result = _compile(
+        r"\задача Условие 1. \кзадача"
+        r"\раздел{Общий комментарий} Текст вне задачи."
+        r"\задача Условие 2. \кзадача"
+    )
+
+    document = render_web_document(
+        result.ast,
+        role=ContentRole.CONDITION,
+        revision_id="revision:inter-problem-content",
+    )
+
+    first = document["problems"][0]
+    assert "Общий комментарий" not in json.dumps(first["blocks"], ensure_ascii=False)
+    assert "Общий комментарий" in json.dumps(
+        first["trailingBlocks"], ensure_ascii=False
+    )
 
 
 def test_web_document_rejects_oversized_table_instead_of_truncating_content() -> None:

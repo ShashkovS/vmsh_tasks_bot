@@ -121,7 +121,8 @@
         ],
         "ordinal": 1,
         "sourceItem": "demo.1",
-        "title": "Синтетическая задача"
+        "title": "Синтетическая задача",
+        "trailingBlocks": []
       }
     ],
     "revisionId": null,

@@ -459,14 +459,18 @@ approval остаются открытыми gates Phase 2.
   может в любой момент отдельно изменить дедлайн. Действие требует явного
   подтверждения, текущего `ETag` и записывается в `lesson_window_changes`;
   повтор того же значения идемпотентен.
-- Solution derivative сохраняет условие задачи и явно разделяет непустые
+- Solution derivative не повторяет условие задачи и явно разделяет непустые
   блоки «Ответ» и «Решение». Пустой блок не создаёт служебный заголовок.
+- Блоки между `\кзадача` и следующей `\задача` сохраняются отдельным
+  document-level потоком: они видны в полной простыне, но не входят в задачу и
+  не повторяются внутри её решения.
 - Browser CSP обязан разрешать точный virtual-hosted origin production bucket,
   а deploy smoke проверяет этот origin после активации frontend-релиза.
 
 Реализация: [`content.py`](../../../db_methods/pwa/content.py),
 [`content_routes.py`](../../../apps/pwa_api/content_routes.py),
 [`web_document.py`](../../../helpers/pwa/content/web_document.py),
+[`math-document.tsx`](../../packages/content/src/math-document.tsx),
 [`deploy-vmsh-tasks-bot.sh`](../../../docs/deploy/deploy-vmsh-tasks-bot.sh).
 Проверки: [`test_content_repository.py`](../../../pwa_tests/integration/test_content_repository.py),
 [`test_content_http_api.py`](../../../pwa_tests/integration/test_content_http_api.py),

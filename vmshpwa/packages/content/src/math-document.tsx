@@ -238,14 +238,20 @@ export function SemanticMathDocument({
       {document.problems.map((problem) => {
         const headingId = `problem-${problem.ordinal}`
         return (
-          <section aria-labelledby={headingId} className="vmsh-problem" key={problem.ordinal}>
-            <h2 id={headingId}>
-              {problem.sourceItem ?? `Задача ${problem.ordinal}`}
-              {problem.title ? <span>{problem.title}</span> : null}
-            </h2>
-            <ContentBlocks blocks={problem.blocks} path={`problem-${problem.ordinal}`} />
-            {renderAfterProblem?.(problem)}
-          </section>
+          <Fragment key={problem.ordinal}>
+            <section aria-labelledby={headingId} className="vmsh-problem">
+              <h2 id={headingId}>
+                {problem.sourceItem ?? `Задача ${problem.ordinal}`}
+                {problem.title ? <span>{problem.title}</span> : null}
+              </h2>
+              <ContentBlocks blocks={problem.blocks} path={`problem-${problem.ordinal}`} />
+              {renderAfterProblem?.(problem)}
+            </section>
+            <ContentBlocks
+              blocks={problem.trailingBlocks ?? []}
+              path={`problem-${problem.ordinal}-trailing`}
+            />
+          </Fragment>
         )
       })}
     </MathDocument>

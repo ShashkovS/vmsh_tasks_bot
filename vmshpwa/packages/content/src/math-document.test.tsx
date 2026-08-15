@@ -67,6 +67,41 @@ describe('browser math content renderer', () => {
     expect(screen.getByText('а)')).not.toBeNull()
   })
 
+  it('renders problem controls before content between adjacent problems', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    const firstProblem = document.problems[0]
+    if (!firstProblem) throw new Error('Fixture must contain a problem')
+
+    const { container } = render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [],
+          problems: [
+            {
+              ...firstProblem,
+              trailingBlocks: [
+                {
+                  type: 'heading',
+                  level: 2,
+                  children: [{ type: 'text', value: 'Общий комментарий' }],
+                },
+              ],
+            },
+          ],
+        }}
+        renderAfterProblem={() => <button type="button">Ответить</button>}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Ответить' })
+    const commentary = screen.getByRole('heading', { name: 'Общий комментарий' })
+    expect(button.compareDocumentPosition(commentary) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
+      0,
+    )
+    expect(container.querySelector('.vmsh-problem')?.contains(commentary)).toBe(false)
+  })
+
   it('keeps the rest of a document visible when one formula is invalid', async () => {
     render(
       <p>

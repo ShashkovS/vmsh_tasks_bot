@@ -268,6 +268,9 @@ export const webContentProblemSchema = z
     sourceItem: z.string().trim().min(1).max(80).nullable(),
     title: z.string().trim().min(1).max(500).nullable(),
     blocks: z.array(webContentBlockSchema).min(1).max(2_000),
+    // Content between this problem and the next one belongs to the document,
+    // not to the problem's submission/review controls.
+    trailingBlocks: z.array(webContentBlockSchema).max(2_000).optional(),
   })
   .strict()
 export type WebContentProblem = z.infer<typeof webContentProblemSchema>
@@ -301,7 +304,12 @@ function refineWebContentDocument(
 
   const stack = [
     ...document.introduction.map((block) => ({ block, depth: 1 })),
-    ...document.problems.flatMap((problem) => problem.blocks.map((block) => ({ block, depth: 1 }))),
+    ...document.problems.flatMap((problem) =>
+      [...problem.blocks, ...(problem.trailingBlocks ?? [])].map((block) => ({
+        block,
+        depth: 1,
+      })),
+    ),
   ]
   while (stack.length > 0) {
     const current = stack.pop()

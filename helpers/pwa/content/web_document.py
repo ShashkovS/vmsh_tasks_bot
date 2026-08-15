@@ -313,7 +313,7 @@ def _blocks(
 
 def _selected_blocks(problem: ProblemNode, role: ContentRole) -> tuple[BlockNode, ...]:
     if role is ContentRole.CONDITION:
-        return problem.statement + problem.trailing
+        return problem.statement
     if role is ContentRole.HINT:
         return problem.hint
     if role is ContentRole.SOLUTION:
@@ -332,7 +332,7 @@ def _problem_blocks(
     if role is not ContentRole.SOLUTION:
         return _blocks(_selected_blocks(problem, role), assets=assets)
 
-    blocks = _blocks(problem.statement + problem.trailing, assets=assets)
+    blocks: list[dict[str, Any]] = []
     for label, section in (("Ответ", problem.answer), ("Решение", problem.solution)):
         rendered = _blocks(section, assets=assets)
         if not rendered:
@@ -375,6 +375,11 @@ def render_web_document(
         blocks = _problem_blocks(problem, role, assets=mapping)
         if not blocks:
             continue
+        trailing_blocks = (
+            _blocks(problem.trailing, assets=mapping)
+            if role is ContentRole.CONDITION
+            else []
+        )
         problems.append(
             {
                 "ordinal": problem.ordinal,
@@ -385,6 +390,7 @@ def render_web_document(
                     problem.source_title or "", 500, "problem title", required=False
                 ),
                 "blocks": blocks,
+                "trailingBlocks": trailing_blocks,
             }
         )
     if len(problems) > 2_000:
