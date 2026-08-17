@@ -40,12 +40,24 @@ from .model import (
 WEB_CONTENT_CONTRACT_VERSION = 1
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
+_TEX_ABSOLUTE_WIDTH = re.compile(
+    r"(?P<value>(?:\d+(?:\.\d*)?|\.\d+))\s*(?P<unit>mm|cm|pt|px)",
+    re.IGNORECASE,
+)
+_TEX_RELATIVE_WIDTH = re.compile(
+    r"(?P<value>(?:\d+(?:\.\d*)?|\.\d+)?)\s*\\(?:textwidth|linewidth)",
+    re.IGNORECASE,
+)
 _WEB_MEDIA_TYPES = {
     "image/jpeg",
     "image/png",
     "image/svg+xml",
     "image/webp",
 }
+
+# Existing worksheets are laid out against an approximately 180 mm text
+# column. This is the same scale used by _external_pipelines/a16_html_from_tex.py.
+_TEX_TEXT_WIDTH_MM = 180.0
 
 
 class WebDocumentError(ValueError):
@@ -102,6 +114,31 @@ def _is_web_link_url(value: str) -> bool:
         return True
     parsed = urlsplit(value)
     return parsed.scheme == "mailto" and bool(parsed.path)
+
+
+def _web_width_hint(value: str | None) -> str | None:
+    """Convert a trusted TeX width to a bounded browser percentage."""
+
+    if value is None:
+        return None
+    normalized = value.strip().replace("true", "")
+    relative = _TEX_RELATIVE_WIDTH.fullmatch(normalized)
+    if relative is not None:
+        factor = float(relative.group("value") or "1")
+        return f"{min(100.0, max(0.1, factor * 100.0)):.3f}%"
+    absolute = _TEX_ABSOLUTE_WIDTH.fullmatch(normalized)
+    if absolute is None:
+        return None
+    amount = float(absolute.group("value"))
+    unit = absolute.group("unit").lower()
+    if unit == "cm":
+        amount *= 10.0
+    elif unit == "pt":
+        amount *= 25.4 / 72.27
+    elif unit == "px":
+        return f"{max(1.0, amount):.3f}px"
+    percent = amount / _TEX_TEXT_WIDTH_MM * 100.0
+    return f"{min(100.0, max(0.1, percent)):.3f}%"
 
 
 def _asset(descriptor: WebAssetDescriptor) -> dict[str, Any]:
@@ -277,6 +314,9 @@ def _blocks(
             figure: dict[str, Any] = {"type": "figure", "alt": alt, "asset": asset}
             if node.float_hint in {"left", "right"}:
                 figure["floatHint"] = node.float_hint
+            width_hint = _web_width_hint(node.width_hint)
+            if width_hint is not None:
+                figure["widthHint"] = width_hint
             result.append(figure)
         elif isinstance(node, SubpartNode):
             blocks = _blocks(node.children, assets=assets)

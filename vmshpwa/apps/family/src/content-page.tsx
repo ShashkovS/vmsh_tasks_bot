@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
 
 import {
+  createFamilyCourseClient,
   FamilyWrittenThreadNetworkError,
   PageLayout,
   PageStatePanel,
   createFamilyWrittenThreadClient,
   useAuthenticatedPrincipal,
   useAuthentication,
+  useFamilyChildHomeQuery,
   useFamilyWrittenThreadQuery,
 } from '@vmsh/app-shell'
 import {
@@ -129,12 +131,14 @@ export function FamilyPublishedContentPage({
   kind,
   requestedStudentPublicId,
   problemOrdinal,
+  displayTitle,
 }: {
   taskId: string
   groupLessonId?: string
   kind: ContentMaterialKind
   requestedStudentPublicId?: string
   problemOrdinal?: number
+  displayTitle?: string
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -245,18 +249,130 @@ export function FamilyPublishedContentPage({
 
   return (
     <PageLayout
-      description="Только чтение: сдача и реакции доступны в кабинете ребёнка."
       eyebrow={materialLabels[kind]}
-      title={selectedProblem?.title ?? document.title ?? `Задача ${taskId}`}
-      width="reading"
+      title={selectedProblem?.title ?? displayTitle ?? document.title ?? materialLabels[kind]}
+      width={selectedProblem ? 'reading' : 'content'}
     >
       <ContentUpdateMarker visible={contentWasReplaced} />
-      <SemanticMathDocument document={visibleDocument} />
+      <div className="mx-auto w-full max-w-5xl">
+        <SemanticMathDocument
+          {...(selectedProblem
+            ? {}
+            : {
+                className:
+                  'vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-6',
+              })}
+          document={visibleDocument}
+        />
+      </div>
       {kind === 'condition' &&
       problemOrdinal !== undefined &&
       publicIdSchema.safeParse(taskId).success ? (
         <FamilyWrittenThreadView problemId={taskId} studentId={studentPublicId} />
       ) : null}
     </PageLayout>
+  )
+}
+
+/** Resolve the public lesson from readable course/group/lesson coordinates. */
+export function FamilyReadableContentPage({
+  childNumber,
+  courseCode,
+  groupCode,
+  lessonNumber,
+}: {
+  childNumber?: number
+  courseCode: string
+  groupCode: string
+  lessonNumber: number
+}) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'family') {
+    throw new Error('Family content requires a Family principal')
+  }
+  const fallbackChild =
+    principal.linkedChildren.find((child) => child.isPrimary) ?? principal.linkedChildren[0]
+  const selectedChild =
+    childNumber === undefined ? fallbackChild : principal.linkedChildren[childNumber - 1]
+  const client = useMemo(
+    () =>
+      createFamilyCourseClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const query = useFamilyChildHomeQuery(
+    client,
+    { audience: 'family', accountId: principal.accountId },
+    selectedChild?.studentId ?? 'missing',
+    selectedChild !== undefined,
+  )
+
+  if (!selectedChild) {
+    return (
+      <PageLayout title="Листок" width="content">
+        <PageStatePanel state="empty" title="Не выбран ребёнок" />
+      </PageLayout>
+    )
+  }
+  if (query.isPending) {
+    return (
+      <PageLayout title="Листок" width="content">
+        <PageStatePanel state="loading" />
+      </PageLayout>
+    )
+  }
+  if (query.error) {
+    return (
+      <PageLayout title="Листок" width="content">
+        <PageStatePanel
+          actionLabel="Повторить"
+          onAction={() => void query.refetch()}
+          state="error"
+        />
+      </PageLayout>
+    )
+  }
+  const course = query.data.courses.find(
+    ({ enrollment }) =>
+      enrollment.course.code.toLocaleLowerCase('ru-RU') === courseCode.toLocaleLowerCase('ru-RU'),
+  )
+  const group = course?.enrollment.allowedGroups.find(
+    (candidate) =>
+      candidate.code.toLocaleLowerCase('ru-RU') === groupCode.toLocaleLowerCase('ru-RU'),
+  )
+  const lesson = course?.currentLesson
+  if (
+    !course ||
+    !group ||
+    course.enrollment.activeGroupId !== group.groupId ||
+    lesson?.lessonNumber !== lessonNumber
+  ) {
+    return (
+      <PageLayout title="Листок" width="content">
+        <PageStatePanel
+          description="Проверьте код курса, группы и номер занятия в ссылке."
+          state="empty"
+          title="Листок не найден"
+        />
+      </PageLayout>
+    )
+  }
+  return (
+    <FamilyPublishedContentPage
+      displayTitle={`Занятие ${lesson.lessonNumber} · ${lesson.title}`}
+      groupLessonId={lesson.groupLessonId}
+      kind="condition"
+      requestedStudentPublicId={selectedChild.studentId}
+      taskId={`lesson-${lesson.lessonNumber}`}
+    />
   )
 }

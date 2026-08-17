@@ -220,6 +220,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
   }
   const linkedChild = principal.linkedChildren.find((child) => child.studentId === childId)
   const requestedChildId = linkedChild?.studentId ?? 'missing'
+  const childNumber = principal.linkedChildren.findIndex((child) => child.studentId === childId) + 1
   const client = useMemo(
     () =>
       createFamilyCourseClient(authentication.client.runtime, {
@@ -385,14 +386,17 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       <Button
                         onClick={() =>
                           void navigate({
-                            to: '/tasks/$taskId',
-                            params: { taskId: `lesson-${currentLesson.lessonNumber}` },
-                            search: {
-                              groupLesson: currentLesson.groupLessonId,
-                              student: student.studentId,
+                            to: '/tasks/$courseCode/$groupCode/$lessonNumber',
+                            params: {
+                              courseCode: enrollment.course.code,
+                              groupCode: group?.code ?? '',
+                              lessonNumber: String(currentLesson.lessonNumber),
                             },
+                            search:
+                              principal.linkedChildren.length > 1 ? { child: childNumber } : {},
                           })
                         }
+                        disabled={!group}
                         size="sm"
                         variant="outline"
                       >

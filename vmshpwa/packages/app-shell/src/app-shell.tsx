@@ -26,6 +26,7 @@ export interface AppShellProps {
   children: ReactNode
   mobileNavigation?: boolean
   headerActions?: ReactNode
+  compactHeader?: boolean
 }
 
 export function AppShell({
@@ -35,23 +36,30 @@ export function AppShell({
   children,
   mobileNavigation = false,
   headerActions,
+  compactHeader = false,
 }: AppShellProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div className="min-h-svh bg-background text-foreground" data-product={product}>
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4">
+        <div
+          className={`mx-auto flex max-w-[1600px] items-center gap-3 px-4 ${compactHeader ? 'h-10' : 'h-14'}`}
+        >
           <div className="flex min-w-0 items-baseline gap-2">
             <Link className="truncate font-semibold tracking-tight" to="/">
               ВМШ 179
             </Link>
-            <span className="hidden text-sm text-muted-foreground sm:inline">{title}</span>
+            {!compactHeader ? (
+              <span className="hidden text-sm text-muted-foreground sm:inline">{title}</span>
+            ) : null}
           </div>
           <div className="ml-auto flex items-center gap-1">
-            <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
-              <Wifi className="size-3.5" aria-hidden="true" /> синхронизировано
-            </span>
+            {!compactHeader ? (
+              <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
+                <Wifi className="size-3.5" aria-hidden="true" /> синхронизировано
+              </span>
+            ) : null}
             <ThemeToggle />
             {headerActions}
             {!mobileNavigation ? (
@@ -70,7 +78,11 @@ export function AppShell({
       </header>
 
       <div className="mx-auto flex max-w-[1600px]">
-        <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] w-56 shrink-0 border-r p-3 md:block">
+        <aside
+          className={`sticky hidden w-56 shrink-0 border-r p-3 md:block ${
+            compactHeader ? 'top-10 h-[calc(100svh-2.5rem)]' : 'top-14 h-[calc(100svh-3.5rem)]'
+          }`}
+        >
           <ShellNavigation navigation={navigation} />
         </aside>
 

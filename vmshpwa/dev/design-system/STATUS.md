@@ -917,3 +917,21 @@ sent|No recipients|Loading|Error` документирует ручной previe
   посылки.
 - Frontend unit **636 PASS**, strict TypeScript и production PWA build —
   **PASS**; visual snapshots не обновлялись.
+
+## Pilot polish: читаемый листок и zoom рисунков — 18 августа 2026
+
+- Student Tasks убрал служебную шапку страницы, счётчик ленты и селектор
+  единственного курса. Листок центрируется относительно viewport, а номер,
+  статус и переход к сдаче находятся прямо в заголовке задачи или пункта.
+- `MathematicalDocument` сохраняет заданную в TeX ширину и направление
+  обтекания рисунка. При увеличении float снимается: рисунок получает ширину
+  листка и прокручиваемый canvas вместо обрезания внутри узкой колонки.
+  Controls масштаба собраны в компактную строку.
+- Family использует тот же paper-layout по читаемому маршруту
+  `/family/tasks/{courseCode}/{groupCode}/{lessonNumber}`; внутренние IDs
+  занятия и школьника в новых ссылках отсутствуют. Старый ID-route удалён.
+- Visual snapshots не обновлялись; ручной просмотр выполнен для Student shell
+  и `product-mathematical-document--zoom-canvas` на agent runtime.
+- Frontend unit **638 PASS**, focused content **11 PASS**, width/float compiler
+  **2 PASS**; ESLint, Stylelint, strict TypeScript, production build и
+  `git diff --check` — **PASS**.

@@ -20,7 +20,7 @@ import { Route as NewsIndexRouteImport } from './routes/news.index'
 import { Route as NewsPostIdRouteImport } from './routes/news.$postId'
 import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as ProfileNotificationsRouteImport } from './routes/profile.notifications'
-import { Route as TasksTaskIdRouteImport } from './routes/tasks.$taskId'
+import { Route as TasksCourseCodeGroupCodeLessonNumberRouteImport } from './routes/tasks.$courseCode.$groupCode.$lessonNumber'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,11 +77,12 @@ const ProfileNotificationsRoute = ProfileNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => ProfileRoute,
 } as any)
-const TasksTaskIdRoute = TasksTaskIdRouteImport.update({
-  id: '/tasks/$taskId',
-  path: '/tasks/$taskId',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const TasksCourseCodeGroupCodeLessonNumberRoute =
+  TasksCourseCodeGroupCodeLessonNumberRouteImport.update({
+    id: '/tasks/$courseCode/$groupCode/$lessonNumber',
+    path: '/tasks/$courseCode/$groupCode/$lessonNumber',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -92,10 +93,10 @@ export interface FileRoutesByFullPath {
   '/children/$childId': typeof ChildrenChildIdRoute
   '/news/$postId': typeof NewsPostIdRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
-  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/children/': typeof ChildrenIndexRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
+  '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,10 +104,10 @@ export interface FileRoutesByTo {
   '/children/$childId': typeof ChildrenChildIdRoute
   '/news/$postId': typeof NewsPostIdRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
-  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/children': typeof ChildrenIndexRoute
   '/news': typeof NewsIndexRoute
   '/profile': typeof ProfileIndexRoute
+  '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,10 +119,10 @@ export interface FileRoutesById {
   '/children/$childId': typeof ChildrenChildIdRoute
   '/news/$postId': typeof NewsPostIdRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
-  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/children/': typeof ChildrenIndexRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
+  '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -134,10 +135,10 @@ export interface FileRouteTypes {
     | '/children/$childId'
     | '/news/$postId'
     | '/profile/notifications'
-    | '/tasks/$taskId'
     | '/children/'
     | '/news/'
     | '/profile/'
+    | '/tasks/$courseCode/$groupCode/$lessonNumber'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -145,10 +146,10 @@ export interface FileRouteTypes {
     | '/children/$childId'
     | '/news/$postId'
     | '/profile/notifications'
-    | '/tasks/$taskId'
     | '/children'
     | '/news'
     | '/profile'
+    | '/tasks/$courseCode/$groupCode/$lessonNumber'
   id:
     | '__root__'
     | '/'
@@ -159,10 +160,10 @@ export interface FileRouteTypes {
     | '/children/$childId'
     | '/news/$postId'
     | '/profile/notifications'
-    | '/tasks/$taskId'
     | '/children/'
     | '/news/'
     | '/profile/'
+    | '/tasks/$courseCode/$groupCode/$lessonNumber'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,7 +172,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRouteWithChildren
   ProfileRoute: typeof ProfileRouteWithChildren
-  TasksTaskIdRoute: typeof TasksTaskIdRoute
+  TasksCourseCodeGroupCodeLessonNumberRoute: typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -253,11 +254,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileNotificationsRouteImport
       parentRoute: typeof ProfileRoute
     }
-    '/tasks/$taskId': {
-      id: '/tasks/$taskId'
-      path: '/tasks/$taskId'
-      fullPath: '/tasks/$taskId'
-      preLoaderRoute: typeof TasksTaskIdRouteImport
+    '/tasks/$courseCode/$groupCode/$lessonNumber': {
+      id: '/tasks/$courseCode/$groupCode/$lessonNumber'
+      path: '/tasks/$courseCode/$groupCode/$lessonNumber'
+      fullPath: '/tasks/$courseCode/$groupCode/$lessonNumber'
+      preLoaderRoute: typeof TasksCourseCodeGroupCodeLessonNumberRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -308,7 +309,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NewsRoute: NewsRouteWithChildren,
   ProfileRoute: ProfileRouteWithChildren,
-  TasksTaskIdRoute: TasksTaskIdRoute,
+  TasksCourseCodeGroupCodeLessonNumberRoute:
+    TasksCourseCodeGroupCodeLessonNumberRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

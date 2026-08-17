@@ -201,34 +201,60 @@
   outline-offset: 2px;
 }
 
+.vmsh-math-body {
+  line-height: 1.58;
+}
+
+.vmsh-math-body p {
+  margin-block: 0.4rem;
+}
+
 .vmsh-problem {
-  display: flow-root;
-  margin-block: 2rem;
+  display: block;
+  margin-block: 2.25rem 1.25rem;
+}
+
+.vmsh-problem::after {
+  display: block;
+  clear: both;
+  content: '';
 }
 
 .vmsh-student-sheet > div {
   font-size: 1rem;
-  line-height: 1.65;
+  line-height: 1.55;
 }
 
 .vmsh-student-sheet .vmsh-problem {
-  margin-block: 1.5rem;
+  margin-block: 2.25rem 1.25rem;
 }
 
-.vmsh-problem > h2 {
+.vmsh-problem-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.625rem;
+  margin-block-end: 0.5rem;
+}
+
+.vmsh-problem-header > h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 0.625rem;
-  margin-block-end: 0.75rem;
+  margin: 0;
   font-family: var(--font-sans);
   font-size: 1.125rem;
-  font-weight: 650;
+  font-weight: 700;
   line-height: 1.4;
 }
 
-.vmsh-problem > h2 > span {
+.vmsh-problem-header > h2 > span {
   color: var(--muted-foreground);
   font-weight: 500;
+}
+
+.vmsh-problem-header > :not(h2) {
+  margin-inline-start: auto;
 }
 
 .vmsh-content-heading {
@@ -239,23 +265,26 @@
 }
 
 .vmsh-subpart {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.125rem 0.375rem;
-  margin-block: 0.375rem;
+  margin-block: 0.75rem;
 }
 
-.vmsh-subpart > .vmsh-subpart-label {
-  grid-row: 1 / span 20;
-  font: inherit;
+.vmsh-subpart-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.125rem;
+  font-family: var(--font-sans);
+}
+
+.vmsh-subpart-label {
   font-weight: 650;
 }
 
-.vmsh-subpart > :not(.vmsh-subpart-label) {
-  grid-column: 2;
+.vmsh-subpart-header > :not(.vmsh-subpart-label) {
+  margin-inline-start: auto;
 }
 
-.vmsh-subpart > p {
+.vmsh-subpart-content > p {
   margin-block: 0;
 }
 
@@ -274,7 +303,16 @@
 .vmsh-asset-figure {
   display: grid;
   gap: 0.375rem;
+  width: min(100%, var(--vmsh-source-width, 100%));
+  max-width: 100%;
   margin-block: 0.875rem 1.125rem;
+}
+
+@media (max-width: 47.999rem) {
+  .vmsh-asset-figure[data-float-hint='right'],
+  .vmsh-asset-figure[data-float-hint='left'] {
+    width: 100%;
+  }
 }
 
 /* Source-side right/left figures keep their intended reading flow on wide
@@ -283,7 +321,7 @@
 @media (min-width: 48rem) {
   .vmsh-asset-figure[data-float-hint='right'],
   .vmsh-asset-figure[data-float-hint='left'] {
-    width: min(70%, calc(100% - 20em));
+    width: min(var(--vmsh-source-width, 40%), 70%, calc(100% - 20em));
     max-width: 70%;
     margin-block: 0.25rem 1rem;
   }
@@ -297,12 +335,22 @@
     float: left;
     margin-inline: 0 1.25rem;
   }
+
+  /* Enlarging a floated figure turns it into a full-width viewer. Keeping a
+   * zoomed canvas in the narrow source float made the image look cropped and
+   * left too little room to pan it. */
+  .vmsh-asset-figure[data-float-hint][data-zoomed='true'] {
+    float: none;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
 }
 
 .vmsh-figure-viewport {
   position: relative;
   display: block;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   max-height: min(70svh, 44rem);
   margin-inline: auto;
@@ -348,14 +396,15 @@
 }
 
 .vmsh-figure-controls button {
-  min-width: var(--touch-target);
-  min-height: var(--touch-target);
+  min-width: 2rem;
+  min-height: 2rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--foreground);
   font: inherit;
-  padding-inline: 0.625rem;
+  padding: 0.125rem 0.45rem;
+  line-height: 1;
 }
 
 .vmsh-figure-controls button:hover:not(:disabled) {
@@ -373,8 +422,9 @@
 }
 
 .vmsh-figure-controls output {
-  min-width: 3.5rem;
+  min-width: 3.25rem;
   color: var(--muted-foreground);
+  font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
   text-align: end;
 }

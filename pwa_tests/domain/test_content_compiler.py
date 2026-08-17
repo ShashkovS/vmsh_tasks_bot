@@ -1129,6 +1129,30 @@ def test_web_document_preserves_source_figure_float_hint() -> None:
     figure = document["problems"][0]["blocks"][0]
     assert figure["type"] == "figure"
     assert figure["floatHint"] == "right"
+    assert figure["widthHint"] == "16.667%"
+
+
+def test_web_document_preserves_relative_width_and_intrinsic_fallback() -> None:
+    result = _compile(
+        r"\задача "
+        r"\includegraphics[width=.5\textwidth]{wide.svg} "
+        r"\includegraphics{intrinsic.png} "
+        r"\кзадача"
+    )
+
+    document = render_web_document(
+        result.ast,
+        role=ContentRole.CONDITION,
+        revision_id="revision:figure-widths",
+    )
+
+    figures = [
+        block
+        for block in document["problems"][0]["blocks"]
+        if block["type"] == "figure"
+    ]
+    assert figures[0]["widthHint"] == "50.000%"
+    assert "widthHint" not in figures[1]
 
 
 def test_solution_web_document_separates_answer_and_explanation() -> None:

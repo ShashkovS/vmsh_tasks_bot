@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, type CSSProperties, type ReactNode } from 'react'
 
 import type {
   WebContentBlock,
@@ -22,7 +22,7 @@ export function MathDocument({ title, children, className }: MathDocumentProps) 
   return (
     <article className={cn('vmsh-math-content', className)} data-slot="math-document">
       {title ? <h1 className="mb-4 font-reading text-2xl font-semibold">{title}</h1> : null}
-      <div className="font-reading text-[1.05rem] leading-8">{children}</div>
+      <div className="vmsh-math-body font-reading text-[1.05rem]">{children}</div>
     </article>
   )
 }
@@ -106,7 +106,21 @@ function TableCell({ cell, path }: { cell: WebContentTableCell; path: string }) 
 }
 
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex -- Axe requires each overflow table region to be keyboard-focusable. */
-function ContentBlocks({ blocks, path }: { blocks: WebContentBlock[]; path: string }) {
+interface ContentBlocksProps {
+  blocks: WebContentBlock[]
+  path: string
+  problem?: WebContentProblem
+  renderAfterSubpart?: (problem: WebContentProblem, label: string) => ReactNode
+  renderSubpartActions?: (problem: WebContentProblem, label: string) => ReactNode
+}
+
+function ContentBlocks({
+  blocks,
+  path,
+  problem,
+  renderAfterSubpart,
+  renderSubpartActions,
+}: ContentBlocksProps) {
   return blocks.map((block, index) => {
     const key = `${path}-${index}`
     switch (block.type) {
@@ -131,7 +145,13 @@ function ContentBlocks({ blocks, path }: { blocks: WebContentBlock[]; path: stri
           <ListTag key={key} start={block.ordered ? block.start : undefined}>
             {block.items.map((item, itemIndex) => (
               <li key={`${key}-item-${itemIndex}`}>
-                <ContentBlocks blocks={item} path={`${key}-item-${itemIndex}`} />
+                <ContentBlocks
+                  blocks={item}
+                  path={`${key}-item-${itemIndex}`}
+                  {...(problem === undefined ? {} : { problem })}
+                  {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+                  {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+                />
               </li>
             ))}
           </ListTag>
@@ -171,7 +191,16 @@ function ContentBlocks({ blocks, path }: { blocks: WebContentBlock[]; path: stri
       case 'figure':
         if (block.asset.status === 'missing') {
           return (
-            <figure className="vmsh-asset-figure" data-float-hint={block.floatHint} key={key}>
+            <figure
+              className="vmsh-asset-figure"
+              data-float-hint={block.floatHint}
+              key={key}
+              style={
+                block.widthHint
+                  ? ({ '--vmsh-source-width': block.widthHint } as CSSProperties)
+                  : undefined
+              }
+            >
               <div className="vmsh-figure-missing" role="status">
                 <strong>Рисунок пока недоступен.</strong>
                 <span>{block.alt}</span>
@@ -194,21 +223,40 @@ function ContentBlocks({ blocks, path }: { blocks: WebContentBlock[]; path: stri
               ) : undefined
             }
             {...(block.floatHint === undefined ? {} : { floatHint: block.floatHint })}
+            {...(block.widthHint === undefined ? {} : { widthHint: block.widthHint })}
             key={`${key}-${block.asset.assetId}`}
           />
         )
       case 'subpart':
         return (
           <div className="vmsh-subpart" key={key}>
-            <strong className="vmsh-subpart-label">{block.label})</strong>
-            <ContentBlocks blocks={block.blocks} path={`${key}-blocks`} />
+            <div className="vmsh-subpart-header">
+              <strong className="vmsh-subpart-label">{block.label})</strong>
+              {problem ? renderSubpartActions?.(problem, block.label) : null}
+            </div>
+            <div className="vmsh-subpart-content">
+              <ContentBlocks
+                blocks={block.blocks}
+                path={`${key}-blocks`}
+                {...(problem === undefined ? {} : { problem })}
+                {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+                {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+              />
+            </div>
+            {problem ? renderAfterSubpart?.(problem, block.label) : null}
           </div>
         )
       case 'callout':
         return (
           <aside className={`vmsh-callout vmsh-callout-${block.kind}`} key={key}>
             {block.title ? <strong className="vmsh-note-title">{block.title}</strong> : null}
-            <ContentBlocks blocks={block.blocks} path={`${key}-blocks`} />
+            <ContentBlocks
+              blocks={block.blocks}
+              path={`${key}-blocks`}
+              {...(problem === undefined ? {} : { problem })}
+              {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+              {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+            />
           </aside>
         )
       case 'divider':
@@ -222,6 +270,9 @@ export interface SemanticMathDocumentProps {
   document: WebContentDocument
   className?: string
   renderAfterProblem?: (problem: WebContentProblem) => ReactNode
+  renderAfterSubpart?: (problem: WebContentProblem, label: string) => ReactNode
+  renderProblemActions?: (problem: WebContentProblem) => ReactNode
+  renderSubpartActions?: (problem: WebContentProblem, label: string) => ReactNode
 }
 
 /** Renders only an already runtime-validated WebContentDocument v1. */
@@ -229,6 +280,9 @@ export function SemanticMathDocument({
   document,
   className,
   renderAfterProblem,
+  renderAfterSubpart,
+  renderProblemActions,
+  renderSubpartActions,
 }: SemanticMathDocumentProps) {
   return (
     <MathDocument
@@ -241,11 +295,20 @@ export function SemanticMathDocument({
         return (
           <Fragment key={problem.ordinal}>
             <section aria-labelledby={headingId} className="vmsh-problem">
-              <h2 id={headingId}>
-                {problem.sourceItem ?? `Задача ${problem.ordinal}`}
-                {problem.title ? <span>{problem.title}</span> : null}
-              </h2>
-              <ContentBlocks blocks={problem.blocks} path={`problem-${problem.ordinal}`} />
+              <div className="vmsh-problem-header">
+                <h2 id={headingId}>
+                  {problem.sourceItem ?? `Задача ${problem.ordinal}`}
+                  {problem.title ? <span>{problem.title}</span> : null}
+                </h2>
+                {renderProblemActions?.(problem)}
+              </div>
+              <ContentBlocks
+                blocks={problem.blocks}
+                path={`problem-${problem.ordinal}`}
+                problem={problem}
+                {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+                {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+              />
               {renderAfterProblem?.(problem)}
             </section>
             <ContentBlocks

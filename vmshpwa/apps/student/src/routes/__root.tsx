@@ -61,7 +61,13 @@ function StudentProtectedShell({
 
   return (
     <AuthenticationRedirectBoundary onAuthenticationRequired={redirectToLogin}>
-      <AppShell product="student" title="Школьник" navigation={navigation} mobileNavigation>
+      <AppShell
+        compactHeader={location.pathname.startsWith('/tasks')}
+        product="student"
+        title="Школьник"
+        navigation={navigation}
+        mobileNavigation
+      >
         <StudentOfflineSessionNotice />
         <Outlet />
       </AppShell>

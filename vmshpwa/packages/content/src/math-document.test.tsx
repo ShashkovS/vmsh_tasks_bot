@@ -73,6 +73,77 @@ describe('browser math content renderer', () => {
     expect(screen.getByText('а)')).not.toBeNull()
   })
 
+  it('keeps the normalized TeX width and source-side float on a figure', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    const { container } = render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [
+            {
+              type: 'figure',
+              alt: 'Схема справа',
+              floatHint: 'right',
+              widthHint: '27.778%',
+              asset: {
+                status: 'available',
+                assetId: 'asset:source-sized-figure',
+                contentSha256: '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae',
+                src: '/content/source-sized.svg',
+                mediaType: 'image/svg+xml',
+                width: 800,
+                height: 480,
+              },
+            },
+          ],
+          problems: [],
+        }}
+      />,
+    )
+
+    const figure = container.querySelector<HTMLElement>('.vmsh-asset-figure')
+    expect(figure?.dataset.floatHint).toBe('right')
+    expect(figure?.style.getPropertyValue('--vmsh-source-width')).toBe('27.778%')
+  })
+
+  it('puts task and subpart actions into their semantic headings', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    const firstProblem = document.problems[0]
+    if (!firstProblem) throw new Error('Fixture must contain a problem')
+
+    render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [],
+          problems: [
+            {
+              ...firstProblem,
+              blocks: [
+                {
+                  type: 'subpart',
+                  label: 'а',
+                  blocks: [
+                    { type: 'paragraph', children: [{ type: 'text', value: 'Первый пункт' }] },
+                  ],
+                },
+              ],
+            },
+          ],
+        }}
+        renderProblemActions={() => <button type="button">Открыть задачу</button>}
+        renderSubpartActions={() => <button type="button">Открыть пункт</button>}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Открыть задачу' }).parentElement?.className).toBe(
+      'vmsh-problem-header',
+    )
+    expect(screen.getByRole('button', { name: 'Открыть пункт' }).parentElement?.className).toBe(
+      'vmsh-subpart-header',
+    )
+  })
+
   it('renders problem controls before content between adjacent problems', () => {
     const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
     const firstProblem = document.problems[0]
@@ -186,9 +257,11 @@ describe('browser math content renderer', () => {
     fireEvent.keyDown(viewport, { key: '+' })
     expect(screen.getByTestId('figure-zoom').textContent).toContain('150%')
     expect(canvas.style.width).toContain('150%')
+    expect(canvas.closest('figure')?.getAttribute('data-zoomed')).toBe('true')
     fireEvent.keyDown(viewport, { key: '0' })
     expect(screen.getByTestId('figure-zoom').textContent).toContain('100%')
     expect(canvas.style.width).toContain('100%')
+    expect(canvas.closest('figure')?.hasAttribute('data-zoomed')).toBe(false)
   })
 
   it('shows a stable missing-image fallback without dropping the caption', () => {

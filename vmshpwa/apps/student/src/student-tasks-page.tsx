@@ -4,8 +4,6 @@ import { useMemo, useState } from 'react'
 
 import {
   CourseNetworkError,
-  PageLayout,
-  PageSection,
   PageStatePanel,
   createStudentCourseClient,
   useAuthenticatedPrincipal,
@@ -26,6 +24,9 @@ import {
   type CourseEnrollment,
   type PrincipalQueryScope,
   type StudentLessonSummary,
+  type StudentProblemSummary,
+  type WebContentBlock,
+  type WebContentProblem,
 } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
 import { CourseContext, CourseGroupSwitcher } from '@vmsh/product'
@@ -50,6 +51,26 @@ function requestState(error: unknown) {
     : error instanceof ApiResponseError && error.status === 403
       ? ('forbidden' as const)
       : ('error' as const)
+}
+
+function containsSubpart(blocks: WebContentBlock[]): boolean {
+  return blocks.some((block) => {
+    if (block.type === 'subpart') return true
+    if (block.type === 'callout') return containsSubpart(block.blocks)
+    if (block.type === 'list') return block.items.some(containsSubpart)
+    return false
+  })
+}
+
+function subpartProblem(
+  problems: StudentProblemSummary[],
+  documentProblem: WebContentProblem,
+  label: string,
+): StudentProblemSummary | undefined {
+  return problems.find(
+    (problem) =>
+      problem.sourceOrdinal === documentProblem.ordinal && problem.displayNumber.endsWith(label),
+  )
 }
 
 function StudentLessonFeedItem({
@@ -131,6 +152,26 @@ function StudentLessonFeedItem({
     })
   }
 
+  const problemActions = (problem: StudentProblemSummary) => (
+    <div className="flex items-center gap-2 font-sans">
+      <ProblemStatusBadge problem={problem} />
+      <Button
+        aria-label={`Открыть задачу ${problem.displayNumber}`}
+        onClick={() => openProblem(problem.displayNumber)}
+        size="sm"
+        variant="ghost"
+      >
+        Открыть
+        <ChevronRight aria-hidden="true" />
+      </Button>
+    </div>
+  )
+
+  const problemsFor = (documentProblem: WebContentProblem) =>
+    problemsQuery.data.problems.filter(
+      (problem) => problem.sourceOrdinal === documentProblem.ordinal,
+    )
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
@@ -150,38 +191,44 @@ function StudentLessonFeedItem({
       </CardHeader>
       <CardContent className="p-0">
         <SemanticMathDocument
-          className="vmsh-student-feed-sheet px-4 py-5 sm:px-7 sm:py-6"
+          className="vmsh-student-feed-sheet px-5 py-6 sm:px-10 sm:py-8"
           document={contentQuery.data.document}
+          renderAfterSubpart={(documentProblem, label) => {
+            const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
+            return problem ? (
+              <StudentTaskMaterials
+                compact
+                groupLessonId={lesson.groupLessonId}
+                problem={problem}
+              />
+            ) : null
+          }}
           renderAfterProblem={(documentProblem) => {
-            const problems = problemsQuery.data.problems.filter(
-              (problem) => problem.sourceOrdinal === documentProblem.ordinal,
-            )
+            if (containsSubpart(documentProblem.blocks)) return null
+            const problems = problemsFor(documentProblem)
             if (problems.length === 0) return null
             return (
-              <div className="mt-3 space-y-2 font-sans">
+              <div className="space-y-2">
                 {problems.map((problem) => (
-                  <div
-                    className="rounded-md border border-border bg-surface-subtle p-2.5"
-                    key={problem.problemId}
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{problem.displayNumber}</span>
-                      <ProblemStatusBadge problem={problem} />
-                      <Button
-                        className="ml-auto"
-                        onClick={() => openProblem(problem.displayNumber)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        Открыть
-                        <ChevronRight aria-hidden="true" />
-                      </Button>
-                    </div>
-                    <StudentTaskMaterials groupLessonId={lesson.groupLessonId} problem={problem} />
+                  <div key={problem.problemId}>
+                    <StudentTaskMaterials
+                      compact
+                      groupLessonId={lesson.groupLessonId}
+                      problem={problem}
+                    />
                   </div>
                 ))}
               </div>
             )
+          }}
+          renderProblemActions={(documentProblem) => {
+            if (containsSubpart(documentProblem.blocks)) return null
+            const problems = problemsFor(documentProblem)
+            return problems.length === 1 && problems[0] ? problemActions(problems[0]) : null
+          }}
+          renderSubpartActions={(documentProblem, label) => {
+            const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
+            return problem ? problemActions(problem) : null
           }}
         />
       </CardContent>
@@ -227,7 +274,7 @@ function StudentLessonArchive({
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-3">
+      {enrollments.length > 1 ? (
         <CourseContext
           activeCourseId={enrollment.course.courseId}
           courses={enrollments.map((candidate) => toCourseEnrollmentView(candidate).course)}
@@ -235,13 +282,13 @@ function StudentLessonArchive({
             void navigate({ search: { course: courseId }, replace: true })
           }}
         />
-      </div>
+      ) : null}
 
       <CourseGroupSwitcher
         activeGroupId={groupId}
         course={enrollmentView.course}
         groups={enrollmentView.allowedGroups}
-        helpText="Можно читать опубликованные листки всех доступных вам групп. Активная группа курса от этого не меняется."
+        helpText={null}
         onChange={(nextGroupId) => {
           void navigate({
             search: { course: enrollment.course.courseId, group: nextGroupId },
@@ -250,10 +297,7 @@ function StudentLessonArchive({
         }}
       />
 
-      <PageSection
-        description={`${visibleLessons.length} из ${lessons.length} загруженных занятий`}
-        title="Лента занятий"
-      >
+      <div>
         {visibleLessons.length === 0 ? (
           <PageStatePanel
             description={'После публикации условия листок появится здесь.'}
@@ -292,7 +336,7 @@ function StudentLessonArchive({
             {query.isFetchingNextPage ? 'Загружаем…' : 'Показать более ранние занятия'}
           </Button>
         ) : null}
-      </PageSection>
+      </div>
     </div>
   )
 }
@@ -361,12 +405,6 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
   }
 
   return (
-    <PageLayout
-      description="Опубликованные листки вашей активной и других доступных групп."
-      eyebrow="Курс и группа"
-      title="Задачи"
-    >
-      {content}
-    </PageLayout>
+    <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 2xl:-translate-x-28">{content}</div>
   )
 }

@@ -1,4 +1,11 @@
-import { useCallback, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import {
+  useCallback,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 
 import type { WebFigureAvailableAsset } from '@vmsh/contracts'
 
@@ -12,6 +19,7 @@ export interface ZoomableAssetFigureProps {
   caption?: ReactNode
   className?: string
   floatHint?: 'left' | 'right'
+  widthHint?: string
 }
 
 function clampZoom(value: number): number {
@@ -28,6 +36,7 @@ export function ZoomableAssetFigure({
   caption,
   className,
   floatHint,
+  widthHint,
 }: ZoomableAssetFigureProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(MINIMUM_ZOOM)
@@ -81,6 +90,8 @@ export function ZoomableAssetFigure({
     <figure
       className={['vmsh-asset-figure', className].filter(Boolean).join(' ')}
       data-float-hint={floatHint}
+      data-zoomed={zoom > MINIMUM_ZOOM ? 'true' : undefined}
+      style={widthHint ? ({ '--vmsh-source-width': widthHint } as CSSProperties) : undefined}
     >
       <div
         aria-label="Просмотр рисунка. Плюс и минус меняют масштаб, ноль сбрасывает."
@@ -133,8 +144,14 @@ export function ZoomableAssetFigure({
         >
           +
         </button>
-        <button disabled={zoom === MINIMUM_ZOOM || imageFailed} onClick={reset} type="button">
-          Сбросить
+        <button
+          aria-label="Сбросить масштаб"
+          disabled={zoom === MINIMUM_ZOOM || imageFailed}
+          onClick={reset}
+          title="Сбросить масштаб"
+          type="button"
+        >
+          ↺
         </button>
         <output aria-live="polite" data-testid="figure-zoom">
           {Math.round(zoom * 100)}%

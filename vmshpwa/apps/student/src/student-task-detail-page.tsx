@@ -44,9 +44,11 @@ function problemRequestState(error: unknown) {
 export function StudentTaskMaterials({
   problem,
   groupLessonId,
+  compact = false,
 }: {
   problem: StudentProblemSummary
   groupLessonId: string
+  compact?: boolean
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -127,6 +129,7 @@ export function StudentTaskMaterials({
       initialSolution={cachedMaterials.solution}
       ownerId={principal.accountId}
       problem={problem}
+      compact={compact}
     />
   )
 }
@@ -196,6 +199,7 @@ function StudentTaskMaterialsReady({
   initialSolution,
   ownerId,
   problem,
+  compact,
 }: {
   client: ReturnType<typeof createContentApiClient>
   database: VmshOfflineDatabase
@@ -204,6 +208,7 @@ function StudentTaskMaterialsReady({
   initialSolution: StudentProblemReveal | null
   ownerId: string
   problem: StudentProblemSummary
+  compact: boolean
 }) {
   const [hint, setHint] = useState<StudentProblemReveal | null>(initialHint)
   const [solution, setSolution] = useState<StudentProblemReveal | null>(initialSolution)
@@ -242,7 +247,10 @@ function StudentTaskMaterialsReady({
   }
 
   return (
-    <section aria-label="Подсказка и решение" className="mt-5 space-y-2">
+    <section
+      aria-label="Подсказка и решение"
+      className={compact ? 'mt-2 space-y-1.5 font-sans' : 'mt-5 space-y-2'}
+    >
       {problem.materials.hint.status === 'unavailable' ? null : (
         <HintDisclosure
           initiallyRevealed={problem.materials.hint.status === 'revealed' || hint !== null}
