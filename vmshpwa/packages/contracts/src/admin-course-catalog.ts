@@ -39,6 +39,53 @@ export const adminCourseSchema = z
   .strict()
 export type AdminCourse = z.infer<typeof adminCourseSchema>
 
+export const courseVerdictModeSchema = z.enum([
+  'verdict_plus_minus',
+  'verdict_plus_minus_half',
+  'verdict_plus_steps',
+])
+export type CourseVerdictMode = z.infer<typeof courseVerdictModeSchema>
+
+export const courseRuntimeSettingsValuesSchema = z
+  .object({
+    verdictMode: courseVerdictModeSchema,
+    resultMode: z.enum(['res_immed', 'res_after']),
+    previousLessonsMode: z.enum([
+      'prev_problems_hide',
+      'prev_problems_prev',
+      'prev_problems_show_all',
+    ]),
+    testAttemptRateLimit: z.enum(['rate_limit_none', 'rate_limit_3_and_6']),
+  })
+  .strict()
+export type CourseRuntimeSettingsValues = z.infer<typeof courseRuntimeSettingsValuesSchema>
+
+export const courseRuntimeSettingsSchema = z
+  .object({
+    courseId: publicIdSchema,
+    values: courseRuntimeSettingsValuesSchema,
+    version: z.number().int().nonnegative(),
+    source: z.enum(['defaults', 'stored']),
+    appliesAfter: z.literal('restart'),
+  })
+  .strict()
+
+export const courseRuntimeSettingsResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    settings: courseRuntimeSettingsSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type CourseRuntimeSettingsResponse = z.infer<typeof courseRuntimeSettingsResponseSchema>
+
+export const updateCourseRuntimeSettingsRequestSchema = z
+  .object({ schemaVersion: z.literal(1), values: courseRuntimeSettingsValuesSchema })
+  .strict()
+export type UpdateCourseRuntimeSettingsRequest = z.infer<
+  typeof updateCourseRuntimeSettingsRequestSchema
+>
+
 export const adminSeasonSchema = z
   .object({
     seasonId: publicIdSchema,
@@ -189,4 +236,14 @@ export const adminCourseCatalogQueryKey = (principal: PrincipalQueryScope, seaso
     'admin-course-catalog',
     ...principalQueryKey(principal),
     { seasonId: seasonId === undefined ? null : publicIdSchema.parse(seasonId) },
+  ] as const
+
+export const courseRuntimeSettingsQueryKey = (
+  principal: PrincipalQueryScope,
+  rawCourseId: string,
+) =>
+  [
+    'course-runtime-settings',
+    ...principalQueryKey(principal),
+    publicIdSchema.parse(rawCourseId),
   ] as const

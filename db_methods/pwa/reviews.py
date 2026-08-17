@@ -1271,7 +1271,13 @@ class PwaWrittenReviewQueueRepository:
             )
             if any(not scope.allows(row) for row in rows):
                 raise ReviewQueueForbidden("review case is outside Staff scope")
-            if any(_active_legacy_claim(row, now=now) for row in rows):
+            active_legacy_rows = [
+                row for row in rows if _active_legacy_claim(row, now=now)
+            ]
+            if any(
+                int(row["teacher_id"]) != teacher_user_id
+                for row in active_legacy_rows
+            ):
                 raise ReviewLeaseConflict("review case is active in legacy Telegram")
             active_rows = [row for row in rows if _active_pwa_claim(row, now=now)]
             if any(int(row["teacher_id"]) != teacher_user_id for row in active_rows):

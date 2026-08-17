@@ -62,11 +62,20 @@ export const createStaffMemberRequestSchema = z
     middleName: z.string().trim().min(1).max(100).nullable(),
     username: z.string().trim().min(1).max(100),
     password: z.string().min(8).max(256),
+    role: z.enum(['teacher', 'admin']),
   })
   .strict()
 export type CreateStaffMemberRequest = z.infer<typeof createStaffMemberRequestSchema>
 
-const staffMemberBatchRowSchema = createStaffMemberRequestSchema.omit({ schemaVersion: true })
+const staffMemberBatchRowSchema = createStaffMemberRequestSchema.omit({
+  schemaVersion: true,
+  role: true,
+})
+
+export const updateStaffRoleRequestSchema = z
+  .object({ schemaVersion: z.literal(1), role: z.literal('admin') })
+  .strict()
+export type UpdateStaffRoleRequest = z.infer<typeof updateStaffRoleRequestSchema>
 
 export const createStaffMemberBatchRequestSchema = z
   .object({

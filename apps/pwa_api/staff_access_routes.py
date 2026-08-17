@@ -22,6 +22,7 @@ from db_methods.pwa.staff_access import (
     insert_teacher_scope,
     list_staff_members,
     list_teacher_scopes,
+    promote_staff_member_to_admin,
     revoke_teacher_scope,
 )
 from helpers.consts import USER_TYPE
@@ -40,6 +41,7 @@ _CREATE_FIELDS = {
     "middleName",
     "username",
     "password",
+    "role",
 }
 _BATCH_FIELDS = {"schemaVersion", "rows", "scopes"}
 _BATCH_ROW_FIELDS = {"surname", "name", "middleName", "username", "password"}
@@ -368,6 +370,7 @@ async def create_staff_member(request: web.Request) -> web.Response:
         None if middle_value is None else _required_text(middle_value, maximum=100)
     )
     password = payload["password"]
+    role = payload["role"]
     normalized_username = normalize_login(username or "")
     if (
         surname is None
@@ -378,6 +381,7 @@ async def create_staff_member(request: web.Request) -> web.Response:
         or not isinstance(password, str)
         or not 8 <= len(password) <= 256
         or not password.strip()
+        or role not in {"teacher", "admin"}
     ):
         raise PwaApiError(
             status=422,
@@ -404,6 +408,7 @@ async def create_staff_member(request: web.Request) -> web.Response:
             username_normalized=normalized_username,
             credential_hash=credential_hash,
             now=now,
+            user_type=USER_TYPE.ADMIN if role == "admin" else USER_TYPE.TEACHER,
         )
         insert_audit_event(
             connection,
@@ -417,7 +422,7 @@ async def create_staff_member(request: web.Request) -> web.Response:
             request_id=request["request_id"],
             before_json=None,
             after_json=json.dumps(
-                {"username": username, "role": "teacher"},
+                {"username": username, "role": role},
                 ensure_ascii=False,
                 separators=(",", ":"),
             ),
@@ -441,6 +446,64 @@ async def create_staff_member(request: web.Request) -> web.Response:
             "requestId": request["request_id"],
         },
         status=201,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@staff_access_routes.patch("/staff/api/v1/staff-members/{staff_public_id}/role")
+async def promote_staff_member(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
+    staff_public_id = _path_id(request)
+    if request.query or request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте новую роль сотрудника"
+        )
+    try:
+        body = json.loads(await request.read())
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте новую роль сотрудника"
+        ) from error
+    if body != {"schemaVersion": 1, "role": "admin"}:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте новую роль сотрудника"
+        )
+    now = _now()
+
+    def write(connection):
+        member = find_staff_member(connection, public_id=staff_public_id)
+        if member is None:
+            return None
+        if int(member["type"]) == int(USER_TYPE.TEACHER):
+            promote_staff_member_to_admin(
+                connection, staff_user_id=int(member["id"]), now=now
+            )
+            insert_audit_event(
+                connection,
+                public_id=f"audit.{uuid.uuid4().hex}",
+                actor_user_id=actor_user_id,
+                actor_account_public_id=actor_account_id,
+                audience="staff",
+                action="staff.member_promoted",
+                object_type="staff_member",
+                object_id=staff_public_id,
+                request_id=request["request_id"],
+                before_json='{"role":"teacher"}',
+                after_json='{"role":"admin"}',
+                occurred_at=now,
+            )
+        updated = find_staff_member(connection, public_id=staff_public_id)
+        assert updated is not None
+        return _member_payload(updated, [])
+
+    member = await _factory(request).run_write_async(write)
+    if member is None:
+        raise PwaApiError(
+            status=404, code="staff_member_not_found", message="Сотрудник не найден"
+        )
+    return web.json_response(
+        {"schemaVersion": 1, "member": member, "requestId": request["request_id"]},
         headers={"Cache-Control": "no-store"},
     )
 

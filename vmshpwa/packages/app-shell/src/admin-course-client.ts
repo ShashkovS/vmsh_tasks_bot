@@ -8,6 +8,7 @@ import {
   courseEnrollmentProvisioningPreviewRequestSchema,
   courseEnrollmentProvisioningPreviewResponseSchema,
   courseEnrollmentProvisioningReceiptSchema,
+  courseRuntimeSettingsQueryKey,
   adminCourseCatalogQueryKey,
   adminCourseCatalogResponseSchema,
   adminCourseScheduleDraftResponseSchema,
@@ -26,6 +27,7 @@ import {
   adminStudentEnrollmentsQueryKey,
   apiErrorSchema,
   createAdminCourseRequestSchema,
+  courseRuntimeSettingsResponseSchema,
   createAdminGroupLessonRequestSchema,
   createAdminSeasonRequestSchema,
   createStaffMemberBatchRequestSchema,
@@ -49,10 +51,12 @@ import {
   saveAdminCourseScheduleRuleSchema,
   staffAccessDirectoryResponseSchema,
   staffAccessMemberResponseSchema,
+  updateStaffRoleRequestSchema,
   staffAccessQueryKey,
   studentProvisioningApplyRequestSchema,
   studentProvisioningPreviewRequestSchema,
   updateAdminCourseRequestSchema,
+  updateCourseRuntimeSettingsRequestSchema,
   updateAdminStudentEnrollmentRequestSchema,
   updateManagedAccountStatusRequestSchema,
   unlinkFamilyAccountResponseSchema,
@@ -75,6 +79,7 @@ import {
   type CourseEnrollmentProvisioningPreviewResponse,
   type CourseEnrollmentProvisioningReceipt,
   type CreateAdminCourseRequest,
+  type CourseRuntimeSettingsResponse,
   type CreateAdminGroupLessonRequest,
   type CreateAdminSeasonRequest,
   type CreateStaffMemberBatchRequest,
@@ -101,7 +106,9 @@ import {
   type StudentProvisioningApplyRequest,
   type StudentProvisioningPreviewRequest,
   type UpdateAdminCourseRequest,
+  type UpdateCourseRuntimeSettingsRequest,
   type UpdateAdminStudentEnrollmentRequest,
+  type UpdateStaffRoleRequest,
   type UnlinkFamilyAccountResponse,
 } from '@vmsh/contracts'
 
@@ -118,6 +125,15 @@ export interface AdminCourseClient {
     version: number,
     input: UpdateAdminCourseRequest,
   ): Promise<AdminCourseResponse>
+  getCourseRuntimeSettings(
+    courseId: string,
+    signal?: AbortSignal,
+  ): Promise<CourseRuntimeSettingsResponse>
+  updateCourseRuntimeSettings(
+    courseId: string,
+    version: number,
+    input: UpdateCourseRuntimeSettingsRequest,
+  ): Promise<CourseRuntimeSettingsResponse>
   createGroup(courseId: string, input: SaveAdminGroupRequest): Promise<AdminGroupResponse>
   createGroupLesson(input: CreateAdminGroupLessonRequest): Promise<AdminGroupLessonResponse>
   updateGroup(
@@ -190,6 +206,10 @@ export interface AdminCourseClient {
   replaceStaffScopes(
     staffUserId: string,
     input: ReplaceStaffScopesRequest,
+  ): Promise<StaffAccessMemberResponse>
+  updateStaffRole(
+    staffUserId: string,
+    input: UpdateStaffRoleRequest,
   ): Promise<StaffAccessMemberResponse>
   previewProblemImport(courseId: string, workbook: File): Promise<ProblemImportPreviewResponse>
   applyProblemImport(
@@ -288,6 +308,25 @@ export function createAdminCourseClient(
           method: 'PUT',
           headers: { 'If-Match': `"${courseId}:v${version}"` },
           body: JSON.stringify(updateAdminCourseRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async getCourseRuntimeSettings(rawCourseId, signal) {
+      const courseId = publicIdSchema.parse(rawCourseId)
+      return courseRuntimeSettingsResponseSchema.parse(
+        await request(`/courses/${encodeURIComponent(courseId)}/runtime-settings`, {
+          method: 'GET',
+          ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async updateCourseRuntimeSettings(rawCourseId, version, input) {
+      const courseId = publicIdSchema.parse(rawCourseId)
+      return courseRuntimeSettingsResponseSchema.parse(
+        await request(`/courses/${encodeURIComponent(courseId)}/runtime-settings`, {
+          method: 'PUT',
+          headers: { 'If-Match': `"${courseId}:runtime-settings:v${version}"` },
+          body: JSON.stringify(updateCourseRuntimeSettingsRequestSchema.parse(input)),
         }),
       )
     },
@@ -521,6 +560,15 @@ export function createAdminCourseClient(
         }),
       )
     },
+    async updateStaffRole(rawStaffUserId, input) {
+      const staffUserId = publicIdSchema.parse(rawStaffUserId)
+      return staffAccessMemberResponseSchema.parse(
+        await request(`/staff-members/${encodeURIComponent(staffUserId)}/role`, {
+          method: 'PATCH',
+          body: JSON.stringify(updateStaffRoleRequestSchema.parse(input)),
+        }),
+      )
+    },
     async previewProblemImport(rawCourseId, workbook) {
       const courseId = publicIdSchema.parse(rawCourseId)
       if (!(workbook instanceof File) || workbook.size < 1 || workbook.size > 10 * 1024 * 1024) {
@@ -590,6 +638,17 @@ export function useAdminCourseScheduleQuery(
         : adminCourseScheduleQueryKey(principal, courseId),
     queryFn: ({ signal }) => client.getCourseSchedule(courseId!, signal),
     enabled: courseId !== null,
+  })
+}
+
+export function useCourseRuntimeSettingsQuery(
+  client: AdminCourseClient,
+  principal: PrincipalQueryScope,
+  courseId: string,
+) {
+  return useQuery({
+    queryKey: courseRuntimeSettingsQueryKey(principal, courseId),
+    queryFn: ({ signal }) => client.getCourseRuntimeSettings(courseId, signal),
   })
 }
 

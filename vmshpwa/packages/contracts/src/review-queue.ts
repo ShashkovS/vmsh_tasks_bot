@@ -166,6 +166,9 @@ export const reviewLeaseSchema = z
     expiresAt: z.iso.datetime(),
     branches: z.array(reviewQueueBranchSchema).min(1),
     evidenceBranches: z.array(reviewLeaseEvidenceBranchSchema).min(1),
+    verdictMode: z
+      .enum(['verdict_plus_minus', 'verdict_plus_minus_half', 'verdict_plus_steps'])
+      .optional(),
   })
   .strict()
   .refine((lease) => lease.expiresAt > lease.claimedAt, {

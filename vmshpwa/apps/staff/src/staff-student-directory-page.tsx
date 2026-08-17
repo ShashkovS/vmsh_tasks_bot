@@ -496,18 +496,20 @@ export function StudentDirectoryView({
                     />
                   ) : null}
                   {selectedStudent.familyAccounts.map((account) => (
-                    <div className="space-y-2" key={account.accountId}>
-                      <p className="text-small text-muted-foreground">
-                        {account.displayName} · {account.relationshipLabel ?? 'родитель'}
-                      </p>
-                      <StudentAccountControls
-                        account={account}
-                        audience="family"
-                        key={`${account.accountId}:${account.credentialVersion}`}
-                        onChange={onAccountChange}
-                        pending={accountSaving}
-                      />
-                    </div>
+                    <details className="rounded-md border border-border" key={account.accountId}>
+                      <summary className="cursor-pointer px-3 py-2 text-small font-medium">
+                        Настроить вход: {account.displayName} · {account.username}
+                      </summary>
+                      <div className="border-t border-border p-3">
+                        <StudentAccountControls
+                          account={account}
+                          audience="family"
+                          key={`${account.accountId}:${account.credentialVersion}`}
+                          onChange={onAccountChange}
+                          pending={accountSaving}
+                        />
+                      </div>
+                    </details>
                   ))}
                 </CardContent>
               </Card>

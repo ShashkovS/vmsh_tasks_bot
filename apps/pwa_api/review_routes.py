@@ -19,6 +19,8 @@ from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
 from db_methods.pwa.review_telegram import read_review_telegram_delivery
+from db_methods.pwa.course_catalog import find_course
+from db_methods.pwa.course_runtime_settings import find_course_runtime_settings
 from db_methods.pwa.reviews import (
     CompleteReviewCommand,
     PwaWrittenReviewQueueRepository,
@@ -55,6 +57,7 @@ from helpers.pwa.review_composite import render_review_annotation_composite_png
 from helpers.pwa.permissions import Capability
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.course_runtime_settings import DEFAULT_COURSE_RUNTIME_SETTINGS
 from models.pwa.review_notifications import record_review_notifications
 from models.pwa.review_corrections import (
     ReviewCorrectionCommand,
@@ -592,6 +595,36 @@ def _lease_payload(lease: ReviewLease) -> dict[str, object]:
     }
 
 
+async def _lease_payload_with_settings(
+    request: web.Request, lease: ReviewLease
+) -> dict[str, object]:
+    first = lease.items[0]
+    mode = str(DEFAULT_COURSE_RUNTIME_SETTINGS["verdictMode"])
+    if first.course_public_id is not None:
+
+        def read(connection):
+            course = find_course(connection, public_id=first.course_public_id)
+            if course is None:
+                return None
+            return find_course_runtime_settings(
+                connection, course_id=int(course["id"])
+            )
+
+        database = request.app.get(PWA_DATABASE)
+        settings = (
+            None
+            if database is None or database.factory is None
+            else await database.factory.run_read_async(read)
+        )
+        if settings is not None:
+            values = json.loads(str(settings["values_json"]))
+            if isinstance(values, dict) and isinstance(values.get("verdictMode"), str):
+                mode = values["verdictMode"]
+    payload = _lease_payload(lease)
+    payload["verdictMode"] = mode
+    return payload
+
+
 def _positive_integer(value: object, *, field: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
         raise PwaApiError(
@@ -1088,7 +1121,7 @@ async def claim_review_item(request: web.Request) -> web.Response:
     return web.json_response(
         {
             "schemaVersion": 1,
-            "lease": _lease_payload(lease),
+            "lease": await _lease_payload_with_settings(request, lease),
             "requestId": request["request_id"],
         }
     )
@@ -1114,7 +1147,7 @@ async def heartbeat_review_item(request: web.Request) -> web.Response:
     return web.json_response(
         {
             "schemaVersion": 1,
-            "lease": _lease_payload(lease),
+            "lease": await _lease_payload_with_settings(request, lease),
             "requestId": request["request_id"],
         }
     )

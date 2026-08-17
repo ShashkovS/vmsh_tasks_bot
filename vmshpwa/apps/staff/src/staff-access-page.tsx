@@ -52,7 +52,7 @@ interface SaveStaffAccessCommand {
   draftKey: string
 }
 
-function TeacherCreator({
+function StaffMemberCreator({
   error,
   saving,
   onCancel,
@@ -70,6 +70,7 @@ function TeacherCreator({
     middleName: null,
     username: '',
     password: '',
+    role: 'teacher',
   })
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -80,7 +81,7 @@ function TeacherCreator({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Новый преподаватель</CardTitle>
+        <CardTitle>Новый сотрудник</CardTitle>
       </CardHeader>
       <CardContent>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={submit}>
@@ -132,6 +133,20 @@ function TeacherCreator({
               value={draft.password}
             />
           </Label>
+          <Label className="grid gap-1">
+            Роль
+            <select
+              className="min-h-(--touch-target) rounded-md border border-input bg-surface px-3 text-small"
+              disabled={saving}
+              onChange={(event) =>
+                setDraft({ ...draft, role: event.target.value as 'teacher' | 'admin' })
+              }
+              value={draft.role}
+            >
+              <option value="teacher">Преподаватель</option>
+              <option value="admin">Администратор</option>
+            </select>
+          </Label>
           {error ? (
             <p className="text-small text-status-error md:col-span-2" role="alert">
               {errorMessage(error)}
@@ -139,7 +154,7 @@ function TeacherCreator({
           ) : null}
           <div className="flex gap-2 md:col-span-2">
             <Button disabled={saving} type="submit">
-              {saving ? 'Создаём…' : 'Создать преподавателя'}
+              {saving ? 'Создаём…' : 'Создать сотрудника'}
             </Button>
             <Button disabled={saving} onClick={onCancel} type="button" variant="outline">
               Отмена
@@ -318,6 +333,7 @@ export function StaffAccessView({
   saving = false,
   storageNamespace,
   onSave,
+  onPromote,
 }: {
   accountId: string
   courses: AdminCourse[]
@@ -325,6 +341,7 @@ export function StaffAccessView({
   saving?: boolean
   storageNamespace: string
   onSave: (command: SaveStaffAccessCommand) => void
+  onPromote?: (member: StaffAccessMember) => void
 }) {
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string>()
@@ -401,15 +418,37 @@ export function StaffAccessView({
               </AlertContent>
             </Alert>
           ) : (
-            <StaffScopeEditor
-              accountId={accountId}
-              courses={courses}
-              key={`${selected.staffUserId}:${selected.scopes.map((scope) => scope.version).join('.')}`}
-              member={selected}
-              onSave={onSave}
-              saving={saving}
-              storageNamespace={storageNamespace}
-            />
+            <>
+              {onPromote ? (
+                <div className="flex justify-end">
+                  <Button
+                    disabled={saving}
+                    onClick={() => {
+                      if (
+                        globalThis.confirm(
+                          `Сделать ${fullName(selected)} администратором? Он получит доступ ко всем данным и настройкам.`,
+                        )
+                      ) {
+                        onPromote(selected)
+                      }
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Сделать администратором
+                  </Button>
+                </div>
+              ) : null}
+              <StaffScopeEditor
+                accountId={accountId}
+                courses={courses}
+                key={`${selected.staffUserId}:${selected.scopes.map((scope) => scope.version).join('.')}`}
+                member={selected}
+                onSave={onSave}
+                saving={saving}
+                storageNamespace={storageNamespace}
+              />
+            </>
           )}
         </div>
       ) : (
@@ -483,6 +522,14 @@ export function StaffAccessPage({
     },
     onError: (error) => authentication.handleApiError(error),
   })
+  const roleMutation = useMutation({
+    mutationFn: (member: StaffAccessMember) =>
+      client.updateStaffRole(member.staffUserId, { schemaVersion: 1, role: 'admin' }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: staffAccessQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
 
   if (!isAdmin) {
     return (
@@ -531,7 +578,7 @@ export function StaffAccessPage({
             Пакетная загрузка
           </Button>
           <Button onClick={() => setCreatorOpen(true)} size="sm">
-            Добавить преподавателя
+            Добавить сотрудника
           </Button>
         </div>
         {batchOpen ? (
@@ -544,7 +591,7 @@ export function StaffAccessPage({
           />
         ) : null}
         {creatorOpen ? (
-          <TeacherCreator
+          <StaffMemberCreator
             error={createMutation.error}
             onCancel={() => setCreatorOpen(false)}
             onSave={(input) => createMutation.mutate(input)}
@@ -572,8 +619,9 @@ export function StaffAccessPage({
           accountId={principal.accountId}
           courses={catalog.data.courses}
           members={directory.data.members}
+          onPromote={(member) => roleMutation.mutate(member)}
           onSave={(command) => mutation.mutate(command)}
-          saving={mutation.isPending}
+          saving={mutation.isPending || roleMutation.isPending}
           storageNamespace={createBrowserStorageNamespace(authentication.client.runtime)}
         />
       </div>

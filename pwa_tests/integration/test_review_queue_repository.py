@@ -1660,3 +1660,30 @@ async def test_active_legacy_claim_blocks_pwa_until_thirty_minute_expiry(
         scope=ALL_GROUPS_SCOPE,
     )
     assert len(lease.items) == 2
+
+
+@pytest.mark.asyncio
+async def test_teacher_can_resume_own_active_legacy_claim(review_queue_fixture):
+    fixture = review_queue_fixture
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE written_tasks_queue SET cur_status = 1, teacher_id = ?, "
+            "teacher_ts = ?, updated_at = ? WHERE public_id = ?",
+            (
+                TEACHER_ONE_ID,
+                _timestamp(fixture.clock.value),
+                _timestamp(fixture.clock.value),
+                fixture.queue_public_ids[0],
+            ),
+        )
+    )
+
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+
+    assert len(lease.items) == 2
+    assert lease.teacher_user_id == TEACHER_ONE_ID
+    assert lease.claim_token

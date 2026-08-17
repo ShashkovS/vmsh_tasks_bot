@@ -61,6 +61,7 @@ describe('admin course client', () => {
       middleName: null,
       username: 'teacher-new',
       password: 'teacher-password-179',
+      role: 'teacher',
     })
 
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/staff-members')

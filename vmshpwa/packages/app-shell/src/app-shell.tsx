@@ -25,6 +25,7 @@ export interface AppShellProps {
   navigation: NavigationItem[]
   children: ReactNode
   mobileNavigation?: boolean
+  headerActions?: ReactNode
 }
 
 export function AppShell({
@@ -33,6 +34,7 @@ export function AppShell({
   navigation,
   children,
   mobileNavigation = false,
+  headerActions,
 }: AppShellProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -51,6 +53,7 @@ export function AppShell({
               <Wifi className="size-3.5" aria-hidden="true" /> синхронизировано
             </span>
             <ThemeToggle />
+            {headerActions}
             {!mobileNavigation ? (
               <Button
                 className="md:hidden"

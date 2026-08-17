@@ -6,12 +6,14 @@ import {
   PageStatePanel,
   createAdminCourseClient,
   useAdminCourseCatalogQuery,
+  useCourseRuntimeSettingsQuery,
   useAuthenticatedPrincipal,
   useAuthentication,
 } from '@vmsh/app-shell'
 import {
   ApiResponseError,
   adminCourseCatalogQueryKey,
+  courseRuntimeSettingsQueryKey,
   type AdminCourse,
   type AdminCourseResponse,
   type AdminGroup,
@@ -19,11 +21,24 @@ import {
   type AdminSeasonResponse,
   type CreateAdminSeasonRequest,
   type CreateAdminCourseRequest,
+  type CourseVerdictMode,
   type SaveAdminGroupRequest,
   type UpdateAdminCourseRequest,
 } from '@vmsh/contracts'
 import { CourseGroupCatalog, type ManagedCourse } from '@vmsh/product'
-import { Alert, AlertContent, AlertDescription, AlertTitle, Button, Input, Label } from '@vmsh/ui'
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+} from '@vmsh/ui'
 
 import { clearCatalogDraft } from './course-catalog-draft'
 import { CourseCatalogEditor, GroupCatalogEditor } from './course-catalog-editors'
@@ -194,6 +209,76 @@ function SeasonEditor({
         ) : null}
       </div>
     </form>
+  )
+}
+
+function CourseVerdictSettings({
+  client,
+  course,
+  scope,
+}: {
+  client: ReturnType<typeof createAdminCourseClient>
+  course: AdminCourse
+  scope: { audience: 'staff'; accountId: string }
+}) {
+  const queryClient = useQueryClient()
+  const query = useCourseRuntimeSettingsQuery(client, scope, course.courseId)
+  const [selected, setSelected] = useState<CourseVerdictMode | null>(null)
+  const mutation = useMutation({
+    mutationFn: (mode: CourseVerdictMode) => {
+      if (!query.data) throw new Error('Настройки курса ещё не загружены')
+      return client.updateCourseRuntimeSettings(course.courseId, query.data.settings.version, {
+        schemaVersion: 1,
+        values: { ...query.data.settings.values, verdictMode: mode },
+      })
+    },
+    onSuccess: async () => {
+      setSelected(null)
+      await queryClient.invalidateQueries({
+        queryKey: courseRuntimeSettingsQueryKey(scope, course.courseId),
+      })
+    },
+  })
+  const current = selected ?? query.data?.settings.values.verdictMode
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-body">{course.name}: вердикты письменных задач</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-end gap-2 pt-0">
+        <Label className="grid min-w-64 flex-1 gap-1 text-small">
+          Набор вердиктов
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={query.isPending || mutation.isPending}
+            onChange={(event) => setSelected(event.target.value as CourseVerdictMode)}
+            value={current ?? 'verdict_plus_minus_half'}
+          >
+            <option value="verdict_plus_minus">+ и −</option>
+            <option value="verdict_plus_minus_half">+, +/2 и −</option>
+            <option value="verdict_plus_steps">Полная шкала: +, +., ±, +/2, ∓, −., −</option>
+          </select>
+        </Label>
+        <Button
+          disabled={
+            !selected || selected === query.data?.settings.values.verdictMode || mutation.isPending
+          }
+          onClick={() => selected && mutation.mutate(selected)}
+          size="sm"
+        >
+          {mutation.isPending ? 'Сохраняем…' : 'Сохранить шкалу'}
+        </Button>
+        <p className="basis-full text-caption text-muted-foreground">
+          Нулевой результат означает, что школьник ничего не сдавал, и преподавателем не выбирается.
+        </p>
+        {query.error || mutation.error ? (
+          <p className="basis-full text-small text-status-error" role="alert">
+            {errorMessage((query.error ?? mutation.error) as Error)}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -369,6 +454,18 @@ export function StaffCourseCatalogPage() {
             if (group && course) setEditor({ kind: 'group', courseId: course.courseId, group })
           }}
         />
+        <div className="grid gap-3 lg:grid-cols-2">
+          {catalog.data.courses
+            .filter((course) => course.status !== 'archived')
+            .map((course) => (
+              <CourseVerdictSettings
+                client={client}
+                course={course}
+                key={course.courseId}
+                scope={scope}
+              />
+            ))}
+        </div>
       </div>
       {courseEditor ? (
         <CourseCatalogEditor

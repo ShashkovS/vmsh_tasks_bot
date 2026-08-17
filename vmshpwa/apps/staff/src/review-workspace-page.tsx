@@ -27,7 +27,9 @@ import {
   ReviewAnnotationEditor,
   ReviewFeedbackForm,
   ThreePaneReview,
+  binaryVerdictScale,
   fullVerdictScale,
+  ternaryVerdictScale,
   type ReviewFeedbackDraft,
   type ReviewFeedbackResult,
   type ThreadMessageView,
@@ -64,6 +66,12 @@ const verdictToWire = {
   'plus-minus': 15,
   'plus-dot': 16,
   plus: 17,
+} as const
+
+const verdictsByMode = {
+  verdict_plus_minus: binaryVerdictScale,
+  verdict_plus_minus_half: ternaryVerdictScale,
+  verdict_plus_steps: fullVerdictScale,
 } as const
 
 /** Live lease-backed composition of Product/Review--Workspace. */
@@ -349,7 +357,7 @@ function LoadedReviewWorkspace({
               }}
               onDraftChange={updateDraft}
               onSubmit={(result) => void submit(result)}
-              verdicts={fullVerdictScale}
+              verdicts={verdictsByMode[currentLease.verdictMode ?? 'verdict_plus_steps']}
             />
           }
           queue={<BranchSummary lease={currentLease} />}

@@ -26,6 +26,7 @@ async def test_admin_creates_teacher_account(
             "surname": "Новый",
             "name": "Преподаватель",
             "middleName": None,
+            "role": "teacher",
             "username": "teacher-new",
             "password": "teacher-password-179",
         },
@@ -46,6 +47,7 @@ async def test_admin_creates_teacher_account(
             "surname": "Другой",
             "name": "Учитель",
             "middleName": None,
+            "role": "teacher",
             "username": "teacher-new",
             "password": "another-password-179",
         },
@@ -61,6 +63,7 @@ async def test_admin_creates_teacher_account(
             "surname": "Запрещено",
             "name": "Учителю",
             "middleName": None,
+            "role": "teacher",
             "username": "teacher-forbidden",
             "password": "teacher-password-179",
         },
@@ -68,6 +71,38 @@ async def test_admin_creates_teacher_account(
         cookies=_cookies(classroom_http, "teacher"),
     )
     assert teacher.status == 403
+
+
+async def test_admin_creates_admin_and_promotes_teacher(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    created = await classroom_http.client.post(
+        "/staff/api/v1/staff-members",
+        json={
+            "schemaVersion": 1,
+            "surname": "Новый",
+            "name": "Администратор",
+            "middleName": None,
+            "role": "admin",
+            "username": "admin-new",
+            "password": "admin-password-179",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    assert (await created.json())["member"]["role"] == "admin"
+
+    promoted = await classroom_http.client.patch(
+        "/staff/api/v1/staff-members/classroom-http-teacher/role",
+        json={"schemaVersion": 1, "role": "admin"},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert promoted.status == 200, await promoted.text()
+    member = (await promoted.json())["member"]
+    assert member["role"] == "admin"
+    assert member["scopes"] == []
 
 
 async def test_admin_creates_teacher_batch_with_shared_scopes_atomically(

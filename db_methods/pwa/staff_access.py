@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import datetime, timedelta
 
 from helpers.consts import USER_TYPE
 
@@ -42,11 +43,12 @@ def insert_teacher(
     username_normalized: str,
     credential_hash: str,
     now: str,
+    user_type: USER_TYPE = USER_TYPE.TEACHER,
 ) -> int:
     user_id = connection.execute(
         "INSERT INTO users (public_id, type, surname, name, middlename) "
         "VALUES (?, ?, ?, ?, ?) RETURNING id",
-        (user_public_id, int(USER_TYPE.TEACHER), surname, name, middle_name),
+        (user_public_id, int(user_type), surname, name, middle_name),
     ).fetchone()["id"]
     connection.execute(
         "INSERT INTO auth_accounts "
@@ -66,6 +68,30 @@ def insert_teacher(
         ),
     )
     return int(user_id)
+
+
+def promote_staff_member_to_admin(
+    connection: sqlite3.Connection, *, staff_user_id: int, now: str
+) -> None:
+    connection.execute(
+        "UPDATE users SET type = ? WHERE id = ? AND type = ?",
+        (int(USER_TYPE.ADMIN), staff_user_id, int(USER_TYPE.TEACHER)),
+    )
+    for scope in connection.execute(
+        "SELECT id, valid_from FROM staff_scopes "
+        "WHERE staff_user_id = ? AND valid_to IS NULL",
+        (staff_user_id,),
+    ).fetchall():
+        valid_to = max(
+            datetime.fromisoformat(now.replace("Z", "+00:00")),
+            datetime.fromisoformat(str(scope["valid_from"]).replace("Z", "+00:00"))
+            + timedelta(microseconds=1),
+        ).isoformat(timespec="microseconds").replace("+00:00", "Z")
+        connection.execute(
+            "UPDATE staff_scopes SET valid_to = ?, reason = 'promoted_to_admin', "
+            "updated_at = ?, version = version + 1 WHERE id = ?",
+            (valid_to, now, scope["id"]),
+        )
 
 
 def find_staff_member(
@@ -185,5 +211,6 @@ __all__ = [
     "insert_teacher_scope",
     "list_staff_members",
     "list_teacher_scopes",
+    "promote_staff_member_to_admin",
     "revoke_teacher_scope",
 ]

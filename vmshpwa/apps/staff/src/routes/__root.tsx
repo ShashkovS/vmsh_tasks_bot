@@ -5,8 +5,8 @@ import {
   Boxes,
   Building2,
   ClipboardCheck,
-  FileText,
   House,
+  LogOut,
   Mail,
   MessageCircleQuestion,
   MessageSquareWarning,
@@ -15,7 +15,7 @@ import {
   ScrollText,
   Users,
 } from 'lucide-react'
-import { useCallback, type ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 
 import {
   AppShell,
@@ -24,7 +24,9 @@ import {
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
   useAuthenticatedPrincipal,
+  useAuthentication,
 } from '@vmsh/app-shell'
+import { Button } from '@vmsh/ui'
 import type { StaffCapability } from '@vmsh/contracts'
 
 interface StaffNavigationItem {
@@ -56,7 +58,6 @@ const navigation: StaffNavigationItem[] = [
   { label: 'Устные', to: '/oral', icon: <Mic2 className="size-4" aria-hidden="true" /> },
   { label: 'Уроки', to: '/lessons', icon: <BookOpenCheck className="size-4" aria-hidden="true" /> },
   { label: 'Курсы', to: '/courses', icon: <Boxes className="size-4" aria-hidden="true" /> },
-  { label: 'Задачи', to: '/problems', icon: <FileText className="size-4" aria-hidden="true" /> },
   { label: 'Новости', to: '/news', icon: <Newspaper className="size-4" aria-hidden="true" /> },
   { label: 'Участники', to: '/users', icon: <Users className="size-4" aria-hidden="true" /> },
   {
@@ -126,6 +127,8 @@ function StaffProtectedShell({
 
 function AuthenticatedStaffShell({ pathname }: { pathname: string }) {
   const principal = useAuthenticatedPrincipal()
+  const authentication = useAuthentication()
+  const [loggingOut, setLoggingOut] = useState(false)
   if (principal.audience !== 'staff') return null
   const localPathname = createRouterAuthReturnTo('staff', { pathname })
   const permittedNavigation = navigation.filter(
@@ -136,7 +139,26 @@ function AuthenticatedStaffShell({ pathname }: { pathname: string }) {
       item.capability && (localPathname === item.to || localPathname.startsWith(`${item.to}/`)),
   )?.capability
   const shell = (
-    <AppShell product="staff" title="Учитель и администратор" navigation={permittedNavigation}>
+    <AppShell
+      product="staff"
+      title="Учитель и администратор"
+      navigation={permittedNavigation}
+      headerActions={
+        <Button
+          aria-label="Выйти из кабинета"
+          disabled={loggingOut}
+          onClick={() => {
+            setLoggingOut(true)
+            void authentication.logout().finally(() => setLoggingOut(false))
+          }}
+          size="icon-sm"
+          title="Выйти"
+          variant="ghost"
+        >
+          <LogOut aria-hidden="true" />
+        </Button>
+      }
+    >
       <Outlet />
     </AppShell>
   )

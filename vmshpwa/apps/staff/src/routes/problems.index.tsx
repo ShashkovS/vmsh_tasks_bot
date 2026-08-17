@@ -1,7 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-
-import { ProblemImportPage } from '../problem-import-page'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/problems/')({
-  component: ProblemImportPage,
+  beforeLoad: () => redirect({ to: '/courses', search: { tab: 'catalog' } }),
 })

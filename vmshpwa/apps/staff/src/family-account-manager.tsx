@@ -162,7 +162,7 @@ export function FamilyAccountManager({
       ) : (
         <ul className="space-y-2">
           {accounts.map((account) => (
-            <li className="rounded-md border border-border p-3" key={account.accountId}>
+            <li className="rounded-md border border-border px-3 py-2" key={account.accountId}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-small font-medium">{account.displayName}</p>
@@ -201,7 +201,7 @@ export function FamilyAccountManager({
                 </div>
               ) : (
                 <Button
-                  className="mt-2"
+                  className="mt-1"
                   disabled={pending}
                   onClick={() => setConfirmUnlink(account.accountId)}
                   size="sm"
