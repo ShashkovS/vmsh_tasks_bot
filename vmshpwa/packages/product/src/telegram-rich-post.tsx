@@ -280,6 +280,7 @@ export interface TelegramRichPostProps {
   renderMath?: (html: string) => ReactNode
   onRetryDelivery?: () => void
   className?: string
+  showEditorialState?: boolean
 }
 
 export function TelegramRichPost({
@@ -289,6 +290,7 @@ export function TelegramRichPost({
   renderMath,
   onRetryDelivery,
   className,
+  showEditorialState = true,
 }: TelegramRichPostProps) {
   if (post.state === 'hidden') {
     return (
@@ -332,7 +334,9 @@ export function TelegramRichPost({
               </p>
             ) : null}
           </div>
-          {post.state ? <StateNotice onRetryDelivery={onRetryDelivery} state={post.state} /> : null}
+          {post.state && showEditorialState ? (
+            <StateNotice onRetryDelivery={onRetryDelivery} state={post.state} />
+          ) : null}
         </div>
       ) : null}
 

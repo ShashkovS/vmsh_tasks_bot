@@ -75,6 +75,18 @@ def _admin_user_id(request: web.Request) -> int:
 
 
 def _payload(item: dict[str, object], *, now: str) -> dict[str, object]:
+    editable_text = str(item["text_plain"])
+    if item["source_type"] == "local" and isinstance(
+        item.get("source_payload_json"), str
+    ):
+        try:
+            source_payload = json.loads(str(item["source_payload_json"]))
+        except json.JSONDecodeError:
+            source_payload = None
+        if isinstance(source_payload, dict) and isinstance(
+            source_payload.get("markdown"), str
+        ):
+            editable_text = source_payload["markdown"]
     return {
         "postId": item["public_id"],
         "source": item["source_type"],
@@ -86,9 +98,7 @@ def _payload(item: dict[str, object], *, now: str) -> dict[str, object]:
         "editedAt": item["last_source_edited_at"],
         "revision": item["revision_number"],
         "textExcerpt": str(item["text_plain"])[:500],
-        "editableText": (
-            str(item["text_plain"]) if item["source_type"] == "local" else None
-        ),
+        "editableText": editable_text if item["source_type"] == "local" else None,
         "mediaCount": item["media_count"],
         "visibility": item["visibility_state"],
         "moderationReason": item["moderation_reason"],

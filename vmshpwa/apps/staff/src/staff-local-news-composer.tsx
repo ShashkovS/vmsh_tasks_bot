@@ -1,4 +1,5 @@
 import type { AdminCourse } from '@vmsh/contracts'
+import { TelegramRichPost, parseTelegramMarkdown } from '@vmsh/product'
 import { Button, Input, Label, Textarea } from '@vmsh/ui'
 
 import type { LocalNewsDraft } from './local-news-draft'
@@ -59,17 +60,30 @@ export function StaffLocalNewsComposer({
         </select>
       </Label>
       <Label className="grid gap-1.5" htmlFor="local-news-text">
-        Текст публикации
+        Текст публикации (Markdown)
         <Textarea
           id="local-news-text"
           maxLength={32_768}
           onChange={(event) => onChange({ ...draft, text: event.target.value })}
-          placeholder="Короткое сообщение для ленты PWA"
+          placeholder="**Важно:** новое занятие уже опубликовано"
           required
           rows={7}
           value={draft.text}
         />
       </Label>
+      {draft.text.trim() ? (
+        <div className="grid gap-1.5">
+          <p className="text-label font-medium">Предпросмотр</p>
+          <TelegramRichPost
+            post={{
+              id: 'local-news-preview',
+              blocks: [parseTelegramMarkdown(draft.text)],
+              state: 'published',
+            }}
+            variant="card"
+          />
+        </div>
+      ) : null}
       <Label className="grid gap-1.5" htmlFor="local-news-published-at">
         {publishedAtDisabled
           ? 'Опубликовано по московскому времени'
@@ -84,8 +98,8 @@ export function StaffLocalNewsComposer({
         />
       </Label>
       <p className="text-caption text-muted-foreground">
-        В первой версии поддерживается обычный текст. Полный Markdown-редактор появится во второй
-        фазе.
+        Поддерживаются **жирный**, _курсив_, __подчёркнутый__, ~~зачёркнутый~~, ||скрытый||, `код` и
+        [ссылки](https://example.org).
       </p>
       <Button disabled={!valid || pending} type="submit">
         {pending ? 'Сохраняем…' : submitLabel}

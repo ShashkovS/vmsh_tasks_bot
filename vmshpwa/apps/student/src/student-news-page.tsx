@@ -78,7 +78,11 @@ export function StudentNewsFeedPage() {
       <div className="space-y-4">
         {items.map((item) => (
           <div className="space-y-2" key={item.postId}>
-            <TelegramRichPost post={toTelegramPostView(item, formatMoment)} variant="card" />
+            <TelegramRichPost
+              post={toTelegramPostView(item, formatMoment)}
+              showEditorialState={false}
+              variant="card"
+            />
             <Link
               className={buttonVariants({ size: 'sm', variant: 'ghost' })}
               params={{ postId: item.postId }}
@@ -137,7 +141,10 @@ export function StudentNewsPostPage({ postId }: { postId: string }) {
         />
       ) : null}
       {query.data ? (
-        <TelegramRichPost post={toTelegramPostView(query.data.item, formatMoment)} />
+        <TelegramRichPost
+          post={toTelegramPostView(query.data.item, formatMoment)}
+          showEditorialState={false}
+        />
       ) : null}
     </PageLayout>
   )

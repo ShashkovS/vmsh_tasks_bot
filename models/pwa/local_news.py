@@ -42,6 +42,88 @@ class LocalNewsPublicationTimeLocked(Exception):
     pass
 
 
+_MARKDOWN_MARKS = (
+    ("**", "bold"),
+    ("__", "underline"),
+    ("~~", "strike"),
+    ("||", "spoiler"),
+    ("`", "code"),
+    ("_", "italic"),
+)
+
+
+def parse_telegram_markdown(value: str) -> tuple[str, list[dict[str, object]]]:
+    """Parse the compact Telegram-compatible subset used by Staff news."""
+
+    nodes: list[dict[str, object]] = []
+    plain_parts: list[str] = []
+
+    def append(text: str, mark: dict[str, str] | None = None) -> None:
+        if not text:
+            return
+        plain_parts.append(text)
+        node: dict[str, object] = {"type": "plain", "text": text}
+        if mark is not None:
+            node["marks"] = [mark]
+        nodes.append(node)
+
+    index = 0
+    literal_start = 0
+    while index < len(value):
+        if value[index] == "\\" and index + 1 < len(value):
+            append(value[literal_start:index])
+            append(value[index + 1])
+            index += 2
+            literal_start = index
+            continue
+        if value[index] == "[":
+            label_end = value.find("](", index + 1)
+            href_end = value.find(")", label_end + 2) if label_end >= 0 else -1
+            if label_end > index + 1 and href_end > label_end + 2:
+                href = value[label_end + 2 : href_end]
+                if href.startswith(("https://", "http://")):
+                    append(value[literal_start:index])
+                    append(
+                        value[index + 1 : label_end],
+                        {"type": "link", "href": href},
+                    )
+                    index = href_end + 1
+                    literal_start = index
+                    continue
+        matched = False
+        for marker, mark_type in _MARKDOWN_MARKS:
+            if not value.startswith(marker, index):
+                continue
+            end = value.find(marker, index + len(marker))
+            if end <= index + len(marker):
+                continue
+            append(value[literal_start:index])
+            append(
+                value[index + len(marker) : end],
+                {"type": mark_type},
+            )
+            index = end + len(marker)
+            literal_start = index
+            matched = True
+            break
+        if not matched:
+            index += 1
+    append(value[literal_start:])
+    return "".join(plain_parts), nodes
+
+
+def _stored_markdown(row: dict[str, object]) -> str:
+    raw = row.get("source_payload_json")
+    if isinstance(raw, str):
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            payload = None
+        if isinstance(payload, dict) and isinstance(payload.get("markdown"), str):
+            return payload["markdown"]
+    return str(row["text_plain"])
+
+
 def _published_at(value: object) -> str:
     if not isinstance(value, str):
         raise InvalidLocalNews("published_at")
@@ -66,11 +148,7 @@ def create_local_news(
     actor_user_id: int,
     now: str,
 ) -> dict[str, object]:
-    """Create one plain-text local post using the existing news revision model.
-
-    Rich Markdown editing belongs to phase two; the v1 local publication is
-    intentionally plain text. See development-plan Phase 8.
-    """
+    """Create one Staff-authored post with Telegram-compatible inline Markdown."""
 
     if owner_type not in {"course", "group"}:
         raise InvalidLocalNews("owner_type")
@@ -91,7 +169,7 @@ def create_local_news(
         raise LocalNewsOwnerNotFound
 
     public_id = f"news.{uuid.uuid4().hex}"
-    content = [{"type": "plain", "text": normalized_text}]
+    plain_text, content = parse_telegram_markdown(normalized_text)
     content_json = json.dumps(
         content, ensure_ascii=False, separators=(",", ":"), sort_keys=True
     )
@@ -100,6 +178,7 @@ def create_local_news(
             "schemaVersion": 1,
             "publishedAt": normalized_published_at,
             "editedAt": now,
+            "markdown": normalized_text,
         },
         separators=(",", ":"),
         sort_keys=True,
@@ -125,7 +204,7 @@ def create_local_news(
         post_id=post_id,
         source_hash=source_hash,
         source_edited_at=None,
-        text_plain=normalized_text,
+        text_plain=plain_text,
         content_json=content_json,
         source_payload_json=source_payload_json,
         now=now,
@@ -173,14 +252,14 @@ def edit_local_news(
         normalized_published_at = str(current["published_at"])
     else:
         normalized_published_at = _published_at(published_at)
-    if (
-        current["text_plain"] == normalized_text
-        and current["published_at"] == normalized_published_at
-    ):
+    if _stored_markdown(current) == normalized_text and current[
+        "published_at"
+    ] == normalized_published_at:
         return False
 
+    plain_text, content = parse_telegram_markdown(normalized_text)
     content_json = json.dumps(
-        [{"type": "plain", "text": normalized_text}],
+        content,
         ensure_ascii=False,
         separators=(",", ":"),
         sort_keys=True,
@@ -190,6 +269,7 @@ def edit_local_news(
             "schemaVersion": 1,
             "publishedAt": normalized_published_at,
             "editedAt": now,
+            "markdown": normalized_text,
         },
         separators=(",", ":"),
         sort_keys=True,
@@ -212,7 +292,7 @@ def edit_local_news(
         post_id=int(current["id"]),
         source_hash=source_hash,
         source_edited_at=now,
-        text_plain=normalized_text,
+        text_plain=plain_text,
         content_json=content_json,
         source_payload_json=source_payload_json,
         now=now,
@@ -256,5 +336,6 @@ __all__ = [
     "LocalNewsPublicationTimeLocked",
     "create_local_news",
     "edit_local_news",
+    "parse_telegram_markdown",
     "sync_scheduled_local_news_notifications",
 ]
