@@ -274,7 +274,10 @@ def _blocks(
                     ),
                 }
             )
-            result.append({"type": "figure", "alt": alt, "asset": asset})
+            figure: dict[str, Any] = {"type": "figure", "alt": alt, "asset": asset}
+            if node.float_hint in {"left", "right"}:
+                figure["floatHint"] = node.float_hint
+            result.append(figure)
         elif isinstance(node, SubpartNode):
             blocks = _blocks(node.children, assets=assets)
             if blocks:

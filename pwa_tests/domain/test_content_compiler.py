@@ -1117,6 +1117,20 @@ def test_web_document_available_asset_requires_explicit_published_metadata() -> 
     }
 
 
+def test_web_document_preserves_source_figure_float_hint() -> None:
+    result = _compile(r"\задача \rightpicture{0mm}{0mm}{30mm}{figure} \кзадача")
+
+    document = render_web_document(
+        result.ast,
+        role=ContentRole.CONDITION,
+        revision_id="revision:float-hint",
+    )
+
+    figure = document["problems"][0]["blocks"][0]
+    assert figure["type"] == "figure"
+    assert figure["floatHint"] == "right"
+
+
 def test_solution_web_document_separates_answer_and_explanation() -> None:
     result = _compile(
         r"\задача Условие. \кзадача"

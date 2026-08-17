@@ -11,6 +11,7 @@ export interface ZoomableAssetFigureProps {
   alt: string
   caption?: ReactNode
   className?: string
+  floatHint?: 'left' | 'right'
 }
 
 function clampZoom(value: number): number {
@@ -21,7 +22,13 @@ function clampZoom(value: number): number {
  * A scroll-backed image viewer. The canvas takes its real scaled size, so a
  * zoomed image remains reachable instead of being cropped by a CSS transform.
  */
-export function ZoomableAssetFigure({ asset, alt, caption, className }: ZoomableAssetFigureProps) {
+export function ZoomableAssetFigure({
+  asset,
+  alt,
+  caption,
+  className,
+  floatHint,
+}: ZoomableAssetFigureProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(MINIMUM_ZOOM)
   const [failedSource, setFailedSource] = useState<string | null>(null)
@@ -71,7 +78,10 @@ export function ZoomableAssetFigure({ asset, alt, caption, className }: Zoomable
 
   /* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex -- The labelled scroll region intentionally receives keyboard zoom controls. */
   return (
-    <figure className={['vmsh-asset-figure', className].filter(Boolean).join(' ')}>
+    <figure
+      className={['vmsh-asset-figure', className].filter(Boolean).join(' ')}
+      data-float-hint={floatHint}
+    >
       <div
         aria-label="Просмотр рисунка. Плюс и минус меняют масштаб, ноль сбрасывает."
         className="vmsh-figure-viewport"

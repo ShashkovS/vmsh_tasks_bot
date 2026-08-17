@@ -153,6 +153,7 @@ export type WebContentBlock =
       type: 'figure'
       alt: string
       caption?: WebInlineNode[] | undefined
+      floatHint?: 'left' | 'right' | undefined
       asset: WebFigureAvailableAsset | WebFigureMissingAsset
     }
   | { type: 'subpart'; label: string; blocks: WebContentBlock[] }
@@ -237,6 +238,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         type: z.literal('figure'),
         alt: nonEmptyTextSchema,
         caption: z.array(webInlineNodeSchema).max(1_000).optional(),
+        floatHint: z.enum(['left', 'right']).optional(),
         asset: z.discriminatedUnion('status', [
           webFigureAvailableAssetSchema,
           webFigureMissingAssetSchema,

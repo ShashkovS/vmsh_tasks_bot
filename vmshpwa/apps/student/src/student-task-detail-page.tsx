@@ -41,7 +41,7 @@ function problemRequestState(error: unknown) {
         : ('error' as const)
 }
 
-function StudentTaskMaterials({
+export function StudentTaskMaterials({
   problem,
   groupLessonId,
 }: {
@@ -361,14 +361,24 @@ export function CanonicalStudentTask({
     <StudentPublishedContentPage
       afterDocument={
         <>
-          <StudentProblemActions
-            conditionRevisionId={query.data.conditionRevisionId}
-            courseId={courseId}
-            groupLessonId={groupLessonId}
-            problem={problem}
-            submissionClosed={submissionClosed}
-          />
-          <StudentProblemMaterialsAndQuestion groupLessonId={groupLessonId} problem={problem} />
+          <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
+          <section
+            aria-label="Ответы и обсуждение"
+            className="mt-4 rounded-lg border border-border bg-surface p-3 sm:p-4"
+          >
+            <StudentProblemActions
+              compact
+              conditionRevisionId={query.data.conditionRevisionId}
+              courseId={courseId}
+              groupLessonId={groupLessonId}
+              problem={problem}
+              submissionClosed={submissionClosed}
+            />
+            <StudentProblemQuestionLink
+              groupLessonId={groupLessonId}
+              problemId={problem.problemId}
+            />
+          </section>
         </>
       }
       displayTitle={problem.title || `Задача ${problem.displayNumber}`}
@@ -541,7 +551,7 @@ const problemStatusView = {
   rejected: { label: 'Ответ не принят', variant: 'danger' },
 } as const
 
-function ProblemStatusBadge({ problem }: { problem: StudentProblemSummary }) {
+export function ProblemStatusBadge({ problem }: { problem: StudentProblemSummary }) {
   const view = problemStatusView[problem.status]
   return (
     <Badge variant={view.variant}>

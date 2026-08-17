@@ -171,7 +171,7 @@ function ContentBlocks({ blocks, path }: { blocks: WebContentBlock[]; path: stri
       case 'figure':
         if (block.asset.status === 'missing') {
           return (
-            <figure className="vmsh-asset-figure" key={key}>
+            <figure className="vmsh-asset-figure" data-float-hint={block.floatHint} key={key}>
               <div className="vmsh-figure-missing" role="status">
                 <strong>Рисунок пока недоступен.</strong>
                 <span>{block.alt}</span>
@@ -193,6 +193,7 @@ function ContentBlocks({ blocks, path }: { blocks: WebContentBlock[]; path: stri
                 <InlineNodes nodes={block.caption} path={`${key}-caption`} />
               ) : undefined
             }
+            {...(block.floatHint === undefined ? {} : { floatHint: block.floatHint })}
             key={`${key}-${block.asset.assetId}`}
           />
         )
