@@ -36,11 +36,11 @@
       "userAgentFamily": "Fixture Browser",
       "createdAt": "2026-07-21T10:00:00Z",
       "lastSeenAt": "2026-07-27T08:05:00Z",
-      "expiresAt": "2026-08-09T21:00:00Z"
+      "expiresAt": "2036-08-09T21:00:00Z"
     },
     "policy": {
       "accessExpiresAt": "2026-07-27T08:20:00Z",
-      "sessionExpiresAt": "2026-08-09T21:00:00Z",
+      "sessionExpiresAt": "2036-08-09T21:00:00Z",
       "supportEmail": "support-fixture@example.invalid"
     }
   },
@@ -55,7 +55,7 @@
         "userAgentFamily": "Fixture Browser",
         "createdAt": "2026-07-21T10:00:00Z",
         "lastSeenAt": "2026-07-27T08:05:00Z",
-        "expiresAt": "2026-08-09T21:00:00Z"
+        "expiresAt": "2036-08-09T21:00:00Z"
       }
     ]
   }

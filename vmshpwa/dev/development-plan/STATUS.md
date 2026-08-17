@@ -1951,3 +1951,33 @@
   interaction **18 PASS**, Ruff, ESLint, Stylelint, strict TypeScript,
   production build и `git diff --check` — **PASS**. Snapshots не обновлялись,
   visual acceptance владельцем остаётся открытым.
+
+## Pilot follow-up: лента занятий и Staff-настройки — 17 августа 2026
+
+- Student Tasks вместо селектора занятия показывает последние пять листков
+  выбранной доступной группы целиком; следующие листки открываются порциями по
+  пять. В каждой задаче и пункте рядом с номером видны статус и переход в
+  читаемый task route, а компактные hint/solution находятся непосредственно
+  после условия. Детальная страница объединяет ответы, письменные посылки и
+  переписку в один блок «Ответы и обсуждение».
+- Source-side `left*`/`right*` у рисунков сохраняется в web-document как
+  `floatHint`. На широком экране renderer обтекает рисунок, только если тексту
+  остаётся минимум `20em`, и ограничивает рисунок 70% ширины; на мобильном
+  обтекание отключается.
+- Staff получил явный logout, создание глобального admin и повышение teacher,
+  а нефункциональный корень `/staff/problems` убран из навигации. Редактор
+  семейных аккаунтов свёрнут в компактные строки.
+- Course runtime settings теперь редактируют набор письменных вердиктов;
+  review lease передаёт режим конкретного курса. Повторный claim своей же
+  legacy-работы больше не определяется как чужой.
+- Local news хранит исходный Telegram-compatible Markdown, показывает живой
+  rich preview и публикует безопасную structured projection. Student больше
+  не видит служебную отметку «Изменено в источнике».
+- Добавлены domain/integration/unit проверки float metadata, Markdown,
+  создания/повышения admin и повторного claim. Auth fixtures перенесены на
+  устойчивый будущий срок: production expiry-check не менялся.
+- Final gates: frontend unit **635 PASS**; PWA Python (8 workers)
+  **1755 PASS, 6 SKIP**; lint, strict TypeScript, production build и
+  `git diff --check` — **PASS**. Два legacy golden-corpus набора исключены из
+  прогона из-за устаревших внешних manifests; golden-файлы и visual snapshots
+  без приёмки владельца не обновлялись.

@@ -90,8 +90,8 @@ describe('Phase-1 authentication contracts', () => {
   it('expresses the 10 August Moscow session boundary as the correct UTC instant', () => {
     for (const fixture of validFixtures) {
       const parsed = authContractFixtureSchema.parse(fixture)
-      expect(parsed.authContext.policy.sessionExpiresAt).toBe('2026-08-09T21:00:00Z')
-      expect(parsed.authContext.currentSession.expiresAt).toBe('2026-08-09T21:00:00Z')
+      expect(parsed.authContext.policy.sessionExpiresAt).toBe('2036-08-09T21:00:00Z')
+      expect(parsed.authContext.currentSession.expiresAt).toBe('2036-08-09T21:00:00Z')
     }
   })
 

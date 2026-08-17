@@ -885,3 +885,26 @@ sent|No recipients|Loading|Error` документирует ручной previe
   ESLint, Stylelint, strict TypeScript и production build — **PASS**. Visual
   snapshots не обновлялись; ручной просмотр новой production-сборки владельцем
   впереди.
+
+## Pilot follow-up: лента задач и компактный Staff UI — 17 августа 2026
+
+- `Pages/Student/Tasks` стал непрерывной лентой: пять последних занятий,
+  семантически свёрстанные условия, статусы пунктов и компактные раскрытия
+  подсказки/решения. Отдельный task view собирает действия и всю переписку в
+  одном месте.
+- `MathematicalDocument` поддерживает source-side left/right figures без
+  ухудшения mobile layout: float включается только на desktop при остатке
+  текстовой колонки не меньше `20em`.
+- В Staff shell добавлен logout; каталог сотрудников различает создание
+  teacher/admin и повышение роли. Family account controls переведены в
+  компактные раскрывающиеся строки, нерабочая ссылка «Задачи» удалена.
+- News composer получил Telegram-compatible Markdown preview, а Student news
+  скрывает редакционную provenance. Каталог курсов показывает настройку набора
+  письменных вердиктов.
+- Новые visual snapshots и Storybook stories не добавлялись: изменения
+  проверяются production pages и unit/integration gates; ручной visual review
+  владельцем остаётся следующим шагом после deploy.
+- Final gates: frontend unit **635 PASS**; PWA Python (8 workers)
+  **1755 PASS, 6 SKIP**; lint, strict TypeScript, production build и
+  `git diff --check` — **PASS**. Legacy golden-файлы и visual snapshots без
+  приёмки владельца намеренно не обновлялись.

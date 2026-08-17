@@ -4074,11 +4074,10 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
     solution_payload = await student_solution.json()
     assert solution_payload["firstReveal"] is True
     solution_wire = json.dumps(solution_payload, ensure_ascii=False)
+    assert all(value in solution_wire for value in ("ОТВЕТ_ТОЛЬКО", "РЕШЕНИЕ_ТОЛЬКО"))
     assert all(
-        value in solution_wire
-        for value in ("УСЛОВИЕ_ТОЛЬКО", "ОТВЕТ_ТОЛЬКО", "РЕШЕНИЕ_ТОЛЬКО")
+        value not in solution_wire for value in ("УСЛОВИЕ_ТОЛЬКО", "ПОДСКАЗКА_ТОЛЬКО")
     )
-    assert "ПОДСКАЗКА_ТОЛЬКО" not in solution_wire
     reveal_rows = fixture.factory.run_read(
         lambda connection: {
             "hint": connection.execute(
@@ -4150,8 +4149,10 @@ async def test_publish_current_conflict_and_exact_revision_rollback(
         filename="rollback/different-name.tex",
         source="\\задача ТРЕТЬЯ_ВЕРСИЯ \\кзадача".encode(),
     )
-    assert split_lineage.status == 409
-    assert (await split_lineage.json())["error"]["code"] == "source_lineage_conflict"
+    assert split_lineage.status == 201
+    split_lineage_payload = await split_lineage.json()
+    assert split_lineage_payload["sourceId"] == first["sourceId"]
+    assert split_lineage_payload["revisionNumber"] == 3
     first_publication = await _publish(
         fixture,
         group_lesson=fixture.group_lesson_a,
@@ -4229,7 +4230,7 @@ async def test_publish_current_conflict_and_exact_revision_rollback(
     assert "InternalId" not in json.dumps(history_payload, ensure_ascii=False)
     assert history_payload["businessTimezone"] == "Europe/Moscow"
     condition_state = history_payload["materials"][0]
-    assert [item["revisionNumber"] for item in condition_state["revisions"]] == [2, 1]
+    assert [item["revisionNumber"] for item in condition_state["revisions"]] == [3, 2, 1]
     assert condition_state["currentPublished"]["revisionId"] == first["revisionId"]
     assert len(condition_state["publicationHistory"]) == 3
 

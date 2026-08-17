@@ -23,11 +23,11 @@
       "userAgentFamily": "Fixture Browser",
       "createdAt": "2026-07-20T09:00:00Z",
       "lastSeenAt": "2026-07-27T08:00:00Z",
-      "expiresAt": "2026-08-09T21:00:00Z"
+      "expiresAt": "2036-08-09T21:00:00Z"
     },
     "policy": {
       "accessExpiresAt": "2026-07-27T08:15:00Z",
-      "sessionExpiresAt": "2026-08-09T21:00:00Z",
+      "sessionExpiresAt": "2036-08-09T21:00:00Z",
       "supportEmail": "support-fixture@example.invalid"
     }
   },
@@ -42,7 +42,7 @@
         "userAgentFamily": "Fixture Browser",
         "createdAt": "2026-07-20T09:00:00Z",
         "lastSeenAt": "2026-07-27T08:00:00Z",
-        "expiresAt": "2026-08-09T21:00:00Z"
+        "expiresAt": "2036-08-09T21:00:00Z"
       },
       {
         "sessionId": "00000000000000000000000000000002",
@@ -52,7 +52,7 @@
         "userAgentFamily": "Synthetic Mobile",
         "createdAt": "2026-07-18T12:00:00Z",
         "lastSeenAt": "2026-07-25T18:30:00Z",
-        "expiresAt": "2026-08-09T21:00:00Z"
+        "expiresAt": "2036-08-09T21:00:00Z"
       }
     ]
   }

@@ -32,7 +32,12 @@ def test_course_analytics_migration_up_down_up_is_exact(tmp_path):
         "0071.pwa_oral_results_idempotency"
     }
 
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
+    # Apply only the historical prefix. Later migrations legitimately depend on
+    # this table and cannot be used to construct the pre-0072 schema.
+    _apply(
+        database_path,
+        {migration_id for migration_id in migrations if migration_id < MIGRATION_ID},
+    )
     with sqlite3.connect(database_path) as connection:
         assert _analytics_objects(connection) == set()
 

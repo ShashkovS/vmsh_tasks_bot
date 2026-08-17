@@ -122,7 +122,7 @@ describe('offline authentication store', () => {
     ])
 
     const afterExpiry = createOfflineAuthenticationStore(target, 'student', {
-      now: () => new Date('2026-08-10T00:00:00.000Z'),
+      now: () => new Date('2036-08-10T00:00:00.000Z'),
     })
     await expect(afterExpiry.read()).resolves.toBeNull()
     expect(await target.authentication.count()).toBe(0)
