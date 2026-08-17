@@ -70,7 +70,7 @@ test('@visual student current week', async ({ page }) => {
   const updateState = page.getByTestId('pwa-update-state')
   await updateState.waitFor({ state: 'visible', timeout: 2_000 }).catch(() => undefined)
   if (await updateState.isVisible())
-    await updateState.getByRole('button', { name: 'Закрыть' }).click()
+    await updateState.getByRole('button', { name: /Скрыть|Закрыть/ }).click()
   await expect(page).toHaveScreenshot('student-current-week.png', { fullPage: true })
 })
 

@@ -90,7 +90,7 @@ export function FamilyAuthenticatedApplication({ runtime }: { runtime: RuntimeCo
 createRoot(rootElement).render(
   <StrictMode>
     {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
-    <PwaUpdateController />
+    <PwaUpdateController router={router} />
     {/* Phase 0: no protected Family route mounts before strict runtime validation. */}
     <RuntimeBootstrap audience="family">{(runtime) => familyApplication(runtime)}</RuntimeBootstrap>
   </StrictMode>,

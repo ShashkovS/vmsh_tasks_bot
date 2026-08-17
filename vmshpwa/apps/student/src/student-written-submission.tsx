@@ -32,6 +32,7 @@ import {
 } from '@vmsh/ui'
 
 import { compressWrittenSubmissionImage } from './image-compression'
+import { announceSafePwaUpdateMoment } from './pwa-update-events'
 
 /**
  * Canonical Phase-5 Student composer. Significant edits are persisted before
@@ -311,6 +312,7 @@ export function StudentWrittenSubmission({
     setPhotos([])
     setReplacementTarget(null)
     await refetchThread()
+    announceSafePwaUpdateMoment()
   }, [client, descriptor, outbox, refetchThread])
 
   useEffect(() => {

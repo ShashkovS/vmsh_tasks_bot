@@ -908,3 +908,12 @@ sent|No recipients|Loading|Error` документирует ручной previe
   **1755 PASS, 6 SKIP**; lint, strict TypeScript, production build и
   `git diff --check` — **PASS**. Legacy golden-файлы и visual snapshots без
   приёмки владельца намеренно не обновлялись.
+
+## Pilot follow-up: ненавязчивое PWA-обновление — 17 августа 2026
+
+- Update prompt сокращён до «Доступно обновление.» с действиями «Обновить
+  сейчас» и «Скрыть». Скрытие не отменяет автоматическую установку в следующий
+  безопасный момент: после навигации, а в Student также после завершённой
+  посылки.
+- Frontend unit **636 PASS**, strict TypeScript и production PWA build —
+  **PASS**; visual snapshots не обновлялись.

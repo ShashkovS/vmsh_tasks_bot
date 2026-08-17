@@ -568,7 +568,8 @@ for (const audience of pwaAudiences) {
 
     const initialPrompt = page.getByTestId('pwa-update-state')
     if (await initialPrompt.isVisible()) {
-      await initialPrompt.getByRole('button', { name: 'Закрыть' }).click()
+      const dismiss = initialPrompt.getByRole('button', { name: /Скрыть|Закрыть/ })
+      await dismiss.click()
     }
     const controlToken = process.env.VMSH_E2E_GATEWAY_CONTROL_TOKEN
     expect(controlToken).toBeTruthy()
@@ -625,7 +626,7 @@ for (const audience of pwaAudiences) {
       if (!registration) throw new Error(`Missing registration for ${expectedScope}`)
       await registration.update()
     }, `${gatewayOrigin}/${audience}/`)
-    await expect(page.getByText('Доступно обновление приложения')).toBeVisible({
+    await expect(page.getByText('Доступно обновление.')).toBeVisible({
       timeout: 20_000,
     })
     await expect
@@ -649,7 +650,10 @@ for (const audience of pwaAudiences) {
       predicate: (frame) => frame === page.mainFrame() && frame.url() === currentUrl,
       timeout: 30_000,
     })
-    await Promise.all([updateNavigation, page.getByRole('button', { name: 'Обновить' }).click()])
+    await Promise.all([
+      updateNavigation,
+      page.getByRole('button', { name: 'Обновить сейчас' }).click(),
+    ])
     await page.waitForLoadState('domcontentloaded')
     await expect(page.getByRole('alert')).toContainText('Не удалось безопасно открыть кабинет')
     await expect

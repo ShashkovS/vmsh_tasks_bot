@@ -1,39 +1,60 @@
-import { useCallback, useEffect, useRef } from 'react'
+import type { AnyRouter } from '@tanstack/react-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 import { Button } from '@vmsh/ui'
 
-export function PwaUpdateController() {
+export function PwaUpdateController({ router }: { router: AnyRouter }) {
   const applyRequested = useRef(false)
+  const updatePending = useRef(false)
+  const detectedAtHref = useRef<string | undefined>(undefined)
   const reloadStarted = useRef(false)
+  const [noticeHidden, setNoticeHidden] = useState(false)
   const reloadAfterControllerChange = useCallback(() => {
     if (!applyRequested.current || reloadStarted.current) return
     reloadStarted.current = true
     window.location.reload()
   }, [])
   const {
-    needRefresh: [needRefresh, setNeedRefresh],
+    needRefresh: [needRefresh],
     offlineReady: [offlineReady, setOfflineReady],
     updateServiceWorker,
   } = useRegisterSW({ immediate: true, onNeedReload: reloadAfterControllerChange })
   const applyUpdate = useCallback(async () => {
+    if (applyRequested.current) return
     applyRequested.current = true
-    let registration: ServiceWorkerRegistration | undefined
     try {
-      registration = await navigator.serviceWorker?.getRegistration(window.location.href)
+      const registration = await navigator.serviceWorker?.getRegistration(window.location.href)
+      if (registration?.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+        return
+      }
+      await updateServiceWorker(false)
     } catch {
-      // Workbox retains the same browser registration fallback.
+      applyRequested.current = false
     }
-    if (registration?.waiting) {
-      // Address the browser-owned waiting worker directly.  Workbox Window can
-      // retain an older wrapper across an app reload, while the registration
-      // remains the authoritative update state.  Phase-0 runtime E2E proves
-      // this path in Chromium, WebKit and Firefox.
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-      return
-    }
-    await updateServiceWorker(false)
   }, [updateServiceWorker])
+
+  const applyAtSafeMoment = useCallback(() => {
+    if (!updatePending.current || !navigator.onLine) return
+    void applyUpdate()
+  }, [applyUpdate])
+
+  useEffect(() => {
+    if (!needRefresh) return
+    updatePending.current = true
+    detectedAtHref.current = router.latestLocation.href
+  }, [needRefresh, router])
+
+  useEffect(
+    () =>
+      router.subscribe('onResolved', (event) => {
+        if (event.hrefChanged && event.toLocation.href !== detectedAtHref.current) {
+          applyAtSafeMoment()
+        }
+      }),
+    [applyAtSafeMoment, router],
+  )
 
   useEffect(() => {
     navigator.serviceWorker?.addEventListener('controllerchange', reloadAfterControllerChange)
@@ -41,7 +62,8 @@ export function PwaUpdateController() {
       navigator.serviceWorker?.removeEventListener('controllerchange', reloadAfterControllerChange)
   }, [reloadAfterControllerChange])
 
-  if (!needRefresh && !offlineReady) return null
+  const showUpdateNotice = needRefresh && !noticeHidden
+  if (!showUpdateNotice && !offlineReady) return null
 
   return (
     <div
@@ -50,28 +72,28 @@ export function PwaUpdateController() {
       data-testid="pwa-update-state"
     >
       <p className="text-sm font-medium">
-        {needRefresh ? 'Доступно обновление приложения' : 'Приложение готово к работе без сети'}
+        {showUpdateNotice ? 'Доступно обновление.' : 'Приложение готово к работе без сети'}
       </p>
       <div className="mt-3 flex gap-2">
-        {needRefresh ? (
+        {showUpdateNotice ? (
           <Button
             size="sm"
             onClick={() => {
               void applyUpdate()
             }}
           >
-            Обновить
+            Обновить сейчас
           </Button>
         ) : null}
         <Button
           size="sm"
           variant="ghost"
           onClick={() => {
-            setNeedRefresh(false)
-            setOfflineReady(false)
+            if (showUpdateNotice) setNoticeHidden(true)
+            else setOfflineReady(false)
           }}
         >
-          Закрыть
+          {showUpdateNotice ? 'Скрыть' : 'Закрыть'}
         </Button>
       </div>
     </div>

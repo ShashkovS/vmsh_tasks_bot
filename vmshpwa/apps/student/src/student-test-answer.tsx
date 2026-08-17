@@ -31,6 +31,7 @@ import {
 } from '@vmsh/ui'
 
 import { createOfflineStudentTestAnswerInputClient } from './offline-student-data'
+import { announceSafePwaUpdateMoment } from './pwa-update-events'
 import { testAnswerSpec } from './student-test-answer-view'
 
 /**
@@ -305,6 +306,7 @@ export function StudentTestAnswer({
       setAnswer('')
       setEditorEpoch((value) => value + 1)
       await historyQuery.refetch()
+      announceSafePwaUpdateMoment()
     } catch (error) {
       setStorageError(error)
     }
@@ -348,6 +350,7 @@ export function StudentTestAnswer({
       setAnswer('')
       setEditorEpoch((value) => value + 1)
       await historyQuery.refetch()
+      announceSafePwaUpdateMoment()
     } catch (error) {
       setSendState('failed')
       setSendError(sendErrorMessage(error))

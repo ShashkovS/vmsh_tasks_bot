@@ -90,7 +90,7 @@ export function StudentAuthenticatedApplication({ runtime }: { runtime: RuntimeC
 createRoot(rootElement).render(
   <StrictMode>
     {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
-    <PwaUpdateController />
+    <PwaUpdateController router={router} />
     {/* Phase 0: no protected Student route mounts before strict runtime validation. */}
     <RuntimeBootstrap audience="student">
       {(runtime) => studentApplication(runtime)}
