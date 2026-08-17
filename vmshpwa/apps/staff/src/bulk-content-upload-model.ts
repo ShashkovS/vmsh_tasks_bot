@@ -1,4 +1,8 @@
-import type { ContentMaterialKind, ContentUploadTarget } from '@vmsh/contracts'
+import {
+  ApiResponseError,
+  type ContentMaterialKind,
+  type ContentUploadTarget,
+} from '@vmsh/contracts'
 
 const SOURCE_LIMIT_BYTES = 512 * 1024
 const MAX_BATCH_FILES = 100
@@ -60,9 +64,48 @@ export function validateBulkContentUploadRows(
 }
 
 export function bulkContentRecoveryHref(row: BulkContentUploadRow): string | undefined {
-  if (row.phase !== 'attention' || !row.groupLessonId || !row.revisionId) return undefined
+  if (row.phase !== 'attention' || !row.groupLessonId) return undefined
   if (row.kind === 'hint_solution') {
     return `/staff/lessons/${encodeURIComponent(row.groupLessonId)}`
   }
   return `/staff/lessons/${encodeURIComponent(row.groupLessonId)}#material-${row.kind}`
+}
+
+export function bulkContentRevisionId(error: unknown): string | undefined {
+  if (!(error instanceof ApiResponseError)) return undefined
+  const revisionId = error.details?.revisionId
+  return typeof revisionId === 'string' ? revisionId : undefined
+}
+
+export function bulkContentUploadErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiResponseError)) {
+    return error instanceof Error ? error.message : 'Не удалось обработать файл.'
+  }
+  if (error.code === 'content_assets_missing') {
+    return 'Файл сохранён. Откройте занятие и добавьте недостающие рисунки.'
+  }
+  if (error.code !== 'asset_conversion_failed' && error.code !== 'content_assets_unavailable') {
+    return error.message
+  }
+
+  const reason = error.details?.reason
+  const reasonMessage =
+    reason === 'asset.converter_timeout'
+      ? 'Сборка рисунка превысила лимит времени.'
+      : reason === 'asset.tikz_forbidden_command'
+        ? 'В TikZ есть запрещённая файловая или исполняемая команда.'
+        : reason === 'asset.tikz_document_boundary'
+          ? 'В TikZ-фрагмент попали команды начала или конца документа.'
+          : reason === 'asset.tool_unavailable' || reason === 'asset.converter_start_failed'
+            ? 'На сервере временно недоступен инструмент обработки рисунков.'
+            : 'LaTeX-компилятор не смог безопасно собрать рисунок.'
+  const logicalAsset = error.details?.logicalAsset
+  const detail = error.details?.detail
+  return [
+    reasonMessage,
+    typeof logicalAsset === 'string' ? `Рисунок: ${logicalAsset}.` : undefined,
+    typeof detail === 'string' && detail.trim() ? `Причина: ${detail}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ')
 }

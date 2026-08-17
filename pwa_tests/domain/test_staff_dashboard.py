@@ -87,6 +87,33 @@ def test_dashboard_selects_latest_started_lesson_and_respects_group_scope() -> N
     assert visible[0]["phase"] == "submissions_closed"
 
 
+def test_lesson_catalog_can_include_every_visible_lesson_and_draft() -> None:
+    rows = [
+        lesson(internal_id=2, public_id="lesson-2", anchor="2026-08-03", number=2),
+        lesson(internal_id=3, public_id="lesson-3", anchor="2026-08-10", number=3),
+        lesson(
+            internal_id=103,
+            public_id="physics-lesson-3",
+            course_id="course-physics",
+            group_id="group-physics",
+            anchor="2026-08-10",
+            number=3,
+        ),
+    ]
+
+    visible = build_staff_dashboard_lessons(
+        rows,
+        [],
+        [],
+        scope=StaffDashboardScope(group_public_ids=frozenset({"group-beginner"})),
+        now=NOW,
+        selection="all",
+    )
+
+    assert [item["groupLessonId"] for item in visible] == ["lesson-3", "lesson-2"]
+    assert [item["phase"] for item in visible] == ["draft", "draft"]
+
+
 def test_dashboard_keeps_publications_independent_and_counts_oral_windows() -> None:
     visible = build_staff_dashboard_lessons(
         [

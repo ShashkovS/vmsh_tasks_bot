@@ -70,6 +70,13 @@ _CHESS_PIECE_CONTEXT = r"""
 }
 """.strip()
 
+_LEGACY_PART_CONTEXT = r"""
+\newcounter{vmshpart}
+\newcommand{\пункт}{%
+  \stepcounter{vmshpart}\textbf{\alph{vmshpart})}%
+}
+""".strip()
+
 
 @dataclass(frozen=True)
 class TikzScanIssue:
@@ -119,7 +126,9 @@ def _declared_identity(
         cursor = skip_space_and_comments(text, command.end, end)
         group = read_group(text, cursor, end, max_depth=limits.max_group_depth)
         if group is not None:
-            cursor = skip_space_and_comments(text, group.content_start, group.content_end)
+            cursor = skip_space_and_comments(
+                text, group.content_start, group.content_end
+            )
         declared = read_command(text, cursor, end)
         return (declared.name if declared is not None else None), None
     if command.name in {"newlength", "setlength", "addtolength"}:
@@ -190,9 +199,7 @@ def _declaration_end(
                 cursor = skip_comment(text, cursor, end)
                 continue
             if text[cursor] == "{" and not is_escaped(text, cursor):
-                body = read_group(
-                    text, cursor, end, max_depth=limits.max_group_depth
-                )
+                body = read_group(text, cursor, end, max_depth=limits.max_group_depth)
                 return body.end if body is not None else None
             cursor += 1
     return None
@@ -254,9 +261,7 @@ def _is_ignorable(text: str, start: int, end: int) -> bool:
             continue
         if text[cursor] == "%" and not is_escaped(text, cursor):
             comment_end = skip_comment(text, cursor, end)
-            if text[cursor:comment_end].lstrip().casefold().startswith(
-                "% addtotikz"
-            ):
+            if text[cursor:comment_end].lstrip().casefold().startswith("% addtotikz"):
                 return False
             cursor = comment_end
             continue
@@ -313,14 +318,14 @@ def _effective_context(
 ) -> tuple[_Declaration, ...]:
     prior = tuple(item for item in declarations if item.end <= picture_start)
     selected = {item.start for item in _adjacent_context(text, picture_start, prior)}
-    selected.update(
-        item.start for item in prior if item.kind == "usetikzlibrary"
-    )
+    selected.update(item.start for item in prior if item.kind == "usetikzlibrary")
     while True:
-        dependency_text = raw_source + "\n" + "\n".join(
-            text[item.start : item.end]
-            for item in prior
-            if item.start in selected
+        dependency_text = (
+            raw_source
+            + "\n"
+            + "\n".join(
+                text[item.start : item.end] for item in prior if item.start in selected
+            )
         )
         command_names = _command_names(dependency_text)
         changed = False
@@ -403,16 +408,12 @@ def _compose_source(
         seen.add(normalized)
     combined = "\n".join((*pieces, raw_source.strip()))
     compat: list[str] = []
-    if (
-        "\\ChessBoard" in raw_source
-        and "\\newcommand{\\ChessBoard}" not in combined
-    ):
+    if "\\ChessBoard" in raw_source and "\\newcommand{\\ChessBoard}" not in combined:
         compat.append(_CHESS_BOARD_CONTEXT)
-    if (
-        "\\ChessPiece" in raw_source
-        and "\\newcommand{\\ChessPiece}" not in combined
-    ):
+    if "\\ChessPiece" in raw_source and "\\newcommand{\\ChessPiece}" not in combined:
         compat.append(_CHESS_PIECE_CONTEXT)
+    if "\\пункт" in raw_source and "\\newcommand{\\пункт}" not in combined:
+        compat.append(_LEGACY_PART_CONTEXT)
     if compat:
         combined = "\n".join((*compat, combined))
         kinds.insert(0, "chess-compat")
@@ -423,9 +424,7 @@ def _inline_tikz_source(
     text: str, command: CommandToken, end: int, limits: ParserLimits
 ) -> tuple[str, int] | None:
     cursor = command.end
-    options = read_optional_group(
-        text, cursor, end, max_depth=limits.max_group_depth
-    )
+    options = read_optional_group(text, cursor, end, max_depth=limits.max_group_depth)
     if options is not None:
         cursor = options.end
     body = read_group(text, cursor, end, max_depth=limits.max_group_depth)
@@ -567,7 +566,7 @@ def scan_tikz_sources(
                     cursor = group.end
                     continue
                 picture_end = match[1]
-                raw_source = text[command.start:picture_end]
+                raw_source = text[command.start : picture_end]
                 kind = "environment"
         elif command.name == "tikz":
             inline = _inline_tikz_source(text, command, end, parser_limits)

@@ -148,12 +148,23 @@ def _iso(value: datetime) -> str:
 @staff_dashboard_routes.get("/staff/api/v1/dashboard")
 async def get_staff_dashboard(request: web.Request) -> web.Response:
     principal = _principal(request)
-    if request.query:
+    if (
+        any(key != "view" for key in request.query)
+        or len(request.query.getall("view", [])) > 1
+    ):
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Рабочая сводка не принимает параметры",
+            message="Параметры рабочей сводки некорректны",
         )
+    view = request.query.get("view", "current")
+    if view not in {"current", "all"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Параметры рабочей сводки некорректны",
+        )
+    selection = "all" if view == "all" else "current"
     scope = _scope(principal)
     now = datetime.now(UTC)
 
@@ -176,6 +187,7 @@ async def get_staff_dashboard(request: web.Request) -> web.Response:
             raw["oral"],
             scope=scope,
             now=now,
+            selection=selection,
         )
     except InvalidStaffDashboardData as error:
         raise PwaApiError(

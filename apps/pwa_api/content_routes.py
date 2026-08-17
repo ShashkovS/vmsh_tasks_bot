@@ -51,6 +51,7 @@ from helpers.pwa.content import (
     ContentAssetService,
     ContentRole,
     DiagnosticSeverity,
+    DocumentAst,
     WebAssetDescriptor,
     compile_latex,
 )
@@ -407,24 +408,7 @@ def _translate_content_errors(
                 message="Материал не прошёл проверку",
             ) from error
         except AssetConversionError as error:
-            unavailable = error.code in {
-                "asset.tool_unavailable",
-                "asset.converter_start_failed",
-            }
-            raise PwaApiError(
-                status=503 if unavailable else 422,
-                code=(
-                    "content_assets_unavailable"
-                    if unavailable
-                    else "asset_conversion_failed"
-                ),
-                message=(
-                    "Обработка рисунков временно недоступна"
-                    if unavailable
-                    else "Рисунок не прошёл безопасную обработку"
-                ),
-                details={"reason": error.code, "capability": error.capability},
-            ) from error
+            raise _asset_conversion_api_error(error) from error
         except ObjectStorageOperationError as error:
             raise PwaApiError(
                 status=503,
@@ -446,6 +430,36 @@ def _translate_content_errors(
             ) from error
 
     return wrapped
+
+
+def _asset_conversion_api_error(
+    error: AssetConversionError,
+    *,
+    details: Mapping[str, object] | None = None,
+) -> PwaApiError:
+    unavailable = error.code in {
+        "asset.tool_unavailable",
+        "asset.converter_start_failed",
+    }
+    payload: dict[str, object] = {
+        "reason": error.code,
+        "capability": error.capability,
+        "detail": error.detail,
+    }
+    if details is not None:
+        payload.update(details)
+    return PwaApiError(
+        status=503 if unavailable else 422,
+        code=(
+            "content_assets_unavailable" if unavailable else "asset_conversion_failed"
+        ),
+        message=(
+            "Обработка рисунков временно недоступна"
+            if unavailable
+            else "Рисунок не прошёл безопасную обработку"
+        ),
+        details=payload,
+    )
 
 
 async def _read_part_bytes(part, *, limit: int) -> bytes:
@@ -1254,10 +1268,43 @@ async def _pdf_derivative_asset(
     return derivative, asset
 
 
-def _asset_references(value: object) -> dict[str, dict[str, object]]:
+def _asset_reference_projection(value: DocumentAst, role: ContentRole) -> object:
+    """Keep only AST blocks rendered for the requested material kind.
+
+    Legacy condition files may contain hidden answers and solutions.  Their
+    figures must not block publication of the condition: those assets become
+    relevant only when the corresponding material is uploaded.  Keep this
+    projection aligned with ``helpers/pwa/content/renderers.py``.
+    """
+
+    problems = []
+    for problem in value.problems:
+        if role is ContentRole.CONDITION:
+            blocks = problem.statement + problem.trailing
+        elif role is ContentRole.HINT:
+            blocks = problem.hint
+        elif role is ContentRole.SOLUTION:
+            blocks = (
+                problem.statement + problem.trailing + problem.answer + problem.solution
+            )
+        else:
+            blocks = (
+                problem.statement
+                + problem.trailing
+                + problem.hint
+                + problem.answer
+                + problem.solution
+            )
+        problems.append(blocks)
+    return {"introduction": value.introduction, "problems": problems}
+
+
+def _asset_references(
+    value: DocumentAst, *, role: ContentRole
+) -> dict[str, dict[str, object]]:
     """Extract exact figure identities from a bounded compiler AST."""
 
-    parsed = json.loads(canonical_json(value))
+    parsed = json.loads(canonical_json(_asset_reference_projection(value, role)))
     discovered: list[dict[str, object]] = []
     stack = [parsed]
     visited = 0
@@ -1333,7 +1380,7 @@ async def _inspect_revision_assets(
             revision_id=context.revision.public_id,
         )
     )
-    return result, _asset_references(result.ast), descriptors
+    return result, _asset_references(result.ast, role=result.role), descriptors
 
 
 async def _resolve_reusable_revision_assets(
@@ -1369,11 +1416,29 @@ async def _resolve_reusable_revision_assets(
             source = reference["tikzSource"]
             if not isinstance(source, str):
                 raise ContentRepositoryError("compiler TikZ reference has no source")
-            persisted = await service.convert_and_attach_tikz(
-                **common,
-                source=source,
-                actor_user_id=actor_user_id,
-            )
+            try:
+                persisted = await service.convert_and_attach_tikz(
+                    **common,
+                    source=source,
+                    actor_user_id=actor_user_id,
+                )
+            except AssetConversionError as error:
+                logger.warning(
+                    "content TikZ conversion failed revision=%s asset=%s reason=%s capability=%s",
+                    context.revision.public_id,
+                    logical_name,
+                    error.code,
+                    error.capability,
+                )
+                raise _asset_conversion_api_error(
+                    error,
+                    details={
+                        "revisionId": context.revision.public_id,
+                        "groupLessonId": context.scope.group_lesson_public_id,
+                        "logicalFilename": context.source.logical_filename,
+                        "logicalAsset": logical_name,
+                    },
+                ) from error
         else:
             persisted = await service.resolve_and_attach_figure(**common)
         if persisted is not None:

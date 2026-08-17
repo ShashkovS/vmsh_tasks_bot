@@ -11,6 +11,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
@@ -99,6 +100,27 @@ def _select_current_lessons(
     )
 
 
+def _select_lessons(
+    rows: Iterable[Mapping[str, object]],
+    *,
+    scope: StaffDashboardScope,
+    now: datetime,
+    selection: Literal["current", "all"],
+) -> list[Mapping[str, object]]:
+    if selection == "current":
+        return _select_current_lessons(rows, scope=scope, now=now)
+    return sorted(
+        (row for row in rows if scope.allows(row)),
+        key=lambda row: (
+            int(row["course_sort_order"]),
+            str(row["course_code"]),
+            -int(row["lesson_number"]),
+            int(row["group_sort_order"]),
+            str(row["group_code"]),
+        ),
+    )
+
+
 def _publication_state(
     rows: Iterable[Mapping[str, object]], *, kind: str
 ) -> dict[str, object]:
@@ -152,8 +174,9 @@ def build_staff_dashboard_lessons(
     *,
     scope: StaffDashboardScope,
     now: datetime,
+    selection: Literal["current", "all"] = "current",
 ) -> list[dict[str, object]]:
-    """Select one current lesson per visible group and derive its public state."""
+    """Select visible lessons and derive their public state."""
 
     if now.tzinfo is None:
         raise ValueError("dashboard clock must be timezone-aware")
@@ -166,7 +189,12 @@ def build_staff_dashboard_lessons(
         oral_windows[int(row["group_lesson_id"])].append(row)
 
     result: list[dict[str, object]] = []
-    for row in _select_current_lessons(lesson_rows, scope=scope, now=now):
+    for row in _select_lessons(
+        lesson_rows,
+        scope=scope,
+        now=now,
+        selection=selection,
+    ):
         group_lesson_id = int(row["group_lesson_id"])
         condition = _publication_state(publications[group_lesson_id], kind="condition")
         hint = _publication_state(publications[group_lesson_id], kind="hint")

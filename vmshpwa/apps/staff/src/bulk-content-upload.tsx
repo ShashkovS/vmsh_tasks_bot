@@ -2,11 +2,7 @@ import { AlertTriangle, CheckCircle2, Files, LoaderCircle, X } from 'lucide-reac
 import { useMemo, useState } from 'react'
 
 import { type ContentApiClient, useContentUploadTargetsQuery } from '@vmsh/content'
-import {
-  ApiResponseError,
-  type ContentMaterialKind,
-  type ContentUploadTarget,
-} from '@vmsh/contracts'
+import { type ContentMaterialKind, type ContentUploadTarget } from '@vmsh/contracts'
 import { LevelChip, type GroupView } from '@vmsh/product'
 import {
   Alert,
@@ -26,12 +22,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  buttonVariants,
 } from '@vmsh/ui'
 
 import {
   type BulkContentUploadRow,
   type BulkContentMaterialKind,
   bulkContentRecoveryHref,
+  bulkContentRevisionId,
+  bulkContentUploadErrorMessage,
   createBulkContentUploadRows,
   validateBulkContentUploadRows,
 } from './bulk-content-upload-model'
@@ -106,6 +105,7 @@ export function BulkContentUpload({
       // concurrent TeX/PDF subprocesses add load without improving the admin's
       // decision flow. See Phase 2 bulk upload in 06-phase-2-content.md.
       for (const row of rows) {
+        let recoveryRevisionId = row.revisionId
         try {
           const kinds: ContentMaterialKind[] =
             row.kind === 'hint_solution' ? ['hint', 'solution'] : [row.kind]
@@ -117,6 +117,7 @@ export function BulkContentUpload({
               logicalFilename: row.file.name,
               source: row.file,
             })
+            recoveryRevisionId = uploaded.data.revisionId
             updateRow(row.id, { phase: 'compiling', revisionId: uploaded.data.revisionId })
             if (uploaded.data.status !== 'ready') {
               const compiled = await client.compileRevision(uploaded.data.revisionId, uploaded.etag)
@@ -129,12 +130,8 @@ export function BulkContentUpload({
         } catch (error) {
           updateRow(row.id, {
             phase: 'attention',
-            message:
-              error instanceof ApiResponseError && error.code === 'content_assets_missing'
-                ? 'Файл сохранён. Откройте занятие и добавьте недостающие рисунки.'
-                : error instanceof Error
-                  ? error.message
-                  : 'Не удалось обработать файл.',
+            revisionId: bulkContentRevisionId(error) ?? recoveryRevisionId,
+            message: bulkContentUploadErrorMessage(error),
           })
         }
       }
@@ -324,8 +321,14 @@ export function BulkContentUpload({
                     >
                       <span>{row.message}</span>
                       {recoveryHref ? (
-                        <a className="font-medium underline underline-offset-2" href={recoveryHref}>
-                          Открыть недостающие рисунки
+                        <a
+                          className={buttonVariants({ size: 'xs', variant: 'outline' })}
+                          href={recoveryHref}
+                        >
+                          Открыть занятие
+                          {selectedTarget
+                            ? ` ${targetsQuery.data?.lessonNumber ?? ''} · ${selectedTarget.groupName}`
+                            : ''}
                         </a>
                       ) : null}
                     </div>
@@ -363,11 +366,11 @@ export function BulkContentUpload({
           <Alert tone="warning">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Загрузка сохранена, но нужны рисунки</AlertTitle>
+              <AlertTitle>Загрузка сохранена, требуется исправление</AlertTitle>
               <AlertDescription>
-                У каждого такого файла выше есть ссылка «Открыть недостающие рисунки». Нажмите её,
-                загрузите внешний рисунок и повторите сборку материала. TikZ обрабатывается
-                автоматически.
+                Нажмите «Открыть занятие» рядом с файлом. Там показаны конкретный проблемный
+                рисунок, сохранённая версия и доступные действия. TikZ обрабатывается автоматически;
+                заново создавать занятие не нужно.
               </AlertDescription>
             </AlertContent>
           </Alert>

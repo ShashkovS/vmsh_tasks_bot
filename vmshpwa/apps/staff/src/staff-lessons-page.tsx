@@ -116,7 +116,6 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
   )
   const catalog = useAdminCourseCatalogQuery(client, scope, undefined, true)
   const queryClient = useQueryClient()
-  const [creationNotice, setCreationNotice] = useState<string>()
   const selectedCourse =
     catalog.data?.courses.find((course) => course.courseId === draft.courseId) ??
     catalog.data?.courses[0]
@@ -153,14 +152,10 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
         }
       }
       if (created.length === 0) throw new Error(failures.join('; ') || 'Занятия не созданы')
-      return { created, failures }
+      return { created }
     },
-    onSuccess: async ({ created, failures }) => {
+    onSuccess: async ({ created }) => {
       await queryClient.invalidateQueries({ queryKey: staffDashboardQueryKey(scope) })
-      if (failures.length > 0) {
-        setCreationNotice(`Создано: ${created.length}. Не создано: ${failures.join('; ')}`)
-        return
-      }
       globalThis.localStorage.removeItem(draftKey)
       globalThis.location.assign(
         `/staff/lessons/${encodeURIComponent(created[0]!.groupLesson.groupLessonId)}`,
@@ -175,7 +170,6 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setCreationNotice(undefined)
     mutation.mutate()
   }
 
@@ -316,14 +310,6 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
               </AlertContent>
             </Alert>
           ) : null}
-          {creationNotice ? (
-            <Alert className="md:col-span-2" tone="warning">
-              <AlertContent>
-                <AlertTitle>Занятия созданы частично</AlertTitle>
-                <AlertDescription>{creationNotice}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
           <div className="flex gap-2 md:col-span-2">
             <Button disabled={mutation.isPending || !selectedGroup} type="submit">
               {mutation.isPending
@@ -353,10 +339,14 @@ export function StaffLessonsPage() {
       }),
     [authentication],
   )
-  const result = useStaffDashboardQuery(client, {
-    audience: 'staff',
-    accountId: principal.accountId,
-  })
+  const result = useStaffDashboardQuery(
+    client,
+    {
+      audience: 'staff',
+      accountId: principal.accountId,
+    },
+    'all',
+  )
   const [creatorOpen, setCreatorOpen] = useState(false)
 
   if (result.isPending) {

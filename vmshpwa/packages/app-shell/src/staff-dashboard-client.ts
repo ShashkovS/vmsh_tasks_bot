@@ -11,8 +11,10 @@ import {
   type StaffDashboardResponse,
 } from '@vmsh/contracts'
 
+export type StaffDashboardView = 'current' | 'all'
+
 export interface StaffDashboardClient {
-  get(signal?: AbortSignal): Promise<StaffDashboardResponse>
+  get(view?: StaffDashboardView, signal?: AbortSignal): Promise<StaffDashboardResponse>
 }
 
 export function createStaffDashboardClient(
@@ -26,9 +28,10 @@ export function createStaffDashboardClient(
   const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
 
   return {
-    async get(signal) {
+    async get(view = 'current', signal) {
+      const query = view === 'all' ? '?view=all' : ''
       const request = () =>
-        fetchImplementation(`${configured.apiBase}/dashboard`, {
+        fetchImplementation(`${configured.apiBase}/dashboard${query}`, {
           method: 'GET',
           cache: 'no-store',
           credentials: 'include',
@@ -52,9 +55,10 @@ export function createStaffDashboardClient(
 export function useStaffDashboardQuery(
   client: StaffDashboardClient,
   principal: PrincipalQueryScope,
+  view: StaffDashboardView = 'current',
 ) {
   return useQuery({
-    queryKey: staffDashboardQueryKey(principal),
-    queryFn: ({ signal }) => client.get(signal),
+    queryKey: [...staffDashboardQueryKey(principal), view],
+    queryFn: ({ signal }) => client.get(view, signal),
   })
 }

@@ -63,6 +63,22 @@ def test_tikz_scan_supports_braced_and_semicolon_inline_forms() -> None:
     assert "{A; B};\\end{tikzpicture}" in scan.sources[1].source
 
 
+def test_tikz_scan_supplies_legacy_part_label_used_by_real_lessons() -> None:
+    scan = scan_tikz_sources(
+        r"""
+\begin{tikzpicture}
+  \draw (0, 0) node {\пункт};
+\end{tikzpicture}
+"""
+    )
+
+    assert not scan.issues
+    assert len(scan.sources) == 1
+    source = scan.sources[0]
+    assert r"\newcommand{\пункт}" in source.source
+    assert r"\alph{vmshpart})" in source.source
+
+
 def test_tikz_scan_excludes_comment_environment_and_groups_layout_wrapper() -> None:
     scan = scan_tikz_sources(
         r"""

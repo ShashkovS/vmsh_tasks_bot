@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ContentUploadTarget } from '@vmsh/contracts'
+import { ApiResponseError, type ContentUploadTarget } from '@vmsh/contracts'
 
 import {
   bulkContentRecoveryHref,
+  bulkContentRevisionId,
+  bulkContentUploadErrorMessage,
   createBulkContentUploadRows,
   validateBulkContentUploadRows,
 } from './bulk-content-upload-model'
@@ -122,6 +124,17 @@ describe('Staff bulk content upload validation', () => {
     expect(bulkContentRecoveryHref(row)).toBe('/staff/lessons/group-lesson-41-n#material-condition')
   })
 
+  it('links a saved attention row even when upload failed before the success response', () => {
+    const row = {
+      ...createBulkContentUploadRows([new File(['tex'], 'condition.tex')])[0]!,
+      groupLessonId: targets[0]!.groupLessonId,
+      revisionId: undefined,
+      phase: 'attention' as const,
+    }
+
+    expect(bulkContentRecoveryHref(row)).toBe('/staff/lessons/group-lesson-41-n#material-condition')
+  })
+
   it('links a combined-material failure to the lesson without inventing a fake anchor', () => {
     const row = {
       ...createBulkContentUploadRows([new File(['tex'], 'usl-20-n-sol.tex')])[0]!,
@@ -131,5 +144,26 @@ describe('Staff bulk content upload validation', () => {
     }
 
     expect(bulkContentRecoveryHref(row)).toBe('/staff/lessons/group-lesson-41-n')
+  })
+
+  it('explains a failed TikZ conversion and keeps the persisted revision id', () => {
+    const error = new ApiResponseError(422, {
+      error: {
+        code: 'asset_conversion_failed',
+        message: 'Рисунок не прошёл безопасную обработку',
+        requestId: 'request-1',
+        details: {
+          reason: 'asset.converter_failed',
+          detail: 'converter exited with code 1',
+          logicalAsset: 'tikz-deadbeef',
+          revisionId: 'content-revision.saved',
+        },
+      },
+    })
+
+    expect(bulkContentRevisionId(error)).toBe('content-revision.saved')
+    expect(bulkContentUploadErrorMessage(error)).toContain('LaTeX-компилятор')
+    expect(bulkContentUploadErrorMessage(error)).toContain('tikz-deadbeef')
+    expect(bulkContentUploadErrorMessage(error)).toContain('converter exited with code 1')
   })
 })

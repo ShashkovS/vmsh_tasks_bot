@@ -30,6 +30,7 @@ from helpers.object_storage import content_addressed_key
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
 from helpers.pwa.auth_config import AuthRuntimeConfig, COOKIE_POLICY
 from helpers.pwa.content import (
+    AssetConversionError,
     ContentAssetConverter,
     ContentAssetService,
     ConvertedAsset,
@@ -2700,6 +2701,74 @@ async def test_identical_source_upload_is_idempotent(content_http: ContentHttpFi
     assert (await first.json())["revisionId"] == (await repeated.json())["revisionId"]
 
 
+async def test_failed_automatic_tikz_keeps_revision_and_returns_recovery_details(
+    content_http: ContentHttpFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fail_tikz(_converter, _source: str) -> ConvertedAsset:
+        raise AssetConversionError(
+            "asset.converter_failed",
+            "latex-to-pdf",
+            "converter exited with code 1",
+        )
+
+    monkeypatch.setattr(SyntheticAssetConverter, "tikz_to_svg", fail_tikz)
+    uploaded = await _upload(
+        content_http,
+        group_lesson=content_http.group_lesson_a,
+        kind="condition",
+        filename="usl-03-x.tex",
+        source=(
+            r"\задача "
+            r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
+            r"\кзадача"
+        ).encode(),
+    )
+
+    assert uploaded.status == 422, await uploaded.text()
+    error = (await uploaded.json())["error"]
+    assert error["code"] == "asset_conversion_failed"
+    assert error["details"]["reason"] == "asset.converter_failed"
+    assert error["details"]["capability"] == "latex-to-pdf"
+    assert error["details"]["detail"] == "converter exited with code 1"
+    assert error["details"]["groupLessonId"] == content_http.group_lesson_a
+    assert error["details"]["logicalFilename"] == "usl-03-x.tex"
+    assert error["details"]["logicalAsset"].startswith("tikz-")
+    revision_id = error["details"]["revisionId"]
+
+    diagnostics = await content_http.client.get(
+        f"/staff/api/v1/content/uploads/{revision_id}/diagnostics",
+        cookies=_cookie(content_http, "admin"),
+        headers=_headers(),
+    )
+    assert diagnostics.status == 200, await diagnostics.text()
+    assert (await diagnostics.json())["status"] == "uploaded"
+
+
+async def test_condition_upload_ignores_tikz_from_hidden_answer(
+    content_http: ContentHttpFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fail_tikz(_converter, _source: str) -> ConvertedAsset:
+        raise AssertionError("hidden answer TikZ must not be converted for condition")
+
+    monkeypatch.setattr(SyntheticAssetConverter, "tikz_to_svg", fail_tikz)
+    uploaded = await _upload(
+        content_http,
+        group_lesson=content_http.group_lesson_a,
+        kind="condition",
+        filename="usl-03-x.tex",
+        source=(
+            r"\задача Видимое условие. "
+            r"\ответ \begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
+            r"\кответ \кзадача"
+        ).encode(),
+    )
+
+    assert uploaded.status == 201, await uploaded.text()
+    assert (await uploaded.json())["status"] == "uploaded"
+
+
 async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     content_http: ContentHttpFixture,
 ):
@@ -4230,7 +4299,11 @@ async def test_publish_current_conflict_and_exact_revision_rollback(
     assert "InternalId" not in json.dumps(history_payload, ensure_ascii=False)
     assert history_payload["businessTimezone"] == "Europe/Moscow"
     condition_state = history_payload["materials"][0]
-    assert [item["revisionNumber"] for item in condition_state["revisions"]] == [3, 2, 1]
+    assert [item["revisionNumber"] for item in condition_state["revisions"]] == [
+        3,
+        2,
+        1,
+    ]
     assert condition_state["currentPublished"]["revisionId"] == first["revisionId"]
     assert len(condition_state["publicationHistory"]) == 3
 

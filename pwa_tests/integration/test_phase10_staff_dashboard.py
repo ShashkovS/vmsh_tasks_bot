@@ -301,3 +301,11 @@ async def test_dashboard_rejects_other_audiences_and_query_parameters(
     )
     assert invalid.status == 422
     assert (await invalid.json())["error"]["code"] == "validation_error"
+
+    all_lessons = await dashboard_http.client.get(
+        "/staff/api/v1/dashboard?view=all",
+        headers=_headers(),
+        cookies=_staff_cookie(dashboard_http, "admin"),
+    )
+    assert all_lessons.status == 200, await all_lessons.text()
+    assert len((await all_lessons.json())["lessons"]) == 1

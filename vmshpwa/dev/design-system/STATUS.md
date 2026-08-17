@@ -16,6 +16,25 @@
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
 ```text
+2026-08-18 — Staff lesson upload recovery — ready for owner production check
+Implemented:
+  saved drafts and all visible lessons are listed in /staff/lessons; partial
+  course-wide creation opens the lesson that was actually created; a failed
+  automatic TikZ conversion shows the concrete asset and safe reason with a
+  direct “Открыть занятие” action. The warning no longer refers to a missing
+  link, and the user is explicitly told not to recreate the lesson.
+Evidence:
+  vmshpwa/apps/staff/src/staff-lessons-page.tsx;
+  vmshpwa/apps/staff/src/bulk-content-upload.tsx;
+  vmshpwa/apps/staff/src/bulk-content-upload-model.ts.
+Checks:
+  focused frontend unit 12/12; targeted TypeScript, Prettier and ESLint PASS;
+  backend HTTP integration 49/49 PASS.
+Snapshots:
+  not updated.
+```
+
+```text
 2026-08-13 — Shared file input affordance — ready for owner production check
 Implemented:
   Native Input type=file keeps the browser picker, keyboard, multiple and
