@@ -395,6 +395,15 @@ export function StudentWrittenSubmission({
     }
   }
 
+  const recordPaste = (characterCount: number) => {
+    try {
+      draftStore.value.recordPaste(descriptor, characterCount)
+      setStorageError(null)
+    } catch (error) {
+      setStorageError(error)
+    }
+  }
+
   const selectPhotos = async (files: FileList | null) => {
     if (!files) return
     const selected = [...files].slice(0, Math.max(0, 10 - photos.length - pendingPhotos.length))
@@ -591,137 +600,139 @@ export function StudentWrittenSubmission({
   }
 
   return (
-    <Card className="mt-5">
-      <CardHeader>
-        <CardTitle>{replacementTarget ? 'Изменить решение' : 'Сдать решение'}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {thread?.reviews.length ? (
-          <WrittenReviewHistory
-            entries={thread.entries}
-            onStudentReactionChange={(reviewId, reactionId, expectedVersion) =>
-              void changeStudentReaction(reviewId, reactionId, expectedVersion)
-            }
-            pendingStudentReactionReviewId={
-              studentReactionMutation.isPending ? studentReactionMutation.variables?.reviewId : null
-            }
-            reviews={thread.reviews}
-            studentReactionError={studentReactionError}
-          />
-        ) : null}
-        {replaceableEntry && !replacementTarget && !queued ? (
-          <Button
-            disabled={replacementLoading}
-            onClick={() => void beginReplacement()}
-            size="sm"
-            variant="outline"
-          >
-            <Pencil aria-hidden="true" />
-            Изменить отправленное решение
-          </Button>
-        ) : null}
-        {replacementTarget ? (
-          <Alert tone="info">
-            <Pencil aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>
-                {replacementLoading ? 'Копируем прежнее решение…' : 'Готовится замена'}
-              </AlertTitle>
-              <AlertDescription>
-                Прежнее решение останется в очереди до полной отправки этой версии. После
-                подтверждения текст и фотографии заменятся одной операцией.
-              </AlertDescription>
-              {!queued && !replacementLoading ? (
-                <Button className="mt-2" onClick={cancelReplacement} size="sm" variant="ghost">
-                  Отменить замену
-                </Button>
-              ) : null}
-            </AlertContent>
-          </Alert>
-        ) : null}
-        {threadStatus === 'awaiting_review' ? (
-          <Alert tone="info">
-            <AlertContent>
-              <AlertTitle>Предыдущее сообщение ждёт проверки</AlertTitle>
-              <AlertDescription>
-                Можно дописать пояснение или отправить новое решение — оно добавится в тот же тред.
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
-        {sent ? (
-          <Alert tone="success">
-            <CheckCircle2 aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Решение отправлено</AlertTitle>
-              <AlertDescription>
-                Оно сохранено на сервере и появилось в истории задачи.
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
-        {storageError ? (
-          <Alert role="alert" tone="danger">
-            <TriangleAlert aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Последнее изменение не сохранено</AlertTitle>
-              <AlertDescription>
-                Не закрывайте страницу. Освободите место в браузере и повторите изменение.
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
-        {queueItem && ['queued', 'retrying'].includes(queueItem.status) ? (
-          <Alert tone="warning">
-            <CloudOff aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Решение сохранено в очереди</AlertTitle>
-              <AlertDescription>
-                Отправка продолжится с последнего подтверждённого шага, когда появится связь.
-              </AlertDescription>
-              {online ? (
-                <Button className="mt-2" onClick={() => void deliver()} size="sm" variant="outline">
-                  Повторить сейчас
-                </Button>
-              ) : null}
-            </AlertContent>
-          </Alert>
-        ) : null}
-        {sendError ? (
-          <Alert role="alert" tone="danger">
-            <TriangleAlert aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Отправка не завершена</AlertTitle>
-              <AlertDescription>{sendError}</AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
+    <section
+      aria-label={replacementTarget ? 'Изменить решение' : 'Сдать решение'}
+      className="mt-4 space-y-4 border-t border-border pt-4"
+    >
+      <h3 className="font-sans text-title-sm font-semibold text-foreground">
+        {replacementTarget ? 'Изменить решение' : 'Сдать решение'}
+      </h3>
+      {thread?.reviews.length ? (
+        <WrittenReviewHistory
+          entries={thread.entries}
+          onStudentReactionChange={(reviewId, reactionId, expectedVersion) =>
+            void changeStudentReaction(reviewId, reactionId, expectedVersion)
+          }
+          pendingStudentReactionReviewId={
+            studentReactionMutation.isPending ? studentReactionMutation.variables?.reviewId : null
+          }
+          reviews={thread.reviews}
+          studentReactionError={studentReactionError}
+        />
+      ) : null}
+      {replaceableEntry && !replacementTarget && !queued ? (
+        <Button
+          disabled={replacementLoading}
+          onClick={() => void beginReplacement()}
+          size="sm"
+          variant="outline"
+        >
+          <Pencil aria-hidden="true" />
+          Изменить отправленное решение
+        </Button>
+      ) : null}
+      {replacementTarget ? (
+        <Alert tone="info">
+          <Pencil aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>
+              {replacementLoading ? 'Копируем прежнее решение…' : 'Готовится замена'}
+            </AlertTitle>
+            <AlertDescription>
+              Прежнее решение останется в очереди до полной отправки этой версии. После
+              подтверждения текст и фотографии заменятся одной операцией.
+            </AlertDescription>
+            {!queued && !replacementLoading ? (
+              <Button className="mt-2" onClick={cancelReplacement} size="sm" variant="ghost">
+                Отменить замену
+              </Button>
+            ) : null}
+          </AlertContent>
+        </Alert>
+      ) : null}
+      {threadStatus === 'awaiting_review' ? (
+        <Alert tone="info">
+          <AlertContent>
+            <AlertTitle>Предыдущее сообщение ждёт проверки</AlertTitle>
+            <AlertDescription>
+              Можно дописать пояснение или отправить новое решение — оно добавится в тот же тред.
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
+      {sent ? (
+        <Alert tone="success">
+          <CheckCircle2 aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>Решение отправлено</AlertTitle>
+            <AlertDescription>
+              Оно сохранено на сервере и появилось в истории задачи.
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
+      {storageError ? (
+        <Alert role="alert" tone="danger">
+          <TriangleAlert aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>Последнее изменение не сохранено</AlertTitle>
+            <AlertDescription>
+              Не закрывайте страницу. Освободите место в браузере и повторите изменение.
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
+      {queueItem && ['queued', 'retrying'].includes(queueItem.status) ? (
+        <Alert tone="warning">
+          <CloudOff aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>Решение сохранено в очереди</AlertTitle>
+            <AlertDescription>
+              Отправка продолжится с последнего подтверждённого шага, когда появится связь.
+            </AlertDescription>
+            {online ? (
+              <Button className="mt-2" onClick={() => void deliver()} size="sm" variant="outline">
+                Повторить сейчас
+              </Button>
+            ) : null}
+          </AlertContent>
+        </Alert>
+      ) : null}
+      {sendError ? (
+        <Alert role="alert" tone="danger">
+          <TriangleAlert aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>Отправка не завершена</AlertTitle>
+            <AlertDescription>{sendError}</AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
 
-        <input
-          accept="image/*,.heic,.heif"
-          className="sr-only"
-          multiple
-          onChange={(event) => void selectPhotos(event.currentTarget.files)}
-          ref={inputRef}
-          type="file"
-        />
-        <SubmissionComposer
-          attachments={attachments}
-          maxPhotos={10}
-          offline={!online}
-          onAddPhotos={() => inputRef.current?.click()}
-          onMoveDown={(id) => move(id, 1)}
-          onMoveUp={(id) => move(id, -1)}
-          onRemove={(id) => void remove(id)}
-          onSubmit={() => void submit()}
-          onTextChange={saveText}
-          queued={queued}
-          submitting={queueItem?.status === 'sending' || replacementLoading}
-          taskType={problemType}
-          text={text}
-          {...(photos.length > 0 ? { totalSizeLabel: formatBytes(totalBytes) } : {})}
-        />
-      </CardContent>
-    </Card>
+      <input
+        accept="image/*,.heic,.heif"
+        className="sr-only"
+        multiple
+        onChange={(event) => void selectPhotos(event.currentTarget.files)}
+        ref={inputRef}
+        type="file"
+      />
+      <SubmissionComposer
+        attachments={attachments}
+        maxPhotos={10}
+        offline={!online}
+        onAddPhotos={() => inputRef.current?.click()}
+        onMoveDown={(id) => move(id, 1)}
+        onMoveUp={(id) => move(id, -1)}
+        onRemove={(id) => void remove(id)}
+        onSubmit={() => void submit()}
+        onTextChange={saveText}
+        onTextPaste={recordPaste}
+        queued={queued}
+        submitting={queueItem?.status === 'sending' || replacementLoading}
+        taskType={problemType}
+        text={text}
+        {...(photos.length > 0 ? { totalSizeLabel: formatBytes(totalBytes) } : {})}
+      />
+    </section>
   )
 }

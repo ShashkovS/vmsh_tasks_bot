@@ -1247,6 +1247,11 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
             "configVersion": 1,
         },
         "text": "Пусть x — искомое число. Тогда x + 7 = 19.",
+        "pasteEvidence": {
+            "pasteCount": 2,
+            "pastedCharacterCount": 37,
+            "lastPastedAt": _timestamp(NOW - timedelta(seconds=10)),
+        },
         "clientCreatedAt": _timestamp(),
     }
 
@@ -1288,6 +1293,18 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
     assert draft["entry"]["problemRevision"] == create_payload["problemRevision"]
     assert draft["entry"]["attachments"] == []
     assert draft["requestId"] == "content.http.test"
+    stored_paste_evidence = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT paste_count, pasted_character_count, last_pasted_at "
+            "FROM submission_entries WHERE public_id = ?",
+            (draft["entry"]["entryId"],),
+        ).fetchone()
+    )
+    assert dict(stored_paste_evidence) == {
+        "paste_count": 2,
+        "pasted_character_count": 37,
+        "last_pasted_at": _timestamp(NOW - timedelta(seconds=10)),
+    }
     cursors_after_create = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
     assert cursors_after_create == {
         **cursors_before,
@@ -1398,6 +1415,11 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
                 "configVersion": 1,
             },
             "text": "Семья увидит этот текст только после отправки.",
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),
@@ -1632,6 +1654,11 @@ async def test_student_written_replacement_is_one_visible_atomic_commit(
                 "configVersion": 1,
             },
             "text": "Первоначальное решение.",
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),
@@ -1663,6 +1690,11 @@ async def test_student_written_replacement_is_one_visible_atomic_commit(
                 "configVersion": 1,
             },
             "text": "Исправленное решение.",
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),
@@ -1752,6 +1784,11 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
                 "configVersion": 1,
             },
             "text": "Эта работа относится ко второй задаче.",
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),
@@ -1934,6 +1971,11 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
                 "configVersion": 1,
             },
             "text": "Новый материал для проверки scope.",
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),
@@ -2015,6 +2057,11 @@ async def test_student_written_photo_upload_converts_persists_replays_and_submit
                 "configVersion": 1,
             },
             "text": None,
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),
@@ -2187,6 +2234,11 @@ async def test_student_written_photo_order_delete_and_reload_contract(
                 "configVersion": 1,
             },
             "text": "Текстовая часть решения сохраняется.",
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),
@@ -2421,6 +2473,11 @@ async def test_student_written_submission_http_persists_safe_failures(
                 "configVersion": 1,
             },
             "text": "   ",
+            "pasteEvidence": {
+                "pasteCount": 0,
+                "pastedCharacterCount": 0,
+                "lastPastedAt": None,
+            },
             "clientCreatedAt": _timestamp(),
         },
         cookies=_cookie(fixture, "student"),

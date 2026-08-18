@@ -34,4 +34,24 @@ describe('composer keyboard submission', () => {
 
     expect(onSubmit).toHaveBeenCalledOnce()
   })
+
+  it('reports only the pasted character count', () => {
+    const onTextPaste = vi.fn()
+    render(
+      <SubmissionComposer
+        attachments={[]}
+        onTextChange={() => undefined}
+        onTextPaste={onTextPaste}
+        taskType="written"
+        text=""
+      />,
+    )
+
+    fireEvent.paste(screen.getByLabelText('Ваше решение'), {
+      clipboardData: { getData: () => 'Скопированный текст' },
+    })
+
+    expect(onTextPaste).toHaveBeenCalledOnce()
+    expect(onTextPaste).toHaveBeenCalledWith('Скопированный текст'.length)
+  })
 })

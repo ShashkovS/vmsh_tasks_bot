@@ -119,6 +119,9 @@ class CreateWrittenEntryCommand:
     problem_public_id: str
     problem_revision: ProblemRevisionRef
     text: str | None
+    paste_count: int
+    pasted_character_count: int
+    last_pasted_at: datetime | None
     client_created_at: datetime
     idempotency_key: str
 
@@ -134,6 +137,30 @@ class CreateWrittenEntryCommand:
             not isinstance(self.text, str) or len(self.text) > 100_000
         ):
             raise ValueError("written entry text is invalid")
+        if (
+            type(self.paste_count) is not int
+            or self.paste_count < 0
+            or type(self.pasted_character_count) is not int
+            or self.pasted_character_count < 0
+        ):
+            raise ValueError("written entry paste counts are invalid")
+        empty_paste_evidence = (
+            self.paste_count == 0
+            and self.pasted_character_count == 0
+            and self.last_pasted_at is None
+        )
+        populated_paste_evidence = (
+            self.paste_count > 0
+            and self.pasted_character_count > 0
+            and isinstance(self.last_pasted_at, datetime)
+        )
+        if not (empty_paste_evidence or populated_paste_evidence):
+            raise ValueError("written entry paste evidence is inconsistent")
+        if self.last_pasted_at is not None and (
+            self.last_pasted_at.tzinfo is None
+            or self.last_pasted_at.utcoffset() is None
+        ):
+            raise ValueError("written entry paste time must be timezone-aware")
 
 
 @dataclass(frozen=True, slots=True)
@@ -2255,6 +2282,15 @@ class PwaWrittenSubmissionRepository:
             "problemId": command.problem_public_id,
             "problemRevision": command.problem_revision.payload(),
             "text": command.text,
+            "pasteEvidence": {
+                "pasteCount": command.paste_count,
+                "pastedCharacterCount": command.pasted_character_count,
+                "lastPastedAt": (
+                    _timestamp(command.last_pasted_at)
+                    if command.last_pasted_at is not None
+                    else None
+                ),
+            },
             "clientCreatedAt": _timestamp(command.client_created_at),
         }
         payload_sha256 = _payload_hash(request)
@@ -2377,15 +2413,23 @@ class PwaWrittenSubmissionRepository:
                     "INSERT INTO submission_entries "
                     "(public_id, thread_id, problem_revision_id, author_kind, "
                     "author_user_id, channel, entry_kind, state, text, "
+                    "paste_count, pasted_character_count, last_pasted_at, "
                     "client_created_at, server_received_at, idempotency_key, "
                     "payload_sha256) VALUES (?, ?, ?, 'student', ?, 'pwa', "
-                    "'submission', 'draft', ?, ?, ?, ?, ?) RETURNING id",
+                    "'submission', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
                     (
                         entry_public_id,
                         thread_id,
                         context.problem_revision_id,
                         context.student_user_id,
                         command.text,
+                        command.paste_count,
+                        command.pasted_character_count,
+                        (
+                            _timestamp(command.last_pasted_at)
+                            if command.last_pasted_at is not None
+                            else None
+                        ),
                         _timestamp(command.client_created_at),
                         received_at,
                         command.idempotency_key,

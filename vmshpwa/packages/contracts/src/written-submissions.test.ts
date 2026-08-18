@@ -57,6 +57,29 @@ describe('Phase-5 written-submission contracts', () => {
     ).toBe(false)
   })
 
+  it('requires internally consistent paste aggregates without clipboard content', () => {
+    expect(
+      createWrittenEntryRequestSchema.safeParse({
+        ...fixture.createRequest,
+        pasteEvidence: {
+          pasteCount: 1,
+          pastedCharacterCount: 0,
+          lastPastedAt: null,
+        },
+      }).success,
+    ).toBe(false)
+    expect(
+      createWrittenEntryRequestSchema.safeParse({
+        ...fixture.createRequest,
+        pasteEvidence: {
+          pasteCount: 2,
+          pastedCharacterCount: 37,
+          lastPastedAt: '2026-09-20T10:04:05Z',
+        },
+      }).success,
+    ).toBe(true)
+  })
+
   it('keeps replacement target, optimistic versions and audit identity explicit', () => {
     expect(replaceWrittenEntryRequestSchema.parse(fixture.replaceRequest)).toEqual(
       fixture.replaceRequest,

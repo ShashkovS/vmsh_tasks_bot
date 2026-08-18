@@ -1575,6 +1575,9 @@ def written_entry_command(
     fixture: SubmissionFixture,
     *,
     text: str | None = "Решение по шагам.",
+    paste_count: int = 0,
+    pasted_character_count: int = 0,
+    last_pasted_at: datetime | None = None,
     key: str = "written-create-key-1",
     client_created_at: datetime = NOW,
 ) -> CreateWrittenEntryCommand:
@@ -1586,6 +1589,9 @@ def written_entry_command(
             config_version=1,
         ),
         text=text,
+        paste_count=paste_count,
+        pasted_character_count=pasted_character_count,
+        last_pasted_at=last_pasted_at,
         client_created_at=client_created_at,
         idempotency_key=key,
     )
@@ -1695,7 +1701,12 @@ async def test_written_draft_keeps_exact_revision_and_replays_without_duplicates
     submission_fixture: SubmissionFixture,
 ):
     fixture = submission_fixture
-    command = written_entry_command(fixture)
+    command = written_entry_command(
+        fixture,
+        paste_count=2,
+        pasted_character_count=37,
+        last_pasted_at=NOW - timedelta(seconds=10),
+    )
 
     first = await fixture.written_repository.create_entry(command)
     replay = await fixture.written_repository.create_entry(command)
@@ -1719,6 +1730,11 @@ async def test_written_draft_keeps_exact_revision_and_replays_without_duplicates
     assert replay.replayed is True
     assert [len(rows) for rows in stored] == [1, 1, 1]
     assert stored[1][0]["problem_revision_id"] == fixture.written_problem_revision_id
+    assert stored[1][0]["paste_count"] == 2
+    assert stored[1][0]["pasted_character_count"] == 37
+    assert stored[1][0]["last_pasted_at"] == timestamp(
+        NOW - timedelta(seconds=10)
+    )
 
 
 async def test_written_create_key_rejects_a_different_payload(

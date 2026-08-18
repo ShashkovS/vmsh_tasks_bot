@@ -245,6 +245,10 @@
       {
         "id": "0079.pwa_content_asset_reuse",
         "sha256": "f9150ef9e9d3cb9b727d886bcee0c5aa88c654b4fd961c7d09fdd3d27663467c"
+      },
+      {
+        "id": "0080.pwa_submission_paste_evidence",
+        "sha256": "0c44016d6feb75c0d786fe63a8a68b8d3a2ccc3cfa7e6cce41e122cc9157152a"
       }
     ],
     "repository_head_status": {
@@ -19023,6 +19027,33 @@
             "name": "problem_revision_id",
             "not_null": false,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 19,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "paste_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 20,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "pasted_character_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 21,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_pasted_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -19262,8 +19293,8 @@
           }
         ],
         "name": "submission_entries",
-        "object_sha256": "67a88e74dd32c7a0c885e10df3d157c37b0ee17d26c2065594a1c5a5f4a4293a",
-        "sql": "CREATE TABLE submission_entries\n(\n    id                   integer primary key,\n    public_id            text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    thread_id            integer not null references submission_threads (id),\n    author_kind          text    not null\n        check (author_kind in ('student', 'teacher', 'admin', 'ai', 'system')),\n    author_user_id       integer references users (id),\n    channel              text    not null\n        check (channel in ('pwa', 'telegram', 'staff', 'system')),\n    channel_group_key    text\n        check (\n            channel_group_key is null\n            or (\n                length(channel_group_key) between 1 and 200\n                and channel_group_key = trim(channel_group_key)\n            )\n        ),\n    entry_kind           text    not null\n        check (entry_kind in ('text', 'submission', 'teacher_comment', 'ai_comment', 'system_event')),\n    state                text    not null\n        check (state in ('draft', 'uploading', 'submitted', 'deleted', 'locked')),\n    text                 text    check (text is null or length(text) <= 100000),\n    client_created_at    text,\n    server_received_at   text    not null,\n    idempotency_key      text\n        check (\n            idempotency_key is null\n            or (\n                length(idempotency_key) between 1 and 200\n                and idempotency_key = trim(idempotency_key)\n            )\n        ),\n    payload_sha256       text\n        check (\n            payload_sha256 is null\n            or (\n                length(payload_sha256) = 64\n                and payload_sha256 not glob '*[^0-9a-f]*'\n            )\n        ),\n    legacy_discussion_id integer unique references written_tasks_discussions (id),\n    version              integer not null default 1 check (version > 0),\n    locked_at            text,\n    deleted_at           text, problem_revision_id integer references problem_revisions (id),\n    check ((idempotency_key is null) = (payload_sha256 is null)),\n    check (channel_group_key is null or channel = 'telegram'),\n    check (\n        (author_kind in ('student', 'teacher', 'admin') and author_user_id is not null)\n        or (author_kind in ('ai', 'system') and author_user_id is null)\n    ),\n    check (\n        (author_kind = 'student' and entry_kind in ('text', 'submission'))\n        or (author_kind in ('teacher', 'admin') and entry_kind = 'teacher_comment')\n        or (author_kind = 'ai' and entry_kind = 'ai_comment')\n        or (author_kind = 'system' and entry_kind = 'system_event')\n    ),\n    check (\n        (state = 'locked' and locked_at is not null and deleted_at is null)\n        or (state = 'deleted' and deleted_at is not null and locked_at is null)\n        or (state not in ('locked', 'deleted') and locked_at is null and deleted_at is null)\n    ),\n    check (locked_at is null or locked_at >= server_received_at),\n    check (deleted_at is null or deleted_at >= server_received_at)\n);",
+        "object_sha256": "c0525d81e2e65ff937db4de9702d86519413ba9acbafe15e238d1ce609ed585d",
+        "sql": "CREATE TABLE submission_entries\n(\n    id                   integer primary key,\n    public_id            text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    thread_id            integer not null references submission_threads (id),\n    author_kind          text    not null\n        check (author_kind in ('student', 'teacher', 'admin', 'ai', 'system')),\n    author_user_id       integer references users (id),\n    channel              text    not null\n        check (channel in ('pwa', 'telegram', 'staff', 'system')),\n    channel_group_key    text\n        check (\n            channel_group_key is null\n            or (\n                length(channel_group_key) between 1 and 200\n                and channel_group_key = trim(channel_group_key)\n            )\n        ),\n    entry_kind           text    not null\n        check (entry_kind in ('text', 'submission', 'teacher_comment', 'ai_comment', 'system_event')),\n    state                text    not null\n        check (state in ('draft', 'uploading', 'submitted', 'deleted', 'locked')),\n    text                 text    check (text is null or length(text) <= 100000),\n    client_created_at    text,\n    server_received_at   text    not null,\n    idempotency_key      text\n        check (\n            idempotency_key is null\n            or (\n                length(idempotency_key) between 1 and 200\n                and idempotency_key = trim(idempotency_key)\n            )\n        ),\n    payload_sha256       text\n        check (\n            payload_sha256 is null\n            or (\n                length(payload_sha256) = 64\n                and payload_sha256 not glob '*[^0-9a-f]*'\n            )\n        ),\n    legacy_discussion_id integer unique references written_tasks_discussions (id),\n    version              integer not null default 1 check (version > 0),\n    locked_at            text,\n    deleted_at           text, problem_revision_id integer references problem_revisions (id), paste_count integer not null default 0\n        check (paste_count >= 0), pasted_character_count integer not null default 0\n        check (pasted_character_count >= 0), last_pasted_at text,\n    check ((idempotency_key is null) = (payload_sha256 is null)),\n    check (channel_group_key is null or channel = 'telegram'),\n    check (\n        (author_kind in ('student', 'teacher', 'admin') and author_user_id is not null)\n        or (author_kind in ('ai', 'system') and author_user_id is null)\n    ),\n    check (\n        (author_kind = 'student' and entry_kind in ('text', 'submission'))\n        or (author_kind in ('teacher', 'admin') and entry_kind = 'teacher_comment')\n        or (author_kind = 'ai' and entry_kind = 'ai_comment')\n        or (author_kind = 'system' and entry_kind = 'system_event')\n    ),\n    check (\n        (state = 'locked' and locked_at is not null and deleted_at is null)\n        or (state = 'deleted' and deleted_at is not null and locked_at is null)\n        or (state not in ('locked', 'deleted') and locked_at is null and deleted_at is null)\n    ),\n    check (locked_at is null or locked_at >= server_received_at),\n    check (deleted_at is null or deleted_at >= server_received_at)\n);",
         "table_name": "submission_entries",
         "type": "table"
       },
@@ -27824,8 +27855,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "6ebf44e3d4e129a400cbe5959d8eab2c37c111bf16e146a19f93ce01f17e95f1",
-    "sha256": "69bec2203e34f4cf66318ed3072546d5f0fe8bca89d3547a6d46dc5b37b169da"
+    "pragma_structure_sha256": "5e9cb666ba9bd774982185459ff71c990ed6c1fd9dd2fadfe992f10f7c1ab513",
+    "sha256": "3092a834e13dce3604dc04f3467aeefb5f619001b12156b4715621d37c19e585"
   },
   "source_kind": "repository-migration-head"
 }

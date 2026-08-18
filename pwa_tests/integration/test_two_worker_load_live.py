@@ -106,6 +106,9 @@ def _run_written_photo_batch(
                         config_version=1,
                     ),
                     text=f"Синтетическое решение {worker_index}-{submission_index}",
+                    paste_count=0,
+                    pasted_character_count=0,
+                    last_pasted_at=None,
                     client_created_at=WORKLOAD_NOW,
                     idempotency_key=(f"load-create-{worker_index}-{submission_index}"),
                 )

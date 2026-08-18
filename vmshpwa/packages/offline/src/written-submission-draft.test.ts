@@ -95,6 +95,8 @@ describe('written-submission local draft store', () => {
     const draftDescriptor = descriptor()
 
     first.saveText(draftDescriptor, 'Решение с пояснением')
+    first.recordPaste(draftDescriptor, 18)
+    first.recordPaste(draftDescriptor, 7)
     await first.addPhoto(draftDescriptor, {
       id: PHOTO_ONE,
       fileName: 'page-1.webp',
@@ -139,6 +141,11 @@ describe('written-submission local draft store', () => {
     expect(restored.discardedPhotoIds).toEqual([])
     expect(restored.compatible).toMatchObject({
       text: 'Решение с пояснением',
+      pasteEvidence: {
+        pasteCount: 2,
+        pastedCharacterCount: 25,
+        lastPastedAt: NOW.toISOString(),
+      },
       serverState: { threadId: 'thread-one', entryId: 'entry-one' },
       replacementTarget: { entryId: 'entry-original', entryVersion: 3 },
       photos: [{ id: PHOTO_TWO }, { id: PHOTO_ONE }],
@@ -165,6 +172,15 @@ describe('written-submission local draft store', () => {
 
     const humanDatabase = database('human')
     expect((await store(storage, humanDatabase, 'human').load(descriptor())).compatible).toBeNull()
+  })
+
+  it('records only non-empty text insertions', () => {
+    const storage = new MemoryStorage()
+    const target = database('written-empty-paste')
+    const draftStore = store(storage, target, 'written-empty-paste')
+
+    expect(() => draftStore.recordPaste(descriptor(), 0)).toThrow('positive integer')
+    expect(storage.length).toBe(0)
   })
 
   it('supports a temporary source blob only for server-side conversion fallback', async () => {

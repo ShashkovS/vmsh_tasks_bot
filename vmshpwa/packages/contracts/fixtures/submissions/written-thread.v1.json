@@ -8,6 +8,11 @@
       "configVersion": 2
     },
     "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+    "pasteEvidence": {
+      "pasteCount": 1,
+      "pastedCharacterCount": 18,
+      "lastPastedAt": "2026-09-20T13:03:55.000000Z"
+    },
     "clientCreatedAt": "2026-09-20T13:04:05.000000Z"
   },
   "createResponse": {

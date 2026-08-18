@@ -21,8 +21,8 @@ export interface MathDocumentProps {
 export function MathDocument({ title, children, className }: MathDocumentProps) {
   return (
     <article className={cn('vmsh-math-content', className)} data-slot="math-document">
-      {title ? <h1 className="mb-4 font-reading text-2xl font-semibold">{title}</h1> : null}
-      <div className="vmsh-math-body font-reading text-[1.05rem]">{children}</div>
+      {title ? <h1 className="vmsh-document-title">{title}</h1> : null}
+      <div className="vmsh-math-body">{children}</div>
     </article>
   )
 }

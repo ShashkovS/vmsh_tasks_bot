@@ -15,6 +15,7 @@ export interface SubmissionComposerProps {
   taskType: TaskType
   text: string
   onTextChange: (value: string) => void
+  onTextPaste?: (characterCount: number) => void
   attachments: AttachmentView[]
   onAddPhotos?: () => void
   onMoveUp?: (id: string) => void
@@ -37,6 +38,7 @@ export function SubmissionComposer({
   taskType,
   text,
   onTextChange,
+  onTextPaste,
   attachments,
   onAddPhotos,
   onMoveUp,
@@ -69,17 +71,19 @@ export function SubmissionComposer({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="space-y-1.5">
-        <label className="block text-label font-medium text-foreground" htmlFor={textId}>
-          Ваше решение
-        </label>
+      <div>
         <Textarea
+          aria-label="Ваше решение"
           aria-describedby={taskType === 'oral' ? oralNoteId : undefined}
-          className="min-h-32"
+          className="min-h-36 text-base sm:text-[1.0625rem]"
           disabled={editingDisabled}
           id={textId}
           onChange={(event) => onTextChange(event.target.value)}
           onKeyDown={submitFromKeyboard}
+          onPaste={(event) => {
+            const characterCount = event.clipboardData.getData('text').length
+            if (characterCount > 0) onTextPaste?.(characterCount)
+          }}
           placeholder="Опишите решение. Формулы можно приложить фотографией."
           value={text}
         />
@@ -119,19 +123,6 @@ export function SubmissionComposer({
           onRetry={onRetry}
           onRotate={onRotate}
         />
-
-        <Button
-          disabled={editingDisabled || atLimit}
-          onClick={onAddPhotos}
-          size="sm"
-          variant="outline"
-        >
-          <ImagePlus aria-hidden="true" />
-          Добавить фото
-        </Button>
-        <p className="text-caption text-muted-foreground">
-          Камера или файлы · JPG, PNG, HEIC · до {maxPhotos} страниц.
-        </p>
       </section>
 
       {offline ? (
@@ -146,7 +137,16 @@ export function SubmissionComposer({
         </Alert>
       ) : null}
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button
+          disabled={editingDisabled || atLimit}
+          onClick={onAddPhotos}
+          size="sm"
+          variant="outline"
+        >
+          <ImagePlus aria-hidden="true" />
+          Добавить фото
+        </Button>
         {closed ? (
           <span className="text-small font-medium text-status-danger">Приём закрыт</span>
         ) : (

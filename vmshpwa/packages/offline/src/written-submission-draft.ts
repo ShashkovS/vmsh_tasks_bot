@@ -5,6 +5,7 @@ import {
   createBrowserStorageNamespace,
   publicIdSchema,
   runtimeInstanceSchema,
+  writtenPasteEvidenceSchema,
   type BrowserStorageNamespace,
 } from '@vmsh/contracts'
 
@@ -132,6 +133,11 @@ export const writtenSubmissionDraftSchema = z
     conditionRevisionId: publicIdSchema,
     configVersion: z.number().int().positive(),
     text: z.string().max(100_000),
+    pasteEvidence: writtenPasteEvidenceSchema.default({
+      pasteCount: 0,
+      pastedCharacterCount: 0,
+      lastPastedAt: null,
+    }),
     photos: z.array(writtenDraftPhotoSchema).max(MAX_WRITTEN_SUBMISSION_PHOTOS),
     serverState: writtenDraftServerStateSchema.nullable(),
     replacementTarget: writtenDraftReplacementTargetSchema.nullable().default(null),
@@ -209,6 +215,7 @@ export interface WrittenSubmissionDraftStore {
   key(descriptor: WrittenDraftDescriptor): string
   load(descriptor: WrittenDraftDescriptor): Promise<WrittenSubmissionDraftLoadResult>
   saveText(descriptor: WrittenDraftDescriptor, text: string): WrittenSubmissionDraft
+  recordPaste(descriptor: WrittenDraftDescriptor, characterCount: number): WrittenSubmissionDraft
   saveServerState(
     descriptor: WrittenDraftDescriptor,
     serverState: WrittenDraftServerState | null,
@@ -344,6 +351,11 @@ function emptyDraft(
     audience: 'student',
     ...descriptor(value),
     text: '',
+    pasteEvidence: {
+      pasteCount: 0,
+      pastedCharacterCount: 0,
+      lastPastedAt: null,
+    },
     photos: [],
     serverState: null,
     replacementTarget: null,
@@ -403,7 +415,10 @@ function withTimestamp(
   draft: WrittenSubmissionDraft,
   now: Date,
   changes: Partial<
-    Pick<WrittenSubmissionDraft, 'text' | 'photos' | 'serverState' | 'replacementTarget'>
+    Pick<
+      WrittenSubmissionDraft,
+      'text' | 'pasteEvidence' | 'photos' | 'serverState' | 'replacementTarget'
+    >
   >,
 ): WrittenSubmissionDraft {
   return writtenSubmissionDraftSchema.parse({
@@ -534,6 +549,25 @@ export function createWrittenSubmissionDraftStore(
     saveText(value, text) {
       const parsedDescriptor = descriptor(value)
       return save(parsedDescriptor, withTimestamp(current(parsedDescriptor), now(), { text }))
+    },
+
+    recordPaste(value, characterCount) {
+      if (!Number.isSafeInteger(characterCount) || characterCount <= 0) {
+        throw new RangeError('Pasted character count must be a positive integer')
+      }
+      const parsedDescriptor = descriptor(value)
+      const draft = current(parsedDescriptor)
+      const timestamp = now()
+      return save(
+        parsedDescriptor,
+        withTimestamp(draft, timestamp, {
+          pasteEvidence: {
+            pasteCount: draft.pasteEvidence.pasteCount + 1,
+            pastedCharacterCount: draft.pasteEvidence.pastedCharacterCount + characterCount,
+            lastPastedAt: timestamp.toISOString(),
+          },
+        }),
+      )
     },
 
     saveServerState(value, serverState) {

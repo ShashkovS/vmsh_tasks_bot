@@ -1,7 +1,7 @@
 import { Send } from 'lucide-react'
 import type { FormEvent, KeyboardEvent } from 'react'
 
-import { Alert, AlertContent, AlertDescription, Button, Label, Textarea, cn } from '@vmsh/ui'
+import { Alert, AlertContent, AlertDescription, Button, Textarea, cn } from '@vmsh/ui'
 
 /**
  * Text-only private dialogue composer for Phase 6. Persistence and submission
@@ -46,8 +46,8 @@ export function SupportComposer({
 
   return (
     <form className={cn('space-y-2', className)} onSubmit={submit}>
-      <Label htmlFor="support-message">Сообщение</Label>
       <Textarea
+        aria-label="Сообщение"
         disabled={disabled || busy}
         id="support-message"
         maxLength={100_000}

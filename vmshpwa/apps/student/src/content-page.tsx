@@ -41,6 +41,10 @@ export function StudentPublishedContentPage({
   documentClassName,
   pageWidth,
   renderAfterProblem,
+  renderAfterSubpart,
+  renderProblemActions,
+  renderSubpartActions,
+  hidePageHeading = false,
 }: {
   taskId: string
   groupLessonId?: string
@@ -52,6 +56,10 @@ export function StudentPublishedContentPage({
   documentClassName?: string
   pageWidth?: 'reading' | 'content' | 'wide'
   renderAfterProblem?: (problem: WebContentProblem) => ReactNode
+  renderAfterSubpart?: (problem: WebContentProblem, label: string) => ReactNode
+  renderProblemActions?: (problem: WebContentProblem) => ReactNode
+  renderSubpartActions?: (problem: WebContentProblem, label: string) => ReactNode
+  hidePageHeading?: boolean
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -157,6 +165,34 @@ export function StudentPublishedContentPage({
         `Задача ${selectedProblem.ordinal}${selectedProblem.sourceItem ?? ''}`
       : document.title || materialLabels[kind])
 
+  const renderedContent = (
+    <>
+      <ContentUpdateMarker visible={contentWasReplaced} />
+      {beforeDocument}
+      <SemanticMathDocument
+        {...(documentClassName ? { className: documentClassName } : {})}
+        document={visibleDocument}
+        {...(renderAfterProblem ? { renderAfterProblem } : {})}
+        {...(renderAfterSubpart ? { renderAfterSubpart } : {})}
+        {...(renderProblemActions ? { renderProblemActions } : {})}
+        {...(renderSubpartActions ? { renderSubpartActions } : {})}
+      />
+      {afterDocument}
+    </>
+  )
+
+  if (hidePageHeading) {
+    const widthClass =
+      pageWidth === 'wide'
+        ? 'max-w-[112rem]'
+        : pageWidth === 'content'
+          ? 'max-w-[96rem]'
+          : 'max-w-[90ch]'
+    return (
+      <main className={`mx-auto w-full px-3 py-4 sm:px-5 ${widthClass}`}>{renderedContent}</main>
+    )
+  }
+
   return (
     <PageLayout
       description={`Опубликовано ${new Date(query.data.publishedAt).toLocaleString('ru-RU')}`}
@@ -164,14 +200,7 @@ export function StudentPublishedContentPage({
       title={visibleTitle}
       width={pageWidth ?? 'reading'}
     >
-      <ContentUpdateMarker visible={contentWasReplaced} />
-      {beforeDocument}
-      <SemanticMathDocument
-        {...(documentClassName ? { className: documentClassName } : {})}
-        document={visibleDocument}
-        {...(renderAfterProblem ? { renderAfterProblem } : {})}
-      />
-      {afterDocument}
+      {renderedContent}
     </PageLayout>
   )
 }

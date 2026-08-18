@@ -364,7 +364,6 @@ function studentMessage(entry: SupportEntry, studentUserId: string): ThreadMessa
     id: entry.entryId,
     author: { kind: entry.author.kind, name: entry.author.displayName },
     at: formatSupportTime(entry.receivedAt),
-    channel: entry.channel,
     body: entry.text ?? 'Приложено изображение.',
     own: entry.author.userId === studentUserId,
   }
@@ -442,7 +441,7 @@ export function StudentProblemQuestionLink({
 
   const threadId = createdThreadId ?? matchingThread?.threadId
   return (
-    <section aria-label="Обсуждение задачи" className="mt-4 border-t border-border pt-3">
+    <section aria-label="Обсуждение задачи" className="mt-2 font-sans">
       <Button
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
@@ -450,7 +449,7 @@ export function StudentProblemQuestionLink({
         variant="ghost"
       >
         <MessageCircleQuestion aria-hidden="true" className="size-4" />
-        {threadId ? 'Переписка с преподавателем' : 'Задать вопрос'}
+        {threadId || open ? 'Вопросы по задаче' : 'Задать вопрос'}
       </Button>
       {open ? (
         <div className="mt-3">

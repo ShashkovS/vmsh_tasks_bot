@@ -282,6 +282,7 @@ describe('written-submission outbox', () => {
   it('snapshots text/order/bytes and returns the same queue item for duplicate enqueue', async () => {
     const { draft, outbox } = stores('written-enqueue')
     draft.saveText(descriptor(), 'Текст решения')
+    draft.recordPaste(descriptor(), 14)
     await addPhoto(draft, PHOTO_ONE, 'first')
     await addPhoto(draft, PHOTO_TWO, 'second')
     draft.reorderPhotos(descriptor(), [PHOTO_TWO, PHOTO_ONE])
@@ -295,6 +296,11 @@ describe('written-submission outbox', () => {
       payloadHash: HASH,
       payload: {
         text: 'Текст решения',
+        pasteEvidence: {
+          pasteCount: 1,
+          pastedCharacterCount: 14,
+          lastPastedAt: NOW.toISOString(),
+        },
         problemRevision: { conditionRevisionId: 'condition-revision-one', configVersion: 3 },
         photos: [
           { localPhotoId: PHOTO_TWO, ordinal: 0, serverAttachmentId: null },

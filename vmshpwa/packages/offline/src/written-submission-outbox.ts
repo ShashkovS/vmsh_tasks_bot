@@ -7,6 +7,7 @@ import {
   replaceWrittenEntryResponseSchema,
   submitWrittenEntryResponseSchema,
   writtenSubmissionCompletionResponseSchema,
+  writtenPasteEvidenceSchema,
   writtenProblemRevisionSchema,
   type CreateWrittenAttachmentResponse,
   type CreateWrittenEntryRequest,
@@ -64,6 +65,7 @@ export const writtenSubmissionOutboxPayloadSchema = z
     descriptor: writtenDraftDescriptorSchema,
     problemRevision: writtenProblemRevisionSchema,
     text: z.string().max(100_000).nullable(),
+    pasteEvidence: writtenPasteEvidenceSchema,
     clientCreatedAt: z.iso.datetime(),
     createIdempotencyKey: z.uuid(),
     reorderIdempotencyKey: z.uuid(),
@@ -492,6 +494,7 @@ export function createWrittenSubmissionOutbox(
         descriptor: parsedDescriptor,
         problemRevision,
         text,
+        pasteEvidence: draft.pasteEvidence,
         clientCreatedAt: timestamp,
         createIdempotencyKey: randomUUID(),
         reorderIdempotencyKey: randomUUID(),
@@ -548,6 +551,7 @@ export function createWrittenSubmissionOutbox(
             idempotencyKey: item.payload.createIdempotencyKey,
             problemRevision: item.payload.problemRevision,
             text: item.payload.text,
+            pasteEvidence: item.payload.pasteEvidence,
             clientCreatedAt: item.payload.clientCreatedAt,
           })
           const response = await transport.create(item.payload.descriptor.problemId, request)

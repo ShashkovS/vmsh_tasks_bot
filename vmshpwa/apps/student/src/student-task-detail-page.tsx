@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp, KeyRound, Lightbulb } from 'lucide-react'
 
 import {
   CourseNetworkError,
@@ -15,9 +16,9 @@ import {
   type StudentProblemReveal,
   type StudentProblemSummary,
   type StudentRevealKind,
+  type WebContentProblem,
 } from '@vmsh/contracts'
 import { useOfflineDatabase, type VmshOfflineDatabase } from '@vmsh/offline'
-import { HintDisclosure, SolutionDisclosure } from '@vmsh/product'
 import { Badge, Button } from '@vmsh/ui'
 
 import { StudentPublishedContentPage } from './content-page'
@@ -140,23 +141,15 @@ function StudentProblemActions({
   groupLessonId,
   problem,
   submissionClosed = false,
-  compact = false,
 }: {
   conditionRevisionId: string
   courseId: string
   groupLessonId: string
   problem: StudentProblemSummary
   submissionClosed?: boolean
-  compact?: boolean
 }) {
   return (
-    <div
-      className={
-        compact
-          ? 'mt-3 space-y-4 border-t border-border pt-3'
-          : 'mt-4 space-y-4 rounded-lg border border-border bg-surface p-3 sm:p-4'
-      }
-    >
+    <div className="mt-3 space-y-4 font-sans">
       {problem.type === 'test' ? (
         <StudentTestAnswer closed={submissionClosed} problemId={problem.problemId} />
       ) : null}
@@ -185,8 +178,8 @@ function StudentProblemMaterialsAndQuestion({
 }) {
   return (
     <>
-      <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
       <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
+      <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} compact />
     </>
   )
 }
@@ -212,6 +205,9 @@ function StudentTaskMaterialsReady({
 }) {
   const [hint, setHint] = useState<StudentProblemReveal | null>(initialHint)
   const [solution, setSolution] = useState<StudentProblemReveal | null>(initialSolution)
+  const [openKind, setOpenKind] = useState<StudentRevealKind | null>(null)
+  const [loadingKind, setLoadingKind] = useState<StudentRevealKind | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const reveal = async (kind: StudentRevealKind) => {
     const existing = kind === 'hint' ? hint : solution
@@ -239,6 +235,24 @@ function StudentTaskMaterialsReady({
     else setSolution(response)
   }
 
+  const toggle = async (kind: StudentRevealKind) => {
+    if (openKind === kind) {
+      setOpenKind(null)
+      return
+    }
+    setError(null)
+    setOpenKind(kind)
+    if ((kind === 'hint' ? hint : solution) !== null) return
+    setLoadingKind(kind)
+    try {
+      await reveal(kind)
+    } catch {
+      setError('Не удалось открыть материал. Проверьте соединение и повторите попытку.')
+    } finally {
+      setLoadingKind(null)
+    }
+  }
+
   if (
     problem.materials.hint.status === 'unavailable' &&
     problem.materials.solution.status === 'unavailable'
@@ -249,34 +263,46 @@ function StudentTaskMaterialsReady({
   return (
     <section
       aria-label="Подсказка и решение"
-      className={compact ? 'mt-2 space-y-1.5 font-sans' : 'mt-5 space-y-2'}
+      className={compact ? 'mt-2 font-sans' : 'mt-4 font-sans'}
     >
-      {problem.materials.hint.status === 'unavailable' ? null : (
-        <HintDisclosure
-          initiallyRevealed={problem.materials.hint.status === 'revealed' || hint !== null}
-          meta={
-            hint
-              ? `опубликовано ${new Date(hint.publishedAt).toLocaleDateString('ru-RU')}`
-              : undefined
-          }
-          onReveal={() => reveal('hint')}
-        >
-          {hint ? <SemanticMathDocument document={hint.document} /> : null}
-        </HintDisclosure>
-      )}
-      {problem.materials.solution.status === 'unavailable' ? null : (
-        <SolutionDisclosure
-          initiallyRevealed={problem.materials.solution.status === 'revealed' || solution !== null}
-          meta={
-            solution
-              ? `опубликовано ${new Date(solution.publishedAt).toLocaleDateString('ru-RU')}`
-              : undefined
-          }
-          onReveal={() => reveal('solution')}
-        >
-          {solution ? <SemanticMathDocument document={solution.document} /> : null}
-        </SolutionDisclosure>
-      )}
+      <div className="flex flex-wrap gap-1.5">
+        {problem.materials.hint.status === 'unavailable' ? null : (
+          <Button onClick={() => void toggle('hint')} size="sm" variant="ghost">
+            <Lightbulb aria-hidden="true" className="size-4" />
+            Подсказка
+            {openKind === 'hint' ? (
+              <ChevronUp aria-hidden="true" />
+            ) : (
+              <ChevronDown aria-hidden="true" />
+            )}
+          </Button>
+        )}
+        {problem.materials.solution.status === 'unavailable' ? null : (
+          <Button onClick={() => void toggle('solution')} size="sm" variant="ghost">
+            <KeyRound aria-hidden="true" className="size-4" />
+            Решение
+            {openKind === 'solution' ? (
+              <ChevronUp aria-hidden="true" />
+            ) : (
+              <ChevronDown aria-hidden="true" />
+            )}
+          </Button>
+        )}
+      </div>
+      {error ? <p className="mt-2 text-small text-danger">{error}</p> : null}
+      {loadingKind === openKind ? (
+        <p className="mt-2 text-small text-muted-foreground">Загружаем…</p>
+      ) : null}
+      {openKind === 'hint' && hint ? (
+        <div className="vmsh-material-reveal mt-2 border-l-2 border-border pl-3">
+          <SemanticMathDocument document={hint.document} />
+        </div>
+      ) : null}
+      {openKind === 'solution' && solution ? (
+        <div className="vmsh-material-reveal mt-2 border-l-2 border-border pl-3">
+          <SemanticMathDocument document={solution.document} />
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -368,31 +394,25 @@ export function CanonicalStudentTask({
   return (
     <StudentPublishedContentPage
       afterDocument={
-        <>
-          <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
-          <section
-            aria-label="Ответы и обсуждение"
-            className="mt-4 rounded-lg border border-border bg-surface p-3 sm:p-4"
-          >
-            <StudentProblemActions
-              compact
-              conditionRevisionId={query.data.conditionRevisionId}
-              courseId={courseId}
-              groupLessonId={groupLessonId}
-              problem={problem}
-              submissionClosed={submissionClosed}
-            />
-            <StudentProblemQuestionLink
-              groupLessonId={groupLessonId}
-              problemId={problem.problemId}
-            />
-          </section>
-        </>
+        <section aria-label="Ответы и обсуждение" className="mx-auto mt-3 max-w-[90ch]">
+          <StudentProblemActions
+            conditionRevisionId={query.data.conditionRevisionId}
+            courseId={courseId}
+            groupLessonId={groupLessonId}
+            problem={problem}
+            submissionClosed={submissionClosed}
+          />
+          <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
+          <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} compact />
+        </section>
       }
-      displayTitle={problem.title || `Задача ${problem.displayNumber}`}
+      documentClassName="vmsh-student-sheet rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
       groupLessonId={groupLessonId}
+      hidePageHeading
       kind="condition"
+      pageWidth="content"
       problemOrdinal={problem.sourceOrdinal}
+      renderProblemActions={() => <ProblemStatusBadge problem={problem} />}
       taskId={problem.problemId}
     />
   )
@@ -459,6 +479,63 @@ export function CanonicalStudentWorksheet({
       </PageLayout>
     )
   }
+  if (
+    query.data.courseId !== courseId ||
+    query.data.groupId !== groupId ||
+    query.data.groupLessonId !== groupLessonId
+  ) {
+    return (
+      <PageLayout title="Листок" width="reading">
+        <PageStatePanel state="forbidden" />
+      </PageLayout>
+    )
+  }
+
+  const data = query.data
+  const problemsFor = (documentProblem: WebContentProblem) =>
+    data.problems.filter((problem) => problem.sourceOrdinal === documentProblem.ordinal)
+  const problemForSubpart = (documentProblem: WebContentProblem, label: string) =>
+    problemsFor(documentProblem).find((problem) =>
+      problem.displayNumber.toLocaleLowerCase('ru-RU').endsWith(label.toLocaleLowerCase('ru-RU')),
+    )
+  const toggleProblem = (problemId: string) =>
+    setExpandedProblemIds((current) => {
+      const next = new Set(current)
+      if (next.has(problemId)) next.delete(problemId)
+      else next.add(problemId)
+      return next
+    })
+  const inlineActions = (problem: StudentProblemSummary) => (
+    <span className="vmsh-inline-problem-actions font-sans">
+      <ProblemStatusBadge problem={problem} />
+      <Button
+        aria-expanded={expandedProblemIds.has(problem.problemId)}
+        onClick={() => toggleProblem(problem.problemId)}
+        size="sm"
+        variant="ghost"
+      >
+        {expandedProblemIds.has(problem.problemId)
+          ? 'Скрыть'
+          : submissionClosed
+            ? 'Посмотреть'
+            : 'Ответить'}
+      </Button>
+    </span>
+  )
+  const afterProblem = (problem: StudentProblemSummary) => (
+    <div className="mb-4">
+      {expandedProblemIds.has(problem.problemId) ? (
+        <StudentProblemActions
+          conditionRevisionId={data.conditionRevisionId}
+          courseId={courseId}
+          groupLessonId={groupLessonId}
+          problem={problem}
+          submissionClosed={submissionClosed}
+        />
+      ) : null}
+      <StudentProblemMaterialsAndQuestion groupLessonId={groupLessonId} problem={problem} />
+    </div>
+  )
 
   return (
     <StudentPublishedContentPage
@@ -467,15 +544,15 @@ export function CanonicalStudentWorksheet({
           <Button
             onClick={() =>
               setExpandedProblemIds((current) =>
-                current.size === query.data.problems.length
+                current.size === data.problems.length
                   ? new Set()
-                  : new Set(query.data.problems.map((problem) => problem.problemId)),
+                  : new Set(data.problems.map((problem) => problem.problemId)),
               )
             }
             size="sm"
             variant="outline"
           >
-            {expandedProblemIds.size === query.data.problems.length
+            {expandedProblemIds.size === data.problems.length
               ? 'Свернуть всё'
               : submissionClosed
                 ? 'Показать все отправленные ответы'
@@ -484,66 +561,28 @@ export function CanonicalStudentWorksheet({
         </div>
       }
       {...(displayTitle === undefined ? {} : { displayTitle })}
-      documentClassName="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-6"
+      documentClassName="vmsh-student-sheet rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
       groupLessonId={groupLessonId}
+      hidePageHeading
       kind="condition"
       pageWidth="content"
+      renderProblemActions={(documentProblem) => {
+        const problems = problemsFor(documentProblem)
+        const problem = problems[0]
+        return problem && problems.length === 1 ? inlineActions(problem) : null
+      }}
+      renderSubpartActions={(documentProblem, label) => {
+        const problem = problemForSubpart(documentProblem, label)
+        return problem ? inlineActions(problem) : null
+      }}
+      renderAfterSubpart={(documentProblem, label) => {
+        const problem = problemForSubpart(documentProblem, label)
+        return problem ? afterProblem(problem) : null
+      }}
       renderAfterProblem={(documentProblem) => {
-        const problems = query.data.problems.filter(
-          (problem) => problem.sourceOrdinal === documentProblem.ordinal,
-        )
-        if (problems.length === 0) return null
-        return (
-          <div className="space-y-3">
-            {problems.map((problem) => (
-              <section
-                aria-label={`Работа с задачей ${problem.displayNumber}`}
-                className="my-3 rounded-md border border-border bg-surface-subtle p-3 font-sans"
-                key={problem.problemId}
-              >
-                {problems.length > 1 ? (
-                  <h3 className="mb-2 text-base font-semibold">Пункт {problem.displayNumber})</h3>
-                ) : null}
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <ProblemStatusBadge problem={problem} />
-                  <Button
-                    aria-expanded={expandedProblemIds.has(problem.problemId)}
-                    onClick={() =>
-                      setExpandedProblemIds((current) => {
-                        const next = new Set(current)
-                        if (next.has(problem.problemId)) next.delete(problem.problemId)
-                        else next.add(problem.problemId)
-                        return next
-                      })
-                    }
-                    size="sm"
-                    variant="outline"
-                  >
-                    {expandedProblemIds.has(problem.problemId)
-                      ? 'Свернуть'
-                      : submissionClosed
-                        ? 'Посмотреть ответы'
-                        : 'Ответить'}
-                  </Button>
-                </div>
-                {expandedProblemIds.has(problem.problemId) ? (
-                  <StudentProblemActions
-                    compact
-                    conditionRevisionId={query.data.conditionRevisionId}
-                    courseId={courseId}
-                    groupLessonId={groupLessonId}
-                    problem={problem}
-                    submissionClosed={submissionClosed}
-                  />
-                ) : null}
-                <StudentProblemMaterialsAndQuestion
-                  groupLessonId={groupLessonId}
-                  problem={problem}
-                />
-              </section>
-            ))}
-          </div>
-        )
+        const problems = problemsFor(documentProblem)
+        const problem = problems[0]
+        return problem && problems.length === 1 ? afterProblem(problem) : null
       }}
       taskId={taskId}
     />

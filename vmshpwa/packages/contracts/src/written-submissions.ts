@@ -305,12 +305,36 @@ export const familyWrittenThreadSchema = writtenThreadSchema.safeExtend({
 })
 export type FamilyWrittenThread = z.infer<typeof familyWrittenThreadSchema>
 
+export const writtenPasteEvidenceSchema = z
+  .object({
+    pasteCount: z.number().int().nonnegative(),
+    pastedCharacterCount: z.number().int().nonnegative(),
+    lastPastedAt: z.iso.datetime().nullable(),
+  })
+  .strict()
+  .superRefine((evidence, context) => {
+    const empty =
+      evidence.pasteCount === 0 &&
+      evidence.pastedCharacterCount === 0 &&
+      evidence.lastPastedAt === null
+    const populated =
+      evidence.pasteCount > 0 && evidence.pastedCharacterCount > 0 && evidence.lastPastedAt !== null
+    if (!empty && !populated) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Paste evidence must be either empty or fully populated',
+      })
+    }
+  })
+export type WrittenPasteEvidence = z.infer<typeof writtenPasteEvidenceSchema>
+
 export const createWrittenEntryRequestSchema = z
   .object({
     schemaVersion: contractVersionSchema,
     idempotencyKey: z.uuid(),
     problemRevision: writtenProblemRevisionSchema,
     text: z.string().max(100_000).nullable(),
+    pasteEvidence: writtenPasteEvidenceSchema,
     clientCreatedAt: utcClientTimeSchema,
   })
   .strict()

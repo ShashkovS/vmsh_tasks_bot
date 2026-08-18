@@ -66,6 +66,7 @@ _CREATE_FIELDS = frozenset(
         "idempotencyKey",
         "problemRevision",
         "text",
+        "pasteEvidence",
         "clientCreatedAt",
     }
 )
@@ -314,6 +315,44 @@ def _client_created_at(value: object) -> datetime:
             message="Проверьте время создания решения",
             details={"field": "clientCreatedAt"},
         ) from error
+
+
+def _paste_evidence(value: object) -> tuple[int, int, datetime | None]:
+    fields = {"pasteCount", "pastedCharacterCount", "lastPastedAt"}
+    if not isinstance(value, dict) or set(value) != fields:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте сведения о вставке текста",
+            details={"field": "pasteEvidence"},
+        )
+    paste_count = value["pasteCount"]
+    pasted_character_count = value["pastedCharacterCount"]
+    last_pasted_at = value["lastPastedAt"]
+    valid_counts = (
+        type(paste_count) is int
+        and paste_count >= 0
+        and type(pasted_character_count) is int
+        and pasted_character_count >= 0
+    )
+    empty = paste_count == 0 and pasted_character_count == 0 and last_pasted_at is None
+    populated = (
+        paste_count > 0
+        and pasted_character_count > 0
+        and isinstance(last_pasted_at, str)
+    )
+    if not valid_counts or not (empty or populated):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте сведения о вставке текста",
+            details={"field": "pasteEvidence"},
+        )
+    return (
+        paste_count,
+        pasted_character_count,
+        _client_created_at(last_pasted_at) if populated else None,
+    )
 
 
 def _problem_revision(value: object) -> ProblemRevisionRef:
@@ -810,12 +849,18 @@ async def create_written_entry(request: web.Request) -> web.Response:
             message="Проверьте текст решения",
             details={"field": "text"},
         )
+    paste_count, pasted_character_count, last_pasted_at = _paste_evidence(
+        payload["pasteEvidence"]
+    )
     receipt = await _repository(request).create_entry(
         CreateWrittenEntryCommand(
             account_id=account_id,
             problem_public_id=problem_public_id,
             problem_revision=_problem_revision(payload["problemRevision"]),
             text=text,
+            paste_count=paste_count,
+            pasted_character_count=pasted_character_count,
+            last_pasted_at=last_pasted_at,
             client_created_at=_client_created_at(payload["clientCreatedAt"]),
             idempotency_key=_canonical_uuid(payload["idempotencyKey"]),
         )
