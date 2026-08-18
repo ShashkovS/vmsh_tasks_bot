@@ -2,6 +2,26 @@
 
 Последнее обновление: 2026-08-18.
 
+## Recoverable PWA update activation — 18 August 2026
+
+- Автоматическая попытка применить новую версию больше не блокирует навсегда
+  кнопку «Обновить сейчас», если service worker ещё не успел перехватить
+  страницу. Защита действует только во время одного активного вызова; после его
+  завершения обновление можно повторить вручную или в следующий безопасный
+  момент.
+- Ошибка низкоуровневой активации также освобождает повторную попытку. Реальная
+  перезагрузка по-прежнему выполняется только после `controllerchange`, поэтому
+  незавершённая отправка или ввод пользователя не теряются.
+- Исправление одинаково применено к Student и Family. Регрессионный тест
+  воспроизводит обе причины: зависшую автоматическую активацию и исключение
+  updater перед последующим нажатием кнопки.
+- Evidence: [`student/src/pwa-update.tsx`](../../apps/student/src/pwa-update.tsx),
+  [`family/src/pwa-update.tsx`](../../apps/family/src/pwa-update.tsx) и
+  [`pwa-update.test.tsx`](../../apps/student/src/pwa-update.test.tsx).
+- Проверки: frontend unit **650/650**, ESLint, targeted TypeScript и production
+  builds Student/Family — PASS. Runtime-isolation E2E не стартовал из-за
+  недоступного локального NATS; браузерная часть сценария не выполнялась.
+
 ## Working classroom event and allocation flow — 18 August 2026
 
 - `/staff/classrooms` больше не зависит от Storybook fixture: admin создаёт и

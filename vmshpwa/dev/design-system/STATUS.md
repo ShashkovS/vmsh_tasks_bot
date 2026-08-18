@@ -16,6 +16,25 @@
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
 ```text
+2026-08-18 — Recoverable PWA update activation — ready for production check
+Implemented:
+  A safe-moment activation that did not reach controllerchange no longer makes
+  “Обновить сейчас” inert. Student and Family guard only concurrent activation;
+  later automatic and explicit attempts remain available, while reload still
+  waits for the new service worker to control the page.
+Evidence:
+  vmshpwa/apps/student/src/pwa-update.tsx;
+  vmshpwa/apps/family/src/pwa-update.tsx;
+  vmshpwa/apps/student/src/pwa-update.test.tsx.
+Checks:
+  frontend unit 122 files / 650 PASS; ESLint and targeted TypeScript PASS;
+  Student and Family production builds PASS. Runtime E2E was blocked before
+  browser launch by unavailable local NATS.
+Snapshots:
+  not updated.
+```
+
+```text
 2026-08-18 — Real classroom event and allocation flow — ready for owner production check
 Implemented:
   /staff/classrooms creates and edits actual in-person events with Moscow

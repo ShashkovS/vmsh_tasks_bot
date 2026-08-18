@@ -7,13 +7,14 @@ import { Button } from '@vmsh/ui'
 import { safePwaUpdateEvent } from './pwa-update-events'
 
 export function PwaUpdateController({ router }: { router: AnyRouter }) {
-  const applyRequested = useRef(false)
+  const applyInProgress = useRef(false)
+  const activationRequested = useRef(false)
   const updatePending = useRef(false)
   const detectedAtHref = useRef<string | undefined>(undefined)
   const reloadStarted = useRef(false)
   const [noticeHidden, setNoticeHidden] = useState(false)
   const reloadAfterControllerChange = useCallback(() => {
-    if (!applyRequested.current || reloadStarted.current) return
+    if (!activationRequested.current || reloadStarted.current) return
     reloadStarted.current = true
     window.location.reload()
   }, [])
@@ -23,8 +24,9 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
     updateServiceWorker,
   } = useRegisterSW({ immediate: true, onNeedReload: reloadAfterControllerChange })
   const applyUpdate = useCallback(async () => {
-    if (applyRequested.current) return
-    applyRequested.current = true
+    if (applyInProgress.current) return
+    applyInProgress.current = true
+    activationRequested.current = true
     try {
       const registration = await navigator.serviceWorker?.getRegistration(window.location.href)
       if (registration?.waiting) {
@@ -33,7 +35,9 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
       }
       await updateServiceWorker(false)
     } catch {
-      applyRequested.current = false
+      activationRequested.current = false
+    } finally {
+      applyInProgress.current = false
     }
   }, [updateServiceWorker])
 
