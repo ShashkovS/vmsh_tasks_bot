@@ -188,6 +188,36 @@ vmshpwa/e2e/classrooms.spec.ts
 
 ## Пруфы завершения этапа
 
+### Рабочий Staff-контур очного события — 18 августа 2026
+
+- `/staff/classrooms` подключён к реальному каталогу очных событий. Admin
+  создаёт и редактирует дату/время, статус и точный набор `group_lesson`, а
+  затем без ручной подстановки opaque ID переходит к схеме и распределению.
+  Новые события получают читаемый public ID `in-person-YYYY-MM-DD`.
+- API `GET/POST /staff/api/v1/in-person-events` и
+  `PATCH /staff/api/v1/in-person-events/{event}` использует optimistic version;
+  после появления classroom plan состав групп события фиксируется, чтобы не
+  подменить основу уже подтверждённых назначений.
+- Вкладки «По группам» и «Школьники» работают с SQLite: наследуют последний
+  подтверждённый план, сохраняют локальный черновик, поддерживают одиночные и
+  массовые select-переносы и подтверждают новый snapshot. Карточки комнат
+  компактно показывают count и средние возраст/класс/силу.
+- Подтверждение и рассылка остаются двумя действиями. Preview позволяет явно
+  выбрать PWA и личный Telegram; черновые перестановки и сохранение события
+  никого автоматически не уведомляют.
+- Student и Family показывают московские дату/время события и подтверждённую
+  аудиторию. Family не получает classroom push/Telegram delivery.
+- Исполняемые точки: `apps/pwa_api/classroom_layout_routes.py`,
+  `db_methods/pwa/classroom_layouts.py`,
+  `vmshpwa/apps/staff/src/classroom-event-page.tsx`,
+  `vmshpwa/packages/product/src/classroom-planning.tsx` и
+  `vmshpwa/e2e/classroom-catalog.spec.ts`.
+- Проверки инкремента: focused HTTP integration **5/5 PASS**; frontend unit
+  **121 файлов / 648 PASS**; classroom production E2E **9/9 PASS** в Chromium,
+  WebKit и Firefox; lint, typecheck и production build — PASS. Полный Python
+  gate: **1763 PASS / 6 skip / 2 unrelated golden-corpus drift failures**;
+  committed snapshots не обновлялись.
+
 Промежуточные принятые вертикальные срезы:
 
 - [Phase 7A: постоянный каталог аудиторий](../../../pwa_tests/reports/phase7-classroom-catalog.md);

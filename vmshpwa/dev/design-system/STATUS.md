@@ -16,6 +16,29 @@
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
 ```text
+2026-08-18 — Real classroom event and allocation flow — ready for owner production check
+Implemented:
+  /staff/classrooms creates and edits actual in-person events with Moscow
+  date/time and selected group lessons; existing real layout, assignment,
+  compact room statistics, local drafts, confirmation and explicit
+  PWA/personal-Telegram delivery are connected to that event. Student and
+  Family show the announced schedule and confirmed room; Family is never a
+  classroom notification recipient.
+Evidence:
+  vmshpwa/apps/staff/src/classroom-event-page.tsx;
+  vmshpwa/packages/product/src/classroom-planning.tsx;
+  vmshpwa/apps/student/src/student-home-page.tsx;
+  vmshpwa/apps/family/src/family-home-page.tsx;
+  vmshpwa/e2e/classroom-catalog.spec.ts.
+Checks:
+  focused HTTP integration 5/5; frontend unit 121 files / 648 PASS;
+  classroom production E2E 9/9 in Chromium, WebKit and Firefox;
+  lint, typecheck and production build PASS.
+Snapshots:
+  not updated.
+```
+
+```text
 2026-08-18 — Staff lesson upload recovery — ready for owner production check
 Implemented:
   saved drafts and all visible lessons are listed in /staff/lessons; partial

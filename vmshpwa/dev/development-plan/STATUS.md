@@ -2,6 +2,30 @@
 
 Последнее обновление: 2026-08-18.
 
+## Working classroom event and allocation flow — 18 August 2026
+
+- `/staff/classrooms` больше не зависит от Storybook fixture: admin создаёт и
+  редактирует реальное очное событие, его московские дату/время и участвующие
+  групповые занятия. Новые события имеют читаемые public IDs вида
+  `in-person-YYYY-MM-DD`.
+- К событию подключены существующие реальные catalog/layout/assignment API:
+  наследование последнего подтверждённого плана, компактная статистика комнат,
+  localStorage-черновик, single/bulk select, пересчёт и подтверждение snapshot.
+- «Разослать аудитории» остаётся отдельным явным действием с preview каналов
+  PWA/личный Telegram. Family только читает актуальное назначение; автоматической
+  рассылки после правки нет.
+- Student и Family показывают дату/время объявленного события и номер аудитории
+  только из подтверждённого плана.
+- Evidence: [`classroom-event-page.tsx`](../../apps/staff/src/classroom-event-page.tsx),
+  [`classroom_layout_routes.py`](../../../apps/pwa_api/classroom_layout_routes.py),
+  [`classroom-planning.tsx`](../../packages/product/src/classroom-planning.tsx),
+  [`classroom-catalog.spec.ts`](../../e2e/classroom-catalog.spec.ts) и
+  [`classroom-and-oral-workflow.md`](../../docs/classroom-and-oral-workflow.md).
+- Проверки: HTTP integration **5/5**, frontend unit **648/648**, classroom E2E
+  **9/9** в Chromium/WebKit/Firefox, lint/typecheck/build — PASS. В полном Python
+  gate **1763 passed / 6 skipped**; 2 теста golden corpus падают из-за локального
+  owner corpus drift и не связаны с classroom increment. Snapshots не менялись.
+
 ## Staff lesson upload deadlock recovery — 18 August 2026
 
 - `/staff/lessons` запрашивает полный доступный каталог занятий, поэтому
