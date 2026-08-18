@@ -161,6 +161,8 @@ export function FamilyHomePage() {
                   audience="family"
                   {...(item.classroomName ? { classroomName: item.classroomName } : {})}
                   {...(confirmedAt ? { confirmedAt } : {})}
+                  endsAt={item.endsAt}
+                  startsAt={item.startsAt}
                   status={item.status}
                   {...(selectedChild ? { studentName: selectedChild.displayName } : {})}
                 />

@@ -19,12 +19,16 @@ import {
   confirmClassroomAssignmentPlanRequestSchema,
   materializeClassroomLayoutRequestSchema,
   latestClassroomDeliveryBatchResponseSchema,
+  inPersonEventEtag,
+  inPersonEventListResponseSchema,
+  inPersonEventResponseSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
   recalculateClassroomAssignmentPlanRequestSchema,
   renameClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
   retryClassroomDeliveryBatchRequestSchema,
+  saveInPersonEventRequestSchema,
   updateClassroomAssignmentPlanRequestSchema,
   type ChangeClassroomStatusRequest,
   type Classroom,
@@ -42,10 +46,14 @@ import {
   type ConfirmClassroomAssignmentPlanRequest,
   type MaterializeClassroomLayoutRequest,
   type LatestClassroomDeliveryBatchResponse,
+  type InPersonEvent,
+  type InPersonEventListResponse,
+  type InPersonEventResponse,
   type RenameClassroomRequest,
   type RecalculateClassroomAssignmentPlanRequest,
   type ReplaceClassroomLayoutRequest,
   type RetryClassroomDeliveryBatchRequest,
+  type SaveInPersonEventRequest,
   type RuntimeConfig,
   type UpdateClassroomAssignmentPlanRequest,
 } from '@vmsh/contracts'
@@ -60,6 +68,16 @@ export interface ClassroomClientOptions {
 }
 
 export interface ClassroomClient {
+  listInPersonEvents(options?: ClassroomRequestOptions): Promise<InPersonEventListResponse>
+  createInPersonEvent(
+    request: SaveInPersonEventRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<InPersonEventResponse>
+  updateInPersonEvent(
+    event: InPersonEvent,
+    request: SaveInPersonEventRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<InPersonEventResponse>
   list(
     query?: ClassroomListQuery,
     options?: ClassroomRequestOptions,
@@ -183,6 +201,46 @@ class BrowserClassroomClient implements ClassroomClient {
     const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
+  }
+
+  async listInPersonEvents(
+    options: ClassroomRequestOptions = {},
+  ): Promise<InPersonEventListResponse> {
+    return this.#request('/in-person-events', { method: 'GET' }, options, 200, (payload) =>
+      inPersonEventListResponseSchema.parse(payload),
+    )
+  }
+
+  async createInPersonEvent(
+    request: SaveInPersonEventRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<InPersonEventResponse> {
+    return this.#request(
+      '/in-person-events',
+      { method: 'POST', body: JSON.stringify(saveInPersonEventRequestSchema.parse(request)) },
+      options,
+      201,
+      (payload) => inPersonEventResponseSchema.parse(payload),
+    )
+  }
+
+  async updateInPersonEvent(
+    event: InPersonEvent,
+    request: SaveInPersonEventRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<InPersonEventResponse> {
+    const publicId = publicIdSchema.parse(event.publicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(publicId)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(saveInPersonEventRequestSchema.parse(request)),
+        headers: { 'If-Match': inPersonEventEtag(event) },
+      },
+      options,
+      200,
+      (payload) => inPersonEventResponseSchema.parse(payload),
+    )
   }
 
   async list(

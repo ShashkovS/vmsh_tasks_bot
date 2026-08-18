@@ -2,6 +2,7 @@ import {
   Archive,
   Bell,
   Building2,
+  CalendarClock,
   Check,
   CircleAlert,
   History,
@@ -1075,6 +1076,8 @@ export type ClassroomAssignmentPublicStatus = 'not_applicable' | 'reassigning' |
 export interface ClassroomAssignmentStatusProps {
   audience: 'student' | 'family'
   status: ClassroomAssignmentPublicStatus
+  startsAt?: string
+  endsAt?: string
   classroomName?: string
   publishedAt?: string
   confirmedAt?: string
@@ -1084,9 +1087,32 @@ export interface ClassroomAssignmentStatusProps {
   className?: string
 }
 
+function formatClassroomEventSchedule(startsAt?: string, endsAt?: string): string | null {
+  if (!startsAt || !endsAt) return null
+  const start = new Date(startsAt)
+  const end = new Date(endsAt)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+  const date = new Intl.DateTimeFormat('ru-RU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'Europe/Moscow',
+  }).format(start)
+  const time = new Intl.DateTimeFormat('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Moscow',
+  })
+  const startsTime = time.format(start)
+  const endsTime = time.format(end)
+  return `${date} · ${startsTime}–${endsTime}`
+}
+
 export function ClassroomAssignmentStatus({
   audience,
   status,
+  startsAt,
+  endsAt,
   classroomName,
   publishedAt,
   confirmedAt,
@@ -1095,6 +1121,7 @@ export function ClassroomAssignmentStatus({
   onOpenNotificationSettings,
   className,
 }: ClassroomAssignmentStatusProps) {
+  const eventSchedule = formatClassroomEventSchedule(startsAt, endsAt)
   if (status === 'reassigning') {
     return (
       <Alert className={className} role="status" tone="warning">
@@ -1106,6 +1133,12 @@ export function ClassroomAssignmentStatus({
               ? 'Прежняя аудитория больше не действует. Новая появится здесь после подтверждения.'
               : 'Прежняя аудитория ребёнка больше не действует. Новая появится после подтверждения.'}
           </AlertDescription>
+          {eventSchedule ? (
+            <p className="mt-1 flex items-center gap-1 text-small font-medium text-foreground">
+              <CalendarClock aria-hidden="true" className="size-4" />
+              {eventSchedule}
+            </p>
+          ) : null}
           {publishedAt ? (
             <p className="mt-1 text-caption text-muted-foreground">Обновлено {publishedAt}</p>
           ) : null}
@@ -1138,6 +1171,12 @@ export function ClassroomAssignmentStatus({
                 ? `${studentName}: сейчас онлайн-режим.`
                 : 'Сейчас у ребёнка онлайн-режим.'}
           </AlertDescription>
+          {eventSchedule ? (
+            <p className="mt-1 flex items-center gap-1 text-small font-medium text-foreground">
+              <CalendarClock aria-hidden="true" className="size-4" />
+              {eventSchedule}
+            </p>
+          ) : null}
         </AlertContent>
       </Alert>
     )
@@ -1156,6 +1195,12 @@ export function ClassroomAssignmentStatus({
           <p className="text-caption text-muted-foreground">
             {audience === 'student' ? 'Ваша аудитория' : `Аудитория: ${studentName ?? 'ребёнок'}`}
           </p>
+          {eventSchedule ? (
+            <p className="mt-1 flex items-center gap-1 text-small font-medium text-foreground">
+              <CalendarClock aria-hidden="true" className="size-4" />
+              {eventSchedule}
+            </p>
+          ) : null}
           <p className="text-title font-semibold text-foreground">
             {classroomName ?? 'Название уточняется'}
           </p>

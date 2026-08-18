@@ -1,13 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { z } from 'zod'
 
 import { StaffClassroomCatalog } from '../classroom-catalog-page'
 import { StaffClassroomAssignments } from '../classroom-assignment-page'
+import { StaffClassroomEventManager } from '../classroom-event-page'
 import { StaffClassroomLayout } from '../classroom-layout-page'
 import { StaffClassroomsPage } from '../pages'
 
 const searchSchema = z.object({
-  event: z.string().trim().min(1).catch('in-person-2026-02-01'),
+  event: z.string().trim().min(1).optional(),
   course: z.string().trim().min(1).optional(),
   group: z.string().trim().min(1).optional(),
   tab: z.enum(['catalog', 'groups', 'students']).catch('catalog'),
@@ -22,6 +24,16 @@ export const Route = createFileRoute('/classrooms')({
 function ClassroomsRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const selectEvent = (event: string | undefined) =>
+    void navigate({ search: (current) => ({ ...current, event }) })
+  const selectEventFirst = (content: (eventPublicId: string) => ReactNode): ReactNode =>
+    search.event ? (
+      content(search.event)
+    ) : (
+      <p className="rounded-md border border-border bg-surface p-4 text-small text-muted-foreground">
+        Создайте или выберите очное занятие выше.
+      </p>
+    )
   return (
     <StaffClassroomsPage
       catalog={
@@ -32,9 +44,19 @@ function ClassroomsRoute() {
           statusFilter={search.roomStatus}
         />
       }
-      layout={<StaffClassroomLayout eventPublicId={search.event} />}
+      event={
+        <StaffClassroomEventManager
+          onEventChange={selectEvent}
+          selectedEventPublicId={search.event}
+        />
+      }
+      layout={selectEventFirst((eventPublicId) => (
+        <StaffClassroomLayout eventPublicId={eventPublicId} />
+      ))}
       onTabChange={(tab) => void navigate({ search: (current) => ({ ...current, tab }) })}
-      students={<StaffClassroomAssignments eventPublicId={search.event} />}
+      students={selectEventFirst((eventPublicId) => (
+        <StaffClassroomAssignments eventPublicId={eventPublicId} />
+      ))}
       tab={search.tab}
     />
   )

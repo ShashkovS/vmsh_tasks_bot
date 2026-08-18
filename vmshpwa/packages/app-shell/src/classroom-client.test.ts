@@ -46,6 +46,28 @@ const layout = {
   conflicts: [],
 }
 
+const eventGroup = {
+  groupLessonPublicId: 'group-lesson-0',
+  coursePublicId: 'course-math',
+  courseName: 'Математика',
+  groupPublicId: 'group-beginner',
+  groupName: 'Начинающие',
+  shortCode: 'н',
+  colorKey: 'beginner',
+  lessonNumber: 0,
+  inPersonCount: 12,
+}
+
+const inPersonEvent = {
+  publicId: 'event-0',
+  name: 'Очное знакомство',
+  startsAt: '2026-09-06T07:00:00Z',
+  endsAt: '2026-09-06T10:00:00Z',
+  status: 'scheduled' as const,
+  version: 1,
+  groupLessons: [eventGroup],
+}
+
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -54,6 +76,62 @@ function response(body: unknown, status = 200) {
 }
 
 describe('classroom client', () => {
+  it('lists, creates and updates in-person events', async () => {
+    const catalog = {
+      schemaVersion: 1,
+      season: {
+        publicId: 'season-2026',
+        code: '2026-27',
+        title: '2026/27',
+      },
+      events: [inPersonEvent],
+      candidates: [eventGroup],
+      requestId: 'events-list',
+    }
+    const eventResponse = {
+      schemaVersion: 1,
+      event: inPersonEvent,
+      requestId: 'event-mutation',
+    }
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(response(catalog))
+      .mockResolvedValueOnce(response(eventResponse, 201))
+      .mockResolvedValueOnce(response(eventResponse))
+    const client = createClassroomClient(runtime, { fetchImplementation })
+    const request = {
+      schemaVersion: 1 as const,
+      name: inPersonEvent.name,
+      startsAt: inPersonEvent.startsAt,
+      endsAt: inPersonEvent.endsAt,
+      status: inPersonEvent.status,
+      groupLessonPublicIds: ['group-lesson-0'],
+    }
+
+    expect((await client.listInPersonEvents()).candidates[0]?.lessonNumber).toBe(0)
+    await client.createInPersonEvent(request)
+    await client.updateInPersonEvent(inPersonEvent, request)
+
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      1,
+      '/staff/api/v1/in-person-events',
+      expect.objectContaining({ method: 'GET' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      2,
+      '/staff/api/v1/in-person-events',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      3,
+      '/staff/api/v1/in-person-events/event-0',
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({ 'If-Match': '"event-0:v1"' }),
+      }),
+    )
+  })
+
   it('lists with normalized query parameters and validates the response', async () => {
     const fetchImplementation = vi.fn(() =>
       Promise.resolve(

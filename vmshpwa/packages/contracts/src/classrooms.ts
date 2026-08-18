@@ -72,6 +72,7 @@ export const classroomListResponseSchema = z
 export type ClassroomListResponse = z.infer<typeof classroomListResponseSchema>
 
 export const inPersonEventStatusSchema = z.enum(['draft', 'scheduled', 'completed', 'cancelled'])
+export type InPersonEventStatus = z.infer<typeof inPersonEventStatusSchema>
 export const classroomLayoutStateSchema = z.enum(['inherited', 'draft', 'confirmed'])
 
 export const classroomLayoutGroupSchema = z
@@ -83,12 +84,74 @@ export const classroomLayoutGroupSchema = z
     groupName: z.string().trim().min(1),
     shortCode: z.string().trim().min(1),
     colorKey: z.string().trim().min(1).nullable(),
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     inPersonCount: z.number().int().nonnegative(),
     assignedCount: z.number().int().nonnegative(),
   })
   .strict()
 export type ClassroomLayoutGroup = z.infer<typeof classroomLayoutGroupSchema>
+
+export const inPersonEventGroupSchema = classroomLayoutGroupSchema.omit({ assignedCount: true })
+export type InPersonEventGroup = z.infer<typeof inPersonEventGroupSchema>
+
+export const inPersonEventSchema = z
+  .object({
+    publicId: publicIdSchema,
+    name: z.string().trim().min(1).max(200),
+    startsAt: z.iso.datetime(),
+    endsAt: z.iso.datetime(),
+    status: inPersonEventStatusSchema,
+    version: z.number().int().positive(),
+    groupLessons: z.array(inPersonEventGroupSchema),
+  })
+  .strict()
+export type InPersonEvent = z.infer<typeof inPersonEventSchema>
+
+export const inPersonEventListResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    season: z
+      .object({
+        publicId: publicIdSchema,
+        code: z.string().trim().min(1),
+        title: z.string().trim().min(1),
+      })
+      .strict(),
+    events: z.array(inPersonEventSchema),
+    candidates: z.array(inPersonEventGroupSchema),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type InPersonEventListResponse = z.infer<typeof inPersonEventListResponseSchema>
+
+export const inPersonEventResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    event: inPersonEventSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type InPersonEventResponse = z.infer<typeof inPersonEventResponseSchema>
+
+export const saveInPersonEventRequestSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    name: z.string().trim().min(1).max(200),
+    startsAt: z.iso.datetime(),
+    endsAt: z.iso.datetime(),
+    status: inPersonEventStatusSchema,
+    groupLessonPublicIds: z.array(publicIdSchema).min(1).max(500),
+  })
+  .strict()
+  .refine(
+    (request) => new Set(request.groupLessonPublicIds).size === request.groupLessonPublicIds.length,
+    { message: 'Group lessons must be unique', path: ['groupLessonPublicIds'] },
+  )
+  .refine((request) => request.endsAt > request.startsAt, {
+    message: 'Event end must be after its start',
+    path: ['endsAt'],
+  })
+export type SaveInPersonEventRequest = z.infer<typeof saveInPersonEventRequestSchema>
 
 export const classroomLayoutRoomSchema = z
   .object({
@@ -581,6 +644,7 @@ export function classroomLayoutEtag(layout: { publicId: string; version: number 
 }
 
 export const classroomAssignmentPlanEtag = classroomLayoutEtag
+export const inPersonEventEtag = classroomLayoutEtag
 
 export const classroomQueryKeys = {
   all: (principal: PrincipalQueryScope) => [...principalQueryKey(principal), 'classrooms'] as const,
@@ -588,6 +652,8 @@ export const classroomQueryKeys = {
     const parsed = classroomListQuerySchema.parse(query)
     return [...classroomQueryKeys.all(principal), 'list', parsed.status, parsed.search] as const
   },
+  events: (principal: PrincipalQueryScope) =>
+    [...classroomQueryKeys.all(principal), 'events'] as const,
   layout: (principal: PrincipalQueryScope, eventPublicId: string) => [
     ...classroomQueryKeys.all(principal),
     'layout',

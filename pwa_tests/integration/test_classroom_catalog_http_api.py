@@ -365,6 +365,31 @@ def _seed_layout_scope(factory: PwaConnectionFactory) -> None:
     factory.run_write(seed)
 
 
+def _seed_event_candidate(factory: PwaConnectionFactory) -> None:
+    now = "2026-07-01T12:00:00.000000Z"
+
+    def seed(connection) -> None:
+        course_id = connection.execute(
+            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+        ).fetchone()["id"]
+        course_lesson_id = connection.execute(
+            "INSERT INTO course_lessons "
+            "(public_id, course_id, lesson_number, created_at, updated_at) "
+            "VALUES ('classroom-event-course-lesson', ?, 0, ?, ?) RETURNING id",
+            (course_id, now, now),
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO group_lessons "
+            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "business_timezone, status, created_at, updated_at) VALUES "
+            "('classroom-event-group-lesson', ?, ?, 'layout-beginner', "
+            "'2026-09-01', 'Europe/Moscow', 'active', ?, ?)",
+            (course_lesson_id, course_id, now, now),
+        )
+
+    factory.run_write(seed)
+
+
 @pytest.mark.asyncio
 async def test_only_admin_can_manage_classroom_catalog(classroom_http):
     unauthenticated = await classroom_http.client.get(
@@ -480,6 +505,99 @@ async def test_admin_catalog_round_trip_duplicate_search_and_stale_version(
         ("renamed", "classroom.http.test"),
         ("archived", "classroom.http.test"),
         ("restored", "classroom.http.test"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_admin_creates_and_updates_in_person_event(classroom_http):
+    _seed_event_candidate(classroom_http.factory)
+    path = "/staff/api/v1/in-person-events"
+
+    teacher = await classroom_http.client.get(
+        path,
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    catalog = await classroom_http.client.get(
+        path,
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert catalog.status == 200
+    catalog_payload = await catalog.json()
+    assert catalog_payload["events"] == []
+    assert catalog_payload["season"]["publicId"] == "classroom-layout-season"
+    assert catalog_payload["candidates"] == [
+        {
+            "groupLessonPublicId": "classroom-event-group-lesson",
+            "coursePublicId": "classroom-layout-course",
+            "courseName": "Математика",
+            "groupPublicId": "classroom-layout-group",
+            "groupName": "Начинающие",
+            "shortCode": "н",
+            "colorKey": "beginner",
+            "lessonNumber": 0,
+            "inPersonCount": 1,
+        }
+    ]
+
+    request = {
+        "schemaVersion": 1,
+        "name": "  Очное знакомство  ",
+        "startsAt": "2026-09-06T07:00:00Z",
+        "endsAt": "2026-09-06T10:00:00Z",
+        "status": "scheduled",
+        "groupLessonPublicIds": ["classroom-event-group-lesson"],
+    }
+    created = await classroom_http.client.post(
+        path,
+        json=request,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    event = (await created.json())["event"]
+    assert event["name"] == "Очное знакомство"
+    assert event["publicId"] == "in-person-2026-09-06"
+    assert event["version"] == 1
+    assert event["groupLessons"][0]["lessonNumber"] == 0
+    assert created.headers["ETag"] == f'"{event["publicId"]}:v1"'
+
+    stale = await classroom_http.client.patch(
+        f'{path}/{event["publicId"]}',
+        json={**request, "name": "Очное знакомство · новое время"},
+        headers=_headers(unsafe=True, if_match=f'"{event["publicId"]}:v2"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert stale.status == 409
+    assert (await stale.json())["error"]["code"] == "version_conflict"
+
+    updated = await classroom_http.client.patch(
+        f'{path}/{event["publicId"]}',
+        json={
+            **request,
+            "name": "Очное знакомство · новое время",
+            "endsAt": "2026-09-06T10:30:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=f'"{event["publicId"]}:v1"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert updated.status == 200, await updated.text()
+    updated_event = (await updated.json())["event"]
+    assert updated_event["version"] == 2
+    assert updated_event["endsAt"] == "2026-09-06T10:30:00Z"
+    assert updated.headers["ETag"] == f'"{event["publicId"]}:v2"'
+
+    refreshed = await classroom_http.client.get(
+        path,
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    refreshed_payload = await refreshed.json()
+    assert [item["publicId"] for item in refreshed_payload["events"]] == [
+        event["publicId"]
     ]
 
 

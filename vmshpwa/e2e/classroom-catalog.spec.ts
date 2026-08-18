@@ -71,7 +71,7 @@ test('Phase 7: admin maintains the durable classroom catalog', async ({ page }, 
       candidate.request().method() === 'PATCH' &&
       new URL(candidate.url()).pathname.startsWith('/staff/api/v1/classrooms/'),
   )
-  await page.getByRole('button', { name: 'Сохранить' }).click()
+  await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   expect((await renameResponse).status()).toBe(200)
   await page.getByLabel('Поиск').fill('')
   await page.getByLabel('Показывать').selectOption('active')
@@ -127,7 +127,7 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
   await expect(page.getByText('Унаследовано')).toBeVisible()
 
   await page.getByRole('button', { name: 'Изменить для занятия' }).click()
-  await expect(page.getByText('Черновик')).toBeVisible()
+  await expect(page.getByText('Черновик', { exact: true }).last()).toBeVisible()
   const groupLabel = `Математика 5–7 · Начинающие E2E ${project}`
   const roomSelect = page.getByLabel(`Группа для аудитории ${roomName}`)
   await roomSelect.selectOption({ label: groupLabel })

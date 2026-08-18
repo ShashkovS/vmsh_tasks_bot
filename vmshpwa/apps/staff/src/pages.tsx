@@ -650,6 +650,7 @@ export function StaffClassroomsPage({
   state = 'ready',
   tab: controlledTab,
   onTabChange,
+  event,
   catalog,
   layout,
   students,
@@ -657,6 +658,7 @@ export function StaffClassroomsPage({
   state?: PageDisplayState
   tab?: ClassroomPageTab
   onTabChange?: (tab: ClassroomPageTab) => void
+  event?: ReactNode
   catalog?: ReactNode
   layout?: ReactNode
   students?: ReactNode
@@ -677,18 +679,20 @@ export function StaffClassroomsPage({
         width="wide"
       >
         <div className="space-y-6">
-          <InPersonEventComposer
-            groupLessons={eventGroupLessons}
-            onToggle={(groupLessonId, selected) =>
-              setEventGroupLessons((current) =>
-                current.map((groupLesson) =>
-                  groupLesson.id === groupLessonId ? { ...groupLesson, selected } : groupLesson,
-                ),
-              )
-            }
-            startsAt="1 февраля, 10:00–13:00"
-            title="Очное воскресенье"
-          />
+          {event ?? (
+            <InPersonEventComposer
+              groupLessons={eventGroupLessons}
+              onToggle={(groupLessonId, selected) =>
+                setEventGroupLessons((current) =>
+                  current.map((groupLesson) =>
+                    groupLesson.id === groupLessonId ? { ...groupLesson, selected } : groupLesson,
+                  ),
+                )
+              }
+              startsAt="1 февраля, 10:00–13:00"
+              title="Очное воскресенье"
+            />
+          )}
           <Tabs onValueChange={setTab} value={tab}>
             <TabsList>
               <TabsTrigger value="catalog">Каталог</TabsTrigger>

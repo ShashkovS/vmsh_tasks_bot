@@ -14,6 +14,8 @@ import {
   classroomDeliveryBatchResponseSchema,
   classroomDeliveryPreviewResponseSchema,
   classroomEtag,
+  inPersonEventEtag,
+  inPersonEventListResponseSchema,
   classroomLayoutEtag,
   classroomLayoutResponseSchema,
   classroomListQuerySchema,
@@ -24,9 +26,22 @@ import {
   createClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
   retryClassroomDeliveryBatchRequestSchema,
+  saveInPersonEventRequestSchema,
   updateClassroomAssignmentPlanRequestSchema,
   createClassroomDeliveryBatchRequestSchema,
 } from './classrooms'
+
+const eventGroup = {
+  groupLessonPublicId: 'group-lesson-0',
+  coursePublicId: 'course-math',
+  courseName: 'Математика',
+  groupPublicId: 'group-beginner',
+  groupName: 'Начинающие',
+  shortCode: 'н',
+  colorKey: 'beginner',
+  lessonNumber: 0,
+  inPersonCount: 12,
+}
 
 describe('classroom catalog contracts', () => {
   it('validates the committed catalog fixture', () => {
@@ -126,6 +141,58 @@ describe('classroom layout contracts', () => {
     )
     expect(classroomQueryKeys.layout(admin, 'event-41')).not.toEqual(
       classroomQueryKeys.layout({ audience: 'staff', accountId: 'admin.two' }, 'event-41'),
+    )
+  })
+})
+
+describe('in-person event contracts', () => {
+  it('accepts lesson zero and gives an event its canonical ETag', () => {
+    const event = {
+      publicId: 'event-0',
+      name: 'Очное знакомство',
+      startsAt: '2026-09-06T07:00:00Z',
+      endsAt: '2026-09-06T10:00:00Z',
+      status: 'scheduled' as const,
+      version: 1,
+      groupLessons: [eventGroup],
+    }
+    const parsed = inPersonEventListResponseSchema.parse({
+      schemaVersion: 1,
+      season: { publicId: 'season-2026', code: '2026-27', title: '2026/27' },
+      events: [event],
+      candidates: [eventGroup],
+      requestId: 'events-list',
+    })
+    expect(parsed.candidates[0]?.lessonNumber).toBe(0)
+    expect(inPersonEventEtag(parsed.events[0]!)).toBe('"event-0:v1"')
+  })
+
+  it('rejects duplicate group lessons and a backwards interval', () => {
+    const base = {
+      schemaVersion: 1,
+      name: 'Очное знакомство',
+      startsAt: '2026-09-06T07:00:00Z',
+      endsAt: '2026-09-06T10:00:00Z',
+      status: 'scheduled',
+      groupLessonPublicIds: ['group-lesson-0'],
+    }
+    expect(() =>
+      saveInPersonEventRequestSchema.parse({
+        ...base,
+        groupLessonPublicIds: ['group-lesson-0', 'group-lesson-0'],
+      }),
+    ).toThrow()
+    expect(() =>
+      saveInPersonEventRequestSchema.parse({
+        ...base,
+        endsAt: '2026-09-06T06:59:00Z',
+      }),
+    ).toThrow()
+  })
+
+  it('isolates event catalogs by staff principal', () => {
+    expect(classroomQueryKeys.events({ audience: 'staff', accountId: 'admin.one' })).not.toEqual(
+      classroomQueryKeys.events({ audience: 'staff', accountId: 'admin.two' }),
     )
   })
 })

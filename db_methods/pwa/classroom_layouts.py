@@ -17,6 +17,188 @@ def get_in_person_event(
     return None if row is None else dict(row)
 
 
+def list_in_person_events(
+    connection: sqlite3.Connection, *, season_id: int
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        "SELECT id, public_id, season_id, name, starts_at, ends_at, status, version "
+        "FROM in_person_events WHERE season_id = ? "
+        "ORDER BY starts_at DESC, id DESC",
+        (season_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_group_lesson_candidates(
+    connection: sqlite3.Connection, *, season_id: int
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        """
+        SELECT gl.id AS group_lesson_id, gl.public_id AS group_lesson_public_id,
+               gl.course_id, gl.group_id, c.public_id AS course_public_id,
+               c.name AS course_name, g.public_id AS group_public_id,
+               g.public_name AS group_name, g.short_code, g.color_key,
+               cl.lesson_number,
+               (
+                   SELECT count(*)
+                   FROM course_enrollments enrollment
+                   WHERE enrollment.course_id = gl.course_id
+                     AND enrollment.active_group_id = gl.group_id
+                     AND enrollment.status = 'active'
+                     AND enrollment.attendance_mode = 'in_person'
+               ) AS in_person_count
+        FROM group_lessons gl
+        JOIN course_lessons cl ON cl.id = gl.course_lesson_id
+        JOIN courses c ON c.id = gl.course_id
+        JOIN groups g ON g.course_id = gl.course_id AND g.group_id = gl.group_id
+        WHERE c.season_id = ?
+          AND c.status = 'active'
+          AND g.status = 'active'
+          AND gl.status != 'archived'
+        ORDER BY c.sort_order, c.id, cl.lesson_number DESC,
+                 g.sort_order, g.group_id, gl.id
+        """,
+        (season_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def resolve_group_lesson_ids(
+    connection: sqlite3.Connection,
+    *,
+    season_id: int,
+    public_ids: tuple[str, ...],
+) -> list[int]:
+    if not public_ids:
+        return []
+    placeholders = ",".join("?" for _ in public_ids)
+    rows = connection.execute(
+        f"""
+        SELECT gl.id, gl.public_id
+        FROM group_lessons gl
+        JOIN courses course ON course.id = gl.course_id
+        JOIN groups group_record
+          ON group_record.course_id = gl.course_id
+         AND group_record.group_id = gl.group_id
+        WHERE course.season_id = ?
+          AND course.status = 'active'
+          AND group_record.status = 'active'
+          AND gl.status != 'archived'
+          AND gl.public_id IN ({placeholders})
+        """,
+        (season_id, *public_ids),
+    ).fetchall()
+    by_public_id = {str(row["public_id"]): int(row["id"]) for row in rows}
+    return [by_public_id[public_id] for public_id in public_ids if public_id in by_public_id]
+
+
+def insert_in_person_event(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    season_id: int,
+    name: str,
+    starts_at: str,
+    ends_at: str,
+    status: str,
+    actor_user_id: int,
+    now: str,
+) -> int:
+    cursor = connection.execute(
+        """
+        INSERT INTO in_person_events (
+            public_id, season_id, name, starts_at, ends_at, status,
+            created_by_user_id, updated_by_user_id, created_at, updated_at, version
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        """,
+        (
+            public_id,
+            season_id,
+            name,
+            starts_at,
+            ends_at,
+            status,
+            actor_user_id,
+            actor_user_id,
+            now,
+            now,
+        ),
+    )
+    return int(cursor.lastrowid)
+
+
+def update_in_person_event(
+    connection: sqlite3.Connection,
+    *,
+    event_id: int,
+    expected_version: int,
+    name: str,
+    starts_at: str,
+    ends_at: str,
+    status: str,
+    actor_user_id: int,
+    now: str,
+) -> bool:
+    cursor = connection.execute(
+        """
+        UPDATE in_person_events
+        SET name = ?, starts_at = ?, ends_at = ?, status = ?,
+            updated_by_user_id = ?, updated_at = ?, version = version + 1
+        WHERE id = ? AND version = ?
+        """,
+        (
+            name,
+            starts_at,
+            ends_at,
+            status,
+            actor_user_id,
+            now,
+            event_id,
+            expected_version,
+        ),
+    )
+    return cursor.rowcount == 1
+
+
+def replace_event_group_lessons(
+    connection: sqlite3.Connection,
+    *,
+    event_id: int,
+    group_lesson_ids: Iterable[int],
+    actor_user_id: int,
+    now: str,
+) -> None:
+    connection.execute(
+        "DELETE FROM in_person_event_group_lessons WHERE in_person_event_id = ?",
+        (event_id,),
+    )
+    connection.executemany(
+        "INSERT INTO in_person_event_group_lessons "
+        "(in_person_event_id, group_lesson_id, added_by_user_id, created_at) "
+        "VALUES (?, ?, ?, ?)",
+        (
+            (event_id, group_lesson_id, actor_user_id, now)
+            for group_lesson_id in group_lesson_ids
+        ),
+    )
+
+
+def event_has_classroom_plan(connection: sqlite3.Connection, *, event_id: int) -> bool:
+    row = connection.execute(
+        """
+        SELECT EXISTS (
+            SELECT 1 FROM classroom_layout_versions
+            WHERE in_person_event_id = ?
+            UNION ALL
+            SELECT 1 FROM classroom_assignment_plans
+            WHERE in_person_event_id = ?
+        ) AS present
+        """,
+        (event_id, event_id),
+    ).fetchone()
+    return bool(row["present"])
+
+
 def list_event_group_lessons(
     connection: sqlite3.Connection, event_id: int
 ) -> list[dict[str, object]]:
@@ -257,16 +439,23 @@ def confirm_draft_layout(
 
 __all__ = [
     "confirm_draft_layout",
+    "event_has_classroom_plan",
     "find_event_layout",
     "find_latest_confirmed_layout_for_group",
     "get_in_person_event",
     "get_layout_version",
     "get_layout_version_by_public_id",
+    "insert_in_person_event",
     "insert_layout_version",
+    "list_group_lesson_candidates",
+    "list_in_person_events",
     "list_event_group_lessons",
     "list_layout_rooms",
     "replace_layout_rooms",
+    "replace_event_group_lessons",
+    "resolve_group_lesson_ids",
     "resolve_layout_room_input",
     "supersede_confirmed_layout",
     "touch_layout_version",
+    "update_in_person_event",
 ]

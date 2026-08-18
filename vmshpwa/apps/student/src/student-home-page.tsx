@@ -257,6 +257,8 @@ export function StudentHomePage() {
                   audience="student"
                   {...(item.classroomName ? { classroomName: item.classroomName } : {})}
                   {...(confirmedAt ? { confirmedAt } : {})}
+                  endsAt={item.endsAt}
+                  startsAt={item.startsAt}
                   status={item.status}
                 />
               </div>
