@@ -2041,3 +2041,29 @@
 - Итоговые ESLint, Stylelint, strict TypeScript, production build и
   `git diff --check` — **PASS**; focused content **11 PASS**, width/float
   compiler **2 PASS**.
+
+## Pilot polish: бумажная типографика и evidence вставок — 18 августа 2026
+
+- `packages/content/src/content.css` и `packages/content/src/math-document.tsx`
+  переводят Student-листок на локальный Computer Modern Serif (WOFF2 + OFL),
+  колонку до `90ch`, русские переносы и адаптивное выравнивание: по ширине
+  только при полной колонке, по левому краю на более узких экранах. Статус и
+  действия находятся в строке номера задачи или пункта; рисунки получают
+  почти белую подложку и в тёмной теме.
+- `apps/student/src/student-task-detail-page.tsx`,
+  `student-written-submission.tsx` и `student-support-pages.tsx` убирают
+  повтор заголовка и дату публикации, сокращают редактор решения и называют
+  диалог «Вопросы по задаче». Подсказка и решение открываются компактными
+  действиями после вопроса без отдельной большой карточки.
+- В `submission_entries` миграцией `0080` добавлены только агрегаты paste
+  evidence: число вставок, суммарное число символов и время последней вставки.
+  Clipboard content отдельно не хранится; draft/outbox/API сохраняют агрегаты
+  вместе с исходной submission.
+- Frontend unit **644 PASS**; focused contracts/content/product **25 PASS**;
+  repository/API integration **94 PASS**; ESLint, Stylelint, strict TypeScript,
+  production build и `git diff --check` — **PASS**. Полный PWA Python прогон:
+  **1761 PASS, 6 SKIP**; после обновления generated schema artifacts отдельные
+  schema/repository **48 PASS**, новый HTTP paste-contract **1 PASS**.
+- Два оставшихся golden-manifest теста расходятся только в pretty-print
+  `topLevelKeys`; семантический состав и hashes corpus не изменились, поэтому
+  внешние golden manifests и visual snapshots без приёмки не обновлялись.

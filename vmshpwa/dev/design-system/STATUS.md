@@ -954,3 +954,25 @@ sent|No recipients|Loading|Error` документирует ручной previe
 - Frontend unit **638 PASS**, focused content **11 PASS**, width/float compiler
   **2 PASS**; ESLint, Stylelint, strict TypeScript, production build и
   `git diff --check` — **PASS**.
+
+## Pilot polish: Computer Modern и компактная сдача — 18 августа 2026
+
+- `MathematicalDocument` использует локальные WOFF2 Computer Modern Serif и
+  paper-layout шириной до `90ch`; при полной колонке включается выравнивание по
+  ширине, при меньшей — ragged right. Заголовки балансируются, русский текст
+  переносится, KaTeX остаётся масштаба `1em` и широкие display-формулы
+  прокручиваются локально.
+- Метаданные задачи и пункта встроены в строку заголовка. Подсказка, решение и
+  вопросы больше не образуют крупные вложенные карточки; editor решения
+  получил увеличенный текст, компактный photo/submit footer и Cmd/Ctrl+Enter.
+- Figure canvas всегда имеет почти белую подложку, поэтому чёрные линии и
+  точки читаются в dark theme. WOFF2 и `LICENSE.txt` находятся в
+  `packages/content/src/fonts/` и собираются Vite как локальные assets.
+- Frontend unit **644 PASS**; focused contracts/content/product **25 PASS**;
+  ESLint, Stylelint, strict TypeScript, production build и `git diff --check`
+  — **PASS**. PWA Python: **1761 PASS, 6 SKIP**; после обновления generated
+  schema artifacts повторная проверка schema/repository — **48 PASS**, новый
+  HTTP paste-contract — **1 PASS**.
+- Два старых golden-manifest теста по-прежнему отличаются только форматом
+  JSON-массива `topLevelKeys`; состав и hashes corpus семантически совпадают.
+  Golden-файлы и visual snapshots без приёмки владельца не обновлялись.
