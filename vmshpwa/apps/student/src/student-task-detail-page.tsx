@@ -177,10 +177,14 @@ function StudentProblemMaterialsAndQuestion({
   problem: StudentProblemSummary
 }) {
   return (
-    <>
-      <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
+    <div className="mt-2 flex flex-wrap items-center gap-1.5 font-sans">
+      <StudentProblemQuestionLink
+        compact
+        groupLessonId={groupLessonId}
+        problemId={problem.problemId}
+      />
       <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} compact />
-    </>
+    </div>
   )
 }
 
@@ -263,9 +267,9 @@ function StudentTaskMaterialsReady({
   return (
     <section
       aria-label="Подсказка и решение"
-      className={compact ? 'mt-2 font-sans' : 'mt-4 font-sans'}
+      className={compact ? 'contents font-sans' : 'mt-4 font-sans'}
     >
-      <div className="flex flex-wrap gap-1.5">
+      <div className={compact ? 'contents' : 'flex flex-wrap gap-1.5'}>
         {problem.materials.hint.status === 'unavailable' ? null : (
           <Button onClick={() => void toggle('hint')} size="sm" variant="ghost">
             <Lightbulb aria-hidden="true" className="size-4" />
@@ -289,17 +293,17 @@ function StudentTaskMaterialsReady({
           </Button>
         )}
       </div>
-      {error ? <p className="mt-2 text-small text-danger">{error}</p> : null}
+      {error ? <p className="mt-2 w-full basis-full text-small text-danger">{error}</p> : null}
       {loadingKind === openKind ? (
-        <p className="mt-2 text-small text-muted-foreground">Загружаем…</p>
+        <p className="mt-2 w-full basis-full text-small text-muted-foreground">Загружаем…</p>
       ) : null}
       {openKind === 'hint' && hint ? (
-        <div className="vmsh-material-reveal mt-2 border-l-2 border-border pl-3">
+        <div className="vmsh-material-reveal mt-2 w-full basis-full border-l-2 border-border pl-3">
           <SemanticMathDocument document={hint.document} />
         </div>
       ) : null}
       {openKind === 'solution' && solution ? (
-        <div className="vmsh-material-reveal mt-2 border-l-2 border-border pl-3">
+        <div className="vmsh-material-reveal mt-2 w-full basis-full border-l-2 border-border pl-3">
           <SemanticMathDocument document={solution.document} />
         </div>
       ) : null}
@@ -394,7 +398,7 @@ export function CanonicalStudentTask({
   return (
     <StudentPublishedContentPage
       afterDocument={
-        <section aria-label="Ответы и обсуждение" className="mx-auto mt-3 max-w-[90ch]">
+        <section aria-label="Ответы и обсуждение" className="mx-auto mt-3 max-w-[96ch]">
           <StudentProblemActions
             conditionRevisionId={query.data.conditionRevisionId}
             courseId={courseId}
@@ -402,11 +406,10 @@ export function CanonicalStudentTask({
             problem={problem}
             submissionClosed={submissionClosed}
           />
-          <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
-          <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} compact />
+          <StudentProblemMaterialsAndQuestion groupLessonId={groupLessonId} problem={problem} />
         </section>
       }
-      documentClassName="vmsh-student-sheet rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
+      documentClassName="vmsh-student-sheet mx-auto max-w-[96ch] rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
       groupLessonId={groupLessonId}
       hidePageHeading
       kind="condition"
@@ -540,7 +543,7 @@ export function CanonicalStudentWorksheet({
   return (
     <StudentPublishedContentPage
       beforeDocument={
-        <div className="mb-4 flex justify-end">
+        <div className="mx-auto mb-2 flex max-w-[96ch] justify-end">
           <Button
             onClick={() =>
               setExpandedProblemIds((current) =>
@@ -561,7 +564,7 @@ export function CanonicalStudentWorksheet({
         </div>
       }
       {...(displayTitle === undefined ? {} : { displayTitle })}
-      documentClassName="vmsh-student-sheet rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
+      documentClassName="vmsh-student-sheet mx-auto max-w-[96ch] rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
       groupLessonId={groupLessonId}
       hidePageHeading
       kind="condition"

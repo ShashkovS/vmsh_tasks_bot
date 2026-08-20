@@ -17,6 +17,7 @@ import {
   useOfflineDatabase,
 } from '@vmsh/offline'
 import '@vmsh/ui/styles.css'
+import '@vmsh/content/styles.css'
 
 import { routeTree } from './routeTree.gen'
 import { PwaUpdateController } from './pwa-update'

@@ -1,6 +1,27 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-08-18.
+Последнее обновление: 2026-08-20.
+
+## Student/Family worksheet typography bundle — 20 August 2026
+
+- Student и Family теперь явно подключают общий production CSS математических
+  материалов после базовых UI-стилей. До исправления Student bundle не содержал
+  `.vmsh-math-content`, поэтому опубликованный листок рендерился системным
+  IBM Plex Sans вместо Computer Modern и игнорировал размеры, интервалы,
+  переносы и раскладку рисунков из Staff preview.
+- Полезная ширина текста остаётся `90ch`; внешняя «бумага» ограничена `96ch`,
+  чтобы сохранить внутренние поля. Кнопки статуса, вопросов, подсказки и решения
+  собраны в компактную строку и не разрывают условие большими блоками.
+- Исправление не меняет content API или сохранённые документы: Student, Family
+  и Staff используют один и тот же `@vmsh/content/styles.css`.
+- Evidence: [`student/main.tsx`](../../apps/student/src/main.tsx),
+  [`family/main.tsx`](../../apps/family/src/main.tsx),
+  [`student-task-detail-page.tsx`](../../apps/student/src/student-task-detail-page.tsx)
+  и [`content.css`](../../packages/content/src/content.css).
+- Проверки: lint, 650 unit tests, targeted TypeScript и production builds
+  Student/Family — PASS;
+  собранные CSS обоих приложений содержат Computer Modern,
+  `.vmsh-math-body` и `max-inline-size:90ch`; `git diff --check` — PASS.
 
 ## Recoverable PWA update activation — 18 August 2026
 

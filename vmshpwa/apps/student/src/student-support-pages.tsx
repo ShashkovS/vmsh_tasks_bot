@@ -402,9 +402,11 @@ function describeSupportError(error: unknown): string {
 export function StudentProblemQuestionLink({
   groupLessonId,
   problemId,
+  compact = false,
 }: {
   groupLessonId: string
   problemId: string
+  compact?: boolean
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -441,7 +443,10 @@ export function StudentProblemQuestionLink({
 
   const threadId = createdThreadId ?? matchingThread?.threadId
   return (
-    <section aria-label="Обсуждение задачи" className="mt-2 font-sans">
+    <section
+      aria-label="Обсуждение задачи"
+      className={compact ? 'contents font-sans' : 'mt-2 font-sans'}
+    >
       <Button
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
@@ -452,7 +457,7 @@ export function StudentProblemQuestionLink({
         {threadId || open ? 'Вопросы по задаче' : 'Задать вопрос'}
       </Button>
       {open ? (
-        <div className="mt-3">
+        <div className={compact ? 'mt-2 w-full basis-full' : 'mt-3'}>
           {threadId ? (
             <InlineStudentSupportThread client={client} threadId={threadId} />
           ) : list.isPending || list.hasNextPage ? (

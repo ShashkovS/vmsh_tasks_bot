@@ -16,6 +16,30 @@
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
 ```text
+2026-08-20 — Shared Student/Family worksheet typography — ready for production check
+Implemented:
+  Student and Family entrypoints explicitly load @vmsh/content/styles.css after
+  the UI foundation. The paper is centered and capped at 96ch including its
+  padding, while the readable mathematical body remains 90ch. Problem actions,
+  questions and published materials share a compact inline row.
+  This fixes the production-only fallback to 16px IBM Plex Sans and restores
+  the same Computer Modern typography, spacing, hyphenation and figure layout
+  already visible in Staff preview.
+Evidence:
+  vmshpwa/apps/student/src/main.tsx;
+  vmshpwa/apps/family/src/main.tsx;
+  vmshpwa/apps/student/src/student-task-detail-page.tsx;
+  vmshpwa/apps/student/src/student-support-pages.tsx;
+  vmshpwa/packages/content/src/content.css.
+Checks:
+  lint, 650 unit tests, targeted TypeScript and Student/Family production builds
+  PASS; both generated CSS bundles contain CMUSerif-Roman, .vmsh-math-body and
+  90ch sizing.
+Snapshots:
+  not updated; owner production review requested.
+```
+
+```text
 2026-08-18 — Recoverable PWA update activation — ready for production check
 Implemented:
   A safe-moment activation that did not reach controllerchange no longer makes
