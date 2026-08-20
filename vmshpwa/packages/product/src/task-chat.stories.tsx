@@ -140,7 +140,7 @@ export const BotDialogue: Story = {
           at: '18:02',
           dateLabel: '20 сентября',
           verdict: findVerdict(binaryVerdictScale, 'rejected')!,
-          text: 'Ответ пока неверный.\nНет, это другое число.',
+          text: 'Нет, это другое число.',
         },
         {
           id: 'a2',
@@ -158,7 +158,7 @@ export const BotDialogue: Story = {
           at: '18:05',
           dateLabel: '20 сентября',
           verdict: findVerdict(binaryVerdictScale, 'plus')!,
-          text: 'Да, ответ принят.\nДа, всё верно!',
+          text: 'Да, всё верно!',
         },
       ]}
     />

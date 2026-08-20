@@ -44,8 +44,10 @@ export function testAttemptReply(attempt: {
   feedback: string | null
   checkerMessage: string | null
 }): string {
+  // The checker's own wording is the reply when it has one; the verdict mark
+  // beside it already states the outcome, so the canned line would only repeat.
   const detail = attempt.feedback?.trim() || attempt.checkerMessage?.trim() || ''
-  return detail ? `${replyByOutcome[attempt.outcome]}\n${detail}` : replyByOutcome[attempt.outcome]
+  return detail || replyByOutcome[attempt.outcome]
 }
 
 /** Automatic checking is binary; anything unresolved carries no verdict yet. */
