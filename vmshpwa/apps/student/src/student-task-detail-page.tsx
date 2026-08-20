@@ -294,7 +294,7 @@ function StudentTaskMaterialsReady({
         )}
       </div>
       {error ? <p className="mt-2 w-full basis-full text-small text-danger">{error}</p> : null}
-      {loadingKind === openKind ? (
+      {loadingKind !== null && loadingKind === openKind ? (
         <p className="mt-2 w-full basis-full text-small text-muted-foreground">Загружаем…</p>
       ) : null}
       {openKind === 'hint' && hint ? (
