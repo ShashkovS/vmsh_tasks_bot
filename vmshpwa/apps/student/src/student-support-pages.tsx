@@ -459,7 +459,7 @@ export function StudentProblemQuestionLink({
         {threadId || open ? 'Вопросы по задаче' : 'Задать вопрос'}
       </Button>
       {open ? (
-        <div className={compact ? 'mt-2 w-full basis-full' : 'mt-3'}>
+        <div className={compact ? 'order-2 mt-2 w-full basis-full' : 'mt-3'}>
           {threadId ? (
             <InlineStudentSupportThread client={client} threadId={threadId} />
           ) : list.isPending || list.hasNextPage ? (

@@ -204,8 +204,12 @@ export function StudentProblemWorkspace({
         problemId={problem.problemId}
       />
       <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} compact />
+      {/*
+       * Panels open below the whole button row, in button order: flex `order`
+       * keeps the row intact instead of splitting it around an open panel.
+       */}
       {answerOpen ? (
-        <div className="w-full basis-full">
+        <div className="order-1 w-full basis-full">
           <StudentProblemActions
             conditionRevisionId={conditionRevisionId}
             courseId={courseId}
@@ -328,18 +332,22 @@ function StudentTaskMaterialsReady({
           </Button>
         )}
       </div>
-      {error ? <p className="mt-2 w-full basis-full text-small text-danger">{error}</p> : null}
+      {error ? (
+        <p className="order-3 mt-2 w-full basis-full text-small text-danger">{error}</p>
+      ) : null}
       {loadingKind !== null && loadingKind === openKind ? (
-        <p className="mt-2 w-full basis-full text-small text-muted-foreground">Загружаем…</p>
+        <p className="order-3 mt-2 w-full basis-full text-small text-muted-foreground">
+          Загружаем…
+        </p>
       ) : null}
       {openKind === 'hint' && hint ? (
-        <div className="vmsh-material-reveal mt-2 w-full basis-full border-l-2 border-border pl-3">
+        <div className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3">
           <SemanticMathDocument document={hint.document} />
           <StudentCollapseAction label="Скрыть подсказку" onClick={() => setOpenKind(null)} />
         </div>
       ) : null}
       {openKind === 'solution' && solution ? (
-        <div className="vmsh-material-reveal mt-2 w-full basis-full border-l-2 border-border pl-3">
+        <div className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3">
           <SemanticMathDocument document={solution.document} />
           <StudentCollapseAction label="Скрыть решение" onClick={() => setOpenKind(null)} />
         </div>
@@ -450,25 +458,23 @@ export function CanonicalStudentTask({
 
   return (
     <StudentPublishedContentPage
-      afterDocument={
-        <section aria-label="Ответы и обсуждение" className="mt-3">
-          <StudentProblemWorkspace
-            answerOpen={answerOpen}
-            conditionRevisionId={query.data.conditionRevisionId}
-            courseId={courseId}
-            groupLessonId={groupLessonId}
-            onToggleAnswer={() => setAnswerOpen((open) => !open)}
-            problem={problem}
-            submissionClosed={submissionClosed}
-          />
-        </section>
-      }
       containerClassName={STUDENT_SHEET_CONTAINER_CLASS}
       documentClassName={STUDENT_SHEET_CLASS}
       groupLessonId={groupLessonId}
       hidePageHeading
       kind="condition"
       problemOrdinal={problem.sourceOrdinal}
+      renderAfterProblem={() => (
+        <StudentProblemWorkspace
+          answerOpen={answerOpen}
+          conditionRevisionId={query.data.conditionRevisionId}
+          courseId={courseId}
+          groupLessonId={groupLessonId}
+          onToggleAnswer={() => setAnswerOpen((open) => !open)}
+          problem={problem}
+          submissionClosed={submissionClosed}
+        />
+      )}
       renderProblemActions={() => (
         <span className="vmsh-problem-actions-row font-sans">
           <ProblemStatusBadge problem={problem} />
