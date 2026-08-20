@@ -239,7 +239,6 @@ function writtenChatMessages({
         ...(entry.text?.trim() ? { text: entry.text } : {}),
         ...(entry.attachments.length > 0 ? { media: <EntryPhotos entry={entry} /> } : {}),
         delivery: 'sent' as const,
-        ...(entry.version > 1 ? { edited: true } : {}),
       }
     }
     if (entry && entry.entryKind === 'system_event') {

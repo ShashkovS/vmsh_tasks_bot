@@ -67,10 +67,9 @@ export function ChatAttachmentStrip({
               </Button>
             </div>
             <p
-              className={cn(
-                'truncate text-center text-caption',
-                attachment.status === 'failed' ? 'text-danger' : 'text-muted-foreground',
-              )}
+              className={`truncate text-center text-caption ${
+                attachment.status === 'failed' ? 'text-danger' : 'text-muted-foreground'
+              }`}
             >
               {attachment.status === 'failed'
                 ? (attachment.error ?? statusLabel.failed)

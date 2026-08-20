@@ -23,7 +23,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 function pagePreview(page: number, accent: string) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320"><rect width="240" height="320" fill="#f7f4eb"/><path d="M24 56h192M24 92h160M24 128h192M24 164h145M24 235h192M24 271h130" stroke="#8f8b82" stroke-width="5" stroke-linecap="round"/><path d="M45 205c28-38 52-38 72 0s45 38 78-4" fill="none" stroke="${accent}" stroke-width="7"/><text x="205" y="300" text-anchor="end" font-family="sans-serif" font-size="24" fill="#3b3935">${page}</text></svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="320" viewBox="0 0 240 320"><rect width="240" height="320" fill="#f7f4eb"/><path d="M24 56h192M24 92h160M24 128h192M24 164h145M24 235h192M24 271h130" stroke="#8f8b82" stroke-width="5" stroke-linecap="round"/><path d="M45 205c28-38 52-38 72 0s45 38 78-4" fill="none" stroke="${accent}" stroke-width="7"/><text x="205" y="300" text-anchor="end" font-family="sans-serif" font-size="24" fill="#3b3935">${page}</text></svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 

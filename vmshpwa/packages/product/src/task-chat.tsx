@@ -55,17 +55,29 @@ const deliveryView: Record<ChatDeliveryState, { icon: typeof Check; label: strin
 
 function DeliveryMark({ state }: { state: ChatDeliveryState }) {
   const { icon: Icon, label } = deliveryView[state]
+  // `cn` merges Tailwind `text-*` classes and reads the project's font-size
+  // tokens as colours, so a size and a colour never share one cn() call.
+  const tone = state === 'failed' ? 'text-danger' : 'text-muted-foreground'
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 text-caption',
-        state === 'failed' ? 'text-danger' : 'text-muted-foreground',
-      )}
-    >
+    <span className={`inline-flex items-center gap-1 text-caption ${tone}`}>
       <Icon aria-hidden="true" className="size-3.5" />
       {label}
     </span>
   )
+}
+
+/** A day divider belongs to the first message of that day, system notes aside. */
+function withDateDividers(
+  messages: ChatMessageView[],
+): { message: ChatMessageView; divider: string | null }[] {
+  const items: { message: ChatMessageView; divider: string | null }[] = []
+  let currentDate: string | undefined
+  for (const message of messages) {
+    const divider = message.dateLabel && message.dateLabel !== currentDate ? message.dateLabel : null
+    if (message.dateLabel) currentDate = message.dateLabel
+    items.push({ message, divider })
+  }
+  return items
 }
 
 export function ChatMessage({ message }: { message: ChatMessageView }) {
@@ -142,16 +154,12 @@ export interface TaskChatProps {
 export function TaskChat({ messages, emptyLabel, className }: TaskChatProps) {
   if (messages.length === 0) {
     return emptyLabel ? (
-      <p className={cn('text-small text-muted-foreground', className)}>{emptyLabel}</p>
+      <p className={`text-small ${cn('text-muted-foreground', className)}`}>{emptyLabel}</p>
     ) : null
   }
   return (
     <ol aria-label="Переписка по задаче" className={cn('space-y-2 font-sans', className)}>
-      {messages.map((message, index) => {
-        const divider =
-          message.dateLabel && message.dateLabel !== messages[index - 1]?.dateLabel
-            ? message.dateLabel
-            : null
+      {withDateDividers(messages).map(({ message, divider }) => {
         return (
           <Fragment key={message.id}>
             {divider ? (
