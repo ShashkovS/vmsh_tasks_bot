@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, KeyRound, Lightbulb } from 'lucide-react'
+import { ChevronDown, ChevronUp, KeyRound, Lightbulb, PencilLine } from 'lucide-react'
 
 import {
   CourseNetworkError,
@@ -16,11 +16,11 @@ import {
   type StudentProblemReveal,
   type StudentProblemSummary,
   type StudentRevealKind,
-  type WebContentProblem,
 } from '@vmsh/contracts'
 import { useOfflineDatabase, type VmshOfflineDatabase } from '@vmsh/offline'
 import { Badge, Button } from '@vmsh/ui'
 
+import { StudentCollapseAction } from './student-collapse-action'
 import { StudentPublishedContentPage } from './content-page'
 import {
   createOfflineStudentCourseClient,
@@ -169,21 +169,56 @@ function StudentProblemActions({
   )
 }
 
-function StudentProblemMaterialsAndQuestion({
+/**
+ * One action row per task: answering, questions, hint and solution all open in
+ * place, inside the worksheet. Shared by the Student tasks feed and the
+ * single-task page so both audiences see the same controls.
+ */
+export function StudentProblemWorkspace({
+  answerOpen,
+  conditionRevisionId,
+  courseId,
   groupLessonId,
+  onToggleAnswer,
   problem,
+  submissionClosed = false,
 }: {
+  answerOpen: boolean
+  conditionRevisionId: string
+  courseId: string
   groupLessonId: string
+  onToggleAnswer: () => void
   problem: StudentProblemSummary
+  submissionClosed?: boolean
 }) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5 font-sans">
+      <Button aria-expanded={answerOpen} onClick={onToggleAnswer} size="sm" variant="ghost">
+        <PencilLine aria-hidden="true" className="size-4" />
+        {submissionClosed ? 'Мой ответ' : 'Ответить'}
+        {answerOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+      </Button>
       <StudentProblemQuestionLink
         compact
         groupLessonId={groupLessonId}
         problemId={problem.problemId}
       />
       <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} compact />
+      {answerOpen ? (
+        <div className="w-full basis-full">
+          <StudentProblemActions
+            conditionRevisionId={conditionRevisionId}
+            courseId={courseId}
+            groupLessonId={groupLessonId}
+            problem={problem}
+            submissionClosed={submissionClosed}
+          />
+          <StudentCollapseAction
+            label={submissionClosed ? 'Скрыть ответ' : 'Свернуть ответ'}
+            onClick={onToggleAnswer}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -300,17 +335,32 @@ function StudentTaskMaterialsReady({
       {openKind === 'hint' && hint ? (
         <div className="vmsh-material-reveal mt-2 w-full basis-full border-l-2 border-border pl-3">
           <SemanticMathDocument document={hint.document} />
+          <StudentCollapseAction label="Скрыть подсказку" onClick={() => setOpenKind(null)} />
         </div>
       ) : null}
       {openKind === 'solution' && solution ? (
         <div className="vmsh-material-reveal mt-2 w-full basis-full border-l-2 border-border pl-3">
           <SemanticMathDocument document={solution.document} />
+          <StudentCollapseAction label="Скрыть решение" onClick={() => setOpenKind(null)} />
         </div>
       ) : null}
     </section>
   )
 }
 
+/*
+ * The tasks feed and the single-task page must place the paper identically, so
+ * both use one container/sheet pair. See apps/student StudentTasksArchivePage.
+ */
+export const STUDENT_SHEET_CONTAINER_CLASS =
+  'mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 2xl:-translate-x-28'
+export const STUDENT_SHEET_CLASS =
+  'vmsh-student-sheet rounded-sm border border-border bg-surface px-5 py-6 shadow-sm sm:px-10 sm:py-8'
+
+/**
+ * Single task on its own page, opened from the "Открыть" action in the tasks
+ * feed. Same sheet geometry as the feed card so the paper does not shift.
+ */
 export function CanonicalStudentTask({
   courseId,
   groupId,
@@ -348,6 +398,9 @@ export function CanonicalStudentTask({
     groupId,
     groupLessonId,
   )
+  // Opening a single task is already the intent to work on it, so the answer
+  // panel starts expanded; the same control still collapses it.
+  const [answerOpen, setAnswerOpen] = useState(true)
 
   if (query.isPending) {
     return (
@@ -398,196 +451,30 @@ export function CanonicalStudentTask({
   return (
     <StudentPublishedContentPage
       afterDocument={
-        <section aria-label="Ответы и обсуждение" className="mx-auto mt-3 max-w-[96ch]">
-          <StudentProblemActions
+        <section aria-label="Ответы и обсуждение" className="mt-3">
+          <StudentProblemWorkspace
+            answerOpen={answerOpen}
             conditionRevisionId={query.data.conditionRevisionId}
             courseId={courseId}
             groupLessonId={groupLessonId}
+            onToggleAnswer={() => setAnswerOpen((open) => !open)}
             problem={problem}
             submissionClosed={submissionClosed}
           />
-          <StudentProblemMaterialsAndQuestion groupLessonId={groupLessonId} problem={problem} />
         </section>
       }
-      documentClassName="vmsh-student-sheet mx-auto max-w-[96ch] rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
+      containerClassName={STUDENT_SHEET_CONTAINER_CLASS}
+      documentClassName={STUDENT_SHEET_CLASS}
       groupLessonId={groupLessonId}
       hidePageHeading
       kind="condition"
-      pageWidth="content"
       problemOrdinal={problem.sourceOrdinal}
-      renderProblemActions={() => <ProblemStatusBadge problem={problem} />}
+      renderProblemActions={() => (
+        <span className="vmsh-problem-actions-row font-sans">
+          <ProblemStatusBadge problem={problem} />
+        </span>
+      )}
       taskId={problem.problemId}
-    />
-  )
-}
-
-export function CanonicalStudentWorksheet({
-  courseId,
-  groupId,
-  groupLessonId,
-  taskId,
-  displayTitle,
-  submissionClosed = false,
-}: {
-  courseId: string
-  groupId: string
-  groupLessonId: string
-  taskId: string
-  displayTitle?: string
-  submissionClosed?: boolean
-}) {
-  const authentication = useAuthentication()
-  const principal = useAuthenticatedPrincipal()
-  if (principal.audience !== 'student') throw new Error('Student task requires a Student principal')
-  const database = useOfflineDatabase()
-  const client = useMemo(() => {
-    const online = createStudentCourseClient(authentication.client.runtime, {
-      refreshSession: async () => {
-        try {
-          return await authentication.refresh()
-        } catch (error) {
-          authentication.handleApiError(error)
-          throw error
-        }
-      },
-    })
-    return createOfflineStudentCourseClient(online, database, principal.accountId)
-  }, [authentication, database, principal.accountId])
-  const query = useStudentProblemsQuery(
-    client,
-    { audience: 'student', accountId: principal.accountId },
-    courseId,
-    groupId,
-    groupLessonId,
-  )
-  const [expandedProblemIds, setExpandedProblemIds] = useState<Set<string>>(() => new Set())
-
-  if (query.isPending) {
-    return (
-      <PageLayout title="Листок" width="reading">
-        <PageStatePanel state="loading" />
-      </PageLayout>
-    )
-  }
-  if (query.error) {
-    const state = problemRequestState(query.error)
-    return (
-      <PageLayout title="Листок" width="reading">
-        <PageStatePanel
-          {...(state === 'error' || state === 'offline'
-            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
-            : {})}
-          state={state}
-        />
-      </PageLayout>
-    )
-  }
-  if (
-    query.data.courseId !== courseId ||
-    query.data.groupId !== groupId ||
-    query.data.groupLessonId !== groupLessonId
-  ) {
-    return (
-      <PageLayout title="Листок" width="reading">
-        <PageStatePanel state="forbidden" />
-      </PageLayout>
-    )
-  }
-
-  const data = query.data
-  const problemsFor = (documentProblem: WebContentProblem) =>
-    data.problems.filter((problem) => problem.sourceOrdinal === documentProblem.ordinal)
-  const problemForSubpart = (documentProblem: WebContentProblem, label: string) =>
-    problemsFor(documentProblem).find((problem) =>
-      problem.displayNumber.toLocaleLowerCase('ru-RU').endsWith(label.toLocaleLowerCase('ru-RU')),
-    )
-  const toggleProblem = (problemId: string) =>
-    setExpandedProblemIds((current) => {
-      const next = new Set(current)
-      if (next.has(problemId)) next.delete(problemId)
-      else next.add(problemId)
-      return next
-    })
-  const inlineActions = (problem: StudentProblemSummary) => (
-    <span className="vmsh-inline-problem-actions font-sans">
-      <ProblemStatusBadge problem={problem} />
-      <Button
-        aria-expanded={expandedProblemIds.has(problem.problemId)}
-        onClick={() => toggleProblem(problem.problemId)}
-        size="sm"
-        variant="ghost"
-      >
-        {expandedProblemIds.has(problem.problemId)
-          ? 'Скрыть'
-          : submissionClosed
-            ? 'Посмотреть'
-            : 'Ответить'}
-      </Button>
-    </span>
-  )
-  const afterProblem = (problem: StudentProblemSummary) => (
-    <div className="mb-4">
-      {expandedProblemIds.has(problem.problemId) ? (
-        <StudentProblemActions
-          conditionRevisionId={data.conditionRevisionId}
-          courseId={courseId}
-          groupLessonId={groupLessonId}
-          problem={problem}
-          submissionClosed={submissionClosed}
-        />
-      ) : null}
-      <StudentProblemMaterialsAndQuestion groupLessonId={groupLessonId} problem={problem} />
-    </div>
-  )
-
-  return (
-    <StudentPublishedContentPage
-      beforeDocument={
-        <div className="mx-auto mb-2 flex max-w-[96ch] justify-end">
-          <Button
-            onClick={() =>
-              setExpandedProblemIds((current) =>
-                current.size === data.problems.length
-                  ? new Set()
-                  : new Set(data.problems.map((problem) => problem.problemId)),
-              )
-            }
-            size="sm"
-            variant="outline"
-          >
-            {expandedProblemIds.size === data.problems.length
-              ? 'Свернуть всё'
-              : submissionClosed
-                ? 'Показать все отправленные ответы'
-                : 'Ответить на все задачи'}
-          </Button>
-        </div>
-      }
-      {...(displayTitle === undefined ? {} : { displayTitle })}
-      documentClassName="vmsh-student-sheet mx-auto max-w-[96ch] rounded-sm border border-border bg-surface px-4 py-5 shadow-sm sm:px-7 sm:py-7"
-      groupLessonId={groupLessonId}
-      hidePageHeading
-      kind="condition"
-      pageWidth="content"
-      renderProblemActions={(documentProblem) => {
-        const problems = problemsFor(documentProblem)
-        const problem = problems[0]
-        return problem && problems.length === 1 ? inlineActions(problem) : null
-      }}
-      renderSubpartActions={(documentProblem, label) => {
-        const problem = problemForSubpart(documentProblem, label)
-        return problem ? inlineActions(problem) : null
-      }}
-      renderAfterSubpart={(documentProblem, label) => {
-        const problem = problemForSubpart(documentProblem, label)
-        return problem ? afterProblem(problem) : null
-      }}
-      renderAfterProblem={(documentProblem) => {
-        const problems = problemsFor(documentProblem)
-        const problem = problems[0]
-        return problem && problems.length === 1 ? afterProblem(problem) : null
-      }}
-      taskId={taskId}
     />
   )
 }

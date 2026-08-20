@@ -2132,3 +2132,25 @@
 - Два оставшихся golden-manifest теста расходятся только в pretty-print
   `topLevelKeys`; семантический состав и hashes corpus не изменились, поэтому
   внешние golden manifests и visual snapshots без приёмки не обновлялись.
+
+## Единый интерфейс листка школьника — 21 августа 2026
+
+- «Открыть курс» на «Сейчас» (`apps/student/src/student-home-page.tsx`) ведёт
+  на `/tasks` с фильтром курса и группы, а `/tasks/$courseCode/$groupCode/
+  $lessonNumber` без `?task=` рендерит ту же ленту (`StudentLessonFeedItem`),
+  отфильтрованную на занятие. Отдельная простыня `CanonicalStudentWorksheet`
+  удалена: интерфейс листка теперь один.
+- В строке номера задачи статус прижат к началу, действие «Открыть» — к
+  противоположному краю (`.vmsh-problem-actions-row` в
+  `packages/content/src/content.css`). «Открыть» показывает задачу целиком
+  через `CanonicalStudentTask`, который теперь использует тот же контейнер и
+  ту же геометрию листа, что и лента (`STUDENT_SHEET_CONTAINER_CLASS`,
+  `STUDENT_SHEET_CLASS`), поэтому бумага не съезжает вправо.
+- `StudentProblemWorkspace` собирает один ряд действий под задачей: «Ответить»
+  (открывает сдачу прямо в листке), «Задать вопрос»/«Вопросы по задаче»,
+  «Подсказка», «Решение». Каждый раскрытый блок заканчивается повторным
+  действием свернуть (`StudentCollapseAction`), потому что длинный материал
+  уводит исходную кнопку за пределы экрана.
+- Frontend unit, ESLint, Stylelint, strict TypeScript и production build —
+  **PASS**. Golden-manifest и три storybook-теста расходятся так же, как на
+  HEAD до изменения, и этой задачей не затрагиваются.

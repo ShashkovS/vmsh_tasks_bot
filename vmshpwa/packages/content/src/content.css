@@ -360,6 +360,29 @@
   padding-inline: 0.5rem;
 }
 
+/*
+ * Task heading row: the status chip stays next to the task number while the
+ * "Открыть" action is pinned to the opposite edge. Used by the Student tasks
+ * feed (apps/student StudentLessonFeedItem) and the single-task page.
+ */
+.vmsh-problem-header > .vmsh-problem-actions-row,
+.vmsh-subpart-header > .vmsh-problem-actions-row {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.625rem;
+  min-width: 0;
+  margin-inline-start: 0;
+  text-align: start;
+}
+
+.vmsh-problem-actions-row button {
+  min-height: 1.75rem;
+  padding-inline: 0.5rem;
+}
+
 .vmsh-content-heading {
   margin-block: 2rem 0.75rem;
   font-family: 'Computer Modern Serif', serif;
@@ -373,6 +396,7 @@
 
 .vmsh-subpart-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   margin-block-end: 0.125rem;

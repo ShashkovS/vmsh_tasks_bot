@@ -209,14 +209,14 @@ export function StudentHomePage() {
                   lessonNumber={lesson.lessonNumber}
                   onOpen={() => {
                     if (!activeGroup) return
+                    // One worksheet interface: the course opens the same Tasks
+                    // feed as the menu entry, pre-filtered to this enrolment.
                     void navigate({
-                      to: '/tasks/$courseCode/$groupCode/$lessonNumber',
-                      params: {
-                        courseCode: course.enrollment.course.code,
-                        groupCode: activeGroup.code,
-                        lessonNumber: String(lesson.lessonNumber),
+                      to: '/tasks',
+                      search: {
+                        course: course.enrollment.course.courseId,
+                        group: activeGroup.groupId,
                       },
-                      search: {},
                     })
                   }}
                   phase={studentPhaseLabel(course)}

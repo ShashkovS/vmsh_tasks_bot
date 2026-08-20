@@ -11,11 +11,15 @@ import {
   useStudentLessonArchiveQuery,
   useStudentProblemsQuery,
 } from '@vmsh/app-shell'
-import { ApiResponseError } from '@vmsh/contracts'
+import { ApiResponseError, type CourseEnrollment } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
 
 import { createOfflineStudentCourseClient } from './offline-student-data'
-import { CanonicalStudentTask, CanonicalStudentWorksheet } from './student-task-detail-page'
+import {
+  CanonicalStudentTask,
+  STUDENT_SHEET_CONTAINER_CLASS,
+} from './student-task-detail-page'
+import { StudentLessonFeedItem } from './student-tasks-page'
 
 function ReadableRouteState({ error }: { error: unknown }) {
   const state =
@@ -96,8 +100,8 @@ export function StudentReadableTaskPage({
   return (
     <ReadableLesson
       client={client}
-      courseId={enrollment.course.courseId}
       {...(displayNumber ? { displayNumber } : {})}
+      enrollment={enrollment}
       groupId={group.groupId}
       lessonNumber={lessonNumber}
       principal={{ audience: 'student', accountId: principal.accountId }}
@@ -107,19 +111,20 @@ export function StudentReadableTaskPage({
 
 function ReadableLesson({
   client,
-  courseId,
   displayNumber,
+  enrollment,
   groupId,
   lessonNumber,
   principal,
 }: {
   client: ReturnType<typeof createOfflineStudentCourseClient>
-  courseId: string
   displayNumber?: string
+  enrollment: CourseEnrollment
   groupId: string
   lessonNumber: number
   principal: { audience: 'student'; accountId: string }
 }) {
+  const courseId = enrollment.course.courseId
   const [openedAt] = useState(() => Date.now())
   const archive = useStudentLessonArchiveQuery(client, principal, courseId, groupId)
   const lesson = archive.data?.pages
@@ -153,23 +158,19 @@ function ReadableLesson({
       </PageLayout>
     )
   }
+  // A lesson link renders the very same feed card as /tasks, just filtered to
+  // this lesson, so there is one worksheet interface instead of two.
   if (!displayNumber) {
-    const submissionClosed = lesson.window
-      ? openedAt >= Date.parse(lesson.window.submissionClosesAt)
-      : false
     return (
-      <CanonicalStudentWorksheet
-        courseId={courseId}
-        displayTitle={
-          lesson.title?.trim()
-            ? `Занятие ${lesson.lessonNumber} · ${lesson.title.trim()}`
-            : `Занятие ${lesson.lessonNumber}`
-        }
-        groupId={groupId}
-        groupLessonId={lesson.groupLessonId}
-        submissionClosed={submissionClosed}
-        taskId={`lesson-${lessonNumber}`}
-      />
+      <div className={STUDENT_SHEET_CONTAINER_CLASS}>
+        <StudentLessonFeedItem
+          client={client}
+          enrollment={enrollment}
+          groupId={groupId}
+          lesson={lesson}
+          principal={principal}
+        />
+      </div>
     )
   }
   return (

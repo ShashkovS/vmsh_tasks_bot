@@ -43,7 +43,11 @@ import {
   createOfflineStudentCourseClient,
   createOfflineStudentPublishedContentClient,
 } from './offline-student-data'
-import { ProblemStatusBadge, StudentTaskMaterials } from './student-task-detail-page'
+import {
+  ProblemStatusBadge,
+  STUDENT_SHEET_CONTAINER_CLASS,
+  StudentProblemWorkspace,
+} from './student-task-detail-page'
 
 function requestState(error: unknown) {
   return error instanceof CourseNetworkError
@@ -73,7 +77,8 @@ function subpartProblem(
   )
 }
 
-function StudentLessonFeedItem({
+/** One published worksheet as it appears in the Student tasks feed. */
+export function StudentLessonFeedItem({
   client,
   principal,
   enrollment,
@@ -116,6 +121,8 @@ function StudentLessonFeedItem({
     { enabled: true },
   )
   const group = enrollment.allowedGroups.find((candidate) => candidate.groupId === groupId)
+  const [expandedProblemIds, setExpandedProblemIds] = useState<Set<string>>(() => new Set())
+  const [openedAt] = useState(() => Date.now())
 
   if (problemsQuery.isPending || contentQuery.isPending) return <PageStatePanel state="loading" />
   if (problemsQuery.error || contentQuery.error) {
@@ -152,8 +159,10 @@ function StudentLessonFeedItem({
     })
   }
 
+  // Status stays with the task number, the full-screen action stays at the
+  // opposite edge; `.vmsh-problem-actions-row` owns that split in content.css.
   const problemActions = (problem: StudentProblemSummary) => (
-    <div className="flex items-center gap-2 font-sans">
+    <span className="vmsh-problem-actions-row font-sans">
       <ProblemStatusBadge problem={problem} />
       <Button
         aria-label={`Открыть задачу ${problem.displayNumber}`}
@@ -164,13 +173,38 @@ function StudentLessonFeedItem({
         Открыть
         <ChevronRight aria-hidden="true" />
       </Button>
-    </div>
+    </span>
+  )
+
+  const submissionClosed = lesson.window
+    ? openedAt >= Date.parse(lesson.window.submissionClosesAt)
+    : false
+  const toggleProblem = (problemId: string) =>
+    setExpandedProblemIds((current) => {
+      const next = new Set(current)
+      if (next.has(problemId)) next.delete(problemId)
+      else next.add(problemId)
+      return next
+    })
+  const problemWorkspace = (problem: StudentProblemSummary) => (
+    <StudentProblemWorkspace
+      answerOpen={expandedProblemIds.has(problem.problemId)}
+      conditionRevisionId={problemsQuery.data.conditionRevisionId}
+      courseId={enrollment.course.courseId}
+      groupLessonId={lesson.groupLessonId}
+      onToggleAnswer={() => toggleProblem(problem.problemId)}
+      problem={problem}
+      submissionClosed={submissionClosed}
+    />
   )
 
   const problemsFor = (documentProblem: WebContentProblem) =>
     problemsQuery.data.problems.filter(
       (problem) => problem.sourceOrdinal === documentProblem.ordinal,
     )
+  const allExpanded =
+    problemsQuery.data.problems.length > 0 &&
+    expandedProblemIds.size === problemsQuery.data.problems.length
 
   return (
     <Card className="overflow-hidden">
@@ -182,7 +216,28 @@ function StudentLessonFeedItem({
             </p>
             <CardTitle>{lessonHeading(lesson)}</CardTitle>
           </div>
-          <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
+            {problemsQuery.data.problems.length > 0 ? (
+              <Button
+                onClick={() =>
+                  setExpandedProblemIds(
+                    allExpanded
+                      ? new Set()
+                      : new Set(problemsQuery.data.problems.map((problem) => problem.problemId)),
+                  )
+                }
+                size="sm"
+                variant="outline"
+              >
+                {allExpanded
+                  ? 'Свернуть всё'
+                  : submissionClosed
+                    ? 'Показать все ответы'
+                    : 'Ответить на все задачи'}
+              </Button>
+            ) : null}
+          </div>
         </div>
         <p className="inline-flex items-center gap-2 text-small text-muted-foreground">
           <BookOpen aria-hidden="true" className="size-4" />
@@ -195,28 +250,16 @@ function StudentLessonFeedItem({
           document={contentQuery.data.document}
           renderAfterSubpart={(documentProblem, label) => {
             const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
-            return problem ? (
-              <StudentTaskMaterials
-                compact
-                groupLessonId={lesson.groupLessonId}
-                problem={problem}
-              />
-            ) : null
+            return problem ? <div className="mb-4">{problemWorkspace(problem)}</div> : null
           }}
           renderAfterProblem={(documentProblem) => {
             if (containsSubpart(documentProblem.blocks)) return null
             const problems = problemsFor(documentProblem)
             if (problems.length === 0) return null
             return (
-              <div className="space-y-2">
+              <div className="mb-4 space-y-2">
                 {problems.map((problem) => (
-                  <div key={problem.problemId}>
-                    <StudentTaskMaterials
-                      compact
-                      groupLessonId={lesson.groupLessonId}
-                      problem={problem}
-                    />
-                  </div>
+                  <div key={problem.problemId}>{problemWorkspace(problem)}</div>
                 ))}
               </div>
             )
@@ -404,7 +447,5 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
       )
   }
 
-  return (
-    <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 2xl:-translate-x-28">{content}</div>
-  )
+  return <div className={STUDENT_SHEET_CONTAINER_CLASS}>{content}</div>
 }

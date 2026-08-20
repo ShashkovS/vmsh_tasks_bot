@@ -19,6 +19,8 @@ import { useSupportDraftEditor, type SupportDraftDescriptor } from '@vmsh/offlin
 import { FeedbackThread, SupportComposer, type ThreadMessageView } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, buttonVariants } from '@vmsh/ui'
 
+import { StudentCollapseAction } from './student-collapse-action'
+
 /** Live Student questions UI; see Phase 6 Questions/SOS and support API proof. */
 export function StudentSupportInboxPage() {
   const authentication = useAuthentication()
@@ -470,6 +472,7 @@ export function StudentProblemQuestionLink({
               problemId={problemId}
             />
           )}
+          <StudentCollapseAction label="Скрыть вопросы" onClick={() => setOpen(false)} />
         </div>
       ) : null}
     </section>

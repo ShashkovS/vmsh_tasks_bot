@@ -38,6 +38,7 @@ export function StudentPublishedContentPage({
   displayTitle,
   afterDocument,
   beforeDocument,
+  containerClassName,
   documentClassName,
   pageWidth,
   renderAfterProblem,
@@ -53,6 +54,7 @@ export function StudentPublishedContentPage({
   displayTitle?: string
   afterDocument?: ReactNode
   beforeDocument?: ReactNode
+  containerClassName?: string
   documentClassName?: string
   pageWidth?: 'reading' | 'content' | 'wide'
   renderAfterProblem?: (problem: WebContentProblem) => ReactNode
@@ -189,7 +191,9 @@ export function StudentPublishedContentPage({
           ? 'max-w-[96rem]'
           : 'max-w-[90ch]'
     return (
-      <main className={`mx-auto w-full px-3 py-4 sm:px-5 ${widthClass}`}>{renderedContent}</main>
+      <main className={containerClassName ?? `mx-auto w-full px-3 py-4 sm:px-5 ${widthClass}`}>
+        {renderedContent}
+      </main>
     )
   }
 
