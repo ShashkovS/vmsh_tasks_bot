@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle2, CloudOff, Pencil, TriangleAlert } from 'lucide-react'
+import { CloudOff, Pencil, TriangleAlert } from 'lucide-react'
 
 import {
   createWrittenSubmissionClient,
@@ -7,7 +7,13 @@ import {
   useWrittenStudentReactionMutation,
   useWrittenThreadQuery,
 } from '@vmsh/app-shell'
-import { ApiResponseError, type StudentProblemType } from '@vmsh/contracts'
+import {
+  ApiResponseError,
+  type StudentProblemType,
+  type WrittenEntry,
+  type WrittenReviewProjection,
+  type WrittenThread,
+} from '@vmsh/contracts'
 import {
   createWrittenSubmissionDraftStore,
   createWrittenSubmissionOutbox,
@@ -17,7 +23,18 @@ import {
   type WrittenDraftReplacementTarget,
   type WrittenSubmissionOutboxItem,
 } from '@vmsh/offline'
-import { SubmissionComposer, WrittenReviewHistory, type AttachmentView } from '@vmsh/product'
+import {
+  ChatComposer,
+  ReactionChip,
+  ReactionPicker,
+  ReviewAnnotationViewer,
+  TaskChat,
+  findReaction,
+  reactionsForScope,
+  writtenReviewVerdict,
+  type AttachmentView,
+  type ChatMessageView,
+} from '@vmsh/product'
 import {
   Alert,
   AlertContent,
@@ -26,13 +43,18 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Skeleton,
+  Textarea,
 } from '@vmsh/ui'
 
 import { compressWrittenSubmissionImage } from './image-compression'
 import { announceSafePwaUpdateMoment } from './pwa-update-events'
+import {
+  buildWrittenChatItems,
+  chatDate,
+  chatTime,
+  replaceableWrittenEntry,
+} from './student-written-chat'
 
 /**
  * Canonical Phase-5 Student composer. Significant edits are persisted before
@@ -94,6 +116,165 @@ function usePhotoPreviewUrls(photos: ResolvedWrittenDraftPhoto[]): Map<string, s
     }
   }, [urls])
   return urls
+}
+
+function EntryPhotos({ entry }: { entry: WrittenEntry }) {
+  return (
+    <ol className="flex flex-wrap gap-1.5">
+      {[...entry.attachments]
+        .sort((left, right) => left.ordinal - right.ordinal)
+        .map((attachment, index) => (
+          <li key={attachment.attachmentId}>
+            <a href={attachment.mediaPath} rel="noreferrer" target="_blank">
+              <img
+                alt={`Страница ${index + 1}`}
+                className="max-h-32 rounded border border-border bg-surface-sunken"
+                loading="lazy"
+                src={attachment.mediaPath}
+              />
+            </a>
+          </li>
+        ))}
+    </ol>
+  )
+}
+
+function ReviewAnnotations({ review, thread }: { review: WrittenReviewProjection; thread: WrittenThread }) {
+  const attachments = new Map(
+    thread.entries.flatMap((entry) =>
+      entry.attachments.map((attachment) => [attachment.attachmentId, attachment] as const),
+    ),
+  )
+  return (
+    <div className="space-y-2">
+      {review.annotations.map((annotation, index) => {
+        const attachment = attachments.get(annotation.attachmentId)
+        if (!attachment) return null
+        return (
+          <ReviewAnnotationViewer
+            imageAlt={`Проверенная страница решения ${index + 1}`}
+            imageSource={attachment.mediaPath}
+            key={`${review.reviewId}:${annotation.attachmentId}`}
+            manifest={annotation}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+function ReviewReactions({
+  review,
+  now,
+  onReaction,
+  pending,
+  error,
+}: {
+  review: WrittenReviewProjection
+  now: number
+  onReaction: (reviewId: string, reactionId: 0 | 1 | 2 | null, expectedVersion: number) => void
+  pending: boolean
+  error: string | null
+}) {
+  const current =
+    review.studentReaction?.reactionId == null
+      ? null
+      : findReaction(review.studentReaction.reactionId)
+  const editableUntil =
+    review.studentReaction?.editableUntil ??
+    new Date(new Date(review.completedAt).getTime() + 60 * 60 * 1000).toISOString()
+  return (
+    <div className="space-y-1">
+      {now <= Date.parse(editableUntil) ? (
+        <ReactionPicker
+          disabled={pending}
+          legend="Ваша реакция на проверку"
+          onSelect={(reactionId) =>
+            onReaction(
+              review.reviewId,
+              reactionId as 0 | 1 | 2 | null,
+              review.studentReaction?.version ?? 0,
+            )
+          }
+          options={reactionsForScope('student-written')}
+          value={review.studentReaction?.reactionId ?? null}
+        />
+      ) : current ? (
+        <div className="space-y-1">
+          <p className="text-caption text-muted-foreground">Ваша реакция</p>
+          <ReactionChip reaction={current} />
+        </div>
+      ) : null}
+      {error ? (
+        <p className="text-small text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+/** One conversation per task: own material, teacher or bot answers, verdicts. */
+function writtenChatMessages({
+  thread,
+  now,
+  onReaction,
+  pendingReactionReviewId,
+  reactionError,
+}: {
+  thread: WrittenThread | null
+  now: number
+  onReaction: (reviewId: string, reactionId: 0 | 1 | 2 | null, expectedVersion: number) => void
+  pendingReactionReviewId: string | null
+  reactionError: { reviewId: string; message: string } | null
+}): ChatMessageView[] {
+  if (!thread) return []
+  return buildWrittenChatItems(thread).map(({ key, at, entry, review }) => {
+    const base = { id: key, at: chatTime(at), dateLabel: chatDate(at) }
+    if (entry?.authorKind === 'student') {
+      return {
+        ...base,
+        author: 'student' as const,
+        own: true,
+        ...(entry.text?.trim() ? { text: entry.text } : {}),
+        ...(entry.attachments.length > 0 ? { media: <EntryPhotos entry={entry} /> } : {}),
+        delivery: 'sent' as const,
+        ...(entry.version > 1 ? { edited: true } : {}),
+      }
+    }
+    if (entry && entry.entryKind === 'system_event') {
+      return {
+        ...base,
+        author: 'system' as const,
+        text: entry.text ?? 'Событие по задаче',
+      }
+    }
+    const ai = review?.source === 'ai' || entry?.authorKind === 'ai'
+    const text = entry?.text ?? review?.comment ?? null
+    return {
+      ...base,
+      author: ai ? ('ai' as const) : entry?.authorKind === 'admin' ? ('admin' as const) : ('teacher' as const),
+      ...(review ? { authorName: review.reviewerName } : {}),
+      ...(review ? { verdict: writtenReviewVerdict(review.verdict, ai ? 'ai' : 'human') } : {}),
+      ...(text?.trim() ? { text } : {}),
+      ...(review && review.annotations.length > 0
+        ? { media: <ReviewAnnotations review={review} thread={thread} /> }
+        : {}),
+      ...(review
+        ? {
+            footer: (
+              <ReviewReactions
+                error={reactionError?.reviewId === review.reviewId ? reactionError.message : null}
+                now={now}
+                onReaction={onReaction}
+                pending={pendingReactionReviewId === review.reviewId}
+                review={review}
+              />
+            ),
+          }
+        : {}),
+    }
+  })
 }
 
 export function StudentWrittenSubmission({
@@ -180,8 +361,8 @@ export function StudentWrittenSubmission({
     reviewId: string
     message: string
   } | null>(null)
-  const [sent, setSent] = useState(false)
   const [online, setOnline] = useState(() => navigator.onLine)
+  const [mountedAt] = useState(() => Date.now())
   const previewUrls = usePhotoPreviewUrls(photos)
 
   const changeStudentReaction = async (
@@ -235,7 +416,6 @@ export function StudentWrittenSubmission({
         setStorageError(null)
         setHydrated(true)
         if (item?.status === 'synced') {
-          setSent(true)
           await outbox.acknowledge(item.id)
           if (active) {
             setText('')
@@ -305,7 +485,6 @@ export function StudentWrittenSubmission({
       setSendError(deliveryMessage(result.error))
       return
     }
-    setSent(true)
     await outbox.acknowledge(result.item.id)
     setQueueItem(null)
     setText('')
@@ -339,33 +518,25 @@ export function StudentWrittenSubmission({
     )
   }
 
+  const chatMessages = writtenChatMessages({
+    thread: threadQuery.data?.thread ?? null,
+    now: mountedAt,
+    onReaction: (reviewId, reactionId, expectedVersion) =>
+      void changeStudentReaction(reviewId, reactionId, expectedVersion),
+    pendingReactionReviewId: studentReactionMutation.isPending
+      ? (studentReactionMutation.variables?.reviewId ?? null)
+      : null,
+    reactionError: studentReactionError,
+  })
+
   if (closed) {
-    const closedThread = threadQuery.data?.thread ?? null
     return (
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>Отправленные решения</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {closedThread?.reviews.length ? (
-            <WrittenReviewHistory
-              entries={closedThread.entries}
-              onStudentReactionChange={(reviewId, reactionId, expectedVersion) =>
-                void changeStudentReaction(reviewId, reactionId, expectedVersion)
-              }
-              pendingStudentReactionReviewId={
-                studentReactionMutation.isPending
-                  ? studentReactionMutation.variables?.reviewId
-                  : null
-              }
-              reviews={closedThread.reviews}
-              studentReactionError={studentReactionError}
-            />
-          ) : (
-            <p className="text-small text-muted-foreground">Приём решений завершён.</p>
-          )}
-        </CardContent>
-      </Card>
+      <section aria-label="Отправленные решения" className="mt-4 space-y-3">
+        <TaskChat
+          emptyLabel="Приём решений завершён, отправленных решений нет."
+          messages={chatMessages}
+        />
+      </section>
     )
   }
 
@@ -386,7 +557,6 @@ export function StudentWrittenSubmission({
 
   const saveText = (value: string) => {
     setText(value)
-    setSent(false)
     try {
       draftStore.value.saveText(descriptor, value)
       setStorageError(null)
@@ -423,7 +593,6 @@ export function StudentWrittenSubmission({
           processing: result.status === 'ready' ? 'client-webp' : 'server-fallback-source',
         })
         setPendingPhotos((current) => current.filter((photo) => photo.id !== id))
-        setSent(false)
         await reloadDraft()
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
@@ -462,7 +631,6 @@ export function StudentWrittenSubmission({
         reordered.map(({ id }) => id),
       )
       setPhotos(reordered)
-      setSent(false)
       setStorageError(null)
     } catch (error) {
       setStorageError(error)
@@ -478,7 +646,6 @@ export function StudentWrittenSubmission({
     }
     try {
       await draftStore.value.removePhoto(descriptor, photoId)
-      setSent(false)
       await reloadDraft()
     } catch (error) {
       setStorageError(error)
@@ -531,15 +698,7 @@ export function StudentWrittenSubmission({
   const queued = queueItem !== null && ['queued', 'retrying', 'sending'].includes(queueItem.status)
   const totalBytes = photos.reduce((sum, photo) => sum + photo.byteSize, 0)
   const thread = threadQuery.data?.thread ?? null
-  const threadStatus = thread?.status ?? null
-  const replaceableEntry = [...(thread?.entries ?? [])]
-    .reverse()
-    .find(
-      (entry) =>
-        entry.authorKind === 'student' &&
-        entry.entryKind === 'submission' &&
-        entry.state === 'submitted',
-    )
+  const replaceableEntry = replaceableWrittenEntry(thread)
 
   const beginReplacement = async () => {
     if (!replaceableEntry || queued || replacementLoading) return
@@ -557,7 +716,6 @@ export function StudentWrittenSubmission({
     try {
       draftStore.value.saveReplacementTarget(descriptor, target)
       setReplacementTarget(target)
-      setSent(false)
       if (text.trim() || photos.length > 0) return
       setReplacementLoading(true)
       draftStore.value.saveText(descriptor, replaceableEntry.text ?? '')
@@ -599,78 +757,69 @@ export function StudentWrittenSubmission({
     }
   }
 
+  // While an answer is on its way it already reads as a sent message, so the
+  // composer steps aside instead of showing the same text twice.
+  const queuedMessage: ChatMessageView | null =
+    queued && queueItem
+      ? {
+          id: `queued:${queueItem.id}`,
+          author: 'student',
+          own: true,
+          at: chatTime(queueItem.payload.clientCreatedAt),
+          dateLabel: chatDate(queueItem.payload.clientCreatedAt),
+          ...(queueItem.payload.text?.trim() ? { text: queueItem.payload.text } : {}),
+          ...(photos.length > 0
+            ? {
+                media: (
+                  <ol className="flex flex-wrap gap-1.5">
+                    {photos.map((photo, index) => (
+                      <li key={photo.id}>
+                        <img
+                          alt={`Страница ${index + 1}`}
+                          className="max-h-32 rounded border border-border bg-surface-sunken"
+                          src={previewUrls.get(photo.id)}
+                        />
+                      </li>
+                    ))}
+                  </ol>
+                ),
+              }
+            : {}),
+          delivery: queueItem.status === 'sending' ? 'sending' : 'queued',
+        }
+      : null
+
+  const editableMessages = chatMessages.map((message) =>
+    replaceableEntry && message.id === `entry:${replaceableEntry.entryId}` && !replacementTarget
+      ? {
+          ...message,
+          actions: (
+            <Button
+              disabled={replacementLoading}
+              onClick={() => void beginReplacement()}
+              size="sm"
+              variant="ghost"
+            >
+              <Pencil aria-hidden="true" />
+              Изменить
+            </Button>
+          ),
+        }
+      : message,
+  )
+  const messages = queuedMessage ? [...editableMessages, queuedMessage] : editableMessages
+  const composerEmpty = text.trim() === '' && attachments.length === 0
+
   return (
     <section
       aria-label={replacementTarget ? 'Изменить решение' : 'Сдать решение'}
-      className="mt-4 space-y-4 border-t border-border pt-4"
+      className="mt-4 space-y-3 border-t border-border pt-4"
     >
-      <h3 className="font-sans text-title-sm font-semibold text-foreground">
-        {replacementTarget ? 'Изменить решение' : 'Сдать решение'}
-      </h3>
-      {thread?.reviews.length ? (
-        <WrittenReviewHistory
-          entries={thread.entries}
-          onStudentReactionChange={(reviewId, reactionId, expectedVersion) =>
-            void changeStudentReaction(reviewId, reactionId, expectedVersion)
-          }
-          pendingStudentReactionReviewId={
-            studentReactionMutation.isPending ? studentReactionMutation.variables?.reviewId : null
-          }
-          reviews={thread.reviews}
-          studentReactionError={studentReactionError}
-        />
-      ) : null}
-      {replaceableEntry && !replacementTarget && !queued ? (
-        <Button
-          disabled={replacementLoading}
-          onClick={() => void beginReplacement()}
-          size="sm"
-          variant="outline"
-        >
-          <Pencil aria-hidden="true" />
-          Изменить отправленное решение
-        </Button>
-      ) : null}
-      {replacementTarget ? (
-        <Alert tone="info">
-          <Pencil aria-hidden="true" />
-          <AlertContent>
-            <AlertTitle>
-              {replacementLoading ? 'Копируем прежнее решение…' : 'Готовится замена'}
-            </AlertTitle>
-            <AlertDescription>
-              Прежнее решение останется в очереди до полной отправки этой версии. После
-              подтверждения текст и фотографии заменятся одной операцией.
-            </AlertDescription>
-            {!queued && !replacementLoading ? (
-              <Button className="mt-2" onClick={cancelReplacement} size="sm" variant="ghost">
-                Отменить замену
-              </Button>
-            ) : null}
-          </AlertContent>
-        </Alert>
-      ) : null}
-      {threadStatus === 'awaiting_review' ? (
-        <Alert tone="info">
-          <AlertContent>
-            <AlertTitle>Предыдущее сообщение ждёт проверки</AlertTitle>
-            <AlertDescription>
-              Можно дописать пояснение или отправить новое решение — оно добавится в тот же тред.
-            </AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
-      {sent ? (
-        <Alert tone="success">
-          <CheckCircle2 aria-hidden="true" />
-          <AlertContent>
-            <AlertTitle>Решение отправлено</AlertTitle>
-            <AlertDescription>
-              Оно сохранено на сервере и появилось в истории задачи.
-            </AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <TaskChat
+        emptyLabel="Здесь появится переписка по задаче: ваше решение и ответ проверяющего."
+        messages={messages}
+      />
+
       {storageError ? (
         <Alert role="alert" tone="danger">
           <TriangleAlert aria-hidden="true" />
@@ -679,22 +828,6 @@ export function StudentWrittenSubmission({
             <AlertDescription>
               Не закрывайте страницу. Освободите место в браузере и повторите изменение.
             </AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
-      {queueItem && ['queued', 'retrying'].includes(queueItem.status) ? (
-        <Alert tone="warning">
-          <CloudOff aria-hidden="true" />
-          <AlertContent>
-            <AlertTitle>Решение сохранено в очереди</AlertTitle>
-            <AlertDescription>
-              Отправка продолжится с последнего подтверждённого шага, когда появится связь.
-            </AlertDescription>
-            {online ? (
-              <Button className="mt-2" onClick={() => void deliver()} size="sm" variant="outline">
-                Повторить сейчас
-              </Button>
-            ) : null}
           </AlertContent>
         </Alert>
       ) : null}
@@ -716,23 +849,83 @@ export function StudentWrittenSubmission({
         ref={inputRef}
         type="file"
       />
-      <SubmissionComposer
-        attachments={attachments}
-        maxPhotos={10}
-        offline={!online}
-        onAddPhotos={() => inputRef.current?.click()}
-        onMoveDown={(id) => move(id, 1)}
-        onMoveUp={(id) => move(id, -1)}
-        onRemove={(id) => void remove(id)}
-        onSubmit={() => void submit()}
-        onTextChange={saveText}
-        onTextPaste={recordPaste}
-        queued={queued}
-        submitting={queueItem?.status === 'sending' || replacementLoading}
-        taskType={problemType}
-        text={text}
-        {...(photos.length > 0 ? { totalSizeLabel: formatBytes(totalBytes) } : {})}
-      />
+
+      {queued ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
+          <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
+          <p className="min-w-0 flex-1 text-small text-muted-foreground">
+            {queueItem?.status === 'sending'
+              ? 'Отправляем решение…'
+              : 'Решение в очереди — отправка продолжится, когда появится связь.'}
+          </p>
+          {online && queueItem?.status !== 'sending' ? (
+            <Button onClick={() => void deliver()} size="sm" variant="outline">
+              Повторить сейчас
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <>
+          {replacementTarget ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
+              <Pencil aria-hidden="true" className="size-4 text-muted-foreground" />
+              <p className="min-w-0 flex-1 text-small text-muted-foreground">
+                {replacementLoading
+                  ? 'Копируем прежнее решение…'
+                  : 'Изменяете отправленное решение — оно заменится одной операцией.'}
+              </p>
+              {!replacementLoading ? (
+                <Button onClick={cancelReplacement} size="sm" variant="ghost">
+                  Отменить
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          <ChatComposer
+            attachments={attachments}
+            attachDisabled={replacementLoading || attachments.length >= 10}
+            attachmentsDisabled={replacementLoading}
+            hint={
+              <span className="flex flex-wrap items-center gap-x-3">
+                <span>
+                  Фотографии: {attachments.length} из 10
+                  {photos.length > 0 ? ` · ${formatBytes(totalBytes)}` : ''}
+                </span>
+                {problemType === 'oral' ? (
+                  <span>Устную задачу можно сдать в конференции или письменно здесь.</span>
+                ) : null}
+                {!online ? <span>Нет сети — отправим, когда связь вернётся.</span> : null}
+              </span>
+            }
+            onAttach={() => inputRef.current?.click()}
+            onMoveAttachmentDown={(id) => move(id, 1)}
+            onMoveAttachmentUp={(id) => move(id, -1)}
+            onRemoveAttachment={(id) => void remove(id)}
+            onSend={() => void submit()}
+            sendDisabled={composerEmpty || replacementLoading}
+            sending={replacementLoading}
+          >
+            <Textarea
+              aria-label="Ваше решение"
+              className="field-sizing-content max-h-56 min-h-11 py-2 text-base sm:text-[1.0625rem]"
+              disabled={replacementLoading}
+              onChange={(event) => saveText(event.target.value)}
+              onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                  event.preventDefault()
+                  if (!composerEmpty && !replacementLoading) void submit()
+                }
+              }}
+              onPaste={(event) => {
+                const characterCount = event.clipboardData.getData('text').length
+                if (characterCount > 0) recordPaste(characterCount)
+              }}
+              placeholder="Решение или пояснение. Формулы можно приложить фотографией."
+              value={text}
+            />
+          </ChatComposer>
+        </>
+      )}
     </section>
   )
 }

@@ -1,5 +1,15 @@
-import { testAnswerInputResponseSchema, type TestAnswerInputResponse } from '@vmsh/contracts'
-import { answerTypeFromLegacyId, type AnswerSpec } from '@vmsh/product'
+import {
+  testAnswerInputResponseSchema,
+  type TestAnswerInputResponse,
+  type TestAttemptOutcome,
+} from '@vmsh/contracts'
+import {
+  answerTypeFromLegacyId,
+  binaryVerdictScale,
+  findVerdict,
+  type AnswerSpec,
+  type VerdictView,
+} from '@vmsh/product'
 
 /** Safe API input configuration translated to the shared historical control. */
 export function testAnswerSpec(input: TestAnswerInputResponse): AnswerSpec {
@@ -14,4 +24,33 @@ export function testAnswerSpec(input: TestAnswerInputResponse): AnswerSpec {
           options: parsed.options.map((option) => ({ value: option, label: option })),
         }),
   }
+}
+
+/*
+ * An automatically checked answer reads as a short exchange with the bot: the
+ * student sends an answer, the checker answers back. The wording below is the
+ * bot's reply; the per-attempt detail from the checker follows it.
+ */
+const replyByOutcome: Record<TestAttemptOutcome, string> = {
+  correct: 'Да, ответ принят.',
+  wrong: 'Ответ пока неверный.',
+  invalid_format: 'Проверьте формат ответа.',
+  pending_configuration: 'Ответ сохранён и ждёт настройки проверки.',
+  checker_failed: 'Ответ сохранён, но проверка не завершилась.',
+}
+
+export function testAttemptReply(attempt: {
+  outcome: TestAttemptOutcome
+  feedback: string | null
+  checkerMessage: string | null
+}): string {
+  const detail = attempt.feedback?.trim() || attempt.checkerMessage?.trim() || ''
+  return detail ? `${replyByOutcome[attempt.outcome]}\n${detail}` : replyByOutcome[attempt.outcome]
+}
+
+/** Automatic checking is binary; anything unresolved carries no verdict yet. */
+export function testAttemptVerdict(outcome: TestAttemptOutcome): VerdictView | undefined {
+  if (outcome === 'correct') return findVerdict(binaryVerdictScale, 'plus')
+  if (outcome === 'wrong') return findVerdict(binaryVerdictScale, 'rejected')
+  return undefined
 }

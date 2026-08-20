@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react'
+import { CloudOff, TriangleAlert } from 'lucide-react'
 
 import {
   createTestSubmissionClient,
@@ -16,7 +16,13 @@ import {
   type TestAnswerDraftDescriptor,
   type TestAnswerOutboxItem,
 } from '@vmsh/offline'
-import { SyncIndicator, TestAnswer, validateAnswerFormat } from '@vmsh/product'
+import {
+  ChatComposer,
+  TaskChat,
+  TestAnswer,
+  validateAnswerFormat,
+  type ChatMessageView,
+} from '@vmsh/product'
 import {
   Alert,
   AlertContent,
@@ -25,14 +31,17 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Skeleton,
 } from '@vmsh/ui'
 
 import { createOfflineStudentTestAnswerInputClient } from './offline-student-data'
 import { announceSafePwaUpdateMoment } from './pwa-update-events'
-import { testAnswerSpec } from './student-test-answer-view'
+import { chatDate, chatTime } from './student-written-chat'
+import {
+  testAnswerSpec,
+  testAttemptReply,
+  testAttemptVerdict,
+} from './student-test-answer-view'
 
 /**
  * Production Phase-4 test editor. It composes the safe input endpoint,
@@ -42,19 +51,8 @@ import { testAnswerSpec } from './student-test-answer-view'
 
 type SendState = 'ready' | 'sending' | 'queued' | 'conflict' | 'failed' | 'synced'
 
-function receiptTitle(receipt: SubmitTestAnswerResponse): string {
-  if (receipt.outcome === 'correct') return 'Да, ответ принят'
-  if (receipt.outcome === 'wrong') return 'Ответ пока неверный'
-  if (receipt.outcome === 'invalid_format') return 'Проверьте формат ответа'
-  if (receipt.outcome === 'pending_configuration') return 'Ответ сохранён и ждёт настройки'
-  return 'Ответ сохранён, но проверка не завершилась'
-}
-
-function receiptTone(receipt: SubmitTestAnswerResponse): 'success' | 'danger' | 'warning' {
-  if (receipt.outcome === 'correct') return 'success'
-  if (receipt.outcome === 'wrong' || receipt.outcome === 'invalid_format') return 'danger'
-  return 'warning'
-}
+/** Recent turns stay in view; older ones load on request. */
+const VISIBLE_TURNS = 6
 
 function sendErrorMessage(error: unknown): string {
   if (error instanceof ApiResponseError) return error.message
@@ -176,6 +174,7 @@ export function StudentTestAnswer({
   const [sendError, setSendError] = useState<string | null>(null)
   const [showFormatError, setShowFormatError] = useState(false)
   const [editorEpoch, setEditorEpoch] = useState(0)
+  const [showEveryTurn, setShowEveryTurn] = useState(false)
 
   useEffect(() => {
     if (!identity || !descriptor || !draftStore.value) return
@@ -357,149 +356,149 @@ export function StudentTestAnswer({
     }
   }
 
-  const fieldLocked =
-    sendState === 'sending' ||
-    (pendingItem !== null && ['queued', 'retrying', 'sending'].includes(pendingItem.status))
-  const attempts = historyQuery.data?.pages.flatMap((page) => page.attempts).slice(0, 3) ?? []
+  const queuedSend =
+    pendingItem !== null && ['queued', 'retrying', 'sending'].includes(pendingItem.status)
+  const fieldLocked = sendState === 'sending' || queuedSend
+  const history = historyQuery.data?.pages.flatMap((page) => page.attempts) ?? []
+  // The API pages newest first; a conversation reads the other way round.
+  const ordered = [...history].reverse()
+  const shown = showEveryTurn ? ordered : ordered.slice(-VISIBLE_TURNS)
+  const hasEarlier = ordered.length > shown.length || historyQuery.hasNextPage
+  const messages: ChatMessageView[] = shown.flatMap((attempt) => {
+    const at = chatTime(attempt.serverReceivedAt)
+    const dateLabel = chatDate(attempt.serverReceivedAt)
+    const answered: ChatMessageView = {
+      id: `answer:${attempt.attemptId}`,
+      author: 'student',
+      own: true,
+      at,
+      dateLabel,
+      text: attempt.displayAnswer || 'Пустой ответ',
+      delivery: 'sent',
+    }
+    const checked: ChatMessageView = {
+      id: `check:${attempt.attemptId}`,
+      author: 'bot',
+      authorName: 'Автопроверка',
+      at,
+      dateLabel,
+      text: testAttemptReply(attempt),
+    }
+    const verdict = testAttemptVerdict(attempt.outcome)
+    if (verdict) checked.verdict = verdict
+    return [answered, checked]
+  })
+  if (queuedSend && pendingItem) {
+    messages.push({
+      id: `queued:${pendingItem.id}`,
+      author: 'student',
+      own: true,
+      at: chatTime(pendingItem.createdAtClient),
+      dateLabel: chatDate(pendingItem.createdAtClient),
+      text: pendingItem.payload.request.displayAnswer,
+      delivery: pendingItem.status === 'sending' ? 'sending' : 'queued',
+    })
+  }
 
   return (
-    <Card className="mt-5">
-      <CardHeader>
-        <CardTitle>Ваш ответ</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {!closed && incompatibleDraft ? (
-          <Alert tone="warning">
-            <TriangleAlert aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Условие изменилось</AlertTitle>
-              <AlertDescription>
-                Ответ к предыдущей версии сохранён отдельно и не перенесён автоматически.
-              </AlertDescription>
-              <Button className="mt-2" onClick={restoreOldDraft} size="sm" variant="outline">
-                Перенести только текст ответа
-              </Button>
-            </AlertContent>
-          </Alert>
-        ) : null}
+    <section aria-label="Ваш ответ" className="mt-4 space-y-3 border-t border-border pt-4">
+      {hasEarlier ? (
+        <Button
+          disabled={historyQuery.isFetchingNextPage}
+          onClick={() => {
+            if (!showEveryTurn) setShowEveryTurn(true)
+            else void historyQuery.fetchNextPage()
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          {historyQuery.isFetchingNextPage ? 'Загружаем…' : 'Показать более ранние ответы'}
+        </Button>
+      ) : null}
 
-        {!closed && storageError ? (
-          <Alert role="alert" tone="danger">
-            <TriangleAlert aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Черновик сейчас не сохраняется</AlertTitle>
-              <AlertDescription>
-                Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и
-                измените ответ ещё раз.
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
+      <TaskChat
+        emptyLabel="Отправьте ответ — проверка придёт сразу."
+        messages={messages}
+      />
 
-        {closed ? (
-          <p className="text-small text-muted-foreground">Приём ответов завершён.</p>
-        ) : (
-          <>
-            <TestAnswer
-              key={`${identity}:${editorEpoch}`}
-              defaultValue={answer}
-              disabled={fieldLocked}
-              onChange={saveAnswer}
-              showFormatError={showFormatError}
-              spec={spec}
-            />
+      {!closed && incompatibleDraft ? (
+        <Alert tone="warning">
+          <TriangleAlert aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>Условие изменилось</AlertTitle>
+            <AlertDescription>
+              Ответ к предыдущей версии сохранён отдельно и не перенесён автоматически.
+            </AlertDescription>
+            <Button className="mt-2" onClick={restoreOldDraft} size="sm" variant="outline">
+              Перенести только текст ответа
+            </Button>
+          </AlertContent>
+        </Alert>
+      ) : null}
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                disabled={!answer.trim() || sendState === 'sending'}
-                onClick={() => void submit()}
-              >
-                {sendState === 'sending' ? (
-                  <>
-                    <RefreshCw
-                      className="animate-spin motion-reduce:animate-none"
-                      aria-hidden="true"
-                    />
-                    Отправляем…
-                  </>
-                ) : pendingItem &&
-                  ['queued', 'retrying', 'sending'].includes(pendingItem.status) ? (
-                  'Повторить отправку'
-                ) : (
-                  'Проверить'
-                )}
-              </Button>
-              <SyncIndicator
-                queuedCount={pendingItem && pendingItem.status !== 'synced' ? 1 : 0}
-                syncing={sendState === 'sending'}
-              />
-            </div>
-          </>
-        )}
+      {!closed && storageError ? (
+        <Alert role="alert" tone="danger">
+          <TriangleAlert aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>Черновик сейчас не сохраняется</AlertTitle>
+            <AlertDescription>
+              Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и
+              измените ответ ещё раз.
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
 
-        {sendState === 'queued' ? (
-          <Alert tone="warning">
-            <CloudOff aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Ответ сохранён в очереди</AlertTitle>
-              <AlertDescription>
-                Можно повторить отправку после восстановления связи. Время создания уже
-                зафиксировано.
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
+      {sendError && sendState !== 'queued' ? (
+        <Alert role="alert" tone={sendState === 'conflict' ? 'warning' : 'danger'}>
+          <TriangleAlert aria-hidden="true" />
+          <AlertContent>
+            <AlertTitle>
+              {sendState === 'conflict' ? 'Нужно обновить задачу' : 'Ответ не отправлен'}
+            </AlertTitle>
+            <AlertDescription>{sendError}</AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
 
-        {sendError && sendState !== 'queued' ? (
-          <Alert role="alert" tone={sendState === 'conflict' ? 'warning' : 'danger'}>
-            <TriangleAlert aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>
-                {sendState === 'conflict' ? 'Нужно обновить задачу' : 'Ответ не отправлен'}
-              </AlertTitle>
-              <AlertDescription>{sendError}</AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
-
-        {receipt ? (
-          <Alert tone={receiptTone(receipt)}>
-            <CheckCircle2 aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>{receiptTitle(receipt)}</AlertTitle>
-              {receipt.feedback ? <AlertDescription>{receipt.feedback}</AlertDescription> : null}
-              <p className="mt-1 text-caption text-muted-foreground">
-                {receipt.attempts.unlimited
-                  ? 'Число попыток не ограничено.'
-                  : `Неверных ответов до конца часа: ${receipt.attempts.remainingThisHour ?? '—'} · ответов сегодня: ${receipt.attempts.remainingToday ?? '—'}.`}
-              </p>
-            </AlertContent>
-          </Alert>
-        ) : null}
-
-        {attempts.length > 0 ? (
-          <div aria-label="Последние ответы" className="space-y-1 border-t border-border pt-3">
-            <p className="text-label font-medium">Последние ответы</p>
-            {attempts.map((attempt) => (
-              <div
-                className="flex items-baseline justify-between gap-3 text-caption text-muted-foreground"
-                key={attempt.attemptId}
-              >
-                <span className="min-w-0 truncate">{attempt.displayAnswer || 'Пустой ответ'}</span>
-                <span className="shrink-0">
-                  {attempt.outcome === 'correct'
-                    ? 'верно'
-                    : attempt.outcome === 'wrong'
-                      ? 'неверно'
-                      : attempt.outcome === 'invalid_format'
-                        ? 'формат'
-                        : 'ожидает'}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+      {closed ? (
+        <p className="text-small text-muted-foreground">Приём ответов завершён.</p>
+      ) : queuedSend ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
+          <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
+          <p className="min-w-0 flex-1 text-small text-muted-foreground">
+            {pendingItem?.status === 'sending'
+              ? 'Отправляем ответ…'
+              : 'Ответ в очереди — время создания уже зафиксировано, отправим при связи.'}
+          </p>
+          {pendingItem?.status !== 'sending' ? (
+            <Button onClick={() => void deliver()} size="sm" variant="outline">
+              Повторить сейчас
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <ChatComposer
+          hint={
+            receipt && !receipt.attempts.unlimited
+              ? `Неверных ответов до конца часа: ${receipt.attempts.remainingThisHour ?? '—'} · ответов сегодня: ${receipt.attempts.remainingToday ?? '—'}.`
+              : null
+          }
+          onSend={() => void submit()}
+          sendDisabled={!answer.trim()}
+          sending={sendState === 'sending'}
+          sendLabel="Проверить"
+        >
+          <TestAnswer
+            key={`${identity}:${editorEpoch}`}
+            defaultValue={answer}
+            disabled={fieldLocked}
+            onChange={saveAnswer}
+            showFormatError={showFormatError}
+            spec={spec}
+          />
+        </ChatComposer>
+      )}
+    </section>
   )
 }
