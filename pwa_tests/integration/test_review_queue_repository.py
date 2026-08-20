@@ -672,6 +672,32 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
 
 
 @pytest.mark.asyncio
+async def test_complete_accepts_evidence_captured_before_own_lease_heartbeat(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    command = _complete_command(lease)
+
+    fixture.clock.value += timedelta(minutes=10)
+    heartbeat = await fixture.repository.heartbeat(
+        queue_public_id=fixture.queue_public_ids[0],
+        claim_token=lease.claim_token,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    assert {item.lease_version for item in heartbeat.items} == {2}
+
+    receipt = await fixture.repository.complete(command)
+
+    assert receipt.review_public_id == "review-completed-test"
+
+
+@pytest.mark.asyncio
 async def test_review_correction_appends_history_and_replaces_legacy_result(
     review_queue_fixture,
 ):

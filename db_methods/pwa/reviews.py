@@ -1939,10 +1939,8 @@ class PwaWrittenReviewQueueRepository:
                 raise ReviewCompletionInvalid(
                     "review annotation references an attachment outside current evidence"
                 )
-            queue_by_public_id = {str(row["public_id"]): row for row in queue_rows}
             for queue_public_id, expected in expected_by_queue.items():
                 actual = actual_by_queue[queue_public_id]
-                queue_row = queue_by_public_id[queue_public_id]
                 actual_entries = tuple(
                     (entry.entry_public_id, entry.entry_version)
                     for entry in actual.entries
@@ -1952,8 +1950,7 @@ class PwaWrittenReviewQueueRepository:
                     for entry in expected.entries
                 )
                 if (
-                    expected.lease_version != int(queue_row["lease_version"])
-                    or expected.thread_public_id != actual.thread_public_id
+                    expected.thread_public_id != actual.thread_public_id
                     or expected.thread_version != actual.thread_version
                     or expected_entries != actual_entries
                 ):
