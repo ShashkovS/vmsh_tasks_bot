@@ -145,6 +145,7 @@ class ContentRevisionRecord:
     compile_lease_expires_at: datetime | None
     compile_attempt_count: int
     compile_completed_at: datetime | None
+    created_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -764,6 +765,7 @@ def _content_revision(row: Mapping[str, object]) -> ContentRevisionRecord:
         compile_lease_expires_at=_optional_timestamp(row["compile_lease_expires_at"]),
         compile_attempt_count=int(row["compile_attempt_count"]),
         compile_completed_at=_optional_timestamp(row["compile_completed_at"]),
+        created_at=parse_utc_timestamp(str(row["created_at"])),
     )
 
 

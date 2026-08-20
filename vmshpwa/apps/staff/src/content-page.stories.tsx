@@ -42,6 +42,7 @@ const readyRevision = staffContentRevisionSchema.parse({
   kind: 'condition',
   logicalFilename: 'condition.tex',
   revisionNumber: 1,
+  uploadedAt: '2026-01-26T12:30:00Z',
   status: 'ready',
   version: 2,
   compileLeaseExpiresAt: null,

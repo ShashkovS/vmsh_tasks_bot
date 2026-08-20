@@ -36,6 +36,7 @@ describe('Phase-2 content HTTP contracts', () => {
       kind: 'condition',
       logicalFilename: 'lesson-41/condition.tex',
       revisionNumber: 3,
+      uploadedAt: '2026-01-26T12:30:00Z',
       status: 'ready',
       version: 3,
       compileLeaseExpiresAt: null,
@@ -60,6 +61,7 @@ describe('Phase-2 content HTTP contracts', () => {
     })
 
     expect(revision.status).toBe('ready')
+    expect(revision.uploadedAt).toBe('2026-01-26T12:30:00Z')
     expect(revision.sourceId).toBe('content-source-41-condition')
     expect(revision.compileAttempt).toBe(1)
     expect(revision.diagnostics[0]?.span.start.line).toBe(2)

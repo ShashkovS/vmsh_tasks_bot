@@ -2755,7 +2755,11 @@ async def test_identical_source_upload_is_idempotent(content_http: ContentHttpFi
     )
 
     assert first.status == repeated.status == 201
-    assert (await first.json())["revisionId"] == (await repeated.json())["revisionId"]
+    first_payload = await first.json()
+    repeated_payload = await repeated.json()
+    assert first_payload["revisionId"] == repeated_payload["revisionId"]
+    assert first_payload["uploadedAt"] == repeated_payload["uploadedAt"]
+    assert first_payload["uploadedAt"].endswith("Z")
 
 
 async def test_failed_automatic_tikz_keeps_revision_and_returns_recovery_details(

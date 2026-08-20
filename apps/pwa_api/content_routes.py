@@ -847,6 +847,7 @@ def _revision_payload(context: ContentRevisionContext) -> dict[str, object]:
         "kind": context.source.kind.value,
         "logicalFilename": context.source.logical_filename,
         "revisionNumber": revision.revision_number,
+        "uploadedAt": _iso(revision.created_at),
         "status": revision.status.value,
         "version": revision.version,
         "sourceSha256": revision.source_sha256,

@@ -220,6 +220,7 @@ export const staffContentRevisionSchema = z
     kind: contentMaterialKindSchema,
     logicalFilename: z.string().trim().min(1).max(240),
     revisionNumber: z.number().int().positive(),
+    uploadedAt: z.iso.datetime(),
     status: contentRevisionStatusSchema,
     version: z.number().int().positive(),
     compileLeaseExpiresAt: z.iso.datetime().nullable(),

@@ -266,6 +266,10 @@ function formatInBusinessTimezone(instant: string, timezone: BusinessTimezone): 
   }).format(new Date(instant))
 }
 
+function revisionLabel(revision: StaffContentRevision, timezone: BusinessTimezone): string {
+  return `Версия ${revision.revisionNumber} · ${revision.logicalFilename} · ${formatInBusinessTimezone(revision.uploadedAt, timezone)}`
+}
+
 function hintPreviewWithConditions(
   condition: WebContentDocument,
   hint: WebContentDocument,
@@ -831,14 +835,14 @@ function MaterialWorkflowCard({
               <SelectTrigger className="w-full" id={`ready-revision-${kind}`}>
                 <SelectValue>
                   {selectedRevision
-                    ? `Версия ${selectedRevision.data.revisionNumber} · ${selectedRevision.data.logicalFilename}`
+                    ? revisionLabel(selectedRevision.data, businessTimezone)
                     : 'Выберите версию'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {[...readyRevisions].reverse().map((revision) => (
                   <SelectItem key={revision.data.revisionId} value={revision.data.revisionId}>
-                    Версия {revision.data.revisionNumber} · {revision.data.logicalFilename}
+                    {revisionLabel(revision.data, businessTimezone)}
                   </SelectItem>
                 ))}
               </SelectContent>
