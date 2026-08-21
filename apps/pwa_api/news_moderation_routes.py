@@ -14,6 +14,7 @@ from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.news_moderation import list_news_for_moderation
+from db_methods.pwa.news import insert_media
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.local_news import (
@@ -34,6 +35,8 @@ from models.pwa.news_moderation import (
     reconcile_news_source_state,
 )
 from models.pwa.news_notifications import create_news_notifications
+from models.pwa.rich_document import InvalidRichDocument, validate_rich_document
+from helpers.pwa.rich_media import RichMediaCopyError, copy_rich_document_media
 
 
 news_moderation_routes = web.RouteTableDef()
@@ -74,7 +77,9 @@ def _admin_user_id(request: web.Request) -> int:
     return principal.linked_user_id
 
 
-def _payload(item: dict[str, object], *, now: str) -> dict[str, object]:
+def _payload(
+    item: dict[str, object], *, now: str, content_version: int = 1
+) -> dict[str, object]:
     editable_text = str(item["text_plain"])
     if item["source_type"] == "local" and isinstance(
         item.get("source_payload_json"), str
@@ -87,7 +92,15 @@ def _payload(item: dict[str, object], *, now: str) -> dict[str, object]:
             source_payload.get("markdown"), str
         ):
             editable_text = source_payload["markdown"]
-    return {
+    rich_document: object | None = None
+    if item.get("content_format") == "rich_markdown_v1" and isinstance(
+        item.get("rich_document_json"), str
+    ):
+        try:
+            rich_document = json.loads(str(item["rich_document_json"]))
+        except json.JSONDecodeError:
+            rich_document = None
+    payload: dict[str, object] = {
         "postId": item["public_id"],
         "source": item["source_type"],
         "channelTitle": item["channel_title"],
@@ -110,12 +123,44 @@ def _payload(item: dict[str, object], *, now: str) -> dict[str, object]:
         ),
         "version": item["visibility_version"],
     }
+    # Keep existing strict v1 Staff clients working. Rich authoring fields are
+    # opt-in with contentVersion=2; see Phase 8 Rich Markdown API contract.
+    if content_version == 2:
+        payload["markdown"] = editable_text if rich_document is not None else None
+        payload["document"] = rich_document
+    return payload
+
+
+async def _copy_document_media(
+    request: web.Request, document: object
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    """Acquire rich media before the SQLite transaction (Phase 8 Rich Markdown v1)."""
+
+    validated = validate_rich_document(document)
+    if not validated["media"]:
+        return validated, []
+    # These keys are owned by pwa_app's content startup. Importing lazily avoids
+    # a route/app factory import cycle while retaining the one shared storage.
+    from apps.pwa_app import PWA_CONTENT_ASSET_CONVERTER
+    from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
+
+    storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
+    converter = request.app.get(PWA_CONTENT_ASSET_CONVERTER)
+    if storage is None or converter is None:
+        raise PwaApiError(
+            status=503,
+            code="rich_media_unavailable",
+            message="Загрузка картинок временно недоступна",
+        )
+    return await copy_rich_document_media(
+        validated, storage=storage, converter=converter
+    )
 
 
 @news_moderation_routes.get("/staff/api/v1/news")
 async def list_news(request: web.Request) -> web.Response:
     _admin_user_id(request)
-    if set(request.query) - {"state", "limit"}:
+    if set(request.query) - {"state", "limit", "contentVersion"}:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте параметры списка"
         )
@@ -127,7 +172,12 @@ async def list_news(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте параметр limit"
         ) from error
-    if (state is not None and state not in _STATES) or not 1 <= limit <= 200:
+    content_version = request.query.get("contentVersion", "1")
+    if (
+        (state is not None and state not in _STATES)
+        or not 1 <= limit <= 200
+        or content_version not in {"1", "2"}
+    ):
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте параметры списка"
         )
@@ -140,7 +190,10 @@ async def list_news(request: web.Request) -> web.Response:
     return web.json_response(
         {
             "schemaVersion": 1,
-            "items": [_payload(item, now=now) for item in rows],
+            "items": [
+                _payload(item, now=now, content_version=int(content_version))
+                for item in rows
+            ],
             "requestId": request["request_id"],
         }
     )
@@ -162,17 +215,20 @@ async def create_local_publication(request: web.Request) -> web.Response:
             code="validation_error",
             message="Проверьте поля публикации",
         ) from error
-    expected_fields = {
+    v1_fields = {"schemaVersion", "ownerType", "ownerId", "text", "publishedAt"}
+    v2_fields = {
         "schemaVersion",
         "ownerType",
         "ownerId",
-        "text",
+        "markdown",
+        "document",
         "publishedAt",
     }
+    is_v2 = isinstance(body, dict) and body.get("schemaVersion") == 2
     if (
         not isinstance(body, dict)
-        or set(body) != expected_fields
-        or body.get("schemaVersion") != 1
+        or set(body) != (v2_fields if is_v2 else v1_fields)
+        or body.get("schemaVersion") not in {1, 2}
         or not isinstance(body.get("ownerId"), str)
         or _PUBLIC_ID.fullmatch(body["ownerId"]) is None
     ):
@@ -181,6 +237,19 @@ async def create_local_publication(request: web.Request) -> web.Response:
             code="validation_error",
             message="Проверьте поля публикации",
         )
+    try:
+        document, media_manifest = (
+            await _copy_document_media(request, body["document"])
+            if is_v2
+            else (None, [])
+        )
+    except (InvalidRichDocument, RichMediaCopyError) as error:
+        raise PwaApiError(
+            status=422,
+            code="rich_markdown_validation_error",
+            message="Проверьте Markdown и внешние картинки",
+            details={"diagnostic": str(error)},
+        ) from error
     now = _now()
 
     def write(connection):
@@ -188,11 +257,19 @@ async def create_local_publication(request: web.Request) -> web.Response:
             connection,
             owner_type=body["ownerType"],
             owner_public_id=body["ownerId"],
-            text=body["text"],
+            text=body["markdown"] if is_v2 else body["text"],
             published_at=body["publishedAt"],
             actor_user_id=actor_user_id,
             now=now,
+            document=document,
         )
+        if media_manifest:
+            insert_media(
+                connection,
+                revision_id=int(created["revision_id"]),
+                media=media_manifest,
+                now=now,
+            )
         create_news_notifications(
             connection,
             post_id=int(created["post_id"]),
@@ -252,7 +329,7 @@ async def create_local_publication(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, now=now),
+            "item": _payload(item, now=now, content_version=2 if is_v2 else 1),
             "requestId": request["request_id"],
         },
         status=201,
@@ -296,18 +373,35 @@ async def edit_local_publication(request: web.Request) -> web.Response:
             code="validation_error",
             message="Проверьте текст и время публикации",
         ) from error
-    allowed_fields = (
-        {"schemaVersion", "text"},
-        {"schemaVersion", "text", "publishedAt"},
+    v1_fields = ({"schemaVersion", "text"}, {"schemaVersion", "text", "publishedAt"})
+    v2_fields = (
+        {"schemaVersion", "markdown", "document"},
+        {"schemaVersion", "markdown", "document", "publishedAt"},
     )
-    if not isinstance(body, dict) or set(body) not in allowed_fields or body.get(
-        "schemaVersion"
-    ) != 1:
+    is_v2 = isinstance(body, dict) and body.get("schemaVersion") == 2
+    if (
+        not isinstance(body, dict)
+        or set(body) not in (v2_fields if is_v2 else v1_fields)
+        or body.get("schemaVersion") not in {1, 2}
+    ):
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Проверьте текст и время публикации",
         )
+    try:
+        document, media_manifest = (
+            await _copy_document_media(request, body["document"])
+            if is_v2
+            else (None, [])
+        )
+    except (InvalidRichDocument, RichMediaCopyError) as error:
+        raise PwaApiError(
+            status=422,
+            code="rich_markdown_validation_error",
+            message="Проверьте Markdown и внешние картинки",
+            details={"diagnostic": str(error)},
+        ) from error
     now = _now()
 
     def write(connection):
@@ -318,10 +412,11 @@ async def edit_local_publication(request: web.Request) -> web.Response:
             connection,
             public_id=public_id,
             expected_version=int(match.group(2)),
-            text=body["text"],
+            text=body["markdown"] if is_v2 else body["text"],
             published_at=body.get("publishedAt"),
             actor_user_id=actor_user_id,
             now=now,
+            document=document,
         )
         after_rows = list_news_for_moderation(
             connection, state=None, limit=1, public_id=public_id
@@ -331,6 +426,21 @@ async def edit_local_publication(request: web.Request) -> web.Response:
         before = before_rows[0]
         item = after_rows[0]
         if changed:
+            if media_manifest:
+                # The freshly created immutable revision is selected by the
+                # moderation projection; lookup its id without exposing it.
+                revision_id = connection.execute(
+                    "SELECT id FROM news_revisions WHERE post_id = "
+                    "(SELECT id FROM news_posts WHERE public_id = ?) "
+                    "ORDER BY revision_number DESC LIMIT 1",
+                    (public_id,),
+                ).fetchone()["id"]
+                insert_media(
+                    connection,
+                    revision_id=int(revision_id),
+                    media=media_manifest,
+                    now=now,
+                )
             insert_audit_event(
                 connection,
                 public_id=f"audit.{uuid.uuid4().hex}",
@@ -388,7 +498,7 @@ async def edit_local_publication(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, now=_now()),
+            "item": _payload(item, now=_now(), content_version=2 if is_v2 else 1),
             "requestId": request["request_id"],
         }
     )

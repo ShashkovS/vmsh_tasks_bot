@@ -86,7 +86,7 @@ export function createNewsModerationClient(
     async list(rawState, { signal } = {}) {
       const state = staffNewsVisibilityFilterSchema.parse(rawState)
       return staffNewsListResponseSchema.parse(
-        await request(`/news?state=${state}&limit=100`, {
+        await request(`/news?state=${state}&limit=100&contentVersion=2`, {
           method: 'GET',
           ...(signal === undefined ? {} : { signal }),
         }),

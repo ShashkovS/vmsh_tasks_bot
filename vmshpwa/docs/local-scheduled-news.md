@@ -1,5 +1,7 @@
 # Локальные публикации PWA по расписанию
 
+> Rich Markdown v1 (готово к review 21 августа 2026): editor и API v2 сохраняют исходный Markdown вместе с валидированным `RichDocument`, сохраняя этот документ как описание scheduled semantics. Точки реализации: [`apps/pwa_api/news_moderation_routes.py`](../../apps/pwa_api/news_moderation_routes.py), [`models/pwa/local_news.py`](../../models/pwa/local_news.py) и [`packages/contracts/src/rich-document.ts`](../packages/contracts/src/rich-document.ts). v1 requests/responses продолжают использовать plain-text projection; новые клиенты запрашивают `contentVersion=2`.
+
 Staff может создать новость, которая относится ко всему курсу или к одной
 группе и появляется в Student/Family PWA в заданное время. Эта операция не
 публикует и не редактирует сообщения в Telegram.

@@ -28,6 +28,7 @@ from pwa_tests.integration.test_phase8_notification_core import (
 
 
 MIGRATION_ID = "0067.pwa_news_mirror"
+RICH_MARKDOWN_MIGRATION_ID = "0081.pwa_rich_markdown"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
@@ -49,7 +50,9 @@ def test_news_migration_up_down_up_is_exact(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0066.pwa_telegram_bindings"
     }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
+    # 0081 extends news_revisions and is tested independently; it cannot be
+    # applied while this historical table is intentionally absent.
+    _apply(database_path, set(migrations) - {MIGRATION_ID, RICH_MARKDOWN_MIGRATION_ID})
     assert _objects(database_path) == set()
 
     expected = {

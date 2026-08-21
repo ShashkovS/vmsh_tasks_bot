@@ -968,3 +968,96 @@ async def test_hidden_local_news_does_not_trigger_due_invalidation(classroom_htt
     )
     assert restored.status == 200
     assert classroom_http.factory.run_read(notification_count) == 2
+
+
+@pytest.mark.asyncio
+async def test_rich_local_news_keeps_v1_reads_and_persists_immutable_v2_revision(
+    classroom_http,
+):
+    first_document = {
+        "schemaVersion": 1,
+        "media": [],
+        "blocks": [
+            {
+                "type": "paragraph",
+                "children": [
+                    {
+                        "type": "bold",
+                        "children": [{"type": "text", "text": "Разбор"}],
+                    },
+                    {"type": "text", "text": " сегодня"},
+                ],
+            }
+        ],
+    }
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 2,
+            "ownerType": "course",
+            "ownerId": "classroom-layout-course",
+            "markdown": "**Разбор** сегодня",
+            "document": first_document,
+            "publishedAt": "2020-01-01T00:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    first = (await created.json())["item"]
+    assert first["document"] == first_document
+    assert first["markdown"] == "**Разбор** сегодня"
+    assert first["textExcerpt"] == "Разбор сегодня"
+
+    legacy_feed = await classroom_http.client.get(
+        "/student/api/v1/news?contentVersion=1",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie
+        },
+    )
+    legacy_post = (await legacy_feed.json())["items"][0]
+    assert "document" not in legacy_post
+    assert legacy_post["blocks"] == [{"kind": "text", "text": "Разбор сегодня"}]
+
+    second_document = {
+        **first_document,
+        "blocks": [
+            {
+                "type": "paragraph",
+                "children": [{"type": "text", "text": "Уточнённый разбор"}],
+            }
+        ],
+    }
+    updated = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{first['postId']}/local",
+        json={
+            "schemaVersion": 2,
+            "markdown": "Уточнённый разбор",
+            "document": second_document,
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert updated.status == 200, await updated.text()
+    assert (await updated.json())["item"]["document"] == second_document
+
+    def revisions(connection):
+        return [
+            dict(row)
+            for row in connection.execute(
+                "SELECT revision_number, content_format, markdown_source, rich_document_json "
+                "FROM news_revisions WHERE post_id = "
+                "(SELECT id FROM news_posts WHERE public_id = ?) "
+                "ORDER BY revision_number",
+                (first["postId"],),
+            )
+        ]
+
+    stored = classroom_http.factory.run_read(revisions)
+    assert [(row["revision_number"], row["content_format"]) for row in stored] == [
+        (1, "rich_markdown_v1"),
+        (2, "rich_markdown_v1"),
+    ]
+    assert json.loads(str(stored[0]["rich_document_json"])) == first_document
+    assert json.loads(str(stored[1]["rich_document_json"])) == second_document

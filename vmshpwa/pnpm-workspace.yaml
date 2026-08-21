@@ -39,6 +39,14 @@ catalog:
   workbox-strategies: ^7.0.0
   workbox-window: ^7.0.0
   zod: ^4.0.0
+  '@puregram/rich': 3.2.0
+  '@codemirror/commands': ^6.11.0
+  '@codemirror/language': ^6.12.4
+  '@codemirror/state': ^6.7.1
+  '@codemirror/view': ^6.43.9
+  '@lezer/markdown': ^1.7.2
+  '@codemirror/lint': ^6.9.7
+  '@codemirror/lang-markdown': ^6.5.2
 
 allowBuilds:
   esbuild: true

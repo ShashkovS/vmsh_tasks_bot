@@ -73,7 +73,7 @@ export function createGroupBannerClient(
   return {
     async active(signal?: AbortSignal): Promise<GroupBannerListResponse> {
       return groupBannerListResponseSchema.parse(
-        await request('/banners/active', {
+        await request('/banners/active?contentVersion=2', {
           method: 'GET',
           ...(signal === undefined ? {} : { signal }),
         }),
@@ -104,7 +104,7 @@ export function createStaffGroupBannerClient(
   return {
     async list(signal?: AbortSignal): Promise<GroupBannerListResponse> {
       return groupBannerListResponseSchema.parse(
-        await request('/group-banners?limit=200', {
+        await request('/group-banners?limit=200&contentVersion=2', {
           method: 'GET',
           ...(signal === undefined ? {} : { signal }),
         }),

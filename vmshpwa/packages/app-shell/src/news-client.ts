@@ -60,14 +60,14 @@ export function createNewsClient(
 
   return {
     async list({ cursor, limit = 20, signal } = {}) {
-      const query = new URLSearchParams({ limit: String(limit) })
+      const query = new URLSearchParams({ limit: String(limit), contentVersion: '2' })
       if (cursor !== undefined) query.set('cursor', publicIdSchema.parse(cursor))
       return newsFeedResponseSchema.parse(await request(`/news?${query}`, signal))
     },
     async post(rawPostId, { signal } = {}) {
       const postId = publicIdSchema.parse(rawPostId)
       return newsPostResponseSchema.parse(
-        await request(`/news/${encodeURIComponent(postId)}`, signal),
+        await request(`/news/${encodeURIComponent(postId)}?contentVersion=2`, signal),
       )
     },
   }

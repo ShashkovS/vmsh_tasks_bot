@@ -154,12 +154,16 @@ def insert_revision(
     content_json: str,
     source_payload_json: str,
     now: str,
+    content_format: str = "legacy",
+    markdown_source: str | None = None,
+    rich_document_json: str | None = None,
 ) -> int:
     row = connection.execute(
         "INSERT INTO news_revisions "
         "(post_id, revision_number, source_hash, source_edited_at, text_plain, "
-        "content_json, source_payload_json, created_at) "
-        "SELECT ?, coalesce(max(revision_number), 0) + 1, ?, ?, ?, ?, ?, ? "
+        "content_json, source_payload_json, content_format, markdown_source, "
+        "rich_document_json, created_at) "
+        "SELECT ?, coalesce(max(revision_number), 0) + 1, ?, ?, ?, ?, ?, ?, ?, ?, ? "
         "FROM news_revisions WHERE post_id = ? RETURNING id",
         (
             post_id,
@@ -168,6 +172,9 @@ def insert_revision(
             text_plain,
             content_json,
             source_payload_json,
+            content_format,
+            markdown_source,
+            rich_document_json,
             now,
             post_id,
         ),
@@ -186,8 +193,8 @@ def insert_media(
         connection.execute(
             "INSERT INTO news_media "
             "(revision_id, ordinal, media_kind, source_message_id, source_file_id, "
-            "storage_key, public_url, mime_type, width, height, storage_status, "
-            "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "storage_key, public_url, mime_type, width, height, storage_status, source_url, "
+            "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 revision_id,
                 ordinal,
@@ -200,6 +207,7 @@ def insert_media(
                 item.get("width"),
                 item.get("height"),
                 item.get("storage_status", "pending"),
+                item.get("source_url"),
                 now,
                 now,
             ),
@@ -379,7 +387,8 @@ def list_visible_posts(
         "SELECT post.id, post.public_id, post.source_type, post.source_chat_id, "
         "post.source_message_id, post.published_at, post.last_source_edited_at, "
         "revision.id AS revision_id, revision.revision_number, revision.text_plain, "
-        "revision.content_json, binding.title_cached AS channel_title "
+        "revision.content_json, revision.content_format, revision.rich_document_json, "
+        "binding.title_cached AS channel_title "
         "FROM news_posts post "
         "JOIN news_visibility visibility ON visibility.post_id = post.id "
         "LEFT JOIN telegram_bindings binding "
@@ -425,7 +434,8 @@ def get_visible_post_by_public_id(
         "SELECT post.id, post.public_id, post.source_type, post.source_chat_id, "
         "post.source_message_id, post.published_at, post.last_source_edited_at, "
         "revision.id AS revision_id, revision.revision_number, revision.text_plain, "
-        "revision.content_json, binding.title_cached AS channel_title "
+        "revision.content_json, revision.content_format, revision.rich_document_json, "
+        "binding.title_cached AS channel_title "
         "FROM news_posts post "
         "JOIN news_visibility visibility ON visibility.post_id = post.id "
         "LEFT JOIN telegram_bindings binding "

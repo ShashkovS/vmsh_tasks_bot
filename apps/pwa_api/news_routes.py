@@ -143,10 +143,10 @@ def _media_payload(item: dict[str, object]) -> dict[str, object]:
 
 
 def _post_payload(
-    item: dict[str, object], media: list[dict[str, object]]
+    item: dict[str, object], media: list[dict[str, object]], *, content_version: int
 ) -> dict[str, object]:
     channel_title = item["channel_title"]
-    return {
+    payload: dict[str, object] = {
         "postId": item["public_id"],
         "source": item["source_type"],
         "publishedAt": item["published_at"],
@@ -161,11 +161,19 @@ def _post_payload(
         "blocks": _blocks(item["content_json"]),
         "media": [_media_payload(media_item) for media_item in media],
     }
+    if content_version == 2 and item.get("content_format") == "rich_markdown_v1":
+        raw_document = item.get("rich_document_json")
+        if isinstance(raw_document, str):
+            try:
+                payload["document"] = json.loads(raw_document)
+            except json.JSONDecodeError as error:
+                raise RuntimeError("Stored rich news document is invalid") from error
+    return payload
 
 
 async def _get_news(request: web.Request) -> web.Response:
     course_ids, group_ids = _scope(request)
-    if set(request.query) - {"limit", "cursor"}:
+    if set(request.query) - {"limit", "cursor", "contentVersion"}:
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -180,10 +188,12 @@ async def _get_news(request: web.Request) -> web.Response:
             message="Проверьте параметр limit",
         ) from error
     cursor = request.query.get("cursor")
+    content_version = request.query.get("contentVersion", "1")
     if (
         limit < 1
         or limit > 50
         or (cursor is not None and _PUBLIC_ID.fullmatch(cursor) is None)
+        or content_version not in {"1", "2"}
     ):
         raise PwaApiError(
             status=422,
@@ -211,7 +221,11 @@ async def _get_news(request: web.Request) -> web.Response:
     for item in media_rows:
         media_by_revision.setdefault(int(item["revision_id"]), []).append(item)
     items = [
-        _post_payload(item, media_by_revision.get(int(item["revision_id"]), []))
+        _post_payload(
+            item,
+            media_by_revision.get(int(item["revision_id"]), []),
+            content_version=int(content_version),
+        )
         for item in rows[:limit]
     ]
     return web.json_response(
@@ -226,6 +240,14 @@ async def _get_news(request: web.Request) -> web.Response:
 
 async def _get_news_post(request: web.Request) -> web.Response:
     course_ids, group_ids = _scope(request)
+    if set(request.query) - {"contentVersion"} or request.query.get(
+        "contentVersion", "1"
+    ) not in {"1", "2"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры публикации",
+        )
     public_id = request.match_info["post_id"]
     if _PUBLIC_ID.fullmatch(public_id) is None:
         raise PwaApiError(
@@ -257,7 +279,11 @@ async def _get_news_post(request: web.Request) -> web.Response:
     return web.json_response(
         {
             "schemaVersion": 1,
-            "item": _post_payload(post, media),
+            "item": _post_payload(
+                post,
+                media,
+                content_version=int(request.query.get("contentVersion", "1")),
+            ),
             "requestId": request["request_id"],
         }
     )

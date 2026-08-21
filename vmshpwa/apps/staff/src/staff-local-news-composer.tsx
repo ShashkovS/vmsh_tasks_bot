@@ -1,8 +1,28 @@
-import type { AdminCourse } from '@vmsh/contracts'
-import { TelegramRichPost, parseTelegramMarkdown } from '@vmsh/product'
-import { Button, Input, Label, Textarea } from '@vmsh/ui'
+import type { AdminCourse, RichDocument } from '@vmsh/contracts'
+import { lazy, Suspense, useState } from 'react'
+
+import { Button, Input, Label } from '@vmsh/ui'
 
 import type { LocalNewsDraft } from './local-news-draft'
+
+const RichMarkdownEditor = lazy(() =>
+  import('./rich-markdown-editor').then((module) => ({ default: module.RichMarkdownEditor })),
+)
+
+function moscowNowInput(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'Europe/Moscow',
+  }).formatToParts(new Date())
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((value) => value.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
+}
 
 export function StaffLocalNewsComposer({
   courses,
@@ -21,15 +41,16 @@ export function StaffLocalNewsComposer({
   publishedAtDisabled?: boolean
   submitLabel?: string
   onChange: (draft: LocalNewsDraft) => void
-  onSubmit: () => void
+  onSubmit: (document: RichDocument) => void
 }) {
-  const valid = draft.owner !== '' && draft.text.trim() !== '' && draft.publishedLocal !== ''
+  const [document, setDocument] = useState<RichDocument | null>(null)
+  const valid = draft.owner !== '' && document !== null && draft.publishedLocal !== ''
   return (
     <form
       className="grid gap-4"
       onSubmit={(event) => {
         event.preventDefault()
-        if (valid) onSubmit()
+        if (valid && document) onSubmit(document)
       }}
     >
       <Label className="grid gap-1.5" htmlFor="local-news-owner">
@@ -59,35 +80,41 @@ export function StaffLocalNewsComposer({
             ))}
         </select>
       </Label>
-      <Label className="grid gap-1.5" htmlFor="local-news-text">
-        Текст публикации (Markdown)
-        <Textarea
-          id="local-news-text"
-          maxLength={32_768}
-          onChange={(event) => onChange({ ...draft, text: event.target.value })}
-          placeholder="**Важно:** новое занятие уже опубликовано"
-          required
-          rows={7}
-          value={draft.text}
-        />
-      </Label>
-      {draft.text.trim() ? (
-        <div className="grid gap-1.5">
-          <p className="text-label font-medium">Предпросмотр</p>
-          <TelegramRichPost
-            post={{
-              id: 'local-news-preview',
-              blocks: [parseTelegramMarkdown(draft.text)],
-              state: 'published',
-            }}
-            variant="card"
+      <div className="grid gap-1.5">
+        <Label htmlFor="local-news-editor">Текст публикации (Markdown)</Label>
+        <Suspense
+          fallback={
+            <div className="min-h-[22rem] rounded-md border border-border p-3 text-caption text-muted-foreground">
+              Загружаем редактор…
+            </div>
+          }
+        >
+          <RichMarkdownEditor
+            id="local-news-editor"
+            onChange={(text) => onChange({ ...draft, text })}
+            onDocumentChange={setDocument}
+            value={draft.text}
           />
+        </Suspense>
+      </div>
+      <div className="grid gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="local-news-published-at">
+            {publishedAtDisabled
+              ? 'Опубликовано по московскому времени'
+              : 'Опубликовать по московскому времени'}
+          </Label>
+          {!publishedAtDisabled ? (
+            <Button
+              onClick={() => onChange({ ...draft, publishedLocal: moscowNowInput() })}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Сейчас
+            </Button>
+          ) : null}
         </div>
-      ) : null}
-      <Label className="grid gap-1.5" htmlFor="local-news-published-at">
-        {publishedAtDisabled
-          ? 'Опубликовано по московскому времени'
-          : 'Опубликовать по московскому времени'}
         <Input
           disabled={publishedAtDisabled}
           id="local-news-published-at"
@@ -96,10 +123,10 @@ export function StaffLocalNewsComposer({
           type="datetime-local"
           value={draft.publishedLocal}
         />
-      </Label>
+      </div>
       <p className="text-caption text-muted-foreground">
-        Поддерживаются **жирный**, _курсив_, __подчёркнутый__, ~~зачёркнутый~~, ||скрытый||, `код` и
-        [ссылки](https://example.org).
+        Сохранение доступно только после строгой проверки Markdown. Внешние картинки копируются на
+        сервер при сохранении.
       </p>
       <Button disabled={!valid || pending} type="submit">
         {pending ? 'Сохраняем…' : submitLabel}

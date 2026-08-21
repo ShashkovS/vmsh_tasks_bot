@@ -12,7 +12,7 @@ import {
 } from '@vmsh/app-shell'
 import { ApiResponseError } from '@vmsh/contracts'
 import { createOfflineNewsClient, useOfflineDatabase } from '@vmsh/offline'
-import { TelegramRichPost, toTelegramPostView } from '@vmsh/product'
+import { RichDocumentView, TelegramRichPost, toTelegramPostView } from '@vmsh/product'
 import { Button, buttonVariants } from '@vmsh/ui'
 
 function formatMoment(value: string): string {
@@ -78,11 +78,15 @@ export function StudentNewsFeedPage() {
       <div className="space-y-4">
         {items.map((item) => (
           <div className="space-y-2" key={item.postId}>
-            <TelegramRichPost
-              post={toTelegramPostView(item, formatMoment)}
-              showEditorialState={false}
-              variant="card"
-            />
+            {item.document ? (
+              <RichDocumentView document={item.document} />
+            ) : (
+              <TelegramRichPost
+                post={toTelegramPostView(item, formatMoment)}
+                showEditorialState={false}
+                variant="card"
+              />
+            )}
             <Link
               className={buttonVariants({ size: 'sm', variant: 'ghost' })}
               params={{ postId: item.postId }}
@@ -141,10 +145,14 @@ export function StudentNewsPostPage({ postId }: { postId: string }) {
         />
       ) : null}
       {query.data ? (
-        <TelegramRichPost
-          post={toTelegramPostView(query.data.item, formatMoment)}
-          showEditorialState={false}
-        />
+        query.data.item.document ? (
+          <RichDocumentView document={query.data.item.document} />
+        ) : (
+          <TelegramRichPost
+            post={toTelegramPostView(query.data.item, formatMoment)}
+            showEditorialState={false}
+          />
+        )
       ) : null}
     </PageLayout>
   )

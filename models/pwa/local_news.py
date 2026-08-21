@@ -20,6 +20,7 @@ from db_methods.pwa.news import (
     insert_revision,
 )
 from models.pwa.news_notifications import create_news_notifications
+from models.pwa.rich_document import rich_document_plain_text, validate_rich_document
 
 
 class InvalidLocalNews(ValueError):
@@ -147,6 +148,7 @@ def create_local_news(
     published_at: object,
     actor_user_id: int,
     now: str,
+    document: object | None = None,
 ) -> dict[str, object]:
     """Create one Staff-authored post with Telegram-compatible inline Markdown."""
 
@@ -169,16 +171,28 @@ def create_local_news(
         raise LocalNewsOwnerNotFound
 
     public_id = f"news.{uuid.uuid4().hex}"
-    plain_text, content = parse_telegram_markdown(normalized_text)
+    if document is None:
+        plain_text, content = parse_telegram_markdown(normalized_text)
+        rich_document_json: str | None = None
+        content_format = "legacy"
+    else:
+        validated_document = validate_rich_document(document)
+        plain_text = rich_document_plain_text(validated_document)
+        content = [{"type": "plain", "text": plain_text}]
+        rich_document_json = json.dumps(
+            validated_document, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        )
+        content_format = "rich_markdown_v1"
     content_json = json.dumps(
         content, ensure_ascii=False, separators=(",", ":"), sort_keys=True
     )
     source_payload_json = json.dumps(
         {
-            "schemaVersion": 1,
+            "schemaVersion": 2 if rich_document_json else 1,
             "publishedAt": normalized_published_at,
             "editedAt": now,
             "markdown": normalized_text,
+            **({"document": json.loads(rich_document_json)} if rich_document_json else {}),
         },
         separators=(",", ":"),
         sort_keys=True,
@@ -208,6 +222,9 @@ def create_local_news(
         content_json=content_json,
         source_payload_json=source_payload_json,
         now=now,
+        content_format=content_format,
+        markdown_source=normalized_text if rich_document_json else None,
+        rich_document_json=rich_document_json,
     )
     return {
         "post_id": post_id,
@@ -226,6 +243,7 @@ def edit_local_news(
     published_at: object | None,
     actor_user_id: int,
     now: str,
+    document: object | None = None,
 ) -> bool:
     """Create a revision, allowing only text corrections after publication.
 
@@ -257,7 +275,18 @@ def edit_local_news(
     ] == normalized_published_at:
         return False
 
-    plain_text, content = parse_telegram_markdown(normalized_text)
+    if document is None:
+        plain_text, content = parse_telegram_markdown(normalized_text)
+        rich_document_json: str | None = None
+        content_format = "legacy"
+    else:
+        validated_document = validate_rich_document(document)
+        plain_text = rich_document_plain_text(validated_document)
+        content = [{"type": "plain", "text": plain_text}]
+        rich_document_json = json.dumps(
+            validated_document, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        )
+        content_format = "rich_markdown_v1"
     content_json = json.dumps(
         content,
         ensure_ascii=False,
@@ -266,10 +295,11 @@ def edit_local_news(
     )
     source_payload_json = json.dumps(
         {
-            "schemaVersion": 1,
+            "schemaVersion": 2 if rich_document_json else 1,
             "publishedAt": normalized_published_at,
             "editedAt": now,
             "markdown": normalized_text,
+            **({"document": json.loads(rich_document_json)} if rich_document_json else {}),
         },
         separators=(",", ":"),
         sort_keys=True,
@@ -296,6 +326,9 @@ def edit_local_news(
         content_json=content_json,
         source_payload_json=source_payload_json,
         now=now,
+        content_format=content_format,
+        markdown_source=normalized_text if rich_document_json else None,
+        rich_document_json=rich_document_json,
     )
     if not already_published:
         reschedule_local_news_events(

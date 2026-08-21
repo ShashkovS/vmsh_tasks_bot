@@ -26,6 +26,27 @@ def _body(*, audience: str = "both", html: str = "<b>Разбор в 17:00</b>")
     }
 
 
+def _rich_document() -> dict[str, object]:
+    """Minimal v2 fixture shared by rich banner HTTP compatibility proof."""
+
+    return {
+        "schemaVersion": 1,
+        "media": [],
+        "blocks": [
+            {
+                "type": "paragraph",
+                "children": [
+                    {
+                        "type": "bold",
+                        "children": [{"type": "text", "text": "Разбор"}],
+                    },
+                    {"type": "text", "text": " сегодня"},
+                ],
+            }
+        ],
+    }
+
+
 @pytest.mark.asyncio
 async def test_admin_creates_updates_and_cancels_banner(classroom_http):
     teacher = await classroom_http.client.get(
@@ -134,4 +155,54 @@ async def test_student_and_family_only_receive_their_active_banners(classroom_ht
     ]
     assert [item["html"] for item in (await family.json())["items"]] == [
         "<i>family</i>"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_rich_banner_is_opt_in_for_v2_readers_and_keeps_v1_html(classroom_http):
+    document = _rich_document()
+    created = await classroom_http.client.post(
+        "/staff/api/v1/group-banners",
+        json={
+            "schemaVersion": 2,
+            "groupId": "classroom-layout-group",
+            "audience": "student",
+            "markdown": "**Разбор** сегодня",
+            "document": document,
+            "startsAt": "2020-01-01T00:00:00Z",
+            "endsAt": "2030-01-01T00:00:00Z",
+            "priority": 10,
+            "dismissible": True,
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    item = (await created.json())["item"]
+    assert item["document"] == document
+    assert item["markdown"] == "**Разбор** сегодня"
+    assert item["html"] == "<p><strong>Разбор</strong> сегодня</p>"
+
+    legacy = await classroom_http.client.get(
+        "/staff/api/v1/group-banners?contentVersion=1",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    legacy_item = (await legacy.json())["items"][0]
+    assert "document" not in legacy_item and "markdown" not in legacy_item
+    assert legacy_item["html"] == item["html"]
+
+    student = await classroom_http.client.get(
+        "/student/api/v1/banners/active?contentVersion=2",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie
+        },
+    )
+    assert student.status == 200
+    assert (await student.json())["items"] == [
+        {
+            **item,
+            "group": item["group"],
+        }
     ]
