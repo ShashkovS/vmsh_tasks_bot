@@ -47,6 +47,11 @@ Production migration не начинает историю с занятия 39. 
 6. Проверить link/media/Telegram limits и sanitizer/CSP. Поддерживаемый корпус — KaTeX + конструкции исторического `a16_html_from_tex.py`.
 7. Сохранить compiler version/hash. Recompile не меняет publication до явного действия.
 
+Для condition browser derivative каждый текстовый или графический блок между
+двумя `\задача` относится к началу **следующей** задачи. Поэтому focused task
+route получает тот же раздел, пояснение и рисунок, что и листок целиком;
+постфикс после последней задачи остаётся в ней.
+
 Перед ручным missing-assets flow сервер присоединяет известные глобальные
 имена и результаты TikZ с тем же `tikz-c14n`/converter version. Архивный импорт
 реализован командой `vmshpwa.scripts.content_picture_bank`: `rg --follow`
@@ -82,23 +87,31 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   `manual_match` выбирает существующую задачу того же group lesson;
   `insert_new` создаёт минимальную legacy projection со статусом письменной
   задачи, которую всё равно нельзя опубликовать до review metadata; `omit`
-  оставляет явную immutable запись без `problem_id`. Исправление уже
-  подтверждённого batch выполняется новой source revision.
-- **MATCH-03.** Готовая `content_revision` и строки review immutable. Поэтому
-  optimistic review version равна выражению
-  `1 + count(content_problem_matches) + count(problem_revisions)` для exact
-  revision. API выдаёт отдельный
-  hash-derived review ETag, который нельзя перепутать с compile ETag. Полные
-  batch вставляются одной `BEGIN IMMEDIATE` транзакцией; точный повтор уже
-  сохранённого batch идемпотентен.
+  оставляет явную запись без `problem_id`. Уже опубликованный batch можно
+  исправить в Staff: это заменяет его текущую структуру, а не создаёт историю.
+- **MATCH-03.** Готовая `content_revision` остаётся immutable, но её текущие
+  match и metadata review редактируемы. Таблица `content_review_states` даёт
+  monotonic optimistic-concurrency version и отдельный review ETag; полные
+  batch применяются одной `BEGIN IMMEDIATE` транзакцией. Убраные строки и
+  старые submissions сохраняются как артефакты, но не участвуют в текущей
+  публикации или проверке.
 - **METADATA-01.** Metadata-grid относится к revision **условия** и подтверждает
-  все её non-omitted match одной транзакцией. Каждая строка создаёт immutable
-  `problem_revisions`, а legacy
-  `problems` обновляется только как текущая Telegram-compatible projection.
+  все её non-omitted match одной транзакцией. Каждая строка задаёт текущую
+  `problem_revisions`, а legacy `problems` обновляется только как текущая
+  Telegram-compatible projection. После публикации Staff может исправить
+  название, тип, тип ответа и checker-конфигурацию; изменения test-конфигурации
+  требуют явной перепроверки всех её попыток.
   Все 23 исторических `ANS_TYPE` поддерживаются; test требует answer type,
   non-test не сохраняет скрытую test-конфигурацию. Пустой checker допустим и
   означает будущий `pending_configuration`, а не ложную успешную проверку.
 - **METADATA-02.** Один `usl-*-*-sol.tex` является источником сразу двух независимых revision — подсказки и решения. В нём присутствуют условия, а блоки подсказки/решения могут быть пустыми. Обе revision позиционно сверяются с опубликованной структурой условия без ручного сопоставления; несовпадение числа задач или пунктов блокирует сборку и требует исправить TeX. Task/answer metadata принадлежит задаче занятия и не дублируется.
+- **METADATA-03.** Только для первой revision исходного condition после полного
+  initial matching и до первого сохранения metadata Staff может запросить
+  несохранённый AI-черновик. Сервер передаёт TeX и уже зафиксированные canonical
+  identities в OpenRouter через async non-streaming structured output; ключ
+  остаётся в profile JSON. Черновик никогда не публикуется автоматически,
+  повторные версии и уже reviewed grid кнопку не получают, а обычное ручное
+  сохранение остаётся единственной mutation-границей.
 - До появления `problems.public_id` в Phase 3 Staff-only reconciliation wire
   использует legacy integer `problemId` только как candidate/mutation token.
   Он не попадает в Student/Family URL или payload; Phase 3 заменяет эту
@@ -120,6 +133,9 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   только отсутствующий внешний рисунок и затем повторяет compilation. The content client accepts
   the exact weak form which a compression filter may produce from the opaque
   version ETag and restores the strong database version token for `If-Match`.
+- После частичной ошибки строка batch сразу показывает сохранённые server diagnostics с
+  location/recovery и имена missing assets; «Открыть исправление» ведёт к exact material
+  card с asset flow и повторной сборкой. Общий alert не заменяет эти конкретные сведения.
 - При загрузке source и по явной кнопке Staff сначала выполняет глобальный
   поиск уже сохранённых картинок. Успешное переиспользование не принимает и не
   конвертирует новые browser bytes; другая картинка требует другого имени.

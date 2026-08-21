@@ -886,13 +886,14 @@ def _legacy_problem(row: Mapping[str, object]) -> LegacyProblemRecord:
 
 
 def _review_version(connection: sqlite3.Connection, revision_id: int) -> int:
-    """Return a monotonic version for the append-only review workflow.
+    """Return the optimistic-concurrency version of current task review."""
 
-    Phase 2 intentionally keeps a compiled revision immutable.  Match and
-    metadata rows are also immutable and inserted only as full batches, so the
-    sum of their counts is a sufficient optimistic-concurrency token without a
-    second mutable state table.  See ``06-phase-2-content.md``, MATCH-03.
-    """
+    state = connection.execute(
+        "SELECT version FROM content_review_states WHERE content_revision_id = ?",
+        (revision_id,),
+    ).fetchone()
+    if state is not None:
+        return int(state["version"])
 
     row = connection.execute(
         "SELECT "
@@ -903,6 +904,37 @@ def _review_version(connection: sqlite3.Connection, revision_id: int) -> int:
         (revision_id, revision_id),
     ).fetchone()
     return 1 + int(row["review_rows"])
+
+
+def _advance_review_version(
+    connection: sqlite3.Connection,
+    *,
+    revision_id: int,
+    expected_version: int,
+    timestamp: str,
+    actor_user_id: int | None,
+) -> None:
+    """Advance review state once a current structure/configuration changes."""
+
+    state = connection.execute(
+        "SELECT 1 FROM content_review_states WHERE content_revision_id = ?",
+        (revision_id,),
+    ).fetchone()
+    if state is None:
+        connection.execute(
+            "INSERT INTO content_review_states "
+            "(content_revision_id, version, updated_at, updated_by_user_id) "
+            "VALUES (?, ?, ?, ?)",
+            (revision_id, expected_version + 1, timestamp, actor_user_id),
+        )
+        return
+    cursor = connection.execute(
+        "UPDATE content_review_states SET version = version + 1, updated_at = ?, "
+        "updated_by_user_id = ? WHERE content_revision_id = ? AND version = ?",
+        (timestamp, actor_user_id, revision_id, expected_version),
+    )
+    if cursor.rowcount != 1:
+        raise ContentVersionConflict("problem review version changed")
 
 
 def _review_scope_row(
@@ -1068,7 +1100,11 @@ def _problem_metadata_grid_from_connection(
         raise ContentConflict("problem matches are incomplete")
     candidates = {candidate.problem_id: candidate for candidate in review.candidates}
     revision_rows = {
-        int(row["problem_id"]): row
+        (
+            int(row["source_ordinal"]),
+            str(row["source_item"]),
+            int(row["problem_id"]),
+        ): row
         for row in connection.execute(
             "SELECT * FROM problem_revisions WHERE content_revision_id = ?",
             (review.revision_id,),
@@ -1090,7 +1126,7 @@ def _problem_metadata_grid_from_connection(
             raise ContentRepositoryError(
                 "matched legacy problem is outside lesson scope"
             )
-        revision_row = revision_rows.get(problem_id)
+        revision_row = revision_rows.get((*identity, problem_id))
         rows.append(
             ProblemMetadataRecord(
                 source=source,
@@ -1560,6 +1596,13 @@ visible_problem AS (
     FROM published_scope
     JOIN problem_revisions AS problem_revision
       ON problem_revision.content_revision_id = published_scope.condition_revision_id
+    JOIN content_problem_matches AS problem_match
+      ON problem_match.content_revision_id = problem_revision.content_revision_id
+     AND problem_match.source_ordinal = problem_revision.source_ordinal
+     AND problem_match.source_item = problem_revision.source_item
+     AND problem_match.problem_id = problem_revision.problem_id
+     AND problem_match.resolved_at IS NOT NULL
+     AND problem_match.decision <> 'omit'
     JOIN problems AS problem ON problem.id = problem_revision.problem_id
 ),
 hint_state AS (
@@ -3353,7 +3396,8 @@ class PwaContentRepository:
                 "  AS resolved_match_count, "
                 "count(*) FILTER (WHERE match.decision = 'omit' "
                 "  AND match.resolved_at IS NOT NULL) AS omitted_problem_count, "
-                "count(problem_revision.id) AS reviewed_problem_count "
+                "count(problem_revision.id) FILTER (WHERE match.decision <> 'omit') "
+                "AS reviewed_problem_count "
                 "FROM content_problem_matches AS match "
                 "LEFT JOIN problem_revisions AS problem_revision "
                 "  ON problem_revision.content_revision_id = match.content_revision_id "
@@ -4007,6 +4051,13 @@ class PwaContentRepository:
                 " AND condition_publication.state = 'published' "
                 "JOIN problem_revisions AS condition_problem "
                 "  ON condition_problem.content_revision_id = condition_publication.revision_id "
+                "JOIN content_problem_matches AS condition_match "
+                "  ON condition_match.content_revision_id = condition_problem.content_revision_id "
+                " AND condition_match.source_ordinal = condition_problem.source_ordinal "
+                " AND condition_match.source_item = condition_problem.source_item "
+                " AND condition_match.problem_id = condition_problem.problem_id "
+                " AND condition_match.resolved_at IS NOT NULL "
+                " AND condition_match.decision <> 'omit' "
                 "JOIN problems AS problem ON problem.id = condition_problem.problem_id "
                 "JOIN lesson_publications AS publication "
                 "  ON publication.group_lesson_id = group_lesson.id "
@@ -4942,7 +4993,7 @@ class PwaContentRepository:
         drafts: Sequence[ProblemMatchDraft],
         actor_user_id: int | None,
     ) -> ProblemMatchReview:
-        """Persist one complete, immutable positional reconciliation batch."""
+        """Replace the current positional reconciliation batch."""
 
         _require_public_id(revision_public_id)
         if expected_review_version < 1:
@@ -4989,75 +5040,79 @@ class PwaContentRepository:
                 "ORDER BY source_ordinal, source_item",
                 (revision_id,),
             ).fetchall()
-            if existing:
-                existing_by_identity = {
-                    (int(row["source_ordinal"]), str(row["source_item"])): row
-                    for row in existing
-                }
-                identical = set(existing_by_identity) == set(draft_by_identity)
-                if identical:
-                    for identity, draft in draft_by_identity.items():
-                        row = existing_by_identity[identity]
-                        stored_decision = ProblemMatchDecision(str(row["decision"]))
-                        stored_problem_id = (
-                            None
-                            if row["problem_id"] is None
-                            else int(row["problem_id"])
-                        )
-                        if stored_decision is not draft.decision:
-                            identical = False
-                            break
-                        if draft.decision is ProblemMatchDecision.INSERT_NEW:
-                            if stored_problem_id is None:
-                                identical = False
-                                break
-                        elif stored_problem_id != draft.problem_id:
-                            identical = False
-                            break
-                if identical:
-                    return _problem_match_review_from_connection(
-                        connection, revision_public_id
+            existing_by_identity = {
+                (int(row["source_ordinal"]), str(row["source_item"])): row
+                for row in existing
+            }
+            identical = set(existing_by_identity) == set(draft_by_identity)
+            if identical:
+                for identity, draft in draft_by_identity.items():
+                    row = existing_by_identity[identity]
+                    stored_decision = ProblemMatchDecision(str(row["decision"]))
+                    stored_problem_id = (
+                        None if row["problem_id"] is None else int(row["problem_id"])
                     )
-                raise ContentVersionConflict("problem matches are already resolved")
+                    if stored_decision is not draft.decision:
+                        identical = False
+                        break
+                    if draft.decision is ProblemMatchDecision.INSERT_NEW:
+                        if stored_problem_id is None:
+                            identical = False
+                            break
+                    elif stored_problem_id != draft.problem_id:
+                        identical = False
+                        break
+            if identical:
+                return _problem_match_review_from_connection(connection, revision_public_id)
             if _review_version(connection, revision_id) != expected_review_version:
                 raise ContentVersionConflict("problem review version changed")
 
+            changed = False
             for identity in sorted(draft_by_identity):
                 draft = draft_by_identity[identity]
                 source = source_by_identity[identity]
+                previous = existing_by_identity.get(identity)
                 problem_id = draft.problem_id
                 if draft.decision is ProblemMatchDecision.INSERT_NEW:
-                    # The compiler's fallback source identity is the ordinal;
-                    # legacy ``item`` uses an empty suffix for that ordinary
-                    # case. An explicit TeX name remains available as item.
-                    legacy_item = (
-                        ""
-                        if source.source_item == str(source.source_ordinal)
-                        else source.source_item
-                    )
-                    try:
-                        created = connection.execute(
-                            "INSERT INTO problems "
-                            "(group_id, lesson, prob, item, title, prob_text, "
-                            "prob_type, ans_type, ans_validation, validation_error, "
-                            "cor_ans, cor_ans_checker, wrong_ans, congrat, synonyms) "
-                            "VALUES (?, ?, ?, ?, ?, '', ?, NULL, NULL, NULL, NULL, "
-                            "NULL, NULL, NULL, '') RETURNING id",
-                            (
-                                scope["group_id"],
-                                scope["lesson_number"],
-                                source.source_ordinal,
-                                legacy_item,
-                                source.source_title
-                                or f"Задача {source.display_number}",
-                                source.problem_type,
-                            ),
-                        ).fetchone()
-                    except sqlite3.IntegrityError as error:
-                        raise ContentConflict(
-                            "problem position already exists; choose an explicit match"
-                        ) from error
-                    problem_id = int(created["id"])
+                    if (
+                        previous is not None
+                        and str(previous["decision"])
+                        == ProblemMatchDecision.INSERT_NEW.value
+                        and previous["problem_id"] is not None
+                    ):
+                        problem_id = int(previous["problem_id"])
+                    else:
+                        # The compiler's fallback source identity is the ordinal;
+                        # legacy ``item`` uses an empty suffix for that ordinary
+                        # case. An explicit TeX name remains available as item.
+                        legacy_item = (
+                            ""
+                            if source.source_item == str(source.source_ordinal)
+                            else source.source_item
+                        )
+                        try:
+                            created = connection.execute(
+                                "INSERT INTO problems "
+                                "(group_id, lesson, prob, item, title, prob_text, "
+                                "prob_type, ans_type, ans_validation, validation_error, "
+                                "cor_ans, cor_ans_checker, wrong_ans, congrat, synonyms) "
+                                "VALUES (?, ?, ?, ?, ?, '', ?, NULL, NULL, NULL, NULL, "
+                                "NULL, NULL, NULL, '') RETURNING id",
+                                (
+                                    scope["group_id"],
+                                    scope["lesson_number"],
+                                    source.source_ordinal,
+                                    legacy_item,
+                                    source.source_title
+                                    or f"Задача {source.display_number}",
+                                    source.problem_type,
+                                ),
+                            ).fetchone()
+                        except sqlite3.IntegrityError as error:
+                            raise ContentConflict(
+                                "problem position already exists; choose an explicit match"
+                            ) from error
+                        problem_id = int(created["id"])
                 elif draft.decision is not ProblemMatchDecision.OMIT:
                     candidate = connection.execute(
                         "SELECT id, prob FROM problems WHERE id = ? "
@@ -5079,27 +5134,57 @@ class PwaContentRepository:
                         raise ContentInvariantError(
                             "automatic match must preserve source position"
                         )
-                try:
+                if previous is None:
+                    try:
+                        connection.execute(
+                            "INSERT INTO content_problem_matches "
+                            "(content_revision_id, source_ordinal, source_item, problem_id, "
+                            "decision, resolved_by_user_id, resolved_at, diagnostics_json, "
+                            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, '[]', ?)",
+                            (
+                                revision_id,
+                                source.source_ordinal,
+                                source.source_item,
+                                problem_id,
+                                draft.decision.value,
+                                actor_user_id,
+                                timestamp,
+                                timestamp,
+                            ),
+                        )
+                    except sqlite3.IntegrityError as error:
+                        raise _translate_integrity(
+                            error, action="problem match review"
+                        ) from error
+                    changed = True
+                elif (
+                    previous["problem_id"] != problem_id
+                    or str(previous["decision"]) != draft.decision.value
+                ):
                     connection.execute(
-                        "INSERT INTO content_problem_matches "
-                        "(content_revision_id, source_ordinal, source_item, problem_id, "
-                        "decision, resolved_by_user_id, resolved_at, diagnostics_json, "
-                        "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, '[]', ?)",
+                        "UPDATE content_problem_matches SET problem_id = ?, decision = ?, "
+                        "resolved_by_user_id = ?, resolved_at = ? "
+                        "WHERE content_revision_id = ? AND source_ordinal = ? "
+                        "AND source_item = ?",
                         (
-                            revision_id,
-                            source.source_ordinal,
-                            source.source_item,
                             problem_id,
                             draft.decision.value,
                             actor_user_id,
                             timestamp,
-                            timestamp,
+                            revision_id,
+                            source.source_ordinal,
+                            source.source_item,
                         ),
                     )
-                except sqlite3.IntegrityError as error:
-                    raise _translate_integrity(
-                        error, action="problem match review"
-                    ) from error
+                    changed = True
+            if changed and existing:
+                _advance_review_version(
+                    connection,
+                    revision_id=revision_id,
+                    expected_version=expected_review_version,
+                    timestamp=timestamp,
+                    actor_user_id=actor_user_id,
+                )
             return _problem_match_review_from_connection(connection, revision_public_id)
 
         return await self._factory.run_write_async(write)
@@ -5157,29 +5242,30 @@ class PwaContentRepository:
                     "metadata grid must cover every matched non-omitted problem"
                 )
 
-            if any(row.reviewed for row in current_grid.rows):
-                identical = all(
-                    row.reviewed
-                    and _metadata_matches_draft(
-                        row.problem,
-                        draft_by_identity[
-                            (
-                                row.source.source_ordinal,
-                                row.source.source_item,
-                                row.problem.problem_id,
-                            )
-                        ],
-                    )
-                    for row in current_grid.rows
-                )
-                if identical:
-                    return current_grid
-                raise ContentVersionConflict("problem metadata is already reviewed")
             if current_grid.review_version != expected_review_version:
                 raise ContentVersionConflict("problem review version changed")
 
+            had_reviewed = any(row.reviewed for row in current_grid.rows)
+            changed = False
             for identity in sorted(draft_by_identity):
                 metadata = draft_by_identity[identity]
+                current_row = next(
+                    (
+                        row
+                        for row in current_grid.rows
+                        if (
+                            row.source.source_ordinal,
+                            row.source.source_item,
+                            row.problem.problem_id,
+                        )
+                        == identity
+                    ),
+                    None,
+                )
+                if current_row is not None and current_row.reviewed and _metadata_matches_draft(
+                    current_row.problem, metadata
+                ):
+                    continue
                 config_version_row = connection.execute(
                     "SELECT coalesce(max(config_version), 0) + 1 AS value "
                     "FROM problem_revisions WHERE problem_id = ?",
@@ -5215,35 +5301,77 @@ class PwaContentRepository:
                         metadata.problem_id,
                     ),
                 )
+                existing_revision = connection.execute(
+                    "SELECT id FROM problem_revisions WHERE content_revision_id = ? "
+                    "AND source_ordinal = ? AND source_item = ? AND problem_id = ?",
+                    (
+                        current_grid.revision_id,
+                        metadata.source_ordinal,
+                        metadata.source_item,
+                        metadata.problem_id,
+                    ),
+                ).fetchone()
                 try:
-                    connection.execute(
-                        "INSERT INTO problem_revisions "
-                        "(problem_id, content_revision_id, source_ordinal, source_item, "
-                        "display_number, title, normalized_title, problem_type, "
-                        "answer_type, answer_config_json, attempt_policy_json, "
-                        "config_version, created_at, created_by_user_id) "
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        (
-                            revision_draft.problem_id,
-                            current_grid.revision_id,
-                            revision_draft.source_ordinal,
-                            revision_draft.source_item,
-                            revision_draft.display_number,
-                            revision_draft.title,
-                            revision_draft.normalized_title,
-                            revision_draft.problem_type,
-                            revision_draft.answer_type,
-                            revision_draft.answer_config_json(),
-                            revision_draft.attempt_policy_json(),
-                            revision_draft.config_version,
-                            timestamp,
-                            actor_user_id,
-                        ),
-                    )
+                    if existing_revision is None:
+                        connection.execute(
+                            "INSERT INTO problem_revisions "
+                            "(problem_id, content_revision_id, source_ordinal, source_item, "
+                            "display_number, title, normalized_title, problem_type, "
+                            "answer_type, answer_config_json, attempt_policy_json, "
+                            "config_version, created_at, created_by_user_id) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (
+                                revision_draft.problem_id,
+                                current_grid.revision_id,
+                                revision_draft.source_ordinal,
+                                revision_draft.source_item,
+                                revision_draft.display_number,
+                                revision_draft.title,
+                                revision_draft.normalized_title,
+                                revision_draft.problem_type,
+                                revision_draft.answer_type,
+                                revision_draft.answer_config_json(),
+                                revision_draft.attempt_policy_json(),
+                                revision_draft.config_version,
+                                timestamp,
+                                actor_user_id,
+                            ),
+                        )
+                    else:
+                        connection.execute(
+                            "UPDATE problem_revisions SET display_number = ?, title = ?, "
+                            "normalized_title = ?, problem_type = ?, answer_type = ?, "
+                            "answer_config_json = ?, attempt_policy_json = ?, config_version = ?, "
+                            "created_at = ?, created_by_user_id = ? WHERE id = ?",
+                            (
+                                revision_draft.display_number,
+                                revision_draft.title,
+                                revision_draft.normalized_title,
+                                revision_draft.problem_type,
+                                revision_draft.answer_type,
+                                revision_draft.answer_config_json(),
+                                revision_draft.attempt_policy_json(),
+                                revision_draft.config_version,
+                                timestamp,
+                                actor_user_id,
+                                int(existing_revision["id"]),
+                            ),
+                        )
                 except sqlite3.IntegrityError as error:
                     raise _translate_integrity(
                         error, action="problem metadata review"
                     ) from error
+                changed = True
+            if not changed:
+                return current_grid
+            if had_reviewed:
+                _advance_review_version(
+                    connection,
+                    revision_id=current_grid.revision_id,
+                    expected_version=expected_review_version,
+                    timestamp=timestamp,
+                    actor_user_id=actor_user_id,
+                )
             return _problem_metadata_grid_from_connection(
                 connection, revision_public_id
             )

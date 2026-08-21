@@ -25,6 +25,7 @@ export type {
   ContentApiClient,
   ContentApiClientOptions,
   ContentRequestOptions,
+  GenerateProblemMetadataInput,
   StaffLessonWindowClient,
   PublicationSlotVersion,
   PublishedContentInput,

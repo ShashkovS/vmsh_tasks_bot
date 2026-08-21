@@ -1,0 +1,107 @@
+from __future__ import annotations
+
+import pytest
+
+from helpers.pwa.content.metadata_generation import (
+    GeneratedMetadata,
+    MetadataGenerationError,
+    MetadataGenerationRequest,
+    MetadataGenerationTarget,
+    _normalize_generated_rows,
+    _user_prompt,
+)
+
+
+def _request() -> MetadataGenerationRequest:
+    return MetadataGenerationRequest(
+        revision_public_id="content-revision-1",
+        source_filename="usl-00-n.tex",
+        latex_text="\\задача Найдите 7. \\кзадача",
+        targets=(
+            MetadataGenerationTarget(
+                source_ordinal=1,
+                source_item="1",
+                display_number="1",
+                source_title=None,
+                problem_id=101,
+            ),
+        ),
+    )
+
+
+def test_metadata_generation_keeps_only_server_identities_and_test_fields():
+    result = _normalize_generated_rows(
+        _request(),
+        GeneratedMetadata.model_validate(
+            {
+                "rows": [
+                    {
+                        "sourceOrdinal": 1,
+                        "sourceItem": "1",
+                        "title": "Найдите число",
+                        "problemType": 2,
+                        "answerType": 3,
+                        "answerValidation": None,
+                        "validationError": None,
+                        "correctAnswer": "7",
+                        "wrongAnswer": None,
+                        "congratulation": None,
+                        "reviewNote": "Проверьте способ сдачи",
+                    }
+                ],
+                "warnings": [],
+            }
+        ),
+    )
+
+    assert result.rows == (
+        {
+            "problemId": 101,
+            "sourceOrdinal": 1,
+            "sourceItem": "1",
+            "displayNumber": "1",
+            "title": "Найдите число",
+            "problemType": 2,
+            "answerType": None,
+            "answerValidation": None,
+            "validationError": None,
+            "correctAnswer": None,
+            "correctAnswerChecker": None,
+            "wrongAnswer": None,
+            "congratulation": None,
+        },
+    )
+    assert result.warnings == ("1: Проверьте способ сдачи",)
+
+
+def test_metadata_generation_rejects_missing_or_extra_model_rows():
+    with pytest.raises(MetadataGenerationError, match="do not match"):
+        _normalize_generated_rows(
+            _request(),
+            GeneratedMetadata.model_validate(
+                {
+                    "rows": [
+                        {
+                            "sourceOrdinal": 2,
+                            "sourceItem": "1",
+                            "title": "Лишняя",
+                            "problemType": 2,
+                            "answerType": None,
+                            "answerValidation": None,
+                            "validationError": None,
+                            "correctAnswer": None,
+                            "wrongAnswer": None,
+                            "congratulation": None,
+                            "reviewNote": None,
+                        }
+                    ],
+                    "warnings": [],
+                }
+            ),
+        )
+
+
+def test_metadata_generation_sends_latex_before_small_target_table():
+    prompt = _user_prompt(_request())
+
+    assert prompt.index("\\задача") < prompt.index("canonical строк")

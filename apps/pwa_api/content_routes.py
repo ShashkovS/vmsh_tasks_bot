@@ -56,6 +56,13 @@ from helpers.pwa.content import (
     compile_latex,
 )
 from helpers.pwa.content.model import canonical_json
+from helpers.pwa.content.metadata_generation import (
+    MetadataGenerationError,
+    MetadataGenerationRequest,
+    MetadataGenerationTarget,
+    MetadataGenerationUnavailable,
+    MetadataGenerator,
+)
 from helpers.pwa.content.pdf import PDF_RENDERER_VERSION
 from helpers.pwa.content.pdf_service import PDF_STORAGE_NAMESPACE
 from helpers.pwa.content.scanner import normalize_asset_reference
@@ -137,6 +144,7 @@ _PROBLEM_MATCH_ROW_FIELDS = frozenset(
     {"sourceOrdinal", "sourceItem", "decision", "problemId"}
 )
 _METADATA_GRID_FIELDS = frozenset({"revisionId", "rows"})
+_METADATA_GENERATION_FIELDS = frozenset({"revisionId"})
 _METADATA_ROW_FIELDS = frozenset(
     {
         "problemId",
@@ -165,6 +173,9 @@ ContentInvalidator = Callable[
     [GroupLessonContentScope, ContentKind, str], Awaitable[None]
 ]
 PWA_CONTENT_INVALIDATOR = web.AppKey("pwa_content_invalidator", ContentInvalidator)
+PWA_CONTENT_METADATA_GENERATOR = web.AppKey(
+    "pwa_content_metadata_generator", MetadataGenerator
+)
 content_routes = web.RouteTableDef()
 logger = logging.getLogger(__name__)
 # Asset discovery is a read-only preflight performed before the concurrency
@@ -192,6 +203,17 @@ def _asset_service(request: web.Request) -> ContentAssetService:
             status=503,
             code="content_assets_unavailable",
             message="Обработка рисунков временно недоступна",
+        ) from error
+
+
+def _metadata_generator(request: web.Request) -> MetadataGenerator:
+    try:
+        return request.app[PWA_CONTENT_METADATA_GENERATOR]
+    except KeyError as error:
+        raise PwaApiError(
+            status=503,
+            code="metadata_generation_unavailable",
+            message="Генерация metadata временно недоступна",
         ) from error
 
 
@@ -949,7 +971,7 @@ def _problem_match_payload(
 
 
 def _metadata_grid_payload(
-    grid: ProblemMetadataGrid, *, request_id: str
+    grid: ProblemMetadataGrid, *, request_id: str, can_generate_metadata: bool = False
 ) -> dict[str, object]:
     etag = _review_etag(grid.revision_public_id, grid.review_version)
     return {
@@ -957,6 +979,7 @@ def _metadata_grid_payload(
         "groupLessonId": grid.group_lesson_public_id,
         "version": grid.review_version,
         "etag": etag,
+        "canGenerateMetadata": can_generate_metadata,
         "rows": [
             {
                 "problemId": row.problem.problem_id,
@@ -2090,19 +2113,108 @@ async def get_metadata_grid(request: web.Request) -> web.Response:
             message="Укажите одну revision для таблицы метаданных",
         )
     revision_public_id = request.query["revisionId"]
-    repository, _context, _actor_user_id = await _authorized_metadata_grid(
+    repository, context, _actor_user_id = await _authorized_metadata_grid(
         request, revision_public_id=revision_public_id
     )
     grid = await repository.get_problem_metadata_grid(
         revision_public_id=revision_public_id
     )
     response = web.json_response(
-        _metadata_grid_payload(grid, request_id=_request_id(request))
+        _metadata_grid_payload(
+            grid,
+            request_id=_request_id(request),
+            can_generate_metadata=(
+                context.revision.revision_number == 1
+                and bool(grid.rows)
+                and not any(row.reviewed for row in grid.rows)
+            ),
+        )
     )
     response.headers["ETag"] = _review_etag(
         grid.revision_public_id, grid.review_version
     )
     return response
+
+
+@content_routes.post("/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid/generate")
+@_translate_content_errors
+async def generate_metadata_grid(request: web.Request) -> web.Response:
+    """Generate a reviewable draft only for the original condition upload."""
+
+    payload = await _json_object(
+        request,
+        allowed_fields=_METADATA_GENERATION_FIELDS,
+        max_bytes=CONTENT_JSON_BODY_LIMIT_BYTES,
+    )
+    revision_public_id = payload["revisionId"]
+    if not isinstance(revision_public_id, str):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Укажите revision для генерации metadata",
+            details={"field": "revisionId"},
+        )
+    repository, context, _actor_user_id = await _authorized_metadata_grid(
+        request, revision_public_id=revision_public_id
+    )
+    # AI filling is an initial-upload convenience, not an editor for later
+    # versions or published/current-state metadata; METADATA-03 in the plan.
+    if context.revision.revision_number != 1:
+        raise PwaApiError(
+            status=409,
+            code="metadata_generation_not_available",
+            message="Генерация доступна только для первой загрузки условия",
+        )
+    grid = await repository.get_problem_metadata_grid(
+        revision_public_id=revision_public_id
+    )
+    if not grid.rows or any(row.reviewed for row in grid.rows):
+        raise PwaApiError(
+            status=409,
+            code="metadata_generation_not_available",
+            message="Генерация доступна только до первого сохранения metadata",
+        )
+    generation_request = MetadataGenerationRequest(
+        revision_public_id=context.revision.public_id,
+        source_filename=context.source.logical_filename,
+        latex_text=context.revision.latex_text,
+        targets=tuple(
+            MetadataGenerationTarget(
+                source_ordinal=row.source.source_ordinal,
+                source_item=row.source.source_item,
+                display_number=row.source.display_number,
+                source_title=row.source.source_title,
+                problem_id=row.problem.problem_id,
+            )
+            for row in grid.rows
+        ),
+    )
+    try:
+        result = await _metadata_generator(request).generate(generation_request)
+        # Validate generated rows against the normal Staff write boundary.
+        _metadata_drafts(list(result.rows))
+    except MetadataGenerationUnavailable as error:
+        raise PwaApiError(
+            status=503,
+            code="metadata_generation_unavailable",
+            message="Генерация metadata не настроена",
+        ) from error
+    except MetadataGenerationError as error:
+        logger.warning("Metadata generation failed for revision %s", revision_public_id)
+        raise PwaApiError(
+            status=502,
+            code="metadata_generation_failed",
+            message="Не удалось сгенерировать metadata. Повторите попытку.",
+        ) from error
+    return web.json_response(
+        {
+            "revisionId": context.revision.public_id,
+            "groupLessonId": context.scope.group_lesson_public_id,
+            "rows": list(result.rows),
+            "warnings": list(result.warnings),
+            "requestId": _request_id(request),
+        }
+    )
 
 
 @content_routes.put("/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid")
@@ -3065,6 +3177,7 @@ async def family_published_content(request: web.Request) -> web.Response:
 
 __all__ = [
     "PWA_CONTENT_INVALIDATOR",
+    "PWA_CONTENT_METADATA_GENERATOR",
     "PWA_CONTENT_REPOSITORY",
     "ContentInvalidator",
     "content_routes",

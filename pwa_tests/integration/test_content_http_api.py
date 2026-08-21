@@ -40,6 +40,10 @@ from helpers.pwa.content.pdf_service import (
     PDF_STORAGE_CONVERSION_VERSION,
     PDF_STORAGE_NAMESPACE,
 )
+from helpers.pwa.content.metadata_generation import (
+    MetadataGenerationRequest,
+    MetadataGenerationResult,
+)
 from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience, CredentialHasher
 from models.pwa.content import ProblemMatchDecision, ProblemRevisionDraft
@@ -91,6 +95,37 @@ class SyntheticAssetConverter:
             data=sanitized.data,
             width=sanitized.width,
             height=sanitized.height,
+        )
+
+
+@dataclass
+class SyntheticMetadataGenerator:
+    requests: list[MetadataGenerationRequest] = field(default_factory=list)
+
+    async def generate(
+        self, request: MetadataGenerationRequest
+    ) -> MetadataGenerationResult:
+        self.requests.append(request)
+        return MetadataGenerationResult(
+            rows=tuple(
+                {
+                    "problemId": target.problem_id,
+                    "sourceOrdinal": target.source_ordinal,
+                    "sourceItem": target.source_item,
+                    "displayNumber": target.display_number,
+                    "title": f"Черновик {target.display_number}",
+                    "problemType": 2,
+                    "answerType": None,
+                    "answerValidation": None,
+                    "validationError": None,
+                    "correctAnswer": None,
+                    "correctAnswerChecker": None,
+                    "wrongAnswer": None,
+                    "congratulation": None,
+                }
+                for target in request.targets
+            ),
+            warnings=("Проверьте способ сдачи.",),
         )
 
 
@@ -395,6 +430,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         storage=asset_storage,
         repository=content_repository,
     )
+    metadata_generator = SyntheticMetadataGenerator()
     written_object_tokens = iter("23456789abcdef")
     written_attachment_service = WrittenAttachmentService(
         converter=asset_converter,  # type: ignore[arg-type]
@@ -422,6 +458,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         review_queue_repository=review_queue_repository,
         written_attachment_service=written_attachment_service,
         content_asset_service=asset_service,
+        content_metadata_generator=metadata_generator,
     )
     app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
     client = await aiohttp_client(app)
@@ -2524,13 +2561,13 @@ async def test_student_written_submission_http_persists_safe_failures(
     assert record == {"state": "failed", "http_status": 422}
 
 
-async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
+async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
     problem_public_id, original_revision_id = await _prepare_published_test_problem(
         fixture,
-        correct_answer=None,
+        correct_answer="179",
     )
     student_route = f"/student/api/v1/problems/{problem_public_id}/test-attempts"
     submitted = await fixture.client.post(
@@ -2549,7 +2586,7 @@ async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
         headers=_headers(unsafe=True),
     )
     assert submitted.status == 201, await submitted.text()
-    assert (await submitted.json())["outcome"] == "pending_configuration"
+    assert (await submitted.json())["outcome"] == "correct"
 
     route = f"/staff/api/v1/problems/{problem_public_id}/recheck-test-attempts"
     unauthenticated = await fixture.client.get(route, headers=_headers())
@@ -2573,14 +2610,31 @@ async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
         "configVersion": 1,
     }
 
-    (
-        repaired_revision_id,
-        repaired_config_version,
-    ) = await _publish_repaired_test_problem(
-        fixture,
-        problem_public_id=problem_public_id,
-        correct_answer="179",
+    grid_url = f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/metadata-grid"
+    grid_response = await fixture.client.get(
+        grid_url,
+        params={"revisionId": original_revision_id},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
     )
+    assert grid_response.status == 200, await grid_response.text()
+    corrected_row = (await grid_response.json())["rows"][0]
+    corrected_row.update(
+        {
+            "correctAnswer": "180",
+            "validationError": "Введите целое число",
+        }
+    )
+    corrected_row.pop("reviewed")
+    corrected = await fixture.client.put(
+        grid_url,
+        json={"revisionId": original_revision_id, "rows": [corrected_row]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
+    )
+    assert corrected.status == 200, await corrected.text()
+    assert (await corrected.json())["version"] == 4
+
     preview_response = await fixture.client.get(
         route,
         cookies=_cookie(fixture, "admin"),
@@ -2589,8 +2643,8 @@ async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
     assert preview_response.status == 200
     preview = await preview_response.json()
     assert preview["problemRevision"] == {
-        "conditionRevisionId": repaired_revision_id,
-        "configVersion": repaired_config_version,
+        "conditionRevisionId": original_revision_id,
+        "configVersion": 2,
     }
     assert preview["pendingAttempts"] == 1
 
@@ -2634,8 +2688,8 @@ async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
         "problemRevision": preview["problemRevision"],
         "pendingBefore": 1,
         "checked": 1,
-        "correct": 1,
-        "wrong": 0,
+        "correct": 0,
+        "wrong": 1,
         "stillPending": 0,
         "skippedConcurrent": 0,
         "threadInvalidationKey": f"problems/{problem_public_id}/test-attempts",
@@ -2653,21 +2707,21 @@ async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
     )
     assert history_response.status == 200
     history = await history_response.json()
-    assert history["attempts"][0]["outcome"] == "correct"
+    assert history["attempts"][0]["outcome"] == "wrong"
     assert history["attempts"][0]["problemRevision"] == {
         "conditionRevisionId": original_revision_id,
-        "configVersion": 1,
+        "configVersion": 2,
     }
     assert history["attempts"][0]["feedback"] is None
     stored = fixture.factory.run_read(
         lambda connection: (
             connection.execute("SELECT count(*) AS n FROM results").fetchone()["n"],
-            connection.execute("SELECT teacher_id FROM results").fetchone()[
-                "teacher_id"
+            connection.execute("SELECT max(teacher_id) AS value FROM results").fetchone()[
+                "value"
             ],
         )
     )
-    assert stored == (1, ADMIN_USER_ID)
+    assert stored == (2, ADMIN_USER_ID)
 
     repeated = await fixture.client.post(
         route,
@@ -2680,7 +2734,7 @@ async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
     )
     assert repeated.status == 200
     repeated_payload = await repeated.json()
-    assert repeated_payload["pendingBefore"] == repeated_payload["checked"] == 0
+    assert repeated_payload["pendingBefore"] == repeated_payload["checked"] == 1
 
 
 async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(
@@ -3520,8 +3574,8 @@ async def test_staff_problem_matching_and_metadata_grid_http_workflow(
         cookies=_cookie(fixture, "admin"),
         headers=_headers(unsafe=True, if_match=saved_response.headers["ETag"]),
     )
-    assert conflict.status == 409
-    assert (await conflict.json())["error"]["code"] == "version_conflict"
+    assert conflict.status == 200, await conflict.text()
+    assert (await conflict.json())["version"] == 6
 
     published = await _publish(
         fixture,
@@ -5238,3 +5292,91 @@ async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
     assert forbidden_problems.status == 403
     assert forbidden_reveal.status == 403
     assert malformed_detail.status == 404
+
+
+async def test_staff_generates_metadata_draft_only_for_initial_unreviewed_condition(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    revision, _compile_etag = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="generation/condition.tex",
+        source="\\задача Найдите 7. \\кзадача",
+        review=False,
+    )
+    match_url = (
+        f"/staff/api/v1/content/revisions/{revision['revisionId']}/problem-matches"
+    )
+    match_response = await fixture.client.get(
+        match_url, cookies=_cookie(fixture, "admin"), headers=_headers()
+    )
+    match = await match_response.json()
+    resolved = await fixture.client.put(
+        match_url,
+        json={
+            "matches": [
+                {
+                    "sourceOrdinal": match["items"][0]["sourceOrdinal"],
+                    "sourceItem": match["items"][0]["sourceItem"],
+                    "decision": "insert_new",
+                    "problemId": None,
+                }
+            ]
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=match_response.headers["ETag"]),
+    )
+    assert resolved.status == 200, await resolved.text()
+
+    grid_url = f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/metadata-grid"
+    initial_grid = await fixture.client.get(
+        grid_url,
+        params={"revisionId": revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert initial_grid.status == 200, await initial_grid.text()
+    assert (await initial_grid.json())["canGenerateMetadata"] is True
+
+    generated = await fixture.client.post(
+        f"{grid_url}/generate",
+        json={"revisionId": revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert generated.status == 200, await generated.text()
+    payload = await generated.json()
+    assert payload["rows"][0]["title"] == "Черновик 1"
+    assert payload["warnings"] == ["Проверьте способ сдачи."]
+    generator = fixture.client.app[content_routes_module.PWA_CONTENT_METADATA_GENERATOR]
+    assert isinstance(generator, SyntheticMetadataGenerator)
+    assert generator.requests[0].latex_text == "\\задача Найдите 7. \\кзадача"
+    assert generator.requests[0].targets[0].source_ordinal == 1
+
+    unchanged_grid = await fixture.client.get(
+        grid_url,
+        params={"revisionId": revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert not (await unchanged_grid.json())["rows"][0]["reviewed"]
+
+    later_revision, _later_etag = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="generation/condition.tex",
+        source="\\задача Найдите 8. \\кзадача",
+        review=False,
+    )
+    later = await fixture.client.post(
+        f"{grid_url}/generate",
+        json={"revisionId": later_revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert later.status == 409
+    assert (await later.json())["error"]["code"] == "metadata_generation_not_available"
+    assert len(generator.requests) == 1

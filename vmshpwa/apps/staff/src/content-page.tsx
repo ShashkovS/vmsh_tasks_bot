@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, FileCode2, RefreshCw, Send, Upload } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   PageLayout,
@@ -92,6 +92,7 @@ interface VersionedPublicationView {
 interface MaterialWorkflowState {
   file: File | undefined
   phase: 'idle' | 'processing' | 'ready' | 'invalid' | 'error'
+  processingMessage: string | undefined
   revisions: VersionedRevision[]
   invalidRevision: StaffContentRevision | undefined
   webDocument: WebContentDocument | undefined
@@ -178,6 +179,7 @@ function initialMaterialState(history?: StaffContentMaterialHistory): MaterialWo
   return {
     file: undefined,
     phase: 'idle',
+    processingMessage: undefined,
     revisions,
     invalidRevision: undefined,
     webDocument: undefined,
@@ -223,6 +225,20 @@ function publicationSlot(
 }
 
 function errorMessage(error: unknown): string {
+  if (
+    error instanceof ApiResponseError &&
+    (error.code === 'asset_conversion_failed' || error.code === 'content_assets_unavailable')
+  ) {
+    const details = error.details as Record<string, unknown> | undefined
+    const logicalAsset = typeof details?.logicalAsset === 'string' ? details.logicalAsset : undefined
+    const capability = typeof details?.capability === 'string' ? details.capability : undefined
+    const detail = typeof details?.detail === 'string' ? details.detail : undefined
+    const subject = logicalAsset ? `Рисунок TikZ ${logicalAsset}` : 'Рисунок TikZ'
+    if (error.code === 'content_assets_unavailable') {
+      return `${subject}: на сервере временно недоступен ${capability ?? 'нужный конвертер'}. Повторите позднее.`
+    }
+    return `${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
+  }
   if (error instanceof ApiResponseError) return error.message
   if (error instanceof Error) return error.message
   return 'Не удалось выполнить действие'
@@ -320,6 +336,10 @@ function MaterialWorkflowCard({
 }) {
   const [state, setState] = useState<MaterialWorkflowState>(() => initialMaterialState(history))
   const [confirmation, setConfirmation] = useState<ConfirmationAction | null>(null)
+  // Button disabled state is applied on the next React render. Keep one
+  // synchronous guard too: otherwise a double click can recompile a revision
+  // after its first request has already made it terminal.
+  const selectedFileCompilePendingRef = useRef(false)
   const latest = state.revisions.at(-1)
   const readyRevisions = state.revisions.filter(
     (revision) => revision.data.status === 'ready' && revision.data.missingAssets.length === 0,
@@ -441,6 +461,7 @@ function MaterialWorkflowCard({
     setState((current) => ({
       ...current,
       phase: 'ready',
+      processingMessage: undefined,
       revisions: [
         ...current.revisions.filter(
           (revision) => revision.data.revisionId !== inspected.data.revisionId,
@@ -470,6 +491,7 @@ function MaterialWorkflowCard({
   const compileStoredRevision = async (revision: VersionedRevision) => {
     patchState({
       phase: 'processing',
+      processingMessage: 'Проверяем LaTeX-файл…',
       errorMessage: undefined,
       invalidRevision: undefined,
       webDocument: undefined,
@@ -484,6 +506,33 @@ function MaterialWorkflowCard({
       const compiled = await client.compileRevision(revision.data.revisionId, revision.etag)
       await inspectCompiledRevision(compiled.data.revisionId)
     } catch (error) {
+      // A short second click (or a second Staff tab) can reach a revision just
+      // after its first compile has made it terminal.  A 409 then describes the
+      // stale action, not what Staff needs to fix.  Read the durable outcome
+      // before presenting a generic conflict; see Phase 2 asset recovery.
+      if (error instanceof ApiResponseError && error.status === 409) {
+        try {
+          const inspected = await client.diagnostics(revision.data.revisionId)
+          if (inspected.data.status === 'invalid') {
+            setState((current) => ({
+              ...current,
+              phase: 'invalid',
+              processingMessage: undefined,
+              invalidRevision: inspected.data,
+              previewLoading: false,
+              errorMessage: undefined,
+            }))
+            return
+          }
+          if (inspected.data.status === 'ready') {
+            await inspectCompiledRevision(inspected.data.revisionId)
+            return
+          }
+        } catch {
+          // The original conflict remains the best actionable result when the
+          // diagnostic read itself cannot complete.
+        }
+      }
       const missingAssets =
         error instanceof ApiResponseError && error.code === 'content_assets_missing'
           ? contentAssetsMissingDetailsSchema.safeParse(error.details)
@@ -501,21 +550,29 @@ function MaterialWorkflowCard({
         setState((current) => ({
           ...current,
           phase: 'invalid',
+          processingMessage: undefined,
           invalidRevision: invalidRevision.data,
           previewLoading: false,
           errorMessage: missingAssets?.success ? undefined : errorMessage(error),
         }))
       } else {
-        patchState({ phase: 'error' })
+        patchState({ phase: 'error', processingMessage: undefined })
         handleMutationError(error)
       }
     }
   }
 
   const compileSelectedFile = async () => {
-    if (!state.file) return
-    patchState({ phase: 'processing', errorMessage: undefined })
+    if (!state.file || selectedFileCompilePendingRef.current) return
+    selectedFileCompilePendingRef.current = true
+    patchState({ phase: 'processing', errorMessage: undefined, processingMessage: 'Читаем LaTeX-файл…' })
     try {
+      const sourceText = await state.file.text()
+      if (/\\(?:begin\s*\{tikzpicture\}|tikz\b)/u.test(sourceText)) {
+        patchState({ processingMessage: 'Готовим рисунки из TikZ. Это может занять немного времени…' })
+      } else {
+        patchState({ processingMessage: 'Загружаем и проверяем LaTeX-файл…' })
+      }
       const uploaded = await client.uploadSource({
         groupLessonId,
         kind,
@@ -524,6 +581,7 @@ function MaterialWorkflowCard({
       })
       setState((current) => ({
         ...current,
+        processingMessage: 'Проверяем структуру материала…',
         revisions: [
           ...current.revisions.filter(
             (revision) => revision.data.revisionId !== uploaded.data.revisionId,
@@ -534,8 +592,10 @@ function MaterialWorkflowCard({
       if (uploaded.data.status === 'ready') await inspectCompiledRevision(uploaded.data.revisionId)
       else await compileStoredRevision(uploaded)
     } catch (error) {
-      patchState({ phase: 'error' })
+      patchState({ phase: 'error', processingMessage: undefined })
       handleMutationError(error)
+    } finally {
+      selectedFileCompilePendingRef.current = false
     }
   }
 
@@ -717,6 +777,7 @@ function MaterialWorkflowCard({
                       ...current,
                       file,
                       phase: 'idle',
+                      processingMessage: undefined,
                       invalidRevision: undefined,
                       webDocument: undefined,
                       telegramHtml: undefined,
@@ -747,9 +808,16 @@ function MaterialWorkflowCard({
             size="sm"
           >
             <Upload aria-hidden="true" />
-            {state.phase === 'processing' ? 'Проверяем…' : 'Загрузить и проверить'}
+            {state.phase === 'processing' ? 'Обрабатываем…' : 'Загрузить и проверить'}
           </Button>
         </div>
+
+        {state.phase === 'processing' && state.processingMessage ? (
+          <p className="inline-flex items-center gap-2 text-small text-muted-foreground" role="status">
+            <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
+            {state.processingMessage}
+          </p>
+        ) : null}
 
         {state.file ? (
           <LatexUpload

@@ -275,8 +275,9 @@ export const webContentProblemSchema = z
     sourceItem: z.string().trim().min(1).max(80).nullable(),
     title: z.string().trim().min(1).max(500).nullable(),
     blocks: z.array(webContentBlockSchema).min(1).max(2_000),
-    // Content between this problem and the next one belongs to the document,
-    // not to the problem's submission/review controls.
+    // Legacy persisted derivatives may carry inter-problem content here. New
+    // compiler output attaches it to the following problem so focused task
+    // routes retain the complete statement (CONTENT-IMPORT-03).
     trailingBlocks: z.array(webContentBlockSchema).max(2_000).optional(),
   })
   .strict()

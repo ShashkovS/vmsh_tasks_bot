@@ -10,6 +10,8 @@ import {
   problemMatchMutationRequestSchema,
   problemMatchReviewSchema,
   problemMetadataGridSchema,
+  problemMetadataGenerationRequestSchema,
+  problemMetadataGenerationSchema,
   problemMetadataMutationRequestSchema,
   contentPublicationCancellationSchema,
   contentPublicationHidingSchema,
@@ -50,6 +52,7 @@ import {
   type ProblemMatchMutationRow,
   type ProblemMatchReview,
   type ProblemMetadataGrid,
+  type ProblemMetadataGeneration,
   type ProblemMetadataMutationRow,
   type PrincipalQueryScope,
   type StaffContentHistory,
@@ -136,6 +139,11 @@ export interface SaveProblemMetadataGridInput {
   rows: ProblemMetadataMutationRow[]
 }
 
+export interface GenerateProblemMetadataInput {
+  groupLessonId: string
+  revisionId: string
+}
+
 export interface ContentRequestOptions {
   signal?: AbortSignal
 }
@@ -181,6 +189,10 @@ export interface ContentApiClient {
     revisionId: string,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<ProblemMetadataGrid>>
+  generateMetadata?(
+    input: GenerateProblemMetadataInput,
+    options?: ContentRequestOptions,
+  ): Promise<ProblemMetadataGeneration>
   saveMetadataGrid(
     input: SaveProblemMetadataGridInput,
     options?: ContentRequestOptions,
@@ -507,6 +519,27 @@ class BrowserContentApiClient implements ContentApiClient {
         ...options,
       },
       problemMetadataGridSchema,
+    )
+  }
+
+  async generateMetadata(
+    input: GenerateProblemMetadataInput,
+    options: ContentRequestOptions = {},
+  ): Promise<ProblemMetadataGeneration> {
+    this.#requireStaff()
+    const groupLessonId = publicIdSchema.parse(input.groupLessonId)
+    const request = problemMetadataGenerationRequestSchema.parse({
+      revisionId: publicIdSchema.parse(input.revisionId),
+    })
+    return this.#json(
+      `/group-lessons/${encodeURIComponent(groupLessonId)}/metadata-grid/generate`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+        contentType: 'application/json',
+        ...options,
+      },
+      problemMetadataGenerationSchema,
     )
   }
 

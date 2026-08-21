@@ -38,9 +38,8 @@ export interface TestAttemptRecheckPanelProps {
 }
 
 /**
- * Admin-only Phase-4 recovery control for attempts accepted while a test
- * checker was missing or broken. It never exposes answer/checker internals and
- * always identifies the immutable published revision being applied. See
+ * Admin-only current-state repair control. It never exposes answer/checker
+ * internals and always identifies the published configuration being applied. See
  * `dev/development-plan/08-phase-4-test-submissions.md`.
  */
 export function TestAttemptRecheckPanel({
@@ -56,11 +55,11 @@ export function TestAttemptRecheckPanel({
 }: TestAttemptRecheckPanelProps) {
   if (loading) {
     return (
-      <Card aria-label="Загрузка отложенных ответов" className={className} role="status">
+      <Card aria-label="Загрузка тестовых ответов" className={className} role="status">
         <CardContent className="space-y-3 pt-5">
           <Skeleton className="h-5 w-52" />
           <Skeleton className="h-10 w-full" />
-          <span className="sr-only">Проверяем, есть ли отложенные ответы</span>
+          <span className="sr-only">Загружаем сохранённые тестовые ответы</span>
         </CardContent>
       </Card>
     )
@@ -73,15 +72,15 @@ export function TestAttemptRecheckPanel({
           <div className="min-w-0">
             <h2 className="flex items-center gap-2 text-small font-semibold text-foreground">
               <Wrench aria-hidden="true" className="size-4 text-muted-foreground" />
-              Отложенные тестовые ответы
+              Перепроверка тестовых ответов
             </h2>
             <p className="mt-1 max-w-2xl text-caption leading-5 text-muted-foreground">
-              Ответы, принятые при недоступной проверке, можно проверить после публикации
-              исправленной конфигурации. Исходные посылки останутся неизменными.
+              Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные
+              посылки останутся неизменными, а прежний вердикт может измениться.
             </p>
           </div>
           <Badge variant={pendingAttempts > 0 ? 'warning' : 'neutral'}>
-            Ожидают: {pendingAttempts}
+            Ответов: {pendingAttempts}
           </Badge>
         </div>
 
@@ -116,7 +115,7 @@ export function TestAttemptRecheckPanel({
           ) : (
             <span className="inline-flex items-center gap-1.5 text-small text-status-success">
               <CheckCircle2 aria-hidden="true" className="size-4" />
-              Нет ответов, ожидающих настройки
+              Нет сохранённых ответов
             </span>
           )}
           {error && onRetry ? (
@@ -137,11 +136,11 @@ function RecheckResult({ result }: { result: TestAttemptRecheckResultView }) {
       <Alert tone={hasUnresolved ? 'warning' : 'success'}>
         <AlertContent>
           <AlertTitle>
-            Проверено {result.checked} из {result.pendingBefore}
+            Перепроверено {result.checked} из {result.pendingBefore}
           </AlertTitle>
           <AlertDescription>
             Верных: {result.correct} · неверных: {result.wrong}
-            {result.stillPending > 0 ? ` · всё ещё ожидают настройки: ${result.stillPending}` : ''}
+            {result.stillPending > 0 ? ` · требуется настройка: ${result.stillPending}` : ''}
             {result.skippedConcurrent > 0
               ? ` · уже обработаны параллельно: ${result.skippedConcurrent}`
               : ''}

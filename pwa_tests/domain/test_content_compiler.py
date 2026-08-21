@@ -162,7 +162,6 @@ def test_each_material_role_projects_only_its_approved_branch() -> None:
         "sourceItem",
         "title",
         "blocks",
-        "trailingBlocks",
     }
     assert "answer" not in condition.web_document.content
     assert "solution" not in condition.web_document.content
@@ -1183,13 +1182,14 @@ def test_solution_web_document_separates_answer_and_explanation() -> None:
         "17 человек.",
         "Слева шесть, справа десять.",
     ]
-    assert document["problems"][0]["trailingBlocks"] == []
+    assert "trailingBlocks" not in document["problems"][0]
 
 
-def test_condition_keeps_inter_problem_content_outside_problem_blocks() -> None:
+def test_condition_attaches_inter_problem_content_to_the_following_problem() -> None:
     result = _compile(
         r"\задача Условие 1. \кзадача"
         r"\раздел{Общий комментарий} Текст вне задачи."
+        r"\includegraphics{figures/preamble.svg}"
         r"\задача Условие 2. \кзадача"
     )
 
@@ -1199,11 +1199,19 @@ def test_condition_keeps_inter_problem_content_outside_problem_blocks() -> None:
         revision_id="revision:inter-problem-content",
     )
 
-    first = document["problems"][0]
+    first, second = document["problems"]
     assert "Общий комментарий" not in json.dumps(first["blocks"], ensure_ascii=False)
-    assert "Общий комментарий" in json.dumps(
-        first["trailingBlocks"], ensure_ascii=False
-    )
+    assert "Общий комментарий" in json.dumps(second["blocks"], ensure_ascii=False)
+    assert [block["type"] for block in second["blocks"][:4]] == [
+        "heading",
+        "paragraph",
+        "figure",
+        "paragraph",
+    ]
+    assert second["blocks"][2]["asset"] == {
+        "status": "missing",
+        "logicalName": "figures/preamble.svg",
+    }
 
 
 def test_web_document_rejects_oversized_table_instead_of_truncating_content() -> None:

@@ -399,12 +399,17 @@ export function MissingAssetsFlow({
   const unresolvedCount = assets.filter(
     (asset) => asset.status !== 'attached' && asset.status !== 'reused',
   ).length
+  const tikzProcessing = assets.some(
+    (asset) => asset.sourceKind === 'tikz' && asset.status === 'uploading',
+  )
 
   return (
     <div className={cn('space-y-3', className)}>
-      <Alert role="status" tone={unresolvedCount === 0 ? 'success' : 'danger'}>
+      <Alert role="status" tone={unresolvedCount === 0 ? 'success' : tikzProcessing ? 'info' : 'danger'}>
         {unresolvedCount === 0 ? (
           <CheckCircle2 aria-hidden="true" />
+        ) : tikzProcessing ? (
+          <LoaderCircle aria-hidden="true" className="animate-spin" />
         ) : (
           <AlertTriangle aria-hidden="true" />
         )}
@@ -412,11 +417,15 @@ export function MissingAssetsFlow({
           <AlertTitle>
             {unresolvedCount === 0
               ? 'Все ресурсы прикреплены'
+              : tikzProcessing
+                ? 'Готовим рисунки из TikZ'
               : `Не хватает ресурсов: ${unresolvedCount}`}
           </AlertTitle>
           <AlertDescription>
             {unresolvedCount === 0
               ? 'Можно повторить сборку материала.'
+              : tikzProcessing
+                ? 'Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически.'
               : 'Публикация недоступна, пока все ссылки не разрешены.'}
           </AlertDescription>
         </AlertContent>
@@ -437,7 +446,8 @@ export function MissingAssetsFlow({
                 </div>
                 {asset.status === 'uploading' ? (
                   <Badge variant="info">
-                    <LoaderCircle aria-hidden="true" className="animate-spin" /> Обрабатываем
+                    <LoaderCircle aria-hidden="true" className="animate-spin" />{' '}
+                    {asset.sourceKind === 'tikz' ? 'Конвертируем TikZ' : 'Обрабатываем'}
                   </Badge>
                 ) : asset.status === 'reused' ? (
                   <Badge variant="success">Переиспользован</Badge>
@@ -491,7 +501,7 @@ export function MissingAssetsFlow({
                     {asset.status === 'error'
                       ? 'Повторить'
                       : asset.sourceKind === 'tikz'
-                        ? 'Повторить обработку'
+                        ? 'Подготовить SVG'
                         : 'Загрузить'}
                   </Button>
                 </div>

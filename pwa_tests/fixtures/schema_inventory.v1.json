@@ -249,6 +249,14 @@
       {
         "id": "0080.pwa_submission_paste_evidence",
         "sha256": "0c44016d6feb75c0d786fe63a8a68b8d3a2ccc3cfa7e6cce41e122cc9157152a"
+      },
+      {
+        "id": "0081.pwa_rich_markdown",
+        "sha256": "c9f719b8a9e868914b9d10dd9bcbab71bcb4feb892239ddbe06fcd3af366adf1"
+      },
+      {
+        "id": "0082.pwa_published_metadata_corrections",
+        "sha256": "4b3077c6ae1d6c87320bb393b8a75d76c187803c75909047323d66eef16789e5"
       }
     ],
     "repository_head_status": {
@@ -259,7 +267,7 @@
     }
   },
   "product": {
-    "object_count": 431,
+    "object_count": 432,
     "objects": [
       {
         "columns": [
@@ -5129,6 +5137,78 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "content_revision_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "content_revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "content_revisions"
+          },
+          {
+            "from_columns": [
+              "updated_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "content_review_states",
+        "object_sha256": "bde660a11e1558086d6b3dbb42c3410d9a1429760fdea27f293fe8289037ce90",
+        "sql": "CREATE TABLE content_review_states\n(\n    content_revision_id integer primary key references content_revisions (id),\n    version             integer not null check (version > 0),\n    updated_at          text not null,\n    updated_by_user_id  integer references users (id)\n);",
+        "table_name": "content_review_states",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "revision_id",
             "not_null": true,
             "primary_key_ordinal": 1
@@ -8992,6 +9072,226 @@
           },
           {
             "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "banner_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ordinal",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "media_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_url",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "storage_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_url",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "mime_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "width",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "height",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "banner_id"
+            ],
+            "match": "NONE",
+            "on_delete": "CASCADE",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "group_banners"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "banner_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "group_banner_media_banner_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "banner_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_group_banner_media_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "banner_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "media_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_group_banner_media_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "group_banner_media",
+        "object_sha256": "a42435cd9e9acc15f407f384d464fb4f920529dc37246016b838f28246657771",
+        "sql": "CREATE TABLE group_banner_media\n(\n    id          integer primary key,\n    banner_id   integer not null references group_banners (id) on delete cascade,\n    ordinal     integer not null check (ordinal >= 0),\n    media_id    text not null,\n    source_url  text not null,\n    storage_key text not null,\n    public_url  text,\n    mime_type   text not null check (mime_type in ('image/webp', 'image/gif')),\n    width       integer not null check (width > 0 and width <= 1920),\n    height      integer not null check (height > 0 and height <= 1920),\n    created_at  text not null,\n    unique (banner_id, ordinal),\n    unique (banner_id, media_id)\n);",
+        "table_name": "group_banner_media",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -9133,6 +9433,33 @@
             "name": "version",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 17,
+            "declared_type": "TEXT",
+            "default_sql": "'legacy_html'",
+            "hidden": 0,
+            "name": "content_format",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 18,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "markdown_source",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 19,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "rich_document_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -9264,8 +9591,8 @@
           }
         ],
         "name": "group_banners",
-        "object_sha256": "8cacbc2b93a6e5cbbb276979e90dc888cb7d2a23907c212aee66ba30691c9c4d",
-        "sql": "CREATE TABLE group_banners\n(\n    id                       integer primary key,\n    public_id                text    not null unique,\n    group_id                 text    not null references groups (group_id),\n    audience                 text    not null\n        check (audience in ('student', 'family', 'both')),\n    html_sanitized           text    not null,\n    sanitizer_policy_version integer not null default 1,\n    starts_at                text    not null,\n    ends_at                  text    not null,\n    priority                 integer not null default 0,\n    dismissible              integer not null default 1\n        check (dismissible in (0, 1)),\n    status                   text    not null default 'active'\n        check (status in ('active', 'cancelled')),\n    created_by_user_id       integer not null references users (id),\n    updated_by_user_id       integer not null references users (id),\n    created_at               text    not null,\n    updated_at               text    not null,\n    cancelled_at             text,\n    version                  integer not null default 1 check (version > 0),\n    check (length(trim(public_id)) > 0),\n    check (length(trim(html_sanitized)) > 0),\n    check (sanitizer_policy_version = 1),\n    check (ends_at > starts_at),\n    check (\n        (status = 'active' and cancelled_at is null)\n        or (status = 'cancelled' and cancelled_at is not null)\n    )\n);",
+        "object_sha256": "9c137fc6583596d502fdb3c56b997eec0ddd892d34e0d503449027fed1a6f277",
+        "sql": "CREATE TABLE group_banners\n(\n    id                       integer primary key,\n    public_id                text    not null unique,\n    group_id                 text    not null references groups (group_id),\n    audience                 text    not null\n        check (audience in ('student', 'family', 'both')),\n    html_sanitized           text    not null,\n    sanitizer_policy_version integer not null default 1,\n    starts_at                text    not null,\n    ends_at                  text    not null,\n    priority                 integer not null default 0,\n    dismissible              integer not null default 1\n        check (dismissible in (0, 1)),\n    status                   text    not null default 'active'\n        check (status in ('active', 'cancelled')),\n    created_by_user_id       integer not null references users (id),\n    updated_by_user_id       integer not null references users (id),\n    created_at               text    not null,\n    updated_at               text    not null,\n    cancelled_at             text,\n    version                  integer not null default 1 check (version > 0), content_format text not null default 'legacy_html'\n    check (content_format in ('legacy_html', 'rich_markdown_v1')), markdown_source text, rich_document_json text,\n    check (length(trim(public_id)) > 0),\n    check (length(trim(html_sanitized)) > 0),\n    check (sanitizer_policy_version = 1),\n    check (ends_at > starts_at),\n    check (\n        (status = 'active' and cancelled_at is null)\n        or (status = 'cancelled' and cancelled_at is not null)\n    )\n);",
         "table_name": "group_banners",
         "type": "table"
       },
@@ -13293,6 +13620,15 @@
             "name": "updated_at",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_url",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -13344,8 +13680,8 @@
           }
         ],
         "name": "news_media",
-        "object_sha256": "6562030184b6274bd0568fa040e42acff46577e44a8e00ae016cb02c14059000",
-        "sql": "CREATE TABLE news_media\n(\n    id                integer primary key,\n    revision_id       integer not null references news_revisions (id) on delete cascade,\n    ordinal           integer not null check (ordinal >= 0),\n    media_kind        text    not null check (media_kind in ('image', 'video', 'audio', 'document')),\n    source_message_id integer,\n    source_file_id    text,\n    storage_key       text,\n    public_url        text,\n    mime_type         text,\n    width             integer check (width is null or width > 0),\n    height            integer check (height is null or height > 0),\n    storage_status    text    not null check (storage_status in ('pending', 'stored', 'failed')),\n    created_at        text    not null,\n    updated_at        text    not null,\n    unique (revision_id, ordinal)\n);",
+        "object_sha256": "b15d200f4da1a373226a9ff1179df8cafbf738cc4b803c32038b8cc1a59fe5b8",
+        "sql": "CREATE TABLE news_media\n(\n    id                integer primary key,\n    revision_id       integer not null references news_revisions (id) on delete cascade,\n    ordinal           integer not null check (ordinal >= 0),\n    media_kind        text    not null check (media_kind in ('image', 'video', 'audio', 'document')),\n    source_message_id integer,\n    source_file_id    text,\n    storage_key       text,\n    public_url        text,\n    mime_type         text,\n    width             integer check (width is null or width > 0),\n    height            integer check (height is null or height > 0),\n    storage_status    text    not null check (storage_status in ('pending', 'stored', 'failed')),\n    created_at        text    not null,\n    updated_at        text    not null, source_url text,\n    unique (revision_id, ordinal)\n);",
         "table_name": "news_media",
         "type": "table"
       },
@@ -13771,6 +14107,33 @@
             "name": "created_at",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": "'legacy'",
+            "hidden": 0,
+            "name": "content_format",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "markdown_source",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "rich_document_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -13886,8 +14249,8 @@
           }
         ],
         "name": "news_revisions",
-        "object_sha256": "5386767c5ac045fe0a59967c14acfd95b2f4eaf34242313ec9b81519fea4200e",
-        "sql": "CREATE TABLE news_revisions\n(\n    id                  integer primary key,\n    post_id             integer not null references news_posts (id) on delete cascade,\n    revision_number     integer not null check (revision_number > 0),\n    source_hash         text    not null check (length(source_hash) = 64),\n    source_edited_at    text,\n    text_plain          text    not null,\n    content_json        text    not null,\n    source_payload_json text    not null,\n    created_at          text    not null,\n    unique (post_id, revision_number),\n    unique (post_id, source_hash)\n);",
+        "object_sha256": "8731d195b6ef708636706f249fc0994ec9c4705d8abad13c22901422ee75c6a4",
+        "sql": "CREATE TABLE news_revisions\n(\n    id                  integer primary key,\n    post_id             integer not null references news_posts (id) on delete cascade,\n    revision_number     integer not null check (revision_number > 0),\n    source_hash         text    not null check (length(source_hash) = 64),\n    source_edited_at    text,\n    text_plain          text    not null,\n    content_json        text    not null,\n    source_payload_json text    not null,\n    created_at          text    not null, content_format text not null default 'legacy'\n    check (content_format in ('legacy', 'rich_markdown_v1')), markdown_source text, rich_document_json text,\n    unique (post_id, revision_number),\n    unique (post_id, source_hash)\n);",
         "table_name": "news_revisions",
         "type": "table"
       },
@@ -26063,6 +26426,13 @@
         "type": "index"
       },
       {
+        "name": "group_banner_media_banner_idx",
+        "object_sha256": "ca7056d4609b5230105d0822a69c3befffc9cdc5453d88c94b57b32f48212e12",
+        "sql": "CREATE INDEX group_banner_media_banner_idx on group_banner_media (banner_id, ordinal);",
+        "table_name": "group_banner_media",
+        "type": "index"
+      },
+      {
         "name": "group_banners_window_idx",
         "object_sha256": "21ea94dbf8f6194761e4c2cad114684c7f93ac46ab651c8fd98821ef8a5e7365",
         "sql": "CREATE INDEX group_banners_window_idx\n    on group_banners (group_id, status, starts_at, ends_at, priority desc, id);",
@@ -26882,13 +27252,6 @@
         "type": "trigger"
       },
       {
-        "name": "content_problem_matches_immutable_update",
-        "object_sha256": "f77a9aa103cbf397a317e4e9e8d453a31f8a39c4dd087acbeca7b4a23fe7cfb1",
-        "sql": "CREATE TRIGGER content_problem_matches_immutable_update\nbefore update on content_problem_matches\nfor each row\nbegin\n    select raise(abort, 'resolved content problem match is immutable');\nend;",
-        "table_name": "content_problem_matches",
-        "type": "trigger"
-      },
-      {
         "name": "content_revision_assets_delete_forbidden",
         "object_sha256": "ff442922f3b063831fb3c42f02cc0ac22f72c968357ca8ce2bfad03637173fb4",
         "sql": "CREATE TRIGGER content_revision_assets_delete_forbidden\nbefore delete on content_revision_assets\nfor each row\nbegin\n    select raise(abort, 'content revision asset deletion is forbidden');\nend;",
@@ -27200,13 +27563,6 @@
         "name": "problem_revisions_delete_forbidden",
         "object_sha256": "c1633df6b6255b5bd7f77caefa03975efa296fab79ea19aa95df630a1a12a4e8",
         "sql": "CREATE TRIGGER problem_revisions_delete_forbidden\nbefore delete on problem_revisions\nfor each row\nbegin\n    select raise(abort, 'problem revision deletion is forbidden');\nend;",
-        "table_name": "problem_revisions",
-        "type": "trigger"
-      },
-      {
-        "name": "problem_revisions_immutable_update",
-        "object_sha256": "82d1a3034ab955a9bf0d24dce4b21a496a26604d2abe940ebc9b99859610e2e3",
-        "sql": "CREATE TRIGGER problem_revisions_immutable_update\nbefore update on problem_revisions\nfor each row\nbegin\n    select raise(abort, 'problem revision is immutable');\nend;",
         "table_name": "problem_revisions",
         "type": "trigger"
       },
@@ -27807,8 +28163,8 @@
       },
       {
         "name": "test_attempts_check_transition_guard",
-        "object_sha256": "0c5fd136f1989529ea3196aeffdb360def067f113ee58da307297346db057b17",
-        "sql": "CREATE TRIGGER test_attempts_check_transition_guard\nbefore update on test_attempts\nfor each row\nwhen not (\n    old.check_status = 'pending_configuration'\n    and new.check_status in ('pending', 'checked', 'failed')\n) and not (\n    old.check_status = 'pending'\n    and new.check_status in ('checked', 'failed')\n)\nbegin\n    select raise(abort, 'invalid test attempt check transition');\nend;",
+        "object_sha256": "3b57b79d9a13398e8269c449b8ac0aa74a4f4c08e96b08ef2fe6f168a28634c5",
+        "sql": "CREATE TRIGGER test_attempts_check_transition_guard\nbefore update on test_attempts\nfor each row\nwhen not (\n    old.check_status = 'pending_configuration'\n    and new.check_status in ('pending', 'checked', 'failed')\n) and not (\n    old.check_status = 'pending'\n    and new.check_status in ('checked', 'failed')\n) and not (\n    old.check_status = 'checked' and new.check_status = 'checked'\n)\nbegin\n    select raise(abort, 'invalid test attempt check transition');\nend;",
         "table_name": "test_attempts",
         "type": "trigger"
       },
@@ -27855,8 +28211,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "5e9cb666ba9bd774982185459ff71c990ed6c1fd9dd2fadfe992f10f7c1ab513",
-    "sha256": "3092a834e13dce3604dc04f3467aeefb5f619001b12156b4715621d37c19e585"
+    "pragma_structure_sha256": "6879c57436a5f0471b7a378a47329b11c14d5d201e7d9f389c0185d3b9211002",
+    "sha256": "c370fd9ad7052aacc794f7468c2635d7f1374da8ef284b55f658cca39fc00276"
   },
   "source_kind": "repository-migration-head"
 }

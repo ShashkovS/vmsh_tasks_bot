@@ -83,6 +83,9 @@ class Config:
     pwa_refresh_pepper_b64: str = field(default="", repr=False)
     pwa_throttle_pepper_b64: str = field(default="", repr=False)
     first_admin_password: str = field(default="", repr=False)
+    # Kept only in the profile JSON alongside the other server credentials.
+    # It is never exposed through the PWA runtime endpoint.
+    openrouter_api_key: str = field(default="", repr=False)
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
     result_mode: str = "res_immed"
@@ -117,6 +120,11 @@ class Config:
                 raise ValueError(
                     f"Runtime database cannot override config field {key!r}"
                 )
+            if key == "OPENROUTER_API_KEY":
+                # Existing profile JSON uses an all-caps secret name.  Runtime
+                # code receives one dataclass field and never reads env vars.
+                self.openrouter_api_key = str(value).strip()
+                continue
             setattr(self, key, value)
 
 
@@ -243,6 +251,11 @@ def _setup(*, force_production=False):
                 profile_values.get("pwa_throttle_pepper_b64", "")
             ).strip(),
             first_admin_password=configured_first_admin_password,
+            openrouter_api_key=str(
+                profile_values.get(
+                    "openrouter_api_key", profile_values.get("OPENROUTER_API_KEY", "")
+                )
+            ).strip(),
             pdf2svg_path=_optional_executable_from_env("VMSH_PDF2SVG_PATH", "pdf2svg"),
             cwebp_path=_optional_executable_from_env("VMSH_CWEBP_PATH", "cwebp"),
             pdflatex_path=_optional_executable_from_env(

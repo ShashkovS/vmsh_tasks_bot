@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 3092a834e13dce3604dc04f3467aeefb5f619001b12156b4715621d37c19e585
+-- Product schema SHA-256: c370fd9ad7052aacc794f7468c2635d7f1374da8ef284b55f658cca39fc00276
 
 CREATE TABLE achievement_definitions
 (
@@ -536,6 +536,14 @@ CREATE TABLE content_problem_matches
     )
 );
 
+CREATE TABLE content_review_states
+(
+    content_revision_id integer primary key references content_revisions (id),
+    version             integer not null check (version > 0),
+    updated_at          text not null,
+    updated_by_user_id  integer references users (id)
+);
+
 CREATE TABLE content_revision_assets
 (
     revision_id integer not null references content_revisions (id),
@@ -966,6 +974,23 @@ CREATE TABLE "game_students_commands"
         references groups
 );
 
+CREATE TABLE group_banner_media
+(
+    id          integer primary key,
+    banner_id   integer not null references group_banners (id) on delete cascade,
+    ordinal     integer not null check (ordinal >= 0),
+    media_id    text not null,
+    source_url  text not null,
+    storage_key text not null,
+    public_url  text,
+    mime_type   text not null check (mime_type in ('image/webp', 'image/gif')),
+    width       integer not null check (width > 0 and width <= 1920),
+    height      integer not null check (height > 0 and height <= 1920),
+    created_at  text not null,
+    unique (banner_id, ordinal),
+    unique (banner_id, media_id)
+);
+
 CREATE TABLE group_banners
 (
     id                       integer primary key,
@@ -987,7 +1012,8 @@ CREATE TABLE group_banners
     created_at               text    not null,
     updated_at               text    not null,
     cancelled_at             text,
-    version                  integer not null default 1 check (version > 0),
+    version                  integer not null default 1 check (version > 0), content_format text not null default 'legacy_html'
+    check (content_format in ('legacy_html', 'rich_markdown_v1')), markdown_source text, rich_document_json text,
     check (length(trim(public_id)) > 0),
     check (length(trim(html_sanitized)) > 0),
     check (sanitizer_policy_version = 1),
@@ -1479,7 +1505,7 @@ CREATE TABLE news_media
     height            integer check (height is null or height > 0),
     storage_status    text    not null check (storage_status in ('pending', 'stored', 'failed')),
     created_at        text    not null,
-    updated_at        text    not null,
+    updated_at        text    not null, source_url text,
     unique (revision_id, ordinal)
 );
 
@@ -1528,7 +1554,8 @@ CREATE TABLE news_revisions
     text_plain          text    not null,
     content_json        text    not null,
     source_payload_json text    not null,
-    created_at          text    not null,
+    created_at          text    not null, content_format text not null default 'legacy'
+    check (content_format in ('legacy', 'rich_markdown_v1')), markdown_source text, rich_document_json text,
     unique (post_id, revision_number),
     unique (post_id, source_hash)
 );
@@ -2966,6 +2993,8 @@ CREATE INDEX family_account_emails_normalized_idx
 CREATE INDEX family_student_links_student_revoked_idx
     on family_student_links (student_user_id, revoked_at);
 
+CREATE INDEX group_banner_media_banner_idx on group_banner_media (banner_id, ordinal);
+
 CREATE INDEX group_banners_window_idx
     on group_banners (group_id, status, starts_at, ends_at, priority desc, id);
 
@@ -3503,13 +3532,6 @@ before delete on content_problem_matches
 for each row
 begin
     select raise(abort, 'content problem match deletion is forbidden');
-end;
-
-CREATE TRIGGER content_problem_matches_immutable_update
-before update on content_problem_matches
-for each row
-begin
-    select raise(abort, 'resolved content problem match is immutable');
 end;
 
 CREATE TRIGGER content_revision_assets_delete_forbidden
@@ -4138,13 +4160,6 @@ before delete on problem_revisions
 for each row
 begin
     select raise(abort, 'problem revision deletion is forbidden');
-end;
-
-CREATE TRIGGER problem_revisions_immutable_update
-before update on problem_revisions
-for each row
-begin
-    select raise(abort, 'problem revision is immutable');
 end;
 
 CREATE TRIGGER problem_revisions_match_insert
@@ -5217,6 +5232,8 @@ when not (
 ) and not (
     old.check_status = 'pending'
     and new.check_status in ('checked', 'failed')
+) and not (
+    old.check_status = 'checked' and new.check_status = 'checked'
 )
 begin
     select raise(abort, 'invalid test attempt check transition');

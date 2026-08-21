@@ -1,4 +1,4 @@
-import { CheckCircle2, RefreshCw } from 'lucide-react'
+import { CheckCircle2, Pencil, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { type ContentApiClient, type VersionedContentResource } from '@vmsh/content'
@@ -207,6 +207,24 @@ function metadataRow(row: ProblemMetadataGrid['rows'][number]): MetadataRow {
   }
 }
 
+function generatedMetadataRow(row: ProblemMetadataMutationRow): MetadataRow {
+  return {
+    problemId: String(row.problemId),
+    sourceOrdinal: String(row.sourceOrdinal),
+    sourceItem: row.sourceItem,
+    displayNumber: row.displayNumber,
+    title: row.title,
+    problemType: String(row.problemType),
+    answerType: row.answerType === null ? '' : String(row.answerType),
+    answerValidation: row.answerValidation ?? '',
+    validationError: row.validationError ?? '',
+    correctAnswer: row.correctAnswer ?? '',
+    correctAnswerChecker: row.correctAnswerChecker ?? '',
+    wrongAnswer: row.wrongAnswer ?? '',
+    congratulation: row.congratulation ?? '',
+  }
+}
+
 function sameMetadataIdentity(left: MetadataRow, right: MetadataRow): boolean {
   return (
     left.problemId === right.problemId &&
@@ -330,6 +348,9 @@ export function ProblemReviewWorkflow({
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string>()
   const [staleDraft, setStaleDraft] = useState(false)
+  const [generatedRows, setGeneratedRows] = useState<MetadataRow[]>()
+  const [generationWarnings, setGenerationWarnings] = useState<string[]>([])
+  const [metadataGridEpoch, setMetadataGridEpoch] = useState(0)
 
   const matchDraftKey = problemReviewDraftStorageKey(
     draftNamespace,
@@ -347,6 +368,8 @@ export function ProblemReviewWorkflow({
   const acceptMetadata = useCallback(
     (resource: MetadataResource) => {
       setMetadataResource(resource)
+      setGeneratedRows(undefined)
+      setGenerationWarnings([])
       if (resource.data.rows.every((row) => row.reviewed)) {
         clearStoredObject(metadataDraftKey)
         setPhase('ready')
@@ -492,6 +515,57 @@ export function ProblemReviewWorkflow({
     }
   }
 
+  const editMatches = async () => {
+    setPhase('loading')
+    setMessage(undefined)
+    try {
+      const current = await client.problemMatches(revisionId)
+      setMatchResource(current)
+      setSelections(selectionsFromReview(current.data))
+      setStaleDraft(false)
+      setPhase('matching')
+    } catch (error) {
+      setMessage(readableError(error))
+      setPhase('error')
+    }
+  }
+
+  const editMetadata = async () => {
+    setPhase('loading')
+    setMessage(undefined)
+    try {
+      const current = await client.metadataGrid(groupLessonId, revisionId)
+      setMetadataResource(current)
+      setStaleDraft(false)
+      setPhase('metadata')
+    } catch (error) {
+      setMessage(readableError(error))
+      setPhase('error')
+    }
+  }
+
+  const generateMetadata = async () => {
+    if (!metadataResource || !client.generateMetadata) return
+    setPending(true)
+    setMessage(undefined)
+    try {
+      const generated = await client.generateMetadata({ groupLessonId, revisionId })
+      const rows = generated.rows.map(generatedMetadataRow)
+      writeStoredObject(metadataDraftKey, {
+        schemaVersion: 1,
+        etag: metadataResource.etag,
+        rows,
+      } satisfies StoredMetadataDraft)
+      setGeneratedRows(rows)
+      setGenerationWarnings(generated.warnings)
+      setMetadataGridEpoch((epoch) => epoch + 1)
+    } catch (error) {
+      setMessage(readableError(error))
+    } finally {
+      setPending(false)
+    }
+  }
+
   if (phase === 'loading') {
     return <p className="text-small text-muted-foreground">Загружаем структуру задач…</p>
   }
@@ -539,7 +613,9 @@ export function ProblemReviewWorkflow({
 
   if (phase === 'metadata' && metadataResource) {
     const baseline = metadataResource.data.rows.map(metadataRow)
-    const draft = storedMetadataRows(metadataDraftKey, metadataResource.data)
+    const draft = generatedRows
+      ? { schemaVersion: 1 as const, etag: metadataResource.etag, rows: generatedRows }
+      : storedMetadataRows(metadataDraftKey, metadataResource.data)
     return (
       <section aria-labelledby={`problem-metadata-${kind}`} className="space-y-2">
         <div>
@@ -548,10 +624,28 @@ export function ProblemReviewWorkflow({
           </h3>
           <p className="text-caption text-muted-foreground">
             Проверьте названия, способы сдачи и сообщения проверки. Таблица сохраняется локально до
-            подтверждения. Если всё верно, нажмите «Подтвердить метаданные» — после этого появятся
-            кнопки публикации.
+            подтверждения. Сохранение заменяет текущую конфигурацию задачи; для тестовой задачи
+            затем перепроверьте ответы по новой конфигурации.
           </p>
         </div>
+        {metadataResource.data.canGenerateMetadata && client.generateMetadata ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button disabled={pending} onClick={() => void generateMetadata()} size="xs" variant="outline">
+              Сгенерировать metadata
+            </Button>
+            <span className="text-caption text-muted-foreground">
+              Черновик нужно проверить и сохранить вручную.
+            </span>
+          </div>
+        ) : null}
+        {generationWarnings.length ? (
+          <Alert tone="warning">
+            <AlertContent>
+              <AlertTitle>Проверьте сгенерированные metadata</AlertTitle>
+              <AlertDescription>{generationWarnings.join(' ')}</AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
         {staleDraft ? (
           <Alert tone="warning">
             <AlertContent>
@@ -565,10 +659,10 @@ export function ProblemReviewWorkflow({
         <MetadataGrid
           allowPristineCommit
           columns={metadataColumns}
-          commitLabel="Подтвердить метаданные"
+          commitLabel="Сохранить метаданные"
           {...(draft ? { initialDraftRows: draft.rows } : {})}
           initialRows={baseline}
-          key={metadataResource.etag}
+          key={`${metadataResource.etag}-${metadataGridEpoch}`}
           onCommit={async (rows) => {
             try {
               const saved = await client.saveMetadataGrid({
@@ -591,7 +685,12 @@ export function ProblemReviewWorkflow({
               throw new Error(readableError(error))
             }
           }}
-          onDiscard={() => clearStoredObject(metadataDraftKey)}
+          onDiscard={() => {
+            clearStoredObject(metadataDraftKey)
+            setGeneratedRows(undefined)
+            setGenerationWarnings([])
+            setMetadataGridEpoch((epoch) => epoch + 1)
+          }}
           onRowsChange={(rows) =>
             writeStoredObject(metadataDraftKey, {
               schemaVersion: 1,
@@ -606,11 +705,23 @@ export function ProblemReviewWorkflow({
   }
 
   return (
-    <p className="inline-flex items-center gap-1 text-small text-status-success" role="status">
-      <CheckCircle2 aria-hidden="true" className="size-4" />
-      {kind === 'condition'
-        ? 'Сопоставление и метаданные подтверждены.'
-        : 'Сопоставление задач подтверждено; метаданные берутся из условия.'}
-    </p>
+    <section className="flex flex-wrap items-center gap-2" role="status">
+      <p className="inline-flex items-center gap-1 text-small text-status-success">
+        <CheckCircle2 aria-hidden="true" className="size-4" />
+        {kind === 'condition'
+          ? 'Сопоставление и метаданные подтверждены.'
+          : 'Сопоставление задач подтверждено; метаданные берутся из условия.'}
+      </p>
+      {kind === 'condition' ? (
+        <>
+          <Button onClick={() => void editMatches()} size="xs" variant="outline">
+            <Pencil aria-hidden="true" /> Изменить состав задач
+          </Button>
+          <Button onClick={() => void editMetadata()} size="xs" variant="outline">
+            <Pencil aria-hidden="true" /> Изменить метаданные
+          </Button>
+        </>
+      ) : null}
+    </section>
   )
 }

@@ -913,6 +913,7 @@ export const problemMetadataGridSchema = z
     groupLessonId: publicIdSchema,
     version: z.number().int().positive(),
     etag: contentEtagSchema,
+    canGenerateMetadata: z.boolean().optional(),
     rows: z.array(problemMetadataGridRowSchema).max(2_000),
     requestId: z.string().trim().min(1).max(200),
   })
@@ -946,6 +947,36 @@ export const problemMetadataMutationRequestSchema = z
     }
   })
 export type ProblemMetadataMutationRequest = z.infer<typeof problemMetadataMutationRequestSchema>
+
+export const problemMetadataGenerationRequestSchema = z
+  .object({ revisionId: publicIdSchema })
+  .strict()
+export type ProblemMetadataGenerationRequest = z.infer<
+  typeof problemMetadataGenerationRequestSchema
+>
+
+export const problemMetadataGenerationSchema = z
+  .object({
+    revisionId: publicIdSchema,
+    groupLessonId: publicIdSchema,
+    rows: z.array(problemMetadataMutationRowSchema).min(1).max(2_000),
+    warnings: z.array(z.string().trim().min(1).max(600)).max(100),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((result, context) => {
+    const identities = result.rows.map(
+      (row) => `${row.sourceOrdinal}\u0000${row.sourceItem}`,
+    )
+    const problemIds = result.rows.map((row) => row.problemId)
+    if (new Set(identities).size !== identities.length) {
+      context.addIssue({ code: 'custom', message: 'Metadata identities must be unique' })
+    }
+    if (new Set(problemIds).size !== problemIds.length) {
+      context.addIssue({ code: 'custom', message: 'Metadata problem IDs must be unique' })
+    }
+  })
+export type ProblemMetadataGeneration = z.infer<typeof problemMetadataGenerationSchema>
 
 export const contentPublicationCancellationSchema = contentPublicationSchema
   .extend({ action: z.literal('cancelled'), state: z.literal('superseded') })

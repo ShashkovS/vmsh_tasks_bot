@@ -36,7 +36,26 @@ export interface RevisionAssetsRecoveryProps {
   onCompile: (revision: VersionedContentResource<StaffContentRevision>) => Promise<void>
 }
 
-function describeError(error: unknown): string {
+function describeError(error: unknown, assetRef?: string): string {
+  if (
+    error instanceof ApiResponseError &&
+    (error.code === 'asset_conversion_failed' || error.code === 'content_assets_unavailable')
+  ) {
+    const details = error.details
+    const capability =
+      details && typeof details === 'object' && typeof details.capability === 'string'
+        ? details.capability
+        : undefined
+    const detail =
+      details && typeof details === 'object' && typeof details.detail === 'string'
+        ? details.detail
+        : undefined
+    const subject = assetRef ? `Рисунок TikZ ${assetRef}` : 'Рисунок TikZ'
+    if (error.code === 'content_assets_unavailable') {
+      return `${subject}: на сервере временно недоступен ${capability ?? 'нужный конвертер'}. Повторите позднее.`
+    }
+    return `${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
+  }
   if (error instanceof ApiResponseError && error.status === 409) {
     return 'Revision уже изменилась. Список ресурсов обновлён; проверьте его и повторите действие.'
   }
@@ -144,7 +163,10 @@ export function RevisionAssetsRecovery({
         throw new Error('Сервер не подтвердил прикрепление ресурса')
       }
     } catch (error) {
-      updateDraft(logicalName, { phase: 'error', errorMessage: describeError(error) })
+      updateDraft(logicalName, {
+        phase: 'error',
+        errorMessage: describeError(error, logicalName),
+      })
       if (error instanceof ApiResponseError && error.status === 409) await assetsQuery.refetch()
     } finally {
       setBusyAssetId(undefined)

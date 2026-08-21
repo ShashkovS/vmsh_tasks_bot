@@ -15,7 +15,7 @@ import { ApiResponseError } from '@vmsh/contracts'
 import { TestAttemptRecheckPanel } from '@vmsh/product'
 
 /**
- * Production Staff composition for Phase 4's pending-configuration repair.
+ * Production Staff composition for current-state test-answer repair.
  * The server enforces checker.manage and the product panel only displays the
  * preview-bound aggregate action. See
  * `dev/design-system/05-pages-and-flows.md` and `TestAttemptRecheckPanel`.
@@ -58,7 +58,7 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
 
   return (
     <PageLayout
-      description="Исправление конфигурации не меняет исходные ответы: система добавляет только результат проверки."
+      description="Исправление конфигурации не меняет исходные ответы: их текущий вердикт пересчитывается по новой настройке."
       eyebrow="Администрирование тестовой задачи"
       title={`Задача ${problemId}`}
       width="wide"

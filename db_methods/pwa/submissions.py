@@ -497,6 +497,13 @@ JOIN problem_revisions AS problem_revision
   ON problem_revision.content_revision_id = condition_revision.id
  AND problem_revision.problem_type = 1
  AND problem_revision.answer_type IS NOT NULL
+JOIN content_problem_matches AS problem_match
+  ON problem_match.content_revision_id = problem_revision.content_revision_id
+ AND problem_match.source_ordinal = problem_revision.source_ordinal
+ AND problem_match.source_item = problem_revision.source_item
+ AND problem_match.problem_id = problem_revision.problem_id
+ AND problem_match.resolved_at IS NOT NULL
+ AND problem_match.decision <> 'omit'
 JOIN problems AS problem
   ON problem.id = problem_revision.problem_id
 WHERE account.id = :account_id
@@ -532,6 +539,13 @@ JOIN problem_revisions AS problem_revision
   ON problem_revision.problem_id = problem.id
  AND problem_revision.problem_type = 1
  AND problem_revision.answer_type IS NOT NULL
+JOIN content_problem_matches AS problem_match
+  ON problem_match.content_revision_id = problem_revision.content_revision_id
+ AND problem_match.source_ordinal = problem_revision.source_ordinal
+ AND problem_match.source_item = problem_revision.source_item
+ AND problem_match.problem_id = problem_revision.problem_id
+ AND problem_match.resolved_at IS NOT NULL
+ AND problem_match.decision <> 'omit'
 JOIN content_revisions AS condition_revision
   ON condition_revision.id = problem_revision.content_revision_id
  AND condition_revision.status = 'ready'
@@ -639,13 +653,12 @@ def _resolve_recheck_context(
     return _recheck_context_from_row(rows[0])
 
 
-def _pending_attempts(
+def _recheckable_attempts(
     connection: sqlite3.Connection, *, problem_id: int
 ) -> tuple[_PendingAttempt, ...]:
     rows = connection.execute(
         "SELECT id, public_id, student_user_id, answer_payload_json "
         "FROM test_attempts WHERE problem_id = ? "
-        "AND check_status = 'pending_configuration' "
         "ORDER BY server_received_at, id",
         (problem_id,),
     ).fetchall()
@@ -655,13 +668,13 @@ def _pending_attempts(
             answer_payload = json.loads(str(row["answer_payload_json"]))
         except (json.JSONDecodeError, RecursionError) as error:
             raise TestSubmissionRepositoryError(
-                "stored pending attempt payload is invalid"
+                "stored test attempt payload is invalid"
             ) from error
         if not isinstance(answer_payload, dict) or not isinstance(
             answer_payload.get("displayAnswer"), str
         ):
             raise TestSubmissionRepositoryError(
-                "stored pending attempt display answer is invalid"
+                "stored test attempt display answer is invalid"
             )
         attempts.append(
             _PendingAttempt(
@@ -1218,7 +1231,7 @@ class PwaTestSubmissionRepository:
     async def get_test_attempt_recheck_preview(
         self, *, problem_public_id: str
     ) -> TestAttemptRecheckPreview:
-        """Return the current published checker revision and pending count."""
+        """Return the current published checker revision and all saved attempts."""
 
         if not _PUBLIC_ID.fullmatch(problem_public_id):
             raise ValueError("problem public ID is invalid")
@@ -1227,10 +1240,9 @@ class PwaTestSubmissionRepository:
             context = _resolve_recheck_context(
                 connection, problem_public_id=problem_public_id
             )
-            pending = connection.execute(
+            attempts = connection.execute(
                 "SELECT count(*) AS n FROM test_attempts "
-                "WHERE problem_id = ? "
-                "AND check_status = 'pending_configuration'",
+                "WHERE problem_id = ?",
                 (context.problem_id,),
             ).fetchone()
             return TestAttemptRecheckPreview(
@@ -1239,7 +1251,7 @@ class PwaTestSubmissionRepository:
                 config_version=context.config_version,
                 course_public_id=context.course_public_id,
                 group_public_id=context.group_public_id,
-                pending_attempts=int(pending["n"]),
+                pending_attempts=int(attempts["n"]),
             )
 
         return await self._factory.run_read_async(read)
@@ -1252,12 +1264,10 @@ class PwaTestSubmissionRepository:
         expected_config_version: int,
         actor_user_id: int,
     ) -> TestAttemptRecheckReceipt:
-        """Check unresolved attempts against one explicitly previewed revision.
+        """Re-evaluate every saved answer against the current configuration.
 
-        The original answer, timestamps and problem revision remain immutable.
-        Only a successful current evaluation creates a legacy result and moves
-        the attempt to ``checked``. A still-missing or broken checker leaves the
-        attempt retryable as ``pending_configuration``.
+        Answer payloads stay immutable, but verdicts are current projections:
+        a corrected answer key can turn an old success into a wrong answer.
         """
 
         if not _PUBLIC_ID.fullmatch(problem_public_id):
@@ -1275,7 +1285,7 @@ class PwaTestSubmissionRepository:
             current = _resolve_recheck_context(
                 connection, problem_public_id=problem_public_id
             )
-            return current, _pending_attempts(connection, problem_id=current.problem_id)
+            return current, _recheckable_attempts(connection, problem_id=current.problem_id)
 
         context, pending_attempts = await self._factory.run_read_async(read_recheck)
         if (
@@ -1354,11 +1364,10 @@ class PwaTestSubmissionRepository:
             }:
                 continue
             current = connection.execute(
-                "SELECT check_status FROM test_attempts WHERE id = ? "
-                "AND problem_id = ?",
+                "SELECT id FROM test_attempts WHERE id = ? AND problem_id = ?",
                 (attempt.id, context.problem_id),
             ).fetchone()
-            if current is None or current["check_status"] != "pending_configuration":
+            if current is None:
                 skipped_concurrent += 1
                 continue
             if evaluation.verdict is None or evaluation.checker_version is None:
@@ -1387,7 +1396,7 @@ class PwaTestSubmissionRepository:
             connection.execute(
                 "UPDATE test_attempts SET check_status = 'checked', "
                 "checker_version = ?, verdict = ?, result_id = ?, checked_at = ? "
-                "WHERE id = ? AND check_status = 'pending_configuration'",
+                "WHERE id = ?",
                 (
                     evaluation.checker_version,
                     int(evaluation.verdict),

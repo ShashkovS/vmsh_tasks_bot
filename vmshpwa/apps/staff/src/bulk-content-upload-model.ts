@@ -1,5 +1,6 @@
 import {
   ApiResponseError,
+  type ContentDiagnostic,
   type ContentMaterialKind,
   type ContentUploadTarget,
 } from '@vmsh/contracts'
@@ -18,6 +19,8 @@ export interface BulkContentUploadRow {
   revisionId: string | undefined
   phase: BulkUploadRowPhase
   message: string | undefined
+  diagnostics: ContentDiagnostic[] | undefined
+  missingAssets: string[] | undefined
 }
 
 export function createBulkContentUploadRows(files: readonly File[]): BulkContentUploadRow[] {
@@ -29,6 +32,8 @@ export function createBulkContentUploadRows(files: readonly File[]): BulkContent
     revisionId: undefined,
     phase: 'queued',
     message: undefined,
+    diagnostics: undefined,
+    missingAssets: undefined,
   }))
 }
 

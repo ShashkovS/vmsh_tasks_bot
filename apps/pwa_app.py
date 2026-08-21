@@ -57,6 +57,7 @@ from apps.pwa_api.classroom_routes import classroom_routes
 from apps.pwa_api.classroom_layout_routes import classroom_layout_routes
 from apps.pwa_api.content_routes import (
     PWA_CONTENT_ASSET_SERVICE,
+    PWA_CONTENT_METADATA_GENERATOR,
     PWA_CONTENT_INVALIDATOR,
     PWA_CONTENT_OBJECT_STORAGE,
     PWA_CONTENT_REPOSITORY,
@@ -146,6 +147,10 @@ from helpers.pwa.content import (
     ConfiguredContentAssetConverter,
     ContentAssetConverter,
     ContentAssetService,
+)
+from helpers.pwa.content.metadata_generation import (
+    MetadataGenerator,
+    OpenRouterMetadataGenerator,
 )
 from helpers.pwa.push_delivery import PushSender, deliver_web_push_once
 from helpers.pwa.live_news import ingest_live_news
@@ -756,6 +761,10 @@ async def on_content_startup(app: web.Application) -> None:
                 "PWA content startup requires a verified database factory"
             )
         app[PWA_CONTENT_REPOSITORY] = PwaContentRepository(factory)
+    if PWA_CONTENT_METADATA_GENERATOR not in app:
+        app[PWA_CONTENT_METADATA_GENERATOR] = OpenRouterMetadataGenerator(
+            api_key=_runtime_config(app).openrouter_api_key
+        )
     if PWA_CONTENT_ASSET_SERVICE in app or not app.get(
         PWA_CONTENT_ASSETS_AUTO_WIRE, False
     ):
@@ -1611,6 +1620,7 @@ def configure(
     content_asset_converter: (
         ContentAssetConverter | ConfiguredContentAssetConverter | None
     ) = None,
+    content_metadata_generator: MetadataGenerator | None = None,
     classroom_telegram_sender: TelegramClassroomSender | None = None,
     review_telegram_sender: ReviewTelegramSender | None = None,
     push_sender: PushSender | None = None,
@@ -1997,6 +2007,8 @@ def configure(
                 app[PWA_CONTENT_OBJECT_STORAGE] = object_storage
             if content_asset_converter is not None:
                 app[PWA_CONTENT_ASSET_CONVERTER] = content_asset_converter
+            if content_metadata_generator is not None:
+                app[PWA_CONTENT_METADATA_GENERATOR] = content_metadata_generator
             app[PWA_CONTENT_ASSETS_AUTO_WIRE] = bool(
                 content_asset_service is not None
                 or (object_storage is not None and content_asset_converter is not None)

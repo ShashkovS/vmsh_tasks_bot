@@ -128,10 +128,25 @@ export function BulkContentUpload({
           }
           updateRow(row.id, { phase: 'ready', message: undefined })
         } catch (error) {
+          const revisionId = bulkContentRevisionId(error) ?? recoveryRevisionId
+          let diagnostics: BulkContentUploadRow['diagnostics']
+          let missingAssets: BulkContentUploadRow['missingAssets']
+          if (revisionId) {
+            try {
+              const inspected = await client.diagnostics(revisionId)
+              diagnostics = inspected.data.diagnostics
+              missingAssets = inspected.data.missingAssets
+            } catch {
+              // The exact API error remains useful even if the diagnostic
+              // read races a just-persisted revision or a transient network error.
+            }
+          }
           updateRow(row.id, {
             phase: 'attention',
-            revisionId: bulkContentRevisionId(error) ?? recoveryRevisionId,
+            revisionId,
             message: bulkContentUploadErrorMessage(error),
+            diagnostics,
+            missingAssets,
           })
         }
       }
@@ -316,20 +331,39 @@ export function BulkContentUpload({
                   </div>
                   {row.message ? (
                     <div
-                      className="flex flex-wrap items-center gap-2 text-caption text-status-warning lg:col-span-4"
+                      className="space-y-2 text-caption text-status-warning lg:col-span-4"
                       role="status"
                     >
-                      <span>{row.message}</span>
-                      {recoveryHref ? (
-                        <a
-                          className={buttonVariants({ size: 'xs', variant: 'outline' })}
-                          href={recoveryHref}
-                        >
-                          Открыть занятие
-                          {selectedTarget
-                            ? ` ${targetsQuery.data?.lessonNumber ?? ''} · ${selectedTarget.groupName}`
-                            : ''}
-                        </a>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{row.message}</span>
+                        {recoveryHref ? (
+                          <a
+                            className={buttonVariants({ size: 'xs', variant: 'outline' })}
+                            href={recoveryHref}
+                          >
+                            Открыть исправление
+                            {selectedTarget
+                              ? ` ${targetsQuery.data?.lessonNumber ?? ''} · ${selectedTarget.groupName}`
+                              : ''}
+                          </a>
+                        ) : null}
+                      </div>
+                      {row.missingAssets?.length ? (
+                        <p>
+                          Нужны рисунки: {row.missingAssets.join(', ')}. Их можно выбрать и
+                          проверить на странице исправления.
+                        </p>
+                      ) : null}
+                      {row.diagnostics?.length ? (
+                        <ul className="list-disc space-y-1 pl-4 text-foreground">
+                          {row.diagnostics.map((diagnostic) => (
+                            <li key={`${diagnostic.code}-${diagnostic.span.start.offset}`}>
+                              {diagnostic.span.start.line}:{diagnostic.span.start.column} ·{' '}
+                              {diagnostic.message}
+                              {diagnostic.recovery ? ` ${diagnostic.recovery}` : ''}
+                            </li>
+                          ))}
+                        </ul>
                       ) : null}
                     </div>
                   ) : null}
@@ -368,9 +402,9 @@ export function BulkContentUpload({
             <AlertContent>
               <AlertTitle>Загрузка сохранена, требуется исправление</AlertTitle>
               <AlertDescription>
-                Нажмите «Открыть занятие» рядом с файлом. Там показаны конкретный проблемный
-                рисунок, сохранённая версия и доступные действия. TikZ обрабатывается автоматически;
-                заново создавать занятие не нужно.
+                Точная причина и имена рисунков показаны рядом с каждым файлом. По кнопке
+                «Открыть исправление» доступны сохранённая версия, рисунки и повторная сборка.
+                TikZ обрабатывается автоматически; заново создавать занятие не нужно.
               </AlertDescription>
             </AlertContent>
           </Alert>

@@ -1,5 +1,29 @@
 # Design-system status
 
+## Compile outcome after a conflict — ready for owner check, 21 августа 2026
+
+- Upload action имеет synchronous one-shot guard. При race Staff вместо ложной плашки о конфликте читает сохранённую revision и показывает реальную ошибку LaTeX/TikZ или готовый preview: [`content-page.tsx`](../../apps/staff/src/content-page.tsx).
+
+## TikZ processing feedback — ready for owner check, 21 августа 2026
+
+- У upload и asset-recovery есть человеческие стадии «Готовим рисунки из TikZ» и «Конвертируем TikZ», а не ошибка о неизвестной библиотеке SVG. При сбое Staff получает logical asset и redacted техническую причину: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`revision-assets-recovery.tsx`](../../apps/staff/src/revision-assets-recovery.tsx), [`staff-publishing.tsx`](../../packages/product/src/staff-publishing.tsx).
+
+## Initial metadata AI draft — ready for owner check, 21 августа 2026
+
+- В [`problem-review-workflow.tsx`](../../apps/staff/src/problem-review-workflow.tsx) появился отдельный action «Сгенерировать metadata» только для первой несохранённой таблицы condition. После ответа таблица получает локальный черновик и предупреждения модели; Staff всё ещё обязан проверить строки и явно сохранить их.
+- Кнопка скрыта для следующих revision и published/current-state metadata по server-owned `canGenerateMetadata`, поэтому AI не предлагается как инструмент редактирования истории.
+
+## Published task metadata corrections — ready for owner check, 21 августа 2026
+
+- Staff flow получил явные возвраты к сопоставлению состава и к таблице metadata после публикации: [`problem-review-workflow.tsx`](../../apps/staff/src/problem-review-workflow.tsx). Изменение остаётся current-state действием; старые артефакты не показываются как актуальные задачи.
+- Для тестовой задачи recheck показывает число всех сохранённых ответов и запускает их оценку по исправленной конфигурации: [`test-attempt-recheck.tsx`](../../packages/product/src/test-attempt-recheck.tsx). До owner visual check остаётся пройти flow на реальном занятии.
+
+## Content upload recovery and focused-task preamble — ready for owner check, 21 августа 2026
+
+- Межзадачный раздел и рисунок являются началом следующей задачи, поэтому focused task view не теряет теорию или иллюстрацию после повторной загрузки source: [`web_document.py`](../../../helpers/pwa/content/web_document.py), [`content.ts`](../../packages/contracts/src/content.ts).
+- В Staff batch error больше не сводится к общей подсказке: рядом с файлом видны line/column diagnostics, recovery и missing assets; ссылка «Открыть исправление» открывает сохранённый material flow: [`bulk-content-upload.tsx`](../../apps/staff/src/bulk-content-upload.tsx).
+- Checks: content compiler 84 PASS, Staff bulk-upload Vitest 10 PASS, contracts/Staff typecheck PASS. Visual review of the real upload remains for the owner; published data was not changed.
+
 ## Rich Markdown authoring — готово к visual review, 21 августа 2026
 
 - Staff news и group banners используют общий full-width CodeMirror 6 surface с live preview и diagnostics: [`apps/staff/src/rich-markdown-editor.tsx`](../../apps/staff/src/rich-markdown-editor.tsx). Новая news-публикация находится в полноширинной секции над лентой, не в диалоге: [`apps/staff/src/staff-news-page.tsx`](../../apps/staff/src/staff-news-page.tsx). Пустой draft нейтрален, а временно невалидный Markdown сохраняет прошлый preview 2 секунды. Новый renderer в [`packages/product/src/rich-document.tsx`](../../packages/product/src/rich-document.tsx) не использует `dangerouslySetInnerHTML`; legacy HTML banner остаётся isolated compatibility fallback. Границы: [`12-phase-8-news-and-notifications.md`](../development-plan/12-phase-8-news-and-notifications.md).

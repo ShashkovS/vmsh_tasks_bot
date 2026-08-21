@@ -2,6 +2,34 @@
 
 Последнее обновление: 2026-08-21.
 
+## Content compile conflict recovery — готово к owner-проверке, 21 августа 2026
+
+- Двойной быстрый клик больше не запускает вторую upload/compile цепочку до React render: синхронный guard в [`content-page.tsx`](../../apps/staff/src/content-page.tsx) удерживает ровно один запрос. Это исключает ложный `409 content_conflict` после того, как первый запрос уже сохранил terminal invalid revision.
+- Если конфликт всё же пришёл из второй вкладки или сети, Staff читает сохранённую revision: `invalid` показывает её настоящие diagnostics, `ready` открывает preview. Общее «Материал уже изменён» остаётся только когда durable outcome получить нельзя.
+
+## TikZ progress and conversion diagnostics — готово к owner-проверке, 21 августа 2026
+
+- При upload файла с `tikzpicture` Staff сразу сообщает «Готовим рисунки из TikZ», затем переключается на проверку структуры. В asset recovery каждый TikZ-слот показывает «Конвертируем TikZ», а успешное завершение автоматически продолжает сборку.
+- Ошибка conversion теперь сообщает конкретный logical TikZ asset, недоступный server capability либо безопасную redacted detail конвертера вместо внутреннего «SVG отсутствует в библиотеке assets». Реализация: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`revision-assets-recovery.tsx`](../../apps/staff/src/revision-assets-recovery.tsx), [`staff-publishing.tsx`](../../packages/product/src/staff-publishing.tsx). Product/Staff typecheck и focused Staff Vitest — PASS.
+
+## AI-черновик metadata для первой загрузки — готово к owner-проверке, 21 августа 2026
+
+- После automatic/manual initial matching Staff видит «Сгенерировать metadata» только для первой revision condition без сохранённых metadata. Ответ OpenRouter заполняет исключительно локальный черновик таблицы; публикации и server mutation до кнопки «Сохранить metadata» нет.
+- Серверный адаптер использует официальный async `openrouter` SDK, strict Pydantic JSON Schema, `reasoning_effort="low"` и non-streaming call. Длинный TeX размещён в начале user-prompt, а canonical identities/`problemId` возвращаются и проверяются сервером; лишние или пропущенные model rows отклоняются.
+- Ключ читает только `OPENROUTER_API_KEY` из profile JSON в `Config.openrouter_api_key`, не из environment и не из PWA runtime payload. Full content HTTP + domain generation **51 PASS**, TypeScript contracts/content/Staff и Staff workflow Vitest — PASS; один настоящий structured-output smoke с коротким условием успешно вернул тестовую metadata.
+
+## Исправление опубликованных метаданных — готово к owner-проверке, 21 августа 2026
+
+- Staff может вернуться к составу задач либо к таблице metadata уже опубликованного condition. Лишняя задача исключается из актуального листка, пропущенная добавляется, а исправленный тип/ответ становится единственной истиной для Student/Family.
+- `0082.pwa_published_metadata_corrections.sql` заменяет append-only review current-state версией с отдельным optimistic ETag. Прежние submissions и результаты остаются артефактами, но исключённые задачи не попадают в актуальные выборки.
+- Перепроверка расширена с `pending_configuration` до всех сохранённых ответов текущей тестовой задачи. Regression доказывает: опубликованный правильный ответ `179` после правки ключа на `180` становится неверным. Проверки: full content HTTP **47 PASS**, schema inventory **21 PASS**, content compiler **84 PASS**, Staff/product TypeScript и workflow Vitest — PASS.
+
+## Pilot content upload diagnostics and next-task preambles — 21 августа 2026
+
+- Новый condition parser переносит разделы, пояснения и рисунки между двумя задачами в начало следующей задачи; завершающий блок последней задачи не теряется. Это закреплено в [`web_document.py`](../../../helpers/pwa/content/web_document.py) и regression [`test_content_compiler.py`](../../../pwa_tests/domain/test_content_compiler.py).
+- Массовая загрузка теперь оставляет у проблемной строки server diagnostics с line/column, recovery и missing-asset names, а кнопка «Открыть исправление» ведёт в сохранённую revision. Реализация: [`bulk-content-upload.tsx`](../../apps/staff/src/bulk-content-upload.tsx) и [`bulk-content-upload-model.ts`](../../apps/staff/src/bulk-content-upload-model.ts).
+- Проверки: content compiler **84 PASS**, Staff bulk-upload Vitest **10 PASS**, contracts и Staff TypeScript — PASS; `git diff --check` — PASS. Existing published materials deliberately were not changed.
+
 ## Rich Markdown для новостей и объявлений — готово к review, 21 августа 2026
 
 - В ветке `vmshpwa` реализован сквозной RichDocument v1 для local news и group banners: строгий `@puregram/rich` parser, нормализованный AST, safe React renderer, lazy CodeMirror 6 authoring surface, server-side media copy и v1 wire compatibility. Решение и границы: [`12-phase-8-news-and-notifications.md`](12-phase-8-news-and-notifications.md); runtime contract: [`packages/contracts/src/rich-document.ts`](../../packages/contracts/src/rich-document.ts).

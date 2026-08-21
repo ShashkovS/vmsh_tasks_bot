@@ -414,15 +414,18 @@ def render_web_document(
         raise WebDocumentError("document source_sha256 is invalid")
     mapping = assets or {}
     problems = []
+    pending_condition_blocks: list[dict[str, Any]] = []
     for problem in document.problems:
         blocks = _problem_blocks(problem, role, assets=mapping)
+        # A section, explanation or figure placed between two ``\задача``
+        # environments introduces the next task.  Keeping it on the previous
+        # task made the focused task route omit it together with the previous
+        # task.  CONTENT-IMPORT-03: attach that preamble to the next problem.
+        if role is ContentRole.CONDITION and pending_condition_blocks:
+            blocks = [*pending_condition_blocks, *blocks]
+            pending_condition_blocks = []
         if not blocks:
             continue
-        trailing_blocks = (
-            _blocks(problem.trailing, assets=mapping)
-            if role is ContentRole.CONDITION
-            else []
-        )
         problems.append(
             {
                 "ordinal": problem.ordinal,
@@ -433,9 +436,14 @@ def render_web_document(
                     problem.source_title or "", 500, "problem title", required=False
                 ),
                 "blocks": blocks,
-                "trailingBlocks": trailing_blocks,
             }
         )
+        if role is ContentRole.CONDITION:
+            pending_condition_blocks = _blocks(problem.trailing, assets=mapping)
+    # A tail after the final task has no following task to introduce.  Retain
+    # it in that task instead of silently dropping it from the browser document.
+    if role is ContentRole.CONDITION and pending_condition_blocks and problems:
+        problems[-1]["blocks"].extend(pending_condition_blocks)
     if len(problems) > 2_000:
         raise WebDocumentError("problem list exceeds 2000 items")
     return {

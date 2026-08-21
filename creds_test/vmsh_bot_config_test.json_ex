@@ -43,6 +43,8 @@
   "pwa_vapid_private_key": "",
   "pwa_vapid_subject": "",
   "conduit_import_api_token": "",
+  "sep11": "====== OPENROUTER ======",
+  "OPENROUTER_API_KEY": "sk-or-v1-XXX_HERE",
   "first_admin_password": "REPLACE_WITH_LOCAL_FIRST_ADMIN_PASSWORD",
   "zdummy": "Тупо последняя строка без запятой"
 }
