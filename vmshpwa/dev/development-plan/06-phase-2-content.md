@@ -120,7 +120,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 ## Staff UI
 
 - Routes: `staff/src/routes/lessons.*`, `problems.*`.
-- Upload single/bulk; обычный `usl-*.tex` по умолчанию является условием, `usl-*-sol.tex` загружается сразу как подсказки и решения; per-level selection.
+- Upload single/bulk; обычный `usl-*.tex` по умолчанию является условием, `usl-*-sol.tex` загружается сразу как подсказки и решения; per-level selection. До отдельного UX-решения массовая загрузка скрыта на Staff lesson page; её component и API сохранены, но видимым путём остаются отдельные карточки материалов.
 - Bulk upload never guesses the group by filename: Staff maps every selected
   `.tex` to one explicit group lesson. Material kind defaults to `condition`
   and remains explicitly editable as `condition|hint|solution`. The UI validates

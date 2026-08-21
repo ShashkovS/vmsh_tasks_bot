@@ -1,5 +1,9 @@
 # Design-system status
 
+## Массовая загрузка временно скрыта — 22 августа 2026
+
+- Staff lesson page больше не предлагает путающий batch-блок; загрузка остаётся в явных карточках материалов. Код массового потока не удалён до отдельного UX-решения: [`content-page.tsx`](../../apps/staff/src/content-page.tsx).
+
 ## Compile outcome after a conflict — ready for owner check, 21 августа 2026
 
 - Upload action имеет synchronous one-shot guard. При race Staff вместо ложной плашки о конфликте читает сохранённую revision и показывает реальную ошибку LaTeX/TikZ или готовый preview: [`content-page.tsx`](../../apps/staff/src/content-page.tsx).

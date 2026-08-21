@@ -62,7 +62,6 @@ import {
 
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
 import { ProblemReviewWorkflow } from './problem-review-workflow'
-import { BulkContentUpload } from './bulk-content-upload'
 import { FamilyDigestPanel } from './family-digest-panel'
 import { stableBrowserFile } from './stable-browser-file'
 
@@ -1540,11 +1539,6 @@ export function StaffContentWorkspace({
           client={client}
           draftNamespace={draftNamespace}
           groupLessonId={groupLessonId}
-        />
-        <BulkContentUpload
-          client={client}
-          groupLessonId={groupLessonId}
-          onCompleted={() => history.refetch()}
         />
         {materialOrder.map((kind) => (
           <MaterialWorkflowCard
