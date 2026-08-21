@@ -252,10 +252,17 @@ export interface LatexUploadProps {
   files: LatexFile[]
   sourcePreview?: string
   onRetry?: (id: string) => void
+  retryLabel?: string
   className?: string
 }
 
-export function LatexUpload({ files, sourcePreview, onRetry, className }: LatexUploadProps) {
+export function LatexUpload({
+  files,
+  sourcePreview,
+  onRetry,
+  retryLabel = 'Повторить',
+  className,
+}: LatexUploadProps) {
   return (
     <div className={cn('space-y-3', className)}>
       <ul className="space-y-2">
@@ -265,7 +272,7 @@ export function LatexUpload({ files, sourcePreview, onRetry, className }: LatexU
               <span className="truncate font-mono text-small text-foreground">{file.name}</span>
               {file.status === 'error' ? (
                 <Button onClick={() => onRetry?.(file.id)} size="xs" variant="outline">
-                  Повторить
+                  {retryLabel}
                 </Button>
               ) : (
                 <span className="shrink-0 text-caption text-muted-foreground">

@@ -8,6 +8,10 @@
 
 - У upload и asset-recovery есть человеческие стадии «Готовим рисунки из TikZ» и «Конвертируем TikZ», а не ошибка о неизвестной библиотеке SVG. При сбое Staff получает logical asset и redacted техническую причину: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`revision-assets-recovery.tsx`](../../apps/staff/src/revision-assets-recovery.tsx), [`staff-publishing.tsx`](../../packages/product/src/staff-publishing.tsx).
 
+## Stable file selection and retry — ready for owner check, 22 августа 2026
+
+- File picker показывает первый выбранный файл сразу; повторный выбор тех же bytes не теряется. Terminal invalid state не притворяется повторной сборкой: кнопка «Обновить статус» читает сохранённый исход, а recoverable upload автоматически обновляет ETag перед compile: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`staff-publishing.tsx`](../../packages/product/src/staff-publishing.tsx).
+
 ## Initial metadata AI draft — ready for owner check, 21 августа 2026
 
 - В [`problem-review-workflow.tsx`](../../apps/staff/src/problem-review-workflow.tsx) появился отдельный action «Сгенерировать metadata» только для первой несохранённой таблицы condition. После ответа таблица получает локальный черновик и предупреждения модели; Staff всё ещё обязан проверить строки и явно сохранить их.

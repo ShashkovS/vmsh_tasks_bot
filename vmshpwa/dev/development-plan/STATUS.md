@@ -12,6 +12,11 @@
 - При upload файла с `tikzpicture` Staff сразу сообщает «Готовим рисунки из TikZ», затем переключается на проверку структуры. В asset recovery каждый TikZ-слот показывает «Конвертируем TikZ», а успешное завершение автоматически продолжает сборку.
 - Ошибка conversion теперь сообщает конкретный logical TikZ asset, недоступный server capability либо безопасную redacted detail конвертера вместо внутреннего «SVG отсутствует в библиотеке assets». Реализация: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`revision-assets-recovery.tsx`](../../apps/staff/src/revision-assets-recovery.tsx), [`staff-publishing.tsx`](../../packages/product/src/staff-publishing.tsx). Product/Staff typecheck и focused Staff Vitest — PASS.
 
+## Upload retry and fresh ETag recovery — готово к owner-проверке, 22 августа 2026
+
+- Выбор файла фиксируется в UI синхронно — без ожидания чтения cloud-backed File; его byte snapshot создаётся непосредственно перед upload. Поэтому первый выбор файла виден сразу, а повторный выбор того же файла корректно вызывает `change`.
+- «Найти недостающие рисунки» при `version_conflict` читает revision и ровно один раз повторяет compile с fresh ETag, а не оставляет экран неподвижным. Для terminal invalid revision кнопка `LatexUpload` называется «Обновить статус» и показывает durable diagnostics; uploaded revision продолжает настоящую повторную сборку. [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`staff-publishing.tsx`](../../packages/product/src/staff-publishing.tsx). Product/Staff typecheck и focused Vitest — PASS.
+
 ## AI-черновик metadata для первой загрузки — готово к owner-проверке, 21 августа 2026
 
 - После automatic/manual initial matching Staff видит «Сгенерировать metadata» только для первой revision condition без сохранённых metadata. Ответ OpenRouter заполняет исключительно локальный черновик таблицы; публикации и server mutation до кнопки «Сохранить metadata» нет.

@@ -488,7 +488,10 @@ function MaterialWorkflowCard({
     }))
   }
 
-  const compileStoredRevision = async (revision: VersionedRevision) => {
+  const compileStoredRevision = async (
+    revision: VersionedRevision,
+    refreshedOnce = false,
+  ) => {
     patchState({
       phase: 'processing',
       processingMessage: 'Проверяем LaTeX-файл…',
@@ -526,6 +529,29 @@ function MaterialWorkflowCard({
           }
           if (inspected.data.status === 'ready') {
             await inspectCompiledRevision(inspected.data.revisionId)
+            return
+          }
+          if (inspected.data.status === 'uploaded' && !refreshedOnce) {
+            // A reusable TikZ attachment increments the revision version. The
+            // unfinished-upload card may still carry the previous ETag, so
+            // retry the intended compile exactly once with the fresh resource.
+            await compileStoredRevision(inspected, true)
+            return
+          }
+          if (inspected.data.status === 'uploaded') {
+            setState((current) => ({
+              ...current,
+              phase: 'idle',
+              processingMessage: undefined,
+              revisions: [
+                ...current.revisions.filter(
+                  (candidate) => candidate.data.revisionId !== inspected.data.revisionId,
+                ),
+                inspected,
+              ].sort((left, right) => left.data.revisionNumber - right.data.revisionNumber),
+              errorMessage:
+                'Версия обновилась во время подготовки рисунков. Нажмите «Найти недостающие рисунки» ещё раз.',
+            }))
             return
           }
         } catch {
@@ -567,7 +593,8 @@ function MaterialWorkflowCard({
     selectedFileCompilePendingRef.current = true
     patchState({ phase: 'processing', errorMessage: undefined, processingMessage: 'Читаем LaTeX-файл…' })
     try {
-      const sourceText = await state.file.text()
+      const stableFile = await stableBrowserFile(state.file)
+      const sourceText = await stableFile.text()
       if (/\\(?:begin\s*\{tikzpicture\}|tikz\b)/u.test(sourceText)) {
         patchState({ processingMessage: 'Готовим рисунки из TikZ. Это может занять немного времени…' })
       } else {
@@ -576,8 +603,8 @@ function MaterialWorkflowCard({
       const uploaded = await client.uploadSource({
         groupLessonId,
         kind,
-        logicalFilename: state.file.name,
-        source: state.file,
+        logicalFilename: stableFile.name,
+        source: stableFile,
       })
       setState((current) => ({
         ...current,
@@ -597,6 +624,32 @@ function MaterialWorkflowCard({
     } finally {
       selectedFileCompilePendingRef.current = false
     }
+  }
+
+  const retryFileOrStoredRevision = async () => {
+    if (state.invalidRevision) {
+      try {
+        const inspected = await client.diagnostics(state.invalidRevision.revisionId)
+        if (inspected.data.status === 'uploaded') {
+          await compileStoredRevision(inspected)
+        } else if (inspected.data.status === 'ready') {
+          await inspectCompiledRevision(inspected.data.revisionId)
+        } else {
+          setState((current) => ({
+            ...current,
+            phase: 'invalid',
+            processingMessage: undefined,
+            invalidRevision: inspected.data,
+            errorMessage: undefined,
+          }))
+        }
+      } catch (error) {
+        patchState({ phase: 'error', processingMessage: undefined })
+        handleMutationError(error)
+      }
+      return
+    }
+    await compileSelectedFile()
   }
 
   const loadSelectedPreviews = async () => {
@@ -771,33 +824,26 @@ function MaterialWorkflowCard({
               onChange={(event) => {
                 const selected = event.currentTarget.files?.[0]
                 if (!selected) return
-                void stableBrowserFile(selected).then(
-                  (file) => {
-                    setState((current) => ({
-                      ...current,
-                      file,
-                      phase: 'idle',
-                      processingMessage: undefined,
-                      invalidRevision: undefined,
-                      webDocument: undefined,
-                      telegramHtml: undefined,
-                      pdfPreview: undefined,
-                      pdfCheckedRevisionId: undefined,
-                      pdfErrorMessage: undefined,
-                      previewRevisionId: undefined,
-                      previewLoading: false,
-                      errorMessage: undefined,
-                    }))
-                  },
-                  () => {
-                    patchState({
-                      file: undefined,
-                      phase: 'error',
-                      errorMessage:
-                        'Не удалось прочитать выбранный файл. Скопируйте его на локальный диск и выберите ещё раз.',
-                    })
-                  },
-                )
+                // Store the browser file synchronously. Reading a cloud-backed
+                // file here delayed the visible selection and made the first
+                // picker attempt appear to do nothing. A stable byte snapshot
+                // is still made immediately before upload.
+                event.currentTarget.value = ''
+                setState((current) => ({
+                  ...current,
+                  file: selected,
+                  phase: 'idle',
+                  processingMessage: undefined,
+                  invalidRevision: undefined,
+                  webDocument: undefined,
+                  telegramHtml: undefined,
+                  pdfPreview: undefined,
+                  pdfCheckedRevisionId: undefined,
+                  pdfErrorMessage: undefined,
+                  previewRevisionId: undefined,
+                  previewLoading: false,
+                  errorMessage: undefined,
+                }))
               }}
               type="file"
             />
@@ -836,6 +882,10 @@ function MaterialWorkflowCard({
                 ...(diagnosticMessages?.length ? { diagnostics: diagnosticMessages } : {}),
               },
             ]}
+            onRetry={() => void retryFileOrStoredRevision()}
+            {...(state.invalidRevision?.status === 'invalid'
+              ? { retryLabel: 'Обновить статус' }
+              : {})}
           />
         ) : null}
 
