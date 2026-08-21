@@ -468,6 +468,8 @@ def _asset_conversion_api_error(
         "capability": error.capability,
         "detail": error.detail,
     }
+    if error.debug:
+        payload["debug"] = error.debug
     if details is not None:
         payload.update(details)
     return PwaApiError(

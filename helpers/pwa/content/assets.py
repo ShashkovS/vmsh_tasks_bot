@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
-from helpers.pwa.toolchain import resolve_executable, run_fixed_command
+from helpers.pwa.toolchain import CommandResult, resolve_executable, run_fixed_command
 
 
 _SVG_NAMESPACE: Final = "http://www.w3.org/2000/svg"
@@ -171,10 +171,18 @@ _LOCAL_URL = re.compile(r"url\(#[A-Za-z_][A-Za-z0-9_.:-]*\)")
 class AssetConversionError(RuntimeError):
     """A redacted conversion failure safe for API diagnostics."""
 
-    def __init__(self, code: str, capability: str, detail: str) -> None:
+    def __init__(
+        self,
+        code: str,
+        capability: str,
+        detail: str,
+        *,
+        debug: Mapping[str, str] | None = None,
+    ) -> None:
         self.code = code
         self.capability = capability
         self.detail = detail
+        self.debug = dict(debug or {})
         super().__init__(f"{capability}: {detail}")
 
 
@@ -256,13 +264,19 @@ def _safe_environment(temp_directory: Path) -> dict[str, str]:
 
 
 def _assert_command_succeeded(
-    *, capability: str, return_code: int, output_path: Path, maximum_bytes: int
+    *,
+    capability: str,
+    return_code: int,
+    output_path: Path,
+    maximum_bytes: int,
+    debug: Mapping[str, str] | None = None,
 ) -> bytes:
     if return_code != 0:
         raise AssetConversionError(
             "asset.converter_failed",
             capability,
             f"converter exited with code {return_code}",
+            debug=debug,
         )
     try:
         data = output_path.read_bytes()
@@ -281,6 +295,20 @@ def _assert_command_succeeded(
             "converter output exceeds the configured limit",
         )
     return data
+
+
+def _tikz_failure_debug(
+    *, standalone_tex: str, result: CommandResult, workdir: Path
+) -> dict[str, str]:
+    """Expose bounded Staff-only evidence without leaking the temp path."""
+
+    output = "\n".join(
+        part for part in (result.stdout.strip(), result.stderr.strip()) if part
+    ).replace(str(workdir), "<workdir>")
+    return {
+        "generatedTex": standalone_tex,
+        "toolOutput": output or "Конвертер не вывел сообщения.",
+    }
 
 
 def _validate_tikz_source(source: str) -> str:
@@ -591,9 +619,8 @@ class ContentAssetConverter:
             tex_path = directory / "content.tex"
             pdf_path = directory / "content.pdf"
             svg_path = directory / "content.svg"
-            tex_path.write_text(
-                prepare_tikz_standalone_document(normalized_source), encoding="utf-8"
-            )
+            standalone_tex = prepare_tikz_standalone_document(normalized_source)
+            tex_path.write_text(standalone_tex, encoding="utf-8")
             environment = _safe_environment(directory)
             latex_result = await self._run(
                 capability="latex-to-pdf",
@@ -614,6 +641,11 @@ class ContentAssetConverter:
                 return_code=latex_result.return_code,
                 output_path=pdf_path,
                 maximum_bytes=32 * 1024 * 1024,
+                debug=_tikz_failure_debug(
+                    standalone_tex=standalone_tex,
+                    result=latex_result,
+                    workdir=directory,
+                ),
             )
             svg_result = await self._run(
                 capability="pdf-to-svg",

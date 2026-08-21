@@ -2825,6 +2825,10 @@ async def test_failed_automatic_tikz_keeps_revision_and_returns_recovery_details
             "asset.converter_failed",
             "latex-to-pdf",
             "converter exited with code 1",
+            debug={
+                "generatedTex": "\\documentclass[tikz]{standalone}\n",
+                "toolOutput": "content.tex:7: Undefined control sequence.",
+            },
         )
 
     monkeypatch.setattr(SyntheticAssetConverter, "tikz_to_svg", fail_tikz)
@@ -2846,6 +2850,10 @@ async def test_failed_automatic_tikz_keeps_revision_and_returns_recovery_details
     assert error["details"]["reason"] == "asset.converter_failed"
     assert error["details"]["capability"] == "latex-to-pdf"
     assert error["details"]["detail"] == "converter exited with code 1"
+    assert error["details"]["debug"] == {
+        "generatedTex": "\\documentclass[tikz]{standalone}\n",
+        "toolOutput": "content.tex:7: Undefined control sequence.",
+    }
     assert error["details"]["groupLessonId"] == content_http.group_lesson_a
     assert error["details"]["logicalFilename"] == "usl-03-x.tex"
     assert error["details"]["logicalAsset"].startswith("tikz-")

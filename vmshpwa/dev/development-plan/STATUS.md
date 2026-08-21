@@ -2,6 +2,11 @@
 
 Последнее обновление: 2026-08-22.
 
+## TikZ conversion diagnostics — готово к owner-проверке, 22 августа 2026
+
+- Если `pdflatex` или `pdf2svg` завершается ошибкой, Staff получает этап конвертации, точный сгенерированный standalone `content.tex` и bounded output инструмента; временный server path redacted. Эти данные видны в раскрытом блоке под ошибкой, а не теряются в journal. Реализация: [`assets.py`](../../../helpers/pwa/content/assets.py), [`content_routes.py`](../../../apps/pwa_api/content_routes.py), [`content-page.tsx`](../../apps/staff/src/content-page.tsx).
+- Focused converter/API regression **2 PASS**, Staff typecheck — PASS.
+
 ## TikZ preparation before compile — готово к owner-проверке, 22 августа 2026
 
 - TikZ больше не получает ложную parser-ошибку о «переданной библиотеке assets»: это исходный блок, а не файл, который должен приложить Staff. Перед каждым compile Staff явно запускает server-side preparation, перечитывает revision с fresh ETag и только затем собирает материал. Если converter действительно не справился, отображается его конкретная причина и capability, а не несуществующий SVG. Старые revision с legacy `asset.missing` теперь также направляются в этот recovery path: [`parser.py`](../../../helpers/pwa/content/parser.py), [`content-page.tsx`](../../apps/staff/src/content-page.tsx).

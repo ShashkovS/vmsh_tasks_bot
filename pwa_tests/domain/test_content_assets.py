@@ -149,6 +149,47 @@ pathlib.Path(sys.argv[2]).write_text('<svg xmlns="http://www.w3.org/2000/svg" wi
 
 
 @pytest.mark.asyncio
+async def test_tikz_latex_failure_exposes_generated_tex_and_redacted_tool_output(
+    tmp_path: Path,
+) -> None:
+    tools_dir = tmp_path / "tools"
+    tools_dir.mkdir()
+    temp_root = tmp_path / "work"
+    temp_root.mkdir()
+    pdflatex = _executable(
+        tools_dir,
+        "pdflatex",
+        "import sys\n"
+        "print(f'{sys.argv[-1]}:7: Undefined control sequence.', file=sys.stderr)\n"
+        "raise SystemExit(1)",
+    )
+    unused = _executable(tools_dir, "unused", "raise SystemExit(99)")
+    converter = ContentAssetConverter(
+        ContentAssetTools(
+            pdflatex=str(pdflatex),
+            pdf2svg=str(unused),
+            magick=str(unused),
+            cwebp=str(unused),
+        ),
+        temp_root=temp_root,
+        timeout_seconds=5,
+    )
+
+    with pytest.raises(AssetConversionError) as captured:
+        await converter.tikz_to_svg(
+            r"\begin{tikzpicture}\badcommand\end{tikzpicture}"
+        )
+
+    error = captured.value
+    assert error.capability == "latex-to-pdf"
+    assert error.debug["generatedTex"].startswith(r"\documentclass[tikz,border=5pt]")
+    assert r"\badcommand" in error.debug["generatedTex"]
+    assert "content.tex:7: Undefined control sequence." in error.debug["toolOutput"]
+    assert str(temp_root) not in error.debug["toolOutput"]
+    assert list(temp_root.iterdir()) == []
+
+
+@pytest.mark.asyncio
 async def test_tikz_forbidden_primitive_is_rejected_before_process_start(
     tmp_path: Path,
 ) -> None:

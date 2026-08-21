@@ -133,6 +133,8 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   только отсутствующий внешний рисунок и затем повторяет compilation. Перед compile Staff явно
   запускает TikZ preparation и читает revision с fresh ETag; отсутствие derivative SVG не является
   parser-ошибкой LaTeX. The content client accepts
+  При сбое converter Staff видит точный standalone `content.tex`, stage и bounded redacted tool output,
+  поэтому `content.tex:<line>` из лога можно сопоставить с фактическим server input.
   the exact weak form which a compression filter may produce from the opaque
   version ETag and restores the strong database version token for `If-Match`.
 - После частичной ошибки строка batch сразу показывает сохранённые server diagnostics с

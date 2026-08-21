@@ -109,6 +109,13 @@ interface MaterialWorkflowState {
   scheduleAt: string
   mutationPending: boolean
   errorMessage: string | undefined
+  conversionDebug: TikzConversionDebug | undefined
+}
+
+interface TikzConversionDebug {
+  stage: string
+  generatedTex: string
+  toolOutput: string
 }
 
 type ConfirmationAction = 'publish' | 'schedule' | 'rollback' | 'hide'
@@ -200,6 +207,7 @@ function initialMaterialState(history?: StaffContentMaterialHistory): MaterialWo
     scheduleAt: '',
     mutationPending: false,
     errorMessage: undefined,
+    conversionDebug: undefined,
   }
 }
 
@@ -241,6 +249,18 @@ function errorMessage(error: unknown): string {
   if (error instanceof ApiResponseError) return error.message
   if (error instanceof Error) return error.message
   return 'Не удалось выполнить действие'
+}
+
+function tikzConversionDebug(error: unknown): TikzConversionDebug | undefined {
+  if (!(error instanceof ApiResponseError)) return undefined
+  const details = error.details as Record<string, unknown> | undefined
+  const debug = details?.debug
+  if (!debug || typeof debug !== 'object') return undefined
+  const generatedTex = (debug as Record<string, unknown>).generatedTex
+  const toolOutput = (debug as Record<string, unknown>).toolOutput
+  const stage = typeof details?.capability === 'string' ? details.capability : undefined
+  if (typeof generatedTex !== 'string' || typeof toolOutput !== 'string' || !stage) return undefined
+  return { stage, generatedTex, toolOutput }
 }
 
 async function optionalPdfPreview(
@@ -433,11 +453,15 @@ function MaterialWorkflowCard({
     if (error instanceof ApiResponseError && error.status === 409) {
       patchState({
         errorMessage: 'Материал уже изменён. Обновляем версии и публикации…',
+        conversionDebug: undefined,
       })
       void onConflict()
       return
     }
-    patchState({ errorMessage: errorMessage(error) })
+    patchState({
+      errorMessage: errorMessage(error),
+      conversionDebug: tikzConversionDebug(error),
+    })
   }
 
   const inspectCompiledRevision = async (revisionId: string) => {
@@ -484,6 +508,7 @@ function MaterialWorkflowCard({
       previewLoading: false,
       invalidRevision: undefined,
       errorMessage: undefined,
+      conversionDebug: undefined,
     }))
   }
 
@@ -495,6 +520,7 @@ function MaterialWorkflowCard({
       phase: 'processing',
       processingMessage: 'Проверяем LaTeX-файл…',
       errorMessage: undefined,
+      conversionDebug: undefined,
       invalidRevision: undefined,
       webDocument: undefined,
       telegramHtml: undefined,
@@ -510,6 +536,9 @@ function MaterialWorkflowCard({
       // server converter is reported as such instead of a misleading parser
       // diagnostic about a missing SVG.
       patchState({ processingMessage: 'Готовим рисунки из TikZ…' })
+      if (!client.resolveRevisionAssets) {
+        throw new Error('Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу.')
+      }
       const prepared = await client.resolveRevisionAssets(revision.data.revisionId, revision.etag)
       const inspected = await client.diagnostics(revision.data.revisionId)
       if (prepared.data.missingAssets.length > 0) {
@@ -613,7 +642,12 @@ function MaterialWorkflowCard({
   const compileSelectedFile = async () => {
     if (!state.file || selectedFileCompilePendingRef.current) return
     selectedFileCompilePendingRef.current = true
-    patchState({ phase: 'processing', errorMessage: undefined, processingMessage: 'Читаем LaTeX-файл…' })
+    patchState({
+      phase: 'processing',
+      errorMessage: undefined,
+      conversionDebug: undefined,
+      processingMessage: 'Читаем LaTeX-файл…',
+    })
     try {
       const stableFile = await stableBrowserFile(state.file)
       const sourceText = await stableFile.text()
@@ -1042,7 +1076,27 @@ function MaterialWorkflowCard({
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
               <AlertTitle>Действие не выполнено</AlertTitle>
-              <AlertDescription>{state.errorMessage}</AlertDescription>
+              <AlertDescription className="space-y-3">
+                <p>{state.errorMessage}</p>
+                {state.conversionDebug ? (
+                  <details className="rounded-md border border-status-error/30 bg-surface p-3" open>
+                    <summary className="cursor-pointer font-medium">
+                      Отладка конвертации TikZ: {state.conversionDebug.stage}
+                    </summary>
+                    <p className="mt-3 text-small">
+                      Ниже точный standalone LaTeX, переданный конвертеру, и его вывод.
+                    </p>
+                    <p className="mt-3 text-small font-medium">Сформированный content.tex</p>
+                    <pre className="mt-1 max-h-80 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
+                      {state.conversionDebug.generatedTex}
+                    </pre>
+                    <p className="mt-3 text-small font-medium">Вывод {state.conversionDebug.stage}</p>
+                    <pre className="mt-1 max-h-64 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
+                      {state.conversionDebug.toolOutput}
+                    </pre>
+                  </details>
+                ) : null}
+              </AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}

@@ -1,5 +1,9 @@
 # Design-system status
 
+## TikZ converter debugging — 22 августа 2026
+
+- Conversion failure раскрывает стадию, exact generated `content.tex` и bounded вывод инструмента в scrollable diagnostic block. Staff может сопоставить `content.tex:<line>` из лога с реальным server input без доступа к временной директории: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`assets.py`](../../../helpers/pwa/content/assets.py).
+
 ## TikZ is prepared, not uploaded — 22 августа 2026
 
 - «Найти недостающие рисунки» сначала показывает стадию подготовки TikZ и запускает серверный converter, затем использует freshly read revision для compile. Поэтому Staff не видит внутреннее имя отсутствующего SVG как якобы ошибку исходного LaTeX: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`parser.py`](../../../helpers/pwa/content/parser.py).
