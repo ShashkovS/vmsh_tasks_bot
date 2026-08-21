@@ -379,7 +379,6 @@ export function StudentTestAnswer({
     const checked: ChatMessageView = {
       id: `check:${attempt.attemptId}`,
       author: 'bot',
-      authorName: 'Автопроверка',
       at,
       dateLabel,
       text: testAttemptReply(attempt),
@@ -416,10 +415,7 @@ export function StudentTestAnswer({
         </Button>
       ) : null}
 
-      <TaskChat
-        emptyLabel="Отправьте ответ — проверка придёт сразу."
-        messages={messages}
-      />
+      <TaskChat emptyLabel="Отправьте ответ — проверка придёт сразу." messages={messages} />
 
       {!closed && incompatibleDraft ? (
         <Alert tone="warning">
@@ -467,23 +463,21 @@ export function StudentTestAnswer({
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
-            {pendingItem?.status === 'sending'
-              ? 'Отправляем ответ…'
-              : 'Ответ в очереди — время создания уже зафиксировано, отправим при связи.'}
+            {pendingItem?.status === 'sending' ? 'Отправляем…' : 'Отправим, когда появится сеть.'}
           </p>
           {pendingItem?.status !== 'sending' ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">
-              Повторить сейчас
+              Повторить
             </Button>
           ) : null}
         </div>
       ) : (
         <ChatComposer
-          hint={
-            receipt && !receipt.attempts.unlimited
-              ? `Неверных ответов до конца часа: ${receipt.attempts.remainingThisHour ?? '—'} · ответов сегодня: ${receipt.attempts.remainingToday ?? '—'}.`
-              : null
-          }
+          {...(receipt && !receipt.attempts.unlimited
+            ? {
+                hint: `Осталось попыток: ${receipt.attempts.remainingThisHour ?? '—'} в этот час, ${receipt.attempts.remainingToday ?? '—'} сегодня.`,
+              }
+            : {})}
           onSend={() => void submit()}
           sendDisabled={!answer.trim()}
           sending={sendState === 'sending'}

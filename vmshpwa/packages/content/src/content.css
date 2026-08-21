@@ -383,6 +383,14 @@
   padding-inline: 0.5rem;
 }
 
+/*
+ * Answering happens at full width. A floated drawing may narrow the condition
+ * text beside it, but the conversation under the task starts below the float.
+ */
+.vmsh-problem-workspace {
+  clear: both;
+}
+
 .vmsh-content-heading {
   margin-block: 2rem 0.75rem;
   font-family: 'Computer Modern Serif', serif;

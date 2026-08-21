@@ -188,7 +188,6 @@ function ReviewReactions({
       {now <= Date.parse(editableUntil) ? (
         <ReactionPicker
           disabled={pending}
-          legend="Ваша реакция на проверку"
           onSelect={(reactionId) =>
             onReaction(
               review.reviewId,
@@ -531,10 +530,7 @@ export function StudentWrittenSubmission({
   if (closed) {
     return (
       <section aria-label="Отправленные решения" className="mt-4 space-y-3">
-        <TaskChat
-          emptyLabel="Приём решений завершён, отправленных решений нет."
-          messages={chatMessages}
-        />
+        <TaskChat emptyLabel="Приём решений завершён, ничего не отправлено." messages={chatMessages} />
       </section>
     )
   }
@@ -814,10 +810,7 @@ export function StudentWrittenSubmission({
       aria-label={replacementTarget ? 'Изменить решение' : 'Сдать решение'}
       className="mt-4 space-y-3 border-t border-border pt-4"
     >
-      <TaskChat
-        emptyLabel="Здесь появится переписка по задаче: ваше решение и ответ проверяющего."
-        messages={messages}
-      />
+      <TaskChat emptyLabel="Пока ничего не отправлено." messages={messages} />
 
       {storageError ? (
         <Alert role="alert" tone="danger">
@@ -853,13 +846,11 @@ export function StudentWrittenSubmission({
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
-            {queueItem?.status === 'sending'
-              ? 'Отправляем решение…'
-              : 'Решение в очереди — отправка продолжится, когда появится связь.'}
+            {queueItem?.status === 'sending' ? 'Отправляем…' : 'Отправим, когда появится сеть.'}
           </p>
           {online && queueItem?.status !== 'sending' ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">
-              Повторить сейчас
+              Повторить
             </Button>
           ) : null}
         </div>
@@ -884,18 +875,21 @@ export function StudentWrittenSubmission({
             attachments={attachments}
             attachDisabled={replacementLoading || attachments.length >= 10}
             attachmentsDisabled={replacementLoading}
-            hint={
-              <span className="flex flex-wrap items-center gap-x-3">
-                <span>
-                  Фотографии: {attachments.length} из 10
-                  {photos.length > 0 ? ` · ${formatBytes(totalBytes)}` : ''}
-                </span>
-                {problemType === 'oral' ? (
-                  <span>Устную задачу можно сдать в конференции или письменно здесь.</span>
-                ) : null}
-                {!online ? <span>Нет сети — отправим, когда связь вернётся.</span> : null}
-              </span>
-            }
+            {...(attachments.length > 0 || problemType === 'oral' || !online
+              ? {
+                  hint: (
+                    <span className="flex flex-wrap items-center gap-x-3">
+                      {attachments.length > 0 ? (
+                        <span>
+                          {attachments.length} из 10 фотографий · {formatBytes(totalBytes)}
+                        </span>
+                      ) : null}
+                      {problemType === 'oral' ? <span>Можно сдать и устно на занятии.</span> : null}
+                      {online ? null : <span>Нет сети — отправим позже.</span>}
+                    </span>
+                  ),
+                }
+              : {})}
             onAttach={() => inputRef.current?.click()}
             onMoveAttachmentDown={(id) => move(id, 1)}
             onMoveAttachmentUp={(id) => move(id, -1)}

@@ -192,7 +192,7 @@ export function StudentProblemWorkspace({
   submissionClosed?: boolean
 }) {
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5 font-sans">
+    <div className="vmsh-problem-workspace mt-2 flex flex-wrap items-center gap-1.5 font-sans">
       <Button aria-expanded={answerOpen} onClick={onToggleAnswer} size="sm" variant="ghost">
         <PencilLine aria-hidden="true" className="size-4" />
         {submissionClosed ? 'Мой ответ' : 'Ответить'}
@@ -217,10 +217,7 @@ export function StudentProblemWorkspace({
             problem={problem}
             submissionClosed={submissionClosed}
           />
-          <StudentCollapseAction
-            label={submissionClosed ? 'Скрыть ответ' : 'Свернуть ответ'}
-            onClick={onToggleAnswer}
-          />
+          <StudentCollapseAction label="Свернуть" onClick={onToggleAnswer} />
         </div>
       ) : null}
     </div>

@@ -1,4 +1,4 @@
-import { Bot, Check, Clock, TriangleAlert, UserRound } from 'lucide-react'
+import { Bot, Check, Clock, TriangleAlert } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 
 import { cn } from '@vmsh/ui'
@@ -38,12 +38,16 @@ export interface ChatMessageView {
   footer?: ReactNode
 }
 
-const defaultAuthorName: Record<Exclude<ChatAuthorKind, 'system'>, string> = {
-  student: 'Вы',
+/*
+ * Only a live person needs a byline. An automatic checker does not: the side of
+ * the bubble already says it is not the reader, and the verdict says the rest.
+ * An AI check is the exception — it is always marked, so it can never be read
+ * as a live teacher.
+ */
+const defaultAuthorName: Partial<Record<ChatAuthorKind, string>> = {
   teacher: 'Преподаватель',
   admin: 'Администратор',
   ai: 'Проверил ИИ',
-  bot: 'Бот',
 }
 
 const deliveryView: Record<ChatDeliveryState, { icon: typeof Check; label: string }> = {
@@ -53,15 +57,13 @@ const deliveryView: Record<ChatDeliveryState, { icon: typeof Check; label: strin
   failed: { icon: TriangleAlert, label: 'Не отправлено' },
 }
 
-function DeliveryMark({ state }: { state: ChatDeliveryState }) {
+/** Delivery is a mark, not a sentence: the word only reaches assistive tech. */
+function DeliveryIcon({ state }: { state: ChatDeliveryState }) {
   const { icon: Icon, label } = deliveryView[state]
-  // `cn` merges Tailwind `text-*` classes and reads the project's font-size
-  // tokens as colours, so a size and a colour never share one cn() call.
-  const tone = state === 'failed' ? 'text-danger' : 'text-muted-foreground'
   return (
-    <span className={`inline-flex items-center gap-1 text-caption ${tone}`}>
-      <Icon aria-hidden="true" className="size-3.5" />
-      {label}
+    <span className={state === 'failed' ? 'text-danger' : undefined}>
+      <Icon aria-hidden="true" className="inline size-3.5" />
+      <span className="sr-only">{label}</span>
     </span>
   )
 }
@@ -84,22 +86,33 @@ export function ChatMessage({ message }: { message: ChatMessageView }) {
   if (message.author === 'system') {
     return (
       <li className="flex justify-center">
-        <div className="max-w-[90%] rounded-full bg-surface-subtle px-3 py-1 text-center text-caption text-muted-foreground">
+        <span className="max-w-[90%] rounded-full bg-surface-subtle px-2.5 py-0.5 text-center text-caption text-muted-foreground">
           {message.text}
-        </div>
+        </span>
       </li>
     )
   }
 
   const ai = message.author === 'ai'
   const own = message.own ?? message.author === 'student'
-  const name = message.authorName ?? defaultAuthorName[message.author]
+  const name = message.authorName ?? defaultAuthorName[message.author] ?? null
+  const verdict = message.verdict ? (
+    <VerdictMark className="mr-1 align-[-0.15em]" verdict={message.verdict} />
+  ) : null
+  // Time rides at the end of the text instead of claiming a line of its own.
+  const meta = (
+    <span className="ml-1.5 inline-flex items-baseline gap-1 align-baseline text-caption text-muted-foreground">
+      {message.edited ? <span>изм.</span> : null}
+      {message.at ? <time className="font-num">{message.at}</time> : null}
+      {message.delivery ? <DeliveryIcon state={message.delivery} /> : null}
+    </span>
+  )
 
   return (
-    <li className={cn('flex flex-col gap-1', own ? 'items-end' : 'items-start')}>
+    <li className={cn('flex flex-col', own ? 'items-end' : 'items-start')}>
       <div
         className={cn(
-          'max-w-[92%] space-y-2 rounded-lg border px-3 py-2 sm:max-w-[85%]',
+          'max-w-[92%] space-y-1 rounded-lg border px-2.5 py-1.5 sm:max-w-[85%]',
           ai
             ? 'border-dashed border-provenance-ai-border bg-provenance-ai-surface'
             : own
@@ -107,38 +120,28 @@ export function ChatMessage({ message }: { message: ChatMessageView }) {
               : 'border-border bg-surface',
         )}
       >
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          {message.verdict ? <VerdictMark showLabel verdict={message.verdict} /> : null}
-          {own ? null : (
-            <span className="inline-flex items-center gap-1 text-label font-medium text-foreground">
-              {ai ? (
-                <Bot aria-hidden="true" className="size-3.5 text-provenance-ai" />
-              ) : message.author === 'bot' ? (
-                <Bot aria-hidden="true" className="size-3.5 text-muted-foreground" />
-              ) : (
-                <UserRound aria-hidden="true" className="size-3.5 text-provenance-human" />
-              )}
-              {name}
-            </span>
-          )}
-        </div>
+        {own || !name ? null : (
+          <p className="flex items-center gap-1 text-caption font-medium text-muted-foreground">
+            {ai ? <Bot aria-hidden="true" className="size-3.5 text-provenance-ai" /> : null}
+            {name}
+          </p>
+        )}
         {message.text ? (
-          <div className="text-small leading-relaxed whitespace-pre-line text-foreground">
+          <p className="text-small leading-snug whitespace-pre-line text-foreground">
+            {verdict}
             {message.text}
-          </div>
+            {meta}
+          </p>
         ) : null}
         {message.media}
-        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
-          {message.edited ? (
-            <span className="text-caption text-muted-foreground">изменено</span>
-          ) : null}
-          {message.at ? (
-            <time className="font-num text-caption text-muted-foreground">{message.at}</time>
-          ) : null}
-          {message.delivery ? <DeliveryMark state={message.delivery} /> : null}
-        </div>
+        {message.text ? null : (
+          <p className="flex items-center justify-end">
+            {verdict}
+            {meta}
+          </p>
+        )}
       </div>
-      {message.actions ? <div className="flex flex-wrap gap-1.5">{message.actions}</div> : null}
+      {message.actions ? <div className="flex flex-wrap gap-1">{message.actions}</div> : null}
       {message.footer ? <div className="w-full">{message.footer}</div> : null}
     </li>
   )
@@ -158,12 +161,12 @@ export function TaskChat({ messages, emptyLabel, className }: TaskChatProps) {
     ) : null
   }
   return (
-    <ol aria-label="Переписка по задаче" className={cn('space-y-2 font-sans', className)}>
+    <ol aria-label="Переписка по задаче" className={cn('space-y-1 font-sans', className)}>
       {withDateDividers(messages).map(({ message, divider }) => {
         return (
           <Fragment key={message.id}>
             {divider ? (
-              <li className="flex justify-center pt-1">
+              <li className="flex justify-center pt-0.5">
                 <span className="rounded-full bg-surface-subtle px-2.5 py-0.5 text-caption text-muted-foreground">
                   {divider}
                 </span>

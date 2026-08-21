@@ -15,6 +15,21 @@ const strokeForColor: Record<ReviewAnnotationColor, string> = {
   amber: 'var(--annotation-highlight)',
 }
 
+/*
+ * Reading a checked page needs the same freedom as reading a drawing: a step
+ * below the natural width lets a tall page stop dominating the conversation.
+ */
+const ZOOM_LADDER = [0.25, 0.5, 0.75, 1, 1.5, 2, 3] as const
+const NATURAL_ZOOM = 1
+const MINIMUM_ZOOM = ZOOM_LADDER[0]
+const MAXIMUM_ZOOM = ZOOM_LADDER.at(-1) ?? NATURAL_ZOOM
+
+function stepZoom(current: number, direction: 1 | -1): number {
+  const found = ZOOM_LADDER.findIndex((step) => step >= current - 0.001)
+  const index = found === -1 ? ZOOM_LADDER.length - 1 : found
+  return ZOOM_LADDER[Math.min(ZOOM_LADDER.length - 1, Math.max(0, index + direction))] ?? current
+}
+
 function pathFromPoints(points: Array<{ x: number; y: number }>): string {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
 }
@@ -27,6 +42,8 @@ export interface ReviewAnnotationSurfaceProps {
   zoom: number
   overlayProps?: Omit<SVGProps<SVGSVGElement>, 'viewBox'>
   testId?: string
+  /** Extra classes for the scroll region, e.g. a height bound when reading. */
+  className?: string
 }
 
 /** One geometry implementation shared by the Staff editor and read-only viewers. */
@@ -38,6 +55,7 @@ export function ReviewAnnotationSurface({
   zoom,
   overlayProps,
   testId,
+  className,
 }: ReviewAnnotationSurfaceProps) {
   const [dimensions, setDimensions] = useState({ width: 4, height: 3 })
   const scrollRegionRef = useRef<HTMLDivElement>(null)
@@ -59,7 +77,10 @@ export function ReviewAnnotationSurface({
   return (
     <div
       aria-label="Фотография с разметкой; область можно прокручивать после увеличения"
-      className="max-w-full overflow-auto rounded-md border border-paper-edge bg-surface-sunken p-2"
+      className={cn(
+        'max-w-full overflow-auto rounded-md border border-paper-edge bg-surface-sunken p-1',
+        className,
+      )}
       ref={scrollRegionRef}
       role="region"
       // A zoomed canvas must be keyboard-focusable so its scroll area is reachable.
@@ -122,12 +143,13 @@ export function ReviewAnnotationViewer({
   manifest,
   className,
 }: ReviewAnnotationViewerProps) {
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState(NATURAL_ZOOM)
   const textMarks = manifest.marks.filter((mark) => mark.kind === 'text')
 
   return (
-    <figure className={cn('space-y-2', className)}>
+    <figure className={cn('space-y-1', className)}>
       <ReviewAnnotationSurface
+        className="max-h-[70vh]"
         imageAlt={imageAlt}
         imageSource={imageSource}
         marks={manifest.marks}
@@ -139,9 +161,9 @@ export function ReviewAnnotationViewer({
       <div className="flex flex-wrap items-center gap-1">
         <Button
           aria-label="Уменьшить масштаб"
-          disabled={zoom <= 1}
-          onClick={() => setZoom((value) => Math.max(1, value - 0.5))}
-          size="icon-sm"
+          disabled={zoom <= MINIMUM_ZOOM}
+          onClick={() => setZoom((value) => stepZoom(value, -1))}
+          size="icon-xs"
           type="button"
           variant="outline"
         >
@@ -149,9 +171,9 @@ export function ReviewAnnotationViewer({
         </Button>
         <Button
           aria-label="Увеличить масштаб"
-          disabled={zoom >= 3}
-          onClick={() => setZoom((value) => Math.min(3, value + 0.5))}
-          size="icon-sm"
+          disabled={zoom >= MAXIMUM_ZOOM}
+          onClick={() => setZoom((value) => stepZoom(value, 1))}
+          size="icon-xs"
           type="button"
           variant="outline"
         >
@@ -159,22 +181,23 @@ export function ReviewAnnotationViewer({
         </Button>
         <Button
           aria-label="Сбросить масштаб"
-          disabled={zoom === 1}
-          onClick={() => setZoom(1)}
-          size="icon-sm"
+          disabled={zoom === NATURAL_ZOOM}
+          onClick={() => setZoom(NATURAL_ZOOM)}
+          size="icon-xs"
           type="button"
           variant="ghost"
         >
           <Maximize2 aria-hidden="true" />
         </Button>
-        <figcaption className="font-num text-caption text-muted-foreground">
-          Пометки преподавателя · {Math.round(zoom * 100)}% · {manifest.rotation}°
+        <figcaption className="text-caption text-muted-foreground">
+          Пометки преподавателя · <span className="font-num">{Math.round(zoom * 100)}%</span>
+          {zoom > NATURAL_ZOOM ? ' · можно прокрутить' : ''}
         </figcaption>
       </div>
       {textMarks.length > 0 ? (
         <ul className="space-y-1 text-small text-foreground">
           {textMarks.map((mark) => (
-            <li className="rounded-md border border-border bg-surface px-3 py-2" key={mark.markId}>
+            <li className="rounded-md border border-border bg-surface px-2.5 py-1.5" key={mark.markId}>
               {mark.data.text}
             </li>
           ))}

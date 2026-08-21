@@ -9,9 +9,15 @@ import {
 
 import type { WebFigureAvailableAsset } from '@vmsh/contracts'
 
-const MINIMUM_ZOOM = 1
-const MAXIMUM_ZOOM = 4
-const ZOOM_STEP = 0.5
+/*
+ * A fixed ladder instead of a step: below the natural width a reader wants
+ * finer control (a big drawing should be able to get out of the way), above it
+ * coarser jumps are enough.
+ */
+const ZOOM_LADDER = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] as const
+const NATURAL_ZOOM = 1
+const MINIMUM_ZOOM = ZOOM_LADDER[0]
+const MAXIMUM_ZOOM = ZOOM_LADDER.at(-1) ?? NATURAL_ZOOM
 
 export interface ZoomableAssetFigureProps {
   asset: WebFigureAvailableAsset
@@ -22,8 +28,10 @@ export interface ZoomableAssetFigureProps {
   widthHint?: string
 }
 
-function clampZoom(value: number): number {
-  return Math.min(MAXIMUM_ZOOM, Math.max(MINIMUM_ZOOM, Math.round(value * 100) / 100))
+function stepZoom(current: number, direction: 1 | -1): number {
+  const found = ZOOM_LADDER.findIndex((step) => step >= current - 0.001)
+  const index = found === -1 ? ZOOM_LADDER.length - 1 : found
+  return ZOOM_LADDER[Math.min(ZOOM_LADDER.length - 1, Math.max(0, index + direction))] ?? current
 }
 
 /**
@@ -39,13 +47,13 @@ export function ZoomableAssetFigure({
   widthHint,
 }: ZoomableAssetFigureProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
-  const [zoom, setZoom] = useState(MINIMUM_ZOOM)
+  const [zoom, setZoom] = useState(NATURAL_ZOOM)
   const [failedSource, setFailedSource] = useState<string | null>(null)
   const imageFailed = failedSource === asset.src
 
-  const changeZoom = useCallback((requestedZoom: number) => {
-    const nextZoom = clampZoom(requestedZoom)
+  const changeZoom = useCallback((direction: 1 | -1) => {
     setZoom((currentZoom) => {
+      const nextZoom = stepZoom(currentZoom, direction)
       if (nextZoom === currentZoom) return currentZoom
       const viewport = viewportRef.current
       const horizontalCenter = viewport
@@ -65,7 +73,7 @@ export function ZoomableAssetFigure({
   }, [])
 
   const reset = useCallback(() => {
-    setZoom(MINIMUM_ZOOM)
+    setZoom(NATURAL_ZOOM)
     window.requestAnimationFrame(() => {
       const viewport = viewportRef.current
       if (viewport) viewport.scrollTo({ left: 0, top: 0 })
@@ -75,10 +83,10 @@ export function ZoomableAssetFigure({
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === '+' || event.key === '=') {
       event.preventDefault()
-      changeZoom(zoom + ZOOM_STEP)
+      changeZoom(1)
     } else if (event.key === '-') {
       event.preventDefault()
-      changeZoom(zoom - ZOOM_STEP)
+      changeZoom(-1)
     } else if (event.key === '0') {
       event.preventDefault()
       reset()
@@ -90,7 +98,7 @@ export function ZoomableAssetFigure({
     <figure
       className={['vmsh-asset-figure', className].filter(Boolean).join(' ')}
       data-float-hint={floatHint}
-      data-zoomed={zoom > MINIMUM_ZOOM ? 'true' : undefined}
+      data-zoomed={zoom > NATURAL_ZOOM ? 'true' : undefined}
       style={widthHint ? ({ '--vmsh-source-width': widthHint } as CSSProperties) : undefined}
     >
       <div
@@ -131,7 +139,7 @@ export function ZoomableAssetFigure({
         <button
           aria-label="Уменьшить рисунок"
           disabled={zoom <= MINIMUM_ZOOM || imageFailed}
-          onClick={() => changeZoom(zoom - ZOOM_STEP)}
+          onClick={() => changeZoom(-1)}
           type="button"
         >
           −
@@ -139,14 +147,14 @@ export function ZoomableAssetFigure({
         <button
           aria-label="Увеличить рисунок"
           disabled={zoom >= MAXIMUM_ZOOM || imageFailed}
-          onClick={() => changeZoom(zoom + ZOOM_STEP)}
+          onClick={() => changeZoom(1)}
           type="button"
         >
           +
         </button>
         <button
           aria-label="Сбросить масштаб"
-          disabled={zoom === MINIMUM_ZOOM || imageFailed}
+          disabled={zoom === NATURAL_ZOOM || imageFailed}
           onClick={reset}
           title="Сбросить масштаб"
           type="button"

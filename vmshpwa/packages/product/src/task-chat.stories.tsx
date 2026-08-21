@@ -77,7 +77,6 @@ export const HumanVerdict: Story = {
           text: 'Неплохо! Но не доказано, что других квадратов нет.',
           footer: (
             <ReactionPicker
-              legend="Ваша реакция на проверку"
               onSelect={() => undefined}
               options={reactionsForScope('student-written')}
               value={null}
@@ -136,7 +135,6 @@ export const BotDialogue: Story = {
         {
           id: 'c1',
           author: 'bot',
-          authorName: 'Автопроверка',
           at: '18:02',
           dateLabel: '20 сентября',
           verdict: findVerdict(binaryVerdictScale, 'rejected')!,
@@ -154,7 +152,6 @@ export const BotDialogue: Story = {
         {
           id: 'c2',
           author: 'bot',
-          authorName: 'Автопроверка',
           at: '18:05',
           dateLabel: '20 сентября',
           verdict: findVerdict(binaryVerdictScale, 'plus')!,
@@ -195,8 +192,7 @@ export const Empty: Story = {
   name: 'Пока пусто',
   render: () => (
     <TaskChat
-      emptyLabel="Здесь появится переписка по задаче: ваше решение и ответ проверяющего."
-      messages={[]}
+      emptyLabel="Пока ничего не отправлено." messages={[]}
     />
   ),
 }
@@ -214,7 +210,7 @@ export const WrittenComposer: Story = {
     return (
       <ChatComposer
         attachments={pages}
-        hint={`Фотографии: ${pages.length} из 10`}
+        {...(pages.length > 0 ? { hint: `${pages.length} из 10 фотографий` } : {})}
         onAttach={() => undefined}
         onRemoveAttachment={(id) => setPages((current) => current.filter((p) => p.id !== id))}
         onSend={() => setText('')}
