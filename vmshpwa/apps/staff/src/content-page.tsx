@@ -505,7 +505,30 @@ function MaterialWorkflowCard({
       previewLoading: false,
     })
     try {
-      const compiled = await client.compileRevision(revision.data.revisionId, revision.etag)
+      // TikZ is a source block, not an attachment Staff has to discover or
+      // upload.  Prepare it explicitly before compilation so an unavailable
+      // server converter is reported as such instead of a misleading parser
+      // diagnostic about a missing SVG.
+      patchState({ processingMessage: 'Готовим рисунки из TikZ…' })
+      const prepared = await client.resolveRevisionAssets(revision.data.revisionId, revision.etag)
+      const inspected = await client.diagnostics(revision.data.revisionId)
+      if (prepared.data.missingAssets.length > 0) {
+        const invalidRevision = staffContentRevisionSchema.parse({
+          ...inspected.data,
+          missingAssets: prepared.data.missingAssets,
+        })
+        setState((current) => ({
+          ...current,
+          phase: 'invalid',
+          processingMessage: undefined,
+          invalidRevision,
+          previewLoading: false,
+          errorMessage: undefined,
+        }))
+        return
+      }
+      patchState({ processingMessage: 'Проверяем LaTeX-файл…' })
+      const compiled = await client.compileRevision(inspected.data.revisionId, inspected.etag)
       await inspectCompiledRevision(compiled.data.revisionId)
     } catch (error) {
       // A short second click (or a second Staff tab) can reach a revision just
@@ -629,7 +652,10 @@ function MaterialWorkflowCard({
     if (state.invalidRevision) {
       try {
         const inspected = await client.diagnostics(state.invalidRevision.revisionId)
-        if (inspected.data.status === 'uploaded') {
+        const hasRecoverableAssetDiagnostic = inspected.data.diagnostics.some(
+          (diagnostic) => diagnostic.code === 'asset.missing',
+        )
+        if (inspected.data.status === 'uploaded' || hasRecoverableAssetDiagnostic) {
           await compileStoredRevision(inspected)
         } else if (inspected.data.status === 'ready') {
           await inspectCompiledRevision(inspected.data.revisionId)

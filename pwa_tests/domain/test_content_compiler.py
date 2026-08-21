@@ -354,27 +354,9 @@ def test_published_descriptor_wins_over_conflicting_legacy_url_for_all_renderers
     assert "other.example.test" not in result.telegram.content
 
 
-@pytest.mark.parametrize(
-    ("body", "logical_name"),
-    [
-        (
-            r"\задача \includegraphics{missing.svg} \кзадача",
-            "missing.svg",
-        ),
-        (
-            (
-                r"\задача \begin{tikzpicture}\draw (0,0)--(1,1);"
-                r"\end{tikzpicture} \кзадача"
-            ),
-            "tikz-1435a39e5123382b",
-        ),
-    ],
-)
-def test_missing_asset_remains_an_explicit_diagnostic_and_wire_state(
-    body: str, logical_name: str
-) -> None:
+def test_missing_external_asset_remains_an_explicit_diagnostic_and_wire_state() -> None:
     result = _compile(
-        body,
+        r"\задача \includegraphics{missing.svg} \кзадача",
         known_assets={},
     )
 
@@ -382,7 +364,28 @@ def test_missing_asset_remains_an_explicit_diagnostic_and_wire_state(
     assert result.web_document is not None
     document = json.loads(result.web_document.content)
     figure = document["problems"][0]["blocks"][0]
-    assert figure["asset"] == {"status": "missing", "logicalName": logical_name}
+    assert figure["asset"] == {"status": "missing", "logicalName": "missing.svg"}
+    assert "<img" not in result.web.content
+    assert "<img" not in result.telegram.content
+
+
+def test_unprepared_tikz_is_a_recoverable_asset_state_not_a_latex_error() -> None:
+    result = _compile(
+        (
+            r"\задача \begin{tikzpicture}\draw (0,0)--(1,1);"
+            r"\end{tikzpicture} \кзадача"
+        ),
+        known_assets={},
+    )
+
+    assert "asset.missing" not in _codes(result)
+    assert result.web_document is not None
+    document = json.loads(result.web_document.content)
+    figure = document["problems"][0]["blocks"][0]
+    assert figure["asset"] == {
+        "status": "missing",
+        "logicalName": "tikz-1435a39e5123382b",
+    }
     assert "<img" not in result.web.content
     assert "<img" not in result.telegram.content
 

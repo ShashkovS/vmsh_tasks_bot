@@ -130,7 +130,9 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
 - A revision blocked by missing external assets remains saved. The bulk row links directly
   to the affected material card; каждый TikZ сервер собирает автоматически, а Staff загружает
-  только отсутствующий внешний рисунок и затем повторяет compilation. The content client accepts
+  только отсутствующий внешний рисунок и затем повторяет compilation. Перед compile Staff явно
+  запускает TikZ preparation и читает revision с fresh ETag; отсутствие derivative SVG не является
+  parser-ошибкой LaTeX. The content client accepts
   the exact weak form which a compression filter may produce from the opaque
   version ETag and restores the strong database version token for `If-Match`.
 - После частичной ошибки строка batch сразу показывает сохранённые server diagnostics с

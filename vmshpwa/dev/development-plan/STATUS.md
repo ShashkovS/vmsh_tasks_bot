@@ -2,6 +2,11 @@
 
 Последнее обновление: 2026-08-22.
 
+## TikZ preparation before compile — готово к owner-проверке, 22 августа 2026
+
+- TikZ больше не получает ложную parser-ошибку о «переданной библиотеке assets»: это исходный блок, а не файл, который должен приложить Staff. Перед каждым compile Staff явно запускает server-side preparation, перечитывает revision с fresh ETag и только затем собирает материал. Если converter действительно не справился, отображается его конкретная причина и capability, а не несуществующий SVG. Старые revision с legacy `asset.missing` теперь также направляются в этот recovery path: [`parser.py`](../../../helpers/pwa/content/parser.py), [`content-page.tsx`](../../apps/staff/src/content-page.tsx).
+- Regression: content compiler **84 PASS**, Staff typecheck — PASS.
+
 ## Массовая загрузка скрыта — 22 августа 2026
 
 - Блок массовой загрузки больше не показывается в Staff-карточке занятия: пока его UX перерабатывается, единственный видимый путь загрузки — отдельные карточки условия, подсказки и решения. Компонент и API намеренно сохранены, чтобы вернуться к функции без восстановления backend-контракта: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`bulk-content-upload.tsx`](../../apps/staff/src/bulk-content-upload.tsx).

@@ -1,5 +1,9 @@
 # Design-system status
 
+## TikZ is prepared, not uploaded — 22 августа 2026
+
+- «Найти недостающие рисунки» сначала показывает стадию подготовки TikZ и запускает серверный converter, затем использует freshly read revision для compile. Поэтому Staff не видит внутреннее имя отсутствующего SVG как якобы ошибку исходного LaTeX: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`parser.py`](../../../helpers/pwa/content/parser.py).
+
 ## Массовая загрузка временно скрыта — 22 августа 2026
 
 - Staff lesson page больше не предлагает путающий batch-блок; загрузка остаётся в явных карточках материалов. Код массового потока не удалён до отдельного UX-решения: [`content-page.tsx`](../../apps/staff/src/content-page.tsx).
