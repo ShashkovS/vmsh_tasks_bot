@@ -1,5 +1,9 @@
 # Design-system status
 
+## Cyrillic TikZ source — 22 августа 2026
+
+- Отладочный `content.tex` теперь явно UTF-8/T2A/Russian и не содержит legacy Cyrillic control sequence `\пункт`: generated TikZ подставляет ASCII `\vmshPartLabel`, сохраняя его видимый label. Это устраняет ошибку `Invalid UTF-8 byte` в isolated pdfLaTeX: [`tikz.py`](../../../helpers/pwa/content/tikz.py), [`assets.py`](../../../helpers/pwa/content/assets.py).
+
 ## TikZ converter debugging — 22 августа 2026
 
 - Conversion failure раскрывает стадию, exact generated `content.tex` и bounded вывод инструмента в scrollable diagnostic block. Staff может сопоставить `content.tex:<line>` из лога с реальным server input без доступа к временной директории: [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`assets.py`](../../../helpers/pwa/content/assets.py).

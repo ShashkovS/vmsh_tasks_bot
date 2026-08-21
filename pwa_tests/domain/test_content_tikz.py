@@ -75,7 +75,9 @@ def test_tikz_scan_supplies_legacy_part_label_used_by_real_lessons() -> None:
     assert not scan.issues
     assert len(scan.sources) == 1
     source = scan.sources[0]
-    assert r"\newcommand{\пункт}" in source.source
+    assert r"\newcommand{\vmshPartLabel}" in source.source
+    assert r"\пункт" not in source.source
+    assert r"\vmshPartLabel" in source.source
     assert r"\alph{vmshpart})" in source.source
 
 
@@ -175,6 +177,8 @@ def test_standalone_preparation_is_pure_and_keeps_security_boundary() -> None:
         r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
     )
     assert document.startswith(r"\documentclass")
+    assert r"\usepackage[utf8]{inputenc}" in document
+    assert r"\usepackage[russian,english]{babel}" in document
     assert document.endswith("\\end{document}\n")
 
     with pytest.raises(AssetConversionError) as captured:

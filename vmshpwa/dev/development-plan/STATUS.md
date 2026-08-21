@@ -2,6 +2,11 @@
 
 Последнее обновление: 2026-08-22.
 
+## Cyrillic TikZ standalone compatibility — готово к owner-проверке, 22 августа 2026
+
+- Исходный Windows-1251 TeX декодируется до extraction как прежде; ошибка `Invalid UTF-8 byte "BF` возникала уже в server-generated UTF-8 `content.tex` на Cyrillic control sequence `\пункт`. TikZ extractor заменяет legacy command только в производном source на ASCII `\vmshPartLabel`, а standalone preamble явно задаёт UTF-8, T2A и Russian babel. Uploaded source не меняется: [`tikz.py`](../../../helpers/pwa/content/tikz.py), [`assets.py`](../../../helpers/pwa/content/assets.py).
+- Parser/TikZ regression **93 PASS**. Реальный production smoke с фрагментом пользовательского source требует явного разрешения на передачу приватного фрагмента на сервер.
+
 ## TikZ conversion diagnostics — готово к owner-проверке, 22 августа 2026
 
 - Если `pdflatex` или `pdf2svg` завершается ошибкой, Staff получает этап конвертации, точный сгенерированный standalone `content.tex` и bounded output инструмента; временный server path redacted. Эти данные видны в раскрытом блоке под ошибкой, а не теряются в journal. Реализация: [`assets.py`](../../../helpers/pwa/content/assets.py), [`content_routes.py`](../../../apps/pwa_api/content_routes.py), [`content-page.tsx`](../../apps/staff/src/content-page.tsx).

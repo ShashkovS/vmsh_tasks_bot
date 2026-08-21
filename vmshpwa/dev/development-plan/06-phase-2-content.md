@@ -135,6 +135,8 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   parser-ошибкой LaTeX. The content client accepts
   При сбое converter Staff видит точный standalone `content.tex`, stage и bounded redacted tool output,
   поэтому `content.tex:<line>` из лога можно сопоставить с фактическим server input.
+  Legacy Cyrillic TikZ command `\пункт` переписывается только в generated source на ASCII alias,
+  а standalone preamble явно включает UTF-8/T2A/Russian; исходный Windows-1251 файл не меняется.
   the exact weak form which a compression filter may produce from the opaque
   version ETag and restores the strong database version token for `If-Match`.
 - После частичной ошибки строка batch сразу показывает сохранённые server diagnostics с

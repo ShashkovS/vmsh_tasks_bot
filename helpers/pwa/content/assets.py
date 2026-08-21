@@ -345,6 +345,9 @@ def _validate_tikz_source(source: str) -> str:
 def _standalone_document(tikz_source: str) -> str:
     return (
         "\\documentclass[tikz,border=5pt]{standalone}\n"
+        "\\usepackage[T2A]{fontenc}\n"
+        "\\usepackage[utf8]{inputenc}\n"
+        "\\usepackage[russian,english]{babel}\n"
         "\\usepackage{amsmath}\n"
         "\\usepackage{tkz-euclide}\n"
         "\\usetikzlibrary{angles,arrows.meta,backgrounds,calc,decorations.markings,"

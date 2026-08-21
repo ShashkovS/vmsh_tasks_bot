@@ -72,7 +72,7 @@ _CHESS_PIECE_CONTEXT = r"""
 
 _LEGACY_PART_CONTEXT = r"""
 \newcounter{vmshpart}
-\newcommand{\пункт}{%
+\newcommand{\vmshPartLabel}{%
   \stepcounter{vmshpart}\textbf{\alph{vmshpart})}%
 }
 """.strip()
@@ -412,8 +412,14 @@ def _compose_source(
         compat.append(_CHESS_BOARD_CONTEXT)
     if "\\ChessPiece" in raw_source and "\\newcommand{\\ChessPiece}" not in combined:
         compat.append(_CHESS_PIECE_CONTEXT)
-    if "\\пункт" in raw_source and "\\newcommand{\\пункт}" not in combined:
-        compat.append(_LEGACY_PART_CONTEXT)
+    # pdfLaTeX cannot reliably tokenize a UTF-8 Cyrillic control-sequence
+    # name in the isolated document.  Preserve the legacy semantics while
+    # compiling a portable ASCII command.  This transformation belongs only
+    # to the generated TikZ source; the uploaded LaTeX remains untouched.
+    if "\\пункт" in combined:
+        combined = combined.replace("\\пункт", "\\vmshPartLabel")
+        if "\\newcommand{\\vmshPartLabel}" not in combined:
+            compat.append(_LEGACY_PART_CONTEXT)
     if compat:
         combined = "\n".join((*compat, combined))
         kinds.insert(0, "chess-compat")
