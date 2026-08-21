@@ -7,7 +7,7 @@ import type { BlockContext, InlineContext, Line, MarkdownConfig } from '@lezer/m
 import { EditorView } from '@codemirror/view'
 import type { RichDocument } from '@vmsh/contracts'
 import { RichDocumentView, RichMarkdownDiagnostic, parseRichMarkdown } from '@vmsh/product'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 /**
  * Phase-8 Rich Markdown v1 authoring surface. Custom Lezer nodes deliberately
@@ -116,7 +116,15 @@ const telegramMarkdown: MarkdownConfig = {
   ],
 }
 
+const previewGracePeriodMs = 2_000
+
+type PreviewState = {
+  document: RichDocument | null
+  expiresAt: number | null
+}
+
 function diagnostic(markdown: string): Diagnostic[] {
+  if (!markdown.trim()) return []
   try {
     parseRichMarkdown(markdown)
     return []
@@ -218,7 +226,9 @@ export function RichMarkdownEditor({
   onDocumentChange?: (document: RichDocument | null) => void
   value: string
 }) {
+  const isEmpty = value.trim() === ''
   const { result, error } = useMemo(() => {
+    if (isEmpty) return { result: null, error: null }
     try {
       return { result: parseRichMarkdown(value), error: null }
     } catch (reason) {
@@ -230,7 +240,47 @@ export function RichMarkdownEditor({
             : new RichMarkdownDiagnostic('Не удалось проверить Markdown'),
       }
     }
-  }, [value])
+  }, [isEmpty, value])
+  const [previewState, setPreviewState] = useState<PreviewState>(() => ({
+    document: result,
+    expiresAt: null,
+  }))
+
+  const handleChange = (markdown: string) => {
+    const nextIsEmpty = markdown.trim() === ''
+    let nextDocument: RichDocument | null = null
+    if (!nextIsEmpty) {
+      try {
+        nextDocument = parseRichMarkdown(markdown)
+      } catch {
+        // The strict parser has already reported the diagnostic in the editor.
+      }
+    }
+    setPreviewState((current) => {
+      if (nextDocument) return { document: nextDocument, expiresAt: null }
+      if (nextIsEmpty) return { document: null, expiresAt: null }
+      return {
+        document: current.document,
+        expiresAt: current.document === null ? null : Date.now() + previewGracePeriodMs,
+      }
+    })
+    onChange(markdown)
+  }
+
+  useEffect(() => {
+    if (previewState.expiresAt === null) return undefined
+    const remaining = Math.max(0, previewState.expiresAt - Date.now())
+    const timeout = globalThis.setTimeout(() => {
+      setPreviewState((current) =>
+        current.expiresAt === previewState.expiresAt
+          ? { ...current, document: null, expiresAt: null }
+          : current,
+      )
+    }, remaining)
+    return () => globalThis.clearTimeout(timeout)
+  }, [previewState.expiresAt])
+
+  const previewDocument = isEmpty ? null : (result ?? previewState.document)
 
   useEffect(() => {
     onDocumentChange?.(result)
@@ -239,10 +289,10 @@ export function RichMarkdownEditor({
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <div className="grid gap-1.5">
-        <Editor {...(id === undefined ? {} : { id })} onChange={onChange} value={value} />
+        <Editor {...(id === undefined ? {} : { id })} onChange={handleChange} value={value} />
         {error ? (
           <p className="text-caption text-status-danger" role="alert">
-            Строка Markdown не сохранится: {error.message}
+            Исправьте ошибку в markdown.
           </p>
         ) : (
           <p className="text-caption text-muted-foreground">
@@ -256,12 +306,14 @@ export function RichMarkdownEditor({
         className="min-h-[22rem] rounded-md border border-border bg-surface p-4"
       >
         <p className="mb-3 text-label font-medium">Предпросмотр</p>
-        {result ? (
-          <RichDocumentView document={result} />
-        ) : (
+        {previewDocument ? (
+          <RichDocumentView document={previewDocument} />
+        ) : isEmpty ? (
           <p className="text-caption text-muted-foreground">
-            Исправьте Markdown, чтобы увидеть предпросмотр.
+            Предпросмотр появится после ввода текста.
           </p>
+        ) : (
+          <p className="text-caption text-muted-foreground">Исправьте ошибку в markdown.</p>
         )}
       </section>
     </div>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import {
   PageLayout,
+  PageSection,
   PageStatePanel,
   createAdminCourseClient,
   createNewsModerationClient,
@@ -26,6 +27,8 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  Card,
+  CardContent,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -97,19 +100,13 @@ export function StaffNewsPage({
   const queryClient = useQueryClient()
   const [sourceCommand, setSourceCommand] = useState<SourceCommand | null>(null)
   const [sourceReason, setSourceReason] = useState('')
-  const [localOpen, setLocalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<StaffNewsItem | null>(null)
   const [editDraft, setEditDraft] = useState(EMPTY_LOCAL_NEWS_DRAFT)
   const draftKey = `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-draft:v1`
   const [localDraft, setLocalDraft] = useState(() =>
     loadLocalNewsDraft(globalThis.localStorage, draftKey),
   )
-  const catalog = useAdminCourseCatalogQuery(
-    catalogClient,
-    scope,
-    undefined,
-    localOpen || editingItem !== null,
-  )
+  const catalog = useAdminCourseCatalogQuery(catalogClient, scope, undefined, true)
   const editDraftKey =
     editingItem === null
       ? null
@@ -151,7 +148,6 @@ export function StaffNewsPage({
       if (command.kind === 'local') {
         clearLocalNewsDraft(globalThis.localStorage, draftKey)
         setLocalDraft(EMPTY_LOCAL_NEWS_DRAFT)
-        setLocalOpen(false)
       }
       if (command.kind === 'edit-local') {
         clearLocalNewsDraft(
@@ -220,9 +216,6 @@ export function StaffNewsPage({
     <PageLayout
       actions={
         <div className="flex flex-wrap items-end gap-2">
-          <Button onClick={() => setLocalOpen(true)} type="button">
-            Создать публикацию
-          </Button>
           <Label className="grid gap-1 text-caption">
             Состояние
             <select
@@ -242,7 +235,7 @@ export function StaffNewsPage({
       title="Новости"
       width="wide"
     >
-      <div className="space-y-3">
+      <div className="space-y-6">
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
@@ -255,56 +248,49 @@ export function StaffNewsPage({
             </AlertContent>
           </Alert>
         ) : null}
-        {content}
-        <Dialog
-          onOpenChange={(open) => {
-            if (!mutation.isPending) setLocalOpen(open)
-          }}
-          open={localOpen}
+        <PageSection
+          description="Публикация появится в ленте выбранного курса или группы в указанное время. Telegram не изменяется."
+          title="Новая публикация в PWA"
         >
-          <DialogContent className="max-w-5xl">
-            <DialogHeader>
-              <DialogTitle>Новая публикация в PWA</DialogTitle>
-              <DialogDescription>
-                Публикация появится в ленте выбранного курса или группы в указанное время. Telegram
-                не изменяется.
-              </DialogDescription>
-            </DialogHeader>
-            {catalog.isPending ? <PageStatePanel state="loading" /> : null}
-            {catalog.error ? (
-              <Alert role="alert" tone="danger">
-                <AlertContent>
-                  <AlertTitle>Не удалось загрузить курсы</AlertTitle>
-                  <AlertDescription>Закройте окно и повторите попытку.</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
-            {catalog.data ? (
-              <StaffLocalNewsComposer
-                courses={catalog.data.courses}
-                draft={localDraft}
-                onChange={setLocalDraft}
-                onSubmit={(document) => {
-                  const separator = localDraft.owner.indexOf(':')
-                  const publishedAt = moscowDateTime(localDraft.publishedLocal)
-                  if (separator < 1 || publishedAt === null) return
-                  mutation.mutate({
-                    kind: 'local',
-                    request: {
-                      schemaVersion: 2,
-                      ownerType: localDraft.owner.slice(0, separator) as 'course' | 'group',
-                      ownerId: localDraft.owner.slice(separator + 1),
-                      markdown: localDraft.text,
-                      document,
-                      publishedAt,
-                    },
-                  })
-                }}
-                pending={mutation.isPending && mutation.variables.kind === 'local'}
-              />
-            ) : null}
-          </DialogContent>
-        </Dialog>
+          {catalog.isPending ? <PageStatePanel state="loading" /> : null}
+          {catalog.error ? (
+            <Alert role="alert" tone="danger">
+              <AlertContent>
+                <AlertTitle>Не удалось загрузить курсы</AlertTitle>
+                <AlertDescription>Обновите страницу и повторите попытку.</AlertDescription>
+              </AlertContent>
+            </Alert>
+          ) : null}
+          {catalog.data ? (
+            <Card>
+              <CardContent className="pt-4">
+                <StaffLocalNewsComposer
+                  courses={catalog.data.courses}
+                  draft={localDraft}
+                  onChange={setLocalDraft}
+                  onSubmit={(document) => {
+                    const separator = localDraft.owner.indexOf(':')
+                    const publishedAt = moscowDateTime(localDraft.publishedLocal)
+                    if (separator < 1 || publishedAt === null) return
+                    mutation.mutate({
+                      kind: 'local',
+                      request: {
+                        schemaVersion: 2,
+                        ownerType: localDraft.owner.slice(0, separator) as 'course' | 'group',
+                        ownerId: localDraft.owner.slice(separator + 1),
+                        markdown: localDraft.text,
+                        document,
+                        publishedAt,
+                      },
+                    })
+                  }}
+                  pending={mutation.isPending && mutation.variables.kind === 'local'}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+        </PageSection>
+        <PageSection title="Новости">{content}</PageSection>
         <Dialog
           onOpenChange={(open) => {
             if (!open && !mutation.isPending) setEditingItem(null)
