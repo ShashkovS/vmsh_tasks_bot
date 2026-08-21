@@ -33,17 +33,24 @@ def insert_group_banner(
     dismissible: bool,
     actor_user_id: int,
     now: str,
+    content_format: str = "legacy_html",
+    markdown_source: str | None = None,
+    rich_document_json: str | None = None,
 ) -> dict[str, object]:
     connection.execute(
         "INSERT INTO group_banners "
-        "(public_id, group_id, audience, html_sanitized, starts_at, ends_at, "
+        "(public_id, group_id, audience, html_sanitized, content_format, markdown_source, "
+        "rich_document_json, starts_at, ends_at, "
         "priority, dismissible, created_by_user_id, updated_by_user_id, "
-        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             public_id,
             group_id,
             audience,
             html_sanitized,
+            content_format,
+            markdown_source,
+            rich_document_json,
             starts_at,
             ends_at,
             priority,
@@ -72,15 +79,22 @@ def update_group_banner(
     dismissible: bool,
     actor_user_id: int,
     now: str,
+    content_format: str = "legacy_html",
+    markdown_source: str | None = None,
+    rich_document_json: str | None = None,
 ) -> dict[str, object] | None:
     cursor = connection.execute(
-        "UPDATE group_banners SET audience = ?, html_sanitized = ?, starts_at = ?, "
+        "UPDATE group_banners SET audience = ?, html_sanitized = ?, content_format = ?, "
+        "markdown_source = ?, rich_document_json = ?, starts_at = ?, "
         "ends_at = ?, priority = ?, dismissible = ?, updated_by_user_id = ?, "
         "updated_at = ?, version = version + 1 WHERE public_id = ? "
         "AND version = ? AND status = 'active'",
         (
             audience,
             html_sanitized,
+            content_format,
+            markdown_source,
+            rich_document_json,
             starts_at,
             ends_at,
             priority,
@@ -92,6 +106,34 @@ def update_group_banner(
         ),
     )
     return get_group_banner(connection, public_id) if cursor.rowcount == 1 else None
+
+
+def replace_group_banner_media(
+    connection: sqlite3.Connection,
+    *,
+    banner_id: int,
+    media: list[dict[str, object]],
+    now: str,
+) -> None:
+    connection.execute("DELETE FROM group_banner_media WHERE banner_id = ?", (banner_id,))
+    for ordinal, item in enumerate(media):
+        connection.execute(
+            "INSERT INTO group_banner_media "
+            "(banner_id, ordinal, media_id, source_url, storage_key, public_url, "
+            "mime_type, width, height, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                banner_id,
+                ordinal,
+                item["media_id"],
+                item["source_url"],
+                item["storage_key"],
+                item["public_url"],
+                item["mime_type"],
+                item["width"],
+                item["height"],
+                now,
+            ),
+        )
 
 
 def cancel_group_banner(
@@ -180,5 +222,6 @@ __all__ = [
     "insert_group_banner",
     "list_current_group_banners",
     "list_group_banners",
+    "replace_group_banner_media",
     "update_group_banner",
 ]

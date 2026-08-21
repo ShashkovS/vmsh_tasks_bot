@@ -51,7 +51,9 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   await page.getByRole('button', { name: 'Создать публикацию' }).click()
   const createDialog = page.getByRole('dialog', { name: 'Новая публикация в PWA' })
   await createDialog.getByLabel('Кому показать').selectOption({ index: 1 })
-  await createDialog.getByLabel('Текст публикации').fill(originalText)
+  await createDialog.getByLabel('Markdown публикации').fill(originalText)
+  await createDialog.getByRole('button', { name: 'Сейчас' }).click()
+  await expect(createDialog.getByLabel('Опубликовать по московскому времени')).not.toHaveValue('')
   await createDialog.getByLabel('Опубликовать по московскому времени').fill('2099-08-04T17:00')
   const createResponse = page.waitForResponse(
     (response) =>
@@ -65,7 +67,7 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   await expect(row).toContainText('По расписанию')
   await row.getByRole('button', { name: /Изменить запланированную/ }).click()
   const editDialog = page.getByRole('dialog', { name: 'Изменить запланированную публикацию' })
-  await editDialog.getByLabel('Текст публикации').fill(editedText)
+  await editDialog.getByLabel('Markdown публикации').fill(editedText)
 
   // Meaningful Staff input is account/entity/version scoped in localStorage.
   // A reload may close the dialog, but opening the same revision restores it.
@@ -78,7 +80,7 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   const restoredDialog = page.getByRole('dialog', {
     name: 'Изменить запланированную публикацию',
   })
-  await expect(restoredDialog.getByLabel('Текст публикации')).toHaveValue(editedText)
+  await expect(restoredDialog.getByLabel('Markdown публикации')).toHaveValue(editedText)
   await restoredDialog.getByLabel('Опубликовать по московскому времени').fill('2099-08-05T18:30')
   const updateResponse = page.waitForResponse(
     (response) =>
@@ -102,7 +104,7 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
   await page.getByRole('button', { name: 'Создать публикацию' }).click()
   const createDialog = page.getByRole('dialog', { name: 'Новая публикация в PWA' })
   await createDialog.getByLabel('Кому показать').selectOption({ index: 1 })
-  await createDialog.getByLabel('Текст публикации').fill(originalText)
+  await createDialog.getByLabel('Markdown публикации').fill(originalText)
   await createDialog.getByLabel('Опубликовать по московскому времени').fill('2020-08-04T17:00')
   const createResponse = page.waitForResponse(
     (response) =>
@@ -116,7 +118,7 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
   await row.getByRole('button', { name: /Исправить опубликованную/ }).click()
   const editDialog = page.getByRole('dialog', { name: 'Исправить опубликованную новость' })
   await expect(editDialog.getByLabel('Опубликовано по московскому времени')).toBeDisabled()
-  await editDialog.getByLabel('Текст публикации').fill(correctedText)
+  await editDialog.getByLabel('Markdown публикации').fill(correctedText)
   const updateResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
@@ -125,9 +127,19 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
   await editDialog.getByRole('button', { name: 'Сохранить изменения' }).click()
   const response = await updateResponse
   expect(response.status()).toBe(200)
-  expect(response.request().postDataJSON()).toEqual({
-    schemaVersion: 1,
-    text: correctedText,
+  expect(response.request().postDataJSON()).toMatchObject({
+    schemaVersion: 2,
+    markdown: correctedText,
+    document: {
+      schemaVersion: 1,
+      media: [],
+      blocks: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', text: correctedText }],
+        },
+      ],
+    },
   })
 
   const correctedRow = page

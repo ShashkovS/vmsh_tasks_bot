@@ -1,6 +1,12 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-08-20.
+Последнее обновление: 2026-08-21.
+
+## Rich Markdown для новостей и объявлений — готово к review, 21 августа 2026
+
+- В отдельном worktree `codex/rich-markdown` реализован сквозной RichDocument v1 для local news и group banners: строгий `@puregram/rich` parser, нормализованный AST, safe React renderer, lazy CodeMirror 6 authoring surface, server-side media copy и v1 wire compatibility. Решение и границы: [`12-phase-8-news-and-notifications.md`](12-phase-8-news-and-notifications.md); runtime contract: [`packages/contracts/src/rich-document.ts`](../../packages/contracts/src/rich-document.ts).
+- v2 API и persistence находятся в [`news_moderation_routes.py`](../../../apps/pwa_api/news_moderation_routes.py), [`group_banner_routes.py`](../../../apps/pwa_api/group_banner_routes.py), [`0081.pwa_rich_markdown.sql`](../../../migrations/0081.pwa_rich_markdown.sql) и [`models/pwa/rich_document.py`](../../../models/pwa/rich_document.py). Student/Family renderer и Staff authoring связывают [`rich-document.tsx`](../../packages/product/src/rich-document.tsx), [`rich-markdown-editor.tsx`](../../apps/staff/src/rich-markdown-editor.tsx), news и broadcasts pages.
+- Gates: focused Python **23 passed**, Vitest **14 passed**, strict contracts/product/Staff typecheck, targeted Prettier/ESLint/Ruff, `make pwa-build` и isolated `make pwa-e2e-news` — PASS. Следующий owner gate — visual/a11y review; массовые рассылки и Telegram delivery остаются вне scope.
 
 ## Student/Family worksheet typography bundle — 20 August 2026
 

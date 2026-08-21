@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
+import { richDocumentCommandSchema, richDocumentSchema } from './rich-document'
 
 /** Wire format for authenticated news reads. See Phase 8 in
  * `dev/development-plan/12-phase-8-news-and-notifications.md`.
@@ -73,6 +74,8 @@ export const newsPostSchema = z
       .nullable(),
     blocks: z.array(newsTextBlockSchema).min(1),
     media: z.array(newsMediaSchema),
+    // Returned only for contentVersion=2 reads. v1 clients intentionally ignore it.
+    document: richDocumentSchema.optional(),
   })
   .strict()
 export type NewsPost = z.infer<typeof newsPostSchema>
@@ -123,6 +126,8 @@ export const staffNewsItemSchema = z
     revision: z.number().int().positive(),
     textExcerpt: z.string().max(500),
     editableText: z.string().max(32_768).nullable(),
+    markdown: z.string().max(32_768).nullable().optional(),
+    document: richDocumentSchema.nullable().optional(),
     mediaCount: z.number().int().nonnegative(),
     visibility: staffNewsVisibilitySchema,
     moderationReason: z.string().trim().min(1).max(500).nullable(),
@@ -169,7 +174,7 @@ export const reconcileNewsSourceRequestSchema = z
   .strict()
 export type ReconcileNewsSourceRequest = z.infer<typeof reconcileNewsSourceRequestSchema>
 
-export const createLocalNewsRequestSchema = z
+const createLocalNewsV1RequestSchema = z
   .object({
     schemaVersion: z.literal(1),
     ownerType: z.enum(['course', 'group']),
@@ -178,9 +183,20 @@ export const createLocalNewsRequestSchema = z
     publishedAt: z.iso.datetime({ offset: true }),
   })
   .strict()
+export const createLocalNewsRequestSchema = z.union([
+  createLocalNewsV1RequestSchema,
+  z
+    .object({
+      ownerType: z.enum(['course', 'group']),
+      ownerId: publicIdSchema,
+      publishedAt: z.iso.datetime({ offset: true }),
+    })
+    .extend(richDocumentCommandSchema.shape)
+    .strict(),
+])
 export type CreateLocalNewsRequest = z.infer<typeof createLocalNewsRequestSchema>
 
-export const updateLocalNewsRequestSchema = z.union([
+const updateLocalNewsV1RequestSchema = z.union([
   z
     .object({
       schemaVersion: z.literal(1),
@@ -193,6 +209,13 @@ export const updateLocalNewsRequestSchema = z.union([
       schemaVersion: z.literal(1),
       text: z.string().trim().min(1).max(32_768),
     })
+    .strict(),
+])
+export const updateLocalNewsRequestSchema = z.union([
+  updateLocalNewsV1RequestSchema,
+  z
+    .object({ publishedAt: z.iso.datetime({ offset: true }).optional() })
+    .extend(richDocumentCommandSchema.shape)
     .strict(),
 ])
 export type UpdateLocalNewsRequest = z.infer<typeof updateLocalNewsRequestSchema>

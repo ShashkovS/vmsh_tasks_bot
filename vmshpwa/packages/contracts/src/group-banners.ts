@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
+import { richDocumentCommandSchema, richDocumentSchema } from './rich-document'
 
 export const groupBannerAudienceSchema = z.enum(['student', 'family', 'both'])
 export type GroupBannerAudience = z.infer<typeof groupBannerAudienceSchema>
@@ -24,6 +25,8 @@ export const groupBannerSchema = z
     group: groupBannerOwnerSchema,
     audience: groupBannerAudienceSchema,
     html: z.string().min(1).max(5_000),
+    markdown: z.string().max(32_768).nullable().optional(),
+    document: richDocumentSchema.nullable().optional(),
     startsAt: z.iso.datetime(),
     endsAt: z.iso.datetime(),
     priority: z.number().int().min(-100).max(100),
@@ -61,7 +64,7 @@ export const groupBannerResponseSchema = z
   .strip()
 export type GroupBannerResponse = z.infer<typeof groupBannerResponseSchema>
 
-export const saveGroupBannerRequestSchema = z
+const saveGroupBannerV1RequestSchema = z
   .object({
     schemaVersion: z.literal(1),
     groupId: publicIdSchema,
@@ -82,9 +85,31 @@ export const saveGroupBannerRequestSchema = z
       })
     }
   })
+export const saveGroupBannerRequestSchema = z.union([
+  saveGroupBannerV1RequestSchema,
+  z
+    .object({
+      groupId: publicIdSchema,
+      audience: groupBannerAudienceSchema,
+      startsAt: z.iso.datetime(),
+      endsAt: z.iso.datetime(),
+      priority: z.number().int().min(-100).max(100),
+      dismissible: z.boolean(),
+    })
+    .extend(richDocumentCommandSchema.shape)
+    .strict()
+    .superRefine((banner, context) => {
+      if (banner.endsAt <= banner.startsAt)
+        context.addIssue({
+          code: 'custom',
+          message: 'Banner end must follow start',
+          path: ['endsAt'],
+        })
+    }),
+])
 export type SaveGroupBannerRequest = z.infer<typeof saveGroupBannerRequestSchema>
 
-export const updateGroupBannerRequestSchema = z
+const updateGroupBannerV1RequestSchema = z
   .object({
     schemaVersion: z.literal(1),
     audience: groupBannerAudienceSchema,
@@ -104,6 +129,27 @@ export const updateGroupBannerRequestSchema = z
       })
     }
   })
+export const updateGroupBannerRequestSchema = z.union([
+  updateGroupBannerV1RequestSchema,
+  z
+    .object({
+      audience: groupBannerAudienceSchema,
+      startsAt: z.iso.datetime(),
+      endsAt: z.iso.datetime(),
+      priority: z.number().int().min(-100).max(100),
+      dismissible: z.boolean(),
+    })
+    .extend(richDocumentCommandSchema.shape)
+    .strict()
+    .superRefine((banner, context) => {
+      if (banner.endsAt <= banner.startsAt)
+        context.addIssue({
+          code: 'custom',
+          message: 'Banner end must follow start',
+          path: ['endsAt'],
+        })
+    }),
+])
 export type UpdateGroupBannerRequest = z.infer<typeof updateGroupBannerRequestSchema>
 
 export const cancelGroupBannerRequestSchema = z.object({ schemaVersion: z.literal(1) }).strict()

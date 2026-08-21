@@ -16,7 +16,9 @@ from db_methods.pwa.group_banners import (
     find_group_id,
     list_current_group_banners,
     list_group_banners,
+    replace_group_banner_media,
 )
+from helpers.pwa.rich_media import RichMediaCopyError, copy_rich_document_media
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.group_banners import (
@@ -26,6 +28,7 @@ from models.pwa.group_banners import (
     create_group_banner,
     edit_group_banner,
 )
+from models.pwa.rich_document import InvalidRichDocument, validate_rich_document
 
 
 group_banner_routes = web.RouteTableDef()
@@ -83,8 +86,16 @@ def _audience_scope(request: web.Request) -> tuple[str, tuple[str, ...]]:
     return audience.value, group_ids
 
 
-def _payload(item: dict[str, object]) -> dict[str, object]:
-    return {
+def _payload(item: dict[str, object], *, content_version: int = 1) -> dict[str, object]:
+    document: object | None = None
+    if item.get("content_format") == "rich_markdown_v1" and isinstance(
+        item.get("rich_document_json"), str
+    ):
+        try:
+            document = json.loads(str(item["rich_document_json"]))
+        except json.JSONDecodeError:
+            document = None
+    payload: dict[str, object] = {
         "bannerId": item["public_id"],
         "group": {
             "groupId": item["group_public_id"],
@@ -101,6 +112,10 @@ def _payload(item: dict[str, object]) -> dict[str, object]:
         "status": item["status"],
         "version": item["version"],
     }
+    if content_version == 2:
+        payload["markdown"] = item.get("markdown_source") if document is not None else None
+        payload["document"] = document
+    return payload
 
 
 def _json_body(body: object, expected: set[str]) -> dict[str, object]:
@@ -117,19 +132,46 @@ def _json_body(body: object, expected: set[str]) -> dict[str, object]:
     return body
 
 
-async def _read_json(request: web.Request, expected: set[str]) -> dict[str, object]:
+async def _read_json(request: web.Request) -> dict[str, object]:
     if request.content_type != "application/json":
         raise PwaApiError(
             status=422, code="validation_error", message="Тело запроса должно быть JSON"
         )
     try:
-        return _json_body(json.loads(await request.read()), expected)
+        body = json.loads(await request.read())
+        if not isinstance(body, dict):
+            raise PwaApiError(
+                status=422, code="validation_error", message="Проверьте поля объявления"
+            )
+        return body
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Проверьте поля объявления",
         ) from error
+
+
+async def _copy_document_media(
+    request: web.Request, document: object
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    validated = validate_rich_document(document)
+    if not validated["media"]:
+        return validated, []
+    from apps.pwa_app import PWA_CONTENT_ASSET_CONVERTER
+    from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
+
+    storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
+    converter = request.app.get(PWA_CONTENT_ASSET_CONVERTER)
+    if storage is None or converter is None:
+        raise PwaApiError(
+            status=503,
+            code="rich_media_unavailable",
+            message="Загрузка картинок временно недоступна",
+        )
+    return await copy_rich_document_media(
+        validated, storage=storage, converter=converter
+    )
 
 
 def _version(request: web.Request, public_id: str) -> int:
@@ -151,7 +193,9 @@ def _version(request: web.Request, public_id: str) -> int:
 
 
 async def _active(request: web.Request) -> web.Response:
-    if request.query:
+    if set(request.query) - {"contentVersion"} or request.query.get(
+        "contentVersion", "1"
+    ) not in {"1", "2"}:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
         )
@@ -164,7 +208,10 @@ async def _active(request: web.Request) -> web.Response:
     return web.json_response(
         {
             "schemaVersion": 1,
-            "items": [_payload(item) for item in rows],
+            "items": [
+                _payload(item, content_version=int(request.query.get("contentVersion", "1")))
+                for item in rows
+            ],
             "requestId": request["request_id"],
         }
     )
@@ -173,7 +220,7 @@ async def _active(request: web.Request) -> web.Response:
 @group_banner_routes.get("/staff/api/v1/group-banners")
 async def list_banners(request: web.Request) -> web.Response:
     _admin_user_id(request)
-    if set(request.query) - {"groupId", "status", "limit"}:
+    if set(request.query) - {"groupId", "status", "limit", "contentVersion"}:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте параметры списка"
         )
@@ -189,6 +236,7 @@ async def list_banners(request: web.Request) -> web.Response:
         (group_id is not None and _PUBLIC_ID.fullmatch(group_id) is None)
         or status not in {None, "active", "cancelled"}
         or not 1 <= limit <= 200
+        or request.query.get("contentVersion", "1") not in {"1", "2"}
     ):
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте параметры списка"
@@ -201,7 +249,10 @@ async def list_banners(request: web.Request) -> web.Response:
     return web.json_response(
         {
             "schemaVersion": 1,
-            "items": [_payload(item) for item in rows],
+            "items": [
+                _payload(item, content_version=int(request.query.get("contentVersion", "1")))
+                for item in rows
+            ],
             "requestId": request["request_id"],
         }
     )
@@ -210,36 +261,54 @@ async def list_banners(request: web.Request) -> web.Response:
 @group_banner_routes.post("/staff/api/v1/group-banners")
 async def create_banner(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
-    body = await _read_json(
-        request,
-        {
-            "groupId",
-            "audience",
-            "html",
-            "startsAt",
-            "endsAt",
-            "priority",
-            "dismissible",
-        },
-    )
+    body = await _read_json(request)
+    v1_fields = {
+        "schemaVersion", "groupId", "audience", "html", "startsAt", "endsAt", "priority", "dismissible"
+    }
+    v2_fields = {
+        "schemaVersion", "groupId", "audience", "markdown", "document", "startsAt", "endsAt", "priority", "dismissible"
+    }
+    is_v2 = body.get("schemaVersion") == 2
+    if set(body) != (v2_fields if is_v2 else v1_fields) or body.get("schemaVersion") not in {1, 2}:
+        raise PwaApiError(status=422, code="validation_error", message="Проверьте поля объявления")
+    try:
+        document, media_manifest = (
+            await _copy_document_media(request, body["document"])
+            if is_v2
+            else (None, [])
+        )
+    except (InvalidRichDocument, RichMediaCopyError) as error:
+        raise PwaApiError(
+            status=422,
+            code="rich_markdown_validation_error",
+            message="Проверьте Markdown и внешние картинки",
+            details={"diagnostic": str(error)},
+        ) from error
 
     def write(connection):
         group_id = find_group_id(connection, str(body["groupId"]))
         if group_id is None:
             return None
-        return create_group_banner(
+        item = create_group_banner(
             connection,
             public_id=f"banner.{uuid.uuid4().hex}",
             group_id=group_id,
             audience=body["audience"],
-            html_source=body["html"],
+            html_source=body["html"] if not is_v2 else "<p>Rich Markdown</p>",
             starts_at=body["startsAt"],
             ends_at=body["endsAt"],
             priority=body["priority"],
             dismissible=body["dismissible"],
             actor_user_id=actor_user_id,
             now=_now(),
+            markdown=body["markdown"] if is_v2 else None,
+            document=document,
         )
+        if media_manifest:
+            replace_group_banner_media(
+                connection, banner_id=int(item["id"]), media=media_manifest, now=_now()
+            )
+        return item
 
     try:
         item = await _factory(request).run_write_async(write)
@@ -255,7 +324,7 @@ async def create_banner(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item),
+            "item": _payload(item, content_version=2 if is_v2 else 1),
             "requestId": request["request_id"],
         },
         status=201,
@@ -273,26 +342,47 @@ async def update_banner(request: web.Request) -> web.Response:
             status=404, code="banner_not_found", message="Объявление не найдено"
         )
     expected_version = _version(request, public_id)
-    body = await _read_json(
-        request,
-        {"audience", "html", "startsAt", "endsAt", "priority", "dismissible"},
-    )
+    body = await _read_json(request)
+    v1_fields = {"schemaVersion", "audience", "html", "startsAt", "endsAt", "priority", "dismissible"}
+    v2_fields = {"schemaVersion", "audience", "markdown", "document", "startsAt", "endsAt", "priority", "dismissible"}
+    is_v2 = body.get("schemaVersion") == 2
+    if set(body) != (v2_fields if is_v2 else v1_fields) or body.get("schemaVersion") not in {1, 2}:
+        raise PwaApiError(status=422, code="validation_error", message="Проверьте поля объявления")
     try:
-        item = await _factory(request).run_write_async(
-            lambda connection: edit_group_banner(
+        document, media_manifest = (
+            await _copy_document_media(request, body["document"])
+            if is_v2
+            else (None, [])
+        )
+    except (InvalidRichDocument, RichMediaCopyError) as error:
+        raise PwaApiError(
+            status=422,
+            code="rich_markdown_validation_error",
+            message="Проверьте Markdown и внешние картинки",
+            details={"diagnostic": str(error)},
+        ) from error
+    try:
+        def write(connection):
+            item = edit_group_banner(
                 connection,
                 public_id=public_id,
                 expected_version=expected_version,
                 audience=body["audience"],
-                html_source=body["html"],
+                html_source=body["html"] if not is_v2 else "<p>Rich Markdown</p>",
                 starts_at=body["startsAt"],
                 ends_at=body["endsAt"],
                 priority=body["priority"],
                 dismissible=body["dismissible"],
                 actor_user_id=actor_user_id,
                 now=_now(),
+                markdown=body["markdown"] if is_v2 else None,
+                document=document,
             )
-        )
+            replace_group_banner_media(
+                connection, banner_id=int(item["id"]), media=media_manifest, now=_now()
+            )
+            return item
+        item = await _factory(request).run_write_async(write)
     except (InvalidGroupBanner, TypeError) as error:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте поля объявления"
@@ -305,7 +395,11 @@ async def update_banner(request: web.Request) -> web.Response:
         ) from error
     await request.app[PWA_BANNER_INVALIDATOR]("group-banner-updated")
     response = web.json_response(
-        {"schemaVersion": 1, "item": _payload(item), "requestId": request["request_id"]}
+        {
+            "schemaVersion": 1,
+            "item": _payload(item, content_version=2 if is_v2 else 1),
+            "requestId": request["request_id"],
+        }
     )
     response.headers["ETag"] = f'"{item["public_id"]}:v{item["version"]}"'
     return response
@@ -320,7 +414,9 @@ async def cancel_group_banner_route(request: web.Request) -> web.Response:
             status=404, code="banner_not_found", message="Объявление не найдено"
         )
     expected_version = _version(request, public_id)
-    await _read_json(request, set())
+    body = await _read_json(request)
+    if set(body) != {"schemaVersion"} or body.get("schemaVersion") != 1:
+        raise PwaApiError(status=422, code="validation_error", message="Проверьте поля объявления")
     try:
         item = await _factory(request).run_write_async(
             lambda connection: cancel_banner(

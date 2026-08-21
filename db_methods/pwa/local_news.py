@@ -13,7 +13,8 @@ def find_local_post_for_edit(
     row = connection.execute(
         "SELECT post.id, post.public_id, post.published_at, visibility.state, "
         "visibility.version, revision.revision_number, revision.text_plain, "
-        "revision.source_payload_json "
+        "revision.source_payload_json, revision.content_format, "
+        "revision.markdown_source, revision.rich_document_json "
         "FROM news_posts post "
         "JOIN news_visibility visibility ON visibility.post_id = post.id "
         "JOIN news_revisions revision ON revision.id = ("

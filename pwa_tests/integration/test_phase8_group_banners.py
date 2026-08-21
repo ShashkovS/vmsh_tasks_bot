@@ -22,12 +22,15 @@ from pwa_tests.integration.test_phase8_notification_core import (
 
 
 MIGRATION_ID = "0068.pwa_group_banners"
+RICH_MARKDOWN_MIGRATION_ID = "0081.pwa_rich_markdown"
 
 
 def test_group_banner_migration_roundtrip(tmp_path):
     database_path = tmp_path / "banners.sqlite3"
     migrations = {item.id: item for item in _migrations()}
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
+    # Rich Markdown extends this table and is covered by its own migration
+    # round-trip. Exclude it while proving the historical 0068 boundary.
+    _apply(database_path, set(migrations) - {MIGRATION_ID, RICH_MARKDOWN_MIGRATION_ID})
     with sqlite3.connect(database_path) as connection:
         assert connection.execute(
             "SELECT count(*) FROM sqlite_schema WHERE name = 'group_banners'"

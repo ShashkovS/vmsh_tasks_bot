@@ -1,5 +1,17 @@
 # Этап 8. Telegram-news, realtime, Web Push и баннеры
 
+## Rich Markdown v1 — готово к review (21 августа 2026)
+
+Этот инкремент расширяет **только** local news и group banners. Authoritative source — `RichDocument v1`: исходный Markdown хранится рядом с нормализованным рекурсивным AST; server валидирует AST и сам получает excerpt/legacy HTML. Строгий authoring parser — `@puregram/rich@3.2.0`, редактор Staff — CodeMirror 6 с `@lezer/markdown`. Контракт, HTTP compatibility и renderer реализуются в `packages/contracts/src/rich-document.ts`, `apps/pwa_api/*news*`, `apps/pwa_api/group_banner_routes.py` и `packages/product/src/rich-document.tsx`.
+
+Поддерживается разумное подмножество: h1–h5, paragraph, quote, divider, fenced code, плоские ordered/unordered/task lists, details, inline/block math, footnotes, отдельная HTTPS image/GIF и вложенные inline bold/italic/underline/strike/code/mark/spoiler/link/sub/sup. h6, tables, nested lists, arbitrary HTML, audio/video, unsafe URLs и unclosed syntax получают точную diagnostic и не сохраняются. Legacy v1 feed/banner responses и requests остаются рабочими; новый authoring POST/PATCH использует `schemaVersion: 2`.
+
+Media проходит server-side copy до DB transaction: HTTPS without credentials, redirect/DNS SSRF validation, image MIME/size/dimensions limits и content-addressed reuse. При ошибке copy публикация не создаётся. Прямой hotlinking запрещён.
+
+Проверки инкремента: shared golden corpus TS/Python, focused API, renderer/editor unit, совместимые v1 tests и isolated news E2E. В частности, `pwa_tests/integration/test_rich_markdown_migration.py`, `test_rich_markdown_media.py`, `test_phase8_news_moderation.py` и `test_phase8_group_banner_http_api.py` доказывают migration, immutable v2 revisions, v1 fallback и отсутствие client hotlink. Кнопка «Сейчас» рядом с датой news/banner заполняет московскую текущую минуту, не отправляет форму и не меняет banner end.
+
+Проверки 21 августа: focused Python **23 passed**, focused Vitest **14 passed**, strict contracts/product/Staff typecheck, targeted Prettier/ESLint/Ruff и `make pwa-build` — PASS; isolated `make pwa-e2e-news` выполнен через `pwa-e2e`. Визуальное owner-review и отдельные Storybook/a11y stories остаются gate перед acceptance; CodeMirror остаётся отдельным lazy chunk Staff.
+
 ## Результат
 
 Посты Telegram-канала с 1 апреля 2026 года, включая edits/deletes, идемпотентно зеркалируются в Student/Family PWA. Admin может скрыть пост только в PWA и создать scheduled local publication/banner. Полный broadcast composer и Staff→Telegram channel publishing откладываются во вторую версию; узкая персональная рассылка подтверждённых аудиторий реализует transport этапа 7.

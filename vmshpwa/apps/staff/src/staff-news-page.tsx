@@ -191,7 +191,7 @@ export function StaffNewsPage({
           const key = `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-edit:${item.postId}:v${item.version}`
           const initial = {
             owner: `${item.ownerType}:${item.ownerId}`,
-            text: item.editableText ?? '',
+            text: item.markdown ?? item.editableText ?? '',
             publishedLocal: toMoscowLocalDateTime(item.publishedAt) ?? '',
           }
           const saved = loadLocalNewsDraft(globalThis.localStorage, key)
@@ -262,7 +262,7 @@ export function StaffNewsPage({
           }}
           open={localOpen}
         >
-          <DialogContent>
+          <DialogContent className="max-w-5xl">
             <DialogHeader>
               <DialogTitle>Новая публикация в PWA</DialogTitle>
               <DialogDescription>
@@ -284,17 +284,18 @@ export function StaffNewsPage({
                 courses={catalog.data.courses}
                 draft={localDraft}
                 onChange={setLocalDraft}
-                onSubmit={() => {
+                onSubmit={(document) => {
                   const separator = localDraft.owner.indexOf(':')
                   const publishedAt = moscowDateTime(localDraft.publishedLocal)
                   if (separator < 1 || publishedAt === null) return
                   mutation.mutate({
                     kind: 'local',
                     request: {
-                      schemaVersion: 1,
+                      schemaVersion: 2,
                       ownerType: localDraft.owner.slice(0, separator) as 'course' | 'group',
                       ownerId: localDraft.owner.slice(separator + 1),
-                      text: localDraft.text,
+                      markdown: localDraft.text,
+                      document,
                       publishedAt,
                     },
                   })
@@ -310,7 +311,7 @@ export function StaffNewsPage({
           }}
           open={editingItem !== null}
         >
-          <DialogContent>
+          <DialogContent className="max-w-5xl">
             <DialogHeader>
               <DialogTitle>
                 {editingItem?.isScheduled
@@ -336,7 +337,7 @@ export function StaffNewsPage({
                 courses={catalog.data.courses}
                 draft={editDraft}
                 onChange={setEditDraft}
-                onSubmit={() => {
+                onSubmit={(document) => {
                   if (editingItem.isScheduled) {
                     const publishedAt = moscowDateTime(editDraft.publishedLocal)
                     if (publishedAt === null) return
@@ -344,8 +345,9 @@ export function StaffNewsPage({
                       kind: 'edit-local',
                       item: editingItem,
                       request: {
-                        schemaVersion: 1,
-                        text: editDraft.text,
+                        schemaVersion: 2,
+                        markdown: editDraft.text,
+                        document,
                         publishedAt,
                       },
                     })
@@ -354,7 +356,7 @@ export function StaffNewsPage({
                   mutation.mutate({
                     kind: 'edit-local',
                     item: editingItem,
-                    request: { schemaVersion: 1, text: editDraft.text },
+                    request: { schemaVersion: 2, markdown: editDraft.text, document },
                   })
                 }}
                 ownerDisabled

@@ -1,5 +1,10 @@
 # Design-system status
 
+## Rich Markdown authoring — готово к visual review, 21 августа 2026
+
+- Staff news и group banners используют общий full-width CodeMirror 6 surface с live preview и diagnostics: [`apps/staff/src/rich-markdown-editor.tsx`](../../apps/staff/src/rich-markdown-editor.tsx). Новый renderer в [`packages/product/src/rich-document.tsx`](../../packages/product/src/rich-document.tsx) не использует `dangerouslySetInnerHTML`; legacy HTML banner остаётся isolated compatibility fallback. Границы: [`12-phase-8-news-and-notifications.md`](../development-plan/12-phase-8-news-and-notifications.md).
+- Проверены focused parser/editor contracts, Staff typecheck, lint и production build. До acceptance нужны owner visual/a11y review wide/mobile layout; CodeMirror намеренно остаётся отдельным lazy Staff chunk.
+
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
 | Фаза                       | Статус            | Принято    | Evidence/решение                                                                       |

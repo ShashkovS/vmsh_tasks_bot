@@ -10,9 +10,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@puregram/rich": "catalog:",
     "@visx/scale": "catalog:",
     "@vmsh/contracts": "workspace:*",
     "@vmsh/ui": "workspace:*",
+    "katex": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:"
   }

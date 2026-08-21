@@ -3,6 +3,8 @@ import { X } from 'lucide-react'
 import type { GroupBanner as GroupBannerView } from '@vmsh/contracts'
 import { Alert, AlertContent, Button } from '@vmsh/ui'
 
+import { RichDocumentView } from './rich-document'
+
 export function GroupBanner({
   banner,
   onDismiss,
@@ -16,10 +18,14 @@ export function GroupBanner({
         <p className="mb-1 text-caption text-muted-foreground">
           {banner.group.courseName} · {banner.group.name}
         </p>
-        <div
-          className="text-small [&_a]:text-link [&_a]:underline [&_code]:rounded [&_code]:bg-surface-sunken [&_code]:px-1"
-          dangerouslySetInnerHTML={{ __html: banner.html }}
-        />
+        {banner.document ? (
+          <RichDocumentView className="text-small" document={banner.document} />
+        ) : (
+          <div
+            className="text-small [&_a]:text-link [&_a]:underline [&_code]:rounded [&_code]:bg-surface-sunken [&_code]:px-1"
+            dangerouslySetInnerHTML={{ __html: banner.html }}
+          />
+        )}
       </AlertContent>
       {banner.dismissible && onDismiss ? (
         <Button aria-label="Скрыть объявление" onClick={onDismiss} size="icon-sm" variant="ghost">

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import json
 import re
 import sqlite3
 from datetime import datetime
@@ -13,6 +14,10 @@ from db_methods.pwa.group_banners import (
     cancel_group_banner,
     insert_group_banner,
     update_group_banner,
+)
+from models.pwa.rich_document import (
+    rich_document_legacy_html,
+    validate_rich_document,
 )
 
 
@@ -73,22 +78,42 @@ def create_group_banner(
     dismissible: bool,
     actor_user_id: int,
     now: str,
+    markdown: str | None = None,
+    document: object | None = None,
 ) -> dict[str, object]:
     _window(starts_at, ends_at)
     if audience not in _AUDIENCES or not -100 <= priority <= 100:
         raise InvalidGroupBanner("settings")
+    if document is None:
+        html_sanitized = sanitize_group_banner_html(html_source)
+        content_format = "legacy_html"
+        markdown_source = None
+        rich_document_json = None
+    else:
+        if not isinstance(markdown, str) or not markdown.strip() or len(markdown) > 32_768:
+            raise InvalidGroupBanner("markdown")
+        validated = validate_rich_document(document)
+        html_sanitized = rich_document_legacy_html(validated)
+        content_format = "rich_markdown_v1"
+        markdown_source = markdown.strip()
+        rich_document_json = json.dumps(
+            validated, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        )
     return insert_group_banner(
         connection,
         public_id=public_id,
         group_id=group_id,
         audience=audience,
-        html_sanitized=sanitize_group_banner_html(html_source),
+        html_sanitized=html_sanitized,
         starts_at=starts_at,
         ends_at=ends_at,
         priority=priority,
         dismissible=dismissible,
         actor_user_id=actor_user_id,
         now=now,
+        content_format=content_format,
+        markdown_source=markdown_source,
+        rich_document_json=rich_document_json,
     )
 
 
@@ -105,22 +130,42 @@ def edit_group_banner(
     dismissible: bool,
     actor_user_id: int,
     now: str,
+    markdown: str | None = None,
+    document: object | None = None,
 ) -> dict[str, object]:
     _window(starts_at, ends_at)
     if audience not in _AUDIENCES or not -100 <= priority <= 100:
         raise InvalidGroupBanner("settings")
+    if document is None:
+        html_sanitized = sanitize_group_banner_html(html_source)
+        content_format = "legacy_html"
+        markdown_source = None
+        rich_document_json = None
+    else:
+        if not isinstance(markdown, str) or not markdown.strip() or len(markdown) > 32_768:
+            raise InvalidGroupBanner("markdown")
+        validated = validate_rich_document(document)
+        html_sanitized = rich_document_legacy_html(validated)
+        content_format = "rich_markdown_v1"
+        markdown_source = markdown.strip()
+        rich_document_json = json.dumps(
+            validated, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        )
     item = update_group_banner(
         connection,
         public_id=public_id,
         expected_version=expected_version,
         audience=audience,
-        html_sanitized=sanitize_group_banner_html(html_source),
+        html_sanitized=html_sanitized,
         starts_at=starts_at,
         ends_at=ends_at,
         priority=priority,
         dismissible=dismissible,
         actor_user_id=actor_user_id,
         now=now,
+        content_format=content_format,
+        markdown_source=markdown_source,
+        rich_document_json=rich_document_json,
     )
     if item is None:
         raise GroupBannerConflict

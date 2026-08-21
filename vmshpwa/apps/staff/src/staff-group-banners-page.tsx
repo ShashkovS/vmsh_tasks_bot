@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
   PageLayout,
@@ -17,6 +17,7 @@ import {
   groupBannerQueryKeys,
   type GroupBanner as GroupBannerData,
   type GroupBannerAudience,
+  type RichDocument,
 } from '@vmsh/contracts'
 import { GroupBanner } from '@vmsh/product'
 import {
@@ -30,13 +31,16 @@ import {
   Checkbox,
   Input,
   Label,
-  Textarea,
 } from '@vmsh/ui'
+
+const RichMarkdownEditor = lazy(() =>
+  import('./rich-markdown-editor').then((module) => ({ default: module.RichMarkdownEditor })),
+)
 
 type Draft = {
   groupId: string
   audience: GroupBannerAudience
-  html: string
+  markdown: string
   startsAt: string
   endsAt: string
   priority: string
@@ -46,7 +50,7 @@ type Draft = {
 const emptyDraft: Draft = {
   groupId: '',
   audience: 'both',
-  html: '',
+  markdown: '',
   startsAt: '',
   endsAt: '',
   priority: '0',
@@ -114,6 +118,7 @@ export function StaffGroupBannersPage() {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState<Draft>(() => readDraft(principal.accountId))
   const [editing, setEditing] = useState<GroupBannerData | null>(null)
+  const [document, setDocument] = useState<RichDocument | null>(null)
 
   useEffect(() => {
     globalThis.localStorage.setItem(
@@ -141,10 +146,12 @@ export function StaffGroupBannersPage() {
       if (command.kind === 'cancel') {
         return bannerClient.cancel(command.banner.bannerId, command.banner.version)
       }
+      if (document === null) throw new Error('Rich Markdown has not passed validation')
       const common = {
-        schemaVersion: 1 as const,
+        schemaVersion: 2 as const,
         audience: draft.audience,
-        html: draft.html,
+        markdown: draft.markdown,
+        document,
         startsAt: moscowIso(draft.startsAt),
         endsAt: moscowIso(draft.endsAt),
         priority: Number(draft.priority),
@@ -157,6 +164,7 @@ export function StaffGroupBannersPage() {
     onSuccess: async () => {
       setDraft(emptyDraft)
       setEditing(null)
+      setDocument(null)
       await queryClient.invalidateQueries({ queryKey: groupBannerQueryKeys.staff(scope) })
     },
     onError: (error) => authentication.handleApiError(error),
@@ -164,7 +172,7 @@ export function StaffGroupBannersPage() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!groupId || !draft.startsAt || !draft.endsAt || !draft.html.trim()) return
+    if (!groupId || !draft.startsAt || !draft.endsAt || document === null) return
     mutation.mutate({ kind: 'save' })
   }
 
@@ -173,12 +181,13 @@ export function StaffGroupBannersPage() {
     setDraft({
       groupId: banner.group.groupId,
       audience: banner.audience,
-      html: banner.html,
+      markdown: banner.markdown ?? '',
       startsAt: moscowInput(banner.startsAt),
       endsAt: moscowInput(banner.endsAt),
       priority: String(banner.priority),
       dismissible: banner.dismissible,
     })
+    setDocument(banner.document ?? null)
     globalThis.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -244,22 +253,40 @@ export function StaffGroupBannersPage() {
                     />
                   </Label>
                 </div>
-                <Label className="grid gap-1">
-                  Текст · допустимы b, i, a и code
-                  <Textarea
-                    onChange={(event) =>
-                      setDraft((value) => ({ ...value, html: event.target.value }))
+                <div className="grid gap-1">
+                  <Label>Текст объявления (Markdown)</Label>
+                  <Suspense
+                    fallback={
+                      <div className="min-h-[22rem] rounded-md border border-border p-3 text-caption text-muted-foreground">
+                        Загружаем редактор…
+                      </div>
                     }
-                    placeholder={
-                      '<b>Разбор сегодня в 17:00</b> · <a href="https://…">Подключиться</a>'
-                    }
-                    rows={4}
-                    value={draft.html}
-                  />
-                </Label>
+                  >
+                    <RichMarkdownEditor
+                      onChange={(markdown) => setDraft((value) => ({ ...value, markdown }))}
+                      onDocumentChange={setDocument}
+                      value={draft.markdown}
+                    />
+                  </Suspense>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Label className="grid gap-1">
-                    Начало показа · Москва
+                  <div className="grid gap-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Начало показа · Москва</Label>
+                      <Button
+                        onClick={() =>
+                          setDraft((value) => ({
+                            ...value,
+                            startsAt: moscowInput(new Date().toISOString()),
+                          }))
+                        }
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        Сейчас
+                      </Button>
+                    </div>
                     <Input
                       onChange={(event) =>
                         setDraft((value) => ({ ...value, startsAt: event.target.value }))
@@ -268,7 +295,7 @@ export function StaffGroupBannersPage() {
                       type="datetime-local"
                       value={draft.startsAt}
                     />
-                  </Label>
+                  </div>
                   <Label className="grid gap-1">
                     Конец показа · Москва
                     <Input
@@ -291,10 +318,14 @@ export function StaffGroupBannersPage() {
                   Можно скрыть на этом устройстве
                 </Label>
                 <p className="text-caption text-muted-foreground">
-                  Безопасный предпросмотр появится в списке после серверной очистки HTML.
+                  Сохранение блокируется, пока строгая проверка Markdown не пройдена. Внешние
+                  картинки копируются на сервер.
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Button disabled={mutation.isPending || groups.length === 0} type="submit">
+                  <Button
+                    disabled={mutation.isPending || groups.length === 0 || document === null}
+                    type="submit"
+                  >
                     {editing ? 'Сохранить изменения' : 'Запланировать'}
                   </Button>
                   {editing ? (
@@ -302,6 +333,7 @@ export function StaffGroupBannersPage() {
                       onClick={() => {
                         setEditing(null)
                         setDraft(emptyDraft)
+                        setDocument(null)
                       }}
                       type="button"
                       variant="outline"
