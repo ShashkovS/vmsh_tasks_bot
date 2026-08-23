@@ -32,6 +32,7 @@ _MAX_SVG_NODES: Final = 100_000
 _MAX_ATTRIBUTE_CHARACTERS: Final = 65_536
 _MAX_DIMENSION: Final = 20_000
 _OUTPUT_MAX_SIDE: Final = 1_920
+_CYRILLIC_TEXT = re.compile(r"[\u0400-\u052f]")
 
 _FORBIDDEN_TEX_COMMAND = re.compile(
     r"\\(?:"
@@ -343,11 +344,16 @@ def _validate_tikz_source(source: str) -> str:
 
 
 def _standalone_document(tikz_source: str) -> str:
-    return (
-        "\\documentclass[tikz,border=5pt]{standalone}\n"
-        "\\usepackage[T2A]{fontenc}\n"
+    cyrillic_preamble = (
+        "\\usepackage[T2A,T1]{fontenc}\n"
         "\\usepackage[utf8]{inputenc}\n"
         "\\usepackage[russian,english]{babel}\n"
+        if _CYRILLIC_TEXT.search(tikz_source)
+        else ""
+    )
+    return (
+        "\\documentclass[tikz,border=5pt]{standalone}\n"
+        f"{cyrillic_preamble}"
         "\\usepackage{amsmath}\n"
         "\\usepackage{tkz-euclide}\n"
         "\\usetikzlibrary{angles,arrows.meta,backgrounds,calc,decorations.markings,"
