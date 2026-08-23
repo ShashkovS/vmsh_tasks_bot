@@ -2199,14 +2199,19 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=503,
             code="metadata_generation_unavailable",
-            message="Генерация metadata не настроена",
+            message=error.public_message,
         ) from error
     except MetadataGenerationError as error:
-        logger.warning("Metadata generation failed for revision %s", revision_public_id)
+        logger.warning(
+            "Metadata generation failed for revision %s: %s",
+            revision_public_id,
+            error,
+            exc_info=True,
+        )
         raise PwaApiError(
             status=502,
             code="metadata_generation_failed",
-            message="Не удалось сгенерировать metadata. Повторите попытку.",
+            message=error.public_message,
         ) from error
     return web.json_response(
         {

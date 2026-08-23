@@ -7,7 +7,10 @@ from helpers.pwa.content.metadata_generation import (
     MetadataGenerationError,
     MetadataGenerationRequest,
     MetadataGenerationTarget,
+    MetadataGenerationUnavailable,
+    OpenRouterMetadataGenerator,
     _normalize_generated_rows,
+    _upstream_generation_error,
     _user_prompt,
 )
 
@@ -105,3 +108,31 @@ def test_metadata_generation_sends_latex_before_small_target_table():
     prompt = _user_prompt(_request())
 
     assert prompt.index("\\задача") < prompt.index("canonical строк")
+
+
+class _UpstreamError(Exception):
+    def __init__(self, status_code: int) -> None:
+        self.status_code = status_code
+
+
+def test_metadata_generation_explains_openrouter_access_denial_safely():
+    error = _upstream_generation_error(_UpstreamError(403))
+
+    assert str(error) == "OpenRouter denied metadata generation with HTTP 403"
+    assert error.public_message == (
+        "OpenRouter отклонил запрос (403: доступ запрещён). Проверьте настоящий "
+        "OPENROUTER_API_KEY в production-конфиге и ограничения этого ключа."
+    )
+
+
+@pytest.mark.asyncio
+async def test_metadata_generation_rejects_the_checked_in_example_key():
+    generator = OpenRouterMetadataGenerator(api_key="sk-or-v1-XXX_HERE")
+
+    with pytest.raises(MetadataGenerationUnavailable, match="usable API key") as raised:
+        await generator.generate(_request())
+
+    assert raised.value.public_message == (
+        "Генерация metadata не настроена: укажите настоящий OPENROUTER_API_KEY "
+        "в production-конфиге."
+    )

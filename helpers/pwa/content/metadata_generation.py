@@ -24,9 +24,82 @@ MAX_LATEX_CHARS = 500_000
 class MetadataGenerationError(RuntimeError):
     """The upstream generator could not produce a usable draft."""
 
+    def __init__(
+        self, message: str, *, public_message: str | None = None
+    ) -> None:
+        super().__init__(message)
+        self.public_message = public_message or (
+            "Не удалось сгенерировать metadata. Повторите попытку."
+        )
+
 
 class MetadataGenerationUnavailable(MetadataGenerationError):
     """The instance has no server-side OpenRouter credentials."""
+
+
+def _is_usable_api_key(value: str) -> bool:
+    """Reject the checked-in example key before making an external request."""
+
+    return bool(value) and "XXX_HERE" not in value
+
+
+def _upstream_generation_error(error: Exception) -> MetadataGenerationError:
+    """Map transport failures to a safe Staff-facing explanation.
+
+    The original exception remains chained and is logged with its full
+    traceback by the HTTP route.  Do not expose an arbitrary provider body:
+    it can include operational details that belong only in the server log.
+    """
+
+    status_code = getattr(error, "status_code", None)
+    if status_code in {401, 403}:
+        return MetadataGenerationError(
+            f"OpenRouter denied metadata generation with HTTP {status_code}",
+            public_message=(
+                f"OpenRouter отклонил запрос ({status_code}: доступ запрещён). "
+                "Проверьте настоящий OPENROUTER_API_KEY в production-конфиге "
+                "и ограничения этого ключа."
+            ),
+        )
+    if status_code == 402:
+        return MetadataGenerationError(
+            "OpenRouter rejected metadata generation because the account has no credit",
+            public_message=(
+                "OpenRouter не выполнил запрос: у аккаунта нет доступного "
+                "кредита. Пополните баланс или выберите доступную модель."
+            ),
+        )
+    if status_code == 429:
+        return MetadataGenerationError(
+            "OpenRouter rate limited metadata generation",
+            public_message=(
+                "OpenRouter временно ограничил запросы. Подождите немного и "
+                "повторите попытку."
+            ),
+        )
+    if status_code in {400, 413, 422}:
+        return MetadataGenerationError(
+            f"OpenRouter rejected metadata generation request with HTTP {status_code}",
+            public_message=(
+                "OpenRouter не принял параметры генерации. Технические детали "
+                "записаны в журнал сервера."
+            ),
+        )
+    if status_code is not None:
+        return MetadataGenerationError(
+            f"OpenRouter metadata generation failed with HTTP {status_code}",
+            public_message=(
+                "OpenRouter временно не выполнил генерацию. Повторите попытку; "
+                "технические детали записаны в журнал сервера."
+            ),
+        )
+    return MetadataGenerationError(
+        "OpenRouter metadata request failed before a response was received",
+        public_message=(
+            "Не удалось связаться с OpenRouter. Повторите попытку; технические "
+            "детали записаны в журнал сервера."
+        ),
+    )
 
 
 class GeneratedMetadataRow(BaseModel):
@@ -154,8 +227,14 @@ class OpenRouterMetadataGenerator:
         self, request: MetadataGenerationRequest
     ) -> MetadataGenerationResult:
         key = (self._api_key or "").strip()
-        if not key:
-            raise MetadataGenerationUnavailable("OpenRouter is not configured")
+        if not _is_usable_api_key(key):
+            raise MetadataGenerationUnavailable(
+                "OpenRouter is not configured with a usable API key",
+                public_message=(
+                    "Генерация metadata не настроена: укажите настоящий "
+                    "OPENROUTER_API_KEY в production-конфиге."
+                ),
+            )
         if len(request.latex_text) > MAX_LATEX_CHARS:
             raise MetadataGenerationError("LaTeX source is too large for metadata generation")
 
@@ -185,7 +264,7 @@ class OpenRouterMetadataGenerator:
         except MetadataGenerationError:
             raise
         except Exception as error:
-            raise MetadataGenerationError("OpenRouter metadata request failed") from error
+            raise _upstream_generation_error(error) from error
         if not isinstance(content, str):
             raise MetadataGenerationError("OpenRouter returned no metadata JSON")
         try:
