@@ -763,7 +763,8 @@ async def on_content_startup(app: web.Application) -> None:
         app[PWA_CONTENT_REPOSITORY] = PwaContentRepository(factory)
     if PWA_CONTENT_METADATA_GENERATOR not in app:
         app[PWA_CONTENT_METADATA_GENERATOR] = OpenRouterMetadataGenerator(
-            api_key=_runtime_config(app).openrouter_api_key
+            api_key=_runtime_config(app).openrouter_api_key,
+            proxy=_runtime_config(app).openrouter_proxy,
         )
     if PWA_CONTENT_ASSET_SERVICE in app or not app.get(
         PWA_CONTENT_ASSETS_AUTO_WIRE, False

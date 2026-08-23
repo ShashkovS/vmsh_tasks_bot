@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
+from helpers.pwa.content import metadata_generation as metadata_generation_module
 from helpers.pwa.content.metadata_generation import (
     GeneratedMetadata,
     MetadataGenerationError,
@@ -136,3 +139,67 @@ async def test_metadata_generation_rejects_the_checked_in_example_key():
         "Генерация metadata не настроена: укажите настоящий OPENROUTER_API_KEY "
         "в production-конфиге."
     )
+
+
+@pytest.mark.asyncio
+async def test_metadata_generation_uses_an_async_client_for_configured_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    created_clients: list[object] = []
+    created_openrouter_kwargs: list[dict[str, object]] = []
+
+    class FakeAsyncClient:
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+            created_clients.append(self)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+            return None
+
+    class FakeOpenRouter:
+        def __init__(self, **kwargs) -> None:
+            created_openrouter_kwargs.append(kwargs)
+            self.chat = SimpleNamespace(send_async=self.send_async)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+            return None
+
+        async def send_async(self, **kwargs):
+            del kwargs
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            content=(
+                                '{"rows":[{"sourceOrdinal":1,"sourceItem":"1",'
+                                '"title":"Черновик","problemType":2,'
+                                '"answerType":null,"answerValidation":null,'
+                                '"validationError":null,"correctAnswer":null,'
+                                '"wrongAnswer":null,"congratulation":null,'
+                                '"reviewNote":null}],"warnings":[]}'
+                            )
+                        )
+                    )
+                ]
+            )
+
+    monkeypatch.setattr(metadata_generation_module.httpx, "AsyncClient", FakeAsyncClient)
+    monkeypatch.setattr(metadata_generation_module, "OpenRouter", FakeOpenRouter)
+
+    result = await OpenRouterMetadataGenerator(
+        api_key="sk-or-v1-live-key",
+        proxy="http://127.0.0.1:1080",
+    ).generate(_request())
+
+    assert len(result.rows) == 1
+    assert created_clients[0].kwargs == {
+        "proxy": "http://127.0.0.1:1080",
+        "follow_redirects": True,
+    }
+    assert created_openrouter_kwargs[0]["async_client"] is created_clients[0]

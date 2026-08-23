@@ -11,6 +11,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
+import httpx
 from openrouter import OpenRouter
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -216,10 +217,12 @@ class OpenRouterMetadataGenerator:
         self,
         *,
         api_key: str | None = None,
+        proxy: str | None = None,
         model: str = DEFAULT_MODEL,
         timeout_ms: int = 120_000,
     ) -> None:
         self._api_key = api_key
+        self._proxy = (proxy or "").strip()
         self._model = model
         self._timeout_ms = timeout_ms
 
@@ -239,27 +242,7 @@ class OpenRouterMetadataGenerator:
             raise MetadataGenerationError("LaTeX source is too large for metadata generation")
 
         try:
-            async with OpenRouter(api_key=key, timeout_ms=self._timeout_ms) as client:
-                response = await client.chat.send_async(
-                    model=self._model,
-                    messages=[
-                        {"role": "system", "content": _SYSTEM_PROMPT},
-                        {"role": "user", "content": _user_prompt(request)},
-                    ],
-                    response_format={
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": "vmsh_metadata_generation_v1",
-                            "strict": True,
-                            "schema": GeneratedMetadata.model_json_schema(),
-                        },
-                    },
-                    provider={"require_parameters": True},
-                    reasoning_effort="low",
-                    max_completion_tokens=16_000,
-                    stream=False,
-                    prompt_cache_key="vmsh-metadata-generation-v1",
-                )
+            response = await self._send_request(key, request)
             content = response.choices[0].message.content
         except MetadataGenerationError:
             raise
@@ -272,6 +255,47 @@ class OpenRouterMetadataGenerator:
         except ValidationError as error:
             raise MetadataGenerationError("OpenRouter returned invalid metadata JSON") from error
         return _normalize_generated_rows(request, generated)
+
+    async def _send_request(self, key: str, request: MetadataGenerationRequest):
+        """Send one request, using the configured proxy for this SDK only."""
+
+        if self._proxy:
+            # OpenRouter receives an httpx.AsyncClient because `send_async` is
+            # used below.  The SDK leaves supplied clients open, so this outer
+            # context owns their lifecycle.
+            async with httpx.AsyncClient(
+                proxy=self._proxy, follow_redirects=True
+            ) as async_client:
+                async with OpenRouter(
+                    api_key=key,
+                    timeout_ms=self._timeout_ms,
+                    async_client=async_client,
+                ) as client:
+                    return await self._send_with_client(client, request)
+        async with OpenRouter(api_key=key, timeout_ms=self._timeout_ms) as client:
+            return await self._send_with_client(client, request)
+
+    async def _send_with_client(self, client, request: MetadataGenerationRequest):
+        return await client.chat.send_async(
+            model=self._model,
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": _user_prompt(request)},
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "vmsh_metadata_generation_v1",
+                    "strict": True,
+                    "schema": GeneratedMetadata.model_json_schema(),
+                },
+            },
+            provider={"require_parameters": True},
+            reasoning_effort="low",
+            max_completion_tokens=16_000,
+            stream=False,
+            prompt_cache_key="vmsh-metadata-generation-v1",
+        )
 
 
 def _normalize_generated_rows(

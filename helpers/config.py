@@ -86,6 +86,9 @@ class Config:
     # Kept only in the profile JSON alongside the other server credentials.
     # It is never exposed through the PWA runtime endpoint.
     openrouter_api_key: str = field(default="", repr=False)
+    # Optional egress proxy for OpenRouter only.  This is deliberately not a
+    # global HTTP proxy: Telegram, storage, and other integrations stay direct.
+    openrouter_proxy: str = field(default="", repr=False)
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
     result_mode: str = "res_immed"
@@ -256,6 +259,7 @@ def _setup(*, force_production=False):
                     "openrouter_api_key", profile_values.get("OPENROUTER_API_KEY", "")
                 )
             ).strip(),
+            openrouter_proxy=str(profile_values.get("openrouter_proxy", "")).strip(),
             pdf2svg_path=_optional_executable_from_env("VMSH_PDF2SVG_PATH", "pdf2svg"),
             cwebp_path=_optional_executable_from_env("VMSH_CWEBP_PATH", "cwebp"),
             pdflatex_path=_optional_executable_from_env(
