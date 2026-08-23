@@ -183,7 +183,7 @@ def test_standalone_preparation_is_pure_and_keeps_security_boundary() -> None:
     cyrillic_document = prepare_tikz_standalone_document(
         r"\begin{tikzpicture}\node {Пример};\end{tikzpicture}"
     )
-    assert r"\usepackage[T2A,T1]{fontenc}" in cyrillic_document
+    assert r"\usepackage[T1,T2A]{fontenc}" in cyrillic_document
     assert r"\usepackage[utf8]{inputenc}" in cyrillic_document
     assert r"\usepackage[russian,english]{babel}" in cyrillic_document
 

@@ -247,9 +247,15 @@ def _safe_environment(temp_directory: Path) -> dict[str, str]:
 
     inherited_path = os.environ.get("PATH")
     environment = {
+        # TeX may build a missing T2A metric on demand.  The service home is
+        # deliberately read-only, so keep all TeX caches inside this conversion
+        # job's temporary directory and remove them with it.
+        "HOME": str(temp_directory),
         "LANG": "C.UTF-8",
         "LC_ALL": "C.UTF-8",
         "MAGICK_TMPDIR": str(temp_directory),
+        "TEXMFCONFIG": str(temp_directory / "texmf-config"),
+        "TEXMFVAR": str(temp_directory / "texmf-var"),
         "TMPDIR": str(temp_directory),
         "openin_any": "p",
         "openout_any": "p",
@@ -257,7 +263,7 @@ def _safe_environment(temp_directory: Path) -> dict[str, str]:
     }
     if inherited_path:
         environment["PATH"] = inherited_path
-    for identity_name in ("HOME", "USER", "LOGNAME"):
+    for identity_name in ("USER", "LOGNAME"):
         identity_value = os.environ.get(identity_name)
         if identity_value:
             environment[identity_name] = identity_value
@@ -345,7 +351,7 @@ def _validate_tikz_source(source: str) -> str:
 
 def _standalone_document(tikz_source: str) -> str:
     cyrillic_preamble = (
-        "\\usepackage[T2A,T1]{fontenc}\n"
+        "\\usepackage[T1,T2A]{fontenc}\n"
         "\\usepackage[utf8]{inputenc}\n"
         "\\usepackage[russian,english]{babel}\n"
         if _CYRILLIC_TEXT.search(tikz_source)

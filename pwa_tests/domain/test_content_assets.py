@@ -12,6 +12,7 @@ from helpers.pwa.content.assets import (
     ConfiguredContentAssetConverter,
     ContentAssetConverter,
     ContentAssetTools,
+    _safe_environment,
     sanitize_svg,
 )
 
@@ -45,6 +46,14 @@ def _vp8x(width: int, height: int) -> bytes:
         + (width - 1).to_bytes(3, "little")
         + (height - 1).to_bytes(3, "little")
     )
+
+
+def test_converter_environment_keeps_tex_caches_inside_the_job(tmp_path: Path) -> None:
+    environment = _safe_environment(tmp_path)
+
+    assert environment["HOME"] == str(tmp_path)
+    assert environment["TEXMFVAR"] == str(tmp_path / "texmf-var")
+    assert environment["TEXMFCONFIG"] == str(tmp_path / "texmf-config")
 
 
 def test_tool_resolution_is_explicit_and_reports_only_capability(
