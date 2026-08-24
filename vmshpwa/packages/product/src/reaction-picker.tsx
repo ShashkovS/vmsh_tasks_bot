@@ -45,7 +45,10 @@ export function ReactionPicker({
       if (!primaryModifier || !event.altKey || event.shiftKey || event.getModifierState('AltGraph'))
         return
 
-      const digit = Number(event.key)
+      // On macOS Option/Alt can turn `event.key` into a printable symbol
+      // (for example ⌥1 → ¡). `code` keeps the physical digit key stable.
+      const digitMatch = event.code.match(/^Digit([1-9])$/)
+      const digit = digitMatch ? Number(digitMatch[1]) : Number(event.key)
       if (!Number.isInteger(digit) || digit < 1 || digit > options.length) return
 
       const option = options[digit - 1]!
@@ -88,7 +91,7 @@ export function ReactionPicker({
                 }
                 aria-pressed={selected}
                 className={cn(
-                  'inline-flex min-h-6 items-center gap-1 rounded-md border px-1.5 py-0.5 text-caption leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+                  'inline-flex min-h-5 items-center gap-0.5 rounded-sm border px-1 py-px text-[0.6875rem] leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
                   tone,
                 )}
                 disabled={disabled}
@@ -106,7 +109,7 @@ export function ReactionPicker({
             <button
               aria-pressed={selected}
               className={cn(
-                'inline-flex min-h-(--touch-target) items-center gap-1.5 rounded-full border px-3 text-small transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+                'inline-flex min-h-9 items-center gap-1 rounded-md border px-2 py-1 text-small transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
                 tone,
               )}
               disabled={disabled}
@@ -124,7 +127,7 @@ export function ReactionPicker({
         <p className="text-caption leading-tight text-muted-foreground">
           {compact
             ? hotkeys
-              ? `⌘/Ctrl + Alt + 1–${options.length} · Не видна ученику и семье.`
+              ? `⌘/Ctrl + ⌥/Alt + 1–${options.length} · Работает и в комментарии; не видна ученику и семье.`
               : 'Не видна ученику и семье.'
             : 'Видно только преподавателям и администратору — ученик и семья не увидят.'}
         </p>
@@ -143,7 +146,7 @@ export function ReactionChip({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-small text-foreground',
+        'inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-0.5 text-caption text-foreground',
         className,
       )}
     >
