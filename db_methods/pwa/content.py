@@ -5612,3 +5612,71 @@ class PwaContentRepository:
             raise ContentConflict("synonym member is already removed")
 
         return await self._factory.run_write_async(write)
+    async def replace_web_derivative(
+        self,
+        *,
+        revision_public_id: str,
+        expected_version: int,
+        content_text: str,
+    ) -> ContentDerivativeRecord:
+        """Atomically replace the active Web document after a Staff-only edit."""
+
+        _require_public_id(revision_public_id)
+        if expected_version < 1:
+            raise ContentInvariantError("expected version must be positive")
+        if not isinstance(content_text, str) or not content_text:
+            raise ContentInvariantError("web document must not be empty")
+        content_hash = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
+        timestamp = self._timestamp()
+        provenance_json = _canonical_json_object(
+            {"operation": "staff_figure_scale"}, label="web derivative provenance"
+        )
+
+        def write(connection):
+            revision = connection.execute(
+                "SELECT * FROM content_revisions WHERE public_id = ?", (revision_public_id,)
+            ).fetchone()
+            if revision is None:
+                raise ContentNotFound("content revision does not exist")
+            if int(revision["version"]) != expected_version:
+                raise ContentVersionConflict("content revision version changed")
+            if RevisionStatus(str(revision["status"])) is not RevisionStatus.READY:
+                raise ContentConflict("web derivative can only be edited after compilation")
+            active = connection.execute(
+                "SELECT id FROM content_derivatives WHERE revision_id = ? "
+                "AND kind = 'web_ast' AND invalidated_at IS NULL "
+                "ORDER BY created_at DESC, id DESC LIMIT 1",
+                (revision["id"],),
+            ).fetchone()
+            if active is None:
+                raise ContentNotFound("active web derivative does not exist")
+            connection.execute(
+                "UPDATE content_derivatives SET invalidated_at = ? WHERE id = ? "
+                "AND invalidated_at IS NULL",
+                (timestamp, active["id"]),
+            )
+            derivative = connection.execute(
+                "INSERT INTO content_derivatives "
+                "(revision_id, kind, renderer_version, content_text, asset_id, "
+                "sha256, diagnostics_json, provenance_json, created_at) "
+                "VALUES (?, 'web_ast', 'staff-figure-scale/v1', ?, NULL, ?, '[]', ?, ?) "
+                "RETURNING *",
+                (revision["id"], content_text, content_hash, provenance_json, timestamp),
+            ).fetchone()
+            if derivative is None:
+                raise ContentRepositoryError("could not save web derivative")
+            return ContentDerivativeRecord(
+                id=int(derivative["id"]),
+                revision_id=int(derivative["revision_id"]),
+                kind=str(derivative["kind"]),
+                renderer_version=str(derivative["renderer_version"]),
+                sha256=str(derivative["sha256"]),
+                content_text=(
+                    None
+                    if derivative["content_text"] is None
+                    else str(derivative["content_text"])
+                ),
+                asset_id=None if derivative["asset_id"] is None else int(derivative["asset_id"]),
+            )
+
+        return await self._factory.run_write_async(write)

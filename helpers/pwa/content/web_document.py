@@ -417,27 +417,34 @@ def render_web_document(
     pending_condition_blocks: list[dict[str, Any]] = []
     for problem in document.problems:
         blocks = _problem_blocks(problem, role, assets=mapping)
+        preamble_blocks: list[dict[str, Any]] = []
         # A section, explanation or figure placed between two ``\задача``
         # environments introduces the next task.  Keeping it on the previous
         # task made the focused task route omit it together with the previous
         # task.  CONTENT-IMPORT-03: attach that preamble to the next problem.
         if role is ContentRole.CONDITION and pending_condition_blocks:
-            blocks = [*pending_condition_blocks, *blocks]
+            preamble_blocks = pending_condition_blocks
             pending_condition_blocks = []
-        if not blocks:
+        if not blocks and not preamble_blocks:
             continue
-        problems.append(
-            {
-                "ordinal": problem.ordinal,
-                "sourceItem": _bounded(
-                    problem.source_item or "", 80, "problem sourceItem", required=False
-                ),
-                "title": _bounded(
-                    problem.source_title or "", 500, "problem title", required=False
-                ),
-                "blocks": blocks,
-            }
-        )
+        # The wire contract requires a task body.  A source can theoretically
+        # contain an empty ``\\задача`` immediately after an inter-task
+        # preamble, so retain that preamble without manufacturing visible text.
+        if not blocks:
+            blocks = [{"type": "paragraph", "children": []}]
+        rendered_problem: dict[str, Any] = {
+            "ordinal": problem.ordinal,
+            "sourceItem": _bounded(
+                problem.source_item or "", 80, "problem sourceItem", required=False
+            ),
+            "title": _bounded(
+                problem.source_title or "", 500, "problem title", required=False
+            ),
+            "blocks": blocks,
+        }
+        if preamble_blocks:
+            rendered_problem["preambleBlocks"] = preamble_blocks
+        problems.append(rendered_problem)
         if role is ContentRole.CONDITION:
             pending_condition_blocks = _blocks(problem.trailing, assets=mapping)
     # A tail after the final task has no following task to introduce.  Retain

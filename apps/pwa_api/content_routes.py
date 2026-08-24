@@ -145,6 +145,10 @@ _PROBLEM_MATCH_ROW_FIELDS = frozenset(
 )
 _METADATA_GRID_FIELDS = frozenset({"revisionId", "rows"})
 _METADATA_GENERATION_FIELDS = frozenset({"revisionId"})
+_FIGURE_SCALE_FIELDS = frozenset({"assetId", "scale"})
+_FIGURE_SCALE_VALUES = frozenset(
+    {0.25, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2.0, 2.5}
+)
 _METADATA_ROW_FIELDS = frozenset(
     {
         "problemId",
@@ -1559,6 +1563,36 @@ def _web_document(
     return document
 
 
+def _set_figure_scale(
+    blocks: object, *, asset_id: str, scale: float
+) -> int:
+    """Set one Staff-selected scale in the public, validated Web document."""
+
+    if not isinstance(blocks, list):
+        raise ContentRepositoryError("stored web document has invalid blocks")
+    updated = 0
+    for block in blocks:
+        if not isinstance(block, dict):
+            raise ContentRepositoryError("stored web document has invalid block")
+        if block.get("type") == "figure":
+            asset = block.get("asset")
+            if isinstance(asset, dict) and asset.get("status") == "available" and asset.get("assetId") == asset_id:
+                block["scale"] = scale
+                updated += 1
+            continue
+        if block.get("type") == "list":
+            items = block.get("items")
+            if not isinstance(items, list):
+                raise ContentRepositoryError("stored web document has invalid list")
+            for item in items:
+                updated += _set_figure_scale(item, asset_id=asset_id, scale=scale)
+        elif block.get("type") in {"subpart", "callout"}:
+            updated += _set_figure_scale(
+                block.get("blocks"), asset_id=asset_id, scale=scale
+            )
+    return updated
+
+
 def _compile_failure_diagnostic(
     *, source_name: str, message: str, code: str = "compiler.source_invalid"
 ) -> dict[str, object]:
@@ -2317,6 +2351,101 @@ async def content_preview(request: web.Request) -> web.Response:
             "html": derivative.content_text,
         }
     return web.json_response(payload)
+
+
+@content_routes.put("/staff/api/v1/content/revisions/{revision_id}/figure-scale")
+@_translate_content_errors
+async def put_content_figure_scale(request: web.Request) -> web.Response:
+    """Persist a Staff-selected visual scale without changing LaTeX source."""
+
+    payload = await _json_object(
+        request,
+        allowed_fields=_FIGURE_SCALE_FIELDS,
+        max_bytes=CONTENT_JSON_BODY_LIMIT_BYTES,
+    )
+    asset_id = payload["assetId"]
+    raw_scale = payload["scale"]
+    if not isinstance(asset_id, str) or not asset_id:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Укажите рисунок для изменения размера",
+            details={"field": "assetId"},
+        )
+    if (
+        not isinstance(raw_scale, (int, float))
+        or isinstance(raw_scale, bool)
+        or float(raw_scale) not in _FIGURE_SCALE_VALUES
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Выбран недопустимый масштаб рисунка",
+            details={"field": "scale"},
+        )
+    scale = float(raw_scale)
+    repository = _repository(request)
+    context = await repository.get_revision_context(request.match_info["revision_id"])
+    _staff_actor(request, context.scope)
+    expected_version = _revision_if_match_version(
+        request, public_id=context.revision.public_id
+    )
+    if context.revision.status is not RevisionStatus.READY:
+        raise PwaApiError(
+            status=409,
+            code="revision_not_ready",
+            message="Размер рисунка можно менять после успешной компиляции",
+        )
+    derivative = await repository.get_active_derivative(
+        revision_id=context.revision.id, kind="web_ast"
+    )
+    document = _web_document(
+        derivative,
+        revision_public_id=context.revision.public_id,
+        kind=context.source.kind,
+    )
+    affected = _set_figure_scale(
+        document.get("introduction"), asset_id=asset_id, scale=scale
+    )
+    problems = document.get("problems")
+    if not isinstance(problems, list):
+        raise ContentRepositoryError("stored web document has invalid problems")
+    for problem in problems:
+        if not isinstance(problem, dict):
+            raise ContentRepositoryError("stored web document has invalid problem")
+        for field in ("preambleBlocks", "blocks", "trailingBlocks"):
+            if field in problem:
+                affected += _set_figure_scale(
+                    problem[field], asset_id=asset_id, scale=scale
+                )
+    if affected == 0:
+        raise PwaApiError(
+            status=422,
+            code="figure_not_found",
+            message="Этот рисунок не найден в текущей версии материала",
+        )
+    await repository.replace_web_derivative(
+        revision_public_id=context.revision.public_id,
+        expected_version=expected_version,
+        content_text=canonical_json(document),
+    )
+    await _invalidate_after_commit(
+        request,
+        scope=context.scope,
+        kind=context.source.kind,
+        reason="staff_figure_scale",
+    )
+    response = web.json_response(
+        {
+            "revisionId": context.revision.public_id,
+            "kind": "web",
+            "document": document,
+        }
+    )
+    response.headers["ETag"] = _etag(
+        context.revision.public_id, context.revision.version
+    )
+    return response
 
 
 @content_routes.get("/staff/api/v1/content/revisions/{revision_id}/pdf")

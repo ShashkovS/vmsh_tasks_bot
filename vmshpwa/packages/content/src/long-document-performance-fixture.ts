@@ -68,7 +68,10 @@ export function countDocumentMathExpressions(document: WebContentDocument): numb
     countBlockMath(document.introduction) +
     document.problems.reduce(
       (count, problem) =>
-        count + countBlockMath(problem.blocks) + countBlockMath(problem.trailingBlocks ?? []),
+        count +
+        countBlockMath(problem.preambleBlocks ?? []) +
+        countBlockMath(problem.blocks) +
+        countBlockMath(problem.trailingBlocks ?? []),
       0,
     )
   )

@@ -5,6 +5,7 @@ import type {
   WebContentDocument,
   WebContentProblem,
   WebContentTableCell,
+  WebFigureAvailableAsset,
   WebInlineNode,
 } from '@vmsh/contracts'
 import { cn } from '@vmsh/ui'
@@ -110,6 +111,7 @@ interface ContentBlocksProps {
   blocks: WebContentBlock[]
   path: string
   problem?: WebContentProblem
+  onFigureScaleCycle?: (asset: WebFigureAvailableAsset, nextScale: number) => void
   renderAfterSubpart?: (problem: WebContentProblem, label: string) => ReactNode
   renderSubpartActions?: (problem: WebContentProblem, label: string) => ReactNode
 }
@@ -118,6 +120,7 @@ function ContentBlocks({
   blocks,
   path,
   problem,
+  onFigureScaleCycle,
   renderAfterSubpart,
   renderSubpartActions,
 }: ContentBlocksProps) {
@@ -149,6 +152,7 @@ function ContentBlocks({
                   blocks={item}
                   path={`${key}-item-${itemIndex}`}
                   {...(problem === undefined ? {} : { problem })}
+                  {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
                   {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
                   {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
                 />
@@ -213,10 +217,11 @@ function ContentBlocks({
             </figure>
           )
         }
+        const asset = block.asset
         return (
           <ZoomableAssetFigure
             alt={block.alt}
-            asset={block.asset}
+            asset={asset}
             caption={
               block.caption ? (
                 <InlineNodes nodes={block.caption} path={`${key}-caption`} />
@@ -224,6 +229,12 @@ function ContentBlocks({
             }
             {...(block.floatHint === undefined ? {} : { floatHint: block.floatHint })}
             {...(block.widthHint === undefined ? {} : { widthHint: block.widthHint })}
+            {...(block.scale === undefined ? {} : { scale: block.scale })}
+            {...(
+              onFigureScaleCycle === undefined
+                ? {}
+                : { onScaleCycle: (nextScale: number) => onFigureScaleCycle(asset, nextScale) }
+            )}
             key={`${key}-${block.asset.assetId}`}
           />
         )
@@ -239,6 +250,7 @@ function ContentBlocks({
                 blocks={block.blocks}
                 path={`${key}-blocks`}
                 {...(problem === undefined ? {} : { problem })}
+                {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
                 {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
                 {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
               />
@@ -254,6 +266,7 @@ function ContentBlocks({
               blocks={block.blocks}
               path={`${key}-blocks`}
               {...(problem === undefined ? {} : { problem })}
+              {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
               {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
               {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
             />
@@ -273,6 +286,7 @@ export interface SemanticMathDocumentProps {
   renderAfterSubpart?: (problem: WebContentProblem, label: string) => ReactNode
   renderProblemActions?: (problem: WebContentProblem) => ReactNode
   renderSubpartActions?: (problem: WebContentProblem, label: string) => ReactNode
+  onFigureScaleCycle?: (asset: WebFigureAvailableAsset, nextScale: number) => void
 }
 
 /** Renders only an already runtime-validated WebContentDocument v1. */
@@ -283,18 +297,28 @@ export function SemanticMathDocument({
   renderAfterSubpart,
   renderProblemActions,
   renderSubpartActions,
+  onFigureScaleCycle,
 }: SemanticMathDocumentProps) {
   return (
     <MathDocument
       {...(className === undefined ? {} : { className })}
       {...(document.title === null ? {} : { title: document.title })}
     >
-      <ContentBlocks blocks={document.introduction} path="introduction" />
+      <ContentBlocks
+        blocks={document.introduction}
+        path="introduction"
+        {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+      />
       {document.problems.map((problem) => {
         const headingId = `problem-${problem.ordinal}`
         return (
           <Fragment key={problem.ordinal}>
             <section aria-labelledby={headingId} className="vmsh-problem">
+              <ContentBlocks
+                blocks={problem.preambleBlocks ?? []}
+                path={`problem-${problem.ordinal}-preamble`}
+                {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+              />
               <div className="vmsh-problem-header">
                 <h2 id={headingId}>
                   {problem.sourceItem ?? `Задача ${problem.ordinal}`}
@@ -308,12 +332,14 @@ export function SemanticMathDocument({
                 problem={problem}
                 {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
                 {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+                {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
               />
               {renderAfterProblem?.(problem)}
             </section>
             <ContentBlocks
               blocks={problem.trailingBlocks ?? []}
               path={`problem-${problem.ordinal}-trailing`}
+              {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
             />
           </Fragment>
         )

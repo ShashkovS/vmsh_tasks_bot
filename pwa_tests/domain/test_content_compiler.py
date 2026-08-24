@@ -1204,14 +1204,13 @@ def test_condition_attaches_inter_problem_content_to_the_following_problem() -> 
 
     first, second = document["problems"]
     assert "Общий комментарий" not in json.dumps(first["blocks"], ensure_ascii=False)
-    assert "Общий комментарий" in json.dumps(second["blocks"], ensure_ascii=False)
-    assert [block["type"] for block in second["blocks"][:4]] == [
+    assert "Общий комментарий" in json.dumps(second["preambleBlocks"], ensure_ascii=False)
+    assert [block["type"] for block in second["preambleBlocks"]] == [
         "heading",
         "paragraph",
         "figure",
-        "paragraph",
     ]
-    assert second["blocks"][2]["asset"] == {
+    assert second["preambleBlocks"][2]["asset"] == {
         "status": "missing",
         "logicalName": "figures/preamble.svg",
     }

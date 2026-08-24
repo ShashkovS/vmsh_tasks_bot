@@ -179,6 +179,38 @@ describe('browser math content renderer', () => {
     expect(container.querySelector('.vmsh-problem')?.contains(commentary)).toBe(false)
   })
 
+  it('renders a task preamble before the task heading', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    const firstProblem = document.problems[0]
+    if (!firstProblem) throw new Error('Fixture must contain a problem')
+
+    const { container } = render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [],
+          problems: [
+            {
+              ...firstProblem,
+              preambleBlocks: [
+                {
+                  type: 'paragraph',
+                  children: [{ type: 'text', value: 'Теория перед задачей.' }],
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    )
+
+    const section = container.querySelector('.vmsh-problem')
+    const preamble = screen.getByText('Теория перед задачей.')
+    const taskHeading = section?.querySelector('h2')
+    expect(taskHeading).not.toBeNull()
+    expect(preamble.compareDocumentPosition(taskHeading!) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+  })
+
   it('keeps the rest of a document visible when one formula is invalid', async () => {
     render(
       <p>
@@ -235,7 +267,7 @@ describe('browser math content renderer', () => {
     expect(screen.getByText('Важно')).not.toBeNull()
   })
 
-  it('scales the framed canvas with keyboard controls and resets it', () => {
+  it('cycles a Student figure locally without rendering zoom controls', () => {
     render(
       <ZoomableAssetFigure
         alt="Синтетическая схема"
@@ -252,16 +284,34 @@ describe('browser math content renderer', () => {
       />,
     )
 
-    const viewport = screen.getByTestId('figure-viewport')
     const canvas = screen.getByTestId('figure-canvas')
-    fireEvent.keyDown(viewport, { key: '+' })
-    expect(screen.getByTestId('figure-zoom').textContent).toContain('150%')
-    expect(canvas.style.width).toContain('150%')
-    expect(canvas.closest('figure')?.getAttribute('data-zoomed')).toBe('true')
-    fireEvent.keyDown(viewport, { key: '0' })
-    expect(screen.getByTestId('figure-zoom').textContent).toContain('100%')
-    expect(canvas.style.width).toContain('100%')
-    expect(canvas.closest('figure')?.hasAttribute('data-zoomed')).toBe(false)
+    expect(canvas.closest('figure')?.style.getPropertyValue('--vmsh-figure-scale')).toBe('1')
+    fireEvent.click(canvas)
+    expect(canvas.closest('figure')?.style.getPropertyValue('--vmsh-figure-scale')).toBe('1.25')
+    expect(screen.queryByRole('group', { name: 'Масштаб рисунка' })).toBeNull()
+  })
+
+  it('sends the next persisted Staff scale on a figure click', () => {
+    const scales: number[] = []
+    render(
+      <ZoomableAssetFigure
+        alt="Схема для Staff"
+        asset={{
+          status: 'available',
+          assetId: 'asset:staff-figure',
+          contentSha256: '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae',
+          src: '/content/staff-geometry.svg',
+          mediaType: 'image/svg+xml',
+          width: 800,
+          height: 480,
+        }}
+        onScaleCycle={(scale) => scales.push(scale)}
+        scale={1.5}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('figure-canvas'))
+    expect(scales).toEqual([1.75])
   })
 
   it('shows a stable missing-image fallback without dropping the caption', () => {

@@ -386,6 +386,40 @@ describe('Content API client', () => {
     )
   })
 
+  it('sends a Staff figure-scale update with the selected revision ETag', async () => {
+    const expected = {
+      revisionId: revision.revisionId,
+      kind: 'web' as const,
+      document: fixture.document,
+    }
+    const requests: Array<{ url: string; init: RequestInit | undefined }> = []
+    const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ url: requestUrl(input), init })
+      return Promise.resolve(jsonResponse(expected))
+    }) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    await expect(
+      client.updateFigureScale!({
+        revisionId: revision.revisionId,
+        etag: contentEtagSchema.parse(`"${revision.revisionId}:v2"`),
+        assetId: 'asset:source-sized-figure',
+        scale: 1.5,
+      }),
+    ).resolves.toEqual(expected)
+
+    expect(requests[0]?.url).toBe(
+      `/staff/api/v1/content/revisions/${encodeURIComponent(revision.revisionId)}/figure-scale`,
+    )
+    expect(requests[0]?.init?.method).toBe('PUT')
+    expect(requests[0]?.init?.body).toBe(
+      JSON.stringify({ assetId: 'asset:source-sized-figure', scale: 1.5 }),
+    )
+    expect(new Headers(requests[0]?.init?.headers).get('If-Match')).toBe(
+      `"${revision.revisionId}:v2"`,
+    )
+  })
+
   it('loads and atomically saves the complete problem-matching batch', async () => {
     const requests: Array<{ url: string; init: RequestInit | undefined }> = []
     const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {

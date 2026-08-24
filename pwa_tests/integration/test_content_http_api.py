@@ -5388,3 +5388,67 @@ async def test_staff_generates_metadata_draft_only_for_initial_unreviewed_condit
     assert later.status == 409
     assert (await later.json())["error"]["code"] == "metadata_generation_not_available"
     assert len(generator.requests) == 1
+async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    uploaded = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="lesson/figure-scale.tex",
+        source=(
+            r"\задача Текст рядом с рисунком. "
+            r"\includegraphics[width=.4\textwidth]{figures/scale.svg} "
+            r"\кзадача"
+        ).encode(),
+    )
+    assert uploaded.status == 201, await uploaded.text()
+    uploaded_payload = await uploaded.json()
+    revision_id = uploaded_payload["revisionId"]
+    attached = await _upload_asset(
+        fixture,
+        revision_id=revision_id,
+        logical_name="figures/scale.svg",
+        kind="svg",
+        if_match=uploaded.headers["ETag"],
+        payload=SAFE_SVG,
+    )
+    assert attached.status == 201, await attached.text()
+    asset_id = (await attached.json())["asset"]["assetId"]
+    compiled = await fixture.client.post(
+        f"/staff/api/v1/content/revisions/{revision_id}/compile",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=attached.headers["ETag"]),
+    )
+    assert compiled.status == 200, await compiled.text()
+    updated = await fixture.client.put(
+        f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
+        json={"assetId": asset_id, "scale": 1.5},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=compiled.headers["ETag"]),
+    )
+    assert updated.status == 200, await updated.text()
+    updated_payload = await updated.json()
+    figure = next(
+        block
+        for block in updated_payload["document"]["problems"][0]["blocks"]
+        if block["type"] == "figure"
+    )
+    assert figure["scale"] == 1.5
+    assert updated.headers["ETag"] == compiled.headers["ETag"]
+
+    preview = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{revision_id}/previews/web",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert preview.status == 200, await preview.text()
+    persisted_figure = next(
+        block
+        for block in (await preview.json())["document"]["problems"][0]["blocks"]
+        if block["type"] == "figure"
+    )
+    assert persisted_figure["scale"] == 1.5
+
+

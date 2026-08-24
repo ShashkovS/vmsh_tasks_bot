@@ -32,6 +32,7 @@ export type {
   PublishContentInput,
   UploadContentSourceInput,
   UploadContentRevisionAssetInput,
+  UpdateContentFigureScaleInput,
   VersionedContentResource,
 } from './content-client'
 export { sanitizeSemanticHtml, semanticHtmlTags } from './sanitizer'

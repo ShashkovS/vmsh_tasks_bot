@@ -155,6 +155,7 @@ export type WebContentBlock =
       caption?: WebInlineNode[] | undefined
       floatHint?: 'left' | 'right' | undefined
       widthHint?: string | undefined
+      scale?: number | undefined
       asset: WebFigureAvailableAsset | WebFigureMissingAsset
     }
   | { type: 'subpart'; label: string; blocks: WebContentBlock[] }
@@ -244,6 +245,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
           .string()
           .regex(/^(?:\d+(?:\.\d+)?%|\d+(?:\.\d+)?px)$/u)
           .optional(),
+        scale: z.number().min(0.25).max(2.5).optional(),
         asset: z.discriminatedUnion('status', [
           webFigureAvailableAssetSchema,
           webFigureMissingAssetSchema,
@@ -274,6 +276,9 @@ export const webContentProblemSchema = z
     ordinal: z.number().int().positive(),
     sourceItem: z.string().trim().min(1).max(80).nullable(),
     title: z.string().trim().min(1).max(500).nullable(),
+    // A preamble belongs to this problem, but is intentionally rendered
+    // before its task heading (CONTENT-IMPORT-03).
+    preambleBlocks: z.array(webContentBlockSchema).max(2_000).optional(),
     blocks: z.array(webContentBlockSchema).min(1).max(2_000),
     // Legacy persisted derivatives may carry inter-problem content here. New
     // compiler output attaches it to the following problem so focused task
@@ -313,7 +318,7 @@ function refineWebContentDocument(
   const stack = [
     ...document.introduction.map((block) => ({ block, depth: 1 })),
     ...document.problems.flatMap((problem) =>
-      [...problem.blocks, ...(problem.trailingBlocks ?? [])].map((block) => ({
+      [...(problem.preambleBlocks ?? []), ...problem.blocks, ...(problem.trailingBlocks ?? [])].map((block) => ({
         block,
         depth: 1,
       })),

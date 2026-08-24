@@ -97,6 +97,13 @@ export interface UploadContentRevisionAssetInput {
   asset?: File
 }
 
+export interface UpdateContentFigureScaleInput {
+  revisionId: string
+  etag: ContentEtag
+  assetId: string
+  scale: number
+}
+
 export interface PublicationSlotVersion {
   publicationId: string
   version: number
@@ -201,6 +208,10 @@ export interface ContentApiClient {
     input: UploadContentRevisionAssetInput,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<StaffContentAssetUpload>>
+  updateFigureScale?(
+    input: UpdateContentFigureScaleInput,
+    options?: ContentRequestOptions,
+  ): Promise<StaffContentPreview>
   preview(
     revisionId: string,
     kind: 'web' | 'telegram' | 'pdf',
@@ -552,6 +563,28 @@ class BrowserContentApiClient implements ContentApiClient {
     return this.#json(
       `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/previews/${kind}`,
       { method: 'GET', ...options },
+      staffContentPreviewSchema,
+    )
+  }
+
+  async updateFigureScale(
+    input: UpdateContentFigureScaleInput,
+    options: ContentRequestOptions = {},
+  ): Promise<StaffContentPreview> {
+    this.#requireStaff()
+    const revisionId = publicIdSchema.parse(input.revisionId)
+    return this.#json(
+      `/content/revisions/${encodeURIComponent(revisionId)}/figure-scale`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          assetId: publicIdSchema.parse(input.assetId),
+          scale: input.scale,
+        }),
+        ifMatch: contentEtagSchema.parse(input.etag),
+        contentType: 'application/json',
+        ...options,
+      },
       staffContentPreviewSchema,
     )
   }

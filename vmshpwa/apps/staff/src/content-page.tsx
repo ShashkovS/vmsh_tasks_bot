@@ -33,6 +33,7 @@ import {
   type StaffContentRevision,
   type StaffLessonWindow,
   type StaffPdfContentPreview,
+  type WebFigureAvailableAsset,
   type WebContentDocument,
 } from '@vmsh/contracts'
 import { LatexUpload } from '@vmsh/product'
@@ -752,6 +753,29 @@ function MaterialWorkflowCard({
     }
   }
 
+  const updateFigureScale = async (asset: WebFigureAvailableAsset, scale: number) => {
+    if (!selectedRevision || !client.updateFigureScale || state.mutationPending) return
+    patchState({ errorMessage: undefined, mutationPending: true })
+    try {
+      const preview = await client.updateFigureScale({
+        revisionId: selectedRevision.data.revisionId,
+        etag: selectedRevision.etag,
+        assetId: asset.assetId,
+        scale,
+      })
+      if (preview.kind !== 'web') throw new Error('Сервер вернул несовместимый preview')
+      setState((current) => ({
+        ...current,
+        webDocument: preview.document,
+        previewRevisionId: preview.revisionId,
+        mutationPending: false,
+      }))
+    } catch (error) {
+      patchState({ mutationPending: false })
+      handleMutationError(error)
+    }
+  }
+
   const publish = async (mode: 'publish' | 'schedule') => {
     if (!selectedRevision) return
     // The confirmation was reachable only after the review became ready. A
@@ -1126,8 +1150,15 @@ function MaterialWorkflowCard({
                 <TabsTrigger value="pdf">PDF</TabsTrigger>
               </TabsList>
               <TabsContent className="min-w-0" value="pwa">
-                <div className="mx-auto max-w-[52rem] rounded-md border border-border bg-surface p-4 sm:p-6">
-                  <SemanticMathDocument document={state.webDocument} />
+                <div className="mx-auto max-w-[112rem] rounded-md border border-border bg-surface p-4 sm:p-6">
+                  <SemanticMathDocument
+                    document={state.webDocument}
+                    {...(
+                      kind === 'condition' && client.updateFigureScale
+                        ? { onFigureScaleCycle: updateFigureScale }
+                        : {}
+                    )}
+                  />
                 </div>
               </TabsContent>
               <TabsContent className="min-w-0" value="telegram">

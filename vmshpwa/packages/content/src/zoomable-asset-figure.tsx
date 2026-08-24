@@ -1,23 +1,13 @@
-import {
-  useCallback,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react'
+import { useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 
 import type { WebFigureAvailableAsset } from '@vmsh/contracts'
 
-/*
- * A fixed ladder instead of a step: below the natural width a reader wants
- * finer control (a big drawing should be able to get out of the way), above it
- * coarser jumps are enough.
- */
-const ZOOM_LADDER = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] as const
-const NATURAL_ZOOM = 1
-const MINIMUM_ZOOM = ZOOM_LADDER[0]
-const MAXIMUM_ZOOM = ZOOM_LADDER.at(-1) ?? NATURAL_ZOOM
+/* The Staff ladder is a persisted editorial choice. Student clicks are an
+ * ephemeral reading convenience and intentionally use their own shorter set. */
+const STAFF_SCALE_LADDER = [
+  1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2, 2.5, 0.25, 0.5, 0.6, 0.7, 0.8, 0.9,
+] as const
+const STUDENT_SCALE_LADDER = [1, 1.25, 1.5, 2, 0.5, 0.75] as const
 
 export interface ZoomableAssetFigureProps {
   asset: WebFigureAvailableAsset
@@ -26,17 +16,33 @@ export interface ZoomableAssetFigureProps {
   className?: string
   floatHint?: 'left' | 'right'
   widthHint?: string
+  scale?: number
+  onScaleCycle?: (nextScale: number) => void
 }
 
-function stepZoom(current: number, direction: 1 | -1): number {
-  const found = ZOOM_LADDER.findIndex((step) => step >= current - 0.001)
-  const index = found === -1 ? ZOOM_LADDER.length - 1 : found
-  return ZOOM_LADDER[Math.min(ZOOM_LADDER.length - 1, Math.max(0, index + direction))] ?? current
+function normalizedScale(scale: number | undefined): number {
+  return scale === undefined ? 1 : Math.min(2.5, Math.max(0.25, scale))
+}
+
+function nextScale(scale: number, ladder: readonly number[]): number {
+  const index = ladder.findIndex((candidate) => Math.abs(candidate - scale) < 0.001)
+  return ladder[(index + 1 + ladder.length) % ladder.length] ?? ladder[0] ?? 1
+}
+
+function canFloat(
+  floatHint: 'left' | 'right' | undefined,
+  widthHint: string | undefined,
+  scale: number,
+) {
+  if (floatHint === undefined || widthHint === undefined || !widthHint.endsWith('%')) return false
+  const width = Number.parseFloat(widthHint)
+  return Number.isFinite(width) && width * scale <= 70
 }
 
 /**
- * A scroll-backed image viewer. The canvas takes its real scaled size, so a
- * zoomed image remains reachable instead of being cropped by a CSS transform.
+ * A figure has no scroll viewport or auxiliary zoom controls. A Staff click
+ * writes the next editorial scale; a Student click only changes local reading
+ * scale and is never sent to the server.
  */
 export function ZoomableAssetFigure({
   asset,
@@ -45,69 +51,57 @@ export function ZoomableAssetFigure({
   className,
   floatHint,
   widthHint,
+  scale,
+  onScaleCycle,
 }: ZoomableAssetFigureProps) {
-  const viewportRef = useRef<HTMLDivElement>(null)
-  const [zoom, setZoom] = useState(NATURAL_ZOOM)
+  const [studentScale, setStudentScale] = useState<number>()
   const [failedSource, setFailedSource] = useState<string | null>(null)
+  const savedScale = normalizedScale(scale)
+  const displayedScale = studentScale ?? savedScale
   const imageFailed = failedSource === asset.src
+  const floats = useMemo(
+    () => canFloat(floatHint, widthHint, displayedScale),
+    [displayedScale, floatHint, widthHint],
+  )
 
-  const changeZoom = useCallback((direction: 1 | -1) => {
-    setZoom((currentZoom) => {
-      const nextZoom = stepZoom(currentZoom, direction)
-      if (nextZoom === currentZoom) return currentZoom
-      const viewport = viewportRef.current
-      const horizontalCenter = viewport
-        ? (viewport.scrollLeft + viewport.clientWidth / 2) / Math.max(1, viewport.scrollWidth)
-        : 0.5
-      const verticalCenter = viewport
-        ? (viewport.scrollTop + viewport.clientHeight / 2) / Math.max(1, viewport.scrollHeight)
-        : 0.5
-      window.requestAnimationFrame(() => {
-        const current = viewportRef.current
-        if (!current) return
-        current.scrollLeft = horizontalCenter * current.scrollWidth - current.clientWidth / 2
-        current.scrollTop = verticalCenter * current.scrollHeight - current.clientHeight / 2
-      })
-      return nextZoom
-    })
-  }, [])
-
-  const reset = useCallback(() => {
-    setZoom(NATURAL_ZOOM)
-    window.requestAnimationFrame(() => {
-      const viewport = viewportRef.current
-      if (viewport) viewport.scrollTo({ left: 0, top: 0 })
-    })
-  }, [])
-
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === '+' || event.key === '=') {
-      event.preventDefault()
-      changeZoom(1)
-    } else if (event.key === '-') {
-      event.preventDefault()
-      changeZoom(-1)
-    } else if (event.key === '0') {
-      event.preventDefault()
-      reset()
+  const cycleScale = () => {
+    if (imageFailed) return
+    if (onScaleCycle) {
+      onScaleCycle(nextScale(savedScale, STAFF_SCALE_LADDER))
+      return
     }
+    setStudentScale((current) => nextScale(current ?? savedScale, STUDENT_SCALE_LADDER))
   }
 
-  /* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex -- The labelled scroll region intentionally receives keyboard zoom controls. */
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    cycleScale()
+  }
+
+  const instruction = onScaleCycle
+    ? `Нажмите, чтобы сохранить следующий размер рисунка: ${Math.round(displayedScale * 100)}%.`
+    : `Нажмите, чтобы изменить размер рисунка: ${Math.round(displayedScale * 100)}%.`
+
   return (
     <figure
       className={['vmsh-asset-figure', className].filter(Boolean).join(' ')}
-      data-float-hint={floatHint}
-      data-zoomed={zoom > NATURAL_ZOOM ? 'true' : undefined}
-      style={widthHint ? ({ '--vmsh-source-width': widthHint } as CSSProperties) : undefined}
+      data-float-hint={floats ? floatHint : undefined}
+      data-testid="asset-figure"
+      style={
+        {
+          '--vmsh-source-width': widthHint ?? '100%',
+          '--vmsh-figure-scale': String(displayedScale),
+        } as CSSProperties
+      }
     >
       <div
-        aria-label="Просмотр рисунка. Плюс и минус меняют масштаб, ноль сбрасывает."
-        className="vmsh-figure-viewport"
-        data-testid="figure-viewport"
+        aria-label={instruction}
+        className="vmsh-figure-canvas"
+        data-testid="figure-canvas"
+        onClick={cycleScale}
         onKeyDown={handleKeyDown}
-        ref={viewportRef}
-        role="region"
+        role="button"
         tabIndex={0}
       >
         {imageFailed ? (
@@ -116,58 +110,19 @@ export function ZoomableAssetFigure({
             <span>{alt}</span>
           </div>
         ) : (
-          <div
-            className="vmsh-figure-canvas"
-            data-testid="figure-canvas"
-            style={{ width: `min(${zoom * 100}%, ${asset.width * zoom}px)` }}
-          >
-            <img
-              alt={alt}
-              decoding="async"
-              draggable={false}
-              height={asset.height}
-              loading="lazy"
-              onError={() => setFailedSource(asset.src)}
-              src={asset.src}
-              width={asset.width}
-            />
-          </div>
+          <img
+            alt={alt}
+            decoding="async"
+            draggable={false}
+            height={asset.height}
+            loading="lazy"
+            onError={() => setFailedSource(asset.src)}
+            src={asset.src}
+            width={asset.width}
+          />
         )}
       </div>
-
-      <div className="vmsh-figure-controls" role="group" aria-label="Масштаб рисунка">
-        <button
-          aria-label="Уменьшить рисунок"
-          disabled={zoom <= MINIMUM_ZOOM || imageFailed}
-          onClick={() => changeZoom(-1)}
-          type="button"
-        >
-          −
-        </button>
-        <button
-          aria-label="Увеличить рисунок"
-          disabled={zoom >= MAXIMUM_ZOOM || imageFailed}
-          onClick={() => changeZoom(1)}
-          type="button"
-        >
-          +
-        </button>
-        <button
-          aria-label="Сбросить масштаб"
-          disabled={zoom === NATURAL_ZOOM || imageFailed}
-          onClick={reset}
-          title="Сбросить масштаб"
-          type="button"
-        >
-          ↺
-        </button>
-        <output aria-live="polite" data-testid="figure-zoom">
-          {Math.round(zoom * 100)}%
-        </output>
-      </div>
-
       {caption ? <figcaption>{caption}</figcaption> : null}
     </figure>
   )
-  /* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
 }
