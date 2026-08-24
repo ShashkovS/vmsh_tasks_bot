@@ -1,4 +1,4 @@
-import { CheckCircle2, Pencil, RefreshCw } from 'lucide-react'
+import { CheckCircle2, LoaderCircle, Pencil, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { type ContentApiClient, type VersionedContentResource } from '@vmsh/content'
@@ -19,7 +19,7 @@ import {
   type MetadataRow,
   type ProblemMatchingSelection,
 } from '@vmsh/product'
-import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh/ui'
+import { Alert, AlertContent, AlertDescription, AlertTitle, Button, Progress } from '@vmsh/ui'
 
 import { automaticProblemMatchPlan } from './automatic-problem-match-plan'
 import { problemReviewDraftStorageKey } from './problem-review-draft'
@@ -77,6 +77,8 @@ const answerTypeOptions = [
   [98, 'Выбор одного варианта'],
   [99, 'Строка'],
 ].map(([value, label]) => ({ value: String(value), label: String(label) }))
+
+const metadataGenerationExpectedSeconds = 70
 
 const metadataColumns: MetadataColumn[] = [
   { id: 'displayNumber', header: 'Номер', editorClassName: 'w-16 min-w-16' },
@@ -351,6 +353,20 @@ export function ProblemReviewWorkflow({
   const [generatedRows, setGeneratedRows] = useState<MetadataRow[]>()
   const [generationWarnings, setGenerationWarnings] = useState<string[]>([])
   const [metadataGridEpoch, setMetadataGridEpoch] = useState(0)
+  const [metadataGenerationStartedAt, setMetadataGenerationStartedAt] = useState<number>()
+  const [metadataGenerationElapsedSeconds, setMetadataGenerationElapsedSeconds] = useState(0)
+
+  useEffect(() => {
+    if (metadataGenerationStartedAt === undefined) return
+    const updateElapsed = () => {
+      setMetadataGenerationElapsedSeconds(
+        Math.floor((Date.now() - metadataGenerationStartedAt) / 1_000),
+      )
+    }
+    updateElapsed()
+    const interval = window.setInterval(updateElapsed, 1_000)
+    return () => window.clearInterval(interval)
+  }, [metadataGenerationStartedAt])
 
   const matchDraftKey = problemReviewDraftStorageKey(
     draftNamespace,
@@ -548,6 +564,8 @@ export function ProblemReviewWorkflow({
     if (!metadataResource || !client.generateMetadata) return
     setPending(true)
     setMessage(undefined)
+    setMetadataGenerationElapsedSeconds(0)
+    setMetadataGenerationStartedAt(Date.now())
     try {
       const generated = await client.generateMetadata({ groupLessonId, revisionId })
       const rows = generated.rows.map(generatedMetadataRow)
@@ -563,6 +581,7 @@ export function ProblemReviewWorkflow({
       setMessage(readableError(error))
     } finally {
       setPending(false)
+      setMetadataGenerationStartedAt(undefined)
     }
   }
 
@@ -631,11 +650,32 @@ export function ProblemReviewWorkflow({
         {metadataResource.data.canGenerateMetadata && client.generateMetadata ? (
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={pending} onClick={() => void generateMetadata()} size="xs" variant="outline">
-              Сгенерировать metadata
+              {metadataGenerationStartedAt === undefined ? 'Сгенерировать metadata' : 'Генерируем metadata…'}
             </Button>
-            <span className="text-caption text-muted-foreground">
-              Черновик нужно проверить и сохранить вручную.
-            </span>
+            {metadataGenerationStartedAt === undefined ? (
+              <span className="text-caption text-muted-foreground">
+                Черновик нужно проверить и сохранить вручную.
+              </span>
+            ) : (
+              <div aria-live="polite" className="flex min-w-72 flex-1 items-center gap-2 text-caption text-muted-foreground" role="status">
+                <LoaderCircle aria-hidden="true" className="size-4 shrink-0 animate-spin" />
+                <div className="min-w-48 flex-1 space-y-1">
+                  <p>
+                    Генерируем и перепроверяем metadata. Обычно это занимает 30–60 секунд
+                    {metadataGenerationElapsedSeconds >= metadataGenerationExpectedSeconds
+                      ? '; запрос всё ещё выполняется.'
+                      : '.'}
+                  </p>
+                  <Progress
+                    aria-label="Генерация metadata"
+                    value={Math.min(
+                      95,
+                      (metadataGenerationElapsedSeconds / metadataGenerationExpectedSeconds) * 100,
+                    )}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
         {generationWarnings.length ? (

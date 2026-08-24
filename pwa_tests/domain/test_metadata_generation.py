@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import pytest
 
 from helpers.pwa.content import metadata_generation as metadata_generation_module
@@ -13,6 +11,7 @@ from helpers.pwa.content.metadata_generation import (
     MetadataGenerationUnavailable,
     OpenRouterMetadataGenerator,
     _normalize_generated_rows,
+    _normalize_reference_markup,
     _upstream_generation_error,
     _user_prompt,
 )
@@ -145,52 +144,34 @@ async def test_metadata_generation_rejects_the_checked_in_example_key():
 async def test_metadata_generation_uses_an_async_client_for_configured_proxy(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    created_clients: list[object] = []
-    created_openrouter_kwargs: list[dict[str, object]] = []
+    calls: list[dict[str, object]] = []
 
-    class FakeAsyncClient:
-        def __init__(self, **kwargs) -> None:
-            self.kwargs = kwargs
-            created_clients.append(self)
+    async def fake_generate_lesson_json(*args, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs})
+        return {
+            "rows": [
+                {
+                    "prob": 1,
+                    "item": "",
+                    "title": "Черновик",
+                    "prob_type": "Письменно",
+                    "ans_type": "",
+                    "validation": {"mode": "none", "regex": "", "choices": []},
+                    "input_prompt": "",
+                    "correct_answers": [],
+                    "wrong_ans": "",
+                    "congrat": "",
+                    "needs_checker": False,
+                    "status": "ready",
+                    "notes": [],
+                }
+            ],
+            "warnings": [],
+        }
 
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-            return None
-
-    class FakeOpenRouter:
-        def __init__(self, **kwargs) -> None:
-            created_openrouter_kwargs.append(kwargs)
-            self.chat = SimpleNamespace(send_async=self.send_async)
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-            return None
-
-        async def send_async(self, **kwargs):
-            del kwargs
-            return SimpleNamespace(
-                choices=[
-                    SimpleNamespace(
-                        message=SimpleNamespace(
-                            content=(
-                                '{"rows":[{"sourceOrdinal":1,"sourceItem":"1",'
-                                '"title":"Черновик","problemType":2,'
-                                '"answerType":null,"answerValidation":null,'
-                                '"validationError":null,"correctAnswer":null,'
-                                '"wrongAnswer":null,"congratulation":null,'
-                                '"reviewNote":null}],"warnings":[]}'
-                            )
-                        )
-                    )
-                ]
-            )
-
-    monkeypatch.setattr(metadata_generation_module.httpx, "AsyncClient", FakeAsyncClient)
-    monkeypatch.setattr(metadata_generation_module, "OpenRouter", FakeOpenRouter)
+    monkeypatch.setattr(
+        metadata_generation_module, "generate_lesson_json", fake_generate_lesson_json
+    )
 
     result = await OpenRouterMetadataGenerator(
         api_key="sk-or-v1-live-key",
@@ -198,8 +179,74 @@ async def test_metadata_generation_uses_an_async_client_for_configured_proxy(
     ).generate(_request())
 
     assert len(result.rows) == 1
-    assert created_clients[0].kwargs == {
-        "proxy": "http://127.0.0.1:1080",
-        "follow_redirects": True,
-    }
-    assert created_openrouter_kwargs[0]["async_client"] is created_clients[0]
+    assert calls[0]["kwargs"]["proxy"] == "http://127.0.0.1:1080"
+    assert calls[0]["kwargs"]["reasoning_effort"] == "medium"
+    assert calls[0]["kwargs"]["prompt_cache"] is True
+
+
+def test_metadata_generation_maps_verified_choice_contract_to_pwa_fields():
+    result = _normalize_reference_markup(
+        _request(),
+        {
+            "rows": [
+                {
+                    "prob": 1,
+                    "item": "",
+                    "title": "Выберите ответ",
+                    "prob_type": "Тест",
+                    "ans_type": "Выбор",
+                    "validation": {
+                        "mode": "choices",
+                        "regex": "",
+                        "choices": ["да", "нет"],
+                    },
+                    "input_prompt": "Выберите верный вариант.",
+                    "correct_answers": ["да"],
+                    "wrong_ans": "Нет.",
+                    "congrat": "Верно!",
+                    "needs_checker": False,
+                    "status": "ready",
+                    "notes": [],
+                }
+            ],
+            "warnings": ["Проверьте выбор."],
+        },
+    )
+
+    assert result.rows[0]["answerType"] == 98
+    assert result.rows[0]["answerValidation"] == "да;нет"
+    assert result.rows[0]["correctAnswer"] == "да"
+    assert result.warnings == ("Проверьте выбор.",)
+
+
+def test_metadata_generation_never_uses_a_provisional_answer_that_needs_checker():
+    result = _normalize_reference_markup(
+        _request(),
+        {
+            "rows": [
+                {
+                    "prob": 1,
+                    "item": "",
+                    "title": "Нестандартная проверка",
+                    "prob_type": "Тест",
+                    "ans_type": "Строка",
+                    "validation": {"mode": "builtin", "regex": "", "choices": []},
+                    "input_prompt": "Введите ответ.",
+                    "correct_answers": ["только для проверки модели"],
+                    "wrong_ans": "Неверно.",
+                    "congrat": "Верно!",
+                    "needs_checker": True,
+                    "checker_reason": "эквивалентность выражений",
+                    "status": "needs_checker",
+                    "notes": [],
+                }
+            ],
+            "warnings": [],
+        },
+    )
+
+    assert result.rows[0]["correctAnswer"] is None
+    assert result.warnings == (
+        "1: эквивалентность выражений; добавьте checker вручную перед публикацией",
+        "1: needs_checker",
+    )
