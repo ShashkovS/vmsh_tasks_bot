@@ -5439,6 +5439,20 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
     assert updated.headers["ETag"] == compiled.headers["ETag"]
 
     preview = await fixture.client.get(
+    updated_again = await fixture.client.put(
+        f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
+        json={"assetId": asset_id, "scale": 1.75},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=updated.headers["ETag"]),
+    )
+    assert updated_again.status == 200, await updated_again.text()
+    updated_again_figure = next(
+        block
+        for block in (await updated_again.json())["document"]["problems"][0]["blocks"]
+        if block["type"] == "figure"
+    )
+    assert updated_again_figure["scale"] == 1.75
+
         f"/staff/api/v1/content/revisions/{revision_id}/previews/web",
         cookies=_cookie(fixture, "admin"),
         headers=_headers(),
@@ -5449,6 +5463,6 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
         for block in (await preview.json())["document"]["problems"][0]["blocks"]
         if block["type"] == "figure"
     )
-    assert persisted_figure["scale"] == 1.5
+    assert persisted_figure["scale"] == 1.75
 
 

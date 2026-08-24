@@ -5650,19 +5650,36 @@ class PwaContentRepository:
             ).fetchone()
             if active is None:
                 raise ContentNotFound("active web derivative does not exist")
-            connection.execute(
-                "UPDATE content_derivatives SET invalidated_at = ? WHERE id = ? "
-                "AND invalidated_at IS NULL",
-                (timestamp, active["id"]),
-            )
-            derivative = connection.execute(
-                "INSERT INTO content_derivatives "
-                "(revision_id, kind, renderer_version, content_text, asset_id, "
-                "sha256, diagnostics_json, provenance_json, created_at) "
-                "VALUES (?, 'web_ast', 'staff-figure-scale/v1', ?, NULL, ?, '[]', ?, ?) "
-                "RETURNING *",
-                (revision["id"], content_text, content_hash, provenance_json, timestamp),
-            ).fetchone()
+            # The schema keeps every derivative immutable and has a unique key
+            # on (revision, kind, renderer_version).  The prior active
+            # derivative ID makes each replacement unique, including a later
+            # return to a scale that was used before.
+            renderer_version = f"staff-figure-scale/v1:{active['id']}"
+            try:
+                connection.execute(
+                    "UPDATE content_derivatives SET invalidated_at = ? WHERE id = ? "
+                    "AND invalidated_at IS NULL",
+                    (timestamp, active["id"]),
+                )
+                derivative = connection.execute(
+                    "INSERT INTO content_derivatives "
+                    "(revision_id, kind, renderer_version, content_text, asset_id, "
+                    "sha256, diagnostics_json, provenance_json, created_at) "
+                    "VALUES (?, 'web_ast', ?, ?, NULL, ?, '[]', ?, ?) "
+                    "RETURNING *",
+                    (
+                        revision["id"],
+                        renderer_version,
+                        content_text,
+                        content_hash,
+                        provenance_json,
+                        timestamp,
+                    ),
+                ).fetchone()
+            except sqlite3.IntegrityError as error:
+                raise _translate_integrity(
+                    error, action="web derivative replacement"
+                ) from error
             if derivative is None:
                 raise ContentRepositoryError("could not save web derivative")
             return ContentDerivativeRecord(
