@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { BookOpen, MapPin, Radio } from 'lucide-react'
 import { useMemo } from 'react'
 
@@ -258,6 +258,11 @@ export function StudentHomePage() {
                   {...(item.classroomName ? { classroomName: item.classroomName } : {})}
                   {...(confirmedAt ? { confirmedAt } : {})}
                   endsAt={item.endsAt}
+                  onlineModeAction={
+                    <Link className="text-link underline-offset-2 hover:underline" to="/profile">
+                      Поменять
+                    </Link>
+                  }
                   startsAt={item.startsAt}
                   status={item.status}
                 />

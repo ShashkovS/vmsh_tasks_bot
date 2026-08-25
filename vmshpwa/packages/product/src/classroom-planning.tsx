@@ -14,7 +14,7 @@ import {
   TriangleAlert,
   UsersRound,
 } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { type ReactNode, useId, useMemo, useState } from 'react'
 
 import {
   Alert,
@@ -1083,6 +1083,8 @@ export interface ClassroomAssignmentStatusProps {
   confirmedAt?: string
   announcedAt?: string
   studentName?: string
+  /** Student-only action that opens the attendance-mode setting. */
+  onlineModeAction?: ReactNode
   onOpenNotificationSettings?: () => void
   className?: string
 }
@@ -1118,6 +1120,7 @@ export function ClassroomAssignmentStatus({
   confirmedAt,
   announcedAt,
   studentName,
+  onlineModeAction,
   onOpenNotificationSettings,
   className,
 }: ClassroomAssignmentStatusProps) {
@@ -1163,14 +1166,18 @@ export function ClassroomAssignmentStatus({
       <Alert className={className} tone="neutral">
         <UsersRound aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>Очная аудитория не требуется</AlertTitle>
-          <AlertDescription>
-            {audience === 'student'
-              ? 'Сейчас у вас онлайн-режим.'
-              : studentName
-                ? `${studentName}: сейчас онлайн-режим.`
-                : 'Сейчас у ребёнка онлайн-режим.'}
-          </AlertDescription>
+          {audience === 'student' ? (
+            <AlertDescription>
+              Сейчас у вас онлайн-режим. {onlineModeAction}
+            </AlertDescription>
+          ) : (
+            <>
+              <AlertTitle>Очная аудитория не требуется</AlertTitle>
+              <AlertDescription>
+                {studentName ? `${studentName}: сейчас онлайн-режим.` : 'Сейчас у ребёнка онлайн-режим.'}
+              </AlertDescription>
+            </>
+          )}
           {eventSchedule ? (
             <p className="mt-1 flex items-center gap-1 text-small font-medium text-foreground">
               <CalendarClock aria-hidden="true" className="size-4" />
