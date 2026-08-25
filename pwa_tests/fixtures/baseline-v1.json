@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
   "schemaVersion": 3,
-  "expectedCanonicalDigest": "34a1c426a28f9a1c9ccd8f6c818f1b971f0d2311f6944643530d0cd3f06480d6",
+  "expectedCanonicalDigest": "78eed7566c37bc1a0b98bab0e4718f662cf6386a1c5ba1c4def6b1dbb1aa5b7a",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",
@@ -12,7 +12,7 @@
     "solutionPublishesAt": "2026-01-31T18:00:00Z",
     "familyPersona": {
       "fixtureKey": "fixture-family-1",
-      "accountPublicId": "account-family-fixture",
+      "accountPublicId": "a-1101",
       "studentUserIds": [101, 102],
       "materializeInPhase": 1
     }
@@ -21,7 +21,7 @@
     "seasons": [
       {
         "id": 1,
-        "public_id": "season-fixture-2025-26",
+        "public_id": "s-1",
         "code": "2025-26",
         "title": "Синтетический сезон 2025–26",
         "starts_on": "2025-09-01",
@@ -36,7 +36,7 @@
     "courses": [
       {
         "id": 1,
-        "public_id": "course-fixture-math-5-7",
+        "public_id": "c-1",
         "season_id": 1,
         "code": "math-5-7",
         "name": "Математика 5–7",
@@ -53,6 +53,7 @@
     ],
     "groups": [
       {
+        "id": 1,
         "group_id": "н",
         "short_code": "н",
         "broadcast_code": "fixture_all_n",
@@ -67,7 +68,7 @@
         "allow_self_switch": 1,
         "is_system": 0,
         "score_weight": 1.0,
-        "public_id": "group-fixture-beginner",
+        "public_id": "g-1",
         "course_id": 1,
         "status": "active",
         "color_key": "level-1",
@@ -76,6 +77,7 @@
         "version": 1
       },
       {
+        "id": 2,
         "group_id": "п",
         "short_code": "п",
         "broadcast_code": "fixture_all_p",
@@ -90,7 +92,7 @@
         "allow_self_switch": 1,
         "is_system": 0,
         "score_weight": 1.0,
-        "public_id": "group-fixture-continuing",
+        "public_id": "g-2",
         "course_id": 1,
         "status": "active",
         "color_key": "level-2",
@@ -99,6 +101,7 @@
         "version": 1
       },
       {
+        "id": 3,
         "group_id": "э",
         "short_code": "э",
         "broadcast_code": "fixture_all_e",
@@ -113,7 +116,7 @@
         "allow_self_switch": 1,
         "is_system": 0,
         "score_weight": 1.0,
-        "public_id": "group-fixture-expert",
+        "public_id": "g-3",
         "course_id": 1,
         "status": "active",
         "color_key": "level-3",
@@ -122,6 +125,7 @@
         "version": 1
       },
       {
+        "id": 4,
         "group_id": "testing",
         "short_code": "т",
         "broadcast_code": "fixture_all_testing",
@@ -136,7 +140,7 @@
         "allow_self_switch": 0,
         "is_system": 0,
         "score_weight": 1.0,
-        "public_id": "group-fixture-testing",
+        "public_id": "g-4",
         "course_id": 1,
         "status": "active",
         "color_key": "testing",
@@ -145,6 +149,7 @@
         "version": 1
       },
       {
+        "id": 5,
         "group_id": "no_level",
         "short_code": "@",
         "broadcast_code": "fixture_all_no_level",
@@ -159,7 +164,7 @@
         "allow_self_switch": 0,
         "is_system": 1,
         "score_weight": 1.0,
-        "public_id": "group-fixture-no-level",
+        "public_id": "g-5",
         "course_id": 1,
         "status": "archived",
         "color_key": "neutral",
@@ -171,7 +176,7 @@
     "users": [
       {
         "id": 101,
-        "public_id": "user-student-online-fixture",
+        "public_id": "u-101",
         "chat_id": null,
         "type": 1,
         "group_id": "н",
@@ -186,7 +191,7 @@
       },
       {
         "id": 102,
-        "public_id": "user-student-in-person-fixture",
+        "public_id": "u-102",
         "chat_id": null,
         "type": 1,
         "group_id": "п",
@@ -201,7 +206,7 @@
       },
       {
         "id": 201,
-        "public_id": "user-staff-fixture",
+        "public_id": "u-201",
         "chat_id": null,
         "type": 2,
         "group_id": "н",
@@ -216,7 +221,7 @@
       },
       {
         "id": 301,
-        "public_id": "user-admin-fixture",
+        "public_id": "u-301",
         "chat_id": null,
         "type": 128,
         "group_id": "no_level",
@@ -233,7 +238,7 @@
     "auth_accounts": [
       {
         "id": 1001,
-        "public_id": "account-student-fixture",
+        "public_id": "a-1001",
         "audience": "student",
         "username": "testovyy-onlayn-14",
         "username_normalized": "testovyy-onlayn-14",
@@ -251,7 +256,7 @@
       },
       {
         "id": 1002,
-        "public_id": "account-student-in-person-fixture",
+        "public_id": "a-1002",
         "audience": "student",
         "username": "testovaya-ochno-02",
         "username_normalized": "testovaya-ochno-02",
@@ -269,7 +274,7 @@
       },
       {
         "id": 1101,
-        "public_id": "account-family-fixture",
+        "public_id": "a-1101",
         "audience": "family",
         "username": "synthetic-family",
         "username_normalized": "synthetic-family",
@@ -287,7 +292,7 @@
       },
       {
         "id": 1201,
-        "public_id": "account-staff-fixture",
+        "public_id": "a-1201",
         "audience": "staff",
         "username": "synthetic-teacher",
         "username_normalized": "synthetic-teacher",
@@ -305,7 +310,7 @@
       },
       {
         "id": 1301,
-        "public_id": "account-admin-fixture",
+        "public_id": "a-1301",
         "audience": "staff",
         "username": "synthetic-admin",
         "username_normalized": "synthetic-admin",
@@ -349,7 +354,7 @@
     "course_enrollments": [
       {
         "id": 2001,
-        "public_id": "enrollment-student-online-fixture",
+        "public_id": "en-2001",
         "student_user_id": 101,
         "course_id": 1,
         "active_group_id": "н",
@@ -363,7 +368,7 @@
       },
       {
         "id": 2002,
-        "public_id": "enrollment-student-in-person-fixture",
+        "public_id": "en-2002",
         "student_user_id": 102,
         "course_id": 1,
         "active_group_id": "п",
@@ -497,7 +502,7 @@
     "problems": [
       {
         "id": 39001,
-        "public_id": "problem-fixture-39001",
+        "public_id": "p-39001",
         "group_id": "н",
         "lesson": 39,
         "prob": 1,
@@ -516,7 +521,7 @@
       },
       {
         "id": 39101,
-        "public_id": "problem-fixture-39101",
+        "public_id": "p-39101",
         "group_id": "п",
         "lesson": 39,
         "prob": 1,
@@ -535,7 +540,7 @@
       },
       {
         "id": 39201,
-        "public_id": "problem-fixture-39201",
+        "public_id": "p-39201",
         "group_id": "э",
         "lesson": 39,
         "prob": 1,
@@ -554,7 +559,7 @@
       },
       {
         "id": 40001,
-        "public_id": "problem-fixture-40001",
+        "public_id": "p-40001",
         "group_id": "н",
         "lesson": 40,
         "prob": 1,
@@ -573,7 +578,7 @@
       },
       {
         "id": 40101,
-        "public_id": "problem-fixture-40101",
+        "public_id": "p-40101",
         "group_id": "п",
         "lesson": 40,
         "prob": 1,
@@ -592,7 +597,7 @@
       },
       {
         "id": 40201,
-        "public_id": "problem-fixture-40201",
+        "public_id": "p-40201",
         "group_id": "э",
         "lesson": 40,
         "prob": 1,
@@ -611,7 +616,7 @@
       },
       {
         "id": 41001,
-        "public_id": "problem-fixture-41001",
+        "public_id": "p-41001",
         "group_id": "н",
         "lesson": 41,
         "prob": 1,
@@ -630,7 +635,7 @@
       },
       {
         "id": 41002,
-        "public_id": "problem-fixture-41002",
+        "public_id": "p-41002",
         "group_id": "н",
         "lesson": 41,
         "prob": 2,
@@ -649,7 +654,7 @@
       },
       {
         "id": 41003,
-        "public_id": "problem-fixture-41003",
+        "public_id": "p-41003",
         "group_id": "н",
         "lesson": 41,
         "prob": 3,
@@ -668,7 +673,7 @@
       },
       {
         "id": 41004,
-        "public_id": "problem-fixture-41004",
+        "public_id": "p-41004",
         "group_id": "н",
         "lesson": 41,
         "prob": 4,
@@ -687,7 +692,7 @@
       },
       {
         "id": 41005,
-        "public_id": "problem-fixture-41005",
+        "public_id": "p-41005",
         "group_id": "н",
         "lesson": 41,
         "prob": 5,
@@ -706,7 +711,7 @@
       },
       {
         "id": 41006,
-        "public_id": "problem-fixture-41006",
+        "public_id": "p-41006",
         "group_id": "н",
         "lesson": 41,
         "prob": 6,
@@ -725,7 +730,7 @@
       },
       {
         "id": 41007,
-        "public_id": "problem-fixture-41007",
+        "public_id": "p-41007",
         "group_id": "н",
         "lesson": 41,
         "prob": 7,
@@ -744,7 +749,7 @@
       },
       {
         "id": 41008,
-        "public_id": "problem-fixture-41008",
+        "public_id": "p-41008",
         "group_id": "н",
         "lesson": 41,
         "prob": 8,
@@ -763,7 +768,7 @@
       },
       {
         "id": 41101,
-        "public_id": "problem-fixture-41101",
+        "public_id": "p-41101",
         "group_id": "п",
         "lesson": 41,
         "prob": 1,
@@ -782,7 +787,7 @@
       },
       {
         "id": 41201,
-        "public_id": "problem-fixture-41201",
+        "public_id": "p-41201",
         "group_id": "э",
         "lesson": 41,
         "prob": 1,
@@ -935,7 +940,7 @@
     "written_tasks_queue": [
       {
         "id": 5001,
-        "public_id": "review-queue-baseline-5001",
+        "public_id": "wq-5001",
         "ts": "2026-01-31T17:49:30Z",
         "student_id": 101,
         "problem_id": 41003,
@@ -950,7 +955,7 @@
       },
       {
         "id": 5002,
-        "public_id": "review-queue-baseline-5002",
+        "public_id": "wq-5002",
         "ts": "2026-01-31T17:48:00Z",
         "student_id": 102,
         "problem_id": 41004,

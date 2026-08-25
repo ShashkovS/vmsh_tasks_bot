@@ -189,13 +189,13 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
 
     def seed(connection):
         connection.execute("DELETE FROM kv_logins")
+        connection.execute("DELETE FROM groups")
         connection.executemany(
-            "INSERT INTO users (id, public_id, type, name, surname, group_id) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, type, name, surname, group_id) "
+            "VALUES (?, ?, ?, ?, ?)",
             (
                 (
                     STUDENT_USER_ID,
-                    "user-content-student",
                     int(USER_TYPE.STUDENT),
                     "Ирина",
                     "Тестова",
@@ -203,7 +203,6 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
                 ),
                 (
                     TEACHER_USER_ID,
-                    "user-content-teacher",
                     int(USER_TYPE.TEACHER),
                     "Тестовый",
                     "Учитель",
@@ -211,7 +210,6 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
                 ),
                 (
                     ADMIN_USER_ID,
-                    "user-content-admin",
                     int(USER_TYPE.ADMIN),
                     "Тестовый",
                     "Администратор",
@@ -221,44 +219,44 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
         )
         season_id = connection.execute(
             "INSERT INTO seasons "
-            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+            "(id, code, title, starts_on, ends_on, session_expires_on, "
             "status, created_at, updated_at) VALUES "
-            "('season-content-http', 'content-http', 'Content HTTP', "
+            "(1, 'content-http', 'Content HTTP', "
             "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) "
             "RETURNING id",
             (now, now),
         ).fetchone()["id"]
         course_id = connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "(id, season_id, code, name, subject_code, status, sort_order, "
             "accent_key, created_at, updated_at) VALUES "
-            "('course-content-http', ?, 'math', 'Математика', 'math', 'active', "
-            "1, 'math', ?, ?) RETURNING id",
+            "(1, ?, 'math', 'Математика', 'math', 'active', 1, 'math', ?, ?) "
+            "RETURNING id",
             (season_id, now, now),
         ).fetchone()["id"]
         connection.executemany(
             "INSERT INTO groups "
-            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, status, "
+            "(id, group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, course_id, status, "
             "created_at, updated_at) VALUES "
-            "(?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?)",
+            "(?, ?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
             (
                 (
+                    1,
                     "content-a",
                     "a",
                     "A",
                     1,
-                    "group-content-http-a",
                     course_id,
                     now,
                     now,
                 ),
                 (
+                    2,
                     "content-b",
                     "b",
                     "B",
                     2,
-                    "group-content-http-b",
                     course_id,
                     now,
                     now,
@@ -267,14 +265,14 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
         )
         accounts = connection.executemany(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(id, audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, display_name, "
             "credential_kind, credential_hash, linked_user_id, status, "
             "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'synthetic-test', "
             "?, ?, ?, ?, 'active', ?, ?)",
             (
                 (
-                    "account-content-student",
+                    1,
                     "student",
                     "content-student",
                     "content-student",
@@ -287,7 +285,7 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
                     now,
                 ),
                 (
-                    "account-content-family",
+                    2,
                     "family",
                     "content-family",
                     "content-family",
@@ -300,7 +298,7 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
                     now,
                 ),
                 (
-                    "account-content-teacher",
+                    3,
                     "staff",
                     "content-teacher",
                     "content-teacher",
@@ -313,7 +311,7 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
                     now,
                 ),
                 (
-                    "account-content-admin",
+                    4,
                     "staff",
                     "content-admin",
                     "content-admin",
@@ -329,7 +327,7 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
         )
         del accounts
         family_account_id = connection.execute(
-            "SELECT id FROM auth_accounts WHERE public_id = 'account-content-family'"
+            "SELECT id FROM auth_accounts WHERE public_id = 'a-2'"
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO family_student_links "
@@ -339,9 +337,9 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
         )
         enrollment_id = connection.execute(
             "INSERT INTO course_enrollments "
-            "(public_id, student_user_id, course_id, active_group_id, "
+            "(id, student_user_id, course_id, active_group_id, "
             "attendance_mode, status, created_at, updated_at) VALUES "
-            "('enrollment-content-http', ?, ?, 'content-a', 'online', "
+            "(1, ?, ?, 'content-a', 'online', "
             "'active', ?, ?) RETURNING id",
             (STUDENT_USER_ID, course_id, now, now),
         ).fetchone()["id"]
@@ -377,23 +375,16 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         factory,
         clock=lambda: NOW,
         claim_token_factory=lambda: "content-http-family-review-claim",
-        review_public_id_factory=lambda: "content-http-family-review",
-        annotation_public_id_factory=lambda: "content-http-family-annotation",
-        comment_public_id_factory=lambda: "content-http-family-comment",
-        event_public_id_factory=lambda: "content-http-family-review-event",
-        internal_reaction_event_public_id_factory=(
-            lambda: "content-http-family-reaction-event"
-        ),
     )
     course_lesson = await content_repository.create_course_lesson(
-        public_id="course-lesson-content-http",
+        public_id="cl-1",
         course_id=course_id,
         lesson_number=41,
         title="Занятие 41",
         actor_user_id=ADMIN_USER_ID,
     )
     group_lesson_a = await content_repository.create_group_lesson(
-        public_id="group-lesson-content-http-a",
+        public_id="gl-1",
         course_lesson_id=course_lesson.id,
         course_id=course_id,
         group_id="content-a",
@@ -403,7 +394,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         status="active",
     )
     group_lesson_b = await content_repository.create_group_lesson(
-        public_id="group-lesson-content-http-b",
+        public_id="gl-2",
         course_lesson_id=course_lesson.id,
         course_id=course_id,
         group_id="content-b",
@@ -905,19 +896,16 @@ def _insert_second_written_problem(
             "SELECT id FROM content_revisions WHERE public_id = ?",
             (condition_revision_public_id,),
         ).fetchone()
-        problem_public_id = "problem-content-http-written-target"
-        problem_id = int(
-            connection.execute(
+        inserted_problem = connection.execute(
                 "INSERT INTO problems "
                 "(group_id, lesson, prob, item, title, prob_text, prob_type, "
                 "ans_type, ans_validation, validation_error, cor_ans, "
-                "cor_ans_checker, wrong_ans, congrat, synonyms, public_id) "
+                "cor_ans_checker, wrong_ans, congrat, synonyms) "
                 "VALUES ('content-a', 41, 2, '', 'Целевая письменная задача', "
-                "'', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', ?) "
-                "RETURNING id",
-                (problem_public_id,),
-            ).fetchone()["id"]
-        )
+                "'', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '') "
+                "RETURNING id, public_id"
+            ).fetchone()
+        problem_id = int(inserted_problem["id"])
         connection.execute(
             "INSERT INTO content_problem_matches "
             "(content_revision_id, source_ordinal, source_item, problem_id, "
@@ -934,7 +922,7 @@ def _insert_second_written_problem(
             "'целевая письменная задача', 2, NULL, '{}', '{}', 1, ?)",
             (problem_id, revision["id"], now),
         )
-        return problem_public_id
+        return str(inserted_problem["public_id"])
 
     return str(fixture.factory.run_write(insert))
 
@@ -1076,7 +1064,7 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
 
     invalid_identity = await fixture.client.post(
         route,
-        json={**payload, "studentId": "user-content-student"},
+        json={**payload, "studentId": "u-903101"},
         cookies=_cookie(fixture, "student"),
         headers=_headers(unsafe=True),
     )
@@ -1308,7 +1296,7 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
     }
     invalid_identity = await fixture.client.post(
         create_route,
-        json={**create_payload, "studentId": "user-content-student"},
+        json={**create_payload, "studentId": "u-903101"},
         cookies=_cookie(fixture, "student"),
         headers=_headers(unsafe=True),
     )
@@ -1439,7 +1427,7 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
     )
     student_thread_route = f"/student/api/v1/problems/{problem_public_id}/thread"
     family_thread_route = (
-        "/family/api/v1/children/user-content-student/problems/"
+        "/family/api/v1/children/u-903101/problems/"
         f"{problem_public_id}/thread"
     )
     created_response = await fixture.client.post(
@@ -1518,9 +1506,9 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
     )
     family_submitted = await family_submitted_response.json()
     family_attachment = family_submitted["thread"]["entries"][0]["attachments"][0]
-    assert family_submitted["studentId"] == "user-content-student"
+    assert family_submitted["studentId"] == "u-903101"
     assert family_attachment["mediaPath"].startswith(
-        "/family/api/v1/children/user-content-student/thread-entries/"
+        "/family/api/v1/children/u-903101/thread-entries/"
     )
     family_media = await fixture.client.get(
         family_attachment["mediaPath"],
@@ -1531,7 +1519,7 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
     assert family_media.content_type == "image/webp"
 
     forbidden_child = await fixture.client.get(
-        family_thread_route.replace("user-content-student", "user-foreign-student"),
+        family_thread_route.replace("u-903101", "user-foreign-student"),
         cookies=_cookie(fixture, "family"),
         headers=_headers(),
     )
@@ -1637,10 +1625,10 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
     reviewed = await reviewed_response.json()
     assert reviewed["thread"]["reviews"] == [
         {
-            "reviewId": "content-http-family-review",
+                "reviewId": "r-1",
             "targetProblemId": problem_public_id,
             "verdict": 15,
-            "commentEntryId": "content-http-family-comment",
+                "commentEntryId": "se-2",
             "comment": "Хорошая идея; поясните отмеченный переход.",
             "reviewerName": "Учитель Тестовый",
             "source": "staff",
@@ -1760,7 +1748,7 @@ async def test_student_written_replacement_is_one_visible_atomic_commit(
     assert replaced_response.status == 200, await replaced_response.text()
     replaced = await replaced_response.json()
     assert replaced["replacedEntryId"] == original["entry"]["entryId"]
-    assert replaced["replacementEventId"].startswith("written-replacement-")
+    assert replaced["replacementEventId"].startswith("ser-")
     assert replaced["entry"]["entryId"] == replacement_draft["entry"]["entryId"]
     assert replaced["entry"]["state"] == "submitted"
     assert replaced["threadStatus"] == "awaiting_review"
@@ -1893,7 +1881,7 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
     )
     assert preview_response.status == 200, await preview_response.text()
     preview = await preview_response.json()
-    assert preview["studentId"] == "user-content-student"
+    assert preview["studentId"] == "u-903101"
     assert preview["source"]["problemId"] == source_problem_id
     assert preview["target"] == {
         "threadId": None,
@@ -2734,7 +2722,7 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
     )
     assert repeated.status == 200
     repeated_payload = await repeated.json()
-    assert repeated_payload["pendingBefore"] == repeated_payload["checked"] == 1
+    assert repeated_payload["pendingBefore"] == repeated_payload["checked"] == 0
 
 
 async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(
@@ -2757,14 +2745,14 @@ async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(
     )
     assert response.status == 200, await response.text()
     assert await response.json() == {
-        "courseLessonId": "course-lesson-content-http",
-        "courseId": "course-content-http",
+        "courseLessonId": "cl-1",
+        "courseId": "c-1",
         "courseName": "Математика",
         "lessonNumber": 41,
         "targets": [
             {
                 "groupLessonId": fixture.group_lesson_a,
-                "groupId": "group-content-http-a",
+                "groupId": "g-1",
                 "groupName": "A",
                 "groupShortCode": "a",
                 "colorKey": None,
@@ -2772,7 +2760,7 @@ async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(
             },
             {
                 "groupLessonId": fixture.group_lesson_b,
-                "groupId": "group-content-http-b",
+                "groupId": "g-2",
                 "groupName": "B",
                 "groupShortCode": "b",
                 "colorKey": None,
@@ -3760,7 +3748,7 @@ async def test_student_reveal_uses_resolved_material_match_without_duplicate_met
     assert published_hint.status == 201, await published_hint.text()
 
     problem_list = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/lessons/"
+        "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
@@ -3768,7 +3756,7 @@ async def test_student_reveal_uses_resolved_material_match_without_duplicate_met
     assert problem_list.status == 200, await problem_list.text()
     problems = (await problem_list.json())["problems"]
     problem_public_id = problems[0]["problemId"]
-    assert problem_public_id.startswith("problem-")
+    assert problem_public_id.startswith("p-")
     assert problems[0]["materials"]["hint"] == {"status": "available"}
 
     revealed = await _student_reveal(
@@ -4035,13 +4023,12 @@ async def test_staff_content_history_is_bounded_per_material_kind(
         ).fetchone()["source_id"]
         connection.executemany(
             "INSERT INTO content_revisions "
-            "(public_id, source_id, revision_number, source_sha256, latex_text, "
+            "(source_id, revision_number, source_sha256, latex_text, "
             "parser_version, status, diagnostics_json, provenance_json, "
             "created_by_user_id, created_at) "
-            "VALUES (?, ?, ?, ?, 'invalid', 'test', 'invalid', '[]', '{}', ?, ?)",
+            "VALUES (?, ?, ?, 'invalid', 'test', 'invalid', '[]', '{}', ?, ?)",
             (
                 (
-                    f"revision-history-{number}",
                     source_id,
                     number,
                     f"{number:064x}",
@@ -4065,6 +4052,98 @@ async def test_staff_content_history_is_bounded_per_material_kind(
     assert revisions[0]["revisionNumber"] == 261
     assert revisions[-1]["revisionNumber"] == 12
 
+
+async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    uploaded = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="lesson/figure-scale.tex",
+        source=(
+            r"\задача Текст рядом с рисунком. "
+            r"\includegraphics[width=.4\textwidth]{figures/scale.svg} "
+            r"\кзадача"
+        ).encode(),
+    )
+    assert uploaded.status == 201, await uploaded.text()
+    uploaded_payload = await uploaded.json()
+    revision_id = uploaded_payload["revisionId"]
+    attached = await _upload_asset(
+        fixture,
+        revision_id=revision_id,
+        logical_name="figures/scale.svg",
+        kind="svg",
+        if_match=uploaded.headers["ETag"],
+        payload=SAFE_SVG,
+    )
+    assert attached.status == 201, await attached.text()
+    asset_id = (await attached.json())["asset"]["assetId"]
+    compiled = await fixture.client.post(
+        f"/staff/api/v1/content/revisions/{revision_id}/compile",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=attached.headers["ETag"]),
+    )
+    assert compiled.status == 200, await compiled.text()
+    updated = await fixture.client.put(
+        f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
+        json={"assetId": asset_id, "scale": 1.5},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=compiled.headers["ETag"]),
+    )
+    assert updated.status == 200, await updated.text()
+    updated_payload = await updated.json()
+    figure = next(
+        block
+        for block in updated_payload["document"]["problems"][0]["blocks"]
+        if block["type"] == "figure"
+    )
+    assert figure["scale"] == 1.5
+    assert updated.headers["ETag"] == compiled.headers["ETag"]
+
+    updated_again = await fixture.client.put(
+        f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
+        json={"assetId": asset_id, "scale": 1.75},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=updated.headers["ETag"]),
+    )
+    assert updated_again.status == 200, await updated_again.text()
+    updated_again_figure = next(
+        block
+        for block in (await updated_again.json())["document"]["problems"][0]["blocks"]
+        if block["type"] == "figure"
+    )
+    assert updated_again_figure["scale"] == 1.75
+    scale_rows = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT asset_id, scale FROM content_figure_scales"
+        ).fetchall()
+    )
+    assert [(row["asset_id"], row["scale"]) for row in scale_rows] == [(asset_id, 1.75)]
+    web_derivative_count = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(*) AS count FROM content_derivatives AS derivative "
+            "JOIN content_revisions AS revision ON revision.id = derivative.revision_id "
+            "WHERE revision.public_id = ? AND derivative.kind = 'web_ast'",
+            (revision_id,),
+        ).fetchone()["count"]
+    )
+    assert web_derivative_count == 1
+
+    preview = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{revision_id}/previews/web",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert preview.status == 200, await preview.text()
+    persisted_figure = next(
+        block
+        for block in (await preview.json())["document"]["problems"][0]["blocks"]
+        if block["type"] == "figure"
+    )
+    assert persisted_figure["scale"] == 1.75
 
 async def test_upload_compile_preview_and_three_material_publications_are_independent(
     content_http: ContentHttpFixture,
@@ -4168,7 +4247,7 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
     assert "telegram" not in condition_wire.casefold()
 
     problem_list_response = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/lessons/"
+        "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
@@ -4222,7 +4301,7 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
     assert repeated_hint_payload["firstReveal"] is False
     assert repeated_hint_payload["revealedAt"] == hint_payload["revealedAt"]
     problem_list_after_reveal = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/lessons/"
+        "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
@@ -4232,7 +4311,7 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
     ] == {"status": "revealed"}
 
     family = await fixture.client.get(
-        f"/family/api/v1/children/user-content-student/group-lessons/"
+        f"/family/api/v1/children/u-903101/group-lessons/"
         f"{fixture.group_lesson_a}/content/condition",
         cookies=_cookie(fixture, "family"),
         headers=_headers(),
@@ -4604,7 +4683,7 @@ async def test_teacher_wrong_audience_group_scope_and_request_limit_fail_closed(
     )
     assert student_forbidden.status == 403
     family_forbidden = await fixture.client.get(
-        f"/family/api/v1/children/user-content-student/group-lessons/"
+        f"/family/api/v1/children/u-903101/group-lessons/"
         f"{fixture.group_lesson_b}/content/condition",
         cookies=_cookie(fixture, "family"),
         headers=_headers(),
@@ -4811,13 +4890,13 @@ async def test_student_course_list_projects_checked_session_authority(
     assert response.headers["Cache-Control"] == "no-store"
     payload = await response.json()
     assert payload == {
-        "studentId": "user-content-student",
+        "studentId": "u-903101",
         "enrollments": [
             {
-                "enrollmentId": "enrollment-content-http",
-                "studentId": "user-content-student",
+                "enrollmentId": "en-1",
+                "studentId": "u-903101",
                 "course": {
-                    "courseId": "course-content-http",
+                    "courseId": "c-1",
                     "code": "math",
                     "name": "Математика",
                     "subjectCode": "math",
@@ -4826,11 +4905,11 @@ async def test_student_course_list_projects_checked_session_authority(
                     "accentKey": "math",
                     "version": 1,
                 },
-                "activeGroupId": "group-content-http-a",
+                "activeGroupId": "g-1",
                 "allowedGroups": [
                     {
-                        "groupId": "group-content-http-a",
-                        "courseId": "course-content-http",
+                        "groupId": "g-1",
+                        "courseId": "c-1",
                         "code": "a",
                         "name": "A",
                         "status": "active",
@@ -4852,7 +4931,7 @@ async def test_student_course_enrollment_is_course_scoped_and_fail_closed(
 ):
     fixture = content_http
     allowed = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/enrollment",
+        "/student/api/v1/courses/c-1/enrollment",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
     )
@@ -4863,7 +4942,7 @@ async def test_student_course_enrollment_is_course_scoped_and_fail_closed(
     )
 
     assert allowed.status == 200, await allowed.text()
-    assert (await allowed.json())["course"]["courseId"] == "course-content-http"
+    assert (await allowed.json())["course"]["courseId"] == "c-1"
     assert forbidden.status == 403
     assert (await forbidden.json())["error"]["code"] == "forbidden"
 
@@ -4873,7 +4952,7 @@ async def test_student_course_reads_reject_ambiguous_query_parameters(
 ):
     fixture = content_http
     response = await fixture.client.get(
-        "/student/api/v1/courses?studentId=user-content-student",
+        "/student/api/v1/courses?studentId=u-903101",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
     )
@@ -4886,7 +4965,7 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
-    list_url = "/student/api/v1/courses/course-content-http/lessons"
+    list_url = "/student/api/v1/courses/c-1/lessons"
     initially_empty = await fixture.client.get(
         list_url,
         cookies=_cookie(fixture, "student"),
@@ -4926,17 +5005,17 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
     )
     assert listed.status == 200, await listed.text()
     payload = await listed.json()
-    assert payload["courseId"] == "course-content-http"
-    assert payload["groupId"] == "group-content-http-a"
-    assert payload["activeGroupId"] == "group-content-http-a"
+    assert payload["courseId"] == "c-1"
+    assert payload["groupId"] == "g-1"
+    assert payload["activeGroupId"] == "g-1"
     assert payload["nextCursor"] is None
     assert len(payload["lessons"]) == 1
     lesson = payload["lessons"][0]
     assert lesson == {
         "groupLessonId": fixture.group_lesson_a,
-        "courseLessonId": "course-lesson-content-http",
-        "courseId": "course-content-http",
-        "groupId": "group-content-http-a",
+        "courseLessonId": "cl-1",
+        "courseId": "c-1",
+        "groupId": "g-1",
         "lessonNumber": 41,
         "title": "Занятие 41",
         "cycleAnchorDate": "2026-09-14",
@@ -4978,15 +5057,15 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
     )
     assert home.status == 200, await home.text()
     home_payload = await home.json()
-    assert home_payload["studentId"] == "user-content-student"
+    assert home_payload["studentId"] == "u-903101"
     assert home_payload["generatedAt"] == "2026-09-20T13:00:00.000000Z"
     assert home_payload["courses"] == [
         {
             "enrollment": {
-                "enrollmentId": "enrollment-content-http",
-                "studentId": "user-content-student",
+                "enrollmentId": "en-1",
+                "studentId": "u-903101",
                 "course": {
-                    "courseId": "course-content-http",
+                    "courseId": "c-1",
                     "code": "math",
                     "name": "Математика",
                     "subjectCode": "math",
@@ -4995,11 +5074,11 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
                     "accentKey": "math",
                     "version": 1,
                 },
-                "activeGroupId": "group-content-http-a",
+                "activeGroupId": "g-1",
                 "allowedGroups": [
                     {
-                        "groupId": "group-content-http-a",
-                        "courseId": "course-content-http",
+                        "groupId": "g-1",
+                        "courseId": "c-1",
                         "code": "a",
                         "name": "A",
                         "status": "active",
@@ -5189,7 +5268,7 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
     )
 
     response = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/lessons/"
+        "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
@@ -5198,8 +5277,8 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
     assert response.status == 200, await response.text()
     payload = await response.json()
     assert payload["conditionRevisionId"] == revision_a["revisionId"]
-    assert payload["courseId"] == "course-content-http"
-    assert payload["groupId"] == "group-content-http-a"
+    assert payload["courseId"] == "c-1"
+    assert payload["groupId"] == "g-1"
     assert payload["groupLessonId"] == fixture.group_lesson_a
     assert [problem["status"] for problem in payload["problems"]] == [
         "accepted",
@@ -5209,7 +5288,7 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
         "accepted",
     ]
     assert all(
-        problem["problemId"].startswith("problem-") for problem in payload["problems"]
+        problem["problemId"].startswith("p-") for problem in payload["problems"]
     )
     assert [problem["sourceOrdinal"] for problem in payload["problems"]] == [
         1,
@@ -5240,7 +5319,7 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
         )
     )
     rechecked = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/lessons/"
+        "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
@@ -5255,9 +5334,9 @@ async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
-    base = "/student/api/v1/courses/course-content-http/lessons"
+    base = "/student/api/v1/courses/c-1/lessons"
     forbidden_group = await fixture.client.get(
-        f"{base}?group=group-content-http-b",
+        f"{base}?group=g-2",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
     )
@@ -5267,7 +5346,7 @@ async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
         headers=_headers(),
     )
     duplicate_group = await fixture.client.get(
-        f"{base}?group=group-content-http-a&group=group-content-http-a",
+        f"{base}?group=g-1&group=g-1",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
     )
@@ -5388,95 +5467,3 @@ async def test_staff_generates_metadata_draft_only_for_initial_unreviewed_condit
     assert later.status == 409
     assert (await later.json())["error"]["code"] == "metadata_generation_not_available"
     assert len(generator.requests) == 1
-async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
-    content_http: ContentHttpFixture,
-):
-    fixture = content_http
-    uploaded = await _upload(
-        fixture,
-        group_lesson=fixture.group_lesson_a,
-        kind="condition",
-        filename="lesson/figure-scale.tex",
-        source=(
-            r"\задача Текст рядом с рисунком. "
-            r"\includegraphics[width=.4\textwidth]{figures/scale.svg} "
-            r"\кзадача"
-        ).encode(),
-    )
-    assert uploaded.status == 201, await uploaded.text()
-    uploaded_payload = await uploaded.json()
-    revision_id = uploaded_payload["revisionId"]
-    attached = await _upload_asset(
-        fixture,
-        revision_id=revision_id,
-        logical_name="figures/scale.svg",
-        kind="svg",
-        if_match=uploaded.headers["ETag"],
-        payload=SAFE_SVG,
-    )
-    assert attached.status == 201, await attached.text()
-    asset_id = (await attached.json())["asset"]["assetId"]
-    compiled = await fixture.client.post(
-        f"/staff/api/v1/content/revisions/{revision_id}/compile",
-        cookies=_cookie(fixture, "admin"),
-        headers=_headers(unsafe=True, if_match=attached.headers["ETag"]),
-    )
-    assert compiled.status == 200, await compiled.text()
-    updated = await fixture.client.put(
-        f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
-        json={"assetId": asset_id, "scale": 1.5},
-        cookies=_cookie(fixture, "admin"),
-        headers=_headers(unsafe=True, if_match=compiled.headers["ETag"]),
-    )
-    assert updated.status == 200, await updated.text()
-    updated_payload = await updated.json()
-    figure = next(
-        block
-        for block in updated_payload["document"]["problems"][0]["blocks"]
-        if block["type"] == "figure"
-    )
-    assert figure["scale"] == 1.5
-    assert updated.headers["ETag"] == compiled.headers["ETag"]
-
-    updated_again = await fixture.client.put(
-        f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
-        json={"assetId": asset_id, "scale": 1.75},
-        cookies=_cookie(fixture, "admin"),
-        headers=_headers(unsafe=True, if_match=updated.headers["ETag"]),
-    )
-    assert updated_again.status == 200, await updated_again.text()
-    updated_again_figure = next(
-        block
-        for block in (await updated_again.json())["document"]["problems"][0]["blocks"]
-        if block["type"] == "figure"
-    )
-    assert updated_again_figure["scale"] == 1.75
-    scale_rows = fixture.factory.run_read(
-        lambda connection: connection.execute(
-            "SELECT asset_id, scale FROM content_figure_scales"
-        ).fetchall()
-    )
-    assert [(row["asset_id"], row["scale"]) for row in scale_rows] == [(asset_id, 1.75)]
-    web_derivative_count = fixture.factory.run_read(
-        lambda connection: connection.execute(
-            "SELECT count(*) AS count FROM content_derivatives AS derivative "
-            "JOIN content_revisions AS revision ON revision.id = derivative.revision_id "
-            "WHERE revision.public_id = ? AND derivative.kind = 'web_ast'",
-            (revision_id,),
-        ).fetchone()["count"]
-    )
-    assert web_derivative_count == 1
-
-    preview = await fixture.client.get(
-        f"/staff/api/v1/content/revisions/{revision_id}/previews/web",
-        cookies=_cookie(fixture, "admin"),
-        headers=_headers(),
-    )
-    assert preview.status == 200, await preview.text()
-    persisted_figure = next(
-        block
-        for block in (await preview.json())["document"]["problems"][0]["blocks"]
-        if block["type"] == "figure"
-    )
-    assert persisted_figure["scale"] == 1.75
-

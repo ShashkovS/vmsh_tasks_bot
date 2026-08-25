@@ -5,7 +5,7 @@
 create table classroom_assignment_delivery_batches
 (
     id                           integer primary key,
-    public_id                    text    not null unique,
+    public_id text generated always as ('cdb-' || id) virtual,
     assignment_plan_id           integer not null references classroom_assignment_plans (id),
     assignment_plan_version      integer not null check (assignment_plan_version > 0),
     requested_by_user_id         integer not null references users (id),
@@ -36,15 +36,10 @@ create table classroom_assignment_delivery_recipients
     course_enrollment_id        integer not null references course_enrollments (id),
     group_lesson_id             integer not null references group_lessons (id),
     classroom_id                integer not null references classrooms (id),
-    student_public_id           text    not null,
     student_display_name        text    not null,
-    event_public_id             text    not null,
     event_name                  text    not null,
-    course_public_id            text    not null,
     course_name                 text    not null,
-    group_public_id             text    not null,
     group_name                  text    not null,
-    classroom_public_id         text    not null,
     classroom_name              text    not null,
     student_account_id          integer references auth_accounts (id),
     telegram_chat_id            integer,
@@ -71,4 +66,3 @@ create table classroom_assignment_delivery_recipients
 create index classroom_assignment_delivery_recipients_student_idx
     on classroom_assignment_delivery_recipients
        (student_user_id, course_enrollment_id, batch_id);
-

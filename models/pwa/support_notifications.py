@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import uuid
 
 from db_methods.pwa.notifications import (
     active_student_accounts,
@@ -35,7 +34,6 @@ def create_staff_reply_notifications(
     ):
         if insert_event(
             connection,
-            public_id=f"notification.support.{uuid.uuid4().hex}",
             account_id=int(account["id"]),
             category="thread_updated",
             dedupe_key=entry_public_id,

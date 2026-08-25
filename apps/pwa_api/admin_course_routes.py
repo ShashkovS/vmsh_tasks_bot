@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-import uuid
 from datetime import UTC, date, datetime
 
 from aiohttp import web
@@ -512,9 +511,6 @@ async def create_group_lesson(request: web.Request) -> web.Response:
             message="Начало приёма должно быть раньше дедлайна",
         )
 
-    group_lesson_public_id = f"group-lesson.{uuid.uuid4().hex}"
-    lesson_window_public_id = f"lesson-window.{uuid.uuid4().hex}"
-    course_lesson_public_id = f"course-lesson.{uuid.uuid4().hex}"
     now = _now()
 
     def write(connection):
@@ -531,23 +527,19 @@ async def create_group_lesson(request: web.Request) -> web.Response:
             lesson_number=lesson_number,
         )
         if course_lesson is None:
-            course_lesson_id = insert_course_lesson(
+            course_lesson_id, resolved_course_lesson_public_id = insert_course_lesson(
                 connection,
-                public_id=course_lesson_public_id,
                 course_id=int(owner["course_id"]),
                 lesson_number=lesson_number,
                 title=title,
                 actor_user_id=actor_user_id,
                 now=now,
             )
-            resolved_course_lesson_public_id = course_lesson_public_id
         else:
             course_lesson_id = int(course_lesson["id"])
             resolved_course_lesson_public_id = str(course_lesson["public_id"])
-        insert_group_lesson_with_window(
+        group_lesson_public_id, _ = insert_group_lesson_with_window(
             connection,
-            group_lesson_public_id=group_lesson_public_id,
-            lesson_window_public_id=lesson_window_public_id,
             course_lesson_id=course_lesson_id,
             course_id=int(owner["course_id"]),
             group_id=str(owner["group_id"]),
@@ -562,7 +554,6 @@ async def create_group_lesson(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
@@ -582,7 +573,7 @@ async def create_group_lesson(request: web.Request) -> web.Response:
             ),
             occurred_at=now,
         )
-        return resolved_course_lesson_public_id
+        return "created", group_lesson_public_id, resolved_course_lesson_public_id
 
     try:
         course_lesson_id = await _factory(request).run_write_async(write)
@@ -598,12 +589,13 @@ async def create_group_lesson(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=404, code="group_not_found", message="Курс или группа не найдены"
         )
+    _, group_lesson_public_id, course_lesson_public_id = course_lesson_id
     return web.json_response(
         {
             "schemaVersion": 1,
             "groupLesson": {
                 "groupLessonId": group_lesson_public_id,
-                "courseLessonId": course_lesson_id,
+                "courseLessonId": course_lesson_public_id,
                 "courseId": course_public_id,
                 "groupId": group_public_id,
                 "lessonNumber": lesson_number,
@@ -632,14 +624,12 @@ async def create_season(request: web.Request) -> web.Response:
         )
     payload = await _read_json(request, _SEASON_FIELDS)
     values = _season_values(payload)
-    public_id = f"season.{uuid.uuid4().hex}"
     now = _now()
 
     def write(connection):
-        insert_season(connection, public_id=public_id, now=now, **values)
+        public_id = insert_season(connection, now=now, **values)
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
@@ -653,9 +643,10 @@ async def create_season(request: web.Request) -> web.Response:
             ),
             occurred_at=now,
         )
+        return public_id
 
     try:
-        await _factory(request).run_write_async(write)
+        public_id = await _factory(request).run_write_async(write)
     except sqlite3.IntegrityError as error:
         if not _is_duplicate(error, "seasons"):
             raise
@@ -734,16 +725,14 @@ async def create_course(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте сезон"
         )
-    public_id = f"course.{uuid.uuid4().hex}"
     now = _now()
 
     def write(connection):
         season = find_season(connection, public_id=season_public_id)
         if season is None:
             return None
-        insert_course(
+        public_id = insert_course(
             connection,
-            public_id=public_id,
             season_id=int(season["id"]),
             actor_user_id=actor_user_id,
             now=now,
@@ -753,7 +742,6 @@ async def create_course(request: web.Request) -> web.Response:
         assert row is not None
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
@@ -785,7 +773,7 @@ async def create_course(request: web.Request) -> web.Response:
     return web.json_response(
         {"schemaVersion": 1, "course": response, "requestId": request["request_id"]},
         status=201,
-        headers={"ETag": f'"{public_id}:v1"', "Cache-Control": "no-store"},
+        headers={"ETag": f'"{row["public_id"]}:v1"', "Cache-Control": "no-store"},
     )
 
 
@@ -823,7 +811,6 @@ async def edit_course(request: web.Request) -> web.Response:
         assert row is not None
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
@@ -961,7 +948,6 @@ async def put_course_runtime_settings(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
@@ -1021,18 +1007,16 @@ async def create_group(request: web.Request) -> web.Response:
     )
     payload = await _read_json(request, _GROUP_FIELDS)
     values = _group_values(payload)
-    public_id = f"group.{uuid.uuid4().hex}"
-    internal_id = f"pwa-{uuid.uuid4().hex}"
     now = _now()
 
     def write(connection):
         course = find_course(connection, public_id=course_public_id)
         if course is None:
             return None
-        insert_group(
+        internal_id = f"pwa-{int(course['id'])}-{values['short_code']}"
+        public_id = insert_group(
             connection,
             group_id=internal_id,
-            public_id=public_id,
             course_id=int(course["id"]),
             now=now,
             **values,
@@ -1041,7 +1025,6 @@ async def create_group(request: web.Request) -> web.Response:
         assert row is not None
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
@@ -1074,7 +1057,7 @@ async def create_group(request: web.Request) -> web.Response:
             "requestId": request["request_id"],
         },
         status=201,
-        headers={"ETag": f'"{public_id}:v1"', "Cache-Control": "no-store"},
+        headers={"ETag": f'"{row["public_id"]}:v1"', "Cache-Control": "no-store"},
     )
 
 
@@ -1111,7 +1094,6 @@ async def edit_group(request: web.Request) -> web.Response:
         assert row is not None
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",

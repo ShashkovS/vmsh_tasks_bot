@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import uuid
 
 from db_methods.pwa.news import (
     get_post,
@@ -47,7 +46,6 @@ def create_news_notifications(
         audience = str(recipient["audience"])
         if insert_event(
             connection,
-            public_id=f"notification.news.{uuid.uuid4().hex}",
             account_id=int(recipient["id"]),
             category="news",
             dedupe_key=str(post["public_id"]),

@@ -8,7 +8,6 @@ import sqlite3
 def insert_audit_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     actor_user_id: int | None,
     actor_account_public_id: str | None,
     audience: str,
@@ -20,15 +19,18 @@ def insert_audit_event(
     after_json: str | None,
     occurred_at: str,
     ip_prefix: str | None = None,
+    public_id: str | None = None,
 ) -> None:
+    # Accepted temporarily to keep a small compatibility boundary while callers
+    # drop their former UUID factories. The database derives `ae-<id>`.
+    del public_id
     connection.execute(
         "INSERT INTO audit_events "
-        "(public_id, actor_user_id, actor_account_id, audience, action, "
+        "(actor_user_id, actor_account_id, audience, action, "
         "object_type, object_id, request_id, before_json, after_json, "
-        "occurred_at, ip_prefix) VALUES (?, ?, "
+        "occurred_at, ip_prefix) VALUES (?, "
         "(SELECT id FROM auth_accounts WHERE public_id = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
-            public_id,
             actor_user_id,
             actor_account_public_id,
             audience,

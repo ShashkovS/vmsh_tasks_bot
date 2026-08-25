@@ -93,7 +93,6 @@ def find_student_account_by_username(
 def insert_student_account(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     username: str,
     username_normalized: str,
     display_name: str,
@@ -103,14 +102,13 @@ def insert_student_account(
 ) -> dict[str, object]:
     row = connection.execute(
         "INSERT INTO auth_accounts "
-        "(public_id, audience, username, username_normalized, "
+        "(audience, username, username_normalized, "
         "username_algorithm_version, provisioning_source, display_name, "
         "credential_kind, credential_hash, linked_user_id, status, created_at, "
-        "updated_at) VALUES (?, 'student', ?, ?, 1, 'staff', ?, "
+        "updated_at) VALUES ('student', ?, ?, 1, 'staff', ?, "
         "'telegram_token', ?, ?, 'active', ?, ?) "
         "RETURNING id, public_id, audience, status, credential_version",
         (
-            public_id,
             username,
             username_normalized,
             display_name,
@@ -137,7 +135,6 @@ def find_family_account_by_username(
 def insert_family_account(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     username: str,
     username_normalized: str,
     display_name: str,
@@ -146,12 +143,11 @@ def insert_family_account(
 ) -> dict[str, object]:
     row = connection.execute(
         "INSERT INTO auth_accounts "
-        "(public_id, audience, username, username_normalized, provisioning_source, "
+        "(audience, username, username_normalized, provisioning_source, "
         "display_name, credential_kind, credential_hash, status, created_at, updated_at) "
-        "VALUES (?, 'family', ?, ?, 'staff', ?, 'password', ?, 'active', ?, ?) "
+        "VALUES ('family', ?, ?, 'staff', ?, 'password', ?, 'active', ?, ?) "
         "RETURNING id, public_id, username, display_name, status, credential_version",
         (
-            public_id,
             username,
             username_normalized,
             display_name,

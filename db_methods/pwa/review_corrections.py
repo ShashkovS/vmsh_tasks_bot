@@ -97,7 +97,6 @@ def insert_result(
 def insert_comment(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     thread_id: int,
     author_kind: str,
     author_user_id: int,
@@ -107,12 +106,11 @@ def insert_comment(
     return int(
         connection.execute(
             "INSERT INTO submission_entries "
-            "(public_id, thread_id, author_kind, author_user_id, channel, entry_kind, "
+            "(thread_id, author_kind, author_user_id, channel, entry_kind, "
             "state, text, server_received_at, version, locked_at) "
-            "VALUES (?, ?, ?, ?, 'staff', 'teacher_comment', 'locked', ?, ?, 1, ?) "
+            "VALUES (?, ?, ?, 'staff', 'teacher_comment', 'locked', ?, ?, 1, ?) "
             "RETURNING id",
             (
-                public_id,
                 thread_id,
                 author_kind,
                 author_user_id,
@@ -127,7 +125,6 @@ def insert_comment(
 def insert_review(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     source: dict[str, object],
     reviewer_user_id: int,
     verdict: int,
@@ -136,20 +133,17 @@ def insert_review(
     idempotency_key: str,
     payload_sha256: str,
     created_at: str,
-) -> int:
-    return int(
-        connection.execute(
+) -> tuple[int, str]:
+    row = connection.execute(
             "INSERT INTO submission_reviews "
-            "(public_id, thread_id, queue_id, queue_public_id, reviewer_user_id, "
+            "(thread_id, queue_id, reviewer_user_id, "
             "evidence_through_entry_id, expected_thread_version, verdict, "
             "comment_entry_id, result_id, source, idempotency_key, payload_sha256, "
-            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
-            "RETURNING id",
+            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
+            "RETURNING id, public_id",
             (
-                public_id,
                 source["thread_id"],
                 source["queue_id"],
-                source["queue_public_id"],
                 reviewer_user_id,
                 source["evidence_through_entry_id"],
                 source["thread_version"],
@@ -160,8 +154,8 @@ def insert_review(
                 payload_sha256,
                 created_at,
             ),
-        ).fetchone()["id"]
-    )
+        ).fetchone()
+    return int(row["id"]), str(row["public_id"])
 
 
 def copy_evidence(
@@ -213,16 +207,15 @@ def update_thread_result(
 def insert_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     review_id: int,
     payload_json: str,
     created_at: str,
 ) -> None:
     connection.execute(
         "INSERT INTO submission_review_events "
-        "(public_id, review_id, event_kind, payload_json, created_at) "
-        "VALUES (?, ?, 'completed', ?, ?)",
-        (public_id, review_id, payload_json, created_at),
+        "(review_id, event_kind, payload_json, created_at) "
+        "VALUES (?, 'completed', ?, ?)",
+        (review_id, payload_json, created_at),
     )
 
 

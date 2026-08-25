@@ -128,11 +128,10 @@ def _index_flags(
 def _insert_season(connection: sqlite3.Connection, *, suffix: str) -> int:
     return connection.execute(
         "INSERT INTO seasons "
-        "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+        "(code, title, starts_on, ends_on, session_expires_on, "
         "status, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?) RETURNING id",
+        "VALUES (?, ?, ?, ?, ?, 'active', ?, ?) RETURNING id",
         (
-            f"season-{suffix}",
             f"season-code-{suffix}",
             f"Season {suffix}",
             "2026-09-01",
@@ -153,12 +152,11 @@ def _insert_course(
 ) -> int:
     return connection.execute(
         "INSERT INTO courses "
-        "(public_id, season_id, code, name, subject_code, status, sort_order, "
+        "(season_id, code, name, subject_code, status, sort_order, "
         "accent_key, created_at, updated_at, created_by, updated_by) "
-        "VALUES (?, ?, ?, ?, 'math', 'active', 10, 'blue', ?, ?, ?, ?) "
+        "VALUES (?, ?, ?, 'math', 'active', 10, 'blue', ?, ?, ?, ?) "
         "RETURNING id",
         (
-            f"course-{suffix}",
             season_id,
             f"course-code-{suffix}",
             f"Course {suffix}",
@@ -200,11 +198,11 @@ def test_phase1_dependencies_and_empty_database_apply(tmp_path):
     with sqlite3.connect(database_path) as connection:
         assert PHASE_1_TABLES <= _product_table_names(connection)
         group_columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(groups)")
+            row[1] for row in connection.execute("PRAGMA table_xinfo(groups)")
         }
         assert GROUP_PHASE_1_COLUMNS <= group_columns
         user_columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(users)")
+            row[1] for row in connection.execute("PRAGMA table_xinfo(users)")
         }
         assert USER_PHASE_1_COLUMNS <= user_columns
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
@@ -266,31 +264,33 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
 
         student_account_id = connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) "
-            "VALUES ('account-student', 'student', 'Student', 'student', 1, "
+            "VALUES ('student', 'Student', 'student', 1, "
             "'phase1-test', 'telegram_token', 'fixture-student-hash', ?, "
             "'active', ?, ?) RETURNING id",
             (user_ids[0], NOW, NOW),
         ).fetchone()[0]
         family_account_id = connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "provisioning_source, display_name, credential_kind, "
             "credential_hash, status, created_at, updated_at) "
-            "VALUES ('account-family', 'family', 'Family', 'family', "
+            "VALUES ('family', 'Family', 'family', "
             "'phase1-test', 'Parent', 'password', 'fixture-family-hash', "
             "'active', ?, ?) RETURNING id",
             (NOW, NOW),
         ).fetchone()[0]
 
-        for invalid_public_id in ("", "Has-Uppercase", "-bad-edge", "x" * 129):
-            with pytest.raises(sqlite3.IntegrityError):
-                connection.execute(
-                    "UPDATE users SET public_id = ? WHERE id = ?",
-                    (invalid_public_id, user_ids[0]),
-                )
+        assert connection.execute(
+            "SELECT public_id FROM users WHERE id = ?", (user_ids[0],)
+        ).fetchone() == (f"u-{user_ids[0]}",)
+        with pytest.raises(sqlite3.OperationalError, match="generated column"):
+            connection.execute(
+                "UPDATE users SET public_id = 'u-1' WHERE id = ?",
+                (user_ids[0],),
+            )
         with pytest.raises(sqlite3.IntegrityError, match="linked user is immutable"):
             connection.execute(
                 "UPDATE auth_accounts SET linked_user_id = ? WHERE id = ?",
@@ -300,10 +300,10 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "provisioning_source, credential_kind, credential_hash, "
                 "linked_user_id, status, created_at, updated_at) "
-                "VALUES ('account-unversioned', 'student', 'Unversioned', "
+                "VALUES ('student', 'Unversioned', "
                 "'unversioned', 'phase1-test', 'telegram_token', "
                 "'fixture-hash', ?, 'active', ?, ?)",
                 (user_ids[1], NOW, NOW),
@@ -311,10 +311,10 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "provisioning_source, display_name, credential_kind, status, "
-                "created_at, updated_at) VALUES ('account-no-credential', "
-                "'family', 'No Credential', 'no-credential', 'phase1-test', "
+                "created_at, updated_at) VALUES "
+                "('family', 'No Credential', 'no-credential', 'phase1-test', "
                 "'Parent', 'password', 'active', ?, ?)",
                 (NOW, NOW),
             )
@@ -473,10 +473,10 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
         assert _index_flags(connection, "auth_accounts")[
             "auth_accounts_linked_user_audience_uq"
         ] == (True, True)
-        assert _index_flags(connection, "users")["users_public_id_uq"] == (
-            True,
-            True,
-        )
+        assert connection.execute(
+            "SELECT count(*) = count(distinct public_id) "
+            "AND count(*) = count(public_id) FROM users"
+        ).fetchone() == (1,)
         assert _index_flags(connection, "auth_throttle_buckets")[
             "auth_throttle_buckets_locked_idx"
         ] == (False, True)
@@ -509,9 +509,9 @@ def test_course_access_constraints_indexes_and_course_ownership(tmp_path):
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO courses "
-                "(public_id, season_id, code, name, subject_code, status, "
+                "(season_id, code, name, subject_code, status, "
                 "sort_order, accent_key, created_at, updated_at) VALUES "
-                "('course-invalid', ?, 'invalid', 'Invalid', 'math', "
+                "(?, 'invalid', 'Invalid', 'math', "
                 "'published', 0, 'blue', ?, ?)",
                 (season_id, NOW, NOW),
             )
@@ -545,18 +545,18 @@ def test_course_access_constraints_indexes_and_course_ownership(tmp_path):
 
         enrollment_id = connection.execute(
             "INSERT INTO course_enrollments "
-            "(public_id, student_user_id, course_id, active_group_id, "
+            "(student_user_id, course_id, active_group_id, "
             "attendance_mode, status, created_at, updated_at) "
-            "VALUES ('enrollment-first', ?, ?, ?, 'online', 'active', ?, ?) "
+            "VALUES (?, ?, ?, 'online', 'active', ?, ?) "
             "RETURNING id",
             (user_ids[0], first_course_id, group_ids[0], NOW, NOW),
         ).fetchone()[0]
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
+                "(student_user_id, course_id, active_group_id, "
                 "attendance_mode, status, created_at, updated_at) "
-                "VALUES ('enrollment-cross-course', ?, ?, ?, 'online', "
+                "VALUES (?, ?, ?, 'online', "
                 "'active', ?, ?)",
                 (user_ids[1], first_course_id, group_ids[1], NOW, NOW),
             )
@@ -633,18 +633,18 @@ def test_course_access_constraints_indexes_and_course_ownership(tmp_path):
 
         connection.execute(
             "INSERT INTO course_enrollment_events "
-            "(public_id, enrollment_id, course_id, event_type, new_group_id, "
+            "(enrollment_id, course_id, event_type, new_group_id, "
             "new_attendance_mode, new_status, source, request_id, occurred_at, "
-            "created_at) VALUES ('event-created', ?, ?, 'created', ?, 'online', "
+            "created_at) VALUES (?, ?, 'created', ?, 'online', "
             "'active', 'import', 'request-created', ?, ?)",
             (enrollment_id, first_course_id, group_ids[0], NOW, NOW),
         )
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO course_enrollment_events "
-                "(public_id, enrollment_id, course_id, event_type, "
+                "(enrollment_id, course_id, event_type, "
                 "previous_group_id, new_group_id, source, request_id, "
-                "occurred_at, created_at) VALUES ('event-cross-course', ?, ?, "
+                "occurred_at, created_at) VALUES (?, ?, "
                 "'active_group_changed', ?, ?, 'staff', 'request-cross', ?, ?)",
                 (
                     enrollment_id,

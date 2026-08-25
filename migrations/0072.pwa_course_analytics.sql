@@ -3,7 +3,7 @@
 create table analytics_runs
 (
     id                      integer primary key,
-    public_id               text    not null unique,
+    public_id text generated always as ('ar-' || id) virtual,
     course_id               integer not null references courses (id),
     algorithm               text    not null,
     algorithm_version       text    not null,

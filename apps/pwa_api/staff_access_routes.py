@@ -7,7 +7,6 @@ import json
 import re
 import sqlite3
 import unicodedata
-import uuid
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -392,15 +391,11 @@ async def create_staff_member(request: web.Request) -> web.Response:
     credential_hash = await asyncio.to_thread(
         auth_service(request).credential_hasher.hash, password
     )
-    user_public_id = f"user.staff.{uuid.uuid4().hex}"
-    account_public_id = f"account.staff.{uuid.uuid4().hex}"
     now = _now()
 
     def write(connection):
-        insert_teacher(
+        created = insert_teacher(
             connection,
-            user_public_id=user_public_id,
-            account_public_id=account_public_id,
             surname=surname,
             name=name,
             middle_name=middle_name,
@@ -412,13 +407,12 @@ async def create_staff_member(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
             action="staff.member_created",
             object_type="staff_member",
-            object_id=user_public_id,
+            object_id=str(created["public_id"]),
             request_id=request["request_id"],
             before_json=None,
             after_json=json.dumps(
@@ -428,7 +422,7 @@ async def create_staff_member(request: web.Request) -> web.Response:
             ),
             occurred_at=now,
         )
-        return find_staff_member(connection, public_id=user_public_id)
+        return find_staff_member(connection, public_id=str(created["public_id"]))
 
     try:
         member = await _factory(request).run_write_async(write)
@@ -481,7 +475,6 @@ async def promote_staff_member(request: web.Request) -> web.Response:
             )
             insert_audit_event(
                 connection,
-                public_id=f"audit.{uuid.uuid4().hex}",
                 actor_user_id=actor_user_id,
                 actor_account_public_id=actor_account_id,
                 audience="staff",
@@ -543,10 +536,8 @@ async def create_staff_member_batch(request: web.Request) -> web.Response:
             targets.append(target)
 
         for row, credential_hash in zip(rows, credential_hashes, strict=True):
-            staff_user_id = insert_teacher(
+            created = insert_teacher(
                 connection,
-                user_public_id=f"user.staff.{uuid.uuid4().hex}",
-                account_public_id=f"account.staff.{uuid.uuid4().hex}",
                 surname=str(row["surname"]),
                 name=str(row["name"]),
                 middle_name=row["middle_name"],
@@ -558,7 +549,7 @@ async def create_staff_member_batch(request: web.Request) -> web.Response:
             for target in targets:
                 insert_teacher_scope(
                     connection,
-                    staff_user_id=staff_user_id,
+                    staff_user_id=int(created["id"]),
                     course_id=int(target["course_id"]),
                     group_id=target.get("group_id"),
                     actor_user_id=actor_user_id,
@@ -567,7 +558,6 @@ async def create_staff_member_batch(request: web.Request) -> web.Response:
 
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_id,
             audience="staff",
@@ -707,7 +697,6 @@ async def replace_staff_scopes(request: web.Request) -> web.Response:
         if additions or removals:
             insert_audit_event(
                 connection,
-                public_id=f"audit.{uuid.uuid4().hex}",
                 actor_user_id=actor_user_id,
                 actor_account_public_id=actor_account_id,
                 audience="staff",

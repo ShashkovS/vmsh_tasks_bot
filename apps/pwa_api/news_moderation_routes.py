@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
@@ -36,7 +35,12 @@ from models.pwa.news_moderation import (
 )
 from models.pwa.news_notifications import create_news_notifications
 from models.pwa.rich_document import InvalidRichDocument, validate_rich_document
-from helpers.pwa.rich_media import RichMediaCopyError, copy_rich_document_media
+from helpers.pwa.rich_media import (
+    MAX_RICH_MEDIA_BYTES,
+    RichMediaCopyError,
+    copy_rich_document_media,
+    store_uploaded_rich_image,
+)
 
 
 news_moderation_routes = web.RouteTableDef()
@@ -154,6 +158,84 @@ async def _copy_document_media(
         )
     return await copy_rich_document_media(
         validated, storage=storage, converter=converter
+    )
+
+
+async def _uploaded_image(request: web.Request) -> bytes:
+    if (
+        request.content_type != "multipart/form-data"
+        or request.content_length is not None
+        and request.content_length > MAX_RICH_MEDIA_BYTES + 16_384
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Загрузка должна содержать одну картинку не больше 10 МиБ",
+        )
+    try:
+        reader = await request.multipart()
+    except (AssertionError, ValueError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Не удалось разобрать форму загрузки картинки",
+        ) from error
+    part = await reader.next()
+    if part is None or part.name != "image" or part.filename is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Загрузите ровно один файл в поле image",
+        )
+    chunks: list[bytes] = []
+    size = 0
+    while chunk := await part.read_chunk(64 * 1024):
+        size += len(chunk)
+        if size > MAX_RICH_MEDIA_BYTES:
+            raise PwaApiError(
+                status=413,
+                code="payload_too_large",
+                message="Картинка не должна быть больше 10 МиБ",
+            )
+        chunks.append(chunk)
+    if await reader.next() is not None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Загрузите ровно один файл в поле image",
+        )
+    return b"".join(chunks)
+
+
+@news_moderation_routes.post("/staff/api/v1/rich-media/uploads")
+async def upload_rich_media(request: web.Request) -> web.Response:
+    """Store a Staff image once, before its Markdown is saved in news or a banner."""
+
+    _admin_user_id(request)
+    data = await _uploaded_image(request)
+    from apps.pwa_app import PWA_CONTENT_ASSET_CONVERTER
+    from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
+
+    storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
+    converter = request.app.get(PWA_CONTENT_ASSET_CONVERTER)
+    if storage is None or converter is None:
+        raise PwaApiError(
+            status=503,
+            code="rich_media_unavailable",
+            message="Загрузка картинок временно недоступна",
+        )
+    try:
+        image = await store_uploaded_rich_image(data, storage=storage, converter=converter)
+    except RichMediaCopyError as error:
+        raise PwaApiError(
+            status=422,
+            code="rich_media_upload_invalid",
+            message="Картинка должна быть PNG, JPEG или WebP и успешно преобразовываться",
+            details={"diagnostic": str(error)},
+        ) from error
+    return web.json_response(
+        {"schemaVersion": 1, "image": image, "requestId": request["request_id"]},
+        status=201,
     )
 
 
@@ -286,7 +368,6 @@ async def create_local_publication(request: web.Request) -> web.Response:
         item = items[0]
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",
@@ -443,7 +524,6 @@ async def edit_local_publication(request: web.Request) -> web.Response:
                 )
             insert_audit_event(
                 connection,
-                public_id=f"audit.{uuid.uuid4().hex}",
                 actor_user_id=actor_user_id,
                 actor_account_public_id=principal.account_public_id,
                 audience="staff",
@@ -673,7 +753,6 @@ async def reconcile_source_state(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",

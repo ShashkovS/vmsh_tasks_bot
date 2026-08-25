@@ -170,7 +170,6 @@ def save_course_preference(
 def insert_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     account_id: int,
     category: str,
     dedupe_key: str,
@@ -182,12 +181,11 @@ def insert_event(
 ) -> bool:
     cursor = connection.execute(
         "INSERT INTO notification_events "
-        "(public_id, account_id, category, dedupe_key, route, payload_json, "
+        "(account_id, category, dedupe_key, route, payload_json, "
         "occurred_at, deliver_after, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(account_id, category, dedupe_key) DO NOTHING",
         (
-            public_id,
             account_id,
             category,
             dedupe_key,

@@ -130,28 +130,28 @@ def _insert_content_fixture(
 ) -> int:
     course_id, actor_user_id, group_id = _lookup_owner(connection, payload)
     targets = [*payload["targets"], *payload["submissionTargets"]]
-    submission_group_lessons = {
-        target["groupLessonPublicId"] for target in payload["submissionTargets"]
-    }
-    public_ids = [
-        value
-        for target in targets
-        for value in (
-            target["courseLessonPublicId"],
-            target["groupLessonPublicId"],
-        )
-    ]
-    placeholders = ", ".join("?" for _value in public_ids)
+    lesson_numbers = [target["lessonNumber"] for target in targets]
+    placeholders = ", ".join("?" for _value in lesson_numbers)
     existing = connection.execute(
-        "SELECT public_id FROM course_lessons WHERE public_id IN "
-        f"({placeholders}) UNION ALL "
-        "SELECT public_id FROM group_lessons WHERE public_id IN "
-        f"({placeholders})",
-        (*public_ids, *public_ids),
+        "SELECT course_lesson.public_id AS course_lesson_public_id, "
+        "group_lesson.public_id AS group_lesson_public_id "
+        "FROM course_lessons AS course_lesson "
+        "LEFT JOIN group_lessons AS group_lesson "
+        "ON group_lesson.course_lesson_id = course_lesson.id "
+        "WHERE course_lesson.course_id = ? "
+        f"AND course_lesson.lesson_number IN ({placeholders})",
+        (course_id, *lesson_numbers),
     ).fetchall()
     if existing:
-        existing_ids = {str(row["public_id"]) for row in existing}
-        if existing_ids == set(public_ids):
+        existing_ids = {
+            (str(row["course_lesson_public_id"]), str(row["group_lesson_public_id"]))
+            for row in existing
+        }
+        expected_ids = {
+            (target["courseLessonPublicId"], target["groupLessonPublicId"])
+            for target in targets
+        }
+        if existing_ids == expected_ids:
             return 0
         raise RuntimeError("Phase-2 E2E fixture is only partially present")
 
@@ -159,11 +159,10 @@ def _insert_content_fixture(
     for target in targets:
         course_lesson_id = connection.execute(
             "INSERT INTO course_lessons "
-            "(public_id, course_id, lesson_number, title, created_by_user_id, "
+            "(course_id, lesson_number, title, created_by_user_id, "
             "updated_by_user_id, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+            "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, public_id",
             (
-                target["courseLessonPublicId"],
                 course_id,
                 target["lessonNumber"],
                 target["title"],
@@ -172,16 +171,17 @@ def _insert_content_fixture(
                 TIMESTAMP,
                 TIMESTAMP,
             ),
-        ).fetchone()["id"]
+        ).fetchone()
+        if str(course_lesson_id["public_id"]) != target["courseLessonPublicId"]:
+            raise RuntimeError("Phase-2 E2E course lesson ID allocation changed")
         group_lesson_id = connection.execute(
             "INSERT INTO group_lessons "
-            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_by_user_id, updated_by_user_id, "
             "created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?) RETURNING id",
+            "VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?) RETURNING id, public_id",
             (
-                target["groupLessonPublicId"],
-                course_lesson_id,
+                course_lesson_id["id"],
                 course_id,
                 group_id,
                 payload["cycleAnchorDate"],
@@ -191,25 +191,25 @@ def _insert_content_fixture(
                 TIMESTAMP,
                 TIMESTAMP,
             ),
-        ).fetchone()["id"]
-        if target["groupLessonPublicId"] in submission_group_lessons:
-            connection.execute(
-                "INSERT INTO lesson_windows "
-                "(public_id, group_lesson_id, opens_at, submission_closes_at, "
-                "timezone, source, created_by_user_id, updated_by_user_id, "
-                "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'native', ?, ?, ?, ?)",
-                (
-                    f"window-{target['groupLessonPublicId']}",
-                    group_lesson_id,
-                    "2026-07-01T00:00:00Z",
-                    "2099-12-31T23:59:59Z",
-                    payload["businessTimezone"],
-                    actor_user_id,
-                    actor_user_id,
-                    TIMESTAMP,
-                    TIMESTAMP,
-                ),
-            )
+        ).fetchone()
+        if str(group_lesson_id["public_id"]) != target["groupLessonPublicId"]:
+            raise RuntimeError("Phase-2 E2E group lesson ID allocation changed")
+        connection.execute(
+            "INSERT INTO lesson_windows "
+            "(group_lesson_id, opens_at, submission_closes_at, "
+            "timezone, source, created_by_user_id, updated_by_user_id, "
+            "created_at, updated_at) VALUES (?, ?, ?, ?, 'native', ?, ?, ?, ?)",
+            (
+                group_lesson_id["id"],
+                "2026-07-01T00:00:00Z",
+                "2099-12-31T23:59:59Z",
+                payload["businessTimezone"],
+                actor_user_id,
+                actor_user_id,
+                TIMESTAMP,
+                TIMESTAMP,
+            ),
+        )
         inserted += 1
     return inserted
 

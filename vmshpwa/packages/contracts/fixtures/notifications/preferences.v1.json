@@ -90,6 +90,16 @@
       "quietEndsLocal": "09:00",
       "timezone": "Europe/Moscow",
       "updatedAt": null
+    },
+    {
+      "category": "group_announcement",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
     }
   ],
   "requestId": "request-notification-preferences-1"

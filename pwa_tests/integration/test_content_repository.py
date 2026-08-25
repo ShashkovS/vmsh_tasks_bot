@@ -76,41 +76,40 @@ def content_fixture(tmp_path) -> ContentFixture:
         )
         season_id = connection.execute(
             "INSERT INTO seasons "
-            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+            "(code, title, starts_on, ends_on, session_expires_on, "
             "status, created_at, updated_at) VALUES "
-            "('season-content-repository', 'content-repository', 'Content repository', "
+            "('content-repository', 'Content repository', "
             "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) RETURNING id",
             (timestamp, timestamp),
         ).fetchone()["id"]
         course_id = connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "(season_id, code, name, subject_code, status, sort_order, "
             "accent_key, created_at, updated_at) VALUES "
-            "('course-content-repository', ?, 'math', 'Math', 'math', 'active', 1, "
+            "(?, 'math', 'Math', 'math', 'active', 1, "
             "'math', ?, ?) RETURNING id",
             (season_id, timestamp, timestamp),
         ).fetchone()["id"]
         other_course_id = connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "(season_id, code, name, subject_code, status, sort_order, "
             "accent_key, created_at, updated_at) VALUES "
-            "('course-content-repository-other', ?, 'physics', 'Physics', 'physics', "
+            "(?, 'physics', 'Physics', 'physics', "
             "'active', 2, 'physics', ?, ?) RETURNING id",
             (season_id, timestamp, timestamp),
         ).fetchone()["id"]
         connection.executemany(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, status, "
+            "allow_self_switch, is_system, score_weight, course_id, status, "
             "created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?)",
+            "VALUES (?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
             (
                 (
                     "content-a",
                     "a",
                     "A",
                     1,
-                    "group-content-a",
                     course_id,
                     timestamp,
                     timestamp,
@@ -120,7 +119,6 @@ def content_fixture(tmp_path) -> ContentFixture:
                     "b",
                     "B",
                     2,
-                    "group-content-b",
                     course_id,
                     timestamp,
                     timestamp,
@@ -130,7 +128,6 @@ def content_fixture(tmp_path) -> ContentFixture:
                     "o",
                     "Other",
                     1,
-                    "group-content-other",
                     other_course_id,
                     timestamp,
                     timestamp,
@@ -786,7 +783,7 @@ async def test_revision_compiler_state_is_optimistic_and_append_keeps_ready_line
         actor_user_id=fixture.actor_user_id,
         expected_previous_revision_number=1,
     )
-    with pytest.raises(sqlite3.IntegrityError, match="source is immutable"):
+    with pytest.raises(sqlite3.OperationalError, match="generated column"):
         fixture.factory.run_write(
             lambda connection: connection.execute(
                 "UPDATE content_revisions SET public_id = ? WHERE id = ?",
@@ -1270,12 +1267,11 @@ async def test_publication_replace_activation_and_rollback_are_atomic(
         fixture.factory.run_write(
             lambda connection: connection.execute(
                 "INSERT INTO lesson_publications "
-                "(public_id, group_lesson_id, kind, revision_id, state, "
+                    "(group_lesson_id, kind, revision_id, state, "
                 "scheduled_at, published_at, activated_from_schedule_id, "
                 "created_by_user_id, published_by_user_id, created_at, updated_at) "
-                "VALUES (?, ?, 'condition', ?, 'published', ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    "publication-invalid-schedule-link",
+                    "VALUES (?, 'condition', ?, 'published', ?, ?, ?, ?, ?, ?, ?)",
+                    (
                     group_lesson.id,
                     first_revision.id,
                     format_utc_timestamp(NOW + timedelta(hours=1)),
@@ -1311,7 +1307,9 @@ async def test_publication_replace_activation_and_rollback_are_atomic(
         )
 
 
-async def test_hint_and_solution_reveals_are_scoped_and_immutable(content_fixture):
+async def test_hint_and_solution_reveals_are_scoped_while_metadata_is_editable(
+    content_fixture,
+):
     fixture = content_fixture
     _, group_lesson = await _create_group_lesson(
         fixture,
@@ -1346,27 +1344,38 @@ async def test_hint_and_solution_reveals_are_scoped_and_immutable(content_fixtur
             (condition_revision.id,),
         ).fetchone()["id"]
     )
-    with pytest.raises(sqlite3.IntegrityError, match="immutable"):
-        fixture.factory.run_write(
-            lambda connection: connection.execute(
-                "UPDATE content_problem_matches SET diagnostics_json = '[1]' "
-                "WHERE id = ?",
-                (problem_match_id,),
-            )
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE content_problem_matches SET diagnostics_json = '[1]' "
+            "WHERE id = ?",
+            (problem_match_id,),
         )
+    )
+    assert fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT diagnostics_json FROM content_problem_matches WHERE id = ?",
+            (problem_match_id,),
+        ).fetchone()["diagnostics_json"]
+    ) == "[1]"
     with pytest.raises(sqlite3.IntegrityError, match="deletion is forbidden"):
         fixture.factory.run_write(
             lambda connection: connection.execute(
                 "DELETE FROM content_problem_matches WHERE id = ?", (problem_match_id,)
             )
         )
-    with pytest.raises(sqlite3.IntegrityError, match="immutable"):
-        fixture.factory.run_write(
-            lambda connection: connection.execute(
-                "UPDATE problem_revisions SET title = 'changed' WHERE id = ?",
-                (problem_revision.id,),
-            )
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE problem_revisions SET title = 'Corrected reveal scope', "
+            "normalized_title = 'corrected reveal scope' WHERE id = ?",
+            (problem_revision.id,),
         )
+    )
+    assert fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT title FROM problem_revisions WHERE id = ?",
+            (problem_revision.id,),
+        ).fetchone()["title"]
+    ) == "Corrected reveal scope"
     _, hint_revision = await _create_source_revision(
         fixture,
         group_lesson_id=group_lesson.id,
@@ -1571,7 +1580,7 @@ async def test_problem_matching_is_complete_scoped_and_idempotent(content_fixtur
     with pytest.raises(ContentVersionConflict):
         await fixture.repository.resolve_problem_matches(
             revision_public_id=revision.public_id,
-            expected_review_version=resolved.review_version,
+            expected_review_version=initial.review_version,
             drafts=(
                 drafts[0],
                 ProblemMatchDraft(
@@ -1583,6 +1592,21 @@ async def test_problem_matching_is_complete_scoped_and_idempotent(content_fixtur
             ),
             actor_user_id=fixture.actor_user_id,
         )
+    corrected = await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id,
+        expected_review_version=resolved.review_version,
+        drafts=(
+            drafts[0],
+            ProblemMatchDraft(
+                source_ordinal=2,
+                source_item="named",
+                decision=ProblemMatchDecision.OMIT,
+                problem_id=None,
+            ),
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert corrected.review_version == resolved.review_version + 1
 
 
 async def test_problem_review_flattens_subparts_and_keeps_predicted_type(
@@ -1762,13 +1786,23 @@ async def test_metadata_grid_updates_projection_and_keeps_revision_history(
     with pytest.raises(ContentVersionConflict):
         await fixture.repository.save_problem_metadata_grid(
             revision_public_id=revision.public_id,
-            expected_review_version=saved.review_version,
+            expected_review_version=grid.review_version,
             drafts=(
                 replace(drafts[0], title="Другое название"),
                 drafts[1],
             ),
             actor_user_id=fixture.actor_user_id,
         )
+    corrected = await fixture.repository.save_problem_metadata_grid(
+        revision_public_id=revision.public_id,
+        expected_review_version=saved.review_version,
+        drafts=(
+            replace(drafts[0], title="Другое название"),
+            drafts[1],
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert corrected.review_version == saved.review_version + 1
 
 
 async def test_synonym_candidates_do_not_merge_and_membership_is_versioned(

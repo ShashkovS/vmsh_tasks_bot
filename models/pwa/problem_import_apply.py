@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import uuid
 from collections import Counter
 
 from db_methods.pwa.problem_imports import (
@@ -142,10 +141,8 @@ def apply_problem_import(
         "unchanged": counts["unchanged"],
         "skippedInvalid": counts["invalid"],
     }
-    public_id = f"problem-import.{uuid.uuid4().hex}"
-    insert_import_receipt(
+    public_id = insert_import_receipt(
         connection,
-        public_id=public_id,
         course_id=course_id,
         source_filename=source_filename,
         source_sha256=source_sha256,
@@ -160,7 +157,6 @@ def apply_problem_import(
     if request_id is not None and actor_account_public_id is not None:
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_public_id,
             audience="staff",
@@ -240,7 +236,6 @@ def rollback_problem_import(
     if request_id is not None and actor_account_public_id is not None:
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_public_id,
             audience="staff",

@@ -1218,35 +1218,11 @@ class PwaWrittenReviewQueueRepository:
         *,
         clock: Callable[[], datetime] = _utc_now,
         claim_token_factory: Callable[[], str] = lambda: f"review-claim-{uuid.uuid4()}",
-        review_public_id_factory: Callable[[], str] = lambda: f"review-{uuid.uuid4()}",
-        annotation_public_id_factory: Callable[[], str] = lambda: (
-            f"review-annotation-{uuid.uuid4()}"
-        ),
-        comment_public_id_factory: Callable[[], str] = lambda: f"entry-{uuid.uuid4()}",
-        event_public_id_factory: Callable[[], str] = lambda: (
-            f"review-event-{uuid.uuid4()}"
-        ),
-        internal_reaction_event_public_id_factory: Callable[[], str] = lambda: (
-            f"review-reaction-event-{uuid.uuid4()}"
-        ),
-        student_reaction_event_public_id_factory: Callable[[], str] = lambda: (
-            f"review-student-reaction-event-{uuid.uuid4()}"
-        ),
         completion_checkpoint: Callable[[str], None] | None = None,
     ) -> None:
         self._factory = connection_factory
         self._clock = clock
         self._claim_token_factory = claim_token_factory
-        self._review_public_id_factory = review_public_id_factory
-        self._annotation_public_id_factory = annotation_public_id_factory
-        self._comment_public_id_factory = comment_public_id_factory
-        self._event_public_id_factory = event_public_id_factory
-        self._internal_reaction_event_public_id_factory = (
-            internal_reaction_event_public_id_factory
-        )
-        self._student_reaction_event_public_id_factory = (
-            student_reaction_event_public_id_factory
-        )
         # A no-op in production. Tests inject a raising observer to prove that
         # every authoritative completion write remains inside one transaction.
         self._completion_checkpoint = completion_checkpoint or (lambda _name: None)
@@ -2053,20 +2029,13 @@ class PwaWrittenReviewQueueRepository:
             comment_entry_id: int | None = None
             comment_public_id: str | None = None
             if comment_text is not None:
-                comment_public_id = self._comment_public_id_factory().strip()
-                if not _PUBLIC_ID.fullmatch(comment_public_id):
-                    raise ValueError(
-                        "comment public ID factory returned an invalid value"
-                    )
-                comment_entry_id = int(
-                    connection.execute(
+                inserted_comment = connection.execute(
                         "INSERT INTO submission_entries "
-                        "(public_id, thread_id, author_kind, author_user_id, channel, "
+                        "(thread_id, author_kind, author_user_id, channel, "
                         "entry_kind, state, text, server_received_at, version, locked_at) "
-                        "VALUES (?, ?, ?, ?, 'staff', 'teacher_comment', 'locked', ?, ?, 1, ?) "
-                        "RETURNING id",
+                        "VALUES (?, ?, ?, 'staff', 'teacher_comment', 'locked', ?, ?, 1, ?) "
+                        "RETURNING id, public_id",
                         (
-                            comment_public_id,
                             target_thread["id"],
                             author_kind,
                             command.teacher_user_id,
@@ -2074,34 +2043,26 @@ class PwaWrittenReviewQueueRepository:
                             completed_at,
                             completed_at,
                         ),
-                    ).fetchone()["id"]
-                )
+                    ).fetchone()
+                comment_entry_id = int(inserted_comment["id"])
+                comment_public_id = str(inserted_comment["public_id"])
             self._completion_checkpoint("comment")
 
-            review_public_id = self._review_public_id_factory().strip()
-            event_public_id = self._event_public_id_factory().strip()
-            if not _PUBLIC_ID.fullmatch(review_public_id) or not _PUBLIC_ID.fullmatch(
-                event_public_id
-            ):
-                raise ValueError("review public ID factory returned an invalid value")
             anchor_queue = next(
                 row
                 for row in queue_rows
                 if str(row["public_id"]) == command.queue_public_id
             )
-            review_id = int(
-                connection.execute(
+            inserted_review = connection.execute(
                     "INSERT INTO submission_reviews "
-                    "(public_id, thread_id, queue_id, queue_public_id, reviewer_user_id, "
+                    "(thread_id, queue_id, reviewer_user_id, "
                     "evidence_through_entry_id, expected_thread_version, verdict, "
                     "comment_entry_id, result_id, source, idempotency_key, payload_sha256, "
-                    "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
-                    "RETURNING id",
+                    "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
+                    "RETURNING id, public_id",
                     (
-                        review_public_id,
                         target_thread["id"],
                         anchor_queue["id"],
-                        anchor_queue["public_id"],
                         command.teacher_user_id,
                         target_entry["id"],
                         target_thread["version"],
@@ -2112,19 +2073,13 @@ class PwaWrittenReviewQueueRepository:
                         payload_sha256,
                         completed_at,
                     ),
-                ).fetchone()["id"]
-            )
+                ).fetchone()
+            review_id = int(inserted_review["id"])
+            review_public_id = str(inserted_review["public_id"])
             self._completion_checkpoint("review")
 
             internal_reaction_state: ReviewInternalReactionState | None = None
             if command.internal_reaction_id is not None:
-                reaction_event_public_id = (
-                    self._internal_reaction_event_public_id_factory().strip()
-                )
-                if not _PUBLIC_ID.fullmatch(reaction_event_public_id):
-                    raise ValueError(
-                        "internal reaction event public ID factory returned an invalid value"
-                    )
                 editable_until = now + REVIEW_INTERNAL_REACTION_EDIT_WINDOW
                 connection.execute(
                     "INSERT INTO submission_review_internal_reactions "
@@ -2141,10 +2096,9 @@ class PwaWrittenReviewQueueRepository:
                 )
                 connection.execute(
                     "INSERT INTO submission_review_internal_reaction_events "
-                    "(public_id, review_id, actor_user_id, event_kind, reaction_id, "
-                    "state_version, created_at) VALUES (?, ?, ?, 'selected', ?, 1, ?)",
+                    "(review_id, actor_user_id, event_kind, reaction_id, "
+                    "state_version, created_at) VALUES (?, ?, 'selected', ?, 1, ?)",
                     (
-                        reaction_event_public_id,
                         review_id,
                         command.teacher_user_id,
                         command.internal_reaction_id,
@@ -2207,19 +2161,13 @@ class PwaWrittenReviewQueueRepository:
 
             annotation_receipts: list[ReviewAnnotationReceipt] = []
             for annotation in command.annotations:
-                annotation_public_id = self._annotation_public_id_factory().strip()
-                if not _PUBLIC_ID.fullmatch(annotation_public_id):
-                    raise ValueError(
-                        "annotation public ID factory returned an invalid value"
-                    )
                 marks_json = _canonical_json(annotation.marks_payload())
-                connection.execute(
+                inserted_annotation = connection.execute(
                     "INSERT INTO submission_review_annotations "
-                    "(public_id, review_id, attachment_id, schema_version, rotation, "
+                    "(review_id, attachment_id, schema_version, rotation, "
                     "marks_json, payload_sha256, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
                     (
-                        annotation_public_id,
                         review_id,
                         evidence_attachments_by_public_id[
                             annotation.attachment_public_id
@@ -2230,7 +2178,8 @@ class PwaWrittenReviewQueueRepository:
                         _payload_hash(annotation.payload()),
                         completed_at,
                     ),
-                )
+                ).fetchone()
+                annotation_public_id = str(inserted_annotation["public_id"])
                 annotation_receipts.append(
                     ReviewAnnotationReceipt(
                         annotation_public_id=annotation_public_id,
@@ -2274,10 +2223,9 @@ class PwaWrittenReviewQueueRepository:
             self._completion_checkpoint("queue")
             connection.execute(
                 "INSERT INTO submission_review_events "
-                "(public_id, review_id, event_kind, payload_json, created_at) "
-                "VALUES (?, ?, 'completed', ?, ?)",
+                "(review_id, event_kind, payload_json, created_at) "
+                "VALUES (?, 'completed', ?, ?)",
                 (
-                    event_public_id,
                     review_id,
                     _canonical_json(
                         {
@@ -2390,11 +2338,6 @@ class PwaWrittenReviewQueueRepository:
                     review_public_id=review_public_id, row=state
                 )
 
-            event_public_id = self._internal_reaction_event_public_id_factory().strip()
-            if not _PUBLIC_ID.fullmatch(event_public_id):
-                raise ValueError(
-                    "internal reaction event public ID factory returned an invalid value"
-                )
             if state is None:
                 updated_at = now
                 next_version = 1
@@ -2440,10 +2383,9 @@ class PwaWrittenReviewQueueRepository:
                     )
             connection.execute(
                 "INSERT INTO submission_review_internal_reaction_events "
-                "(public_id, review_id, actor_user_id, event_kind, reaction_id, "
-                "state_version, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, ?, ?, ?, ?)",
                 (
-                    event_public_id,
                     review["id"],
                     teacher_user_id,
                     event_kind,
@@ -2518,11 +2460,6 @@ class PwaWrittenReviewQueueRepository:
                 raise ReviewInternalReactionWindowClosed(
                     "internal reaction edit window has closed"
                 )
-            event_public_id = self._internal_reaction_event_public_id_factory().strip()
-            if not _PUBLIC_ID.fullmatch(event_public_id):
-                raise ValueError(
-                    "internal reaction event public ID factory returned an invalid value"
-                )
             next_version = int(state["version"]) + 1
             cursor = connection.execute(
                 "UPDATE submission_review_internal_reactions "
@@ -2541,10 +2478,9 @@ class PwaWrittenReviewQueueRepository:
                 )
             connection.execute(
                 "INSERT INTO submission_review_internal_reaction_events "
-                "(public_id, review_id, actor_user_id, event_kind, reaction_id, "
-                "state_version, created_at) VALUES (?, ?, ?, 'deleted', NULL, ?, ?)",
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, 'deleted', NULL, ?, ?)",
                 (
-                    event_public_id,
                     review["id"],
                     teacher_user_id,
                     next_version,
@@ -2630,11 +2566,6 @@ class PwaWrittenReviewQueueRepository:
                     ),
                 )
 
-            event_public_id = self._student_reaction_event_public_id_factory().strip()
-            if not _PUBLIC_ID.fullmatch(event_public_id):
-                raise ValueError(
-                    "Student reaction event public ID factory returned an invalid value"
-                )
             if state is None:
                 updated_at = now
                 next_version = 1
@@ -2680,10 +2611,9 @@ class PwaWrittenReviewQueueRepository:
                     )
             connection.execute(
                 "INSERT INTO submission_review_student_reaction_events "
-                "(public_id, review_id, actor_user_id, event_kind, reaction_id, "
-                "state_version, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, ?, ?, ?, ?)",
                 (
-                    event_public_id,
                     review["id"],
                     student_user_id,
                     event_kind,
@@ -2764,11 +2694,6 @@ class PwaWrittenReviewQueueRepository:
                 raise ReviewStudentReactionWindowClosed(
                     "Student reaction edit window has closed"
                 )
-            event_public_id = self._student_reaction_event_public_id_factory().strip()
-            if not _PUBLIC_ID.fullmatch(event_public_id):
-                raise ValueError(
-                    "Student reaction event public ID factory returned an invalid value"
-                )
             next_version = int(state["version"]) + 1
             cursor = connection.execute(
                 "UPDATE submission_review_student_reactions "
@@ -2787,10 +2712,9 @@ class PwaWrittenReviewQueueRepository:
                 )
             connection.execute(
                 "INSERT INTO submission_review_student_reaction_events "
-                "(public_id, review_id, actor_user_id, event_kind, reaction_id, "
-                "state_version, created_at) VALUES (?, ?, ?, 'deleted', NULL, ?, ?)",
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, 'deleted', NULL, ?, ?)",
                 (
-                    event_public_id,
                     review["id"],
                     student_user_id,
                     next_version,

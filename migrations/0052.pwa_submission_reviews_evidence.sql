@@ -8,18 +8,11 @@
 create table submission_reviews
 (
     id                        integer primary key,
-    public_id                 text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('r-' || id) virtual,
     thread_id                 integer not null references submission_threads (id),
     -- Queue rows are deleted by the same transaction.  These are immutable
     -- provenance snapshots rather than foreign keys to ephemeral work items.
     queue_id                  integer not null,
-    queue_public_id           text    not null,
     reviewer_user_id          integer not null references users (id),
     evidence_through_entry_id integer not null references submission_entries (id),
     expected_thread_version   integer not null check (expected_thread_version > 0),
@@ -252,7 +245,7 @@ end;
 create table submission_review_events
 (
     id          integer primary key,
-    public_id   text not null unique,
+    public_id text generated always as ('re-' || id) virtual,
     review_id   integer not null references submission_reviews (id),
     event_kind  text not null check (event_kind in ('completed')),
     payload_json text not null check (json_valid(payload_json) = 1),

@@ -173,7 +173,7 @@ for (const { name, persona, expectedRole } of loginMatrix) {
     if (expectedRole === 'admin') {
       await page.goto('/staff/classrooms')
       await expect(page.getByRole('heading', { name: 'Аудитории' })).toBeVisible()
-      await expect(page.getByText('Очное воскресенье')).toBeVisible()
+      await expect(page.getByLabel('Событие')).toBeVisible()
     }
   })
 }
@@ -186,7 +186,7 @@ test('Admin searches the real immutable audit timeline', async ({ page }) => {
   )
   await expect(page.getByRole('heading', { name: 'Журнал изменений', level: 1 })).toBeVisible()
   await expect(page.getByText('e2e.audit.baseline', { exact: true })).toBeVisible()
-  await expect(page.getByText('account-student-fixture', { exact: true })).toBeVisible()
+  await expect(page.getByText('a-1001', { exact: true })).toBeVisible()
 
   await page.getByText('Показать изменения').click()
   await expect(page.getByText('blocked', { exact: true })).toBeVisible()
@@ -198,7 +198,7 @@ test('Teacher reads only the scoped anonymous course statistics', async ({ page 
   await loginThroughUi(
     page,
     AUTH_PERSONAS.teacher,
-    '/staff/statistics?course=course-fixture-math-5-7&lesson=41',
+    '/staff/statistics?course=c-1&lesson=41',
   )
   await expect(page.getByRole('heading', { name: 'Статистика курса', level: 1 })).toBeVisible()
   await expect(page.getByLabel('Группа')).toHaveValue('')
@@ -240,7 +240,7 @@ test('Student profile uses the authenticated course enrollment instead of protot
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
   await expect(page.getByRole('heading', { name: 'Алексей Тестовый-Онлайн' })).toBeVisible()
   await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
-  await expect(page.getByLabel('Активная группа')).toHaveValue('group-fixture-beginner')
+  await expect(page.getByLabel('Активная группа')).toHaveValue('g-1')
   await expect(page.getByLabel('Формат занятий')).toHaveValue('online')
   await expect(page.getByText('Василий Петров')).toHaveCount(0)
 })
@@ -287,12 +287,12 @@ test('Admin finds a student and never loses an unsaved course edit on reload', a
   await expect(page.getByRole('button', { name: /Тестовый-Онлайн Алексей/ })).toBeVisible()
   await expect(page).toHaveURL((url) => url.searchParams.get('q') === 'алексеи')
 
-  await page.getByLabel('Активная группа').selectOption('group-fixture-continuing')
+  await page.getByLabel('Активная группа').selectOption('g-2')
   await page.getByLabel('Формат занятий').selectOption('in_person')
   await expect(page.getByText(/Несохранённые изменения хранятся/)).toBeVisible()
 
   await page.reload()
-  await expect(page.getByLabel('Активная группа')).toHaveValue('group-fixture-continuing')
+  await expect(page.getByLabel('Активная группа')).toHaveValue('g-2')
   await expect(page.getByLabel('Формат занятий')).toHaveValue('in_person')
 })
 
@@ -486,7 +486,7 @@ test('Deploy-first: Admin imports a Student TSV, enrolls the account and Student
     '/student/profile',
   )
   await expect(page.getByRole('heading', { name: 'Школьник Приёмочный' })).toBeVisible()
-  await expect(page.getByLabel('Активная группа')).toHaveValue('group-fixture-beginner')
+  await expect(page.getByLabel('Активная группа')).toHaveValue('g-1')
 })
 
 test('Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in', async ({
@@ -499,7 +499,7 @@ test('Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in
   const password = `pilot-password-${suffix}`
 
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users?tab=teachers')
-  await page.getByRole('button', { name: 'Добавить преподавателя' }).click()
+  await page.getByRole('button', { name: 'Добавить сотрудника' }).click()
   const creator = page.locator('form').filter({ hasText: 'Временный пароль' })
   await creator.getByLabel('Фамилия').fill('Приёмочный')
   await creator.getByLabel('Имя').fill('Преподаватель')
@@ -510,7 +510,7 @@ test('Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in
       response.request().method() === 'POST' &&
       new URL(response.url()).pathname === '/staff/api/v1/staff-members',
   )
-  await creator.getByRole('button', { name: 'Создать преподавателя' }).click()
+  await creator.getByRole('button', { name: 'Создать сотрудника' }).click()
   expect((await created).status()).toBe(201)
 
   await page.getByRole('button', { name: /Приёмочный Преподаватель/ }).click()
@@ -630,7 +630,7 @@ test('Admin edits teacher scopes without losing the local draft', async ({ page 
   const changed = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' &&
-      new URL(response.url()).pathname === '/staff/api/v1/staff-members/user-staff-fixture/scopes',
+      new URL(response.url()).pathname === '/staff/api/v1/staff-members/u-201/scopes',
   )
   await page.getByRole('button', { name: 'Сохранить доступы' }).click()
   expect((await changed).status()).toBe(200)
@@ -641,7 +641,7 @@ test('Admin edits teacher scopes without losing the local draft', async ({ page 
   const restored = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' &&
-      new URL(response.url()).pathname === '/staff/api/v1/staff-members/user-staff-fixture/scopes',
+      new URL(response.url()).pathname === '/staff/api/v1/staff-members/u-201/scopes',
   )
   await page.getByRole('button', { name: 'Сохранить доступы' }).click()
   expect((await restored).status()).toBe(200)
@@ -691,7 +691,7 @@ test('Admin saves a course enrollment through the real API', async ({ page }, te
     (response) =>
       response.request().method() === 'PUT' &&
       new URL(response.url()).pathname ===
-        '/staff/api/v1/course-enrollments/enrollment-classroom-e2e-chromium',
+        '/staff/api/v1/course-enrollments/en-10301',
   )
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   expect((await changed).status()).toBe(200)
@@ -704,7 +704,7 @@ test('Admin saves a course enrollment through the real API', async ({ page }, te
     (response) =>
       response.request().method() === 'PUT' &&
       new URL(response.url()).pathname ===
-        '/staff/api/v1/course-enrollments/enrollment-classroom-e2e-chromium',
+        '/staff/api/v1/course-enrollments/en-10301',
   )
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   expect((await restored).status()).toBe(200)

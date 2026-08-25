@@ -8,7 +8,6 @@ import hmac
 import json
 import secrets
 import sqlite3
-import uuid
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -508,7 +507,6 @@ def _batch_audit(
 ) -> None:
     insert_audit_event(
         connection,
-        public_id=f"audit.{uuid.uuid4().hex}",
         actor_user_id=principal.linked_user_id,
         actor_account_public_id=principal.account_public_id,
         audience="staff",
@@ -536,7 +534,6 @@ def _enrollment_batch_audit(
 ) -> None:
     insert_audit_event(
         connection,
-        public_id=f"audit.{uuid.uuid4().hex}",
         actor_user_id=principal.linked_user_id,
         actor_account_public_id=principal.account_public_id,
         audience="staff",
@@ -619,10 +616,8 @@ async def apply_student_accounts(request: web.Request) -> web.Response:
                     }
                 )
                 continue
-            user_public_id = f"user.{uuid.uuid4().hex}"
-            user_id = insert_student_user(
+            user_id, user_public_id = insert_student_user(
                 connection,
-                public_id=user_public_id,
                 surname=str(row["surname"]),
                 name=str(row["name"]),
                 patronymic=str(row["patronymic"]),
@@ -630,10 +625,8 @@ async def apply_student_accounts(request: web.Request) -> web.Response:
                 grade=row["grade"],
                 birth_date=row["birth_date"],
             )
-            account_public_id = f"student-account.{uuid.uuid4().hex}"
-            account_id = insert_provisioned_account(
+            account_id, account_public_id = insert_provisioned_account(
                 connection,
-                public_id=account_public_id,
                 audience="student",
                 username=resolved_login,
                 username_normalized=resolved_normalized,
@@ -717,10 +710,8 @@ async def apply_course_enrollments(request: web.Request) -> web.Response:
             first_course = not student_has_course_enrollment(
                 connection, student_user_id=student_user_id
             )
-            enrollment_public_id = f"course-enrollment.{uuid.uuid4().hex}"
-            enrollment_id = insert_course_enrollment(
+            enrollment_id, enrollment_public_id = insert_course_enrollment(
                 connection,
-                public_id=enrollment_public_id,
                 student_user_id=student_user_id,
                 course_id=int(row["courseId"]),
                 active_group_id=str(row["activeGroupId"]),
@@ -738,7 +729,6 @@ async def apply_course_enrollments(request: web.Request) -> web.Response:
             )
             insert_course_enrollment_created_event(
                 connection,
-                public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
                 enrollment_id=enrollment_id,
                 course_id=int(row["courseId"]),
                 active_group_id=str(row["activeGroupId"]),
@@ -841,10 +831,8 @@ async def apply_family_accounts(request: web.Request) -> web.Response:
                     }
                 )
                 continue
-            account_public_id = f"family-account.{uuid.uuid4().hex}"
-            account_id = insert_provisioned_account(
+            account_id, account_public_id = insert_provisioned_account(
                 connection,
-                public_id=account_public_id,
                 audience="family",
                 username=resolved_login,
                 username_normalized=resolved_normalized,

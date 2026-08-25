@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-import uuid
 from datetime import UTC, datetime
-from zoneinfo import ZoneInfo
 
 from aiohttp import web
 
@@ -42,7 +40,6 @@ classroom_layout_routes = web.RouteTableDef()
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _ETAG = re.compile(r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):v([1-9]\d*)"$')
 _EVENT_STATUSES = frozenset({"draft", "scheduled", "completed", "cancelled"})
-_MOSCOW = ZoneInfo("Europe/Moscow")
 
 
 class _EventNotFound(Exception):
@@ -279,18 +276,8 @@ def _create_event(
     )
     if len(group_lesson_ids) != len(group_public_ids):
         raise _UnknownGroupLesson
-    event_date = datetime.fromisoformat(starts_at.replace("Z", "+00:00")).astimezone(
-        _MOSCOW
-    ).date()
-    public_id_base = f"in-person-{event_date.isoformat()}"
-    public_id = public_id_base
-    suffix = 2
-    while get_in_person_event(connection, public_id) is not None:
-        public_id = f"{public_id_base}-{suffix}"
-        suffix += 1
-    event_id = insert_in_person_event(
+    event_id, event_public_id = insert_in_person_event(
         connection,
-        public_id=public_id,
         season_id=int(season["id"]),
         name=name,
         starts_at=starts_at,
@@ -306,7 +293,7 @@ def _create_event(
         actor_user_id=actor_user_id,
         now=now,
     )
-    event = get_in_person_event(connection, public_id)
+    event = get_in_person_event(connection, event_public_id)
     assert event is not None
     return event, list_event_group_lessons(connection, event_id)
 
@@ -630,7 +617,6 @@ async def post_materialize_classroom_layout(request: web.Request) -> web.Respons
             lambda connection: materialize_layout(
                 connection,
                 event_public_id=event_public_id,
-                layout_public_id=f"classroom-layout.{uuid.uuid4().hex}",
                 actor_user_id=actor_user_id,
                 now=_now(),
             )

@@ -7,13 +7,7 @@
 create table submission_review_annotations
 (
     id             integer primary key,
-    public_id      text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ra-' || id) virtual,
     review_id      integer not null references submission_reviews (id),
     attachment_id  integer not null references submission_attachments (id),
     schema_version integer not null check (schema_version = 1),

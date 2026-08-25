@@ -58,7 +58,11 @@ export function SupportComposer({
         value={value}
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {saveState === 'unavailable' ? (
+        {saveState === 'saved' ? (
+          <p className="text-caption text-muted-foreground" role="status">
+            Черновик сохранён на этом устройстве.
+          </p>
+        ) : saveState === 'unavailable' ? (
           <p className="text-caption text-danger" role="status">
             Черновик не сохраняется. Не закрывайте страницу до отправки.
           </p>

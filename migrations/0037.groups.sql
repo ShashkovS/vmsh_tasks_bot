@@ -1,6 +1,10 @@
 create table IF NOT EXISTS groups
 (
-    group_id              text primary key,
+    -- `id` is the PWA-facing compact-ID source (`g-<id>`).  The legacy
+    -- string remains a unique compatibility key for the Telegram adapter.
+    -- See vmshpwa/docs/compact-identifiers.md.
+    id                    integer primary key,
+    group_id              text not null unique,
     short_code            text    not null,
     broadcast_code        text unique,
     tg_command            text unique,
@@ -294,7 +298,7 @@ create table lessons_dg_tmp
     id       INTEGER
         primary key,
     group_id text
-        references groups,
+        references groups (group_id),
     lesson   INTEGER not null,
     unique (lesson, group_id)
 );
@@ -315,7 +319,7 @@ create table problems_dg_tmp
     id               INTEGER
         primary key,
     group_id         text
-        references groups,
+        references groups (group_id),
     lesson           INTEGER         not null,
     prob             INTEGER         not null,
     item             TEXT            not null,
@@ -372,7 +376,7 @@ create table results_dg_tmp
     problem_id           INTEGER   not null
         references problems,
     group_id             text
-        references groups,
+        references groups (group_id),
     lesson               INTEGER   not null,
     teacher_id           INTEGER
         references users,
@@ -426,7 +430,7 @@ create table users_dg_tmp
         unique,
     type           INTEGER not null,
     group_id       text
-        references groups,
+        references groups (group_id),
     name           TEXT    not null,
     surname        TEXT    not null,
     middlename     TEXT,
@@ -475,7 +479,7 @@ create table zoom_conversation_dg_tmp
     teacher_id           INTEGER not null
         references users,
     group_id             text
-        references groups,
+        references groups (group_id),
     lesson               INTEGER not null,
     check_time_spent_sec INTEGER
 );

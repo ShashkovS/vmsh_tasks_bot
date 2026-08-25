@@ -17,12 +17,11 @@ import argparse
 import json
 import os
 import re
-import secrets
 import sqlite3
 import stat
 import sys
 from collections import Counter
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -58,7 +57,6 @@ REPORT_SCHEMA_VERSION = 1
 STUDENT_TYPE = 1
 PROVISIONING_SOURCE = "controlled-student-import-v1"
 _CANONICAL_USERNAME = re.compile(r"[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?\Z")
-_PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
 _REQUIRED_TABLES = {
     "users",
     "auth_accounts",
@@ -329,7 +327,7 @@ def _require_import_schema(path: Path) -> None:
         }
         if not _REQUIRED_TABLES <= tables:
             raise AuthImportError("Import database lacks required Phase-1 tables")
-        columns = {row[1] for row in connection.execute("PRAGMA table_info(users)")}
+        columns = {row[1] for row in connection.execute("PRAGMA table_xinfo(users)")}
         if "public_id" not in columns:
             raise AuthImportError("Import database lacks users.public_id")
 
@@ -557,9 +555,9 @@ def build_plan(
             and account.username_algorithm_version == STUDENT_USERNAME_ALGORITHM_VERSION
             and account.provisioning_source == PROVISIONING_SOURCE
             and account.status == "active"
-            and _PUBLIC_ID.fullmatch(account.public_id)
+            and account.public_id.startswith("a-")
             and row.public_id is not None
-            and _PUBLIC_ID.fullmatch(row.public_id)
+            and row.public_id.startswith("u-")
             and valid_credential
         ):
             raise AuthImportError("Existing Student account does not match this import")
@@ -570,11 +568,7 @@ def build_plan(
         excluded_user_ids=decisions.excluded_user_ids,
         effective_usernames=effective_usernames,
         pending_user_ids=tuple(pending),
-        pending_user_public_id_ids=tuple(
-            user_id
-            for user_id in pending
-            if assessment_by_id[user_id].row.public_id is None
-        ),
+        pending_user_public_id_ids=(),
         existing_user_ids=tuple(existing),
         collision_groups=collision_group_count,
         collision_rows=len(collision_ids),
@@ -596,14 +590,12 @@ def aggregate_report(
         blocker_counts.update(assessment.blocker_codes)
     if operation == "preview":
         new_accounts = len(plan.pending_user_ids)
-        new_user_public_ids = len(plan.pending_user_public_id_ids)
+        new_user_public_ids = 0
         already_imported = len(plan.existing_user_ids)
         status = "ready"
     else:
         new_accounts = 0 if inserted_rows is None else inserted_rows
-        new_user_public_ids = (
-            0 if inserted_user_public_ids is None else inserted_user_public_ids
-        )
+        new_user_public_ids = 0
         already_imported = len(plan.existing_user_ids) - new_accounts
         status = "applied" if new_accounts else "already-applied"
     return {
@@ -808,10 +800,6 @@ def preview_import(
     return plan, aggregate_report(plan, operation="preview")
 
 
-def _random_public_id(prefix: str) -> str:
-    return f"{prefix}-{secrets.token_hex(16)}"
-
-
 def _display_name(row: StudentSourceRow) -> str:
     return " ".join(part for part in (row.name.strip(), row.surname.strip()) if part)
 
@@ -822,7 +810,6 @@ def apply_import(
     *,
     confirmed_database: Path,
     credential_hasher: CredentialHasher | None = None,
-    public_id_factory: Callable[[str], str] = _random_public_id,
     now: datetime | None = None,
 ) -> tuple[ImportPlan, dict[str, Any]]:
     """Apply one fully validated plan, or roll back every target mutation."""
@@ -869,8 +856,6 @@ def apply_import(
                 if locked_plan.assessments != preview_plan.assessments or (
                     locked_plan.pending_user_ids != preview_plan.pending_user_ids
                     or locked_plan.existing_user_ids != preview_plan.existing_user_ids
-                    or locked_plan.pending_user_public_id_ids
-                    != preview_plan.pending_user_public_id_ids
                     or dict(locked_plan.effective_usernames)
                     != dict(preview_plan.effective_usernames)
                 ):
@@ -880,35 +865,16 @@ def apply_import(
 
                 for user_id in locked_plan.pending_user_ids:
                     row = assessment_by_id[user_id].row
-                    user_public_id = row.public_id or public_id_factory("usr")
-                    account_public_id = public_id_factory("acct")
-                    if not _PUBLIC_ID.fullmatch(
-                        user_public_id
-                    ) or not _PUBLIC_ID.fullmatch(account_public_id):
-                        raise AuthImportError(
-                            "Public ID factory produced a non-canonical ID"
-                        )
-                    if row.public_id is None:
-                        changed = connection.execute(
-                            "UPDATE users SET public_id = ? "
-                            "WHERE id = ? AND public_id IS NULL AND type = ?",
-                            (user_public_id, user_id, STUDENT_TYPE),
-                        ).rowcount
-                        if changed != 1:
-                            raise AuthImportError(
-                                "Student row changed during public-ID assignment"
-                            )
                     username = locked_plan.effective_usernames[user_id]
                     connection.execute(
                         "INSERT INTO auth_accounts "
-                        "(public_id, audience, username, username_normalized, "
+                        "(audience, username, username_normalized, "
                         "username_algorithm_version, provisioning_source, "
                         "display_name, credential_kind, credential_hash, "
                         "linked_user_id, status, credential_version, created_at, "
-                        "updated_at) VALUES (?, 'student', ?, ?, ?, ?, ?, "
+                        "updated_at) VALUES ('student', ?, ?, ?, ?, ?, "
                         "'telegram_token', ?, ?, 'active', 1, ?, ?)",
                         (
-                            account_public_id,
                             username,
                             username,
                             STUDENT_USERNAME_ALGORITHM_VERSION,
@@ -952,7 +918,6 @@ def apply_import(
         final_plan,
         operation="apply",
         inserted_rows=len(preview_plan.pending_user_ids),
-        inserted_user_public_ids=len(preview_plan.pending_user_public_id_ids),
     )
 
 

@@ -4,7 +4,7 @@
 create table telegram_bindings
 (
     id                  integer primary key,
-    public_id           text    not null unique,
+    public_id text generated always as ('tb-' || id) virtual,
     owner_type          text    not null check (owner_type in ('course', 'group')),
     owner_course_id     integer references courses (id),
     owner_group_id      text references groups (group_id),

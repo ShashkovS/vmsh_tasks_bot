@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sqlite3
-import uuid
 
 from db_methods.pwa.family_enrollment import (
     insert_group_change_event,
@@ -48,7 +47,6 @@ def change_family_enrollment(
     if group_changed:
         insert_group_change_event(
             connection,
-            public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
             enrollment_id=enrollment_id,
             course_id=course_id,
             previous_value=previous_group_id,
@@ -59,7 +57,6 @@ def change_family_enrollment(
     if mode_changed:
         insert_mode_change_event(
             connection,
-            public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
             enrollment_id=enrollment_id,
             course_id=course_id,
             previous_value=previous_attendance_mode,

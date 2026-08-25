@@ -27,6 +27,7 @@ from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
 
 
 MIGRATION_ID = "0063.pwa_notification_core"
+ACCOUNT_PUBLIC_ID = "a-1"
 
 
 def _migrations():
@@ -88,11 +89,11 @@ def _seed_account(connection: sqlite3.Connection) -> tuple[int, int]:
     _insert_parents(connection)
     account_id = connection.execute(
         "INSERT INTO auth_accounts "
-        "(public_id, audience, username, username_normalized, "
+        "(id, audience, username, username_normalized, "
         "username_algorithm_version, provisioning_source, credential_kind, "
         "credential_hash, linked_user_id, status, created_at, updated_at) "
-        "VALUES ('notification-account', 'student', 'notification-student', "
-        "'notification-student', 1, 'synthetic-test', 'telegram_token', 'hash', 1, "
+        "VALUES (1, 'student', 'notification-student', 'notification-student', "
+        "1, 'synthetic-test', 'telegram_token', 'hash', 1, "
         "'active', ?, ?) RETURNING id",
         (NOW, NOW),
     ).fetchone()["id"]
@@ -176,7 +177,6 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
         account_id, session_id = _seed_account(connection)
         assert insert_event(
             connection,
-            public_id="notification.classroom-one",
             account_id=account_id,
             category="classroom_assignment",
             dedupe_key="classroom:one",
@@ -188,7 +188,6 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
         )
         assert not insert_event(
             connection,
-            public_id="notification.duplicate",
             account_id=account_id,
             category="classroom_assignment",
             dedupe_key="classroom:one",
@@ -206,14 +205,14 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
         first = acknowledge_event(
             connection,
             account_id=account_id,
-            event_public_id="notification.classroom-one",
+            event_public_id="n-1",
             session_id=session_id,
             now="2026-10-05T12:00:03Z",
         )
         repeated = acknowledge_event(
             connection,
             account_id=account_id,
-            event_public_id="notification.classroom-one",
+            event_public_id="n-1",
             session_id=session_id,
             now="2026-10-05T12:00:10Z",
         )
@@ -232,7 +231,7 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
             acknowledge_event(
                 connection,
                 account_id=account_id + 1,
-                event_public_id="notification.classroom-one",
+                event_public_id="n-1",
                 session_id=session_id,
                 now=NOW,
             )
@@ -248,7 +247,6 @@ def test_event_list_applies_in_app_preference_and_oral_default(tmp_path):
         for category in ("news", "oral_window"):
             assert insert_event(
                 connection,
-                public_id=f"notification.{category}",
                 account_id=account_id,
                 category=category,
                 dedupe_key=f"{category}:one",
@@ -316,7 +314,6 @@ def test_event_is_not_visible_before_deliver_after(tmp_path):
         account_id, _session_id = _seed_account(connection)
         assert insert_event(
             connection,
-            public_id="notification.future-news",
             account_id=account_id,
             category="news",
             dedupe_key="news:future",

@@ -89,69 +89,69 @@ def test_classroom_assignment_migration_up_down_up_is_exact(tmp_path):
 
 def _insert_parents(connection: sqlite3.Connection) -> None:
     connection.execute(
-        "INSERT INTO users (id, public_id, type, name, surname) "
-        "VALUES (1, 'student-assignment', 1, 'Иван', 'Иванов'), "
-        "(2, 'admin-assignment', 128, 'Анна', 'Администратор')"
+        "INSERT INTO users (id, type, name, surname) "
+        "VALUES (1, 1, 'Иван', 'Иванов'), "
+        "(2, 128, 'Анна', 'Администратор')"
     )
     connection.execute(
         "INSERT INTO seasons "
-        "(id, public_id, code, title, starts_on, ends_on, session_expires_on, "
+        "(id, code, title, starts_on, ends_on, session_expires_on, "
         "status, created_at, updated_at) VALUES "
-        "(1, 'season-assignment', 'assignment', 'Assignment', '2025-09-01', "
+        "(1, 'assignment', 'Assignment', '2025-09-01', "
         "'2026-05-31', '2026-08-10', 'active', ?, ?)",
         (NOW, NOW),
     )
     connection.execute(
         "INSERT INTO courses "
-        "(id, public_id, season_id, code, name, subject_code, status, sort_order, "
+        "(id, season_id, code, name, subject_code, status, sort_order, "
         "accent_key, created_at, updated_at) VALUES "
-        "(1, 'course-assignment', 1, 'math', 'Математика', 'math', 'active', 1, "
+        "(1, 1, 'math', 'Математика', 'math', 'active', 1, "
         "'math', ?, ?)",
         (NOW, NOW),
     )
     connection.execute(
         "INSERT INTO groups "
         "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-        "allow_self_switch, is_system, score_weight, public_id, course_id, "
+        "allow_self_switch, is_system, score_weight, course_id, "
         "status, color_key, created_at, updated_at) VALUES "
         "('assignment-n', 'ан', 'Начинающие', 1, 1, 1, 1, 0, 1.0, "
-        "'group-assignment', 1, 'active', 'level-1', ?, ?)",
+        "1, 'active', 'level-1', ?, ?)",
         (NOW, NOW),
     )
     connection.execute(
         "INSERT INTO course_enrollments "
-        "(id, public_id, student_user_id, course_id, active_group_id, "
+        "(id, student_user_id, course_id, active_group_id, "
         "attendance_mode, status, created_at, updated_at) VALUES "
-        "(1, 'enrollment-assignment', 1, 1, 'assignment-n', "
+        "(1, 1, 1, 'assignment-n', "
         "'in_person', 'active', ?, ?)",
         (NOW, NOW),
     )
     course_lesson_id = connection.execute(
         "INSERT INTO course_lessons "
-        "(public_id, course_id, lesson_number, created_at, updated_at) "
-        "VALUES ('course-lesson-assignment', 1, 41, ?, ?) RETURNING id",
+        "(course_id, lesson_number, created_at, updated_at) "
+        "VALUES (1, 41, ?, ?) RETURNING id",
         (NOW, NOW),
     ).fetchone()[0]
     group_lesson_id = connection.execute(
         "INSERT INTO group_lessons "
-        "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+        "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
         "business_timezone, status, created_at, updated_at) VALUES "
-        "('group-lesson-assignment', ?, 1, 'assignment-n', '2026-01-01', "
+        "(?, 1, 'assignment-n', '2026-01-01', "
         "'Europe/Moscow', 'active', ?, ?) RETURNING id",
         (course_lesson_id, NOW, NOW),
     ).fetchone()[0]
     room_id = connection.execute(
         "INSERT INTO classrooms "
-        "(public_id, name, normalized_name, status, created_by_user_id, "
+        "(name, normalized_name, status, created_by_user_id, "
         "updated_by_user_id, created_at, updated_at) VALUES "
-        "('classroom-assignment', '201', '201', 'active', 2, 2, ?, ?) RETURNING id",
+        "('201', '201', 'active', 2, 2, ?, ?) RETURNING id",
         (NOW, NOW),
     ).fetchone()[0]
     event_id = connection.execute(
         "INSERT INTO in_person_events "
-        "(public_id, season_id, name, starts_at, ends_at, status, "
+        "(season_id, name, starts_at, ends_at, status, "
         "created_by_user_id, updated_by_user_id, created_at, updated_at) VALUES "
-        "('event-assignment', 1, 'Очное занятие', '2026-02-01T10:00:00Z', "
+        "(1, 'Очное занятие', '2026-02-01T10:00:00Z', "
         "'2026-02-01T13:00:00Z', 'scheduled', 2, 2, ?, ?) RETURNING id",
         (NOW, NOW),
     ).fetchone()[0]
@@ -163,9 +163,9 @@ def _insert_parents(connection: sqlite3.Connection) -> None:
     )
     layout_id = connection.execute(
         "INSERT INTO classroom_layout_versions "
-        "(public_id, in_person_event_id, state, created_by_user_id, "
+        "(in_person_event_id, state, created_by_user_id, "
         "created_at, updated_at) VALUES "
-        "('layout-assignment', ?, 'draft', 2, ?, ?) RETURNING id",
+        "(?, 'draft', 2, ?, ?) RETURNING id",
         (event_id, NOW, NOW),
     ).fetchone()[0]
     connection.execute(
@@ -181,9 +181,9 @@ def _insert_parents(connection: sqlite3.Connection) -> None:
     )
     plan_id = connection.execute(
         "INSERT INTO classroom_assignment_plans "
-        "(public_id, in_person_event_id, layout_version_id, state, "
+        "(in_person_event_id, layout_version_id, state, "
         "created_by_user_id, created_at, updated_at) VALUES "
-        "('plan-assignment', ?, ?, 'draft', 2, ?, ?) RETURNING id",
+        "(?, ?, 'draft', 2, ?, ?) RETURNING id",
         (event_id, layout_id, NOW, NOW),
     ).fetchone()[0]
     connection.execute(
@@ -244,8 +244,8 @@ def test_assignment_plan_recalculates_and_confirms(tmp_path):
 
         preview = recalculate_assignment_plan(
             connection,
-            event_public_id="event-assignment",
-            plan_public_id="plan-generated",
+            event_public_id="ipe-1",
+            plan_public_id=None,
             expected_version=None,
             actor_user_id=2,
             now=NOW,
@@ -262,8 +262,8 @@ def test_assignment_plan_recalculates_and_confirms(tmp_path):
 
         confirmed = confirm_assignment_plan(
             connection,
-            event_public_id="event-assignment",
-            plan_public_id="plan-generated",
+            event_public_id="ipe-1",
+            plan_public_id="cap-1",
             expected_version=1,
             actor_user_id=2,
             now="2026-07-29T13:01:00Z",
@@ -309,7 +309,7 @@ def test_student_projection_uses_only_current_confirmed_assignment(tmp_path):
 
         connection.execute(
             "UPDATE classrooms SET status = 'archived' "
-            "WHERE public_id = 'classroom-assignment'"
+            "WHERE public_id = 'room-1'"
         )
         unavailable = read_student_classroom_assignments(connection, 1)[0]
         assert unavailable["status"] == "reassigning"
@@ -335,8 +335,8 @@ def test_assignment_plan_without_room_cannot_be_confirmed(tmp_path):
         )
         empty_layout_id = connection.execute(
             "INSERT INTO classroom_layout_versions "
-            "(public_id, in_person_event_id, state, created_by_user_id, created_at, updated_at) "
-            "SELECT 'layout-empty', in_person_event_id, 'draft', 2, ?, ? "
+            "(in_person_event_id, state, created_by_user_id, created_at, updated_at) "
+            "SELECT in_person_event_id, 'draft', 2, ?, ? "
             "FROM classroom_layout_versions WHERE id = ? RETURNING id",
             (NOW, NOW, layout_id),
         ).fetchone()[0]
@@ -348,8 +348,8 @@ def test_assignment_plan_without_room_cannot_be_confirmed(tmp_path):
 
         preview = recalculate_assignment_plan(
             connection,
-            event_public_id="event-assignment",
-            plan_public_id="plan-no-room",
+            event_public_id="ipe-1",
+            plan_public_id=None,
             expected_version=None,
             actor_user_id=2,
             now=NOW,
@@ -360,8 +360,8 @@ def test_assignment_plan_without_room_cannot_be_confirmed(tmp_path):
         with pytest.raises(InvalidClassroomAssignment):
             confirm_assignment_plan(
                 connection,
-                event_public_id="event-assignment",
-                plan_public_id="plan-no-room",
+                event_public_id="ipe-1",
+                plan_public_id="cap-1",
                 expected_version=1,
                 actor_user_id=2,
                 now=NOW,
@@ -380,8 +380,8 @@ def test_confirming_new_layout_marks_and_rebases_working_assignment_plan(tmp_pat
 
         initial = recalculate_assignment_plan(
             connection,
-            event_public_id="event-assignment",
-            plan_public_id="plan-to-rebase",
+            event_public_id="ipe-1",
+            plan_public_id=None,
             expected_version=None,
             actor_user_id=2,
             now=NOW,
@@ -390,35 +390,34 @@ def test_confirming_new_layout_marks_and_rebases_working_assignment_plan(tmp_pat
 
         materialized = materialize_layout(
             connection,
-            event_public_id="event-assignment",
-            layout_public_id="layout-assignment-next",
+            event_public_id="ipe-1",
             actor_user_id=2,
             now="2026-07-29T13:01:00Z",
         )
         assert materialized["state"] == "draft"
         confirm_layout(
             connection,
-            event_public_id="event-assignment",
-            layout_public_id="layout-assignment-next",
+            event_public_id="ipe-1",
+            layout_public_id="clv-2",
             expected_version=1,
             actor_user_id=2,
             now="2026-07-29T13:02:00Z",
         )
         stale = connection.execute(
             "SELECT state, stale_reason, version FROM classroom_assignment_plans "
-            "WHERE public_id = 'plan-to-rebase'"
+            "WHERE public_id = 'cap-1'"
         ).fetchone()
         assert tuple(stale) == ("stale", "layout_changed", 2)
 
         recalculated = recalculate_assignment_plan(
             connection,
-            event_public_id="event-assignment",
-            plan_public_id="ignored-for-existing-working-plan",
+            event_public_id="ipe-1",
+            plan_public_id="cap-1",
             expected_version=2,
             actor_user_id=2,
             now="2026-07-29T13:03:00Z",
         )
-        assert recalculated["plan"]["public_id"] == "plan-to-rebase"
+        assert recalculated["plan"]["public_id"] == "cap-1"
         assert (recalculated["plan"]["state"], recalculated["plan"]["version"]) == (
             "draft",
             3,

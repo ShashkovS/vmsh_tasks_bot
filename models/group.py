@@ -23,6 +23,8 @@ class Group:
     allow_self_switch: int
     is_system: int
     score_weight: float
+    # Rowid-backed source for the virtual PWA-facing `g-<id>` identity.
+    id: Optional[int] = None
     # Transitional Phase-1 fields are optional until the controlled Phase-11
     # backfill assigns every legacy group to a course. Keeping them on the
     # legacy dataclass lets its SELECT * readers survive the additive migration

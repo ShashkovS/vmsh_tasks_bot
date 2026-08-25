@@ -21,10 +21,9 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_DATABASE = REPOSITORY_ROOT / "db/vmshpwa_e2e.sqlite3"
 TIMESTAMP = "2026-07-30T12:00:00Z"
 PROJECTS = ("chromium", "webkit", "firefox")
-BINDING_PUBLIC_ID = "telegram-binding.phase8.e2e"
-POST_PUBLIC_ID = "news.phase8.e2e"
-BANNER_PUBLIC_ID = "banner.phase8.e2e"
-
+POST_ID = 9601
+BINDING_ID = 9601
+BANNER_ID = 9601
 
 def _require_e2e_target(runtime_config: PwaMaintenanceConfig) -> Path:
     require_pwa_maintenance_profile(runtime_config)
@@ -43,19 +42,20 @@ def _require_e2e_target(runtime_config: PwaMaintenanceConfig) -> Path:
 
 def _seed(connection: sqlite3.Connection) -> int:
     course = connection.execute(
-        "SELECT id FROM courses WHERE public_id = 'course-fixture-math-5-7'"
+        "SELECT id FROM courses WHERE code = 'math-5-7'"
     ).fetchone()
     group = connection.execute(
-        "SELECT group_id FROM groups WHERE public_id = 'group-fixture-beginner'"
+        "SELECT group_id FROM groups WHERE course_id = ? AND group_id = 'н'",
+        (course["id"],),
     ).fetchone()
     actor = connection.execute(
-        "SELECT id FROM users WHERE public_id = 'user-admin-fixture'"
+        "SELECT id FROM users WHERE id = 301"
     ).fetchone()
     credential_hashes = {
         str(row["audience"]): str(row["credential_hash"])
         for row in connection.execute(
-            "SELECT audience, credential_hash FROM auth_accounts WHERE public_id IN "
-            "('account-student-fixture', 'account-family-fixture')"
+            "SELECT audience, credential_hash FROM auth_accounts WHERE username IN "
+            "('testovyy-onlayn-14', 'synthetic-family')"
         )
     }
     if (
@@ -70,42 +70,29 @@ def _seed(connection: sqlite3.Connection) -> int:
     ):
         raise RuntimeError("News E2E seed requires baseline fixtures")
 
-    expected_accounts = {
-        f"account-news-{audience}-e2e-{project}"
-        for audience in ("student", "family")
-        for project in PROJECTS
-    }
-    expected_notifications = {
-        f"notification.news.phase8.e2e.{audience}.{project}"
-        for audience in ("student", "family")
-        for project in PROJECTS
-    }
+    expected_account_count = len(PROJECTS) * 2
+    expected_notification_count = len(PROJECTS) * 2
     existing = {
         "binding": connection.execute(
-            "SELECT count(*) FROM telegram_bindings WHERE public_id = ?",
-            (BINDING_PUBLIC_ID,),
+            "SELECT count(*) FROM telegram_bindings "
+            "WHERE purpose = 'news_source' AND chat_id = -1001798001",
         ).fetchone()[0],
         "post": connection.execute(
-            "SELECT count(*) FROM news_posts WHERE public_id = ?", (POST_PUBLIC_ID,)
+            "SELECT count(*) FROM news_posts "
+            "WHERE source_chat_id = -1001798001 AND source_message_id = 8001"
         ).fetchone()[0],
         "banner": connection.execute(
-            "SELECT count(*) FROM group_banners WHERE public_id = ?",
-            (BANNER_PUBLIC_ID,),
+            "SELECT count(*) FROM group_banners "
+            "WHERE html_sanitized = '<b>Разбор сегодня в 17:00</b> · новости уже опубликованы'",
         ).fetchone()[0],
-        "accounts": {
-            str(row[0])
-            for row in connection.execute(
-                "SELECT public_id FROM auth_accounts "
-                "WHERE public_id LIKE 'account-news-%-e2e-%'"
-            )
-        },
-        "notifications": {
-            str(row[0])
-            for row in connection.execute(
-                "SELECT public_id FROM notification_events "
-                "WHERE public_id LIKE 'notification.news.phase8.e2e.%'"
-            )
-        },
+        "accounts": int(connection.execute(
+            "SELECT count(*) FROM auth_accounts "
+            "WHERE username LIKE 'news-%-e2e-%'"
+        ).fetchone()[0]),
+        "notifications": int(connection.execute(
+            "SELECT count(*) FROM notification_events "
+            "WHERE category = 'news' AND route LIKE '/%/news/news-%'"
+        ).fetchone()[0]),
     }
     if any(
         (
@@ -120,8 +107,8 @@ def _seed(connection: sqlite3.Connection) -> int:
             existing["binding"] == 1
             and existing["post"] == 1
             and existing["banner"] == 1
-            and existing["accounts"] == expected_accounts
-            and existing["notifications"] == expected_notifications
+            and existing["accounts"] == expected_account_count
+            and existing["notifications"] == expected_notification_count
         ):
             return 0
         raise RuntimeError("News E2E fixture is only partially present")
@@ -130,15 +117,15 @@ def _seed(connection: sqlite3.Connection) -> int:
     actor_id = int(actor["id"])
     group_id = str(group["group_id"])
     account_ids: dict[str, int] = {}
-    for project in PROJECTS:
+    for ordinal, project in enumerate(PROJECTS, start=1):
         student_id = int(
             connection.execute(
                 "INSERT INTO users "
-                "(public_id, type, group_id, name, surname, online, grade, birthday, "
+                "(id, type, group_id, name, surname, online, grade, birthday, "
                 "allowed_groups) VALUES (?, 1, ?, 'Новости', ?, 1, 7, '2013-06-01', ?) "
                 "RETURNING id",
                 (
-                    f"student-news-e2e-{project}",
+                    9500 + ordinal,
                     group_id,
                     f"E2E {project}",
                     f";{group_id};",
@@ -148,14 +135,14 @@ def _seed(connection: sqlite3.Connection) -> int:
         student_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(id, audience, username, username_normalized, "
                 "username_algorithm_version, provisioning_source, display_name, "
                 "credential_kind, credential_hash, linked_user_id, status, "
                 "credential_version, created_at, updated_at) "
                 "VALUES (?, 'student', ?, ?, 1, 'synthetic_e2e_news', ?, "
                 "'telegram_token', ?, ?, 'active', 1, ?, ?) RETURNING id",
                 (
-                    f"account-news-student-e2e-{project}",
+                    9510 + ordinal,
                     f"news-student-e2e-{project}",
                     f"news-student-e2e-{project}",
                     f"Новости E2E {project}",
@@ -169,14 +156,14 @@ def _seed(connection: sqlite3.Connection) -> int:
         family_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(id, audience, username, username_normalized, "
                 "username_algorithm_version, provisioning_source, display_name, "
                 "credential_kind, credential_hash, linked_user_id, status, "
                 "credential_version, created_at, updated_at) "
                 "VALUES (?, 'family', ?, ?, NULL, 'synthetic_e2e_news', ?, "
                 "'password', ?, NULL, 'active', 1, ?, ?) RETURNING id",
                 (
-                    f"account-news-family-e2e-{project}",
+                    9520 + ordinal,
                     f"news-family-e2e-{project}",
                     f"news-family-e2e-{project}",
                     f"Семья новости E2E {project}",
@@ -194,12 +181,12 @@ def _seed(connection: sqlite3.Connection) -> int:
         )
         enrollment_id = int(
             connection.execute(
-                "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
-                "attendance_mode, status, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, 'online', 'active', ?, ?) RETURNING id",
+            "INSERT INTO course_enrollments "
+            "(id, student_user_id, course_id, active_group_id, "
+            "attendance_mode, status, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, 'online', 'active', ?, ?) RETURNING id",
                 (
-                    f"enrollment-news-e2e-{project}",
+                    9530 + ordinal,
                     student_id,
                     course_id,
                     group_id,
@@ -227,12 +214,12 @@ def _seed(connection: sqlite3.Connection) -> int:
 
     connection.execute(
         "INSERT INTO telegram_bindings "
-        "(public_id, owner_type, owner_course_id, purpose, chat_id, title_cached, "
+        "(id, owner_type, owner_course_id, purpose, chat_id, title_cached, "
         "status, verified_at, created_by_user_id, updated_by_user_id, created_at, "
         "updated_at) VALUES (?, 'course', ?, 'news_source', -1001798001, ?, "
         "'verified', ?, ?, ?, ?, ?)",
         (
-            BINDING_PUBLIC_ID,
+            BINDING_ID,
             course_id,
             "Тестовый канал ВМШ",
             TIMESTAMP,
@@ -242,22 +229,27 @@ def _seed(connection: sqlite3.Connection) -> int:
             TIMESTAMP,
         ),
     )
-    post_id = int(
-        connection.execute(
-            "INSERT INTO news_posts "
-            "(public_id, source_type, source_binding_public_id, owner_course_id, "
-            "source_chat_id, source_message_id, published_at, created_at, updated_at) "
-            "VALUES (?, 'telegram', ?, ?, -1001798001, 8001, ?, ?, ?) RETURNING id",
-            (
-                POST_PUBLIC_ID,
-                BINDING_PUBLIC_ID,
-                course_id,
-                TIMESTAMP,
-                TIMESTAMP,
-                TIMESTAMP,
-            ),
-        ).fetchone()["id"]
-    )
+    binding_id = int(connection.execute(
+        "SELECT id FROM telegram_bindings "
+        "WHERE purpose = 'news_source' AND chat_id = -1001798001"
+    ).fetchone()["id"])
+    post = connection.execute(
+        "INSERT INTO news_posts "
+        "(id, source_type, source_binding_id, owner_course_id, "
+        "source_chat_id, source_message_id, published_at, created_at, updated_at) "
+        "VALUES (?, 'telegram', ?, ?, -1001798001, 8001, ?, ?, ?) "
+        "RETURNING id, public_id",
+        (
+            POST_ID,
+            binding_id,
+            course_id,
+            TIMESTAMP,
+            TIMESTAMP,
+            TIMESTAMP,
+        ),
+    ).fetchone()
+    post_id = int(post["id"])
+    post_public_id = str(post["public_id"])
     content = [
         {"type": "plain", "text": "Разбор "},
         {"type": "plain", "text": "задач", "marks": [{"type": "bold"}]},
@@ -289,12 +281,12 @@ def _seed(connection: sqlite3.Connection) -> int:
     )
     connection.execute(
         "INSERT INTO group_banners "
-        "(public_id, group_id, audience, html_sanitized, starts_at, ends_at, "
+        "(id, group_id, audience, html_sanitized, starts_at, ends_at, "
         "priority, dismissible, created_by_user_id, updated_by_user_id, created_at, "
         "updated_at) VALUES (?, ?, 'both', ?, '2020-01-01T00:00:00Z', "
         "'2030-01-01T00:00:00Z', 20, 1, ?, ?, ?, ?)",
         (
-            BANNER_PUBLIC_ID,
+            BANNER_ID,
             group_id,
             "<b>Разбор сегодня в 17:00</b> · новости уже опубликованы",
             actor_id,
@@ -304,19 +296,19 @@ def _seed(connection: sqlite3.Connection) -> int:
         ),
     )
 
-    for audience in ("student", "family"):
-        for project in PROJECTS:
+    for audience, offset in (("student", 9610), ("family", 9620)):
+        for ordinal, project in enumerate(PROJECTS, start=1):
             account_id = account_ids[f"{audience}.{project}"]
             connection.execute(
                 "INSERT INTO notification_events "
-                "(public_id, account_id, category, dedupe_key, route, payload_json, "
+                "(id, account_id, category, dedupe_key, route, payload_json, "
                 "occurred_at, deliver_after, created_at) VALUES (?, ?, 'news', ?, ?, ?, ?, ?, ?)",
                 (
-                    f"notification.news.phase8.e2e.{audience}.{project}",
+                    offset + ordinal,
                     account_id,
-                    POST_PUBLIC_ID,
-                    f"/{audience}/news/{POST_PUBLIC_ID}",
-                    json.dumps({"postId": POST_PUBLIC_ID}, separators=(",", ":")),
+                    post_public_id,
+                    f"/{audience}/news/{post_public_id}",
+                    json.dumps({"postId": post_public_id}, separators=(",", ":")),
                     TIMESTAMP,
                     TIMESTAMP,
                     TIMESTAMP,

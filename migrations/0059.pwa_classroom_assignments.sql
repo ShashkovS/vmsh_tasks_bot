@@ -4,13 +4,7 @@
 create table classroom_assignment_plans
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cap-' || id) virtual,
     in_person_event_id   integer not null references in_person_events (id),
     layout_version_id    integer not null,
     base_plan_id         integer references classroom_assignment_plans (id),

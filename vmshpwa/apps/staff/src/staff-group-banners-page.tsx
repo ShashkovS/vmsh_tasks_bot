@@ -6,6 +6,7 @@ import {
   PageSection,
   PageStatePanel,
   createStaffGroupBannerClient,
+  createStaffRichMediaClient,
   createTelegramBindingClient,
   useAuthenticatedPrincipal,
   useAuthentication,
@@ -113,6 +114,13 @@ export function StaffGroupBannersPage() {
       }),
     [authentication],
   )
+  const richMediaClient = useMemo(
+    () =>
+      createStaffRichMediaClient(authentication.client.runtime, {
+        refreshSession: () => authentication.refresh(),
+      }),
+    [authentication],
+  )
   const banners = useStaffGroupBannersQuery(bannerClient, scope)
   const owners = useTelegramBindingOwnersQuery(ownerClient, scope)
   const queryClient = useQueryClient()
@@ -193,9 +201,9 @@ export function StaffGroupBannersPage() {
 
   return (
     <PageLayout
-      description="Короткие объявления на «Сейчас». Это не массовая рассылка и не публикация в Telegram."
+      description="Короткие сообщения для группы: появятся на «Сейчас» и придут уведомлением на устройства с включёнными push."
       eyebrow="Admin only"
-      title="Объявления"
+      title="Рассылки"
       width="wide"
     >
       <PageSection title={editing ? 'Изменить объявление' : 'Новое объявление'}>
@@ -265,6 +273,7 @@ export function StaffGroupBannersPage() {
                     <RichMarkdownEditor
                       onChange={(markdown) => setDraft((value) => ({ ...value, markdown }))}
                       onDocumentChange={setDocument}
+                      onImageUpload={richMediaClient.uploadImage}
                       value={draft.markdown}
                     />
                   </Suspense>
@@ -315,11 +324,12 @@ export function StaffGroupBannersPage() {
                       setDraft((value) => ({ ...value, dismissible: checked === true }))
                     }
                   />
-                  Можно скрыть на этом устройстве
+                  Разрешить получателю скрыть объявление
                 </Label>
                 <p className="text-caption text-muted-foreground">
-                  Сохранение блокируется, пока строгая проверка Markdown не пройдена. Внешние
-                  картинки копируются на сервер.
+                  Скрытие действует только в текущем браузере получателя. Уведомление создаётся
+                  в момент начала показа; уже отправленное уведомление после правки не повторяется.
+                  Внешние картинки копируются на сервер.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -398,15 +408,6 @@ export function StaffGroupBannersPage() {
           ))}
         </div>
       </PageSection>
-      <Alert tone="info">
-        <AlertContent>
-          <AlertTitle>Полные рассылки — во второй версии</AlertTitle>
-          <AlertDescription>
-            Markdown-редактор, preview получателей и произвольная доставка PWA/Telegram здесь пока
-            не включены.
-          </AlertDescription>
-        </AlertContent>
-      </Alert>
     </PageLayout>
   )
 }

@@ -40,14 +40,14 @@ def _override(
 @pytest.mark.asyncio
 async def test_admin_confirms_course_schedule_rule_after_impact_preview(content_http):
     teacher = await content_http.client.get(
-        "/staff/api/v1/courses/course-content-http/schedule-rules",
+        "/staff/api/v1/courses/c-1/schedule-rules",
         cookies=_cookie(content_http, "teacher"),
         headers=_headers(),
     )
     assert teacher.status == 403
 
     empty = await content_http.client.get(
-        "/staff/api/v1/courses/course-content-http/schedule-rules",
+        "/staff/api/v1/courses/c-1/schedule-rules",
         cookies=_cookie(content_http, "admin"),
         headers=_headers(),
     )
@@ -57,7 +57,7 @@ async def test_admin_confirms_course_schedule_rule_after_impact_preview(content_
     assert empty_body["draftImpacts"] == []
 
     created = await content_http.client.put(
-        "/staff/api/v1/courses/course-content-http/schedule-rules",
+        "/staff/api/v1/courses/c-1/schedule-rules",
         json=_rule("opens_at", day=0, time="16:30"),
         cookies=_cookie(content_http, "admin"),
         headers=_headers(unsafe=True),
@@ -78,7 +78,7 @@ async def test_admin_confirms_course_schedule_rule_after_impact_preview(content_
 
     rule_id = body["rule"]["ruleId"]
     resumed = await content_http.client.get(
-        "/staff/api/v1/courses/course-content-http/schedule-rules",
+        "/staff/api/v1/courses/c-1/schedule-rules",
         cookies=_cookie(content_http, "admin"),
         headers=_headers(),
     )
@@ -110,7 +110,7 @@ async def test_admin_confirms_course_schedule_rule_after_impact_preview(content_
 @pytest.mark.asyncio
 async def test_group_override_is_based_on_current_active_course_rule(content_http):
     course_draft = await content_http.client.put(
-        "/staff/api/v1/courses/course-content-http/schedule-rules",
+        "/staff/api/v1/courses/c-1/schedule-rules",
         json=_rule("hint_scheduled_at", day=5, time="12:00"),
         cookies=_cookie(content_http, "admin"),
         headers=_headers(unsafe=True),
@@ -126,7 +126,7 @@ async def test_group_override_is_based_on_current_active_course_rule(content_htt
     assert course_confirmed.status == 200
 
     draft = await content_http.client.put(
-        "/staff/api/v1/groups/group-content-http-a/schedule-overrides",
+        "/staff/api/v1/groups/g-1/schedule-overrides",
         json=_override("hint_scheduled_at", mode="override", day=5, time="15:00"),
         cookies=_cookie(content_http, "admin"),
         headers=_headers(unsafe=True),
@@ -157,7 +157,7 @@ async def test_group_override_is_based_on_current_active_course_rule(content_htt
     assert (await confirmed.json())["override"]["state"] == "active"
 
     listed = await content_http.client.get(
-        "/staff/api/v1/groups/group-content-http-a/schedule-overrides",
+        "/staff/api/v1/groups/g-1/schedule-overrides",
         cookies=_cookie(content_http, "admin"),
         headers=_headers(),
     )
@@ -170,7 +170,7 @@ async def test_group_override_is_based_on_current_active_course_rule(content_htt
 @pytest.mark.asyncio
 async def test_group_schedule_rejects_missing_base_and_invalid_disabled_cutoff(content_http):
     missing_base = await content_http.client.put(
-        "/staff/api/v1/groups/group-content-http-a/schedule-overrides",
+        "/staff/api/v1/groups/g-1/schedule-overrides",
         json=_override("solution_scheduled_at", mode="inherit"),
         cookies=_cookie(content_http, "admin"),
         headers=_headers(unsafe=True),
@@ -179,7 +179,7 @@ async def test_group_schedule_rejects_missing_base_and_invalid_disabled_cutoff(c
     assert (await missing_base.json())["error"]["code"] == "course_schedule_incomplete"
 
     course_draft = await content_http.client.put(
-        "/staff/api/v1/courses/course-content-http/schedule-rules",
+        "/staff/api/v1/courses/c-1/schedule-rules",
         json=_rule("submission_closes_at", day=6, time="21:00"),
         cookies=_cookie(content_http, "admin"),
         headers=_headers(unsafe=True),
@@ -194,7 +194,7 @@ async def test_group_schedule_rejects_missing_base_and_invalid_disabled_cutoff(c
     assert confirmed.status == 200
 
     disabled = await content_http.client.put(
-        "/staff/api/v1/groups/group-content-http-a/schedule-overrides",
+        "/staff/api/v1/groups/g-1/schedule-overrides",
         json=_override("submission_closes_at", mode="disabled"),
         cookies=_cookie(content_http, "admin"),
         headers=_headers(unsafe=True),

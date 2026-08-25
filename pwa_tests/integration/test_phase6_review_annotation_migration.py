@@ -64,7 +64,6 @@ def test_review_annotation_migration_up_down_up_is_exact(tmp_path):
         }
         assert columns == {
             "id",
-            "public_id",
             "review_id",
             "attachment_id",
             "schema_version",

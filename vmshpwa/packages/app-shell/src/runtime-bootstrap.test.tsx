@@ -70,6 +70,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.unstubAllGlobals()
   vi.useRealTimers()
   cleanup()
   window.localStorage.clear()
@@ -246,6 +247,23 @@ describe('RuntimeBootstrap', () => {
 })
 
 describe('theme namespace', () => {
+  it('uses light on a first visit even when the system prefers dark mode', async () => {
+    const namespace = createBrowserStorageNamespace({ audience: 'family', instance: 'agent' })
+    const matchMedia = vi.fn(() => ({ matches: true }))
+    vi.stubGlobal('matchMedia', matchMedia)
+
+    render(
+      <AppProviders storageNamespace={namespace}>
+        <ThemeToggle />
+      </AppProviders>,
+    )
+
+    await waitFor(() => expect(document.documentElement.classList.contains('dark')).toBe(false))
+    expect(document.documentElement.style.colorScheme).toBe('light')
+    expect(window.localStorage.getItem(themeStorageKey(namespace))).toBe('light')
+    expect(matchMedia).not.toHaveBeenCalled()
+  })
+
   it('reads and writes theme only below the full audience and instance namespace', async () => {
     const namespace = createBrowserStorageNamespace({ audience: 'student', instance: 'agent' })
     const otherNamespace = createBrowserStorageNamespace({ audience: 'student', instance: 'human' })

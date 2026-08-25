@@ -1,7 +1,5 @@
 -- depends: 0050.pwa_submission_entry_replacements
 
-drop trigger written_tasks_queue_public_id_immutable;
-drop trigger written_tasks_queue_public_id_fill_after_insert;
 drop index written_tasks_queue_claim_token_idx;
 drop index written_tasks_queue_lease_expiry_idx;
 drop index written_tasks_queue_problem_waiting_idx;

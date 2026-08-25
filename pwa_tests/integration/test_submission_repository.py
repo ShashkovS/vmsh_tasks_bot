@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import itertools
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -43,12 +42,12 @@ NOW = datetime(2026, 9, 20, 13, tzinfo=UTC)
 STUDENT_USER_ID = -947_001
 OTHER_STUDENT_USER_ID = -947_002
 ADMIN_USER_ID = 947_003
-PROBLEM_PUBLIC_ID = "problem-submission-integer"
-PENDING_PROBLEM_PUBLIC_ID = "problem-submission-pending"
-UNLIMITED_PROBLEM_PUBLIC_ID = "problem-submission-unlimited"
-DAILY_LIMIT_PROBLEM_PUBLIC_ID = "problem-submission-daily-limit"
-WRITTEN_PROBLEM_PUBLIC_ID = "problem-submission-written"
-WRITTEN_TARGET_PROBLEM_PUBLIC_ID = "problem-submission-written-target"
+PROBLEM_PUBLIC_ID = "p-1"
+PENDING_PROBLEM_PUBLIC_ID = "p-2"
+UNLIMITED_PROBLEM_PUBLIC_ID = "p-3"
+DAILY_LIMIT_PROBLEM_PUBLIC_ID = "p-4"
+WRITTEN_PROBLEM_PUBLIC_ID = "p-5"
+WRITTEN_TARGET_PROBLEM_PUBLIC_ID = "p-6"
 
 
 def timestamp(value: datetime) -> str:
@@ -86,67 +85,41 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
     apply_schema_migrations(database_path)
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock(NOW)
-    public_ids = (f"attempt-repository-{index}" for index in itertools.count(1))
-    repository = PwaTestSubmissionRepository(
-        factory,
-        clock=clock,
-        public_id_factory=lambda: next(public_ids),
-    )
-    thread_public_ids = (
-        f"written-thread-repository-{index}" for index in itertools.count(1)
-    )
-    entry_public_ids = (
-        f"written-entry-repository-{index}" for index in itertools.count(1)
-    )
-    replacement_public_ids = (
-        f"written-replacement-repository-{index}" for index in itertools.count(1)
-    )
-    reassignment_public_ids = (
-        f"written-reassignment-repository-{index}" for index in itertools.count(1)
-    )
-    written_repository = PwaWrittenSubmissionRepository(
-        factory,
-        clock=clock,
-        thread_public_id_factory=lambda: next(thread_public_ids),
-        entry_public_id_factory=lambda: next(entry_public_ids),
-        replacement_event_public_id_factory=lambda: next(replacement_public_ids),
-        reassignment_public_id_factory=lambda: next(reassignment_public_ids),
-    )
+    repository = PwaTestSubmissionRepository(factory, clock=clock)
+    written_repository = PwaWrittenSubmissionRepository(factory, clock=clock)
     now = timestamp(NOW)
 
     def seed(connection):
         connection.execute("DELETE FROM kv_logins")
         connection.executemany(
-            "INSERT INTO users (id, public_id, type, name, surname) "
-            "VALUES (?, ?, 1, ?, ?)",
+            "INSERT INTO users (id, type, name, surname) "
+            "VALUES (?, 1, ?, ?)",
             (
                 (
                     STUDENT_USER_ID,
-                    "user-submission-student",
                     "Ирина",
                     "Тестова",
                 ),
                 (
                     OTHER_STUDENT_USER_ID,
-                    "user-submission-other",
                     "Олег",
                     "Другой",
                 ),
             ),
         )
         connection.execute(
-            "INSERT INTO users (id, public_id, type, name, surname) "
-            "VALUES (?, 'user-submission-admin', 128, 'Анна', 'Админова')",
+            "INSERT INTO users (id, type, name, surname) "
+            "VALUES (?, 128, 'Анна', 'Админова')",
             (ADMIN_USER_ID,),
         )
         student_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "username_algorithm_version, provisioning_source, "
                 "credential_kind, credential_hash, linked_user_id, status, "
                 "created_at, updated_at) VALUES "
-                "('account-submission-student', 'student', 'submission-student', "
+                "('student', 'submission-student', "
                 "'submission-student', 1, 'synthetic-test', 'telegram_token', "
                 "'hash', ?, 'active', ?, ?) RETURNING id",
                 (STUDENT_USER_ID, now, now),
@@ -155,11 +128,11 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         other_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "username_algorithm_version, provisioning_source, "
                 "credential_kind, credential_hash, linked_user_id, status, "
                 "created_at, updated_at) VALUES "
-                "('account-submission-other', 'student', 'submission-other', "
+                "('student', 'submission-other', "
                 "'submission-other', 1, 'synthetic-test', 'telegram_token', "
                 "'hash', ?, 'active', ?, ?) RETURNING id",
                 (OTHER_STUDENT_USER_ID, now, now),
@@ -168,10 +141,10 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         staff_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "provisioning_source, credential_kind, credential_hash, "
                 "linked_user_id, status, created_at, updated_at) VALUES "
-                "('account-submission-admin', 'staff', 'submission-admin', "
+                "('staff', 'submission-admin', "
                 "'submission-admin', 'synthetic-test', 'password', 'hash', ?, "
                 "'active', ?, ?) RETURNING id",
                 (ADMIN_USER_ID, now, now),
@@ -180,9 +153,9 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         season_id = int(
             connection.execute(
                 "INSERT INTO seasons "
-                "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+                "(code, title, starts_on, ends_on, session_expires_on, "
                 "status, created_at, updated_at) VALUES "
-                "('season-submission', 'submission', 'Submission tests', "
+                "('submission', 'Submission tests', "
                 "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) "
                 "RETURNING id",
                 (now, now),
@@ -191,9 +164,9 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         course_id = int(
             connection.execute(
                 "INSERT INTO courses "
-                "(public_id, season_id, code, name, subject_code, status, "
+                "(season_id, code, name, subject_code, status, "
                 "sort_order, accent_key, created_at, updated_at) VALUES "
-                "('course-submission', ?, 'math', 'Математика', 'math', "
+                "(?, 'math', 'Математика', 'math', "
                 "'active', 1, 'math', ?, ?) RETURNING id",
                 (season_id, now, now),
             ).fetchone()["id"]
@@ -201,18 +174,18 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         connection.execute(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, "
-            "is_default, allow_self_switch, is_system, score_weight, public_id, "
+            "is_default, allow_self_switch, is_system, score_weight, "
             "course_id, status, created_at, updated_at) VALUES "
             "('submission-a', 'a', 'Начинающие', 1, 1, 1, 1, 0, 1.0, "
-            "'group-submission-a', ?, 'active', ?, ?)",
+            "?, 'active', ?, ?)",
             (course_id, now, now),
         )
         enrollment_id = int(
             connection.execute(
                 "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
+                "(student_user_id, course_id, active_group_id, "
                 "attendance_mode, status, created_at, updated_at) VALUES "
-                "('enrollment-submission', ?, ?, 'submission-a', 'online', "
+                "(?, ?, 'submission-a', 'online', "
                 "'active', ?, ?) RETURNING id",
                 (STUDENT_USER_ID, course_id, now, now),
             ).fetchone()["id"]
@@ -226,17 +199,17 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         course_lesson_id = int(
             connection.execute(
                 "INSERT INTO course_lessons "
-                "(public_id, course_id, lesson_number, created_at, updated_at) "
-                "VALUES ('course-lesson-submission-41', ?, 41, ?, ?) RETURNING id",
+                "(course_id, lesson_number, created_at, updated_at) "
+                "VALUES (?, 41, ?, ?) RETURNING id",
                 (course_id, now, now),
             ).fetchone()["id"]
         )
         group_lesson_id = int(
             connection.execute(
                 "INSERT INTO group_lessons "
-                "(public_id, course_lesson_id, course_id, group_id, "
+                "(course_lesson_id, course_id, group_id, "
                 "cycle_anchor_date, business_timezone, status, created_at, "
-                "updated_at) VALUES ('group-lesson-submission-41', ?, ?, "
+                "updated_at) VALUES (?, ?, "
                 "'submission-a', '2026-09-14', 'Europe/Moscow', 'active', ?, ?) "
                 "RETURNING id",
                 (course_lesson_id, course_id, now, now),
@@ -245,9 +218,9 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         window_id = int(
             connection.execute(
                 "INSERT INTO lesson_windows "
-                "(public_id, group_lesson_id, submission_closes_at, timezone, "
+                "(group_lesson_id, submission_closes_at, timezone, "
                 "source, created_at, updated_at) VALUES "
-                "('window-submission-41', ?, ?, 'Europe/Moscow', 'native', ?, ?) "
+                "(?, ?, 'Europe/Moscow', 'native', ?, ?) "
                 "RETURNING id",
                 (group_lesson_id, timestamp(NOW + timedelta(days=2)), now, now),
             ).fetchone()["id"]
@@ -255,9 +228,9 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         source_id = int(
             connection.execute(
                 "INSERT INTO content_sources "
-                "(public_id, group_lesson_id, kind, logical_filename, "
+                "(group_lesson_id, kind, logical_filename, "
                 "source_encoding, created_at) VALUES "
-                "('source-submission-condition', ?, 'condition', "
+                "(?, 'condition', "
                 "'condition.tex', 'utf-8', ?) RETURNING id",
                 (group_lesson_id, now),
             ).fetchone()["id"]
@@ -265,10 +238,10 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         revision_id = int(
             connection.execute(
                 "INSERT INTO content_revisions "
-                "(public_id, source_id, revision_number, source_sha256, latex_text, "
+                "(source_id, revision_number, source_sha256, latex_text, "
                 "parser_version, status, canonical_json, diagnostics_json, "
                 "provenance_json, created_at) VALUES "
-                "('revision-submission-condition', ?, 1, ?, '\\задача 7 \\кзадача', "
+                "(?, 1, ?, '\\задача 7 \\кзадача', "
                 "'test-v1', 'ready', '{}', '[]', '{}', ?) RETURNING id",
                 (source_id, "a" * 64, now),
             ).fetchone()["id"]
@@ -285,10 +258,10 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
                 "INSERT INTO problems "
                 "(group_id, lesson, prob, item, title, prob_text, prob_type, "
                 "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
-                "congrat, synonyms, public_id) VALUES "
+                "congrat, synonyms) VALUES "
                 "('submission-a', 41, 1, '', 'Целое число', '', 1, ?, '', "
-                "'Введите целое число', '7', 'Нет', 'Да', '', ?) RETURNING id",
-                (int(ANS_TYPE.INTEGER), PROBLEM_PUBLIC_ID),
+                "'Введите целое число', '7', 'Нет', 'Да', '') RETURNING id",
+                (int(ANS_TYPE.INTEGER),),
             ).fetchone()["id"]
         )
         answer_config = json.dumps(
@@ -336,10 +309,10 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
                 "INSERT INTO problems "
                 "(group_id, lesson, prob, item, title, prob_text, prob_type, "
                 "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
-                "congrat, synonyms, public_id) VALUES "
+                "congrat, synonyms) VALUES "
                 "('submission-a', 41, 2, '', 'Без ответа', '', 1, ?, '', "
-                "'Введите целое число', '', 'Нет', 'Да', '', ?) RETURNING id",
-                (int(ANS_TYPE.INTEGER), PENDING_PROBLEM_PUBLIC_ID),
+                "'Введите целое число', '', 'Нет', 'Да', '') RETURNING id",
+                (int(ANS_TYPE.INTEGER),),
             ).fetchone()["id"]
         )
         connection.execute(
@@ -382,7 +355,6 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         def insert_additional_problem(
             *,
             ordinal: int,
-            public_id: str,
             title: str,
             attempt_policy_json: str,
         ) -> None:
@@ -391,10 +363,10 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
                     "INSERT INTO problems "
                     "(group_id, lesson, prob, item, title, prob_text, prob_type, "
                     "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
-                    "congrat, synonyms, public_id) VALUES "
+                    "congrat, synonyms) VALUES "
                     "('submission-a', 41, ?, '', ?, '', 1, ?, '', "
-                    "'Введите целое число', '7', 'Нет', 'Да', '', ?) RETURNING id",
-                    (ordinal, title, int(ANS_TYPE.INTEGER), public_id),
+                    "'Введите целое число', '7', 'Нет', 'Да', '') RETURNING id",
+                    (ordinal, title, int(ANS_TYPE.INTEGER)),
                 ).fetchone()["id"]
             )
             connection.execute(
@@ -435,13 +407,11 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
 
         insert_additional_problem(
             ordinal=3,
-            public_id=UNLIMITED_PROBLEM_PUBLIC_ID,
             title="Без ограничений",
             attempt_policy_json='{ "schemaVersion": 1, "unlimited": true }',
         )
         insert_additional_problem(
             ordinal=4,
-            public_id=DAILY_LIMIT_PROBLEM_PUBLIC_ID,
             title="Дневной лимит",
             attempt_policy_json=(
                 '{ "schemaVersion": 1, "maxPerHour": null, "maxPerDay": 2 }'
@@ -452,10 +422,10 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
                 "INSERT INTO problems "
                 "(group_id, lesson, prob, item, title, prob_text, prob_type, "
                 "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
-                "congrat, synonyms, public_id) VALUES "
+                "congrat, synonyms) VALUES "
                 "('submission-a', 41, 5, '', 'Письменная задача', '', 2, NULL, "
-                "'', '', '', '', '', '', ?) RETURNING id",
-                (WRITTEN_PROBLEM_PUBLIC_ID,),
+                "'', '', '', '', '', '') RETURNING id",
+                (),
             ).fetchone()["id"]
         )
         connection.execute(
@@ -482,10 +452,10 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
                 "INSERT INTO problems "
                 "(group_id, lesson, prob, item, title, prob_text, prob_type, "
                 "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
-                "congrat, synonyms, public_id) VALUES "
+                "congrat, synonyms) VALUES "
                 "('submission-a', 41, 6, '', 'Другая письменная задача', '', 2, "
-                "NULL, '', '', '', '', '', '', ?) RETURNING id",
-                (WRITTEN_TARGET_PROBLEM_PUBLIC_ID,),
+                "NULL, '', '', '', '', '', '') RETURNING id",
+                (),
             ).fetchone()["id"]
         )
         connection.execute(
@@ -510,9 +480,9 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
         )
         connection.execute(
             "INSERT INTO lesson_publications "
-            "(public_id, group_lesson_id, kind, revision_id, state, published_at, "
+            "(group_lesson_id, kind, revision_id, state, published_at, "
             "created_at, updated_at, provenance_kind) VALUES "
-            "('publication-submission-condition', ?, 'condition', ?, 'published', "
+            "(?, 'condition', ?, 'published', "
             "?, ?, ?, 'legacy_backfill')",
             (group_lesson_id, revision_id, now, now, now),
         )
@@ -612,10 +582,10 @@ def publish_pending_problem_configuration(
         revision_id = int(
             connection.execute(
                 "INSERT INTO content_revisions "
-                "(public_id, source_id, revision_number, source_sha256, latex_text, "
+                "(source_id, revision_number, source_sha256, latex_text, "
                 "parser_version, status, canonical_json, diagnostics_json, "
                 "provenance_json, created_at) VALUES "
-                "('revision-submission-recheck', ?, ?, ?, '\\задача 179 \\кзадача', "
+                "(?, ?, ?, '\\задача 179 \\кзадача', "
                 "'test-v1', 'ready', '{}', '[]', '{}', ?) RETURNING id",
                 (
                     old_publication["source_id"],
@@ -659,10 +629,10 @@ def publish_pending_problem_configuration(
         )
         connection.execute(
             "INSERT INTO lesson_publications "
-            "(public_id, group_lesson_id, kind, revision_id, state, published_at, "
+            "(group_lesson_id, kind, revision_id, state, published_at, "
             "created_by_user_id, published_by_user_id, supersedes_publication_id, "
             "created_at, updated_at, provenance_kind) VALUES "
-            "('publication-submission-recheck', ?, 'condition', ?, 'published', ?, "
+            "(?, 'condition', ?, 'published', ?, "
             "?, ?, ?, ?, ?, 'interactive')",
             (
                 old_publication["group_lesson_id"],
@@ -908,7 +878,7 @@ async def test_pending_attempt_recheck_uses_previewed_current_configuration(
     assert receipt.pending_before == receipt.checked == 2
     assert receipt.correct == receipt.wrong == 1
     assert receipt.still_pending == 0
-    assert receipt.owner_account_public_ids == ("account-submission-student",)
+    assert receipt.owner_account_public_ids == ("a-1",)
     assert attempt["problem_revision_id"] == original_problem_revision_id
     assert attempt["check_status"] == "checked"
     assert attempt["checker_version"].startswith("pwa-test-checker-v1:")
@@ -1585,7 +1555,7 @@ def written_entry_command(
         account_id=fixture.student_account_id,
         problem_public_id=WRITTEN_PROBLEM_PUBLIC_ID,
         problem_revision=ProblemRevisionRef(
-            condition_revision_public_id="revision-submission-condition",
+            condition_revision_public_id="cr-1",
             config_version=1,
         ),
         text=text,
@@ -1807,9 +1777,9 @@ async def test_written_attachment_keeps_server_scope_and_replays_once(
     )
     assert staff_media.media == media
     assert staff_media.scope.payload() == {
-        "courseId": "course-submission",
-        "groupId": "group-submission-a",
-        "groupLessonId": "group-lesson-submission-41",
+        "courseId": "c-1",
+        "groupId": "g-5",
+        "groupLessonId": "gl-1",
     }
     with pytest.raises(WrittenSubmissionRejected) as foreign:
         await fixture.written_repository.get_attachment_media(
@@ -2207,7 +2177,7 @@ async def test_written_text_entry_submits_atomically_and_replays(
     assert entry["state"] == "submitted"
     assert entry["version"] == 2
     assert len(queue) == 1
-    assert queue[0]["public_id"].startswith("review-queue-")
+    assert queue[0]["public_id"].startswith("wq-")
     assert queue[0]["ts"] == timestamp(NOW)
     assert queue[0]["student_id"] == STUDENT_USER_ID
     assert queue[0]["problem_id"] == fixture.written_problem_id
@@ -2346,7 +2316,7 @@ async def test_written_entry_replacement_swaps_visibility_and_audits_once(
     )
 
     assert receipt.replaced_entry_public_id == original.entry.public_id
-    assert receipt.replacement_event_public_id == "written-replacement-repository-1"
+    assert receipt.replacement_event_public_id == "ser-1"
     assert receipt.entry.public_id == replacement_draft.entry.public_id
     assert receipt.entry.state == "submitted"
     assert receipt.thread_status == "awaiting_review"
@@ -2362,7 +2332,7 @@ async def test_written_entry_replacement_swaps_visibility_and_audits_once(
     assert rows[0][1]["deleted_at"] is None
     assert rows[1] == [
         {
-            "public_id": "written-replacement-repository-1",
+            "public_id": "ser-1",
             "replaced_entry": original.entry.public_id,
             "replacement_entry": replacement_draft.entry.public_id,
         }
@@ -2730,7 +2700,7 @@ async def test_staff_material_reassignment_is_append_only_and_projected(
     assert replay.replayed is True
     assert receipt.source_thread_status == "closed"
     assert receipt.target_thread_version == 1
-    assert receipt.owner_account_public_ids == ("account-submission-student",)
+    assert receipt.owner_account_public_ids == ("a-1",)
 
     source = await fixture.written_repository.get_thread(
         account_id=fixture.student_account_id,

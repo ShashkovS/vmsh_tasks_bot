@@ -9,13 +9,7 @@
 create table support_threads
 (
     id                integer primary key,
-    public_id         text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sup-' || id) virtual,
     student_user_id   integer not null references users (id),
     problem_id        integer references problems (id),
     group_lesson_id   integer references group_lessons (id),
@@ -97,13 +91,7 @@ end;
 create table support_entries
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sue-' || id) virtual,
     thread_id          integer not null references support_threads (id),
     author_kind        text    not null
         check (author_kind in ('student', 'teacher', 'admin', 'system')),

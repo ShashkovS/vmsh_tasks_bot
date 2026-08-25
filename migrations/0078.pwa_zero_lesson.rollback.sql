@@ -39,13 +39,7 @@ alter table course_lessons rename to course_lessons_with_zero;
 create table course_lessons
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cl-' || id) virtual,
     course_id          integer not null references courses (id),
     lesson_number      integer not null check (lesson_number > 0),
     title              text check (title is null or length(trim(title)) > 0),
@@ -59,9 +53,9 @@ create table course_lessons
 );
 
 insert into course_lessons
-    (id, public_id, course_id, lesson_number, title, created_by_user_id,
+    (id, course_id, lesson_number, title, created_by_user_id,
      updated_by_user_id, created_at, updated_at, version)
-select id, public_id, course_id, lesson_number, title, created_by_user_id,
+select id, course_id, lesson_number, title, created_by_user_id,
        updated_by_user_id, created_at, updated_at, version
 from course_lessons_with_zero;
 

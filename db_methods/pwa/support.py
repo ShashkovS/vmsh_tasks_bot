@@ -13,7 +13,6 @@ import hashlib
 import json
 import re
 import sqlite3
-import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -331,17 +330,9 @@ class PwaSupportThreadRepository:
         connection_factory: PwaConnectionFactory,
         *,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
-        thread_public_id_factory: Callable[[], str] = lambda: (
-            f"support-thread-{uuid.uuid4()}"
-        ),
-        entry_public_id_factory: Callable[[], str] = lambda: (
-            f"support-entry-{uuid.uuid4()}"
-        ),
     ) -> None:
         self._factory = connection_factory
         self._clock = clock
-        self._thread_public_id_factory = thread_public_id_factory
-        self._entry_public_id_factory = entry_public_id_factory
 
     async def create_student_thread(
         self, command: CreateSupportThreadCommand
@@ -398,17 +389,13 @@ class PwaSupportThreadRepository:
                 ).fetchone()
 
             if existing is None:
-                thread_public_id = self._new_public_id(
-                    self._thread_public_id_factory, "support thread"
-                )
                 thread_id = int(
                     connection.execute(
                         "INSERT INTO support_threads "
-                        "(public_id, student_user_id, problem_id, group_lesson_id, kind, "
+                        "(student_user_id, problem_id, group_lesson_id, kind, "
                         "latest_entry_at, created_at, updated_at, version) "
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1) RETURNING id",
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, 1) RETURNING id",
                         (
-                            thread_public_id,
                             command.student_user_id,
                             target["problem_id"],
                             target["group_lesson_id"],
@@ -1002,16 +989,12 @@ class PwaSupportThreadRepository:
         idempotency_key: str,
         payload_hash: str,
     ) -> None:
-        entry_public_id = self._new_public_id(
-            self._entry_public_id_factory, "support entry"
-        )
         connection.execute(
             "INSERT INTO support_entries "
-            "(public_id, thread_id, author_kind, author_user_id, text, channel, "
+            "(thread_id, author_kind, author_user_id, text, channel, "
             "client_created_at, server_received_at, idempotency_key, payload_sha256, "
-            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                entry_public_id,
                 thread_id,
                 author_kind,
                 author_user_id,

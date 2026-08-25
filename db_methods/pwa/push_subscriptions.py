@@ -8,7 +8,6 @@ import sqlite3
 def save_subscription(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     account_id: int,
     session_id: int,
     endpoint: str,
@@ -20,9 +19,9 @@ def save_subscription(
 ) -> str:
     row = connection.execute(
         "INSERT INTO push_subscriptions "
-        "(public_id, account_id, session_id, endpoint, p256dh, auth_secret, "
+        "(account_id, session_id, endpoint, p256dh, auth_secret, "
         "expiration_time, user_agent, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(endpoint) DO UPDATE SET "
         "account_id = excluded.account_id, session_id = excluded.session_id, "
         "p256dh = excluded.p256dh, auth_secret = excluded.auth_secret, "
@@ -30,7 +29,6 @@ def save_subscription(
         "user_agent = excluded.user_agent, updated_at = excluded.updated_at "
         "RETURNING public_id",
         (
-            public_id,
             account_id,
             session_id,
             endpoint,

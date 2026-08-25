@@ -79,7 +79,6 @@ def due_notification_windows(
 def insert_window(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     group_lesson_id: int,
     sequence_number: int,
     opens_at: str,
@@ -90,15 +89,14 @@ def insert_window(
     status: str,
     actor_user_id: int,
     now: str,
-) -> None:
-    connection.execute(
+) -> str:
+    row = connection.execute(
         "INSERT INTO oral_windows "
-        "(public_id, group_lesson_id, sequence_number, opens_at, closes_at, "
+        "(group_lesson_id, sequence_number, opens_at, closes_at, "
         "join_label, join_url, join_code, status, created_by_user_id, "
         "updated_by_user_id, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
         (
-            public_id,
             group_lesson_id,
             sequence_number,
             opens_at,
@@ -112,7 +110,8 @@ def insert_window(
             now,
             now,
         ),
-    )
+    ).fetchone()
+    return str(row["public_id"])
 
 
 def window_by_public_id(

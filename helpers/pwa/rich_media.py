@@ -35,6 +35,47 @@ class RichMediaCopyError(InvalidRichDocument):
     pass
 
 
+def _static_image_payload(data: bytes) -> bool:
+    return (
+        data.startswith(b"\x89PNG\r\n\x1a\n")
+        or data.startswith(b"\xff\xd8\xff")
+        or (len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP")
+    )
+
+
+async def store_uploaded_rich_image(
+    data: bytes,
+    *,
+    storage: ObjectStorage,
+    converter: ContentAssetConverter | ConfiguredContentAssetConverter,
+) -> dict[str, object]:
+    """Convert one Staff-uploaded image and return its safe public Markdown URL."""
+
+    if not data or len(data) > MAX_RICH_MEDIA_BYTES:
+        raise RichMediaCopyError("image file is empty or exceeds 10 MiB")
+    if not _static_image_payload(data):
+        raise RichMediaCopyError("upload must be a PNG, JPEG or WebP image")
+    converted = await converter.raster_to_webp(data)
+    if (
+        converted.source_sha256 != hashlib.sha256(data).hexdigest()
+        or converted.media_type != "image/webp"
+        or not 1 <= converted.width <= MAX_RICH_MEDIA_SIDE
+        or not 1 <= converted.height <= MAX_RICH_MEDIA_SIDE
+    ):
+        raise RichMediaCopyError("image conversion returned invalid output")
+    key = content_addressed_key("rich-media", converted.data, "webp")
+    await storage.put(key, converted.data, "image/webp")
+    public_url = storage.public_url(key)
+    if public_url is None or not is_rich_https_url(public_url):
+        raise RichMediaCopyError("public HTTPS URL for uploaded image is unavailable")
+    return {
+        "url": public_url,
+        "mimeType": "image/webp",
+        "width": converted.width,
+        "height": converted.height,
+    }
+
+
 class _SafeResolver(AbstractResolver):
     async def resolve(self, host: str, port: int = 0, family: int = socket.AF_UNSPEC) -> list[dict[str, object]]:
         try:
@@ -201,4 +242,5 @@ __all__ = [
     "MAX_RICH_MEDIA_TOTAL_BYTES",
     "RichMediaCopyError",
     "copy_rich_document_media",
+    "store_uploaded_rich_image",
 ]

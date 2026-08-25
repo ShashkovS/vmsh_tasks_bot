@@ -2,34 +2,15 @@
 
 -- Phase 1 identity/session schema. Authoritative contract:
 -- vmshpwa/dev/development-plan/05-phase-1-auth.md and ADR 0003.
--- Legacy integer user IDs remain the internal FK. Browser contracts use this
--- separately backfilled opaque ID; NULL fails closed until the controlled
--- account activation/import has assigned one.
+-- Browser contracts expose a virtual compact ID derived from the legacy
+-- integer primary key. See vmshpwa/docs/compact-identifiers.md.
 alter table users add column public_id text
-    check (
-        public_id is null
-        or (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        )
-    );
-
-create unique index users_public_id_uq
-    on users (public_id)
-    where public_id is not null;
+    generated always as ('u-' || id) virtual;
 
 create table seasons
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('s-' || id) virtual,
     code               text    not null unique
         check (length(trim(code)) > 0),
     title              text    not null
@@ -50,13 +31,7 @@ create table seasons
 create table auth_accounts
 (
     id                         integer primary key,
-    public_id                  text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('a-' || id) virtual,
     audience                   text    not null
         check (audience in ('student', 'family', 'staff')),
     username                   text    not null

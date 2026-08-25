@@ -41,6 +41,7 @@ PUSH_COPY = {
     ),
     "deadline": ("Скоро дедлайн", "Проверьте срок сдачи задач."),
     "news": ("Новая публикация", "В новостях кружка появилась запись."),
+    "group_announcement": ("Новое объявление", "В кабинете появилось объявление."),
 }
 
 
@@ -96,6 +97,10 @@ def _payload(item: dict[str, object], now: datetime) -> dict[str, object]:
             count = values.get("count")
             if isinstance(count, int) and not isinstance(count, bool) and count > 1:
                 body = f"Проверено задач: {count}. Результаты уже в кабинете."
+    elif category == "group_announcement":
+        text = values.get("text")
+        if isinstance(text, str) and text.strip():
+            body = text.strip()
     audience = str(item["audience"])
     route = str(item["route"])
     if not route.startswith(f"/{audience}/"):
@@ -133,9 +138,8 @@ def _prepare(
         )
         insert_delivery(
             connection,
-            public_id=f"push-delivery.{uuid.uuid4().hex}",
             event_id=int(candidate["event_id"]),
-            subscription_public_id=str(candidate["subscription_public_id"]),
+            subscription_id=int(candidate["subscription_id"]),
             state="pending" if enabled else "suppressed",
             error_code=None if enabled else "preference_disabled",
             now=timestamp,

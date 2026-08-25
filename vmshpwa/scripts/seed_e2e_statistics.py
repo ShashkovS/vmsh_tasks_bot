@@ -17,7 +17,8 @@ from vmshpwa.scripts.runtime_guard import (
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_DATABASE = REPOSITORY_ROOT / "db/vmshpwa_e2e.sqlite3"
-RUN_PUBLIC_ID = "analytics-e2e-staff-statistics"
+RUN_ID = 9601
+RUN_PUBLIC_ID = f"ar-{RUN_ID}"
 COMPLETED_AT = "2026-08-02T12:15:00Z"
 
 
@@ -50,11 +51,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         return 0
 
     course = connection.execute(
-        "SELECT id FROM courses WHERE public_id = 'course-fixture-math-5-7'"
+        "SELECT id FROM courses WHERE public_id = 'c-1'"
     ).fetchone()
     students = connection.execute(
         "SELECT id, group_id FROM users WHERE public_id IN "
-        "('user-student-online-fixture', 'user-student-in-person-fixture') "
+        "('u-101', 'u-102') "
         "ORDER BY id"
     ).fetchall()
     if course is None or len(students) != 2:
@@ -62,10 +63,10 @@ def _seed(connection: sqlite3.Connection) -> int:
 
     run_id = connection.execute(
         "INSERT INTO analytics_runs "
-        "(public_id, course_id, algorithm, algorithm_version, input_through_result_id, "
+        "(id, course_id, algorithm, algorithm_version, input_through_result_id, "
         "state, started_at, completed_at) "
         "VALUES (?, ?, 'a53-compatible', '1', 179, 'completed', ?, ?) RETURNING id",
-        (RUN_PUBLIC_ID, int(course["id"]), COMPLETED_AT, COMPLETED_AT),
+        (RUN_ID, int(course["id"]), COMPLETED_AT, COMPLETED_AT),
     ).fetchone()["id"]
     rows = []
     for lesson_number, solved_by_student in ((40, (2, 3)), (41, (4, 5))):

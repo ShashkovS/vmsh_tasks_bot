@@ -10,7 +10,7 @@ def list_due_candidates(
 ) -> list[dict[str, object]]:
     rows = connection.execute(
         "SELECT e.id AS event_id, e.category, e.deliver_after, "
-        "s.public_id AS subscription_public_id, "
+        "s.id AS subscription_id, "
         "coalesce(cp.push_enabled, p.push_enabled) AS push_enabled "
         "FROM notification_events e "
         "JOIN auth_accounts a ON a.id = e.account_id AND a.status = 'active' "
@@ -26,7 +26,7 @@ def list_due_candidates(
         "WHERE e.deliver_after <= ? AND e.read_at IS NULL "
         "AND (s.expiration_time IS NULL OR s.expiration_time > ?) "
         "AND NOT EXISTS (SELECT 1 FROM notification_deliveries d "
-        "WHERE d.event_id = e.id AND d.subscription_public_id = s.public_id) "
+        "WHERE d.event_id = e.id AND d.subscription_id = s.id) "
         "ORDER BY e.deliver_after, e.id, s.id LIMIT ?",
         (now, now, now_milliseconds, limit),
     ).fetchall()
@@ -36,22 +36,20 @@ def list_due_candidates(
 def insert_delivery(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     event_id: int,
-    subscription_public_id: str,
+    subscription_id: int,
     state: str,
     error_code: str | None,
     now: str,
 ) -> bool:
     cursor = connection.execute(
         "INSERT INTO notification_deliveries "
-        "(public_id, event_id, subscription_public_id, state, next_attempt_at, "
-        "last_error_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
-        "ON CONFLICT(event_id, subscription_public_id) DO NOTHING",
+        "(event_id, subscription_id, state, next_attempt_at, "
+        "last_error_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(event_id, subscription_id) DO NOTHING",
         (
-            public_id,
             event_id,
-            subscription_public_id,
+            subscription_id,
             state,
             now,
             error_code,
@@ -72,7 +70,7 @@ def suppress_unavailable(connection: sqlite3.Connection, *, now: str) -> int:
         "WHERE e.id = notification_deliveries.event_id AND e.read_at IS NOT NULL) "
         "OR NOT EXISTS (SELECT 1 FROM push_subscriptions s "
         "JOIN auth_sessions ses ON ses.id = s.session_id "
-        "WHERE s.public_id = notification_deliveries.subscription_public_id "
+        "WHERE s.id = notification_deliveries.subscription_id "
         "AND ses.revoked_at IS NULL AND ses.expires_at > ?))",
         (now, now),
     )
@@ -106,7 +104,7 @@ def claim_deliveries(
         "FROM notification_deliveries d "
         "JOIN notification_events e ON e.id = d.event_id "
         "JOIN auth_accounts a ON a.id = e.account_id "
-        "JOIN push_subscriptions s ON s.public_id = d.subscription_public_id "
+        "JOIN push_subscriptions s ON s.id = d.subscription_id "
         "JOIN auth_sessions ses ON ses.id = s.session_id "
         "LEFT JOIN notification_preferences p "
         "ON p.account_id = e.account_id AND p.category = e.category "

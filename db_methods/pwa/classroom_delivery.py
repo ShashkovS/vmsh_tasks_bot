@@ -98,7 +98,6 @@ def find_batch_by_idempotency_key(
 def insert_batch(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     plan_id: int,
     plan_version: int,
     actor_user_id: int,
@@ -110,16 +109,15 @@ def insert_batch(
     state: str,
     idempotency_key: str,
     now: str,
-) -> int:
-    cursor = connection.execute(
+) -> tuple[int, str]:
+    row = connection.execute(
         "INSERT INTO classroom_assignment_delivery_batches "
-        "(public_id, assignment_plan_id, assignment_plan_version, "
+        "(assignment_plan_id, assignment_plan_version, "
         "requested_by_user_id, pwa_selected, telegram_selected, "
         "recipient_snapshot_hash, recipient_count, changed_since_previous_count, "
         "state, idempotency_key, created_at, completed_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, public_id",
         (
-            public_id,
             plan_id,
             plan_version,
             actor_user_id,
@@ -133,8 +131,8 @@ def insert_batch(
             now,
             now if state == "completed" else None,
         ),
-    )
-    return int(cursor.lastrowid)
+    ).fetchone()
+    return int(row["id"]), str(row["public_id"])
 
 
 def insert_recipients(
@@ -144,13 +142,11 @@ def insert_recipients(
     connection.executemany(
         "INSERT INTO classroom_assignment_delivery_recipients "
         "(batch_id, student_user_id, course_enrollment_id, group_lesson_id, "
-        "classroom_id, student_public_id, student_display_name, event_public_id, "
-        "event_name, course_public_id, course_name, group_public_id, group_name, "
-        "classroom_public_id, classroom_name, student_account_id, telegram_chat_id, "
+        "classroom_id, student_display_name, event_name, course_name, group_name, "
+        "classroom_name, student_account_id, telegram_chat_id, "
         "pwa_state, pwa_error_code, pwa_sent_at, telegram_state, "
         "telegram_error_code, telegram_sent_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-        "?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
 
@@ -188,12 +184,24 @@ def list_batch_recipients(
     connection: sqlite3.Connection, batch_id: int
 ) -> list[dict[str, object]]:
     rows = connection.execute(
-        "SELECT student_public_id, student_display_name, event_public_id, event_name, "
-        "course_public_id, course_name, group_public_id, group_name, "
-        "classroom_public_id, classroom_name, pwa_state, pwa_error_code, "
+        "SELECT student.public_id AS student_public_id, recipient.student_display_name, "
+        "event.public_id AS event_public_id, recipient.event_name, "
+        "course.public_id AS course_public_id, recipient.course_name, "
+        "groups.public_id AS group_public_id, recipient.group_name, "
+        "room.public_id AS classroom_public_id, recipient.classroom_name, "
+        "recipient.pwa_state, recipient.pwa_error_code, "
         "pwa_sent_at, telegram_state, telegram_error_code, telegram_sent_at "
-        "FROM classroom_assignment_delivery_recipients WHERE batch_id = ? "
-        "ORDER BY student_display_name, course_name, student_public_id",
+        "FROM classroom_assignment_delivery_recipients recipient "
+        "JOIN classroom_assignment_delivery_batches batch ON batch.id = recipient.batch_id "
+        "JOIN classroom_assignment_plans plan ON plan.id = batch.assignment_plan_id "
+        "JOIN in_person_events event ON event.id = plan.in_person_event_id "
+        "JOIN users student ON student.id = recipient.student_user_id "
+        "JOIN group_lessons lesson ON lesson.id = recipient.group_lesson_id "
+        "JOIN courses course ON course.id = lesson.course_id "
+        "JOIN groups ON groups.group_id = lesson.group_id AND groups.course_id = lesson.course_id "
+        "JOIN classrooms room ON room.id = recipient.classroom_id "
+        "WHERE recipient.batch_id = ? "
+        "ORDER BY recipient.student_display_name, recipient.course_name, student.public_id",
         (batch_id,),
     ).fetchall()
     return [dict(row) for row in rows]

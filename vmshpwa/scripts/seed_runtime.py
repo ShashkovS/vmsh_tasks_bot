@@ -190,9 +190,20 @@ def _insert_rows(
 ) -> None:
     if not rows:
         return
-    columns = tuple(rows[0])
-    if any(tuple(row) != columns for row in rows):
+    fixture_columns = tuple(rows[0])
+    if any(tuple(row) != fixture_columns for row in rows):
         raise ValueError(f"All {table} fixture rows must use the same column order")
+    # Compact browser IDs are virtual projections of each table's integer
+    # primary key. Fixtures keep their derived values for assertions, but must
+    # never try to persist a generated SQLite column.
+    generated_columns = {
+        str(row["name"])
+        for row in connection.execute(f"PRAGMA table_xinfo({_quote_identifier(table)})")
+        if int(row["hidden"]) in {2, 3}
+    }
+    columns = tuple(
+        column for column in fixture_columns if column not in generated_columns
+    )
     column_sql = ", ".join(f'"{column}"' for column in columns)
     placeholders = ", ".join("?" for _column in columns)
     connection.executemany(

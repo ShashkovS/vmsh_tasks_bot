@@ -34,8 +34,6 @@ def list_staff_members(connection: sqlite3.Connection) -> list[dict[str, object]
 def insert_teacher(
     connection: sqlite3.Connection,
     *,
-    user_public_id: str,
-    account_public_id: str,
     surname: str,
     name: str,
     middle_name: str | None,
@@ -44,30 +42,33 @@ def insert_teacher(
     credential_hash: str,
     now: str,
     user_type: USER_TYPE = USER_TYPE.TEACHER,
-) -> int:
-    user_id = connection.execute(
-        "INSERT INTO users (public_id, type, surname, name, middlename) "
-        "VALUES (?, ?, ?, ?, ?) RETURNING id",
-        (user_public_id, int(user_type), surname, name, middle_name),
-    ).fetchone()["id"]
-    connection.execute(
+) -> dict[str, object]:
+    user = connection.execute(
+        "INSERT INTO users (type, surname, name, middlename) "
+        "VALUES (?, ?, ?, ?) RETURNING id, public_id",
+        (int(user_type), surname, name, middle_name),
+    ).fetchone()
+    account = connection.execute(
         "INSERT INTO auth_accounts "
-        "(public_id, audience, username, username_normalized, provisioning_source, "
+        "(audience, username, username_normalized, provisioning_source, "
         "display_name, credential_kind, credential_hash, linked_user_id, status, "
-        "created_at, updated_at) VALUES (?, 'staff', ?, ?, 'staff', ?, 'password', "
-        "?, ?, 'active', ?, ?)",
+        "created_at, updated_at) VALUES ('staff', ?, ?, 'staff', ?, 'password', "
+        "?, ?, 'active', ?, ?) RETURNING id, public_id",
         (
-            account_public_id,
             username,
             username_normalized,
             f"{name} {surname}",
             credential_hash,
-            user_id,
+            user["id"],
             now,
             now,
         ),
-    )
-    return int(user_id)
+    ).fetchone()
+    return {
+        "id": int(user["id"]),
+        "public_id": str(user["public_id"]),
+        "account_public_id": str(account["public_id"]),
+    }
 
 
 def promote_staff_member_to_admin(

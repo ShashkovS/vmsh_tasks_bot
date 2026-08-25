@@ -7,13 +7,7 @@
 create table lesson_window_changes
 (
     id                integer primary key,
-    public_id         text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('lwc-' || id) virtual,
     lesson_window_id  integer not null references lesson_windows (id),
     change_kind       text    not null
         check (change_kind in (

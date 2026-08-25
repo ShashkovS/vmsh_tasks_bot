@@ -8,13 +8,7 @@
 create table submission_entry_replacements
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ser-' || id) virtual,
     thread_id            integer not null references submission_threads (id),
     student_user_id      integer not null references users (id),
     replaced_entry_id    integer not null unique references submission_entries (id),

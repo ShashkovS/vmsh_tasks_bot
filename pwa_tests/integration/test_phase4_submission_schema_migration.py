@@ -85,17 +85,17 @@ def _counts(connection: sqlite3.Connection) -> dict[str, int]:
 def _insert_student_account(connection: sqlite3.Connection) -> tuple[int, int]:
     student_id = -946_001
     connection.execute(
-        "INSERT INTO users (id, type, name, surname, public_id) "
-        "VALUES (?, 1, 'Attempt', 'Student', 'student-attempt-schema')",
+        "INSERT INTO users (id, type, name, surname) "
+        "VALUES (?, 1, 'Attempt', 'Student')",
         (student_id,),
     )
     account_id = int(
         connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) "
-            "VALUES ('account-attempt-schema', 'student', 'Attempt Student', "
+            "VALUES ('student', 'Attempt Student', "
             "'attempt student', 1, 'test', 'telegram_token', 'hash', ?, "
             "'active', ?, ?) RETURNING id",
             (student_id, NOW, NOW),
@@ -110,9 +110,9 @@ def _insert_test_problem_context(
     season_id = int(
         connection.execute(
             "INSERT INTO seasons "
-            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+            "(code, title, starts_on, ends_on, session_expires_on, "
             "status, created_at, updated_at) VALUES "
-            "('season-attempt-schema', 'attempt-schema', 'Attempt schema', "
+            "('attempt-schema', 'Attempt schema', "
             "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) "
             "RETURNING id",
             (NOW, NOW),
@@ -121,9 +121,9 @@ def _insert_test_problem_context(
     course_id = int(
         connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "(season_id, code, name, subject_code, status, sort_order, "
             "accent_key, created_at, updated_at) VALUES "
-            "('course-attempt-schema', ?, 'math', 'Math', 'math', 'active', 1, "
+            "(?, 'math', 'Math', 'math', 'active', 1, "
             "'math', ?, ?) RETURNING id",
             (season_id, NOW, NOW),
         ).fetchone()[0]
@@ -131,26 +131,25 @@ def _insert_test_problem_context(
     connection.execute(
         "INSERT INTO groups "
         "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-        "allow_self_switch, is_system, score_weight, public_id, course_id, "
+        "allow_self_switch, is_system, score_weight, course_id, "
         "status, created_at, updated_at) VALUES "
-        "('attempt-a', 'a', 'A', 1, 1, 0, 1, 0, 1.0, "
-        "'group-attempt-a', ?, 'active', ?, ?)",
+        "('attempt-a', 'a', 'A', 1, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
         (course_id, NOW, NOW),
     )
     course_lesson_id = int(
         connection.execute(
             "INSERT INTO course_lessons "
-            "(public_id, course_id, lesson_number, created_at, updated_at) "
-            "VALUES ('lesson-attempt-41', ?, 41, ?, ?) RETURNING id",
+            "(course_id, lesson_number, created_at, updated_at) "
+            "VALUES (?, 41, ?, ?) RETURNING id",
             (course_id, NOW, NOW),
         ).fetchone()[0]
     )
     group_lesson_id = int(
         connection.execute(
             "INSERT INTO group_lessons "
-            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_at, updated_at) VALUES "
-            "('group-lesson-attempt-a', ?, ?, 'attempt-a', '2026-09-14', "
+            "(?, ?, 'attempt-a', '2026-09-14', "
             "'Europe/Moscow', 'active', ?, ?) RETURNING id",
             (course_lesson_id, course_id, NOW, NOW),
         ).fetchone()[0]
@@ -158,8 +157,8 @@ def _insert_test_problem_context(
     source_id = int(
         connection.execute(
             "INSERT INTO content_sources "
-            "(public_id, group_lesson_id, kind, logical_filename, source_encoding, "
-            "created_at) VALUES ('source-attempt-condition', ?, 'condition', "
+            "(group_lesson_id, kind, logical_filename, source_encoding, "
+            "created_at) VALUES (?, 'condition', "
             "'condition.tex', 'utf-8', ?) RETURNING id",
             (group_lesson_id, NOW),
         ).fetchone()[0]
@@ -167,10 +166,10 @@ def _insert_test_problem_context(
     content_revision_id = int(
         connection.execute(
             "INSERT INTO content_revisions "
-            "(public_id, source_id, revision_number, source_sha256, latex_text, "
+            "(source_id, revision_number, source_sha256, latex_text, "
             "parser_version, status, canonical_json, diagnostics_json, "
             "provenance_json, created_at) VALUES "
-            "('revision-attempt-condition', ?, 1, ?, '\\задача 7 \\кзадача', "
+            "(?, 1, ?, '\\задача 7 \\кзадача', "
             "'test-v1', 'ready', '{}', '[]', '{}', ?) RETURNING id",
             (source_id, "c" * 64, NOW),
         ).fetchone()[0]
@@ -211,7 +210,9 @@ def test_phase4_submission_schema_exact_up_down_up_and_additive(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0045.pwa_material_reveal_matches"
     }
-    preceding = {item.id for item in migrations.values() if item.id != MIGRATION_ID}
+    preceding = {
+        item.id for item in migrations.values() if item.id.split(".", 1)[0] < "0046"
+    }
     _apply(database_path, preceding)
 
     with sqlite3.connect(database_path) as connection:
@@ -333,13 +334,13 @@ def test_phase4_attempt_revision_result_and_state_invariants(tmp_path):
         attempt_id = int(
             connection.execute(
                 "INSERT INTO test_attempts "
-                "(public_id, student_user_id, problem_id, problem_revision_id, "
+                "(student_user_id, problem_id, problem_revision_id, "
                 "answer_payload_json, normalized_answer_json, parse_status, "
                 "counts_as_attempt, check_status, client_created_at, "
                 "server_received_at, clock_skew_seconds, clock_suspicious, "
                 "idempotency_key, payload_sha256, checker_version, verdict, "
                 "result_id, created_at, checked_at) VALUES "
-                "('attempt-checked-1', ?, ?, ?, ?, ?, 'valid', 1, 'checked', ?, ?, "
+                "(?, ?, ?, ?, ?, 'valid', 1, 'checked', ?, ?, "
                 "0, 0, 'attempt-key-1', ?, 'legacy-standard-v1', 18, ?, ?, ?) "
                 "RETURNING id",
                 (
@@ -361,11 +362,11 @@ def test_phase4_attempt_revision_result_and_state_invariants(tmp_path):
         invalid_id = int(
             connection.execute(
                 "INSERT INTO test_attempts "
-                "(public_id, student_user_id, problem_id, problem_revision_id, "
+                "(student_user_id, problem_id, problem_revision_id, "
                 "answer_payload_json, parse_status, counts_as_attempt, check_status, "
                 "client_created_at, server_received_at, clock_skew_seconds, "
                 "clock_suspicious, idempotency_key, payload_sha256, created_at, "
-                "checked_at) VALUES ('attempt-invalid-1', ?, ?, ?, ?, "
+                "checked_at) VALUES (?, ?, ?, ?, "
                 "'invalid_format', 0, 'checked', ?, ?, 0, 0, 'attempt-key-2', ?, ?, ?) "
                 "RETURNING id",
                 (
@@ -386,11 +387,11 @@ def test_phase4_attempt_revision_result_and_state_invariants(tmp_path):
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO test_attempts "
-                "(public_id, student_user_id, problem_id, problem_revision_id, "
+                "(student_user_id, problem_id, problem_revision_id, "
                 "answer_payload_json, parse_status, counts_as_attempt, check_status, "
                 "client_created_at, server_received_at, clock_skew_seconds, "
                 "clock_suspicious, idempotency_key, payload_sha256, created_at, "
-                "checked_at) VALUES ('attempt-invalid-counted', ?, ?, ?, ?, "
+                "checked_at) VALUES (?, ?, ?, ?, "
                 "'invalid_format', 1, 'checked', ?, ?, 0, 0, 'attempt-key-3', ?, ?, ?)",
                 (
                     student_id,
@@ -407,13 +408,13 @@ def test_phase4_attempt_revision_result_and_state_invariants(tmp_path):
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO test_attempts "
-                "(public_id, student_user_id, problem_id, problem_revision_id, "
+                "(student_user_id, problem_id, problem_revision_id, "
                 "answer_payload_json, normalized_answer_json, parse_status, "
                 "counts_as_attempt, check_status, client_created_at, "
                 "server_received_at, clock_skew_seconds, clock_suspicious, "
                 "idempotency_key, payload_sha256, checker_version, verdict, "
                 "result_id, created_at, checked_at) VALUES "
-                "('attempt-result-mismatch', ?, ?, ?, ?, ?, 'valid', 1, 'checked', "
+                "(?, ?, ?, ?, ?, 'valid', 1, 'checked', "
                 "?, ?, 0, 0, 'attempt-key-4', ?, 'legacy-standard-v1', 18, ?, ?, ?)",
                 (
                     student_id,

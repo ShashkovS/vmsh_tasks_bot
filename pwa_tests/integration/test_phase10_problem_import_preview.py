@@ -104,15 +104,15 @@ def _workbook(*, lesson: int = 41, synonym_candidate: bool = False) -> bytes:
 def _seed_second_group(factory) -> None:
     def write(connection):
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "allow_self_switch, is_system, score_weight, course_id, "
             "status, color_key, created_at, updated_at) VALUES "
             "('layout-continuing', 'п', 'Продолжающие', 2, 1, 0, 0, 0, 1.0, "
-            "'classroom-layout-group-continuing', ?, 'active', 'continuing', "
+            "?, 'active', 'continuing', "
             "'2026-07-30T10:00:00Z', '2026-07-30T10:00:00Z')",
             (course_id,),
         )
@@ -121,7 +121,7 @@ def _seed_second_group(factory) -> None:
 
 
 def _form(
-    course_id: str = "classroom-layout-course",
+    course_id: str = "c-1",
     *,
     source_sha256: str | None = None,
     preview_sha256: str | None = None,
@@ -147,12 +147,12 @@ def _seed_existing_problem(factory, *, title: str = "Орехи", lesson: int = 
     def write(connection):
         connection.execute(
             "INSERT INTO problems "
-            "(public_id, group_id, lesson, prob, item, title, prob_text, prob_type, "
+            "(group_id, lesson, prob, item, title, prob_text, prob_type, "
             "ans_type, ans_validation, validation_error, cor_ans, cor_ans_checker, "
             "wrong_ans, congrat, synonyms) VALUES "
-            "(?, 'layout-beginner', ?, 1, '', ?, "
+            "('layout-beginner', ?, 1, '', ?, "
             "'', 1, 2, NULL, 'Введите число', '29', NULL, 'Нет', 'Да', '')",
-            (f"problem-import-existing-{lesson}", lesson, title),
+            (lesson, title),
         )
 
     factory.run_write(write)
@@ -194,7 +194,7 @@ async def test_problem_import_preview_compares_real_sqlite_without_writing(
     }
     assert len(body["previewSha256"]) == 64
     assert body["synonymCandidates"] == []
-    assert body["rows"][0]["problemId"] == f"problem-import-existing-{lesson}"
+    assert body["rows"][0]["problemId"] == "p-1"
     assert body["rows"][2]["diagnostics"][0]["code"] == "group_unknown"
 
     def count(connection):
@@ -231,7 +231,7 @@ async def test_problem_import_preview_reports_synonym_candidate_without_merging(
                     "sheet": "Задачи",
                     "row": 3,
                     "groupCode": "н",
-                    "groupId": "classroom-layout-group",
+                    "groupId": "g-5",
                     "problemNumber": 1,
                     "item": "",
                     "problemId": None,
@@ -242,7 +242,7 @@ async def test_problem_import_preview_reports_synonym_candidate_without_merging(
                     "sheet": "Задачи",
                     "row": 4,
                     "groupCode": "п",
-                    "groupId": "classroom-layout-group-continuing",
+                    "groupId": "g-6",
                     "problemNumber": 4,
                     "item": "",
                     "problemId": None,
@@ -274,7 +274,7 @@ async def test_problem_import_preview_rejects_unknown_course_and_invalid_xlsx(
     assert missing_response.status == 404
 
     invalid = FormData(default_to_multipart=True)
-    invalid.add_field("courseId", "classroom-layout-course")
+    invalid.add_field("courseId", "c-1")
     invalid.add_field("workbook", b"not an xlsx", filename="tasks.xlsx")
     invalid_response = await classroom_http.client.post(
         "/staff/api/v1/problem-imports/preview",
@@ -451,8 +451,9 @@ async def test_problem_import_rollback_is_atomic_after_a_later_edit(classroom_ht
 
     classroom_http.factory.run_write(
         lambda connection: connection.execute(
-            "UPDATE problems SET title = 'Поздняя правка' WHERE public_id = ?",
-            (f"problem-import-existing-{lesson}",),
+            "UPDATE problems SET title = 'Поздняя правка' "
+            "WHERE group_id = 'layout-beginner' AND lesson = ? AND prob = 1",
+            (lesson,),
         )
     )
     rollback = await classroom_http.client.post(

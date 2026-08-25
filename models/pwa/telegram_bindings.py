@@ -76,7 +76,6 @@ def _values(
 def create_binding(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     owner_type: object,
     owner_public_id: object,
     purpose: object,
@@ -97,7 +96,6 @@ def create_binding(
     )
     return insert_binding(
         connection,
-        public_id=public_id,
         owner_type=values[0],
         owner_course_id=values[1],
         owner_group_id=values[2],

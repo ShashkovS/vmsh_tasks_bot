@@ -24,7 +24,6 @@ def find_season(
 def insert_season(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     code: str,
     title: str,
     starts_on: str,
@@ -32,14 +31,13 @@ def insert_season(
     session_expires_on: str,
     status: str,
     now: str,
-) -> None:
-    connection.execute(
+) -> str:
+    row = connection.execute(
         "INSERT INTO seasons "
-        "(public_id, code, title, starts_on, ends_on, timezone, "
+        "(code, title, starts_on, ends_on, timezone, "
         "session_expires_on, status, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, 'Europe/Moscow', ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, 'Europe/Moscow', ?, ?, ?, ?) RETURNING public_id",
         (
-            public_id,
             code,
             title,
             starts_on,
@@ -49,7 +47,8 @@ def insert_season(
             now,
             now,
         ),
-    )
+    ).fetchone()
+    return str(row["public_id"])
 
 
 def list_courses(
@@ -136,7 +135,6 @@ def find_course(
 def insert_course(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     season_id: int,
     code: str,
     name: str,
@@ -146,14 +144,13 @@ def insert_course(
     accent_key: str,
     actor_user_id: int,
     now: str,
-) -> None:
-    connection.execute(
+) -> str:
+    row = connection.execute(
         "INSERT INTO courses "
-        "(public_id, season_id, code, name, subject_code, status, sort_order, "
+        "(season_id, code, name, subject_code, status, sort_order, "
         "accent_key, created_at, updated_at, created_by, updated_by) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
         (
-            public_id,
             season_id,
             code,
             name,
@@ -166,7 +163,8 @@ def insert_course(
             actor_user_id,
             actor_user_id,
         ),
-    )
+    ).fetchone()
+    return str(row["public_id"])
 
 
 def update_course(
@@ -227,7 +225,6 @@ def insert_group(
     connection: sqlite3.Connection,
     *,
     group_id: str,
-    public_id: str,
     course_id: int,
     short_code: str,
     name: str,
@@ -237,13 +234,13 @@ def insert_group(
     allow_self_switch: bool,
     score_weight: float,
     now: str,
-) -> None:
-    connection.execute(
+) -> str:
+    row = connection.execute(
         "INSERT INTO groups "
         "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-        "allow_self_switch, is_system, score_weight, public_id, course_id, status, "
+        "allow_self_switch, is_system, score_weight, course_id, status, "
         "color_key, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?, ?, ?, ?) RETURNING public_id",
         (
             group_id,
             short_code,
@@ -252,14 +249,14 @@ def insert_group(
             int(status == "active"),
             int(allow_self_switch),
             score_weight,
-            public_id,
             course_id,
             status,
             color_key,
             now,
             now,
         ),
-    )
+    ).fetchone()
+    return str(row["public_id"])
 
 
 def update_group(

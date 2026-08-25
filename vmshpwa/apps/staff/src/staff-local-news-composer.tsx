@@ -32,6 +32,7 @@ export function StaffLocalNewsComposer({
   publishedAtDisabled = false,
   submitLabel = 'Запланировать публикацию',
   onChange,
+  onImageUpload,
   onSubmit,
 }: {
   courses: AdminCourse[]
@@ -41,6 +42,7 @@ export function StaffLocalNewsComposer({
   publishedAtDisabled?: boolean
   submitLabel?: string
   onChange: (draft: LocalNewsDraft) => void
+  onImageUpload?: (image: File) => Promise<{ url: string }>
   onSubmit: (document: RichDocument) => void
 }) {
   const [document, setDocument] = useState<RichDocument | null>(null)
@@ -93,6 +95,7 @@ export function StaffLocalNewsComposer({
             id="local-news-editor"
             onChange={(text) => onChange({ ...draft, text })}
             onDocumentChange={setDocument}
+            {...(onImageUpload === undefined ? {} : { onImageUpload })}
             value={draft.text}
           />
         </Suspense>
@@ -116,6 +119,11 @@ export function StaffLocalNewsComposer({
           ) : null}
         </div>
         <Input
+          aria-label={
+            publishedAtDisabled
+              ? 'Опубликовано по московскому времени'
+              : 'Опубликовать по московскому времени'
+          }
           disabled={publishedAtDisabled}
           id="local-news-published-at"
           onChange={(event) => onChange({ ...draft, publishedLocal: event.target.value })}

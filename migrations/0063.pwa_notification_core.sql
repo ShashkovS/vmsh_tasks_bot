@@ -22,7 +22,7 @@ create table notification_preferences
 create table notification_events
 (
     id                 integer primary key,
-    public_id          text    not null unique,
+    public_id text generated always as ('n-' || id) virtual,
     account_id         integer not null references auth_accounts (id),
     category           text    not null,
     dedupe_key         text    not null,

@@ -73,24 +73,24 @@ class FakeSupportRepository:
     def __init__(self) -> None:
         self.calls: list[object] = []
         self.record = SupportThreadRecord(
-            thread_public_id="support-http-thread",
+            thread_public_id="sup-1",
             kind="problem_question",
-            student_public_id="support-http-student",
+            student_public_id="u-957001",
             student_display_name="Анна Белова",
-            course_public_id="support-http-course",
+            course_public_id="c-1",
             course_name="Математика",
-            group_public_id="support-http-group-a",
+            group_public_id="g-5",
             group_name="Начинающие",
-            group_lesson_public_id="support-http-group-lesson",
-            problem_public_id="support-http-problem",
+            group_lesson_public_id="gl-1",
+            problem_public_id="p-1",
             problem_title="Перестановки",
             latest_entry_at=NOW,
             version=1,
             entries=(
                 SupportEntryRecord(
-                    entry_public_id="support-http-entry",
+                    entry_public_id="se-1",
                     author_kind="student",
-                    author_public_id="support-http-student",
+                    author_public_id="u-957001",
                     author_display_name="Анна Белова",
                     text="Почему эти случаи одинаковые?",
                     asset_public_id=None,
@@ -182,8 +182,8 @@ class FakeSupportRepository:
     async def invalidation_targets(self, *, thread_public_id):
         return SupportInvalidationTargets(
             thread_public_id=thread_public_id,
-            student_account_public_ids=("support-http-account-student",),
-            staff_account_public_ids=("support-http-account-teacher",),
+            student_account_public_ids=("a-1",),
+            staff_account_public_ids=("a-2",),
         )
 
 
@@ -201,32 +201,28 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
     def seed(connection) -> None:
         connection.execute("DELETE FROM kv_logins")
         connection.executemany(
-            "INSERT INTO users (id, public_id, type, name, surname) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, type, name, surname) VALUES (?, ?, ?, ?)",
             (
                 (
                     STUDENT_ID,
-                    "support-http-student",
                     int(USER_TYPE.STUDENT),
                     "Анна",
                     "Белова",
                 ),
                 (
                     TEACHER_ID,
-                    "support-http-teacher",
                     int(USER_TYPE.TEACHER),
                     "Мария",
                     "Учитель",
                 ),
                 (
                     PARTIAL_TEACHER_ID,
-                    "support-http-partial",
                     int(USER_TYPE.TEACHER),
                     "Пётр",
                     "Другой",
                 ),
                 (
                     ADMIN_ID,
-                    "support-http-admin",
                     int(USER_TYPE.ADMIN),
                     "Иван",
                     "Администратор",
@@ -235,13 +231,12 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
         )
         connection.executemany(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, 'synthetic-test', ?, ?, ?, 'active', ?, ?)",
+            "VALUES (?, ?, ?, ?, 'synthetic-test', ?, ?, ?, 'active', ?, ?)",
             (
                 (
-                    "support-http-account-student",
                     "student",
                     "support-http-student",
                     "support-http-student",
@@ -253,7 +248,6 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
                     now,
                 ),
                 (
-                    "support-http-account-teacher",
                     "staff",
                     "support-http-teacher",
                     "support-http-teacher",
@@ -265,7 +259,6 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
                     now,
                 ),
                 (
-                    "support-http-account-partial",
                     "staff",
                     "support-http-partial",
                     "support-http-partial",
@@ -277,7 +270,6 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
                     now,
                 ),
                 (
-                    "support-http-account-admin",
                     "staff",
                     "support-http-admin",
                     "support-http-admin",
@@ -293,9 +285,9 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
         season_id = int(
             connection.execute(
                 "INSERT INTO seasons "
-                "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+                "(code, title, starts_on, ends_on, session_expires_on, "
                 "status, created_at, updated_at) VALUES "
-                "('support-http-season', 'support-http', 'Support HTTP', "
+                "('support-http', 'Support HTTP', "
                 "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) "
                 "RETURNING id",
                 (now, now),
@@ -304,31 +296,31 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
         course_id = int(
             connection.execute(
                 "INSERT INTO courses "
-                "(public_id, season_id, code, name, subject_code, status, sort_order, "
+                "(season_id, code, name, subject_code, status, sort_order, "
                 "accent_key, created_at, updated_at) VALUES "
-                "('support-http-course', ?, 'math', 'Математика', 'math', 'active', "
+                "(?, 'math', 'Математика', 'math', 'active', "
                 "1, 'math', ?, ?) RETURNING id",
                 (season_id, now, now),
             ).fetchone()["id"]
         )
-        for group_id, public_id, code in (
-            ("support-http-a", "support-http-group-a", "a"),
-            ("support-http-b", "support-http-group-b", "b"),
+        for group_id, code in (
+            ("support-http-a", "a"),
+            ("support-http-b", "b"),
         ):
             connection.execute(
                 "INSERT INTO groups "
                 "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-                "allow_self_switch, is_system, score_weight, public_id, course_id, "
+                "allow_self_switch, is_system, score_weight, course_id, "
                 "status, created_at, updated_at) VALUES "
-                "(?, ?, ?, 1, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?)",
-                (group_id, code, f"Группа {code}", public_id, course_id, now, now),
+                "(?, ?, ?, 1, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
+                (group_id, code, f"Группа {code}", course_id, now, now),
             )
         enrollment_id = int(
             connection.execute(
                 "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
+                "(student_user_id, course_id, active_group_id, "
                 "attendance_mode, status, created_at, updated_at) VALUES "
-                "('support-http-enrollment', ?, ?, 'support-http-a', 'online', "
+                "(?, ?, 'support-http-a', 'online', "
                 "'active', ?, ?) RETURNING id",
                 (STUDENT_ID, course_id, now, now),
             ).fetchone()["id"]
@@ -456,8 +448,8 @@ def _create_payload(**changes) -> dict[str, object]:
         "schemaVersion": 1,
         "idempotencyKey": "support-http-create",
         "kind": "problem_question",
-        "groupLessonId": "support-http-group-lesson",
-        "problemId": "support-http-problem",
+        "groupLessonId": "gl-1",
+        "problemId": "p-1",
         "text": "Почему эти случаи одинаковые?",
         "clientCreatedAt": "2026-10-05T12:00:00Z",
     }
@@ -480,7 +472,7 @@ def _append_payload(**changes) -> dict[str, object]:
 async def test_student_create_get_and_append_use_authenticated_owner(support_http):
     fixture = support_http
     anonymous = await fixture.client.get(
-        "/student/api/v1/questions/support-http-thread", headers=_headers()
+        "/student/api/v1/questions/sup-1", headers=_headers()
     )
     assert anonymous.status == 401
 
@@ -493,19 +485,18 @@ async def test_student_create_get_and_append_use_authenticated_owner(support_htt
     assert created.status == 200, await created.text()
     payload = await created.json()
     assert payload["requestId"] == "support.http.test"
-    assert payload["thread"]["student"]["studentId"] == "support-http-student"
+    assert payload["thread"]["student"]["studentId"] == "u-957001"
     assert payload["thread"]["entries"][0]["author"]["kind"] == "student"
-    assert str(STUDENT_ID) not in str(payload)
     assert fixture.repository.calls[-1].student_user_id == STUDENT_ID
 
     fetched = await fixture.client.get(
-        "/student/api/v1/questions/support-http-thread",
+        "/student/api/v1/questions/sup-1",
         cookies=_cookie(fixture, "student", AuthAudience.STUDENT),
         headers=_headers(),
     )
     assert fetched.status == 200
     appended = await fixture.client.post(
-        "/student/api/v1/questions/support-http-thread/entries",
+        "/student/api/v1/questions/sup-1/entries",
         json=_append_payload(),
         cookies=_cookie(fixture, "student", AuthAudience.STUDENT),
         headers=_headers(unsafe=True),
@@ -522,21 +513,21 @@ async def test_student_create_get_and_append_use_authenticated_owner(support_htt
 async def test_staff_scope_and_server_owned_author_kind_are_enforced(support_http):
     fixture = support_http
     visible = await fixture.client.get(
-        "/staff/api/v1/questions/support-http-thread",
+        "/staff/api/v1/questions/sup-1",
         cookies=_cookie(fixture, "teacher", AuthAudience.STAFF),
         headers=_headers(),
     )
     assert visible.status == 200
 
     forbidden = await fixture.client.get(
-        "/staff/api/v1/questions/support-http-thread",
+        "/staff/api/v1/questions/sup-1",
         cookies=_cookie(fixture, "partial", AuthAudience.STAFF),
         headers=_headers(),
     )
     assert forbidden.status == 403
 
     teacher_reply = await fixture.client.post(
-        "/staff/api/v1/questions/support-http-thread/entries",
+        "/staff/api/v1/questions/sup-1/entries",
         json=_append_payload(idempotencyKey="support-teacher-entry"),
         cookies=_cookie(fixture, "teacher", AuthAudience.STAFF),
         headers=_headers(unsafe=True),
@@ -546,7 +537,7 @@ async def test_staff_scope_and_server_owned_author_kind_are_enforced(support_htt
     assert fixture.repository.calls[-1].author_kind == "teacher"
 
     admin_reply = await fixture.client.post(
-        "/staff/api/v1/questions/support-http-thread/entries",
+        "/staff/api/v1/questions/sup-1/entries",
         json=_append_payload(idempotencyKey="support-admin-entry"),
         cookies=_cookie(fixture, "admin", AuthAudience.STAFF),
         headers=_headers(unsafe=True),
@@ -579,7 +570,6 @@ async def test_student_list_is_owner_derived_cursor_backed_and_public_id_only(
         "textExcerpt": "Почему эти случаи одинаковые?",
         "receivedAt": "2026-10-05T12:00:00.000000Z",
     }
-    assert str(STUDENT_ID) not in str(payload)
     assert fixture.repository.calls[-1] == (
         "student-list",
         STUDENT_ID,
@@ -600,8 +590,8 @@ async def test_staff_list_passes_server_scope_and_strict_inbox_filters(support_h
     fixture = support_http
     response = await fixture.client.get(
         "/staff/api/v1/questions"
-        "?state=awaiting_student&kind=general&course=support-http-course"
-        "&group=support-http-group-a&cursor=support-http-before",
+        "?state=awaiting_student&kind=general&course=c-1"
+        "&group=g-5&cursor=support-http-before",
         cookies=_cookie(fixture, "teacher", AuthAudience.STAFF),
         headers=_headers(),
     )
@@ -609,10 +599,10 @@ async def test_staff_list_passes_server_scope_and_strict_inbox_filters(support_h
     query = fixture.repository.calls[-1][1]
     assert query["state"] == "awaiting_student"
     assert query["kind"] == "general"
-    assert query["course_public_id"] == "support-http-course"
-    assert query["group_public_id"] == "support-http-group-a"
+    assert query["course_public_id"] == "c-1"
+    assert query["group_public_id"] == "g-5"
     assert query["cursor"] == "support-http-before"
-    assert query["scope"].group_public_ids == frozenset({"support-http-group-a"})
+    assert query["scope"].group_public_ids == frozenset({"g-5"})
 
     forbidden_scope = await fixture.client.get(
         "/staff/api/v1/questions",
@@ -646,7 +636,7 @@ async def test_support_routes_reject_cross_audience_and_non_strict_payloads(
     assert staff_on_student.status == 401
 
     student_on_staff = await fixture.client.get(
-        "/staff/api/v1/questions/support-http-thread",
+        "/staff/api/v1/questions/sup-1",
         cookies=_cookie(fixture, "student", AuthAudience.STUDENT),
         headers=_headers(),
     )
@@ -702,7 +692,7 @@ async def test_committed_support_entry_survives_invalidation_failure(
             fail_invalidation
         )
     response = await fixture.client.post(
-        "/student/api/v1/questions/support-http-thread/entries",
+        "/student/api/v1/questions/sup-1/entries",
         json=_append_payload(idempotencyKey="support-after-live-failure"),
         cookies=_cookie(fixture, "student", AuthAudience.STUDENT),
         headers=_headers(unsafe=True),

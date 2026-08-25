@@ -17,23 +17,23 @@ pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 def _seed_statistics(classroom_http: ClassroomHttpFixture) -> None:
     def write(connection):
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         student_ids: list[int] = []
         for index in range(3):
             student_ids.append(
                 connection.execute(
                     "INSERT INTO users "
-                    "(public_id, type, group_id, name, surname, online) "
-                    "VALUES (?, 1, 'layout-beginner', ?, 'Статистика', 1) RETURNING id",
-                    (f"statistics-student-{index}", f"Ученик {index + 1}"),
+                    "(type, group_id, name, surname, online) "
+                    "VALUES (1, 'layout-beginner', ?, 'Статистика', 1) RETURNING id",
+                    (f"Ученик {index + 1}",),
                 ).fetchone()["id"]
             )
         run_id = connection.execute(
             "INSERT INTO analytics_runs "
-            "(public_id, course_id, algorithm, algorithm_version, "
+            "(course_id, algorithm, algorithm_version, "
             "input_through_result_id, state, started_at, completed_at) "
-            "VALUES ('statistics-run-latest', ?, 'a53-compatible', '1', 179, "
+            "VALUES (?, 'a53-compatible', '1', 179, "
             "'completed', '2026-08-02T10:00:00Z', '2026-08-02T10:01:00Z') "
             "RETURNING id",
             (course_id,),
@@ -76,16 +76,16 @@ async def test_admin_and_scoped_teacher_read_latest_course_statistics(
     _seed_statistics(classroom_http)
     for persona in ("admin", "teacher"):
         response = await classroom_http.client.get(
-            "/staff/api/v1/statistics?courseId=classroom-layout-course",
+            "/staff/api/v1/statistics?courseId=c-1",
             headers=_headers(),
             cookies=_cookies(classroom_http, persona),
         )
         assert response.status == 200, await response.text()
         payload = await response.json()
-        assert payload["selectedCourseId"] == "classroom-layout-course"
+        assert payload["selectedCourseId"] == "c-1"
         assert payload["selectedGroupId"] is None
         assert payload["run"] == {
-            "runId": "statistics-run-latest",
+            "runId": "ar-1",
             "algorithm": "a53-compatible",
             "algorithmVersion": "1",
             "inputThroughResultId": 179,
@@ -94,7 +94,7 @@ async def test_admin_and_scoped_teacher_read_latest_course_statistics(
         assert [lesson["lessonNumber"] for lesson in payload["lessons"]] == [40, 41]
         assert payload["lessons"][1]["solvedDistribution"] == [2, 3, 5]
         assert payload["lessons"][1]["completionRate"] == 66.7
-        assert payload["lessons"][1]["groups"][0]["groupId"] == "classroom-layout-group"
+        assert payload["lessons"][1]["groups"][0]["groupId"] == "g-5"
 
 
 async def test_statistics_group_filter_and_fail_closed_scope(
@@ -102,12 +102,12 @@ async def test_statistics_group_filter_and_fail_closed_scope(
 ) -> None:
     _seed_statistics(classroom_http)
     filtered = await classroom_http.client.get(
-        "/staff/api/v1/statistics?courseId=classroom-layout-course&groupId=classroom-layout-group",
+        "/staff/api/v1/statistics?courseId=c-1&groupId=g-5",
         headers=_headers(),
         cookies=_cookies(classroom_http, "teacher"),
     )
     assert filtered.status == 200
-    assert (await filtered.json())["selectedGroupId"] == "classroom-layout-group"
+    assert (await filtered.json())["selectedGroupId"] == "g-5"
 
     forbidden = await classroom_http.client.get(
         "/staff/api/v1/statistics?courseId=course.without-scope",
@@ -133,7 +133,7 @@ async def test_statistics_empty_state_and_input_validation(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     response = await classroom_http.client.get(
-        "/staff/api/v1/statistics?courseId=classroom-layout-course",
+        "/staff/api/v1/statistics?courseId=c-1",
         headers=_headers(),
         cookies=_cookies(classroom_http, "admin"),
     )

@@ -53,9 +53,8 @@ async def test_live_news_writes_verified_source_and_invalidates(
     def seed(connection):
         binding = create_binding(
             connection,
-            public_id="live-news-source",
             owner_type="course",
-            owner_public_id="classroom-layout-course",
+            owner_public_id="c-1",
             purpose="news_source",
             chat_id=-801,
             message_thread_id=None,
@@ -128,7 +127,7 @@ async def _append(values: list[str], value: str) -> None:
 
 
 def result_payload(result: dict[str, object]) -> str:
-    return f'{{"postId":"{result["public_id"]}","courseId":"classroom-layout-course"}}'
+    return f'{{"postId":"{result["public_id"]}","courseId":"c-1"}}'
 
 
 @pytest.mark.asyncio
@@ -165,9 +164,8 @@ async def test_live_album_edit_keeps_unmodified_media(classroom_http, tmp_path):
     def seed(connection):
         binding = create_binding(
             connection,
-            public_id="live-album-source",
             owner_type="course",
-            owner_public_id="classroom-layout-course",
+            owner_public_id="c-1",
             purpose="news_source",
             chat_id=-801,
             message_thread_id=None,
@@ -185,8 +183,9 @@ async def test_live_album_edit_keeps_unmodified_media(classroom_http, tmp_path):
             actor_user_id=958_001,
             now="2026-07-29T15:00:00Z",
         )
+        return str(binding["public_id"])
 
-    classroom_http.factory.run_write(seed)
+    binding_public_id = classroom_http.factory.run_write(seed)
     storage = LocalObjectStorage(tmp_path / "media")
     invalidations: list[str] = []
 
@@ -212,7 +211,7 @@ async def test_live_album_edit_keeps_unmodified_media(classroom_http, tmp_path):
     classroom_http.factory.run_write(
         lambda connection: set_binding_status(
             connection,
-            public_id="live-album-source",
+            public_id=binding_public_id,
             expected_version=2,
             status="disabled",
             verified_at=None,

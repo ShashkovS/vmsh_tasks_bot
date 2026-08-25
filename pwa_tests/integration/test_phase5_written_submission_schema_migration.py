@@ -124,23 +124,23 @@ def _insert_context(connection: sqlite3.Connection) -> dict[str, int]:
     student_id = -947_001
     other_student_id = -947_002
     teacher_id = -947_003
-    for user_id, user_type, name, public_id in (
-        (student_id, 1, "Written Student", "student-written-schema"),
-        (other_student_id, 1, "Other Student", "student-written-schema-other"),
-        (teacher_id, 2, "Written Teacher", "teacher-written-schema"),
+    for user_id, user_type, name in (
+        (student_id, 1, "Written Student"),
+        (other_student_id, 1, "Other Student"),
+        (teacher_id, 2, "Written Teacher"),
     ):
         connection.execute(
-            "INSERT INTO users (id, type, name, surname, public_id) "
-            "VALUES (?, ?, ?, 'Schema', ?)",
-            (user_id, user_type, name, public_id),
+            "INSERT INTO users (id, type, name, surname) "
+            "VALUES (?, ?, ?, 'Schema')",
+            (user_id, user_type, name),
         )
 
     season_id = int(
         connection.execute(
             "INSERT INTO seasons "
-            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+            "(code, title, starts_on, ends_on, session_expires_on, "
             "status, created_at, updated_at) VALUES "
-            "('season-written-schema', 'written-schema', 'Written schema', "
+            "('written-schema', 'Written schema', "
             "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) "
             "RETURNING id",
             (NOW, NOW),
@@ -149,9 +149,9 @@ def _insert_context(connection: sqlite3.Connection) -> dict[str, int]:
     course_id = int(
         connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "(season_id, code, name, subject_code, status, sort_order, "
             "accent_key, created_at, updated_at) VALUES "
-            "('course-written-schema', ?, 'math', 'Math', 'math', 'active', 1, "
+            "(?, 'math', 'Math', 'math', 'active', 1, "
             "'math', ?, ?) RETURNING id",
             (season_id, NOW, NOW),
         ).fetchone()[0]
@@ -159,26 +159,26 @@ def _insert_context(connection: sqlite3.Connection) -> dict[str, int]:
     connection.execute(
         "INSERT INTO groups "
         "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-        "allow_self_switch, is_system, score_weight, public_id, course_id, "
+        "allow_self_switch, is_system, score_weight, course_id, "
         "status, created_at, updated_at) VALUES "
         "('written-a', 'a', 'A', 1, 1, 0, 1, 0, 1.0, "
-        "'group-written-a', ?, 'active', ?, ?)",
+        "?, 'active', ?, ?)",
         (course_id, NOW, NOW),
     )
     course_lesson_id = int(
         connection.execute(
             "INSERT INTO course_lessons "
-            "(public_id, course_id, lesson_number, created_at, updated_at) "
-            "VALUES ('lesson-written-41', ?, 41, ?, ?) RETURNING id",
+            "(course_id, lesson_number, created_at, updated_at) "
+            "VALUES (?, 41, ?, ?) RETURNING id",
             (course_id, NOW, NOW),
         ).fetchone()[0]
     )
     group_lesson_id = int(
         connection.execute(
             "INSERT INTO group_lessons "
-            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_at, updated_at) VALUES "
-            "('group-lesson-written-a', ?, ?, 'written-a', '2026-09-21', "
+            "(?, ?, 'written-a', '2026-09-21', "
             "'Europe/Moscow', 'active', ?, ?) RETURNING id",
             (course_lesson_id, course_id, NOW, NOW),
         ).fetchone()[0]
@@ -186,8 +186,8 @@ def _insert_context(connection: sqlite3.Connection) -> dict[str, int]:
     source_id = int(
         connection.execute(
             "INSERT INTO content_sources "
-            "(public_id, group_lesson_id, kind, logical_filename, source_encoding, "
-            "created_at) VALUES ('source-written-condition', ?, 'condition', "
+            "(group_lesson_id, kind, logical_filename, source_encoding, "
+            "created_at) VALUES (?, 'condition', "
             "'condition.tex', 'utf-8', ?) RETURNING id",
             (group_lesson_id, NOW),
         ).fetchone()[0]
@@ -195,10 +195,10 @@ def _insert_context(connection: sqlite3.Connection) -> dict[str, int]:
     revision_id = int(
         connection.execute(
             "INSERT INTO content_revisions "
-            "(public_id, source_id, revision_number, source_sha256, latex_text, "
+            "(source_id, revision_number, source_sha256, latex_text, "
             "parser_version, status, canonical_json, diagnostics_json, "
             "provenance_json, created_at) VALUES "
-            "('revision-written-condition', ?, 1, ?, 'two problems', 'test-v1', "
+            "(?, 1, ?, 'two problems', 'test-v1', "
             "'ready', '{}', '[]', '{}', ?) RETURNING id",
             (source_id, "7" * 64, NOW),
         ).fetchone()[0]
@@ -206,10 +206,10 @@ def _insert_context(connection: sqlite3.Connection) -> dict[str, int]:
     unrelated_revision_id = int(
         connection.execute(
             "INSERT INTO content_revisions "
-            "(public_id, source_id, revision_number, source_sha256, latex_text, "
+            "(source_id, revision_number, source_sha256, latex_text, "
             "parser_version, status, canonical_json, diagnostics_json, "
             "provenance_json, created_at) VALUES "
-            "('revision-written-unmatched', ?, 2, ?, 'unmatched', 'test-v1', "
+            "(?, 2, ?, 'unmatched', 'test-v1', "
             "'ready', '{}', '[]', '{}', ?) RETURNING id",
             (source_id, "8" * 64, NOW),
         ).fetchone()[0]
@@ -268,7 +268,6 @@ def _insert_context(connection: sqlite3.Connection) -> dict[str, int]:
 def _insert_thread(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     student_id: int,
     problem_id: int,
     revision_id: int,
@@ -278,11 +277,10 @@ def _insert_thread(
     return int(
         connection.execute(
             "INSERT INTO submission_threads "
-            "(public_id, student_user_id, problem_id, condition_revision_id, status, "
+            "(student_user_id, problem_id, condition_revision_id, status, "
             "latest_result_id, latest_entry_at, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
             (
-                public_id,
                 student_id,
                 problem_id,
                 revision_id,
@@ -299,7 +297,6 @@ def _insert_thread(
 def _insert_entry(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     thread_id: int,
     student_id: int,
     state: str = "draft",
@@ -319,13 +316,12 @@ def _insert_entry(
     return int(
         connection.execute(
             "INSERT INTO submission_entries "
-            "(public_id, thread_id, problem_revision_id, author_kind, author_user_id, "
+            "(thread_id, problem_revision_id, author_kind, author_user_id, "
             "channel, entry_kind, state, text, client_created_at, server_received_at, "
             "idempotency_key, payload_sha256) VALUES "
-            "(?, ?, ?, 'student', ?, 'pwa', 'submission', ?, ?, ?, ?, ?, ?) "
+            "(?, ?, 'student', ?, 'pwa', 'submission', ?, ?, ?, ?, ?, ?) "
             "RETURNING id",
             (
-                public_id,
                 thread_id,
                 problem_revision_id,
                 student_id,
@@ -352,12 +348,11 @@ def _insert_asset(
     return int(
         connection.execute(
             "INSERT INTO media_assets "
-            "(public_id, sha256, storage_namespace, object_key, public_url, "
+            "(sha256, storage_namespace, object_key, public_url, "
             "media_type, byte_size, width, height, source_filename, "
-            "conversion_version, created_at) VALUES (?, ?, ?, ?, ?, ?, 1024, ?, ?, "
+            "conversion_version, created_at) VALUES (?, ?, ?, ?, ?, 1024, ?, ?, "
             "'page.jpg', 'written-webp-v1', ?) RETURNING id",
             (
-                f"asset-written-{ordinal}",
                 f"{ordinal:064x}",
                 namespace,
                 f"sol_imgs/integration/page-{ordinal}.webp",
@@ -374,7 +369,6 @@ def _insert_asset(
 def _insert_attachment(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     entry_id: int,
     asset_id: int,
     ordinal: int,
@@ -382,10 +376,10 @@ def _insert_attachment(
     return int(
         connection.execute(
             "INSERT INTO submission_attachments "
-            "(public_id, entry_id, asset_id, ordinal, client_filename, "
-            "upload_status, created_at) VALUES (?, ?, ?, ?, 'page.jpg', 'stored', ?) "
+            "(entry_id, asset_id, ordinal, client_filename, "
+            "upload_status, created_at) VALUES (?, ?, ?, 'page.jpg', 'stored', ?) "
             "RETURNING id",
-            (public_id, entry_id, asset_id, ordinal, NOW),
+            (entry_id, asset_id, ordinal, NOW),
         ).fetchone()[0]
     )
 
@@ -494,7 +488,6 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
         context = _insert_context(connection)
         thread_id = _insert_thread(
             connection,
-            public_id="thread-entry-revision",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
@@ -502,9 +495,9 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
         with pytest.raises(sqlite3.IntegrityError, match="outside thread scope"):
             connection.execute(
                 "INSERT INTO submission_entries "
-                "(public_id, thread_id, problem_revision_id, author_kind, "
+                "(thread_id, problem_revision_id, author_kind, "
                 "author_user_id, channel, entry_kind, state, server_received_at) "
-                "VALUES ('entry-missing-revision', ?, NULL, 'student', ?, 'pwa', "
+                "VALUES (?, NULL, 'student', ?, 'pwa', "
                 "'submission', 'draft', ?)",
                 (thread_id, context["student"], NOW),
             )
@@ -517,9 +510,9 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
         with pytest.raises(sqlite3.IntegrityError, match="outside thread scope"):
             connection.execute(
                 "INSERT INTO submission_entries "
-                "(public_id, thread_id, problem_revision_id, author_kind, "
+                "(thread_id, problem_revision_id, author_kind, "
                 "author_user_id, channel, entry_kind, state, server_received_at) "
-                "VALUES ('entry-wrong-problem-revision', ?, ?, 'student', ?, 'pwa', "
+                "VALUES (?, ?, 'student', ?, 'pwa', "
                 "'submission', 'draft', ?)",
                 (
                     thread_id,
@@ -530,7 +523,6 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
             )
         entry_id = _insert_entry(
             connection,
-            public_id="entry-exact-revision",
             thread_id=thread_id,
             student_id=context["student"],
         )
@@ -590,14 +582,12 @@ def test_phase5_attachment_mutation_guard_exact_up_down_up(tmp_path):
         context = _insert_context(connection)
         thread_id = _insert_thread(
             connection,
-            public_id="thread-delete-evidence",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
         )
         entry_id = _insert_entry(
             connection,
-            public_id="entry-delete-evidence",
             thread_id=thread_id,
             student_id=context["student"],
             state="uploading",
@@ -606,7 +596,6 @@ def test_phase5_attachment_mutation_guard_exact_up_down_up(tmp_path):
         asset_id = _insert_asset(connection, ordinal=95)
         attachment_id = _insert_attachment(
             connection,
-            public_id="attachment-delete-evidence",
             entry_id=entry_id,
             asset_id=asset_id,
             ordinal=0,
@@ -667,7 +656,6 @@ def test_phase5_entry_replacement_audit_exact_up_down_up_and_scope(tmp_path):
         context = _insert_context(connection)
         thread_id = _insert_thread(
             connection,
-            public_id="thread-entry-replacement",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
@@ -675,7 +663,6 @@ def test_phase5_entry_replacement_audit_exact_up_down_up_and_scope(tmp_path):
         )
         replaced_id = _insert_entry(
             connection,
-            public_id="entry-replaced",
             thread_id=thread_id,
             student_id=context["student"],
             state="submitted",
@@ -683,7 +670,6 @@ def test_phase5_entry_replacement_audit_exact_up_down_up_and_scope(tmp_path):
         )
         replacement_id = _insert_entry(
             connection,
-            public_id="entry-replacement",
             thread_id=thread_id,
             student_id=context["student"],
             state="draft",
@@ -701,9 +687,9 @@ def test_phase5_entry_replacement_audit_exact_up_down_up_and_scope(tmp_path):
         )
         connection.execute(
             "INSERT INTO submission_entry_replacements "
-            "(public_id, thread_id, student_user_id, replaced_entry_id, "
+            "(thread_id, student_user_id, replaced_entry_id, "
             "replacement_entry_id, idempotency_key, replaced_at) "
-            "VALUES ('replacement-audit-one', ?, ?, ?, ?, 'replacement-key-one', ?)",
+            "VALUES (?, ?, ?, ?, 'replacement-key-one', ?)",
             (
                 thread_id,
                 context["student"],
@@ -741,7 +727,6 @@ def test_phase5_thread_scope_result_state_version_and_one_active(tmp_path):
         context = _insert_context(connection)
         thread_id = _insert_thread(
             connection,
-            public_id="thread-written-one",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
@@ -750,7 +735,6 @@ def test_phase5_thread_scope_result_state_version_and_one_active(tmp_path):
         with pytest.raises(sqlite3.IntegrityError, match="outside problem scope"):
             _insert_thread(
                 connection,
-                public_id="thread-wrong-revision",
                 student_id=context["student"],
                 problem_id=context["problem_two"],
                 revision_id=context["unrelated_revision"],
@@ -758,7 +742,6 @@ def test_phase5_thread_scope_result_state_version_and_one_active(tmp_path):
         with pytest.raises(sqlite3.IntegrityError):
             _insert_thread(
                 connection,
-                public_id="thread-active-duplicate",
                 student_id=context["student"],
                 problem_id=context["problem_one"],
                 revision_id=context["revision"],
@@ -766,7 +749,6 @@ def test_phase5_thread_scope_result_state_version_and_one_active(tmp_path):
 
         _insert_thread(
             connection,
-            public_id="thread-closed-history",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
@@ -832,14 +814,12 @@ def test_phase5_entry_author_idempotency_nonempty_and_lifecycle(tmp_path):
         context = _insert_context(connection)
         thread_id = _insert_thread(
             connection,
-            public_id="thread-entry-guards",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
         )
         entry_id = _insert_entry(
             connection,
-            public_id="entry-draft",
             thread_id=thread_id,
             student_id=context["student"],
             idempotency_key="entry-key-one",
@@ -848,14 +828,12 @@ def test_phase5_entry_author_idempotency_nonempty_and_lifecycle(tmp_path):
         with pytest.raises(sqlite3.IntegrityError, match="outside thread scope"):
             _insert_entry(
                 connection,
-                public_id="entry-wrong-owner",
                 thread_id=thread_id,
                 student_id=context["other_student"],
             )
         with pytest.raises(sqlite3.IntegrityError):
             _insert_entry(
                 connection,
-                public_id="entry-duplicate-key",
                 thread_id=thread_id,
                 student_id=context["student"],
                 idempotency_key="entry-key-one",
@@ -911,14 +889,12 @@ def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
         context = _insert_context(connection)
         thread_id = _insert_thread(
             connection,
-            public_id="thread-attachment-guards",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
         )
         entry_id = _insert_entry(
             connection,
-            public_id="entry-ten-pages",
             thread_id=thread_id,
             student_id=context["student"],
             state="uploading",
@@ -932,7 +908,6 @@ def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
         with pytest.raises(sqlite3.IntegrityError, match="final webp"):
             _insert_attachment(
                 connection,
-                public_id="attachment-wrong-namespace",
                 entry_id=entry_id,
                 asset_id=invalid_asset_id,
                 ordinal=0,
@@ -941,7 +916,6 @@ def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
         with pytest.raises(sqlite3.IntegrityError, match="final webp"):
             _insert_attachment(
                 connection,
-                public_id="attachment-oversized",
                 entry_id=entry_id,
                 asset_id=oversized_asset_id,
                 ordinal=0,
@@ -953,7 +927,6 @@ def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
             attachment_ids.append(
                 _insert_attachment(
                     connection,
-                    public_id=f"attachment-page-{ordinal + 1}",
                     entry_id=entry_id,
                     asset_id=asset_id,
                     ordinal=ordinal,
@@ -963,7 +936,6 @@ def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
         with pytest.raises(sqlite3.IntegrityError, match="at most ten"):
             _insert_attachment(
                 connection,
-                public_id="attachment-page-eleven",
                 entry_id=entry_id,
                 asset_id=extra_asset_id,
                 ordinal=10,
@@ -991,14 +963,12 @@ def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
 
         lock_thread_id = _insert_thread(
             connection,
-            public_id="thread-lock-evidence",
             student_id=context["student"],
             problem_id=context["problem_two"],
             revision_id=context["revision"],
         )
         lock_entry_id = _insert_entry(
             connection,
-            public_id="entry-lock-evidence",
             thread_id=lock_thread_id,
             student_id=context["student"],
             state="uploading",
@@ -1006,7 +976,6 @@ def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
         lock_asset_id = _insert_asset(connection, ordinal=93)
         lock_attachment_id = _insert_attachment(
             connection,
-            public_id="attachment-lock-evidence",
             entry_id=lock_entry_id,
             asset_id=lock_asset_id,
             ordinal=0,
@@ -1062,21 +1031,18 @@ def test_phase5_material_reassignment_scope_and_append_only(tmp_path):
         context = _insert_context(connection)
         source_thread_id = _insert_thread(
             connection,
-            public_id="thread-reassign-source",
             student_id=context["student"],
             problem_id=context["problem_one"],
             revision_id=context["revision"],
         )
         target_thread_id = _insert_thread(
             connection,
-            public_id="thread-reassign-target",
             student_id=context["student"],
             problem_id=context["problem_two"],
             revision_id=context["revision"],
         )
         source_entry_id = _insert_entry(
             connection,
-            public_id="entry-reassign-source",
             thread_id=source_thread_id,
             student_id=context["student"],
             state="uploading",
@@ -1084,7 +1050,6 @@ def test_phase5_material_reassignment_scope_and_append_only(tmp_path):
         )
         target_entry_id = _insert_entry(
             connection,
-            public_id="entry-reassign-target",
             thread_id=target_thread_id,
             student_id=context["student"],
             text="Target text",
@@ -1092,7 +1057,6 @@ def test_phase5_material_reassignment_scope_and_append_only(tmp_path):
         asset_id = _insert_asset(connection, ordinal=94)
         attachment_id = _insert_attachment(
             connection,
-            public_id="attachment-reassign-source",
             entry_id=source_entry_id,
             asset_id=asset_id,
             ordinal=0,
@@ -1101,10 +1065,10 @@ def test_phase5_material_reassignment_scope_and_append_only(tmp_path):
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO submission_material_reassignments "
-                "(public_id, student_user_id, source_thread_id, target_thread_id, "
+                "(student_user_id, source_thread_id, target_thread_id, "
                 "source_problem_id, target_problem_id, performed_by_user_id, "
                 "request_id, created_at) VALUES "
-                "('reassignment-wrong-owner', ?, ?, ?, ?, ?, ?, 'wrong-owner', ?)",
+                "(?, ?, ?, ?, ?, ?, 'wrong-owner', ?)",
                 (
                     context["other_student"],
                     source_thread_id,
@@ -1119,10 +1083,10 @@ def test_phase5_material_reassignment_scope_and_append_only(tmp_path):
         reassignment_id = int(
             connection.execute(
                 "INSERT INTO submission_material_reassignments "
-                "(public_id, student_user_id, source_thread_id, target_thread_id, "
+                "(student_user_id, source_thread_id, target_thread_id, "
                 "source_problem_id, target_problem_id, performed_by_user_id, reason, "
                 "request_id, created_at) VALUES "
-                "('reassignment-valid', ?, ?, ?, ?, ?, ?, 'Неверная задача', "
+                "(?, ?, ?, ?, ?, ?, 'Неверная задача', "
                 "'reassignment-request-one', ?) RETURNING id",
                 (
                     context["student"],

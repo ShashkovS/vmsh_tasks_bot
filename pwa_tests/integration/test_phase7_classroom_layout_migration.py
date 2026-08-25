@@ -101,11 +101,10 @@ def _insert_course(
     return int(
         connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "(season_id, code, name, subject_code, status, sort_order, "
             "accent_key, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?) RETURNING id",
+            "VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?) RETURNING id",
             (
-                f"course-{code}",
                 season_id,
                 code,
                 name,
@@ -129,14 +128,13 @@ def _insert_group(
     connection.execute(
         "INSERT INTO groups "
         "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-        "allow_self_switch, is_system, score_weight, public_id, course_id, "
+        "allow_self_switch, is_system, score_weight, course_id, "
         "status, color_key, created_at, updated_at) "
-        "VALUES (?, ?, ?, 1, 1, 0, 0, 0, 1.0, ?, ?, 'active', ?, ?, ?)",
+        "VALUES (?, ?, ?, 1, 1, 0, 0, 0, 1.0, ?, 'active', ?, ?, ?)",
         (
             group_id,
             group_id[:3],
             name,
-            f"group-{group_id}",
             course_id,
             group_id,
             NOW,
@@ -155,10 +153,9 @@ def _insert_group_lesson(
     course_lesson_id = int(
         connection.execute(
             "INSERT INTO course_lessons "
-            "(public_id, course_id, lesson_number, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?) RETURNING id",
+            "(course_id, lesson_number, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?) RETURNING id",
             (
-                f"course-lesson-{course_id}-{lesson_number}",
                 course_id,
                 lesson_number,
                 NOW,
@@ -169,12 +166,11 @@ def _insert_group_lesson(
     return int(
         connection.execute(
             "INSERT INTO group_lessons "
-            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, '2026-01-01', 'Europe/Moscow', 'active', ?, ?) "
+            "VALUES (?, ?, ?, '2026-01-01', 'Europe/Moscow', 'active', ?, ?) "
             "RETURNING id",
             (
-                f"group-lesson-{group_id}-{lesson_number}",
                 course_lesson_id,
                 course_id,
                 group_id,
@@ -190,20 +186,19 @@ def _insert_event(
     *,
     season_id: int,
     actor_id: int,
-    public_id: str,
+    name: str,
     starts_at: str,
     group_lesson_ids: Collection[int],
-) -> None:
+) -> str:
     event_id = int(
         connection.execute(
             "INSERT INTO in_person_events "
-            "(public_id, season_id, name, starts_at, ends_at, status, "
+            "(season_id, name, starts_at, ends_at, status, "
             "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?) RETURNING id",
+            "VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?) RETURNING id, public_id",
             (
-                public_id,
                 season_id,
-                public_id,
+                name,
                 starts_at,
                 starts_at.replace("10:00:00", "13:00:00"),
                 actor_id,
@@ -222,24 +217,26 @@ def _insert_event(
             for group_lesson_id in group_lesson_ids
         ),
     )
+    return str(connection.execute(
+        "SELECT public_id FROM in_person_events WHERE id = ?", (event_id,)
+    ).fetchone()[0])
 
 
 def _confirm_single_room(
     connection: sqlite3.Connection,
     *,
     event_public_id: str,
-    layout_public_id: str,
     room_public_id: str,
     group_lesson_public_id: str,
     actor_id: int,
 ) -> None:
-    materialize_layout(
+    draft = materialize_layout(
         connection,
         event_public_id=event_public_id,
-        layout_public_id=layout_public_id,
         actor_user_id=actor_id,
         now=NOW,
     )
+    layout_public_id = str(draft["layout_public_id"])
     draft = replace_draft_layout(
         connection,
         event_public_id=event_public_id,
@@ -273,9 +270,9 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
         season_id = int(
             connection.execute(
                 "INSERT INTO seasons "
-                "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+                "(code, title, starts_on, ends_on, session_expires_on, "
                 "status, created_at, updated_at) "
-                "VALUES ('season-layout', 'layout', 'Layout', '2025-09-01', "
+                "VALUES ('layout', 'Layout', '2025-09-01', "
                 "'2026-05-31', '2026-08-10', 'active', ?, ?) RETURNING id",
                 (NOW, NOW),
             ).fetchone()[0]
@@ -320,70 +317,67 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
         )
         connection.executemany(
             "INSERT INTO classrooms "
-            "(public_id, name, normalized_name, status, created_by_user_id, "
+            "(name, normalized_name, status, created_by_user_id, "
             "updated_by_user_id, created_at, updated_at) "
-            "VALUES (?, ?, ?, 'active', ?, ?, ?, ?)",
+            "VALUES (?, ?, 'active', ?, ?, ?, ?)",
             (
-                ("room-201", "201", "201", actor_id, actor_id, NOW, NOW),
-                ("room-401", "401", "401", actor_id, actor_id, NOW, NOW),
+                ("201", "201", actor_id, actor_id, NOW, NOW),
+                ("401", "401", actor_id, actor_id, NOW, NOW),
             ),
         )
-        _insert_event(
+        math_event = _insert_event(
             connection,
             season_id=season_id,
             actor_id=actor_id,
-            public_id="event-math-40",
+            name="Математика 40",
             starts_at="2026-01-18T10:00:00Z",
             group_lesson_ids=[math_40],
         )
-        _insert_event(
+        physics_event = _insert_event(
             connection,
             season_id=season_id,
             actor_id=actor_id,
-            public_id="event-physics-8",
+            name="Физика 8",
             starts_at="2026-01-25T10:00:00Z",
             group_lesson_ids=[physics_8],
         )
         _confirm_single_room(
             connection,
-            event_public_id="event-math-40",
-            layout_public_id="layout-math-40",
-            room_public_id="room-201",
-            group_lesson_public_id="group-lesson-math-beginner-40",
+            event_public_id=math_event,
+            room_public_id="room-1",
+            group_lesson_public_id="gl-1",
             actor_id=actor_id,
         )
         _confirm_single_room(
             connection,
-            event_public_id="event-physics-8",
-            layout_public_id="layout-physics-8",
-            room_public_id="room-401",
-            group_lesson_public_id="group-lesson-physics-intro-8",
+            event_public_id=physics_event,
+            room_public_id="room-2",
+            group_lesson_public_id="gl-3",
             actor_id=actor_id,
         )
-        _insert_event(
+        combined_event = _insert_event(
             connection,
             season_id=season_id,
             actor_id=actor_id,
-            public_id="event-combined",
+            name="Совмещённое занятие",
             starts_at="2026-02-01T10:00:00Z",
             group_lesson_ids=[math_41, physics_9],
         )
 
-        inherited = read_effective_layout(connection, "event-combined")
+        inherited = read_effective_layout(connection, combined_event)
         assert inherited["state"] == "inherited"
         assert {
             (room["classroom_name"], room["group_lesson_public_id"])
             for room in inherited["rooms"]
         } == {
-            ("201", "group-lesson-math-beginner-41"),
-            ("401", "group-lesson-physics-intro-9"),
+            ("201", "gl-2"),
+            ("401", "gl-4"),
         }
         assert inherited["conflicts"] == []
 
         draft = materialize_layout(
             connection,
-            event_public_id="event-combined",
-            layout_public_id="layout-combined-1",
+            event_public_id=combined_event,
             actor_user_id=actor_id,
             now="2026-07-29T09:05:00Z",
         )
@@ -391,8 +385,8 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
         assert draft["version"] == 1
         confirmed = confirm_layout(
             connection,
-            event_public_id="event-combined",
-            layout_public_id="layout-combined-1",
+            event_public_id=combined_event,
+            layout_public_id=str(draft["layout_public_id"]),
             expected_version=1,
             actor_user_id=actor_id,
             now="2026-07-29T09:06:00Z",
@@ -403,8 +397,8 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
         with pytest.raises(ClassroomLayoutConflict):
             confirm_layout(
                 connection,
-                event_public_id="event-combined",
-                layout_public_id="layout-combined-1",
+                event_public_id=combined_event,
+                layout_public_id=str(draft["layout_public_id"]),
                 expected_version=1,
                 actor_user_id=actor_id,
                 now="2026-07-29T09:07:00Z",
@@ -412,8 +406,7 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
 
         next_draft = materialize_layout(
             connection,
-            event_public_id="event-combined",
-            layout_public_id="layout-combined-2",
+            event_public_id=combined_event,
             actor_user_id=actor_id,
             now="2026-07-29T09:08:00Z",
         )
@@ -421,32 +414,32 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
         with pytest.raises(InvalidClassroomLayout, match="more than once"):
             replace_draft_layout(
                 connection,
-                event_public_id="event-combined",
-                layout_public_id="layout-combined-2",
+                event_public_id=combined_event,
+                layout_public_id=str(next_draft["layout_public_id"]),
                 expected_version=1,
                 mappings=[
-                    ("room-201", "group-lesson-math-beginner-41"),
-                    ("room-201", "group-lesson-physics-intro-9"),
+                    ("room-1", "gl-2"),
+                    ("room-1", "gl-4"),
                 ],
                 now="2026-07-29T09:09:00Z",
             )
         with pytest.raises(InvalidClassroomLayout, match="non-participating"):
             replace_draft_layout(
                 connection,
-                event_public_id="event-combined",
-                layout_public_id="layout-combined-2",
+                event_public_id=combined_event,
+                layout_public_id=str(next_draft["layout_public_id"]),
                 expected_version=1,
-                mappings=[("room-201", "group-lesson-math-beginner-40")],
+                mappings=[("room-1", "gl-1")],
                 now="2026-07-29T09:10:00Z",
             )
         connection.execute(
-            "UPDATE classrooms SET status = 'archived' WHERE public_id = 'room-401'"
+            "UPDATE classrooms SET status = 'archived' WHERE public_id = 'room-2'"
         )
         with pytest.raises(InvalidClassroomLayout, match="archived"):
             confirm_layout(
                 connection,
-                event_public_id="event-combined",
-                layout_public_id="layout-combined-2",
+                event_public_id=combined_event,
+                layout_public_id=str(next_draft["layout_public_id"]),
                 expected_version=1,
                 actor_user_id=actor_id,
                 now="2026-07-29T09:11:00Z",
@@ -454,7 +447,7 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
         assert (
             connection.execute(
                 "SELECT state FROM classroom_layout_versions WHERE public_id = ?",
-                ("layout-combined-1",),
+                (str(draft["layout_public_id"]),),
             ).fetchone()[0]
             == "confirmed"
         )
@@ -462,13 +455,14 @@ def test_layout_inherits_selected_groups_from_separate_previous_events(tmp_path)
             connection.execute(
                 "DELETE FROM classroom_layout_rooms WHERE layout_version_id = "
                 "(SELECT id FROM classroom_layout_versions WHERE public_id = ?)",
-                ("layout-combined-1",),
+                (str(draft["layout_public_id"]),),
             )
 
         source_count = connection.execute(
             "SELECT count(DISTINCT source_layout_version_id) "
             "FROM classroom_layout_rooms lr "
             "JOIN classroom_layout_versions lv ON lv.id = lr.layout_version_id "
-            "WHERE lv.public_id = 'layout-combined-1'"
+            "WHERE lv.public_id = ?",
+            (str(draft["layout_public_id"]),),
         ).fetchone()[0]
         assert source_count == 2

@@ -38,6 +38,7 @@ type FamilyNotificationCategory =
   | 'review_completed'
   | 'deadline'
   | 'news'
+  | 'group_announcement'
 
 // Per dev/development-plan/12-phase-8-news-and-notifications.md,
 // ``review_completed`` means one explicit lesson digest for Family; the server
@@ -49,6 +50,7 @@ const familyCategories: readonly FamilyNotificationCategory[] = [
   'review_completed',
   'deadline',
   'news',
+  'group_announcement',
 ] as const
 
 const categoryCopy: Record<FamilyNotificationCategory, { title: string; description: string }> = {
@@ -61,6 +63,7 @@ const categoryCopy: Record<FamilyNotificationCategory, { title: string; descript
   },
   deadline: { title: 'Дедлайн', description: 'Напоминание о публикации решений' },
   news: { title: 'Новости', description: 'Публикации кружка' },
+  group_announcement: { title: 'Объявление', description: 'Сообщение для группы ребёнка' },
 }
 
 type FamilyNotificationPreference = NotificationPreference & {
@@ -274,6 +277,7 @@ function FamilyPushDeviceSettings({
         { id: 'results', label: 'Итоги занятия' },
         { id: 'deadline', label: 'Дедлайн' },
         { id: 'news', label: 'Новости кружка' },
+        { id: 'group_announcement', label: 'Объявления группы' },
       ]}
       onDisable={() => void push.disable()}
       onDismiss={push.dismiss}

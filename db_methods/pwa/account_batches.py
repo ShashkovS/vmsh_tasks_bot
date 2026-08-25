@@ -89,20 +89,18 @@ def student_has_course_enrollment(
 def insert_course_enrollment(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     student_user_id: int,
     course_id: int,
     active_group_id: str,
     actor_user_id: int,
     now: str,
-) -> int:
+) -> tuple[int, str]:
     row = connection.execute(
         "INSERT INTO course_enrollments "
-        "(public_id, student_user_id, course_id, active_group_id, "
+        "(student_user_id, course_id, active_group_id, "
         "attendance_mode, status, created_at, updated_at, created_by, updated_by) "
-        "VALUES (?, ?, ?, ?, 'online', 'active', ?, ?, ?, ?) RETURNING id",
+        "VALUES (?, ?, ?, 'online', 'active', ?, ?, ?, ?) RETURNING id, public_id",
         (
-            public_id,
             student_user_id,
             course_id,
             active_group_id,
@@ -112,7 +110,7 @@ def insert_course_enrollment(
             actor_user_id,
         ),
     ).fetchone()
-    return int(row["id"])
+    return int(row["id"]), str(row["public_id"])
 
 
 def insert_imported_group_access(
@@ -138,7 +136,6 @@ def insert_imported_group_access(
 def insert_course_enrollment_created_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     enrollment_id: int,
     course_id: int,
     active_group_id: str,
@@ -148,12 +145,11 @@ def insert_course_enrollment_created_event(
 ) -> None:
     connection.execute(
         "INSERT INTO course_enrollment_events "
-        "(public_id, enrollment_id, course_id, event_type, new_group_id, "
+        "(enrollment_id, course_id, event_type, new_group_id, "
         "new_attendance_mode, new_status, actor_user_id, source, request_id, "
         "occurred_at, created_at) "
-        "VALUES (?, ?, ?, 'created', ?, 'online', 'active', ?, 'import', ?, ?, ?)",
+        "VALUES (?, ?, 'created', ?, 'online', 'active', ?, 'import', ?, ?, ?)",
         (
-            public_id,
             enrollment_id,
             course_id,
             active_group_id,
@@ -191,20 +187,18 @@ def available_student_logins(connection: sqlite3.Connection) -> set[str]:
 def insert_student_user(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     surname: str,
     name: str,
     patronymic: str,
     token: str,
     grade: int | None,
     birth_date: str | None,
-) -> int:
+) -> tuple[int, str]:
     row = connection.execute(
         "INSERT INTO users "
-        "(public_id, type, surname, name, middlename, token, online, grade, birthday) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+        "(type, surname, name, middlename, token, online, grade, birthday) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, public_id",
         (
-            public_id,
             int(USER_TYPE.STUDENT),
             surname,
             name,
@@ -215,13 +209,12 @@ def insert_student_user(
             birth_date,
         ),
     ).fetchone()
-    return int(row["id"])
+    return int(row["id"]), str(row["public_id"])
 
 
 def insert_provisioned_account(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     audience: str,
     username: str,
     username_normalized: str,
@@ -231,17 +224,16 @@ def insert_provisioned_account(
     credential_plaintext: str,
     linked_user_id: int | None,
     now: str,
-) -> int:
+) -> tuple[int, str]:
     row = connection.execute(
         "INSERT INTO auth_accounts "
-        "(public_id, audience, username, username_normalized, "
+        "(audience, username, username_normalized, "
         "username_algorithm_version, provisioning_source, display_name, "
         "credential_kind, credential_hash, provisioning_password_plaintext, "
         "linked_user_id, status, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, 'staff_batch', ?, ?, ?, ?, ?, 'active', ?, ?) "
-        "RETURNING id",
+        "VALUES (?, ?, ?, ?, 'staff_batch', ?, ?, ?, ?, ?, 'active', ?, ?) "
+        "RETURNING id, public_id",
         (
-            public_id,
             audience,
             username,
             username_normalized,
@@ -255,7 +247,7 @@ def insert_provisioned_account(
             now,
         ),
     ).fetchone()
-    return int(row["id"])
+    return int(row["id"]), str(row["public_id"])
 
 
 def insert_family_emails(

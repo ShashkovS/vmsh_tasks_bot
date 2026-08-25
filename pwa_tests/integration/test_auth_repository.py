@@ -89,49 +89,50 @@ def auth_fixture(tmp_path) -> AuthFixture:
 
     def seed(connection):
         connection.execute("DELETE FROM kv_logins")
+        connection.execute("DELETE FROM groups")
         student_user_id = -701
         second_student_user_id = -702
         staff_user_id = -703
         season_id = connection.execute(
             "INSERT INTO seasons "
-            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+            "(id, code, title, starts_on, ends_on, session_expires_on, "
             "status, created_at, updated_at) VALUES "
-            "('season-phase1', '2026-27', 'Сезон 2026–27', '2026-09-01', "
+            "(1, '2026-27', 'Сезон 2026–27', '2026-09-01', "
             "'2027-05-31', '2027-08-10', 'active', ?, ?) RETURNING id",
             (now, now),
         ).fetchone()["id"]
         course_id = connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, "
+            "(id, season_id, code, name, subject_code, status, "
             "sort_order, accent_key, created_at, updated_at) VALUES "
-            "('course-math', ?, 'math-5-7', 'Математика 5–7', 'math', "
+            "(1, ?, 'math-5-7', 'Математика 5–7', 'math', "
             "'active', 10, 'math', ?, ?) RETURNING id",
             (season_id, now, now),
         ).fetchone()["id"]
         connection.executemany(
             "INSERT INTO groups "
-            "(group_id, short_code, public_name, sort_order, is_active, "
+            "(id, group_id, short_code, public_name, sort_order, is_active, "
             "is_default, allow_self_switch, is_system, score_weight, "
-            "public_id, course_id, status, color_key, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?, ?)",
+            "course_id, status, color_key, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?, ?)",
             (
                 (
+                    1,
                     "phase-a",
                     "a",
                     "Начинающие",
                     10,
-                    "group-phase-a",
                     course_id,
                     "beginner",
                     now,
                     now,
                 ),
                 (
+                    2,
                     "phase-b",
                     "b",
                     "Продолжающие",
                     20,
-                    "group-phase-b",
                     course_id,
                     "continuing",
                     now,
@@ -141,12 +142,11 @@ def auth_fixture(tmp_path) -> AuthFixture:
         )
         connection.executemany(
             "INSERT INTO users "
-            "(id, public_id, type, name, surname, grade, birthday, group_id) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "(id, type, name, surname, grade, birthday, group_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 (
                     student_user_id,
-                    "user-student-anna",
                     1,
                     "Анна",
                     "Иванова",
@@ -156,7 +156,6 @@ def auth_fixture(tmp_path) -> AuthFixture:
                 ),
                 (
                     second_student_user_id,
-                    "user-student-boris",
                     1,
                     "Борис",
                     "Петров",
@@ -166,7 +165,6 @@ def auth_fixture(tmp_path) -> AuthFixture:
                 ),
                 (
                     staff_user_id,
-                    "user-staff-teacher",
                     2,
                     "Тестовый",
                     "Учитель",
@@ -178,31 +176,31 @@ def auth_fixture(tmp_path) -> AuthFixture:
         )
         student_account_id = connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(id, audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, "
             "credential_kind, credential_hash, linked_user_id, status, "
             "created_at, updated_at) VALUES "
-            "('account-student', 'student', 'Ivanova-07', 'ivanova-07', 1, "
+            "(1, 'student', 'Ivanova-07', 'ivanova-07', 1, "
             "'synthetic-test', 'telegram_token', ?, ?, "
             "'active', ?, ?) RETURNING id",
             (STUDENT_HASH_V1, student_user_id, now, now),
         ).fetchone()["id"]
         family_account_id = connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(id, audience, username, username_normalized, "
             "provisioning_source, display_name, credential_kind, "
             "credential_hash, status, created_at, updated_at) VALUES "
-            "('account-family', 'family', 'Family Login', 'family login', "
+            "(2, 'family', 'Family Login', 'family login', "
             "'synthetic-test', 'Родитель', 'password', ?, "
             "'active', ?, ?) RETURNING id",
             (FAMILY_HASH_V1, now, now),
         ).fetchone()["id"]
         staff_account_id = connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(id, audience, username, username_normalized, "
             "provisioning_source, credential_kind, credential_hash, "
             "linked_user_id, status, created_at, updated_at) VALUES "
-            "('account-staff', 'staff', 'Teacher', 'teacher', "
+            "(3, 'staff', 'Teacher', 'teacher', "
             "'synthetic-test', 'password', ?, ?, 'active', ?, ?) "
             "RETURNING id",
             (STAFF_HASH_V1, staff_user_id, now, now),
@@ -235,9 +233,9 @@ def auth_fixture(tmp_path) -> AuthFixture:
         )
         enrollment_id = connection.execute(
             "INSERT INTO course_enrollments "
-            "(public_id, student_user_id, course_id, active_group_id, "
+            "(id, student_user_id, course_id, active_group_id, "
             "attendance_mode, status, created_at, updated_at) VALUES "
-            "('enrollment-anna-math', ?, ?, 'phase-a', 'in_person', "
+            "(1, ?, ?, 'phase-a', 'in_person', "
             "'active', ?, ?) RETURNING id",
             (student_user_id, course_id, now, now),
         ).fetchone()["id"]
@@ -358,7 +356,7 @@ async def test_login_lookup_is_normalized_audience_scoped_and_credential_neutral
     )
 
     assert account is not None
-    assert account.public_id == "account-family"
+    assert account.public_id == "a-2"
     assert FAMILY_HASH_V1 not in repr(account)
     assert wrong_audience is None
     assert missing is None
@@ -377,14 +375,14 @@ async def test_create_current_list_and_soft_revoke_sessions(auth_fixture: AuthFi
 
     current = await auth_fixture.repository.get_current_session(
         audience=AuthAudience.STUDENT,
-        account_public_id="account-student",
+        account_public_id="a-1",
         session_public_id=first.public_id,
         credential_version=1,
         session_version=1,
     )
     wrong_version = await auth_fixture.repository.get_current_session(
         audience=AuthAudience.STUDENT,
-        account_public_id="account-student",
+        account_public_id="a-1",
         session_public_id=first.public_id,
         credential_version=1,
         session_version=2,
@@ -396,7 +394,7 @@ async def test_create_current_list_and_soft_revoke_sessions(auth_fixture: AuthFi
     assert current is not None
     assert current.display_name == "Анна Иванова"
     assert current.linked_user_id == auth_fixture.student_user_id
-    assert current.linked_user_public_id == "user-student-anna"
+    assert current.linked_user_public_id == "u--701"
     assert current.linked_user_type == 1
     assert wrong_version is None
     assert {session.public_id for session in sessions} == {
@@ -653,7 +651,7 @@ async def test_refresh_rotation_is_single_use_and_replay_soft_revokes(
 
     assert rotated.outcome is RefreshRotationOutcome.ROTATED
     assert rotated.session is not None and rotated.session.version == 2
-    assert rotated.account_public_id == "account-student"
+    assert rotated.account_public_id == "a-1"
     assert arbitrary_mismatch.outcome is RefreshRotationOutcome.INVALID_SECRET
     assert arbitrary_mismatch.session is not None
     assert arbitrary_mismatch.account_public_id is None
@@ -677,7 +675,7 @@ async def test_refresh_rotation_is_single_use_and_replay_soft_revokes(
     assert (
         await auth_fixture.repository.get_current_session(
             audience=AuthAudience.STUDENT,
-            account_public_id="account-student",
+            account_public_id="a-1",
             session_public_id=session.public_id,
             credential_version=1,
             session_version=2,
@@ -687,27 +685,27 @@ async def test_refresh_rotation_is_single_use_and_replay_soft_revokes(
 
 
 @pytest.mark.asyncio
-async def test_refresh_rotation_requires_canonical_server_account_identity(
+async def test_refresh_rotation_uses_virtual_account_identity(
     auth_fixture: AuthFixture,
 ):
     session = await _create_student_session(
         auth_fixture, suffix="refresh-canonical-account", refresh_hash="2" * 64
     )
-    with sqlite3.connect(auth_fixture.database_path, autocommit=True) as connection:
-        connection.execute("PRAGMA ignore_check_constraints = ON")
-        connection.execute(
-            "UPDATE auth_accounts SET public_id = 'ACCOUNT-STUDENT' WHERE id = ?",
+    account_public_id = auth_fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT public_id FROM auth_accounts WHERE id = ?",
             (auth_fixture.student_account_id,),
-        )
-
-    with pytest.raises(PrincipalDataIntegrityError, match="account public ID"):
-        await auth_fixture.repository.rotate_refresh_secret(
-            audience=AuthAudience.STUDENT,
-            session_public_id=session.public_id,
-            presented_secret_hash="2" * 64,
-            replacement_secret_hash="3" * 64,
-            request_id="request-refresh-corrupt-account-id",
-        )
+        ).fetchone()["public_id"]
+    )
+    assert account_public_id == "a-1"
+    result = await auth_fixture.repository.rotate_refresh_secret(
+        audience=AuthAudience.STUDENT,
+        session_public_id=session.public_id,
+        presented_secret_hash="2" * 64,
+        replacement_secret_hash="3" * 64,
+        request_id="request-refresh-virtual-account-id",
+    )
+    assert result.outcome is RefreshRotationOutcome.ROTATED
 
     stored = auth_fixture.factory.run_read(
         lambda connection: connection.execute(
@@ -715,7 +713,7 @@ async def test_refresh_rotation_requires_canonical_server_account_identity(
             (session.id,),
         ).fetchone()
     )
-    assert stored == {"refresh_secret_hash": "2" * 64, "version": 1}
+    assert stored == {"refresh_secret_hash": "3" * 64, "version": 2}
     consumed_count, rotation_event_count = auth_fixture.factory.run_read(
         lambda connection: (
             connection.execute(
@@ -730,7 +728,7 @@ async def test_refresh_rotation_requires_canonical_server_account_identity(
             ).fetchone()["n"],
         )
     )
-    assert (consumed_count, rotation_event_count) == (0, 0)
+    assert (consumed_count, rotation_event_count) == (1, 1)
 
 
 @pytest.mark.asyncio
@@ -820,7 +818,7 @@ async def test_refresh_authenticated_logout_revokes_and_audits_atomically(
 
     assert result is not None
     assert result.audience is AuthAudience.STUDENT
-    assert result.account_public_id == "account-student"
+    assert result.account_public_id == "a-1"
     assert result.session_public_id == session.public_id
     assert repeated is None
     stored = (
@@ -1252,7 +1250,7 @@ async def test_student_token_uniqueness_failure_rolls_back_auth_and_sessions(
     assert account.credential_hash == STUDENT_HASH_V1
     current = await auth_fixture.repository.get_current_session(
         audience=AuthAudience.STUDENT,
-        account_public_id="account-student",
+        account_public_id="a-1",
         session_public_id=session.public_id,
         credential_version=1,
         session_version=1,
@@ -1327,7 +1325,7 @@ async def test_student_credential_change_rejects_hash_for_a_different_token(
     assert (
         await auth_fixture.repository.get_current_session(
             audience=AuthAudience.STUDENT,
-            account_public_id="account-student",
+            account_public_id="a-1",
             session_public_id=session.public_id,
             credential_version=1,
             session_version=1,
@@ -1382,7 +1380,7 @@ async def test_family_credential_change_revokes_live_sessions(
     assert (
         await auth_fixture.repository.get_current_session(
             audience=AuthAudience.FAMILY,
-            account_public_id="account-family",
+            account_public_id="a-2",
             session_public_id=session.public_id,
             credential_version=1,
             session_version=1,
@@ -1530,7 +1528,7 @@ async def test_concurrent_workers_increment_one_throttle_bucket_without_lost_upd
     key = make_throttle_bucket_key(
         audience=AuthAudience.STAFF,
         kind=ThrottleBucketKind.ACCOUNT,
-        value="account-staff",
+        value="a-3",
         pepper=PEPPER,
     )
 
@@ -1573,7 +1571,7 @@ async def test_family_course_access_and_staff_scope_reads_are_current_only(
 
     assert children == (children[0],)
     assert children[0].student_user_id == auth_fixture.student_user_id
-    assert children[0].student_public_id == "user-student-anna"
+    assert children[0].student_public_id == "u--701"
     assert children[0].is_primary
     assert children[0].grade == 7
     assert children[0].birthday == "2012-01-07"
@@ -1581,16 +1579,16 @@ async def test_family_course_access_and_staff_scope_reads_are_current_only(
     assert len(enrollments) == 1
     enrollment = enrollments[0]
     assert enrollment.course_id == auth_fixture.course_id
-    assert enrollment.student_public_id == "user-student-anna"
+    assert enrollment.student_public_id == "u--701"
     assert enrollment.course_subject_code == "math"
     assert enrollment.course_accent_key == "math"
     assert enrollment.course_version == 1
     assert enrollment.active_group_id == "phase-a"
-    assert enrollment.active_group_public_id == "group-phase-a"
+    assert enrollment.active_group_public_id == "g-1"
     assert enrollment.attendance_mode == "in_person"
     assert [group.group_id for group in enrollment.allowed_groups] == ["phase-a"]
-    assert enrollment.allowed_groups[0].course_public_id == "course-math"
-    assert enrollment.allowed_groups[0].group_public_id == "group-phase-a"
+    assert enrollment.allowed_groups[0].course_public_id == "c-1"
+    assert enrollment.allowed_groups[0].group_public_id == "g-1"
     assert enrollment.allowed_groups[0].version == 1
 
     assert len(scopes) == 1
@@ -1645,14 +1643,14 @@ async def test_principal_reads_fail_closed_on_wrong_legacy_user_types(
     )
     student_current = await auth_fixture.repository.get_current_session(
         audience=AuthAudience.STUDENT,
-        account_public_id="account-student",
+        account_public_id="a-1",
         session_public_id=student_session.public_id,
         credential_version=1,
         session_version=1,
     )
     staff_current = await auth_fixture.repository.get_current_session(
         audience=AuthAudience.STAFF,
-        account_public_id="account-staff",
+        account_public_id="a-3",
         session_public_id=staff_session.public_id,
         credential_version=1,
         session_version=1,
@@ -1698,7 +1696,7 @@ async def test_staff_identity_rejects_inactive_negative_and_composite_types(
 
     current = await auth_fixture.repository.get_current_session(
         audience=AuthAudience.STAFF,
-        account_public_id="account-staff",
+        account_public_id="a-3",
         session_public_id=session.public_id,
         credential_version=1,
         session_version=1,
@@ -1711,49 +1709,38 @@ async def test_staff_identity_rejects_inactive_negative_and_composite_types(
 
 
 @pytest.mark.asyncio
-async def test_corrupt_browser_public_ids_fail_closed_at_repository_boundary(
+async def test_browser_public_ids_are_virtual_and_current_at_repository_boundary(
     auth_fixture: AuthFixture,
 ):
     session = await _create_student_session(
         auth_fixture, suffix="corrupt-user-public-id", refresh_hash="c" * 64
     )
 
-    # Migration CHECKs prevent this in supported writes. Bypassing them here
-    # proves a restored/corrupt database still cannot become browser authority.
-    with sqlite3.connect(auth_fixture.database_path, autocommit=True) as connection:
-        connection.execute("PRAGMA ignore_check_constraints = ON")
-        connection.execute(
-            "UPDATE users SET public_id = '' WHERE id = ?",
-            (auth_fixture.student_user_id,),
-        )
-
-    assert (
-        await auth_fixture.repository.get_current_session(
+    current = await auth_fixture.repository.get_current_session(
             audience=AuthAudience.STUDENT,
-            account_public_id="account-student",
+            account_public_id="a-1",
             session_public_id=session.public_id,
             credential_version=1,
             session_version=1,
         )
-        is None
+    assert current is not None and current.linked_user_public_id == "u--701"
+    children = await auth_fixture.repository.list_family_children(
+        family_account_id=auth_fixture.family_account_id
     )
-    with pytest.raises(PrincipalDataIntegrityError, match="public ID"):
-        await auth_fixture.repository.list_family_children(
-            family_account_id=auth_fixture.family_account_id
-        )
-    with pytest.raises(PrincipalDataIntegrityError, match="public ID"):
-        await auth_fixture.repository.list_course_enrollments(
-            student_user_id=auth_fixture.student_user_id
-        )
+    enrollments = await auth_fixture.repository.list_course_enrollments(
+        student_user_id=auth_fixture.student_user_id
+    )
+    assert children[0].student_public_id == "u--701"
+    assert enrollments[0].student_public_id == "u--701"
 
 
 @pytest.mark.asyncio
-async def test_group_staff_scope_without_public_id_cannot_widen_to_course_scope(
+async def test_group_staff_scope_uses_virtual_group_public_id(
     auth_fixture: AuthFixture,
 ):
     now = _timestamp(auth_fixture.clock())
 
-    def corrupt_group_scope(connection):
+    def add_group_scope(connection):
         connection.execute(
             "INSERT INTO staff_scopes "
             "(staff_user_id, course_id, group_id, role, valid_from, "
@@ -1766,16 +1753,12 @@ async def test_group_staff_scope_without_public_id_cannot_widen_to_course_scope(
                 now,
             ),
         )
-        connection.execute(
-            "UPDATE groups SET public_id = NULL WHERE group_id = 'phase-a'"
-        )
+    auth_fixture.factory.run_write(add_group_scope)
 
-    auth_fixture.factory.run_write(corrupt_group_scope)
-
-    with pytest.raises(PrincipalDataIntegrityError, match="public ID"):
-        await auth_fixture.repository.list_staff_scopes(
-            staff_user_id=auth_fixture.staff_user_id
-        )
+    scopes = await auth_fixture.repository.list_staff_scopes(
+        staff_user_id=auth_fixture.staff_user_id
+    )
+    assert any(scope.group_public_id == "g-1" for scope in scopes)
 
 
 def test_repository_rejects_non_digest_keys_and_weak_peppers():

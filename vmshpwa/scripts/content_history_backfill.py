@@ -162,8 +162,6 @@ class MaterialPlan:
     mapping: MaterialMapping
     logical_filename: str
     compile_result: CompileResult
-    source_public_id: str
-    revision_public_id: str
     provenance_json: str
 
 
@@ -597,13 +595,6 @@ def _source_snapshot(
         raise ContentHistoryBackfillError(str(error)) from error
 
 
-def _stable_public_id(prefix: str, *parts: object) -> str:
-    digest = hashlib.sha256(
-        "\x1f".join(str(part) for part in parts).encode("utf-8")
-    ).hexdigest()[:32]
-    return f"{prefix}-{digest}"
-
-
 def _normalize_title(value: str) -> str:
     return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
@@ -884,14 +875,7 @@ def _read_material(
             ) from error
         raise ContentHistoryBackfillError(str(error)) from error
     logical_filename = PurePosixPath(material.source_path).name
-    logical_scope = _stable_public_id(
-        "history",
-        mapping.backfill_id,
-        lesson.legacy_group_id,
-        lesson.legacy_lesson_number,
-        material.kind,
-    )
-    return content, f"{logical_scope}/{logical_filename}"
+    return content, logical_filename
 
 
 def build_plan(
@@ -946,20 +930,15 @@ def build_plan(
                 diagnostics.append(BackfillDiagnostic("missingSource", "error", key[1]))
                 continue
             role = ContentRole(material.kind)
-            revision_public_id = _stable_public_id(
-                "hcr",
-                mapping.backfill_id,
-                lesson.legacy_group_id,
-                lesson.legacy_lesson_number,
-                material.kind,
-                hashlib.sha256(content).hexdigest(),
-            )
             try:
                 compiled = compile_latex(
                     content,
                     source_name=logical_filename,
                     role=role,
-                    revision_id=revision_public_id,
+                    revision_id=(
+                        f"backfill:{mapping.backfill_id}:{lesson.legacy_group_id}:"
+                        f"{lesson.legacy_lesson_number}:{material.kind}"
+                    ),
                 )
             except ContentCompileError as error:
                 code = (
@@ -998,21 +977,11 @@ def build_plan(
                     )
                 )
                 continue
-            source_public_id = _stable_public_id(
-                "hcs",
-                mapping.backfill_id,
-                lesson.legacy_group_id,
-                lesson.legacy_lesson_number,
-                material.kind,
-                logical_filename,
-            )
             materials.append(
                 MaterialPlan(
                     mapping=material,
                     logical_filename=logical_filename,
                     compile_result=compiled,
-                    source_public_id=source_public_id,
-                    revision_public_id=revision_public_id,
                     provenance_json=_material_provenance(mapping, lesson, material),
                 )
             )
@@ -1244,13 +1213,12 @@ def _require_target_schema(path: Path) -> None:
             raise ContentHistoryBackfillError("Apply target lacks Phase-2 tables")
 
 
-def _insert_or_verify_public(
+def _insert_or_verify(
     connection: sqlite3.Connection,
     *,
     table: str,
     insert_columns: Sequence[str],
     values: Sequence[object],
-    public_id: str,
     verify_columns: Sequence[str],
     expected: Sequence[object],
 ) -> tuple[int, bool]:
@@ -1261,15 +1229,13 @@ def _insert_or_verify_public(
         f"INSERT OR IGNORE INTO {table} ({columns}) VALUES ({placeholders})", values
     )
     inserted = connection.total_changes > before
+    identity = " AND ".join(f"{column} IS ?" for column in verify_columns)
     row = connection.execute(
-        f"SELECT id, {', '.join(verify_columns)} FROM {table} WHERE public_id = ?",
-        (public_id,),
+        f"SELECT id FROM {table} WHERE {identity}", expected
     ).fetchone()
-    if row is None or tuple(row[column] for column in verify_columns) != tuple(
-        expected
-    ):
+    if row is None:
         raise ContentHistoryBackfillError(
-            f"Existing {table} row conflicts with deterministic backfill identity"
+            f"Existing {table} row conflicts with the backfill data"
         )
     return int(row["id"]), inserted
 
@@ -1339,27 +1305,21 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
     for lesson_number in sorted(
         {item.mapping.course_lesson_number for item in plan.group_lessons}
     ):
-        public_id = _stable_public_id(
-            "hcl", mapping.backfill_id, mapping.course_public_id, lesson_number
-        )
-        course_lesson_id, inserted = _insert_or_verify_public(
+        course_lesson_id, inserted = _insert_or_verify(
             connection,
             table="course_lessons",
             insert_columns=(
-                "public_id",
                 "course_id",
                 "lesson_number",
                 "created_at",
                 "updated_at",
             ),
             values=(
-                public_id,
                 course_id,
                 lesson_number,
                 mapping.recorded_at,
                 mapping.recorded_at,
             ),
-            public_id=public_id,
             verify_columns=("course_id", "lesson_number"),
             expected=(course_id, lesson_number),
         )
@@ -1369,17 +1329,10 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
     for lesson_plan in plan.group_lessons:
         lesson = lesson_plan.mapping
         course_lesson_id = course_lesson_ids[lesson.course_lesson_number]
-        group_lesson_public_id = _stable_public_id(
-            "hgl",
-            mapping.backfill_id,
-            lesson.legacy_group_id,
-            lesson.legacy_lesson_number,
-        )
-        group_lesson_id, inserted = _insert_or_verify_public(
+        group_lesson_id, inserted = _insert_or_verify(
             connection,
             table="group_lessons",
             insert_columns=(
-                "public_id",
                 "course_lesson_id",
                 "course_id",
                 "group_id",
@@ -1390,7 +1343,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                 "updated_at",
             ),
             values=(
-                group_lesson_public_id,
                 course_lesson_id,
                 course_id,
                 lesson.legacy_group_id,
@@ -1400,7 +1352,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                 mapping.recorded_at,
                 mapping.recorded_at,
             ),
-            public_id=group_lesson_public_id,
             verify_columns=(
                 "course_lesson_id",
                 "course_id",
@@ -1421,14 +1372,10 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
         changes["groupLessons"] += inserted
 
         if lesson.timestamps.submission_closes_at is not None:
-            window_public_id = _stable_public_id(
-                "hlw", mapping.backfill_id, group_lesson_public_id
-            )
-            _window_id, inserted = _insert_or_verify_public(
+            _window_id, inserted = _insert_or_verify(
                 connection,
                 table="lesson_windows",
                 insert_columns=(
-                    "public_id",
                     "group_lesson_id",
                     "opens_at",
                     "submission_closes_at",
@@ -1440,7 +1387,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                     "updated_at",
                 ),
                 values=(
-                    window_public_id,
                     group_lesson_id,
                     lesson.timestamps.opens_at,
                     lesson.timestamps.submission_closes_at,
@@ -1451,7 +1397,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                     mapping.recorded_at,
                     mapping.recorded_at,
                 ),
-                public_id=window_public_id,
                 verify_columns=(
                     "group_lesson_id",
                     "opens_at",
@@ -1476,11 +1421,10 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
         for material_plan in lesson_plan.materials:
             material = material_plan.mapping
             result = material_plan.compile_result
-            source_id, inserted = _insert_or_verify_public(
+            source_id, inserted = _insert_or_verify(
                 connection,
                 table="content_sources",
                 insert_columns=(
-                    "public_id",
                     "group_lesson_id",
                     "kind",
                     "logical_filename",
@@ -1488,14 +1432,12 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                     "created_at",
                 ),
                 values=(
-                    material_plan.source_public_id,
                     group_lesson_id,
                     material.kind,
                     material_plan.logical_filename,
                     _source_encoding(result),
                     mapping.recorded_at,
                 ),
-                public_id=material_plan.source_public_id,
                 verify_columns=(
                     "group_lesson_id",
                     "kind",
@@ -1510,11 +1452,10 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                 ),
             )
             changes["contentSources"] += inserted
-            revision_id, inserted = _insert_or_verify_public(
+            revision_id, inserted = _insert_or_verify(
                 connection,
                 table="content_revisions",
                 insert_columns=(
-                    "public_id",
                     "source_id",
                     "revision_number",
                     "source_sha256",
@@ -1527,7 +1468,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                     "created_at",
                 ),
                 values=(
-                    material_plan.revision_public_id,
                     source_id,
                     1,
                     result.source.raw_sha256,
@@ -1539,7 +1479,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                     material_plan.provenance_json,
                     mapping.recorded_at,
                 ),
-                public_id=material_plan.revision_public_id,
                 verify_columns=(
                     "source_id",
                     "revision_number",
@@ -1584,7 +1523,7 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                     {
                         "source": "manual_backfill",
                         "backfillId": mapping.backfill_id,
-                        "revisionPublicId": material_plan.revision_public_id,
+                        "sourceSha256": result.source.raw_sha256,
                     }
                 )
                 if existing is None:
@@ -1693,18 +1632,10 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                         )
 
             if material.published_at is not None:
-                publication_public_id = _stable_public_id(
-                    "hlp",
-                    mapping.backfill_id,
-                    group_lesson_public_id,
-                    material.kind,
-                    material_plan.revision_public_id,
-                )
-                _publication_id, inserted = _insert_or_verify_public(
+                _publication_id, inserted = _insert_or_verify(
                     connection,
                     table="lesson_publications",
                     insert_columns=(
-                        "public_id",
                         "group_lesson_id",
                         "kind",
                         "revision_id",
@@ -1715,7 +1646,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                         "updated_at",
                     ),
                     values=(
-                        publication_public_id,
                         group_lesson_id,
                         material.kind,
                         revision_id,
@@ -1725,7 +1655,6 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                         mapping.recorded_at,
                         mapping.recorded_at,
                     ),
-                    public_id=publication_public_id,
                     verify_columns=(
                         "group_lesson_id",
                         "kind",

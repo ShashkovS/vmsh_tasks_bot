@@ -25,9 +25,8 @@ def _seed(classroom_http) -> None:
         for index in range(3):
             insert_audit_event(
                 connection,
-                public_id=f"audit.seed-{index}",
                 actor_user_id=ADMIN_ID,
-                actor_account_public_id="classroom-http-account-admin",
+                actor_account_public_id="a-1",
                 audience="staff",
                 action="account.status_changed",
                 object_type="account",
@@ -58,9 +57,9 @@ async def test_audit_is_admin_only_and_returns_safe_changes(
     assert teacher.status == 403
 
     changed = await classroom_http.client.patch(
-        "/staff/api/v1/accounts/classroom-http-account-student/status",
+        "/staff/api/v1/accounts/a-3/status",
         json={"schemaVersion": 1, "status": "blocked"},
-        headers=_headers(unsafe=True, if_match='"classroom-http-account-student:v1"'),
+        headers=_headers(unsafe=True, if_match='"a-3:v1"'),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert changed.status == 200, await changed.text()
@@ -81,11 +80,11 @@ async def test_audit_is_admin_only_and_returns_safe_changes(
             "audience": "staff",
             "action": "account.status_changed",
             "objectType": "account",
-            "objectId": "classroom-http-account-student",
+            "objectId": "a-3",
             "requestId": "classroom.http.test",
             "actor": {
-                "userId": "classroom-http-admin",
-                "accountId": "classroom-http-account-admin",
+                "userId": "u-958001",
+                "accountId": "a-1",
                 "displayName": "Администратор Иван",
             },
             "before": {"status": "active"},
@@ -109,8 +108,8 @@ async def test_audit_uses_stable_cursor_and_rejects_unknown_inputs(
     )
     assert first.status == 200
     first_body = await first.json()
-    assert first_body["items"][0]["eventId"] == "audit.seed-2"
-    assert first_body["nextCursor"] == "audit.seed-2"
+    assert first_body["items"][0]["eventId"] == "ae-3"
+    assert first_body["nextCursor"] == "ae-3"
 
     second = await classroom_http.client.get(
         f"/staff/api/v1/audit?limit=1&cursor={first_body['nextCursor']}",
@@ -118,7 +117,7 @@ async def test_audit_uses_stable_cursor_and_rejects_unknown_inputs(
         cookies=_cookies(classroom_http, "admin"),
     )
     assert second.status == 200
-    assert (await second.json())["items"][0]["eventId"] == "audit.seed-1"
+    assert (await second.json())["items"][0]["eventId"] == "ae-2"
 
     for query in (
         "cursor=audit.missing",
@@ -142,13 +141,13 @@ def test_audit_rows_are_immutable(classroom_http) -> None:
         with pytest.raises(sqlite3.IntegrityError, match="audit event is immutable"):
             connection.execute(
                 "UPDATE audit_events SET action = 'changed' WHERE public_id = ?",
-                ("audit.seed-0",),
+                ("ae-1",),
             )
         with pytest.raises(
             sqlite3.IntegrityError, match="audit event deletion is forbidden"
         ):
             connection.execute(
-                "DELETE FROM audit_events WHERE public_id = ?", ("audit.seed-0",)
+                "DELETE FROM audit_events WHERE public_id = ?", ("ae-1",)
             )
 
     classroom_http.factory.run_write(mutate)

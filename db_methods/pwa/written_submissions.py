@@ -13,7 +13,6 @@ import hashlib
 import json
 import re
 import sqlite3
-import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -2244,34 +2243,9 @@ class PwaWrittenSubmissionRepository:
         factory: PwaConnectionFactory,
         *,
         clock: Callable[[], datetime] | None = None,
-        thread_public_id_factory: Callable[[], str] | None = None,
-        entry_public_id_factory: Callable[[], str] | None = None,
-        attachment_public_id_factory: Callable[[], str] | None = None,
-        media_public_id_factory: Callable[[], str] | None = None,
-        replacement_event_public_id_factory: Callable[[], str] | None = None,
-        reassignment_public_id_factory: Callable[[], str] | None = None,
     ) -> None:
         self._factory = factory
         self._clock = clock or (lambda: datetime.now(UTC))
-        self._thread_public_id_factory = thread_public_id_factory or (
-            lambda: f"written-thread-{uuid.uuid4()}"
-        )
-        self._entry_public_id_factory = entry_public_id_factory or (
-            lambda: f"written-entry-{uuid.uuid4()}"
-        )
-        self._attachment_public_id_factory = attachment_public_id_factory or (
-            lambda: f"written-attachment-{uuid.uuid4()}"
-        )
-        self._media_public_id_factory = media_public_id_factory or (
-            lambda: f"submission-media-{uuid.uuid4()}"
-        )
-        self._replacement_event_public_id_factory = (
-            replacement_event_public_id_factory
-            or (lambda: f"written-replacement-{uuid.uuid4()}")
-        )
-        self._reassignment_public_id_factory = reassignment_public_id_factory or (
-            lambda: f"written-reassignment-{uuid.uuid4()}"
-        )
 
     async def create_entry(
         self, command: CreateWrittenEntryCommand
@@ -2369,19 +2343,12 @@ class PwaWrittenSubmissionRepository:
                 (context.student_user_id, context.problem_id),
             ).fetchone()
             if thread is None:
-                thread_public_id = self._thread_public_id_factory()
-                if not _PUBLIC_ID.fullmatch(thread_public_id):
-                    raise WrittenSubmissionRepositoryError(
-                        "thread public ID factory returned an invalid value"
-                    )
-                thread_id = int(
-                    connection.execute(
+                inserted_thread = connection.execute(
                         "INSERT INTO submission_threads "
-                        "(public_id, student_user_id, problem_id, condition_revision_id, "
+                        "(student_user_id, problem_id, condition_revision_id, "
                         "status, latest_entry_at, created_at, updated_at) VALUES "
-                        "(?, ?, ?, ?, 'open', ?, ?, ?) RETURNING id",
+                        "(?, ?, ?, 'open', ?, ?, ?) RETURNING id, public_id",
                         (
-                            thread_public_id,
                             context.student_user_id,
                             context.problem_id,
                             context.content_revision_id,
@@ -2389,8 +2356,9 @@ class PwaWrittenSubmissionRepository:
                             received_at,
                             received_at,
                         ),
-                    ).fetchone()["id"]
-                )
+                    ).fetchone()
+                thread_id = int(inserted_thread["id"])
+                thread_public_id = str(inserted_thread["public_id"])
                 thread_status = "open"
                 thread_version = 1
             else:
@@ -2403,22 +2371,15 @@ class PwaWrittenSubmissionRepository:
                     "version = ? WHERE id = ?",
                     (received_at, received_at, thread_version, thread_id),
                 )
-            entry_public_id = self._entry_public_id_factory()
-            if not _PUBLIC_ID.fullmatch(entry_public_id):
-                raise WrittenSubmissionRepositoryError(
-                    "entry public ID factory returned an invalid value"
-                )
-            entry_id = int(
-                connection.execute(
+            inserted_entry = connection.execute(
                     "INSERT INTO submission_entries "
-                    "(public_id, thread_id, problem_revision_id, author_kind, "
+                    "(thread_id, problem_revision_id, author_kind, "
                     "author_user_id, channel, entry_kind, state, text, "
                     "paste_count, pasted_character_count, last_pasted_at, "
                     "client_created_at, server_received_at, idempotency_key, "
-                    "payload_sha256) VALUES (?, ?, ?, 'student', ?, 'pwa', "
+                    "payload_sha256) VALUES (?, ?, 'student', ?, 'pwa', "
                     "'submission', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
                     (
-                        entry_public_id,
                         thread_id,
                         context.problem_revision_id,
                         context.student_user_id,
@@ -2435,8 +2396,8 @@ class PwaWrittenSubmissionRepository:
                         command.idempotency_key,
                         payload_sha256,
                     ),
-                ).fetchone()["id"]
-            )
+                ).fetchone()
+            entry_id = int(inserted_entry["id"])
             receipt = CreateWrittenEntryReceipt(
                 thread_public_id=thread_public_id,
                 problem_public_id=context.problem_public_id,
@@ -2506,21 +2467,11 @@ class PwaWrittenSubmissionRepository:
         """Atomically publish final media metadata and its entry attachment."""
 
         now = self._clock()
-        media_public_id = self._media_public_id_factory()
-        attachment_public_id = self._attachment_public_id_factory()
-        if not _PUBLIC_ID.fullmatch(media_public_id) or not _PUBLIC_ID.fullmatch(
-            attachment_public_id
-        ):
-            raise WrittenSubmissionRepositoryError(
-                "attachment public ID factory returned an invalid value"
-            )
         receipt, error = await self._factory.run_write_async(
             lambda connection: self._write_complete_attachment_upload(
                 connection,
                 prepared=prepared,
                 asset=asset,
-                media_public_id=media_public_id,
-                attachment_public_id=attachment_public_id,
                 now=now,
             )
         )
@@ -2535,8 +2486,6 @@ class PwaWrittenSubmissionRepository:
         *,
         prepared: PreparedWrittenAttachmentUpload,
         asset: PersistWrittenAttachment,
-        media_public_id: str,
-        attachment_public_id: str,
         now: datetime,
     ) -> tuple[
         CreateWrittenAttachmentReceipt | None,
@@ -2576,16 +2525,14 @@ class PwaWrittenSubmissionRepository:
                 command=command,
                 now=now,
             )
-            media_id = int(
-                connection.execute(
+            inserted_media = connection.execute(
                     "INSERT INTO media_assets "
-                    "(public_id, sha256, storage_namespace, object_key, public_url, "
+                    "(sha256, storage_namespace, object_key, public_url, "
                     "media_type, byte_size, width, height, source_filename, "
                     "conversion_version, created_by_user_id, created_at) VALUES "
-                    "(?, ?, 'submission', ?, ?, 'image/webp', ?, ?, ?, ?, "
+                    "(?, 'submission', ?, ?, 'image/webp', ?, ?, ?, ?, "
                     "'pwa-written-image-v1', ?, ?) RETURNING id",
                     (
-                        media_public_id,
                         asset.output_sha256,
                         asset.object_key,
                         asset.public_url,
@@ -2596,14 +2543,13 @@ class PwaWrittenSubmissionRepository:
                         target.context.student_user_id,
                         received_at,
                     ),
-                ).fetchone()["id"]
-            )
+                ).fetchone()
+            media_id = int(inserted_media["id"])
             connection.execute(
                 "INSERT INTO submission_attachments "
-                "(public_id, entry_id, asset_id, ordinal, client_filename, "
-                "upload_status, created_at) VALUES (?, ?, ?, ?, ?, 'stored', ?)",
+                "(entry_id, asset_id, ordinal, client_filename, "
+                "upload_status, created_at) VALUES (?, ?, ?, ?, 'stored', ?)",
                 (
-                    attachment_public_id,
                     target.entry_id,
                     media_id,
                     command.ordinal,
@@ -3178,17 +3124,11 @@ class PwaWrittenSubmissionRepository:
             if replay.state != "completed":
                 _raise_replay_failure(replay)
             return ReplaceWrittenEntryReceipt.from_response(replay.response)
-        replacement_event_public_id = self._replacement_event_public_id_factory()
-        if not _PUBLIC_ID.fullmatch(replacement_event_public_id):
-            raise WrittenSubmissionRepositoryError(
-                "replacement event public ID factory returned an invalid value"
-            )
         receipt, error = await self._factory.run_write_async(
             lambda connection: self._write_replace_entry(
                 connection,
                 command=command,
                 payload_sha256=payload_sha256,
-                replacement_event_public_id=replacement_event_public_id,
                 now=self._clock(),
             )
         )
@@ -3203,7 +3143,6 @@ class PwaWrittenSubmissionRepository:
         *,
         command: ReplaceWrittenEntryCommand,
         payload_sha256: str,
-        replacement_event_public_id: str,
         now: datetime,
     ) -> tuple[ReplaceWrittenEntryReceipt | None, WrittenSubmissionRejected | None]:
         replay = _read_idempotency(
@@ -3381,13 +3320,12 @@ class PwaWrittenSubmissionRepository:
                 "version = ? WHERE id = ?",
                 (replaced_at, replaced_at, thread_version, row["thread_id"]),
             )
-            connection.execute(
+            replacement_event = connection.execute(
                 "INSERT INTO submission_entry_replacements "
-                "(public_id, thread_id, student_user_id, replaced_entry_id, "
+                "(thread_id, student_user_id, replaced_entry_id, "
                 "replacement_entry_id, idempotency_key, replaced_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?) RETURNING public_id",
                 (
-                    replacement_event_public_id,
                     row["thread_id"],
                     row["student_user_id"],
                     replaced["id"],
@@ -3395,7 +3333,8 @@ class PwaWrittenSubmissionRepository:
                     command.idempotency_key,
                     replaced_at,
                 ),
-            )
+            ).fetchone()
+            replacement_event_public_id = str(replacement_event["public_id"])
             receipt = ReplaceWrittenEntryReceipt(
                 thread_public_id=str(row["thread_public_id"]),
                 problem_public_id=str(row["problem_public_id"]),
@@ -3466,21 +3405,11 @@ class PwaWrittenSubmissionRepository:
             if replay.state != "completed":
                 _raise_replay_failure(replay)
             return ReassignWrittenMaterialReceipt.from_response(replay.response)
-        reassignment_public_id = self._reassignment_public_id_factory()
-        target_thread_public_id = self._thread_public_id_factory()
-        if not _PUBLIC_ID.fullmatch(reassignment_public_id) or not _PUBLIC_ID.fullmatch(
-            target_thread_public_id
-        ):
-            raise WrittenSubmissionRepositoryError(
-                "material reassignment public ID factory returned an invalid value"
-            )
         receipt, error = await self._factory.run_write_async(
             lambda connection: self._write_reassign_material(
                 connection,
                 command=command,
                 payload_sha256=payload_sha256,
-                reassignment_public_id=reassignment_public_id,
-                target_thread_public_id=target_thread_public_id,
                 now=self._clock(),
             )
         )
@@ -3495,8 +3424,6 @@ class PwaWrittenSubmissionRepository:
         *,
         command: ReassignWrittenMaterialCommand,
         payload_sha256: str,
-        reassignment_public_id: str,
-        target_thread_public_id: str,
         now: datetime,
     ) -> tuple[ReassignWrittenMaterialReceipt | None, WrittenSubmissionRejected | None]:
         replay = _read_idempotency(
@@ -3560,16 +3487,15 @@ class PwaWrittenSubmissionRepository:
                         "sourceThreadVersion": preview.source_thread_version,
                         "targetThreadVersion": preview.target_thread_version,
                     },
-                )
+            )
             if preview.target_thread_id is None:
-                target_thread_id = int(
-                    connection.execute(
+                inserted_target_thread = connection.execute(
                         "INSERT INTO submission_threads "
-                        "(public_id, student_user_id, problem_id, condition_revision_id, "
+                        "(student_user_id, problem_id, condition_revision_id, "
                         "status, latest_entry_at, created_at, updated_at, version) "
-                        "VALUES (?, ?, ?, ?, 'awaiting_review', ?, ?, ?, 1) RETURNING id",
+                        "VALUES (?, ?, ?, 'awaiting_review', ?, ?, ?, 1) "
+                        "RETURNING id, public_id",
                         (
-                            target_thread_public_id,
                             preview.student_user_id,
                             preview.target_problem_id,
                             preview.target_condition_revision_id,
@@ -3577,9 +3503,11 @@ class PwaWrittenSubmissionRepository:
                             moved_at,
                             moved_at,
                         ),
-                    ).fetchone()["id"]
+                    ).fetchone()
+                target_thread_id = int(inserted_target_thread["id"])
+                resolved_target_thread_public_id = str(
+                    inserted_target_thread["public_id"]
                 )
-                resolved_target_thread_public_id = target_thread_public_id
                 target_thread_version = 1
             else:
                 target_thread_id = preview.target_thread_id
@@ -3595,15 +3523,13 @@ class PwaWrittenSubmissionRepository:
                         target_thread_id,
                     ),
                 )
-            reassignment_id = int(
-                connection.execute(
+            inserted_reassignment = connection.execute(
                     "INSERT INTO submission_material_reassignments "
-                    "(public_id, student_user_id, source_thread_id, target_thread_id, "
+                    "(student_user_id, source_thread_id, target_thread_id, "
                     "source_problem_id, target_problem_id, performed_by_user_id, "
-                    "reason, request_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                    "RETURNING id",
+                    "reason, request_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "RETURNING id, public_id",
                     (
-                        reassignment_public_id,
                         preview.student_user_id,
                         preview.source_thread_id,
                         target_thread_id,
@@ -3614,8 +3540,9 @@ class PwaWrittenSubmissionRepository:
                         command.idempotency_key,
                         moved_at,
                     ),
-                ).fetchone()["id"]
-            )
+                ).fetchone()
+            reassignment_id = int(inserted_reassignment["id"])
+            reassignment_public_id = str(inserted_reassignment["public_id"])
             for ordinal, reference in enumerate(command.items):
                 item_row = connection.execute(
                     "SELECT entry.id AS entry_id, attachment.id AS attachment_id "

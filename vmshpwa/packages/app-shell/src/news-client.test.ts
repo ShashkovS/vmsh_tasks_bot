@@ -25,9 +25,11 @@ describe('news client', () => {
     expect((await client.list({ cursor: 'news.previous', limit: 10 })).items).toHaveLength(1)
     expect((await client.post('news.course-41')).item.postId).toBe('news.course-41')
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
-      '/student/api/v1/news?limit=10&cursor=news.previous',
+      '/student/api/v1/news?limit=10&contentVersion=2&cursor=news.previous',
     )
-    expect(fetchImplementation.mock.calls[1]?.[0]).toBe('/student/api/v1/news/news.course-41')
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/student/api/v1/news/news.course-41?contentVersion=2',
+    )
   })
 
   it('refreshes once after an expired access cookie', async () => {

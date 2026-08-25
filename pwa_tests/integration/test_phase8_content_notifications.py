@@ -30,23 +30,23 @@ async def test_condition_publication_notifies_active_group_student_and_family(
     )
 
     assert [row["account_public_id"] for row in rows] == [
-        "account-content-student",
-        "account-content-family",
+        "a-1",
+        "a-2",
     ]
     assert len({row["dedupe_key"] for row in rows}) == 1
     assert rows[0]["route"] == (
-        "/student/tasks?course=course-content-http&group=group-content-http-a&lesson=41"
+        "/student/tasks?course=c-1&group=g-1&lesson=41"
     )
-    assert rows[1]["route"] == "/family/children/user-content-student"
+    assert rows[1]["route"] == "/family/children/u-903101"
     for row in rows:
         assert json.loads(row["payload_json"]) == {
             "publicationId": row["dedupe_key"],
-            "courseId": "course-content-http",
-            "groupId": "group-content-http-a",
-            "groupLessonId": "group-lesson-content-http-a",
+            "courseId": "c-1",
+            "groupId": "g-1",
+            "groupLessonId": "gl-1",
             "lessonNumber": 41,
             "kind": "condition",
-            "studentIds": ["user-content-student"],
+            "studentIds": ["u-903101"],
         }
     assert (
         fixture.factory.run_read(
@@ -54,7 +54,7 @@ async def test_condition_publication_notifies_active_group_student_and_family(
                 connection,
                 course_id=int(
                     connection.execute(
-                        "SELECT id FROM courses WHERE public_id = 'course-content-http'"
+                        "SELECT id FROM courses WHERE public_id = 'c-1'"
                     ).fetchone()["id"]
                 ),
                 group_id="content-b",

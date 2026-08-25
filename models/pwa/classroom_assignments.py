@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sqlite3
-import uuid
 from collections.abc import Sequence
 from datetime import date
 
@@ -128,7 +127,7 @@ def recalculate_assignment_plan(
     connection: sqlite3.Connection,
     *,
     event_public_id: str,
-    plan_public_id: str,
+    plan_public_id: str | None,
     expected_version: int | None,
     actor_user_id: int,
     now: str,
@@ -145,9 +144,8 @@ def recalculate_assignment_plan(
         if expected_version is not None:
             raise ClassroomAssignmentConflict
         confirmed = find_plan(connection, event_id, ("confirmed",))
-        plan_id = insert_plan(
+        plan_id, _plan_public_id = insert_plan(
             connection,
-            public_id=plan_public_id,
             event_id=event_id,
             layout_id=int(layout["id"]),
             base_plan_id=None if confirmed is None else int(confirmed["id"]),
@@ -371,7 +369,6 @@ def update_assignment_plan(
         )
         insert_group_change_event(
             connection,
-            public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
             enrollment_id=enrollment_id,
             course_id=int(assignment["course_id"]),
             previous_group_id=previous_group_id,

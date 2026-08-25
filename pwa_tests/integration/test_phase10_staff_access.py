@@ -94,7 +94,7 @@ async def test_admin_creates_admin_and_promotes_teacher(
     assert (await created.json())["member"]["role"] == "admin"
 
     promoted = await classroom_http.client.patch(
-        "/staff/api/v1/staff-members/classroom-http-teacher/role",
+        "/staff/api/v1/staff-members/u-958002/role",
         json={"schemaVersion": 1, "role": "admin"},
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
@@ -130,8 +130,8 @@ async def test_admin_creates_teacher_batch_with_shared_scopes_atomically(
             ],
             "scopes": [
                 {
-                    "courseId": "classroom-layout-course",
-                    "groupId": "classroom-layout-group",
+                    "courseId": "c-1",
+                    "groupId": "g-5",
                 }
             ],
         },
@@ -181,7 +181,7 @@ async def test_teacher_batch_conflict_creates_nothing(
                     "password": "teacher-batch-password-duplicate",
                 },
             ],
-            "scopes": [{"courseId": "classroom-layout-course", "groupId": None}],
+            "scopes": [{"courseId": "c-1", "groupId": None}],
         },
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
@@ -218,26 +218,26 @@ async def test_only_admin_lists_staff_access(
     member = next(
         item
         for item in payload["members"]
-        if item["staffUserId"] == "classroom-http-teacher"
+        if item["staffUserId"] == "u-958002"
     )
     assert member == {
-        "staffUserId": "classroom-http-teacher",
+        "staffUserId": "u-958002",
         "name": "Мария",
         "surname": "Учитель",
         "middleName": None,
         "role": "teacher",
         "account": {
-            "accountId": "classroom-http-account-teacher",
+            "accountId": "a-2",
             "username": "classroom-http-teacher",
             "status": "active",
         },
         "scopes": [
             {
-                "courseId": "classroom-layout-course",
+                "courseId": "c-1",
                 "courseCode": "math-layout",
                 "courseName": "Математика",
                 "courseStatus": "active",
-                "groupId": "classroom-layout-group",
+                "groupId": "g-5",
                 "groupCode": "н",
                 "groupName": "Начинающие",
                 "groupStatus": "active",
@@ -260,17 +260,17 @@ async def test_admin_replaces_scope_and_teacher_sees_it_on_next_request(
         )
     )
     response = await classroom_http.client.put(
-        "/staff/api/v1/staff-members/classroom-http-teacher/scopes",
+        "/staff/api/v1/staff-members/u-958002/scopes",
         json={
             "schemaVersion": 1,
             "expectedScopes": [
                 {
-                    "courseId": "classroom-layout-course",
-                    "groupId": "classroom-layout-group",
+                    "courseId": "c-1",
+                    "groupId": "g-5",
                     "version": 1,
                 }
             ],
-            "scopes": [{"courseId": "classroom-layout-course", "groupId": None}],
+            "scopes": [{"courseId": "c-1", "groupId": None}],
         },
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
@@ -278,7 +278,7 @@ async def test_admin_replaces_scope_and_teacher_sees_it_on_next_request(
     assert response.status == 200, await response.text()
     member = (await response.json())["member"]
     assert [(scope["courseId"], scope["groupId"]) for scope in member["scopes"]] == [
-        ("classroom-layout-course", None)
+        ("c-1", None)
     ]
 
     me = await classroom_http.client.get(
@@ -290,7 +290,7 @@ async def test_admin_replaces_scope_and_teacher_sees_it_on_next_request(
     assert [
         (scope["courseId"], scope["groupId"])
         for scope in (await me.json())["principal"]["scopes"]
-    ] == [("classroom-layout-course", None)]
+    ] == [("c-1", None)]
 
     def history(connection):
         return connection.execute(
@@ -315,14 +315,14 @@ async def test_admin_replaces_scope_and_teacher_sees_it_on_next_request(
 
     event = classroom_http.factory.run_read(audit)
     assert event["action"] == "staff_scope.replaced"
-    assert event["object_id"] == "classroom-http-teacher"
+    assert event["object_id"] == "u-958002"
     assert json.loads(event["before_json"]) == {
         "scopeCount": 1,
-        "scopes": "classroom-layout-course/classroom-layout-group",
+        "scopes": "c-1/g-5",
     }
     assert json.loads(event["after_json"]) == {
         "scopeCount": 1,
-        "scopes": "classroom-layout-course",
+        "scopes": "c-1",
         "addedCount": 1,
         "removedCount": 1,
     }
@@ -339,11 +339,11 @@ async def test_admin_replaces_scope_and_teacher_sees_it_on_next_request(
 async def test_scope_replace_rejects_stale_redundant_and_unknown_targets(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
-    url = "/staff/api/v1/staff-members/classroom-http-teacher/scopes"
+    url = "/staff/api/v1/staff-members/u-958002/scopes"
     expected = [
         {
-            "courseId": "classroom-layout-course",
-            "groupId": "classroom-layout-group",
+            "courseId": "c-1",
+            "groupId": "g-5",
             "version": 1,
         }
     ]
@@ -353,10 +353,10 @@ async def test_scope_replace_rejects_stale_redundant_and_unknown_targets(
             "schemaVersion": 1,
             "expectedScopes": expected,
             "scopes": [
-                {"courseId": "classroom-layout-course", "groupId": None},
+                {"courseId": "c-1", "groupId": None},
                 {
-                    "courseId": "classroom-layout-course",
-                    "groupId": "classroom-layout-group",
+                    "courseId": "c-1",
+                    "groupId": "g-5",
                 },
             ],
         },
@@ -373,7 +373,7 @@ async def test_scope_replace_rejects_stale_redundant_and_unknown_targets(
             "expectedScopes": expected,
             "scopes": [
                 {
-                    "courseId": "classroom-layout-course",
+                    "courseId": "c-1",
                     "groupId": "another-course-group",
                 }
             ],
@@ -398,7 +398,7 @@ async def test_admin_scope_is_fixed_global_access(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     response = await classroom_http.client.put(
-        "/staff/api/v1/staff-members/classroom-http-admin/scopes",
+        "/staff/api/v1/staff-members/u-958001/scopes",
         json={"schemaVersion": 1, "expectedScopes": [], "scopes": []},
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
@@ -419,17 +419,17 @@ async def test_scope_replace_rolls_back_when_audit_insert_fails(
         )
     )
     response = await classroom_http.client.put(
-        "/staff/api/v1/staff-members/classroom-http-teacher/scopes",
+        "/staff/api/v1/staff-members/u-958002/scopes",
         json={
             "schemaVersion": 1,
             "expectedScopes": [
                 {
-                    "courseId": "classroom-layout-course",
-                    "groupId": "classroom-layout-group",
+                    "courseId": "c-1",
+                    "groupId": "g-5",
                     "version": 1,
                 }
             ],
-            "scopes": [{"courseId": "classroom-layout-course", "groupId": None}],
+            "scopes": [{"courseId": "c-1", "groupId": None}],
         },
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),

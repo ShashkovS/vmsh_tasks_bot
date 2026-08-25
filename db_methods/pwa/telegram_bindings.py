@@ -113,7 +113,6 @@ def list_verified_context_bindings(
 def insert_binding(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     owner_type: str,
     owner_course_id: int | None,
     owner_group_id: str | None,
@@ -125,14 +124,13 @@ def insert_binding(
     now: str,
 ) -> dict[str, object]:
     try:
-        connection.execute(
+        row = connection.execute(
             "INSERT INTO telegram_bindings "
-            "(public_id, owner_type, owner_course_id, owner_group_id, purpose, "
+            "(owner_type, owner_course_id, owner_group_id, purpose, "
             "chat_id, message_thread_id, title_cached, status, "
             "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?) RETURNING public_id",
             (
-                public_id,
                 owner_type,
                 owner_course_id,
                 owner_group_id,
@@ -145,12 +143,12 @@ def insert_binding(
                 now,
                 now,
             ),
-        )
+        ).fetchone()
     except sqlite3.IntegrityError as error:
         if "telegram_bindings_owner_destination_uq" in str(error):
             raise TelegramBindingDuplicate from error
         raise
-    item = get_binding(connection, public_id)
+    item = get_binding(connection, str(row["public_id"]))
     assert item is not None
     return item
 

@@ -5,13 +5,7 @@
 create table classrooms
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('room-' || id) virtual,
     name               text    not null
         check (name = trim(name) and length(name) between 1 and 200),
     normalized_name    text    not null unique
@@ -41,7 +35,7 @@ end;
 create table classroom_events
 (
     id                     integer primary key,
-    public_id              text    not null unique,
+    public_id text generated always as ('ce-' || id) virtual,
     classroom_id           integer not null references classrooms (id),
     action                 text    not null
         check (action in ('created', 'renamed', 'archived', 'restored')),

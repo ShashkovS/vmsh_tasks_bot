@@ -175,7 +175,6 @@ def read_latest_classroom_delivery_batch(
 def create_classroom_delivery_batch(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     plan_public_id: str,
     expected_plan_version: int,
     expected_snapshot_hash: str,
@@ -225,9 +224,8 @@ def create_classroom_delivery_batch(
     )
     state = "queued" if telegram_queued else "completed"
 
-    batch_id = insert_batch(
+    batch_id, batch_public_id = insert_batch(
         connection,
-        public_id=public_id,
         plan_id=int(plan["id"]),
         plan_version=int(plan["version"]),
         actor_user_id=actor_user_id,
@@ -249,15 +247,10 @@ def create_classroom_delivery_batch(
                 item["course_enrollment_id"],
                 item["group_lesson_id"],
                 item["classroom_id"],
-                item["student_public_id"],
                 f"{item['surname']} {item['name']}",
-                item["event_public_id"],
                 item["event_name"],
-                item["course_public_id"],
                 item["course_name"],
-                item["group_public_id"],
                 item["group_name"],
-                item["classroom_public_id"],
                 item["classroom_name"],
                 item["student_account_id"],
                 item["telegram_chat_id"],
@@ -299,12 +292,10 @@ def create_classroom_delivery_batch(
             if account_id is None:
                 continue
             event_key = (
-                f"classroom-assignment:{public_id}:{item['course_enrollment_id']}"
+                f"classroom-assignment:{batch_public_id}:{item['course_enrollment_id']}"
             )
-            event_hash = hashlib.sha256(event_key.encode()).hexdigest()
             insert_event(
                 connection,
-                public_id=f"notification.{event_hash}",
                 account_id=int(account_id),
                 category="classroom_assignment",
                 dedupe_key=event_key,
@@ -328,7 +319,7 @@ def create_classroom_delivery_batch(
                 deliver_after=now,
                 created_at=now,
             )
-    result = read_classroom_delivery_batch(connection, public_id)
+    result = read_classroom_delivery_batch(connection, batch_public_id)
     result["student_user_ids"] = tuple(
         int(item["student_user_id"])
         for item in recipients

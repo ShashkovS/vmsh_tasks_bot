@@ -7,13 +7,13 @@
 
 ## Итог
 
-- compiler: `vmsh-latex-compiler/3`;
+- compiler: `vmsh-latex-compiler/5`;
 - manifest: `vmshpwa/fixtures/content/golden-manifest.json`;
 - manifest entries: 54;
 - compiled TeX sources: 30;
 - active problem AST nodes: 334;
 - structural signal failures: 0;
-- deterministic record-set SHA-256: `590de6459c02e19ca8e3d15cd1b7e6580e62558dad37dec394fd71d040ff4b78`.
+- deterministic record-set SHA-256: `9dff6747b0ee94ffa6ad01418898836a3690472530bf98cb34a0a7c606e74701`.
 
 ## Диагностики
 

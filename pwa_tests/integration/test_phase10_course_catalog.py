@@ -53,8 +53,8 @@ def _group(*, code: str = "dp2", name: str = "Динамика · 2") -> dict[st
 def _group_lesson() -> dict[str, object]:
     return {
         "schemaVersion": 1,
-        "courseId": "classroom-layout-course",
-        "groupId": "classroom-layout-group",
+        "courseId": "c-1",
+        "groupId": "g-5",
         "lessonNumber": 0,
         "title": "Нулевое занятие",
         "cycleAnchorDate": "2026-09-06",
@@ -84,14 +84,14 @@ async def test_course_catalog_is_admin_only_and_reports_real_counts(classroom_ht
     assert response.headers["Cache-Control"] == "no-store"
     body = await response.json()
     assert body["season"] == {
-        "seasonId": "classroom-layout-season",
+        "seasonId": "s-1",
         "code": "layout-season",
         "title": "Layout season",
         "status": "active",
     }
     assert body["courses"] == [
         {
-            "courseId": "classroom-layout-course",
+            "courseId": "c-1",
             "code": "math-layout",
             "name": "Математика",
             "subjectCode": "math",
@@ -101,7 +101,7 @@ async def test_course_catalog_is_admin_only_and_reports_real_counts(classroom_ht
             "activeStudents": 1,
             "groups": [
                 {
-                    "groupId": "classroom-layout-group",
+                    "groupId": "g-5",
                     "shortCode": "н",
                     "name": "Начинающие",
                     "status": "active",
@@ -208,7 +208,7 @@ async def test_admin_creates_group_lesson_with_independent_window(classroom_http
 
 @pytest.mark.asyncio
 async def test_admin_creates_and_versioned_edits_courses_and_groups(classroom_http):
-    course_request = _course(season_id="classroom-layout-season", code=" Physics-7 ")
+    course_request = _course(season_id="s-1", code=" Physics-7 ")
     created = await classroom_http.client.post(
         "/staff/api/v1/courses",
         json=course_request,
@@ -225,7 +225,7 @@ async def test_admin_creates_and_versioned_edits_courses_and_groups(classroom_ht
 
     duplicate = await classroom_http.client.post(
         "/staff/api/v1/courses",
-        json=_course(season_id="classroom-layout-season", code="PHYSICS-7"),
+        json=_course(season_id="s-1", code="PHYSICS-7"),
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -297,7 +297,7 @@ async def test_admin_creates_and_versioned_edits_courses_and_groups(classroom_ht
     assert (await edited_course.json())["course"]["version"] == 2
 
     listed = await classroom_http.client.get(
-        "/staff/api/v1/courses?seasonId=classroom-layout-season",
+        "/staff/api/v1/courses?seasonId=s-1",
         headers=_headers(),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -325,7 +325,7 @@ async def test_admin_creates_and_versioned_edits_courses_and_groups(classroom_ht
         ("course.updated", "course"),
     ]
     assert all(
-        event["actor_account_id"] == "classroom-http-account-admin" for event in events
+        event["actor_account_id"] == "a-1" for event in events
     )
     assert json.loads(events[0]["after_json"])["status"] == "draft"
     assert json.loads(events[2]["before_json"])["status"] == "active"
@@ -340,21 +340,21 @@ async def test_catalog_rejects_unknown_fields_and_duplicate_group_identity(
 ):
     invalid = await classroom_http.client.post(
         "/staff/api/v1/courses",
-        json={**_course(season_id="classroom-layout-season"), "unexpected": True},
+        json={**_course(season_id="s-1"), "unexpected": True},
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert invalid.status == 422
 
     first = await classroom_http.client.post(
-        "/staff/api/v1/courses/classroom-layout-course/groups",
+        "/staff/api/v1/courses/c-1/groups",
         json=_group(code="i9a", name="Новая группа"),
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert first.status == 201, await first.text()
     duplicate = await classroom_http.client.post(
-        "/staff/api/v1/courses/classroom-layout-course/groups",
+        "/staff/api/v1/courses/c-1/groups",
         json=_group(code="I9A", name="Другая группа"),
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
@@ -377,7 +377,7 @@ async def test_course_write_rolls_back_when_its_audit_row_cannot_be_saved(
     classroom_http.factory.run_write(install_failure)
     response = await classroom_http.client.post(
         "/staff/api/v1/courses",
-        json=_course(season_id="classroom-layout-season", code="rollback-proof"),
+        json=_course(season_id="s-1", code="rollback-proof"),
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
     )

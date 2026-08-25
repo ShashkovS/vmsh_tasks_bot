@@ -18,9 +18,9 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_DATABASE = REPOSITORY_ROOT / "db/vmshpwa_e2e.sqlite3"
 TIMESTAMP = "2026-07-29T12:00:00Z"
 TARGETS = (
-    ("chromium", "group-lesson-classroom-e2e-chromium"),
-    ("webkit", "group-lesson-classroom-e2e-webkit"),
-    ("firefox", "group-lesson-classroom-e2e-firefox"),
+    ("chromium", 9801),
+    ("webkit", 9802),
+    ("firefox", 9803),
 )
 
 
@@ -41,23 +41,24 @@ def _require_e2e_target(runtime_config: PwaMaintenanceConfig) -> Path:
 
 def _seed(connection: sqlite3.Connection) -> int:
     actor = connection.execute(
-        "SELECT id FROM users WHERE public_id = 'user-admin-fixture'"
+        "SELECT linked_user_id AS id FROM auth_accounts "
+        "WHERE audience = 'staff' AND username_normalized = 'synthetic-admin'"
     ).fetchone()
     season = connection.execute(
-        "SELECT id FROM seasons WHERE public_id = 'season-fixture-2025-26'"
+        "SELECT id FROM seasons WHERE code = '2025-26'"
     ).fetchone()
     course = connection.execute(
-        "SELECT id FROM courses WHERE public_id = 'course-fixture-math-5-7'"
+        "SELECT id FROM courses WHERE code = 'math-5-7'"
     ).fetchone()
     if actor is None or season is None or course is None:
         raise RuntimeError("Classroom E2E seed requires the baseline seed")
     student_credential = connection.execute(
         "SELECT credential_hash FROM auth_accounts "
-        "WHERE public_id = 'account-student-fixture'"
+        "WHERE audience = 'student' AND username_normalized = 'testovyy-onlayn-14'"
     ).fetchone()
     family_credential = connection.execute(
         "SELECT credential_hash FROM auth_accounts "
-        "WHERE public_id = 'account-family-fixture'"
+        "WHERE audience = 'family' AND username_normalized = 'synthetic-family'"
     ).fetchone()
     if student_credential is None or family_credential is None:
         raise RuntimeError("Classroom E2E seed requires the baseline auth accounts")
@@ -65,31 +66,31 @@ def _seed(connection: sqlite3.Connection) -> int:
     actor_id = int(actor["id"])
     connection.execute(
         "INSERT OR IGNORE INTO audit_events "
-        "(public_id, actor_user_id, actor_account_id, audience, action, "
+        "(actor_user_id, actor_account_id, audience, action, "
         "object_type, object_id, request_id, before_json, after_json, occurred_at) "
-        "VALUES ('audit.e2e-baseline', ?, "
-        "(SELECT id FROM auth_accounts WHERE public_id = 'account-admin-fixture'), "
-        "'staff', 'account.status_changed', 'account', 'account-student-fixture', "
+        "VALUES (?, "
+        "(SELECT id FROM auth_accounts WHERE username_normalized = 'synthetic-admin'), "
+        "'staff', 'account.status_changed', 'account', 'a-1001', "
         "'e2e.audit.baseline', '{\"status\":\"blocked\"}', "
         '\'{"status":"active"}\', ?)',
         (actor_id, TIMESTAMP),
     )
 
-    event_ids = [f"in-person-classrooms-e2e-{project}" for project, _lesson in TARGETS]
-    room_ids = [f"classroom-e2e-{project}" for project, _lesson in TARGETS] + [
-        f"classroom-e2e-reassign-{project}" for project, _lesson in TARGETS
+    event_ids = [fixture_id for _project, fixture_id in TARGETS]
+    room_ids = [fixture_id for _project, fixture_id in TARGETS] + [
+        fixture_id + 100 for _project, fixture_id in TARGETS
     ]
     existing_events = {
         row[0]
         for row in connection.execute(
-            "SELECT public_id FROM in_person_events WHERE public_id IN (?, ?, ?)",
+            "SELECT id FROM in_person_events WHERE id IN (?, ?, ?)",
             event_ids,
         )
     }
     existing_rooms = {
         row[0]
         for row in connection.execute(
-            f"SELECT public_id FROM classrooms WHERE public_id IN "
+            f"SELECT id FROM classrooms WHERE id IN "
             f"({','.join('?' for _room_id in room_ids)})",
             tuple(room_ids),
         )
@@ -101,21 +102,21 @@ def _seed(connection: sqlite3.Connection) -> int:
 
     season_id = int(season["id"])
     course_id = int(course["id"])
-    for ordinal, (project, group_lesson_public_id) in enumerate(TARGETS, start=1):
+    for ordinal, (project, fixture_id) in enumerate(TARGETS, start=1):
         group_id = f"classroom-e2e-{project}-n"
         connection.execute(
             "INSERT INTO groups "
-            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "(id, group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, course_id, "
             "status, color_key, created_at, updated_at) VALUES "
-            "(?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, ?, "
+            "(?, ?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, "
             "'active', 'beginner', ?, ?)",
             (
+                fixture_id,
                 group_id,
                 f"e{project[0]}",
                 f"Начинающие E2E {project}",
                 900 + ordinal,
-                f"group-classroom-e2e-{project}",
                 course_id,
                 TIMESTAMP,
                 TIMESTAMP,
@@ -124,11 +125,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         course_lesson_id = int(
             connection.execute(
                 "INSERT INTO course_lessons "
-                "(public_id, course_id, lesson_number, title, created_by_user_id, "
+                "(id, course_id, lesson_number, title, created_by_user_id, "
                 "updated_by_user_id, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
                 (
-                    f"course-lesson-classroom-e2e-{project}",
+                    fixture_id,
                     course_id,
                     950 + ordinal,
                     f"E2E аудитории {project}",
@@ -142,13 +143,13 @@ def _seed(connection: sqlite3.Connection) -> int:
         group_lesson_id = int(
             connection.execute(
                 "INSERT INTO group_lessons "
-                "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+                "(id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
                 "business_timezone, status, created_by_user_id, updated_by_user_id, "
                 "created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, 'Europe/Moscow', 'active', ?, ?, ?, ?) "
                 "RETURNING id",
                 (
-                    group_lesson_public_id,
+                    fixture_id,
                     course_lesson_id,
                     course_id,
                     group_id,
@@ -161,22 +162,22 @@ def _seed(connection: sqlite3.Connection) -> int:
             ).fetchone()["id"]
         )
         room_specs = (
-            (f"classroom-e2e-{project}", f"20{ordinal} E2E {project}", "primary"),
+            (fixture_id, f"20{ordinal} E2E {project}", "primary"),
             (
-                f"classroom-e2e-reassign-{project}",
+                fixture_id + 100,
                 f"Переназначение E2E {project}",
                 "reassign",
             ),
         )
-        for room_public_id, room_name, purpose in room_specs:
+        for room_fixture_id, room_name, purpose in room_specs:
             room_id = int(
                 connection.execute(
                     "INSERT INTO classrooms "
-                    "(public_id, name, normalized_name, status, created_by_user_id, "
+                    "(id, name, normalized_name, status, created_by_user_id, "
                     "updated_by_user_id, created_at, updated_at) "
                     "VALUES (?, ?, ?, 'active', ?, ?, ?, ?) RETURNING id",
                     (
-                        room_public_id,
+                        room_fixture_id,
                         room_name,
                         room_name.casefold(),
                         actor_id,
@@ -188,11 +189,11 @@ def _seed(connection: sqlite3.Connection) -> int:
             )
             connection.execute(
                 "INSERT INTO classroom_events "
-                "(public_id, classroom_id, action, after_name, after_normalized_name, "
+                "(id, classroom_id, action, after_name, after_normalized_name, "
                 "after_status, version_after, actor_user_id, request_id, created_at) "
                 "VALUES (?, ?, 'created', ?, ?, 'active', 1, ?, ?, ?)",
                 (
-                    f"classroom-event-e2e-{purpose}-{project}",
+                    room_fixture_id,
                     room_id,
                     room_name,
                     room_name.casefold(),
@@ -204,11 +205,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         event_id = int(
             connection.execute(
                 "INSERT INTO in_person_events "
-                "(public_id, season_id, name, starts_at, ends_at, status, "
+                "(id, season_id, name, starts_at, ends_at, status, "
                 "created_by_user_id, updated_by_user_id, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?) RETURNING id",
                 (
-                    f"in-person-classrooms-e2e-{project}",
+                    fixture_id,
                     season_id,
                     f"E2E схема аудиторий {project}",
                     f"2026-08-0{ordinal}T13:00:00Z",
@@ -229,21 +230,21 @@ def _seed(connection: sqlite3.Connection) -> int:
         student_id = int(
             connection.execute(
                 "INSERT INTO users "
-                "(public_id, type, name, surname, grade, birthday) "
+                "(id, type, name, surname, grade, birthday) "
                 "VALUES (?, 1, 'Ученик', ?, 7, '2013-01-01') RETURNING id",
-                (f"student-classroom-e2e-{project}", f"Тестов {project}"),
+                (fixture_id + 200, f"Тестов {project}"),
             ).fetchone()["id"]
         )
         connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(id, audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, display_name, "
             "credential_kind, credential_hash, linked_user_id, status, "
             "credential_version, created_at, updated_at) "
             "VALUES (?, 'student', ?, ?, 1, 'synthetic_e2e_classroom', ?, "
             "'telegram_token', ?, ?, 'active', 1, ?, ?)",
             (
-                f"account-classroom-e2e-{project}",
+                fixture_id + 300,
                 f"classroom-e2e-{project}",
                 f"classroom-e2e-{project}",
                 f"Тестов {project} Ученик",
@@ -256,14 +257,14 @@ def _seed(connection: sqlite3.Connection) -> int:
         family_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(id, audience, username, username_normalized, "
                 "username_algorithm_version, provisioning_source, display_name, "
                 "credential_kind, credential_hash, linked_user_id, status, "
                 "credential_version, created_at, updated_at) "
                 "VALUES (?, 'family', ?, ?, NULL, 'synthetic_e2e_classroom', ?, "
                 "'password', ?, NULL, 'active', 1, ?, ?) RETURNING id",
                 (
-                    f"account-classroom-family-e2e-{project}",
+                    fixture_id + 400,
                     f"classroom-family-e2e-{project}",
                     f"classroom-family-e2e-{project}",
                     f"Семья classroom E2E {project}",
@@ -282,11 +283,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         enrollment_id = int(
             connection.execute(
                 "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
+                "(id, student_user_id, course_id, active_group_id, "
                 "attendance_mode, status, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, 'in_person', 'active', ?, ?) RETURNING id",
                 (
-                    f"enrollment-classroom-e2e-{project}",
+                    fixture_id + 500,
                     student_id,
                     course_id,
                     group_id,
@@ -318,10 +319,10 @@ def _seed(connection: sqlite3.Connection) -> int:
         unprovisioned_id = int(
             connection.execute(
                 "INSERT INTO users "
-                "(public_id, type, name, surname, grade, birthday, token) "
+                "(id, type, name, surname, grade, birthday, token) "
                 "VALUES (?, 1, 'Новый', ?, 6, '2013-05-17', ?) RETURNING id",
                 (
-                    f"student-unprovisioned-e2e-{project}",
+                    fixture_id + 600,
                     f"БезАккаунта {project}",
                     f"synthetic-provision-{project}-not-a-secret",
                 ),
@@ -330,11 +331,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         unprovisioned_enrollment = int(
             connection.execute(
                 "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
+                "(id, student_user_id, course_id, active_group_id, "
                 "attendance_mode, status, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, 'online', 'active', ?, ?) RETURNING id",
                 (
-                    f"enrollment-unprovisioned-e2e-{project}",
+                    fixture_id + 700,
                     unprovisioned_id,
                     course_id,
                     group_id,
@@ -361,18 +362,18 @@ def _seed(connection: sqlite3.Connection) -> int:
         if project == "chromium":
             connection.executemany(
                 "INSERT INTO users "
-                "(public_id, type, name, surname, grade, birthday, token) "
+                "(id, type, name, surname, grade, birthday, token) "
                 "VALUES (?, 1, ?, ?, 6, ?, ?)",
                 (
                     (
-                        "student-batch-account-e2e-one",
+                        9991,
                         "Первый",
                         "Пакет Chromium",
                         "2013-05-18",
                         "synthetic-batch-one-not-secret",
                     ),
                     (
-                        "student-batch-account-e2e-two",
+                        9992,
                         "Второй",
                         "Пакет Chromium",
                         "2013-05-19",

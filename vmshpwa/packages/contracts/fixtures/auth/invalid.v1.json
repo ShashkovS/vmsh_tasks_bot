@@ -38,7 +38,7 @@
       "name": "student_principal_family_shape",
       "target": "principal",
       "payload": {
-        "accountId": "account-student-fixture",
+        "accountId": "a-1001",
         "audience": "student",
         "displayName": "Synthetic principal",
         "sessionVersion": 1,
@@ -51,7 +51,7 @@
       "target": "auth_context",
       "payload": {
         "principal": {
-          "accountId": "account-student-fixture",
+          "accountId": "a-1001",
           "audience": "student",
           "displayName": "Synthetic principal",
           "sessionVersion": 1,

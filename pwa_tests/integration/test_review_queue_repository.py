@@ -78,9 +78,7 @@ class ReviewQueueFixture:
     queue_public_ids: tuple[str, str]
 
 
-ALL_GROUPS_SCOPE = ReviewStaffScope(
-    group_public_ids=frozenset({"review-group-a", "review-group-b"})
-)
+ALL_GROUPS_SCOPE = ReviewStaffScope(group_public_ids=frozenset({"g-5", "g-6"}))
 
 
 class _SyntheticCompletionFailure(RuntimeError):
@@ -119,41 +117,29 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock(NOW)
     tokens = (f"review-claim-test-{index}" for index in itertools.count(1))
-    reaction_events = (
-        f"review-reaction-event-test-{index}" for index in itertools.count(1)
-    )
-    student_reaction_events = (
-        f"review-student-reaction-event-test-{index}" for index in itertools.count(1)
-    )
     repository = PwaWrittenReviewQueueRepository(
         factory,
         clock=clock,
         claim_token_factory=lambda: next(tokens),
-        review_public_id_factory=lambda: "review-completed-test",
-        annotation_public_id_factory=lambda: "review-annotation-test",
-        comment_public_id_factory=lambda: "review-comment-test",
-        event_public_id_factory=lambda: "review-event-test",
-        internal_reaction_event_public_id_factory=lambda: next(reaction_events),
-        student_reaction_event_public_id_factory=lambda: next(student_reaction_events),
     )
     now = _timestamp(NOW)
 
     def seed(connection):
         connection.executemany(
-            "INSERT INTO users (id, public_id, type, name, surname) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, type, name, surname) "
+            "VALUES (?, ?, ?, ?)",
             (
-                (STUDENT_ID, "review-student", 1, "Анна", "Белова"),
-                (TEACHER_ONE_ID, "review-teacher-one", 2, "Мария", "Первая"),
-                (TEACHER_TWO_ID, "review-teacher-two", 2, "Иван", "Второй"),
+                (STUDENT_ID, 1, "Анна", "Белова"),
+                (TEACHER_ONE_ID, 2, "Мария", "Первая"),
+                (TEACHER_TWO_ID, 2, "Иван", "Второй"),
             ),
         )
         season_id = int(
             connection.execute(
                 "INSERT INTO seasons "
-                "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+                "(code, title, starts_on, ends_on, session_expires_on, "
                 "status, created_at, updated_at) VALUES "
-                "('review-season', 'review', 'Review', '2026-09-01', "
+                "('review', 'Review', '2026-09-01', "
                 "'2027-05-31', '2027-08-10', 'active', ?, ?) RETURNING id",
                 (now, now),
             ).fetchone()["id"]
@@ -161,29 +147,28 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
         course_id = int(
             connection.execute(
                 "INSERT INTO courses "
-                "(public_id, season_id, code, name, subject_code, status, "
+                "(season_id, code, name, subject_code, status, "
                 "sort_order, accent_key, created_at, updated_at) VALUES "
-                "('review-course', ?, 'math', 'Математика', 'math', 'active', "
+                "(?, 'math', 'Математика', 'math', 'active', "
                 "1, 'math', ?, ?) RETURNING id",
                 (season_id, now, now),
             ).fetchone()["id"]
         )
-        for group_id, public_id, short_code, sort_order in (
-            ("review-a", "review-group-a", "а", 1),
-            ("review-b", "review-group-b", "б", 2),
+        for group_id, short_code, sort_order in (
+            ("review-a", "а", 1),
+            ("review-b", "б", 2),
         ):
             connection.execute(
                 "INSERT INTO groups "
                 "(group_id, short_code, public_name, sort_order, is_active, "
                 "is_default, allow_self_switch, is_system, score_weight, "
-                "public_id, course_id, status, created_at, updated_at) VALUES "
-                "(?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?)",
+                "course_id, status, created_at, updated_at) VALUES "
+                "(?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
                 (
                     group_id,
                     short_code,
                     f"Группа {short_code}",
                     sort_order,
-                    public_id,
                     course_id,
                     now,
                     now,
@@ -192,17 +177,17 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
         course_lesson_id = int(
             connection.execute(
                 "INSERT INTO course_lessons "
-                "(public_id, course_id, lesson_number, created_at, updated_at) "
-                "VALUES ('review-course-lesson', ?, 41, ?, ?) RETURNING id",
+                "(course_id, lesson_number, created_at, updated_at) "
+                "VALUES (?, 41, ?, ?) RETURNING id",
                 (course_id, now, now),
             ).fetchone()["id"]
         )
         synonym_group_id = int(
             connection.execute(
                 "INSERT INTO problem_synonym_groups "
-                "(public_id, course_lesson_id, group_key, display_title, status, "
+                "(course_lesson_id, group_key, display_title, status, "
                 "created_at, updated_at) VALUES "
-                "('review-synonym-case', ?, 'shared', 'Общая задача', 'active', ?, ?) "
+                "(?, 'shared', 'Общая задача', 'active', ?, ?) "
                 "RETURNING id",
                 (course_lesson_id, now, now),
             ).fetchone()["id"]
@@ -213,12 +198,11 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
             group_lesson_id = int(
                 connection.execute(
                     "INSERT INTO group_lessons "
-                    "(public_id, course_lesson_id, course_id, group_id, "
+                    "(course_lesson_id, course_id, group_id, "
                     "cycle_anchor_date, business_timezone, status, created_at, "
-                    "updated_at) VALUES (?, ?, ?, ?, '2026-09-28', "
+                    "updated_at) VALUES (?, ?, ?, '2026-09-28', "
                     "'Europe/Moscow', 'active', ?, ?) RETURNING id",
                     (
-                        f"review-group-lesson-{index}",
                         course_lesson_id,
                         course_id,
                         group_id,
@@ -230,11 +214,10 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
             source_id = int(
                 connection.execute(
                     "INSERT INTO content_sources "
-                    "(public_id, group_lesson_id, kind, logical_filename, "
-                    "source_encoding, created_at) VALUES (?, ?, 'condition', ?, "
+                    "(group_lesson_id, kind, logical_filename, "
+                    "source_encoding, created_at) VALUES (?, 'condition', ?, "
                     "'utf-8', ?) RETURNING id",
                     (
-                        f"review-source-{index}",
                         group_lesson_id,
                         f"review-{index}.tex",
                         now,
@@ -244,12 +227,12 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
             revision_id = int(
                 connection.execute(
                     "INSERT INTO content_revisions "
-                    "(public_id, source_id, revision_number, source_sha256, "
+                    "(source_id, revision_number, source_sha256, "
                     "latex_text, parser_version, status, canonical_json, "
                     "diagnostics_json, provenance_json, created_at) VALUES "
-                    "(?, ?, 1, ?, 'problem', 'review-test', 'ready', '{}', '[]', "
+                    "(?, 1, ?, 'problem', 'review-test', 'ready', '{}', '[]', "
                     "'{}', ?) RETURNING id",
-                    (f"review-revision-{index}", source_id, str(index) * 64, now),
+                    (source_id, str(index) * 64, now),
                 ).fetchone()["id"]
             )
             problem_id = int(
@@ -305,11 +288,10 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
             thread_id = int(
                 connection.execute(
                     "INSERT INTO submission_threads "
-                    "(public_id, student_user_id, problem_id, condition_revision_id, "
+                    "(student_user_id, problem_id, condition_revision_id, "
                     "status, latest_entry_at, created_at, updated_at, version) "
-                    "VALUES (?, ?, ?, ?, 'awaiting_review', ?, ?, ?, 2) RETURNING id",
+                    "VALUES (?, ?, ?, 'awaiting_review', ?, ?, ?, 2) RETURNING id",
                     (
-                        f"review-thread-test-{index}",
                         STUDENT_ID,
                         problem_id,
                         revision_id,
@@ -322,10 +304,10 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
             if index == 1:
                 connection.execute(
                     "INSERT INTO submission_entries "
-                    "(public_id, thread_id, problem_revision_id, author_kind, "
+                        "(thread_id, problem_revision_id, author_kind, "
                     "author_user_id, channel, entry_kind, state, text, client_created_at, "
                     "server_received_at, locked_at, version) VALUES "
-                    "('review-old-teacher-comment', ?, ?, 'teacher', ?, 'pwa', "
+                        "(?, ?, 'teacher', ?, 'pwa', "
                     "'teacher_comment', 'locked', 'Поясните первый переход.', ?, ?, ?, 1)",
                     (
                         thread_id,
@@ -339,12 +321,11 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
             entry_id = int(
                 connection.execute(
                     "INSERT INTO submission_entries "
-                    "(public_id, thread_id, problem_revision_id, author_kind, "
+                    "(thread_id, problem_revision_id, author_kind, "
                     "author_user_id, channel, entry_kind, state, text, client_created_at, "
-                    "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
+                    "server_received_at, version) VALUES (?, ?, 'student', ?, 'pwa', "
                     "'submission', 'submitted', ?, ?, ?, 2) RETURNING id",
                     (
-                        f"review-entry-test-{index}",
                         thread_id,
                         problem_revision_id,
                         STUDENT_ID,
@@ -358,10 +339,10 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
                 asset_id = int(
                     connection.execute(
                         "INSERT INTO media_assets "
-                        "(public_id, sha256, storage_namespace, object_key, public_url, "
+                        "(sha256, storage_namespace, object_key, public_url, "
                         "media_type, byte_size, width, height, source_filename, "
                         "conversion_version, created_by_user_id, created_at) "
-                        "VALUES ('review-asset-test-1', ?, 'submission', "
+                        "VALUES (?, 'submission', "
                         "'submission/review-asset-test-1.webp', "
                         "'https://assets.test/review-asset-test-1.webp', "
                         "'image/webp', 1024, 1200, 900, 'page.webp', "
@@ -371,24 +352,22 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
                 )
                 connection.execute(
                     "INSERT INTO submission_attachments "
-                    "(public_id, entry_id, asset_id, ordinal, client_filename, "
+                    "(entry_id, asset_id, ordinal, client_filename, "
                     "upload_status, created_at) VALUES "
-                    "('review-attachment-test-1', ?, ?, 0, 'page.webp', 'stored', ?)",
+                    "(?, ?, 0, 'page.webp', 'stored', ?)",
                     (entry_id, asset_id, submitted_at),
                 )
-            queue_public_id = f"review-queue-test-{index}"
-            connection.execute(
+            queue_public_id = str(connection.execute(
                 "INSERT INTO written_tasks_queue "
-                "(public_id, ts, student_id, problem_id, cur_status, updated_at) "
-                "VALUES (?, ?, ?, ?, 0, ?)",
+                "(ts, student_id, problem_id, cur_status, updated_at) "
+                "VALUES (?, ?, ?, 0, ?) RETURNING public_id",
                 (
-                    queue_public_id,
                     submitted_at,
                     STUDENT_ID,
                     problem_id,
                     now,
                 ),
-            )
+            ).fetchone()["public_id"])
             queue_public_ids.append(queue_public_id)
         return tuple(queue_public_ids)
 
@@ -410,7 +389,7 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
         scope=ALL_GROUPS_SCOPE,
     )
 
-    assert lease.logical_case_public_id == "review-synonym-case"
+    assert lease.logical_case_public_id == "ps-1"
     assert lease.claim_token == "review-claim-test-1"
     assert lease.teacher_user_id == TEACHER_ONE_ID
     assert [item.group_id for item in lease.items] == ["review-a", "review-b"]
@@ -419,22 +398,22 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
     assert {item.course_name for item in lease.items} == {"Математика"}
     assert {item.lease_version for item in lease.items} == {1}
     assert [branch.thread_public_id for branch in lease.evidence_branches] == [
-        "review-thread-test-1",
-        "review-thread-test-2",
+        "st-1",
+        "st-2",
     ]
     assert [
         entry.entry_public_id
         for branch in lease.evidence_branches
         for entry in branch.entries
-    ] == ["review-entry-test-1", "review-entry-test-2"]
+    ] == ["se-2", "se-3"]
     assert [
         entry.entry_public_id
         for branch in lease.evidence_branches
         for entry in branch.timeline_entries
     ] == [
-        "review-old-teacher-comment",
-        "review-entry-test-1",
-        "review-entry-test-2",
+        "se-1",
+        "se-2",
+        "se-3",
     ]
     assert [
         entry.author_kind
@@ -518,7 +497,7 @@ def _complete_command(
 
 
 def _annotation_manifest(
-    *, attachment_public_id: str = "review-attachment-test-1"
+    *, attachment_public_id: str = "sa-1"
 ) -> ReviewAnnotationManifest:
     return ReviewAnnotationManifest(
         attachment_public_id=attachment_public_id,
@@ -641,8 +620,8 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
 
     assert receipt.annotations == (
         ReviewAnnotationReceipt(
-            annotation_public_id="review-annotation-test",
-            attachment_public_id="review-attachment-test-1",
+            annotation_public_id="ra-1",
+            attachment_public_id="sa-1",
             schema_version=1,
             rotation=90,
             mark_count=6,
@@ -694,7 +673,7 @@ async def test_complete_accepts_evidence_captured_before_own_lease_heartbeat(
 
     receipt = await fixture.repository.complete(command)
 
-    assert receipt.review_public_id == "review-completed-test"
+    assert receipt.review_public_id == "r-1"
 
 
 @pytest.mark.asyncio
@@ -810,12 +789,12 @@ async def test_student_thread_projects_review_annotation_and_student_reaction(
         lambda connection: int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "username_algorithm_version, provisioning_source, "
                 "credential_kind, credential_hash, "
                 "linked_user_id, status, created_at, updated_at) VALUES "
-                "('review-student-account', 'student', 'review-student', "
-                "'review-student', 1, 'synthetic-test', 'telegram_token', "
+                "('student', 'review-student', 'review-student', 1, "
+                "'synthetic-test', 'telegram_token', "
                 "'test-only-hash', ?, 'active', ?, ?) RETURNING id",
                 (STUDENT_ID, now, now),
             ).fetchone()["id"]
@@ -833,11 +812,11 @@ async def test_student_thread_projects_review_annotation_and_student_reaction(
     assert first is not None and second is not None
     first_review = first.payload()["reviews"][0]
     second_review = second.payload()["reviews"][0]
-    assert first_review["reviewId"] == "review-completed-test"
+    assert first_review["reviewId"] == "r-1"
     assert first_review["targetProblemId"] == lease.items[1].problem_public_id
     assert first_review["reviewerName"] == "Первая Мария"
     assert first_review["comment"] == "Точная формулировка проверки."
-    assert first_review["evidenceEntryIds"] == ["review-entry-test-1"]
+    assert first_review["evidenceEntryIds"] == ["se-2"]
     assert first_review["annotations"] == [_annotation_manifest().payload()]
     assert first_review["studentReaction"] == {
         "reactionId": 2,
@@ -847,7 +826,7 @@ async def test_student_thread_projects_review_annotation_and_student_reaction(
         "deleted": False,
     }
     assert "internalReaction" not in first_review
-    assert second_review["evidenceEntryIds"] == ["review-entry-test-2"]
+    assert second_review["evidenceEntryIds"] == ["se-3"]
     assert second_review["annotations"] == []
     assert second_review["studentReaction"] == first_review["studentReaction"]
 
@@ -897,13 +876,13 @@ async def test_complete_freezes_synonym_evidence_and_targets_latest_branch(
     receipt = await fixture.repository.complete(command)
 
     assert receipt.target_problem_public_id == lease.items[1].problem_public_id
-    assert receipt.target_thread_public_id == "review-thread-test-2"
+    assert receipt.target_thread_public_id == "st-2"
     assert receipt.target_thread_status == "accepted"
     assert receipt.evidence_entry_public_ids == (
-        "review-entry-test-1",
-        "review-entry-test-2",
+        "se-2",
+        "se-3",
     )
-    assert receipt.comment_entry_public_id == "review-comment-test"
+    assert receipt.comment_entry_public_id == "se-4"
     rows = fixture.factory.run_read(
         lambda connection: {
             "queue": connection.execute(
@@ -935,9 +914,9 @@ async def test_complete_freezes_synonym_evidence_and_targets_latest_branch(
         }
     ]
     assert rows["threads"] == [
-        {"public_id": "review-thread-test-1", "status": "closed", "version": 3},
+        {"public_id": "st-1", "status": "closed", "version": 3},
         {
-            "public_id": "review-thread-test-2",
+            "public_id": "st-2",
             "status": "accepted",
             "version": 3,
         },
@@ -947,7 +926,7 @@ async def test_complete_freezes_synonym_evidence_and_targets_latest_branch(
         fixture.factory.run_write(
             lambda connection: connection.execute(
                 "UPDATE submission_entries SET text = 'changed', version = 3 "
-                "WHERE public_id = 'review-entry-test-1'"
+                "WHERE public_id = 'se-2'"
             )
         )
 
@@ -975,29 +954,29 @@ async def test_complete_resolves_only_current_student_and_family_recipients(
     def seed_recipients(connection):
         connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) VALUES "
-            "('review-student-account', 'student', 'review-student', "
-            "'review-student', 1, 'synthetic-test', 'telegram_token', "
+            "('student', 'review-student', 'review-student', 1, "
+            "'synthetic-test', 'telegram_token', "
             "'test-only-student-hash', ?, 'active', ?, ?)",
             (STUDENT_ID, now, now),
         )
         family_ids: dict[str, int] = {}
-        for public_id, status in (
-            ("review-family-active", "active"),
-            ("review-family-blocked", "blocked"),
-            ("review-family-revoked-link", "active"),
+        for key, status in (
+            ("active", "active"),
+            ("blocked", "blocked"),
+            ("revoked_link", "active"),
         ):
-            family_ids[public_id] = int(
+            family_ids[key] = int(
                 connection.execute(
                     "INSERT INTO auth_accounts "
-                    "(public_id, audience, username, username_normalized, "
-                    "provisioning_source, display_name, credential_kind, "
+                    "(audience, username, username_normalized, provisioning_source, "
+                    "display_name, credential_kind, "
                     "credential_hash, status, created_at, updated_at) VALUES "
-                    "(?, 'family', ?, ?, 'synthetic-test', 'Семья', 'password', "
+                    "('family', ?, ?, 'synthetic-test', 'Семья', 'password', "
                     "'test-only-family-hash', ?, ?, ?) RETURNING id",
-                    (public_id, public_id, public_id, status, now, now),
+                    (key, key, status, now, now),
                 ).fetchone()["id"]
             )
         connection.executemany(
@@ -1005,10 +984,10 @@ async def test_complete_resolves_only_current_student_and_family_recipients(
             "(family_account_id, student_user_id, is_primary, created_at, "
             "updated_at, revoked_at) VALUES (?, ?, 1, ?, ?, ?)",
             (
-                (family_ids["review-family-active"], STUDENT_ID, now, now, None),
-                (family_ids["review-family-blocked"], STUDENT_ID, now, now, None),
+                (family_ids["active"], STUDENT_ID, now, now, None),
+                (family_ids["blocked"], STUDENT_ID, now, now, None),
                 (
-                    family_ids["review-family-revoked-link"],
+                    family_ids["revoked_link"],
                     STUDENT_ID,
                     now,
                     revoked_at,
@@ -1025,8 +1004,8 @@ async def test_complete_resolves_only_current_student_and_family_recipients(
     )
     receipt = await fixture.repository.complete(_complete_command(lease))
 
-    assert receipt.owner_account_public_ids == ("review-student-account",)
-    assert receipt.family_account_public_ids == ("review-family-active",)
+    assert receipt.owner_account_public_ids == ("a-1",)
+    assert receipt.family_account_public_ids == ("a-2",)
 
 
 @pytest.mark.asyncio
@@ -1043,7 +1022,7 @@ async def test_complete_rejects_a_thread_change_without_partial_writes(
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE submission_threads SET updated_at = ?, version = version + 1 "
-            "WHERE public_id = 'review-thread-test-1'",
+            "WHERE public_id = 'st-1'",
             (_timestamp(NOW + timedelta(minutes=5)),),
         )
     )
@@ -1385,13 +1364,13 @@ async def test_list_groups_synonyms_and_hides_partial_scope(review_queue_fixture
     assert len(page.items) == 1
     case = page.items[0]
     assert case.queue_public_id == fixture.queue_public_ids[0]
-    assert case.logical_case_public_id == "review-synonym-case"
+    assert case.logical_case_public_id == "ps-1"
     assert [item.group_id for item in case.items] == ["review-a", "review-b"]
-    assert all(item.problem_public_id.startswith("problem-") for item in case.items)
+    assert all(item.problem_public_id.startswith("p-") for item in case.items)
     assert case.lock is None
 
     partial = await fixture.repository.list_cases(
-        scope=ReviewStaffScope(group_public_ids=frozenset({"review-group-a"}))
+        scope=ReviewStaffScope(group_public_ids=frozenset({"g-5"}))
     )
     assert partial.items == ()
 
@@ -1561,13 +1540,6 @@ async def test_completion_fault_at_every_write_boundary_rolls_back_atomically(
     repository = PwaWrittenReviewQueueRepository(
         fixture.factory,
         clock=fixture.clock,
-        review_public_id_factory=lambda: "review-fault-completed",
-        annotation_public_id_factory=lambda: "review-fault-annotation",
-        comment_public_id_factory=lambda: "review-fault-comment",
-        event_public_id_factory=lambda: "review-fault-event",
-        internal_reaction_event_public_id_factory=lambda: (
-            "review-fault-internal-reaction-event"
-        ),
         completion_checkpoint=checkpoint,
     )
 
@@ -1593,7 +1565,7 @@ async def test_completion_fault_at_every_write_boundary_rolls_back_atomically(
                 "AS reaction_events, "
                 "(SELECT count(*) FROM submission_review_events) AS events, "
                 "(SELECT count(*) FROM submission_entries "
-                "WHERE public_id = 'review-fault-comment') AS comments"
+                "WHERE public_id = 'se-4') AS comments"
             ).fetchone(),
             "queue": connection.execute(
                 "SELECT cur_status, claim_token, lease_version "
@@ -1626,7 +1598,7 @@ async def test_completion_fault_at_every_write_boundary_rolls_back_atomically(
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE media_assets SET source_filename = 'after-rollback.webp' "
-            "WHERE public_id = 'review-asset-test-1'"
+            "WHERE public_id = 'ma-1'"
         )
     )
 
@@ -1640,7 +1612,7 @@ async def test_claim_fails_closed_when_one_synonym_branch_is_outside_scope(
         await fixture.repository.claim(
             queue_public_id=fixture.queue_public_ids[0],
             teacher_user_id=TEACHER_ONE_ID,
-            scope=ReviewStaffScope(group_public_ids=frozenset({"review-group-a"})),
+            scope=ReviewStaffScope(group_public_ids=frozenset({"g-5"})),
         )
 
     rows = fixture.factory.run_read(

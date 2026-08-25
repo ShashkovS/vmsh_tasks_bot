@@ -22,26 +22,22 @@ def _seed(database_path) -> None:
     apply_schema_migrations(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
-        for user_id, public_id in enumerate(
-            ("student-one", "student-two", "student-three", "student-four"),
-            start=91_001,
-        ):
+        for user_id in range(91_001, 91_005):
             connection.execute(
-                "INSERT INTO users (id, public_id, type, name, surname, token) "
-                "VALUES (?, ?, ?, 'Ученик', 'Тестовый', ?)",
-                (user_id, public_id, int(USER_TYPE.STUDENT), f"token-{user_id}"),
+                "INSERT INTO users (id, type, name, surname, token) "
+                "VALUES (?, ?, 'Ученик', 'Тестовый', ?)",
+                (user_id, int(USER_TYPE.STUDENT), f"token-{user_id}"),
             )
         for account_id, username in ((92_001, "family-one"), (92_002, "family-two")):
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(id, public_id, audience, username, username_normalized, "
+                "(id, audience, username, username_normalized, "
                 "provisioning_source, display_name, credential_kind, credential_hash, "
                 "status, created_at, updated_at) VALUES "
-                "(?, ?, 'family', ?, ?, 'synthetic-test', 'Семья', 'password', "
+                "(?, 'family', ?, ?, 'synthetic-test', 'Семья', 'password', "
                 "'hash', 'active', ?, ?)",
                 (
                     account_id,
-                    f"family-account-{account_id}",
                     username,
                     username,
                     NOW,
@@ -66,10 +62,10 @@ def test_preview_classifies_links_and_keeps_migrated_sqlite_read_only(tmp_path):
     _seed(database_path)
     csv_path.write_text(
         "family_username,student_public_id,relationship_label,is_primary\n"
-        "family-one,student-one,мама,true\n"
-        "family-one,student-two,мама,true\n"
-        "family-two,student-three,мама,true\n"
-        "family-two,student-four,мама,true\n",
+        "family-one,u-91001,мама,true\n"
+        "family-one,u-91002,мама,true\n"
+        "family-two,u-91003,мама,true\n"
+        "family-two,u-91004,мама,true\n",
         encoding="utf-8",
     )
     before = _sha256(database_path)
@@ -97,7 +93,7 @@ def test_preview_reports_only_row_numbers_and_codes_for_missing_records(tmp_path
     _seed(database_path)
     csv_path.write_text(
         "family_username,student_public_id,relationship_label,is_primary\n"
-        "missing-family,student-one,мама,true\n"
+        "missing-family,u-91001,мама,true\n"
         "family-one,missing-student,мама,false\n",
         encoding="utf-8",
     )
@@ -124,7 +120,7 @@ def test_cli_writes_the_same_redacted_report(tmp_path):
     _seed(database_path)
     csv_path.write_text(
         "family_username,student_public_id,relationship_label,is_primary\n"
-        "family-one,student-one,мама,true\n",
+        "family-one,u-91001,мама,true\n",
         encoding="utf-8",
     )
 
@@ -155,4 +151,4 @@ def test_cli_writes_the_same_redacted_report(tmp_path):
         "unchanged": 0,
     }
     assert "family-one" not in completed.stdout
-    assert "student-one" not in completed.stdout
+    assert "u-91001" not in completed.stdout

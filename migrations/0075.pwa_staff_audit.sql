@@ -5,13 +5,7 @@
 create table audit_events
 (
     id               integer primary key,
-    public_id        text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ae-' || id) virtual,
     actor_user_id    integer references users (id),
     actor_account_id integer references auth_accounts (id),
     audience         text    not null

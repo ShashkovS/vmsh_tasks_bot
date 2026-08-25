@@ -14,16 +14,7 @@ alter table written_tasks_queue rename to written_tasks_queue_before_pwa_leases;
 create table written_tasks_queue
 (
     id               integer primary key unique,
-    public_id        text unique
-        check (
-            public_id is null
-            or (
-                length(public_id) between 1 and 128
-                and public_id not glob '*[^a-z0-9._:-]*'
-                and substr(public_id, 1, 1) glob '[a-z0-9]'
-                and substr(public_id, -1, 1) glob '[a-z0-9]'
-            )
-        ),
+    public_id text generated always as ('wq-' || id) virtual,
     ts               timestamp not null,
     student_id       integer   not null references users,
     problem_id       integer   not null references problems,
@@ -67,13 +58,12 @@ create table written_tasks_queue
 -- affinity already stores legitimate integer IDs as integers.
 insert into written_tasks_queue
 (
-    id, public_id, ts, student_id, problem_id, cur_status, teacher_ts,
+    id, ts, student_id, problem_id, cur_status, teacher_ts,
     teacher_id, claim_token, claimed_at, lease_expires_at, lease_version,
     updated_at
 )
 select
     id,
-    'review-queue-' || lower(hex(randomblob(16))),
     ts,
     student_id,
     problem_id,
@@ -102,23 +92,5 @@ create index written_tasks_queue_lease_expiry_idx
 create index written_tasks_queue_claim_token_idx
     on written_tasks_queue (claim_token, id)
     where claim_token is not null;
-
-create trigger written_tasks_queue_public_id_fill_after_insert
-after insert on written_tasks_queue
-for each row
-when new.public_id is null
-begin
-    update written_tasks_queue
-    set public_id = 'review-queue-' || lower(hex(randomblob(16)))
-    where id = new.id;
-end;
-
-create trigger written_tasks_queue_public_id_immutable
-before update of public_id on written_tasks_queue
-for each row
-when old.public_id is not null and new.public_id is not old.public_id
-begin
-    select raise(abort, 'review queue public identity is immutable');
-end;
 
 pragma legacy_alter_table = off;

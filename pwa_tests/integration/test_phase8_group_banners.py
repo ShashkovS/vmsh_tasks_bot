@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 
 import pytest
@@ -11,6 +12,7 @@ from models.pwa.group_banners import (
     create_group_banner,
     edit_group_banner,
 )
+from models.pwa.group_banner_notifications import sync_group_banner_notifications
 from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
     _insert_parents,
 )
@@ -18,6 +20,7 @@ from pwa_tests.integration.test_phase8_notification_core import (
     _apply,
     _migrations,
     _rollback,
+    _seed_account,
 )
 
 
@@ -52,7 +55,6 @@ def test_banner_sanitizing_window_and_optimistic_cancel(tmp_path):
 
     item = create_group_banner(
         connection,
-        public_id="banner-lesson-review",
         group_id="assignment-n",
         audience="both",
         html_source=(
@@ -91,7 +93,7 @@ def test_banner_sanitizing_window_and_optimistic_cancel(tmp_path):
 
     updated = edit_group_banner(
         connection,
-        public_id="banner-lesson-review",
+        public_id="bn-1",
         expected_version=1,
         audience="student",
         html_source="<i>Новое время</i>",
@@ -106,17 +108,97 @@ def test_banner_sanitizing_window_and_optimistic_cancel(tmp_path):
     with pytest.raises(GroupBannerConflict):
         cancel_banner(
             connection,
-            public_id="banner-lesson-review",
+            public_id="bn-1",
             expected_version=1,
             actor_user_id=2,
             now="2026-10-05T11:06:00Z",
         )
     cancelled = cancel_banner(
         connection,
-        public_id="banner-lesson-review",
+        public_id="bn-1",
         expected_version=2,
         actor_user_id=2,
         now="2026-10-05T11:07:00Z",
     )
     assert (cancelled["status"], cancelled["version"]) == ("cancelled", 3)
     connection.close()
+
+
+def test_future_banner_schedules_and_replaces_group_notifications(tmp_path):
+    database_path = tmp_path / "banner-notifications.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        account_id, _session_id = _seed_account(connection)
+        created = create_group_banner(
+            connection,
+            group_id="assignment-n",
+            audience="student",
+            html_source="<b>Встречаемся у входа</b>",
+            starts_at="2026-10-05T12:00:00Z",
+            ends_at="2026-10-05T18:00:00Z",
+            priority=0,
+            dismissible=True,
+            actor_user_id=2,
+            now="2026-10-05T11:00:00Z",
+        )
+        assert (
+            sync_group_banner_notifications(
+                connection, banner=created, now="2026-10-05T11:00:00Z"
+            )
+            == 1
+        )
+        scheduled = connection.execute(
+            "SELECT account_id, category, route, payload_json, deliver_after "
+            "FROM notification_events"
+        ).fetchone()
+        assert dict(scheduled) | {"payload_json": None} == {
+            "account_id": account_id,
+            "category": "group_announcement",
+            "route": "/student/",
+            "payload_json": None,
+            "deliver_after": "2026-10-05T12:00:00Z",
+        }
+        assert json.loads(str(scheduled["payload_json"])) == {
+            "bannerId": "bn-1",
+            "courseId": "c-1",
+            "groupId": created["group_public_id"],
+            "groupName": "Начинающие",
+            "text": "Встречаемся у входа",
+        }
+
+        updated = edit_group_banner(
+            connection,
+            public_id="bn-1",
+            expected_version=1,
+            audience="student",
+            html_source="<i>Встречаемся у второго входа</i>",
+            starts_at="2026-10-05T12:30:00Z",
+            ends_at="2026-10-05T18:00:00Z",
+            priority=0,
+            dismissible=True,
+            actor_user_id=2,
+            now="2026-10-05T11:05:00Z",
+        )
+        assert (
+            sync_group_banner_notifications(
+                connection, banner=updated, now="2026-10-05T11:05:00Z"
+            )
+            == 1
+        )
+        replacement = connection.execute(
+            "SELECT payload_json, deliver_after FROM notification_events"
+        ).fetchone()
+        assert replacement["deliver_after"] == "2026-10-05T12:30:00Z"
+        assert json.loads(str(replacement["payload_json"]))["text"] == "Встречаемся у второго входа"
+
+        cancelled = cancel_banner(
+            connection,
+            public_id="bn-1",
+            expected_version=2,
+            actor_user_id=2,
+            now="2026-10-05T11:10:00Z",
+        )
+        assert sync_group_banner_notifications(connection, banner=cancelled, now="2026-10-05T11:10:00Z") == 0
+        assert connection.execute("SELECT count(*) FROM notification_events").fetchone()[0] == 0

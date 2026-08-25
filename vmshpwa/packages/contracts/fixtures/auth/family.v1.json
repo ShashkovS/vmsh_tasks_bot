@@ -8,7 +8,7 @@
   },
   "authContext": {
     "principal": {
-      "accountId": "account-family-fixture",
+      "accountId": "a-1101",
       "audience": "family",
       "displayName": "Синтетический родитель",
       "sessionVersion": 1,

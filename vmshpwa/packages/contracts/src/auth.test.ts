@@ -204,7 +204,7 @@ describe('Phase-1 authentication contracts', () => {
     expect(authQueryKeys.sessions(student)).toEqual([
       'principal',
       'student',
-      'account-student-fixture',
+      'a-1001',
       'sessions',
     ])
     expect(authQueryKeys.sessions(student)).not.toEqual(authQueryKeys.sessions(otherStudent))

@@ -43,6 +43,16 @@ STUDENT_ID = 953_001
 FULL_TEACHER_ID = 953_002
 PARTIAL_TEACHER_ID = 953_003
 ADMIN_ID = 953_004
+STUDENT_PUBLIC_ID = f"u-{STUDENT_ID}"
+FULL_TEACHER_PUBLIC_ID = f"u-{FULL_TEACHER_ID}"
+STUDENT_ACCOUNT_PUBLIC_ID = "a-1"
+SYNONYM_PUBLIC_ID = "ps-1"
+THREAD_PUBLIC_IDS = ("st-1", "st-2")
+ENTRY_PUBLIC_IDS = ("se-1", "se-2")
+ATTACHMENT_PUBLIC_ID = "sa-1"
+REVIEW_PUBLIC_ID = "r-1"
+COMMENT_ENTRY_PUBLIC_ID = "se-3"
+ANNOTATION_PUBLIC_ID = "ra-1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,12 +95,11 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
     def seed(connection):
         connection.execute("DELETE FROM kv_logins")
         connection.executemany(
-            "INSERT INTO users (id, public_id, chat_id, type, name, surname) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, chat_id, type, name, surname) "
+            "VALUES (?, ?, ?, ?, ?)",
             (
                 (
                     STUDENT_ID,
-                    "review-http-student",
                     9_530_001,
                     int(USER_TYPE.STUDENT),
                     "Анна",
@@ -98,7 +107,6 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 ),
                 (
                     FULL_TEACHER_ID,
-                    "review-http-teacher-full",
                     None,
                     int(USER_TYPE.TEACHER),
                     "Мария",
@@ -106,7 +114,6 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 ),
                 (
                     PARTIAL_TEACHER_ID,
-                    "review-http-teacher-partial",
                     None,
                     int(USER_TYPE.TEACHER),
                     "Иван",
@@ -114,7 +121,6 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 ),
                 (
                     ADMIN_ID,
-                    "review-http-admin",
                     None,
                     int(USER_TYPE.ADMIN),
                     "Ада",
@@ -125,11 +131,11 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
         student_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "username_algorithm_version, provisioning_source, credential_kind, "
                 "credential_hash, linked_user_id, status, created_at, updated_at) "
-                "VALUES ('review-http-account-student', 'student', "
-                "'review-http-student', 'review-http-student', 1, 'synthetic-test', "
+                "VALUES ('student', 'review-http-student', 'review-http-student', "
+                "1, 'synthetic-test', "
                 "'telegram_token', ?, ?, 'active', ?, ?) RETURNING id",
                 (TEST_HASHER.hash("student-token"), STUDENT_ID, now, now),
             ).fetchone()["id"]
@@ -138,10 +144,10 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
         family_account_id = int(
             connection.execute(
                 "INSERT INTO auth_accounts "
-                "(public_id, audience, username, username_normalized, "
+                "(audience, username, username_normalized, "
                 "provisioning_source, display_name, credential_kind, credential_hash, "
                 "status, created_at, updated_at) VALUES "
-                "('review-http-account-family', 'family', 'review-http-family', "
+                "('family', 'review-http-family', "
                 "'review-http-family', 'synthetic-test', 'Семья Беловых', 'password', "
                 "?, 'active', ?, ?) RETURNING id",
                 (TEST_HASHER.hash("family-password"), now, now),
@@ -156,9 +162,9 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
         season_id = int(
             connection.execute(
                 "INSERT INTO seasons "
-                "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+                "(code, title, starts_on, ends_on, session_expires_on, "
                 "status, created_at, updated_at) VALUES "
-                "('review-http-season', 'review-http', 'Review HTTP', "
+                "('review-http', 'Review HTTP', "
                 "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) "
                 "RETURNING id",
                 (now, now),
@@ -167,29 +173,28 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
         course_id = int(
             connection.execute(
                 "INSERT INTO courses "
-                "(public_id, season_id, code, name, subject_code, status, "
+                "(season_id, code, name, subject_code, status, "
                 "sort_order, accent_key, created_at, updated_at) VALUES "
-                "('review-http-course', ?, 'math', 'Математика', 'math', "
+                "(?, 'math', 'Математика', 'math', "
                 "'active', 1, 'math', ?, ?) RETURNING id",
                 (season_id, now, now),
             ).fetchone()["id"]
         )
-        for group_id, public_id, short_code, sort_order in (
-            ("review-http-a", "review-http-group-a", "a", 1),
-            ("review-http-b", "review-http-group-b", "b", 2),
+        for group_id, short_code, sort_order in (
+            ("review-http-a", "a", 1),
+            ("review-http-b", "b", 2),
         ):
             connection.execute(
                 "INSERT INTO groups "
                 "(group_id, short_code, public_name, sort_order, is_active, "
-                "is_default, allow_self_switch, is_system, score_weight, public_id, "
+                "is_default, allow_self_switch, is_system, score_weight, "
                 "course_id, status, created_at, updated_at) VALUES "
-                "(?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?)",
+                "(?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
                 (
                     group_id,
                     short_code,
                     f"Группа {short_code}",
                     sort_order,
-                    public_id,
                     course_id,
                     now,
                     now,
@@ -197,14 +202,13 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
             )
         connection.executemany(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, display_name, "
             "credential_kind, credential_hash, linked_user_id, status, "
-            "created_at, updated_at) VALUES (?, 'staff', ?, ?, NULL, "
+            "created_at, updated_at) VALUES ('staff', ?, ?, NULL, "
             "'synthetic-test', NULL, 'password', ?, ?, 'active', ?, ?)",
             (
                 (
-                    "review-http-account-full",
                     "review-http-full",
                     "review-http-full",
                     TEST_HASHER.hash("full-password"),
@@ -213,7 +217,6 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                     now,
                 ),
                 (
-                    "review-http-account-partial",
                     "review-http-partial",
                     "review-http-partial",
                     TEST_HASHER.hash("partial-password"),
@@ -222,7 +225,6 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                     now,
                 ),
                 (
-                    "review-http-account-admin",
                     "review-http-admin",
                     "review-http-admin",
                     TEST_HASHER.hash("admin-password"),
@@ -251,17 +253,17 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
         course_lesson_id = int(
             connection.execute(
                 "INSERT INTO course_lessons "
-                "(public_id, course_id, lesson_number, created_at, updated_at) "
-                "VALUES ('review-http-course-lesson', ?, 41, ?, ?) RETURNING id",
+                "(course_id, lesson_number, created_at, updated_at) "
+                "VALUES (?, 41, ?, ?) RETURNING id",
                 (course_id, now, now),
             ).fetchone()["id"]
         )
         synonym_id = int(
             connection.execute(
                 "INSERT INTO problem_synonym_groups "
-                "(public_id, course_lesson_id, group_key, display_title, status, "
+                "(course_lesson_id, group_key, display_title, status, "
                 "created_at, updated_at) VALUES "
-                "('review-http-synonym', ?, 'shared', 'Общая задача', 'active', ?, ?) "
+                "(?, 'shared', 'Общая задача', 'active', ?, ?) "
                 "RETURNING id",
                 (course_lesson_id, now, now),
             ).fetchone()["id"]
@@ -271,12 +273,11 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
             group_lesson_id = int(
                 connection.execute(
                     "INSERT INTO group_lessons "
-                    "(public_id, course_lesson_id, course_id, group_id, "
+                    "(course_lesson_id, course_id, group_id, "
                     "cycle_anchor_date, business_timezone, status, created_at, "
-                    "updated_at) VALUES (?, ?, ?, ?, '2026-09-28', "
+                    "updated_at) VALUES (?, ?, ?, '2026-09-28', "
                     "'Europe/Moscow', 'active', ?, ?) RETURNING id",
                     (
-                        f"review-http-group-lesson-{index}",
                         course_lesson_id,
                         course_id,
                         group_id,
@@ -299,11 +300,10 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
             source_id = int(
                 connection.execute(
                     "INSERT INTO content_sources "
-                    "(public_id, group_lesson_id, kind, logical_filename, "
-                    "source_encoding, created_at) VALUES (?, ?, 'condition', ?, "
+                    "(group_lesson_id, kind, logical_filename, "
+                    "source_encoding, created_at) VALUES (?, 'condition', ?, "
                     "'utf-8', ?) RETURNING id",
                     (
-                        f"review-http-source-{index}",
                         group_lesson_id,
                         f"review-http-{index}.tex",
                         now,
@@ -313,13 +313,12 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
             revision_id = int(
                 connection.execute(
                     "INSERT INTO content_revisions "
-                    "(public_id, source_id, revision_number, source_sha256, "
+                    "(source_id, revision_number, source_sha256, "
                     "latex_text, parser_version, status, canonical_json, "
                     "diagnostics_json, provenance_json, created_at) VALUES "
-                    "(?, ?, 1, ?, 'problem', 'review-http-test', 'ready', '{}', "
+                    "(?, 1, ?, 'problem', 'review-http-test', 'ready', '{}', "
                     "'[]', '{}', ?) RETURNING id",
                     (
-                        f"review-http-revision-{index}",
                         source_id,
                         str(index) * 64,
                         now,
@@ -360,11 +359,10 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
             thread_id = int(
                 connection.execute(
                     "INSERT INTO submission_threads "
-                    "(public_id, student_user_id, problem_id, condition_revision_id, "
+                    "(student_user_id, problem_id, condition_revision_id, "
                     "status, latest_entry_at, created_at, updated_at, version) "
-                    "VALUES (?, ?, ?, ?, 'awaiting_review', ?, ?, ?, 2) RETURNING id",
+                    "VALUES (?, ?, ?, 'awaiting_review', ?, ?, ?, 2) RETURNING id",
                     (
-                        f"review-http-thread-{index}",
                         STUDENT_ID,
                         problem_id,
                         revision_id,
@@ -377,12 +375,11 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
             entry_id = int(
                 connection.execute(
                     "INSERT INTO submission_entries "
-                    "(public_id, thread_id, problem_revision_id, author_kind, "
+                    "(thread_id, problem_revision_id, author_kind, "
                     "author_user_id, channel, entry_kind, state, text, client_created_at, "
-                    "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
+                    "server_received_at, version) VALUES (?, ?, 'student', ?, 'pwa', "
                     "'submission', 'submitted', ?, ?, ?, 2) RETURNING id",
                     (
-                        f"review-http-entry-{index}",
                         thread_id,
                         problem_revision_id,
                         STUDENT_ID,
@@ -396,10 +393,10 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 asset_id = int(
                     connection.execute(
                         "INSERT INTO media_assets "
-                        "(public_id, sha256, storage_namespace, object_key, public_url, "
+                        "(sha256, storage_namespace, object_key, public_url, "
                         "media_type, byte_size, width, height, source_filename, "
                         "conversion_version, created_by_user_id, created_at) "
-                        "VALUES ('review-http-asset-1', ?, 'submission', "
+                        "VALUES (?, 'submission', "
                         "'submission/review-http-asset-1.webp', "
                         "'https://assets.test/review-http-asset-1.webp', "
                         "'image/webp', 1024, 1200, 900, 'page.webp', "
@@ -409,23 +406,23 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 )
                 connection.execute(
                     "INSERT INTO submission_attachments "
-                    "(public_id, entry_id, asset_id, ordinal, client_filename, "
+                    "(entry_id, asset_id, ordinal, client_filename, "
                     "upload_status, created_at) VALUES "
-                    "('review-http-attachment-1', ?, ?, 0, 'page.webp', 'stored', ?)",
+                    "(?, ?, 0, 'page.webp', 'stored', ?)",
                     (entry_id, asset_id, submitted_at),
                 )
-            queue_public_id = f"review-http-queue-{index}"
-            connection.execute(
-                "INSERT INTO written_tasks_queue "
-                "(public_id, ts, student_id, problem_id, cur_status, updated_at) "
-                "VALUES (?, ?, ?, ?, 0, ?)",
-                (
-                    queue_public_id,
-                    submitted_at,
-                    STUDENT_ID,
-                    problem_id,
-                    now,
-                ),
+            queue_public_id = str(
+                connection.execute(
+                    "INSERT INTO written_tasks_queue "
+                    "(ts, student_id, problem_id, cur_status, updated_at) "
+                    "VALUES (?, ?, ?, 0, ?) RETURNING public_id",
+                    (
+                        submitted_at,
+                        STUDENT_ID,
+                        problem_id,
+                        now,
+                    ),
+                ).fetchone()["public_id"]
             )
             queue_public_ids.append(queue_public_id)
         return tuple(queue_public_ids)
@@ -455,10 +452,6 @@ async def review_http(tmp_path, aiohttp_client, monkeypatch) -> ReviewHttpFixtur
         factory,
         clock=lambda: NOW,
         claim_token_factory=lambda: next(claim_tokens),
-        review_public_id_factory=lambda: "review-http-completed",
-        annotation_public_id_factory=lambda: "review-http-annotation",
-        comment_public_id_factory=lambda: "review-http-comment",
-        event_public_id_factory=lambda: "review-http-event",
     )
     telegram_calls: list[tuple[int, str, tuple[bytes, ...]]] = []
     render_calls: list[dict[str, object]] = []
@@ -618,7 +611,7 @@ def _complete_payload(lease: dict[str, object]) -> dict[str, object]:
 
 def _annotation_payload() -> dict[str, object]:
     return {
-        "attachmentId": "review-http-attachment-1",
+        "attachmentId": ATTACHMENT_PUBLIC_ID,
         "schemaVersion": 1,
         "rotation": 90,
         "marks": [
@@ -657,7 +650,7 @@ async def test_review_list_is_private_and_logical_case_scope_is_fail_closed(
     assert payload["requestId"] == "review.http.test"
     assert len(payload["items"]) == 1
     assert payload["items"][0]["queueId"] == fixture.queue_public_ids[0]
-    assert payload["items"][0]["logicalCaseId"] == "review-http-synonym"
+    assert payload["items"][0]["logicalCaseId"] == SYNONYM_PUBLIC_ID
     assert len(payload["items"][0]["branches"]) == 2
     assert "student_user_id" not in str(payload)
 
@@ -802,10 +795,9 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         "41b.2",
     ]
     assert {branch["courseName"] for branch in lease["branches"]} == {"Математика"}
-    assert [branch["thread"]["threadId"] for branch in lease["evidenceBranches"]] == [
-        "review-http-thread-1",
-        "review-http-thread-2",
-    ]
+    assert [
+        branch["thread"]["threadId"] for branch in lease["evidenceBranches"]
+    ] == list(THREAD_PUBLIC_IDS)
     assert [
         entry["authorKind"]
         for branch in lease["evidenceBranches"]
@@ -824,24 +816,24 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
     assert completed.status == 200, await completed.text()
     result = (await completed.json())["review"]
     assert result == {
-        "reviewId": "review-http-completed",
-        "targetThreadId": "review-http-thread-2",
+        "reviewId": REVIEW_PUBLIC_ID,
+        "targetThreadId": THREAD_PUBLIC_IDS[1],
         "targetProblemId": lease["branches"][1]["problemId"],
         "targetThreadStatus": "accepted",
         "verdict": 16,
-        "commentEntryId": "review-http-comment",
-        "evidenceEntryIds": ["review-http-entry-1", "review-http-entry-2"],
+        "commentEntryId": COMMENT_ENTRY_PUBLIC_ID,
+        "evidenceEntryIds": list(ENTRY_PUBLIC_IDS),
         "annotations": [
             {
-                "annotationId": "review-http-annotation",
-                "attachmentId": "review-http-attachment-1",
+                "annotationId": ANNOTATION_PUBLIC_ID,
+                "attachmentId": ATTACHMENT_PUBLIC_ID,
                 "schemaVersion": 1,
                 "rotation": 90,
                 "markCount": 1,
             }
         ],
         "internalReaction": {
-            "reviewId": "review-http-completed",
+            "reviewId": REVIEW_PUBLIC_ID,
             "reactionId": 100,
             "version": 1,
             "editableUntil": _timestamp(NOW + timedelta(hours=1)),
@@ -892,13 +884,13 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         ).fetchall()
     )
     assert len(notifications) == 1
-    assert notifications[0]["account_public_id"] == "review-http-account-student"
+    assert notifications[0]["account_public_id"] == STUDENT_ACCOUNT_PUBLIC_ID
     assert notifications[0]["category"] == "review_completed"
     assert notifications[0]["route"] == "/student/notifications"
     assert notifications[0]["deliver_after"] == _timestamp(NOW + timedelta(minutes=30))
     assert json.loads(notifications[0]["payload_json"]) == {
         "count": 1,
-        "reviewIds": ["review-http-completed"],
+        "reviewIds": [REVIEW_PUBLIC_ID],
         "problemIds": [branch["problemId"] for branch in lease["branches"]],
     }
 
@@ -1064,11 +1056,10 @@ async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
     assert teacher_reaction["reviewId"] == source_review_id
     assert teacher_reaction["isLatestReview"] is False
     assert [entry["entryId"] for entry in teacher_reaction["evidenceEntries"]] == [
-        "review-http-entry-1",
-        "review-http-entry-2",
+        *ENTRY_PUBLIC_IDS,
     ]
     assert teacher_reaction["evidenceEntries"][0]["attachments"] == [
-        {"attachmentId": "review-http-attachment-1", "ordinal": 0}
+        {"attachmentId": ATTACHMENT_PUBLIC_ID, "ordinal": 0}
     ]
     stored = fixture.factory.run_read(
         lambda connection: {
@@ -1247,7 +1238,7 @@ async def test_student_reaction_http_updates_owner_and_family_projection(
     assert "internalReaction" not in student_review
 
     family_thread = await fixture.client.get(
-        f"/family/api/v1/children/review-http-student/problems/{problem_id}/thread",
+        f"/family/api/v1/children/{STUDENT_PUBLIC_ID}/problems/{problem_id}/thread",
         cookies=_family_cookie(fixture),
         headers=_headers(),
     )
@@ -1277,12 +1268,12 @@ async def test_student_reaction_http_updates_owner_and_family_projection(
     assert set(inbox_by_kind) == {"student", "teacher"}
     assert inbox_by_kind["student"]["reactionId"] == 0
     assert inbox_by_kind["student"]["student"] == {
-        "studentId": "review-http-student",
+        "studentId": STUDENT_PUBLIC_ID,
         "displayName": "Белова Анна",
     }
     assert inbox_by_kind["teacher"]["reactionId"] == 103
     assert inbox_by_kind["teacher"]["reviewer"] == {
-        "staffId": "review-http-teacher-full",
+        "staffId": FULL_TEACHER_PUBLIC_ID,
         "displayName": "Полная Мария",
     }
     assert inbox_by_kind["teacher"]["comment"] == "Проверено через Staff PWA."
@@ -1346,7 +1337,7 @@ async def test_complete_review_reports_thread_change_and_confirmation_errors(
     payload = _complete_payload(lease)
     payload["annotations"] = [
         {
-            "attachmentId": "review-http-attachment-1",
+            "attachmentId": ATTACHMENT_PUBLIC_ID,
             "schemaVersion": 1,
             "rotation": 0,
             "marks": [
@@ -1392,8 +1383,8 @@ async def test_complete_review_reports_thread_change_and_confirmation_errors(
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE submission_threads SET updated_at = ?, version = version + 1 "
-            "WHERE public_id = 'review-http-thread-1'",
-            (_timestamp(),),
+                "WHERE public_id = ?",
+                (_timestamp(), THREAD_PUBLIC_IDS[0]),
         )
     )
     conflict = await fixture.client.post(

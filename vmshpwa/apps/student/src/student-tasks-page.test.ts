@@ -75,17 +75,17 @@ describe('Student production Tasks mapping', () => {
   it('maps real server states and opaque identities into Product task rows', () => {
     expect(problems.map((problem) => toStudentTaskView(problem, 42, 'н'))).toEqual([
       expect.objectContaining({
-        id: 'problem-fixture-42-1',
+        id: 'p-42-1',
         number: '42н.1',
         status: { kind: 'accepted', label: 'Зачтено', tone: 'success' },
         verdict: expect.objectContaining({ value: 'plus', symbol: '✅+', weight: 1 }),
       }),
       expect.objectContaining({
-        id: 'problem-fixture-42-2',
+        id: 'p-42-2',
         status: { kind: 'checking', label: 'На проверке', tone: 'info' },
       }),
       expect.objectContaining({
-        id: 'problem-fixture-42-3',
+        id: 'p-42-3',
         number: '42н.3а',
         status: { kind: 'needs-work', label: 'Нужна доработка', tone: 'warning' },
         verdict: expect.objectContaining({ value: 'plus-minus', symbol: '🟨±', weight: 0.7 }),

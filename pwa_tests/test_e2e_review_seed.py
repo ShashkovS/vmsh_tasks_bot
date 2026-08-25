@@ -16,7 +16,7 @@ def test_review_seed_creates_one_complete_case_per_browser(tmp_path):
     apply_schema_migrations(database_path)
     factory = PwaConnectionFactory(database_path)
     # The insertion helper intentionally depends on the stable Phase-1 baseline.
-    with pytest.raises(RuntimeError, match="owner is missing"):
+    with pytest.raises(RuntimeError, match="requires the baseline accounts"):
         factory.run_write(_insert_review_cases)
 
 

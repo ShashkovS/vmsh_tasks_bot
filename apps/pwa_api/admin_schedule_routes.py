@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-import uuid
 
 from aiohttp import web
 
@@ -259,7 +258,7 @@ async def create_course_schedule_draft(request: web.Request) -> web.Response:
         raise PwaApiError(status=404, code="course_not_found", message="Курс не найден")
     try:
         draft = await _repository(request).create_course_schedule_rule_draft(
-            public_id=f"schedule-rule.{uuid.uuid4().hex}",
+            public_id="schedule-rule",
             course_id=int(course["id"]),
             schedule_field=field,
             value=value,
@@ -395,7 +394,7 @@ async def create_group_schedule_draft(request: web.Request) -> web.Response:
         )
     try:
         draft = await _repository(request).create_group_schedule_override_draft(
-            public_id=f"schedule-override.{uuid.uuid4().hex}",
+            public_id="schedule-override",
             course_id=int(group["course_id"]),
             group_id=str(group["group_id"]),
             schedule_field=field,

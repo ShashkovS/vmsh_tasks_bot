@@ -18,7 +18,11 @@ from vmshpwa.scripts.runtime_guard import (
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_DATABASE = REPOSITORY_ROOT / "db/vmshpwa_e2e.sqlite3"
 TIMESTAMP = "2026-07-30T12:00:00Z"
-PROJECTS = ("chromium", "webkit", "firefox")
+TARGETS = (
+    ("chromium", 10404, 10601),
+    ("webkit", 10405, 10602),
+    ("firefox", 10406, 10603),
+)
 
 
 def _require_e2e_target(runtime_config: PwaMaintenanceConfig) -> Path:
@@ -38,27 +42,26 @@ def _require_e2e_target(runtime_config: PwaMaintenanceConfig) -> Path:
 
 def _seed(connection: sqlite3.Connection) -> int:
     course = connection.execute(
-        "SELECT id FROM courses WHERE public_id = 'course-fixture-math-5-7'"
+        "SELECT id FROM courses WHERE id = 1"
     ).fetchone()
     groups = {
-        str(row["public_id"]): str(row["group_id"])
+        int(row["id"]): str(row["group_id"])
         for row in connection.execute(
-            "SELECT public_id, group_id FROM groups WHERE public_id IN "
-            "('group-fixture-beginner', 'group-fixture-continuing')"
+            "SELECT id, group_id FROM groups WHERE id IN (1, 2)"
         )
     }
     admin = connection.execute(
-        "SELECT id FROM users WHERE public_id = 'user-admin-fixture'"
+        "SELECT id FROM users WHERE id = 301"
     ).fetchone()
     if course is None or admin is None or len(groups) != 2:
         raise RuntimeError("Family E2E seed requires baseline course and groups")
 
-    expected_students = {f"student-family-second-e2e-{project}" for project in PROJECTS}
+    expected_students = {student_id for _project, student_id, _enrollment_id in TARGETS}
     existing_students = {
-        str(row[0])
+        int(row[0])
         for row in connection.execute(
-            "SELECT public_id FROM users WHERE public_id LIKE "
-            "'student-family-second-e2e-%'"
+            "SELECT id FROM users WHERE id IN (?, ?, ?)",
+            tuple(sorted(expected_students)),
         )
     }
     if existing_students:
@@ -68,21 +71,24 @@ def _seed(connection: sqlite3.Connection) -> int:
 
     course_id = int(course["id"])
     admin_id = int(admin["id"])
-    beginner = groups["group-fixture-beginner"]
-    continuing = groups["group-fixture-continuing"]
+    beginner = groups[1]
+    continuing = groups[2]
 
-    for project in PROJECTS:
+    for project, second_student_id, second_enrollment_id in TARGETS:
         first_student = connection.execute(
-            "SELECT id FROM users WHERE public_id = ?",
-            (f"student-classroom-e2e-{project}",),
+            "SELECT linked_user_id AS id FROM auth_accounts "
+            "WHERE audience = 'student' AND username_normalized = ?",
+            (f"classroom-e2e-{project}",),
         ).fetchone()
         family_account = connection.execute(
-            "SELECT id FROM auth_accounts WHERE public_id = ?",
-            (f"account-classroom-family-e2e-{project}",),
+            "SELECT id FROM auth_accounts "
+            "WHERE audience = 'family' AND username_normalized = ?",
+            (f"classroom-family-e2e-{project}",),
         ).fetchone()
         first_enrollment = connection.execute(
-            "SELECT id FROM course_enrollments WHERE public_id = ?",
-            (f"enrollment-classroom-e2e-{project}",),
+            "SELECT id FROM course_enrollments "
+            "WHERE student_user_id = ? AND course_id = ?",
+            (int(first_student["id"]) if first_student is not None else None, course_id),
         ).fetchone()
         if first_student is None or family_account is None or first_enrollment is None:
             raise RuntimeError("Family E2E seed requires classroom personas")
@@ -105,19 +111,16 @@ def _seed(connection: sqlite3.Connection) -> int:
             ],
         )
 
-        second_student_id = int(
-            connection.execute(
-                "INSERT INTO users "
-                "(public_id, type, group_id, name, surname, online, grade, birthday, "
-                "allowed_groups) VALUES (?, 1, ?, 'Второй', ?, 1, 5, '2015-05-05', ?) "
-                "RETURNING id",
-                (
-                    f"student-family-second-e2e-{project}",
-                    continuing,
-                    f"Ребёнок {project}",
-                    f";{beginner};{continuing};",
-                ),
-            ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO users "
+            "(id, type, group_id, name, surname, online, grade, birthday, "
+            "allowed_groups) VALUES (?, 1, ?, 'Второй', ?, 1, 5, '2015-05-05', ?)",
+            (
+                second_student_id,
+                continuing,
+                f"Ребёнок {project}",
+                f";{beginner};{continuing};",
+            ),
         )
         connection.execute(
             "INSERT INTO family_student_links "
@@ -125,21 +128,18 @@ def _seed(connection: sqlite3.Connection) -> int:
             "created_at, updated_at) VALUES (?, ?, 'родитель', 0, ?, ?)",
             (int(family_account["id"]), second_student_id, TIMESTAMP, TIMESTAMP),
         )
-        second_enrollment_id = int(
-            connection.execute(
-                "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
-                "attendance_mode, status, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, 'online', 'active', ?, ?) RETURNING id",
-                (
-                    f"enrollment-family-second-e2e-{project}",
-                    second_student_id,
-                    course_id,
-                    continuing,
-                    TIMESTAMP,
-                    TIMESTAMP,
-                ),
-            ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO course_enrollments "
+            "(id, student_user_id, course_id, active_group_id, attendance_mode, status, "
+            "created_at, updated_at) VALUES (?, ?, ?, ?, 'online', 'active', ?, ?)",
+            (
+                second_enrollment_id,
+                second_student_id,
+                course_id,
+                continuing,
+                TIMESTAMP,
+                TIMESTAMP,
+            ),
         )
         connection.executemany(
             "INSERT INTO course_group_access "
@@ -158,7 +158,7 @@ def _seed(connection: sqlite3.Connection) -> int:
                 for group_id in (beginner, continuing)
             ],
         )
-    return len(PROJECTS)
+    return len(TARGETS)
 
 
 def seed_e2e_family_progress(runtime_config: PwaMaintenanceConfig) -> int:

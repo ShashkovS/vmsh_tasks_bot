@@ -4,9 +4,9 @@
 create table notification_deliveries
 (
     id                     integer primary key,
-    public_id              text    not null unique,
+    public_id text generated always as ('nd-' || id) virtual,
     event_id               integer not null references notification_events (id),
-    subscription_public_id text    not null,
+    subscription_id        integer references push_subscriptions (id) on delete set null,
     state                  text    not null
         check (state in ('pending', 'sending', 'retry', 'sent', 'failed', 'suppressed')),
     attempt_count          integer not null default 0 check (attempt_count >= 0),
@@ -17,7 +17,7 @@ create table notification_deliveries
     last_error_code        text,
     created_at             text    not null,
     updated_at             text    not null,
-    unique (event_id, subscription_public_id),
+    unique (event_id, subscription_id),
     check (
         (state = 'sending' and claim_token is not null and claim_until is not null)
         or (state <> 'sending' and claim_token is null and claim_until is null)

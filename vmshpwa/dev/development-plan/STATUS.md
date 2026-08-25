@@ -1,6 +1,70 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-08-22.
+## Group announcements deliver to devices — готово к owner-проверке, 25 августа 2026
+
+- Staff «Рассылки» больше не являются только баннерами на «Сейчас»: active
+  announcement создаёт account-scoped `group_announcement` событие в момент
+  `startsAt`. Поэтому оно видно в списке уведомлений и попадает в существующий
+  Web Push outbox на каждое разрешённое устройство Student/Family. Будущая
+  правка заменяет ожидающее событие; отмена его удаляет, а правка уже начатого
+  объявления не дублирует доставку. Реализация:
+  [`group_banner_notifications.py`](../../../models/pwa/group_banner_notifications.py),
+  [`group_banner_routes.py`](../../../apps/pwa_api/group_banner_routes.py),
+  [`push_delivery.py`](../../../helpers/pwa/push_delivery.py).
+- В Staff checkbox явно объяснён: скрытие — localStorage текущего браузера
+  получателя, не отмена рассылки. Контракты и Student/Family settings дают
+  отдельную категорию «Объявления группы»:
+  [`notifications.ts`](../../packages/contracts/src/notifications.ts),
+  [`student-notifications-page.tsx`](../../apps/student/src/student-notifications-page.tsx),
+  [`family-notifications-page.tsx`](../../apps/family/src/family-notifications-page.tsx).
+- Проверки: group banner repository/HTTP + Web Push **17 PASS**; строгий
+  TypeScript Staff/Student/Family/contracts — PASS.
+
+## Светлая тема по умолчанию — готово, 23 августа 2026
+
+- Общий `AppProviders` больше не наследует тёмную тему от системного
+  `prefers-color-scheme`: первый вход в Student, Family или Staff всегда
+  светлый. Явный выбор пользователя по-прежнему изолированно сохраняется в
+  `localStorage` и позволяет переключиться на тёмную тему:
+  [`providers.tsx`](../../packages/app-shell/src/providers.tsx).
+- Regression в
+  [`runtime-bootstrap.test.tsx`](../../packages/app-shell/src/runtime-bootstrap.test.tsx)
+  фиксирует светлый первый вход даже при системной тёмной теме.
+- Проверки: focused Vitest **10 PASS**, strict TypeScript, ESLint, полный
+  `make pwa-build` и `git diff --check` — PASS.
+
+## Компактные persistent ID — финальный полный gate в работе, 23 августа 2026
+
+- Владелец утвердил замену случайных PWA record ID на компактные
+  детерминированные формы: `u-127`, `c-912`, `g-627`, `gl-13`, `cr-1`.
+  Persistent tables сохраняют только `INTEGER PRIMARY KEY`; compatibility
+  projection `public_id` будет virtual, без stored text и unique index.
+  Реестр префиксов и намеренно сохранённые secret/idempotency identifiers:
+  [`compact-identifiers.md`](../../docs/compact-identifiers.md).
+- PWA migrations и creation paths используют virtual `public_id`, получаемый
+  после insert через `RETURNING`; stored UUID-колонки и их text-FK удалены.
+  Written submissions/reviews/support, classroom delivery/import/layout/plan и
+  news mirror/moderation вместе с их fixtures переведены на реальные компактные
+  значения. В `news_posts` и classroom snapshot-снимках больше нет дублей
+  текстовых public ID; связи используют integer FK. Review/classroom/news
+  Playwright seed-ы используют фиксированные integer rowid и соответственно
+  `wq-9701`/`p-9701`, `ipe-9801`/`gl-9801`, `news-9601`; старые semantic UUID-like
+  ID не сохраняются. Оставшиеся Family и oral Playwright seed-ы переведены на
+  фиксированные integer `rowid`; их public формы теперь получаются virtual как
+  `u-10404`, `a-10201`, `en-10601`, `gl-921`, `ow-921`.
+- Проверены: written submissions **55 PASS** и legacy attempt schema **3 PASS**;
+  review repository **34 PASS** (один process-pool тест не запускается в sandbox
+  из-за системных semaphores), review migration/notification fixtures **13 PASS**
+  и review HTTP **10 PASS**; Phase-7 classroom fixtures **21 PASS**, classroom
+  HTTP **5 PASS**; Phase-8 news **18 PASS**. `make pwa-schema-update
+  pwa-schema-check` и PWA TypeScript typecheck — PASS, product SHA `8076aeb3…`.
+- Существующая SQLite БД намеренно не поддерживается: владелец создаст чистую
+  БД.
+
+Последнее обновление: 2026-08-23. Изолированный content E2E после зачистки
+fixture seed-ов — **6 PASS** (Chromium, WebKit, Firefox). Полный PWA E2E
+перезапускается на чистой БД; затем будут повторены все backend и frontend
+тестовые ворота.
 
 ## Cyrillic TikZ standalone compatibility — готово к owner-проверке, 22 августа 2026
 

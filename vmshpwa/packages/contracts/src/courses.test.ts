@@ -78,13 +78,13 @@ describe('Phase-1 course access contracts', () => {
   })
 
   it('keys every course resource by principal, course, and group context', () => {
-    const principal = { audience: 'student' as const, accountId: 'account-student-fixture' }
+    const principal = { audience: 'student' as const, accountId: 'a-1001' }
     const otherPrincipal = { audience: 'student' as const, accountId: 'account-student-other' }
 
     expect(courseQueryKeys.enrollment(principal, 'course-fixture-alpha')).toEqual([
       'principal',
       'student',
-      'account-student-fixture',
+      'a-1001',
       'courses',
       'course-fixture-alpha',
       'enrollment',
@@ -94,7 +94,7 @@ describe('Phase-1 course access contracts', () => {
     ).toEqual([
       'principal',
       'student',
-      'account-student-fixture',
+      'a-1001',
       'courses',
       'course-fixture-alpha',
       'groups',
@@ -135,7 +135,7 @@ describe('Phase-1 course access contracts', () => {
   })
 
   it('separates lesson pages from exact lesson query keys', () => {
-    const principal = { audience: 'student' as const, accountId: 'account-student-fixture' }
+    const principal = { audience: 'student' as const, accountId: 'a-1001' }
     const pageKey = courseQueryKeys.lessons(
       principal,
       'course-fixture-alpha',
@@ -183,7 +183,7 @@ describe('Phase-1 course access contracts', () => {
       'checking',
       'needs-work',
     ])
-    expect(response.problems[0]?.problemId).toBe('problem-fixture-42-1')
+    expect(response.problems[0]?.problemId).toBe('p-42-1')
     expect(response.problems.map((problem) => problem.materials.hint.status)).toEqual([
       'revealed',
       'available',

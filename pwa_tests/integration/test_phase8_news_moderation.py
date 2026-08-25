@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
+from aiohttp import FormData
 
 from apps import pwa_app
+from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
 from db_methods.pwa.telegram_bindings import set_binding_status
 from helpers.pwa.auth_config import COOKIE_POLICY
+from helpers.pwa.content.assets import ConvertedAsset
 from models.pwa.auth import AuthAudience
 from models.pwa.news import ingest_telegram_news
 from models.pwa.telegram_bindings import create_binding
@@ -22,12 +26,35 @@ from pwa_tests.integration.test_phase7_classroom_assignment_migration import NOW
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
+class _RichMediaStorage:
+    def __init__(self) -> None:
+        self.objects: list[tuple[str, bytes, str]] = []
+
+    async def put(self, key: str, data: bytes, media_type: str) -> None:
+        self.objects.append((key, data, media_type))
+
+    def public_url(self, key: str) -> str:
+        return f"https://cdn.example.test/{key}"
+
+
+class _RichMediaConverter:
+    async def raster_to_webp(self, data: bytes) -> ConvertedAsset:
+        converted = b"webp:" + data
+        return ConvertedAsset(
+            source_sha256=hashlib.sha256(data).hexdigest(),
+            output_sha256=hashlib.sha256(converted).hexdigest(),
+            media_type="image/webp",
+            data=converted,
+            width=1_200,
+            height=900,
+        )
+
+
 def _seed_post(connection):
     binding = create_binding(
         connection,
-        public_id="moderation-news-source",
         owner_type="course",
-        owner_public_id="classroom-layout-course",
+        owner_public_id="c-1",
         purpose="news_source",
         chat_id=-700,
         message_thread_id=None,
@@ -61,6 +88,39 @@ def _seed_post(connection):
 
 
 @pytest.mark.asyncio
+async def test_admin_uploads_rich_markdown_image_to_webp_storage(classroom_http):
+    storage = _RichMediaStorage()
+    classroom_http.client.app[PWA_CONTENT_OBJECT_STORAGE] = storage
+    classroom_http.client.app[pwa_app.PWA_CONTENT_ASSET_CONVERTER] = _RichMediaConverter()
+    form = FormData()
+    form.add_field(
+        "image",
+        b"\x89PNG\r\n\x1a\nimage",
+        filename="square.png",
+        content_type="image/png",
+    )
+
+    response = await classroom_http.client.post(
+        "/staff/api/v1/rich-media/uploads",
+        data=form,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert response.status == 201, await response.text()
+    payload = await response.json()
+    assert payload["image"] == {
+        "url": f"https://cdn.example.test/{storage.objects[0][0]}",
+        "mimeType": "image/webp",
+        "width": 1_200,
+        "height": 900,
+    }
+    assert storage.objects[0][0].startswith("rich-media/sha256/")
+    assert storage.objects[0][1] == b"webp:\x89PNG\r\n\x1a\nimage"
+    assert storage.objects[0][2] == "image/webp"
+
+
+@pytest.mark.asyncio
 async def test_admin_hides_and_restores_news_without_changing_telegram(classroom_http):
     _, update = classroom_http.factory.run_write(_seed_post)
     teacher = await classroom_http.client.get(
@@ -82,7 +142,7 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
         "source": "telegram",
         "channelTitle": "Тестовый канал",
         "ownerType": "course",
-        "ownerId": "classroom-layout-course",
+        "ownerId": "c-1",
         "ownerName": "Математика",
         "publishedAt": "2026-07-05T10:00:00Z",
         "editedAt": None,
@@ -356,7 +416,7 @@ async def test_admin_schedules_local_news_without_releasing_it_early(classroom_h
     body = {
         "schemaVersion": 1,
         "ownerType": "course",
-        "ownerId": "classroom-layout-course",
+        "ownerId": "c-1",
         "text": "  Разбор задач состоится завтра в 17:00.  ",
         "publishedAt": "2099-08-04T13:00:00+00:00",
     }
@@ -381,7 +441,7 @@ async def test_admin_schedules_local_news_without_releasing_it_early(classroom_h
         "source": "local",
         "channelTitle": None,
         "ownerType": "course",
-        "ownerId": "classroom-layout-course",
+        "ownerId": "c-1",
         "publishedAt": "2099-08-04T13:00:00.000000Z",
         "revision": 1,
         "textExcerpt": "Разбор задач состоится завтра в 17:00.",
@@ -458,7 +518,7 @@ async def test_admin_edits_future_local_news_and_reschedules_notifications(
         json={
             "schemaVersion": 1,
             "ownerType": "course",
-            "ownerId": "classroom-layout-course",
+            "ownerId": "c-1",
             "text": "Первоначальный текст",
             "publishedAt": "2099-08-04T13:00:00Z",
         },
@@ -561,7 +621,7 @@ async def test_admin_corrects_published_local_news_without_repeat_notification(
         json={
             "schemaVersion": 1,
             "ownerType": "group",
-            "ownerId": "classroom-layout-group",
+            "ownerId": "g-5",
             "text": "Уже в ленте",
             "publishedAt": "2020-08-04T13:00:00Z",
         },
@@ -580,7 +640,7 @@ async def test_admin_corrects_published_local_news_without_repeat_notification(
             (post_id,),
         ).fetchall()
         deliveries = connection.execute(
-            "SELECT public_id, event_id, subscription_public_id, state, "
+            "SELECT public_id, event_id, state, "
             "attempt_count, next_attempt_at, delivered_at, created_at, updated_at "
             "FROM notification_deliveries WHERE event_id IN "
             "(SELECT id FROM notification_events WHERE dedupe_key = ?) "
@@ -688,7 +748,7 @@ async def test_admin_can_restore_previous_text_and_time_as_a_new_revision(
     original = {
         "schemaVersion": 1,
         "ownerType": "group",
-        "ownerId": "classroom-layout-group",
+        "ownerId": "g-5",
         "text": "Первый вариант",
         "publishedAt": "2099-08-04T13:00:00Z",
     }
@@ -745,7 +805,7 @@ async def test_local_news_edit_rolls_back_revision_schedule_and_version_with_aud
         json={
             "schemaVersion": 1,
             "ownerType": "course",
-            "ownerId": "classroom-layout-course",
+            "ownerId": "c-1",
             "text": "До сбоя аудита",
             "publishedAt": "2099-08-04T13:00:00Z",
         },
@@ -806,7 +866,7 @@ async def test_published_local_news_reaches_student_and_family(classroom_http):
         json={
             "schemaVersion": 1,
             "ownerType": "group",
-            "ownerId": "classroom-layout-group",
+            "ownerId": "g-5",
             "text": "Аудитории опубликованы.",
             "publishedAt": "2020-08-04T13:00:00Z",
         },
@@ -857,7 +917,7 @@ async def test_local_news_rejects_unknown_owner_and_invalid_content(classroom_ht
         json={
             "schemaVersion": 1,
             "ownerType": "course",
-            "ownerId": "classroom-layout-course",
+            "ownerId": "c-1",
             "text": "   ",
             "publishedAt": "tomorrow",
         },
@@ -874,7 +934,7 @@ async def test_due_local_news_publishes_one_idempotent_refetch_hint(classroom_ht
         json={
             "schemaVersion": 1,
             "ownerType": "course",
-            "ownerId": "classroom-layout-course",
+            "ownerId": "c-1",
             "text": "Публикация по расписанию",
             "publishedAt": "2099-08-04T13:00:00Z",
         },
@@ -929,7 +989,7 @@ async def test_hidden_local_news_does_not_trigger_due_invalidation(classroom_htt
         json={
             "schemaVersion": 1,
             "ownerType": "group",
-            "ownerId": "classroom-layout-group",
+            "ownerId": "g-5",
             "text": "Отменённая публикация",
             "publishedAt": "2099-08-04T13:00:00Z",
         },
@@ -995,7 +1055,7 @@ async def test_rich_local_news_keeps_v1_reads_and_persists_immutable_v2_revision
         json={
             "schemaVersion": 2,
             "ownerType": "course",
-            "ownerId": "classroom-layout-course",
+            "ownerId": "c-1",
             "markdown": "**Разбор** сегодня",
             "document": first_document,
             "publishedAt": "2020-01-01T00:00:00Z",

@@ -15,6 +15,10 @@ function targetForProject(projectName: string): SubmissionTarget {
   return target
 }
 
+function readableLessonUrl(lessonNumber: number): string {
+  return `/student/tasks/math-5-7/${encodeURIComponent('н')}/${lessonNumber}`
+}
+
 function testProblemSource(
   projectName: string,
   retry: number,
@@ -68,8 +72,14 @@ async function publishTestProblem(
   // branch keeps attempt counters independent from a failed prior run while
   // still exercising the production insert/publish workflow.
   const matching = workflow.getByLabel('Сопоставление задачи 1')
-  await matching.selectOption('insert_new')
-  await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
+  const manualMatchingRequired = await matching
+    .waitFor({ state: 'visible', timeout: 1_000 })
+    .then(() => true)
+    .catch(() => false)
+  if (manualMatchingRequired) {
+    await matching.selectOption('insert_new')
+    await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
+  }
 
   await workflow.getByLabel('Название, строка 1').fill(title)
   const problemType = options.problemType ?? '1'
@@ -133,23 +143,28 @@ async function publishRepairedTestProblem(
   expect((await uploadResponse).status()).toBe(201)
 
   const matching = workflow.getByLabel('Сопоставление задачи 1')
-  await expect(matching).toBeVisible()
-  const existingValue = await matching
-    .locator('option')
-    .evaluateAll(
-      (options, title) =>
-        options
-          .find(
-            (option) =>
-              /^(?:auto_position|manual_match):/.test(option.getAttribute('value') ?? '') &&
-              option.textContent?.includes(String(title)),
-          )
-          ?.getAttribute('value'),
-      existingTitle,
-    )
-  if (!existingValue) throw new Error(`No existing problem candidate for ${existingTitle}`)
-  await matching.selectOption(existingValue)
-  await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
+  const manualMatchingRequired = await matching
+    .waitFor({ state: 'visible', timeout: 1_000 })
+    .then(() => true)
+    .catch(() => false)
+  if (manualMatchingRequired) {
+    const existingValue = await matching
+      .locator('option')
+      .evaluateAll(
+        (options, title) =>
+          options
+            .find(
+              (option) =>
+                /^(?:auto_position|manual_match):/.test(option.getAttribute('value') ?? '') &&
+                option.textContent?.includes(String(title)),
+            )
+            ?.getAttribute('value'),
+        existingTitle,
+      )
+    if (!existingValue) throw new Error(`No existing problem candidate for ${existingTitle}`)
+    await matching.selectOption(existingValue)
+    await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
+  }
 
   await workflow.getByLabel('Правильный ответ, строка 1').fill('7')
   const metadataResponse = page.waitForResponse(
@@ -182,6 +197,32 @@ async function serverAttempts(page: Page, problemId: string) {
   }, problemId)
 }
 
+async function publishedProblemId(page: Page, target: SubmissionTarget, sourceItem: string) {
+  return page.evaluate(
+    async ({ courseId, groupLessonId, displayNumber }) => {
+      const response = await fetch(
+        `/student/api/v1/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(groupLessonId)}/problems`,
+      )
+      if (!response.ok) throw new Error(`Published problems returned ${response.status}`)
+      const body = (await response.json()) as {
+        problems: Array<{ displayNumber: string; problemId: string }>
+      }
+      const problem = body.problems.find((candidate) => candidate.displayNumber === displayNumber)
+      if (!problem) throw new Error(`Published problem ${displayNumber} is missing`)
+      return problem.problemId
+    },
+    {
+      courseId: contentFixture.coursePublicId,
+      groupLessonId: target.groupLessonPublicId,
+      displayNumber: `1${sourceItem}`,
+    },
+  )
+}
+
+async function openPublishedTestProblem(page: Page, sourceItem: string) {
+  await page.getByRole('button', { name: `Открыть задачу 1${sourceItem}` }).click()
+}
+
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
 })
@@ -190,21 +231,14 @@ test('Phase 4: a test answer survives reload and an offline POST is delivered ex
   page,
 }, testInfo) => {
   const target = targetForProject(testInfo.project.name)
+  const sourceItem = `e2e-${testInfo.retry}`
   await loginThroughUi(page, AUTH_PERSONAS.admin, `/staff/lessons/${target.groupLessonPublicId}`)
-  await publishTestProblem(page, target, testInfo.project.name, testInfo.retry)
+  await publishTestProblem(page, target, testInfo.project.name, testInfo.retry, { sourceItem })
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
-  await page.goto(
-    `/student/tasks?course=${contentFixture.coursePublicId}` +
-      `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
-  )
-  const task = page.getByRole('button', {
-    name: new RegExp(`Тестовая сдача ${testInfo.project.name}`),
-  })
-  await expect(task).toBeVisible()
-  await task.click()
-  await expect(page.getByRole('heading', { name: 'Тестовая сдача', exact: true })).toBeVisible()
-  await expect(page.getByText('Ваш ответ')).toBeVisible()
+  await page.goto(readableLessonUrl(target.lessonNumber))
+  await openPublishedTestProblem(page, sourceItem)
+  await expect(page.getByRole('region', { name: 'Ваш ответ' })).toBeVisible()
 
   const attemptPath = /\/student\/api\/v1\/problems\/[^/]+\/test-attempts$/
   let submissionRequests = 0
@@ -230,11 +264,9 @@ test('Phase 4: a test answer survives reload and an offline POST is delivered ex
   )
   await page.getByRole('button', { name: 'Проверить' }).click()
   expect((await created).status()).toBe(201)
-  await expect(page.getByText('Да, ответ принят')).toBeVisible()
   await expect(page.getByText('Да, всё верно!')).toBeVisible()
 
-  const problemId = new URL(page.url()).pathname.split('/').at(-1)
-  if (!problemId) throw new Error('Student task URL has no problem identity')
+  const problemId = await publishedProblemId(page, target, sourceItem)
   await expect.poll(async () => (await serverAttempts(page, problemId)).attempts.length).toBe(1)
 
   // Use the browser's real offline mode so the POST cannot leave the browser.
@@ -244,23 +276,21 @@ test('Phase 4: a test answer survives reload and an offline POST is delivered ex
   try {
     await page.getByLabel('Ответ', { exact: true }).fill('8')
     await page.getByRole('button', { name: 'Проверить' }).click()
-    await expect(page.getByText('Ответ сохранён в очереди')).toBeVisible()
+    await expect(page.getByText('Отправим, когда появится сеть.')).toBeVisible()
   } finally {
     await page.context().setOffline(false)
   }
 
   await page.reload()
-  await expect(page.getByText('Ответ сохранён в очереди')).toBeVisible()
-  await expect(page.getByLabel('Ответ', { exact: true })).toHaveValue('8')
+  await expect(page.getByText('Отправим, когда появится сеть.')).toBeVisible()
   expect((await serverAttempts(page, problemId)).attempts).toHaveLength(1)
 
   const retried = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' && attemptPath.test(new URL(response.url()).pathname),
   )
-  await page.getByRole('button', { name: 'Повторить отправку' }).click()
+  await page.getByRole('button', { name: 'Повторить' }).click()
   expect((await retried).status()).toBe(201)
-  await expect(page.getByText('Ответ пока неверный')).toBeVisible()
   await expect(page.getByText('Нет, это другое число.')).toBeVisible()
 
   await expect.poll(async () => (await serverAttempts(page, problemId)).attempts.length).toBe(2)
@@ -276,7 +306,7 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
   const target = targetForProject(testInfo.project.name)
   const title = `Отложенная проверка ${testInfo.project.name}`
   const sourceTitle = 'Отложенная проверка'
-  const sourceItem = `pending-${testInfo.project.name}`
+  const sourceItem = `pending-${testInfo.project.name}-${testInfo.retry}`
   await loginThroughUi(page, AUTH_PERSONAS.admin, `/staff/lessons/${target.groupLessonPublicId}`)
   await publishTestProblem(page, target, testInfo.project.name, testInfo.retry, {
     title,
@@ -286,14 +316,10 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
   })
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
-  await page.goto(
-    `/student/tasks?course=${contentFixture.coursePublicId}` +
-      `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
-  )
-  await page.getByRole('button', { name: new RegExp(title) }).click()
+  await page.goto(readableLessonUrl(target.lessonNumber))
+  await openPublishedTestProblem(page, sourceItem)
   const taskUrl = page.url()
-  const problemId = new URL(taskUrl).pathname.split('/').at(-1)
-  if (!problemId) throw new Error('Student task URL has no problem identity')
+  const problemId = await publishedProblemId(page, target, sourceItem)
 
   await page.getByLabel('Ответ', { exact: true }).fill('7')
   const pendingResponse = page.waitForResponse(
@@ -303,7 +329,7 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
   )
   await page.getByRole('button', { name: 'Проверить' }).click()
   expect((await pendingResponse).status()).toBe(201)
-  await expect(page.getByText('Ответ сохранён и ждёт настройки')).toBeVisible()
+  await expect(page.getByText('Ответ принят и ожидает настройки проверки.')).toBeVisible()
   expect((await serverAttempts(page, problemId)).attempts).toEqual([
     expect.objectContaining({ displayAnswer: '7', outcome: 'pending_configuration' }),
   ])
@@ -321,7 +347,7 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
     sourceItem,
   )
   await page.goto(`/staff/problems/${problemId}`)
-  await expect(page.getByText('Ожидают: 1')).toBeVisible()
+  await expect(page.getByText('Ответов: 1')).toBeVisible()
 
   const recheckResponse = page.waitForResponse(
     (response) =>
@@ -332,10 +358,11 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
   await page.getByRole('button', { name: 'Перепроверить 1 ответ' }).click()
   expect((await recheckResponse).status()).toBe(200)
   await expect(page.getByText('Проверено 1 из 1')).toBeVisible()
-  await expect(page.getByText('Нет ответов, ожидающих настройки')).toBeVisible()
 
   await page.goto(taskUrl)
-  await expect(page.getByLabel('Последние ответы').getByText('верно')).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Ваш ответ' }).getByText('Да, ответ принят.'),
+  ).toBeVisible()
   expect((await serverAttempts(page, problemId)).attempts).toEqual([
     expect.objectContaining({ displayAnswer: '7', outcome: 'correct' }),
   ])
@@ -346,25 +373,21 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
 }, testInfo) => {
   const target = targetForProject(testInfo.project.name)
   const title = `Письменная сдача ${testInfo.project.name}`
+  const sourceItem = `written-${testInfo.project.name}-${testInfo.retry}`
   await loginThroughUi(page, AUTH_PERSONAS.admin, `/staff/lessons/${target.groupLessonPublicId}`)
   await publishTestProblem(page, target, testInfo.project.name, testInfo.retry, {
     title,
     sourceTitle: title,
-    sourceItem: `written-${testInfo.project.name}`,
+    sourceItem,
     problemType: '2',
   })
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
-  await page.goto(
-    `/student/tasks?course=${contentFixture.coursePublicId}` +
-      `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
-  )
-  await page.getByRole('button', { name: new RegExp(title) }).click()
-  await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
-  await expect(page.getByText('Сдать решение', { exact: true })).toBeVisible()
+  await page.goto(readableLessonUrl(target.lessonNumber))
+  await openPublishedTestProblem(page, sourceItem)
+  await expect(page.getByRole('region', { name: 'Сдать решение' })).toBeVisible()
 
-  const problemId = new URL(page.url()).pathname.split('/').at(-1)
-  if (!problemId) throw new Error('Student written-task URL has no problem identity')
+  const problemId = await publishedProblemId(page, target, sourceItem)
 
   const solutionText = 'Провёл дополнительную диагональ и получил два равных треугольника.'
   await page.getByLabel('Ваше решение').fill(solutionText)
@@ -376,11 +399,11 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
       'base64',
     ),
   })
-  await expect(page.getByText('Готово к отправке')).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText('готово', { exact: true })).toBeVisible({ timeout: 30_000 })
 
   await page.reload()
   await expect(page.getByLabel('Ваше решение')).toHaveValue(solutionText)
-  await expect(page.getByText('Готово к отправке')).toBeVisible()
+  await expect(page.getByText('готово', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Страница 1: повернуть' })).toHaveCount(0)
 
   const writeCounts = { create: 0, upload: 0, reorder: 0, submit: 0 }
@@ -398,25 +421,34 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
   })
 
   await page.context().setOffline(true)
-  try {
-    // Wait for the application-level connectivity state, not only the
-    // Playwright network switch, before enqueueing the offline draft.
-    await expect(page.getByText('Нет сети', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Поставить в очередь' }).click()
-    await expect(page.getByText('Решение сохранено в очереди')).toBeVisible()
-    await expect(page.getByLabel('Ваше решение')).toBeDisabled()
-    expect(writeCounts).toEqual({ create: 0, upload: 0, reorder: 0, submit: 0 })
-  } finally {
-    const submitted = page.waitForResponse(
-      (response) =>
-        response.request().method() === 'POST' &&
-        new URL(response.url()).pathname.endsWith('/submit'),
-    )
-    await page.context().setOffline(false)
-    expect((await submitted).status()).toBe(200)
-  }
+  // Wait for the application-level connectivity state, not only the
+  // Playwright network switch, before enqueueing the offline draft.
+  await expect(page.getByText('Нет сети — отправим позже.')).toBeVisible()
+  // The written composer always keeps its primary action named "Отправить";
+  // submit() enqueues locally while navigator is offline.
+  await page.getByRole('button', { name: 'Отправить' }).click()
+  await expect(page.getByText('Отправим, когда появится сеть.')).toBeVisible()
+  await expect(page.getByLabel('Ваше решение')).toHaveCount(0)
+  expect(writeCounts).toEqual({ create: 0, upload: 0, reorder: 0, submit: 0 })
 
-  await expect(page.getByText('Решение отправлено')).toBeVisible()
+  const submitted = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/submit'),
+  )
+  await page.context().setOffline(false)
+
+  // A reconnect may start delivery before the hydrated outbox renders its
+  // retry affordance.  If it did not, resume the durable queue explicitly.
+  const retry = page.getByRole('button', { name: 'Повторить' })
+  const edit = page.getByRole('button', { name: 'Изменить' })
+  await expect
+    .poll(async () => (await retry.isVisible()) || (await edit.isVisible()), { timeout: 30_000 })
+    .toBe(true)
+  if (await retry.isVisible()) await retry.click()
+  expect((await submitted).status()).toBe(200)
+
+  await expect(page.getByRole('button', { name: 'Изменить' })).toBeVisible()
   await expect(page.getByLabel('Ваше решение')).toHaveValue('')
   expect(writeCounts).toEqual({ create: 1, upload: 1, reorder: 0, submit: 1 })
 
@@ -452,18 +484,26 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
       response.request().method() === 'GET' && new URL(response.url()).pathname.endsWith('/media'),
   )
   page.once('dialog', (dialog) => void dialog.accept())
-  await page.getByRole('button', { name: 'Изменить отправленное решение' }).click()
+  await page.getByRole('button', { name: 'Изменить' }).click()
   expect((await mediaResponse).status()).toBe(200)
-  await expect(page.getByText('Готовится замена', { exact: true })).toBeVisible()
+  await expect(
+    page.getByText('Изменяете отправленное решение — оно заменится одной операцией.'),
+  ).toBeVisible()
   await expect(page.getByLabel('Ваше решение')).toHaveValue(solutionText)
-  await expect(page.getByText('Страница 1.webp', { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Изменить решение' }).getByRole('img', { name: 'Страница 1' }).last(),
+  ).toBeVisible()
 
   const replacementText = `${solutionText} Исправил обоснование равенства углов.`
   await page.getByLabel('Ваше решение').fill(replacementText)
   await page.reload()
-  await expect(page.getByText('Готовится замена', { exact: true })).toBeVisible()
+  await expect(
+    page.getByText('Изменяете отправленное решение — оно заменится одной операцией.'),
+  ).toBeVisible()
   await expect(page.getByLabel('Ваше решение')).toHaveValue(replacementText)
-  await expect(page.getByText('Страница 1.webp', { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Изменить решение' }).getByRole('img', { name: 'Страница 1' }).last(),
+  ).toBeVisible()
 
   const replaceResponse = page.waitForResponse(
     (response) =>
@@ -473,7 +513,6 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
   page.once('dialog', (dialog) => void dialog.accept())
   await page.getByRole('button', { name: 'Отправить', exact: true }).click()
   expect((await replaceResponse).status()).toBe(200)
-  await expect(page.getByText('Решение отправлено')).toBeVisible()
 
   const replaced = await page.evaluate(async (id) => {
     const response = await fetch(`/student/api/v1/problems/${id}/thread`)

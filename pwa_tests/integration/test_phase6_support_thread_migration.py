@@ -76,7 +76,7 @@ def test_support_thread_migration_up_down_up_is_exact(tmp_path):
     with sqlite3.connect(database_path) as connection:
         assert {
             str(row[1])
-            for row in connection.execute("PRAGMA table_info(support_threads)")
+            for row in connection.execute("PRAGMA table_xinfo(support_threads)")
         } == {
             "id",
             "public_id",

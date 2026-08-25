@@ -25,28 +25,28 @@ async def test_teacher_directory_is_scope_filtered_and_hides_account_links(
     assert teacher_list.status == 200, await teacher_list.text()
     students = (await teacher_list.json())["students"]
     assert [student["studentId"] for student in students] == [
-        "classroom-layout-student"
+        "u-958003"
     ]
     assert students[0]["webAccount"] is None
     assert students[0]["usernameSuggestion"] is None
     assert students[0]["familyAccounts"] == []
 
     forbidden_update = await classroom_http.client.put(
-        "/staff/api/v1/course-enrollments/classroom-layout-enrollment",
+        "/staff/api/v1/course-enrollments/en-1",
         json={
             "schemaVersion": 1,
-            "activeGroupId": "classroom-layout-group",
-            "allowedGroupIds": ["classroom-layout-group"],
+            "activeGroupId": "g-5",
+            "allowedGroupIds": ["g-5"],
             "attendanceMode": "online",
             "status": "active",
         },
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v1"',
+            if_match='"en-1:v1"',
         ),
         cookies=_cookies(classroom_http, "teacher"),
     )
-    assert forbidden_update.status == 403
+    assert forbidden_update.status == 403, await forbidden_update.text()
     assert (await forbidden_update.json())["error"]["code"] == "forbidden"
 
 
@@ -64,10 +64,10 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
     student = next(
         item
         for item in payload["students"]
-        if item["studentId"] == "classroom-layout-student"
+        if item["studentId"] == "u-958003"
     )
     assert student == {
-        "studentId": "classroom-layout-student",
+        "studentId": "u-958003",
         "surname": "Белова",
         "name": "Анна",
         "middleName": None,
@@ -76,14 +76,14 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
         "strength": None,
         "usernameSuggestion": None,
         "webAccount": {
-            "accountId": "classroom-http-account-student",
+            "accountId": "a-3",
             "username": "classroom-http-student",
             "status": "active",
             "credentialVersion": 1,
         },
         "familyAccounts": [
             {
-                "accountId": "classroom-http-account-family",
+                "accountId": "a-4",
                 "username": "classroom-http-family",
                 "displayName": "Семья Беловой",
                 "status": "active",
@@ -94,17 +94,17 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
         ],
         "enrollments": [
             {
-                "enrollmentId": "classroom-layout-enrollment",
+                "enrollmentId": "en-1",
                 "course": {
-                    "courseId": "classroom-layout-course",
+                    "courseId": "c-1",
                     "code": "math-layout",
                     "name": "Математика",
                     "subjectCode": "math",
                 },
-                "activeGroupId": "classroom-layout-group",
+                "activeGroupId": "g-5",
                 "allowedGroups": [
                     {
-                        "groupId": "classroom-layout-group",
+                        "groupId": "g-5",
                         "code": "н",
                         "name": "Начинающие",
                         "status": "active",
@@ -145,12 +145,11 @@ async def test_admin_directory_suggests_only_unique_canonical_student_logins(
     def seed(connection) -> None:
         connection.executemany(
             "INSERT INTO users "
-            "(id, public_id, type, name, surname, birthday, token) "
-            "VALUES (?, ?, 1, ?, ?, ?, ?)",
+            "(id, type, name, surname, birthday, token) "
+            "VALUES (?, 1, ?, ?, ?, ?)",
             (
                 (
                     958020,
-                    "student-login-ready",
                     "Сергей",
                     "Шашков",
                     "2013-03-07",
@@ -158,7 +157,6 @@ async def test_admin_directory_suggests_only_unique_canonical_student_logins(
                 ),
                 (
                     958021,
-                    "student-login-collision-a",
                     "Анна",
                     "Иванова",
                     "2012-01-02",
@@ -166,7 +164,6 @@ async def test_admin_directory_suggests_only_unique_canonical_student_logins(
                 ),
                 (
                     958022,
-                    "student-login-collision-b",
                     "Алина",
                     "Иванова",
                     "2011-04-02",
@@ -174,7 +171,6 @@ async def test_admin_directory_suggests_only_unique_canonical_student_logins(
                 ),
                 (
                     958023,
-                    "student-login-invalid",
                     "Борис",
                     "Петров",
                     None,
@@ -192,16 +188,16 @@ async def test_admin_directory_suggests_only_unique_canonical_student_logins(
     assert response.status == 200, await response.text()
     students = {item["studentId"]: item for item in (await response.json())["students"]}
 
-    assert students["student-login-ready"]["usernameSuggestion"] == {
+    assert students["u-958020"]["usernameSuggestion"] == {
         "username": "shashkov-07",
         "state": "ready",
     }
-    for student_id in ("student-login-collision-a", "student-login-collision-b"):
+    for student_id in ("u-958021", "u-958022"):
         assert students[student_id]["usernameSuggestion"] == {
             "username": "ivanova-02",
             "state": "collision",
         }
-    assert students["student-login-invalid"]["usernameSuggestion"] == {
+    assert students["u-958023"]["usernameSuggestion"] == {
         "username": None,
         "state": "invalid_identity",
     }
@@ -212,15 +208,15 @@ def _seed_second_group(classroom_http: ClassroomHttpFixture) -> None:
 
     def seed(connection) -> None:
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "allow_self_switch, is_system, score_weight, course_id, "
             "status, color_key, created_at, updated_at) VALUES "
             "('layout-advanced', 'п', 'Продолжающие', 2, 1, 0, 0, 0, 1.0, "
-            "'classroom-layout-group-advanced', ?, 'active', 'intermediate', ?, ?)",
+            "?, 'active', 'intermediate', ?, ?)",
             (course_id, now, now),
         )
         connection.execute(
@@ -239,11 +235,11 @@ def _allow_second_group_for_student(
 
     def seed(connection) -> None:
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         enrollment_id = connection.execute(
             "SELECT id FROM course_enrollments "
-            "WHERE public_id = 'classroom-layout-enrollment'"
+            "WHERE public_id = 'en-1'"
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO course_group_access "
@@ -260,7 +256,7 @@ def _allow_second_group_for_teacher(classroom_http: ClassroomHttpFixture) -> Non
 
     def seed(connection) -> None:
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO staff_scopes "
@@ -280,20 +276,20 @@ async def test_teacher_changes_only_active_group_inside_scope(
 
     body = {
         "schemaVersion": 1,
-        "activeGroupId": "classroom-layout-group-advanced",
+        "activeGroupId": "g-6",
         "allowedGroupIds": [
-            "classroom-layout-group",
-            "classroom-layout-group-advanced",
+            "g-5",
+            "g-6",
         ],
         "attendanceMode": "in_person",
         "status": "active",
     }
     forbidden = await classroom_http.client.put(
-        "/staff/api/v1/course-enrollments/classroom-layout-enrollment",
+        "/staff/api/v1/course-enrollments/en-1",
         json=body,
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v1"',
+            if_match='"en-1:v1"',
         ),
         cookies=_cookies(classroom_http, "teacher"),
     )
@@ -302,18 +298,18 @@ async def test_teacher_changes_only_active_group_inside_scope(
     _allow_second_group_for_teacher(classroom_http)
 
     response = await classroom_http.client.put(
-        "/staff/api/v1/course-enrollments/classroom-layout-enrollment",
+        "/staff/api/v1/course-enrollments/en-1",
         json=body,
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v1"',
+            if_match='"en-1:v1"',
         ),
         cookies=_cookies(classroom_http, "teacher"),
     )
 
     assert response.status == 200, await response.text()
     assert (await response.json())["enrollment"]["activeGroupId"] == (
-        "classroom-layout-group-advanced"
+        "g-6"
     )
     event = classroom_http.factory.run_read(
         lambda connection: connection.execute(
@@ -327,13 +323,13 @@ async def test_admin_changes_group_mode_and_allowed_access_atomically(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     _seed_second_group(classroom_http)
-    path = "/staff/api/v1/course-enrollments/classroom-layout-enrollment"
+    path = "/staff/api/v1/course-enrollments/en-1"
     body = {
         "schemaVersion": 1,
-        "activeGroupId": "classroom-layout-group-advanced",
+        "activeGroupId": "g-6",
         "allowedGroupIds": [
-            "classroom-layout-group",
-            "classroom-layout-group-advanced",
+            "g-5",
+            "g-6",
         ],
         "attendanceMode": "online",
         "status": "active",
@@ -344,7 +340,7 @@ async def test_admin_changes_group_mode_and_allowed_access_atomically(
         json=body,
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v2"',
+            if_match='"en-1:v2"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -352,10 +348,10 @@ async def test_admin_changes_group_mode_and_allowed_access_atomically(
 
     invalid = await classroom_http.client.put(
         path,
-        json={**body, "allowedGroupIds": ["classroom-layout-group"]},
+        json={**body, "allowedGroupIds": ["g-5"]},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v1"',
+            if_match='"en-1:v1"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -367,18 +363,18 @@ async def test_admin_changes_group_mode_and_allowed_access_atomically(
         json=body,
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v1"',
+            if_match='"en-1:v1"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert response.status == 200, await response.text()
-    assert response.headers["ETag"] == '"classroom-layout-enrollment:v2"'
+    assert response.headers["ETag"] == '"en-1:v2"'
     enrollment = (await response.json())["enrollment"]
-    assert enrollment["activeGroupId"] == "classroom-layout-group-advanced"
+    assert enrollment["activeGroupId"] == "g-6"
     assert enrollment["attendanceMode"] == "online"
     assert {group["groupId"] for group in enrollment["allowedGroups"]} == {
-        "classroom-layout-group",
-        "classroom-layout-group-advanced",
+        "g-5",
+        "g-6",
     }
 
     # Replaying the complete desired state is a no-op, not a new audit event.
@@ -387,18 +383,18 @@ async def test_admin_changes_group_mode_and_allowed_access_atomically(
         json=body,
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v2"',
+            if_match='"en-1:v2"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert unchanged.status == 200, await unchanged.text()
-    assert unchanged.headers["ETag"] == '"classroom-layout-enrollment:v2"'
+    assert unchanged.headers["ETag"] == '"en-1:v2"'
 
     def rows(connection):
         enrollment_row = connection.execute(
             "SELECT active_group_id, attendance_mode, version, updated_by "
             "FROM course_enrollments "
-            "WHERE public_id = 'classroom-layout-enrollment'"
+            "WHERE public_id = 'en-1'"
         ).fetchone()
         access_rows = connection.execute(
             "SELECT group_id FROM course_group_access "
@@ -410,7 +406,7 @@ async def test_admin_changes_group_mode_and_allowed_access_atomically(
         ).fetchall()
         legacy_user = connection.execute(
             "SELECT group_id, online FROM users "
-            "WHERE public_id = 'classroom-layout-student'"
+            "WHERE public_id = 'u-958003'"
         ).fetchone()
         return enrollment_row, access_rows, event_rows, legacy_user
 
@@ -438,25 +434,25 @@ async def test_admin_can_revoke_old_access_and_pause_enrollment(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     _seed_second_group(classroom_http)
-    path = "/staff/api/v1/course-enrollments/classroom-layout-enrollment"
+    path = "/staff/api/v1/course-enrollments/en-1"
     response = await classroom_http.client.put(
         path,
         json={
             "schemaVersion": 1,
-            "activeGroupId": "classroom-layout-group-advanced",
-            "allowedGroupIds": ["classroom-layout-group-advanced"],
+            "activeGroupId": "g-6",
+            "allowedGroupIds": ["g-6"],
             "attendanceMode": "in_person",
             "status": "paused",
         },
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-enrollment:v1"',
+            if_match='"en-1:v1"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
 
     assert response.status == 200, await response.text()
-    assert response.headers["ETag"] == '"classroom-layout-enrollment:v2"'
+    assert response.headers["ETag"] == '"en-1:v2"'
 
     def rows(connection):
         access = connection.execute(

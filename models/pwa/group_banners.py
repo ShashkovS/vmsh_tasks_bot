@@ -68,7 +68,6 @@ def _window(starts_at: str, ends_at: str) -> None:
 def create_group_banner(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     group_id: str,
     audience: str,
     html_source: str,
@@ -101,7 +100,6 @@ def create_group_banner(
         )
     return insert_group_banner(
         connection,
-        public_id=public_id,
         group_id=group_id,
         audience=audience,
         html_sanitized=html_sanitized,

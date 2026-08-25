@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
@@ -28,6 +27,7 @@ from models.pwa.group_banners import (
     create_group_banner,
     edit_group_banner,
 )
+from models.pwa.group_banner_notifications import sync_group_banner_notifications
 from models.pwa.rich_document import InvalidRichDocument, validate_rich_document
 
 
@@ -261,6 +261,7 @@ async def list_banners(request: web.Request) -> web.Response:
 @group_banner_routes.post("/staff/api/v1/group-banners")
 async def create_banner(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    now = _now()
     body = await _read_json(request)
     v1_fields = {
         "schemaVersion", "groupId", "audience", "html", "startsAt", "endsAt", "priority", "dismissible"
@@ -291,7 +292,6 @@ async def create_banner(request: web.Request) -> web.Response:
             return None
         item = create_group_banner(
             connection,
-            public_id=f"banner.{uuid.uuid4().hex}",
             group_id=group_id,
             audience=body["audience"],
             html_source=body["html"] if not is_v2 else "<p>Rich Markdown</p>",
@@ -300,14 +300,15 @@ async def create_banner(request: web.Request) -> web.Response:
             priority=body["priority"],
             dismissible=body["dismissible"],
             actor_user_id=actor_user_id,
-            now=_now(),
+            now=now,
             markdown=body["markdown"] if is_v2 else None,
             document=document,
         )
         if media_manifest:
             replace_group_banner_media(
-                connection, banner_id=int(item["id"]), media=media_manifest, now=_now()
+                connection, banner_id=int(item["id"]), media=media_manifest, now=now
             )
+        sync_group_banner_notifications(connection, banner=item, now=now)
         return item
 
     try:
@@ -336,6 +337,7 @@ async def create_banner(request: web.Request) -> web.Response:
 @group_banner_routes.patch("/staff/api/v1/group-banners/{banner_id}")
 async def update_banner(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    now = _now()
     public_id = request.match_info["banner_id"]
     if _PUBLIC_ID.fullmatch(public_id) is None:
         raise PwaApiError(
@@ -374,13 +376,12 @@ async def update_banner(request: web.Request) -> web.Response:
                 priority=body["priority"],
                 dismissible=body["dismissible"],
                 actor_user_id=actor_user_id,
-                now=_now(),
+                now=now,
                 markdown=body["markdown"] if is_v2 else None,
                 document=document,
             )
-            replace_group_banner_media(
-                connection, banner_id=int(item["id"]), media=media_manifest, now=_now()
-            )
+            replace_group_banner_media(connection, banner_id=int(item["id"]), media=media_manifest, now=now)
+            sync_group_banner_notifications(connection, banner=item, now=now)
             return item
         item = await _factory(request).run_write_async(write)
     except (InvalidGroupBanner, TypeError) as error:
@@ -408,6 +409,7 @@ async def update_banner(request: web.Request) -> web.Response:
 @group_banner_routes.post("/staff/api/v1/group-banners/{banner_id}/cancel")
 async def cancel_group_banner_route(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    now = _now()
     public_id = request.match_info["banner_id"]
     if _PUBLIC_ID.fullmatch(public_id) is None:
         raise PwaApiError(
@@ -418,15 +420,18 @@ async def cancel_group_banner_route(request: web.Request) -> web.Response:
     if set(body) != {"schemaVersion"} or body.get("schemaVersion") != 1:
         raise PwaApiError(status=422, code="validation_error", message="Проверьте поля объявления")
     try:
-        item = await _factory(request).run_write_async(
-            lambda connection: cancel_banner(
+        def write(connection):
+            item = cancel_banner(
                 connection,
                 public_id=public_id,
                 expected_version=expected_version,
                 actor_user_id=actor_user_id,
-                now=_now(),
+                now=now,
             )
-        )
+            sync_group_banner_notifications(connection, banner=item, now=now)
+            return item
+
+        item = await _factory(request).run_write_async(write)
     except GroupBannerConflict as error:
         raise PwaApiError(
             status=409,

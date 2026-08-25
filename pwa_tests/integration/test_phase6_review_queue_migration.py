@@ -14,7 +14,7 @@ from db_methods.pwa.migrations import MIGRATIONS_ROOT
 
 
 MIGRATION_ID = "0051.pwa_review_queue_leases"
-PUBLIC_ID = re.compile(r"review-queue-[0-9a-f]{32}")
+PUBLIC_ID = re.compile(r"wq-[1-9][0-9]*")
 NOW = "2026-10-04T12:00:00.000000Z"
 
 
@@ -89,7 +89,6 @@ def test_review_queue_rebuild_up_down_up_preserves_rows_and_legacy_writes(tmp_pa
         columns = _columns(connection)
         assert columns["teacher_id"] == "integer"
         assert {
-            "public_id",
             "claim_token",
             "claimed_at",
             "lease_expires_at",

@@ -4,7 +4,7 @@
 create table push_subscriptions
 (
     id              integer primary key,
-    public_id       text    not null unique,
+    public_id text generated always as ('push-' || id) virtual,
     account_id      integer not null references auth_accounts (id),
     session_id      integer not null references auth_sessions (id),
     endpoint        text    not null unique,

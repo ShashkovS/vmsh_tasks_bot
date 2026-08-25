@@ -16,7 +16,7 @@ pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 def _body(*, audience: str = "both", html: str = "<b>Разбор в 17:00</b>"):
     return {
         "schemaVersion": 1,
-        "groupId": "classroom-layout-group",
+        "groupId": "g-5",
         "audience": audience,
         "html": html,
         "startsAt": "2020-01-01T00:00:00Z",
@@ -66,9 +66,9 @@ async def test_admin_creates_updates_and_cancels_banner(classroom_http):
     assert created.status == 201, await created.text()
     item = (await created.json())["item"]
     assert item["group"] == {
-        "groupId": "classroom-layout-group",
+        "groupId": "g-5",
         "name": "Начинающие",
-        "courseId": "classroom-layout-course",
+        "courseId": "c-1",
         "courseName": "Математика",
     }
     assert "javascript" not in item["html"]
@@ -78,7 +78,7 @@ async def test_admin_creates_updates_and_cancels_banner(classroom_http):
     }
 
     listed = await classroom_http.client.get(
-        "/staff/api/v1/group-banners?status=active&groupId=classroom-layout-group",
+        "/staff/api/v1/group-banners?status=active&groupId=g-5",
         headers=_headers(),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -165,7 +165,7 @@ async def test_rich_banner_is_opt_in_for_v2_readers_and_keeps_v1_html(classroom_
         "/staff/api/v1/group-banners",
         json={
             "schemaVersion": 2,
-            "groupId": "classroom-layout-group",
+            "groupId": "g-5",
             "audience": "student",
             "markdown": "**Разбор** сегодня",
             "document": document,

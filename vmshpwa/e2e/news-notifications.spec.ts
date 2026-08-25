@@ -4,16 +4,33 @@ import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas
 import { expect, test } from './fixtures'
 
 const postText = 'Разбор задач — сегодня в 17:00.'
-const postId = 'news.phase8.e2e'
+const postId = 'news-9601'
+const bannerId = 'bn-9601'
 const offlineMarker = 'vmsh-e2e-news-api-offline'
 
 test.setTimeout(90_000)
 
+function projectOrdinal(project: string): number {
+  const ordinals: Record<string, number> = {
+    chromium: 1,
+    webkit: 2,
+    firefox: 3,
+  }
+  const ordinal = ordinals[project]
+  if (ordinal === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+  return ordinal
+}
+
+function newsEventId(project: string, audience: 'student' | 'family'): string {
+  return `n-${(audience === 'student' ? 9610 : 9620) + projectOrdinal(project)}`
+}
+
 function phase8Persona(project: string, audience: 'student' | 'family'): AuthPersona {
+  const ordinal = projectOrdinal(project)
   if (audience === 'student') {
     return {
       persona: 'student',
-      accountPublicId: `account-news-student-e2e-${project}`,
+      accountPublicId: `a-${9510 + ordinal}`,
       audience,
       username: `news-student-e2e-${project}`,
       credentialField: 'telegramToken',
@@ -22,7 +39,7 @@ function phase8Persona(project: string, audience: 'student' | 'family'): AuthPer
   }
   return {
     persona: 'family',
-    accountPublicId: `account-news-family-e2e-${project}`,
+    accountPublicId: `a-${9520 + ordinal}`,
     audience,
     username: `news-family-e2e-${project}`,
     credentialField: 'password',
@@ -82,14 +99,16 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   const restoredDialog = page.getByRole('dialog', {
     name: 'Изменить запланированную публикацию',
   })
-  await expect(restoredDialog.getByLabel('Markdown публикации')).toHaveValue(editedText)
+  await expect(restoredDialog.getByLabel('Markdown публикации')).toContainText(editedText)
   await restoredDialog.getByLabel('Опубликовать по московскому времени').fill('2099-08-05T18:30')
   const updateResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
       /\/staff\/api\/v1\/news\/[^/]+\/local$/.test(new URL(response.url()).pathname),
   )
-  await restoredDialog.getByRole('button', { name: 'Сохранить изменения' }).click()
+  const saveScheduled = restoredDialog.getByRole('button', { name: 'Сохранить изменения' })
+  await saveScheduled.scrollIntoViewIfNeeded()
+  await saveScheduled.click()
   expect((await updateResponse).status()).toBe(200)
 
   const updatedRow = page.getByText(editedText, { exact: true }).locator('xpath=ancestor::li[1]')
@@ -128,7 +147,9 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
       response.request().method() === 'PATCH' &&
       /\/staff\/api\/v1\/news\/[^/]+\/local$/.test(new URL(response.url()).pathname),
   )
-  await editDialog.getByRole('button', { name: 'Сохранить изменения' }).click()
+  const savePublished = editDialog.getByRole('button', { name: 'Сохранить изменения' })
+  await savePublished.scrollIntoViewIfNeeded()
+  await savePublished.click()
   const response = await updateResponse
   expect(response.status()).toBe(200)
   expect(response.request().postDataJSON()).toMatchObject({
@@ -260,12 +281,12 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
 }, testInfo) => {
   await loginThroughUi(page, phase8Persona(testInfo.project.name, 'student'), '/student/')
 
-  const banner = page.locator('[data-banner-id="banner.phase8.e2e"]')
+  const banner = page.locator(`[data-banner-id="${bannerId}"]`)
   await expect(banner).toContainText('Разбор сегодня в 17:00')
   await banner.getByRole('button', { name: 'Скрыть объявление' }).click()
   await expect(banner).toHaveCount(0)
   await page.reload()
-  await expect(page.locator('[data-banner-id="banner.phase8.e2e"]')).toHaveCount(0)
+  await expect(page.locator(`[data-banner-id="${bannerId}"]`)).toHaveCount(0)
   await expect(page).toHaveURL('/student/')
   await expect(page.locator('[data-product="student"]')).toBeVisible()
 
@@ -310,7 +331,7 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
     }
   })
   const targetEvent = eventBeforeRead.items.find(
-    (item) => item.eventId === `notification.news.phase8.e2e.student.${testInfo.project.name}`,
+    (item) => item.eventId === newsEventId(testInfo.project.name, 'student'),
   )
   expect(targetEvent).toBeDefined()
   const event = page
@@ -369,7 +390,7 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
           })
           return response.items.find(
             (item) =>
-              item.eventId === `notification.news.phase8.e2e.student.${testInfo.project.name}`,
+              item.eventId === newsEventId(testInfo.project.name, 'student'),
           )?.readAt
         },
         { timeout: 15_000 },
@@ -383,7 +404,7 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
   })
   expect(
     unreadNews.items.some(
-      (item) => item.eventId === `notification.news.phase8.e2e.student.${testInfo.project.name}`,
+      (item) => item.eventId === newsEventId(testInfo.project.name, 'student'),
     ),
   ).toBe(false)
 
@@ -412,7 +433,7 @@ test('Phase 8: Family sees the shared post, banner and its own news event', asyn
   page,
 }, testInfo) => {
   await loginThroughUi(page, phase8Persona(testInfo.project.name, 'family'), '/family/')
-  await expect(page.locator('[data-banner-id="banner.phase8.e2e"]')).toContainText(
+  await expect(page.locator(`[data-banner-id="${bannerId}"]`)).toContainText(
     'Разбор сегодня в 17:00',
   )
   await page.goto('/family/news')

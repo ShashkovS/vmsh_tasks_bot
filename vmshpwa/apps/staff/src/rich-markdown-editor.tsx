@@ -7,6 +7,8 @@ import type { BlockContext, InlineContext, Line, MarkdownConfig } from '@lezer/m
 import { EditorView } from '@codemirror/view'
 import type { RichDocument } from '@vmsh/contracts'
 import { RichDocumentView, RichMarkdownDiagnostic, parseRichMarkdown } from '@vmsh/product'
+import { Button } from '@vmsh/ui'
+import { ImagePlus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 /**
@@ -153,10 +155,12 @@ function diagnostic(markdown: string): Diagnostic[] {
 function Editor({
   id,
   onChange,
+  onReady,
   value,
 }: {
   id?: string
   onChange: (value: string) => void
+  onReady?: (insert: (markdown: string) => void) => void
   value: string
 }) {
   const host = useRef<HTMLDivElement>(null)
@@ -164,10 +168,15 @@ function Editor({
   const initialId = useRef(id)
   const initialValue = useRef(value)
   const onChangeRef = useRef(onChange)
+  const onReadyRef = useRef(onReady)
 
   useEffect(() => {
     onChangeRef.current = onChange
   }, [onChange])
+
+  useEffect(() => {
+    onReadyRef.current = onReady
+  }, [onReady])
 
   useEffect(() => {
     if (!host.current) return
@@ -199,6 +208,16 @@ function Editor({
       ],
     })
     view.current = new EditorView({ state, parent: host.current })
+    onReadyRef.current?.((markdown) => {
+      const current = view.current
+      if (current === null) return
+      const selection = current.state.selection.main
+      current.dispatch({
+        changes: { from: selection.from, to: selection.to, insert: markdown },
+        selection: { anchor: selection.from + markdown.length },
+      })
+      current.focus()
+    })
     return () => {
       view.current?.destroy()
       view.current = null
@@ -215,15 +234,22 @@ function Editor({
   return <div ref={host} />
 }
 
+function imageAlt(filename: string): string {
+  const withoutExtension = filename.replace(/\.[^.]+$/u, '')
+  return withoutExtension.replace(/[\[\]]/gu, '').trim() || 'Картинка'
+}
+
 export function RichMarkdownEditor({
   id,
   onChange,
   onDocumentChange,
+  onImageUpload,
   value,
 }: {
   id?: string
   onChange: (value: string) => void
   onDocumentChange?: (document: RichDocument | null) => void
+  onImageUpload?: (image: File) => Promise<{ url: string }>
   value: string
 }) {
   const isEmpty = value.trim() === ''
@@ -245,6 +271,10 @@ export function RichMarkdownEditor({
     document: result,
     expiresAt: null,
   }))
+  const imageInput = useRef<HTMLInputElement>(null)
+  const [insertAtCursor, setInsertAtCursor] = useState<((markdown: string) => void) | null>(null)
+  const [imageError, setImageError] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const handleChange = (markdown: string) => {
     const nextIsEmpty = markdown.trim() === ''
@@ -282,6 +312,22 @@ export function RichMarkdownEditor({
 
   const previewDocument = isEmpty ? null : (result ?? previewState.document)
 
+  const uploadImage = async (image: File) => {
+    if (!onImageUpload) return
+    setImageError(null)
+    setIsUploadingImage(true)
+    try {
+      const uploaded = await onImageUpload(image)
+      const markdown = `\n\n![${imageAlt(image.name)}](${uploaded.url})\n`
+      if (insertAtCursor) insertAtCursor(markdown)
+      else handleChange(`${value}${markdown}`)
+    } catch (reason) {
+      setImageError(reason instanceof Error ? reason.message : 'Не удалось загрузить картинку.')
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
   useEffect(() => {
     onDocumentChange?.(result)
   }, [onDocumentChange, result])
@@ -289,7 +335,43 @@ export function RichMarkdownEditor({
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <div className="grid gap-1.5">
-        <Editor {...(id === undefined ? {} : { id })} onChange={handleChange} value={value} />
+        <Editor
+          {...(id === undefined ? {} : { id })}
+          onChange={handleChange}
+          onReady={(insert) => setInsertAtCursor(() => insert)}
+          value={value}
+        />
+        {onImageUpload ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              onChange={(event) => {
+                const image = event.target.files?.[0]
+                event.target.value = ''
+                if (image) void uploadImage(image)
+              }}
+              ref={imageInput}
+              type="file"
+            />
+            <Button
+              disabled={isUploadingImage}
+              onClick={() => imageInput.current?.click()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <ImagePlus aria-hidden="true" />
+              {isUploadingImage ? 'Готовим картинку…' : 'Загрузить картинку'}
+            </Button>
+            <span className="text-caption text-muted-foreground">PNG, JPEG или WebP · до 10 МиБ</span>
+          </div>
+        ) : null}
+        {imageError ? (
+          <p className="text-caption text-status-danger" role="alert">
+            {imageError}
+          </p>
+        ) : null}
         {error ? (
           <p className="text-caption text-status-danger" role="alert">
             Исправьте ошибку в markdown.

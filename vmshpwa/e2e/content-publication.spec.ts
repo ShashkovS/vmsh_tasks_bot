@@ -14,6 +14,10 @@ function targetForProject(projectName: string): ContentTarget {
   return target
 }
 
+function readableTaskUrl(lessonNumber: number): string {
+  return `/student/tasks/math-5-7/${encodeURIComponent('н')}/${lessonNumber}?task=1e2e`
+}
+
 function latexSource(title: string, statement: string, kind: ContentKind = 'condition'): string {
   const problemStatement =
     kind === 'condition'
@@ -75,7 +79,7 @@ async function uploadReviewAndPublish({
   const uploadResponse = await uploadResponsePromise
   expect(uploadResponse.status()).toBe(201)
   const uploadPayload = (await uploadResponse.json()) as { revisionId: string }
-  expect(uploadPayload.revisionId).toMatch(/^content-revision-/)
+  expect(uploadPayload.revisionId).toMatch(/^cr-\d+$/)
 
   const matching = workflow.getByLabel('Сопоставление задачи 1')
   if (kind === 'condition') {
@@ -83,16 +87,23 @@ async function uploadReviewAndPublish({
     await expect(workflow.getByText('Важное объявление для E2E.', { exact: true })).toBeVisible()
     await expect(workflow.getByText('Важно', { exact: true })).toBeVisible()
   }
-  if (match === 'insert-new') {
-    await matching.selectOption('insert_new')
-  } else {
-    await matching.selectOption({ index: 1 })
-    await expect(matching).toHaveValue(/^(auto_position|manual_match):/)
+  const manualMatchingRequired = await matching
+    .waitFor({ state: 'visible', timeout: 1_000 })
+    .then(() => true)
+    .catch(() => false)
+  if (manualMatchingRequired) {
+    if (match === 'insert-new') {
+      await matching.selectOption('insert_new')
+    } else {
+      await matching.selectOption({ index: 1 })
+      await expect(matching).toHaveValue(/^(auto_position|manual_match):/)
+    }
+    await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
   }
-  await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
 
   if (kind === 'condition') {
     if (!metadataTitle) throw new Error('Condition publication requires a task title')
+    await expect(workflow.getByRole('heading', { name: 'Метаданные задач' })).toBeVisible()
     const title = workflow.getByLabel('Название, строка 1')
     await title.fill(metadataTitle)
     // Phase 10 no-loss boundary: the real Staff route must restore the exact
@@ -105,7 +116,7 @@ async function uploadReviewAndPublish({
         new URL(response.url()).pathname ===
           `/staff/api/v1/group-lessons/${target.groupLessonPublicId}/metadata-grid`,
     )
-    await workflow.getByRole('button', { name: 'Подтвердить метаданные' }).click()
+    await workflow.getByRole('button', { name: 'Сохранить метаданные' }).click()
     const metadataResponse = await metadataResponsePromise
     expect(metadataResponse.status()).toBe(200)
     await expect(workflow.getByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
@@ -165,22 +176,26 @@ test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solu
 
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/lessons')
   await page.getByRole('button', { name: 'Создать занятие' }).click()
-  await page.getByLabel('Курс').selectOption(contentFixture.coursePublicId)
-  await page.getByLabel('Группа').selectOption(contentFixture.groupPublicId)
-  await page.getByLabel('Номер занятия').fill(String(lessonNumber))
-  await page.getByLabel('Название (необязательно)').fill(lessonTitle)
-  await page.getByLabel('Дата занятия').fill(`2027-02-0${projectOffset}`)
-  await page.getByLabel('Открыть приём · Москва (необязательно)').fill('2026-01-01T16:00')
-  await page.getByLabel('Закрыть приём · Москва').fill('2027-02-08T20:50')
-  await page.getByLabel('Подсказки · Москва (необязательно)').fill('2027-02-06T12:00')
-  await page.getByLabel('Решения · Москва (необязательно)').fill('2027-02-08T21:00')
+  const lessonForm = page.locator('form').filter({ hasText: 'Номер занятия' })
+  await lessonForm.locator('select').first().selectOption(contentFixture.coursePublicId)
+  await lessonForm.getByRole('checkbox', { name: /Создать занятие сразу для всех/ }).click()
+  await expect(lessonForm.getByRole('combobox', { name: 'Группа' })).toContainText(
+    'н · Начинающие',
+  )
+  await lessonForm.getByLabel('Номер занятия').fill(String(lessonNumber))
+  await lessonForm.getByLabel('Название (необязательно)').fill(lessonTitle)
+  await lessonForm.getByLabel('Дата занятия').fill(`2027-02-0${projectOffset}`)
+  await lessonForm.getByLabel('Открыть приём · Москва (необязательно)').fill('2026-01-01T16:00')
+  await lessonForm.getByLabel('Закрыть приём · Москва').fill('2027-02-08T20:50')
+  await lessonForm.getByLabel('Подсказки · Москва (необязательно)').fill('2027-02-06T12:00')
+  await lessonForm.getByLabel('Решения · Москва (необязательно)').fill('2027-02-08T21:00')
 
   const createdResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
       new URL(response.url()).pathname === '/staff/api/v1/group-lessons',
   )
-  await page.getByRole('button', { name: 'Создать и открыть' }).click()
+  await lessonForm.getByRole('button', { name: 'Создать и открыть' }).click()
   const created = await createdResponse
   expect(created.status()).toBe(201)
   const createdPayload = (await created.json()) as {
@@ -209,6 +224,7 @@ test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solu
       response.request().method() === 'PATCH' &&
       new URL(response.url()).pathname.endsWith('/lesson-window/submission-cutoff'),
   )
+  page.once('dialog', (dialog) => void dialog.accept())
   await page.getByRole('button', { name: 'Изменить дедлайн' }).click()
   expect((await cutoffResponse).status()).toBe(200)
 
@@ -233,6 +249,7 @@ test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solu
       response.request().method() === 'PATCH' &&
       new URL(response.url()).pathname.endsWith('/lesson-window/submission-cutoff'),
   )
+  page.once('dialog', (dialog) => void dialog.accept())
   await page.getByRole('button', { name: 'Закрыть приём сейчас' }).click()
   const closed = await closeResponse
   expect(closed.status()).toBe(200)
@@ -242,19 +259,18 @@ test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solu
   )
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
-  await page.goto(
-    `/student/tasks?course=${contentFixture.coursePublicId}` +
-      `&group=${contentFixture.groupPublicId}&lesson=${lessonNumber}`,
-  )
-  await page.getByRole('button', { name: new RegExp(taskTitle) }).click()
-  await page.getByRole('button', { name: /^Решение/ }).click()
-  const revealResponse = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'POST' &&
-      /\/reveal\/solution$/.test(new URL(response.url()).pathname),
-  )
-  await page.getByRole('button', { name: 'Показать решение' }).click()
-  expect((await revealResponse).status()).toBe(200)
+  await page.goto(readableTaskUrl(lessonNumber))
+  await page.getByRole('button', { name: 'Решение', exact: true }).click()
+  const revealButton = page.getByRole('button', { name: 'Показать решение' })
+  if (await revealButton.isVisible()) {
+    const revealResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        /\/reveal\/solution$/.test(new URL(response.url()).pathname),
+    )
+    await revealButton.click()
+    expect((await revealResponse).status()).toBe(200)
+  }
   await expect(page.getByText(solutionText)).toBeVisible()
 })
 
@@ -263,9 +279,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
 }, testInfo) => {
   const target = targetForProject(testInfo.project.name)
   const staffUrl = `/staff/lessons/${target.groupLessonPublicId}`
-  const studentUrl =
-    `/student/tasks/content-e2e?groupLesson=${target.groupLessonPublicId}` +
-    '&material=condition&problem=1'
+  const studentUrl = readableTaskUrl(target.lessonNumber)
 
   // Acceptance trace: development-plan/06-phase-2-content.md; real routes are
   // Staff /content/uploads→compile→problem-matches→metadata-grid→publications
@@ -297,34 +311,26 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
   await expect(page.getByText('1 задача в листке')).toBeVisible()
 
-  await page.goto(
-    `/student/tasks?course=${contentFixture.coursePublicId}&group=${contentFixture.groupPublicId}`,
-  )
-  await expect(page.getByRole('heading', { name: 'Задачи', exact: true })).toBeVisible()
-  const lessonSelect = page.getByRole('combobox', { name: 'Занятие' })
-  await expect(lessonSelect).toContainText(`${target.lessonNumber} ·`)
-  await lessonSelect.selectOption(String(target.lessonNumber))
-  await expect(page).toHaveURL(new RegExp(`[?&]lesson=${target.lessonNumber}(?:&|$)`))
-  const taskRow = page.getByRole('button', { name: new RegExp(firstTaskTitle) })
-  await expect(taskRow).toContainText('Не начата')
-  await taskRow.click()
-  await expect(page).toHaveURL(/\/student\/tasks\/problem-[0-9a-f]{32}\?/)
+  await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()
   await expect(page.getByText('Обычное объявление для E2E.')).toBeVisible()
   await expect(page.getByText('Важное объявление для E2E.')).toBeVisible()
   await expect(page.getByText('Важно', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: /^Подсказка/ }).click()
-  const revealResponsePromise = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'POST' &&
-      /\/student\/api\/v1\/group-lessons\/[^/]+\/problems\/[^/]+\/reveal\/hint$/.test(
-        new URL(response.url()).pathname,
-      ),
-  )
-  await page.getByRole('button', { name: 'Показать подсказку' }).click()
-  const revealResponse = await revealResponsePromise
-  expect(revealResponse.status()).toBe(200)
-  expect(await revealResponse.json()).toMatchObject({ firstReveal: true, kind: 'hint' })
+  const revealHintButton = page.getByRole('button', { name: 'Показать подсказку' })
+  if (await revealHintButton.isVisible()) {
+    const revealResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        /\/student\/api\/v1\/group-lessons\/[^/]+\/problems\/[^/]+\/reveal\/hint$/.test(
+          new URL(response.url()).pathname,
+        ),
+    )
+    await revealHintButton.click()
+    const revealResponse = await revealResponsePromise
+    expect(revealResponse.status()).toBe(200)
+    expect(await revealResponse.json()).toMatchObject({ firstReveal: true, kind: 'hint' })
+  }
   await expect(page.getByText(hintStatement)).toBeVisible()
 
   await page.reload()

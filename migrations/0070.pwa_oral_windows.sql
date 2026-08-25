@@ -3,7 +3,7 @@
 create table oral_windows
 (
     id                 integer primary key,
-    public_id          text    not null unique,
+    public_id text generated always as ('ow-' || id) virtual,
     group_lesson_id    integer not null references group_lessons (id),
     sequence_number    integer not null check (sequence_number > 0),
     opens_at           text    not null,

@@ -24,13 +24,13 @@ async def test_only_admin_can_change_account_status(
         "_now",
         lambda: NOW.isoformat(timespec="microseconds").replace("+00:00", "Z"),
     )
-    path = "/staff/api/v1/accounts/classroom-http-account-student/status"
+    path = "/staff/api/v1/accounts/a-3/status"
     teacher = await classroom_http.client.patch(
         path,
         json={"schemaVersion": 1, "status": "blocked"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-student:v1"',
+            if_match='"a-3:v1"',
         ),
         cookies=_cookies(classroom_http, "teacher"),
     )
@@ -41,14 +41,14 @@ async def test_only_admin_can_change_account_status(
         json={"schemaVersion": 1, "status": "blocked"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-student:v1"',
+            if_match='"a-3:v1"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert response.status == 200, await response.text()
-    assert response.headers["ETag"] == '"classroom-http-account-student:v2"'
+    assert response.headers["ETag"] == '"a-3:v2"'
     assert (await response.json())["account"] == {
-        "accountId": "classroom-http-account-student",
+        "accountId": "a-3",
         "audience": "student",
         "status": "blocked",
         "credentialVersion": 2,
@@ -57,7 +57,7 @@ async def test_only_admin_can_change_account_status(
     def stored(connection):
         account = connection.execute(
             "SELECT status, credential_version FROM auth_accounts "
-            "WHERE public_id = 'classroom-http-account-student'"
+            "WHERE public_id = 'a-3'"
         ).fetchone()
         event = connection.execute(
             "SELECT event_type, request_id, metadata_json FROM auth_events "
@@ -66,7 +66,7 @@ async def test_only_admin_can_change_account_status(
         sessions = connection.execute(
             "SELECT count(*) AS count FROM auth_sessions "
             "WHERE account_id = (SELECT id FROM auth_accounts "
-            "WHERE public_id = 'classroom-http-account-student') "
+            "WHERE public_id = 'a-3') "
             "AND revoked_at IS NULL"
         ).fetchone()["count"]
         return account, event, sessions
@@ -92,16 +92,16 @@ async def test_status_noop_preserves_version_and_writes_no_event(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     response = await classroom_http.client.patch(
-        "/staff/api/v1/accounts/classroom-http-account-family/status",
+        "/staff/api/v1/accounts/a-4/status",
         json={"schemaVersion": 1, "status": "active"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-family:v1"',
+            if_match='"a-4:v1"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert response.status == 200, await response.text()
-    assert response.headers["ETag"] == '"classroom-http-account-family:v1"'
+    assert response.headers["ETag"] == '"a-4:v1"'
     count = classroom_http.factory.run_read(
         lambda connection: connection.execute(
             "SELECT count(*) AS count FROM auth_events "
@@ -115,31 +115,31 @@ async def test_admin_rotates_student_token_and_invalidates_old_session(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     teacher = await classroom_http.client.post(
-        "/staff/api/v1/accounts/classroom-http-account-student/credential",
+        "/staff/api/v1/accounts/a-3/credential",
         json={"schemaVersion": 1, "credential": "replacement-token-2026"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-student:v1"',
+            if_match='"a-3:v1"',
         ),
         cookies=_cookies(classroom_http, "teacher"),
     )
     assert teacher.status == 403
 
     response = await classroom_http.client.post(
-        "/staff/api/v1/accounts/classroom-http-account-student/credential",
+        "/staff/api/v1/accounts/a-3/credential",
         json={"schemaVersion": 1, "credential": "Replacement-Token-2026"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-student:v1"',
+            if_match='"a-3:v1"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert response.status == 200, await response.text()
-    assert response.headers["ETag"] == '"classroom-http-account-student:v2"'
+    assert response.headers["ETag"] == '"a-3:v2"'
 
     token = classroom_http.factory.run_read(
         lambda connection: connection.execute(
-            "SELECT token FROM users WHERE public_id = 'classroom-layout-student'"
+            "SELECT token FROM users WHERE public_id = 'u-958003'"
         ).fetchone()["token"]
     )
     assert token == "replacement-token-2026"
@@ -167,13 +167,13 @@ async def test_admin_creates_student_web_login_from_current_bot_token(
     classroom_http.factory.run_write(
         lambda connection: connection.execute(
             "INSERT INTO users "
-            "(id, public_id, type, name, surname, token, chat_id) VALUES "
-            "(958010, 'classroom-unprovisioned-student', ?, 'Лев', 'Новый', "
+            "(id, type, name, surname, token, chat_id) VALUES "
+            "(958010, ?, 'Лев', 'Новый', "
             "'CurrentBotToken2026', 958010)",
             (int(USER_TYPE.STUDENT),),
         )
     )
-    path = "/staff/api/v1/students/classroom-unprovisioned-student/student-account"
+    path = "/staff/api/v1/students/u-958010/student-account"
     payload = {"schemaVersion": 1, "username": "  novyi-17  "}
 
     teacher = await classroom_http.client.post(
@@ -234,14 +234,14 @@ async def test_student_web_login_creation_rejects_unsafe_legacy_token(
     classroom_http.factory.run_write(
         lambda connection: connection.execute(
             "INSERT INTO users "
-            "(id, public_id, type, name, surname, token, chat_id) VALUES "
-            "(958011, 'classroom-unsafe-token-student', ?, 'Ира', 'Тест', "
+            "(id, type, name, surname, token, chat_id) VALUES "
+            "(958011, ?, 'Ира', 'Тест', "
             "'123456', 958011)",
             (int(USER_TYPE.STUDENT),),
         )
     )
     response = await classroom_http.client.post(
-        "/staff/api/v1/students/classroom-unsafe-token-student/student-account",
+        "/staff/api/v1/students/u-958011/student-account",
         json={"schemaVersion": 1, "username": "test-01"},
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
@@ -254,11 +254,11 @@ async def test_admin_rotates_family_password_without_returning_it(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     response = await classroom_http.client.post(
-        "/staff/api/v1/accounts/classroom-http-account-family/credential",
+        "/staff/api/v1/accounts/a-4/credential",
         json={"schemaVersion": 1, "credential": "new-family-password"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-family:v1"',
+            if_match='"a-4:v1"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -282,22 +282,22 @@ async def test_status_and_credential_mutations_require_current_version(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     status = await classroom_http.client.patch(
-        "/staff/api/v1/accounts/classroom-http-account-family/status",
+        "/staff/api/v1/accounts/a-4/status",
         json={"schemaVersion": 1, "status": "archived"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-family:v9"',
+            if_match='"a-4:v9"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert status.status == 409
 
     credential = await classroom_http.client.post(
-        "/staff/api/v1/accounts/classroom-http-account-family/credential",
+        "/staff/api/v1/accounts/a-4/credential",
         json={"schemaVersion": 1, "credential": "new-family-password"},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-http-account-family:v9"',
+            if_match='"a-4:v9"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -306,7 +306,7 @@ async def test_status_and_credential_mutations_require_current_version(
     unchanged = classroom_http.factory.run_read(
         lambda connection: connection.execute(
             "SELECT status, credential_version FROM auth_accounts "
-            "WHERE public_id = 'classroom-http-account-family'"
+            "WHERE public_id = 'a-4'"
         ).fetchone()
     )
     assert tuple(unchanged.values()) == ("active", 1)
@@ -321,7 +321,7 @@ async def test_admin_creates_family_account_and_link_without_exposing_password(
         "_now",
         lambda: NOW.isoformat(timespec="microseconds").replace("+00:00", "Z"),
     )
-    path = "/staff/api/v1/students/classroom-layout-student/family-accounts"
+    path = "/staff/api/v1/students/u-958003/family-accounts"
     payload = {
         "schemaVersion": 1,
         "username": "  Family   New  ",
@@ -346,7 +346,7 @@ async def test_admin_creates_family_account_and_link_without_exposing_password(
     )
     assert response.status == 201, await response.text()
     body = await response.json()
-    assert body["account"]["accountId"].startswith("family-account.")
+    assert body["account"]["accountId"] == "a-5"
     assert {
         key: value for key, value in body["account"].items() if key != "accountId"
     } == {
@@ -356,7 +356,7 @@ async def test_admin_creates_family_account_and_link_without_exposing_password(
         "credentialVersion": 1,
     }
     assert body["link"] == {
-        "studentId": "classroom-layout-student",
+        "studentId": "u-958003",
         "relationshipLabel": "родитель",
         "isPrimary": False,
     }
@@ -397,12 +397,12 @@ async def test_admin_links_existing_family_to_second_child_and_can_revoke_link(
     second_student_id = 958004
     classroom_http.factory.run_write(
         lambda connection: connection.execute(
-            "INSERT INTO users (id, public_id, type, name, surname) "
-            "VALUES (?, 'classroom-second-student', ?, 'Борис', 'Ветров')",
+            "INSERT INTO users (id, type, name, surname) "
+            "VALUES (?, ?, 'Борис', 'Ветров')",
             (second_student_id, int(USER_TYPE.STUDENT)),
         )
     )
-    path = "/staff/api/v1/students/classroom-second-student/family-links"
+    path = "/staff/api/v1/students/u-958004/family-links"
     response = await classroom_http.client.post(
         path,
         json={
@@ -416,19 +416,19 @@ async def test_admin_links_existing_family_to_second_child_and_can_revoke_link(
     )
     assert response.status == 200, await response.text()
     linked = await response.json()
-    assert linked["account"]["accountId"] == "classroom-http-account-family"
-    assert linked["link"]["studentId"] == "classroom-second-student"
+    assert linked["account"]["accountId"] == "a-4"
+    assert linked["link"]["studentId"] == "u-958004"
 
     family_access = await classroom_http.client.get(
-        "/family/api/v1/children/classroom-second-student/courses",
+        "/family/api/v1/children/u-958004/courses",
         headers=_headers(),
         cookies={"vmsh_family_access": classroom_http.family_cookie},
     )
     assert family_access.status == 200, await family_access.text()
 
     unlink = await classroom_http.client.delete(
-        "/staff/api/v1/students/classroom-second-student/family-links/"
-        "classroom-http-account-family",
+        "/staff/api/v1/students/u-958004/family-links/"
+        "a-4",
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -436,7 +436,7 @@ async def test_admin_links_existing_family_to_second_child_and_can_revoke_link(
     assert (await unlink.json())["revoked"] is True
 
     revoked_access = await classroom_http.client.get(
-        "/family/api/v1/children/classroom-second-student/courses",
+        "/family/api/v1/children/u-958004/courses",
         headers=_headers(),
         cookies={"vmsh_family_access": classroom_http.family_cookie},
     )
@@ -447,7 +447,7 @@ async def test_admin_links_existing_family_to_second_child_and_can_revoke_link(
             for row in connection.execute(
                 "SELECT event_type FROM auth_events WHERE account_id = "
                 "(SELECT id FROM auth_accounts "
-                "WHERE public_id = 'classroom-http-account-family') "
+                "WHERE public_id = 'a-4') "
                 "AND event_type LIKE 'family.student_%' ORDER BY id"
             ).fetchall()
         ]

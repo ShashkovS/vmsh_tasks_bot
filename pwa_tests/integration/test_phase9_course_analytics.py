@@ -42,7 +42,7 @@ async def test_course_analytics_reads_calculates_and_publishes_one_snapshot(
 
     def calculate_and_save(connection):
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'course-content-http'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         metrics = calculate_course_lesson_metrics(
             list_course_problem_rows(connection, course_id=course_id),
@@ -51,7 +51,6 @@ async def test_course_analytics_reads_calculates_and_publishes_one_snapshot(
         )
         save_completed_course_metrics(
             connection,
-            public_id="analytics-course-content-http-v1",
             course_id=course_id,
             algorithm="a53-course",
             algorithm_version="1",
@@ -71,9 +70,9 @@ async def test_course_analytics_reads_calculates_and_publishes_one_snapshot(
     def seed_incomplete_and_read(connection):
         connection.execute(
             "INSERT INTO analytics_runs "
-            "(public_id, course_id, algorithm, algorithm_version, "
+            "(course_id, algorithm, algorithm_version, "
             "input_through_result_id, state, started_at, diagnostics_json) "
-            "VALUES ('analytics-running', ?, 'a53-course', '2', 1, "
+            "VALUES (?, 'a53-course', '2', 1, "
             "'running', '2026-09-16T12:00:00Z', '[]')",
             (course_id,),
         )
@@ -85,23 +84,23 @@ async def test_course_analytics_reads_calculates_and_publishes_one_snapshot(
 
     stored = fixture.factory.run_write(seed_incomplete_and_read)
     assert len(stored) == 1
-    assert stored[0]["run_public_id"] == "analytics-course-content-http-v1"
+    assert stored[0]["run_public_id"] == "ar-1"
     assert stored[0]["algorithm_version"] == "1"
     assert stored[0]["lesson_number"] == 41
     assert stored[0]["solved_items"] == 1
     assert stored[0]["total_items"] == 1
 
     response = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/progress",
+        "/student/api/v1/courses/c-1/progress",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "student"),
     )
     assert response.status == 200, await response.text()
     analytics = (await response.json())["analytics"]
-    assert analytics["runId"] == "analytics-course-content-http-v1"
+    assert analytics["runId"] == "ar-1"
     assert analytics["algorithmVersion"] == "1"
     assert analytics["lessons"][0]["lessonNumber"] == 41
-    assert analytics["lessons"][0]["groupId"] == "group-content-http-a"
+    assert analytics["lessons"][0]["groupId"] == "g-1"
     assert analytics["lessons"][0]["solvedItems"] == 1
 
 
@@ -125,14 +124,13 @@ async def test_analytics_command_calculates_every_active_course(content_http):
         return calculate_active_courses(
             connection,
             completed_at="2026-09-17T12:00:00Z",
-            run_token="integration",
         )
 
-    assert fixture.factory.run_write(seed_and_calculate) == [("course-content-http", 1)]
+    assert fixture.factory.run_write(seed_and_calculate) == [("c-1", 1)]
 
     def read_achievements(connection):
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'course-content-http'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         return list_student_course_achievements(
             connection,

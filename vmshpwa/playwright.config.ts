@@ -33,12 +33,10 @@ const backendEnv = {
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
-  // Playwright runs different spec files in parallel even when fullyParallel is
-  // false. The global cap plus one worker per project keeps all three browsers
-  // active without flooding the single real aiohttp/SQLite runtime with several
-  // same-engine background tabs. Higher default host concurrency made service-
-  // worker and visibility tests miss browser deadlines rather than expose bugs.
-  workers: 3,
+  // The suite shares one real SQLite database. Browser projects deliberately
+  // create durable fixtures, so serial execution prevents one project's writes
+  // from changing another project's expected starting state.
+  workers: 1,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   failOnFlakyTests: true,

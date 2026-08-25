@@ -263,7 +263,6 @@ def grant_group_access(
 def insert_group_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     enrollment_id: int,
     course_id: int,
     previous_group_id: str,
@@ -274,11 +273,10 @@ def insert_group_event(
 ) -> None:
     connection.execute(
         "INSERT INTO course_enrollment_events "
-        "(public_id, enrollment_id, course_id, event_type, previous_group_id, "
+        "(enrollment_id, course_id, event_type, previous_group_id, "
         "new_group_id, actor_user_id, source, request_id, occurred_at, created_at) "
-        "VALUES (?, ?, ?, 'active_group_changed', ?, ?, ?, 'staff', ?, ?, ?)",
+        "VALUES (?, ?, 'active_group_changed', ?, ?, ?, 'staff', ?, ?, ?)",
         (
-            public_id,
             enrollment_id,
             course_id,
             previous_group_id,
@@ -294,7 +292,6 @@ def insert_group_event(
 def insert_mode_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     enrollment_id: int,
     course_id: int,
     previous_mode: str,
@@ -305,12 +302,11 @@ def insert_mode_event(
 ) -> None:
     connection.execute(
         "INSERT INTO course_enrollment_events "
-        "(public_id, enrollment_id, course_id, event_type, "
+        "(enrollment_id, course_id, event_type, "
         "previous_attendance_mode, new_attendance_mode, actor_user_id, source, "
         "request_id, occurred_at, created_at) "
-        "VALUES (?, ?, ?, 'attendance_mode_changed', ?, ?, ?, 'staff', ?, ?, ?)",
+        "VALUES (?, ?, 'attendance_mode_changed', ?, ?, ?, 'staff', ?, ?, ?)",
         (
-            public_id,
             enrollment_id,
             course_id,
             previous_mode,
@@ -326,7 +322,6 @@ def insert_mode_event(
 def insert_status_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     enrollment_id: int,
     course_id: int,
     previous_status: str,
@@ -337,11 +332,10 @@ def insert_status_event(
 ) -> None:
     connection.execute(
         "INSERT INTO course_enrollment_events "
-        "(public_id, enrollment_id, course_id, event_type, previous_status, "
+        "(enrollment_id, course_id, event_type, previous_status, "
         "new_status, actor_user_id, source, request_id, occurred_at, created_at) "
-        "VALUES (?, ?, ?, 'status_changed', ?, ?, ?, 'staff', ?, ?, ?)",
+        "VALUES (?, ?, 'status_changed', ?, ?, ?, 'staff', ?, ?, ?)",
         (
-            public_id,
             enrollment_id,
             course_id,
             previous_status,

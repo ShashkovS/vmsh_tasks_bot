@@ -23,7 +23,6 @@ def get_group_banner(
 def insert_group_banner(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     group_id: str,
     audience: str,
     html_sanitized: str,
@@ -37,14 +36,14 @@ def insert_group_banner(
     markdown_source: str | None = None,
     rich_document_json: str | None = None,
 ) -> dict[str, object]:
-    connection.execute(
+    row = connection.execute(
         "INSERT INTO group_banners "
-        "(public_id, group_id, audience, html_sanitized, content_format, markdown_source, "
+        "(group_id, audience, html_sanitized, content_format, markdown_source, "
         "rich_document_json, starts_at, ends_at, "
         "priority, dismissible, created_by_user_id, updated_by_user_id, "
-        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "RETURNING public_id",
         (
-            public_id,
             group_id,
             audience,
             html_sanitized,
@@ -60,8 +59,8 @@ def insert_group_banner(
             now,
             now,
         ),
-    )
-    item = get_group_banner(connection, public_id)
+    ).fetchone()
+    item = get_group_banner(connection, str(row["public_id"]))
     assert item is not None
     return item
 

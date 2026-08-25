@@ -8,7 +8,7 @@
   },
   "authContext": {
     "principal": {
-      "accountId": "account-student-fixture",
+      "accountId": "a-1001",
       "audience": "student",
       "displayName": "Синтетический ученик",
       "sessionVersion": 3,

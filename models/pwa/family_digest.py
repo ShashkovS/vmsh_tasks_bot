@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import uuid
 
 from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.family_digest import (
@@ -151,7 +150,6 @@ def send_family_digest(
         assert isinstance(student_ids, list) and student_ids
         if insert_event(
             connection,
-            public_id=f"notification.family-digest.{uuid.uuid4().hex}",
             account_id=int(family["account_id"]),
             category="review_completed",
             dedupe_key=dedupe_key,
@@ -170,7 +168,6 @@ def send_family_digest(
     if created_account_ids:
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=actor_account_public_id,
             audience="staff",

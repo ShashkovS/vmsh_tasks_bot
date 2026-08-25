@@ -14,12 +14,8 @@ from db_methods.pwa.migrations import MIGRATIONS_ROOT
 
 
 MIGRATION_ID = "0044.pwa_problem_identity"
-PUBLIC_ID = re.compile(r"problem-[0-9a-f]{32}")
-EXPECTED_OBJECTS = {
-    "problems_public_id_uq",
-    "problems_public_id_fill_after_insert",
-    "problems_public_id_immutable",
-}
+PUBLIC_ID = re.compile(r"p-\d+")
+EXPECTED_OBJECTS: set[str] = set()
 
 
 def _migrations():
@@ -41,7 +37,7 @@ def _rollback(database_path: Path, migration_ids: Collection[str]) -> None:
 
 
 def _columns(connection: sqlite3.Connection) -> set[str]:
-    return {str(row[1]) for row in connection.execute("PRAGMA table_info(problems)")}
+    return {str(row[1]) for row in connection.execute("PRAGMA table_xinfo(problems)")}
 
 
 def _objects(connection: sqlite3.Connection) -> set[str]:
@@ -100,12 +96,12 @@ def test_phase3_problem_identity_exact_up_down_up_and_legacy_writes(tmp_path):
         assert PUBLIC_ID.fullmatch(legacy_public_id)
         assert legacy_public_id != original_public_id
 
-        with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+        with pytest.raises(sqlite3.OperationalError, match="generated column"):
             connection.execute(
                 "UPDATE problems SET public_id = 'problem-replacement' WHERE id = ?",
                 (legacy_id,),
             )
-        with pytest.raises(sqlite3.IntegrityError):
+        with pytest.raises(sqlite3.OperationalError, match="generated column"):
             connection.execute(
                 "INSERT INTO problems "
                 "(group_id, lesson, prob, item, title, prob_text, prob_type, synonyms, public_id) "

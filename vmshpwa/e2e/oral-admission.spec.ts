@@ -17,7 +17,7 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
   const project = testInfo.project.name
   const target = targetByProject[project]
   if (target === undefined) throw new Error(`No oral E2E lesson for ${project}`)
-  const groupLessonId = `e2e-oral-group-lesson-${project}`
+  const groupLessonId = `gl-${target.lessonNumber}`
   const title = `Устная E2E ${project}`
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
@@ -25,19 +25,19 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
     `/student/tasks?course=${contentFixture.coursePublicId}` +
       `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
   )
-  const task = page.getByRole('button', { name: new RegExp(title) })
+  const task = page.locator('[data-slot="card-title"]').filter({ hasText: title })
   await expect(task).toBeVisible()
-  await task.click()
-  await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
+  await task.locator('xpath=following::button[@aria-label="Открыть задачу 1"][1]').click()
+  await expect(page.getByRole('heading', { name: `1 ${title}`, exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Устный приём' })).toBeVisible()
   await expect(
-    page.getByText('Можно сдать устно в конференции или отправить письменное решение здесь.'),
+    page.getByText('Задачу также можно отправить письменно ниже.'),
   ).toBeVisible()
 
   const joinResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'GET' &&
-      new URL(response.url()).pathname.endsWith(`/oral-windows/e2e-oral-window-${project}/join`),
+      new URL(response.url()).pathname.endsWith(`/oral-windows/ow-${target.lessonNumber}/join`),
   )
   await page.getByRole('button', { name: 'Подключиться к Zoom' }).click()
   expect((await joinResponse).status()).toBe(200)
@@ -72,7 +72,12 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
     `/student/tasks?course=${contentFixture.coursePublicId}` +
       `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
   )
-  await expect(page.getByRole('button', { name: new RegExp(title) })).toContainText('Зачтено')
+  await expect(
+    page
+      .locator('[data-slot="card-title"]')
+      .filter({ hasText: title })
+      .locator('xpath=ancestor::*[@data-slot="card"][1]'),
+  ).toContainText('Зачтено')
 
   await page.goto(`/student/progress?course=${contentFixture.coursePublicId}`)
   await expect(page.getByRole('heading', { name: 'Прогресс' })).toBeVisible()

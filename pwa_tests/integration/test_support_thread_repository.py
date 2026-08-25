@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import itertools
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -53,8 +52,8 @@ class SupportFixture:
     clock: MutableClock
 
 
-GROUP_A_SCOPE = SupportStaffScope(group_public_ids=frozenset({"support-group-a"}))
-GROUP_B_SCOPE = SupportStaffScope(group_public_ids=frozenset({"support-group-b"}))
+GROUP_A_SCOPE = SupportStaffScope(group_public_ids=frozenset({"g-5"}))
+GROUP_B_SCOPE = SupportStaffScope(group_public_ids=frozenset({"g-6"}))
 
 
 @pytest.fixture()
@@ -63,33 +62,26 @@ def support_fixture(tmp_path) -> SupportFixture:
     apply_schema_migrations(database_path)
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock(NOW)
-    thread_ids = (f"support-thread-test-{index}" for index in itertools.count(1))
-    entry_ids = (f"support-entry-test-{index}" for index in itertools.count(1))
-    repository = PwaSupportThreadRepository(
-        factory,
-        clock=clock,
-        thread_public_id_factory=lambda: next(thread_ids),
-        entry_public_id_factory=lambda: next(entry_ids),
-    )
+    repository = PwaSupportThreadRepository(factory, clock=clock)
     now = _timestamp(NOW)
     access_from = _timestamp(NOW - timedelta(days=30))
 
     def seed(connection: sqlite3.Connection) -> None:
         connection.executemany(
-            "INSERT INTO users (id, public_id, type, name, surname) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, type, name, surname) VALUES (?, ?, ?, ?)",
             (
-                (STUDENT_ID, "support-student", 1, "Анна", "Белова"),
-                (OTHER_STUDENT_ID, "support-other-student", 1, "Борис", "Ветров"),
-                (TEACHER_ID, "support-teacher", 2, "Мария", "Учитель"),
-                (ADMIN_ID, "support-admin", 2, "Иван", "Администратор"),
+                (STUDENT_ID, 1, "Анна", "Белова"),
+                (OTHER_STUDENT_ID, 1, "Борис", "Ветров"),
+                (TEACHER_ID, 2, "Мария", "Учитель"),
+                (ADMIN_ID, 2, "Иван", "Администратор"),
             ),
         )
         season_id = int(
             connection.execute(
                 "INSERT INTO seasons "
-                "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+                "(code, title, starts_on, ends_on, session_expires_on, "
                 "status, created_at, updated_at) VALUES "
-                "('support-season', 'support', 'Support', '2026-09-01', "
+                "('support', 'Support', '2026-09-01', "
                 "'2027-05-31', '2027-08-10', 'active', ?, ?) RETURNING id",
                 (now, now),
             ).fetchone()["id"]
@@ -97,31 +89,31 @@ def support_fixture(tmp_path) -> SupportFixture:
         course_id = int(
             connection.execute(
                 "INSERT INTO courses "
-                "(public_id, season_id, code, name, subject_code, status, sort_order, "
+                "(season_id, code, name, subject_code, status, sort_order, "
                 "accent_key, created_at, updated_at) VALUES "
-                "('support-course', ?, 'math', 'Математика', 'math', 'active', 1, "
+                "(?, 'math', 'Математика', 'math', 'active', 1, "
                 "'math', ?, ?) RETURNING id",
                 (season_id, now, now),
             ).fetchone()["id"]
         )
-        for group_id, public_id, short_code, title, order in (
-            ("support-a", "support-group-a", "a", "Начинающие", 1),
-            ("support-b", "support-group-b", "b", "Продолжающие", 2),
+        for group_id, short_code, title, order in (
+            ("support-a", "a", "Начинающие", 1),
+            ("support-b", "b", "Продолжающие", 2),
         ):
             connection.execute(
                 "INSERT INTO groups "
                 "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-                "allow_self_switch, is_system, score_weight, public_id, course_id, "
+                "allow_self_switch, is_system, score_weight, course_id, "
                 "status, created_at, updated_at) VALUES "
-                "(?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?)",
-                (group_id, short_code, title, order, public_id, course_id, now, now),
+                "(?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
+                (group_id, short_code, title, order, course_id, now, now),
             )
         enrollment_id = int(
             connection.execute(
                 "INSERT INTO course_enrollments "
-                "(public_id, student_user_id, course_id, active_group_id, "
+                "(student_user_id, course_id, active_group_id, "
                 "attendance_mode, status, created_at, updated_at) VALUES "
-                "('support-enrollment', ?, ?, 'support-a', 'online', 'active', ?, ?) "
+                "(?, ?, 'support-a', 'online', 'active', ?, ?) "
                 "RETURNING id",
                 (STUDENT_ID, course_id, now, now),
             ).fetchone()["id"]
@@ -135,8 +127,8 @@ def support_fixture(tmp_path) -> SupportFixture:
         course_lesson_id = int(
             connection.execute(
                 "INSERT INTO course_lessons "
-                "(public_id, course_id, lesson_number, created_at, updated_at) "
-                "VALUES ('support-course-lesson', ?, 41, ?, ?) RETURNING id",
+                "(course_id, lesson_number, created_at, updated_at) "
+                "VALUES (?, 41, ?, ?) RETURNING id",
                 (course_id, now, now),
             ).fetchone()["id"]
         )
@@ -144,12 +136,11 @@ def support_fixture(tmp_path) -> SupportFixture:
             group_lesson_id = int(
                 connection.execute(
                     "INSERT INTO group_lessons "
-                    "(public_id, course_lesson_id, course_id, group_id, "
+                    "(course_lesson_id, course_id, group_id, "
                     "cycle_anchor_date, business_timezone, status, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, '2026-09-28', 'Europe/Moscow', 'active', ?, ?) "
+                    "VALUES (?, ?, ?, '2026-09-28', 'Europe/Moscow', 'active', ?, ?) "
                     "RETURNING id",
                     (
-                        f"support-group-lesson-{index}",
                         course_lesson_id,
                         course_id,
                         group_id,
@@ -161,11 +152,10 @@ def support_fixture(tmp_path) -> SupportFixture:
             source_id = int(
                 connection.execute(
                     "INSERT INTO content_sources "
-                    "(public_id, group_lesson_id, kind, logical_filename, "
-                    "source_encoding, created_at) VALUES (?, ?, 'condition', ?, 'utf-8', ?) "
+                    "(group_lesson_id, kind, logical_filename, "
+                    "source_encoding, created_at) VALUES (?, 'condition', ?, 'utf-8', ?) "
                     "RETURNING id",
                     (
-                        f"support-source-{index}",
                         group_lesson_id,
                         f"support-{index}.tex",
                         now,
@@ -175,13 +165,12 @@ def support_fixture(tmp_path) -> SupportFixture:
             revision_id = int(
                 connection.execute(
                     "INSERT INTO content_revisions "
-                    "(public_id, source_id, revision_number, source_sha256, latex_text, "
+                    "(source_id, revision_number, source_sha256, latex_text, "
                     "parser_version, status, canonical_json, diagnostics_json, "
                     "provenance_json, created_at) VALUES "
-                    "(?, ?, 1, ?, 'problem', 'support-test', 'ready', '{}', '[]', '{}', ?) "
+                    "(?, 1, ?, 'problem', 'support-test', 'ready', '{}', '[]', '{}', ?) "
                     "RETURNING id",
                     (
-                        f"support-revision-{index}",
                         source_id,
                         str(index) * 64,
                         now,
@@ -191,11 +180,11 @@ def support_fixture(tmp_path) -> SupportFixture:
             problem_id = int(
                 connection.execute(
                     "INSERT INTO problems "
-                    "(public_id, group_id, lesson, prob, item, title, prob_text, prob_type, "
+                    "(group_id, lesson, prob, item, title, prob_text, prob_type, "
                     "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
-                    "congrat, synonyms) VALUES (?, ?, 41, 1, '', ?, '', 2, 0, '', '', "
+                    "congrat, synonyms) VALUES (?, 41, 1, '', ?, '', 2, 0, '', '', "
                     "'', '', '', '') RETURNING id",
-                    (f"support-problem-{index}", group_id, f"Задача {index}"),
+                    (group_id, f"Задача {index}"),
                 ).fetchone()["id"]
             )
             connection.execute(
@@ -231,8 +220,8 @@ def _create_problem_command(**changes) -> CreateSupportThreadCommand:
     values = {
         "student_user_id": STUDENT_ID,
         "kind": "problem_question",
-        "group_lesson_public_id": "support-group-lesson-1",
-        "problem_public_id": "support-problem-1",
+        "group_lesson_public_id": "gl-1",
+        "problem_public_id": "p-1",
         "text": "Почему здесь можно считать эти случаи одинаковыми?",
         "client_created_at": NOW - timedelta(minutes=1),
         "idempotency_key": "support-create-problem",
@@ -250,11 +239,11 @@ async def test_private_thread_is_idempotent_and_keeps_one_chronological_dialogue
     replay = await fixture.repository.create_student_thread(_create_problem_command())
 
     assert replay == created
-    assert created.thread_public_id == "support-thread-test-1"
-    assert created.student_public_id == "support-student"
-    assert created.course_public_id == "support-course"
-    assert created.group_public_id == "support-group-a"
-    assert created.problem_public_id == "support-problem-1"
+    assert created.thread_public_id == "sup-1"
+    assert created.student_public_id == "u--956001"
+    assert created.course_public_id == "c-1"
+    assert created.group_public_id == "g-5"
+    assert created.problem_public_id == "p-1"
     assert created.version == 1
     assert [entry.author_kind for entry in created.entries] == ["student"]
 
@@ -300,7 +289,7 @@ async def test_private_thread_is_idempotent_and_keeps_one_chronological_dialogue
         "student",
         "teacher",
     ]
-    assert teacher_reply.entries[-1].author_public_id == "support-teacher"
+    assert teacher_reply.entries[-1].author_public_id == "u--956003"
     assert teacher_reply.entries[-1].channel == "staff"
     stored = fixture.factory.run_read(
         lambda connection: connection.execute(
@@ -343,7 +332,7 @@ async def test_owner_and_staff_scope_are_enforced_without_closing_or_assignment(
 
     visible = await fixture.repository.get_staff_thread(
         thread_public_id=created.thread_public_id,
-        scope=SupportStaffScope(course_public_ids=frozenset({"support-course"})),
+        scope=SupportStaffScope(course_public_ids=frozenset({"c-1"})),
     )
     assert visible == created
 
@@ -381,7 +370,7 @@ async def test_general_and_problem_targets_require_current_access_and_exact_scop
         CreateSupportThreadCommand(
             student_user_id=STUDENT_ID,
             kind="general",
-            group_lesson_public_id="support-group-lesson-2",
+            group_lesson_public_id="gl-2",
             problem_public_id=None,
             text="Где посмотреть время следующего разбора?",
             client_created_at=NOW,
@@ -389,7 +378,7 @@ async def test_general_and_problem_targets_require_current_access_and_exact_scop
         )
     )
     assert general.kind == "general"
-    assert general.group_public_id == "support-group-b"
+    assert general.group_public_id == "g-6"
     assert general.problem_public_id is None
 
     fixture.factory.run_write(
@@ -408,7 +397,7 @@ async def test_general_and_problem_targets_require_current_access_and_exact_scop
             CreateSupportThreadCommand(
                 student_user_id=STUDENT_ID,
                 kind="general",
-                group_lesson_public_id="support-group-lesson-2",
+                group_lesson_public_id="gl-2",
                 problem_public_id=None,
                 text="Новый вопрос после отзыва доступа",
                 client_created_at=fixture.clock.value,
@@ -424,8 +413,8 @@ async def test_general_and_problem_targets_require_current_access_and_exact_scop
     with pytest.raises(SupportNotFound):
         await fixture.repository.create_student_thread(
             _create_problem_command(
-                group_lesson_public_id="support-group-lesson-1",
-                problem_public_id="support-problem-2",
+                group_lesson_public_id="gl-1",
+                problem_public_id="p-2",
                 idempotency_key="support-cross-lesson-problem",
             )
         )
@@ -442,7 +431,7 @@ async def test_student_thread_list_is_newest_first_cursor_backed_and_historical(
         CreateSupportThreadCommand(
             student_user_id=STUDENT_ID,
             kind="general",
-            group_lesson_public_id="support-group-lesson-2",
+            group_lesson_public_id="gl-2",
             problem_public_id=None,
             text="Когда следующий разбор?",
             client_created_at=fixture.clock.value,
@@ -514,7 +503,7 @@ async def test_staff_inbox_derives_reply_state_and_enforces_scope_and_filters(
         CreateSupportThreadCommand(
             student_user_id=STUDENT_ID,
             kind="general",
-            group_lesson_public_id="support-group-lesson-2",
+            group_lesson_public_id="gl-2",
             problem_public_id=None,
             text="Когда следующий разбор?",
             client_created_at=fixture.clock.value,
@@ -540,7 +529,7 @@ async def test_staff_inbox_derives_reply_state_and_enforces_scope_and_filters(
     ]
     assert group_a_inbox.items[0].reply_state == "awaiting_staff"
 
-    course_scope = SupportStaffScope(course_public_ids=frozenset({"support-course"}))
+    course_scope = SupportStaffScope(course_public_ids=frozenset({"c-1"}))
     all_threads = await fixture.repository.list_staff_threads(
         scope=course_scope, state="all"
     )
@@ -552,7 +541,7 @@ async def test_staff_inbox_derives_reply_state_and_enforces_scope_and_filters(
         scope=course_scope,
         state="awaiting_student",
         kind="general",
-        group_public_id="support-group-b",
+        group_public_id="g-6",
     )
     assert [item.thread_public_id for item in awaiting_student.items] == [
         general.thread_public_id
@@ -575,19 +564,18 @@ async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_
 
     def seed_accounts(connection: sqlite3.Connection) -> None:
         connection.execute(
-            "INSERT INTO users (id, public_id, type, name, surname) "
-            "VALUES (?, 'support-global-admin', ?, 'Галина', 'Администратор')",
+            "INSERT INTO users (id, type, name, surname) "
+            "VALUES (?, ?, 'Галина', 'Администратор')",
             (GLOBAL_ADMIN_ID, int(USER_TYPE.ADMIN)),
         )
         connection.executemany(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, 'synthetic-test', ?, 'test-hash', ?, 'active', ?, ?)",
+            "VALUES (?, ?, ?, ?, 'synthetic-test', ?, 'test-hash', ?, 'active', ?, ?)",
             (
                 (
-                    "support-account-student",
                     "student",
                     "support-student",
                     "support-student",
@@ -598,7 +586,6 @@ async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_
                     now,
                 ),
                 (
-                    "support-account-teacher-a",
                     "staff",
                     "support-teacher",
                     "support-teacher",
@@ -609,7 +596,6 @@ async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_
                     now,
                 ),
                 (
-                    "support-account-teacher-b",
                     "staff",
                     "support-admin",
                     "support-admin",
@@ -620,7 +606,6 @@ async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_
                     now,
                 ),
                 (
-                    "support-account-global-admin",
                     "staff",
                     "support-global-admin",
                     "support-global-admin",
@@ -634,7 +619,7 @@ async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_
         )
         course_id = int(
             connection.execute(
-                "SELECT id FROM courses WHERE public_id = 'support-course'"
+                "SELECT id FROM courses WHERE public_id = 'c-1'"
             ).fetchone()["id"]
         )
         connection.executemany(
@@ -651,10 +636,10 @@ async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_
     targets = await fixture.repository.invalidation_targets(
         thread_public_id=created.thread_public_id
     )
-    assert targets.student_account_public_ids == ("support-account-student",)
+    assert targets.student_account_public_ids == ("a-1",)
     assert targets.staff_account_public_ids == (
-        "support-account-teacher-a",
-        "support-account-global-admin",
+        "a-2",
+        "a-4",
     )
 
     fixture.factory.run_write(
@@ -667,7 +652,7 @@ async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_
     after_revoke = await fixture.repository.invalidation_targets(
         thread_public_id=created.thread_public_id
     )
-    assert after_revoke.staff_account_public_ids == ("support-account-global-admin",)
+    assert after_revoke.staff_account_public_ids == ("a-4",)
 
 
 @pytest.mark.asyncio
@@ -713,9 +698,9 @@ def test_sqlite_guards_reject_cross_owner_entries_and_mutation(support_fixture):
         with pytest.raises(sqlite3.IntegrityError, match="outside thread scope"):
             connection.execute(
                 "INSERT INTO support_entries "
-                "(public_id, thread_id, author_kind, author_user_id, text, channel, "
+                "(thread_id, author_kind, author_user_id, text, channel, "
                 "server_received_at, created_at) VALUES "
-                "('support-entry-wrong-owner', ?, 'student', ?, 'Чужой вопрос', "
+                "(?, 'student', ?, 'Чужой вопрос', "
                 "'pwa', ?, ?)",
                 (thread_id, OTHER_STUDENT_ID, _timestamp(NOW), _timestamp(NOW)),
             )

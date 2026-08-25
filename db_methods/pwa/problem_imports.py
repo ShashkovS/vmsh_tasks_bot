@@ -124,7 +124,6 @@ def get_import_receipt(
 def insert_import_receipt(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     course_id: int,
     source_filename: str,
     source_sha256: str,
@@ -133,14 +132,13 @@ def insert_import_receipt(
     changes_json: str,
     actor_user_id: int,
     applied_at: str,
-) -> None:
-    connection.execute(
+) -> str:
+    row = connection.execute(
         "INSERT INTO problem_import_receipts "
-        "(public_id, course_id, source_filename, source_sha256, preview_sha256, state, "
+        "(course_id, source_filename, source_sha256, preview_sha256, state, "
         "summary_json, changes_json, applied_by_user_id, applied_at) "
-        "VALUES (?, ?, ?, ?, ?, 'applied', ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, 'applied', ?, ?, ?, ?) RETURNING public_id",
         (
-            public_id,
             course_id,
             source_filename,
             source_sha256,
@@ -150,7 +148,8 @@ def insert_import_receipt(
             actor_user_id,
             applied_at,
         ),
-    )
+    ).fetchone()
+    return str(row["public_id"])
 
 
 def mark_import_rolled_back(

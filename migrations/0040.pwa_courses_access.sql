@@ -5,13 +5,7 @@
 create table courses
 (
     id           integer primary key,
-    public_id    text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('c-' || id) virtual,
     season_id    integer not null references seasons (id),
     code         text    not null
         check (length(trim(code)) > 0),
@@ -38,16 +32,9 @@ create index courses_season_status_order_idx
 
 -- Transitional group ownership for Phase 1. Existing rows keep course_id NULL
 -- until the controlled backfill; Phase 11 closes the remaining nullability.
+-- `public_id` is the virtual `g-<id>` projection of the rowid.
 alter table groups add column public_id text
-    check (
-        public_id is null
-        or (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        )
-    );
+    generated always as ('g-' || id) virtual;
 alter table groups add column course_id integer references courses (id);
 alter table groups add column status text not null default 'active'
     check (status in ('draft', 'active', 'archived'));
@@ -58,15 +45,7 @@ alter table groups add column version integer not null default 1
     check (version > 0);
 
 update groups
-set public_id = 'legacy-' || lower(hex(cast(group_id as blob)))
-where public_id is null;
-
-update groups
 set status = case when is_active = 1 then 'active' else 'archived' end;
-
-create unique index groups_public_id_uq
-    on groups (public_id)
-    where public_id is not null;
 
 -- This non-partial parent key is required by SQLite composite foreign keys.
 create unique index groups_course_group_uq
@@ -83,13 +62,7 @@ create unique index groups_course_public_name_uq
 create table course_enrollments
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('en-' || id) virtual,
     student_user_id    integer not null references users (id),
     course_id          integer not null references courses (id),
     active_group_id    text    not null,
@@ -155,13 +128,7 @@ create index course_group_access_enrollment_history_idx
 create table course_enrollment_events
 (
     id                       integer primary key,
-    public_id                text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ene-' || id) virtual,
     enrollment_id            integer not null,
     course_id                integer not null references courses (id),
     event_type               text    not null

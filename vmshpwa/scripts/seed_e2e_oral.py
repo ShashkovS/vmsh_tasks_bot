@@ -73,23 +73,21 @@ def _web_document(*, revision_id: str, source_sha256: str, title: str) -> str:
 
 def _seed(connection: sqlite3.Connection) -> int:
     existing_lessons = {
-        row["public_id"]
+        int(row["id"])
         for row in connection.execute(
-            "SELECT public_id FROM group_lessons WHERE public_id IN (?, ?, ?)",
-            tuple(f"e2e-oral-group-lesson-{project}" for project, _number in TARGETS),
+            "SELECT id FROM group_lessons WHERE id IN (?, ?, ?)",
+            tuple(number for _project, number in TARGETS),
         )
     }
     existing_windows = {
-        row["public_id"]
+        int(row["id"])
         for row in connection.execute(
-            "SELECT public_id FROM oral_windows WHERE public_id IN (?, ?, ?)",
-            tuple(f"e2e-oral-window-{project}" for project, _number in TARGETS),
+            "SELECT id FROM oral_windows WHERE id IN (?, ?, ?)",
+            tuple(number for _project, number in TARGETS),
         )
     }
-    expected_lessons = {
-        f"e2e-oral-group-lesson-{project}" for project, _number in TARGETS
-    }
-    expected_windows = {f"e2e-oral-window-{project}" for project, _number in TARGETS}
+    expected_lessons = {number for _project, number in TARGETS}
+    expected_windows = {number for _project, number in TARGETS}
     if existing_lessons or existing_windows:
         if (
             existing_lessons == expected_lessons
@@ -99,14 +97,14 @@ def _seed(connection: sqlite3.Connection) -> int:
         raise RuntimeError("Oral E2E fixture is only partially present")
 
     course = connection.execute(
-        "SELECT id FROM courses WHERE public_id = 'course-fixture-math-5-7'"
+        "SELECT id FROM courses WHERE id = 1"
     ).fetchone()
     admin = connection.execute(
-        "SELECT id FROM users WHERE public_id = 'user-admin-fixture'"
+        "SELECT id FROM users WHERE id = 301"
     ).fetchone()
     group = connection.execute(
         "SELECT group_id, course_id FROM groups "
-        "WHERE public_id = 'group-fixture-beginner'"
+        "WHERE id = 1"
     ).fetchone()
     if course is None or admin is None or group is None:
         raise RuntimeError("Oral E2E seed requires baseline course, group and admin")
@@ -123,11 +121,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         course_lesson_id = int(
             connection.execute(
                 "INSERT INTO course_lessons "
-                "(public_id, course_id, lesson_number, title, created_by_user_id, "
+                "(id, course_id, lesson_number, title, created_by_user_id, "
                 "updated_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
                 "RETURNING id",
                 (
-                    f"e2e-oral-course-lesson-{project}",
+                    lesson_number,
                     course_id,
                     lesson_number,
                     title,
@@ -141,12 +139,12 @@ def _seed(connection: sqlite3.Connection) -> int:
         group_lesson_id = int(
             connection.execute(
                 "INSERT INTO group_lessons "
-                "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+                "(id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
                 "business_timezone, status, created_by_user_id, updated_by_user_id, "
                 "created_at, updated_at) VALUES (?, ?, ?, ?, '2026-07-29', "
                 "'Europe/Moscow', 'active', ?, ?, ?, ?) RETURNING id",
                 (
-                    f"e2e-oral-group-lesson-{project}",
+                    lesson_number,
                     course_lesson_id,
                     course_id,
                     group_id,
@@ -160,11 +158,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         source_id = int(
             connection.execute(
                 "INSERT INTO content_sources "
-                "(public_id, group_lesson_id, kind, logical_filename, source_encoding, "
+                "(id, group_lesson_id, kind, logical_filename, source_encoding, "
                 "created_by_user_id, created_at) VALUES (?, ?, 'condition', ?, 'utf-8', ?, ?) "
                 "RETURNING id",
                 (
-                    f"e2e-oral-source-{project}",
+                    lesson_number,
                     group_lesson_id,
                     f"e2e-oral-{project}.tex",
                     admin_id,
@@ -172,16 +170,16 @@ def _seed(connection: sqlite3.Connection) -> int:
                 ),
             ).fetchone()["id"]
         )
-        revision_public_id = f"e2e-oral-revision-{project}"
+        revision_public_id = f"cr-{lesson_number}"
         revision_id = int(
             connection.execute(
                 "INSERT INTO content_revisions "
-                "(public_id, source_id, revision_number, source_sha256, latex_text, "
+                "(id, source_id, revision_number, source_sha256, latex_text, "
                 "parser_version, status, canonical_json, diagnostics_json, provenance_json, "
                 "created_by_user_id, created_at) VALUES (?, ?, 1, ?, ?, 'oral-e2e-v1', "
                 "'ready', ?, '[]', '{}', ?, ?) RETURNING id",
                 (
-                    revision_public_id,
+                    lesson_number,
                     source_id,
                     source_sha256,
                     source,
@@ -215,16 +213,16 @@ def _seed(connection: sqlite3.Connection) -> int:
         problem_id = int(
             connection.execute(
                 "INSERT INTO problems "
-                "(group_id, lesson, prob, item, title, prob_text, prob_type, ans_type, "
-                "ans_validation, validation_error, cor_ans, wrong_ans, congrat, synonyms, "
-                "public_id) VALUES (?, ?, 1, '', ?, ?, 3, 0, '', '', '', '', '', '', ?) "
+                "(id, group_id, lesson, prob, item, title, prob_text, prob_type, ans_type, "
+                "ans_validation, validation_error, cor_ans, wrong_ans, congrat, synonyms) "
+                "VALUES (?, ?, ?, 1, '', ?, ?, 3, 0, '', '', '', '', '', '') "
                 "RETURNING id",
                 (
+                    lesson_number,
                     group_id,
                     lesson_number,
                     title,
                     source,
-                    f"e2e-oral-problem-{project}",
                 ),
             ).fetchone()["id"]
         )
@@ -245,12 +243,12 @@ def _seed(connection: sqlite3.Connection) -> int:
         )
         connection.execute(
             "INSERT INTO lesson_windows "
-            "(public_id, group_lesson_id, opens_at, submission_closes_at, timezone, source, "
+            "(id, group_lesson_id, opens_at, submission_closes_at, timezone, source, "
             "created_by_user_id, updated_by_user_id, created_at, updated_at) "
             "VALUES (?, ?, '2026-01-01T00:00:00Z', '2027-08-10T00:00:00Z', "
             "'Europe/Moscow', 'native', ?, ?, ?, ?)",
             (
-                f"e2e-oral-lesson-window-{project}",
+                lesson_number,
                 group_lesson_id,
                 admin_id,
                 admin_id,
@@ -260,11 +258,11 @@ def _seed(connection: sqlite3.Connection) -> int:
         )
         connection.execute(
             "INSERT INTO lesson_publications "
-            "(public_id, group_lesson_id, kind, revision_id, state, published_at, "
+            "(id, group_lesson_id, kind, revision_id, state, published_at, "
             "created_by_user_id, published_by_user_id, created_at, updated_at) "
             "VALUES (?, ?, 'condition', ?, 'published', ?, ?, ?, ?, ?)",
             (
-                f"e2e-oral-publication-{project}",
+                lesson_number,
                 group_lesson_id,
                 revision_id,
                 TIMESTAMP,
@@ -276,12 +274,12 @@ def _seed(connection: sqlite3.Connection) -> int:
         )
         connection.execute(
             "INSERT INTO oral_windows "
-            "(public_id, group_lesson_id, sequence_number, opens_at, closes_at, join_label, "
+            "(id, group_lesson_id, sequence_number, opens_at, closes_at, join_label, "
             "join_url, join_code, status, created_by_user_id, updated_by_user_id, "
             "created_at, updated_at) VALUES (?, ?, 1, '2026-01-01T00:00:00Z', "
             "'2027-08-10T00:00:00Z', 'Подключиться к Zoom', ?, ?, 'active', ?, ?, ?, ?)",
             (
-                f"e2e-oral-window-{project}",
+                lesson_number,
                 group_lesson_id,
                 f"https://zoom.example.test/j/{ordinal}",
                 f"17990{ordinal}",

@@ -22,6 +22,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKSPACE = REPOSITORY_ROOT / "vmshpwa"
 DEFAULT_LOCK_PATH = REPOSITORY_ROOT / ".runtime/vmshpwa/e2e-suite.lock"
 E2E_API_ORIGIN = "http://127.0.0.1:8380"
+E2E_DATABASE = REPOSITORY_ROOT / "db/vmshpwa_e2e.sqlite3"
 
 # These are the complete browser-facing inputs currently consumed by the
 # workspace. Values from a developer shell must not turn the hermetic E2E
@@ -73,6 +74,12 @@ def exclusive_e2e_run(lock_path: Path = DEFAULT_LOCK_PATH) -> Iterator[None]:
 
 def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     playwright = ["pnpm", "exec", "playwright", "test"]
+    if mode == "all":
+        return (
+            ("pnpm", "build"),
+            (*playwright, "--grep-invert", "@visual"),
+            (*playwright, "--grep", "@visual"),
+        )
     if mode == "authentication":
         playwright.append("e2e/authentication.spec.ts")
     elif mode == "content":
@@ -107,9 +114,21 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         playwright.extend(["--grep", "@visual"])
     elif mode == "visual-update":
         playwright.extend(["--grep", "@visual", "--update-snapshots"])
-    elif mode != "all":
+    else:
         raise ValueError(f"Unknown E2E mode: {mode}")
     return (("pnpm", "build"), tuple(playwright))
+
+
+def reset_e2e_database() -> None:
+    """Reset only the reproducible E2E SQLite database between suite phases."""
+
+    paths = (
+        E2E_DATABASE,
+        E2E_DATABASE.with_name(f"{E2E_DATABASE.name}-shm"),
+        E2E_DATABASE.with_name(f"{E2E_DATABASE.name}-wal"),
+    )
+    for path in paths:
+        path.unlink(missing_ok=True)
 
 
 def sanitized_e2e_environment(
@@ -140,9 +159,12 @@ def run_commands(
     *,
     workspace: Path = WORKSPACE,
     environment: Mapping[str, str] | None = None,
+    reset_database_between_commands: bool = False,
 ) -> int:
     subprocess_environment = sanitized_e2e_environment(environment)
-    for command in commands:
+    for index, command in enumerate(commands):
+        if reset_database_between_commands and index > 0:
+            reset_e2e_database()
         result = subprocess.run(
             command,
             cwd=workspace,
@@ -184,7 +206,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
         with exclusive_e2e_run():
-            return run_commands(commands_for_mode(args.mode))
+            return run_commands(
+                commands_for_mode(args.mode),
+                reset_database_between_commands=args.mode == "all",
+            )
     except E2eSuiteAlreadyRunning as error:
         print(error)
         return 73

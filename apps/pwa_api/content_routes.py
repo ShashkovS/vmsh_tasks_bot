@@ -252,7 +252,9 @@ def _request_id(request: web.Request) -> str:
 
 
 def _public_id(prefix: str) -> str:
-    return f"{prefix}-{uuid.uuid4().hex}"
+    """Validated compatibility value; SQLite derives the actual public ID."""
+
+    return prefix
 
 
 def _iso(value: datetime | None) -> str | None:

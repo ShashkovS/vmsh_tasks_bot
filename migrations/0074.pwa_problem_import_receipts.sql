@@ -3,7 +3,7 @@
 create table problem_import_receipts
 (
     id                     integer primary key,
-    public_id              text    not null unique,
+    public_id text generated always as ('pir-' || id) virtual,
     course_id              integer not null references courses (id),
     source_filename        text    not null check (length(trim(source_filename)) > 0),
     source_sha256          text    not null check (length(source_sha256) = 64),

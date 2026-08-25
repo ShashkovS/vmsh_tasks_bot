@@ -5,11 +5,23 @@ import { expect, test } from './fixtures'
 
 test.setTimeout(90_000)
 
+function classroomFixtureId(project: string): number {
+  const fixtureIds: Record<string, number> = {
+    chromium: 9801,
+    webkit: 9802,
+    firefox: 9803,
+  }
+  const fixtureId = fixtureIds[project]
+  if (fixtureId === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+  return fixtureId
+}
+
 function classroomPersona(project: string, audience: 'student' | 'family'): AuthPersona {
+  const fixtureId = classroomFixtureId(project)
   if (audience === 'student') {
     return {
       persona: 'student',
-      accountPublicId: `account-classroom-e2e-${project}`,
+      accountPublicId: `a-${fixtureId + 300}`,
       audience,
       username: `classroom-e2e-${project}`,
       credentialField: 'telegramToken',
@@ -18,7 +30,7 @@ function classroomPersona(project: string, audience: 'student' | 'family'): Auth
   }
   return {
     persona: 'family',
-    accountPublicId: `account-classroom-family-e2e-${project}`,
+    accountPublicId: `a-${fixtureId + 400}`,
     audience,
     username: `classroom-family-e2e-${project}`,
     credentialField: 'password',
@@ -100,7 +112,7 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
   page,
 }, testInfo) => {
   const project = testInfo.project.name
-  const eventPublicId = `in-person-classrooms-e2e-${project}`
+  const eventPublicId = `ipe-${classroomFixtureId(project)}`
   const roomNameByProject: Record<string, string> = {
     chromium: '201 E2E chromium',
     webkit: '202 E2E webkit',
@@ -141,13 +153,13 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Аудитории по группам' })).toBeVisible()
   await expect(page.getByLabel(`Группа для аудитории ${roomName}`)).toHaveValue(
-    `group-lesson-classroom-e2e-${project}`,
+    `gl-${classroomFixtureId(project)}`,
   )
   await expect(page.getByLabel(`Группа для аудитории ${secondRoomName}`)).toHaveValue(
-    `group-lesson-classroom-e2e-${project}`,
+    `gl-${classroomFixtureId(project)}`,
   )
   await expect(page.getByLabel(`Группа для аудитории ${reassignRoomName}`)).toHaveValue(
-    `group-lesson-classroom-e2e-${project}`,
+    `gl-${classroomFixtureId(project)}`,
   )
 
   const saveResponse = page.waitForResponse(
@@ -170,7 +182,7 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   page,
 }, testInfo) => {
   const project = testInfo.project.name
-  const eventPublicId = `in-person-classrooms-e2e-${project}`
+  const eventPublicId = `ipe-${classroomFixtureId(project)}`
   const studentName = `Тестов ${project} Ученик`
   const reassignRoomName = `Переназначение E2E ${project}`
 

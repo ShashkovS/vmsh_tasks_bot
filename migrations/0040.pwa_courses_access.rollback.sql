@@ -5,7 +5,6 @@ drop table course_enrollments;
 drop index groups_course_public_name_uq;
 drop index groups_course_short_code_uq;
 drop index groups_course_group_uq;
-drop index groups_public_id_uq;
 alter table groups drop column version;
 alter table groups drop column updated_at;
 alter table groups drop column created_at;

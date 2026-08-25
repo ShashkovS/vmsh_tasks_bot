@@ -209,6 +209,10 @@ def _setup(*, force_production=False):
         )
         if not isinstance(configured_first_admin_password, str):
             raise RuntimeError("first_admin_password must be a string")
+        configured_nats_server = os.environ.get("VMSH_NATS_SERVER")
+        if configured_nats_server is None:
+            configured_nats_server = profile_values.get("nats_server")
+
         config = Config(
             runtime_profile=runtime_profile,
             pwa_instance=configured_instance,
@@ -229,9 +233,10 @@ def _setup(*, force_production=False):
             google_sheets_key="",
             google_cred_json="",
             telegram_bot_token="",
-            nats_server=os.environ.get("VMSH_NATS_SERVER")
-            or profile_values.get("nats_server")
-            or None,
+            # An explicitly empty environment value disables NATS for an
+            # isolated runtime such as Playwright E2E. Falling back here would
+            # silently turn the profile's broker back on.
+            nats_server=configured_nats_server or None,
             trace_enabled=False,
             sentry_dsn=os.environ.get("VMSH_SENTRY_DSN")
             or str(profile_values.get("sentry_dsn", "")).strip(),

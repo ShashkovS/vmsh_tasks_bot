@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import uuid
 from datetime import UTC, datetime, timedelta
 
 from db_methods.pwa.notifications import (
@@ -77,13 +76,11 @@ def record_review_notifications(
             )
             continue
 
-        public_id = f"notification.{uuid.uuid4().hex}"
         if insert_event(
             connection,
-            public_id=public_id,
             account_id=account_id,
             category="review_completed",
-            dedupe_key=public_id,
+            dedupe_key=review_public_id,
             route="/student/notifications",
             payload_json=json.dumps(
                 {

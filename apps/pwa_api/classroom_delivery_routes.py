@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-import uuid
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -342,7 +341,6 @@ async def post_classroom_delivery_batch(request: web.Request) -> web.Response:
         result = await _factory(request).run_write_async(
             lambda connection: create_classroom_delivery_batch(
                 connection,
-                public_id=f"classroom-delivery.{uuid.uuid4().hex}",
                 plan_public_id=plan_public_id,
                 expected_plan_version=version,
                 expected_snapshot_hash=preview_hash,

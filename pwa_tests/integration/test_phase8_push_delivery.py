@@ -57,14 +57,13 @@ def _prepare_database(tmp_path, *, endpoint: str = "https://push.example.test/de
         )
         insert_event(
             connection,
-            public_id="notification.classroom-push",
             account_id=account_id,
             category="classroom_assignment",
             dedupe_key="classroom:push",
             route="/student/",
             payload_json=json.dumps(
                 {
-                    "courseId": "course-assignment",
+                    "courseId": "c-1",
                     "courseName": "Математика",
                     "groupName": "Начинающие",
                     "classroomName": "202",
@@ -161,7 +160,7 @@ async def test_delivery_is_idempotent_and_quiet_hours_only_silence(tmp_path):
     assert len(sent) == 1
     assert sent[0][1] == {
         "schemaVersion": 1,
-        "eventId": "notification.classroom-push",
+        "eventId": "n-1",
         "category": "classroom_assignment",
         "title": "Назначена аудитория",
         "body": "Математика · Начинающие · аудитория 202",
@@ -169,6 +168,34 @@ async def test_delivery_is_idempotent_and_quiet_hours_only_silence(tmp_path):
         "silent": True,
         "occurredAt": NOW,
     }
+
+
+async def test_group_announcement_push_uses_announcement_text(tmp_path):
+    database_path, factory = _prepare_database(tmp_path)
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "INSERT INTO notification_events "
+            "(account_id, category, dedupe_key, route, payload_json, occurred_at, "
+            "deliver_after, created_at) VALUES (1, 'group_announcement', 'bn-1', "
+            "'/student/', ?, ?, ?, ?)",
+            (
+                json.dumps({"text": "Собираемся у главного входа в 16:50."}),
+                NOW,
+                NOW,
+                NOW,
+            ),
+        )
+    sent: list[dict[str, object]] = []
+
+    async def sender(_subscription, payload):
+        sent.append(payload)
+
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+    assert result["sent"] == 2
+    announcement = next(item for item in sent if item["category"] == "group_announcement")
+    assert announcement["title"] == "Новое объявление"
+    assert announcement["body"] == "Собираемся у главного входа в 16:50."
+    assert announcement["route"] == "/student/"
     row = factory.run_read(
         lambda connection: connection.execute(
             "SELECT state, attempt_count, delivered_at FROM notification_deliveries"

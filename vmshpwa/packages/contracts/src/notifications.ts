@@ -15,6 +15,7 @@ export const notificationCategorySchema = z.enum([
   'classroom_assignment',
   'deadline',
   'news',
+  'group_announcement',
 ])
 export type NotificationCategory = z.infer<typeof notificationCategorySchema>
 

@@ -26,7 +26,6 @@ def update_enrollment(
 def insert_group_change_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     enrollment_id: int,
     course_id: int,
     previous_value: str,
@@ -36,12 +35,11 @@ def insert_group_change_event(
 ) -> None:
     connection.execute(
         "INSERT INTO course_enrollment_events "
-        "(public_id, enrollment_id, course_id, event_type, "
+        "(enrollment_id, course_id, event_type, "
         "previous_group_id, new_group_id, "
         "source, request_id, occurred_at, created_at) "
-        "VALUES (?, ?, ?, 'active_group_changed', ?, ?, 'pwa', ?, ?, ?)",
+        "VALUES (?, ?, 'active_group_changed', ?, ?, 'pwa', ?, ?, ?)",
         (
-            public_id,
             enrollment_id,
             course_id,
             previous_value,
@@ -56,7 +54,6 @@ def insert_group_change_event(
 def insert_mode_change_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     enrollment_id: int,
     course_id: int,
     previous_value: str,
@@ -66,12 +63,11 @@ def insert_mode_change_event(
 ) -> None:
     connection.execute(
         "INSERT INTO course_enrollment_events "
-        "(public_id, enrollment_id, course_id, event_type, "
+        "(enrollment_id, course_id, event_type, "
         "previous_attendance_mode, new_attendance_mode, "
         "source, request_id, occurred_at, created_at) "
-        "VALUES (?, ?, ?, 'attendance_mode_changed', ?, ?, 'pwa', ?, ?, ?)",
+        "VALUES (?, ?, 'attendance_mode_changed', ?, ?, 'pwa', ?, ?, ?)",
         (
-            public_id,
             enrollment_id,
             course_id,
             previous_value,

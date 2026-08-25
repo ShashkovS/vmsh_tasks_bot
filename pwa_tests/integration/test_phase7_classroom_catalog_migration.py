@@ -99,8 +99,6 @@ def test_catalog_create_rename_archive_restore_and_conflicts(tmp_path):
         name, normalized = prepare_classroom_name("  Актовый зал  ")
         created = create_classroom(
             connection,
-            public_id="room.hall",
-            event_public_id="room-event.1",
             name=name,
             normalized_name=normalized,
             actor_user_id=admin_id,
@@ -108,7 +106,7 @@ def test_catalog_create_rename_archive_restore_and_conflicts(tmp_path):
             now="2026-07-29T08:00:00Z",
         )
         assert created == {
-            "public_id": "room.hall",
+            "public_id": "room-1",
             "name": "Актовый зал",
             "status": "active",
             "created_at": "2026-07-29T08:00:00Z",
@@ -120,8 +118,6 @@ def test_catalog_create_rename_archive_restore_and_conflicts(tmp_path):
         with pytest.raises(ClassroomNameConflict):
             create_classroom(
                 connection,
-                public_id="room.duplicate",
-                event_public_id="room-event.duplicate",
                 name=duplicate_name,
                 normalized_name=duplicate_normalized,
                 actor_user_id=admin_id,
@@ -131,9 +127,8 @@ def test_catalog_create_rename_archive_restore_and_conflicts(tmp_path):
 
         renamed = rename_classroom(
             connection,
-            public_id="room.hall",
+            public_id="room-1",
             expected_version=1,
-            event_public_id="room-event.2",
             name="Большой зал",
             normalized_name="большой зал",
             actor_user_id=admin_id,
@@ -144,9 +139,8 @@ def test_catalog_create_rename_archive_restore_and_conflicts(tmp_path):
         with pytest.raises(ClassroomVersionConflict):
             rename_classroom(
                 connection,
-                public_id="room.hall",
+                public_id="room-1",
                 expected_version=1,
-                event_public_id="room-event.stale",
                 name="Старое имя",
                 normalized_name="старое имя",
                 actor_user_id=admin_id,
@@ -156,9 +150,8 @@ def test_catalog_create_rename_archive_restore_and_conflicts(tmp_path):
 
         archived = set_classroom_status(
             connection,
-            public_id="room.hall",
+            public_id="room-1",
             expected_version=2,
-            event_public_id="room-event.3",
             status="archived",
             actor_user_id=admin_id,
             request_id="request-5",
@@ -172,9 +165,8 @@ def test_catalog_create_rename_archive_restore_and_conflicts(tmp_path):
 
         restored = set_classroom_status(
             connection,
-            public_id="room.hall",
+            public_id="room-1",
             expected_version=3,
-            event_public_id="room-event.4",
             status="active",
             actor_user_id=admin_id,
             request_id="request-6",

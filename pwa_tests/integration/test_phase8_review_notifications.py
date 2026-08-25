@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 
 from models.pwa.review_notifications import record_review_notifications
 from pwa_tests.integration.test_phase8_notification_core import (
+    ACCOUNT_PUBLIC_ID,
     _apply,
     _migrations,
     _seed_account,
@@ -32,7 +33,7 @@ def test_reviews_share_one_batch_for_thirty_minutes(tmp_path):
         assert (
             record_review_notifications(
                 connection,
-                account_public_ids=("notification-account",),
+                account_public_ids=(ACCOUNT_PUBLIC_ID,),
                 review_public_id="review-one",
                 problem_public_ids=("problem-one",),
                 completed_at=FIRST_REVIEW,
@@ -46,7 +47,7 @@ def test_reviews_share_one_batch_for_thirty_minutes(tmp_path):
         assert (
             record_review_notifications(
                 connection,
-                account_public_ids=("notification-account",),
+                account_public_ids=(ACCOUNT_PUBLIC_ID,),
                 review_public_id="review-two",
                 problem_public_ids=("problem-two", "problem-one"),
                 completed_at=FIRST_REVIEW + timedelta(minutes=29),
@@ -56,7 +57,7 @@ def test_reviews_share_one_batch_for_thirty_minutes(tmp_path):
         # Repeating the same committed review must not inflate the batch.
         record_review_notifications(
             connection,
-            account_public_ids=("notification-account",),
+            account_public_ids=(ACCOUNT_PUBLIC_ID,),
             review_public_id="review-two",
             problem_public_ids=("problem-two",),
             completed_at=FIRST_REVIEW + timedelta(minutes=29),
@@ -93,7 +94,7 @@ def test_review_after_batch_window_starts_a_new_event(tmp_path):
         for review_id, offset in (("review-one", 0), ("review-two", 30)):
             record_review_notifications(
                 connection,
-                account_public_ids=("notification-account",),
+                account_public_ids=(ACCOUNT_PUBLIC_ID,),
                 review_public_id=review_id,
                 problem_public_ids=(f"problem-{review_id}",),
                 completed_at=FIRST_REVIEW + timedelta(minutes=offset),
@@ -121,12 +122,13 @@ def test_review_notifications_ignore_family_and_inactive_accounts(tmp_path):
         _seed_account(connection)
         connection.execute(
             "UPDATE auth_accounts SET status = 'blocked' "
-            "WHERE public_id = 'notification-account'"
+            "WHERE public_id = ?",
+            (ACCOUNT_PUBLIC_ID,),
         )
 
         created = record_review_notifications(
             connection,
-            account_public_ids=("notification-account", "missing-account"),
+            account_public_ids=(ACCOUNT_PUBLIC_ID, "missing-account"),
             review_public_id="review-one",
             problem_public_ids=("problem-one",),
             completed_at=FIRST_REVIEW,

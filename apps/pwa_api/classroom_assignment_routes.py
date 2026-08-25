@@ -440,9 +440,7 @@ async def post_recalculate_classroom_assignment_plan(
         )
     working_plan = _working_plan_version(request)
     plan_public_id, expected_version = (
-        (f"classroom-plan.{uuid.uuid4().hex}", None)
-        if working_plan is None
-        else working_plan
+        (None, None) if working_plan is None else working_plan
     )
     try:
         result = await _factory(request).run_write_async(

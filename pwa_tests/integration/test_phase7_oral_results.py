@@ -51,7 +51,7 @@ def test_oral_result_migration_up_down_up_is_exact(tmp_path):
 def _result_payload(problem_id: str, **changes) -> dict[str, object]:
     payload: dict[str, object] = {
         "schemaVersion": 1,
-        "studentId": "user-content-student",
+        "studentId": "u-903101",
         "idempotencyKey": "oral-round-41-student-1",
         "marks": [{"problemId": problem_id, "outcome": "accepted"}],
         "reactionId": 300,
@@ -76,7 +76,7 @@ async def test_teacher_records_oral_round_once_in_legacy_tables(content_http):
     roster_body = await roster.json()
     assert roster_body["students"] == [
         {
-            "studentId": "user-content-student",
+            "studentId": "u-903101",
             "displayName": "Тестова Ирина",
         }
     ]
@@ -183,7 +183,7 @@ async def test_invalid_or_in_person_oral_result_does_not_write(content_http):
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE course_enrollments SET attendance_mode = 'in_person' "
-            "WHERE public_id = 'enrollment-content-http'"
+            "WHERE public_id = 'en-1'"
         )
     )
     unavailable = await fixture.client.post(

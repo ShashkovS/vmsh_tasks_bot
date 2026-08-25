@@ -9,7 +9,7 @@ def find_news_source_bindings(
     connection: sqlite3.Connection, chat_id: int
 ) -> list[dict[str, object]]:
     rows = connection.execute(
-        "SELECT binding.public_id, binding.owner_course_id, binding.owner_group_id "
+        "SELECT binding.id, binding.owner_course_id, binding.owner_group_id "
         "FROM telegram_bindings binding "
         "WHERE binding.status = 'verified' AND binding.purpose = 'news_source' "
         "AND binding.chat_id = ? ORDER BY binding.id",
@@ -44,8 +44,7 @@ def find_telegram_post(
 def insert_telegram_post(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
-    source_binding_public_id: str,
+    source_binding_id: int,
     owner_course_id: int | None,
     owner_group_id: str | None,
     chat_id: int,
@@ -57,13 +56,12 @@ def insert_telegram_post(
 ) -> int:
     row = connection.execute(
         "INSERT INTO news_posts "
-        "(public_id, source_type, source_binding_public_id, owner_course_id, "
+        "(source_type, source_binding_id, owner_course_id, "
         "owner_group_id, source_chat_id, source_message_id, source_media_group_id, "
         "published_at, last_source_edited_at, created_at, updated_at) "
-        "VALUES (?, 'telegram', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+        "VALUES ('telegram', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
         (
-            public_id,
-            source_binding_public_id,
+            source_binding_id,
             owner_course_id,
             owner_group_id,
             chat_id,
@@ -107,7 +105,6 @@ def find_local_news_owner(
 def insert_local_post(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     owner_course_id: int | None,
     owner_group_id: str | None,
     published_at: str,
@@ -118,9 +115,9 @@ def insert_local_post(
 
     row = connection.execute(
         "INSERT INTO news_posts "
-        "(public_id, source_type, owner_course_id, owner_group_id, published_at, "
-        "created_at, updated_at) VALUES (?, 'local', ?, ?, ?, ?, ?) RETURNING id",
-        (public_id, owner_course_id, owner_group_id, published_at, now, now),
+        "(source_type, owner_course_id, owner_group_id, published_at, "
+        "created_at, updated_at) VALUES ('local', ?, ?, ?, ?, ?) RETURNING id",
+        (owner_course_id, owner_group_id, published_at, now, now),
     ).fetchone()
     post_id = int(row["id"])
     connection.execute(
@@ -392,7 +389,7 @@ def list_visible_posts(
         "FROM news_posts post "
         "JOIN news_visibility visibility ON visibility.post_id = post.id "
         "LEFT JOIN telegram_bindings binding "
-        "ON binding.public_id = post.source_binding_public_id "
+        "ON binding.id = post.source_binding_id "
         "JOIN news_revisions revision ON revision.id = ("
         "SELECT latest.id FROM news_revisions latest WHERE latest.post_id = post.id "
         "ORDER BY latest.revision_number DESC LIMIT 1) "
@@ -439,7 +436,7 @@ def get_visible_post_by_public_id(
         "FROM news_posts post "
         "JOIN news_visibility visibility ON visibility.post_id = post.id "
         "LEFT JOIN telegram_bindings binding "
-        "ON binding.public_id = post.source_binding_public_id "
+        "ON binding.id = post.source_binding_id "
         "JOIN news_revisions revision ON revision.id = ("
         "SELECT latest.id FROM news_revisions latest WHERE latest.post_id = post.id "
         "ORDER BY latest.revision_number DESC LIMIT 1) "

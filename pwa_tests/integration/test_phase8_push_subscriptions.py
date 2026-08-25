@@ -165,7 +165,7 @@ async def test_student_push_subscription_http_is_account_scoped(classroom_http):
     )
     assert created.status == 200, await created.text()
     subscription_id = (await created.json())["subscriptionId"]
-    assert subscription_id.startswith("push.")
+    assert subscription_id.startswith("push-")
 
     repeated = await classroom_http.client.post(
         "/student/api/v1/push-subscriptions",

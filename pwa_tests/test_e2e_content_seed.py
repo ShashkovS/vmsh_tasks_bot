@@ -17,32 +17,24 @@ from vmshpwa.scripts.seed_e2e_content import (
 
 def _seed_owners(connection: sqlite3.Connection) -> None:
     connection.execute(
-        "INSERT INTO users (id, public_id, type, name, surname) "
-        "VALUES (301, 'user-admin-fixture', 128, 'E2E', 'Admin')"
+        "INSERT INTO users (id, type, name, surname) "
+        "VALUES (301, 128, 'E2E', 'Admin')"
     )
     connection.execute(
         "INSERT INTO seasons "
-        "(id, public_id, code, title, starts_on, ends_on, session_expires_on, "
+        "(id, code, title, starts_on, ends_on, session_expires_on, "
         "status, created_at, updated_at) VALUES "
-        "(1, 'season-e2e', 'e2e', 'E2E', '2026-01-01', '2026-12-31', "
+        "(1, 'e2e', 'E2E', '2026-01-01', '2026-12-31', "
         "'2027-08-10', 'active', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')"
     )
     connection.execute(
         "INSERT INTO courses "
-        "(id, public_id, season_id, code, name, subject_code, status, sort_order, "
+        "(id, season_id, code, name, subject_code, status, sort_order, "
         "accent_key, created_at, updated_at) VALUES "
-        "(1, 'course-fixture-math-5-7', 1, 'math', 'Math', 'math', 'active', 1, "
+        "(1, 1, 'math', 'Math', 'math', 'active', 1, "
         "'math', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')"
     )
-    connection.execute(
-        "INSERT INTO groups "
-        "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-        "allow_self_switch, is_system, score_weight, public_id, course_id, status, "
-        "created_at, updated_at) VALUES "
-        "('n', 'n', 'Beginners', 1, 1, 1, 1, 0, 1.0, "
-        "'group-fixture-beginner', 1, 'active', "
-        "'2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')"
-    )
+    connection.execute("UPDATE groups SET course_id = 1 WHERE id = 1")
 
 
 def test_fixture_has_one_independent_target_per_browser():
@@ -104,7 +96,7 @@ def test_fixture_insert_is_atomic_and_idempotent(tmp_path):
             connection.execute(
                 "SELECT count(*) FROM lesson_windows AS window "
                 "JOIN group_lessons AS lesson ON lesson.id = window.group_lesson_id "
-                "WHERE lesson.public_id LIKE 'group-lesson-submission-e2e-%'"
+                "WHERE lesson.public_id IN ('gl-4', 'gl-5', 'gl-6')"
             ).fetchone()[0]
             == 3
         )

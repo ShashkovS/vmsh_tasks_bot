@@ -109,13 +109,7 @@ create unique index results_id_student_problem_uq
 create table test_attempts
 (
     id                     integer primary key,
-    public_id              text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ta-' || id) virtual,
     student_user_id        integer not null references users (id),
     problem_id             integer not null references problems (id),
     problem_revision_id    integer not null,
@@ -259,6 +253,10 @@ when not (
 ) and not (
     old.check_status = 'pending'
     and new.check_status in ('checked', 'failed')
+) and not (
+    old.check_status = 'checked'
+    and new.check_status = 'checked'
+    and new.checker_version is not old.checker_version
 )
 begin
     select raise(abort, 'invalid test attempt check transition');

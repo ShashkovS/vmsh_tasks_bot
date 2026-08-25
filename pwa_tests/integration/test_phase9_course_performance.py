@@ -84,7 +84,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON course_group_access (enrollment_id, valid_to);
         CREATE TABLE analytics_runs (
             id INTEGER PRIMARY KEY,
-            public_id TEXT NOT NULL,
+            public_id TEXT GENERATED ALWAYS AS ('ar-' || id) VIRTUAL,
             course_id INTEGER NOT NULL,
             algorithm TEXT NOT NULL,
             algorithm_version TEXT NOT NULL,
@@ -214,7 +214,6 @@ def test_course_analytics_handles_1500_students_and_38_lessons(tmp_path):
         )
         save_completed_course_metrics(
             connection,
-            public_id="analytics-phase9-performance",
             course_id=1,
             algorithm="a53-course",
             algorithm_version="1",

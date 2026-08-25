@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
@@ -209,7 +208,6 @@ def _append_synonym_audit(
     """Store only a compact Staff summary; membership history remains canonical."""
     insert_audit_event(
         connection,
-        public_id=f"audit.{uuid.uuid4().hex}",
         actor_user_id=actor_user_id,
         actor_account_public_id=actor_account_id,
         audience="staff",

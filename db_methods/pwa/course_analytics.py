@@ -98,7 +98,6 @@ def list_course_group_access_rows(
 def save_completed_course_metrics(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     course_id: int,
     algorithm: str,
     algorithm_version: str,
@@ -112,11 +111,10 @@ def save_completed_course_metrics(
     with connection:
         run_id = connection.execute(
             "INSERT INTO analytics_runs "
-            "(public_id, course_id, algorithm, algorithm_version, "
+            "(course_id, algorithm, algorithm_version, "
             "input_through_result_id, state, started_at, completed_at, diagnostics_json) "
-            "VALUES (?, ?, ?, ?, ?, 'completed', ?, ?, ?) RETURNING id",
+            "VALUES (?, ?, ?, ?, 'completed', ?, ?, ?) RETURNING id",
             (
-                public_id,
                 course_id,
                 algorithm,
                 algorithm_version,

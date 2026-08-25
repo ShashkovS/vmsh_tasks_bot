@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -181,13 +180,11 @@ async def correct_written_review(
             created_at=effective_completed_at_text,
         )
         author_kind = "admin" if is_admin else "teacher"
-        comment_public_id = f"entry-{uuid.uuid4()}" if comment else None
         comment_entry_id = (
             None
-            if comment_public_id is None
+            if comment is None
             else insert_comment(
                 connection,
-                public_id=comment_public_id,
                 thread_id=int(source["thread_id"]),
                 author_kind=author_kind,
                 author_user_id=command.reviewer_user_id,
@@ -195,10 +192,8 @@ async def correct_written_review(
                 created_at=effective_completed_at_text,
             )
         )
-        review_public_id = f"review-{uuid.uuid4()}"
-        review_id = insert_review(
+        review_id, review_public_id = insert_review(
             connection,
-            public_id=review_public_id,
             source=source,
             reviewer_user_id=command.reviewer_user_id,
             verdict=command.verdict,
@@ -225,7 +220,6 @@ async def correct_written_review(
         )
         insert_event(
             connection,
-            public_id=f"review-event-{uuid.uuid4()}",
             review_id=review_id,
             payload_json=json.dumps(
                 {

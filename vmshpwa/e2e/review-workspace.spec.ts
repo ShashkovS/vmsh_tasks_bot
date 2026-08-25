@@ -7,13 +7,28 @@ import {
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test } from './fixtures'
 
+function reviewFixtureId(project: string): number {
+  const fixtureIds: Record<string, number> = {
+    chromium: 9701,
+    webkit: 9702,
+    firefox: 9703,
+  }
+  const fixtureId = fixtureIds[project]
+  if (fixtureId === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+  return fixtureId
+}
+
 test('Phase 6: Staff review restores its draft and completes one leased case', async ({
   page,
   secondaryContext,
 }, testInfo) => {
   test.setTimeout(90_000)
   const project = testInfo.project.name
-  const queueId = `e2e-review-queue-${project}`
+  const fixtureId = reviewFixtureId(project)
+  const queueId = `wq-${fixtureId}`
+  const problemId = `p-${fixtureId}`
+  const studentEntryId = `se-${fixtureId * 10 + 2}`
+  const attachmentId = `sa-${fixtureId}`
   const title = `E2E проверка ${project}`
 
   await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/review')
@@ -122,7 +137,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   expect(receipt.review.annotations).toEqual([
     {
       annotationId: expect.any(String),
-      attachmentId: `e2e-review-attachment-${project}`,
+      attachmentId,
       schemaVersion: 1,
       rotation: 90,
       markCount: 1,
@@ -163,11 +178,11 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
           resources: event.resources,
           accountId: event.accountId ?? null,
         }
-      }, `problems/e2e-review-problem-${project}/thread`),
+      }, `problems/${problemId}/thread`),
     )
     .toEqual({
       audience: 'family',
-      resources: [`problems/e2e-review-problem-${project}/thread`],
+      resources: [`problems/${problemId}/thread`],
       accountId: null,
     })
 
@@ -176,7 +191,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     const response = await fetch(`/student/api/v1/problems/${problemId}/thread`)
     const body: unknown = await response.json()
     return { status: response.status, body }
-  }, `e2e-review-problem-${project}`)
+  }, problemId)
   expect(studentProjection.status).toBe(200)
   const studentThread = writtenThreadResponseSchema.parse(studentProjection.body)
   expect(studentThread.thread?.reviews).toEqual([
@@ -184,10 +199,10 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
       verdict: 15,
       comment: `Проверено в ${project}; переход обоснован.`,
       source: 'staff',
-      evidenceEntryIds: [`e2e-review-student-entry-${project}`],
+      evidenceEntryIds: [studentEntryId],
       annotations: [
         expect.objectContaining({
-          attachmentId: `e2e-review-attachment-${project}`,
+          attachmentId,
           schemaVersion: 1,
           rotation: 90,
           marks: [expect.objectContaining({ kind: 'rectangle' })],
@@ -218,7 +233,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     const response = await fetch(`/student/api/v1/problems/${problemId}/thread`)
     const body: unknown = await response.json()
     return { status: response.status, body }
-  }, `e2e-review-problem-${project}`)
+  }, problemId)
   expect(updatedStudentProjection.status).toBe(200)
   expect(
     writtenThreadResponseSchema.parse(updatedStudentProjection.body).thread?.reviews[0]
@@ -239,11 +254,11 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
         )
         if (!event) return null
         return { audience: event.audience, resources: event.resources }
-      }, `problems/e2e-review-problem-${project}/thread`),
+      }, `problems/${problemId}/thread`),
     )
     .toEqual({
       audience: 'family',
-      resources: [`problems/e2e-review-problem-${project}/thread`],
+      resources: [`problems/${problemId}/thread`],
     })
 
   const familyAuth = await familyPage.evaluate(async () => {
@@ -257,7 +272,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     throw new Error('Family auth endpoint returned another audience')
   }
   const child = familyContext.principal.linkedChildren.find(
-    (candidate) => candidate.studentId === 'user-student-online-fixture',
+    (candidate) => candidate.studentId === 'u-101',
   )
   if (!child) throw new Error('Review student is not linked to the E2E family')
   const familyProjection = await familyPage.evaluate(
@@ -271,20 +286,20 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
         body: threadBody,
       }
     },
-    { problemId: `e2e-review-problem-${project}`, studentId: child.studentId },
+    { problemId, studentId: child.studentId },
   )
   expect(familyProjection.status).toBe(200)
   const familyThread = familyWrittenThreadResponseSchema.parse(familyProjection.body)
-  expect(familyThread.studentId).toBe('user-student-online-fixture')
+  expect(familyThread.studentId).toBe('u-101')
   expect(familyThread.thread?.reviews).toEqual([
     expect.objectContaining({
       verdict: 15,
       comment: `Проверено в ${project}; переход обоснован.`,
       source: 'staff',
-      evidenceEntryIds: [`e2e-review-student-entry-${project}`],
+      evidenceEntryIds: [studentEntryId],
       annotations: [
         expect.objectContaining({
-          attachmentId: `e2e-review-attachment-${project}`,
+          attachmentId,
           schemaVersion: 1,
           rotation: 90,
           marks: [expect.objectContaining({ kind: 'rectangle' })],
@@ -300,9 +315,9 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   expect(familyThread.thread?.reviews[0]).not.toHaveProperty('internalReaction')
   const familyAttachment = familyThread.thread?.entries
     .flatMap((entry) => entry.attachments)
-    .find((attachment) => attachment.attachmentId === `e2e-review-attachment-${project}`)
+    .find((attachment) => attachment.attachmentId === attachmentId)
   expect(familyAttachment?.mediaPath).toBe(
-    `/family/api/v1/children/user-student-online-fixture/thread-entries/e2e-review-student-entry-${project}/attachments/e2e-review-attachment-${project}/media`,
+    `/family/api/v1/children/u-101/thread-entries/${studentEntryId}/attachments/${attachmentId}/media`,
   )
   const familyMedia = await familyPage.evaluate(async (mediaPath) => {
     if (!mediaPath) throw new Error('Family projection has no submitted photo')
@@ -374,7 +389,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     const response = await fetch(`/student/api/v1/problems/${problemId}/thread`)
     const body: unknown = await response.json()
     return { status: response.status, body }
-  }, `e2e-review-problem-${project}`)
+  }, problemId)
   expect(correctedStudentProjection.status).toBe(200)
   const correctedStudentThread = writtenThreadResponseSchema.parse(correctedStudentProjection.body)
   expect(correctedStudentThread.thread?.status).toBe('needs_work')
@@ -383,7 +398,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     expect.objectContaining({
       verdict: 13,
       comment: correctedComment,
-      evidenceEntryIds: [`e2e-review-student-entry-${project}`],
+      evidenceEntryIds: [studentEntryId],
       annotations: [],
     }),
   )
@@ -396,7 +411,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
       const body: unknown = await response.json()
       return { status: response.status, body }
     },
-    { problemId: `e2e-review-problem-${project}`, studentId: child.studentId },
+    { problemId, studentId: child.studentId },
   )
   expect(correctedFamilyProjection.status).toBe(200)
   const correctedFamilyThread = familyWrittenThreadResponseSchema.parse(
@@ -421,7 +436,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
               candidate.resources.includes(expectedResource),
           ) ?? false
         )
-      }, `problems/e2e-review-problem-${project}/thread`),
+      }, `problems/${problemId}/thread`),
     )
     .toBe(true)
 

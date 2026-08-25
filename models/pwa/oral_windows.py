@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import uuid
 from datetime import UTC, datetime
 from urllib.parse import urlencode, urlparse
 
@@ -149,7 +148,6 @@ def create_due_window_notifications(
         ):
             if insert_event(
                 connection,
-                public_id=f"notification.oral.{uuid.uuid4().hex}",
                 account_id=int(account["id"]),
                 category="oral_window",
                 dedupe_key=str(window["public_id"]),
@@ -192,11 +190,9 @@ def create_window(
         join_code=join_code,
         status=status,
     )
-    public_id = f"oral-window.{uuid.uuid4().hex}"
     try:
-        insert_window(
+        public_id = insert_window(
             connection,
-            public_id=public_id,
             group_lesson_id=int(scope["group_lesson_id"]),
             actor_user_id=actor_user_id,
             now=_timestamp(now),

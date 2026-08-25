@@ -4,9 +4,9 @@
 create table news_posts
 (
     id                       integer primary key,
-    public_id                text    not null unique,
+    public_id text generated always as ('news-' || id) virtual,
     source_type              text    not null check (source_type in ('telegram', 'local')),
-    source_binding_public_id text,
+    source_binding_id        integer references telegram_bindings (id),
     owner_course_id          integer references courses (id),
     owner_group_id           text references groups (group_id),
     source_chat_id           integer,
@@ -20,12 +20,12 @@ create table news_posts
     version                  integer not null default 1 check (version > 0),
     check (
         (source_type = 'telegram'
-            and source_binding_public_id is not null
+            and source_binding_id is not null
             and source_chat_id is not null
             and source_message_id is not null)
         or
         (source_type = 'local'
-            and source_binding_public_id is null
+            and source_binding_id is null
             and source_chat_id is null
             and source_message_id is null
             and source_media_group_id is null)

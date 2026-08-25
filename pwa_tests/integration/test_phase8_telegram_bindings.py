@@ -79,12 +79,12 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     assert owners.status == 200
     assert (await owners.json())["courses"] == [
         {
-            "courseId": "classroom-layout-course",
+            "courseId": "c-1",
             "courseName": "Математика",
             "status": "active",
             "groups": [
                 {
-                    "groupId": "classroom-layout-group",
+                    "groupId": "g-5",
                     "groupName": "Начинающие",
                     "status": "active",
                 }
@@ -95,7 +95,7 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     request = {
         "schemaVersion": 1,
         "ownerType": "course",
-        "ownerId": "classroom-layout-course",
+        "ownerId": "c-1",
         "purpose": "news_source",
         "chatId": -100179000001,
         "messageThreadId": None,
@@ -112,9 +112,9 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     assert item == {
         "publicId": item["publicId"],
         "ownerType": "course",
-        "ownerId": "classroom-layout-course",
+        "ownerId": "c-1",
         "ownerName": "Математика",
-        "courseId": "classroom-layout-course",
+        "courseId": "c-1",
         "courseName": "Математика",
         "purpose": "news_source",
         "chatId": -100179000001,
@@ -137,7 +137,7 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     assert (await duplicate.json())["error"]["code"] == "telegram_binding_duplicate"
 
     listed = await classroom_http.client.get(
-        "/staff/api/v1/telegram-bindings?courseId=classroom-layout-course",
+        "/staff/api/v1/telegram-bindings?courseId=c-1",
         headers=_headers(),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -214,7 +214,7 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
         "telegram_binding.verified",
     ]
     assert all(
-        event["actor_account_id"] == "classroom-http-account-admin" for event in events
+        event["actor_account_id"] == "a-1" for event in events
     )
     assert json.loads(events[1]["before_json"])["titleCached"] == "Новости математики"
     assert json.loads(events[1]["after_json"])["titleCached"] == "Канал курса"
@@ -260,7 +260,7 @@ async def test_binding_write_rolls_back_when_audit_insert_fails(classroom_http):
         json={
             "schemaVersion": 1,
             "ownerType": "course",
-            "ownerId": "classroom-layout-course",
+            "ownerId": "c-1",
             "purpose": "materials_target",
             "chatId": -100179000099,
             "messageThreadId": None,
@@ -291,33 +291,32 @@ async def test_news_adds_course_and_group_while_material_target_overrides(
 ):
     def seed(connection):
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         group_id = connection.execute(
-            "SELECT group_id FROM groups WHERE public_id = 'classroom-layout-group'"
+            "SELECT group_id FROM groups WHERE public_id = 'g-5'"
         ).fetchone()["group_id"]
         rows = []
         for suffix, owner_type, owner_id, purpose, chat_id in (
-            ("course-news", "course", "classroom-layout-course", "news_source", -101),
-            ("group-news", "group", "classroom-layout-group", "news_source", -102),
+            ("course-news", "course", "c-1", "news_source", -101),
+            ("group-news", "group", "g-5", "news_source", -102),
             (
                 "course-materials",
                 "course",
-                "classroom-layout-course",
+                "c-1",
                 "materials_target",
                 -103,
             ),
             (
                 "group-materials",
                 "group",
-                "classroom-layout-group",
+                "g-5",
                 "materials_target",
                 -104,
             ),
         ):
             row = create_binding(
                 connection,
-                public_id=f"telegram-binding.{suffix}",
                 owner_type=owner_type,
                 owner_public_id=owner_id,
                 purpose=purpose,

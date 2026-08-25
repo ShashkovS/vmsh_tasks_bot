@@ -143,20 +143,18 @@ def list_synonym_problem_ids(
 def insert_synonym_group(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     course_lesson_id: int,
     group_key: str,
     display_title: str,
     actor_user_id: int,
     now: str,
-) -> int:
-    cursor = connection.execute(
+) -> tuple[int, str]:
+    row = connection.execute(
         "INSERT INTO problem_synonym_groups "
-        "(public_id, course_lesson_id, group_key, display_title, status, "
+        "(course_lesson_id, group_key, display_title, status, "
         "created_by_user_id, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, 'active', ?, ?, ?)",
+        "VALUES (?, ?, ?, 'active', ?, ?, ?) RETURNING id, public_id",
         (
-            public_id,
             course_lesson_id,
             group_key,
             display_title,
@@ -164,8 +162,9 @@ def insert_synonym_group(
             now,
             now,
         ),
-    )
-    return int(cursor.lastrowid)
+    ).fetchone()
+    assert row is not None
+    return int(row["id"]), str(row["public_id"])
 
 
 def insert_synonym_member(

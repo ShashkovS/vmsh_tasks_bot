@@ -11,7 +11,7 @@ content_http = content_support.content_http
 async def test_family_reads_only_a_linked_childs_courses(content_http):
     fixture = content_http
     response = await fixture.client.get(
-        "/family/api/v1/children/user-content-student/courses",
+        "/family/api/v1/children/u-903101/courses",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "family"),
     )
@@ -19,7 +19,7 @@ async def test_family_reads_only_a_linked_childs_courses(content_http):
     assert response.headers["Cache-Control"] == "no-store"
     body = await response.json()
     assert body["student"] == {
-        "studentId": "user-content-student",
+        "studentId": "u-903101",
         "displayName": "Ирина Тестова",
         "grade": None,
         "birthday": None,
@@ -27,9 +27,9 @@ async def test_family_reads_only_a_linked_childs_courses(content_http):
         "isPrimary": True,
     }
     assert len(body["enrollments"]) == 1
-    assert body["enrollments"][0]["studentId"] == "user-content-student"
-    assert body["enrollments"][0]["course"]["courseId"] == "course-content-http"
-    assert body["enrollments"][0]["activeGroupId"] == "group-content-http-a"
+    assert body["enrollments"][0]["studentId"] == "u-903101"
+    assert body["enrollments"][0]["course"]["courseId"] == "c-1"
+    assert body["enrollments"][0]["activeGroupId"] == "g-1"
 
 
 async def test_family_child_courses_hide_unlinked_and_reject_other_audiences(
@@ -46,7 +46,7 @@ async def test_family_child_courses_hide_unlinked_and_reject_other_audiences(
         assert (await hidden.json())["error"]["code"] == "forbidden"
 
     student = await fixture.client.get(
-        "/family/api/v1/children/user-content-student/courses",
+        "/family/api/v1/children/u-903101/courses",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "student"),
     )
@@ -55,7 +55,7 @@ async def test_family_child_courses_hide_unlinked_and_reject_other_audiences(
     assert student.status == 401
 
     with_query = await fixture.client.get(
-        "/family/api/v1/children/user-content-student/courses?extra=1",
+        "/family/api/v1/children/u-903101/courses?extra=1",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "family"),
     )
@@ -65,7 +65,7 @@ async def test_family_child_courses_hide_unlinked_and_reject_other_audiences(
 async def test_family_home_returns_only_browser_ready_current_lessons(content_http):
     fixture = content_http
     empty = await fixture.client.get(
-        "/family/api/v1/children/user-content-student/home",
+        "/family/api/v1/children/u-903101/home",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "family"),
     )
@@ -92,31 +92,31 @@ async def test_family_home_returns_only_browser_ready_current_lessons(content_ht
             "(definition_id, user_id, course_id, earned_at, evidence_json) "
             "SELECT definition.id, ?, course.id, '2026-09-15T10:00:00Z', '{}' "
             "FROM achievement_definitions AS definition "
-            "JOIN courses AS course ON course.public_id = 'course-content-http' "
+            "JOIN courses AS course ON course.public_id = 'c-1' "
             "WHERE definition.code = 'first_submission'",
             (content_support.STUDENT_USER_ID,),
         )
 
     fixture.factory.run_write(seed_result)
     response = await fixture.client.get(
-        "/family/api/v1/children/user-content-student/home",
+        "/family/api/v1/children/u-903101/home",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "family"),
     )
     assert response.status == 200, await response.text()
     body = await response.json()
-    assert body["student"]["studentId"] == "user-content-student"
-    assert body["courses"][0]["enrollment"]["activeGroupId"] == "group-content-http-a"
+    assert body["student"]["studentId"] == "u-903101"
+    assert body["courses"][0]["enrollment"]["activeGroupId"] == "g-1"
     assert body["courses"][0]["currentLesson"] == {
         "groupLessonId": fixture.group_lesson_a,
-        "courseLessonId": "course-lesson-content-http",
+        "courseLessonId": "cl-1",
         "lessonNumber": 41,
         "title": "Занятие 41",
         "cycleAnchorDate": "2026-09-14",
         "businessTimezone": "Europe/Moscow",
         "problemCount": 1,
     }
-    assert body["courses"][0]["progress"]["courseId"] == "course-content-http"
+    assert body["courses"][0]["progress"]["courseId"] == "c-1"
     assert body["courses"][0]["progress"]["summary"] == {
         "attempted": 1,
         "accepted": 1,
@@ -177,13 +177,13 @@ async def test_student_progress_is_course_scoped_and_collapses_retries(content_h
 
     fixture.factory.run_write(seed_results)
     response = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/progress",
+        "/student/api/v1/courses/c-1/progress",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "student"),
     )
     assert response.status == 200, await response.text()
     assert await response.json() == {
-        "courseId": "course-content-http",
+        "courseId": "c-1",
         "summary": {
             "attempted": 1,
             "accepted": 1,
@@ -217,7 +217,7 @@ async def test_student_progress_is_course_scoped_and_collapses_retries(content_h
     assert forbidden.status == 403
 
     invalid_query = await fixture.client.get(
-        "/student/api/v1/courses/course-content-http/progress?group=anything",
+        "/student/api/v1/courses/c-1/progress?group=anything",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "student"),
     )
@@ -232,7 +232,7 @@ async def test_family_changes_an_allowed_group_and_mode_with_one_versioned_write
     def grant_second_group(connection):
         enrollment = connection.execute(
             "SELECT id, course_id FROM course_enrollments "
-            "WHERE public_id = 'enrollment-content-http'"
+            "WHERE public_id = 'en-1'"
         ).fetchone()
         connection.execute(
             "INSERT INTO course_group_access "
@@ -244,13 +244,13 @@ async def test_family_changes_an_allowed_group_and_mode_with_one_versioned_write
 
     fixture.factory.run_write(grant_second_group)
     path = (
-        "/family/api/v1/children/user-content-student/courses/"
-        "course-content-http/enrollment"
+        "/family/api/v1/children/u-903101/courses/"
+        "c-1/enrollment"
     )
     changed = await fixture.client.patch(
         path,
         json={
-            "activeGroupId": "group-content-http-b",
+            "activeGroupId": "g-2",
             "attendanceMode": "in_person",
             "version": 1,
         },
@@ -258,19 +258,19 @@ async def test_family_changes_an_allowed_group_and_mode_with_one_versioned_write
         cookies=content_support._cookie(fixture, "family"),
     )
     assert changed.status == 200, await changed.text()
-    assert (await changed.json())["activeGroupId"] == "group-content-http-b"
+    assert (await changed.json())["activeGroupId"] == "g-2"
     assert (await changed.json())["attendanceMode"] == "in_person"
     assert (await changed.json())["version"] == 2
 
     def read_changes(connection):
         enrollment = connection.execute(
             "SELECT active_group_id, attendance_mode, version "
-            "FROM course_enrollments WHERE public_id = 'enrollment-content-http'"
+            "FROM course_enrollments WHERE public_id = 'en-1'"
         ).fetchone()
         events = connection.execute(
             "SELECT event_type, source FROM course_enrollment_events "
             "WHERE enrollment_id = (SELECT id FROM course_enrollments "
-            "WHERE public_id = 'enrollment-content-http') ORDER BY id"
+            "WHERE public_id = 'en-1') ORDER BY id"
         ).fetchall()
         legacy = connection.execute(
             "SELECT group_id, online FROM users WHERE id = ?",
@@ -293,7 +293,7 @@ async def test_family_changes_an_allowed_group_and_mode_with_one_versioned_write
     stale = await fixture.client.patch(
         path,
         json={
-            "activeGroupId": "group-content-http-a",
+            "activeGroupId": "g-1",
             "attendanceMode": "online",
             "version": 1,
         },
@@ -303,13 +303,13 @@ async def test_family_changes_an_allowed_group_and_mode_with_one_versioned_write
     assert stale.status == 409
 
     refreshed = await fixture.client.get(
-        "/family/api/v1/children/user-content-student/home",
+        "/family/api/v1/children/u-903101/home",
         headers=content_support._headers(),
         cookies=content_support._cookie(fixture, "family"),
     )
     assert refreshed.status == 200
     current = (await refreshed.json())["courses"][0]["enrollment"]
-    assert current["activeGroupId"] == "group-content-http-b"
+    assert current["activeGroupId"] == "g-2"
     assert current["attendanceMode"] == "in_person"
 
 
@@ -318,13 +318,13 @@ async def test_family_enrollment_change_rejects_unlinked_or_unavailable_data(
 ):
     fixture = content_http
     body = {
-        "activeGroupId": "group-content-http-b",
+        "activeGroupId": "g-2",
         "attendanceMode": "in_person",
         "version": 1,
     }
     linked_path = (
-        "/family/api/v1/children/user-content-student/courses/"
-        "course-content-http/enrollment"
+        "/family/api/v1/children/u-903101/courses/"
+        "c-1/enrollment"
     )
 
     unavailable_group = await fixture.client.patch(
@@ -338,7 +338,7 @@ async def test_family_enrollment_change_rejects_unlinked_or_unavailable_data(
 
     unlinked_child = await fixture.client.patch(
         "/family/api/v1/children/someone-else/courses/"
-        "course-content-http/enrollment",
+        "c-1/enrollment",
         json=body,
         headers=content_support._headers(unsafe=True),
         cookies=content_support._cookie(fixture, "family"),
@@ -369,7 +369,7 @@ async def test_student_changes_own_allowed_group_and_attendance(content_http):
     def grant_second_group(connection):
         enrollment = connection.execute(
             "SELECT id, course_id FROM course_enrollments "
-            "WHERE public_id = 'enrollment-content-http'"
+            "WHERE public_id = 'en-1'"
         ).fetchone()
         connection.execute(
             "INSERT INTO course_group_access "
@@ -380,11 +380,11 @@ async def test_student_changes_own_allowed_group_and_attendance(content_http):
         )
 
     fixture.factory.run_write(grant_second_group)
-    path = "/student/api/v1/courses/course-content-http/enrollment"
+    path = "/student/api/v1/courses/c-1/enrollment"
     changed = await fixture.client.patch(
         path,
         json={
-            "activeGroupId": "group-content-http-b",
+            "activeGroupId": "g-2",
             "attendanceMode": "in_person",
             "version": 1,
         },
@@ -393,7 +393,7 @@ async def test_student_changes_own_allowed_group_and_attendance(content_http):
     )
     assert changed.status == 200, await changed.text()
     changed_body = await changed.json()
-    assert changed_body["activeGroupId"] == "group-content-http-b"
+    assert changed_body["activeGroupId"] == "g-2"
     assert changed_body["attendanceMode"] == "in_person"
     assert changed_body["version"] == 2
 

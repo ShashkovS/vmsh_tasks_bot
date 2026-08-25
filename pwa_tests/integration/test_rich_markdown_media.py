@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 
 from helpers.pwa import rich_media
+from helpers.pwa.content.assets import ConvertedAsset
 
 
 class _PrivateStorage:
@@ -16,6 +19,24 @@ class _PrivateStorage:
 
     def public_url(self, key: str) -> None:
         return None
+
+
+class _PublicStorage(_PrivateStorage):
+    def public_url(self, key: str) -> str:
+        return f"https://cdn.example.test/{key}"
+
+
+class _RasterConverter:
+    async def raster_to_webp(self, payload: bytes) -> ConvertedAsset:
+        converted = b"webp:" + payload
+        return ConvertedAsset(
+            source_sha256=hashlib.sha256(payload).hexdigest(),
+            output_sha256=hashlib.sha256(converted).hexdigest(),
+            media_type="image/webp",
+            data=converted,
+            width=1_200,
+            height=900,
+        )
 
 
 @pytest.mark.asyncio
@@ -62,3 +83,35 @@ async def test_rich_media_copy_never_returns_client_hotlink_for_private_storage(
     ]
     assert manifest[0]["storage_status"] == "stored"
     assert storage.objects[0][2] == "image/gif"
+
+
+@pytest.mark.asyncio
+async def test_staff_uploaded_rich_image_is_converted_and_uses_public_s3_url() -> None:
+    source = b"\x89PNG\r\n\x1a\nsource-image"
+    storage = _PublicStorage()
+
+    result = await rich_media.store_uploaded_rich_image(
+        source,
+        storage=storage,
+        converter=_RasterConverter(),
+    )
+
+    assert result == {
+        "url": f"https://cdn.example.test/{storage.objects[0][0]}",
+        "mimeType": "image/webp",
+        "width": 1_200,
+        "height": 900,
+    }
+    assert storage.objects[0][0].startswith("rich-media/sha256/")
+    assert storage.objects[0][1] == b"webp:" + source
+    assert storage.objects[0][2] == "image/webp"
+
+
+@pytest.mark.asyncio
+async def test_staff_uploaded_rich_image_rejects_non_image_before_conversion() -> None:
+    with pytest.raises(rich_media.RichMediaCopyError, match="PNG, JPEG or WebP"):
+        await rich_media.store_uploaded_rich_image(
+            b"not an image",
+            storage=_PublicStorage(),
+            converter=_RasterConverter(),
+        )

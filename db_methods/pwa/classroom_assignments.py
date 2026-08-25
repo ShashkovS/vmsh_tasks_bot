@@ -175,21 +175,20 @@ def find_previous_classroom(
 def insert_plan(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     event_id: int,
     layout_id: int,
     base_plan_id: int | None,
     actor_user_id: int,
     now: str,
-) -> int:
-    cursor = connection.execute(
+) -> tuple[int, str]:
+    row = connection.execute(
         "INSERT INTO classroom_assignment_plans "
-        "(public_id, in_person_event_id, layout_version_id, base_plan_id, state, "
+        "(in_person_event_id, layout_version_id, base_plan_id, state, "
         "created_by_user_id, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, 'draft', ?, ?, ?)",
-        (public_id, event_id, layout_id, base_plan_id, actor_user_id, now, now),
-    )
-    return int(cursor.lastrowid)
+        "VALUES (?, ?, ?, 'draft', ?, ?, ?) RETURNING id, public_id",
+        (event_id, layout_id, base_plan_id, actor_user_id, now, now),
+    ).fetchone()
+    return int(row["id"]), str(row["public_id"])
 
 
 def replace_assignments(
@@ -444,7 +443,6 @@ def grant_group_access(
 def insert_group_change_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     enrollment_id: int,
     course_id: int,
     previous_group_id: str,
@@ -455,11 +453,10 @@ def insert_group_change_event(
 ) -> None:
     connection.execute(
         "INSERT INTO course_enrollment_events "
-        "(public_id, enrollment_id, course_id, event_type, previous_group_id, "
+        "(enrollment_id, course_id, event_type, previous_group_id, "
         "new_group_id, actor_user_id, source, request_id, occurred_at, created_at) "
-        "VALUES (?, ?, ?, 'active_group_changed', ?, ?, ?, 'staff', ?, ?, ?)",
+        "VALUES (?, ?, 'active_group_changed', ?, ?, ?, 'staff', ?, ?, ?)",
         (
-            public_id,
             enrollment_id,
             course_id,
             previous_group_id,

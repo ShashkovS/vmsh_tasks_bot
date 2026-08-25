@@ -64,6 +64,7 @@
   "pwa_vapid_subject": "",
   "sep11": "====== OPENROUTER ======",
   "OPENROUTER_API_KEY": "sk-or-v1-XXX_HERE",
+  "openrouter_proxy": "",
   "sep99": "====== 99 ======",
   "zdummy": "Тупо последняя строка без запятой"
 }

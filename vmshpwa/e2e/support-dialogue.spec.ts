@@ -3,13 +3,25 @@ import { expect, test } from './fixtures'
 
 test.setTimeout(90_000)
 
+function reviewFixtureId(project: string): number {
+  const fixtureIds: Record<string, number> = {
+    chromium: 9701,
+    webkit: 9702,
+    firefox: 9703,
+  }
+  const fixtureId = fixtureIds[project]
+  if (fixtureId === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+  return fixtureId
+}
+
 test('Phase 6: private Student and Staff dialogue survives reload and syncs live', async ({
   page,
   secondaryContext,
 }, testInfo) => {
   const project = testInfo.project.name
-  const groupLessonId = `e2e-review-group-lesson-${project}`
-  const problemId = `e2e-review-problem-${project}`
+  const fixtureId = reviewFixtureId(project)
+  const groupLessonId = `gl-${fixtureId}`
+  const problemId = `p-${fixtureId}`
   const composePath =
     `/student/questions/new?groupLesson=${groupLessonId}` + `&problem=${problemId}`
   const studentQuestion = `Почему здесь нужен этот переход? ${project}, ${testInfo.retry}`
@@ -34,7 +46,7 @@ test('Phase 6: private Student and Staff dialogue survives reload and syncs live
   )
   await page.getByRole('button', { name: 'Отправить' }).click()
   expect((await createResponse).status()).toBe(200)
-  await expect(page).toHaveURL(/\/student\/questions\/support-thread-[a-z0-9-]+$/)
+  await expect(page).toHaveURL(/\/student\/questions\/sup-\d+$/)
   const threadId = new URL(page.url()).pathname.split('/').at(-1)
   if (!threadId) throw new Error('Created support dialogue has no public thread ID')
   await expect(page.getByText(studentQuestion, { exact: true })).toBeVisible()

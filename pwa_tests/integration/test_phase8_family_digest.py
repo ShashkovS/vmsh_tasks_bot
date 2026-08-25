@@ -18,7 +18,7 @@ pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 def _path() -> str:
     return (
         "/staff/api/v1/group-lessons/"
-        "classroom-layout-group-lesson/family-digest"
+        "gl-1/family-digest"
     )
 
 
@@ -53,10 +53,10 @@ async def test_admin_previews_sends_and_does_not_repeat_family_digest(classroom_
     assert preview_response.status == 200, await preview_response.text()
     preview = (await preview_response.json())["digest"]
     assert preview == {
-        "groupLessonId": "classroom-layout-group-lesson",
-        "courseId": "classroom-layout-course",
+        "groupLessonId": "gl-1",
+        "courseId": "c-1",
         "courseName": "Математика",
-        "groupId": "classroom-layout-group",
+        "groupId": "g-5",
         "groupName": "Начинающие",
         "lessonNumber": 41,
         "studentCount": 1,
@@ -108,33 +108,33 @@ async def test_admin_previews_sends_and_does_not_repeat_family_digest(classroom_
         return event, audits
 
     event, audits = classroom_http.factory.run_read(stored)
-    assert event["account_public_id"] == "classroom-http-account-family"
+    assert event["account_public_id"] == "a-4"
     assert event["category"] == "review_completed"
     assert event["dedupe_key"] == (
-        "family-digest:classroom-layout-group-lesson"
+        "family-digest:gl-1"
     )
-    assert event["route"] == "/family/children/classroom-layout-student"
+    assert event["route"] == "/family/children/u-958003"
     assert json.loads(event["payload_json"]) == {
         "kind": "family_lesson_digest",
-        "courseId": "classroom-layout-course",
+        "courseId": "c-1",
         "courseName": "Математика",
-        "groupId": "classroom-layout-group",
+        "groupId": "g-5",
         "groupName": "Начинающие",
-        "groupLessonId": "classroom-layout-group-lesson",
+        "groupLessonId": "gl-1",
         "lessonNumber": 41,
-        "studentIds": ["classroom-layout-student"],
+        "studentIds": ["u-958003"],
     }
     assert len(audits) == 1
     assert tuple(audits[0][key] for key in ("action", "object_type", "object_id")) == (
         "family_digest.sent",
         "group_lesson",
-        "classroom-layout-group-lesson",
+        "gl-1",
     )
     assert audits[0]["request_id"] == "classroom.http.test"
     assert json.loads(audits[0]["after_json"]) == {
         "createdFamilyCount": 1,
         "eligibleFamilyCount": 1,
-        "groupId": "classroom-layout-group",
+        "groupId": "g-5",
         "lessonNumber": 41,
     }
 
@@ -146,7 +146,7 @@ async def test_admin_previews_sends_and_does_not_repeat_family_digest(classroom_
     assert family_events.status == 200
     family_item = (await family_events.json())["items"][0]
     assert family_item["category"] == "review_completed"
-    assert family_item["route"] == "/family/children/classroom-layout-student"
+    assert family_item["route"] == "/family/children/u-958003"
     assert family_item["payload"]["kind"] == "family_lesson_digest"
 
     student_events = await classroom_http.client.get(
@@ -203,7 +203,7 @@ async def test_digest_preview_reports_unlinked_and_reaches_only_late_family(
     assert (unlinked["familyCount"], unlinked["pendingFamilyCount"]) == (0, 0)
     assert unlinked["unlinkedStudents"] == [
         {
-            "studentId": "classroom-layout-student",
+            "studentId": "u-958003",
             "displayName": "Белова Анна",
         }
     ]
@@ -234,10 +234,10 @@ async def test_digest_preview_reports_unlinked_and_reaches_only_late_family(
         now = classroom_support.NOW.isoformat().replace("+00:00", "Z")
         account_id = connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, display_name, "
+            "(audience, username, username_normalized, display_name, "
             "provisioning_source, credential_kind, credential_hash, status, "
             "created_at, updated_at) VALUES "
-            "('classroom-http-account-family-late', 'family', 'late-family', "
+            "('family', 'late-family', "
             "'late-family', 'Вторая семья', 'synthetic-test', 'password', ?, "
             "'active', ?, ?) RETURNING id",
             (classroom_support.TEST_HASHER.hash("late-password"), now, now),
@@ -278,8 +278,8 @@ async def test_digest_preview_reports_unlinked_and_reaches_only_late_family(
         ).fetchall()
     )
     assert [(row["public_id"], row["total"]) for row in rows] == [
-        ("classroom-http-account-family", 1),
-        ("classroom-http-account-family-late", 1),
+        ("a-4", 1),
+        ("a-5", 1),
     ]
 
 
@@ -296,7 +296,7 @@ async def test_family_digest_rejects_missing_or_inactive_lesson(classroom_http):
     classroom_http.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE group_lessons SET status = 'archived' "
-            "WHERE public_id = 'classroom-layout-group-lesson'"
+            "WHERE public_id = 'gl-1'"
         )
     )
     inactive = await classroom_http.client.post(

@@ -89,9 +89,8 @@ def _database(tmp_path: Path) -> sqlite3.Connection:
     _insert_parents(connection)
     binding = create_binding(
         connection,
-        public_id="news-binding",
         owner_type="course",
-        owner_public_id="course-assignment",
+        owner_public_id="c-1",
         purpose="news_source",
         chat_id=-100179,
         message_thread_id=None,
@@ -148,7 +147,7 @@ def test_ingest_is_idempotent_and_keeps_immutable_revisions(tmp_path):
         duplicate = ingest_telegram_news(connection, update=_update(), now=NOW)
         set_binding_status(
             connection,
-            public_id="news-binding",
+            public_id="tb-1",
             expected_version=2,
             status="disabled",
             verified_at=None,
@@ -230,19 +229,18 @@ def test_historical_export_is_fully_partitioned_without_copying_content():
 @pytest.mark.asyncio
 async def test_student_and_family_read_course_and_group_news(classroom_http):
     def seed(connection):
-        for public_id, owner_type, owner_id, chat_id in (
-            ("feed-course", "course", "classroom-layout-course", -501),
-            ("feed-group", "group", "classroom-layout-group", -502),
+        for owner_type, owner_id, chat_id, title in (
+            ("course", "c-1", -501, "feed-course"),
+            ("group", "g-5", -502, "feed-group"),
         ):
             binding = create_binding(
                 connection,
-                public_id=public_id,
                 owner_type=owner_type,
                 owner_public_id=owner_id,
                 purpose="news_source",
                 chat_id=chat_id,
                 message_thread_id=None,
-                title_cached=public_id,
+                title_cached=title,
                 actor_user_id=958_001,
                 now=NOW,
             )

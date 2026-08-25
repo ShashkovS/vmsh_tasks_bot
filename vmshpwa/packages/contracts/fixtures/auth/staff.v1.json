@@ -8,12 +8,12 @@
   },
   "authContext": {
     "principal": {
-      "accountId": "account-staff-fixture",
+      "accountId": "a-1201",
       "audience": "staff",
       "displayName": "Синтетический преподаватель",
       "sessionVersion": 4,
       "credentialVersion": 1,
-      "userId": "user-staff-fixture",
+      "userId": "u-201",
       "role": "teacher",
       "capabilities": [
         "account.sessions.manage",

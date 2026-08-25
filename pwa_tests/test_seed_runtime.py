@@ -106,11 +106,11 @@ def test_baseline_seed_has_exact_legacy_personas_and_phase1_context(tmp_path):
         ).fetchall() == [("no_level",)]
         assert connection.execute(
             "SELECT public_id, code, status FROM seasons"
-        ).fetchall() == [("season-fixture-2025-26", "2025-26", "active")]
+        ).fetchall() == [("s-1", "2025-26", "active")]
         assert connection.execute(
             "SELECT public_id, name, subject_code, status FROM courses"
         ).fetchall() == [
-            ("course-fixture-math-5-7", "Математика 5–7", "math", "active")
+            ("c-1", "Математика 5–7", "math", "active")
         ]
         assert connection.execute(
             "SELECT group_id, course_id, status, color_key FROM groups "
@@ -126,8 +126,8 @@ def test_baseline_seed_has_exact_legacy_personas_and_phase1_context(tmp_path):
             "SELECT id, public_id, online, group_id FROM users "
             "WHERE type = 1 ORDER BY id"
         ).fetchall() == [
-            (101, "user-student-online-fixture", 1, "н"),
-            (102, "user-student-in-person-fixture", 2, "п"),
+            (101, "u-101", 1, "н"),
+            (102, "u-102", 2, "п"),
         ]
         assert connection.execute(
             "SELECT id, allowed_groups FROM users WHERE id IN (201, 301) ORDER BY id"
@@ -525,7 +525,7 @@ def test_family_persona_is_materialized_with_two_student_links(tmp_path):
     family = load_baseline_v1()["seedMetadata"]["familyPersona"]
     assert family == {
         "fixtureKey": "fixture-family-1",
-        "accountPublicId": "account-family-fixture",
+        "accountPublicId": "a-1101",
         "studentUserIds": [101, 102],
         "materializeInPhase": 1,
     }

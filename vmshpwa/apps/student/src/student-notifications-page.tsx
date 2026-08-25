@@ -54,6 +54,7 @@ const categoryCopy: Record<NotificationCategory, { title: string; description: s
   classroom_assignment: { title: 'Назначена аудитория', description: 'Очное занятие' },
   deadline: { title: 'Скоро дедлайн', description: 'Напоминание о публикации решений' },
   news: { title: 'Новая публикация', description: 'Новости кружка' },
+  group_announcement: { title: 'Новое объявление', description: 'Сообщение для вашей группы' },
 }
 
 function eventDescription(event: NotificationEvent): string {
@@ -149,6 +150,7 @@ export function PushDeviceSettings({
         { id: 'review', label: 'Результат проверки' },
         { id: 'deadline', label: 'Дедлайн и новые материалы' },
         { id: 'news', label: 'Новости кружка' },
+        { id: 'group_announcement', label: 'Объявления группы' },
       ]}
       onDisable={() => void push.disable()}
       onDismiss={push.dismiss}

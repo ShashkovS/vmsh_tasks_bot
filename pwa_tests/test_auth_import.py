@@ -177,7 +177,7 @@ def test_preview_is_deterministic_aggregate_and_does_not_mutate_source(tmp_path)
             },
         },
         "databaseChanges": {
-            "newUserPublicIds": 3,
+            "newUserPublicIds": 0,
             "newStudentAccounts": 3,
             "alreadyImportedAccounts": 0,
             "plaintextCredentialCopies": 0,
@@ -358,7 +358,7 @@ def test_apply_hashes_normalized_legacy_token_without_second_plaintext_copy(tmp_
 
     assert report["status"] == "applied"
     assert report["databaseChanges"] == {
-        "newUserPublicIds": 3,
+        "newUserPublicIds": 0,
         "newStudentAccounts": 3,
         "alreadyImportedAccounts": 0,
         "plaintextCredentialCopies": 0,
@@ -377,8 +377,8 @@ def test_apply_hashes_normalized_legacy_token_without_second_plaintext_copy(tmp_
             == 0
         )
         for row in imported:
-            assert row["public_id"].startswith("acct-")
-            assert row["user_public_id"].startswith("usr-")
+            assert row["public_id"].startswith("a-")
+            assert row["user_public_id"].startswith("u-")
             assert row["public_id"] != row["user_public_id"]
             assert row["credential_kind"] == "telegram_token"
             assert row["credential_hash"].startswith("$argon2id$")
@@ -424,11 +424,16 @@ def test_apply_rerun_is_idempotent_and_reports_no_new_rows(tmp_path):
     }
 
 
-def test_apply_rolls_back_every_change_on_public_id_collision(tmp_path):
+def test_apply_rolls_back_every_change_on_account_write_failure(tmp_path):
     database = _database(tmp_path / "copy.sqlite3")
     decisions = load_decisions(_decisions(tmp_path / "decisions.json"))
     before = _logical_auth_state(database)
 
+    with sqlite3.connect(database, autocommit=True) as connection:
+        connection.execute(
+            "CREATE TRIGGER auth_import_test_failure BEFORE INSERT ON auth_accounts "
+            "BEGIN SELECT raise(ABORT, 'synthetic import failure'); END"
+        )
     with pytest.raises(
         AuthImportError, match="Transactional Student auth import failed"
     ):
@@ -437,7 +442,6 @@ def test_apply_rolls_back_every_change_on_public_id_collision(tmp_path):
             decisions,
             confirmed_database=database,
             credential_hasher=_cheap_hasher(),
-            public_id_factory=lambda prefix: f"{prefix}-same",
         )
 
     assert _logical_auth_state(database) == before

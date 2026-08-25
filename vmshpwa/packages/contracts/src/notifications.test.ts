@@ -23,7 +23,7 @@ describe('notification contracts', () => {
     const preferences = notificationPreferenceListResponseSchema.parse(preferencesFixture)
 
     expect(events.items[0]?.payload.classroomName).toBe('202')
-    expect(preferences.items).toHaveLength(9)
+    expect(preferences.items).toHaveLength(10)
     expect(preferences.items.find((item) => item.category === 'oral_window')?.pushEnabled).toBe(
       false,
     )
@@ -58,7 +58,7 @@ describe('notification contracts', () => {
         items,
         requestId: 'request-course-preferences',
       }).items,
-    ).toHaveLength(9)
+    ).toHaveLength(10)
     expect(
       updateCourseNotificationPreferenceRequestSchema.parse({
         schemaVersion: 1,

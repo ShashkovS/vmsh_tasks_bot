@@ -40,7 +40,6 @@ def find_import_receipt(
 def insert_import_receipt(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     event_id: int,
     source_sha256: str,
     preview_sha256: str,
@@ -55,12 +54,11 @@ def insert_import_receipt(
 ) -> None:
     connection.execute(
         "INSERT INTO classroom_import_receipts "
-        "(public_id, in_person_event_id, source_sha256, preview_sha256, "
+        "(in_person_event_id, source_sha256, preview_sha256, "
         "source_sheet, source_row_count, classroom_count, assignment_count, "
         "layout_version_id, assignment_plan_id, actor_user_id, applied_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
-            public_id,
             event_id,
             source_sha256,
             preview_sha256,

@@ -6,7 +6,6 @@ import json
 import logging
 import re
 import sqlite3
-import uuid
 from collections import Counter
 from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime
@@ -479,7 +478,6 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
         if plan.group_changed:
             insert_group_event(
                 connection,
-                public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
                 enrollment_id=int(current["enrollment_id"]),
                 course_id=int(current["course_id"]),
                 previous_group_id=str(current["active_group_id"]),
@@ -491,7 +489,6 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
         if plan.mode_changed:
             insert_mode_event(
                 connection,
-                public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
                 enrollment_id=int(current["enrollment_id"]),
                 course_id=int(current["course_id"]),
                 previous_mode=str(current["attendance_mode"]),
@@ -503,7 +500,6 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
         if plan.status_changed:
             insert_status_event(
                 connection,
-                public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
                 enrollment_id=int(current["enrollment_id"]),
                 course_id=int(current["course_id"]),
                 previous_status=str(current["enrollment_status"]),
@@ -514,7 +510,6 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
             )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=actor_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",

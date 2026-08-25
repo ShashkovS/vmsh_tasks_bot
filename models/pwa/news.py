@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-import uuid
 
 from db_methods.pwa.news import (
     find_news_source_bindings,
@@ -196,8 +195,7 @@ def ingest_telegram_news(
         binding = bindings[0]
         post_id = insert_telegram_post(
             connection,
-            public_id=f"news.{uuid.uuid4().hex}",
-            source_binding_public_id=str(binding["public_id"]),
+            source_binding_id=int(binding["id"]),
             owner_course_id=(
                 None
                 if binding["owner_course_id"] is None

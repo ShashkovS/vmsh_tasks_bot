@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import json
 import os
 from collections.abc import Sequence
 from pathlib import Path
@@ -62,48 +63,71 @@ async def _put_review_media(media_root: Path) -> None:
         )
 
 
-def _required_id(connection, table: str, public_id: str) -> int:
-    if table not in {"courses", "users"}:
-        raise ValueError("unsupported E2E review owner table")
-    row = connection.execute(
-        f"SELECT id FROM {table} WHERE public_id = ?",  # noqa: S608 - allowlisted table
-        (public_id,),
-    ).fetchone()
-    if row is None:
-        raise RuntimeError(f"Phase-6 E2E review owner is missing: {public_id}")
-    return int(row["id"])
-
-
 def _insert_review_cases(connection) -> int:
+    course = connection.execute(
+        "SELECT id FROM courses WHERE code = 'math-5-7'"
+    ).fetchone()
+    student = connection.execute(
+        "SELECT linked_user_id FROM auth_accounts "
+        "WHERE audience = 'student' AND username_normalized = 'testovyy-onlayn-14'"
+    ).fetchone()
+    teacher = connection.execute(
+        "SELECT linked_user_id FROM auth_accounts "
+        "WHERE audience = 'staff' AND username_normalized = 'synthetic-teacher'"
+    ).fetchone()
+    if course is None or student is None or teacher is None:
+        raise RuntimeError("Phase-6 E2E review seed requires the baseline accounts")
+    course_id = int(course["id"])
+    group_id = str(
+        connection.execute(
+            "SELECT group_id FROM groups WHERE group_id = 'н'"
+        ).fetchone()["group_id"]
+    )
+    student_id = int(student["linked_user_id"])
+    teacher_id = int(teacher["linked_user_id"])
+    connection.execute(
+        "INSERT INTO course_runtime_settings "
+        "(course_id, schema_version, values_json, updated_by_user_id, updated_at) "
+        "VALUES (?, 1, ?, ?, ?) "
+        "ON CONFLICT(course_id) DO UPDATE SET values_json = excluded.values_json, "
+        "updated_by_user_id = excluded.updated_by_user_id, updated_at = excluded.updated_at",
+        (
+            course_id,
+            json.dumps(
+                {
+                    "verdictMode": "verdict_plus_steps",
+                    "resultMode": "res_immed",
+                    "previousLessonsMode": "prev_problems_show_all",
+                    "testAttemptRateLimit": "rate_limit_3_and_6",
+                },
+                separators=(",", ":"),
+            ),
+            teacher_id,
+            TIMESTAMP,
+        ),
+    )
+
     existing = connection.execute(
-        "SELECT public_id FROM written_tasks_queue WHERE public_id LIKE 'e2e-review-queue-%'"
+        "SELECT id FROM written_tasks_queue WHERE id BETWEEN 9701 AND 9703"
     ).fetchall()
-    expected_queue_ids = {f"e2e-review-queue-{project}" for project, _lesson in TARGETS}
+    expected_queue_ids = {fixture_id for _project, fixture_id in TARGETS}
     if existing:
-        existing_ids = {str(row["public_id"]) for row in existing}
+        existing_ids = {int(row["id"]) for row in existing}
         if existing_ids == expected_queue_ids:
             return 0
         raise RuntimeError("Phase-6 E2E review fixture is only partially present")
 
-    course_id = _required_id(connection, "courses", "course-fixture-math-5-7")
-    group_id = str(
-        connection.execute(
-            "SELECT group_id FROM groups WHERE public_id = 'group-fixture-beginner'"
-        ).fetchone()["group_id"]
-    )
-    student_id = _required_id(connection, "users", "user-student-online-fixture")
-    teacher_id = _required_id(connection, "users", "user-staff-fixture")
-
     inserted = 0
-    for ordinal, (project, lesson_number) in enumerate(TARGETS, start=1):
+    for ordinal, (project, fixture_id) in enumerate(TARGETS, start=1):
+        lesson_number = fixture_id
         course_lesson_id = int(
             connection.execute(
                 "INSERT INTO course_lessons "
-                "(public_id, course_id, lesson_number, title, created_by_user_id, "
+                "(id, course_id, lesson_number, title, created_by_user_id, "
                 "updated_by_user_id, created_at, updated_at) VALUES "
                 "(?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
                 (
-                    f"e2e-review-course-lesson-{project}",
+                    fixture_id,
                     course_id,
                     lesson_number,
                     f"E2E проверка {project}",
@@ -117,12 +141,12 @@ def _insert_review_cases(connection) -> int:
         group_lesson_id = int(
             connection.execute(
                 "INSERT INTO group_lessons "
-                "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+                "(id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
                 "business_timezone, status, created_by_user_id, updated_by_user_id, "
                 "created_at, updated_at) VALUES (?, ?, ?, ?, '2026-07-28', "
                 "'Europe/Moscow', 'active', ?, ?, ?, ?) RETURNING id",
                 (
-                    f"e2e-review-group-lesson-{project}",
+                    fixture_id,
                     course_lesson_id,
                     course_id,
                     group_id,
@@ -136,11 +160,11 @@ def _insert_review_cases(connection) -> int:
         source_id = int(
             connection.execute(
                 "INSERT INTO content_sources "
-                "(public_id, group_lesson_id, kind, logical_filename, source_encoding, "
+                "(id, group_lesson_id, kind, logical_filename, source_encoding, "
                 "created_by_user_id, created_at) VALUES (?, ?, 'condition', ?, 'utf-8', "
                 "?, ?) RETURNING id",
                 (
-                    f"e2e-review-source-{project}",
+                    fixture_id,
                     group_lesson_id,
                     f"e2e-review-{project}.tex",
                     teacher_id,
@@ -151,13 +175,13 @@ def _insert_review_cases(connection) -> int:
         revision_id = int(
             connection.execute(
                 "INSERT INTO content_revisions "
-                "(public_id, source_id, revision_number, source_sha256, latex_text, "
+                "(id, source_id, revision_number, source_sha256, latex_text, "
                 "parser_version, status, canonical_json, diagnostics_json, "
                 "provenance_json, created_by_user_id, created_at) VALUES "
                 "(?, ?, 1, ?, 'Тестовая задача', 'review-e2e-v1', 'ready', '{}', "
                 "'[]', '{}', ?, ?) RETURNING id",
                 (
-                    f"e2e-review-revision-{project}",
+                    fixture_id,
                     source_id,
                     f"{ordinal}" * 64,
                     teacher_id,
@@ -168,15 +192,15 @@ def _insert_review_cases(connection) -> int:
         problem_id = int(
             connection.execute(
                 "INSERT INTO problems "
-                "(group_id, lesson, prob, item, title, prob_text, prob_type, ans_type, "
-                "ans_validation, validation_error, cor_ans, wrong_ans, congrat, synonyms, "
-                "public_id) VALUES (?, ?, 1, '', ?, '', 2, 0, '', '', '', '', '', '', ?) "
+                "(id, group_id, lesson, prob, item, title, prob_text, prob_type, ans_type, "
+                "ans_validation, validation_error, cor_ans, wrong_ans, congrat, synonyms) "
+                "VALUES (?, ?, ?, 1, '', ?, '', 2, 0, '', '', '', '', '', '') "
                 "RETURNING id",
                 (
+                    fixture_id,
                     group_id,
                     lesson_number,
                     f"E2E проверка {project}",
-                    f"e2e-review-problem-{project}",
                 ),
             ).fetchone()["id"]
         )
@@ -207,11 +231,11 @@ def _insert_review_cases(connection) -> int:
         thread_id = int(
             connection.execute(
                 "INSERT INTO submission_threads "
-                "(public_id, student_user_id, problem_id, condition_revision_id, status, "
+                "(id, student_user_id, problem_id, condition_revision_id, status, "
                 "latest_entry_at, created_at, updated_at, version) VALUES "
                 "(?, ?, ?, ?, 'awaiting_review', ?, ?, ?, 3) RETURNING id",
                 (
-                    f"e2e-review-thread-{project}",
+                    fixture_id,
                     student_id,
                     problem_id,
                     revision_id,
@@ -223,12 +247,12 @@ def _insert_review_cases(connection) -> int:
         )
         connection.execute(
             "INSERT INTO submission_entries "
-            "(public_id, thread_id, problem_revision_id, author_kind, author_user_id, "
+            "(id, thread_id, problem_revision_id, author_kind, author_user_id, "
             "channel, entry_kind, state, text, client_created_at, server_received_at, "
             "locked_at, version) VALUES (?, ?, ?, 'teacher', ?, 'pwa', "
             "'teacher_comment', 'locked', 'Поясните, почему этот переход верен.', ?, ?, ?, 1)",
             (
-                f"e2e-review-teacher-entry-{project}",
+                fixture_id * 10 + 1,
                 thread_id,
                 problem_revision_id,
                 teacher_id,
@@ -240,13 +264,13 @@ def _insert_review_cases(connection) -> int:
         student_entry_id = int(
             connection.execute(
                 "INSERT INTO submission_entries "
-                "(public_id, thread_id, problem_revision_id, author_kind, author_user_id, "
+                "(id, thread_id, problem_revision_id, author_kind, author_user_id, "
                 "channel, entry_kind, state, text, client_created_at, server_received_at, "
                 "version) VALUES (?, ?, ?, 'student', ?, 'pwa', 'submission', 'submitted', "
                 "'Я дописал объяснение перехода и проверил крайний случай.', ?, ?, 2) "
                 "RETURNING id",
                 (
-                    f"e2e-review-student-entry-{project}",
+                    fixture_id * 10 + 2,
                     thread_id,
                     problem_revision_id,
                     student_id,
@@ -258,13 +282,13 @@ def _insert_review_cases(connection) -> int:
         asset_id = int(
             connection.execute(
                 "INSERT INTO media_assets "
-                "(public_id, sha256, storage_namespace, object_key, media_type, "
+                "(id, sha256, storage_namespace, object_key, media_type, "
                 "byte_size, width, height, source_filename, conversion_version, "
                 "created_by_user_id, created_at) VALUES (?, ?, 'submission', ?, "
                 "'image/webp', ?, 1, 1, 'e2e-review.webp', "
                 "'pwa-written-image-v1', ?, ?) RETURNING id",
                 (
-                    f"e2e-review-asset-{project}",
+                    fixture_id,
                     hashlib.sha256(REVIEW_WEBP).hexdigest(),
                     f"submission/e2e-review-{project}.webp",
                     len(REVIEW_WEBP),
@@ -275,10 +299,10 @@ def _insert_review_cases(connection) -> int:
         )
         connection.execute(
             "INSERT INTO submission_attachments "
-            "(public_id, entry_id, asset_id, ordinal, client_filename, upload_status, "
+            "(id, entry_id, asset_id, ordinal, client_filename, upload_status, "
             "created_at) VALUES (?, ?, ?, 0, 'e2e-review.webp', 'stored', ?)",
             (
-                f"e2e-review-attachment-{project}",
+                fixture_id,
                 student_entry_id,
                 asset_id,
                 TIMESTAMP,
@@ -286,9 +310,9 @@ def _insert_review_cases(connection) -> int:
         )
         connection.execute(
             "INSERT INTO written_tasks_queue "
-            "(public_id, ts, student_id, problem_id, cur_status, updated_at) VALUES "
+            "(id, ts, student_id, problem_id, cur_status, updated_at) VALUES "
             "(?, '2026-07-28T12:02:00Z', ?, ?, 0, ?)",
-            (f"e2e-review-queue-{project}", student_id, problem_id, TIMESTAMP),
+            (fixture_id, student_id, problem_id, TIMESTAMP),
         )
         inserted += 1
     return inserted

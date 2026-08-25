@@ -24,38 +24,38 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
 
     def write(connection):
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         course_lesson_id = connection.execute(
             "SELECT id FROM course_lessons "
-            "WHERE public_id = 'classroom-layout-course-lesson'"
+            "WHERE public_id = 'cl-1'"
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "allow_self_switch, is_system, score_weight, course_id, "
             "status, color_key, created_at, updated_at) VALUES "
             "('synonym-continuing', 'п', 'Продолжающие', 2, 1, 0, 0, 0, 1.0, "
-            "'synonym-group-continuing', ?, 'active', 'continuing', ?, ?)",
+            "?, 'active', 'continuing', ?, ?)",
             (course_id, now, now),
         )
         continuing_lesson_id = connection.execute(
             "INSERT INTO group_lessons "
-            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_at, updated_at) VALUES "
-            "('synonym-group-lesson-continuing', ?, ?, 'synonym-continuing', "
+            "(?, ?, 'synonym-continuing', "
             "'2026-10-01', 'Europe/Moscow', 'active', ?, ?) RETURNING id",
             (course_lesson_id, course_id, now, now),
         ).fetchone()["id"]
         beginner_lesson_id = connection.execute(
             "SELECT id FROM group_lessons "
-            "WHERE public_id = 'classroom-layout-group-lesson'"
+            "WHERE public_id = 'gl-1'"
         ).fetchone()["id"]
 
         problem_ids: list[int] = []
+        problem_public_ids: list[str] = []
         definitions = (
             (
-                "synonym-problem-beginner",
                 "layout-beginner",
                 beginner_lesson_id,
                 1,
@@ -63,7 +63,6 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
                 2,
             ),
             (
-                "synonym-problem-continuing",
                 "synonym-continuing",
                 continuing_lesson_id,
                 4,
@@ -72,7 +71,6 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
             ),
         )
         for index, (
-            problem_public_id,
             group_id,
             group_lesson_id,
             problem_number,
@@ -81,24 +79,24 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
         ) in enumerate(definitions, 1):
             problem_id = connection.execute(
                 "INSERT INTO problems "
-                "(public_id, group_id, lesson, prob, item, title, prob_text, prob_type, "
-                "ans_type, synonyms) VALUES (?, ?, 41, ?, '', 'Расстановка ладей', "
-                "'', ?, ?, '') RETURNING id",
+                "(group_id, lesson, prob, item, title, prob_text, prob_type, "
+                "ans_type, synonyms) VALUES (?, 41, ?, '', 'Расстановка ладей', "
+                "'', ?, ?, '') RETURNING id, public_id",
                 (
-                    problem_public_id,
                     group_id,
                     problem_number,
                     problem_type,
                     answer_type,
                 ),
-            ).fetchone()["id"]
+            ).fetchone()
+            problem_ids.append(int(problem_id["id"]))
+            problem_public_ids.append(str(problem_id["public_id"]))
             source_id = connection.execute(
                 "INSERT INTO content_sources "
-                "(public_id, group_lesson_id, kind, logical_filename, source_encoding, "
-                "created_by_user_id, created_at) VALUES (?, ?, 'condition', ?, "
+                "(group_lesson_id, kind, logical_filename, source_encoding, "
+                "created_by_user_id, created_at) VALUES (?, 'condition', ?, "
                 "'utf-8', ?, ?) RETURNING id",
                 (
-                    f"synonym-source-{index}",
                     group_lesson_id,
                     f"synonym-{index}.tex",
                     ADMIN_ID,
@@ -107,13 +105,12 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
             ).fetchone()["id"]
             revision_id = connection.execute(
                 "INSERT INTO content_revisions "
-                "(public_id, source_id, revision_number, source_sha256, latex_text, "
+                "(source_id, revision_number, source_sha256, latex_text, "
                 "parser_version, status, canonical_json, diagnostics_json, "
                 "provenance_json, created_by_user_id, created_at) VALUES "
-                "(?, ?, 1, ?, 'Задача', 'test', 'ready', '{}', '[]', '{}', ?, ?) "
+                "(?, 1, ?, 'Задача', 'test', 'ready', '{}', '[]', '{}', ?, ?) "
                 "RETURNING id",
                 (
-                    f"synonym-revision-{index}",
                     source_id,
                     str(index) * 64,
                     ADMIN_ID,
@@ -125,7 +122,7 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
                 "(content_revision_id, source_ordinal, source_item, problem_id, decision, "
                 "resolved_by_user_id, resolved_at, diagnostics_json, created_at) "
                 "VALUES (?, 1, '1', ?, 'auto_position', ?, ?, '[]', ?)",
-                (revision_id, problem_id, ADMIN_ID, now, now),
+                (revision_id, int(problem_id["id"]), ADMIN_ID, now, now),
             )
             connection.execute(
                 "INSERT INTO problem_revisions "
@@ -135,7 +132,7 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
                 "created_by_user_id) VALUES (?, ?, 1, '1', ?, 'Расстановка ладей', "
                 "'расстановка ладей', ?, ?, '{}', '{}', 1, ?, ?)",
                 (
-                    problem_id,
+                    int(problem_id["id"]),
                     revision_id,
                     str(problem_number),
                     problem_type,
@@ -144,8 +141,6 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
                     ADMIN_ID,
                 ),
             )
-            problem_ids.append(problem_id)
-
         result_id = connection.execute(
             "INSERT INTO results "
             "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, "
@@ -153,10 +148,10 @@ def _seed_synonym_problems(factory) -> tuple[str, str]:
             "'Исходный ответ', 1) RETURNING id",
             (STUDENT_ID, problem_ids[0], ADMIN_ID, now),
         ).fetchone()["id"]
-        return result_id
+        assert result_id is not None
+        return tuple(problem_public_ids)
 
-    factory.run_write(write)
-    return "synonym-problem-beginner", "synonym-problem-continuing"
+    return factory.run_write(write)
 
 
 @pytest.mark.asyncio
@@ -167,14 +162,14 @@ async def test_synonym_candidates_are_admin_only_and_do_not_require_matching_typ
     first, second = _seed_synonym_problems(classroom_http.factory)
 
     teacher = await classroom_http.client.get(
-        "/staff/api/v1/course-lessons/classroom-layout-course-lesson/synonym-candidates",
+        "/staff/api/v1/course-lessons/cl-1/synonym-candidates",
         headers=_headers(),
         cookies=_cookies(classroom_http, "teacher"),
     )
     assert teacher.status == 403
 
     response = await classroom_http.client.get(
-        "/staff/api/v1/course-lessons/classroom-layout-course-lesson/synonym-candidates",
+        "/staff/api/v1/course-lessons/cl-1/synonym-candidates",
         headers=_headers(),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -242,7 +237,7 @@ async def test_synonym_merge_and_split_preserve_original_problem_and_result_rows
     }
 
     current_response = await classroom_http.client.get(
-        "/staff/api/v1/course-lessons/classroom-layout-course-lesson/synonym-candidates",
+        "/staff/api/v1/course-lessons/cl-1/synonym-candidates",
         headers=_headers(),
         cookies=cookies,
     )
@@ -327,7 +322,7 @@ async def test_synonym_merge_and_split_preserve_original_problem_and_result_rows
     ]
     assert events[0]["before_json"] is None
     assert json.loads(events[0]["after_json"]) == {
-        "courseLessonId": "classroom-layout-course-lesson",
+        "courseLessonId": "cl-1",
         "status": "active",
         "version": 1,
         "memberCount": 2,
@@ -339,7 +334,7 @@ async def test_synonym_merge_and_split_preserve_original_problem_and_result_rows
         "memberCount": 2,
     }
     assert json.loads(events[1]["after_json"]) == {
-        "courseLessonId": "classroom-layout-course-lesson",
+        "courseLessonId": "cl-1",
         "status": "split",
         "version": 2,
         "memberCount": 0,

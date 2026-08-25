@@ -75,6 +75,14 @@ export function automaticProblemMatchPlan(
     )
     if (remainingCandidates.length > remainingItems.length) return undefined
 
+    // A named source is an explicit identity.  Its position alone is not
+    // enough to silently turn a renamed task into a revision of another one.
+    // Empty legacy suffixes are the historical unsplit-task exception: they
+    // can be reconciled positionally before the author creates subparts.
+    if (remainingCandidates.some((candidate) => normalizedItem(candidate.item) !== '')) {
+      return undefined
+    }
+
     remainingCandidates.forEach((candidate, index) => {
       const item = remainingItems[index]!
       usedCandidates.add(candidate.problemId)

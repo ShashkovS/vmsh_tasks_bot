@@ -660,7 +660,10 @@ export function StudentWrittenSubmission({
       }
       const item = await outbox.enqueue(descriptor)
       setQueueItem(item)
-      if (navigator.onLine) await deliver()
+      // `online` is updated from the browser connectivity events.  It is the
+      // same state the composer presents to the student, so an offline submit
+      // stays queued instead of acquiring a delivery lease that cannot finish.
+      if (online) await deliver()
     } catch (error) {
       setSendError(deliveryMessage(error))
     }

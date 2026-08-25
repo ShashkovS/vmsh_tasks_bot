@@ -28,7 +28,6 @@ class ClassroomNameConflict(RuntimeError):
 def _record_event(
     connection: sqlite3.Connection,
     *,
-    event_public_id: str,
     classroom_id: int,
     action: str,
     before: dict[str, object] | None,
@@ -40,14 +39,13 @@ def _record_event(
     connection.execute(
         """
         INSERT INTO classroom_events (
-            public_id, classroom_id, action,
+            classroom_id, action,
             before_name, before_normalized_name, before_status,
             after_name, after_normalized_name, after_status, version_after,
             actor_user_id, request_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            event_public_id,
             classroom_id,
             action,
             None if before is None else before["name"],
@@ -117,8 +115,6 @@ def find_classroom_by_normalized_name(
 def create_classroom(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
-    event_public_id: str,
     name: str,
     normalized_name: str,
     actor_user_id: int,
@@ -126,16 +122,15 @@ def create_classroom(
     now: str,
 ) -> dict[str, object]:
     try:
-        cursor = connection.execute(
+        row = connection.execute(
             """
             INSERT INTO classrooms (
-                public_id, name, normalized_name, status,
+                name, normalized_name, status,
                 created_by_user_id, updated_by_user_id,
                 created_at, updated_at, version
-            ) VALUES (?, ?, ?, 'active', ?, ?, ?, ?, 1)
+            ) VALUES (?, ?, 'active', ?, ?, ?, ?, 1) RETURNING id, public_id
             """,
             (
-                public_id,
                 name,
                 normalized_name,
                 actor_user_id,
@@ -143,17 +138,16 @@ def create_classroom(
                 now,
                 now,
             ),
-        )
+        ).fetchone()
     except sqlite3.IntegrityError as error:
         if "classrooms.normalized_name" in str(error):
             raise ClassroomNameConflict from error
         raise
-    row = get_classroom(connection, public_id)
+    row = get_classroom(connection, str(row["public_id"]))
     assert row is not None
     _record_event(
         connection,
-        event_public_id=event_public_id,
-        classroom_id=cursor.lastrowid,
+        classroom_id=int(row["id"]),
         action="created",
         before=None,
         after=row,
@@ -171,7 +165,6 @@ def rename_classroom(
     *,
     public_id: str,
     expected_version: int,
-    event_public_id: str,
     name: str,
     normalized_name: str,
     actor_user_id: int,
@@ -210,7 +203,6 @@ def rename_classroom(
     assert after is not None
     _record_event(
         connection,
-        event_public_id=event_public_id,
         classroom_id=int(before["id"]),
         action="renamed",
         before=before,
@@ -229,7 +221,6 @@ def set_classroom_status(
     *,
     public_id: str,
     expected_version: int,
-    event_public_id: str,
     status: ClassroomStatus,
     actor_user_id: int,
     request_id: str,
@@ -254,7 +245,6 @@ def set_classroom_status(
     assert after is not None
     _record_event(
         connection,
-        event_public_id=event_public_id,
         classroom_id=int(before["id"]),
         action="archived" if status == "archived" else "restored",
         before=before,

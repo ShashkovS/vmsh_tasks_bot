@@ -3,7 +3,7 @@
 create table group_banners
 (
     id                       integer primary key,
-    public_id                text    not null unique,
+    public_id text generated always as ('bn-' || id) virtual,
     group_id                 text    not null references groups (group_id),
     audience                 text    not null
         check (audience in ('student', 'family', 'both')),

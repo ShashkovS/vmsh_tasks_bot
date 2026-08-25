@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
@@ -215,7 +214,6 @@ def _append_audit(
 ) -> None:
     insert_audit_event(
         connection,
-        public_id=f"audit.{uuid.uuid4().hex}",
         actor_user_id=actor_user_id,
         actor_account_public_id=actor_account_id,
         audience="staff",
@@ -349,13 +347,11 @@ async def post_telegram_binding(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
     actor_account_id = _actor_account_id(request)
     payload = await _json(request, _FIELDS)
-    public_id = f"telegram-binding.{uuid.uuid4().hex}"
     now = _now()
 
     def write(connection: sqlite3.Connection) -> dict[str, object]:
         item = create_binding(
             connection,
-            public_id=public_id,
             owner_type=payload["ownerType"],
             owner_public_id=payload["ownerId"],
             purpose=payload["purpose"],
@@ -371,7 +367,7 @@ async def post_telegram_binding(request: web.Request) -> web.Response:
             actor_user_id=actor_user_id,
             actor_account_id=actor_account_id,
             action="telegram_binding.created",
-            public_id=public_id,
+            public_id=str(item["public_id"]),
             before=None,
             after=item,
             now=now,

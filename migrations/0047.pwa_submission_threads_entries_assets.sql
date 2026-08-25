@@ -10,13 +10,7 @@
 create table submission_threads
 (
     id                    integer primary key,
-    public_id             text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('st-' || id) virtual,
     student_user_id       integer not null references users (id),
     problem_id            integer not null references problems (id),
     -- The public conditionRevisionId contract names the source/content
@@ -144,13 +138,7 @@ end;
 create table submission_entries
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('se-' || id) virtual,
     thread_id            integer not null references submission_threads (id),
     author_kind          text    not null
         check (author_kind in ('student', 'teacher', 'admin', 'ai', 'system')),
@@ -348,13 +336,7 @@ end;
 create table submission_attachments
 (
     id                  integer primary key,
-    public_id           text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sa-' || id) virtual,
     entry_id            integer not null references submission_entries (id),
     asset_id            integer not null references media_assets (id),
     -- Ordinals are deliberately sparse and non-negative. SQLite does not defer
@@ -519,13 +501,7 @@ end;
 create table submission_material_reassignments
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('smr-' || id) virtual,
     student_user_id      integer not null references users (id),
     source_thread_id     integer not null,
     target_thread_id     integer not null,

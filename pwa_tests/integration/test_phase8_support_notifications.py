@@ -17,10 +17,10 @@ def _seed_student_account(fixture: support_repository.SupportFixture) -> None:
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) "
-            "VALUES ('support-account-student', 'student', 'support-student', "
+            "VALUES ('student', 'support-student', "
             "'support-student', 1, 'synthetic-test', 'telegram_token', 'hash', ?, "
             "'active', ?, ?)",
             (support_repository.STUDENT_ID, now, now),
@@ -40,7 +40,7 @@ async def test_staff_reply_creates_one_idempotent_student_event(support_fixture)
         fixture.factory.run_write(
             lambda connection: create_staff_reply_notifications(
                 connection,
-                student_account_public_ids=("support-account-student",),
+                student_account_public_ids=("a-1",),
                 thread_public_id=thread.thread_public_id,
             )
         )
@@ -64,8 +64,8 @@ async def test_staff_reply_creates_one_idempotent_student_event(support_fixture)
         return create_staff_reply_notifications(
             connection,
             student_account_public_ids=(
-                "support-account-student",
-                "support-account-student",
+                "a-1",
+                "a-1",
                 "missing-account",
             ),
             thread_public_id=thread.thread_public_id,

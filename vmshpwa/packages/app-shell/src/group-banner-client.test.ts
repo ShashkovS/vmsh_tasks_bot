@@ -20,7 +20,7 @@ describe('group banner clients', () => {
     const client = createGroupBannerClient(runtime, 'student', { fetchImplementation })
     await expect(client.active()).resolves.toEqual(fixture)
     expect(fetchImplementation).toHaveBeenCalledWith(
-      '/student/api/v1/banners/active',
+      '/student/api/v1/banners/active?contentVersion=2',
       expect.objectContaining({ method: 'GET', credentials: 'include' }),
     )
   })

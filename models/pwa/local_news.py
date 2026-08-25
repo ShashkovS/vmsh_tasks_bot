@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-import uuid
 from datetime import UTC, datetime
 
 from db_methods.pwa.local_news import (
@@ -170,7 +169,6 @@ def create_local_news(
     if owner is None:
         raise LocalNewsOwnerNotFound
 
-    public_id = f"news.{uuid.uuid4().hex}"
     if document is None:
         plain_text, content = parse_telegram_markdown(normalized_text)
         rich_document_json: str | None = None
@@ -202,7 +200,6 @@ def create_local_news(
     ).hexdigest()
     post_id = insert_local_post(
         connection,
-        public_id=public_id,
         owner_course_id=(
             None if owner["owner_course_id"] is None else int(owner["owner_course_id"])
         ),
@@ -228,7 +225,11 @@ def create_local_news(
     )
     return {
         "post_id": post_id,
-        "public_id": public_id,
+        "public_id": str(
+            connection.execute(
+                "SELECT public_id FROM news_posts WHERE id = ?", (post_id,)
+            ).fetchone()["public_id"]
+        ),
         "published_at": normalized_published_at,
         "revision_id": revision_id,
     }

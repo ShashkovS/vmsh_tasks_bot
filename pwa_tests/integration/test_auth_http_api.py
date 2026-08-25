@@ -12,6 +12,7 @@ from argon2 import PasswordHasher
 from aiohttp import WSMsgType, WSServerHandshakeError, web
 
 from apps import pwa_app
+from apps.pwa_api.first_admin import ensure_first_global_admin
 from apps.pwa_api.auth_service import PwaAuthService
 from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.auth import PwaAuthRepository
@@ -74,12 +75,11 @@ def _seed_accounts(factory: PwaConnectionFactory) -> None:
     def seed(connection):
         connection.execute("DELETE FROM kv_logins")
         connection.executemany(
-            "INSERT INTO users (id, public_id, type, name, surname, group_id) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, type, name, surname, group_id) "
+            "VALUES (?, ?, ?, ?, ?)",
             (
                 (
                     STUDENT_USER_ID,
-                    "user-student-http",
                     int(USER_TYPE.STUDENT),
                     "Ирина",
                     "Тестова",
@@ -87,7 +87,6 @@ def _seed_accounts(factory: PwaConnectionFactory) -> None:
                 ),
                 (
                     STAFF_USER_ID,
-                    "user-staff-http",
                     int(USER_TYPE.TEACHER),
                     "Тестовый",
                     "Учитель",
@@ -97,14 +96,14 @@ def _seed_accounts(factory: PwaConnectionFactory) -> None:
         )
         connection.executemany(
             "INSERT INTO auth_accounts "
-            "(public_id, audience, username, username_normalized, "
+            "(id, audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, display_name, "
             "credential_kind, credential_hash, linked_user_id, status, "
             "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'synthetic-test', "
             "?, ?, ?, ?, 'active', ?, ?)",
             (
                 (
-                    "account-student-http",
+                    1,
                     "student",
                     USERNAMES[AuthAudience.STUDENT],
                     USERNAMES[AuthAudience.STUDENT],
@@ -117,7 +116,7 @@ def _seed_accounts(factory: PwaConnectionFactory) -> None:
                     now,
                 ),
                 (
-                    "account-family-http",
+                    2,
                     "family",
                     USERNAMES[AuthAudience.FAMILY],
                     USERNAMES[AuthAudience.FAMILY],
@@ -130,7 +129,7 @@ def _seed_accounts(factory: PwaConnectionFactory) -> None:
                     now,
                 ),
                 (
-                    "account-staff-http",
+                    3,
                     "staff",
                     USERNAMES[AuthAudience.STAFF],
                     USERNAMES[AuthAudience.STAFF],
@@ -145,7 +144,7 @@ def _seed_accounts(factory: PwaConnectionFactory) -> None:
             ),
         )
         family_id = connection.execute(
-            "SELECT id FROM auth_accounts WHERE public_id = 'account-family-http'"
+            "SELECT id FROM auth_accounts WHERE public_id = 'a-2'"
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO family_student_links "
@@ -280,7 +279,7 @@ async def test_login_sets_exact_audience_cookies_and_contract(
     if audience is AuthAudience.FAMILY:
         assert payload["principal"]["linkedChildren"] == [
             {
-                "studentId": "user-student-http",
+                "studentId": "u-901811",
                 "displayName": "Ирина Тестова",
                 "relationshipLabel": "родитель",
                 "isPrimary": True,
@@ -305,6 +304,32 @@ async def test_login_sets_exact_audience_cookies_and_contract(
                 "statistics.read",
             }
         }
+
+
+@pytest.mark.asyncio
+async def test_first_admin_bootstrap_can_login_through_staff_http_route(auth_http_client):
+    """A fresh install must make the configured bootstrap password usable."""
+
+    password = "synthetic-first-admin-password"
+    factory = auth_http_client.app[AUTH_HTTP_FACTORY]
+    created = await ensure_first_global_admin(
+        factory,
+        Config(first_admin_password=password),
+        CredentialHasher(TEST_HASHER),
+    )
+    assert created is True
+
+    response = await auth_http_client.post(
+        "/staff/api/v1/auth/login",
+        json={"username": "admin", "password": password},
+        headers=_headers(unsafe=True),
+    )
+
+    assert response.status == 200, await response.text()
+    payload = await response.json()
+    assert payload["principal"]["accountId"] == "a-4"
+    assert payload["principal"]["role"] == "admin"
+    assert len(_set_cookie_values(response)) == 2
 
 
 @pytest.mark.asyncio

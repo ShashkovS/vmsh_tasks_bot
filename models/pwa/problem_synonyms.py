@@ -8,7 +8,6 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-import uuid
 
 from db_methods.pwa.problem_synonyms import (
     course_lesson_exists,
@@ -203,12 +202,10 @@ def merge_problem_synonyms(
     additions = plan["additions"]
     assert isinstance(additions, list)
     if synonym is None:
-        public_id = f"problem-synonym.{uuid.uuid4().hex}"
-        group_id = insert_synonym_group(
+        group_id, public_id = insert_synonym_group(
             connection,
-            public_id=public_id,
             course_lesson_id=int(plan["problems"][0]["course_lesson_id"]),
-            group_key=public_id,
+            group_key=f"problem-{int(plan['problems'][0]['problem_id'])}",
             display_title=str(plan["problems"][0]["title"]),
             actor_user_id=actor_user_id,
             now=now,

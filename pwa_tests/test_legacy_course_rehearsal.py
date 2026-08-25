@@ -152,7 +152,7 @@ def test_backfill_preserves_legacy_ids_and_matches_student_state(
         "schemaVersion": 1,
         "operation": "phase11-course-enrollment-rehearsal",
         "recordedAt": RECORDED_AT,
-        "coursePublicId": "course-math-5-7",
+        "coursePublicId": "c-1",
         "legacyStudents": 2,
         "courseEnrollments": 2,
         "groupsAttached": 4,

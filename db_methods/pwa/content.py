@@ -1839,7 +1839,6 @@ class PwaContentRepository:
         title: str | None,
         actor_user_id: int | None,
     ) -> CourseLessonRecord:
-        _require_public_id(public_id)
         if lesson_number < 1:
             raise ContentInvariantError("lesson number must be positive")
         title = _optional_text(title, label="course lesson title")
@@ -1849,11 +1848,10 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO course_lessons "
-                    "(public_id, course_id, lesson_number, title, "
+                    "(course_id, lesson_number, title, "
                     "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         course_id,
                         lesson_number,
                         title,
@@ -1881,7 +1879,6 @@ class PwaContentRepository:
         actor_user_id: int | None,
         status: str = "draft",
     ) -> GroupLessonRecord:
-        _require_public_id(public_id)
         group_id = _required_text(group_id, label="group ID")
         if type(cycle_anchor_date) is not date:
             raise ContentInvariantError("cycle anchor date must be a date")
@@ -1896,12 +1893,11 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO group_lessons "
-                    "(public_id, course_lesson_id, course_id, group_id, "
+                    "(course_lesson_id, course_id, group_id, "
                     "cycle_anchor_date, business_timezone, status, "
                     "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         course_lesson_id,
                         course_id,
                         group_id,
@@ -1923,7 +1919,6 @@ class PwaContentRepository:
     async def get_group_lesson_scope(self, public_id: str) -> GroupLessonContentScope:
         """Resolve attacker-supplied public identity to authoritative scope."""
 
-        _require_public_id(public_id)
 
         def read(connection):
             row = connection.execute(
@@ -2204,11 +2199,10 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO course_schedule_rules "
-                    "(public_id, course_id, schedule_field, rule_version, day_offset, "
+                    "(course_id, schedule_field, rule_version, day_offset, "
                     "local_time, timezone, state, created_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         course_id,
                         schedule_field.value,
                         rule_version,
@@ -2328,7 +2322,6 @@ class PwaContentRepository:
         based_on_schedule_rule_id: int,
         actor_user_id: int | None,
     ) -> GroupScheduleOverrideRecord:
-        _require_public_id(public_id)
         group_id = _required_text(group_id, label="group ID")
         if (mode is ScheduleOverrideMode.OVERRIDE) != (value is not None):
             raise ContentInvariantError(
@@ -2354,12 +2347,11 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO group_schedule_overrides "
-                    "(public_id, course_id, group_id, schedule_field, override_version, "
+                    "(course_id, group_id, schedule_field, override_version, "
                     "mode, day_offset, local_time, timezone, based_on_schedule_rule_id, "
                     "state, created_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         course_id,
                         group_id,
                         schedule_field.value,
@@ -2458,7 +2450,6 @@ class PwaContentRepository:
         source_encoding: str,
         actor_user_id: int | None,
     ) -> ContentSourceRecord:
-        _require_public_id(public_id)
         logical_filename = _required_text(logical_filename, label="logical filename")
         source_encoding = _required_text(source_encoding, label="source encoding")
         if source_encoding not in {"utf-8", "cp1251"}:
@@ -2471,11 +2462,10 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO content_sources "
-                    "(public_id, group_lesson_id, kind, logical_filename, "
+                    "(group_lesson_id, kind, logical_filename, "
                     "source_encoding, created_by_user_id, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         group_lesson_id,
                         kind.value,
                         logical_filename,
@@ -2509,8 +2499,6 @@ class PwaContentRepository:
         concurrent filenames cannot create parallel active histories.
         """
 
-        _require_public_id(source_public_id)
-        _require_public_id(revision_public_id)
         logical_filename = _required_text(logical_filename, label="logical filename")
         parser_version = _required_text(parser_version, label="parser version")
         if payload.source_encoding not in {"utf-8", "cp1251"}:
@@ -2541,11 +2529,10 @@ class PwaContentRepository:
                 else:
                     source_row = connection.execute(
                         "INSERT INTO content_sources "
-                        "(public_id, group_lesson_id, kind, logical_filename, "
+                        "(group_lesson_id, kind, logical_filename, "
                         "source_encoding, created_by_user_id, created_at) "
-                        "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                        "VALUES (?, ?, ?, ?, ?, ?) RETURNING *",
                         (
-                            source_public_id,
                             group_lesson_id,
                             kind.value,
                             logical_filename,
@@ -2584,13 +2571,12 @@ class PwaContentRepository:
                 current_number = 0 if latest is None else int(latest["revision_number"])
                 revision_row = connection.execute(
                     "INSERT INTO content_revisions "
-                    "(public_id, source_id, revision_number, source_sha256, "
+                    "(source_id, revision_number, source_sha256, "
                     "latex_text, parser_version, status, diagnostics_json, "
                     "provenance_json, created_by_user_id, created_at, "
                     "supersedes_revision_id) VALUES "
-                    "(?, ?, ?, ?, ?, ?, 'uploaded', '[]', ?, ?, ?, ?) RETURNING *",
+                    "(?, ?, ?, ?, ?, 'uploaded', '[]', ?, ?, ?, ?) RETURNING *",
                     (
-                        revision_public_id,
                         source.id,
                         current_number + 1,
                         payload.source_sha256,
@@ -2624,7 +2610,6 @@ class PwaContentRepository:
         parser_version: str = "pending-v1",
         expected_previous_revision_number: int | None = None,
     ) -> ContentRevisionRecord:
-        _require_public_id(public_id)
         parser_version = _required_text(parser_version, label="parser version")
         timestamp = self._timestamp()
 
@@ -2651,13 +2636,12 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO content_revisions "
-                    "(public_id, source_id, revision_number, source_sha256, "
+                    "(source_id, revision_number, source_sha256, "
                     "latex_text, parser_version, status, diagnostics_json, "
                     "provenance_json, created_by_user_id, created_at, "
                     "supersedes_revision_id) VALUES "
-                    "(?, ?, ?, ?, ?, ?, 'uploaded', '[]', ?, ?, ?, ?) RETURNING *",
+                    "(?, ?, ?, ?, ?, 'uploaded', '[]', ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         source_id,
                         current_number + 1,
                         payload.source_sha256,
@@ -2945,13 +2929,12 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO lesson_windows "
-                    "(public_id, group_lesson_id, opens_at, submission_closes_at, "
+                    "(group_lesson_id, opens_at, submission_closes_at, "
                     "hint_scheduled_at, solution_scheduled_at, timezone, source, "
                     "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     "RETURNING *",
                     (
-                        public_id,
                         group_lesson_id,
                         *values,
                         actor_user_id,
@@ -3057,12 +3040,11 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO lesson_windows "
-                    "(public_id, group_lesson_id, opens_at, submission_closes_at, "
+                    "(group_lesson_id, opens_at, submission_closes_at, "
                     "hint_scheduled_at, solution_scheduled_at, timezone, source, "
                     "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         group_lesson_id,
                         *values,
                         actor_user_id,
@@ -3185,12 +3167,11 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO lesson_windows "
-                    "(public_id, group_lesson_id, opens_at, submission_closes_at, "
+                    "(group_lesson_id, opens_at, submission_closes_at, "
                     "hint_scheduled_at, solution_scheduled_at, timezone, source, "
                     "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         group_lesson_id,
                         *values,
                         actor_user_id,
@@ -3201,11 +3182,10 @@ class PwaContentRepository:
                 ).fetchone()
                 connection.execute(
                     "INSERT INTO lesson_window_changes "
-                    "(public_id, lesson_window_id, change_kind, before_json, "
+                    "(lesson_window_id, change_kind, before_json, "
                     "after_json, actor_user_id, request_id, created_at) "
-                    "VALUES (?, ?, 'created', NULL, ?, ?, ?, ?)",
+                    "VALUES (?, 'created', NULL, ?, ?, ?, ?)",
                     (
-                        audit_public_id,
                         row["id"],
                         _window_audit_json(row),
                         actor_user_id,
@@ -3284,11 +3264,10 @@ class PwaContentRepository:
             try:
                 connection.execute(
                     "INSERT INTO lesson_window_changes "
-                    "(public_id, lesson_window_id, change_kind, before_json, "
+                    "(lesson_window_id, change_kind, before_json, "
                     "after_json, actor_user_id, request_id, created_at) "
-                    "VALUES (?, ?, 'schedule_changed', ?, ?, ?, ?, ?)",
+                    "VALUES (?, 'schedule_changed', ?, ?, ?, ?, ?)",
                     (
-                        audit_public_id,
                         current["id"],
                         _window_audit_json(current),
                         _window_audit_json(row),
@@ -3362,11 +3341,10 @@ class PwaContentRepository:
             try:
                 connection.execute(
                     "INSERT INTO lesson_window_changes "
-                    "(public_id, lesson_window_id, change_kind, before_json, "
+                    "(lesson_window_id, change_kind, before_json, "
                     "after_json, actor_user_id, request_id, created_at) "
-                    "VALUES (?, ?, 'submission_cutoff_changed', ?, ?, ?, ?, ?)",
+                    "VALUES (?, 'submission_cutoff_changed', ?, ?, ?, ?, ?)",
                     (
-                        audit_public_id,
                         current["id"],
                         _window_audit_json(current),
                         _window_audit_json(row),
@@ -3502,12 +3480,11 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO lesson_publications "
-                    "(public_id, group_lesson_id, kind, revision_id, state, "
+                    "(group_lesson_id, kind, revision_id, state, "
                     "scheduled_at, published_at, hidden_at, created_by_user_id, "
                     "published_by_user_id, supersedes_publication_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         group_lesson_id,
                         kind.value,
                         revision_id,
@@ -3659,13 +3636,12 @@ class PwaContentRepository:
                     )
                 row = connection.execute(
                     "INSERT INTO lesson_publications "
-                    "(public_id, group_lesson_id, kind, revision_id, state, "
+                    "(group_lesson_id, kind, revision_id, state, "
                     "scheduled_at, published_at, created_by_user_id, "
                     "published_by_user_id, supersedes_publication_id, "
-                    "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     "RETURNING *",
                     (
-                        public_id,
                         group_lesson_id,
                         kind.value,
                         revision_id,
@@ -3801,14 +3777,13 @@ class PwaContentRepository:
                 )
                 row = connection.execute(
                     "INSERT INTO lesson_publications "
-                    "(public_id, group_lesson_id, kind, revision_id, state, "
+                    "(group_lesson_id, kind, revision_id, state, "
                     "scheduled_at, published_at, created_by_user_id, "
                     "published_by_user_id, supersedes_publication_id, "
                     "activated_from_schedule_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "VALUES (?, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?) "
                     "RETURNING *",
                     (
-                        published_public_id,
                         scheduled["group_lesson_id"],
                         scheduled["kind"],
                         scheduled["revision_id"],
@@ -3882,14 +3857,13 @@ class PwaContentRepository:
                 )
                 row = connection.execute(
                     "INSERT INTO lesson_publications "
-                    "(public_id, group_lesson_id, kind, revision_id, state, "
+                    "(group_lesson_id, kind, revision_id, state, "
                     "scheduled_at, published_at, created_by_user_id, "
                     "published_by_user_id, supersedes_publication_id, "
                     "activated_from_schedule_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "VALUES (?, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?) "
                     "RETURNING *",
                     (
-                        published_public_id,
                         scheduled["group_lesson_id"],
                         scheduled["kind"],
                         scheduled["revision_id"],
@@ -4364,12 +4338,11 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO media_assets "
-                    "(public_id, sha256, storage_namespace, object_key, public_url, "
+                    "(sha256, storage_namespace, object_key, public_url, "
                     "media_type, byte_size, width, height, source_filename, "
                     "conversion_version, created_by_user_id, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         sha256,
                         storage_namespace,
                         object_key,
@@ -5346,6 +5319,23 @@ class PwaContentRepository:
                 )
 
             if current_grid.review_version != expected_review_version:
+                current_by_identity = {
+                    (
+                        row.source.source_ordinal,
+                        row.source.source_item,
+                        row.problem.problem_id,
+                    ): row
+                    for row in current_grid.rows
+                }
+                if all(
+                    current_by_identity[identity].reviewed
+                    and _metadata_matches_draft(
+                        current_by_identity[identity].problem,
+                        metadata,
+                    )
+                    for identity, metadata in draft_by_identity.items()
+                ):
+                    return current_grid
                 raise ContentVersionConflict("problem review version changed")
 
             had_reviewed = any(row.reviewed for row in current_grid.rows)
@@ -5605,11 +5595,10 @@ class PwaContentRepository:
             try:
                 row = connection.execute(
                     "INSERT INTO problem_synonym_groups "
-                    "(public_id, course_lesson_id, group_key, display_title, status, "
+                    "(course_lesson_id, group_key, display_title, status, "
                     "created_by_user_id, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, 'active', ?, ?, ?) RETURNING *",
+                    "VALUES (?, ?, ?, 'active', ?, ?, ?) RETURNING *",
                     (
-                        public_id,
                         course_lesson_id,
                         group_key,
                         display_title,

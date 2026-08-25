@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: c370fd9ad7052aacc794f7468c2635d7f1374da8ef284b55f658cca39fc00276
+-- Product schema SHA-256: 15f61ca650815d6e0e0c2b1d9c595520051f8532c6b4ff2654b58c817a1a659f
 
 CREATE TABLE achievement_definitions
 (
@@ -17,7 +17,7 @@ CREATE TABLE achievement_definitions
 CREATE TABLE analytics_runs
 (
     id                      integer primary key,
-    public_id               text    not null unique,
+    public_id text generated always as ('ar-' || id) virtual,
     course_id               integer not null references courses (id),
     algorithm               text    not null,
     algorithm_version       text    not null,
@@ -36,13 +36,7 @@ CREATE TABLE analytics_runs
 CREATE TABLE audit_events
 (
     id               integer primary key,
-    public_id        text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ae-' || id) virtual,
     actor_user_id    integer references users (id),
     actor_account_id integer references auth_accounts (id),
     audience         text    not null
@@ -66,13 +60,7 @@ CREATE TABLE audit_events
 CREATE TABLE auth_accounts
 (
     id                         integer primary key,
-    public_id                  text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('a-' || id) virtual,
     audience                   text    not null
         check (audience in ('student', 'family', 'staff')),
     username                   text    not null
@@ -216,7 +204,7 @@ CREATE TABLE auth_throttle_buckets
 CREATE TABLE classroom_assignment_delivery_batches
 (
     id                           integer primary key,
-    public_id                    text    not null unique,
+    public_id text generated always as ('cdb-' || id) virtual,
     assignment_plan_id           integer not null references classroom_assignment_plans (id),
     assignment_plan_version      integer not null check (assignment_plan_version > 0),
     requested_by_user_id         integer not null references users (id),
@@ -244,15 +232,10 @@ CREATE TABLE classroom_assignment_delivery_recipients
     course_enrollment_id        integer not null references course_enrollments (id),
     group_lesson_id             integer not null references group_lessons (id),
     classroom_id                integer not null references classrooms (id),
-    student_public_id           text    not null,
     student_display_name        text    not null,
-    event_public_id             text    not null,
     event_name                  text    not null,
-    course_public_id            text    not null,
     course_name                 text    not null,
-    group_public_id             text    not null,
     group_name                  text    not null,
-    classroom_public_id         text    not null,
     classroom_name              text    not null,
     student_account_id          integer references auth_accounts (id),
     telegram_chat_id            integer,
@@ -292,13 +275,7 @@ CREATE TABLE classroom_assignment_delivery_retries
 CREATE TABLE classroom_assignment_plans
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cap-' || id) virtual,
     in_person_event_id   integer not null references in_person_events (id),
     layout_version_id    integer not null,
     base_plan_id         integer references classroom_assignment_plans (id),
@@ -359,7 +336,7 @@ CREATE TABLE classroom_assignments
 CREATE TABLE classroom_events
 (
     id                     integer primary key,
-    public_id              text    not null unique,
+    public_id text generated always as ('ce-' || id) virtual,
     classroom_id           integer not null references classrooms (id),
     action                 text    not null
         check (action in ('created', 'renamed', 'archived', 'restored')),
@@ -389,7 +366,7 @@ CREATE TABLE classroom_events
 CREATE TABLE classroom_import_receipts
 (
     id                    integer primary key,
-    public_id             text    not null unique,
+    public_id text generated always as ('cir-' || id) virtual,
     in_person_event_id    integer not null unique references in_person_events (id),
     source_sha256         text    not null check (length(source_sha256) = 64),
     preview_sha256        text    not null check (length(preview_sha256) = 64),
@@ -418,13 +395,7 @@ CREATE TABLE classroom_layout_rooms
 CREATE TABLE classroom_layout_versions
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('clv-' || id) virtual,
     in_person_event_id   integer not null references in_person_events (id),
     base_version_id      integer references classroom_layout_versions (id),
     state                text    not null
@@ -454,13 +425,7 @@ CREATE TABLE classroom_layout_versions
 CREATE TABLE classrooms
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('room-' || id) virtual,
     name               text    not null
         check (name = trim(name) and length(name) between 1 and 200),
     normalized_name    text    not null unique
@@ -560,13 +525,7 @@ CREATE TABLE content_revision_assets
 CREATE TABLE content_revisions
 (
     id                      integer primary key,
-    public_id               text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cr-' || id) virtual,
     source_id               integer not null references content_sources (id),
     revision_number         integer not null check (revision_number > 0),
     source_sha256           text    not null
@@ -606,13 +565,7 @@ CREATE TABLE content_revisions
 CREATE TABLE content_sources
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cs-' || id) virtual,
     group_lesson_id    integer not null references group_lessons (id),
     kind               text    not null
         check (kind in ('condition', 'hint', 'solution', 'teacher_note')),
@@ -645,13 +598,7 @@ CREATE TABLE content_tikz_cache
 CREATE TABLE course_enrollment_events
 (
     id                       integer primary key,
-    public_id                text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ene-' || id) virtual,
     enrollment_id            integer not null,
     course_id                integer not null references courses (id),
     event_type               text    not null
@@ -731,13 +678,7 @@ CREATE TABLE course_enrollment_events
 CREATE TABLE course_enrollments
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('en-' || id) virtual,
     student_user_id    integer not null references users (id),
     course_id          integer not null references courses (id),
     active_group_id    text    not null,
@@ -787,13 +728,7 @@ CREATE TABLE course_group_access
 CREATE TABLE course_lessons
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cl-' || id) virtual,
     course_id          integer not null references courses (id),
     lesson_number      integer not null check (lesson_number >= 0),
     title              text check (title is null or length(trim(title)) > 0),
@@ -819,13 +754,7 @@ CREATE TABLE course_runtime_settings
 CREATE TABLE course_schedule_rules
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sr-' || id) virtual,
     course_id          integer not null references courses (id),
     schedule_field     text    not null
         check (schedule_field in (
@@ -868,13 +797,7 @@ CREATE TABLE course_schedule_rules
 CREATE TABLE courses
 (
     id           integer primary key,
-    public_id    text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('c-' || id) virtual,
     season_id    integer not null references seasons (id),
     code         text    not null
         check (length(trim(code)) > 0),
@@ -994,7 +917,7 @@ CREATE TABLE group_banner_media
 CREATE TABLE group_banners
 (
     id                       integer primary key,
-    public_id                text    not null unique,
+    public_id text generated always as ('bn-' || id) virtual,
     group_id                 text    not null references groups (group_id),
     audience                 text    not null
         check (audience in ('student', 'family', 'both')),
@@ -1027,13 +950,7 @@ CREATE TABLE group_banners
 CREATE TABLE group_lessons
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('gl-' || id) virtual,
     course_lesson_id   integer not null,
     course_id          integer not null references courses (id),
     group_id           text    not null,
@@ -1062,13 +979,7 @@ CREATE TABLE group_lessons
 CREATE TABLE group_schedule_overrides
 (
     id                         integer primary key,
-    public_id                  text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('so-' || id) virtual,
     course_id                  integer not null references courses (id),
     group_id                   text    not null,
     schedule_field             text    not null
@@ -1124,7 +1035,11 @@ CREATE TABLE group_schedule_overrides
 
 CREATE TABLE groups
 (
-    group_id              text primary key,
+    -- `id` is the PWA-facing compact-ID source (`g-<id>`).  The legacy
+    -- string remains a unique compatibility key for the Telegram adapter.
+    -- See vmshpwa/docs/compact-identifiers.md.
+    id                    integer primary key,
+    group_id              text not null unique,
     short_code            text    not null,
     broadcast_code        text unique,
     tg_command            text unique,
@@ -1139,15 +1054,7 @@ CREATE TABLE groups
     is_system             integer not null default 0,
     score_weight          real    not null default 1.0
 , public_id text
-    check (
-        public_id is null
-        or (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        )
-    ), course_id integer references courses (id), status text not null default 'active'
+    generated always as ('g-' || id) virtual, course_id integer references courses (id), status text not null default 'active'
     check (status in ('draft', 'active', 'archived')), color_key text, created_at text, updated_at text, version integer not null default 1
     check (version > 0));
 
@@ -1223,13 +1130,7 @@ CREATE TABLE in_person_event_group_lessons
 CREATE TABLE in_person_events
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ipe-' || id) virtual,
     season_id          integer not null references seasons (id),
     name               text    not null check (length(trim(name)) > 0),
     starts_at          text    not null,
@@ -1274,13 +1175,7 @@ CREATE TABLE last_keyboards
 CREATE TABLE lesson_publications
 (
     id                        integer primary key,
-    public_id                 text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('lp-' || id) virtual,
     group_lesson_id           integer not null references group_lessons (id),
     kind                      text    not null
         check (kind in ('condition', 'hint', 'solution')),
@@ -1309,13 +1204,7 @@ CREATE TABLE lesson_publications
 CREATE TABLE lesson_window_changes
 (
     id                integer primary key,
-    public_id         text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('lwc-' || id) virtual,
     lesson_window_id  integer not null references lesson_windows (id),
     change_kind       text    not null
         check (change_kind in (
@@ -1383,13 +1272,7 @@ CREATE TABLE lesson_window_schedule_sources
 CREATE TABLE lesson_windows
 (
     id                    integer primary key,
-    public_id             text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('lw-' || id) virtual,
     group_lesson_id       integer not null unique references group_lessons (id),
     opens_at              text,
     submission_closes_at  text    not null,
@@ -1411,7 +1294,7 @@ CREATE TABLE "lessons"
     id       INTEGER
         primary key,
     group_id text
-        references groups,
+        references groups (group_id),
     lesson   INTEGER not null,
     unique (lesson, group_id)
 );
@@ -1419,13 +1302,7 @@ CREATE TABLE "lessons"
 CREATE TABLE media_assets
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ma-' || id) virtual,
     sha256             text    not null
         check (length(sha256) = 64 and sha256 not glob '*[^0-9a-f]*'),
     storage_namespace  text    not null
@@ -1512,9 +1389,9 @@ CREATE TABLE news_media
 CREATE TABLE news_posts
 (
     id                       integer primary key,
-    public_id                text    not null unique,
+    public_id text generated always as ('news-' || id) virtual,
     source_type              text    not null check (source_type in ('telegram', 'local')),
-    source_binding_public_id text,
+    source_binding_id        integer references telegram_bindings (id),
     owner_course_id          integer references courses (id),
     owner_group_id           text references groups (group_id),
     source_chat_id           integer,
@@ -1528,12 +1405,12 @@ CREATE TABLE news_posts
     version                  integer not null default 1 check (version > 0),
     check (
         (source_type = 'telegram'
-            and source_binding_public_id is not null
+            and source_binding_id is not null
             and source_chat_id is not null
             and source_message_id is not null)
         or
         (source_type = 'local'
-            and source_binding_public_id is null
+            and source_binding_id is null
             and source_chat_id is null
             and source_message_id is null
             and source_media_group_id is null)
@@ -1584,9 +1461,9 @@ CREATE TABLE notification_course_preferences
 CREATE TABLE notification_deliveries
 (
     id                     integer primary key,
-    public_id              text    not null unique,
+    public_id text generated always as ('nd-' || id) virtual,
     event_id               integer not null references notification_events (id),
-    subscription_public_id text    not null,
+    subscription_id        integer references push_subscriptions (id) on delete set null,
     state                  text    not null
         check (state in ('pending', 'sending', 'retry', 'sent', 'failed', 'suppressed')),
     attempt_count          integer not null default 0 check (attempt_count >= 0),
@@ -1597,7 +1474,7 @@ CREATE TABLE notification_deliveries
     last_error_code        text,
     created_at             text    not null,
     updated_at             text    not null,
-    unique (event_id, subscription_public_id),
+    unique (event_id, subscription_id),
     check (
         (state = 'sending' and claim_token is not null and claim_until is not null)
         or (state <> 'sending' and claim_token is null and claim_until is null)
@@ -1611,7 +1488,7 @@ CREATE TABLE notification_deliveries
 CREATE TABLE notification_events
 (
     id                 integer primary key,
-    public_id          text    not null unique,
+    public_id text generated always as ('n-' || id) virtual,
     account_id         integer not null references auth_accounts (id),
     category           text    not null,
     dedupe_key         text    not null,
@@ -1656,7 +1533,7 @@ CREATE TABLE notification_preferences
 CREATE TABLE oral_windows
 (
     id                 integer primary key,
-    public_id          text    not null unique,
+    public_id text generated always as ('ow-' || id) virtual,
     group_lesson_id    integer not null references group_lessons (id),
     sequence_number    integer not null check (sequence_number > 0),
     opens_at           text    not null,
@@ -1687,7 +1564,7 @@ CREATE TABLE problem_complexity
 CREATE TABLE problem_import_receipts
 (
     id                     integer primary key,
-    public_id              text    not null unique,
+    public_id text generated always as ('pir-' || id) virtual,
     course_id              integer not null references courses (id),
     source_filename        text    not null check (length(trim(source_filename)) > 0),
     source_sha256          text    not null check (length(source_sha256) = 64),
@@ -1735,13 +1612,7 @@ CREATE TABLE problem_revisions
 CREATE TABLE problem_synonym_groups
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ps-' || id) virtual,
     course_lesson_id   integer not null references course_lessons (id),
     group_key          text    not null check (length(trim(group_key)) > 0),
     display_title      text    not null check (length(trim(display_title)) > 0),
@@ -1780,7 +1651,7 @@ CREATE TABLE "problems"
     id               INTEGER
         primary key,
     group_id         text
-        references groups,
+        references groups (group_id),
     lesson           INTEGER         not null,
     prob             INTEGER         not null,
     item             TEXT            not null,
@@ -1795,22 +1666,14 @@ CREATE TABLE "problems"
     wrong_ans        text,
     congrat          text,
     synonyms         text default '' not null, public_id text
-    check (
-        public_id is null
-        or (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        )
-    ),
+    generated always as ('p-' || id) virtual,
     unique (group_id, lesson, prob, item)
 );
 
 CREATE TABLE push_subscriptions
 (
     id              integer primary key,
-    public_id       text    not null unique,
+    public_id text generated always as ('push-' || id) virtual,
     account_id      integer not null references auth_accounts (id),
     session_id      integer not null references auth_sessions (id),
     endpoint        text    not null unique,
@@ -1876,7 +1739,7 @@ CREATE TABLE "results"
     problem_id           INTEGER   not null
         references problems,
     group_id             text
-        references groups,
+        references groups (group_id),
     lesson               INTEGER   not null,
     teacher_id           INTEGER
         references users,
@@ -1892,13 +1755,7 @@ CREATE TABLE "results"
 CREATE TABLE seasons
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('s-' || id) virtual,
     code               text    not null unique
         check (length(trim(code)) > 0),
     title              text    not null
@@ -2002,13 +1859,7 @@ CREATE TABLE student_strength
 CREATE TABLE submission_attachments
 (
     id                  integer primary key,
-    public_id           text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sa-' || id) virtual,
     entry_id            integer not null references submission_entries (id),
     asset_id            integer not null references media_assets (id),
     -- Ordinals are deliberately sparse and non-negative. SQLite does not defer
@@ -2032,13 +1883,7 @@ CREATE TABLE submission_attachments
 CREATE TABLE submission_entries
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('se-' || id) virtual,
     thread_id            integer not null references submission_threads (id),
     author_kind          text    not null
         check (author_kind in ('student', 'teacher', 'admin', 'ai', 'system')),
@@ -2106,13 +1951,7 @@ CREATE TABLE submission_entries
 CREATE TABLE submission_entry_replacements
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ser-' || id) virtual,
     thread_id            integer not null references submission_threads (id),
     student_user_id      integer not null references users (id),
     replaced_entry_id    integer not null unique references submission_entries (id),
@@ -2144,13 +1983,7 @@ CREATE TABLE submission_material_reassignment_items
 CREATE TABLE submission_material_reassignments
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('smr-' || id) virtual,
     student_user_id      integer not null references users (id),
     source_thread_id     integer not null,
     target_thread_id     integer not null,
@@ -2174,13 +2007,7 @@ CREATE TABLE submission_material_reassignments
 CREATE TABLE submission_review_annotations
 (
     id             integer primary key,
-    public_id      text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ra-' || id) virtual,
     review_id      integer not null references submission_reviews (id),
     attachment_id  integer not null references submission_attachments (id),
     schema_version integer not null check (schema_version = 1),
@@ -2203,7 +2030,7 @@ CREATE TABLE submission_review_annotations
 CREATE TABLE submission_review_events
 (
     id          integer primary key,
-    public_id   text not null unique,
+    public_id text generated always as ('re-' || id) virtual,
     review_id   integer not null references submission_reviews (id),
     event_kind  text not null check (event_kind in ('completed')),
     payload_json text not null check (json_valid(payload_json) = 1),
@@ -2240,13 +2067,7 @@ CREATE TABLE submission_review_evidence_entries
 CREATE TABLE submission_review_internal_reaction_events
 (
     id            integer primary key,
-    public_id     text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('rie-' || id) virtual,
     review_id     integer not null references submission_reviews (id),
     actor_user_id integer not null references users (id),
     event_kind    text    not null check (event_kind in ('selected', 'changed', 'deleted')),
@@ -2282,13 +2103,7 @@ CREATE TABLE submission_review_internal_reactions
 CREATE TABLE submission_review_student_reaction_events
 (
     id            integer primary key,
-    public_id     text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('rse-' || id) virtual,
     review_id     integer not null references submission_reviews (id),
     actor_user_id integer not null references users (id),
     event_kind    text    not null check (event_kind in ('selected', 'changed', 'deleted')),
@@ -2324,18 +2139,11 @@ CREATE TABLE submission_review_student_reactions
 CREATE TABLE submission_reviews
 (
     id                        integer primary key,
-    public_id                 text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('r-' || id) virtual,
     thread_id                 integer not null references submission_threads (id),
     -- Queue rows are deleted by the same transaction.  These are immutable
     -- provenance snapshots rather than foreign keys to ephemeral work items.
     queue_id                  integer not null,
-    queue_public_id           text    not null,
     reviewer_user_id          integer not null references users (id),
     evidence_through_entry_id integer not null references submission_entries (id),
     expected_thread_version   integer not null check (expected_thread_version > 0),
@@ -2355,13 +2163,7 @@ CREATE TABLE submission_reviews
 CREATE TABLE submission_threads
 (
     id                    integer primary key,
-    public_id             text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('st-' || id) virtual,
     student_user_id       integer not null references users (id),
     problem_id            integer not null references problems (id),
     -- The public conditionRevisionId contract names the source/content
@@ -2385,13 +2187,7 @@ CREATE TABLE submission_threads
 CREATE TABLE support_entries
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sue-' || id) virtual,
     thread_id          integer not null references support_threads (id),
     author_kind        text    not null
         check (author_kind in ('student', 'teacher', 'admin', 'system')),
@@ -2439,13 +2235,7 @@ CREATE TABLE support_entries
 CREATE TABLE support_threads
 (
     id                integer primary key,
-    public_id         text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sup-' || id) virtual,
     student_user_id   integer not null references users (id),
     problem_id        integer references problems (id),
     group_lesson_id   integer references group_lessons (id),
@@ -2501,7 +2291,7 @@ CREATE TABLE surveys
 CREATE TABLE telegram_bindings
 (
     id                  integer primary key,
-    public_id           text    not null unique,
+    public_id text generated always as ('tb-' || id) virtual,
     owner_type          text    not null check (owner_type in ('course', 'group')),
     owner_course_id     integer references courses (id),
     owner_group_id      text references groups (group_id),
@@ -2533,13 +2323,7 @@ CREATE TABLE telegram_bindings
 CREATE TABLE test_attempts
 (
     id                     integer primary key,
-    public_id              text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ta-' || id) virtual,
     student_user_id        integer not null references users (id),
     problem_id             integer not null references problems (id),
     problem_revision_id    integer not null,
@@ -2670,7 +2454,7 @@ CREATE TABLE "users"
         unique,
     type           INTEGER not null,
     group_id       text
-        references groups,
+        references groups (group_id),
     name           TEXT    not null,
     surname        TEXT    not null,
     middlename     TEXT,
@@ -2681,15 +2465,7 @@ CREATE TABLE "users"
     birthday       int,
     allowed_groups text
 , public_id text
-    check (
-        public_id is null
-        or (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        )
-    ));
+    generated always as ('u-' || id) virtual);
 
 CREATE TABLE verdicts
 (
@@ -2728,16 +2504,7 @@ CREATE TABLE written_tasks_discussions
 CREATE TABLE written_tasks_queue
 (
     id               integer primary key unique,
-    public_id        text unique
-        check (
-            public_id is null
-            or (
-                length(public_id) between 1 and 128
-                and public_id not glob '*[^a-z0-9._:-]*'
-                and substr(public_id, 1, 1) glob '[a-z0-9]'
-                and substr(public_id, -1, 1) glob '[a-z0-9]'
-            )
-        ),
+    public_id text generated always as ('wq-' || id) virtual,
     ts               timestamp not null,
     student_id       integer   not null references users,
     problem_id       integer   not null references problems,
@@ -2802,7 +2569,7 @@ CREATE TABLE "zoom_conversation"
     teacher_id           INTEGER not null
         references users,
     group_id             text
-        references groups,
+        references groups (group_id),
     lesson               INTEGER not null,
     check_time_spent_sec INTEGER
 , pwa_idempotency_key text);
@@ -3024,10 +2791,6 @@ CREATE UNIQUE INDEX groups_course_short_code_uq
     on groups (course_id, short_code)
     where course_id is not null;
 
-CREATE UNIQUE INDEX groups_public_id_uq
-    on groups (public_id)
-    where public_id is not null;
-
 CREATE INDEX hint_reveals_student_timeline_idx
     on hint_reveals (student_user_id, revealed_at, id);
 
@@ -3124,10 +2887,6 @@ CREATE UNIQUE INDEX problem_synonym_members_problem_active_uq
 
 CREATE INDEX problems_by_synonyms
     on problems (synonyms);
-
-CREATE UNIQUE INDEX problems_public_id_uq
-    on problems (public_id)
-    where public_id is not null;
 
 CREATE INDEX push_subscriptions_account_idx
     on push_subscriptions (account_id, updated_at desc);
@@ -3281,10 +3040,6 @@ CREATE INDEX test_attempts_student_problem_history_idx
 
 CREATE INDEX user_achievements_user_course_idx
     on user_achievements (user_id, course_id, earned_at, id);
-
-CREATE UNIQUE INDEX users_public_id_uq
-    on users (public_id)
-    where public_id is not null;
 
 CREATE INDEX waitlist_by_student
     on waitlist (student_id);
@@ -4229,24 +3984,6 @@ when not exists (
 )
 begin
     select raise(abort, 'synonym member is outside its course/group lesson');
-end;
-
-CREATE TRIGGER problems_public_id_fill_after_insert
-after insert on problems
-for each row
-when new.public_id is null
-begin
-    update problems
-    set public_id = 'problem-' || lower(hex(randomblob(16)))
-    where id = new.id;
-end;
-
-CREATE TRIGGER problems_public_id_immutable
-before update on problems
-for each row
-when old.public_id is not null and new.public_id is not old.public_id
-begin
-    select raise(abort, 'problem public identity is immutable');
 end;
 
 CREATE TRIGGER solution_reveals_delete_forbidden
@@ -5300,22 +5037,4 @@ when new.result_id is not null and not exists (
 )
 begin
     select raise(abort, 'test attempt result mismatch');
-end;
-
-CREATE TRIGGER written_tasks_queue_public_id_fill_after_insert
-after insert on written_tasks_queue
-for each row
-when new.public_id is null
-begin
-    update written_tasks_queue
-    set public_id = 'review-queue-' || lower(hex(randomblob(16)))
-    where id = new.id;
-end;
-
-CREATE TRIGGER written_tasks_queue_public_id_immutable
-before update of public_id on written_tasks_queue
-for each row
-when old.public_id is not null and new.public_id is not old.public_id
-begin
-    select raise(abort, 'review queue public identity is immutable');
 end;

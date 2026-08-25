@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-import uuid
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -233,8 +232,6 @@ async def post_classroom(request: web.Request) -> web.Response:
         item = await _factory(request).run_write_async(
             lambda connection: create_classroom(
                 connection,
-                public_id=f"classroom.{uuid.uuid4().hex}",
-                event_public_id=f"classroom-event.{uuid.uuid4().hex}",
                 name=name,
                 normalized_name=normalized_name,
                 actor_user_id=actor_user_id,
@@ -269,7 +266,6 @@ async def patch_classroom(request: web.Request) -> web.Response:
                 connection,
                 public_id=public_id,
                 expected_version=expected_version,
-                event_public_id=f"classroom-event.{uuid.uuid4().hex}",
                 name=name,
                 normalized_name=normalized_name,
                 actor_user_id=actor_user_id,
@@ -306,7 +302,6 @@ async def _change_status(request: web.Request, status: str) -> web.Response:
                 connection,
                 public_id=public_id,
                 expected_version=expected_version,
-                event_public_id=f"classroom-event.{uuid.uuid4().hex}",
                 status=status,
                 actor_user_id=actor_user_id,
                 request_id=request["request_id"],

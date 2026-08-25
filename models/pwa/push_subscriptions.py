@@ -6,7 +6,6 @@ import base64
 import binascii
 import re
 import sqlite3
-import uuid
 from urllib.parse import urlsplit
 
 from db_methods.pwa.push_subscriptions import delete_subscription, save_subscription
@@ -71,7 +70,6 @@ def register_subscription(
         user_agent = user_agent.strip()[:256] or None
     return save_subscription(
         connection,
-        public_id=f"push.{uuid.uuid4().hex}",
         account_id=account_id,
         session_id=session_id,
         endpoint=endpoint,

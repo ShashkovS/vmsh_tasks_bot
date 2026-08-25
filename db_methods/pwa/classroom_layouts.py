@@ -95,7 +95,6 @@ def resolve_group_lesson_ids(
 def insert_in_person_event(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     season_id: int,
     name: str,
     starts_at: str,
@@ -103,16 +102,15 @@ def insert_in_person_event(
     status: str,
     actor_user_id: int,
     now: str,
-) -> int:
-    cursor = connection.execute(
+) -> tuple[int, str]:
+    row = connection.execute(
         """
         INSERT INTO in_person_events (
-            public_id, season_id, name, starts_at, ends_at, status,
+            season_id, name, starts_at, ends_at, status,
             created_by_user_id, updated_by_user_id, created_at, updated_at, version
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1) RETURNING id, public_id
         """,
         (
-            public_id,
             season_id,
             name,
             starts_at,
@@ -123,8 +121,8 @@ def insert_in_person_event(
             now,
             now,
         ),
-    )
-    return int(cursor.lastrowid)
+    ).fetchone()
+    return int(row["id"]), str(row["public_id"])
 
 
 def update_in_person_event(
@@ -349,22 +347,21 @@ def resolve_layout_room_input(
 def insert_layout_version(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     event_id: int,
     base_version_id: int | None,
     actor_user_id: int,
     now: str,
-) -> int:
-    cursor = connection.execute(
+) -> tuple[int, str]:
+    row = connection.execute(
         """
         INSERT INTO classroom_layout_versions (
-            public_id, in_person_event_id, base_version_id, state,
+            in_person_event_id, base_version_id, state,
             created_by_user_id, created_at, updated_at, version
-        ) VALUES (?, ?, ?, 'draft', ?, ?, ?, 1)
+        ) VALUES (?, ?, 'draft', ?, ?, ?, 1) RETURNING id, public_id
         """,
-        (public_id, event_id, base_version_id, actor_user_id, now, now),
-    )
-    return int(cursor.lastrowid)
+        (event_id, base_version_id, actor_user_id, now, now),
+    ).fetchone()
+    return int(row["id"]), str(row["public_id"])
 
 
 def replace_layout_rooms(

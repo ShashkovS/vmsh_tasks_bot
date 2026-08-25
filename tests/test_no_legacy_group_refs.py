@@ -26,6 +26,8 @@ ALLOWED_FILES = {
     "groups.diff",
     "docs/db_structure.sql",
     "docs/db_data_examples.sql",
+    # Rich-text heading levels are unrelated to the removed legacy group field.
+    "models/pwa/rich_document.py",
     "tests/test_no_legacy_group_refs.py",
 }
 

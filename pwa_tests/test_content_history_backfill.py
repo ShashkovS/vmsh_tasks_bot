@@ -43,25 +43,25 @@ def _seed_database(path: Path, *, include_second_group: bool = False) -> Path:
         connection.execute("PRAGMA journal_mode = DELETE")
         connection.execute(
             "INSERT INTO seasons "
-            "(public_id, code, title, starts_on, ends_on, timezone, "
+            "(code, title, starts_on, ends_on, timezone, "
             "session_expires_on, status, created_at, updated_at) VALUES "
-            "('season-history', 'history', 'Synthetic season', '2025-09-01', "
+            "('history', 'Synthetic season', '2025-09-01', "
             "'2026-07-01', 'Europe/Moscow', '2026-08-10', 'active', ?, ?)",
             (NOW, NOW),
         )
         season_id = connection.execute(
-            "SELECT id FROM seasons WHERE public_id = 'season-history'"
+            "SELECT id FROM seasons WHERE public_id = 's-1'"
         ).fetchone()[0]
         connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "(season_id, code, name, subject_code, status, sort_order, "
             "accent_key, created_at, updated_at) VALUES "
-            "('course-history', ?, 'math', 'Synthetic math', 'math', 'active', "
+            "(?, 'math', 'Synthetic math', 'math', 'active', "
             "1, 'math', ?, ?)",
             (season_id, NOW, NOW),
         )
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'course-history'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()[0]
         groups = [
             (
@@ -69,7 +69,6 @@ def _seed_database(path: Path, *, include_second_group: bool = False) -> Path:
                 "hn",
                 "Synthetic N",
                 1,
-                "group-history-n",
                 course_id,
                 NOW,
                 NOW,
@@ -82,7 +81,6 @@ def _seed_database(path: Path, *, include_second_group: bool = False) -> Path:
                     "hp",
                     "Synthetic P",
                     2,
-                    "group-history-p",
                     course_id,
                     NOW,
                     NOW,
@@ -91,9 +89,9 @@ def _seed_database(path: Path, *, include_second_group: bool = False) -> Path:
         connection.executemany(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "allow_self_switch, is_system, score_weight, course_id, "
             "status, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, ?, 'active', ?, ?)",
+            "VALUES (?, ?, ?, ?, 1, 0, 1, 0, 1.0, ?, 'active', ?, ?)",
             groups,
         )
         lesson_rows = [(501, "hist-n", 1), (538, "hist-n", 38)]
@@ -124,7 +122,7 @@ def _seed_database(path: Path, *, include_second_group: bool = False) -> Path:
                         2,
                         None,
                         "Введите целое число",
-                        "17",
+                        "legacy-correct-answer-17",
                         None,
                         "Нет",
                         "Да",
@@ -224,7 +222,7 @@ def _mapping(
     groups = [
         {
             "legacyGroupId": "hist-n",
-            "targetGroupPublicId": "group-history-n",
+            "targetGroupPublicId": "g-5",
         }
     ]
     if include_second_group:
@@ -232,7 +230,7 @@ def _mapping(
         groups.append(
             {
                 "legacyGroupId": "hist-p",
-                "targetGroupPublicId": "group-history-p",
+                "targetGroupPublicId": "g-6",
             }
         )
         lesson_mappings.append(
@@ -258,8 +256,8 @@ def _mapping(
         "purpose": "phase2-content-history-backfill",
         "backfillId": "history-test-v1",
         "recordedAt": NOW,
-        "seasonPublicId": "season-history",
-        "coursePublicId": "course-history",
+        "seasonPublicId": "s-1",
+        "coursePublicId": "c-1",
         "legacyLessonRange": {"first": 1, "last": 38},
         "groupMappings": groups,
         "lessonMappings": lesson_mappings,
@@ -306,7 +304,7 @@ def test_preview_is_deterministic_read_only_generic_1_to_38_and_privacy_safe(
         "never-report-this-token",
         "Введите целое число",
         "Общее название",
-        "17",
+        "legacy-correct-answer-17",
     ):
         assert private_value not in serialized
     assert source.read_bytes() == source_before
@@ -570,13 +568,13 @@ def test_cp1251_historical_example_uses_flat_problem_and_subpart_count(tmp_path)
         "purpose": "phase2-content-history-backfill",
         "backfillId": "history-cp1251-v1",
         "recordedAt": NOW,
-        "seasonPublicId": "season-history",
-        "coursePublicId": "course-history",
+        "seasonPublicId": "s-1",
+        "coursePublicId": "c-1",
         "legacyLessonRange": {"first": 1, "last": 38},
         "groupMappings": [
             {
                 "legacyGroupId": "hist-n",
-                "targetGroupPublicId": "group-history-n",
+                "targetGroupPublicId": "g-5",
             }
         ],
         "lessonMappings": [

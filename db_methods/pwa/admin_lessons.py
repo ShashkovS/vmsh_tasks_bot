@@ -34,28 +34,25 @@ def find_course_lesson(
 def insert_course_lesson(
     connection: sqlite3.Connection,
     *,
-    public_id: str,
     course_id: int,
     lesson_number: int,
     title: str | None,
     actor_user_id: int,
     now: str,
-) -> int:
+) -> tuple[int, str]:
     row = connection.execute(
         "INSERT INTO course_lessons "
-        "(public_id, course_id, lesson_number, title, created_by_user_id, "
-        "updated_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
-        "RETURNING id",
-        (public_id, course_id, lesson_number, title, actor_user_id, actor_user_id, now, now),
+        "(course_id, lesson_number, title, created_by_user_id, "
+        "updated_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) "
+        "RETURNING id, public_id",
+        (course_id, lesson_number, title, actor_user_id, actor_user_id, now, now),
     ).fetchone()
-    return int(row["id"])
+    return int(row["id"]), str(row["public_id"])
 
 
 def insert_group_lesson_with_window(
     connection: sqlite3.Connection,
     *,
-    group_lesson_public_id: str,
-    lesson_window_public_id: str,
     course_lesson_id: int,
     course_id: int,
     group_id: str,
@@ -67,15 +64,14 @@ def insert_group_lesson_with_window(
     solution_scheduled_at: str | None,
     actor_user_id: int,
     now: str,
-) -> None:
+) -> tuple[str, str]:
     row = connection.execute(
         "INSERT INTO group_lessons "
-        "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+        "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
         "business_timezone, status, created_by_user_id, updated_by_user_id, "
-        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?) "
-        "RETURNING id",
+        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?) "
+        "RETURNING id, public_id",
         (
-            group_lesson_public_id,
             course_lesson_id,
             course_id,
             group_id,
@@ -87,14 +83,13 @@ def insert_group_lesson_with_window(
             now,
         ),
     ).fetchone()
-    connection.execute(
+    window = connection.execute(
         "INSERT INTO lesson_windows "
-        "(public_id, group_lesson_id, opens_at, submission_closes_at, "
+        "(group_lesson_id, opens_at, submission_closes_at, "
         "hint_scheduled_at, solution_scheduled_at, timezone, source, "
         "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, 'native', ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, 'native', ?, ?, ?, ?) RETURNING public_id",
         (
-            lesson_window_public_id,
             int(row["id"]),
             opens_at,
             submission_closes_at,
@@ -106,7 +101,8 @@ def insert_group_lesson_with_window(
             now,
             now,
         ),
-    )
+    ).fetchone()
+    return str(row["public_id"]), str(window["public_id"])
 
 
 __all__ = [

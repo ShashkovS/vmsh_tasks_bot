@@ -64,7 +64,9 @@ describe('news moderation client', () => {
       text: 'Исправление опубликованной новости',
     })
 
-    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/news?state=all&limit=100')
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/news?state=all&limit=100&contentVersion=2',
+    )
     expect(fetchImplementation.mock.calls[1]?.[1]).toEqual(
       expect.objectContaining({
         method: 'PATCH',

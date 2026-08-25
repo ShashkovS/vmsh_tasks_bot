@@ -150,7 +150,6 @@ def materialize_layout(
     connection: sqlite3.Connection,
     *,
     event_public_id: str,
-    layout_public_id: str,
     actor_user_id: int,
     now: str,
 ) -> dict[str, object]:
@@ -162,9 +161,8 @@ def materialize_layout(
     event_id = int(event["id"])
     current = find_event_layout(connection, event_id, "confirmed")
     base_version_id = None if current is None else int(current["id"])
-    layout_id = insert_layout_version(
+    layout_id, _layout_public_id = insert_layout_version(
         connection,
-        public_id=layout_public_id,
         event_id=event_id,
         base_version_id=base_version_id,
         actor_user_id=actor_user_id,

@@ -5,13 +5,7 @@
 create table in_person_events
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ipe-' || id) virtual,
     season_id          integer not null references seasons (id),
     name               text    not null check (length(trim(name)) > 0),
     starts_at          text    not null,
@@ -45,13 +39,7 @@ create index in_person_event_group_lessons_lesson_idx
 create table classroom_layout_versions
 (
     id                   integer primary key,
-    public_id            text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('clv-' || id) virtual,
     in_person_event_id   integer not null references in_person_events (id),
     base_version_id      integer references classroom_layout_versions (id),
     state                text    not null

@@ -41,7 +41,7 @@ def list_news_for_moderation(
         "SELECT latest.id FROM news_revisions latest WHERE latest.post_id = post.id "
         "ORDER BY latest.revision_number DESC LIMIT 1) "
         "LEFT JOIN telegram_bindings binding "
-        "ON binding.public_id = post.source_binding_public_id "
+        "ON binding.id = post.source_binding_id "
         "LEFT JOIN courses course ON course.id = post.owner_course_id "
         "LEFT JOIN groups owner_group ON owner_group.group_id = post.owner_group_id "
         + where

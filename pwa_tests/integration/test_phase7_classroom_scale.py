@@ -44,12 +44,11 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
 
         connection.executemany(
             "INSERT INTO users "
-            "(id, public_id, type, name, surname, grade, birthday) "
-            "VALUES (?, ?, 1, ?, ?, ?, ?)",
+            "(id, type, name, surname, grade, birthday) "
+            "VALUES (?, 1, ?, ?, ?, ?)",
             (
                 (
                     student_id,
-                    f"student-scale-{student_id:04d}",
                     f"Имя{student_id:04d}",
                     f"Фамилия{student_id:04d}",
                     5 + student_id % 3,
@@ -60,13 +59,12 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
         )
         connection.executemany(
             "INSERT INTO course_enrollments "
-            "(id, public_id, student_user_id, course_id, active_group_id, "
+            "(id, student_user_id, course_id, active_group_id, "
             "attendance_mode, status, created_at, updated_at) "
-            "VALUES (?, ?, ?, 1, 'assignment-n', 'in_person', 'active', ?, ?)",
+            "VALUES (?, ?, 1, 'assignment-n', 'in_person', 'active', ?, ?)",
             (
                 (
                     enrollment_id,
-                    f"enrollment-scale-{enrollment_id:04d}",
                     enrollment_id + 1,
                     NOW,
                     NOW,
@@ -74,16 +72,15 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
                 for enrollment_id in range(2, STUDENT_COUNT + 1)
             ),
         )
-        room_public_ids = ["classroom-assignment"]
+        room_public_ids = ["room-1"]
         for room_number in range(2, ROOM_COUNT + 1):
-            room_public_id = f"classroom-scale-{room_number:02d}"
+            room_public_id = f"room-{room_number}"
             connection.execute(
                 "INSERT INTO classrooms "
-                "(public_id, name, normalized_name, status, "
+                "(name, normalized_name, status, "
                 "created_by_user_id, updated_by_user_id, created_at, updated_at) "
-                "VALUES (?, ?, ?, 'active', 2, 2, ?, ?)",
+                "VALUES (?, ?, 'active', 2, 2, ?, ?)",
                 (
-                    room_public_id,
                     str(200 + room_number),
                     str(200 + room_number),
                     NOW,
@@ -93,26 +90,25 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
             room_public_ids.append(room_public_id)
         draft = materialize_layout(
             connection,
-            event_public_id="event-assignment",
-            layout_public_id="layout-scale",
+            event_public_id="ipe-1",
             actor_user_id=2,
             now=NOW,
         )
         draft = replace_draft_layout(
             connection,
-            event_public_id="event-assignment",
-            layout_public_id="layout-scale",
+            event_public_id="ipe-1",
+            layout_public_id=str(draft["layout_public_id"]),
             expected_version=int(draft["version"]),
             mappings=[
-                (room_public_id, "group-lesson-assignment")
+                (room_public_id, "gl-1")
                 for room_public_id in room_public_ids
             ],
             now=NOW,
         )
         confirm_layout(
             connection,
-            event_public_id="event-assignment",
-            layout_public_id="layout-scale",
+            event_public_id="ipe-1",
+            layout_public_id=str(draft["layout_public_id"]),
             expected_version=int(draft["version"]),
             actor_user_id=2,
             now=NOW,
@@ -122,8 +118,8 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
         started = perf_counter()
         preview = recalculate_assignment_plan(
             connection,
-            event_public_id="event-assignment",
-            plan_public_id="plan-scale",
+            event_public_id="ipe-1",
+            plan_public_id=None,
             expected_version=None,
             actor_user_id=2,
             now=NOW,
@@ -145,8 +141,8 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
         started = perf_counter()
         confirmed = confirm_assignment_plan(
             connection,
-            event_public_id="event-assignment",
-            plan_public_id="plan-scale",
+            event_public_id="ipe-1",
+            plan_public_id=str(preview["plan"]["public_id"]),
             expected_version=int(preview["plan"]["version"]),
             actor_user_id=2,
             now="2026-07-29T13:00:01Z",

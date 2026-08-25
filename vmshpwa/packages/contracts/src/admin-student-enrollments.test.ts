@@ -18,7 +18,7 @@ import {
 describe('admin student enrollment contracts', () => {
   it('accepts the committed Staff directory fixture', () => {
     const directory = adminStudentEnrollmentDirectoryResponseSchema.parse(directoryFixture)
-    expect(directory.students[0]?.enrollments[0]?.activeGroupId).toBe('group-fixture-beginner')
+    expect(directory.students[0]?.enrollments[0]?.activeGroupId).toBe('g-1')
     expect(directory.students[0]?.webAccount?.credentialVersion).toBe(1)
     expect(directory.students[0]?.familyAccounts[0]?.username).toBe('family-testovye')
     expect(directory.students[1]?.usernameSuggestion).toEqual({

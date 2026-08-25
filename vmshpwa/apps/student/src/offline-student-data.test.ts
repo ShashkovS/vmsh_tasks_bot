@@ -24,7 +24,7 @@ import {
 } from './offline-student-data'
 
 const databases = new Set<VmshOfflineDatabase>()
-const ownerId = 'account-student-fixture'
+const ownerId = 'a-1001'
 const problems = studentProblemListResponseSchema.parse(studentProblemsFixture.response)
 const document = webContentDocumentSchema.parse(webDocumentFixture.document)
 const published = publishedContentSchema.parse({

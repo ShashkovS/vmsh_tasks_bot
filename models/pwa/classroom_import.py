@@ -6,7 +6,6 @@ import hashlib
 import json
 import sqlite3
 import unicodedata
-import uuid
 from collections import Counter, defaultdict
 
 from db_methods.pwa.classroom_assignments import (
@@ -289,17 +288,15 @@ def apply_classroom_import(
         room_key = str(room["key"])
         existing = find_classroom_by_normalized_name(connection, room_key)
         if existing is None:
-            public_id = f"classroom.{uuid.uuid4().hex}"
-            create_classroom(
+            created = create_classroom(
                 connection,
-                public_id=public_id,
-                event_public_id=f"classroom-event.{uuid.uuid4().hex}",
                 name=str(room["name"]),
                 normalized_name=room_key,
                 actor_user_id=actor_user_id,
                 request_id=request_id,
                 now=now,
             )
+            public_id = str(created["public_id"])
         else:
             public_id = str(existing["public_id"])
         stored = get_classroom(connection, public_id)
@@ -307,14 +304,13 @@ def apply_classroom_import(
         room_ids[room_key] = int(stored["id"])
         room_public_ids[room_key] = public_id
 
-    layout_public_id = f"classroom-layout.{uuid.uuid4().hex}"
-    materialize_layout(
+    draft_layout = materialize_layout(
         connection,
         event_public_id=event_public_id,
-        layout_public_id=layout_public_id,
         actor_user_id=actor_user_id,
         now=now,
     )
+    layout_public_id = str(draft_layout["layout_public_id"])
     group_public_ids = {
         int(group["group_lesson_id"]): str(group["group_lesson_public_id"])
         for group in list_event_group_lessons(connection, event_id)
@@ -344,10 +340,8 @@ def apply_classroom_import(
     layout = find_event_layout(connection, event_id, "confirmed")
     assert layout is not None
 
-    plan_public_id = f"classroom-plan.{uuid.uuid4().hex}"
-    plan_id = insert_plan(
+    plan_id, plan_public_id = insert_plan(
         connection,
-        public_id=plan_public_id,
         event_id=event_id,
         layout_id=int(layout["id"]),
         base_plan_id=None,
@@ -381,10 +375,8 @@ def apply_classroom_import(
     plan_row = find_plan(connection, event_id, ("confirmed",))
     assert plan_row is not None
 
-    receipt_public_id = f"classroom-import.{uuid.uuid4().hex}"
     insert_import_receipt(
         connection,
-        public_id=receipt_public_id,
         event_id=event_id,
         source_sha256=source_sha256,
         preview_sha256=confirmed_preview_sha256,

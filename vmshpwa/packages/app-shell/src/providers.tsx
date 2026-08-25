@@ -39,10 +39,7 @@ function initialTheme(storageNamespace: StorageNamespace): Theme {
   if (typeof window === 'undefined') return 'light'
   const stored = readTheme(storageNamespace)
   if (stored) return stored
-  return typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
+  return 'light'
 }
 
 export function AppProviders({

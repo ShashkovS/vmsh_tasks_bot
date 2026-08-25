@@ -55,60 +55,60 @@ def _seed_dashboard(factory: PwaConnectionFactory, *, now: datetime) -> None:
 
     def seed(connection) -> None:
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         course_lesson_id = connection.execute(
             "INSERT INTO course_lessons "
-            "(public_id, course_id, lesson_number, created_at, updated_at) "
-            "VALUES ('dashboard-course-lesson', ?, 41, ?, ?) RETURNING id",
+            "(course_id, lesson_number, created_at, updated_at) "
+            "VALUES (?, 41, ?, ?) RETURNING id",
             (course_id, opened_at, opened_at),
         ).fetchone()["id"]
         group_lesson_id = connection.execute(
             "INSERT INTO group_lessons "
-            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_at, updated_at) VALUES "
-            "('dashboard-group-lesson', ?, ?, 'layout-beginner', ?, "
+            "(?, ?, 'layout-beginner', ?, "
             "'Europe/Moscow', 'active', ?, ?) RETURNING id",
             (course_lesson_id, course_id, anchor, opened_at, opened_at),
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO lesson_windows "
-            "(public_id, group_lesson_id, opens_at, submission_closes_at, "
+            "(group_lesson_id, opens_at, submission_closes_at, "
             "timezone, source, created_at, updated_at) VALUES "
-            "('dashboard-window', ?, ?, ?, 'Europe/Moscow', 'native', ?, ?)",
+            "(?, ?, ?, 'Europe/Moscow', 'native', ?, ?)",
             (group_lesson_id, opened_at, closes_at, opened_at, opened_at),
         )
         source_id = connection.execute(
             "INSERT INTO content_sources "
-            "(public_id, group_lesson_id, kind, logical_filename, "
+            "(group_lesson_id, kind, logical_filename, "
             "source_encoding, created_at) VALUES "
-            "('dashboard-condition-source', ?, 'condition', 'condition.tex', "
+            "(?, 'condition', 'condition.tex', "
             "'utf-8', ?) RETURNING id",
             (group_lesson_id, opened_at),
         ).fetchone()["id"]
         revision_id = connection.execute(
             "INSERT INTO content_revisions "
-            "(public_id, source_id, revision_number, source_sha256, latex_text, "
+            "(source_id, revision_number, source_sha256, latex_text, "
             "parser_version, status, canonical_json, diagnostics_json, "
             "provenance_json, created_at) VALUES "
-            "('dashboard-condition-revision', ?, 1, ?, 'condition', 'test', "
+            "(?, 1, ?, 'condition', 'test', "
             "'ready', '{}', '[]', '{}', ?) RETURNING id",
             (source_id, "a" * 64, opened_at),
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO lesson_publications "
-            "(public_id, group_lesson_id, kind, revision_id, state, published_at, "
+            "(group_lesson_id, kind, revision_id, state, published_at, "
             "created_at, updated_at, provenance_kind) VALUES "
-            "('dashboard-condition-publication', ?, 'condition', ?, 'published', "
+            "(?, 'condition', ?, 'published', "
             "?, ?, ?, 'legacy_backfill')",
             (group_lesson_id, revision_id, opened_at, opened_at, opened_at),
         )
         connection.execute(
             "INSERT INTO oral_windows "
-            "(public_id, group_lesson_id, sequence_number, opens_at, closes_at, "
+            "(group_lesson_id, sequence_number, opens_at, closes_at, "
             "join_label, join_url, status, created_by_user_id, updated_by_user_id, "
             "created_at, updated_at) VALUES "
-            "('dashboard-oral-window', ?, 1, ?, ?, 'Zoom', "
+            "(?, 1, ?, ?, 'Zoom', "
             "'https://zoom.example.test', 'active', ?, ?, ?, ?)",
             (
                 group_lesson_id,
@@ -129,9 +129,9 @@ def _seed_dashboard(factory: PwaConnectionFactory, *, now: datetime) -> None:
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO written_tasks_queue "
-            "(public_id, ts, student_id, problem_id, cur_status, teacher_ts, "
+            "(ts, student_id, problem_id, cur_status, teacher_ts, "
             "teacher_id, claim_token, claimed_at, lease_expires_at, updated_at) "
-            "VALUES ('dashboard-review', ?, ?, ?, ?, ?, ?, 'dashboard-claim', ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, 'dashboard-claim', ?, ?, ?)",
             (
                 opened_at,
                 STUDENT_ID,
@@ -146,9 +146,9 @@ def _seed_dashboard(factory: PwaConnectionFactory, *, now: datetime) -> None:
         )
         thread_id = connection.execute(
             "INSERT INTO support_threads "
-            "(public_id, student_user_id, group_lesson_id, kind, latest_entry_at, "
+            "(student_user_id, group_lesson_id, kind, latest_entry_at, "
             "created_at, updated_at) VALUES "
-            "('dashboard-question', ?, ?, 'general', ?, ?, ?) RETURNING id",
+            "(?, ?, 'general', ?, ?, ?) RETURNING id",
             (
                 STUDENT_ID,
                 group_lesson_id,
@@ -159,9 +159,9 @@ def _seed_dashboard(factory: PwaConnectionFactory, *, now: datetime) -> None:
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO support_entries "
-            "(public_id, thread_id, author_kind, author_user_id, text, channel, "
+            "(thread_id, author_kind, author_user_id, text, channel, "
             "client_created_at, server_received_at, created_at) VALUES "
-            "('dashboard-question-entry', ?, 'student', ?, 'Нужна помощь', 'pwa', "
+            "(?, 'student', ?, 'Нужна помощь', 'pwa', "
             "?, ?, ?)",
             (thread_id, STUDENT_ID, old_question_at, old_question_at, old_question_at),
         )
@@ -276,7 +276,7 @@ async def test_admin_and_teacher_receive_scoped_operational_dashboard(
             {"failedBatches": 0, "failedRecipients": 0} if identity == "admin" else None
         )
         assert payload["lessons"][0]["phase"] == "active"
-        assert payload["lessons"][0]["group"]["groupId"] == "classroom-layout-group"
+        assert payload["lessons"][0]["group"]["groupId"] == "g-5"
         assert "studentId" not in str(payload)
 
 

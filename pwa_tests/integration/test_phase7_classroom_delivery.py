@@ -123,10 +123,10 @@ def _seed_delivery(connection: sqlite3.Connection) -> None:
     connection.execute("UPDATE users SET chat_id = 179179 WHERE id = 1")
     connection.execute(
         "INSERT INTO auth_accounts "
-        "(public_id, audience, username, username_normalized, "
+        "(audience, username, username_normalized, "
         "username_algorithm_version, provisioning_source, credential_kind, "
         "credential_hash, linked_user_id, status, created_at, updated_at) "
-        "VALUES ('student-delivery-account', 'student', 'student-delivery', "
+        "VALUES ('student', 'student-delivery', "
         "'student-delivery', 1, 'synthetic-test', 'telegram_token', 'hash', 1, "
         "'active', ?, ?)",
         (NOW, NOW),
@@ -147,7 +147,7 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
         _seed_delivery(connection)
 
         preview = preview_classroom_delivery(
-            connection, plan_public_id="plan-assignment"
+            connection, plan_public_id="cap-1"
         )
         assert (preview["recipient_count"], preview["changed_count"]) == (1, 1)
         assert preview["telegram_unavailable_count"] == 0
@@ -156,8 +156,7 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
 
         created = create_classroom_delivery_batch(
             connection,
-            public_id="delivery-first",
-            plan_public_id="plan-assignment",
+            plan_public_id="cap-1",
             expected_plan_version=2,
             expected_snapshot_hash=str(preview["snapshot_hash"]),
             actor_user_id=2,
@@ -173,7 +172,7 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
         notification = connection.execute(
             "SELECT category, payload_json FROM notification_events "
             "WHERE account_id = (SELECT id FROM auth_accounts "
-            "WHERE public_id = 'student-delivery-account')"
+            "WHERE public_id = 'a-1')"
         ).fetchone()
         assert notification["category"] == "classroom_assignment"
         assert json.loads(notification["payload_json"])["classroomName"] == "201"
@@ -183,8 +182,7 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
 
         repeated = create_classroom_delivery_batch(
             connection,
-            public_id="ignored-on-retry",
-            plan_public_id="plan-assignment",
+            plan_public_id="cap-1",
             expected_plan_version=2,
             expected_snapshot_hash=str(preview["snapshot_hash"]),
             actor_user_id=2,
@@ -193,16 +191,16 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
             idempotency_key="delivery-key-1",
             now="2026-07-29T13:03:00Z",
         )
-        assert repeated["batch"]["public_id"] == "delivery-first"
+        assert repeated["batch"]["public_id"] == "cdb-1"
         assert (
-            read_latest_classroom_delivery_batch(connection, "plan-assignment")[
+            read_latest_classroom_delivery_batch(connection, "cap-1")[
                 "batch"
             ]["public_id"]
-            == "delivery-first"
+            == "cdb-1"
         )
 
         next_preview = preview_classroom_delivery(
-            connection, plan_public_id="plan-assignment"
+            connection, plan_public_id="cap-1"
         )
         assert next_preview["changed_count"] == 0
 
@@ -215,7 +213,7 @@ def test_latest_delivery_is_empty_before_first_send(tmp_path):
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_delivery(connection)
         assert (
-            read_latest_classroom_delivery_batch(connection, "plan-assignment") is None
+            read_latest_classroom_delivery_batch(connection, "cap-1") is None
         )
 
 
@@ -227,12 +225,11 @@ def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path)
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_delivery(connection)
         preview = preview_classroom_delivery(
-            connection, plan_public_id="plan-assignment"
+            connection, plan_public_id="cap-1"
         )
         create_classroom_delivery_batch(
             connection,
-            public_id="delivery-claim",
-            plan_public_id="plan-assignment",
+            plan_public_id="cap-1",
             expected_plan_version=2,
             expected_snapshot_hash=str(preview["snapshot_hash"]),
             actor_user_id=2,
@@ -242,9 +239,9 @@ def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path)
             now=NOW,
         )
 
-        claimed = claim_next_telegram_recipient(connection, "delivery-claim")
+        claimed = claim_next_telegram_recipient(connection, "cdb-1")
         assert claimed is not None
-        assert claim_next_telegram_recipient(connection, "delivery-claim") is None
+        assert claim_next_telegram_recipient(connection, "cdb-1") is None
         assert finish_telegram_recipient(
             connection,
             batch_id=int(claimed["batch_id"]),
@@ -253,15 +250,15 @@ def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path)
             error_code="telegram_forbidden",
             sent_at=None,
         )
-        finish_telegram_batch(connection, "delivery-claim", NOW)
+        finish_telegram_batch(connection, "cdb-1", NOW)
 
-        result = read_classroom_delivery_batch(connection, "delivery-claim")
+        result = read_classroom_delivery_batch(connection, "cdb-1")
         assert result["batch"]["state"] == "completed_with_errors"
         assert result["recipients"][0]["telegram_error_code"] == ("telegram_forbidden")
 
         retried = retry_failed_classroom_delivery(
             connection,
-            batch_public_id="delivery-claim",
+            batch_public_id="cdb-1",
             expected_batch_version=int(result["batch"]["version"]),
             actor_user_id=2,
             idempotency_key="delivery-retry-key",
@@ -271,17 +268,17 @@ def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path)
         assert retried["recipients"][0]["telegram_state"] == "queued"
         repeated = retry_failed_classroom_delivery(
             connection,
-            batch_public_id="delivery-claim",
+            batch_public_id="cdb-1",
             expected_batch_version=int(result["batch"]["version"]),
             actor_user_id=2,
             idempotency_key="delivery-retry-key",
             now=NOW,
         )
-        assert repeated["batch"]["public_id"] == "delivery-claim"
+        assert repeated["batch"]["public_id"] == "cdb-1"
         with pytest.raises(ClassroomDeliveryConflict, match="batch_version_changed"):
             retry_failed_classroom_delivery(
                 connection,
-                batch_public_id="delivery-claim",
+                batch_public_id="cdb-1",
                 expected_batch_version=int(result["batch"]["version"]),
                 actor_user_id=2,
                 idempotency_key="delivery-retry-stale",
@@ -297,14 +294,13 @@ def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_delivery(connection)
         preview = preview_classroom_delivery(
-            connection, plan_public_id="plan-assignment"
+            connection, plan_public_id="cap-1"
         )
 
         with pytest.raises(ClassroomDeliveryConflict, match="preview_changed"):
             create_classroom_delivery_batch(
                 connection,
-                public_id="delivery-conflict",
-                plan_public_id="plan-assignment",
+                plan_public_id="cap-1",
                 expected_plan_version=2,
                 expected_snapshot_hash="0" * 64,
                 actor_user_id=2,
@@ -322,6 +318,6 @@ def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):
         with pytest.raises(InvalidClassroomDelivery, match="plan_not_confirmed"):
             preview_classroom_delivery(
                 connection,
-                plan_public_id="plan-assignment",
+                plan_public_id="cap-1",
                 expected_version=int(preview["plan_version"]),
             )

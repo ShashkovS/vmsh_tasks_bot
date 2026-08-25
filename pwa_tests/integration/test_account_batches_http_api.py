@@ -258,16 +258,15 @@ async def test_admin_enrolls_students_and_uses_first_allowed_group_by_order(
         connection.executemany(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "allow_self_switch, is_system, score_weight, course_id, "
             "status, color_key, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, ?, 'active', ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, 'active', ?, ?, ?)",
             (
                 (
                     "layout-continuing",
                     "п",
                     "Продолжающие",
                     2,
-                    "classroom-layout-group-continuing",
                     course_id,
                     "continuing",
                     now,
@@ -278,7 +277,6 @@ async def test_admin_enrolls_students_and_uses_first_allowed_group_by_order(
                     "э",
                     "Эксперты",
                     3,
-                    "classroom-layout-group-expert",
                     course_id,
                     "expert",
                     now,
@@ -389,26 +387,25 @@ async def test_course_enrollment_apply_rejects_group_order_changed_after_preview
         now = "2026-08-03T10:00:00Z"
         course_id = connection.execute(
             "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
-            "accent_key, created_at, updated_at) VALUES "
-            "('order-change-course', ?, 'physics', 'Физика', 'physics', 'active', "
+                "(season_id, code, name, subject_code, status, sort_order, "
+                "accent_key, created_at, updated_at) VALUES "
+                "(?, 'physics', 'Физика', 'physics', 'active', "
             "2, 'physics', ?, ?) RETURNING id",
             (season_id, now, now),
         ).fetchone()["id"]
         connection.executemany(
             "INSERT INTO groups "
             "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
-            "status, color_key, created_at, updated_at) VALUES "
-            "(?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, ?, 'active', 'physics', ?, ?)",
+                "allow_self_switch, is_system, score_weight, course_id, "
+                "status, color_key, created_at, updated_at) VALUES "
+                "(?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, 'active', 'physics', ?, ?)",
             (
                 (
                     "physics-first",
                     "ф1",
                     "Физика 1",
                     1,
-                    "physics-first-public",
-                    course_id,
+                        course_id,
                     now,
                     now,
                 ),
@@ -417,8 +414,7 @@ async def test_course_enrollment_apply_rejects_group_order_changed_after_preview
                     "ф2",
                     "Физика 2",
                     2,
-                    "physics-second-public",
-                    course_id,
+                        course_id,
                     now,
                     now,
                 ),

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import uuid
 from datetime import UTC, datetime
 from functools import partial
 
@@ -43,20 +42,16 @@ async def ensure_first_global_admin(
         )
 
     credential_hash = await asyncio.to_thread(credential_hasher.hash, password)
-    suffix = uuid.uuid4().hex
     occurred_at = datetime.now(UTC).isoformat(timespec="microseconds")
     return await factory.run_write_async(
         partial(
             insert_first_global_admin,
             admin_user_type=admin_user_type,
-            user_public_id=f"user.bootstrap.{suffix}",
-            account_public_id=f"account.bootstrap.{suffix}",
             username="admin",
             display_name="Администратор ВМШ 179",
             user_name="Администратор",
             user_surname="ВМШ 179",
             credential_hash=credential_hash,
-            audit_public_id=f"audit.bootstrap.{suffix}",
             audit_action="auth.first_admin.created",
             audit_after_json=json.dumps(
                 {

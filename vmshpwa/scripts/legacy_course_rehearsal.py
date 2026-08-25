@@ -17,7 +17,6 @@ import sqlite3
 import unicodedata
 from datetime import UTC, datetime
 from pathlib import Path
-from uuid import UUID, uuid5
 
 from db_methods.pwa.migrations import apply_schema_migrations
 from vmshpwa.scripts.report_io import atomic_write_text
@@ -26,15 +25,13 @@ from vmshpwa.scripts.report_io import atomic_write_text
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 AUTHORITATIVE_DATABASE = REPOSITORY_ROOT / "db" / "vmsh.db"
 REHEARSAL_ROOT = REPOSITORY_ROOT / ".runtime" / "phase11-rehearsal"
-PUBLIC_ID_NAMESPACE = UUID("1d387e30-c870-4cb9-9c6d-2fa5703014f4")
-
-SEASON_PUBLIC_ID = "season-2025-26"
-COURSE_PUBLIC_ID = "course-math-5-7"
+SEASON_CODE = "2025-26"
+COURSE_CODE = "math-5-7"
 GROUPS = {
-    "н": ("group-math-5-7-n", "beginner"),
-    "п": ("group-math-5-7-p", "continuing"),
-    "э": ("group-math-5-7-e", "expert"),
-    "no_level": ("group-math-5-7-no-level", "neutral"),
+    "н": "beginner",
+    "п": "continuing",
+    "э": "expert",
+    "no_level": "neutral",
 }
 LESSON_DATES = {
     1: "2025-09-01",
@@ -76,10 +73,6 @@ LESSON_DATES = {
     37: "2026-05-18",
     38: "2026-05-25",
 }
-
-
-def _public_id(prefix: str, value: object) -> str:
-    return f"{prefix}.{uuid5(PUBLIC_ID_NAMESPACE, str(value)).hex}"
 
 
 def _inside(path: Path, root: Path) -> bool:
@@ -146,31 +139,44 @@ def _parse_allowed_groups(value: object, active_group_id: str) -> set[str]:
 def _insert_scope(connection: sqlite3.Connection, recorded_at: str) -> int:
     connection.execute(
         "INSERT OR IGNORE INTO seasons "
-        "(public_id, code, title, starts_on, ends_on, timezone, "
+        "(code, title, starts_on, ends_on, timezone, "
         "session_expires_on, status, created_at, updated_at) "
-        "VALUES (?, '2025-26', '2025–26', '2025-08-01', '2026-08-09', "
+        "VALUES (?, '2025–26', '2025-08-01', '2026-08-09', "
         "'Europe/Moscow', '2026-08-10', 'active', ?, ?)",
-        (SEASON_PUBLIC_ID, recorded_at, recorded_at),
+        (SEASON_CODE, recorded_at, recorded_at),
     )
     season = connection.execute(
-        "SELECT id FROM seasons WHERE public_id = ?", (SEASON_PUBLIC_ID,)
+        "SELECT id FROM seasons WHERE code = ?", (SEASON_CODE,)
     ).fetchone()
     if season is None:
         raise RuntimeError("Could not resolve rehearsal season")
     season_id = int(season[0])
     connection.execute(
         "INSERT OR IGNORE INTO courses "
-        "(public_id, season_id, code, name, subject_code, status, sort_order, "
+        "(season_id, code, name, subject_code, status, sort_order, "
         "accent_key, created_at, updated_at) "
-        "VALUES (?, ?, 'math-5-7', 'Математика 5–7', 'math', 'active', 10, "
+        "VALUES (?, ?, 'Математика 5–7', 'math', 'active', 10, "
         "'math', ?, ?)",
-        (COURSE_PUBLIC_ID, season_id, recorded_at, recorded_at),
+        (season_id, COURSE_CODE, recorded_at, recorded_at),
     )
     course = connection.execute(
-        "SELECT id, season_id FROM courses WHERE public_id = ?", (COURSE_PUBLIC_ID,)
+        "SELECT id, season_id FROM courses WHERE season_id = ? AND code = ?",
+        (season_id, COURSE_CODE),
     ).fetchone()
     if course is None or int(course[1]) != season_id:
         raise RuntimeError("Existing rehearsal course conflicts with the season")
+    return int(course[0])
+
+
+def _course_id(connection: sqlite3.Connection) -> int:
+    course = connection.execute(
+        "SELECT course.id FROM courses AS course "
+        "JOIN seasons AS season ON season.id = course.season_id "
+        "WHERE season.code = ? AND course.code = ?",
+        (SEASON_CODE, COURSE_CODE),
+    ).fetchone()
+    if course is None:
+        raise RuntimeError("Course enrollment backfill must run first")
     return int(course[0])
 
 
@@ -182,17 +188,17 @@ def _attach_groups(
     }
     if observed != set(GROUPS):
         raise RuntimeError("Legacy group set differs from the reviewed 2025–26 mapping")
-    for group_id, (public_id, color_key) in GROUPS.items():
+    for group_id, color_key in GROUPS.items():
         row = connection.execute(
             "SELECT course_id FROM groups WHERE group_id = ?", (group_id,)
         ).fetchone()
         if row is None or (row[0] is not None and int(row[0]) != course_id):
             raise RuntimeError(f"Legacy group {group_id!r} belongs to another course")
         connection.execute(
-            "UPDATE groups SET public_id = ?, course_id = ?, color_key = ?, "
+            "UPDATE groups SET course_id = ?, color_key = ?, "
             "created_at = COALESCE(created_at, ?), updated_at = ? "
             "WHERE group_id = ?",
-            (public_id, course_id, color_key, recorded_at, recorded_at, group_id),
+            (course_id, color_key, recorded_at, recorded_at, group_id),
         )
 
 
@@ -208,15 +214,13 @@ def _insert_enrollments(
     for student_id, group_id, online, allowed_groups in students:
         if group_id not in GROUPS or online not in (1, 2):
             raise RuntimeError("A Student has an unmapped group or attendance mode")
-        public_id = _public_id("enrollment", f"{COURSE_PUBLIC_ID}:{student_id}")
         before = connection.total_changes
         connection.execute(
             "INSERT OR IGNORE INTO course_enrollments "
-            "(public_id, student_user_id, course_id, active_group_id, "
+            "(student_user_id, course_id, active_group_id, "
             "attendance_mode, status, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, 'active', ?, ?)",
+            "VALUES (?, ?, ?, ?, 'active', ?, ?)",
             (
-                public_id,
                 student_id,
                 course_id,
                 group_id,
@@ -228,8 +232,8 @@ def _insert_enrollments(
         inserted_enrollments += connection.total_changes > before
         enrollment = connection.execute(
             "SELECT id, active_group_id, attendance_mode FROM course_enrollments "
-            "WHERE public_id = ?",
-            (public_id,),
+            "WHERE student_user_id = ? AND course_id = ?",
+            (student_id, course_id),
         ).fetchone()
         expected_mode = "online" if online == 1 else "in_person"
         if enrollment is None or (enrollment[1], enrollment[2]) != (
@@ -241,11 +245,10 @@ def _insert_enrollments(
 
         connection.execute(
             "INSERT OR IGNORE INTO course_enrollment_events "
-            "(public_id, enrollment_id, course_id, event_type, new_group_id, "
+            "(enrollment_id, course_id, event_type, new_group_id, "
             "new_attendance_mode, new_status, source, request_id, occurred_at, created_at) "
-            "VALUES (?, ?, ?, 'created', ?, ?, 'active', 'import', ?, ?, ?)",
+            "VALUES (?, ?, 'created', ?, ?, 'active', 'import', ?, ?, ?)",
             (
-                _public_id("enrollment-event", public_id),
                 enrollment_id,
                 course_id,
                 group_id,
@@ -322,6 +325,9 @@ def backfill_course(database: Path, recorded_at: str) -> dict[str, object]:
             (course_id,),
         ).fetchone()[0]
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
+        course_public_id = connection.execute(
+            "SELECT public_id FROM courses WHERE id = ?", (course_id,)
+        ).fetchone()[0]
 
     if legacy_students != enrollments or group_mismatches or mode_mismatches:
         raise RuntimeError("Course enrollment parity check failed")
@@ -329,7 +335,7 @@ def backfill_course(database: Path, recorded_at: str) -> dict[str, object]:
         "schemaVersion": 1,
         "operation": "phase11-course-enrollment-rehearsal",
         "recordedAt": recorded_at,
-        "coursePublicId": COURSE_PUBLIC_ID,
+        "coursePublicId": str(course_public_id),
         "legacyStudents": legacy_students,
         "courseEnrollments": enrollments,
         "groupsAttached": len(GROUPS),
@@ -382,11 +388,10 @@ def _insert_history_event(
     before = connection.total_changes
     connection.execute(
         f"INSERT OR IGNORE INTO course_enrollment_events "
-        f"(public_id, enrollment_id, course_id, event_type, "
+        f"(enrollment_id, course_id, event_type, "
         f"{previous_column}, {new_column}, source, request_id, occurred_at, created_at) "
-        f"VALUES (?, ?, ?, ?, ?, ?, 'import', ?, ?, ?)",
+        f"VALUES (?, ?, ?, ?, ?, 'import', ?, ?, ?)",
         (
-            _public_id("enrollment-history", request_id),
             enrollment_id,
             course_id,
             event_type,
@@ -407,12 +412,7 @@ def backfill_enrollment_history(database: Path, recorded_at: str) -> dict[str, o
         raise ValueError("History target must be below .runtime/phase11-rehearsal")
     with sqlite3.connect(database, autocommit=False) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
-        course = connection.execute(
-            "SELECT id FROM courses WHERE public_id = ?", (COURSE_PUBLIC_ID,)
-        ).fetchone()
-        if course is None:
-            raise RuntimeError("Course enrollment backfill must run first")
-        course_id = int(course[0])
+        course_id = _course_id(connection)
         enrollments = {
             int(row[0]): {
                 "id": int(row[1]),
@@ -525,12 +525,7 @@ def backfill_lessons(database: Path, recorded_at: str) -> dict[str, object]:
         raise ValueError("Lesson target must be below .runtime/phase11-rehearsal")
     with sqlite3.connect(database, autocommit=False) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
-        course = connection.execute(
-            "SELECT id FROM courses WHERE public_id = ?", (COURSE_PUBLIC_ID,)
-        ).fetchone()
-        if course is None:
-            raise RuntimeError("Course enrollment backfill must run first")
-        course_id = int(course[0])
+        course_id = _course_id(connection)
         legacy_rows = connection.execute(
             "SELECT group_id, lesson FROM lessons ORDER BY lesson, group_id"
         ).fetchall()
@@ -546,19 +541,18 @@ def backfill_lessons(database: Path, recorded_at: str) -> dict[str, object]:
         inserted_course_lessons = 0
         course_lesson_ids: dict[int, int] = {}
         for lesson_number in sorted({lesson for _group, lesson in mapped_rows}):
-            public_id = f"course-lesson.math-5-7.{lesson_number}"
             before = connection.total_changes
             connection.execute(
                 "INSERT OR IGNORE INTO course_lessons "
-                "(public_id, course_id, lesson_number, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (public_id, course_id, lesson_number, recorded_at, recorded_at),
+                "(course_id, lesson_number, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?)",
+                (course_id, lesson_number, recorded_at, recorded_at),
             )
             inserted_course_lessons += connection.total_changes > before
             row = connection.execute(
                 "SELECT id, course_id, lesson_number FROM course_lessons "
-                "WHERE public_id = ?",
-                (public_id,),
+                "WHERE course_id = ? AND lesson_number = ?",
+                (course_id, lesson_number),
             ).fetchone()
             if row is None or (int(row[1]), int(row[2])) != (
                 course_id,
@@ -569,17 +563,13 @@ def backfill_lessons(database: Path, recorded_at: str) -> dict[str, object]:
 
         inserted_group_lessons = 0
         for group_id, lesson_number in mapped_rows:
-            public_id = _public_id(
-                "group-lesson", f"{COURSE_PUBLIC_ID}:{group_id}:{lesson_number}"
-            )
             before = connection.total_changes
             connection.execute(
                 "INSERT OR IGNORE INTO group_lessons "
-                "(public_id, course_lesson_id, course_id, group_id, "
+                "(course_lesson_id, course_id, group_id, "
                 "cycle_anchor_date, business_timezone, status, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, 'Europe/Moscow', 'active', ?, ?)",
+                "VALUES (?, ?, ?, ?, 'Europe/Moscow', 'active', ?, ?)",
                 (
-                    public_id,
                     course_lesson_ids[lesson_number],
                     course_id,
                     group_id,
@@ -591,8 +581,8 @@ def backfill_lessons(database: Path, recorded_at: str) -> dict[str, object]:
             inserted_group_lessons += connection.total_changes > before
             row = connection.execute(
                 "SELECT course_lesson_id, course_id, group_id, cycle_anchor_date "
-                "FROM group_lessons WHERE public_id = ?",
-                (public_id,),
+                "FROM group_lessons WHERE course_lesson_id = ? AND group_id = ?",
+                (course_lesson_ids[lesson_number], group_id),
             ).fetchone()
             expected = (
                 course_lesson_ids[lesson_number],

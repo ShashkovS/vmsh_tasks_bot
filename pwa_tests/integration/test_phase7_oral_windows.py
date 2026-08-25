@@ -64,25 +64,25 @@ def _seed_group_lesson(fixture: classroom_support.ClassroomHttpFixture) -> None:
 
     def seed(connection):
         course_id = connection.execute(
-            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+            "SELECT id FROM courses WHERE public_id = 'c-1'"
         ).fetchone()["id"]
         course_lesson_id = connection.execute(
             "INSERT INTO course_lessons "
-            "(public_id, course_id, lesson_number, created_at, updated_at) "
-            "VALUES ('oral-course-lesson', ?, 41, ?, ?) RETURNING id",
+            "(course_id, lesson_number, created_at, updated_at) "
+            "VALUES (?, 41, ?, ?) RETURNING id",
             (course_id, now, now),
         ).fetchone()["id"]
         connection.execute(
             "INSERT INTO group_lessons "
-            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_at, updated_at) VALUES "
-            "('oral-group-lesson', ?, ?, 'layout-beginner', '2026-10-05', "
+            "(?, ?, 'layout-beginner', '2026-10-05', "
             "'Europe/Moscow', 'active', ?, ?)",
             (course_lesson_id, course_id, now, now),
         )
         connection.execute(
             "UPDATE course_enrollments SET attendance_mode = 'online' "
-            "WHERE public_id = 'classroom-layout-enrollment'"
+            "WHERE public_id = 'en-1'"
         )
 
     fixture.factory.run_write(seed)
@@ -110,7 +110,7 @@ async def test_admin_configures_and_online_student_reveals_open_join(
     fixture = classroom_http
     _seed_group_lesson(fixture)
     monkeypatch.setattr(oral_routes, "_now", lambda: NOW)
-    staff_path = "/staff/api/v1/group-lessons/oral-group-lesson/oral-windows"
+    staff_path = "/staff/api/v1/group-lessons/gl-1/oral-windows"
 
     teacher = await fixture.client.post(
         staff_path,
@@ -143,8 +143,8 @@ async def test_admin_configures_and_online_student_reveals_open_join(
         COOKIE_POLICY[AuthAudience.STUDENT].access_name: fixture.student_cookie
     }
     student_path = (
-        "/student/api/v1/courses/classroom-layout-course/lessons/"
-        "oral-group-lesson/oral-windows"
+        "/student/api/v1/courses/c-1/lessons/"
+        "gl-1/oral-windows"
     )
     listed = await fixture.client.get(
         student_path,
@@ -187,7 +187,7 @@ async def test_admin_configures_and_online_student_reveals_open_join(
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE course_enrollments SET attendance_mode = 'in_person' "
-            "WHERE public_id = 'classroom-layout-enrollment'"
+            "WHERE public_id = 'en-1'"
         )
     )
     hidden = await fixture.client.get(
@@ -206,7 +206,7 @@ async def test_opening_window_notifies_current_online_student_once_without_secre
     _seed_group_lesson(fixture)
     monkeypatch.setattr(oral_routes, "_now", lambda: NOW)
     created = await fixture.client.post(
-        "/staff/api/v1/group-lessons/oral-group-lesson/oral-windows",
+        "/staff/api/v1/group-lessons/gl-1/oral-windows",
         json=_payload(),
         headers=classroom_support._headers(unsafe=True),
         cookies=classroom_support._cookies(fixture, "admin"),
@@ -233,11 +233,11 @@ async def test_opening_window_notifies_current_online_student_once_without_secre
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE course_enrollments SET attendance_mode = 'in_person' "
-            "WHERE public_id = 'classroom-layout-enrollment'"
+            "WHERE public_id = 'en-1'"
         )
     )
     second = await fixture.client.post(
-        "/staff/api/v1/group-lessons/oral-group-lesson/oral-windows",
+        "/staff/api/v1/group-lessons/gl-1/oral-windows",
         json=_payload(sequenceNumber=2, joinUrl="https://zoom.example.test/j/180"),
         headers=classroom_support._headers(unsafe=True),
         cookies=classroom_support._cookies(fixture, "admin"),
@@ -251,7 +251,7 @@ async def test_opening_window_notifies_current_online_student_once_without_secre
         )
     )
 
-    assert notified == ("classroom-http-account-student",)
+    assert notified == ("a-3",)
     assert repeated == ()
     assert in_person == ()
 
@@ -269,11 +269,11 @@ async def test_opening_window_notifies_current_online_student_once_without_secre
     assert row["audience"] == "student"
     assert row["dedupe_key"] == window_id
     assert row["route"] == (
-        "/student/tasks?course=classroom-layout-course&group="
-        "classroom-layout-group&lesson=41"
+        "/student/tasks?course=c-1&group="
+        "g-5&lesson=41"
     )
     payload = json.loads(row["payload_json"])
     assert payload["windowId"] == window_id
-    assert payload["groupLessonId"] == "oral-group-lesson"
+    assert payload["groupLessonId"] == "gl-1"
     assert "joinUrl" not in payload
     assert "joinCode" not in payload

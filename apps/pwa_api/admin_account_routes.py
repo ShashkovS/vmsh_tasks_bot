@@ -6,7 +6,6 @@ import asyncio
 import json
 import re
 import sqlite3
-import uuid
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -296,7 +295,6 @@ async def create_student_account(request: web.Request) -> web.Response:
             return {"state": "username_conflict"}
         account = insert_student_account(
             connection,
-            public_id=f"student-account.{uuid.uuid4().hex}",
             username=username,
             username_normalized=normalized_username,
             display_name=display_name,
@@ -321,7 +319,6 @@ async def create_student_account(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=principal.linked_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",
@@ -418,7 +415,6 @@ async def create_family_account(request: web.Request) -> web.Response:
             return {"state": "username_conflict"}
         account = insert_family_account(
             connection,
-            public_id=f"family-account.{uuid.uuid4().hex}",
             username=username,
             username_normalized=normalized_username,
             display_name=display_name,
@@ -452,7 +448,6 @@ async def create_family_account(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=principal.linked_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",
@@ -470,7 +465,6 @@ async def create_family_account(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=principal.linked_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",
@@ -586,7 +580,6 @@ async def link_family_account(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=principal.linked_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",
@@ -666,7 +659,6 @@ async def unlink_family_account(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=principal.linked_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",
@@ -770,7 +762,6 @@ async def patch_account_status(request: web.Request) -> web.Response:
         )
         insert_audit_event(
             connection,
-            public_id=f"audit.{uuid.uuid4().hex}",
             actor_user_id=principal.linked_user_id,
             actor_account_public_id=principal.account_public_id,
             audience="staff",
@@ -858,7 +849,6 @@ async def replace_account_credential(request: web.Request) -> web.Response:
                 normalized_telegram_token=credential,
                 replacement_credential_hash=credential_hash,
                 request_id=request["request_id"],
-                audit_public_id=f"audit.{uuid.uuid4().hex}",
                 actor_user_id=principal.linked_user_id,
                 actor_account_public_id=principal.account_public_id,
             )
@@ -868,7 +858,6 @@ async def replace_account_credential(request: web.Request) -> web.Response:
                 expected_credential_version=expected_version,
                 replacement_credential_hash=credential_hash,
                 request_id=request["request_id"],
-                audit_public_id=f"audit.{uuid.uuid4().hex}",
                 actor_user_id=principal.linked_user_id,
                 actor_account_public_id=principal.account_public_id,
             )

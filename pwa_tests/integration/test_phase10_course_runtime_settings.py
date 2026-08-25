@@ -13,7 +13,7 @@ from pwa_tests.integration.test_classroom_catalog_http_api import _cookies, _hea
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
-PATH = "/staff/api/v1/courses/classroom-layout-course/runtime-settings"
+PATH = "/staff/api/v1/courses/c-1/runtime-settings"
 
 
 @pytest.mark.asyncio
@@ -31,10 +31,10 @@ async def test_runtime_settings_are_admin_only_typed_and_optimistic(classroom_ht
         cookies=_cookies(classroom_http, "admin"),
     )
     assert initial.status == 200, await initial.text()
-    assert initial.headers["ETag"] == ('"classroom-layout-course:runtime-settings:v0"')
+    assert initial.headers["ETag"] == ('"c-1:runtime-settings:v0"')
     assert initial.headers["Cache-Control"] == "no-store"
     assert (await initial.json())["settings"] == {
-        "courseId": "classroom-layout-course",
+        "courseId": "c-1",
         "values": dict(DEFAULT_COURSE_RUNTIME_SETTINGS),
         "version": 0,
         "source": "defaults",
@@ -52,7 +52,7 @@ async def test_runtime_settings_are_admin_only_typed_and_optimistic(classroom_ht
         },
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-course:runtime-settings:v0"',
+            if_match='"c-1:runtime-settings:v0"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -68,14 +68,14 @@ async def test_runtime_settings_are_admin_only_typed_and_optimistic(classroom_ht
         json={"schemaVersion": 1, "values": values},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-course:runtime-settings:v0"',
+            if_match='"c-1:runtime-settings:v0"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert saved.status == 200, await saved.text()
-    assert saved.headers["ETag"] == ('"classroom-layout-course:runtime-settings:v1"')
+    assert saved.headers["ETag"] == ('"c-1:runtime-settings:v1"')
     assert (await saved.json())["settings"] == {
-        "courseId": "classroom-layout-course",
+        "courseId": "c-1",
         "values": values,
         "version": 1,
         "source": "stored",
@@ -87,7 +87,7 @@ async def test_runtime_settings_are_admin_only_typed_and_optimistic(classroom_ht
         json={"schemaVersion": 1, "values": values},
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-course:runtime-settings:v0"',
+            if_match='"c-1:runtime-settings:v0"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )
@@ -141,7 +141,7 @@ async def test_runtime_settings_missing_course_and_audit_failure_are_fail_closed
         },
         headers=_headers(
             unsafe=True,
-            if_match='"classroom-layout-course:runtime-settings:v0"',
+            if_match='"c-1:runtime-settings:v0"',
         ),
         cookies=_cookies(classroom_http, "admin"),
     )

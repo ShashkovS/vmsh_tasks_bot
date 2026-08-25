@@ -7,6 +7,7 @@ import {
   PageStatePanel,
   createAdminCourseClient,
   createNewsModerationClient,
+  createStaffRichMediaClient,
   useAdminCourseCatalogQuery,
   useAuthenticatedPrincipal,
   useAuthentication,
@@ -93,6 +94,13 @@ export function StaffNewsPage({
             throw error
           }
         },
+      }),
+    [authentication],
+  )
+  const richMediaClient = useMemo(
+    () =>
+      createStaffRichMediaClient(authentication.client.runtime, {
+        refreshSession: () => authentication.refresh(),
       }),
     [authentication],
   )
@@ -268,6 +276,7 @@ export function StaffNewsPage({
                   courses={catalog.data.courses}
                   draft={localDraft}
                   onChange={setLocalDraft}
+                  onImageUpload={richMediaClient.uploadImage}
                   onSubmit={(document) => {
                     const separator = localDraft.owner.indexOf(':')
                     const publishedAt = moscowDateTime(localDraft.publishedLocal)
@@ -297,7 +306,7 @@ export function StaffNewsPage({
           }}
           open={editingItem !== null}
         >
-          <DialogContent className="max-w-5xl">
+          <DialogContent className="max-h-[calc(100svh-2rem)] max-w-5xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingItem?.isScheduled
@@ -323,6 +332,7 @@ export function StaffNewsPage({
                 courses={catalog.data.courses}
                 draft={editDraft}
                 onChange={setEditDraft}
+                onImageUpload={richMediaClient.uploadImage}
                 onSubmit={(document) => {
                   if (editingItem.isScheduled) {
                     const publishedAt = moscowDateTime(editDraft.publishedLocal)

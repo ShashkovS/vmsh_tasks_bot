@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { RichMarkdownEditor } from './rich-markdown-editor'
@@ -46,5 +46,29 @@ describe('RichMarkdownEditor', () => {
 
     expect(within(preview).queryByText('Исходный текст')).toBeNull()
     expect(within(preview).getByText('Исправьте ошибку в markdown.')).toBeTruthy()
+  })
+
+  it('uploads an image and inserts its server-owned Markdown URL at the cursor', async () => {
+    const onChange = vi.fn()
+    const onImageUpload = vi.fn().mockResolvedValue({
+      url: 'https://cdn.example.test/rich-media/sha256/aa/picture.webp',
+    })
+    const { container } = render(
+      <RichMarkdownEditor onChange={onChange} onImageUpload={onImageUpload} value="Текст" />,
+    )
+
+    const input = container.querySelector('input[type="file"]')
+    expect(input).toBeTruthy()
+    fireEvent.change(input!, {
+      target: {
+        files: [new File(['picture'], 'квадрат.png', { type: 'image/png' })],
+      },
+    })
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.stringContaining('![квадрат](https://cdn.example.test/rich-media/sha256/aa/picture.webp)'),
+      ),
+    )
   })
 })

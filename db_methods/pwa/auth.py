@@ -1304,7 +1304,6 @@ class PwaAuthRepository:
         replacement_credential_hash: str,
         request_id: str,
         ip_prefix: str | None = None,
-        audit_public_id: str | None = None,
         actor_user_id: int | None = None,
         actor_account_public_id: str | None = None,
     ) -> CredentialChangeResult:
@@ -1320,9 +1319,7 @@ class PwaAuthRepository:
         if expected_credential_version <= 0:
             raise ValueError("Expected credential version must be positive")
         _require_request_id(request_id)
-        if audit_public_id is not None and (
-            actor_user_id is None or actor_account_public_id is None
-        ):
+        if (actor_user_id is None) != (actor_account_public_id is None):
             raise ValueError("Audit actor is required for an audited credential change")
         ip_prefix = _normalize_ip_prefix(ip_prefix)
         timestamp = _format_timestamp(self._now())
@@ -1366,11 +1363,10 @@ class PwaAuthRepository:
                 account_id=account_id,
                 ip_prefix=ip_prefix,
             )
-            if audit_public_id is not None:
+            if actor_user_id is not None:
                 assert account is not None
                 insert_audit_event(
                     connection,
-                    public_id=audit_public_id,
                     actor_user_id=actor_user_id,
                     actor_account_public_id=actor_account_public_id,
                     audience="staff",
@@ -1401,7 +1397,6 @@ class PwaAuthRepository:
         replacement_credential_hash: str,
         request_id: str,
         ip_prefix: str | None = None,
-        audit_public_id: str | None = None,
         actor_user_id: int | None = None,
         actor_account_public_id: str | None = None,
     ) -> CredentialChangeResult:
@@ -1442,9 +1437,7 @@ class PwaAuthRepository:
         if expected_credential_version <= 0:
             raise ValueError("Expected credential version must be positive")
         _require_request_id(request_id)
-        if audit_public_id is not None and (
-            actor_user_id is None or actor_account_public_id is None
-        ):
+        if (actor_user_id is None) != (actor_account_public_id is None):
             raise ValueError("Audit actor is required for an audited credential change")
         ip_prefix = _normalize_ip_prefix(ip_prefix)
         timestamp = _format_timestamp(self._now())
@@ -1513,10 +1506,9 @@ class PwaAuthRepository:
                 account_id=account_id,
                 ip_prefix=ip_prefix,
             )
-            if audit_public_id is not None:
+            if actor_user_id is not None:
                 insert_audit_event(
                     connection,
-                    public_id=audit_public_id,
                     actor_user_id=actor_user_id,
                     actor_account_public_id=actor_account_public_id,
                     audience="staff",

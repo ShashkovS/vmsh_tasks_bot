@@ -5,7 +5,7 @@
 create table classroom_import_receipts
 (
     id                    integer primary key,
-    public_id             text    not null unique,
+    public_id text generated always as ('cir-' || id) virtual,
     in_person_event_id    integer not null unique references in_person_events (id),
     source_sha256         text    not null check (length(source_sha256) = 64),
     preview_sha256        text    not null check (length(preview_sha256) = 64),

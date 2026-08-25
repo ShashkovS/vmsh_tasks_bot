@@ -9,13 +9,7 @@
 create table course_lessons
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cl-' || id) virtual,
     course_id          integer not null references courses (id),
     lesson_number      integer not null check (lesson_number > 0),
     title              text check (title is null or length(trim(title)) > 0),
@@ -36,13 +30,7 @@ create index course_lessons_course_number_idx
 create table group_lessons
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('gl-' || id) virtual,
     course_lesson_id   integer not null,
     course_id          integer not null references courses (id),
     group_id           text    not null,
@@ -77,13 +65,7 @@ create index group_lessons_course_group_idx
 create table course_schedule_rules
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('sr-' || id) virtual,
     course_id          integer not null references courses (id),
     schedule_field     text    not null
         check (schedule_field in (
@@ -185,13 +167,7 @@ end;
 create table group_schedule_overrides
 (
     id                         integer primary key,
-    public_id                  text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('so-' || id) virtual,
     course_id                  integer not null references courses (id),
     group_id                   text    not null,
     schedule_field             text    not null
@@ -339,13 +315,7 @@ end;
 create table content_sources
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cs-' || id) virtual,
     group_lesson_id    integer not null references group_lessons (id),
     kind               text    not null
         check (kind in ('condition', 'hint', 'solution', 'teacher_note')),
@@ -366,13 +336,7 @@ create index content_sources_group_kind_idx
 create table content_revisions
 (
     id                      integer primary key,
-    public_id               text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('cr-' || id) virtual,
     source_id               integer not null references content_sources (id),
     revision_number         integer not null check (revision_number > 0),
     source_sha256           text    not null
@@ -485,13 +449,7 @@ end;
 create table media_assets
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ma-' || id) virtual,
     sha256             text    not null
         check (length(sha256) = 64 and sha256 not glob '*[^0-9a-f]*'),
     storage_namespace  text    not null
@@ -735,13 +693,7 @@ end;
 create table problem_synonym_groups
 (
     id                 integer primary key,
-    public_id          text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('ps-' || id) virtual,
     course_lesson_id   integer not null references course_lessons (id),
     group_key          text    not null check (length(trim(group_key)) > 0),
     display_title      text    not null check (length(trim(display_title)) > 0),
@@ -848,13 +800,7 @@ end;
 create table lesson_windows
 (
     id                    integer primary key,
-    public_id             text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('lw-' || id) virtual,
     group_lesson_id       integer not null unique references group_lessons (id),
     opens_at              text,
     submission_closes_at  text    not null,
@@ -996,13 +942,7 @@ end;
 create table lesson_publications
 (
     id                        integer primary key,
-    public_id                 text    not null unique
-        check (
-            length(public_id) between 1 and 128
-            and public_id not glob '*[^a-z0-9._:-]*'
-            and substr(public_id, 1, 1) glob '[a-z0-9]'
-            and substr(public_id, -1, 1) glob '[a-z0-9]'
-        ),
+    public_id text generated always as ('lp-' || id) virtual,
     group_lesson_id           integer not null references group_lessons (id),
     kind                      text    not null
         check (kind in ('condition', 'hint', 'solution')),

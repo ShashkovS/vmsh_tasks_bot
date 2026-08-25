@@ -28,6 +28,9 @@ bundles с очищенным browser-build environment: все унаследо
 безопасные E2E-значения (`Sentry` и внешний media origin отключены,
 MSW/prototype false). Это также перекрывает одноимённые значения из локальных
 Vite `.env` благодаря приоритету process environment. Затем runner запускает
+полный non-visual набор и visual-набор отдельными Playwright-процессами,
+сбрасывая между ними только воспроизводимую `db/vmshpwa_e2e.sqlite3`: изменения
+functional-сценариев не могут менять baseline визуального smoke. Каждый процесс запускает
 настоящий aiohttp и test-only one-origin gateway
 [`scripts/e2e_gateway.py`](../scripts/e2e_gateway.py). Gateway отдаёт готовые
 `dist` по `/student/*`, `/family/*`, `/staff/*` на

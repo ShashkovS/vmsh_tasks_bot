@@ -58,65 +58,65 @@ def _write_export(path: Path, rows: list[tuple[object, object, object]]) -> None
 
 def _seed_event(connection: sqlite3.Connection) -> None:
     connection.execute(
-        "INSERT INTO users (id, public_id, type, name, surname) VALUES "
-        "(101, 'student-import-1', 1, 'Иван', 'Иванов'), "
-        "(102, 'student-import-2', 1, 'Пётр', 'Петров'), "
-        "(900, 'admin-import', 128, 'Анна', 'Администратор')"
+        "INSERT INTO users (id, type, name, surname) VALUES "
+        "(101, 1, 'Иван', 'Иванов'), "
+        "(102, 1, 'Пётр', 'Петров'), "
+        "(900, 128, 'Анна', 'Администратор')"
     )
     connection.execute(
         "INSERT INTO seasons "
-        "(id, public_id, code, title, starts_on, ends_on, session_expires_on, "
+        "(id, code, title, starts_on, ends_on, session_expires_on, "
         "status, created_at, updated_at) VALUES "
-        "(1, 'season-import', '2025-26', '2025/26', '2025-09-01', "
+        "(1, '2025-26', '2025/26', '2025-09-01', "
         "'2026-05-31', '2026-08-10', 'active', ?, ?)",
         (NOW, NOW),
     )
     connection.execute(
         "INSERT INTO courses "
-        "(id, public_id, season_id, code, name, subject_code, status, sort_order, "
+        "(id, season_id, code, name, subject_code, status, sort_order, "
         "accent_key, created_at, updated_at) VALUES "
-        "(1, 'course-import', 1, 'math', 'Математика', 'math', 'active', 1, "
+        "(1, 1, 'math', 'Математика', 'math', 'active', 1, "
         "'math', ?, ?)",
         (NOW, NOW),
     )
     connection.execute(
         "INSERT INTO groups "
         "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-        "allow_self_switch, is_system, score_weight, public_id, course_id, "
+        "allow_self_switch, is_system, score_weight, course_id, "
         "status, color_key, created_at, updated_at) VALUES "
         "('import-n', 'н', 'Начинающие', 1, 1, 1, 1, 0, 1.0, "
-        "'group-import-n', 1, 'active', 'level-1', ?, ?)",
+        "1, 'active', 'level-1', ?, ?)",
         (NOW, NOW),
     )
     connection.executemany(
         "INSERT INTO course_enrollments "
-        "(id, public_id, student_user_id, course_id, active_group_id, "
+        "(id, student_user_id, course_id, active_group_id, "
         "attendance_mode, status, created_at, updated_at) "
-        "VALUES (?, ?, ?, 1, 'import-n', 'in_person', 'active', ?, ?)",
+        "VALUES (?, ?, 1, 'import-n', 'in_person', 'active', ?, ?)",
         (
-            (1, "enrollment-import-1", 101, NOW, NOW),
-            (2, "enrollment-import-2", 102, NOW, NOW),
+            (1, 101, NOW, NOW),
+            (2, 102, NOW, NOW),
         ),
     )
     course_lesson_id = connection.execute(
         "INSERT INTO course_lessons "
-        "(public_id, course_id, lesson_number, created_at, updated_at) "
-        "VALUES ('course-lesson-import', 1, 41, ?, ?) RETURNING id",
+        "(course_id, lesson_number, created_at, updated_at) "
+        "VALUES (1, 41, ?, ?) RETURNING id",
         (NOW, NOW),
     ).fetchone()[0]
     group_lesson_id = connection.execute(
         "INSERT INTO group_lessons "
-        "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+        "(course_lesson_id, course_id, group_id, cycle_anchor_date, "
         "business_timezone, status, created_at, updated_at) VALUES "
-        "('group-lesson-import', ?, 1, 'import-n', '2026-01-01', "
+        "(?, 1, 'import-n', '2026-01-01', "
         "'Europe/Moscow', 'active', ?, ?) RETURNING id",
         (course_lesson_id, NOW, NOW),
     ).fetchone()[0]
     event_id = connection.execute(
         "INSERT INTO in_person_events "
-        "(public_id, season_id, name, starts_at, ends_at, status, "
+        "(season_id, name, starts_at, ends_at, status, "
         "created_by_user_id, updated_by_user_id, created_at, updated_at) VALUES "
-        "('event-import', 1, 'Очное занятие', '2026-02-01T10:00:00Z', "
+        "(1, 'Очное занятие', '2026-02-01T10:00:00Z', "
         "'2026-02-01T13:00:00Z', 'scheduled', 900, 900, ?, ?) RETURNING id",
         (NOW, NOW),
     ).fetchone()[0]
@@ -209,7 +209,7 @@ def test_import_reports_blockers_without_writing(tmp_path):
         _seed_event(connection)
         report, _plan = analyze_classroom_import(
             connection,
-            event_public_id="event-import",
+            event_public_id="ipe-1",
             source_sha256=source_hash,
             source_sheet="Итог",
             header_row=header_row,
@@ -239,7 +239,7 @@ def test_reviewed_import_applies_atomically_and_replays(tmp_path):
         connection.execute("COMMIT")
         report, _plan = analyze_classroom_import(
             connection,
-            event_public_id="event-import",
+            event_public_id="ipe-1",
             source_sha256=source_hash,
             source_sheet="Итог",
             header_row=header_row,
@@ -252,7 +252,7 @@ def test_reviewed_import_applies_atomically_and_replays(tmp_path):
         with pytest.raises(ClassroomImportRejected, match="preview hash"):
             apply_classroom_import(
                 connection,
-                event_public_id="event-import",
+                event_public_id="ipe-1",
                 source_sha256=source_hash,
                 source_sheet="Итог",
                 header_row=header_row,
@@ -268,7 +268,7 @@ def test_reviewed_import_applies_atomically_and_replays(tmp_path):
         connection.execute("BEGIN IMMEDIATE")
         receipt = apply_classroom_import(
             connection,
-            event_public_id="event-import",
+            event_public_id="ipe-1",
             source_sha256=source_hash,
             source_sheet="Итог",
             header_row=header_row,
@@ -308,7 +308,7 @@ def test_reviewed_import_applies_atomically_and_replays(tmp_path):
         connection.execute("BEGIN IMMEDIATE")
         replay = apply_classroom_import(
             connection,
-            event_public_id="event-import",
+            event_public_id="ipe-1",
             source_sha256=source_hash,
             source_sheet="Итог",
             header_row=header_row,

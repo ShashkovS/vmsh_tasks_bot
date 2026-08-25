@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sqlite3
-import uuid
 from datetime import UTC, datetime
 
 from db_methods.pwa.course_analytics import (
@@ -35,7 +34,6 @@ def calculate_active_courses(
     connection: sqlite3.Connection,
     *,
     completed_at: str,
-    run_token: str,
 ) -> list[tuple[str, int]]:
     """Calculate active courses and return ``(course public id, point count)``."""
 
@@ -58,7 +56,6 @@ def calculate_active_courses(
         )
         save_completed_course_metrics(
             connection,
-            public_id=f"analytics-{course_public_id}-{run_token}",
             course_id=course_id,
             algorithm=ALGORITHM,
             algorithm_version=ALGORITHM_VERSION,
@@ -89,7 +86,6 @@ def run(runtime_config: PwaMaintenanceConfig) -> list[tuple[str, int]]:
     completed_at = (
         datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
     )
-    run_token = uuid.uuid4().hex
     with sqlite3.connect(runtime_config.db_filename, timeout=5) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -97,7 +93,6 @@ def run(runtime_config: PwaMaintenanceConfig) -> list[tuple[str, int]]:
         return calculate_active_courses(
             connection,
             completed_at=completed_at,
-            run_token=run_token,
         )
 
 

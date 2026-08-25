@@ -2,9 +2,11 @@ import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas
 import { expect, test } from './fixtures'
 
 function phase9FamilyPersona(project: string): AuthPersona {
+  const ordinal = ['chromium', 'webkit', 'firefox'].indexOf(project) + 1
+  if (ordinal === 0) throw new Error(`No Family E2E persona for ${project}`)
   return {
     persona: 'family',
-    accountPublicId: `account-classroom-family-e2e-${project}`,
+    accountPublicId: `a-${10200 + ordinal}`,
     audience: 'family',
     username: `classroom-family-e2e-${project}`,
     credentialField: 'password',
@@ -25,12 +27,15 @@ test('Phase 9: Family switches children and opens only their current course cont
     .locator('xpath=../../..')
     .getByRole('button', { name: 'Открыть' })
     .click()
-  await expect(page).toHaveURL(/\/family\/children\/user-student-online-fixture$/)
+  await expect(page).toHaveURL(/\/family\/children\/u-101$/)
   await expect(page.getByRole('heading', { name: 'Алексей Тестовый-Онлайн' })).toBeVisible()
-  await expect(page.getByText('Занятие 923 · Устная E2E firefox')).toBeVisible()
+  const currentLesson = page.getByText(/^Занятие \d+ · /).first()
+  await expect(currentLesson).toBeVisible()
+  const lessonNumber = (await currentLesson.textContent())?.match(/^Занятие (\d+) · /)?.[1]
+  expect(lessonNumber).toBeTruthy()
   await expect(page.getByText(/\d+ зачтено из \d+ задач/).first()).toBeVisible()
   await page.getByRole('button', { name: 'Открыть листок' }).click()
-  await expect(page.getByText('Устная E2E firefox', { exact: true })).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`/family/tasks/[^/]+/[^/]+/${lessonNumber}(?:\\?|$)`))
 
   await page.goto('/family/children')
   await page
@@ -51,7 +56,9 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
   const project = testInfo.project.name
   const firstChild = `Ученик Тестов ${project}`
   const secondChild = `Второй Ребёнок ${project}`
-  const secondChildId = `student-family-second-e2e-${project}`
+  const ordinal = ['chromium', 'webkit', 'firefox'].indexOf(project) + 1
+  if (ordinal === 0) throw new Error(`No Family E2E child for ${project}`)
+  const secondChildId = `u-${10403 + ordinal}`
   await loginThroughUi(page, phase9FamilyPersona(project), '/family/children')
 
   const initialEnrollment = await page.evaluate(async (studentId) => {
@@ -63,9 +70,9 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
     ).enrollments[0]!
   }, secondChildId)
   const targetGroup =
-    initialEnrollment.activeGroupId === 'group-fixture-beginner'
-      ? 'group-fixture-continuing'
-      : 'group-fixture-beginner'
+    initialEnrollment.activeGroupId === 'g-1'
+      ? 'g-2'
+      : 'g-1'
   const targetMode = initialEnrollment.attendanceMode === 'online' ? 'in_person' : 'online'
 
   await page
@@ -113,7 +120,7 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
   const saved = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
-      new URL(response.url()).pathname.endsWith('/course-fixture-math-5-7/enrollment'),
+      new URL(response.url()).pathname.endsWith('/c-1/enrollment'),
   )
   await page.getByRole('button', { name: 'Подтвердить изменения' }).click()
   expect((await saved).status()).toBe(200)

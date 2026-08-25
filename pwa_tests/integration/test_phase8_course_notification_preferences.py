@@ -59,7 +59,7 @@ def test_course_preference_migration_up_down_up_is_exact(tmp_path):
 
 async def test_student_can_override_and_restore_course_push(classroom_http):
     path = (
-        "/student/api/v1/courses/classroom-layout-course/notifications/preferences"
+        "/student/api/v1/courses/c-1/notifications/preferences"
     )
     cookies = {
         COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie

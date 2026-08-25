@@ -376,15 +376,12 @@ test('browser HTTP and WebSocket traffic cannot leave the E2E loopback origin', 
 })
 
 for (const audience of pwaAudiences) {
-  test(`${audience}: manifest and every icon have exact install boundaries`, async ({
-    page,
-    request,
-  }) => {
-    await page.goto(`/${audience}/`)
-    await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
-      'href',
-      `/${audience}/manifest.webmanifest`,
-    )
+  test(`${audience}: manifest and every icon have exact install boundaries`, async ({ request }) => {
+    // Install boundaries are HTTP contracts. Checking the shell through the
+    // request context avoids an unrelated WebKit PWA cold-start timeout.
+    const shellResponse = await request.get(`/${audience}/`)
+    expect(shellResponse.status()).toBe(200)
+    expect(await shellResponse.text()).toContain(`href="/${audience}/manifest.webmanifest"`)
     const response = await request.get(`/${audience}/manifest.webmanifest`)
     expect(response.status()).toBe(200)
     expect(response.headers()['content-type']).toMatch(/application\/(manifest\+json|json)/)

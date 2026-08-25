@@ -14,7 +14,6 @@ import hashlib
 import json
 import re
 import sqlite3
-import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -29,6 +28,7 @@ from models.pwa.submissions import (
     TestAttemptPolicy,
     TestProblemAnswerConfig,
     assess_submission_clock,
+    checker_version,
     evaluate_test_answer,
 )
 
@@ -389,7 +389,6 @@ class _RecheckContext:
 @dataclass(frozen=True, slots=True)
 class _PendingAttempt:
     id: int
-    public_id: str
     student_user_id: int
     display_answer: str
 
@@ -654,13 +653,18 @@ def _resolve_recheck_context(
 
 
 def _recheckable_attempts(
-    connection: sqlite3.Connection, *, problem_id: int
+    connection: sqlite3.Connection,
+    *,
+    problem_id: int,
+    current_checker_version: str,
 ) -> tuple[_PendingAttempt, ...]:
     rows = connection.execute(
-        "SELECT id, public_id, student_user_id, answer_payload_json "
-        "FROM test_attempts WHERE problem_id = ? "
+        "SELECT id, student_user_id, answer_payload_json "
+        "FROM test_attempts WHERE problem_id = ? AND ("
+        "check_status = 'pending_configuration' "
+        "OR (check_status = 'checked' AND checker_version <> ?)) "
         "ORDER BY server_received_at, id",
-        (problem_id,),
+        (problem_id, current_checker_version),
     ).fetchall()
     attempts: list[_PendingAttempt] = []
     for row in rows:
@@ -679,7 +683,6 @@ def _recheckable_attempts(
         attempts.append(
             _PendingAttempt(
                 id=int(row["id"]),
-                public_id=str(row["public_id"]),
                 student_user_id=int(row["student_user_id"]),
                 display_answer=str(answer_payload["displayAnswer"]),
             )
@@ -1087,14 +1090,10 @@ class PwaTestSubmissionRepository:
         factory: PwaConnectionFactory,
         *,
         clock: Callable[[], datetime] | None = None,
-        public_id_factory: Callable[[], str] | None = None,
         trusted_checker_executor: TrustedCheckerExecutor | None = None,
     ) -> None:
         self._factory = factory
         self._clock = clock or (lambda: datetime.now(UTC))
-        self._public_id_factory = public_id_factory or (
-            lambda: f"attempt-{uuid.uuid4().hex}"
-        )
         self._trusted_checker_executor = (
             trusted_checker_executor or TrustedCheckerExecutor()
         )
@@ -1285,7 +1284,11 @@ class PwaTestSubmissionRepository:
             current = _resolve_recheck_context(
                 connection, problem_public_id=problem_public_id
             )
-            return current, _recheckable_attempts(connection, problem_id=current.problem_id)
+            return current, _recheckable_attempts(
+                connection,
+                problem_id=current.problem_id,
+                current_checker_version=checker_version(current.answer_config),
+            )
 
         context, pending_attempts = await self._factory.run_read_async(read_recheck)
         if (
@@ -1364,8 +1367,14 @@ class PwaTestSubmissionRepository:
             }:
                 continue
             current = connection.execute(
-                "SELECT id FROM test_attempts WHERE id = ? AND problem_id = ?",
-                (attempt.id, context.problem_id),
+                "SELECT id FROM test_attempts WHERE id = ? AND problem_id = ? AND ("
+                "check_status = 'pending_configuration' "
+                "OR (check_status = 'checked' AND checker_version <> ?))",
+                (
+                    attempt.id,
+                    context.problem_id,
+                    evaluation.checker_version,
+                ),
             ).fetchone()
             if current is None:
                 skipped_concurrent += 1
@@ -1547,22 +1556,17 @@ class PwaTestSubmissionRepository:
             elif evaluation.check_status.value in {"checked", "failed"}:
                 checked_at = created_at
 
-            attempt_public_id = self._public_id_factory()
-            if not _PUBLIC_ID.fullmatch(attempt_public_id):
-                raise TestSubmissionRepositoryError(
-                    "attempt public ID factory returned an invalid value"
-                )
-            connection.execute(
+            row = connection.execute(
                 "INSERT INTO test_attempts "
-                "(public_id, student_user_id, problem_id, problem_revision_id, "
+                "(student_user_id, problem_id, problem_revision_id, "
                 "answer_payload_json, normalized_answer_json, parse_status, "
                 "counts_as_attempt, check_status, client_created_at, "
                 "server_received_at, clock_skew_seconds, clock_suspicious, "
                 "idempotency_key, payload_sha256, checker_version, verdict, "
                 "result_id, created_at, checked_at) VALUES "
-                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "RETURNING public_id",
                 (
-                    attempt_public_id,
                     context.student_user_id,
                     context.problem_id,
                     context.problem_revision_id,
@@ -1587,7 +1591,8 @@ class PwaTestSubmissionRepository:
                     created_at,
                     checked_at,
                 ),
-            )
+            ).fetchone()
+            attempt_public_id = str(row["public_id"])
             if evaluation.counts_as_attempt:
                 if evaluation.verdict == VERDICT.WRONG_ANSWER:
                     hour_count += 1
