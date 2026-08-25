@@ -114,10 +114,7 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
 
   const view = toCourseEnrollmentView(enrollment)
   return (
-    <PageLayout
-      description="Только ваша личная работа. Здесь нет рейтинга и сравнения с другими школьниками."
-      title="Прогресс"
-    >
+    <PageLayout title="Прогресс">
       <div className="space-y-5">
         <CourseContext
           activeCourseId={view.course.id}
