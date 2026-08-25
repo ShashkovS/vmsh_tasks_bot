@@ -178,7 +178,7 @@ export function StudentHomePage() {
             ))}
         </div>
       ) : null}
-      <PageSection title="Сейчас по курсам">
+      <section>
         {query.data.courses.length === 0 ? (
           <PageStatePanel
             description="Когда вас добавят на курс, он появится здесь."
@@ -226,8 +226,8 @@ export function StudentHomePage() {
             })}
           </div>
         )}
-      </PageSection>
-      <PageSection title="Очные занятия">
+      </section>
+      <PageSection className="mt-8" title="Очные занятия">
         {classroomQuery.isPending ? <PageStatePanel state="loading" /> : null}
         {classroomQuery.error ? (
           <PageStatePanel
