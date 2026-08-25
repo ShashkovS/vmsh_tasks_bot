@@ -1593,6 +1593,22 @@ def _set_figure_scale(
     return updated
 
 
+def _apply_figure_scales(document: Mapping[str, object], scales: Mapping[str, float]) -> None:
+    """Overlay current mutable scale preferences onto an immutable Web AST."""
+
+    problems = document.get("problems")
+    if not isinstance(problems, list):
+        raise ContentRepositoryError("stored web document has invalid problems")
+    for asset_id, scale in scales.items():
+        _set_figure_scale(document.get("introduction"), asset_id=asset_id, scale=scale)
+        for problem in problems:
+            if not isinstance(problem, dict):
+                raise ContentRepositoryError("stored web document has invalid problem")
+            for field in ("preambleBlocks", "blocks", "trailingBlocks"):
+                if field in problem:
+                    _set_figure_scale(problem[field], asset_id=asset_id, scale=scale)
+
+
 def _compile_failure_diagnostic(
     *, source_name: str, message: str, code: str = "compiler.source_invalid"
 ) -> dict[str, object]:
@@ -2333,14 +2349,19 @@ async def content_preview(request: web.Request) -> web.Response:
         kind="web_ast" if preview == "web" else "telegram_html",
     )
     if preview == "web":
+        document = _web_document(
+            derivative,
+            revision_public_id=context.revision.public_id,
+            kind=context.source.kind,
+        )
+        _apply_figure_scales(
+            document,
+            await repository.get_figure_scales(revision_id=context.revision.id),
+        )
         payload: dict[str, object] = {
             "revisionId": context.revision.public_id,
             "kind": "web",
-            "document": _web_document(
-                derivative,
-                revision_public_id=context.revision.public_id,
-                kind=context.source.kind,
-            ),
+            "document": document,
         }
     else:
         if derivative.content_text is None:
@@ -2404,6 +2425,10 @@ async def put_content_figure_scale(request: web.Request) -> web.Response:
         revision_public_id=context.revision.public_id,
         kind=context.source.kind,
     )
+    _apply_figure_scales(
+        document,
+        await repository.get_figure_scales(revision_id=context.revision.id),
+    )
     affected = _set_figure_scale(
         document.get("introduction"), asset_id=asset_id, scale=scale
     )
@@ -2424,10 +2449,11 @@ async def put_content_figure_scale(request: web.Request) -> web.Response:
             code="figure_not_found",
             message="Этот рисунок не найден в текущей версии материала",
         )
-    await repository.replace_web_derivative(
+    await repository.set_figure_scale(
         revision_public_id=context.revision.public_id,
         expected_version=expected_version,
-        content_text=canonical_json(document),
+        asset_id=asset_id,
+        scale=scale,
     )
     await _invalidate_after_commit(
         request,

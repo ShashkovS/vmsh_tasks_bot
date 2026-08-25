@@ -5438,7 +5438,6 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
     assert figure["scale"] == 1.5
     assert updated.headers["ETag"] == compiled.headers["ETag"]
 
-    preview = await fixture.client.get(
     updated_again = await fixture.client.put(
         f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
         json={"assetId": asset_id, "scale": 1.75},
@@ -5452,7 +5451,23 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
         if block["type"] == "figure"
     )
     assert updated_again_figure["scale"] == 1.75
+    scale_rows = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT asset_id, scale FROM content_figure_scales"
+        ).fetchall()
+    )
+    assert [(row["asset_id"], row["scale"]) for row in scale_rows] == [(asset_id, 1.75)]
+    web_derivative_count = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(*) AS count FROM content_derivatives AS derivative "
+            "JOIN content_revisions AS revision ON revision.id = derivative.revision_id "
+            "WHERE revision.public_id = ? AND derivative.kind = 'web_ast'",
+            (revision_id,),
+        ).fetchone()["count"]
+    )
+    assert web_derivative_count == 1
 
+    preview = await fixture.client.get(
         f"/staff/api/v1/content/revisions/{revision_id}/previews/web",
         cookies=_cookie(fixture, "admin"),
         headers=_headers(),
@@ -5464,5 +5479,4 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
         if block["type"] == "figure"
     )
     assert persisted_figure["scale"] == 1.75
-
 

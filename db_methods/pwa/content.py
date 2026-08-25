@@ -1781,6 +1781,40 @@ def _scope_by_group_lesson_id(
     return _group_lesson_content_scope(row)
 
 
+def _overlay_figure_scales(document: dict[str, object], scales: Mapping[str, float]) -> None:
+    """Apply current presentation preferences without changing the Web AST."""
+
+    def overlay_blocks(blocks: object) -> None:
+        if not isinstance(blocks, list):
+            raise ContentRepositoryError("stored web document has invalid blocks")
+        for block in blocks:
+            if not isinstance(block, dict):
+                raise ContentRepositoryError("stored web document has invalid block")
+            if block.get("type") == "figure":
+                asset = block.get("asset")
+                if isinstance(asset, dict) and asset.get("status") == "available":
+                    scale = scales.get(str(asset.get("assetId")))
+                    if scale is not None:
+                        block["scale"] = scale
+                continue
+            if block.get("type") == "list":
+                for item in block.get("items", []):
+                    overlay_blocks(item)
+            elif block.get("type") in {"subpart", "callout"}:
+                overlay_blocks(block.get("blocks"))
+
+    overlay_blocks(document.get("introduction"))
+    problems = document.get("problems")
+    if not isinstance(problems, list):
+        raise ContentRepositoryError("stored web document has invalid problems")
+    for problem in problems:
+        if not isinstance(problem, dict):
+            raise ContentRepositoryError("stored web document has invalid problem")
+        for field in ("preambleBlocks", "blocks", "trailingBlocks"):
+            if field in problem:
+                overlay_blocks(problem[field])
+
+
 class PwaContentRepository:
     """Async-facing repository; each operation owns one SQLite connection."""
 
@@ -3996,6 +4030,14 @@ class PwaContentRepository:
                 or document.get("materialKind") != kind.value
             ):
                 raise ContentRepositoryError("stored web document is invalid")
+            scale_rows = connection.execute(
+                "SELECT asset_id, scale FROM content_figure_scales WHERE revision_id = ?",
+                (row["revision_id"],),
+            ).fetchall()
+            _overlay_figure_scales(
+                document,
+                {str(scale_row["asset_id"]): float(scale_row["scale"]) for scale_row in scale_rows},
+            )
             return PublishedContentRecord(
                 publication=_publication(row),
                 revision_public_id=revision_public_id,
@@ -4099,6 +4141,14 @@ class PwaContentRepository:
                 or not isinstance(document.get("problems"), list)
             ):
                 raise ContentRepositoryError("stored web document is invalid")
+            scale_rows = connection.execute(
+                "SELECT asset_id, scale FROM content_figure_scales WHERE revision_id = ?",
+                (row["revision_id"],),
+            ).fetchall()
+            _overlay_figure_scales(
+                document,
+                {str(scale_row["asset_id"]): float(scale_row["scale"]) for scale_row in scale_rows},
+            )
             source_ordinal = int(row["material_source_ordinal"])
             selected = [
                 problem
@@ -4948,6 +4998,59 @@ class PwaContentRepository:
 
         return await self._factory.run_read_async(read)
 
+    async def get_figure_scales(self, *, revision_id: int) -> dict[str, float]:
+        """Return the current Staff-selected scale for each Web figure."""
+
+        if revision_id < 1:
+            raise ContentInvariantError("revision ID must be positive")
+
+        def read(connection):
+            rows = connection.execute(
+                "SELECT asset_id, scale FROM content_figure_scales WHERE revision_id = ?",
+                (revision_id,),
+            ).fetchall()
+            return {str(row["asset_id"]): float(row["scale"]) for row in rows}
+
+        return await self._factory.run_read_async(read)
+
+    async def set_figure_scale(
+        self,
+        *,
+        revision_public_id: str,
+        expected_version: int,
+        asset_id: str,
+        scale: float,
+    ) -> None:
+        """Upsert one current figure scale without creating content history."""
+
+        _require_public_id(revision_public_id)
+        asset_id = _required_text(asset_id, label="figure asset ID")
+        if expected_version < 1:
+            raise ContentInvariantError("expected version must be positive")
+        if not 0.25 <= scale <= 2.5:
+            raise ContentInvariantError("figure scale is out of range")
+        timestamp = self._timestamp()
+
+        def write(connection):
+            revision = connection.execute(
+                "SELECT * FROM content_revisions WHERE public_id = ?", (revision_public_id,)
+            ).fetchone()
+            if revision is None:
+                raise ContentNotFound("content revision does not exist")
+            if int(revision["version"]) != expected_version:
+                raise ContentVersionConflict("content revision version changed")
+            if RevisionStatus(str(revision["status"])) is not RevisionStatus.READY:
+                raise ContentConflict("figure scale can only be edited after compilation")
+            connection.execute(
+                "INSERT INTO content_figure_scales (revision_id, asset_id, scale, updated_at) "
+                "VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(revision_id, asset_id) DO UPDATE SET "
+                "scale = excluded.scale, updated_at = excluded.updated_at",
+                (revision["id"], asset_id, scale, timestamp),
+            )
+
+        await self._factory.run_write_async(write)
+
     async def invalidate_derivative(self, *, derivative_id: int) -> None:
         timestamp = self._timestamp()
 
@@ -5610,90 +5713,5 @@ class PwaContentRepository:
             if exists is None:
                 raise ContentNotFound("synonym member does not exist")
             raise ContentConflict("synonym member is already removed")
-
-        return await self._factory.run_write_async(write)
-    async def replace_web_derivative(
-        self,
-        *,
-        revision_public_id: str,
-        expected_version: int,
-        content_text: str,
-    ) -> ContentDerivativeRecord:
-        """Atomically replace the active Web document after a Staff-only edit."""
-
-        _require_public_id(revision_public_id)
-        if expected_version < 1:
-            raise ContentInvariantError("expected version must be positive")
-        if not isinstance(content_text, str) or not content_text:
-            raise ContentInvariantError("web document must not be empty")
-        content_hash = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
-        timestamp = self._timestamp()
-        provenance_json = _canonical_json_object(
-            {"operation": "staff_figure_scale"}, label="web derivative provenance"
-        )
-
-        def write(connection):
-            revision = connection.execute(
-                "SELECT * FROM content_revisions WHERE public_id = ?", (revision_public_id,)
-            ).fetchone()
-            if revision is None:
-                raise ContentNotFound("content revision does not exist")
-            if int(revision["version"]) != expected_version:
-                raise ContentVersionConflict("content revision version changed")
-            if RevisionStatus(str(revision["status"])) is not RevisionStatus.READY:
-                raise ContentConflict("web derivative can only be edited after compilation")
-            active = connection.execute(
-                "SELECT id FROM content_derivatives WHERE revision_id = ? "
-                "AND kind = 'web_ast' AND invalidated_at IS NULL "
-                "ORDER BY created_at DESC, id DESC LIMIT 1",
-                (revision["id"],),
-            ).fetchone()
-            if active is None:
-                raise ContentNotFound("active web derivative does not exist")
-            # The schema keeps every derivative immutable and has a unique key
-            # on (revision, kind, renderer_version).  The prior active
-            # derivative ID makes each replacement unique, including a later
-            # return to a scale that was used before.
-            renderer_version = f"staff-figure-scale/v1:{active['id']}"
-            try:
-                connection.execute(
-                    "UPDATE content_derivatives SET invalidated_at = ? WHERE id = ? "
-                    "AND invalidated_at IS NULL",
-                    (timestamp, active["id"]),
-                )
-                derivative = connection.execute(
-                    "INSERT INTO content_derivatives "
-                    "(revision_id, kind, renderer_version, content_text, asset_id, "
-                    "sha256, diagnostics_json, provenance_json, created_at) "
-                    "VALUES (?, 'web_ast', ?, ?, NULL, ?, '[]', ?, ?) "
-                    "RETURNING *",
-                    (
-                        revision["id"],
-                        renderer_version,
-                        content_text,
-                        content_hash,
-                        provenance_json,
-                        timestamp,
-                    ),
-                ).fetchone()
-            except sqlite3.IntegrityError as error:
-                raise _translate_integrity(
-                    error, action="web derivative replacement"
-                ) from error
-            if derivative is None:
-                raise ContentRepositoryError("could not save web derivative")
-            return ContentDerivativeRecord(
-                id=int(derivative["id"]),
-                revision_id=int(derivative["revision_id"]),
-                kind=str(derivative["kind"]),
-                renderer_version=str(derivative["renderer_version"]),
-                sha256=str(derivative["sha256"]),
-                content_text=(
-                    None
-                    if derivative["content_text"] is None
-                    else str(derivative["content_text"])
-                ),
-                asset_id=None if derivative["asset_id"] is None else int(derivative["asset_id"]),
-            )
 
         return await self._factory.run_write_async(write)
