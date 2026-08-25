@@ -17,6 +17,7 @@ from apps.pwa_api.middleware import (
 )
 from apps.pwa_api.realtime_control import realtime_session_controller
 from db_methods.pwa.admin_accounts import (
+    delete_student,
     find_account,
     find_family_account_by_username,
     find_student,
@@ -230,6 +231,51 @@ def _family_link_response(
             "requestId": request["request_id"],
         },
         status=status,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@admin_account_routes.delete("/staff/api/v1/students/{student_public_id}")
+async def delete_student_account(request: web.Request) -> web.Response:
+    """Soft-delete a Student while retaining historical rows and audit evidence."""
+
+    principal = _admin(request)
+    student_public_id = _path_public_id(request, "student_public_id")
+    now = _now()
+
+    def write(connection: sqlite3.Connection) -> dict[str, object] | None:
+        deleted = delete_student(connection, public_id=student_public_id, now=now)
+        if deleted is None:
+            return None
+        insert_audit_event(
+            connection,
+            actor_user_id=principal.linked_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="student.deleted",
+            object_type="student",
+            object_id=student_public_id,
+            request_id=request["request_id"],
+            before_json=json.dumps({"type": "student"}, separators=(",", ":")),
+            after_json=json.dumps({"type": "deleted"}, separators=(",", ":")),
+            occurred_at=now,
+        )
+        return deleted
+
+    deleted = await _factory(request).run_write_async(write)
+    if deleted is None:
+        raise PwaApiError(
+            status=404, code="student_not_found", message="Школьник не найден"
+        )
+    for account in deleted["accounts"]:
+        await _close_account_sockets(request, account)
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "studentId": student_public_id,
+            "deleted": True,
+            "requestId": request["request_id"],
+        },
         headers={"Cache-Control": "no-store"},
     )
 

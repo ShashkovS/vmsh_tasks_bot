@@ -1,5 +1,17 @@
 # Статус плана разработки
 
+## Чистый старт и мягкое удаление школьника — готово к owner-проверке, 25 августа 2026
+
+- Telegram-бот больше не наполняет чистую БД старым Google-sheet при запуске:
+  импорт остаётся явной legacy-операцией. В Staff добавляется мягкое удаление
+  школьника: legacy user переводится в `DELETED`, web-вход выключается, сессии
+  завершаются, а исторические записи не удаляются. Реализация:
+  [`tg_bot.py`](../../../apps/tg_bot.py),
+  [`admin_account_routes.py`](../../../apps/pwa_api/admin_account_routes.py),
+  [`staff-student-directory-page.tsx`](../../apps/staff/src/staff-student-directory-page.tsx).
+- Проверки: Staff account/enrollment HTTP **17 PASS**, contracts/app-shell/Staff
+  typecheck и admin-client Vitest **17 PASS**, Ruff, Prettier и `git diff --check` — PASS.
+
 ## Group announcements deliver to devices — готово к owner-проверке, 25 августа 2026
 
 - Staff «Рассылки» больше не являются только баннерами на «Сейчас»: active

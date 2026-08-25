@@ -79,6 +79,51 @@ def find_student(
     return None if row is None else dict(row)
 
 
+def delete_student(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    now: str,
+) -> dict[str, object] | None:
+    """Hide a legacy Student and revoke the Student web account, retaining history."""
+
+    student = connection.execute(
+        "SELECT id, public_id FROM users WHERE public_id = ? AND type = ?",
+        (public_id, int(USER_TYPE.STUDENT)),
+    ).fetchone()
+    if student is None:
+        return None
+    accounts = connection.execute(
+        "SELECT id, public_id, audience FROM auth_accounts "
+        "WHERE linked_user_id = ? AND audience = 'student'",
+        (student["id"],),
+    ).fetchall()
+    account_ids = tuple(int(account["id"]) for account in accounts)
+    if account_ids:
+        placeholders = ",".join("?" for _ in account_ids)
+        connection.execute(
+            f"UPDATE auth_accounts SET status = 'disabled', "
+            "credential_version = credential_version + 1, updated_at = ? "
+            f"WHERE id IN ({placeholders})",
+            (now, *account_ids),
+        )
+        connection.execute(
+            f"UPDATE auth_sessions SET revoked_at = CASE "
+            "WHEN created_at > ? THEN created_at ELSE ? END, "
+            "revoke_reason = 'account_unavailable', updated_at = ?, version = version + 1 "
+            f"WHERE account_id IN ({placeholders}) AND revoked_at IS NULL",
+            (now, now, now, *account_ids),
+        )
+    connection.execute(
+        "UPDATE users SET type = ?, chat_id = NULL, token = NULL WHERE id = ?",
+        (int(USER_TYPE.DELETED), student["id"]),
+    )
+    return {
+        "student_public_id": str(student["public_id"]),
+        "accounts": [dict(account) for account in accounts],
+    }
+
+
 def find_student_account_by_username(
     connection: sqlite3.Connection, *, username_normalized: str
 ) -> dict[str, object] | None:
@@ -228,6 +273,7 @@ def insert_account_event(
 
 
 __all__ = [
+    "delete_student",
     "find_account",
     "find_family_account_by_username",
     "find_student",

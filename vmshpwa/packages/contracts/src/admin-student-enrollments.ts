@@ -153,6 +153,16 @@ export const adminStudentEnrollmentResponseSchema = z
   .strict()
 export type AdminStudentEnrollmentResponse = z.infer<typeof adminStudentEnrollmentResponseSchema>
 
+export const deleteStudentResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    studentId: publicIdSchema,
+    deleted: z.literal(true),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type DeleteStudentResponse = z.infer<typeof deleteStudentResponseSchema>
+
 export const updateManagedAccountStatusRequestSchema = z
   .object({
     schemaVersion: z.literal(1),

@@ -34,6 +34,12 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
 } from '@vmsh/ui'
@@ -269,6 +275,7 @@ export function StudentDirectoryView({
   saving = false,
   accountSaving = false,
   batchAccountSaving = false,
+  deleteSaving = false,
   familySaving = false,
   showPrivateAccounts = true,
   storageNamespace,
@@ -278,6 +285,7 @@ export function StudentDirectoryView({
   onCreateStudentAccounts,
   onCreateStudentAccount,
   onFamilyChange,
+  onDeleteStudent,
   onSearchChange,
 }: {
   accountId: string
@@ -288,6 +296,7 @@ export function StudentDirectoryView({
   saving?: boolean
   accountSaving?: boolean
   batchAccountSaving?: boolean
+  deleteSaving?: boolean
   familySaving?: boolean
   showPrivateAccounts?: boolean
   storageNamespace: string
@@ -299,8 +308,10 @@ export function StudentDirectoryView({
   ) => Promise<StudentAccountBatchResult>
   onCreateStudentAccount?: (studentId: string, input: CreateStudentAccountRequest) => Promise<void>
   onFamilyChange?: (command: FamilyAccountCommand) => Promise<void>
+  onDeleteStudent?: (studentId: string) => Promise<void>
   onSearchChange: (search: DirectorySearch) => void
 }) {
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const matches = filterStudents(students, search.query)
   const selectedStudent =
     matches.find((student) => student.studentId === search.studentId) ?? matches[0]
@@ -453,7 +464,54 @@ export function StudentDirectoryView({
                   </>
                 ) : null}
               </CardContent>
+              {onDeleteStudent ? (
+                <CardContent className="border-t border-border pt-4">
+                  <Button
+                    disabled={deleteSaving}
+                    onClick={() => setDeleteOpen(true)}
+                    type="button"
+                    variant="destructive"
+                  >
+                    Удалить школьника
+                  </Button>
+                </CardContent>
+              ) : null}
             </Card>
+
+            {onDeleteStudent ? (
+              <Dialog onOpenChange={setDeleteOpen} open={deleteOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Удалить школьника?</DialogTitle>
+                    <DialogDescription>
+                      {fullName(selectedStudent)} исчезнет из административных списков. Его вход
+                      будет отключён; решения и другая история останутся в базе.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      disabled={deleteSaving}
+                      onClick={() => setDeleteOpen(false)}
+                      type="button"
+                      variant="outline"
+                    >
+                      Отмена
+                    </Button>
+                    <Button
+                      disabled={deleteSaving}
+                      onClick={() => {
+                        setDeleteOpen(false)
+                        void onDeleteStudent(selectedStudent.studentId).catch(() => undefined)
+                      }}
+                      type="button"
+                      variant="destructive"
+                    >
+                      {deleteSaving ? 'Удаляем…' : 'Удалить'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ) : null}
 
             {showPrivateAccounts && onAccountChange ? (
               <Card>
@@ -687,6 +745,13 @@ export function StaffStudentDirectoryPage({
       await queryClient.invalidateQueries({ queryKey: adminStudentEnrollmentsQueryKey(scope) })
     },
   })
+  const deleteStudentMutation = useMutation({
+    mutationFn: (studentId: string) => client.deleteStudent(studentId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: adminStudentEnrollmentsQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
 
   if (directory.isPending || (isAdmin && catalog.isPending)) {
     return (
@@ -746,7 +811,8 @@ export function StaffStudentDirectoryPage({
         accountMutation.error ||
         familyMutation.error ||
         createStudentAccountsMutation.error ||
-        createStudentAccountMutation.error ? (
+        createStudentAccountMutation.error ||
+        deleteStudentMutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
               <AlertTitle>Изменение не сохранено</AlertTitle>
@@ -756,7 +822,8 @@ export function StaffStudentDirectoryPage({
                     accountMutation.error ??
                     familyMutation.error ??
                     createStudentAccountsMutation.error ??
-                    createStudentAccountMutation.error)!,
+                    createStudentAccountMutation.error ??
+                    deleteStudentMutation.error)!,
                 )}
               </AlertDescription>
             </AlertContent>
@@ -779,6 +846,7 @@ export function StaffStudentDirectoryPage({
           }
           batchAccountSaving={createStudentAccountsMutation.isPending}
           courses={catalog.data?.courses ?? []}
+          deleteSaving={deleteStudentMutation.isPending}
           familySaving={familyMutation.isPending}
           onAccountChange={async (command) => {
             await accountMutation.mutateAsync(command)
@@ -792,6 +860,13 @@ export function StaffStudentDirectoryPage({
           onCreateStudentAccounts={async (commands) =>
             createStudentAccountsMutation.mutateAsync(commands)
           }
+          {...(isAdmin
+            ? {
+                onDeleteStudent: async (studentId: string) => {
+                  await deleteStudentMutation.mutateAsync(studentId)
+                },
+              }
+            : {})}
           onSave={(command) => mutation.mutate(command)}
           onSearchChange={onSearchChange}
           saving={mutation.isPending}

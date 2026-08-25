@@ -721,4 +721,22 @@ describe('admin course client', () => {
     )
     expect(fetchImplementation.mock.calls[1]?.[1]?.body).toContain('"allowedGroupCodes":["p","n"]')
   })
+
+  it('soft-deletes a student through the dedicated endpoint', async () => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        schemaVersion: 1,
+        studentId: 'u-958003',
+        deleted: true,
+        requestId: 'delete-student',
+      }),
+    )
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await expect(client.deleteStudent('u-958003')).resolves.toMatchObject({ deleted: true })
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/students/u-958003')
+    expect(fetchImplementation.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
 })

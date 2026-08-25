@@ -15,6 +15,64 @@ from pwa_tests.integration.test_classroom_catalog_http_api import (
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
+async def test_admin_soft_deletes_student_and_disables_student_login(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    path = "/staff/api/v1/students/u-958003"
+    teacher = await classroom_http.client.delete(
+        path,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    deleted = await classroom_http.client.delete(
+        path,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert deleted.status == 200, await deleted.text()
+    assert (await deleted.json())["deleted"] is True
+
+    directory = await classroom_http.client.get(
+        "/staff/api/v1/student-enrollments",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert directory.status == 200
+    assert "u-958003" not in {student["studentId"] for student in (await directory.json())["students"]}
+
+    old_session = await classroom_http.client.get(
+        "/student/api/v1/auth/me",
+        headers=_headers(),
+        cookies={"vmsh_student_access": classroom_http.student_cookie},
+    )
+    assert old_session.status == 401
+    login = await classroom_http.client.post(
+        "/student/api/v1/auth/login",
+        json={"username": "classroom-http-student", "telegramToken": "student-password"},
+        headers=_headers(unsafe=True),
+    )
+    assert login.status == 401
+
+    def stored(connection):
+        user = connection.execute(
+            "SELECT type, token, chat_id FROM users WHERE public_id = 'u-958003'"
+        ).fetchone()
+        account = connection.execute(
+            "SELECT status, credential_version FROM auth_accounts WHERE public_id = 'a-3'"
+        ).fetchone()
+        event = connection.execute(
+            "SELECT action FROM audit_events WHERE action = 'student.deleted'"
+        ).fetchone()
+        return user, account, event
+
+    user, account, event = classroom_http.factory.run_read(stored)
+    assert tuple(user.values()) == (int(USER_TYPE.DELETED), None, None)
+    assert tuple(account.values()) == ("disabled", 2)
+    assert event["action"] == "student.deleted"
+
+
 async def test_only_admin_can_change_account_status(
     classroom_http: ClassroomHttpFixture,
     monkeypatch,

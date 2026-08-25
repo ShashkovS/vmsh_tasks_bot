@@ -34,6 +34,7 @@ import {
   createStaffMemberBatchResponseSchema,
   createStaffMemberRequestSchema,
   createStudentAccountRequestSchema,
+  deleteStudentResponseSchema,
   createFamilyAccountRequestSchema,
   familyAccountLinkResponseSchema,
   familyProvisioningApplyRequestSchema,
@@ -86,6 +87,7 @@ import {
   type CreateStaffMemberBatchResponse,
   type CreateStaffMemberRequest,
   type CreateStudentAccountRequest,
+  type DeleteStudentResponse,
   type CreateFamilyAccountRequest,
   type FamilyAccountLinkResponse,
   type FamilyProvisioningApplyRequest,
@@ -179,6 +181,7 @@ export interface AdminCourseClient {
     studentId: string,
     input: CreateStudentAccountRequest,
   ): Promise<ManagedAccountResponse>
+  deleteStudent(studentId: string): Promise<DeleteStudentResponse>
   createFamilyAccount(
     studentId: string,
     input: CreateFamilyAccountRequest,
@@ -465,6 +468,12 @@ export function createAdminCourseClient(
           method: 'POST',
           body: JSON.stringify(createStudentAccountRequestSchema.parse(input)),
         }),
+      )
+    },
+    async deleteStudent(rawStudentId) {
+      const studentId = publicIdSchema.parse(rawStudentId)
+      return deleteStudentResponseSchema.parse(
+        await request(`/students/${encodeURIComponent(studentId)}`, { method: 'DELETE' }),
       )
     },
     async createFamilyAccount(rawStudentId, input) {
