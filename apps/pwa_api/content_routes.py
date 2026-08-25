@@ -144,7 +144,7 @@ _PROBLEM_MATCH_ROW_FIELDS = frozenset(
     {"sourceOrdinal", "sourceItem", "decision", "problemId"}
 )
 _METADATA_GRID_FIELDS = frozenset({"revisionId", "rows"})
-_METADATA_GENERATION_FIELDS = frozenset({"revisionId"})
+_METADATA_GENERATION_FIELDS = frozenset({"revisionId", "confirmedOverwrite"})
 _FIGURE_SCALE_FIELDS = frozenset({"assetId", "scale"})
 _FIGURE_SCALE_VALUES = frozenset(
     {0.25, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2.0, 2.5}
@@ -979,7 +979,11 @@ def _problem_match_payload(
 
 
 def _metadata_grid_payload(
-    grid: ProblemMetadataGrid, *, request_id: str, can_generate_metadata: bool = False
+    grid: ProblemMetadataGrid,
+    *,
+    request_id: str,
+    can_generate_metadata: bool = False,
+    metadata_generation_requires_confirmation: bool = False,
 ) -> dict[str, object]:
     etag = _review_etag(grid.revision_public_id, grid.review_version)
     return {
@@ -988,6 +992,9 @@ def _metadata_grid_payload(
         "version": grid.review_version,
         "etag": etag,
         "canGenerateMetadata": can_generate_metadata,
+        "metadataGenerationRequiresConfirmation": (
+            metadata_generation_requires_confirmation
+        ),
         "rows": [
             {
                 "problemId": row.problem.problem_id,
@@ -2177,10 +2184,10 @@ async def get_metadata_grid(request: web.Request) -> web.Response:
         _metadata_grid_payload(
             grid,
             request_id=_request_id(request),
-            can_generate_metadata=(
-                context.revision.revision_number == 1
-                and bool(grid.rows)
-                and not any(row.reviewed for row in grid.rows)
+            can_generate_metadata=bool(grid.rows),
+            metadata_generation_requires_confirmation=(
+                context.revision.revision_number != 1
+                or any(row.reviewed for row in grid.rows)
             ),
         )
     )
@@ -2193,7 +2200,7 @@ async def get_metadata_grid(request: web.Request) -> web.Response:
 @content_routes.post("/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid/generate")
 @_translate_content_errors
 async def generate_metadata_grid(request: web.Request) -> web.Response:
-    """Generate a reviewable draft only for the original condition upload."""
+    """Generate a reviewable full-grid draft for a condition revision."""
 
     payload = await _json_object(
         request,
@@ -2208,25 +2215,35 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
             message="Укажите revision для генерации metadata",
             details={"field": "revisionId"},
         )
+    confirmed_overwrite = payload.get("confirmedOverwrite", False)
+    if not isinstance(confirmed_overwrite, bool):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Подтверждение перезаписи metadata должно быть булевым значением",
+            details={"field": "confirmedOverwrite"},
+        )
     repository, context, _actor_user_id = await _authorized_metadata_grid(
         request, revision_public_id=revision_public_id
     )
-    # AI filling is an initial-upload convenience, not an editor for later
-    # versions or published/current-state metadata; METADATA-03 in the plan.
-    if context.revision.revision_number != 1:
-        raise PwaApiError(
-            status=409,
-            code="metadata_generation_not_available",
-            message="Генерация доступна только для первой загрузки условия",
-        )
     grid = await repository.get_problem_metadata_grid(
         revision_public_id=revision_public_id
     )
-    if not grid.rows or any(row.reviewed for row in grid.rows):
+    if not grid.rows:
         raise PwaApiError(
             status=409,
             code="metadata_generation_not_available",
-            message="Генерация доступна только до первого сохранения metadata",
+            message="Сначала сопоставьте хотя бы одну задачу для генерации metadata",
+        )
+    if (
+        context.revision.revision_number != 1 or any(row.reviewed for row in grid.rows)
+    ) and not confirmed_overwrite:
+        raise PwaApiError(
+            status=409,
+            code="metadata_generation_confirmation_required",
+            message=(
+                "Подтвердите полную перегенерацию metadata для этой версии условия"
+            ),
         )
     generation_request = MetadataGenerationRequest(
         revision_public_id=context.revision.public_id,

@@ -914,6 +914,7 @@ export const problemMetadataGridSchema = z
     version: z.number().int().positive(),
     etag: contentEtagSchema,
     canGenerateMetadata: z.boolean().optional(),
+    metadataGenerationRequiresConfirmation: z.boolean().optional(),
     rows: z.array(problemMetadataGridRowSchema).max(2_000),
     requestId: z.string().trim().min(1).max(200),
   })
@@ -949,7 +950,7 @@ export const problemMetadataMutationRequestSchema = z
 export type ProblemMetadataMutationRequest = z.infer<typeof problemMetadataMutationRequestSchema>
 
 export const problemMetadataGenerationRequestSchema = z
-  .object({ revisionId: publicIdSchema })
+  .object({ revisionId: publicIdSchema, confirmedOverwrite: z.boolean() })
   .strict()
 export type ProblemMetadataGenerationRequest = z.infer<
   typeof problemMetadataGenerationRequestSchema
@@ -965,9 +966,7 @@ export const problemMetadataGenerationSchema = z
   })
   .strict()
   .superRefine((result, context) => {
-    const identities = result.rows.map(
-      (row) => `${row.sourceOrdinal}\u0000${row.sourceItem}`,
-    )
+    const identities = result.rows.map((row) => `${row.sourceOrdinal}\u0000${row.sourceItem}`)
     const problemIds = result.rows.map((row) => row.problemId)
     if (new Set(identities).size !== identities.length) {
       context.addIssue({ code: 'custom', message: 'Metadata identities must be unique' })

@@ -105,13 +105,14 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   non-test не сохраняет скрытую test-конфигурацию. Пустой checker допустим и
   означает будущий `pending_configuration`, а не ложную успешную проверку.
 - **METADATA-02.** Один `usl-*-*-sol.tex` является источником сразу двух независимых revision — подсказки и решения. В нём присутствуют условия, а блоки подсказки/решения могут быть пустыми. Обе revision позиционно сверяются с опубликованной структурой условия без ручного сопоставления; несовпадение числа задач или пунктов блокирует сборку и требует исправить TeX. Task/answer metadata принадлежит задаче занятия и не дублируется.
-- **METADATA-03.** Только для первой revision исходного condition после полного
-  initial matching и до первого сохранения metadata Staff может запросить
-  несохранённый AI-черновик. Сервер передаёт TeX и уже зафиксированные canonical
-  identities в OpenRouter через async non-streaming structured output; ключ
-  остаётся в profile JSON. Черновик никогда не публикуется автоматически,
-  повторные версии и уже reviewed grid кнопку не получают, а обычное ручное
-  сохранение остаётся единственной mutation-границей.
+- **METADATA-03.** После полного matching Staff может запросить несохранённый
+  AI-черновик для любой revision condition. Для первой пустой revision это
+  обычный initial-fill; для повторной revision либо уже reviewed grid интерфейс
+  и API требуют явного подтверждения полной перегенерации. Сервер передаёт TeX
+  и уже зафиксированные canonical identities в OpenRouter через async
+  non-streaming structured output; ключ остаётся в profile JSON. Черновик
+  никогда не публикуется автоматически: после проверки только обычное ручное
+  сохранение атомарно заменяет полный текущий metadata grid.
 - До появления `problems.public_id` в Phase 3 Staff-only reconciliation wire
   использует legacy integer `problemId` только как candidate/mutation token.
   Он не попадает в Student/Family URL или payload; Phase 3 заменяет эту

@@ -149,6 +149,7 @@ export interface SaveProblemMetadataGridInput {
 export interface GenerateProblemMetadataInput {
   groupLessonId: string
   revisionId: string
+  confirmedOverwrite?: boolean
 }
 
 export interface ContentRequestOptions {
@@ -541,6 +542,7 @@ class BrowserContentApiClient implements ContentApiClient {
     const groupLessonId = publicIdSchema.parse(input.groupLessonId)
     const request = problemMetadataGenerationRequestSchema.parse({
       revisionId: publicIdSchema.parse(input.revisionId),
+      confirmedOverwrite: input.confirmedOverwrite ?? false,
     })
     return this.#json(
       `/group-lessons/${encodeURIComponent(groupLessonId)}/metadata-grid/generate`,

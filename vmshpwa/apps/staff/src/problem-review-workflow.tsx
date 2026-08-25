@@ -562,12 +562,25 @@ export function ProblemReviewWorkflow({
 
   const generateMetadata = async () => {
     if (!metadataResource || !client.generateMetadata) return
+    const confirmedOverwrite = metadataResource.data.metadataGenerationRequiresConfirmation === true
+    if (
+      confirmedOverwrite &&
+      !globalThis.confirm(
+        'Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач.',
+      )
+    ) {
+      return
+    }
     setPending(true)
     setMessage(undefined)
     setMetadataGenerationElapsedSeconds(0)
     setMetadataGenerationStartedAt(Date.now())
     try {
-      const generated = await client.generateMetadata({ groupLessonId, revisionId })
+      const generated = await client.generateMetadata({
+        groupLessonId,
+        revisionId,
+        ...(confirmedOverwrite ? { confirmedOverwrite: true } : {}),
+      })
       const rows = generated.rows.map(generatedMetadataRow)
       writeStoredObject(metadataDraftKey, {
         schemaVersion: 1,
@@ -649,15 +662,28 @@ export function ProblemReviewWorkflow({
         </div>
         {metadataResource.data.canGenerateMetadata && client.generateMetadata ? (
           <div className="flex flex-wrap items-center gap-2">
-            <Button disabled={pending} onClick={() => void generateMetadata()} size="xs" variant="outline">
-              {metadataGenerationStartedAt === undefined ? 'Сгенерировать metadata' : 'Генерируем metadata…'}
+            <Button
+              disabled={pending}
+              onClick={() => void generateMetadata()}
+              size="xs"
+              variant="outline"
+            >
+              {metadataGenerationStartedAt === undefined
+                ? 'Сгенерировать metadata'
+                : 'Генерируем metadata…'}
             </Button>
             {metadataGenerationStartedAt === undefined ? (
               <span className="text-caption text-muted-foreground">
-                Черновик нужно проверить и сохранить вручную.
+                {metadataResource.data.metadataGenerationRequiresConfirmation
+                  ? 'Новая генерация полностью заменит таблицу после подтверждения; затем её нужно проверить и сохранить вручную.'
+                  : 'Черновик нужно проверить и сохранить вручную.'}
               </span>
             ) : (
-              <div aria-live="polite" className="flex min-w-72 flex-1 items-center gap-2 text-caption text-muted-foreground" role="status">
+              <div
+                aria-live="polite"
+                className="flex min-w-72 flex-1 items-center gap-2 text-caption text-muted-foreground"
+                role="status"
+              >
                 <LoaderCircle aria-hidden="true" className="size-4 shrink-0 animate-spin" />
                 <div className="min-w-48 flex-1 space-y-1">
                   <p>

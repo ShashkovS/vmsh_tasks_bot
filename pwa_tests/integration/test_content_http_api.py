@@ -5381,7 +5381,7 @@ async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
     assert malformed_detail.status == 404
 
 
-async def test_staff_generates_metadata_draft_only_for_initial_unreviewed_condition(
+async def test_staff_generates_metadata_draft_for_later_condition_after_confirmation(
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
@@ -5425,11 +5425,13 @@ async def test_staff_generates_metadata_draft_only_for_initial_unreviewed_condit
         headers=_headers(),
     )
     assert initial_grid.status == 200, await initial_grid.text()
-    assert (await initial_grid.json())["canGenerateMetadata"] is True
+    initial_payload = await initial_grid.json()
+    assert initial_payload["canGenerateMetadata"] is True
+    assert initial_payload["metadataGenerationRequiresConfirmation"] is False
 
     generated = await fixture.client.post(
         f"{grid_url}/generate",
-        json={"revisionId": revision["revisionId"]},
+        json={"revisionId": revision["revisionId"], "confirmedOverwrite": False},
         cookies=_cookie(fixture, "admin"),
         headers=_headers(unsafe=True),
     )
@@ -5456,14 +5458,41 @@ async def test_staff_generates_metadata_draft_only_for_initial_unreviewed_condit
         kind="condition",
         filename="generation/condition.tex",
         source="\\задача Найдите 8. \\кзадача",
-        review=False,
+        review=True,
     )
-    later = await fixture.client.post(
+    later_grid = await fixture.client.get(
+        grid_url,
+        params={"revisionId": later_revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert later_grid.status == 200, await later_grid.text()
+    later_grid_payload = await later_grid.json()
+    assert later_grid_payload["canGenerateMetadata"] is True
+    assert later_grid_payload["metadataGenerationRequiresConfirmation"] is True
+
+    missing_confirmation = await fixture.client.post(
         f"{grid_url}/generate",
-        json={"revisionId": later_revision["revisionId"]},
+        json={
+            "revisionId": later_revision["revisionId"],
+            "confirmedOverwrite": False,
+        },
         cookies=_cookie(fixture, "admin"),
         headers=_headers(unsafe=True),
     )
-    assert later.status == 409
-    assert (await later.json())["error"]["code"] == "metadata_generation_not_available"
-    assert len(generator.requests) == 1
+    assert missing_confirmation.status == 409
+    assert (await missing_confirmation.json())["error"]["code"] == (
+        "metadata_generation_confirmation_required"
+    )
+
+    later = await fixture.client.post(
+        f"{grid_url}/generate",
+        json={
+            "revisionId": later_revision["revisionId"],
+            "confirmedOverwrite": True,
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert later.status == 200, await later.text()
+    assert len(generator.requests) == 2

@@ -69,7 +69,7 @@
   из-за системных semaphores), review migration/notification fixtures **13 PASS**
   и review HTTP **10 PASS**; Phase-7 classroom fixtures **21 PASS**, classroom
   HTTP **5 PASS**; Phase-8 news **18 PASS**. `make pwa-schema-update
-  pwa-schema-check` и PWA TypeScript typecheck — PASS, product SHA `8076aeb3…`.
+pwa-schema-check` и PWA TypeScript typecheck — PASS, product SHA `8076aeb3…`.
 - Существующая SQLite БД намеренно не поддерживается: владелец создаст чистую
   БД.
 
@@ -112,9 +112,9 @@ fixture seed-ов — **6 PASS** (Chromium, WebKit, Firefox). Полный PWA E
 - Выбор файла фиксируется в UI синхронно — без ожидания чтения cloud-backed File; его byte snapshot создаётся непосредственно перед upload. Поэтому первый выбор файла виден сразу, а повторный выбор того же файла корректно вызывает `change`.
 - «Найти недостающие рисунки» при `version_conflict` читает revision и ровно один раз повторяет compile с fresh ETag, а не оставляет экран неподвижным. Для terminal invalid revision кнопка `LatexUpload` называется «Обновить статус» и показывает durable diagnostics; uploaded revision продолжает настоящую повторную сборку. [`content-page.tsx`](../../apps/staff/src/content-page.tsx), [`staff-publishing.tsx`](../../packages/product/src/staff-publishing.tsx). Product/Staff typecheck и focused Vitest — PASS.
 
-## AI-черновик metadata для первой загрузки — готово к owner-проверке, 21 августа 2026
+## AI-перегенерация metadata — готово к owner-проверке, 25 августа 2026
 
-- После automatic/manual initial matching Staff видит «Сгенерировать metadata» только для первой revision condition без сохранённых metadata. Ответ OpenRouter заполняет исключительно локальный черновик таблицы; публикации и server mutation до кнопки «Сохранить metadata» нет.
+- После automatic/manual matching Staff может запросить «Сгенерировать metadata» для любой revision condition. Для повторной версии либо уже сохранённой таблицы интерфейс спрашивает подтверждение, а API не выполнит расходующий модель запрос без `confirmedOverwrite`. Ответ OpenRouter полностью заменяет только локальный черновик; публикации и server mutation до кнопки «Сохранить metadata» нет.
 - Серверный адаптер использует официальный async `openrouter` SDK, strict Pydantic JSON Schema, `reasoning_effort="low"` и non-streaming call. Длинный TeX размещён в начале user-prompt, а canonical identities/`problemId` возвращаются и проверяются сервером; лишние или пропущенные model rows отклоняются.
 - Ключ читает только `OPENROUTER_API_KEY` из profile JSON в `Config.openrouter_api_key`, не из environment и не из PWA runtime payload. Full content HTTP + domain generation **51 PASS**, TypeScript contracts/content/Staff и Staff workflow Vitest — PASS; один настоящий structured-output smoke с коротким условием успешно вернул тестовую metadata.
 
@@ -2272,7 +2272,7 @@ fixture seed-ов — **6 PASS** (Chromium, WebKit, Firefox). Полный PWA E
 
 - «Открыть курс» на «Сейчас» (`apps/student/src/student-home-page.tsx`) ведёт
   на `/tasks` с фильтром курса и группы, а `/tasks/$courseCode/$groupCode/
-  $lessonNumber` без `?task=` рендерит ту же ленту (`StudentLessonFeedItem`),
+$lessonNumber` без `?task=` рендерит ту же ленту (`StudentLessonFeedItem`),
   отфильтрованную на занятие. Отдельная простыня `CanonicalStudentWorksheet`
   удалена: интерфейс листка теперь один.
 - В строке номера задачи статус прижат к началу, действие «Открыть» — к
