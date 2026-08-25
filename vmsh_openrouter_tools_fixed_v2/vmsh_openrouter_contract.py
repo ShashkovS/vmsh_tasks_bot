@@ -116,9 +116,20 @@ class ContractModel(BaseModel):
 
 
 class AnswerValidation(ContractModel):
-    mode: ValidationMode = Field(description="Способ предварительной проверки формата ответа.")
+    mode: ValidationMode = Field(
+        description=(
+            "Способ предварительной проверки допустимого формата ответа; "
+            "это не проверка правильного ответа."
+        )
+    )
     regex: str = Field(description="Регулярное выражение без /.../; иначе пустая строка.")
-    choices: list[str] = Field(description="Варианты для типа Выбор; иначе пустой список.")
+    choices: list[str] = Field(
+        description=(
+            "Для типа Выбор — полный список всех вариантов, которые ученик может "
+            "выбрать, включая неверные; никогда не только correct_answers. "
+            "Для остальных типов пустой список."
+        )
+    )
 
     @model_validator(mode="after")
     def validate_consistency(self) -> "AnswerValidation":
@@ -158,10 +169,20 @@ class LessonRow(ContractModel):
     title: str = Field(description="Короткое уникальное название, обычно 2–3 слова.")
     prob_text: str = Field(description="Явная замена текста задачи; обычно пустая строка.")
     prob_type: ProblemType = Field(description="Тип строки, установленный структурным парсером.")
-    ans_type: AnswerType = Field(description="Штатный тип ответа; пусто у нетестовых строк.")
+    ans_type: AnswerType = Field(
+        description=(
+            "Штатный тип ответа; пусто у нетестовых строк. Используй Выбор для "
+            "закрытого списка вариантов из условия, а не Строка с regex."
+        )
+    )
     validation: AnswerValidation
     input_prompt: str = Field(description="Однозначное приглашение к вводу и описание формата.")
-    correct_answers: list[str] = Field(description="Смыслово различные правильные ответы.")
+    correct_answers: list[str] = Field(
+        description=(
+            "Только смыслово различные правильные ответы. Для Выбор это подмножество "
+            "validation.choices, а не источник списка choices."
+        )
+    )
     needs_checker: bool = Field(description="Нужен ли отдельный нестандартный Python-чекер.")
     checker_reason: str = Field(description="Короткая причина необходимости чекера; иначе пусто.")
     wrong_ans: str = Field(description="Короткое сообщение о неверном ответе без подсказки.")
@@ -910,10 +931,16 @@ LESSON_SYSTEM_PROMPT = rf"""
 - МультиМнож сравнивает мультимножество: порядок не важен, повторы важны.
 - ПоследДробей сравнивает последовательность дробей.
 - Выбор: validation.mode="choices", choices содержит все варианты, correct_answers — правильные.
-  input_prompt должен перечислять варианты; локальная нормализация добавит их, если модель пропустит.
+  choices — это полный допустимый домен ответа ученика, поэтому обязательно включи и неверные
+  варианты из условия. Никогда не строй choices только из correct_answers и не раскрывай
+  правильный вариант в input_prompt. Например, для «У кого сумма больше: у Пети или у Васи?»
+  используй Выбор с choices=["Петя", "Вася"] (или теми же формами из условия), а в
+  correct_answers оставь только верный вариант. input_prompt должен перечислять все варианты;
+  локальная нормализация добавит их, если модель пропустит.
 - Строка всегда требует validation.mode="regex" и осмысленную регулярку. Для одного точного
   слова используй регистронезависимую регулярку, например (?i:бам). Выбор используй только
-  когда ученику действительно предъявляется закрытый список вариантов.
+  когда ученику действительно предъявляется закрытый список вариантов; не превращай такой
+  список в Строку и regex по одному правильному ответу.
 - Символьное требует строгого равенства выражений; Эквивалентно допускает алгебраически
   эквивалентную запись.
 - Для остальных штатных типов validation.mode="builtin".
@@ -969,6 +996,10 @@ FACT_REVIEW_SYSTEM_PROMPT = r"""
 3. solution_latex и hint_latex;
 4. самостоятельное решение.
 Проверяй явный ответ по условию и решению, а не копируй его вслепую.
+validation описывает весь допустимый формат ответа, а не только правильный ответ. Для ans_type
+"Выбор" choices должен содержать все предложенные ученику варианты, включая неверные, а
+correct_answers — только правильные из них. Если draft сузил choices до correct_answers или
+заменил закрытый выбор Строкой/regex, исправь это.
 
 verdict="confirmed": скопируй все фактологические поля DRAFT_FACTS дословно и reason="".
 verdict="corrected": измени только доказуемо неверные фактологические поля и кратко объясни reason.
@@ -1091,6 +1122,28 @@ def _answer_type_hint(task: ParsedTask, row: ExpectedRow) -> tuple[str, list[str
     statement, answer = _task_part(task, row)
     statement_plain = _strip_simple_tex(statement)
     lowered = statement_plain.lower()
+    if re.search(r"\bу\s+кого\b", lowered):
+        preamble = task.statement.split(r"\пункт", maxsplit=1)[0]
+        stop_words = {
+            "Если",
+            "Как",
+            "Какая",
+            "Какой",
+            "Когда",
+            "Кто",
+            "На",
+            "Несколько",
+            "Сколько",
+        }
+        names = list(
+            dict.fromkeys(
+                name
+                for name in re.findall(r"\b[А-ЯЁ][а-яё]{1,30}\b", _strip_simple_tex(preamble))
+                if name not in stop_words
+            )
+        )
+        if len(names) >= 2:
+            return "Выбор", names
     count_words = {"два": "ДваЦелых", "две": "ДваЦелых", "три": "ТриЦелых", "четыре": "ЧетыреЦелых"}
     match = re.search(r"(?:введите|укажите|запишите)[^.!?]{0,80}\b(два|две|три|четыре)\b[^.!?]{0,40}\bчисл", lowered)
     if match:
@@ -1110,6 +1163,34 @@ def _answer_type_hint(task: ParsedTask, row: ExpectedRow) -> tuple[str, list[str
     if len(answer_numbers) == 1 and re.search(r"\bсколько\b", lowered):
         return ("Целое" if answer_numbers[0].startswith("-") else "Натуральное"), []
     return "", []
+
+
+def _choice_answer_key(value: str) -> str:
+    """Compare a named choice with a natural answer such as ``У Васи``."""
+
+    normalized = _plain_answer_text(value).casefold().replace("ё", "е")
+    normalized = re.sub(r"^(?:у|за|от|для)\s+", "", normalized)
+    normalized = re.sub(r"[яи]$", "", normalized)
+    return re.sub(r"[^a-zа-я0-9]+", "", normalized)
+
+
+def _align_choice_answers_with_options(
+    answers: Sequence[str], choices: Sequence[str]
+) -> list[str]:
+    """Keep stored correct answers in the exact form offered to a student."""
+
+    by_key = {
+        _choice_answer_key(choice): choice.strip()
+        for choice in choices
+        if choice.strip()
+    }
+    return list(
+        dict.fromkeys(
+            by_key.get(_choice_answer_key(answer), answer.strip())
+            for answer in answers
+            if answer.strip()
+        )
+    )
 
 
 def _explicit_answer_for_row(task: ParsedTask, row: ExpectedRow, ans_type: str) -> list[str]:
@@ -1315,6 +1396,9 @@ def canonicalize_with_source(markup: LessonMarkup, parsed: ParsedLesson) -> Less
         if ans_type == "Выбор" and data.get("status") != "needs_image":
             validation = data.get("validation") or {}
             choices = list(validation.get("choices") or [])
+            data["correct_answers"] = _align_choice_answers_with_options(
+                list(data.get("correct_answers") or []), choices
+            )
             data["input_prompt"] = _ensure_choice_prompt(
                 str(data.get("input_prompt") or ""),
                 choices,

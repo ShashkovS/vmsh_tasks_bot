@@ -15,6 +15,7 @@ from helpers.pwa.content.metadata_generation import (
     _upstream_generation_error,
     _user_prompt,
 )
+from vmsh_openrouter_tools_fixed_v2 import vmsh_openrouter_contract as markup_contract
 
 
 def _request() -> MetadataGenerationRequest:
@@ -217,6 +218,69 @@ def test_metadata_generation_maps_verified_choice_contract_to_pwa_fields():
     assert result.rows[0]["answerValidation"] == "да;нет"
     assert result.rows[0]["correctAnswer"] == "да"
     assert result.warnings == ("Проверьте выбор.",)
+
+
+def test_source_markup_turns_named_closed_question_into_complete_choice():
+    source = r"""
+\begin{document}
+\раздел{<<Тест>> задачи}
+\задача
+Петя взял числа, а Вася взял другие числа.
+\пункт У кого сумма получилась больше?
+\пункт На сколько?
+\кзадача
+\ответ
+\пункт У Васи.
+\пункт На 34.
+\кответ
+\end{document}
+"""
+    parsed = markup_contract.parse_lesson_structure(source, 0, "п")
+    rows = [
+        markup_contract.LessonRow(
+            row_id=expected.row_id,
+            prob=expected.prob,
+            item=expected.item,
+            source_title="",
+            title=f"Черновик {expected.item}",
+            prob_text="",
+            prob_type="Тест",
+            ans_type="Строка",
+            validation={
+                "mode": "regex",
+                "regex": "(?i:(?:У Васи))",
+                "choices": [],
+            },
+            input_prompt="Введите ответ.",
+            correct_answers=["У Васи" if expected.item == "а" else "34"],
+            needs_checker=False,
+            checker_reason="",
+            wrong_ans="Нет.",
+            congrat="Верно!",
+            answer_source="explicit_answer",
+            status="ready",
+            image_dependency={"required_for": [], "references": []},
+            notes=[],
+        )
+        for expected in parsed.rows
+    ]
+    markup = markup_contract.LessonMarkup(
+        schema_version="vmsh-lesson-json-v3",
+        lesson_number=0,
+        lesson_group="п",
+        rows=rows,
+        warnings=[],
+    )
+
+    fixed = markup_contract.canonicalize_with_source(markup, parsed)
+
+    selected = fixed.rows[0]
+    assert selected.ans_type == "Выбор"
+    assert selected.validation.mode == "choices"
+    assert selected.validation.choices == ["Петя", "Вася"]
+    assert selected.correct_answers == ["Вася"]
+    assert all(name in selected.input_prompt for name in ("Петя", "Вася"))
+    assert markup_contract.audit_lesson_markup(fixed, parsed)[0] == []
 
 
 def test_metadata_generation_never_uses_a_provisional_answer_that_needs_checker():
