@@ -1134,6 +1134,22 @@ def test_web_document_preserves_source_figure_float_hint() -> None:
     assert figure["widthHint"] == "16.667%"
 
 
+def test_telegram_figure_has_no_generated_caption() -> None:
+    descriptor = _published_asset(
+        asset_id="asset:telegram-figure",
+        content_sha256="a" * 64,
+        media_type="image/svg+xml",
+    )
+    result = _compile(
+        r"\задача \rightpicture{0mm}{0mm}{30mm}{figure.svg} Условие. \кзадача",
+        known_assets={"figure.svg": descriptor},
+    )
+
+    assert "<figure><img" in result.telegram.content
+    assert "<figcaption>" not in result.telegram.content
+    assert "Математический рисунок" not in result.telegram.content
+
+
 def test_web_document_preserves_relative_width_and_intrinsic_fallback() -> None:
     result = _compile(
         r"\задача "
@@ -1192,7 +1208,7 @@ def test_condition_attaches_inter_problem_content_to_the_following_problem() -> 
     result = _compile(
         r"\задача Условие 1. \кзадача"
         r"\раздел{Общий комментарий} Текст вне задачи."
-        r"\includegraphics{figures/preamble.svg}"
+        r"\rightpicture{0mm}{0mm}{30mm}{figures/preamble.svg}"
         r"\задача Условие 2. \кзадача"
     )
 
@@ -1208,9 +1224,10 @@ def test_condition_attaches_inter_problem_content_to_the_following_problem() -> 
     assert [block["type"] for block in second["preambleBlocks"]] == [
         "heading",
         "paragraph",
-        "figure",
     ]
-    assert second["preambleBlocks"][2]["asset"] == {
+    assert [block["type"] for block in second["blocks"]] == ["figure", "paragraph"]
+    assert second["blocks"][0]["floatHint"] == "right"
+    assert second["blocks"][0]["asset"] == {
         "status": "missing",
         "logicalName": "figures/preamble.svg",
     }

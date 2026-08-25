@@ -125,7 +125,7 @@ def _figure(
     caption = html.escape(node.alt_text, quote=False)
     if url is None:
         if target == "telegram":
-            return f"<aside>Рисунок: {caption}</aside>"
+            return "<aside>Рисунок пока недоступен.</aside>"
         reference = html.escape(node.logical_name, quote=True)
         return (
             f'<figure data-asset-ref="{reference}">'
@@ -136,7 +136,9 @@ def _figure(
     source = html.escape(url, quote=True)
     alt = html.escape(node.alt_text, quote=True)
     if target == "telegram":
-        return f'<figure><img src="{source}" alt="{alt}"/><figcaption>{caption}</figcaption></figure>'
+        # ``alt`` stays available to the client, but it is not a visible
+        # caption in the Telegram worksheet.  The source has no caption here.
+        return f'<figure><img src="{source}" alt="{alt}"/></figure>'
     attributes = [f'src="{source}"', f'alt="{alt}"', 'loading="lazy"']
     if node.width_hint:
         attributes.append(

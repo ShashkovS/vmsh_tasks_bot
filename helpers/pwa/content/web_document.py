@@ -391,6 +391,32 @@ def _problem_blocks(
     return blocks
 
 
+def _split_condition_preamble(
+    blocks: Sequence[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Keep a source-side float with the condition it introduces.
+
+    In worksheets a ``\\righttikz`` command conventionally appears after a
+    section's explanatory text and immediately before ``\\задача``.  It is
+    therefore structurally between problems, but visually floats beside the
+    following condition.  The non-floating blocks remain that condition's
+    preamble; the float is emitted first in its body so CSS can float it beside
+    the condition text.  See CONTENT-IMPORT-03.
+    """
+
+    preamble: list[dict[str, Any]] = []
+    leading_figures: list[dict[str, Any]] = []
+    for block in blocks:
+        if block.get("type") == "figure" and block.get("floatHint") in {
+            "left",
+            "right",
+        }:
+            leading_figures.append(block)
+        else:
+            preamble.append(block)
+    return preamble, leading_figures
+
+
 def render_web_document(
     document: DocumentAst,
     *,
@@ -423,7 +449,12 @@ def render_web_document(
         # task made the focused task route omit it together with the previous
         # task.  CONTENT-IMPORT-03: attach that preamble to the next problem.
         if role is ContentRole.CONDITION and pending_condition_blocks:
-            preamble_blocks = pending_condition_blocks
+            preamble_blocks, leading_figures = _split_condition_preamble(
+                pending_condition_blocks
+            )
+            # The figure must precede the paragraph in the DOM: CSS floats do
+            # not affect text that was already emitted before the float.
+            blocks = leading_figures + blocks
             pending_condition_blocks = []
         if not blocks and not preamble_blocks:
             continue
