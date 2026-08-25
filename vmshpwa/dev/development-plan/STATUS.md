@@ -115,6 +115,7 @@ fixture seed-ов — **6 PASS** (Chromium, WebKit, Firefox). Полный PWA E
 ## AI-перегенерация metadata — готово к owner-проверке, 25 августа 2026
 
 - После automatic/manual matching Staff может запросить «Сгенерировать metadata» для любой revision condition. Для повторной версии либо уже сохранённой таблицы интерфейс спрашивает подтверждение, а API не выполнит расходующий модель запрос без `confirmedOverwrite`. Ответ OpenRouter полностью заменяет только локальный черновик; публикации и server mutation до кнопки «Сохранить metadata» нет.
+- В workflow показан явный результат генерации: successful response подтверждает замену черновика, а ошибка OpenRouter/API остаётся рядом с кнопкой, а не исчезает вместе с progress loader.
 - Серверный адаптер использует официальный async `openrouter` SDK, strict Pydantic JSON Schema, `reasoning_effort="low"` и non-streaming call. Длинный TeX размещён в начале user-prompt, а canonical identities/`problemId` возвращаются и проверяются сервером; лишние или пропущенные model rows отклоняются.
 - Ключ читает только `OPENROUTER_API_KEY` из profile JSON в `Config.openrouter_api_key`, не из environment и не из PWA runtime payload. Full content HTTP + domain generation **51 PASS**, TypeScript contracts/content/Staff и Staff workflow Vitest — PASS; один настоящий structured-output smoke с коротким условием успешно вернул тестовую metadata.
 

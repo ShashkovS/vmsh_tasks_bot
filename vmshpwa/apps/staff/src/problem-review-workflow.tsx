@@ -704,6 +704,25 @@ export function ProblemReviewWorkflow({
             )}
           </div>
         ) : null}
+        {message ? (
+          <Alert role="alert" tone="danger">
+            <AlertContent>
+              <AlertTitle>Не удалось сгенерировать metadata</AlertTitle>
+              <AlertDescription>{message}</AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
+        {generatedRows ? (
+          <Alert tone="success">
+            <AlertContent>
+              <AlertTitle>Черновик metadata обновлён</AlertTitle>
+              <AlertDescription>
+                Результат генерации уже показан в таблице ниже. Проверьте его и нажмите «Сохранить
+                метаданные», чтобы заменить текущую конфигурацию задач.
+              </AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
         {generationWarnings.length ? (
           <Alert tone="warning">
             <AlertContent>
