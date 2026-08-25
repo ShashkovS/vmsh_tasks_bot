@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, KeyRound, Lightbulb, PencilLine } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, ChevronDown, ChevronUp, KeyRound, Lightbulb, PencilLine } from 'lucide-react'
 
 import {
   CourseNetworkError,
@@ -380,6 +381,7 @@ export function CanonicalStudentTask({
   submissionClosed?: boolean
 }) {
   const authentication = useAuthentication()
+  const navigate = useNavigate()
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'student') throw new Error('Student task requires a Student principal')
   const database = useOfflineDatabase()
@@ -455,6 +457,23 @@ export function CanonicalStudentTask({
 
   return (
     <StudentPublishedContentPage
+      beforeDocument={
+        <div className="mb-4 flex justify-start border-b border-border pb-3 font-sans">
+          <Button
+            onClick={() =>
+              void navigate({
+                to: '/tasks',
+                search: { course: courseId, group: groupId },
+              })
+            }
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            К листку
+          </Button>
+        </div>
+      }
       containerClassName={STUDENT_SHEET_CONTAINER_CLASS}
       documentClassName={STUDENT_SHEET_CLASS}
       groupLessonId={groupLessonId}
