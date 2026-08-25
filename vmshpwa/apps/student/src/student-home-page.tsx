@@ -214,8 +214,8 @@ export function StudentHomePage() {
                     void navigate({
                       to: '/tasks',
                       search: {
-                        course: course.enrollment.course.courseId,
-                        group: activeGroup.groupId,
+                        course: course.enrollment.course.code,
+                        group: activeGroup.code,
                       },
                     })
                   }}

@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { BookOpen, ChevronRight } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   CourseNetworkError,
@@ -322,7 +322,11 @@ function StudentLessonArchive({
           activeCourseId={enrollment.course.courseId}
           courses={enrollments.map((candidate) => toCourseEnrollmentView(candidate).course)}
           onCourseChange={(courseId) => {
-            void navigate({ search: { course: courseId }, replace: true })
+            const nextEnrollment = enrollments.find(
+              (candidate) => candidate.course.courseId === courseId,
+            )
+            if (!nextEnrollment) return
+            void navigate({ search: { course: nextEnrollment.course.code }, replace: true })
           }}
         />
       ) : null}
@@ -333,8 +337,12 @@ function StudentLessonArchive({
         groups={enrollmentView.allowedGroups}
         helpText={null}
         onChange={(nextGroupId) => {
+          const nextGroup = enrollment.allowedGroups.find(
+            (candidate) => candidate.groupId === nextGroupId,
+          )
+          if (!nextGroup) return
           void navigate({
-            search: { course: enrollment.course.courseId, group: nextGroupId },
+            search: { course: enrollment.course.code, group: nextGroup.code },
             replace: true,
           })
         }}
@@ -386,6 +394,7 @@ function StudentLessonArchive({
 
 /** Production Student Tasks/archive boundary from Phase 3. */
 export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch }) {
+  const navigate = useNavigate({ from: '/tasks/' })
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'student') throw new Error('Student tasks require a Student principal')
@@ -408,6 +417,33 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
     accountId: principal.accountId,
   })
 
+  const context = accessQuery.data
+    ? resolveStudentTasksContext(accessQuery.data, search)
+    : undefined
+  useEffect(() => {
+    if (context?.kind !== 'ready') return
+    const selectedGroup = context.enrollment.allowedGroups.find(
+      (group) => group.groupId === context.groupId,
+    )
+    if (!selectedGroup) return
+    const canonicalCourse = context.enrollment.course.code
+    const canonicalGroup = selectedGroup.code
+    if (
+      (search.course === undefined || search.course === canonicalCourse) &&
+      (search.group === undefined || search.group === canonicalGroup)
+    ) {
+      return
+    }
+    void navigate({
+      search: {
+        ...search,
+        ...(search.course === undefined ? {} : { course: canonicalCourse }),
+        ...(search.group === undefined ? {} : { group: canonicalGroup }),
+      },
+      replace: true,
+    })
+  }, [context, navigate, search])
+
   let content
   if (accessQuery.isPending) {
     content = <PageStatePanel state="loading" />
@@ -422,15 +458,15 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
       />
     )
   } else {
-    const context = resolveStudentTasksContext(accessQuery.data, search)
+    const loadedContext = resolveStudentTasksContext(accessQuery.data, search)
     content =
-      context.kind === 'empty' ? (
+      loadedContext.kind === 'empty' ? (
         <PageStatePanel
           description="Когда вас добавят на курс, здесь появятся опубликованные листки."
           state="empty"
           title="Нет доступных курсов"
         />
-      ) : context.kind === 'forbidden' ? (
+      ) : loadedContext.kind === 'forbidden' ? (
         <PageStatePanel
           description="Выберите курс и группу из тех, которые доступны вашей учётной записи."
           state="forbidden"
@@ -438,10 +474,10 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
       ) : (
         <StudentLessonArchive
           client={client}
-          enrollment={context.enrollment}
+          enrollment={loadedContext.enrollment}
           enrollments={accessQuery.data.enrollments}
-          groupId={context.groupId}
-          key={`${context.enrollment.course.courseId}:${context.groupId}`}
+          groupId={loadedContext.groupId}
+          key={`${loadedContext.enrollment.course.courseId}:${loadedContext.groupId}`}
           principal={{ audience: 'student', accountId: principal.accountId }}
         />
       )

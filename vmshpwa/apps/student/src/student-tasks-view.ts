@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 import {
-  publicIdSchema,
   type CourseEnrollment,
   type StudentCourseAccessResponse,
   type StudentLessonSummary,
@@ -17,9 +16,19 @@ import {
 } from '@vmsh/product'
 
 /** Shareable Student Tasks context; URL state never grants server access. */
+const courseContextCodeSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .regex(/^[\p{L}\p{N}][\p{L}\p{N}._:-]*$/u)
+
 export const studentTasksSearchSchema = z.object({
-  course: publicIdSchema.optional(),
-  group: publicIdSchema.optional(),
+  // Course and group codes are readable, stable shareable context.  Public
+  // identifiers remain accepted below only to make previously shared links
+  // work; navigation always emits the short codes.
+  course: courseContextCodeSchema.optional(),
+  group: courseContextCodeSchema.optional(),
   lesson: z.coerce.number().int().nonnegative().optional(),
   view: z.enum(['list', 'sheet']).optional().catch(undefined),
   topic: z.string().trim().min(1).max(100).optional(),
@@ -37,15 +46,25 @@ export function resolveStudentTasksContext(
 ): StudentTasksContext {
   if (access.enrollments.length === 0) return { kind: 'empty' }
   const enrollment = search.course
-    ? access.enrollments.find((candidate) => candidate.course.courseId === search.course)
+    ? access.enrollments.find(
+        (candidate) =>
+          candidate.course.code.localeCompare(search.course!, 'ru-RU', { sensitivity: 'accent' }) ===
+            0 || candidate.course.courseId === search.course,
+      )
     : access.enrollments[0]
   if (!enrollment) return { kind: 'forbidden', resource: 'course' }
 
-  const groupId = search.group ?? enrollment.activeGroupId
-  if (!enrollment.allowedGroups.some((group) => group.groupId === groupId)) {
+  const group = search.group
+    ? enrollment.allowedGroups.find(
+        (candidate) =>
+          candidate.code.localeCompare(search.group!, 'ru-RU', { sensitivity: 'accent' }) === 0 ||
+          candidate.groupId === search.group,
+      )
+    : enrollment.allowedGroups.find((candidate) => candidate.groupId === enrollment.activeGroupId)
+  if (!group) {
     return { kind: 'forbidden', resource: 'group' }
   }
-  return { kind: 'ready', enrollment, groupId }
+  return { kind: 'ready', enrollment, groupId: group.groupId }
 }
 
 export function lessonHeading(lesson: StudentLessonSummary): string {

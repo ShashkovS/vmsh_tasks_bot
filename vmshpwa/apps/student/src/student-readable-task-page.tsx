@@ -101,7 +101,9 @@ export function StudentReadableTaskPage({
     <ReadableLesson
       client={client}
       {...(displayNumber ? { displayNumber } : {})}
+      courseCode={enrollment.course.code}
       enrollment={enrollment}
+      groupCode={group.code}
       groupId={group.groupId}
       lessonNumber={lessonNumber}
       principal={{ audience: 'student', accountId: principal.accountId }}
@@ -111,15 +113,19 @@ export function StudentReadableTaskPage({
 
 function ReadableLesson({
   client,
+  courseCode,
   displayNumber,
   enrollment,
+  groupCode,
   groupId,
   lessonNumber,
   principal,
 }: {
   client: ReturnType<typeof createOfflineStudentCourseClient>
+  courseCode: string
   displayNumber?: string
   enrollment: CourseEnrollment
+  groupCode: string
   groupId: string
   lessonNumber: number
   principal: { audience: 'student'; accountId: string }
@@ -176,8 +182,10 @@ function ReadableLesson({
   return (
     <ReadableProblem
       client={client}
+      courseCode={courseCode}
       courseId={courseId}
       displayNumber={displayNumber}
+      groupCode={groupCode}
       groupId={groupId}
       groupLessonId={lesson.groupLessonId}
       submissionClosed={
@@ -190,16 +198,20 @@ function ReadableLesson({
 
 function ReadableProblem({
   client,
+  courseCode,
   courseId,
   displayNumber,
+  groupCode,
   groupId,
   groupLessonId,
   principal,
   submissionClosed,
 }: {
   client: ReturnType<typeof createOfflineStudentCourseClient>
+  courseCode: string
   courseId: string
   displayNumber: string
+  groupCode: string
   groupId: string
   groupLessonId: string
   principal: { audience: 'student'; accountId: string }
@@ -232,7 +244,9 @@ function ReadableProblem({
   }
   return (
     <CanonicalStudentTask
+      courseCode={courseCode}
       courseId={courseId}
+      groupCode={groupCode}
       groupId={groupId}
       groupLessonId={groupLessonId}
       submissionClosed={submissionClosed}

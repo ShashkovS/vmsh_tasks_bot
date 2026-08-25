@@ -368,13 +368,17 @@ export const STUDENT_SHEET_CLASS =
  * feed. Same sheet geometry as the feed card so the paper does not shift.
  */
 export function CanonicalStudentTask({
+  courseCode,
   courseId,
+  groupCode,
   groupId,
   groupLessonId,
   taskId,
   submissionClosed = false,
 }: {
+  courseCode: string
   courseId: string
+  groupCode: string
   groupId: string
   groupLessonId: string
   taskId: string
@@ -463,7 +467,7 @@ export function CanonicalStudentTask({
             onClick={() =>
               void navigate({
                 to: '/tasks',
-                search: { course: courseId, group: groupId },
+                search: { course: courseCode, group: groupCode },
               })
             }
             size="sm"
