@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ImagePlus, SendHorizontal, X } from 'lucide-react'
+import { Camera, ChevronLeft, ChevronRight, ImagePlus, SendHorizontal, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { Button, cn } from '@vmsh/ui'
@@ -112,6 +112,10 @@ export interface ChatComposerProps {
   onAttach?: () => void
   attachLabel?: string
   attachDisabled?: boolean
+  /** Opens the device camera when the surrounding form supports photo capture. */
+  onCapture?: () => void
+  captureLabel?: string
+  captureDisabled?: boolean
   attachments?: AttachmentView[]
   onMoveAttachmentUp?: (id: string) => void
   onMoveAttachmentDown?: (id: string) => void
@@ -131,6 +135,9 @@ export function ChatComposer({
   onAttach,
   attachLabel = 'Добавить фото',
   attachDisabled,
+  onCapture,
+  captureLabel = 'Сделать фото',
+  captureDisabled,
   attachments = [],
   onMoveAttachmentUp,
   onMoveAttachmentDown,
@@ -158,6 +165,18 @@ export function ChatComposer({
             variant="outline"
           >
             <ImagePlus aria-hidden="true" />
+          </Button>
+        ) : null}
+        {onCapture ? (
+          <Button
+            aria-label={captureLabel}
+            disabled={captureDisabled ?? attachDisabled}
+            onClick={onCapture}
+            size="icon"
+            title={captureLabel}
+            variant="outline"
+          >
+            <Camera aria-hidden="true" />
           </Button>
         ) : null}
         <div className="min-w-0 flex-1">{children}</div>

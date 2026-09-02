@@ -342,6 +342,7 @@ export function StudentWrittenSubmission({
   )
   const refetchThread = threadQuery.refetch
   const inputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const deliveryActive = useRef(false)
   const photoProcessing = useRef(new Map<string, AbortController>())
   const [hydrated, setHydrated] = useState(false)
@@ -569,9 +570,11 @@ export function StudentWrittenSubmission({
     }
   }
 
-  const selectPhotos = async (files: FileList | null) => {
+  const selectPhotos = async (files: FileList | null, input: HTMLInputElement) => {
     if (!files) return
     const selected = [...files].slice(0, Math.max(0, 10 - photos.length - pendingPhotos.length))
+    // Reset before processing so that taking the same picture again triggers change.
+    input.value = ''
     for (const file of selected) {
       const id = crypto.randomUUID()
       const controller = new AbortController()
@@ -609,7 +612,6 @@ export function StudentWrittenSubmission({
         photoProcessing.current.delete(id)
       }
     }
-    if (inputRef.current) inputRef.current.value = ''
   }
 
   const move = (photoId: string, offset: -1 | 1) => {
@@ -840,8 +842,16 @@ export function StudentWrittenSubmission({
         accept="image/*,.heic,.heif"
         className="sr-only"
         multiple
-        onChange={(event) => void selectPhotos(event.currentTarget.files)}
+        onChange={(event) => void selectPhotos(event.currentTarget.files, event.currentTarget)}
         ref={inputRef}
+        type="file"
+      />
+      <input
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        onChange={(event) => void selectPhotos(event.currentTarget.files, event.currentTarget)}
+        ref={cameraInputRef}
         type="file"
       />
 
@@ -894,6 +904,7 @@ export function StudentWrittenSubmission({
                 }
               : {})}
             onAttach={() => inputRef.current?.click()}
+            onCapture={() => cameraInputRef.current?.click()}
             onMoveAttachmentDown={(id) => move(id, 1)}
             onMoveAttachmentUp={(id) => move(id, -1)}
             onRemoveAttachment={(id) => void remove(id)}

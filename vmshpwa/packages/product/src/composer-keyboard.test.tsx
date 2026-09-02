@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { ChatComposer } from './chat-composer'
 import { SubmissionComposer } from './submission-composer'
 import { SupportComposer } from './support-dialogue'
 
@@ -53,5 +54,21 @@ describe('composer keyboard submission', () => {
 
     expect(onTextPaste).toHaveBeenCalledOnce()
     expect(onTextPaste).toHaveBeenCalledWith('Скопированный текст'.length)
+  })
+
+  it('keeps camera capture separate from the file picker', () => {
+    const onAttach = vi.fn()
+    const onCapture = vi.fn()
+    render(
+      <ChatComposer onAttach={onAttach} onCapture={onCapture}>
+        <textarea aria-label="Решение" />
+      </ChatComposer>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить фото' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Сделать фото' }))
+
+    expect(onAttach).toHaveBeenCalledOnce()
+    expect(onCapture).toHaveBeenCalledOnce()
   })
 })
