@@ -143,10 +143,29 @@ def normalize_login(value: str) -> str:
     return " ".join(unicodedata.normalize("NFKC", value).strip().casefold().split())
 
 
-def normalize_telegram_token(value: str) -> str:
-    """Preserve the historical bot token-normalization contract."""
+def normalize_student_login(value: str) -> str:
+    """Normalize a Student login while ignoring every whitespace character.
 
-    return value.strip().translate(_TOKEN_HOMOGLYPHS).lower()
+    School logins are issued as compact identifiers.  Treating whitespace as
+    cosmetic keeps mobile keyboards, pasted messages and autocorrection from
+    turning a correct login into a failed attempt.  Family and Staff logins
+    deliberately retain ``normalize_login`` semantics.
+    """
+
+    return "".join(normalize_login(value).split())
+
+
+def normalize_telegram_token(value: str) -> str:
+    """Normalize a Student token regardless of case or whitespace.
+
+    The bot and PWA share this one secret, so this is the single canonical
+    rule for both issuance and verification.
+    """
+
+    normalized = unicodedata.normalize("NFKC", value)
+    return "".join(char for char in normalized if not char.isspace()).translate(
+        _TOKEN_HOMOGLYPHS
+    ).casefold()
 
 
 def legacy_telegram_token_risk_shapes(token: str, chat_id: Any) -> frozenset[str]:

@@ -8,10 +8,15 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Callable
 from datetime import date
 from typing import Any
 
-from models.pwa.auth import normalize_login, normalize_telegram_token
+from models.pwa.auth import (
+    normalize_login,
+    normalize_student_login,
+    normalize_telegram_token,
+)
 
 
 _EMAIL = re.compile(r"^[^\s,@]+@[^\s,@]+\.[^\s,@]+$")
@@ -37,6 +42,14 @@ def _text(value: Any, *, code: str, maximum: int, optional: bool = False) -> str
 def _login(value: Any) -> tuple[str, str]:
     stored = _text(value, code="invalid_login", maximum=100)
     normalized = normalize_login(stored)
+    if not normalized or len(normalized) > 100:
+        raise InvalidAccountBatchRow("invalid_login")
+    return stored, normalized
+
+
+def _student_login(value: Any) -> tuple[str, str]:
+    stored = _text(value, code="invalid_login", maximum=100)
+    normalized = normalize_student_login(stored)
     if not normalized or len(normalized) > 100:
         raise InvalidAccountBatchRow("invalid_login")
     return stored, normalized
@@ -73,7 +86,7 @@ def normalize_student_batch_row(row: object) -> dict[str, object]:
         or not set(row).issubset(allowed)
     ):
         raise InvalidAccountBatchRow("invalid_student_row")
-    login, normalized_login = _login(row["login"])
+    login, normalized_login = _student_login(row["login"])
     raw_password = row["password"]
     if not isinstance(raw_password, str):
         raise InvalidAccountBatchRow("invalid_password")
@@ -120,7 +133,7 @@ def _child_logins(value: Any) -> tuple[str, ...]:
     result: list[str] = []
     seen: set[str] = set()
     for item in value:
-        _, normalized = _login(item)
+        _, normalized = _student_login(item)
         if normalized in seen:
             raise InvalidAccountBatchRow("invalid_child_logins")
         seen.add(normalized)
@@ -173,7 +186,7 @@ def normalize_course_enrollment_batch_row(row: object) -> dict[str, object]:
         "allowedGroupCodes",
     }:
         raise InvalidAccountBatchRow("invalid_enrollment_row")
-    _, login_normalized = _login(row["login"])
+    _, login_normalized = _student_login(row["login"])
     values = row["allowedGroupCodes"]
     if not isinstance(values, list) or not 1 <= len(values) <= 100:
         raise InvalidAccountBatchRow("invalid_allowed_groups")
@@ -222,6 +235,8 @@ def choose_available_login(
     normalized_login: str,
     used: set[str],
     suffix_candidates: list[int],
+    *,
+    normalize: Callable[[str], str] = normalize_login,
 ) -> tuple[str, str, bool]:
     """Return the original login or a reviewed random two-digit alternative."""
 
@@ -231,7 +246,7 @@ def choose_available_login(
     prefix = login[:97]
     for number in suffix_candidates:
         candidate = f"{prefix}-{number:02d}"
-        normalized_candidate = normalize_login(candidate)
+        normalized_candidate = normalize(candidate)
         if normalized_candidate not in used:
             used.add(normalized_candidate)
             return candidate, normalized_candidate, True

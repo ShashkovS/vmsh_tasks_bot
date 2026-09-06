@@ -54,6 +54,7 @@ from models.pwa.auth import (
     hash_refresh_secret,
     next_session_expiry,
     normalize_login,
+    normalize_student_login,
     normalize_telegram_token,
     parse_refresh_cookie,
 )
@@ -219,7 +220,11 @@ class PwaAuthService:
         device_label: str | None = None,
         raw_user_agent: str | None = None,
     ) -> IssuedSession:
-        normalized_login = normalize_login(username)
+        normalized_login = (
+            normalize_student_login(username)
+            if audience is AuthAudience.STUDENT
+            else normalize_login(username)
+        )
         ip_prefix = coarse_ip_prefix(client_address)
         login_key = self._throttle_key(
             audience,

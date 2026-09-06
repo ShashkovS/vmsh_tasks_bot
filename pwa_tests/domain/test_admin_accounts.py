@@ -32,7 +32,7 @@ def test_student_account_creation_normalizes_login_and_current_bot_token() -> No
         username="  Petrov   07  ",
         telegram_token="  Уnique-Token-2026  ",
         chat_id=9001,
-    ) == ("Petrov 07", "petrov 07", "ynique-token-2026")
+    ) == ("Petrov 07", "petrov07", "ynique-token-2026")
 
 
 def test_student_account_creation_rejects_unsafe_current_bot_token() -> None:

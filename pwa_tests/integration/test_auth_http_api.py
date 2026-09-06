@@ -307,6 +307,23 @@ async def test_login_sets_exact_audience_cookies_and_contract(
 
 
 @pytest.mark.asyncio
+async def test_student_login_ignores_case_and_whitespace_in_both_credentials(
+    auth_http_client,
+):
+    response = await auth_http_client.post(
+        "/student/api/v1/auth/login",
+        json={
+            "username": " S\tT\nU\u00a0D E N T-14 ",
+            "telegramToken": " S\tY\nN\u00a0T H E T I C- S T U D E N T- T O K E N ",
+        },
+        headers=_headers(unsafe=True),
+    )
+
+    assert response.status == 200, await response.text()
+    assert (await response.json())["principal"]["audience"] == "student"
+
+
+@pytest.mark.asyncio
 async def test_first_admin_bootstrap_can_login_through_staff_http_route(auth_http_client):
     """A fresh install must make the configured bootstrap password usable."""
 

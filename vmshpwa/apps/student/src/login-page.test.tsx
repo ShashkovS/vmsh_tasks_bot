@@ -6,6 +6,12 @@ import { StudentLoginPage } from './pages'
 afterEach(() => cleanup())
 
 describe('Student login page', () => {
+  it('prefills a login supplied by the student login link', () => {
+    render(<StudentLoginPage initialUsername="shamanin115" />)
+
+    expect(screen.getByLabelText('Логин').getAttribute('value')).toBe('shamanin115')
+  })
+
   it('submits the Telegram token contract and never a generic password field', async () => {
     const onSubmit = vi.fn()
     render(<StudentLoginPage onSubmit={onSubmit} />)

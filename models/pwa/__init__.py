@@ -13,6 +13,7 @@ from .auth import (
     create_session_token_pair,
     next_session_expiry,
     normalize_login,
+    normalize_student_login,
     normalize_telegram_token,
 )
 
@@ -29,5 +30,6 @@ __all__ = [
     "create_session_token_pair",
     "next_session_expiry",
     "normalize_login",
+    "normalize_student_login",
     "normalize_telegram_token",
 ]

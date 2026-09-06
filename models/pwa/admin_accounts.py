@@ -14,6 +14,7 @@ from models.pwa.auth import (
     AuthAudience,
     legacy_telegram_token_risk_shapes,
     normalize_login,
+    normalize_student_login,
     normalize_telegram_token,
 )
 
@@ -103,7 +104,7 @@ def prepare_student_identity(
     """Validate a Staff-selected login against the Student's current bot token."""
 
     stored_username = " ".join(unicodedata.normalize("NFKC", username).strip().split())
-    normalized_username = normalize_login(stored_username)
+    normalized_username = normalize_student_login(stored_username)
     if not 1 <= len(stored_username) <= 100 or not normalized_username:
         raise InvalidManagedAccountChange("invalid_student_username")
     credential = normalize_telegram_token(telegram_token)

@@ -43,7 +43,12 @@ from models.pwa.account_batches import (
     normalize_family_batch_row,
     normalize_student_batch_row,
 )
-from models.pwa.auth import AuthAudience, normalize_login, normalize_telegram_token
+from models.pwa.auth import (
+    AuthAudience,
+    normalize_login,
+    normalize_student_login,
+    normalize_telegram_token,
+)
 
 
 account_batch_routes = web.RouteTableDef()
@@ -365,6 +370,7 @@ async def preview_student_accounts(request: web.Request) -> web.Response:
                 str(normalized["login_normalized"]),
                 used,
                 _suffixes(),
+                normalize=normalize_student_login,
             )
             used_tokens.add(token)
         except InvalidAccountBatchRow as error:
@@ -591,7 +597,7 @@ async def apply_student_accounts(request: web.Request) -> web.Response:
                     {"rowNumber": number, "state": "skipped", "code": "invalid_row"}
                 )
                 continue
-            resolved_normalized = normalize_login(str(resolved_login))
+            resolved_normalized = normalize_student_login(str(resolved_login))
             original = str(row["login"])
             allowed_suffix = (
                 len(resolved_login) == min(len(original), 97) + 3

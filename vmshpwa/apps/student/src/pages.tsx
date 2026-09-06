@@ -857,14 +857,16 @@ export type StudentLoginState =
   | 'error'
 
 export function StudentLoginPage({
+  initialUsername = '',
   loginState = 'idle',
   onSubmit,
 }: {
+  initialUsername?: string
   loginState?: StudentLoginState
   onSubmit?: (request: StudentLoginRequest) => void | Promise<void>
 }) {
   const [showPassword, setShowPassword] = useState(false)
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(initialUsername)
   const [telegramToken, setTelegramToken] = useState('')
   const errorCopy = {
     invalid: 'Логин или токен не подошли. Проверьте раскладку и попробуйте ещё раз.',

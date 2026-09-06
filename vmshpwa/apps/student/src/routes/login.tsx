@@ -13,6 +13,7 @@ import { studentLoginRequestSchema } from '@vmsh/contracts'
 import { StudentLoginPage } from '../pages'
 
 const searchSchema = z.object({
+  login: z.string().trim().min(1).max(128).optional(),
   returnTo: z.unknown().optional().transform(sanitizeAuthReturnTo),
 })
 
@@ -22,7 +23,7 @@ export const Route = createFileRoute('/login')({
 })
 
 function StudentLoginRoute() {
-  const { returnTo } = Route.useSearch()
+  const { login: initialUsername, returnTo } = Route.useSearch()
   const router = useRouter()
   const returnHref = createAuthReturnHref('student', returnTo)
   const finishLogin = useCallback(() => {
@@ -46,6 +47,7 @@ function StudentLoginRoute() {
 
   return (
     <StudentLoginPage
+      initialUsername={initialUsername ?? ''}
       loginState={login.loginState}
       onSubmit={async (request) => {
         await login.submit(studentLoginRequestSchema.parse(request))

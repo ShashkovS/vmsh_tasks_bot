@@ -14,6 +14,7 @@ from models.pwa.auth import (
     legacy_telegram_token_risk_shapes,
     next_session_expiry,
     normalize_login,
+    normalize_student_login,
     normalize_telegram_token,
     parse_refresh_cookie,
 )
@@ -36,6 +37,10 @@ def test_login_normalization_is_nfkc_trimmed_casefolded_and_space_stable():
     assert normalize_login("  ＶＭＳＨ   User  ") == "vmsh user"
 
 
+def test_student_login_normalization_ignores_every_whitespace_character():
+    assert normalize_student_login("  S\tT\nU\u00a0D E N T-14  ") == "student-14"
+
+
 @pytest.mark.parametrize(
     ("surname", "birthday", "expected"),
     [
@@ -56,6 +61,7 @@ def test_student_username_refuses_an_empty_transliterated_surname():
 
 def test_telegram_token_normalization_matches_historical_homoglyph_behavior():
     assert normalize_telegram_token("  УКЕНХВАРОСМТ  ") == "ykehxbapocmt"
+    assert normalize_telegram_token("У\tК\nЕ\u00a0Н Х В А Р О С М Т") == "ykehxbapocmt"
 
 
 def test_legacy_telegram_token_risk_shapes_are_shared_aggregate_labels():
