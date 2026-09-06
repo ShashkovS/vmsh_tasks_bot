@@ -150,6 +150,34 @@ describe('Content API client', () => {
     expect(new Headers(requests[1]?.init?.headers).get('If-Match')).toBe('"lesson-window-1:v1"')
   })
 
+  it('loads and updates the shared course-lesson title', async () => {
+    const requests: Array<{ url: string; init: RequestInit | undefined }> = []
+    const title = {
+      courseLessonId: 'course-lesson-1',
+      groupLessonId: revision.groupLessonId,
+      lessonNumber: 0,
+      title: null,
+      version: 1,
+      requestId: 'lesson-title-test',
+    } as const
+    const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ url: requestUrl(input), init })
+      return Promise.resolve(jsonResponse(title, { etag: '"course-lesson-1:v1"' }))
+    }) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    const loaded = await client.lessonTitle!(revision.groupLessonId)
+    await client.updateLessonTitle!(revision.groupLessonId, loaded.etag, {
+      title: 'Знакомство',
+    })
+
+    expect(requests[0]?.url).toBe(
+      `/staff/api/v1/group-lessons/${revision.groupLessonId}/lesson-title`,
+    )
+    expect(requests[1]?.init?.body).toBe(JSON.stringify({ title: 'Знакомство' }))
+    expect(new Headers(requests[1]?.init?.headers).get('If-Match')).toBe('"course-lesson-1:v1"')
+  })
+
   it('sends multipart upload and preserves the strong revision ETag for compile', async () => {
     const requests: Array<{ url: string; init: RequestInit | undefined }> = []
     const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {

@@ -594,6 +594,23 @@ export const staffContentHistorySchema = z
   })
 export type StaffContentHistory = z.infer<typeof staffContentHistorySchema>
 
+export const staffLessonTitleSchema = z
+  .object({
+    courseLessonId: publicIdSchema,
+    groupLessonId: publicIdSchema,
+    lessonNumber: z.number().int().nonnegative(),
+    title: z.string().trim().min(1).max(200).nullable(),
+    version: z.number().int().positive(),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+export type StaffLessonTitle = z.infer<typeof staffLessonTitleSchema>
+
+export const updateStaffLessonTitleSchema = z
+  .object({ title: z.string().trim().min(1).max(200).nullable() })
+  .strict()
+export type UpdateStaffLessonTitle = z.input<typeof updateStaffLessonTitleSchema>
+
 export const staffLessonWindowSchema = z
   .object({
     lessonWindowId: publicIdSchema,
@@ -1088,6 +1105,7 @@ export const contentQueryKeys = {
   metadataGrid: (groupLessonId: string, revisionId: string) =>
     ['content', 'metadata-grid', groupLessonId, revisionId] as const,
   history: (groupLessonId: string) => ['content', 'history', groupLessonId] as const,
+  lessonTitle: (groupLessonId: string) => ['content', 'lesson-title', groupLessonId] as const,
   lessonWindow: (groupLessonId: string) => ['content', 'lesson-window', groupLessonId] as const,
   uploadTargets: (groupLessonId: string) => ['content', 'upload-targets', groupLessonId] as const,
   preview: (revisionId: string, kind: 'web' | 'telegram' | 'pdf') =>

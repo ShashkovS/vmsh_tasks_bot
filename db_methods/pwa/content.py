@@ -3145,6 +3145,57 @@ class PwaContentRepository:
 
         return await self._factory.run_read_async(read)
 
+    async def get_course_lesson_for_group_lesson(
+        self, *, group_lesson_id: int
+    ) -> CourseLessonRecord:
+        """Return the shared course lesson behind one concrete group lesson."""
+
+        def read(connection):
+            row = connection.execute(
+                "SELECT course_lesson.* FROM group_lessons AS group_lesson "
+                "JOIN course_lessons AS course_lesson "
+                "ON course_lesson.id = group_lesson.course_lesson_id "
+                "WHERE group_lesson.id = ?",
+                (group_lesson_id,),
+            ).fetchone()
+            if row is None:
+                raise ContentNotFound("course lesson does not exist")
+            return _course_lesson(row)
+
+        return await self._factory.run_read_async(read)
+
+    async def update_course_lesson_title(
+        self,
+        *,
+        public_id: str,
+        expected_version: int,
+        title: str | None,
+        actor_user_id: int | None,
+    ) -> CourseLessonRecord:
+        _require_public_id(public_id)
+        if expected_version < 1:
+            raise ContentInvariantError("expected version must be positive")
+        title = _optional_text(title, label="course lesson title")
+        timestamp = self._timestamp()
+
+        def write(connection):
+            row = connection.execute(
+                "UPDATE course_lessons SET title = ?, updated_by_user_id = ?, "
+                "updated_at = ?, version = version + 1 "
+                "WHERE public_id = ? AND version = ? RETURNING *",
+                (title, actor_user_id, timestamp, public_id, expected_version),
+            ).fetchone()
+            if row is not None:
+                return _course_lesson(row)
+            exists = connection.execute(
+                "SELECT 1 FROM course_lessons WHERE public_id = ?", (public_id,)
+            ).fetchone()
+            if exists is None:
+                raise ContentNotFound("course lesson does not exist")
+            raise ContentVersionConflict("course lesson version changed")
+
+        return await self._factory.run_write_async(write)
+
     async def create_lesson_window_with_audit(
         self,
         *,

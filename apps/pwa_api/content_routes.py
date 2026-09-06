@@ -134,6 +134,7 @@ _LESSON_WINDOW_SCHEDULE_FIELDS = frozenset(
 _LESSON_WINDOW_CUTOFF_FIELDS = frozenset(
     {"submissionClosesLocalTime", "businessTimezone", "confirmChange"}
 )
+_LESSON_TITLE_FIELDS = frozenset({"title"})
 _ROLLBACK_FIELDS = frozenset(
     {"revisionId", "expectedScheduledPublicationId", "expectedScheduledVersion"}
 )
@@ -914,6 +915,18 @@ def _lesson_window_payload(
         "businessTimezone": record.timezone,
         "source": record.source,
         "version": record.version,
+    }
+
+
+def _lesson_title_payload(
+    lesson, *, group_lesson_public_id: str
+) -> dict[str, object]:
+    return {
+        "courseLessonId": lesson.public_id,
+        "groupLessonId": group_lesson_public_id,
+        "lessonNumber": lesson.lesson_number,
+        "title": lesson.title,
+        "version": lesson.version,
     }
 
 
@@ -2598,6 +2611,59 @@ async def _authorized_lesson_window_scope(
     )
     _principal, actor_user_id = _staff_actor(request, scope)
     return repository, scope, actor_user_id
+
+
+@content_routes.get("/staff/api/v1/group-lessons/{group_lesson_id}/lesson-title")
+@_translate_content_errors
+async def get_lesson_title(request: web.Request) -> web.Response:
+    repository, scope, _actor_user_id = await _authorized_lesson_window_scope(request)
+    lesson = await repository.get_course_lesson_for_group_lesson(
+        group_lesson_id=scope.group_lesson_id
+    )
+    response = web.json_response(
+        {
+            **_lesson_title_payload(lesson, group_lesson_public_id=scope.group_lesson_public_id),
+            "requestId": _request_id(request),
+        }
+    )
+    response.headers["ETag"] = _etag(lesson.public_id, lesson.version)
+    return response
+
+
+@content_routes.put("/staff/api/v1/group-lessons/{group_lesson_id}/lesson-title")
+@_translate_content_errors
+async def update_lesson_title(request: web.Request) -> web.Response:
+    payload = await _json_object(request, allowed_fields=_LESSON_TITLE_FIELDS)
+    repository, scope, actor_user_id = await _authorized_lesson_window_scope(request)
+    current = await repository.get_course_lesson_for_group_lesson(
+        group_lesson_id=scope.group_lesson_id
+    )
+    _require_if_match(request, _etag(current.public_id, current.version))
+    raw_title = payload["title"]
+    if raw_title is not None and (
+        not isinstance(raw_title, str)
+        or not raw_title.strip()
+        or len(raw_title.strip()) > 200
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Название занятия должно содержать не более 200 символов",
+        )
+    lesson = await repository.update_course_lesson_title(
+        public_id=current.public_id,
+        expected_version=current.version,
+        title=None if raw_title is None else raw_title.strip(),
+        actor_user_id=actor_user_id,
+    )
+    response = web.json_response(
+        {
+            **_lesson_title_payload(lesson, group_lesson_public_id=scope.group_lesson_public_id),
+            "requestId": _request_id(request),
+        }
+    )
+    response.headers["ETag"] = _etag(lesson.public_id, lesson.version)
+    return response
 
 
 @content_routes.get("/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window")

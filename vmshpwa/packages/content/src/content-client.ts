@@ -32,7 +32,9 @@ import {
   staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
   staffContentUploadTargetsSchema,
+  staffLessonTitleSchema,
   staffLessonWindowSchema,
+  updateStaffLessonTitleSchema,
   updateStaffLessonWindowScheduleSchema,
   updateStaffSubmissionCutoffSchema,
   type Audience,
@@ -62,7 +64,9 @@ import {
   type StaffContentRevisionAssets,
   type StaffContentRevision,
   type StaffContentUploadTargets,
+  type StaffLessonTitle,
   type StaffLessonWindow,
+  type UpdateStaffLessonTitle,
   type UpdateStaffLessonWindowSchedule,
   type UpdateStaffSubmissionCutoff,
 } from '@vmsh/contracts'
@@ -223,6 +227,16 @@ export interface ContentApiClient {
     groupLessonId: string,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<StaffLessonWindow>>
+  lessonTitle?(
+    groupLessonId: string,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffLessonTitle>>
+  updateLessonTitle?(
+    groupLessonId: string,
+    etag: ContentEtag,
+    input: UpdateStaffLessonTitle,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffLessonTitle>>
   updateLessonWindowSchedule?(
     groupLessonId: string,
     etag: ContentEtag,
@@ -265,6 +279,10 @@ export interface ContentApiClient {
 
 export type StaffLessonWindowClient = Required<
   Pick<ContentApiClient, 'lessonWindow' | 'updateLessonWindowSchedule' | 'updateSubmissionCutoff'>
+>
+
+export type StaffLessonTitleClient = Required<
+  Pick<ContentApiClient, 'lessonTitle' | 'updateLessonTitle'>
 >
 
 export interface ContentApiClientOptions {
@@ -615,6 +633,38 @@ class BrowserContentApiClient implements ContentApiClient {
       `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/lesson-window`,
       { method: 'GET', ...options },
       staffLessonWindowSchema,
+    )
+  }
+
+  async lessonTitle(
+    groupLessonId: string,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffLessonTitle>> {
+    this.#requireStaff()
+    return this.#versionedJson(
+      `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/lesson-title`,
+      { method: 'GET', ...options },
+      staffLessonTitleSchema,
+    )
+  }
+
+  async updateLessonTitle(
+    groupLessonId: string,
+    etag: ContentEtag,
+    input: UpdateStaffLessonTitle,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffLessonTitle>> {
+    this.#requireStaff()
+    return this.#versionedJson(
+      `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/lesson-title`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(updateStaffLessonTitleSchema.parse(input)),
+        ifMatch: contentEtagSchema.parse(etag),
+        contentType: 'application/json',
+        ...options,
+      },
+      staffLessonTitleSchema,
     )
   }
 
@@ -1037,6 +1087,18 @@ export function useStaffLessonWindowQuery(
   return useQuery({
     queryKey: contentQueryKeys.lessonWindow(groupLessonId),
     queryFn: ({ signal }) => client.lessonWindow(groupLessonId, { signal }),
+    enabled: options.enabled ?? true,
+  })
+}
+
+export function useStaffLessonTitleQuery(
+  client: StaffLessonTitleClient,
+  groupLessonId: string,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: contentQueryKeys.lessonTitle(groupLessonId),
+    queryFn: ({ signal }) => client.lessonTitle(groupLessonId, { signal }),
     enabled: options.enabled ?? true,
   })
 }

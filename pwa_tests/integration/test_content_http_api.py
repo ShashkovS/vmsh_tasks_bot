@@ -3859,6 +3859,66 @@ async def test_staff_can_preview_and_stream_exact_persisted_pdf(
     assert (await corrupt.json())["error"]["code"] == "content_storage_invalid"
 
 
+async def test_staff_can_rename_an_existing_shared_course_lesson(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    route = f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/lesson-title"
+    initial = await fixture.client.get(
+        route,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert initial.status == 200, await initial.text()
+    initial_payload = await initial.json()
+    assert initial_payload["title"] == "Занятие 41"
+    assert initial.headers["ETag"] == '"cl-1:v1"'
+
+    invalid = await fixture.client.put(
+        route,
+        json={"title": "   "},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial.headers["ETag"]),
+    )
+    assert invalid.status == 422
+
+    updated = await fixture.client.put(
+        route,
+        json={"title": " Первое занятие "},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial.headers["ETag"]),
+    )
+    assert updated.status == 200, await updated.text()
+    updated_payload = await updated.json()
+    assert updated_payload["title"] == "Первое занятие"
+    assert updated_payload["groupLessonId"] == fixture.group_lesson_a
+    assert updated.headers["ETag"] == '"cl-1:v2"'
+
+    stale = await fixture.client.put(
+        route,
+        json={"title": None},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial.headers["ETag"]),
+    )
+    assert stale.status == 409
+
+    cleared = await fixture.client.put(
+        route,
+        json={"title": None},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=updated.headers["ETag"]),
+    )
+    assert cleared.status == 200, await cleared.text()
+    assert (await cleared.json())["title"] is None
+
+    teacher = await fixture.client.get(
+        route,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert teacher.status == 403
+
+
 async def test_lesson_window_cutoff_has_separate_confirmation_audit_and_etag(
     content_http: ContentHttpFixture,
 ):

@@ -15,9 +15,11 @@ import {
   createContentApiClient,
   type ContentApiClient,
   type PublicationSlotVersion,
+  type StaffLessonTitleClient,
   type StaffLessonWindowClient,
   type VersionedContentResource,
   useStaffContentHistoryQuery,
+  useStaffLessonTitleQuery,
   useStaffLessonWindowQuery,
 } from '@vmsh/content'
 import {
@@ -1381,6 +1383,114 @@ function MaterialWorkflowCard({
   )
 }
 
+function LessonTitlePanel(props: { client: ContentApiClient; groupLessonId: string }) {
+  const { client } = props
+  if (!client.lessonTitle || !client.updateLessonTitle) return null
+  return <LessonTitlePanelEnabled {...props} client={client as StaffLessonTitleClient} />
+}
+
+function LessonTitlePanelEnabled({
+  client,
+  groupLessonId,
+}: {
+  client: StaffLessonTitleClient
+  groupLessonId: string
+}) {
+  const query = useStaffLessonTitleQuery(client, groupLessonId)
+  const resource = query.data
+  const [title, setTitle] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (resource) setTitle(resource.data.title ?? '')
+  }, [resource])
+
+  async function saveTitle() {
+    if (!resource) return
+    setSaving(true)
+    setError(null)
+    setSaved(false)
+    try {
+      await client.updateLessonTitle(groupLessonId, resource.etag, {
+        title: title.trim() || null,
+      })
+      await query.refetch()
+      setSaved(true)
+    } catch (caught) {
+      setError(caught instanceof ApiResponseError ? caught.message : 'Название не сохранено')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Название занятия</CardTitle>
+        <p className="text-small text-muted-foreground">
+          Название общее для этого номера занятия во всех группах курса.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {query.isPending ? (
+          <p className="text-small text-muted-foreground">Загружаем название…</p>
+        ) : query.error ? (
+          <Alert tone="danger">
+            <AlertTriangle aria-hidden="true" />
+            <AlertContent>
+              <AlertTitle>Название не загружено</AlertTitle>
+              <AlertDescription>
+                <Button onClick={() => void query.refetch()} size="sm" variant="outline">
+                  Повторить
+                </Button>
+              </AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : (
+          <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void saveTitle()
+            }}
+          >
+            <Label className="grid min-w-64 flex-1 gap-1">
+              Название (необязательно)
+              <Input
+                disabled={saving}
+                maxLength={200}
+                onChange={(event) => {
+                  setTitle(event.target.value)
+                  setSaved(false)
+                }}
+                value={title}
+              />
+            </Label>
+            <Button
+              disabled={saving || title.trim() === (resource?.data.title ?? '')}
+              type="submit"
+            >
+              {saving ? 'Сохраняем…' : 'Сохранить название'}
+            </Button>
+            {saved ? (
+              <p className="text-small text-status-success" role="status">
+                Название сохранено
+              </p>
+            ) : null}
+            {error ? (
+              <p className="text-small text-danger" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function LessonWindowPanel(props: {
   client: ContentApiClient
   draftNamespace: string
@@ -1646,6 +1756,7 @@ export function StaffContentWorkspace({
         </AlertContent>
       </Alert>
       <div className="space-y-4">
+        <LessonTitlePanel client={client} groupLessonId={groupLessonId} />
         <LessonWindowPanel
           client={client}
           draftNamespace={draftNamespace}

@@ -19,6 +19,7 @@ export {
   useContentPreviewQuery,
   usePublishedContentQuery,
   useStaffContentHistoryQuery,
+  useStaffLessonTitleQuery,
   useStaffLessonWindowQuery,
 } from './content-client'
 export type {
@@ -26,6 +27,7 @@ export type {
   ContentApiClientOptions,
   ContentRequestOptions,
   GenerateProblemMetadataInput,
+  StaffLessonTitleClient,
   StaffLessonWindowClient,
   PublicationSlotVersion,
   PublishedContentInput,
