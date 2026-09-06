@@ -317,7 +317,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                   {currentLesson ? (
                     <div className="space-y-1">
                       <p className="text-small font-medium text-foreground">
-                        Занятие {currentLesson.lessonNumber} · {currentLesson.title}
+                        {currentLesson.title?.trim() || `Занятие ${currentLesson.lessonNumber}`}
                       </p>
                       <p className="text-caption text-muted-foreground">
                         {currentLesson.problemCount} задач в листке

@@ -118,5 +118,16 @@ describe('Family child course contract', () => {
       ],
     }
     expect(familyChildHomeResponseSchema.parse(withoutLesson)).toEqual(withoutLesson)
+
+    const untitledLesson = {
+      ...home,
+      courses: [
+        {
+          ...home.courses[0]!,
+          currentLesson: { ...home.courses[0]!.currentLesson, title: null },
+        },
+      ],
+    }
+    expect(familyChildHomeResponseSchema.parse(untitledLesson)).toEqual(untitledLesson)
   })
 })

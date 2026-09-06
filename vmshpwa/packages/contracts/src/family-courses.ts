@@ -50,7 +50,7 @@ export const familyCurrentLessonSchema = z
     groupLessonId: publicIdSchema,
     courseLessonId: publicIdSchema,
     lessonNumber: z.number().int().nonnegative(),
-    title: z.string().trim().min(1).max(300),
+    title: z.string().trim().min(1).max(300).nullable(),
     cycleAnchorDate: z.iso.date(),
     businessTimezone: z.string().trim().min(1).max(100),
     problemCount: z.number().int().nonnegative(),

@@ -368,7 +368,7 @@ export function FamilyReadableContentPage({
   }
   return (
     <FamilyPublishedContentPage
-      displayTitle={`Занятие ${lesson.lessonNumber} · ${lesson.title}`}
+      displayTitle={lesson.title?.trim() || `Занятие ${lesson.lessonNumber}`}
       groupLessonId={lesson.groupLessonId}
       kind="condition"
       requestedStudentPublicId={selectedChild.studentId}
