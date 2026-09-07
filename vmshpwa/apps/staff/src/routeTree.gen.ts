@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as BroadcastsRouteImport } from './routes/broadcasts'
 import { Route as ClassroomsRouteImport } from './routes/classrooms'
@@ -37,6 +38,11 @@ import { Route as ReviewSubmissionIdRouteImport } from './routes/review.$submiss
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -157,6 +163,7 @@ const ReviewSubmissionIdRoute = ReviewSubmissionIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
@@ -206,6 +214,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analytics'
     | '/audit'
     | '/broadcasts'
     | '/classrooms'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analytics'
     | '/audit'
     | '/broadcasts'
     | '/classrooms'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analytics'
     | '/audit'
     | '/broadcasts'
     | '/classrooms'
@@ -309,6 +321,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   AuditRoute: typeof AuditRoute
   BroadcastsRoute: typeof BroadcastsRoute
   ClassroomsRoute: typeof ClassroomsRoute
@@ -332,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -556,6 +576,7 @@ const ReviewRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
   AuditRoute: AuditRoute,
   BroadcastsRoute: BroadcastsRoute,
   ClassroomsRoute: ClassroomsRoute,

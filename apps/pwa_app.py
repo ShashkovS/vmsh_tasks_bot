@@ -23,6 +23,7 @@ from apps.pwa_api.admin_enrollment_routes import (
 from apps.pwa_api.staff_access_routes import staff_access_routes
 from apps.pwa_api.staff_dashboard_routes import staff_dashboard_routes
 from apps.pwa_api.staff_statistics_routes import staff_statistics_routes
+from apps.pwa_api.product_analytics_routes import product_analytics_routes
 from apps.pwa_api.problem_import_routes import problem_import_routes
 from apps.pwa_api.problem_synonym_routes import (
     PWA_PROBLEM_SYNONYM_INVALIDATOR,
@@ -1792,6 +1793,7 @@ def configure(
         app.add_routes(staff_access_routes)
         app.add_routes(staff_dashboard_routes)
         app.add_routes(staff_statistics_routes)
+        app.add_routes(product_analytics_routes)
         app.add_routes(problem_import_routes)
         app.add_routes(problem_synonym_routes)
         app.add_routes(course_routes)

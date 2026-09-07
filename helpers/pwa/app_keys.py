@@ -15,7 +15,11 @@ from aiohttp import web
 from helpers.config import Config
 
 if TYPE_CHECKING:
-    from db_methods.pwa import DatabaseLifecycleLock, PwaConnectionFactory
+    from db_methods.pwa import (
+        DatabaseLifecycleLock,
+        ProductAnalyticsConnectionFactory,
+        PwaConnectionFactory,
+    )
 
 
 @dataclass(slots=True)
@@ -30,13 +34,24 @@ class PwaDatabaseState:
     factory: "PwaConnectionFactory | None" = None
     lifecycle_lock: "DatabaseLifecycleLock | None" = None
 
+
+@dataclass(slots=True)
+class PwaAnalyticsDatabaseState:
+    """Independent, optional product-analytics SQLite runtime."""
+
+    factory: "ProductAnalyticsConnectionFactory | None" = None
+    lifecycle_lock: "DatabaseLifecycleLock | None" = None
+
 RUNTIME_CONFIG = web.AppKey("runtime_config", Config)
 ENABLED_ADAPTERS = web.AppKey("enabled_adapters", tuple)
 PWA_DATABASE = web.AppKey("pwa_database", PwaDatabaseState)
+PWA_ANALYTICS_DATABASE = web.AppKey("pwa_analytics_database", PwaAnalyticsDatabaseState)
 
 __all__ = [
     "ENABLED_ADAPTERS",
     "PWA_DATABASE",
+    "PWA_ANALYTICS_DATABASE",
     "RUNTIME_CONFIG",
     "PwaDatabaseState",
+    "PwaAnalyticsDatabaseState",
 ]

@@ -7,6 +7,7 @@ import {
   AuthenticationRedirectBoundary,
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
+  ProductPageView,
 } from '@vmsh/app-shell'
 
 const navigation = [
@@ -52,6 +53,7 @@ function FamilyProtectedShell({
   return (
     <AuthenticationRedirectBoundary onAuthenticationRequired={redirectToLogin}>
       <AppShell product="family" title="Семья" navigation={navigation} mobileNavigation>
+        <ProductPageView audience="family" pathname={location.pathname} />
         <Outlet />
       </AppShell>
     </AuthenticationRedirectBoundary>

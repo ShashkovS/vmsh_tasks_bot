@@ -83,6 +83,7 @@ class Capability(StrEnum):
     ORAL_MANAGE = "oral.manage"
     STUDENT_ACTIVE_GROUP_WRITE = "student.active-group.write"
     STATISTICS_READ = "statistics.read"
+    PRODUCT_ANALYTICS_READ = "product-analytics.read"
     COURSE_MANAGE = "course.manage"
     GROUP_MANAGE = "group.manage"
     CONTENT_MANAGE = "content.manage"
@@ -152,6 +153,7 @@ _ADMIN_ONLY_CAPABILITIES = frozenset(
         Capability.BROADCAST_MANAGE,
         Capability.CLASSROOM_MANAGE,
         Capability.AUDIT_READ,
+        Capability.PRODUCT_ANALYTICS_READ,
         Capability.STAFF_MANAGE,
         Capability.TELEGRAM_BINDING_MANAGE,
     }

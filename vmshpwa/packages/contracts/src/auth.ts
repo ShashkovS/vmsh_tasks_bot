@@ -92,6 +92,7 @@ export const STAFF_CAPABILITY_VALUES = [
   'oral.manage',
   'student.active-group.write',
   'statistics.read',
+  'product-analytics.read',
   'course.manage',
   'group.manage',
   'content.manage',

@@ -56,6 +56,7 @@ const backendCapabilityRegistry = [
   'oral.manage',
   'student.active-group.write',
   'statistics.read',
+  'product-analytics.read',
   'course.manage',
   'group.manage',
   'content.manage',
@@ -76,6 +77,7 @@ const backendTeacherCapabilities = [
   'review.write',
   'self.read',
   'statistics.read',
+  'product-analytics.read',
   'student.active-group.write',
   'student.read',
 ] as const

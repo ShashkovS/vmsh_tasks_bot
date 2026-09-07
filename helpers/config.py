@@ -67,6 +67,9 @@ class Config:
     webhook_port: int = -1
     production_mode: bool = False
     db_filename: str = ""
+    # Kept separate from the teaching database: product telemetry is best
+    # effort and must never contend with submissions or publication writes.
+    pwa_analytics_db_filename: str = ""
     sos_channel: Union[str, int] = ""
     exceptions_channel: Union[str, int] = ""
     sentry_dsn: Optional[str] = field(default="", repr=False)
@@ -213,6 +216,16 @@ def _setup(*, force_production=False):
         if configured_nats_server is None:
             configured_nats_server = profile_values.get("nats_server")
 
+        database_path = _absolute_path(configured_database)
+        configured_analytics_database = os.environ.get("VMSH_ANALYTICS_DB_FILENAME")
+        if configured_analytics_database is None:
+            configured_analytics_database = str(
+                profile_values.get(
+                    "pwa_analytics_db_filename",
+                    database_path.with_name("analytics.sqlite3"),
+                )
+            )
+
         config = Config(
             runtime_profile=runtime_profile,
             pwa_instance=configured_instance,
@@ -227,7 +240,10 @@ def _setup(*, force_production=False):
                     )
                 ),
             ),
-            db_filename=str(_absolute_path(configured_database)),
+            db_filename=str(database_path),
+            pwa_analytics_db_filename=str(
+                _absolute_path(configured_analytics_database)
+            ),
             pwa_media_root=str(_absolute_path(configured_media_root)),
             apps="pwa_app",
             google_sheets_key="",

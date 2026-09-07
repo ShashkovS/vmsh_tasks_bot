@@ -6,6 +6,7 @@ from .connection import (
     PwaConnectionFactory,
     SqliteConcurrencyPolicy,
 )
+from .product_analytics import ProductAnalyticsConnectionFactory
 from .migrations import (
     MigrationState,
     SchemaMismatchError,
@@ -30,6 +31,7 @@ __all__ = [
     "JournalModeMismatchError",
     "MigrationState",
     "PwaConnectionFactory",
+    "ProductAnalyticsConnectionFactory",
     "SchemaMismatchError",
     "SqliteConcurrencyPolicy",
     "apply_schema_migrations",

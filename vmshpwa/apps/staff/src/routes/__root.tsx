@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import {
   BarChart3,
+  ChartNoAxesCombined,
   BookOpenCheck,
   Boxes,
   Building2,
@@ -23,6 +24,7 @@ import {
   StaffCapabilityBoundary,
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
+  ProductPageView,
   useAuthenticatedPrincipal,
   useAuthentication,
 } from '@vmsh/app-shell'
@@ -76,6 +78,12 @@ const navigation: StaffNavigationItem[] = [
     label: 'Статистика',
     to: '/statistics',
     icon: <BarChart3 className="size-4" aria-hidden="true" />,
+  },
+  {
+    label: 'Аналитика',
+    to: '/analytics',
+    icon: <ChartNoAxesCombined className="size-4" aria-hidden="true" />,
+    capability: 'product-analytics.read',
   },
   {
     label: 'Аудит',
@@ -159,6 +167,7 @@ function AuthenticatedStaffShell({ pathname }: { pathname: string }) {
         </Button>
       }
     >
+      <ProductPageView audience="staff" pathname={pathname} />
       <Outlet />
     </AppShell>
   )

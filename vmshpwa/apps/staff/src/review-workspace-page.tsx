@@ -6,6 +6,7 @@ import {
   PageSection,
   PageStatePanel,
   createReviewQueueClient,
+  recordProductAction,
   createWrittenMaterialReassignmentClient,
   useAuthenticatedPrincipal,
   useAuthentication,
@@ -261,6 +262,8 @@ function LoadedReviewWorkspace({
         annotations: draft.annotations,
         internalReactionId: reaction.success ? reaction.data : null,
       })
+      const queueId = currentLease.branches[0]?.queueId
+      if (queueId) recordProductAction('review.verdict', { type: 'submission', id: queueId })
       clearReviewDraft(window.localStorage, storageKey)
       await navigate({ to: '/review' })
     } catch (error) {

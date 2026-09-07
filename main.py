@@ -2,15 +2,19 @@
 import asyncio
 import os
 from contextlib import suppress
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Iterable, Protocol
 
 from aiohttp import web
 
 import apps
 from db_methods.pwa import (
+    ProductAnalyticsConnectionFactory,
     PwaConnectionFactory,
     runtime_database_lock,
 )
+from db_methods.pwa.product_analytics import prune_expired_events
 from helpers.config import DATABASE_MUTABLE_CONFIG_FIELDS, Config, config, logger
 import db_methods as db
 from helpers.features import set_features
@@ -19,8 +23,10 @@ from helpers.prometheus_metrics import configure_prometheus
 from helpers.pwa.app_keys import (
     ENABLED_ADAPTERS,
     PWA_DATABASE,
+    PWA_ANALYTICS_DATABASE,
     RUNTIME_CONFIG,
     PwaDatabaseState,
+    PwaAnalyticsDatabaseState,
 )
 from helpers.shutdown import wait_for_valuable_tasks
 from helpers.trace import init_trace
@@ -74,6 +80,68 @@ async def pwa_database_lifecycle(app: web.Application):
     try:
         yield
     finally:
+        state.factory = None
+        state.lifecycle_lock = None
+        lifecycle_lock.release()
+
+
+async def pwa_analytics_lifecycle(app: web.Application):
+    """Prepare and retain the independent best-effort analytics store."""
+
+    runtime_config = app[RUNTIME_CONFIG]
+    if not runtime_config.runtime_profile.startswith("pwa-"):
+        yield
+        return
+    state = app[PWA_ANALYTICS_DATABASE]
+    analytics_path = runtime_config.pwa_analytics_db_filename or str(
+        Path(runtime_config.db_filename).with_name("analytics.sqlite3")
+    )
+    lifecycle_lock = runtime_database_lock(analytics_path)
+    try:
+        lifecycle_lock.acquire()
+        factory = await asyncio.to_thread(
+            ProductAnalyticsConnectionFactory,
+            analytics_path,
+        )
+        # Retention is enforced both here and by the lightweight daily task in
+        # the PWA adapter; failure is intentionally isolated from core startup.
+        await factory.run_write_async(
+            lambda connection: prune_expired_events(connection, now=datetime.now(UTC))
+        )
+    except asyncio.CancelledError:
+        lifecycle_lock.release()
+        raise
+    except Exception:
+        # Telemetry is explicitly fail-open: a disk or maintenance issue must
+        # not take the Student, Family or Staff application down.
+        logger.warning("Product analytics startup unavailable", exc_info=True)
+        with suppress(Exception):
+            lifecycle_lock.release()
+        yield
+        return
+    state.lifecycle_lock = lifecycle_lock
+    state.factory = factory
+
+    async def prune_daily() -> None:
+        while True:
+            await asyncio.sleep(24 * 60 * 60)
+            try:
+                await factory.run_write_async(
+                    lambda connection: prune_expired_events(
+                        connection, now=datetime.now(UTC)
+                    )
+                )
+            except Exception:
+                # Product telemetry is never allowed to affect PWA availability.
+                logger.warning("Daily product analytics cleanup failed", exc_info=True)
+
+    cleanup_task = asyncio.create_task(prune_daily())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await cleanup_task
         state.factory = None
         state.lifecycle_lock = None
         lifecycle_lock.release()
@@ -134,10 +202,12 @@ def create_app(
     app[RUNTIME_CONFIG] = selected_config
     app[ENABLED_ADAPTERS] = selected_adapters
     app[PWA_DATABASE] = PwaDatabaseState()
+    app[PWA_ANALYTICS_DATABASE] = PwaAnalyticsDatabaseState()
     # aiohttp runs cleanup contexts after on_shutdown and request draining.
     # Keeping the DB lifecycle lock here prevents maintenance from replacing
     # SQLite while a graceful-shutdown handler still owns a connection.
     app.cleanup_ctx.append(pwa_database_lifecycle)
+    app.cleanup_ctx.append(pwa_analytics_lifecycle)
     # Важно, что текущие on_startup и on_shutdown первые. Мы потом развернём список on_shutdown в обратном порядке
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)

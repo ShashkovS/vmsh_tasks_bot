@@ -21,6 +21,7 @@ import {
   type SupportThreadPage,
   type SupportThreadResponse,
 } from '@vmsh/contracts'
+import { recordProductAction } from './product-analytics'
 
 export interface SupportRequestOptions {
   signal?: AbortSignal
@@ -135,13 +136,15 @@ class BrowserSupportClient implements SupportClient {
     if (this.runtime.audience !== 'student') {
       throw new TypeError('Only Student can create a support thread')
     }
-    return this.#jsonRequest(
+    const response = await this.#jsonRequest(
       '/questions',
       'POST',
       JSON.stringify(createSupportThreadRequestSchema.parse(request)),
       options,
       (payload) => supportThreadResponseSchema.parse(payload),
     )
+    recordProductAction('question.create', { type: 'thread', id: response.thread.threadId })
+    return response
   }
 
   async get(threadId: string, options: SupportRequestOptions = {}): Promise<SupportThreadResponse> {
@@ -161,13 +164,15 @@ class BrowserSupportClient implements SupportClient {
     options: SupportRequestOptions = {},
   ): Promise<SupportThreadResponse> {
     const parsedThreadId = publicIdSchema.parse(threadId)
-    return this.#jsonRequest(
+    const response = await this.#jsonRequest(
       `/questions/${encodeURIComponent(parsedThreadId)}/entries`,
       'POST',
       JSON.stringify(appendSupportEntryRequestSchema.parse(request)),
       options,
       (payload) => supportThreadResponseSchema.parse(payload),
     )
+    recordProductAction('question.reply', { type: 'thread', id: parsedThreadId })
+    return response
   }
 
   async #jsonRequest<T>(

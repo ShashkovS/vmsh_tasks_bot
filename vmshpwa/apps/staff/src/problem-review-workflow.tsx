@@ -2,6 +2,7 @@ import { CheckCircle2, LoaderCircle, Pencil, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { type ContentApiClient, type VersionedContentResource } from '@vmsh/content'
+import { recordProductAction } from '@vmsh/app-shell'
 import {
   ApiResponseError,
   answerTypeSchema,
@@ -588,6 +589,7 @@ export function ProblemReviewWorkflow({
         rows,
       } satisfies StoredMetadataDraft)
       setGeneratedRows(rows)
+      recordProductAction('metadata.generate', { type: 'lesson', id: groupLessonId })
       setGenerationWarnings(generated.warnings)
       setMetadataGridEpoch((epoch) => epoch + 1)
     } catch (error) {
@@ -758,6 +760,7 @@ export function ProblemReviewWorkflow({
               })
               clearStoredObject(metadataDraftKey)
               acceptMetadata(saved)
+              recordProductAction('metadata.change', { type: 'lesson', id: groupLessonId })
             } catch (error) {
               if (error instanceof ApiResponseError && error.status === 409) {
                 const current = await client.metadataGrid(groupLessonId, revisionId)

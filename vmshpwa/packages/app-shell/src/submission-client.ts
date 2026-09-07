@@ -18,6 +18,7 @@ import {
   type TestAttemptCursor,
   type TestAttemptHistoryResponse,
 } from '@vmsh/contracts'
+import { recordProductAction } from './product-analytics'
 
 /**
  * Same-origin Student transport for Phase-4 test attempts. A 401 retry reuses
@@ -108,13 +109,15 @@ class BrowserTestSubmissionClient implements TestSubmissionClient {
     const parsedProblemId = publicIdSchema.parse(problemId)
     const parsedRequest = submitTestAnswerRequestSchema.parse(request)
     const body = JSON.stringify(parsedRequest)
-    return this.#request(
+    const response = await this.#request(
       `/problems/${encodeURIComponent(parsedProblemId)}/test-attempts`,
       { method: 'POST', body },
       options,
       201,
       submitTestAnswerResponseSchema,
     )
+    recordProductAction('test.submit', { type: 'problem', id: parsedProblemId })
+    return response
   }
 
   async history(

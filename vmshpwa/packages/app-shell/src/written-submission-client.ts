@@ -38,6 +38,7 @@ import {
   type WrittenThreadResponse,
   type WrittenStudentReactionResponse,
 } from '@vmsh/contracts'
+import { recordProductAction } from './product-analytics'
 
 /**
  * Same-origin Student transport for Phase-5 written threads. All mutations
@@ -202,13 +203,15 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
     body.set('expectedThreadVersion', String(metadata.expectedThreadVersion))
     body.set('ordinal', String(metadata.ordinal))
     body.set('asset', upload.asset, fileName)
-    return this.#request(
+    const response = await this.#request(
       `/thread-entries/${encodeURIComponent(parsedEntryId)}/attachments`,
       { method: 'POST', body },
       options,
       201,
       createWrittenAttachmentResponseSchema,
     )
+    recordProductAction('photo.attach', { type: 'submission', id: parsedEntryId })
+    return response
   }
 
   async attachmentMedia(
@@ -284,13 +287,15 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
   ): Promise<SubmitWrittenEntryResponse> {
     const parsedEntryId = publicIdSchema.parse(entryId)
     const body = JSON.stringify(submitWrittenEntryRequestSchema.parse(request))
-    return this.#request(
+    const response = await this.#request(
       `/thread-entries/${encodeURIComponent(parsedEntryId)}/submit`,
       { method: 'POST', body, contentType: 'application/json' },
       options,
       200,
       submitWrittenEntryResponseSchema,
     )
+    recordProductAction('written.submit', { type: 'submission', id: parsedEntryId })
+    return response
   }
 
   async replace(

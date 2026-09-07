@@ -7,6 +7,7 @@ import {
   AuthenticationRedirectBoundary,
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
+  ProductPageView,
   useAuthentication,
 } from '@vmsh/app-shell'
 import { ConnectionBanner } from '@vmsh/product'
@@ -68,6 +69,7 @@ function StudentProtectedShell({
         navigation={navigation}
         mobileNavigation
       >
+        <ProductPageView audience="student" pathname={location.pathname} />
         <StudentOfflineSessionNotice />
         <Outlet />
       </AppShell>
