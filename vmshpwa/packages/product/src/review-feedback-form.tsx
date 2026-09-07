@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { Button, Textarea, cn } from '@vmsh/ui'
 
@@ -53,9 +53,22 @@ export function ReviewFeedbackForm({
   )
   const [reactionId, setReactionId] = useState<number | null>(initialDraft?.reactionId ?? null)
   const [confirming, setConfirming] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useEffect(() => {
+    const send = (event: KeyboardEvent) => {
+      if (disabled || event.repeat || event.isComposing) return
+      if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault()
+        formRef.current?.requestSubmit()
+      }
+    }
+    window.addEventListener('keydown', send)
+    return () => window.removeEventListener('keydown', send)
+  }, [disabled])
 
   const submit = () => {
-    if (!verdict) return
+    if (disabled || !verdict) return
     // «Зачтено» — вес ≥ 0.9. Незачёт без комментария просим подтвердить.
     const notPassed = verdict.weight < 0.9
     if (notPassed && comment.trim() === '' && !confirming) {
@@ -68,6 +81,7 @@ export function ReviewFeedbackForm({
 
   return (
     <form
+      ref={formRef}
       className={cn('space-y-3', className)}
       onSubmit={(event) => {
         event.preventDefault()
@@ -111,7 +125,7 @@ export function ReviewFeedbackForm({
       {showInternalReaction ? (
         <ReactionPicker
           compact
-          hotkeys
+          hotkeys={!disabled}
           legend="Внутренняя пометка (не видна ученику)"
           onSelect={(nextReactionId) => {
             setReactionId(nextReactionId)
@@ -146,6 +160,9 @@ export function ReviewFeedbackForm({
           Отправить вердикт
         </Button>
       )}
+      <p className="text-caption text-muted-foreground">
+        ⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии.
+      </p>
     </form>
   )
 }

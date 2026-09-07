@@ -22,6 +22,7 @@ import {
   type ReviewAnnotationManifest,
   type ReviewLease,
   type ReviewTimelineEntry,
+  type CompleteReviewResponse,
 } from '@vmsh/contracts'
 import {
   FeedbackThread,
@@ -138,18 +139,24 @@ export function StaffReviewWorkspacePage({ queueId }: { queueId: string }) {
   )
 }
 
-function LoadedReviewWorkspace({
+export function LoadedReviewWorkspace({
   client,
   lease,
   mediaClient,
   principal,
   queueId,
+  inactive = false,
+  onCompleted,
+  onBusyChange,
 }: {
   client: ReturnType<typeof createReviewQueueClient>
   lease: ReviewLease
   mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>
   principal: ReturnType<typeof useAuthenticatedPrincipal>
   queueId: string
+  inactive?: boolean
+  onCompleted?: (response: CompleteReviewResponse, draft: ReviewDraft) => void
+  onBusyChange?: (busy: boolean) => void
 }) {
   const authentication = useAuthentication()
   const navigate = useNavigate()
@@ -174,6 +181,10 @@ function LoadedReviewWorkspace({
   const complete = useCompleteReviewMutation(client, principal, queueId)
   const currentLease = heartbeat.data?.lease ?? lease
   const leaseLost = Boolean(heartbeat.error)
+
+  useEffect(() => {
+    if (!inactive) onBusyChange?.(complete.isPending || release.isPending)
+  }, [inactive, complete.isPending, release.isPending, onBusyChange])
 
   useEffect(() => {
     const renew = () => {
@@ -225,7 +236,7 @@ function LoadedReviewWorkspace({
   }
 
   const submit = async (result: ReviewFeedbackResult) => {
-    if (complete.isPending || leaseLost) return
+    if (inactive || complete.isPending || leaseLost) return
     const verdict = verdictToWire[result.verdict.value as keyof typeof verdictToWire]
     const reaction = writtenTeacherReactionIdSchema.safeParse(result.reactionId)
     if (!verdict || (result.reactionId !== null && !reaction.success)) return
@@ -251,7 +262,7 @@ function LoadedReviewWorkspace({
 
     complete.reset()
     try {
-      await complete.mutateAsync({
+      const response = await complete.mutateAsync({
         schemaVersion: 1,
         claimToken: currentLease.claimToken,
         idempotencyKey: draft.idempotencyKey,
@@ -265,7 +276,8 @@ function LoadedReviewWorkspace({
       const queueId = currentLease.branches[0]?.queueId
       if (queueId) recordProductAction('review.verdict', { type: 'submission', id: queueId })
       clearReviewDraft(window.localStorage, storageKey)
-      await navigate({ to: '/review' })
+      if (onCompleted) onCompleted(response, draft)
+      else await navigate({ to: '/review' })
     } catch (error) {
       authentication.handleApiError(error)
     }
@@ -287,7 +299,7 @@ function LoadedReviewWorkspace({
     mediaClient,
     draft.annotations,
     updateAnnotation,
-    complete.isPending || leaseLost,
+    inactive || complete.isPending || leaseLost,
   )
   const first = currentLease.branches[0]!
   const errors = complete.error ?? release.error
@@ -335,10 +347,7 @@ function LoadedReviewWorkspace({
         ) : null}
         <ThreePaneReview
           evidence={
-            <PageSection
-              description="Все ветки показаны общей хронологией; источник каждой посылки сохранён."
-              title="Работа и переписка"
-            >
+            <PageSection title="Работа и переписка">
               <Card>
                 <CardHeader className="flex-row items-center justify-between">
                   <CardTitle>{messages.length} сообщений</CardTitle>
@@ -352,7 +361,7 @@ function LoadedReviewWorkspace({
           }
           feedback={
             <ReviewFeedbackForm
-              disabled={complete.isPending || leaseLost}
+              disabled={inactive || complete.isPending || leaseLost}
               initialDraft={{
                 verdictValue: draft.verdictValue,
                 comment: draft.comment,
@@ -372,21 +381,29 @@ function LoadedReviewWorkspace({
 
 function BranchSummary({ lease }: { lease: ReviewLease }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ветки задачи</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {lease.branches.map((branch) => (
-          <div className="rounded-md border border-border p-2" key={branch.queueId}>
-            <p className="font-num text-small font-medium">{branch.problemNumber}</p>
-            <p className="text-caption text-muted-foreground">
-              {branch.courseName ?? 'Курс'} · {branch.groupName}
-            </p>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+    <div className="flex flex-wrap gap-2 text-caption text-muted-foreground">
+      {lease.branches.map((branch) => (
+        <span key={branch.queueId}>
+          {branch.problemNumber} · {branch.groupName}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+export function ReviewReadOnlyEvidence({
+  lease,
+  mediaClient,
+  annotations,
+}: {
+  lease: ReviewLease
+  mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>
+  annotations: ReviewAnnotationManifest[]
+}) {
+  return (
+    <FeedbackThread
+      messages={timelineMessages(lease, mediaClient, annotations, () => undefined, true)}
+    />
   )
 }
 

@@ -146,6 +146,18 @@ export const FeedbackPlus: Story = {
   },
 }
 
+export const FeedbackKeyboardSubmit: Story = {
+  name: 'Быстрая отправка — Ctrl+Enter из комментария',
+  render: () => <FormHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.keyboard('1')
+    await userEvent.click(canvas.getByRole('textbox'))
+    await userEvent.keyboard('{Control>}{Enter}{/Control}')
+    await expect(canvas.getByTestId('readout')).toHaveTextContent('Отправлено: plus')
+  },
+}
+
 export const FeedbackGuard: Story = {
   name: 'Незачёт без комментария — подтверждение',
   render: () => <FormHarness />,

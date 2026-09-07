@@ -508,9 +508,9 @@ export function useCompleteReviewMutation(
   return useMutation({
     mutationKey: [...reviewQueueQueryKeys.lease(principal, queueId), 'complete'],
     mutationFn: (request: CompleteReviewRequest) => client.complete(queueId, request),
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.removeQueries({ queryKey: reviewQueueQueryKeys.lease(principal, queueId) })
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: reviewQueueQueryKeys.all(principal),
       })
     },

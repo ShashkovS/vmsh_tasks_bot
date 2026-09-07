@@ -198,3 +198,9 @@ tie-break. Client time в выборе target не участвует. Посл�
 ветки восстанавливают собственные статусы.
 
 Дополнительный proof: concurrency объединённого case, immutable snapshot, target-last assertion, split status и stories `Product/Review--synonym-combined-case`, `Product/Feedback--synonym-merged-timeline`.
+# Дополнение: серийная проверка, 7 сентября 2026
+
+См. [serial-review.md](../../docs/serial-review.md): Staff `review-series-page.tsx`
+повторно использует lease и correction, готовит одну следующую работу,
+позволяет исправить последнюю оценку без поиска в очереди. Проверки выбора,
+пагинации и клавиатуры добавлены рядом с моделями и общим компонентом.

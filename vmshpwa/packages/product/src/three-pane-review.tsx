@@ -23,8 +23,8 @@ export function ThreePaneReview({
   className,
 }: ThreePaneReviewProps) {
   return (
-    <div className={cn('grid gap-4 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]', className)}>
-      <section aria-label="Очередь" className="min-w-0">
+    <div className={cn('grid gap-3', className)}>
+      <section aria-label="Ветки задачи" className="min-w-0">
         {queue}
       </section>
       <section aria-label="Работа и обсуждение" className="min-w-0 space-y-3">
