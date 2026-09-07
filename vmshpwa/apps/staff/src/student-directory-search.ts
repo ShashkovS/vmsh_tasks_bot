@@ -36,11 +36,16 @@ export function studentMatchesSearch(
   student: AdminStudentDirectoryEntry,
   rawQuery: string,
 ): boolean {
+  return studentNameMatchesSearch(
+    [student.surname, student.name, student.middleName ?? ''].filter(Boolean).join(' '),
+    rawQuery,
+  )
+}
+
+export function studentNameMatchesSearch(displayName: string, rawQuery: string): boolean {
   const query = normalize(rawQuery)
   if (!query) return true
-  const name = normalize(
-    [student.surname, student.name, student.middleName ?? ''].filter(Boolean).join(' '),
-  )
+  const name = normalize(displayName)
   if (name.includes(query)) return true
   const candidateTokens = name.split(' ')
   return query

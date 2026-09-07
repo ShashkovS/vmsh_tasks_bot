@@ -1,5 +1,12 @@
 # Lesson statistics and a53 iteration
 
+Staff student selection uses `apps/staff/src/statistics-student-search.tsx`:
+local name search reuses the directory typo-tolerant matcher (case/ё insensitive,
+arbitrary word order). Render at most 20 results, request a narrower query for
+larger matches. Typing does not fetch charts; selection changes the existing
+student URL filter. Native result buttons support Tab/Enter and selection can
+be cleared. Covered by `statistics-student-search.test.tsx`, including 2000 names.
+
 Implemented 2026-09-07. Approved scope: live lesson tables count
 current scores (1 / 0.5), actual submitters per group including zero scores and
 lesson zero. `db_methods/pwa/lesson_statistics.py` reads published membership and

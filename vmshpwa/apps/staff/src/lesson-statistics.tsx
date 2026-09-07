@@ -1,5 +1,6 @@
 import { DistributionViolin, StrengthTrend } from '@vmsh/product'
 import type { StaffStatisticsResponse } from '@vmsh/contracts'
+import { StatisticsStudentSearch } from './statistics-student-search'
 import {
   Button,
   Label,
@@ -144,21 +145,11 @@ export function LessonStatistics({
           </div>
         </section>
       ))}
-      <Label>
-        График школьника
-        <select
-          className="ml-2 rounded border border-input bg-surface p-2"
-          value={studentId ?? ''}
-          onChange={(e) => onStudentChange(e.target.value || null)}
-        >
-          <option value="">Выберите школьника</option>
-          {data.students.map((s) => (
-            <option key={s.studentId} value={s.studentId}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </Label>
+      <StatisticsStudentSearch
+        students={data.students}
+        studentId={studentId}
+        onChange={onStudentChange}
+      />
       {studentId &&
         (data.personal.length ? (
           <StrengthTrend
