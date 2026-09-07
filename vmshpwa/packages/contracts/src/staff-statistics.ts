@@ -82,6 +82,50 @@ export const staffStatisticsResponseSchema = z
     selectedGroupId: publicIdSchema.nullable(),
     run: statisticsRunSchema.nullable(),
     lessons: z.array(staffStatisticsLessonSchema).max(200),
+    lessonNumbers: z.array(z.number().int().nonnegative()).default([]),
+    basicLesson: z
+      .object({
+        lessonNumber: z.number().int().nonnegative(),
+        groups: z.array(
+          z.object({
+            groupId: publicIdSchema,
+            code: z.string(),
+            name: z.string(),
+            participantCount: z.number().int().nonnegative(),
+            distribution: z.array(z.number().nonnegative()),
+            problems: z.array(
+              z.object({
+                problemId: publicIdSchema,
+                label: z.string(),
+                title: z.string(),
+                points: z.number().nonnegative(),
+                tried: z.number().int().nonnegative(),
+                share: z.number().min(0).max(100).nullable(),
+                difficultyWeak: z.number().min(0).max(1).nullable(),
+                difficultyStrong: z.number().min(0).max(1).nullable(),
+              }),
+            ),
+          }),
+        ),
+      })
+      .nullable()
+      .optional(),
+    students: z.array(z.object({ studentId: publicIdSchema, name: z.string() })).default([]),
+    personal: z
+      .array(
+        z.object({
+          lessonNumber: z.number().int().positive(),
+          groupCode: z.string(),
+          simple: z.number().min(0).max(10),
+          complex: z.number().min(0).max(10),
+          difficulty: z.number().min(0).max(10),
+          simpleSmooth: z.number().min(0).max(10).nullable(),
+          complexSmooth: z.number().min(0).max(10).nullable(),
+          solved: z.number().int().nonnegative(),
+          total: z.number().int().nonnegative(),
+        }),
+      )
+      .default([]),
     requestId: z.string().trim().min(1).max(128),
   })
   .strip()

@@ -18,7 +18,13 @@ import {
   type CourseProgressResponse,
   type FamilyEnrollmentUpdateRequest,
 } from '@vmsh/contracts'
-import { ActivityCalendar, LevelChip, courseAchievementLabel, type GroupView } from '@vmsh/product'
+import {
+  ActivityCalendar,
+  StrengthTrend,
+  LevelChip,
+  courseAchievementLabel,
+  type GroupView,
+} from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
 type ColorIndex = 0 | 1 | 2 | 3 | 4
@@ -335,6 +341,20 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       : ''}
                   </p>
                   <FamilyCourseAchievements achievements={progress.achievements} />
+                  {progress.analytics?.lessons.length ? (
+                    <StrengthTrend
+                      points={progress.analytics.lessons.map((lesson) => ({
+                        lesson: String(lesson.lessonNumber),
+                        simple: lesson.simpleStrength,
+                        complex: lesson.complexStrength,
+                        simpleSmooth: lesson.simpleSmooth ?? lesson.simpleStrength,
+                        complexSmooth: lesson.complexSmooth ?? lesson.complexStrength,
+                        difficulty: lesson.maxComplexStrength,
+                        group: lesson.groupCode,
+                        solved: `${lesson.solvedItems}/${lesson.totalItems}`,
+                      }))}
+                    />
+                  ) : null}
                   {progress.lessons.length || progress.activity.length ? (
                     <details className="rounded-md border border-border bg-surface px-3 py-2">
                       <summary className="cursor-pointer text-small font-medium">

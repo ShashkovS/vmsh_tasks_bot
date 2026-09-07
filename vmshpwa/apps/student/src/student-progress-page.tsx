@@ -167,6 +167,8 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
               points={progress.data.analytics.lessons.map((lesson) => ({
                 lesson: String(lesson.lessonNumber),
                 simple: lesson.simpleStrength,
+                simpleSmooth: lesson.simpleSmooth ?? lesson.simpleStrength,
+                complexSmooth: lesson.complexSmooth ?? lesson.complexStrength,
                 complex: lesson.complexStrength,
                 difficulty: lesson.maxComplexStrength,
                 solved: `${lesson.solvedItems}/${lesson.totalItems}`,

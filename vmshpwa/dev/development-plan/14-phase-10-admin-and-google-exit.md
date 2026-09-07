@@ -1,5 +1,13 @@
 # Этап 10. Администрирование данных, bulk workflows и отказ от Google
 
+## Lesson statistics extension — готово к выпуску
+
+Live-статистика и итерационный a53: [контракт](../../docs/lesson-statistics.md).
+Статистика занятия 0 независима от фонового расчёта; личные ряды доступны
+только своему Student, связанной Family и scoped Staff.
+Проверки: 29 backend, 9 frontend unit, 10 Storybook, typecheck/build/lint.
+Установка миграции и таймера описана в контракте; prod локально не изменялся.
+
 ## Analytics validation hotfix — 7 сентября 2026
 
 Ожидаемые ошибки ingestion/report filters возвращают 422 вместо TypeError/500;

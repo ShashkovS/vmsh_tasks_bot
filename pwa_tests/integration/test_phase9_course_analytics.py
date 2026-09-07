@@ -121,12 +121,12 @@ async def test_analytics_command_calculates_every_active_course(content_http):
             "VALUES (?, ?, 'content-a', 41, NULL, '2026-09-17T10:00:00', 17, 2)",
             (content_support.STUDENT_USER_ID, problem_id),
         )
-        return calculate_active_courses(
-            connection,
-            completed_at="2026-09-17T12:00:00Z",
-        )
 
-    assert fixture.factory.run_write(seed_and_calculate) == [("c-1", 1)]
+    fixture.factory.run_write(seed_and_calculate)
+    with fixture.factory.connect() as connection:
+        assert calculate_active_courses(
+            connection, completed_at="2026-09-17T12:00:00Z"
+        ) == [("c-1", 1)]
 
     def read_achievements(connection):
         course_id = connection.execute(

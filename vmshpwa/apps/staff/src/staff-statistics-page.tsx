@@ -1,5 +1,6 @@
 import { BarChart3, CalendarDays, UsersRound } from 'lucide-react'
 import { useMemo } from 'react'
+import { LessonStatistics } from './lesson-statistics'
 
 import {
   PageLayout,
@@ -59,7 +60,9 @@ function selectedLesson(
   lessonNumber: number | null,
 ): StaffStatisticsLesson | null {
   if (lessons.length === 0) return null
-  return lessons.find((lesson) => lesson.lessonNumber === lessonNumber) ?? lessons.at(-1) ?? null
+  return lessonNumber === null
+    ? (lessons.at(-1) ?? null)
+    : (lessons.find((lesson) => lesson.lessonNumber === lessonNumber) ?? null)
 }
 
 function MetricCard({
@@ -88,15 +91,24 @@ export function StaffStatisticsView({
   onCourseChange,
   onGroupChange,
   onLessonChange,
+  studentId = null,
+  onStudentChange = () => {},
+  onRefresh = () => {},
 }: {
   data: StaffStatisticsResponse
   lessonNumber: number | null
   onCourseChange: (courseId: string) => void
   onGroupChange: (groupId: string | null) => void
   onLessonChange: (lessonNumber: number) => void
+  studentId?: string | null
+  onStudentChange?: (student: string | null) => void
+  onRefresh?: () => void
 }) {
   const course = data.courses.find((item) => item.courseId === data.selectedCourseId) ?? null
-  const lesson = selectedLesson(data.lessons, lessonNumber)
+  const lesson = selectedLesson(
+    data.lessons,
+    lessonNumber ?? data.basicLesson?.lessonNumber ?? null,
+  )
   const distributionMaximum = Math.max(1, ...(lesson?.solvedDistribution ?? [1]))
 
   return (
@@ -138,10 +150,17 @@ export function StaffStatisticsView({
           </Label>
         </div>
       }
-      description="Анонимные агрегаты по завершённым занятиям. Здесь нет рейтинга школьников и сравнения конкретного ребёнка с группой."
+      description="Отправленные задачи и баллы по занятиям. Сила и сложность обновляются отдельным расчётом."
       title="Статистика курса"
       width="wide"
     >
+      <LessonStatistics
+        data={data}
+        onLessonChange={onLessonChange}
+        studentId={studentId}
+        onStudentChange={onStudentChange}
+        onRefresh={onRefresh}
+      />
       {data.courses.length === 0 ? (
         <PageStatePanel
           description="Администратор ещё не выдал вам доступ к курсу со статистикой."
@@ -304,6 +323,8 @@ export function StaffStatisticsPage({
   onCourseChange,
   onGroupChange,
   onLessonChange,
+  studentId = null,
+  onStudentChange = () => {},
 }: {
   courseId: string | null
   groupId: string | null
@@ -311,6 +332,8 @@ export function StaffStatisticsPage({
   onCourseChange: (courseId: string) => void
   onGroupChange: (groupId: string | null) => void
   onLessonChange: (lessonNumber: number) => void
+  studentId?: string | null
+  onStudentChange?: (student: string | null) => void
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -332,7 +355,7 @@ export function StaffStatisticsPage({
   const result = useStaffStatisticsQuery(
     client,
     { audience: 'staff', accountId: principal.accountId },
-    { courseId, groupId },
+    { courseId, groupId, lessonNumber, studentId },
   )
 
   if (result.isPending) {
@@ -364,6 +387,9 @@ export function StaffStatisticsPage({
       onCourseChange={onCourseChange}
       onGroupChange={onGroupChange}
       onLessonChange={onLessonChange}
+      studentId={studentId}
+      onStudentChange={onStudentChange}
+      onRefresh={() => void result.refetch()}
     />
   )
 }

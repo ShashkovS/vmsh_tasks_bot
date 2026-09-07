@@ -25,6 +25,8 @@ const courseAnalyticsLessonSchema = z
     groupCode: z.string().trim().min(1).max(20),
     simpleStrength: z.number().min(0).max(10),
     complexStrength: z.number().min(0).max(10),
+    simpleSmooth: z.number().min(0).max(10).nullable().optional(),
+    complexSmooth: z.number().min(0).max(10).nullable().optional(),
     maxComplexStrength: z.number().min(0).max(10),
     solvedItems: z.number().int().nonnegative(),
     totalItems: z.number().int().nonnegative(),

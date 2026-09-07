@@ -15,6 +15,8 @@ import {
 export interface StaffStatisticsFilter {
   courseId: string | null
   groupId: string | null
+  lessonNumber?: number | null
+  studentId?: string | null
 }
 
 export interface StaffStatisticsClient {
@@ -36,6 +38,8 @@ export function createStaffStatisticsClient(
       const search = new URLSearchParams()
       if (filter.courseId !== null) search.set('courseId', publicIdSchema.parse(filter.courseId))
       if (filter.groupId !== null) search.set('groupId', publicIdSchema.parse(filter.groupId))
+      if (filter.lessonNumber != null) search.set('lessonNumber', String(filter.lessonNumber))
+      if (filter.studentId) search.set('studentId', publicIdSchema.parse(filter.studentId))
       const path = `/statistics${search.size === 0 ? '' : `?${search}`}`
       const request = () =>
         fetchImplementation(`${configured.apiBase}${path}`, {
@@ -65,7 +69,12 @@ export function useStaffStatisticsQuery(
   filter: StaffStatisticsFilter,
 ) {
   return useQuery({
-    queryKey: staffStatisticsQueryKey(principal, filter.courseId, filter.groupId),
+    queryKey: [
+      ...staffStatisticsQueryKey(principal, filter.courseId, filter.groupId),
+      filter.lessonNumber ?? null,
+      filter.studentId ?? null,
+    ],
+    refetchOnWindowFocus: 'always',
     queryFn: ({ signal }) => client.get(filter, signal),
   })
 }

@@ -1,5 +1,14 @@
 # Статус плана разработки
 
+## Статистика занятий и a53 — готово к выпуску, 7 сентября 2026
+
+- Реализованы независимые live-агрегаты баллов/отправок, один шаг a53,
+  атомарная публикация состояния и личные графики Student/Family/Staff.
+- Проверки: 29 backend, 9 frontend unit, 10 browser Storybook; workspace
+  typecheck, ESLint/Ruff, сборки Staff/Student/Family. Миграция 0084 и
+  systemd timer требуют обычного серверного выпуска; локально prod не менялся.
+- [Контракт, реализация и выпуск](../../docs/lesson-statistics.md).
+
 ## Analytics validation hotfix — 7 сентября 2026
 
 - Исправлены keyword-only вызовы PwaApiError: ожидаемые ошибки аналитики

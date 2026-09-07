@@ -18,11 +18,14 @@ from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.permissions import AuthorizationPrincipal, Capability
 from models.pwa.auth import AuthAudience
 from models.pwa.staff_statistics import summarize_staff_course_metrics
+from db_methods.pwa.lesson_statistics import course_facts
+from db_methods.pwa.iterative_analytics import read_state
+from models.pwa.lesson_statistics import summarize_lessons
 
 
 staff_statistics_routes = web.RouteTableDef()
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
-_QUERY_KEYS = {"courseId", "groupId"}
+_QUERY_KEYS = {"courseId", "groupId", "lessonNumber", "studentId"}
 
 
 def _factory(request: web.Request):
@@ -109,6 +112,19 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
         )
     requested_course_id = _query_id(request, "courseId")
     requested_group_id = _query_id(request, "groupId")
+    requested_student_id = _query_id(request, "studentId")
+    try:
+        requested_lesson = (
+            int(request.query["lessonNumber"])
+            if "lessonNumber" in request.query
+            else None
+        )
+        if requested_lesson is not None and requested_lesson < 0:
+            raise ValueError
+    except ValueError:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Неверный номер занятия"
+        )
 
     courses, groups = await _factory(request).run_read_async(_catalog)
     accessible_courses = [
@@ -185,6 +201,13 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
         )
 
     def read_run(connection: sqlite3.Connection):
+        connection.execute("BEGIN")
+        try:
+            return read_snapshot(connection)
+        finally:
+            connection.execute("ROLLBACK")
+
+    def read_snapshot(connection: sqlite3.Connection):
         run = find_latest_completed_course_run(
             connection, course_id=int(selected_course["id"])
         )
@@ -193,9 +216,13 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
             if run is None
             else list_course_run_metrics(connection, run_id=int(run["id"]))
         )
-        return run, rows
+        facts = course_facts(connection, int(selected_course["id"]))
+        difficulty, _ = read_state(connection, int(selected_course["id"]))
+        return run, rows, facts, difficulty
 
-    run, metric_rows = await _factory(request).run_read_async(read_run)
+    run, metric_rows, facts, difficulty = await _factory(request).run_read_async(
+        read_run
+    )
     allowed_group_ids = (
         frozenset({requested_group_id})
         if requested_group_id is not None
@@ -203,6 +230,60 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
     )
     lessons = summarize_staff_course_metrics(
         metric_rows, allowed_group_public_ids=allowed_group_ids
+    )
+    basic = summarize_lessons(*facts, allowed_group_ids)
+    numbers = [item["lessonNumber"] for item in basic]
+    selected_number = (
+        requested_lesson if requested_lesson in numbers else max(numbers, default=None)
+    )
+    basic_lesson = next(
+        (item for item in basic if item["lessonNumber"] == selected_number), None
+    )
+    by_public = {p["public_id"]: p for p in facts[0]}
+    if basic_lesson:
+        for group in basic_lesson["groups"]:
+            for problem in group["problems"]:
+                values = difficulty.get(
+                    by_public[problem["problemId"]]["logical_problem_key"]
+                )
+                problem["difficultyWeak"] = values[0] if values else None
+                problem["difficultyStrong"] = values[1] if values else None
+    allowed_problems = {
+        p["problem_id"] for p in facts[0] if p["group_public_id"] in allowed_group_ids
+    }
+    students = {
+        r["student_public_id"]: {
+            "studentId": r["student_public_id"],
+            "name": r["student_name"],
+            "id": r["student_user_id"],
+        }
+        for r in facts[1]
+        if r["problem_id"] in allowed_problems
+    }
+    if requested_student_id is not None and requested_student_id not in students:
+        raise PwaApiError(
+            status=403, code="forbidden", message="Нет доступа к статистике школьника"
+        )
+    selected_student = students.get(requested_student_id)
+    personal = (
+        []
+        if selected_student is None
+        else [
+            {
+                "lessonNumber": r["lesson_number"],
+                "groupCode": r["group_code"],
+                "simple": r["simple_strength"],
+                "complex": r["complex_strength"],
+                "difficulty": r["max_complex_strength"],
+                "simpleSmooth": r["simple_smooth"],
+                "complexSmooth": r["complex_smooth"],
+                "solved": r["solved_items"],
+                "total": r["total_items"],
+            }
+            for r in metric_rows
+            if r["student_user_id"] == selected_student["id"]
+            and r["group_public_id"] in allowed_group_ids
+        ]
     )
     return web.json_response(
         {
@@ -220,6 +301,15 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
                 "completedAt": run["completed_at"],
             },
             "lessons": lessons,
+            "lessonNumbers": numbers,
+            "basicLesson": basic_lesson,
+            "students": [
+                {"studentId": s["studentId"], "name": s["name"]}
+                for s in sorted(
+                    students.values(), key=lambda s: (s["name"], s["studentId"])
+                )
+            ],
+            "personal": personal,
             "requestId": request["request_id"],
         },
         headers={"Cache-Control": "no-store"},

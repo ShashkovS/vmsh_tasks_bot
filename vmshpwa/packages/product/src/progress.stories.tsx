@@ -15,6 +15,30 @@ const meta = { title: 'Product/Progress', parameters: { layout: 'padded' } } sat
 export default meta
 type Story = StoryObj<typeof meta>
 
+export const FractionalLessonDistributions: Story = {
+  render: () => (
+    <div className="flex gap-4">
+      <DistributionViolin
+        values={[0, 0.5, 1, 1.5, 2]}
+        domain={[0, 3]}
+        colorIndex={1}
+        caption="Начинающие · баллы"
+      />
+      <DistributionViolin
+        values={[0, 1, 1.5, 2.5, 3]}
+        domain={[0, 3]}
+        colorIndex={2}
+        caption="Продолжающие · баллы"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('img')).toHaveLength(2)
+    await expect(canvas.getAllByText('0,5')).toHaveLength(2)
+  },
+}
+
 const groupScores = [
   0, 0.25, 0.5, 0.5, 0.7, 0.7, 0.7, 0.95, 1, 0.7, 0.5, 0.95, 0.7, 0.25, 0.5, 0.7, 1, 0.95, 0.7, 0.5,
 ]

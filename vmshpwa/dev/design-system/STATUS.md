@@ -1,5 +1,13 @@
 # Design-system status
 
+## Lesson statistics — готово, 7 сентября 2026
+
+- Live-таблицы и распределения баллов отдельно от model-run; переиспользуются
+  DistributionViolin и StrengthTrend. [Решения](../../docs/lesson-statistics.md).
+- Добавлены дробные шкалы, квартильный box, цвета групп, одиночная точка,
+  выбор школьника и сглаживание личных графиков. 9 unit и 10 browser stories
+  прошли; production build всех трёх приложений прошёл.
+
 ## Analytics route contract — 7 сентября 2026
 
 - Общий трекер нормализует кириллические/encoded сегменты маршрутов в `:id`;

@@ -186,6 +186,8 @@ def course_analytics_payload(rows: list[dict[str, object]]) -> dict[str, object]
                 "groupCode": row["group_short_code"],
                 "simpleStrength": row["simple_strength"],
                 "complexStrength": row["complex_strength"],
+                "simpleSmooth": row.get("simple_smooth"),
+                "complexSmooth": row.get("complex_smooth"),
                 "maxComplexStrength": row["max_complex_strength"],
                 "solvedItems": row["solved_items"],
                 "totalItems": row["total_items"],

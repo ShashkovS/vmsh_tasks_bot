@@ -64,6 +64,7 @@ export interface DistributionViolinProps {
   height?: number | undefined
   caption?: string | undefined
   className?: string | undefined
+  colorIndex?: 1 | 2 | 3 | undefined
 }
 
 /*
@@ -77,6 +78,7 @@ export function DistributionViolin({
   height = 200,
   caption,
   className,
+  colorIndex = 1,
 }: DistributionViolinProps) {
   const pad = 12
   const sorted = [...values].sort((a, b) => a - b)
@@ -96,6 +98,16 @@ export function DistributionViolin({
   const median = quantileSorted(sorted, 0.5)
   const q1 = quantileSorted(sorted, 0.25)
   const q3 = quantileSorted(sorted, 0.75)
+  const color = {
+    1: 'fill-chart-1/25 stroke-chart-1',
+    2: 'fill-chart-2/25 stroke-chart-2',
+    3: 'fill-chart-3/25 stroke-chart-3',
+  }[colorIndex]
+  const tickStep = Math.max(0.5, Math.ceil(((hi - lo) / 8) * 2) / 2)
+  const ticks = Array.from(
+    { length: Math.floor((hi - lo) / tickStep) + 1 },
+    (_, i) => lo + i * tickStep,
+  )
 
   const label = `Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}.`
 
@@ -107,13 +119,34 @@ export function DistributionViolin({
         role="img"
         viewBox={`0 0 ${width} ${height}`}
       >
+        {ticks.map((tick) => (
+          <g key={tick}>
+            <line
+              x1={24}
+              x2={width - pad}
+              y1={yScale(tick)}
+              y2={yScale(tick)}
+              className="stroke-border/60"
+            />
+            <text x={0} y={yScale(tick) + 3} className="fill-muted-foreground text-[9px]">
+              {tick.toLocaleString('ru-RU')}
+            </text>
+          </g>
+        ))}
         <path
-          className="fill-chart-1/25 stroke-chart-1"
+          className={color}
           d={buildViolinPath(ys, densities, yScale, halfScale, cx)}
           strokeWidth={1.5}
         />
+        <rect
+          x={cx - 10}
+          y={yScale(q3)}
+          width={20}
+          height={Math.max(1, yScale(q1) - yScale(q3))}
+          className={color}
+        />
         <line
-          className="stroke-chart-1"
+          className={color}
           strokeWidth={2}
           x1={cx - halfScale(kde(values, median, bandwidth))}
           x2={cx + halfScale(kde(values, median, bandwidth))}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import nullcontext
 from collections.abc import Iterable, Mapping
 
 
@@ -104,11 +105,12 @@ def save_completed_course_metrics(
     input_through_result_id: int,
     completed_at: str,
     metrics: Iterable[Mapping[str, object]],
+    commit: bool = True,
 ) -> int:
     """Persist a complete run in one transaction and return its database id."""
 
     metrics = list(metrics)
-    with connection:
+    with connection if commit else nullcontext():
         run_id = connection.execute(
             "INSERT INTO analytics_runs "
             "(course_id, algorithm, algorithm_version, "
@@ -166,7 +168,8 @@ def latest_student_course_metrics(
                metric.complex_strength,
                metric.max_complex_strength,
                metric.solved_items,
-               metric.total_items
+               metric.total_items,
+               metric.simple_smooth, metric.complex_smooth
         FROM student_lesson_metrics AS metric
         JOIN analytics_runs AS run ON run.id = metric.run_id
         JOIN groups AS group_record ON group_record.group_id = metric.group_id
@@ -213,7 +216,8 @@ def list_course_run_metrics(
                metric.complex_strength,
                metric.max_complex_strength,
                metric.solved_items,
-               metric.total_items
+               metric.total_items,
+               metric.simple_smooth, metric.complex_smooth
         FROM student_lesson_metrics AS metric
         JOIN groups AS group_record ON group_record.group_id = metric.group_id
         WHERE metric.run_id = ?
