@@ -74,7 +74,7 @@ export function canonicalProductRoute(pathname: string): string {
   const segments = (pathname.split(/[?#]/, 1)[0] ?? '').split('/').filter(Boolean)
   if (segments.length === 0) return '/'
   return `/${segments
-    .map((segment) => (/\d/.test(segment) || /[._:-]/.test(segment) ? ':id' : segment))
+    .map((segment) => (/^[a-z]+$/.test(segment) ? segment : ':id'))
     .join('/')}`
 }
 

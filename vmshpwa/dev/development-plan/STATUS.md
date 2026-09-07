@@ -1,5 +1,15 @@
 # Статус плана разработки
 
+## Analytics validation hotfix — 7 сентября 2026
+
+- Исправлены keyword-only вызовы PwaApiError: ожидаемые ошибки аналитики
+  возвращают 422/403 вместо TypeError/500. Кириллические и URL-encoded коды
+  групп нормализуются в `:id`, включая события от закешированных клиентов.
+- Проверки пройдены: HTTP validation/report filters и SQLite store — 26 tests;
+  frontend route tests — 8 tests; ESLint и git diff --check.
+  Детали и файлы: [product-analytics.md](../../docs/product-analytics.md).
+- Сдача ответов и отдельная проекция Staff audit этой правкой не меняются.
+
 ## Правка названия созданного занятия — готово к owner-проверке, 7 сентября 2026
 
 - Staff-страница существующего занятия получает отдельную карточку «Название

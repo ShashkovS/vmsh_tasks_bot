@@ -1,5 +1,12 @@
 # Design-system status
 
+## Analytics route contract — 7 сентября 2026
+
+- Общий трекер нормализует кириллические/encoded сегменты маршрутов в `:id`;
+  backend совместим с открытыми вкладками предыдущей версии. Визуальных
+  изменений нет. Frontend regression: 8 tests passed.
+- [Контракт и backend-проверки](../../docs/product-analytics.md).
+
 ## Cyrillic TikZ source — 22 августа 2026
 
 - Отладочный `content.tex` теперь явно UTF-8/T2A/Russian и не содержит legacy Cyrillic control sequence `\пункт`: generated TikZ подставляет ASCII `\vmshPartLabel`, сохраняя его видимый label. Это устраняет ошибку `Invalid UTF-8 byte` в isolated pdfLaTeX: [`tikz.py`](../../../helpers/pwa/content/tikz.py), [`assets.py`](../../../helpers/pwa/content/assets.py).

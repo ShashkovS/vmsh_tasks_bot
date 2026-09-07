@@ -1,5 +1,12 @@
 # Этап 10. Администрирование данных, bulk workflows и отказ от Google
 
+## Analytics validation hotfix — 7 сентября 2026
+
+Ожидаемые ошибки ingestion/report filters возвращают 422 вместо TypeError/500;
+кириллические коды групп приводятся к ASCII route shape. Проверки и реализация:
+[product-analytics.md](../../docs/product-analytics.md). Отдельный Staff audit
+и отправка ответов не входят в этот hotfix.
+
 ## Результат
 
 Admin из Staff импортирует Excel, создаёт/правит пользователей и task settings, показывает отчёт об ошибочных строках и полностью заменяет workflow листов «Задачи»/«Старые». Остальные Google/external scripts продолжают работать до отдельного полного cutover своего процесса.

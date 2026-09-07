@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 import re
 from datetime import UTC, datetime, timedelta
+from urllib.parse import unquote
 
 from aiohttp import web
 
@@ -65,6 +66,19 @@ _ROUTE_ID = re.compile(r"^/[a-z0-9/:._-]{0,159}$")
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 
 
+def _route_id(value: object) -> str:
+    # Compatibility for cached clients; see vmshpwa/docs/product-analytics.md.
+    if not isinstance(value, str) or len(value) > 160:
+        raise ValueError
+    route = "/".join(
+        ":id" if unquote(segment) in {"н", "п", "э"} else segment
+        for segment in value.split("/")
+    )
+    if _ROUTE_ID.fullmatch(route) is None:
+        raise ValueError
+    return route
+
+
 def _analytics_factory(request: web.Request):
     state = request.app.get(PWA_ANALYTICS_DATABASE)
     if state is None or state.factory is None:
@@ -102,15 +116,13 @@ def _event(value: object) -> tuple[str, str | None, str | None, int, int, float,
     }:
         raise ValueError
     event_type = value.get("eventType")
-    route_id = value.get("routeId")
+    _route_id(value.get("routeId"))
     entity_type = value.get("entityType")
     entity_id = value.get("entityId")
     width, height, dpr = value.get("viewportWidth"), value.get("viewportHeight"), value.get("devicePixelRatio")
     pointer_type, display_mode = value.get("pointerType"), value.get("displayMode")
     if (
         event_type not in _EVENT_TYPES
-        or not isinstance(route_id, str)
-        or _ROUTE_ID.fullmatch(route_id) is None
         or (entity_type is None) != (entity_id is None)
         or entity_type is not None
         and (
@@ -134,7 +146,7 @@ async def record_events(request: web.Request) -> web.Response:
     validate_request_boundary(request, audience=audience, expects_json=True, require_browser_source=True)
     session = authenticated_session(request)
     if session.principal.audience is not audience:
-        raise PwaApiError(403, "forbidden", "Неверная аудитория аналитики")
+        raise PwaApiError(status=403, code="forbidden", message="Неверная аудитория аналитики")
     try:
         payload = await request.json()
         events = payload["events"] if isinstance(payload, dict) and set(payload) == {"events"} else None
@@ -142,7 +154,7 @@ async def record_events(request: web.Request) -> web.Response:
             raise ValueError
         parsed = [(item, _event(item)) for item in events]
     except (ValueError, TypeError, KeyError):
-        raise PwaApiError(422, "validation_error", "Некорректное аналитическое событие")
+        raise PwaApiError(status=422, code="validation_error", message="Некорректное аналитическое событие")
 
     factory = _analytics_factory(request)
     if factory is None:
@@ -156,7 +168,7 @@ async def record_events(request: web.Request) -> web.Response:
             "INSERT INTO product_events (occurred_at, audience, account_public_id, session_public_id, event_type, route_id, entity_type, entity_public_id, viewport_width, viewport_height, device_pixel_ratio, pointer_type, display_mode) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                (occurred_at, audience.value, account_id, session_id, parsed_event[0], str(raw["routeId"]), parsed_event[1], parsed_event[2], parsed_event[3], parsed_event[4], parsed_event[5], parsed_event[6], parsed_event[7])
+                (occurred_at, audience.value, account_id, session_id, parsed_event[0], _route_id(raw["routeId"]), parsed_event[1], parsed_event[2], parsed_event[3], parsed_event[4], parsed_event[5], parsed_event[6], parsed_event[7])
                 for raw, parsed_event in parsed
             ],
         )
@@ -171,7 +183,7 @@ async def record_events(request: web.Request) -> web.Response:
 def _report_filter(request: web.Request) -> tuple[datetime, datetime, str | None, str | None, str | None]:
     allowed = {"from", "to", "audience", "accountId", "eventType", "limit", "before"}
     if set(request.query) - allowed:
-        raise PwaApiError(422, "validation_error", "Неизвестный параметр аналитики")
+        raise PwaApiError(status=422, code="validation_error", message="Неизвестный параметр аналитики")
     now = datetime.now(UTC)
     start = now - timedelta(days=14)
     try:
@@ -179,15 +191,15 @@ def _report_filter(request: web.Request) -> tuple[datetime, datetime, str | None
             start = datetime.fromisoformat(request.query["from"].replace("Z", "+00:00")).astimezone(UTC)
         end = datetime.fromisoformat(request.query.get("to", now.isoformat()).replace("Z", "+00:00")).astimezone(UTC)
     except ValueError as exc:
-        raise PwaApiError(422, "validation_error", "Неверный период аналитики") from exc
+        raise PwaApiError(status=422, code="validation_error", message="Неверный период аналитики") from exc
     if end < start or end - start > timedelta(days=370):
-        raise PwaApiError(422, "validation_error", "Выберите период не более года")
+        raise PwaApiError(status=422, code="validation_error", message="Выберите период не более года")
     audience = request.query.get("audience")
     event_type = request.query.get("eventType")
     if (audience is not None and audience not in _AUDIENCES) or (
         event_type is not None and event_type not in _EVENT_TYPES
     ):
-        raise PwaApiError(422, "validation_error", "Неверный фильтр аналитики")
+        raise PwaApiError(status=422, code="validation_error", message="Неверный фильтр аналитики")
     return start, end, audience, request.query.get("accountId"), event_type
 
 
@@ -231,7 +243,7 @@ async def analytics_events(request: web.Request) -> web.Response:
         limit = min(100, max(1, int(request.query.get("limit", "50"))))
         before = int(request.query["before"]) if request.query.get("before") else None
     except ValueError as exc:
-        raise PwaApiError(422, "validation_error", "Неверная страница аналитики") from exc
+        raise PwaApiError(status=422, code="validation_error", message="Неверная страница аналитики") from exc
     clauses, params = ["occurred_at >= ?", "occurred_at <= ?"], [start.isoformat(), end.isoformat()]
     for clause, value in (("audience", audience), ("account_public_id", account_id), ("event_type", event_type)):
         if value is not None:
