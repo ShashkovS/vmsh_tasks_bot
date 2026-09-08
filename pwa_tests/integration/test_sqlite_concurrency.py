@@ -5,6 +5,8 @@ import threading
 
 import pytest
 
+from helpers.pwa.request_trace import RequestTrace, current_trace
+
 from db_methods.pwa import (
     BusyRetryExhausted,
     PwaConnectionFactory,
@@ -89,3 +91,33 @@ def test_unit_of_work_rejects_coroutine_callbacks(database_path):
 
     with pytest.raises(TypeError, match="must be synchronous"):
         factory.run_write(invalid_operation)
+
+
+@pytest.mark.asyncio
+async def test_trace_records_database_stages_without_sql(database_path):
+    factory = PwaConnectionFactory(database_path)
+    trace = RequestTrace()
+    token = current_trace.set(trace)
+    try:
+        await factory.run_write_async(
+            lambda connection: (
+                connection.execute(
+                    "INSERT INTO kv (key, value) VALUES ('trace-secret', 'secret')"
+                ).rowcount
+            )
+        )
+        await factory.run_read_async(
+            lambda connection: connection.execute("SELECT 1").fetchone()
+        )
+    finally:
+        current_trace.reset(token)
+    assert set(trace.stages) == {
+        "db.thread_queue",
+        "db.connect",
+        "db.write_lock",
+        "db.write",
+        "db.commit",
+        "db.read",
+    }
+    assert trace.stages["db.connect"][0] == 2
+    assert "secret" not in str(trace.stages)

@@ -14,6 +14,7 @@ import socket
 from dataclasses import dataclass
 
 from aiohttp import web
+from helpers.pwa.request_trace import trace_stage
 from aiohttp.web_urldispatcher import SystemRoute
 
 from apps.pwa_api.auth_service import (
@@ -218,12 +219,13 @@ async def authenticate_access_cookie(
 
     policy = COOKIE_POLICY[audience]
     try:
-        authenticated = await auth_service(request).authenticate_access(
-            audience=audience,
-            access_cookie_value=request.cookies.get(policy.access_name),
-            request_id=_request_id(request),
-            client_address=request_boundary(request).client_address,
-        )
+        with trace_stage("auth"):
+            authenticated = await auth_service(request).authenticate_access(
+                audience=audience,
+                access_cookie_value=request.cookies.get(policy.access_name),
+                request_id=_request_id(request),
+                client_address=request_boundary(request).client_address,
+            )
     except AuthServiceError as error:
         raise _auth_error(error) from error
     if authenticated is not None:

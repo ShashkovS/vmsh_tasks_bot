@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import inspect
 import sqlite3
 import time
@@ -11,6 +10,8 @@ from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeVar
+
+from helpers.pwa.request_trace import trace_stage, traced_thread
 
 from .migrations import require_current_schema
 
@@ -135,7 +136,8 @@ class PwaConnectionFactory:
 
     @contextmanager
     def read_connection(self) -> Iterator[sqlite3.Connection]:
-        connection = self.connect()
+        with trace_stage("db.connect"):
+            connection = self.connect()
         try:
             yield connection
         finally:
@@ -143,9 +145,11 @@ class PwaConnectionFactory:
 
     @contextmanager
     def write_transaction(self) -> Iterator[sqlite3.Connection]:
-        connection = self.connect()
+        with trace_stage("db.connect"):
+            connection = self.connect()
         try:
-            self._begin_write(connection)
+            with trace_stage("db.write_lock"):
+                self._begin_write(connection)
             try:
                 yield connection
             except BaseException:
@@ -153,13 +157,15 @@ class PwaConnectionFactory:
                     connection.execute("ROLLBACK")
                 raise
             else:
-                connection.execute("COMMIT")
+                with trace_stage("db.commit"):
+                    connection.execute("COMMIT")
         finally:
             connection.close()
 
     def run_read(self, operation: Callable[[sqlite3.Connection], ResultT]) -> ResultT:
         with self.read_connection() as connection:
-            result = operation(connection)
+            with trace_stage("db.read"):
+                result = operation(connection)
             if inspect.isawaitable(result):
                 if inspect.iscoroutine(result):
                     result.close()
@@ -168,7 +174,8 @@ class PwaConnectionFactory:
 
     def run_write(self, operation: Callable[[sqlite3.Connection], ResultT]) -> ResultT:
         with self.write_transaction() as connection:
-            result = operation(connection)
+            with trace_stage("db.write"):
+                result = operation(connection)
             if inspect.isawaitable(result):
                 if inspect.iscoroutine(result):
                     result.close()
@@ -178,9 +185,9 @@ class PwaConnectionFactory:
     async def run_read_async(
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
-        return await asyncio.to_thread(self.run_read, operation)
+        return await traced_thread(self.run_read, operation)
 
     async def run_write_async(
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
-        return await asyncio.to_thread(self.run_write, operation)
+        return await traced_thread(self.run_write, operation)

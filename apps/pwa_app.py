@@ -1654,6 +1654,13 @@ def configure(
             broker = NatsBroker(runtime_config.config_name)
         else:
             broker = InProcessBroker(runtime_config.config_name)
+    from helpers.pwa.request_trace import (
+        event_loop_trace_lifecycle,
+        request_trace_middleware,
+    )
+
+    app.middlewares.append(request_trace_middleware)
+    app.cleanup_ctx.append(event_loop_trace_lifecycle)
     app.middlewares.append(pwa_error_middleware)
     app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
