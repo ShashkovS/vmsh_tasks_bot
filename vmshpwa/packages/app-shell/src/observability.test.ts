@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { sanitizeSentryBreadcrumb, sanitizeSentryEvent } from './observability'
 
 describe('Sentry privacy boundary', () => {
-  it('removes browser identity and request contents while keeping the route', () => {
+  it('keeps only account ID and removes request contents while keeping the route', () => {
     const sanitized = sanitizeSentryEvent({
       user: { id: 'student-17', email: 'student@example.test' },
       request: {
@@ -26,7 +26,7 @@ describe('Sentry privacy boundary', () => {
       },
     })
 
-    expect(sanitized.user).toBeUndefined()
+    expect(sanitized.user).toEqual({ id: 'student-17' })
     expect(sanitized.request).toEqual({ url: 'https://vmsh.example/student/tasks' })
     expect(sanitized.extra).toEqual({
       requestId: 'request-17',

@@ -129,7 +129,8 @@ async function sha256Payload(payload: TestAnswerOutboxPayload): Promise<string> 
 }
 
 function failureLabel(error: unknown): string {
-  if (error instanceof ApiResponseError) return `api:${error.status}:${error.code}`
+  if (error instanceof ApiResponseError)
+    return `api:${error.status}:${error.code.slice(0, 100)}:request=${error.requestId.slice(0, 128)}`
   if (error instanceof DOMException) return `dom:${error.name}`
   if (error instanceof Error) return `client:${error.name}`
   return 'client:unknown'

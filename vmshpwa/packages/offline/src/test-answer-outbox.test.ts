@@ -135,7 +135,7 @@ describe('test-answer Dexie outbox', () => {
     expect((await queue.list())[0]).toMatchObject({
       status: 'conflict',
       payload: { request: mutationFixture.request },
-      lastError: 'api:409:test_problem_revision_changed',
+      lastError: 'api:409:test_problem_revision_changed:request=request-conflict',
     })
     expect(await queue.acknowledge(UUID)).toBe(false)
   })

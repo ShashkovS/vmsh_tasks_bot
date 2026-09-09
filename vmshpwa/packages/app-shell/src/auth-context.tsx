@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { setObservabilityUser } from './observability'
 import {
   ApiResponseError,
   authErrorCodeSchema,
@@ -390,6 +391,12 @@ export function AuthenticationProvider({
     locallySignedOut,
     offlineSnapshotState,
   ])
+
+  const observabilityAccountId = authenticationStatePrincipal(state)?.accountId ?? null
+  useEffect(() => {
+    setObservabilityUser(observabilityAccountId)
+    return () => setObservabilityUser(null)
+  }, [observabilityAccountId])
 
   const value = useMemo<AuthenticationController>(
     () => ({

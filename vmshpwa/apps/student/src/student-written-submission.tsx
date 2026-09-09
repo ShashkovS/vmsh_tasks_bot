@@ -3,6 +3,8 @@ import { CloudOff, Pencil, TriangleAlert } from 'lucide-react'
 
 import {
   createWrittenSubmissionClient,
+  submissionFailureMessage,
+  reportHandledError,
   useAuthentication,
   useWrittenStudentReactionMutation,
   useWrittenThreadQuery,
@@ -84,11 +86,12 @@ function formatBytes(bytes: number): string {
 }
 
 function deliveryMessage(error: unknown): string {
-  if (error instanceof ApiResponseError) return error.message
+  reportHandledError(error, 'written.submit')
+  if (error instanceof ApiResponseError) return submissionFailureMessage(error)
   if (error instanceof Error && error.name === 'WrittenSubmissionLocalEvidenceError') {
     return 'Одна из сохранённых фотографий недоступна. Добавьте её заново.'
   }
-  return 'Не удалось отправить решение. Оно сохранено на этом устройстве.'
+  return submissionFailureMessage(error)
 }
 
 function relevantItem(
@@ -139,7 +142,13 @@ function EntryPhotos({ entry }: { entry: WrittenEntry }) {
   )
 }
 
-function ReviewAnnotations({ review, thread }: { review: WrittenReviewProjection; thread: WrittenThread }) {
+function ReviewAnnotations({
+  review,
+  thread,
+}: {
+  review: WrittenReviewProjection
+  thread: WrittenThread
+}) {
   const attachments = new Map(
     thread.entries.flatMap((entry) =>
       entry.attachments.map((attachment) => [attachment.attachmentId, attachment] as const),
@@ -251,7 +260,11 @@ function writtenChatMessages({
     const text = entry?.text ?? review?.comment ?? null
     return {
       ...base,
-      author: ai ? ('ai' as const) : entry?.authorKind === 'admin' ? ('admin' as const) : ('teacher' as const),
+      author: ai
+        ? ('ai' as const)
+        : entry?.authorKind === 'admin'
+          ? ('admin' as const)
+          : ('teacher' as const),
       ...(review ? { authorName: review.reviewerName } : {}),
       ...(review ? { verdict: writtenReviewVerdict(review.verdict, ai ? 'ai' : 'human') } : {}),
       ...(text?.trim() ? { text } : {}),
@@ -355,6 +368,10 @@ export function StudentWrittenSubmission({
   )
   const [replacementLoading, setReplacementLoading] = useState(false)
   const [storageError, setStorageError] = useState<unknown>(draftStore.error)
+  useEffect(() => {
+    if (storageError)
+      reportHandledError(storageError, 'written.storage', { accountId: ownerId, problemId })
+  }, [storageError, ownerId, problemId])
   const [sendError, setSendError] = useState<string | null>(null)
   const [studentReactionError, setStudentReactionError] = useState<{
     reviewId: string
@@ -412,6 +429,7 @@ export function StudentWrittenSubmission({
         setPhotos(loaded.compatible?.photos ?? [])
         setReplacementTarget(loaded.compatible?.replacementTarget ?? null)
         setQueueItem(item)
+        setSendError(item?.lastError ? submissionFailureMessage(undefined, item.lastError) : null)
         setStorageError(null)
         setHydrated(true)
         if (item?.status === 'synced') {
@@ -481,6 +499,12 @@ export function StudentWrittenSubmission({
     }
     setQueueItem(result.item)
     if (result.state !== 'synced') {
+      reportHandledError(result.error, 'written.submit', {
+        accountId: ownerId,
+        problemId,
+        outboxId: result.item.id,
+        attempts: result.item.attempts,
+      })
       setSendError(deliveryMessage(result.error))
       return
     }
@@ -491,7 +515,7 @@ export function StudentWrittenSubmission({
     setReplacementTarget(null)
     await refetchThread()
     announceSafePwaUpdateMoment()
-  }, [client, descriptor, outbox, refetchThread])
+  }, [client, descriptor, outbox, refetchThread, ownerId, problemId])
 
   useEffect(() => {
     if (online && queueItem && ['queued', 'retrying'].includes(queueItem.status)) {
@@ -531,7 +555,10 @@ export function StudentWrittenSubmission({
   if (closed) {
     return (
       <section aria-label="Отправленные решения" className="mt-4 space-y-3">
-        <TaskChat emptyLabel="Приём решений завершён, ничего не отправлено." messages={chatMessages} />
+        <TaskChat
+          emptyLabel="Приём решений завершён, ничего не отправлено."
+          messages={chatMessages}
+        />
       </section>
     )
   }
@@ -597,6 +624,7 @@ export function StudentWrittenSubmission({
           setPendingPhotos((current) => current.filter((photo) => photo.id !== id))
           continue
         }
+        reportHandledError(error, 'written.image-processing', { accountId: ownerId, problemId })
         setPendingPhotos((current) =>
           current.map((photo) =>
             photo.id === id
@@ -828,7 +856,7 @@ export function StudentWrittenSubmission({
           </AlertContent>
         </Alert>
       ) : null}
-      {sendError ? (
+      {sendError && !queued ? (
         <Alert role="alert" tone="danger">
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
@@ -859,7 +887,9 @@ export function StudentWrittenSubmission({
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
-            {queueItem?.status === 'sending' ? 'Отправляем…' : 'Отправим, когда появится сеть.'}
+            {queueItem?.status === 'sending'
+              ? 'Отправляем…'
+              : (sendError ?? submissionFailureMessage(undefined, queueItem?.lastError))}
           </p>
           {online && queueItem?.status !== 'sending' ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">

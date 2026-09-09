@@ -3,11 +3,13 @@ import { CloudOff, TriangleAlert } from 'lucide-react'
 
 import {
   createTestSubmissionClient,
+  submissionFailureMessage,
+  reportHandledError,
   useAuthentication,
   useTestAnswerInputQuery,
   useTestAttemptHistoryQuery,
 } from '@vmsh/app-shell'
-import { ApiResponseError, type SubmitTestAnswerResponse } from '@vmsh/contracts'
+import { type SubmitTestAnswerResponse } from '@vmsh/contracts'
 import {
   createTestAnswerDraftStore,
   createTestAnswerOutbox,
@@ -37,11 +39,7 @@ import {
 import { createOfflineStudentTestAnswerInputClient } from './offline-student-data'
 import { announceSafePwaUpdateMoment } from './pwa-update-events'
 import { chatDate, chatTime } from './student-written-chat'
-import {
-  testAnswerSpec,
-  testAttemptReply,
-  testAttemptVerdict,
-} from './student-test-answer-view'
+import { testAnswerSpec, testAttemptReply, testAttemptVerdict } from './student-test-answer-view'
 
 /**
  * Production Phase-4 test editor. It composes the safe input endpoint,
@@ -55,8 +53,8 @@ type SendState = 'ready' | 'sending' | 'queued' | 'conflict' | 'failed' | 'synce
 const VISIBLE_TURNS = 6
 
 function sendErrorMessage(error: unknown): string {
-  if (error instanceof ApiResponseError) return error.message
-  return 'Не удалось отправить ответ. Он сохранён на этом устройстве.'
+  reportHandledError(error, 'test.submit')
+  return submissionFailureMessage(error)
 }
 
 function relevantQueueItem(
@@ -168,6 +166,10 @@ export function StudentTestAnswer({
   const [answer, setAnswer] = useState('')
   const [incompatibleDraft, setIncompatibleDraft] = useState<TestAnswerDraft | null>(null)
   const [storageError, setStorageError] = useState<unknown>(draftStore.error)
+  useEffect(() => {
+    if (storageError)
+      reportHandledError(storageError, 'test.storage', { accountId: ownerId, problemId })
+  }, [storageError, ownerId, problemId])
   const [sendState, setSendState] = useState<SendState>('ready')
   const [pendingItem, setPendingItem] = useState<TestAnswerOutboxItem | null>(null)
   const [receipt, setReceipt] = useState<SubmitTestAnswerResponse | null>(null)
@@ -199,6 +201,7 @@ export function StudentTestAnswer({
           if (!item) return
           setPendingItem(item)
           setSendState(queueState(item))
+          setSendError(item.lastError ? submissionFailureMessage(undefined, item.lastError) : null)
           if (item.status !== 'synced' || !item.result) return
           setReceipt(item.result)
           try {
@@ -292,6 +295,12 @@ export function StudentTestAnswer({
     setPendingItem(result.item)
     setSendState(result.state === 'retrying' ? 'queued' : result.state)
     if (result.state !== 'synced') {
+      reportHandledError(result.error, 'test.submit', {
+        accountId: result.item.ownerId,
+        problemId,
+        outboxId: result.item.id,
+        attempts: result.item.attempts,
+      })
       setSendError(sendErrorMessage(result.error))
       if (result.state === 'conflict') void inputQuery.refetch()
       return
@@ -338,6 +347,12 @@ export function StudentTestAnswer({
       setPendingItem(result.item)
       setSendState(result.state === 'retrying' ? 'queued' : result.state)
       if (result.state !== 'synced') {
+        reportHandledError(result.error, 'test.submit', {
+          accountId: result.item.ownerId,
+          problemId,
+          outboxId: result.item.id,
+          attempts: result.item.attempts,
+        })
         setSendError(sendErrorMessage(result.error))
         if (result.state === 'conflict') void inputQuery.refetch()
         return
@@ -463,7 +478,9 @@ export function StudentTestAnswer({
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
-            {pendingItem?.status === 'sending' ? 'Отправляем…' : 'Отправим, когда появится сеть.'}
+            {pendingItem?.status === 'sending'
+              ? 'Отправляем…'
+              : (sendError ?? submissionFailureMessage(undefined, pendingItem?.lastError))}
           </p>
           {pendingItem?.status !== 'sending' ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">

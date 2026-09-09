@@ -297,7 +297,8 @@ function serverState(
 }
 
 function failureLabel(error: unknown): string {
-  if (error instanceof ApiResponseError) return `api:${error.status}:${error.code}`
+  if (error instanceof ApiResponseError)
+    return `api:${error.status}:${error.code.slice(0, 100)}:request=${error.requestId.slice(0, 128)}`
   if (error instanceof WrittenSubmissionLocalEvidenceError) return 'client:local-evidence-missing'
   if (error instanceof WrittenSubmissionLeaseLostError) return 'client:delivery-lease-lost'
   if (error instanceof DOMException) return `dom:${error.name}`

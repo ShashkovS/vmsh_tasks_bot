@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query'
+import { reportHandledError } from './observability'
 import { Moon, Sun } from 'lucide-react'
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
@@ -68,6 +69,8 @@ export function AppProviders({
 
 export function createAppQueryClient(): QueryClient {
   return new QueryClient({
+    queryCache: new QueryCache({ onError: (error) => reportHandledError(error, 'query') }),
+    mutationCache: new MutationCache({ onError: (error) => reportHandledError(error, 'mutation') }),
     defaultOptions: {
       queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
       mutations: { retry: 0 },

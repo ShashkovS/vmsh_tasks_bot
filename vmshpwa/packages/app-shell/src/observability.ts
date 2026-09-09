@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react'
 import type { Breadcrumb, Event } from '@sentry/react'
+import { ApiResponseError } from '@vmsh/contracts'
 
 export interface FrontendObservabilityOptions {
   audience: 'student' | 'family' | 'staff'
@@ -50,7 +51,8 @@ export function sanitizeSentryBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb {
 
 export function sanitizeSentryEvent<T extends Event>(event: T): T {
   const sanitized = { ...event }
-  delete sanitized.user
+  if (event.user?.id) sanitized.user = { id: event.user.id }
+  else delete sanitized.user
   const request = event.request ? { ...event.request } : undefined
   if (request) {
     delete request.cookies
@@ -89,4 +91,78 @@ export function initFrontendObservability(options: FrontendObservabilityOptions)
     },
   })
   initialized = true
+}
+
+export function setObservabilityUser(accountId: string | null) {
+  Sentry.setUser(accountId ? { id: accountId } : null)
+}
+
+const reportedErrors = new WeakSet<object>()
+
+/** Allowlisted diagnostics only; see docs/submission-error-diagnostics.md. */
+export function reportHandledError(
+  error: unknown,
+  operation: string,
+  context: {
+    accountId?: string
+    problemId?: string
+    outboxId?: string
+    attempts?: number
+  } = {},
+) {
+  if (error !== null && typeof error === 'object') {
+    if (reportedErrors.has(error)) return
+    reportedErrors.add(error)
+  }
+  const api = error instanceof ApiResponseError ? error : null
+  // Do not forward original messages, causes, details or mutation variables: these can contain answers.
+  try {
+    Sentry.captureException(
+      new Error(
+        `PWA ${operation}: ${api ? 'API failure' : error instanceof Error ? error.name : 'Unknown failure'}`,
+      ),
+      {
+        ...(context.accountId ? { user: { id: context.accountId } } : {}),
+        tags: {
+          operation,
+          ...(api ? { http_status: String(api.status), api_code: api.code } : {}),
+        },
+        extra: {
+          ...context,
+          requestId: api?.requestId,
+          online: typeof navigator === 'undefined' ? null : navigator.onLine,
+        },
+      },
+    )
+  } catch {
+    // Diagnostics must not change delivery or prevent an error from being shown.
+  }
+}
+
+export function submissionFailureMessage(error?: unknown, storedLabel?: string): string {
+  const api = error instanceof ApiResponseError ? error : null
+  const status = api?.status ?? Number(storedLabel?.split(':')[1])
+  let message: string
+  if (status === 401) message = 'Сессия истекла. Войдите снова, затем повторите отправку.'
+  else if (status === 403)
+    message = 'Сервер запретил отправку. Проверьте доступ к задаче или обратитесь к преподавателю.'
+  else if (status === 429)
+    message = 'Слишком много запросов. Подождите немного и повторите отправку.'
+  else if (status >= 500)
+    message = 'Ошибка сервера. Это не проблема вашего интернета. Повторите отправку позже.'
+  else if (api) message = api.message
+  else if (status >= 400)
+    message = 'Сервер отклонил отправку. Обновите задачу и проверьте условия приёма.'
+  else if (
+    (error instanceof Error && /NetworkError|AbortError/.test(error.name)) ||
+    /NetworkError|AbortError/.test(storedLabel ?? '')
+  )
+    message =
+      'Не удалось дождаться ответа сервера. Причиной может быть связь или недоступность сервера. Повторите отправку.'
+  else if (error || storedLabel)
+    message =
+      'Ошибка приложения при отправке. Повторите попытку; если ошибка остаётся, сообщите преподавателю.'
+  else message = 'Отправка ещё не подтверждена. Нажмите «Повторить».'
+  const code = api ? `HTTP ${api.status}, ${api.code}; запрос ${api.requestId}` : storedLabel
+  return `${message}${code ? ` Код: ${code}.` : ''}`
 }

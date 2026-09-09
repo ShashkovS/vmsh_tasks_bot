@@ -58,9 +58,7 @@ function StatusLine({ attachment }: { attachment: AttachmentView }) {
     case 'ready':
       return <p className="text-caption text-status-success">Готово к отправке</p>
     case 'queued':
-      return (
-        <p className="text-caption text-muted-foreground">В очереди — уйдёт, когда появится сеть</p>
-      )
+      return <p className="text-caption text-muted-foreground">В очереди на отправку</p>
     case 'failed':
       return (
         <p className="text-caption text-status-danger">

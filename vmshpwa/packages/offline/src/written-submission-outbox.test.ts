@@ -514,7 +514,10 @@ describe('written-submission outbox', () => {
 
     expect(result).toMatchObject({
       state: 'conflict',
-      item: { status: 'conflict', lastError: 'api:409:written_problem_revision_changed' },
+      item: {
+        status: 'conflict',
+        lastError: 'api:409:written_problem_revision_changed:request=request-conflict',
+      },
     })
     expect((await draft.load(descriptor())).compatible?.text).toBe('Текст решения')
   })
