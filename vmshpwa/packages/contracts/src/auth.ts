@@ -131,9 +131,20 @@ export const studentPrincipalSchema = z
     ...principalCommonShape,
     audience: z.literal('student'),
     userId: publicIdSchema,
+    isStaffTesting: z.boolean().optional(),
   })
   .strip()
 export type StudentPrincipal = z.infer<typeof studentPrincipalSchema>
+
+export const staffTestingCoursesSchema = z.object({
+  courses: z.array(
+    z.object({
+      courseId: publicIdSchema,
+      name: z.string(),
+      groups: z.array(z.object({ groupId: publicIdSchema, name: z.string() })),
+    }),
+  ),
+})
 
 export const familyPrincipalSchema = z
   .object({

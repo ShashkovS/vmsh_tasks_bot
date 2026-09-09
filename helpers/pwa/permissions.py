@@ -571,7 +571,7 @@ def build_authorization_principal(
     staff_scopes = _normalize_staff_scopes(staff_scope_grants)
 
     if normalized_audience is AuthAudience.STUDENT:
-        if linked_user_id is None or user_type is not USER_TYPE.STUDENT:
+        if linked_user_id is None or user_type not in {USER_TYPE.STUDENT, USER_TYPE.STAFF_TEST_STUDENT}:
             raise PrincipalIntegrityError(
                 "Student audience requires an exact legacy student identity"
             )
@@ -763,6 +763,8 @@ def _strict_user_type(value: int | USER_TYPE | None) -> USER_TYPE | None:
         raise PrincipalIntegrityError("Legacy user type must be an integer")
     if int(value) == int(USER_TYPE.STUDENT):
         return USER_TYPE.STUDENT
+    if int(value) == int(USER_TYPE.STAFF_TEST_STUDENT):
+        return USER_TYPE.STAFF_TEST_STUDENT
     if int(value) == int(USER_TYPE.TEACHER):
         return USER_TYPE.TEACHER
     if int(value) == int(USER_TYPE.ADMIN):

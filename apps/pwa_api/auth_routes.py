@@ -82,6 +82,8 @@ def _principal_payload(authenticated: AuthenticatedSession) -> dict[str, object]
         ):  # pragma: no cover - service invariant
             raise RuntimeError("Student principal has no public user ID")
         common["userId"] = current.linked_user_public_id
+        if current.linked_user_type == 512:
+            common["isStaffTesting"] = True
     elif principal.audience is AuthAudience.FAMILY:
         common["linkedChildren"] = [
             {
@@ -327,6 +329,52 @@ def _clear_session_cookies(request: web.Request, response: web.StreamResponse) -
             max_age=0,
             expires="Thu, 01 Jan 1970 00:00:00 GMT",
         )
+
+
+@auth_routes.get("/staff/api/v1/testing/courses")
+async def staff_testing_courses(request: web.Request) -> web.Response:
+    from db_methods.pwa.staff_testing import available_groups
+    from helpers.pwa.app_keys import PWA_DATABASE
+
+    session = authenticated_session(request)
+    if session.principal.audience is not AuthAudience.STAFF:
+        raise PwaApiError(status=403, code="forbidden", message="Недостаточно прав")
+    groups = await request.app[PWA_DATABASE].factory.run_read_async(
+        lambda c: available_groups(c, session.current.session.account_id, _iso(auth_service(request)._now()))
+    )
+    courses = {}
+    for group in groups:
+        course = courses.setdefault(group["course_public_id"], {
+            "courseId": group["course_public_id"], "name": group["course_name"], "groups": [],
+        })
+        course["groups"].append({"groupId": group["public_id"], "name": group["name"]})
+    return web.json_response({"courses": list(courses.values())})
+
+
+@auth_routes.post("/staff/api/v1/testing/session")
+async def start_staff_testing(request: web.Request) -> web.Response:
+    from db_methods.pwa.staff_testing import prepare_test_account
+    from helpers.pwa.app_keys import PWA_DATABASE
+
+    session = authenticated_session(request)
+    if session.principal.audience is not AuthAudience.STAFF:
+        raise PwaApiError(status=403, code="forbidden", message="Недостаточно прав")
+    try:
+        account = await request.app[PWA_DATABASE].factory.run_write_async(
+            lambda c: prepare_test_account(c, session.current.session.account_id, _iso(auth_service(request)._now()))
+        )
+    except PermissionError as error:
+        raise PwaApiError(status=403, code="forbidden", message="Нет доступных групп для тестирования") from error
+    # Staff authorization is the credential here; no password is issued or
+    # accepted for this identity. See docs/staff-testing.md.
+    issued = await auth_service(request)._create_verified_session(
+        account=account, replacement_credential_hash=None, request_id=_request_id(request),
+        ip_prefix=None, device_label="Тестирование учителем",
+        raw_user_agent=request.headers.get("User-Agent"),
+    )
+    response = web.json_response({"ready": True})
+    _set_session_cookies_for_request(request, response, issued)
+    return response
 
 
 @auth_routes.post("/{audience:student|family|staff}/api/v1/auth/login")

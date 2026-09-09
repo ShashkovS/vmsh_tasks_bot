@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 15f61ca650815d6e0e0c2b1d9c595520051f8532c6b4ff2654b58c817a1a659f
+-- Product schema SHA-256: c768d9316bc13f5d1518a0984af4853bd2a2005d1a5ed9918ac3cdb99667f530
 
 CREATE TABLE achievement_definitions
 (
@@ -476,6 +476,16 @@ CREATE TABLE content_derivatives
     check (invalidated_at is null or invalidated_at >= created_at)
 );
 
+CREATE TABLE content_figure_scales
+(
+    revision_id integer not null references content_revisions (id),
+    asset_id    text not null
+        check (length(trim(asset_id)) between 1 and 160),
+    scale       real not null check (scale between 0.25 and 2.5),
+    updated_at  text not null,
+    primary key (revision_id, asset_id)
+);
+
 CREATE TABLE content_problem_matches
 (
     id                  integer primary key,
@@ -741,6 +751,14 @@ CREATE TABLE course_lessons
     unique (id, course_id)
 );
 
+CREATE TABLE course_problem_difficulty (
+    course_id integer not null references courses(id),
+    logical_key text not null,
+    for_weak real not null check(for_weak between 0 and 1),
+    for_strong real not null check(for_strong between 0 and 1),
+    primary key(course_id, logical_key)
+);
+
 CREATE TABLE course_runtime_settings
 (
     course_id          integer primary key references courses (id),
@@ -792,6 +810,14 @@ CREATE TABLE course_schedule_rules
     ),
     check ((state = 'draft') = (confirmed_at is null)),
     check ((state = 'superseded') = (superseded_at is not null))
+);
+
+CREATE TABLE course_student_strength (
+    course_id integer not null references courses(id),
+    student_user_id integer not null references users(id),
+    simple real not null check(simple between 0 and 1),
+    complex real not null check(complex between 0 and 1),
+    primary key(course_id, student_user_id)
 );
 
 CREATE TABLE courses
@@ -1822,6 +1848,11 @@ CREATE TABLE staff_scopes
         references groups (course_id, group_id)
 );
 
+CREATE TABLE staff_test_students (
+    staff_account_id INTEGER PRIMARY KEY REFERENCES auth_accounts(id),
+    student_user_id INTEGER NOT NULL UNIQUE REFERENCES users(id)
+);
+
 CREATE TABLE states
 (
     user_id         INTEGER primary key unique references users,
@@ -1843,7 +1874,7 @@ CREATE TABLE student_lesson_metrics
     complex_strength     real    not null check (complex_strength between 0 and 10),
     max_complex_strength real    not null check (max_complex_strength between 0 and 10),
     solved_items         integer not null check (solved_items >= 0),
-    total_items          integer not null check (total_items >= 0),
+    total_items          integer not null check (total_items >= 0), simple_smooth real check(simple_smooth between 0 and 10), complex_smooth real check(complex_smooth between 0 and 10),
     primary key (run_id, student_user_id, lesson_number),
     check (complex_strength <= max_complex_strength),
     check (solved_items <= total_items)

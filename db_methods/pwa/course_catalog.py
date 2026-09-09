@@ -69,6 +69,7 @@ def list_courses(
         FROM courses AS course
         LEFT JOIN course_enrollments AS enrollment
           ON enrollment.course_id = course.id AND enrollment.status = 'active'
+         AND NOT EXISTS (SELECT 1 FROM staff_test_students t WHERE t.student_user_id=enrollment.student_user_id)
         WHERE course.season_id = ?
         GROUP BY course.id
         ORDER BY course.sort_order, course.code, course.id
@@ -104,6 +105,7 @@ def list_groups(
           ON enrollment.course_id = group_record.course_id
          AND enrollment.active_group_id = group_record.group_id
          AND enrollment.status = 'active'
+         AND NOT EXISTS (SELECT 1 FROM staff_test_students t WHERE t.student_user_id=enrollment.student_user_id)
         WHERE group_record.course_id IN ({placeholders})
         GROUP BY group_record.group_id
         ORDER BY group_record.course_id,
@@ -125,7 +127,8 @@ def find_course(
         "course.accent_key, course.version, "
         "(SELECT count(DISTINCT enrollment.student_user_id) "
         " FROM course_enrollments AS enrollment "
-        " WHERE enrollment.course_id = course.id AND enrollment.status = 'active') "
+        " WHERE enrollment.course_id = course.id AND enrollment.status = 'active' "
+        " AND NOT EXISTS (SELECT 1 FROM staff_test_students t WHERE t.student_user_id=enrollment.student_user_id)) "
         "AS active_students FROM courses AS course WHERE course.public_id = ?",
         (public_id,),
     ).fetchone()
@@ -214,7 +217,8 @@ def find_group(
         " FROM course_enrollments AS enrollment "
         " WHERE enrollment.course_id = group_record.course_id "
         "   AND enrollment.active_group_id = group_record.group_id "
-        "   AND enrollment.status = 'active') AS active_students "
+        "   AND enrollment.status = 'active' "
+        " AND NOT EXISTS (SELECT 1 FROM staff_test_students t WHERE t.student_user_id=enrollment.student_user_id)) AS active_students "
         "FROM groups AS group_record WHERE group_record.public_id = ?",
         (public_id,),
     ).fetchone()

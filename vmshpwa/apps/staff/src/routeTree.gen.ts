@@ -24,6 +24,7 @@ import { Route as QuestionsRouteImport } from './routes/questions'
 import { Route as ReactionsRouteImport } from './routes/reactions'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as StatisticsRouteImport } from './routes/statistics'
+import { Route as TestingRouteImport } from './routes/testing'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as LessonsIndexRouteImport } from './routes/lessons.index'
 import { Route as LessonsLessonIdRouteImport } from './routes/lessons.$lessonId'
@@ -111,6 +112,11 @@ const StatisticsRoute = StatisticsRouteImport.update({
   path: '/statistics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TestingRoute = TestingRouteImport.update({
+  id: '/testing',
+  path: '/testing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/reactions': typeof ReactionsRoute
   '/review': typeof ReviewRouteWithChildren
   '/statistics': typeof StatisticsRoute
+  '/testing': typeof TestingRoute
   '/users': typeof UsersRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/oral': typeof OralRoute
   '/reactions': typeof ReactionsRoute
   '/statistics': typeof StatisticsRoute
+  '/testing': typeof TestingRoute
   '/users': typeof UsersRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/reactions': typeof ReactionsRoute
   '/review': typeof ReviewRouteWithChildren
   '/statistics': typeof StatisticsRoute
+  '/testing': typeof TestingRoute
   '/users': typeof UsersRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/reactions'
     | '/review'
     | '/statistics'
+    | '/testing'
     | '/users'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/oral'
     | '/reactions'
     | '/statistics'
+    | '/testing'
     | '/users'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/reactions'
     | '/review'
     | '/statistics'
+    | '/testing'
     | '/users'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   ReactionsRoute: typeof ReactionsRoute
   ReviewRoute: typeof ReviewRouteWithChildren
   StatisticsRoute: typeof StatisticsRoute
+  TestingRoute: typeof TestingRoute
   UsersRoute: typeof UsersRoute
 }
 
@@ -455,6 +468,13 @@ declare module '@tanstack/react-router' {
       path: '/statistics'
       fullPath: '/statistics'
       preLoaderRoute: typeof StatisticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/testing': {
+      id: '/testing'
+      path: '/testing'
+      fullPath: '/testing'
+      preLoaderRoute: typeof TestingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users': {
@@ -611,6 +631,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReactionsRoute: ReactionsRoute,
   ReviewRoute: ReviewRouteWithChildren,
   StatisticsRoute: StatisticsRoute,
+  TestingRoute: TestingRoute,
   UsersRoute: UsersRoute,
 }
 export const routeTree = rootRouteImport

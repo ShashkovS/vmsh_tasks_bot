@@ -73,6 +73,17 @@ function StudentProtectedShell({
         mobileNavigation
       >
         <ProductPageView audience="student" pathname={location.pathname} />
+        {principal?.audience === 'student' && principal.isStaffTesting ? (
+          <div
+            role="status"
+            className="mb-4 rounded-lg border border-border bg-muted p-3 text-small"
+          >
+            Тестирование учителем. Отправки не входят в общую статистику.{' '}
+            <a href="/staff/" className="underline">
+              Вернуться в Staff
+            </a>
+          </div>
+        ) : null}
         <StudentOfflineSessionNotice />
         <Outlet />
       </AppShell>

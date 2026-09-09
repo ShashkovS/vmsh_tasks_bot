@@ -1,4 +1,4 @@
-import { BookOpenCheck, CircleAlert, ClipboardCheck, MessagesSquare, Radio } from 'lucide-react'
+import { BookOpenCheck, CircleAlert, ClipboardCheck, MessagesSquare } from 'lucide-react'
 import { useMemo } from 'react'
 
 import {
@@ -118,13 +118,6 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
             icon={BookOpenCheck}
             label="Текущие листки"
             value={summary.publications.groupLessons}
-          />
-          <SummaryCard
-            detail={`${summary.oral.upcomingWindows} откроются позже`}
-            href="/staff/oral"
-            icon={Radio}
-            label="Устные окна открыты"
-            value={summary.oral.openWindows}
           />
           {summary.delivery ? (
             <SummaryCard

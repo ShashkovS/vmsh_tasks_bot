@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { useAuthenticatedPrincipal } from '@vmsh/app-shell'
+import { StaffTestingPage } from '../staff-testing-page'
 
 import { StaffCoursesPage } from '../pages'
 import { StaffCourseCatalogPage } from '../staff-course-catalog-page'
@@ -20,6 +22,10 @@ export const Route = createFileRoute('/courses')({
 function CoursesRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'staff' || !principal.capabilities.includes('course.manage')) {
+    return <StaffTestingPage view="courses" />
+  }
 
   if (search.tab === 'catalog') return <StaffCourseCatalogPage />
 

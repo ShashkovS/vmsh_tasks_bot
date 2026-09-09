@@ -63,6 +63,14 @@ device sessions и privacy explanation; email UI отложен. Реализа�
 
 ## Staff SPA
 
+Уточнение 9 сентября 2026: обычный teacher получает на «Уроки» и «Курсы»
+список доступных назначений и вход в собственную тестовую Student-личность;
+«Новости» открывает ту же ленту, что школьнику. Admin сохраняет редакторы и
+получает отдельное «Тестирование». Полный цикл отправки и проверки не входит
+в учебную статистику. Заглушка oral скрыта из навигации.
+Реализация: [`StaffTestingPage`](../../apps/staff/src/staff-testing-page.tsx),
+[контракт и проверки](../../docs/staff-testing.md).
+
 Teacher и admin работают в одном приложении. Navigation и backend permissions адаптируются по capabilities; запрещённые admin routes не просто скрываются, а возвращают корректный forbidden state.
 
 ### Weekly dashboard

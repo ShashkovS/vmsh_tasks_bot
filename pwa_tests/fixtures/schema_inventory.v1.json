@@ -257,6 +257,18 @@
       {
         "id": "0082.pwa_published_metadata_corrections",
         "sha256": "4b3077c6ae1d6c87320bb393b8a75d76c187803c75909047323d66eef16789e5"
+      },
+      {
+        "id": "0083.pwa_content_figure_scales",
+        "sha256": "9436ecb0ce87a283d9a975beb62947651bb2c0183ebfb6cb5215c5796b35daa5"
+      },
+      {
+        "id": "0084.pwa_iterative_analytics",
+        "sha256": "df0145251cc43d24c61e906ec7eb49289d36173d068b7197a1f68b7eefacb4f7"
+      },
+      {
+        "id": "0085.pwa_staff_testing",
+        "sha256": "136e6b94e48660a48ac8097002dbf7cb64a4f4d6b85782c10aa8fe9a28bab322"
       }
     ],
     "repository_head_status": {
@@ -267,7 +279,7 @@
     }
   },
   "product": {
-    "object_count": 425,
+    "object_count": 429,
     "objects": [
       {
         "columns": [
@@ -4665,6 +4677,99 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "revision_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "asset_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "scale",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "content_revisions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "revision_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "asset_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_content_figure_scales_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "content_figure_scales",
+        "object_sha256": "248813bd486ac110f0519f71dc94f6abb4aac7fdff2e2b8b338faaf283137593",
+        "sql": "CREATE TABLE content_figure_scales\n(\n    revision_id integer not null references content_revisions (id),\n    asset_id    text not null\n        check (length(trim(asset_id)) between 1 and 160),\n    scale       real not null check (scale between 0.25 and 2.5),\n    updated_at  text not null,\n    primary key (revision_id, asset_id)\n);",
+        "table_name": "content_figure_scales",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "id",
             "not_null": false,
             "primary_key_ordinal": 1
@@ -7122,6 +7227,99 @@
             "default_sql": null,
             "hidden": 0,
             "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "logical_key",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "for_weak",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "for_strong",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "logical_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_course_problem_difficulty_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "course_problem_difficulty",
+        "object_sha256": "8b4e593d1b45f111a4cd5768db62b826c2e38035a453334460a4879ad015a566",
+        "sql": "CREATE TABLE course_problem_difficulty (\n    course_id integer not null references courses(id),\n    logical_key text not null,\n    for_weak real not null check(for_weak between 0 and 1),\n    for_strong real not null check(for_strong between 0 and 1),\n    primary key(course_id, logical_key)\n);",
+        "table_name": "course_problem_difficulty",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
             "not_null": false,
             "primary_key_ordinal": 1
           },
@@ -7547,6 +7745,111 @@
         "object_sha256": "3571f80dba12ac15cdb1e89e9f7f7fdecb75071cb5c420edb96e8ba5fd4052d1",
         "sql": "CREATE TABLE course_schedule_rules\n(\n    id                 integer primary key,\n    public_id text generated always as ('sr-' || id) virtual,\n    course_id          integer not null references courses (id),\n    schedule_field     text    not null\n        check (schedule_field in (\n            'opens_at', 'hint_scheduled_at',\n            'submission_closes_at', 'solution_scheduled_at'\n        )),\n    rule_version       integer not null check (rule_version > 0),\n    day_offset         integer not null,\n    local_time         text    not null\n        check (\n            length(local_time) in (5, 8)\n            and local_time glob '[0-2][0-9]:[0-5][0-9]*'\n            and cast(substr(local_time, 1, 2) as integer) between 0 and 23\n            and (\n                length(local_time) = 5\n                or (\n                    substr(local_time, 6, 1) = ':'\n                    and substr(local_time, 7, 2) glob '[0-5][0-9]'\n                )\n            )\n        ),\n    timezone           text    not null check (length(trim(timezone)) > 0),\n    state              text    not null check (state in ('draft', 'active', 'superseded')),\n    created_by_user_id integer references users (id),\n    confirmed_by_user_id integer references users (id),\n    created_at         text    not null,\n    updated_at         text    not null,\n    confirmed_at       text,\n    superseded_at      text,\n    version            integer not null default 1 check (version > 0),\n    unique (course_id, schedule_field, rule_version),\n    check (\n        (confirmed_by_user_id is null and confirmed_at is null)\n        or (confirmed_by_user_id is not null and confirmed_at is not null)\n    ),\n    check ((state = 'draft') = (confirmed_at is null)),\n    check ((state = 'superseded') = (superseded_at is not null))\n);",
         "table_name": "course_schedule_rules",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "simple",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "complex",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_course_student_strength_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "course_student_strength",
+        "object_sha256": "0f835b810817f1dc9fa19c825e634f03bd96a22beae966e4204de946ba04d061",
+        "sql": "CREATE TABLE course_student_strength (\n    course_id integer not null references courses(id),\n    student_user_id integer not null references users(id),\n    simple real not null check(simple between 0 and 1),\n    complex real not null check(complex between 0 and 1),\n    primary key(course_id, student_user_id)\n);",
+        "table_name": "course_student_strength",
         "type": "table"
       },
       {
@@ -17690,6 +17993,85 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "staff_account_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "staff_account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_staff_test_students_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "staff_test_students",
+        "object_sha256": "241c79f971af6bda9a011ceed094a477925371ec76fc59849fbaeca273a44867",
+        "sql": "CREATE TABLE staff_test_students (\n    staff_account_id INTEGER PRIMARY KEY REFERENCES auth_accounts(id),\n    student_user_id INTEGER NOT NULL UNIQUE REFERENCES users(id)\n);",
+        "table_name": "staff_test_students",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "user_id",
             "not_null": false,
             "primary_key_ordinal": 1
@@ -17925,6 +18307,24 @@
             "name": "total_items",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "simple_smooth",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "complex_smooth",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -18048,8 +18448,8 @@
           }
         ],
         "name": "student_lesson_metrics",
-        "object_sha256": "0753c8a3a4212d195f1f948b004587a96dd310df42cc167f7c88c17623bb939d",
-        "sql": "CREATE TABLE student_lesson_metrics\n(\n    run_id               integer not null references analytics_runs (id) on delete cascade,\n    student_user_id      integer not null references users (id),\n    lesson_number        integer not null check (lesson_number >= 0),\n    group_id             text    not null references groups (group_id),\n    simple_strength      real    not null check (simple_strength between 0 and 10),\n    complex_strength     real    not null check (complex_strength between 0 and 10),\n    max_complex_strength real    not null check (max_complex_strength between 0 and 10),\n    solved_items         integer not null check (solved_items >= 0),\n    total_items          integer not null check (total_items >= 0),\n    primary key (run_id, student_user_id, lesson_number),\n    check (complex_strength <= max_complex_strength),\n    check (solved_items <= total_items)\n);",
+        "object_sha256": "63fa18af80a2686b520c81ed3c33cc4098484214fb18434192bdada54eab2ced",
+        "sql": "CREATE TABLE student_lesson_metrics\n(\n    run_id               integer not null references analytics_runs (id) on delete cascade,\n    student_user_id      integer not null references users (id),\n    lesson_number        integer not null check (lesson_number >= 0),\n    group_id             text    not null references groups (group_id),\n    simple_strength      real    not null check (simple_strength between 0 and 10),\n    complex_strength     real    not null check (complex_strength between 0 and 10),\n    max_complex_strength real    not null check (max_complex_strength between 0 and 10),\n    solved_items         integer not null check (solved_items >= 0),\n    total_items          integer not null check (total_items >= 0), simple_smooth real check(simple_smooth between 0 and 10), complex_smooth real check(complex_smooth between 0 and 10),\n    primary key (run_id, student_user_id, lesson_number),\n    check (complex_strength <= max_complex_strength),\n    check (solved_items <= total_items)\n);",
         "table_name": "student_lesson_metrics",
         "type": "table"
       },
@@ -26940,8 +27340,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "412401bf602647863969d3cc2b002a1aa00ceaef3e590afdf7cc79c949b2d151",
-    "sha256": "15f61ca650815d6e0e0c2b1d9c595520051f8532c6b4ff2654b58c817a1a659f"
+    "pragma_structure_sha256": "daa71d7ef892181e2830b6fc645336fc1be878e082f6a5ccf6743c8e84c5379d",
+    "sha256": "c768d9316bc13f5d1518a0984af4853bd2a2005d1a5ed9918ac3cdb99667f530"
   },
   "source_kind": "repository-migration-head"
 }

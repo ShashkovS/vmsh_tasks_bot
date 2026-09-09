@@ -606,7 +606,8 @@ class PwaAuthRepository:
                 "SELECT id, public_id, audience, credential_kind, "
                 "credential_hash, linked_user_id, status, credential_version "
                 "FROM auth_accounts WHERE audience = ? "
-                "AND username_normalized = ? AND status = 'active'",
+                "AND username_normalized = ? AND status = 'active' "
+                "AND provisioning_source <> 'staff_testing'",
                 (audience.value, normalized),
             ).fetchone()
             return None if row is None else _account_from_row(row)
@@ -839,6 +840,11 @@ class PwaAuthRepository:
                 and _valid_public_id(linked_user_public_id)
             )
             linked_user_type = _optional_int(row["linked_user_type"])
+            if linked_user_type == int(USER_TYPE.STAFF_TEST_STUDENT):
+                from db_methods.pwa.staff_testing import test_access_is_current
+
+                if not test_access_is_current(connection, linked_user_id, _format_timestamp(now)):
+                    return None
             display_name = _optional_string(row["display_name"])
             if display_name is None and linked_user_id is not None:
                 display_name = " ".join(
@@ -854,7 +860,7 @@ class PwaAuthRepository:
                     audience is AuthAudience.STUDENT
                     and linked_user_id is not None
                     and linked_user_public_id_is_valid
-                    and linked_user_type == int(USER_TYPE.STUDENT)
+                    and linked_user_type in {int(USER_TYPE.STUDENT), int(USER_TYPE.STAFF_TEST_STUDENT)}
                 )
                 or (
                     audience is AuthAudience.FAMILY
@@ -1797,7 +1803,7 @@ class PwaAuthRepository:
                 "JOIN courses AS c ON c.id = ce.course_id "
                 "JOIN groups AS g ON g.course_id = ce.course_id "
                 f"AND g.group_id = ce.active_group_id WHERE {condition} "
-                "AND u.type = ? AND u.public_id IS NOT NULL "
+                "AND u.type IN (?,512) AND u.public_id IS NOT NULL "
                 "ORDER BY c.sort_order, c.id, ce.id",
                 (student_user_id, int(USER_TYPE.STUDENT)),
             ).fetchall()
