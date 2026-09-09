@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import sqlite3
 import time
@@ -36,8 +37,12 @@ class SqliteConcurrencyPolicy:
     busy_timeout_ms: int = 750
     retry_delays_seconds: tuple[float, ...] = (0.025, 0.075, 0.225)
     write_begin: str = "BEGIN IMMEDIATE"
+    read_concurrency: int = 2
+    write_concurrency: int = 1
 
     def __post_init__(self) -> None:
+        if self.read_concurrency < 1 or self.write_concurrency < 1:
+            raise ValueError("SQLite concurrency must be positive")
         if self.busy_timeout_ms < 0:
             raise ValueError("busy_timeout_ms must be non-negative")
         if any(delay < 0 for delay in self.retry_delays_seconds):
@@ -66,6 +71,10 @@ class PwaConnectionFactory:
         self.database_path = Path(database_path)
         self.policy = policy or SqliteConcurrencyPolicy()
         self._sleep = sleeper
+        # ADR 0002: bound schema-loading contention before entering the thread
+        # pool. Writers waiting on another process must not consume read slots.
+        self._read_slots = asyncio.Semaphore(self.policy.read_concurrency)
+        self._write_slots = asyncio.Semaphore(self.policy.write_concurrency)
         if verify_schema:
             require_current_schema(self.database_path)
             self._require_wal_mode()
@@ -185,9 +194,38 @@ class PwaConnectionFactory:
     async def run_read_async(
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
-        return await traced_thread(self.run_read, operation)
+        return await self._run_admitted(self._read_slots, self.run_read, operation)
 
     async def run_write_async(
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
-        return await traced_thread(self.run_write, operation)
+        return await self._run_admitted(self._write_slots, self.run_write, operation)
+
+    async def _run_admitted(
+        self,
+        slots: asyncio.Semaphore,
+        runner: Callable[[Callable[[sqlite3.Connection], ResultT]], ResultT],
+        operation: Callable[[sqlite3.Connection], ResultT],
+    ) -> ResultT:
+        with trace_stage("db.admission_queue"):
+            await slots.acquire()
+        try:
+            worker = asyncio.create_task(traced_thread(runner, operation))
+            try:
+                return await asyncio.shield(worker)
+            except asyncio.CancelledError:
+                # Cancellation cannot stop a running SQLite callback. Keep its
+                # permit (and the request's lifecycle) until the connection is
+                # closed, including when shutdown cancels the request again.
+                while not worker.done():
+                    try:
+                        await asyncio.shield(worker)
+                    except asyncio.CancelledError:
+                        continue
+                    except Exception:
+                        break
+                if not worker.cancelled():
+                    worker.exception()
+                raise
+        finally:
+            slots.release()

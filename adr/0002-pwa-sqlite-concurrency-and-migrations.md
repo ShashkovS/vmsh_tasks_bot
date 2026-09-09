@@ -38,6 +38,13 @@ Primary references checked on 27 July 2026:
 3. Async callers move the entire operation to `asyncio.to_thread`; callbacks are
    synchronous. No `await`, network access or media conversion occurs inside a
    transaction.
+   Performance amendment (9 September 2026): each factory admits at most two
+   async reads and one async write to the executor at a time. Separate gates
+   preserve WAL read progress while a writer waits. Waiting happens on the
+   event loop, not in executor threads; cancellation of a queued caller opens
+   no connection, cancellation after dispatch drains the callback before
+   releasing its permit. Connections still are not reused. Measurements and
+   rollout checks: `vmshpwa/docs/sqlite-admission-performance.md`.
 4. The explicit maintenance command enables persistent WAL mode. Runtime
    startup verifies WAL without changing it; each operation enables
    `foreign_keys`, verifies WAL again and uses a bounded `busy_timeout`.

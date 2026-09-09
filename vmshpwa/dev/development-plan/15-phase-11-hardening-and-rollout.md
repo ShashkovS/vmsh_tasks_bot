@@ -1,5 +1,15 @@
 # Этап 11. Production hardening, deployment и параллельный запуск
 
+## Performance follow-up — 9 сентября 2026
+
+На изолированной полной схеме воспроизведена деградация при конкурентном
+открытии SQLite-соединений. В `db_methods/pwa/connection.py` добавлен допуск
+двух чтений и одной записи на фабрику; соединения и результаты не кешируются.
+Замеры, воспроизводимый benchmark, контракт отмены и критерии production
+сравнения: [sqlite-admission-performance.md](../../docs/sqlite-admission-performance.md).
+Локальные регрессии не заменяют production latency gate: нужны свежие
+`pwa_slow_request` и сопоставимые метрики после выпуска.
+
 ## Результат
 
 Student/Family/Staff разворачиваются на одном явно утверждённом production FQDN

@@ -9,7 +9,8 @@
 - INFO `pwa_slow_request` для завершившихся API-запросов от 200 мс;
 - JSON: request_id, шаблон маршрута (без query и конкретных ID), метод,
   статус, total_ms, агрегированные count/ms этапов;
-- `auth`, `db.thread_queue` (ожидание worker), `db.connect` (включая PRAGMA),
+- `auth`, `db.admission_queue` (ожидание допуска к SQLite),
+  `db.thread_queue` (ожидание worker), `db.connect` (включая PRAGMA),
   `db.write_lock` (включая busy_timeout и повторы), `db.read`, `db.write`
   (полный callback, не отдельный SQL), `db.commit`;
 - INFO `pwa_event_loop_lag` при задержке пробуждения более 100 мс,
@@ -40,7 +41,8 @@ db.read/write — исследовать callback и планы SQL; commit/conn
 диск/WAL; большой остаток — точечно инструментировать handler/внешние вызовы.
 Трейсы только медленных запросов не годятся для общего p95: использовать
 Prometheus вместе с числом запросов. Причина текущих production-задержек пока
-не установлена; оптимизация после сбора, не увеличение таймаутов наугад.
+не установлена полностью; первая воспроизводимая локальная проблема и
+ограничение параллелизма описаны в [sqlite-admission-performance.md](sqlite-admission-performance.md).
 
 Проверки: `pwa_tests/domain/test_request_trace.py` и существующие SQLite fault
 tests. Инструментация не меняет транзакции, повторы и правила авторизации.
