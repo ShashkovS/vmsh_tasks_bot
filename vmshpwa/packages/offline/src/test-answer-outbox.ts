@@ -138,6 +138,7 @@ function failureLabel(error: unknown): string {
 
 function failureState(error: unknown): 'retrying' | 'conflict' | 'failed' {
   if (error instanceof ApiResponseError) {
+    if (['test_attempt_hour_limit', 'test_attempt_day_limit'].includes(error.code)) return 'failed'
     if (
       error.code === 'idempotency_payload_mismatch' ||
       error.code === 'test_problem_revision_changed'
@@ -158,7 +159,14 @@ function failureState(error: unknown): 'retrying' | 'conflict' | 'failed' {
 }
 
 function validatedItem(item: OutboxItem): TestAnswerOutboxItem {
-  return testAnswerOutboxItemSchema.parse(item)
+  const parsed = testAnswerOutboxItemSchema.parse(item)
+  if (
+    ['queued', 'retrying'].includes(parsed.status) &&
+    /\btest_attempt_(hour|day)_limit\b/.test(parsed.lastError ?? '')
+  ) {
+    return { ...parsed, status: 'failed' }
+  }
+  return parsed
 }
 
 function receiptMatchesPayload(
@@ -215,6 +223,20 @@ export function createTestAnswerOutbox(
   async function claimNext(): Promise<TestAnswerOutboxItem | null> {
     return database.transaction('rw', database.outbox, async () => {
       const leaseCutoff = new Date(now().getTime() - sendingLeaseMilliseconds).toISOString()
+      // Retire retries persisted by older clients, without another HTTP attempt.
+      // See docs/support-problem-context.md: business limits are not transport failures.
+      for (const item of await database.outbox.where('ownerId').equals(parsedOwnerId).toArray()) {
+        if (
+          item.kind === 'test-answer' &&
+          ['queued', 'retrying'].includes(item.status) &&
+          /\btest_attempt_(hour|day)_limit\b/.test(item.lastError ?? '')
+        ) {
+          await database.outbox.update(item.id, {
+            status: 'failed',
+            updatedAtClient: now().toISOString(),
+          })
+        }
+      }
       const candidates = (await database.outbox.where('ownerId').equals(parsedOwnerId).toArray())
         .filter(
           (item) =>

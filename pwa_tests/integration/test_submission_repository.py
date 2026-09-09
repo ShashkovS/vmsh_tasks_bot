@@ -1220,7 +1220,7 @@ async def test_hour_limit_blocks_fourth_counted_attempt_but_not_invalid_format(
     )
 
     assert caught.value.code == "test_attempt_hour_limit"
-    assert caught.value.http_status == 429
+    assert caught.value.http_status == 422
     assert invalid.outcome == "invalid_format"
     assert invalid.attempts.used_this_hour == 3
     counts = fixture.factory.run_read(

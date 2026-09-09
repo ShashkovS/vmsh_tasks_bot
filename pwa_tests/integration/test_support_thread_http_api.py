@@ -486,6 +486,8 @@ async def test_student_create_get_and_append_use_authenticated_owner(support_htt
     payload = await created.json()
     assert payload["requestId"] == "support.http.test"
     assert payload["thread"]["student"]["studentId"] == "u-957001"
+    assert "problemNumber" not in payload["thread"]["context"]
+    assert "problemDocument" not in payload["thread"]
     assert payload["thread"]["entries"][0]["author"]["kind"] == "student"
     assert fixture.repository.calls[-1].student_user_id == STUDENT_ID
 
@@ -518,6 +520,18 @@ async def test_staff_scope_and_server_owned_author_kind_are_enforced(support_htt
         headers=_headers(),
     )
     assert visible.status == 200
+    legacy = (await visible.json())["thread"]
+    assert "problemNumber" not in legacy["context"]
+    assert "problemDocument" not in legacy
+    extended = await fixture.client.get(
+        "/staff/api/v1/questions/sup-1",
+        cookies=_cookie(fixture, "teacher", AuthAudience.STAFF),
+        headers={**_headers(), "X-Vmsh-Support-Context": "1"},
+    )
+    assert extended.status == 200
+    extended_thread = (await extended.json())["thread"]
+    assert "problemNumber" in extended_thread["context"]
+    assert "problemDocument" in extended_thread
 
     forbidden = await fixture.client.get(
         "/staff/api/v1/questions/sup-1",
@@ -564,6 +578,7 @@ async def test_student_list_is_owner_derived_cursor_backed_and_public_id_only(
     assert response.status == 200, await response.text()
     payload = await response.json()
     assert payload["nextCursor"] == "support-http-next"
+    assert "problemNumber" not in payload["items"][0]["context"]
     assert payload["items"][0]["replyState"] == "awaiting_staff"
     assert payload["items"][0]["latestEntry"] == {
         "authorKind": "student",

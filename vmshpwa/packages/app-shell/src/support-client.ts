@@ -220,7 +220,10 @@ class BrowserSupportClient implements SupportClient {
     body: string | undefined,
     options: SupportRequestOptions,
   ): Promise<Response> {
-    const headers: Record<string, string> = { Accept: 'application/json' }
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'X-Vmsh-Support-Context': '1',
+    }
     if (method === 'POST') headers['Content-Type'] = 'application/json'
     try {
       return await this.#fetch(`${this.runtime.apiBase}${path}`, {

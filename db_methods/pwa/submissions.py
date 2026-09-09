@@ -838,8 +838,8 @@ def _raise_if_limited(
     if policy.max_per_hour is not None and hour_count >= policy.max_per_hour:
         raise TestSubmissionRejected(
             code="test_attempt_hour_limit",
-            message="За этот час уже было три неверных ответа.",
-            http_status=429,
+            message="На эту задачу закончились попытки на текущий час. Вернитесь к ней позже.",
+            http_status=422,
             details=_limit_receipt(
                 policy, hour_count=hour_count, day_count=day_count
             ).payload(),
@@ -847,8 +847,8 @@ def _raise_if_limited(
     if policy.max_per_day is not None and day_count >= policy.max_per_day:
         raise TestSubmissionRejected(
             code="test_attempt_day_limit",
-            message="На сегодня попытки закончились.",
-            http_status=429,
+            message="На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра.",
+            http_status=422,
             details=_limit_receipt(
                 policy, hour_count=hour_count, day_count=day_count
             ).payload(),

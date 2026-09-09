@@ -141,6 +141,11 @@ export function reportHandledError(
 
 export function submissionFailureMessage(error?: unknown, storedLabel?: string): string {
   const api = error instanceof ApiResponseError ? error : null
+  const domainCode = api?.code ?? storedLabel?.split(':')[2]
+  if (domainCode === 'test_attempt_hour_limit')
+    return 'На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем.'
+  if (domainCode === 'test_attempt_day_limit')
+    return 'На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра. Ответ не отправлен; автоматически отправлять его не будем.'
   const status = api?.status ?? Number(storedLabel?.split(':')[1])
   let message: string
   if (status === 401) message = 'Сессия истекла. Войдите снова, затем повторите отправку.'

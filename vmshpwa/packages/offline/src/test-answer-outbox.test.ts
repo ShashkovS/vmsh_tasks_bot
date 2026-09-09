@@ -48,6 +48,26 @@ function enqueue(target: ReturnType<typeof outbox>) {
 }
 
 describe('test-answer Dexie outbox', () => {
+  it.each(['test_attempt_hour_limit', 'test_attempt_day_limit'])(
+    'does not retry business limit %s',
+    async (code) => {
+      const target = database(code)
+      const queue = outbox(target)
+      await enqueue(queue)
+      const submit = vi.fn().mockRejectedValue(
+        new ApiResponseError(429, {
+          error: { code, message: 'Лимит', requestId: 'request-limit' },
+        }),
+      )
+      expect(await queue.deliverNext({ submit })).toMatchObject({ state: 'failed' })
+      expect(await queue.deliverNext({ submit })).toMatchObject({ state: 'idle' })
+      expect(submit).toHaveBeenCalledOnce()
+      await target.outbox.update(UUID, { status: 'retrying' })
+      expect((await queue.list())[0]?.status).toBe('failed')
+      expect(await queue.deliverNext({ submit })).toMatchObject({ state: 'idle' })
+      expect(submit).toHaveBeenCalledOnce()
+    },
+  )
   it('persists one immutable versioned wire request and its client timestamp', async () => {
     const target = database('test-answer-enqueue')
     const queue = outbox(target)

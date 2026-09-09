@@ -339,10 +339,14 @@ def _summary_payload(summary: SupportThreadSummaryRecord) -> dict[str, object]:
 
 
 def _page_response(request: web.Request, page: SupportThreadPage) -> web.Response:
+    items = [_summary_payload(item) for item in page.items]
+    if request.headers.get("X-Vmsh-Support-Context") != "1":
+        for item in items:
+            item["context"].pop("problemNumber", None)
     return web.json_response(
         {
             "schemaVersion": 1,
-            "items": [_summary_payload(item) for item in page.items],
+            "items": items,
             "nextCursor": page.next_cursor,
             "requestId": request["request_id"],
         }
@@ -372,10 +376,16 @@ def _query_value(
 
 
 def _response(request: web.Request, thread: SupportThreadRecord) -> web.Response:
+    # Old installed PWA validates strict v1 objects; extensions require opt-in.
+    # See vmshpwa/docs/support-problem-context.md.
+    payload = _thread_payload(thread)
+    if request.headers.get("X-Vmsh-Support-Context") != "1":
+        payload["context"].pop("problemNumber", None)
+        payload.pop("problemDocument", None)
     return web.json_response(
         {
             "schemaVersion": 1,
-            "thread": _thread_payload(thread),
+            "thread": payload,
             "requestId": request["request_id"],
         }
     )

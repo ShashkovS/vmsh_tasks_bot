@@ -396,8 +396,14 @@ def _translate_submission_errors(handler):
         try:
             return await handler(request)
         except TestSubmissionRejected as error:
+            # Includes replayed refusals stored as 429 by previous deployments.
+            # See vmshpwa/docs/support-problem-context.md.
+            business_limit = error.code in {
+                "test_attempt_hour_limit",
+                "test_attempt_day_limit",
+            }
             raise PwaApiError(
-                status=error.http_status,
+                status=422 if business_limit else error.http_status,
                 code=error.code,
                 message=error.message,
                 details=error.details or None,
