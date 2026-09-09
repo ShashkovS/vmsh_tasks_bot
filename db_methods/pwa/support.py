@@ -155,6 +155,8 @@ class SupportThreadRecord:
     latest_entry_at: datetime
     version: int
     entries: tuple[SupportEntryRecord, ...]
+    problem_number: str | None = None
+    problem_document: dict[str, object] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,6 +178,7 @@ class SupportThreadSummaryRecord:
     reply_state: SupportReplyState
     entry_count: int
     version: int
+    problem_number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -307,6 +310,7 @@ def _summary_record(row: dict[str, object]) -> SupportThreadSummaryRecord:
         problem_title=(
             None if row["problem_title"] is None else str(row["problem_title"])
         ),
+        problem_number=row["problem_number"],
         latest_entry_at=_parse_timestamp(
             row["latest_entry_at"], label="support latest entry time"
         ),
@@ -779,7 +783,9 @@ class PwaSupportThreadRepository:
             "course.public_id AS course_public_id, course.name AS course_name, "
             "group_row.public_id AS group_public_id, "
             "group_row.public_name AS group_name, problem.public_id AS problem_public_id, "
-            "problem.title AS problem_title "
+            "problem.title AS problem_title, "
+            "problem.lesson || coalesce(group_row.short_code, '') || '.' || "
+            "problem.prob || coalesce(problem.item, '') AS problem_number "
             "FROM support_threads AS thread "
             "JOIN users AS student ON student.id = thread.student_user_id "
             "LEFT JOIN group_lessons AS group_lesson ON group_lesson.id = thread.group_lesson_id "
@@ -890,7 +896,40 @@ class PwaSupportThreadRepository:
             ),
             version=int(row["version"]),
             entries=entries,
+            problem_number=row["problem_number"],
+            problem_document=self._problem_document(connection, row),
         )
+
+    @staticmethod
+    def _problem_document(
+        connection: sqlite3.Connection, thread: dict[str, object]
+    ) -> dict[str, object] | None:
+        # Only the published condition; see docs/support-problem-context.md.
+        row = connection.execute(
+            "SELECT derivative.content_text, revision.source_ordinal "
+            "FROM lesson_publications publication "
+            "JOIN content_revisions content ON content.id = publication.revision_id "
+            "AND content.status = 'ready' "
+            "JOIN problem_revisions revision ON revision.content_revision_id = content.id "
+            "AND revision.problem_id = ? "
+            "JOIN content_derivatives derivative ON derivative.revision_id = content.id "
+            "AND derivative.kind = 'web_ast' AND derivative.invalidated_at IS NULL "
+            "WHERE publication.group_lesson_id = ? AND publication.kind = 'condition' "
+            "AND publication.state = 'published' ORDER BY derivative.id DESC LIMIT 1",
+            (thread["problem_id"], thread["group_lesson_id"]),
+        ).fetchone()
+        if row is None:
+            return None
+        try:
+            document = json.loads(row["content_text"])
+            document["problems"] = [
+                problem
+                for problem in document["problems"]
+                if problem["ordinal"] == row["source_ordinal"]
+            ]
+            return document if document["problems"] else None
+        except ValueError, TypeError, KeyError:
+            return None
 
     @staticmethod
     def _summary_rows(
@@ -907,6 +946,8 @@ class PwaSupportThreadRepository:
             "group_row.public_id AS group_public_id, "
             "group_row.public_name AS group_name, "
             "problem.public_id AS problem_public_id, problem.title AS problem_title, "
+            "problem.lesson || coalesce(group_row.short_code, '') || '.' || "
+            "problem.prob || coalesce(problem.item, '') AS problem_number, "
             "latest_entry.author_kind AS latest_author_kind, "
             "substr(latest_entry.text, 1, 280) AS latest_text_excerpt, "
             "(SELECT count(*) FROM support_entries AS counted_entry "

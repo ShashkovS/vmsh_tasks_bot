@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -21,6 +22,35 @@ from db_methods.pwa.support import (
     SupportStaffScope,
 )
 from helpers.consts import USER_TYPE
+
+
+def test_question_document_is_focused_and_only_published_condition():
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+    connection.executescript("""
+        CREATE TABLE lesson_publications(group_lesson_id, revision_id, kind, state);
+        CREATE TABLE content_revisions(id, status);
+        CREATE TABLE problem_revisions(problem_id, content_revision_id, source_ordinal);
+        CREATE TABLE content_derivatives(id, revision_id, kind, invalidated_at, content_text);
+        INSERT INTO lesson_publications VALUES (1, 1, 'condition', 'published');
+        INSERT INTO content_revisions VALUES (1, 'ready');
+        INSERT INTO problem_revisions VALUES (7, 1, 2);
+    """)
+    document = {"introduction": [], "problems": [{"ordinal": 1}, {"ordinal": 2}]}
+    connection.execute(
+        "INSERT INTO content_derivatives VALUES (1, 1, ?, NULL, ?)",
+        ("web_ast", json.dumps(document)),
+    )
+    target = {"problem_id": 7, "group_lesson_id": 1}
+    result = PwaSupportThreadRepository._problem_document(connection, target)
+    assert result["problems"] == [{"ordinal": 2}]
+    connection.execute("UPDATE lesson_publications SET kind = 'solution'")
+    assert PwaSupportThreadRepository._problem_document(connection, target) is None
+    connection.execute(
+        "UPDATE lesson_publications SET kind = 'condition', state = 'hidden'"
+    )
+    assert PwaSupportThreadRepository._problem_document(connection, target) is None
+    connection.close()
 
 
 NOW = datetime(2026, 10, 5, 12, tzinfo=UTC)
@@ -244,6 +274,8 @@ async def test_private_thread_is_idempotent_and_keeps_one_chronological_dialogue
     assert created.course_public_id == "c-1"
     assert created.group_public_id == "g-5"
     assert created.problem_public_id == "p-1"
+    assert created.problem_number == "41a.1"
+    assert created.problem_document is None
     assert created.version == 1
     assert [entry.author_kind for entry in created.entries] == ["student"]
 

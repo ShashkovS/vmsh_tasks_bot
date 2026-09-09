@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { webContentDocumentSchema } from './content'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 
@@ -110,11 +111,13 @@ export const supportThreadSchema = z
         groupLessonId: publicIdSchema.nullable(),
         problemId: publicIdSchema.nullable(),
         problemTitle: z.string().trim().min(1).max(500).nullable(),
+        problemNumber: z.string().nullable().optional(),
       })
       .strict(),
     latestEntryAt: z.iso.datetime(),
     version: z.number().int().positive(),
     entries: z.array(supportEntrySchema).min(1),
+    problemDocument: webContentDocumentSchema.nullable().optional(),
   })
   .strict()
   .superRefine((thread, context) => {
@@ -185,6 +188,7 @@ export const supportThreadSummarySchema = z
         groupLessonId: publicIdSchema.nullable(),
         problemId: publicIdSchema.nullable(),
         problemTitle: z.string().trim().min(1).max(500).nullable(),
+        problemNumber: z.string().nullable().optional(),
       })
       .strict(),
     latestEntry: z

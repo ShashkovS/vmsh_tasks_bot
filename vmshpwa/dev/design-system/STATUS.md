@@ -1,5 +1,10 @@
 # Design-system status
 
+## Вопросы: номер и условие — 9 сентября 2026
+
+Staff показывает номер и название; нативный details раскрывает SemanticMathDocument.
+См. [контракт изменения](../../docs/support-problem-context.md). Visual snapshots не менялись.
+
 ## Учительский Student flow — 9 сентября 2026, проверка
 
 Phase 5: `StaffTestingPage` соединяет учительские «Уроки», «Курсы», «Новости»

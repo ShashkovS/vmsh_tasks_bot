@@ -281,8 +281,10 @@ def _thread_payload(thread: SupportThreadRecord) -> dict[str, object]:
             "groupLessonId": thread.group_lesson_public_id,
             "problemId": thread.problem_public_id,
             "problemTitle": thread.problem_title,
+            "problemNumber": thread.problem_number,
         },
         "latestEntryAt": _timestamp(thread.latest_entry_at),
+        "problemDocument": thread.problem_document,
         "version": thread.version,
         "entries": [
             {
@@ -323,6 +325,7 @@ def _summary_payload(summary: SupportThreadSummaryRecord) -> dict[str, object]:
             "groupLessonId": summary.group_lesson_public_id,
             "problemId": summary.problem_public_id,
             "problemTitle": summary.problem_title,
+            "problemNumber": summary.problem_number,
         },
         "latestEntry": {
             "authorKind": summary.latest_author_kind,

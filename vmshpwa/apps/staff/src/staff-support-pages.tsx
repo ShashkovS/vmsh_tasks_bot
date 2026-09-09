@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useMemo } from 'react'
+import { SemanticMathDocument } from '@vmsh/content'
 
 import {
   PageLayout,
@@ -141,9 +142,7 @@ function StaffSupportSummary({ item }: { item: SupportThreadSummary }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
-            <p className="font-medium text-foreground">
-              {item.context.problemTitle ?? 'Общий вопрос по занятию'}
-            </p>
+            <p className="font-medium text-foreground">{supportProblemLabel(item.context)}</p>
             <p className="text-caption text-muted-foreground">{supportContext(item)}</p>
             <p className="line-clamp-2 text-small text-foreground">
               {item.latestEntry.textExcerpt ?? 'Вложение'}
@@ -243,9 +242,19 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
         .filter(Boolean)
         .join(' · ')}
       eyebrow="Приватная переписка"
-      title={thread.context.problemTitle ?? 'Общий вопрос по занятию'}
+      title={supportProblemLabel(thread.context)}
       width="content"
     >
+      {thread.context.problemId ? (
+        <details className="mb-5 rounded-xl border p-4">
+          <summary className="cursor-pointer font-medium">Условие задачи</summary>
+          {thread.problemDocument ? (
+            <SemanticMathDocument document={thread.problemDocument} />
+          ) : (
+            <p className="mt-3 text-muted-foreground">Опубликованное условие недоступно.</p>
+          )}
+        </details>
+      ) : null}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <FeedbackThread
           messages={thread.entries.map((entry) => staffMessage(entry, principal.userId))}
@@ -269,6 +278,13 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
         </Card>
       </div>
     </PageLayout>
+  )
+}
+
+export function supportProblemLabel(context: SupportThreadSummary['context']) {
+  return (
+    [context.problemNumber, context.problemTitle].filter(Boolean).join(' · ') ||
+    'Общий вопрос по занятию'
   )
 }
 
