@@ -505,6 +505,14 @@ async def review_http(tmp_path, aiohttp_client, monkeypatch) -> ReviewHttpFixtur
     )
     app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
     app[PWA_CONTENT_OBJECT_STORAGE] = storage
+    async def database_lifecycle(_app):
+        factory.start_async_workers()
+        try:
+            yield
+        finally:
+            await factory.aclose()
+
+    app.cleanup_ctx.append(database_lifecycle)
     client = await aiohttp_client(app)
 
     async def login(audience: AuthAudience, username: str, password: str) -> str:

@@ -1,5 +1,18 @@
 # Статус плана разработки
 
+## Два постоянных SQLite-соединения — 9 сентября 2026, готово к выпуску
+
+- Runtime: один reader и один writer в собственных потоках; PRAGMA при
+  открытии, без кеширования результатов. Cleanup закрывает соединения в
+  потоках-владельцах до снятия lifecycle flock. Синхронные maintenance-пути
+  сохраняют прежнее поведение. Cancellation/rollback/reuse проверены.
+- Gunicorn остаётся на двух процессах; 3/4 требуют отдельного сравнения
+  после выпуска, не одновременной смены двух параметров.
+- 163 теста прошли: SQLite/trace, app lifecycle, auth/review/content HTTP
+  на постоянных соединениях, test-submissions и runtime locks. Ruff/diff-check
+  прошли. Локальный benchmark: p95 230 → 5,47 мс при 24 клиентах;
+  не production-замер. Подробности: [sqlite-admission-performance.md](../../docs/sqlite-admission-performance.md).
+
 ## Производительность SQLite — 9 сентября 2026, готово к выпуску
 
 - На изолированной полной схеме воспроизведена деградация даже `SELECT 1`

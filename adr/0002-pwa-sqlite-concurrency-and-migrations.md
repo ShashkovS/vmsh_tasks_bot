@@ -32,22 +32,27 @@ Primary references checked on 27 July 2026:
    with a diagnostic when migrations are missing, changed or newer than the
    checkout. Legacy startup retains its old auto-apply behavior until its
    separate cutover.
-2. New PWA repositories use `PwaConnectionFactory`: one connection per complete
-   synchronous operation. Connections are never shared across requests,
-   coroutines or threads.
-3. Async callers move the entire operation to `asyncio.to_thread`; callbacks are
+2. New PWA repositories use `PwaConnectionFactory`. Runtime enables two lazy,
+   persistent connections after acquiring its lifecycle lock: one reader and
+   one writer, each confined to its own single-thread executor. Connections
+   are reused between complete units of work, never concurrently or across
+   threads. Standalone synchronous maintenance retains connection-per-operation.
+3. Async callers move the entire operation to a worker thread; callbacks are
    synchronous. No `await`, network access or media conversion occurs inside a
    transaction.
-   Performance amendment (9 September 2026): each factory admits at most two
-   async reads and one async write to the executor at a time. Separate gates
+   Performance amendment (9 September 2026): runtime admits at most one
+   async read and one async write to the executors at a time. Separate gates
    preserve WAL read progress while a writer waits. Waiting happens on the
    event loop, not in executor threads; cancellation of a queued caller opens
    no connection, cancellation after dispatch drains the callback before
-   releasing its permit. Connections still are not reused. Measurements and
+   releasing its permit. Cleanup drains the units of work and closes both
+   connections on their owner threads before releasing the lifecycle lock;
+   this also holds if the cleanup caller is cancelled. No transaction may
+   remain open after a callback; exceptional writes roll back. Measurements and
    rollout checks: `vmshpwa/docs/sqlite-admission-performance.md`.
 4. The explicit maintenance command enables persistent WAL mode. Runtime
-   startup verifies WAL without changing it; each operation enables
-   `foreign_keys`, verifies WAL again and uses a bounded `busy_timeout`.
+   startup verifies WAL without changing it; each new connection enables
+   `foreign_keys`, verifies WAL and uses a bounded `busy_timeout`.
 5. Multi-write use cases acquire the writer slot with `BEGIN IMMEDIATE`, then
    retry only `SQLITE_BUSY`/`SQLITE_LOCKED` using the finite policy
    `25ms, 75ms, 225ms` after the initial attempt. Exhaustion is observable as

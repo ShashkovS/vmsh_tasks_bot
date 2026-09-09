@@ -5,7 +5,7 @@ import json
 import logging
 import time
 from contextlib import contextmanager, suppress
-from contextvars import ContextVar
+from contextvars import ContextVar, copy_context
 from dataclasses import dataclass, field
 from threading import Lock
 
@@ -45,7 +45,8 @@ def trace_stage(name):
             trace.add(name, time.perf_counter() - started)
 
 
-async def traced_thread(operation, *args):
+def submit_traced_thread(operation, *args, executor=None):
+    """Submit immediately; the Future is not a task targeted by global shutdown."""
     trace = current_trace.get()
     submitted = time.perf_counter()
 
@@ -54,7 +55,13 @@ async def traced_thread(operation, *args):
             trace.add("db.thread_queue", time.perf_counter() - submitted)
         return operation(*args)
 
-    return await asyncio.to_thread(run)
+    return asyncio.get_running_loop().run_in_executor(
+        executor, copy_context().run, run
+    )
+
+
+async def traced_thread(operation, *args):
+    return await submit_traced_thread(operation, *args)
 
 
 @web.middleware

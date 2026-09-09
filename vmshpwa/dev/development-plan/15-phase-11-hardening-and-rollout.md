@@ -3,8 +3,9 @@
 ## Performance follow-up — 9 сентября 2026
 
 На изолированной полной схеме воспроизведена деградация при конкурентном
-открытии SQLite-соединений. В `db_methods/pwa/connection.py` добавлен допуск
-двух чтений и одной записи на фабрику; соединения и результаты не кешируются.
+открытии SQLite-соединений. В `db_methods/pwa/connection.py` runtime теперь
+держит два постоянных соединения (reader/writer), каждое в своём потоке;
+результаты не кешируются. `main.py` закрывает их до снятия lifecycle flock.
 Замеры, воспроизводимый benchmark, контракт отмены и критерии production
 сравнения: [sqlite-admission-performance.md](../../docs/sqlite-admission-performance.md).
 Локальные регрессии не заменяют production latency gate: нужны свежие

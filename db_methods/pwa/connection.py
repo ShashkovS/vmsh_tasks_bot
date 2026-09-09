@@ -1,4 +1,4 @@
-"""Connection-per-operation SQLite boundary for new PWA domain services."""
+"""SQLite units of work and two thread-owned runtime connections (ADR 0002)."""
 
 from __future__ import annotations
 
@@ -6,13 +6,15 @@ import asyncio
 import inspect
 import sqlite3
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable, Iterator
 from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeVar
 
-from helpers.pwa.request_trace import trace_stage, traced_thread
+from helpers.pwa.request_trace import trace_stage, submit_traced_thread
 
 from .migrations import require_current_schema
 
@@ -52,10 +54,10 @@ class SqliteConcurrencyPolicy:
 
 
 class PwaConnectionFactory:
-    """Open a fresh connection for each synchronous unit of work.
+    """Run complete synchronous units of work without sharing transactions.
 
-    A connection never crosses an asyncio request/coroutine boundary. The async
-    helpers below run the complete callback in one worker thread. See
+    Runtime opts into one persistent reader and writer, each confined to its
+    own thread. Standalone sync/maintenance calls keep fresh connections. See
     ``adr/0002-pwa-sqlite-concurrency-and-migrations.md`` and the fault tests in
     ``pwa_tests/integration/test_sqlite_concurrency.py``.
     """
@@ -75,9 +77,50 @@ class PwaConnectionFactory:
         # pool. Writers waiting on another process must not consume read slots.
         self._read_slots = asyncio.Semaphore(self.policy.read_concurrency)
         self._write_slots = asyncio.Semaphore(self.policy.write_concurrency)
+        self._local = threading.local()
+        self._executors: dict[str, ThreadPoolExecutor] = {}
+        self._closed = False
+        self._close_task: asyncio.Task | None = None
         if verify_schema:
             require_current_schema(self.database_path)
             self._require_wal_mode()
+
+    def start_async_workers(self) -> None:
+        """Enable two lazy connections after runtime has acquired its flock."""
+        if self._closed or self._executors:
+            raise RuntimeError("SQLite workers already started or closed")
+        self._read_slots = asyncio.Semaphore(1)
+        self._write_slots = asyncio.Semaphore(1)
+        for role in ("read", "write"):
+            self._executors[role] = ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix=f"pwa-db-{role}"
+            )
+
+    def _close_workers(self) -> None:
+        def close_connection():
+            connection = getattr(self._local, "connection", None)
+            if connection is not None:
+                connection.close()
+                self._local.connection = None
+
+        try:
+            closing = [executor.submit(close_connection) for executor in self._executors.values()]
+            for future in closing:
+                future.result()
+        finally:
+            for executor in self._executors.values():
+                executor.shutdown(wait=True)
+
+    async def aclose(self) -> None:
+        """Drain dispatched operations and close on owner threads before unlock."""
+        async def close():
+            async with self._read_slots, self._write_slots:
+                await asyncio.to_thread(self._close_workers)
+
+        if self._close_task is None:
+            self._closed = True
+            self._close_task = asyncio.create_task(close())
+        await self._drain_on_cancel(self._close_task)
 
     def _require_wal_mode(self) -> None:
         uri = f"{self.database_path.resolve().as_uri()}?mode=ro"
@@ -145,18 +188,31 @@ class PwaConnectionFactory:
 
     @contextmanager
     def read_connection(self) -> Iterator[sqlite3.Connection]:
-        with trace_stage("db.connect"):
-            connection = self.connect()
+        reusable = getattr(self._local, "reusable", False)
+        connection = getattr(self._local, "connection", None) if reusable else None
+        if connection is None:
+            with trace_stage("db.connect"):
+                connection = self.connect()
+            if reusable:
+                self._local.connection = connection
         try:
             yield connection
         finally:
-            connection.close()
+            if reusable:
+                # No transaction/snapshot may escape into the next callback.
+                try:
+                    if connection.in_transaction:
+                        connection.execute("ROLLBACK")
+                except BaseException:
+                    connection.close()
+                    self._local.connection = None
+                    raise
+            else:
+                connection.close()
 
     @contextmanager
     def write_transaction(self) -> Iterator[sqlite3.Connection]:
-        with trace_stage("db.connect"):
-            connection = self.connect()
-        try:
+        with self.read_connection() as connection:
             with trace_stage("db.write_lock"):
                 self._begin_write(connection)
             try:
@@ -168,8 +224,6 @@ class PwaConnectionFactory:
             else:
                 with trace_stage("db.commit"):
                     connection.execute("COMMIT")
-        finally:
-            connection.close()
 
     def run_read(self, operation: Callable[[sqlite3.Connection], ResultT]) -> ResultT:
         with self.read_connection() as connection:
@@ -194,15 +248,16 @@ class PwaConnectionFactory:
     async def run_read_async(
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
-        return await self._run_admitted(self._read_slots, self.run_read, operation)
+        return await self._run_admitted("read", self._read_slots, self.run_read, operation)
 
     async def run_write_async(
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
-        return await self._run_admitted(self._write_slots, self.run_write, operation)
+        return await self._run_admitted("write", self._write_slots, self.run_write, operation)
 
     async def _run_admitted(
         self,
+        role: str,
         slots: asyncio.Semaphore,
         runner: Callable[[Callable[[sqlite3.Connection], ResultT]], ResultT],
         operation: Callable[[sqlite3.Connection], ResultT],
@@ -210,22 +265,33 @@ class PwaConnectionFactory:
         with trace_stage("db.admission_queue"):
             await slots.acquire()
         try:
-            worker = asyncio.create_task(traced_thread(runner, operation))
-            try:
-                return await asyncio.shield(worker)
-            except asyncio.CancelledError:
-                # Cancellation cannot stop a running SQLite callback. Keep its
-                # permit (and the request's lifecycle) until the connection is
-                # closed, including when shutdown cancels the request again.
-                while not worker.done():
-                    try:
-                        await asyncio.shield(worker)
-                    except asyncio.CancelledError:
-                        continue
-                    except Exception:
-                        break
-                if not worker.cancelled():
-                    worker.exception()
-                raise
+            if self._closed:
+                raise RuntimeError("SQLite workers are closed")
+            executor = self._executors.get(role)
+
+            def run():
+                self._local.reusable = executor is not None
+                return runner(operation)
+
+            worker = submit_traced_thread(run, executor=executor)
+            return await self._drain_on_cancel(worker)
         finally:
             slots.release()
+
+    @staticmethod
+    async def _drain_on_cancel(worker):
+        try:
+            return await asyncio.shield(worker)
+        except asyncio.CancelledError:
+            # Cancellation cannot stop SQLite: keep the permit until the unit
+            # of work has finished, even if shutdown cancels the caller again.
+            while not worker.done():
+                try:
+                    await asyncio.shield(worker)
+                except asyncio.CancelledError:
+                    continue
+                except Exception:
+                    break
+            if not worker.cancelled():
+                worker.exception()
+            raise

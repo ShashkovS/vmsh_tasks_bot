@@ -142,6 +142,48 @@ async def test_pwa_startup_releases_lifecycle_lock_when_schema_check_fails(tmp_p
 
 
 @pytest.mark.asyncio
+async def test_cancelled_runtime_cleanup_keeps_lock_until_sqlite_drains(tmp_path):
+    database_path = tmp_path / "draining.sqlite3"
+    apply_schema_migrations(database_path)
+    runtime = Config(
+        runtime_profile="pwa-agent", config_name="factory-test",
+        db_filename=str(database_path),
+    )
+    app = create_app([], runtime_config=runtime)
+    app.freeze()
+    await app.startup()
+    factory = app[PWA_DATABASE].factory
+    started = threading.Event()
+    release = threading.Event()
+
+    def blocking(connection):
+        started.set()
+        assert release.wait(5)
+        return connection.execute("SELECT 1").fetchone()
+
+    operation = asyncio.create_task(factory.run_read_async(blocking))
+    assert await asyncio.to_thread(started.wait, 5)
+    await app.shutdown()
+    cleanup = asyncio.create_task(app.cleanup())
+    try:
+        await asyncio.sleep(0.01)
+        cleanup.cancel()
+        await asyncio.sleep(0.01)
+        assert not cleanup.done()
+        with pytest.raises(DatabaseLifecycleBusyError):
+            maintenance_database_lock(database_path).acquire()
+    finally:
+        release.set()
+    # Global on_shutdown cancels the caller; the SQLite work still drains.
+    with pytest.raises(asyncio.CancelledError):
+        await operation
+    with pytest.raises(asyncio.CancelledError):
+        await cleanup
+    with maintenance_database_lock(database_path) as maintenance:
+        assert maintenance.acquired
+
+
+@pytest.mark.asyncio
 async def test_runner_cleanup_releases_lock_after_later_startup_failure(tmp_path):
     database_path = tmp_path / "current.sqlite3"
     apply_schema_migrations(database_path)

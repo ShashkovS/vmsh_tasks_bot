@@ -193,6 +193,15 @@ async def auth_http_client(tmp_path, aiohttp_client):
     app.router.add_get("/student/api/v1/private-probe", private_probe)
     app.router.add_post("/student/api/v1/private-probe", private_probe)
     app.router.add_get("/student/api/v1/auth/login", private_probe)
+
+    async def database_lifecycle(_app):
+        factory.start_async_workers()
+        try:
+            yield
+        finally:
+            await factory.aclose()
+
+    app.cleanup_ctx.append(database_lifecycle)
     return await aiohttp_client(app)
 
 

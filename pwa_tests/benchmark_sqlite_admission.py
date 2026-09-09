@@ -18,7 +18,7 @@ from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from helpers.pwa.request_trace import traced_thread
 
 
-async def measure(factory, *, callers, iterations, admitted):
+async def measure(factory, *, callers, iterations, mode):
     def operation(connection):
         return connection.execute("SELECT 1").fetchone()
 
@@ -26,7 +26,7 @@ async def measure(factory, *, callers, iterations, admitted):
         elapsed = []
         for _ in range(iterations):
             started = time.perf_counter()
-            if admitted:
+            if mode != "fresh-unbounded":
                 await factory.run_read_async(operation)
             else:
                 await traced_thread(factory.run_read, operation)
@@ -37,7 +37,7 @@ async def measure(factory, *, callers, iterations, admitted):
     batches = await asyncio.gather(*(client() for _ in range(callers)))
     elapsed = sorted(value for batch in batches for value in batch)
     return {
-        "admitted": admitted,
+        "mode": mode,
         "callers": callers,
         "operations": len(elapsed),
         "mean_ms": round(statistics.mean(elapsed), 2),
@@ -47,12 +47,17 @@ async def measure(factory, *, callers, iterations, admitted):
 
 
 async def benchmark(path, callers, iterations):
-    factory = PwaConnectionFactory(path)
     for concurrency in (1, callers):
-        for admitted in (False, True):
-            print(json.dumps(await measure(
-                factory, callers=concurrency, iterations=iterations, admitted=admitted
-            )), flush=True)
+        for mode in ("fresh-unbounded", "fresh-admitted", "persistent"):
+            factory = PwaConnectionFactory(path)
+            if mode == "persistent":
+                factory.start_async_workers()
+            try:
+                print(json.dumps(await measure(
+                    factory, callers=concurrency, iterations=iterations, mode=mode
+                )), flush=True)
+            finally:
+                await factory.aclose()
 
 
 def main():

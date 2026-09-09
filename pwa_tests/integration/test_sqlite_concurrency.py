@@ -4,6 +4,7 @@ import asyncio
 import threading
 
 import pytest
+import pytest_asyncio
 
 from helpers.pwa.request_trace import RequestTrace, current_trace
 
@@ -20,6 +21,19 @@ def database_path(tmp_path):
     path = tmp_path / "concurrency.sqlite3"
     apply_schema_migrations(path)
     return path
+
+
+@pytest_asyncio.fixture(params=[False, True], ids=["fresh", "persistent"])
+async def async_factory(database_path, request):
+    factory = PwaConnectionFactory(
+        database_path, policy=SqliteConcurrencyPolicy(read_concurrency=1)
+    )
+    if request.param:
+        factory.start_async_workers()
+    try:
+        yield factory
+    finally:
+        await factory.aclose()
 
 
 def test_second_writer_retries_then_reports_exhaustion(database_path):
@@ -126,10 +140,8 @@ async def test_trace_records_database_stages_without_sql(database_path):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("kind", ["read", "write"])
-async def test_admission_bounds_workers_and_releases_after_failure(database_path, kind):
-    factory = PwaConnectionFactory(
-        database_path, policy=SqliteConcurrencyPolicy(read_concurrency=1)
-    )
+async def test_admission_bounds_workers_and_releases_after_failure(async_factory, kind):
+    factory = async_factory
     run = getattr(factory, f"run_{kind}_async")
     started = threading.Event()
     release = threading.Event()
@@ -155,10 +167,8 @@ async def test_admission_bounds_workers_and_releases_after_failure(database_path
 
 
 @pytest.mark.asyncio
-async def test_cancelled_worker_keeps_permit_until_connection_closes(database_path):
-    factory = PwaConnectionFactory(
-        database_path, policy=SqliteConcurrencyPolicy(read_concurrency=1)
-    )
+async def test_cancelled_worker_keeps_permit_until_connection_closes(async_factory):
+    factory = async_factory
     started = threading.Event()
     release = threading.Event()
     second_started = threading.Event()
@@ -188,8 +198,8 @@ async def test_cancelled_worker_keeps_permit_until_connection_closes(database_pa
 
 
 @pytest.mark.asyncio
-async def test_waiting_writer_does_not_block_reads_or_leak_cancelled_waiter(database_path):
-    factory = PwaConnectionFactory(database_path)
+async def test_waiting_writer_does_not_block_reads_or_leak_cancelled_waiter(async_factory):
+    factory = async_factory
     started = threading.Event()
     release = threading.Event()
 
@@ -213,3 +223,79 @@ async def test_waiting_writer_does_not_block_reads_or_leak_cancelled_waiter(data
         release.set()
         await writer
     assert await factory.run_write_async(lambda _connection: 42) == 42
+
+
+@pytest.mark.asyncio
+async def test_persistent_connections_reuse_owner_threads_and_fresh_results(database_path):
+    factory = PwaConnectionFactory(database_path)
+    factory.start_async_workers()
+    trace = RequestTrace()
+    token = current_trace.set(trace)
+    try:
+        def identity(c):
+            return id(c), threading.get_ident()
+
+        reader = await factory.run_read_async(identity)
+        writer = await factory.run_write_async(identity)
+        assert reader[0] != writer[0]
+        assert reader[1] != writer[1]
+        for _ in range(5):
+            assert await factory.run_read_async(identity) == reader
+            assert await factory.run_write_async(identity) == writer
+        assert trace.stages["db.connect"][0] == 2
+
+        def broken(c):
+            c.execute("INSERT INTO kv (key, value) VALUES ('rollback', '1')")
+            raise ValueError("rollback")
+
+        with pytest.raises(ValueError, match="rollback"):
+            await factory.run_write_async(broken)
+        assert await factory.run_read_async(
+            lambda c: c.execute("SELECT value FROM kv WHERE key='rollback'").fetchone()
+        ) is None
+        await factory.run_write_async(
+            lambda c: c.execute("INSERT INTO kv (key, value) VALUES ('fresh', '1')").rowcount
+        )
+        assert await factory.run_read_async(
+            lambda c: c.execute("SELECT value FROM kv WHERE key='fresh'").fetchone()
+        ) == {"value": "1"}
+        # A mistakenly unfinished read transaction cannot pin a snapshot.
+        await factory.run_read_async(lambda c: c.execute("BEGIN").rowcount)
+        assert not await factory.run_read_async(lambda c: c.in_transaction)
+    finally:
+        current_trace.reset(token)
+        await factory.aclose()
+    await factory.aclose()
+    with pytest.raises(RuntimeError, match="closed"):
+        await factory.run_read_async(lambda c: None)
+
+
+@pytest.mark.asyncio
+async def test_cancelled_shutdown_drains_and_closes_on_owner_thread(database_path):
+    factory = PwaConnectionFactory(database_path)
+    factory.start_async_workers()
+    started = threading.Event()
+    release = threading.Event()
+    worker_thread = None
+
+    def blocking(c):
+        nonlocal worker_thread
+        worker_thread = threading.current_thread()
+        started.set()
+        assert release.wait(5)
+        return c.execute("SELECT 1").fetchone()
+
+    operation = asyncio.create_task(factory.run_read_async(blocking))
+    assert await asyncio.to_thread(started.wait, 5)
+    close = asyncio.create_task(factory.aclose())
+    try:
+        await asyncio.sleep(0.01)
+        close.cancel()
+        await asyncio.sleep(0.01)
+        assert not close.done()
+    finally:
+        release.set()
+    await operation
+    with pytest.raises(asyncio.CancelledError):
+        await close
+    assert worker_thread is not None and not worker_thread.is_alive()

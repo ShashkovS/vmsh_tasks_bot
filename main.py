@@ -78,11 +78,15 @@ async def pwa_database_lifecycle(app: web.Application):
     state.lifecycle_lock = lifecycle_lock
     state.factory = factory
     try:
+        factory.start_async_workers()
         yield
     finally:
-        state.factory = None
-        state.lifecycle_lock = None
-        lifecycle_lock.release()
+        try:
+            await factory.aclose()
+        finally:
+            state.factory = None
+            state.lifecycle_lock = None
+            lifecycle_lock.release()
 
 
 async def pwa_analytics_lifecycle(app: web.Application):

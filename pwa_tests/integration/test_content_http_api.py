@@ -452,6 +452,14 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         content_metadata_generator=metadata_generator,
     )
     app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
+    async def database_lifecycle(_app):
+        factory.start_async_workers()
+        try:
+            yield
+        finally:
+            await factory.aclose()
+
+    app.cleanup_ctx.append(database_lifecycle)
     client = await aiohttp_client(app)
 
     async def login(audience: AuthAudience, username: str, credential: str) -> str:
