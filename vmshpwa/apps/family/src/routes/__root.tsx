@@ -4,6 +4,8 @@ import { useCallback } from 'react'
 
 import {
   AppShell,
+  authenticationStatePrincipal,
+  useAuthentication,
   AuthenticationRedirectBoundary,
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
@@ -41,6 +43,7 @@ function FamilyProtectedShell({
   location: { pathname: string; searchStr: string; hash: string }
 }) {
   const navigate = Route.useNavigate()
+  const principal = authenticationStatePrincipal(useAuthentication().state)
   const returnTo = createRouterAuthReturnTo('family', {
     pathname: location.pathname,
     search: location.searchStr,
@@ -52,7 +55,13 @@ function FamilyProtectedShell({
 
   return (
     <AuthenticationRedirectBoundary onAuthenticationRequired={redirectToLogin}>
-      <AppShell product="family" title="Семья" navigation={navigation} mobileNavigation>
+      <AppShell
+        product="family"
+        title="Семья"
+        displayName={principal?.displayName}
+        navigation={navigation}
+        mobileNavigation
+      >
         <ProductPageView audience="family" pathname={location.pathname} />
         <Outlet />
       </AppShell>

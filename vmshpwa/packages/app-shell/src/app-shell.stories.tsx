@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, within } from 'storybook/test'
 import {
   createMemoryHistory,
   createRootRoute,
@@ -35,6 +36,13 @@ function createShellRouter(
       <AppShell
         product={product}
         title={title}
+        displayName={
+          product === 'student'
+            ? 'Анна Иванова'
+            : product === 'family'
+              ? 'Мария Иванова'
+              : 'Сергей Шашков'
+        }
         navigation={navigation}
         mobileNavigation={mobileNavigation}
       >
@@ -91,6 +99,18 @@ const meta = {
   title: 'Product/App shells',
   component: ShellPreview,
   parameters: { layout: 'fullscreen' },
+  play: async ({ canvasElement, args }) => {
+    const header = within(canvasElement).getByRole('banner')
+    await expect(
+      within(header).getByText(
+        args.audience === 'student'
+          ? 'Анна Иванова'
+          : args.audience === 'family'
+            ? 'Мария Иванова'
+            : 'Сергей Шашков',
+      ),
+    ).toBeVisible()
+  },
 } satisfies Meta<typeof ShellPreview>
 export default meta
 type Story = StoryObj<typeof meta>
@@ -151,5 +171,6 @@ function StateCard({
 
 export const LoadingEmptyErrorOffline: Story = {
   args: { audience: 'student' },
+  play: async () => {},
   render: () => <StateGallery />,
 }

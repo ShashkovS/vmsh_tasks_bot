@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 
 import {
   AppShell,
+  authenticationStatePrincipal,
   AuthenticationRedirectBoundary,
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
@@ -51,6 +52,7 @@ function StudentProtectedShell({
   location: { pathname: string; searchStr: string; hash: string }
 }) {
   const navigate = Route.useNavigate()
+  const principal = authenticationStatePrincipal(useAuthentication().state)
   const returnTo = createRouterAuthReturnTo('student', {
     pathname: location.pathname,
     search: location.searchStr,
@@ -66,6 +68,7 @@ function StudentProtectedShell({
         compactHeader={location.pathname.startsWith('/tasks')}
         product="student"
         title="Школьник"
+        displayName={principal?.displayName}
         navigation={navigation}
         mobileNavigation
       >

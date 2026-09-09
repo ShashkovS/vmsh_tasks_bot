@@ -150,6 +150,7 @@ function AuthenticatedStaffShell({ pathname }: { pathname: string }) {
     <AppShell
       product="staff"
       title="Учитель и администратор"
+      displayName={principal.displayName}
       navigation={permittedNavigation}
       headerActions={
         <Button

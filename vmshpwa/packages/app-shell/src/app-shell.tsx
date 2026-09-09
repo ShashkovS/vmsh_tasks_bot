@@ -22,6 +22,7 @@ export interface NavigationItem {
 export interface AppShellProps {
   product: 'student' | 'family' | 'staff'
   title: string
+  displayName?: string | undefined
   navigation: NavigationItem[]
   children: ReactNode
   mobileNavigation?: boolean
@@ -32,6 +33,7 @@ export interface AppShellProps {
 export function AppShell({
   product,
   title,
+  displayName,
   navigation,
   children,
   mobileNavigation = false,
@@ -47,14 +49,23 @@ export function AppShell({
           className={`mx-auto flex max-w-[1600px] items-center gap-3 px-4 ${compactHeader ? 'h-10' : 'h-14'}`}
         >
           <div className="flex min-w-0 items-baseline gap-2">
-            <Link className="truncate font-semibold tracking-tight" to="/">
+            <Link className="shrink-0 font-semibold tracking-tight" to="/">
               ВМШ 179
             </Link>
-            {!compactHeader ? (
-              <span className="hidden text-sm text-muted-foreground sm:inline">{title}</span>
+            {displayName || !compactHeader ? (
+              <span
+                className={
+                  displayName
+                    ? 'truncate text-sm text-muted-foreground'
+                    : 'hidden text-sm text-muted-foreground sm:inline'
+                }
+                title={displayName ?? title}
+              >
+                {displayName ?? title}
+              </span>
             ) : null}
           </div>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             {!compactHeader ? (
               <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
                 <Wifi className="size-3.5" aria-hidden="true" /> синхронизировано
@@ -115,7 +126,7 @@ export function AppShell({
         <Drawer onOpenChange={setMenuOpen} open={menuOpen} side="left">
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle>ВМШ 179 · {title}</DrawerTitle>
+              <DrawerTitle>ВМШ 179 · {displayName ?? title}</DrawerTitle>
               <DrawerDescription>Разделы рабочего кабинета</DrawerDescription>
             </DrawerHeader>
             <div className="min-h-0 flex-1 overflow-y-auto p-3 pt-0">
