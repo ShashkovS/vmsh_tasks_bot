@@ -48,6 +48,33 @@ function enqueue(target: ReturnType<typeof outbox>) {
 }
 
 describe('test-answer Dexie outbox', () => {
+  it('delivers the selected answer without consuming an older retry from another task', async () => {
+    const target = database('targeted-answer')
+    const queue = outbox(target)
+    const selected = await enqueue(queue)
+    const olderId = '00000000-0000-4000-8000-000000000001'
+    await target.outbox.put({
+      ...selected,
+      id: olderId,
+      idempotencyKey: olderId,
+      status: 'retrying',
+      createdAtClient: new Date(NOW.getTime() - 1000).toISOString(),
+      payload: { ...selected.payload, problemId: 'p-999' },
+      lastError: 'client:TestSubmissionNetworkError',
+    })
+    const submit = vi.fn().mockResolvedValue(RECEIPT)
+    expect(await queue.deliverNext({ submit }, selected.id)).toMatchObject({
+      state: 'synced',
+      item: { id: selected.id },
+    })
+    expect(submit).toHaveBeenCalledExactlyOnceWith(
+      selected.payload.problemId,
+      selected.payload.request,
+    )
+    expect((await target.outbox.get(olderId))?.attempts).toBe(0)
+    expect(await queue.deliverNext({ submit }, selected.id)).toEqual({ state: 'idle' })
+    expect(submit).toHaveBeenCalledOnce()
+  })
   it.each(['test_attempt_hour_limit', 'test_attempt_day_limit'])(
     'does not retry business limit %s',
     async (code) => {

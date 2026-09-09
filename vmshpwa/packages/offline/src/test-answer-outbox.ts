@@ -100,7 +100,10 @@ export interface TestAnswerOutboxOptions {
 export interface TestAnswerOutbox {
   enqueue(input: EnqueueTestAnswerInput): Promise<TestAnswerOutboxItem>
   list(): Promise<TestAnswerOutboxItem[]>
-  deliverNext(transport: TestAnswerSubmissionTransport): Promise<TestAnswerDeliveryResult>
+  deliverNext(
+    transport: TestAnswerSubmissionTransport,
+    itemId?: string,
+  ): Promise<TestAnswerDeliveryResult>
   acknowledge(itemId: string): Promise<boolean>
 }
 
@@ -220,7 +223,7 @@ export function createTestAnswerOutbox(
     return stored ? validatedItem(stored) : { ...claimed, status: state, updatedAtClient }
   }
 
-  async function claimNext(): Promise<TestAnswerOutboxItem | null> {
+  async function claimNext(itemId?: string): Promise<TestAnswerOutboxItem | null> {
     return database.transaction('rw', database.outbox, async () => {
       const leaseCutoff = new Date(now().getTime() - sendingLeaseMilliseconds).toISOString()
       // Retire retries persisted by older clients, without another HTTP attempt.
@@ -241,6 +244,7 @@ export function createTestAnswerOutbox(
         .filter(
           (item) =>
             item.kind === 'test-answer' &&
+            (itemId === undefined || item.id === itemId) &&
             (item.status === 'queued' ||
               item.status === 'retrying' ||
               (item.status === 'sending' && item.updatedAtClient <= leaseCutoff)),
@@ -319,8 +323,8 @@ export function createTestAnswerOutbox(
         )
     },
 
-    async deliverNext(transport) {
-      const claimed = await claimNext()
+    async deliverNext(transport, itemId) {
+      const claimed = await claimNext(itemId === undefined ? undefined : z.uuid().parse(itemId))
       if (!claimed) return { state: 'idle' }
       try {
         const receipt = submitTestAnswerResponseSchema.parse(

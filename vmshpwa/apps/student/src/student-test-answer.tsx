@@ -281,12 +281,22 @@ export function StudentTestAnswer({
   }
 
   const deliver = async () => {
+    if (!pendingItem) return
     setSendState('sending')
     setSendError(null)
-    const result = await outbox.deliverNext(online)
+    let result = await outbox.deliverNext(online, pendingItem.id)
     if (result.state === 'idle') {
-      setSendState('queued')
-      return
+      const stored = (await outbox.list()).find((item) => item.id === pendingItem.id)
+      if (stored?.status === 'synced' && stored.result) {
+        result = { state: 'synced', item: stored, receipt: stored.result }
+      } else {
+        setPendingItem(stored ?? null)
+        setSendState(queueState(stored ?? null))
+        setSendError(
+          stored?.lastError ? submissionFailureMessage(undefined, stored.lastError) : null,
+        )
+        return
+      }
     }
     if (result.item.id !== pendingItem?.id) {
       setSendState('queued')
@@ -339,7 +349,7 @@ export function StudentTestAnswer({
       // queued state is shown only after deliverNext persisted a retryable
       // failure, so a reload cannot strand a just-created answer as sending.
       setSendState('sending')
-      const result = await outbox.deliverNext(online)
+      const result = await outbox.deliverNext(online, queued.id)
       if (result.state === 'idle' || result.item.id !== queued.id) {
         setSendState('queued')
         return
