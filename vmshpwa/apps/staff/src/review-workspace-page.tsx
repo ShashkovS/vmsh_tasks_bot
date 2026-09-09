@@ -59,6 +59,7 @@ import {
   type ReviewDraft,
 } from './review-draft'
 import { describeReviewError } from './review-errors'
+import { rememberCompletedReview } from './last-completed-review'
 
 const verdictToWire = {
   rejected: 11,
@@ -276,6 +277,7 @@ export function LoadedReviewWorkspace({
       const queueId = currentLease.branches[0]?.queueId
       if (queueId) recordProductAction('review.verdict', { type: 'submission', id: queueId })
       clearReviewDraft(window.localStorage, storageKey)
+      rememberCompletedReview(namespace, principal.accountId, response.review.reviewId)
       if (onCompleted) onCompleted(response, draft)
       else await navigate({ to: '/review' })
     } catch (error) {
@@ -508,7 +510,7 @@ function TimelineEntryBody({
   )
 }
 
-function ReviewAttachmentImage({
+export function ReviewAttachmentImage({
   attachmentId,
   annotation,
   annotationDisabled,

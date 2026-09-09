@@ -10,6 +10,11 @@ from datetime import UTC, datetime, timedelta
 from db_methods.pwa.connection import PwaConnectionFactory
 from db_methods.pwa.review_corrections import (
     copy_evidence,
+    copy_annotations,
+    store_annotations,
+    active_review_owner,
+    read_verdict_mode,
+    evidence_scopes,
     find_replay,
     find_source_review,
     insert_comment,
@@ -21,8 +26,9 @@ from db_methods.pwa.review_corrections import (
     recipient_account_public_ids,
     update_thread_result,
 )
-from db_methods.pwa.reviews import ReviewStaffScope
+from db_methods.pwa.reviews import ReviewStaffScope, ReviewAnnotationManifest
 from helpers.consts import USER_TYPE, VERDICT, VERDICTS_SOLVED
+from models.pwa.course_runtime_settings import DEFAULT_COURSE_RUNTIME_SETTINGS
 
 
 class ReviewCorrectionNotFound(RuntimeError):
@@ -45,6 +51,10 @@ class ReviewCorrectionInvalid(RuntimeError):
     pass
 
 
+class ReviewCorrectionLeased(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class ReviewCorrectionCommand:
     source_review_public_id: str
@@ -55,6 +65,10 @@ class ReviewCorrectionCommand:
     verdict: int
     comment: str | None
     confirm_without_comment: bool
+    annotations: tuple[ReviewAnnotationManifest, ...] | None = None
+    expected_latest_review_id: str | None = None
+    expected_thread_version: int | None = None
+    confirm_replace_newer: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,12 +86,25 @@ class ReviewCorrectionReceipt:
 
 
 def _payload(command: ReviewCorrectionCommand) -> dict[str, object]:
-    return {
+    payload = {
         "sourceReviewId": command.source_review_public_id,
         "verdict": command.verdict,
         "comment": command.comment,
         "confirmWithoutComment": command.confirm_without_comment,
     }
+    # Preserve legacy idempotency hashes; see vmshpwa/docs/review-history.md.
+    if command.expected_latest_review_id is not None:
+        payload.update(
+            {
+                "expectedLatestReviewId": command.expected_latest_review_id,
+                "expectedThreadVersion": command.expected_thread_version,
+                "confirmReplaceNewer": command.confirm_replace_newer,
+                "annotations": None
+                if command.annotations is None
+                else [annotation.payload() for annotation in command.annotations],
+            }
+        )
+    return payload
 
 
 def _payload_hash(command: ReviewCorrectionCommand) -> str:
@@ -103,9 +130,28 @@ async def correct_written_review(
             "lower verdict requires a comment or confirmation"
         )
     completed_at = (now or datetime.now(UTC)).astimezone(UTC)
+    if (command.expected_latest_review_id is None) != (
+        command.expected_thread_version is None
+    ):
+        raise ReviewCorrectionInvalid("both optimistic expectations are required")
+    if command.annotations is not None and command.expected_latest_review_id is None:
+        raise ReviewCorrectionInvalid(
+            "annotation changes require optimistic expectations"
+        )
     payload_sha256 = _payload_hash(command)
 
     def operation(connection):
+        source = find_source_review(connection, command.source_review_public_id)
+        if source is None:
+            raise ReviewCorrectionNotFound("source review was not found")
+        if not command.scope.allows(source) or not all(
+            command.scope.allows(evidence)
+            for evidence in evidence_scopes(connection, source["id"])
+        ):
+            raise ReviewCorrectionForbidden("review is outside current Staff scope")
+        is_admin = bool(command.reviewer_type & int(USER_TYPE.ADMIN))
+        if not is_admin and int(source["reviewer_user_id"]) != command.reviewer_user_id:
+            raise ReviewCorrectionForbidden("teacher may correct only their own review")
         replay = find_replay(
             connection, command.reviewer_user_id, command.idempotency_key
         )
@@ -137,18 +183,32 @@ async def correct_written_review(
                 replayed=True,
             )
 
-        source = find_source_review(connection, command.source_review_public_id)
-        if source is None:
-            raise ReviewCorrectionNotFound("source review was not found")
-        if not command.scope.allows(source):
-            raise ReviewCorrectionForbidden("review is outside current Staff scope")
-        is_admin = bool(command.reviewer_type & int(USER_TYPE.ADMIN))
-        if not is_admin and int(source["reviewer_user_id"]) != command.reviewer_user_id:
-            raise ReviewCorrectionForbidden("teacher may correct only their own review")
-        if latest_review_public_id(connection, int(source["thread_id"])) != str(
-            source["public_id"]
+        latest_id = latest_review_public_id(connection, int(source["thread_id"]))
+        if command.expected_latest_review_id is not None:
+            mode = (
+                read_verdict_mode(connection, source["course_public_id"])
+                or DEFAULT_COURSE_RUNTIME_SETTINGS["verdictMode"]
+            )
+            allowed = {
+                "verdict_plus_minus": {11, 17},
+                "verdict_plus_minus_half": {11, 14, 17},
+                "verdict_plus_steps": set(range(11, 18)),
+            }[mode]
+            if command.verdict not in allowed:
+                raise ReviewCorrectionInvalid("verdict is outside current course scale")
+        if command.expected_latest_review_id is not None and (
+            latest_id != command.expected_latest_review_id
+            or int(source["thread_version"]) != command.expected_thread_version
+        ):
+            raise ReviewCorrectionStale("review or thread changed after opening")
+        if latest_id != str(source["public_id"]) and not (
+            command.expected_latest_review_id is not None
+            and command.confirm_replace_newer
         ):
             raise ReviewCorrectionStale("a newer review already exists")
+        owner = active_review_owner(connection, source, completed_at)
+        if owner is not None and int(owner["teacher_id"]) != command.reviewer_user_id:
+            raise ReviewCorrectionLeased(str(owner["display_name"]))
 
         stored_updated_at = datetime.fromisoformat(
             str(source["thread_updated_at"]).replace("Z", "+00:00")
@@ -206,6 +266,20 @@ async def correct_written_review(
         copy_evidence(
             connection, source_review_id=int(source["id"]), review_id=review_id
         )
+        if command.annotations is None:
+            copy_annotations(
+                connection, int(source["id"]), review_id, effective_completed_at_text
+            )
+        else:
+            try:
+                store_annotations(
+                    connection,
+                    review_id,
+                    command.annotations,
+                    effective_completed_at_text,
+                )
+            except ValueError as error:
+                raise ReviewCorrectionInvalid(str(error)) from error
         status = (
             "accepted" if VERDICT(command.verdict) in VERDICTS_SOLVED else "needs_work"
         )
@@ -225,6 +299,7 @@ async def correct_written_review(
                 {
                     "reviewPublicId": review_public_id,
                     "correctsReviewPublicId": command.source_review_public_id,
+                    "supersedesReviewPublicId": latest_id,
                     "studentUserId": source["student_user_id"],
                     "targetProblemId": source["problem_id"],
                 },

@@ -1,13 +1,23 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ReviewLease } from '@vmsh/contracts'
 import type * as AppShell from '@vmsh/app-shell'
 
 const mocks = vi.hoisted(() => {
-  const client = { list: vi.fn(), claim: vi.fn(), release: vi.fn(), correct: vi.fn() }
+  const client = {
+    list: vi.fn(),
+    claim: vi.fn(),
+    release: vi.fn(),
+    correct: vi.fn(),
+    historyDetail: vi.fn(),
+  }
   const principal = { accountId: 'u-1', audience: 'staff' as const }
-  const authentication = { client: { runtime: {} }, refresh: vi.fn(), handleApiError: vi.fn() }
+  const authentication = {
+    client: { runtime: { audience: 'staff', instance: 'agent' } },
+    refresh: vi.fn(),
+    handleApiError: vi.fn(),
+  }
   return { client, principal, authentication, mounts: new Map<string, number>() }
 })
 vi.mock('@vmsh/app-shell', async (original) => ({
@@ -53,6 +63,9 @@ vi.mock('./review-workspace-page', async () => {
   }
 })
 import { StaffReviewSeriesPage } from './review-series-page'
+import { CompletedReviewCard } from './review-history-page'
+import { historySearchSchema } from './review-history-search'
+import { lastCompletedReview, rememberCompletedReview } from './last-completed-review'
 
 function work(id: string) {
   return { queueId: id, logicalCaseId: id, branches: [{ problemId: 'p-1' }], lock: null }
@@ -68,10 +81,95 @@ function lease(id: string): ReviewLease {
     expiresAt: '',
   }
 }
+beforeEach(() => {
+  const values = new Map<string, string>()
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+      clear: () => values.clear(),
+    },
+  })
+})
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   mocks.mounts.clear()
+  window.localStorage.clear()
+})
+
+it('remembers only the account-scoped last completed review', () => {
+  rememberCompletedReview('agent-staff', 'a-1', 'r-7')
+  expect(lastCompletedReview('agent-staff', 'a-1')).toBe('r-7')
+  expect(lastCompletedReview('agent-staff', 'a-2')).toBeNull()
+  expect(lastCompletedReview('human-staff', 'a-1')).toBeNull()
+})
+
+it('restores correction draft and requires explicit confirmation before replacing a newer review', async () => {
+  expect(historySearchSchema.parse({ lesson: '9701' }).lesson).toBe(9701)
+  mocks.client.historyDetail.mockResolvedValue({
+    detail: {
+      review: {
+        reviewId: 'r-1',
+        verdict: 17,
+        studentName: 'Ученик',
+        problemNumber: '1.1',
+        problemTitle: 'Задача',
+        isLatestReview: false,
+      },
+      latestReviewId: 'r-2',
+      threadVersion: 8,
+      entries: [],
+      timeline: [
+        {
+          reviewId: 'r-2',
+          teacherName: 'Другой учитель',
+          verdict: 14,
+          completedAt: '2026-09-09T12:00:00Z',
+          comment: 'Половина',
+        },
+      ],
+      comment: 'Исходный',
+      statement: '',
+      document: null,
+      blockedBy: null,
+      verdictMode: 'verdict_plus_steps',
+    },
+  })
+  const close = vi.fn()
+  const mount = () =>
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <CompletedReviewCard reviewId="r-1" onClose={close} />
+      </QueryClientProvider>,
+    )
+  const first = mount()
+  fireEvent.change(await screen.findByRole('textbox'), { target: { value: 'Мой черновик' } })
+  first.unmount()
+  mount()
+  expect(await screen.findByRole('textbox')).toHaveProperty('value', 'Мой черновик')
+  const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
+  expect(confirmation).toHaveBeenCalledWith(expect.stringContaining('Другой учитель'))
+  expect(mocks.client.correct).not.toHaveBeenCalled()
+  confirmation.mockReturnValue(true)
+  mocks.client.correct.mockResolvedValue({ correction: { reviewId: 'r-3' } })
+  fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
+  await waitFor(() => expect(close).toHaveBeenCalled())
+  expect(mocks.client.correct).toHaveBeenCalledWith(
+    'r-1',
+    expect.objectContaining({
+      expectedLatestReviewId: 'r-2',
+      expectedThreadVersion: 8,
+      confirmReplaceNewer: true,
+      comment: 'Мой черновик',
+    }),
+  )
+  confirmation.mockRestore()
 })
 
 it('prepares only one next work, promotes its existing render and releases remaining leases on exit', async () => {
@@ -97,7 +195,27 @@ it('prepares only one next work, promotes its existing render and releases remai
   expect(mocks.mounts.get(nextId)).toBe(1)
   expect(mocks.client.claim).toHaveBeenCalledTimes(2)
   mocks.client.correct.mockResolvedValue({ correction: { reviewId: 'r-2' } })
+  mocks.client.historyDetail.mockResolvedValue({
+    detail: {
+      review: {
+        reviewId: 'r-1',
+        verdict: 17,
+        studentName: 'Ученик',
+        problemNumber: '1.1',
+        problemTitle: 'Задача',
+        isLatestReview: true,
+      },
+      latestReviewId: 'r-1',
+      threadVersion: 3,
+      entries: [],
+      timeline: [],
+      comment: '',
+      statement: 'Условие',
+      verdictMode: 'verdict_plus_steps',
+    },
+  })
   fireEvent.click(screen.getByRole('button', { name: /^Исправить предыдущую/ }))
+  await screen.findByRole('textbox')
   fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Исправленный комментарий' } })
   fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
   await waitFor(() =>

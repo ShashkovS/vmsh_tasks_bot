@@ -7,10 +7,12 @@ export function StatisticsStudentSearch({
   students,
   studentId,
   onChange,
+  label = 'График школьника',
 }: {
   students: { studentId: string; name: string }[]
   studentId: string | null
   onChange: (id: string | null) => void
+  label?: string
 }) {
   const id = useId()
   const [query, setQuery] = useState('')
@@ -24,7 +26,7 @@ export function StatisticsStudentSearch({
   const selected = students.find((student) => student.studentId === studentId)
   return (
     <section className="max-w-lg space-y-2">
-      <Label htmlFor={id}>График школьника</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}
         type="search"

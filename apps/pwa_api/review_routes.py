@@ -53,6 +53,12 @@ from db_methods.pwa.reviews import (
     ReviewThreadChanged,
 )
 from helpers.consts import USER_TYPE, VERDICT, VERDICT_TO_TICK
+from db_methods.pwa.review_history import (
+    history_options,
+    history_rows,
+    history_detail,
+    summary as history_summary,
+)
 from helpers.pwa.review_composite import render_review_annotation_composite_png
 from helpers.pwa.permissions import Capability
 from helpers.pwa.app_keys import PWA_DATABASE
@@ -64,6 +70,7 @@ from models.pwa.review_corrections import (
     ReviewCorrectionConflict,
     ReviewCorrectionForbidden,
     ReviewCorrectionInvalid,
+    ReviewCorrectionLeased,
     ReviewCorrectionNotFound,
     ReviewCorrectionStale,
     correct_written_review,
@@ -369,7 +376,10 @@ def _optional_reaction_id(value: str | None) -> int | None:
 
 
 async def _json_object(
-    request: web.Request, *, required_fields: frozenset[str]
+    request: web.Request,
+    *,
+    required_fields: frozenset[str],
+    optional_fields: frozenset[str] = frozenset(),
 ) -> dict[str, object]:
     if (
         request.content_length is not None
@@ -401,7 +411,11 @@ async def _json_object(
             code="validation_error",
             message="Тело запроса должно быть корректным JSON-объектом",
         ) from error
-    if not isinstance(payload, dict) or set(payload) != required_fields:
+    if (
+        not isinstance(payload, dict)
+        or not required_fields <= set(payload)
+        or set(payload) - required_fields - optional_fields
+    ):
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -606,9 +620,7 @@ async def _lease_payload_with_settings(
             course = find_course(connection, public_id=first.course_public_id)
             if course is None:
                 return None
-            return find_course_runtime_settings(
-                connection, course_id=int(course["id"])
-            )
+            return find_course_runtime_settings(connection, course_id=int(course["id"]))
 
         database = request.app.get(PWA_DATABASE)
         settings = (
@@ -1336,6 +1348,93 @@ async def complete_review_item(request: web.Request) -> web.Response:
     )
 
 
+@review_routes.get("/staff/api/v1/review/history")
+async def completed_review_history(request: web.Request) -> web.Response:
+    teacher_id, scope = _require_review_write(request)
+    principal = authenticated_session(request).principal
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+    query = request.query
+    if set(query) - {
+        "course",
+        "lesson",
+        "teacher",
+        "student",
+        "problem",
+        "comment",
+        "cursor",
+        "review",
+    }:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте фильтры"
+        )
+    try:
+        lesson = int(query["lesson"]) if "lesson" in query else None
+        if lesson is not None and lesson < 0:
+            raise ValueError
+        if any(len(value) > 500 for value in query.values()):
+            raise ValueError
+    except ValueError as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте фильтры"
+        ) from error
+
+    def read(connection):
+        if query.get("review"):
+            detail = history_detail(
+                connection,
+                scope,
+                teacher_id,
+                principal.is_global_admin,
+                query["review"],
+            )
+            if detail is None:
+                raise PwaApiError(
+                    status=404,
+                    code="review_not_found",
+                    message="Проверка не найдена или недоступна",
+                )
+            return {"schemaVersion": 1, "detail": detail}
+        options = history_options(
+            connection,
+            scope,
+            teacher_id,
+            principal.is_global_admin,
+            query.get("course"),
+            lesson,
+        )
+        rows = (
+            []
+            if options["courseId"] is None or options["lesson"] is None
+            else history_rows(
+                connection,
+                scope,
+                teacher_id,
+                principal.is_global_admin,
+                course=options["courseId"],
+                lesson=options["lesson"],
+                teacher=query.get("teacher"),
+                student=query.get("student"),
+                problem=query.get("problem"),
+                comment=query.get("comment"),
+                before=query.get("cursor"),
+            )
+        )
+        return {
+            "schemaVersion": 1,
+            "options": options,
+            "items": [history_summary(row) for row in rows[:50]],
+            "nextCursor": rows[49]["review_id"] if len(rows) > 50 else None,
+        }
+
+    return web.json_response(await database.factory.run_read_async(read))
+
+
 @review_routes.post("/staff/api/v1/reviews/{review_public_id}/correction")
 async def correct_completed_review(request: web.Request) -> web.Response:
     reviewer_user_id, scope = _require_review_write(request)
@@ -1346,7 +1445,33 @@ async def correct_completed_review(request: web.Request) -> web.Response:
             code="review_queue_unavailable",
             message="Проверка временно недоступна",
         )
-    payload = await _json_object(request, required_fields=_CORRECTION_FIELDS)
+    payload = await _json_object(
+        request,
+        required_fields=_CORRECTION_FIELDS,
+        optional_fields=frozenset(
+            {
+                "annotations",
+                "expectedLatestReviewId",
+                "expectedThreadVersion",
+                "confirmReplaceNewer",
+            }
+        ),
+    )
+    extended = {
+        "expectedLatestReviewId",
+        "expectedThreadVersion",
+        "confirmReplaceNewer",
+    }
+    if (extended & payload.keys() or "annotations" in payload) and (
+        not extended <= payload.keys()
+        or not isinstance(payload.get("expectedLatestReviewId"), str)
+        or type(payload.get("expectedThreadVersion")) is not int
+        or payload["expectedThreadVersion"] < 1
+        or type(payload.get("confirmReplaceNewer")) is not bool
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте версию проверки"
+        )
     verdict = payload["verdict"]
     if (
         isinstance(verdict, bool)
@@ -1393,8 +1518,20 @@ async def correct_completed_review(request: web.Request) -> web.Response:
                 verdict=verdict,
                 comment=comment,
                 confirm_without_comment=payload["confirmWithoutComment"],
+                annotations=_complete_annotations(payload["annotations"])
+                if "annotations" in payload
+                else None,
+                expected_latest_review_id=payload.get("expectedLatestReviewId"),
+                expected_thread_version=payload.get("expectedThreadVersion"),
+                confirm_replace_newer=payload.get("confirmReplaceNewer", False),
             ),
         )
+    except ReviewCorrectionLeased as error:
+        raise PwaApiError(
+            status=409,
+            code="review_already_claimed",
+            message=f"Сейчас проверяет {error}",
+        ) from error
     except ReviewCorrectionNotFound as error:
         raise PwaApiError(
             status=404,
@@ -1423,7 +1560,7 @@ async def correct_completed_review(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422,
             code="review_confirmation_required",
-            message="Подтвердите отправку вердикта без комментария",
+            message="Проверьте оценку по шкале курса, подтверждение комментария и пометки на исходных фотографиях",
         ) from error
 
     if not receipt.replayed:

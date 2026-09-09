@@ -45,6 +45,29 @@ const baseItem = {
   ],
 }
 
+it('requires coherent optimistic correction expectations', () => {
+  const legacy = {
+    schemaVersion: 1,
+    idempotencyKey: 'correction-one',
+    verdict: 17,
+    comment: null,
+    confirmWithoutComment: false,
+  }
+  expect(correctWrittenReviewRequestSchema.safeParse(legacy).success).toBe(true)
+  expect(correctWrittenReviewRequestSchema.safeParse({ ...legacy, annotations: [] }).success).toBe(
+    false,
+  )
+  expect(
+    correctWrittenReviewRequestSchema.safeParse({
+      ...legacy,
+      annotations: [],
+      expectedLatestReviewId: 'r-1',
+      expectedThreadVersion: 2,
+      confirmReplaceNewer: false,
+    }).success,
+  ).toBe(true)
+})
+
 describe('admin review-reaction inbox contracts', () => {
   it('accepts exact Student and Teacher reaction rows', () => {
     const parsed = reviewReactionInboxResponseSchema.parse({

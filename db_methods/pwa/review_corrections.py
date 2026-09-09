@@ -7,6 +7,11 @@ read and write the rows required by the Phase-6 correction transaction.
 from __future__ import annotations
 
 import sqlite3
+import hashlib
+import json
+from datetime import datetime
+
+from helpers.consts import WRITTEN_STATUS
 
 
 def find_source_review(
@@ -42,6 +47,16 @@ def find_replay(
         "WHERE review.reviewer_user_id = ? AND review.idempotency_key = ?",
         (reviewer_user_id, idempotency_key),
     ).fetchone()
+
+
+def evidence_scopes(connection, review_id):
+    return connection.execute(
+        "SELECT DISTINCT groups.public_id AS group_public_id, course.public_id AS course_public_id "
+        "FROM submission_review_evidence_entries evidence JOIN problems problem ON problem.id = evidence.problem_id "
+        "LEFT JOIN groups ON groups.group_id = problem.group_id LEFT JOIN courses course ON course.id = groups.course_id "
+        "WHERE evidence.review_id = ?",
+        (review_id,),
+    ).fetchall()
 
 
 def latest_review_public_id(
@@ -135,26 +150,26 @@ def insert_review(
     created_at: str,
 ) -> tuple[int, str]:
     row = connection.execute(
-            "INSERT INTO submission_reviews "
-            "(thread_id, queue_id, reviewer_user_id, "
-            "evidence_through_entry_id, expected_thread_version, verdict, "
-            "comment_entry_id, result_id, source, idempotency_key, payload_sha256, "
-            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
-            "RETURNING id, public_id",
-            (
-                source["thread_id"],
-                source["queue_id"],
-                reviewer_user_id,
-                source["evidence_through_entry_id"],
-                source["thread_version"],
-                verdict,
-                comment_entry_id,
-                result_id,
-                idempotency_key,
-                payload_sha256,
-                created_at,
-            ),
-        ).fetchone()
+        "INSERT INTO submission_reviews "
+        "(thread_id, queue_id, reviewer_user_id, "
+        "evidence_through_entry_id, expected_thread_version, verdict, "
+        "comment_entry_id, result_id, source, idempotency_key, payload_sha256, "
+        "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
+        "RETURNING id, public_id",
+        (
+            source["thread_id"],
+            source["queue_id"],
+            reviewer_user_id,
+            source["evidence_through_entry_id"],
+            source["thread_version"],
+            verdict,
+            comment_entry_id,
+            result_id,
+            idempotency_key,
+            payload_sha256,
+            created_at,
+        ),
+    ).fetchone()
     return int(row["id"]), str(row["public_id"])
 
 
@@ -187,6 +202,15 @@ def update_thread_result(
     comment_created: bool,
     created_at: str,
 ) -> None:
+    # A correction grades its old evidence, not newer queued submissions.
+    pending = connection.execute(
+        "SELECT 1 FROM written_tasks_queue AS queue JOIN submission_threads AS thread "
+        "ON queue.student_id = thread.student_user_id AND queue.problem_id = thread.problem_id "
+        "WHERE thread.id = ? LIMIT 1",
+        (thread_id,),
+    ).fetchone()
+    if pending is not None:
+        status = current_status
     if current_status != status:
         # The existing schema deliberately routes every post-review status
         # change through awaiting_review. A correction is one transaction, but
@@ -202,6 +226,95 @@ def update_thread_result(
         "updated_at = ?, version = version + 1 WHERE id = ?",
         (status, result_id, comment_created, created_at, created_at, thread_id),
     )
+
+
+def active_review_owner(connection, source, now: datetime):
+    """Read the active holder across the same student's synonym case."""
+    return connection.execute(
+        "SELECT queue.teacher_id, trim(coalesce(owner.name, '') || ' ' || "
+        "coalesce(owner.surname, '')) AS display_name FROM written_tasks_queue AS queue "
+        "JOIN users AS owner ON owner.id = queue.teacher_id "
+        "WHERE queue.student_id = ? AND queue.cur_status = ? "
+        "AND (queue.problem_id = ? OR queue.problem_id IN ("
+        "SELECT peer.problem_id FROM problem_synonym_members AS member "
+        "JOIN problem_synonym_groups AS synonym ON synonym.id = member.synonym_group_id "
+        "JOIN problem_synonym_members AS peer ON peer.synonym_group_id = synonym.id "
+        "WHERE member.problem_id = ? AND synonym.status = 'active')) "
+        "AND (julianday(queue.lease_expires_at) > julianday(?) OR "
+        "(queue.claim_token IS NULL AND julianday(queue.teacher_ts) > julianday(?) - 1.0/48)) "
+        "LIMIT 1",
+        (
+            source["student_user_id"],
+            int(WRITTEN_STATUS.BEING_CHECKED),
+            source["problem_id"],
+            source["problem_id"],
+            now.isoformat(),
+            now.isoformat(),
+        ),
+    ).fetchone()
+
+
+def copy_annotations(connection, source_review_id, review_id, created_at):
+    connection.execute(
+        "INSERT INTO submission_review_annotations "
+        "(review_id, attachment_id, schema_version, rotation, marks_json, payload_sha256, created_at) "
+        "SELECT ?, attachment_id, schema_version, rotation, marks_json, payload_sha256, ? "
+        "FROM submission_review_annotations WHERE review_id = ?",
+        (review_id, created_at, source_review_id),
+    )
+
+
+def read_verdict_mode(connection, course_public_id):
+    row = connection.execute(
+        "SELECT settings.values_json FROM course_runtime_settings settings "
+        "JOIN courses course ON course.id = settings.course_id WHERE course.public_id = ?",
+        (course_public_id,),
+    ).fetchone()
+    return None if row is None else json.loads(row["values_json"])["verdictMode"]
+
+
+def store_annotations(connection, review_id, annotations, created_at):
+    attachments = {
+        row["public_id"]: row["id"]
+        for row in connection.execute(
+            "SELECT attachment.public_id, attachment.id FROM submission_review_evidence_attachments AS evidence "
+            "JOIN submission_attachments AS attachment ON attachment.id = evidence.attachment_id "
+            "WHERE evidence.review_id = ?",
+            (review_id,),
+        ).fetchall()
+    }
+    seen = set()
+    for annotation in annotations:
+        public_id = annotation.attachment_public_id
+        if public_id not in attachments or public_id in seen:
+            raise ValueError("annotation is outside selected evidence or duplicated")
+        seen.add(public_id)
+        payload = json.dumps(
+            annotation.payload(),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        marks = json.dumps(
+            annotation.marks_payload(),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        connection.execute(
+            "INSERT INTO submission_review_annotations "
+            "(review_id, attachment_id, schema_version, rotation, marks_json, payload_sha256, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                review_id,
+                attachments[public_id],
+                annotation.schema_version,
+                annotation.rotation,
+                marks,
+                hashlib.sha256(payload.encode()).hexdigest(),
+                created_at,
+            ),
+        )
 
 
 def insert_event(

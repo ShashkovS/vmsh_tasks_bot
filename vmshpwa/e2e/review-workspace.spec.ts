@@ -32,6 +32,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   const title = `E2E проверка ${project}`
 
   await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/review')
+  await page.getByRole('button', { name: 'Все работы' }).click()
   const row = page.getByRole('row').filter({ hasText: title })
   await expect(row).toBeVisible()
 
@@ -39,6 +40,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   // update it through the audience-scoped queue invalidations, not polling.
   const adminPage = await secondaryContext.newPage()
   await loginThroughUi(adminPage, AUTH_PERSONAS.admin, '/staff/review')
+  await adminPage.getByRole('button', { name: 'Все работы' }).click()
   const adminRow = adminPage.getByRole('row').filter({ hasText: title })
   await expect(adminRow.getByRole('button', { name: 'Открыть' })).toBeVisible()
 
@@ -54,13 +56,19 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   const drawing = page.getByRole('application', { name: 'Область разметки фотографии' })
   await expect(drawing).toBeVisible()
   await page.getByRole('button', { name: 'Прямоугольник' }).click()
+  await drawing.scrollIntoViewIfNeeded()
   const bounds = await drawing.boundingBox()
   if (!bounds) throw new Error('Review annotation canvas has no visible bounds')
   await page.mouse.move(bounds.x + bounds.width * 0.2, bounds.y + bounds.height * 0.2)
   await page.mouse.down()
-  await page.mouse.move(bounds.x + bounds.width * 0.65, bounds.y + bounds.height * 0.45)
+  await page.mouse.move(bounds.x + bounds.width * 0.65, bounds.y + bounds.height * 0.45, {
+    steps: 10,
+  })
   await page.mouse.up()
-  await page.getByRole('button', { name: 'Повернуть по часовой стрелке' }).click()
+  await expect(page.getByText('100% · 0° · 1 пометок')).toBeVisible()
+  // Keyboard activation is stable after the SVG drag releases pointer capture.
+  await page.getByRole('button', { name: 'Повернуть по часовой стрелке' }).focus()
+  await page.keyboard.press('Enter')
   await expect(page.getByText('100% · 90° · 1 пометок')).toBeVisible()
 
   const comment = page.getByLabel('Комментарий')
@@ -399,7 +407,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
       verdict: 13,
       comment: correctedComment,
       evidenceEntryIds: [studentEntryId],
-      annotations: [],
+      annotations: [expect.objectContaining({ attachmentId, rotation: 90 })],
     }),
   )
 
@@ -439,6 +447,42 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
       }, `problems/${problemId}/thread`),
     )
     .toBe(true)
+
+  // docs/review-history.md: find a completed review, restore a correction
+  // draft, remove marks append-only and observe the current Student result.
+  await adminPage.goto(`/staff/review/history?lesson=${fixtureId}`)
+  await adminPage.getByLabel('Фрагмент комментария').fill(correctedComment)
+  const historyRow = adminPage.getByRole('row').filter({ hasText: correctedComment })
+  await expect(historyRow).toHaveCount(1)
+  await historyRow.getByRole('button', { name: 'Перепроверить' }).click()
+  await expect(
+    adminPage.getByRole('application', { name: 'Область разметки фотографии' }),
+  ).toBeVisible()
+  await adminPage.getByRole('button', { name: 'Очистить разметку' }).click()
+  await adminPage.getByLabel('Комментарий').fill(`История ${project}: половина.`)
+  await adminPage.getByRole('button', { name: /Половина/ }).click()
+  await adminPage.reload()
+  await expect(adminPage.getByLabel('Комментарий')).toHaveValue(`История ${project}: половина.`)
+  await expect(adminPage.getByText(/0 пометок/)).toBeVisible()
+  const historySaved = adminPage.waitForResponse(
+    (response) => response.request().method() === 'POST' && response.url().endsWith('/correction'),
+  )
+  await adminPage.getByRole('button', { name: 'Отправить вердикт' }).click()
+  expect((await historySaved).status()).toBe(200)
+  const finalProjection = await page.evaluate(
+    async (id) => (await fetch(`/student/api/v1/problems/${id}/thread`)).json(),
+    problemId,
+  )
+  const finalThread = writtenThreadResponseSchema.parse(finalProjection)
+  expect(finalThread.thread?.reviews).toHaveLength(3)
+  expect(finalThread.thread?.reviews[2]).toEqual(
+    expect.objectContaining({
+      verdict: 14,
+      annotations: [],
+      comment: `История ${project}: половина.`,
+    }),
+  )
+  expect(finalThread.thread?.reviews[0]?.annotations).toHaveLength(1)
 
   await familyPage.evaluate(() => {
     const state = globalThis as typeof globalThis & { __reviewRealtimeSocket?: WebSocket }

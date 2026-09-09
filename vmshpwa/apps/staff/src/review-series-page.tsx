@@ -13,31 +13,16 @@ import {
   type CompleteReviewResponse,
   type ReviewLease,
   reviewQueueQueryKeys,
+  createBrowserStorageNamespace,
 } from '@vmsh/contracts'
-import {
-  ReviewFeedbackForm,
-  binaryVerdictScale,
-  ternaryVerdictScale,
-  fullVerdictScale,
-  type ReviewFeedbackResult,
-} from '@vmsh/product'
 import { Button } from '@vmsh/ui'
-import type { ReviewDraft } from './review-draft'
-import { LoadedReviewWorkspace, ReviewReadOnlyEvidence } from './review-workspace-page'
+import { LoadedReviewWorkspace } from './review-workspace-page'
+import { CompletedReviewCard } from './review-history-page'
+import { lastCompletedReview } from './last-completed-review'
 import { allReviewItems, seriesCandidates } from './review-series-model'
 import { describeReviewError } from './review-errors'
 
 type PreparedWork = { queueId: string; lease: ReviewLease }
-type PreviousWork = PreparedWork & { response: CompleteReviewResponse; draft: ReviewDraft }
-const wireVerdicts: Record<string, number> = {
-  rejected: 11,
-  'minus-dot': 12,
-  'minus-plus': 13,
-  half: 14,
-  'plus-minus': 15,
-  'plus-dot': 16,
-  plus: 17,
-}
 
 /** One active + one rendered next lease, per docs/serial-review.md (Phase 6). */
 export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
@@ -65,12 +50,13 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
   const generation = useRef(0)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const [previous, setPrevious] = useState<PreviousWork | null>(null)
+  const namespace = createBrowserStorageNamespace(runtime)
+  const [previous, setPrevious] = useState<string | null>(() =>
+    lastCompletedReview(namespace, principal.accountId),
+  )
   const [correcting, setCorrecting] = useState(false)
-  const [savingCorrection, setSavingCorrection] = useState(false)
   const [savingReview, setSavingReview] = useState(false)
   const skipBusy = useRef(false)
-  const correctionKey = useRef<string | null>(null)
 
   const fill = useCallback(async () => {
     if (busy.current || owned.current.length >= 2) return
@@ -136,11 +122,10 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     void fill()
   }, [fill, works.length])
 
-  const finish = (work: PreparedWork, response: CompleteReviewResponse, draft: ReviewDraft) => {
+  const finish = (work: PreparedWork, response: CompleteReviewResponse) => {
     setSavingReview(false)
     completed.current.add(work.lease.logicalCaseId)
-    setPrevious({ ...work, response, draft })
-    correctionKey.current = null
+    setPrevious(response.review.reviewId)
     owned.current = owned.current.filter((item) => item.queueId !== work.queueId)
     setWorks(owned.current)
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -169,14 +154,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
   }
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (
-        event.repeat ||
-        savingReview ||
-        savingCorrection ||
-        !(event.ctrlKey || event.metaKey) ||
-        !event.altKey
-      )
-        return
+      if (event.repeat || savingReview || !(event.ctrlKey || event.metaKey) || !event.altKey) return
       if (event.code === 'ArrowLeft' && previous) {
         event.preventDefault()
         setCorrecting((value) => !value)
@@ -189,37 +167,6 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
   })
-  const correct = async (result: ReviewFeedbackResult) => {
-    if (!previous || savingCorrection) return
-    const verdict = wireVerdicts[result.verdict.value]
-    if (!verdict) return
-    setSavingCorrection(true)
-    correctionKey.current ??= crypto.randomUUID()
-    try {
-      const response = await client.correct(previous.response.review.reviewId, {
-        schemaVersion: 1,
-        idempotencyKey: correctionKey.current,
-        verdict,
-        comment: result.comment || null,
-        confirmWithoutComment: verdict < 16 && !result.comment,
-      })
-      setPrevious({
-        ...previous,
-        response: {
-          ...previous.response,
-          review: { ...previous.response.review, reviewId: response.correction.reviewId, verdict },
-        },
-        draft: { ...previous.draft, verdictValue: result.verdict.value, comment: result.comment },
-      })
-      correctionKey.current = null
-      setCorrecting(false)
-      setMessage('Предыдущий вердикт исправлен.')
-    } catch (error) {
-      setMessage(describeReviewError(error))
-    } finally {
-      setSavingCorrection(false)
-    }
-  }
   return (
     <div className="mx-auto max-w-[1500px] px-4 py-3">
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background py-2">
@@ -227,7 +174,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
           К списку задач
         </Button>
         <Button
-          disabled={!previous || savingReview || savingCorrection}
+          disabled={!previous || savingReview}
           onClick={() => setCorrecting((value) => !value)}
           variant="outline"
           size="sm"
@@ -235,7 +182,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
           {correcting ? 'Продолжить серию' : 'Исправить предыдущую'} · ⌘/Ctrl + Alt + ←
         </Button>
         <Button
-          disabled={correcting || savingReview || savingCorrection}
+          disabled={correcting || savingReview}
           onClick={() => void skip()}
           variant="ghost"
           size="sm"
@@ -261,7 +208,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
             lease={work.lease}
             inactive={index > 0 || correcting}
             onBusyChange={setSavingReview}
-            onCompleted={(response, draft) => finish(work, response, draft)}
+            onCompleted={(response) => finish(work, response)}
           />
         </div>
       ))}
@@ -279,27 +226,13 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
       ) : null}
       {correcting && previous ? (
         <section className="space-y-3 py-4">
-          <h2 className="text-subtitle font-semibold">
-            Предыдущая работа · {previous.lease.student.displayName}
-          </h2>
-          <ReviewReadOnlyEvidence
-            lease={previous.lease}
-            mediaClient={mediaClient}
-            annotations={previous.draft.annotations}
-          />
-          <ReviewFeedbackForm
-            key={previous.response.review.reviewId}
-            disabled={savingCorrection}
-            showInternalReaction={false}
-            initialDraft={previous.draft}
-            verdicts={
-              previous.lease.verdictMode === 'verdict_plus_minus'
-                ? binaryVerdictScale
-                : previous.lease.verdictMode === 'verdict_plus_minus_half'
-                  ? ternaryVerdictScale
-                  : fullVerdictScale
-            }
-            onSubmit={(result) => void correct(result)}
+          <h2 className="text-subtitle font-semibold">Предыдущая проверка</h2>
+          <CompletedReviewCard
+            reviewId={previous}
+            onClose={() => {
+              setPrevious(lastCompletedReview(namespace, principal.accountId) ?? previous)
+              setCorrecting(false)
+            }}
           />
         </section>
       ) : null}

@@ -505,6 +505,7 @@ async def review_http(tmp_path, aiohttp_client, monkeypatch) -> ReviewHttpFixtur
     )
     app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
     app[PWA_CONTENT_OBJECT_STORAGE] = storage
+
     async def database_lifecycle(_app):
         factory.start_async_workers()
         try:
@@ -999,6 +1000,7 @@ async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
     lease = (await claim.json())["lease"]
     completion_payload = _complete_payload(lease)
     completion_payload["internalReactionId"] = 100
+    completion_payload["annotations"] = [_annotation_payload()]
     completed = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/complete",
         json=completion_payload,
@@ -1007,6 +1009,29 @@ async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
     )
     assert completed.status == 200, await completed.text()
     source_review_id = (await completed.json())["review"]["reviewId"]
+    history = await fixture.client.get(
+        "/staff/api/v1/review/history",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert history.status == 200, await history.text()
+    history_body = await history.json()
+    assert history_body["items"][0]["reviewId"] == source_review_id
+    assert history_body["options"]["canChooseTeacher"] is False
+    assert history_body["options"]["students"][0]["studentId"] == STUDENT_PUBLIC_ID
+    detail_response = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={source_review_id}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert detail_response.status == 200, await detail_response.text()
+    original_detail = (await detail_response.json())["detail"]
+    assert original_detail["latestReviewId"] == source_review_id
+    assert original_detail["entries"]
+    assert (
+        original_detail["entries"][0]["attachments"][0]["annotation"]
+        == _annotation_payload()
+    )
     correction_payload = {
         "schemaVersion": 1,
         "idempotencyKey": "review-http-correction-1",
@@ -1027,6 +1052,14 @@ async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
     assert correction["verdict"] == 13
     assert correction["threadStatus"] == "needs_work"
     assert correction["replayed"] is False
+    copied = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={correction['reviewId']}",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert (await copied.json())["detail"]["entries"][0]["attachments"][0][
+        "annotation"
+    ] == _annotation_payload()
 
     replay = await fixture.client.post(
         f"/staff/api/v1/reviews/{source_review_id}/correction",
@@ -1053,6 +1086,92 @@ async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
         headers=_headers(unsafe=True),
     )
     assert forbidden.status == 403
+
+    # History never leaks another author's rows to a teacher, even via forged filters/IDs.
+    hidden = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={correction['reviewId']}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert hidden.status == 404
+    filtered = await fixture.client.get(
+        "/staff/api/v1/review/history?comment=ПЕРЕПРОВЕРЕНО",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert [item["reviewId"] for item in (await filtered.json())["items"]] == [
+        correction["reviewId"]
+    ]
+    no_wildcard = await fixture.client.get(
+        "/staff/api/v1/review/history?comment=%25",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert (await no_wildcard.json())["items"] == []
+
+    refreshed = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={source_review_id}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    detail = (await refreshed.json())["detail"]
+    overwrite = {
+        **correction_payload,
+        "idempotencyKey": "explicit-overwrite",
+        "verdict": 17,
+        "expectedLatestReviewId": detail["latestReviewId"],
+        "expectedThreadVersion": detail["threadVersion"],
+        "confirmReplaceNewer": False,
+        "annotations": [],
+    }
+    denied = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json=overwrite,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert denied.status == 409
+    overwrite["confirmReplaceNewer"] = True
+    forged = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json={
+            **overwrite,
+            "annotations": [{**_annotation_payload(), "attachmentId": "sa-999999"}],
+        },
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert forged.status == 422
+    replaced = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json=overwrite,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert replaced.status == 200, await replaced.text()
+    same = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json=overwrite,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert (await same.json())["correction"]["replayed"] is True
+    race = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json={**overwrite, "idempotencyKey": "concurrent-overwrite"},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert race.status == 409
+    replacement_id = (await replaced.json())["correction"]["reviewId"]
+    cleared = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={replacement_id}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert (await cleared.json())["detail"]["entries"][0]["attachments"][0][
+        "annotation"
+    ] is None
 
     inbox = await fixture.client.get(
         "/staff/api/v1/review/reactions",
@@ -1085,7 +1204,173 @@ async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
             ],
         }
     )
-    assert stored == {"review_verdicts": [16, 13], "result_verdicts": [-2, 13]}
+    assert stored == {"review_verdicts": [16, 13, 17], "result_verdicts": [-2, -2, 17]}
+
+    def new_submission(connection):
+        source = connection.execute(
+            "SELECT thread.* FROM submission_threads thread JOIN submission_reviews review ON review.thread_id = thread.id WHERE review.public_id = ?",
+            (source_review_id,),
+        ).fetchone()
+        timestamp = _timestamp(NOW + timedelta(hours=1))
+        connection.execute(
+            "UPDATE submission_threads SET status = 'awaiting_review', version = version + 1, updated_at = ? WHERE id = ?",
+            (timestamp, source["id"]),
+        )
+        connection.execute(
+            "INSERT INTO submission_entries (thread_id, problem_revision_id, author_kind, author_user_id, channel, entry_kind, state, text, server_received_at, version) VALUES (?, (SELECT id FROM problem_revisions WHERE problem_id = ? LIMIT 1), 'student', ?, 'pwa', 'submission', 'submitted', 'Новая посылка', ?, 1)",
+            (source["id"], source["problem_id"], STUDENT_ID, timestamp),
+        )
+        return connection.execute(
+            "INSERT INTO written_tasks_queue (ts, student_id, problem_id, cur_status, updated_at) VALUES (?, ?, ?, 0, ?) RETURNING public_id",
+            (timestamp, STUDENT_ID, source["problem_id"], timestamp),
+        ).fetchone()["public_id"]
+
+    pending_queue_id = fixture.factory.run_write(new_submission)
+    latest_detail_response = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={source_review_id}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    latest_detail = (await latest_detail_response.json())["detail"]
+    pending_payload = {
+        **overwrite,
+        "idempotencyKey": "correct-with-new-submission",
+        "expectedLatestReviewId": latest_detail["latestReviewId"],
+        "expectedThreadVersion": latest_detail["threadVersion"],
+    }
+    pending_correction = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json=pending_payload,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert pending_correction.status == 200, await pending_correction.text()
+    pending_state = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT thread.status FROM submission_threads thread JOIN submission_reviews review ON review.thread_id = thread.id WHERE review.public_id = ?",
+            (source_review_id,),
+        ).fetchone()
+    )
+    assert pending_state["status"] == "awaiting_review"
+    claimed = await fixture.client.post(
+        f"/staff/api/v1/review/items/{pending_queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert claimed.status == 200, await claimed.text()
+    leased_detail = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={source_review_id}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    leased_detail = (await leased_detail.json())["detail"]
+    leased = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json={
+            **pending_payload,
+            "idempotencyKey": "blocked-by-lease",
+            "expectedLatestReviewId": leased_detail["latestReviewId"],
+            "expectedThreadVersion": leased_detail["threadVersion"],
+        },
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert leased.status == 409, await leased.text()
+    assert (await leased.json())["error"]["code"] == "review_already_claimed"
+
+
+@pytest.mark.asyncio
+async def test_review_history_cursor_pages_have_no_duplicates(
+    review_http: ReviewHttpFixture,
+):
+    fixture = review_http
+    queue_id = fixture.queue_public_ids[0]
+    claimed = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    complete = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=_complete_payload((await claimed.json())["lease"]),
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert complete.status == 200
+    review_id = (await complete.json())["review"]["reviewId"]
+    for index in range(52):
+        correction = await fixture.client.post(
+            f"/staff/api/v1/reviews/{review_id}/correction",
+            json={
+                "schemaVersion": 1,
+                "idempotencyKey": f"page-{index}",
+                "verdict": 17,
+                "comment": f"Исправление {index}",
+                "confirmWithoutComment": False,
+            },
+            cookies=_cookie(fixture, "full"),
+            headers=_headers(unsafe=True),
+        )
+        assert correction.status == 200, await correction.text()
+        review_id = (await correction.json())["correction"]["reviewId"]
+    first = await fixture.client.get(
+        "/staff/api/v1/review/history",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    first = await first.json()
+    assert len(first["items"]) == 50
+    assert first["items"][0]["reviewId"] == review_id
+    second = await fixture.client.get(
+        f"/staff/api/v1/review/history?cursor={first['nextCursor']}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    second = await second.json()
+    assert len(second["items"]) == 3
+    assert second["nextCursor"] is None
+    assert len({row["reviewId"] for row in first["items"] + second["items"]}) == 53
+    forged = await fixture.client.get(
+        f"/staff/api/v1/review/history?teacher=u-{ADMIN_ID}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert (await forged.json())["items"] == []
+
+    # Keep access to the root group but revoke a peer evidence group.
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE staff_scopes SET group_id = (SELECT problem.group_id FROM submission_reviews review JOIN submission_threads thread ON thread.id = review.thread_id JOIN problems problem ON problem.id = thread.problem_id WHERE review.public_id = ?) WHERE staff_user_id = ?",
+            (review_id, FULL_TEACHER_ID),
+        )
+    )
+    revoked = await fixture.client.get(
+        f"/staff/api/v1/review/history?review={review_id}",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert revoked.status == 404
+    revoked_list = await fixture.client.get(
+        "/staff/api/v1/review/history",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert (await revoked_list.json())["items"] == []
+    revoked_save = await fixture.client.post(
+        f"/staff/api/v1/reviews/{review_id}/correction",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "revoked-scope",
+            "verdict": 17,
+            "comment": None,
+            "confirmWithoutComment": False,
+        },
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert revoked_save.status == 403
 
 
 @pytest.mark.asyncio
@@ -1391,8 +1676,8 @@ async def test_complete_review_reports_thread_change_and_confirmation_errors(
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE submission_threads SET updated_at = ?, version = version + 1 "
-                "WHERE public_id = ?",
-                (_timestamp(), THREAD_PUBLIC_IDS[0]),
+            "WHERE public_id = ?",
+            (_timestamp(), THREAD_PUBLIC_IDS[0]),
         )
     )
     conflict = await fixture.client.post(

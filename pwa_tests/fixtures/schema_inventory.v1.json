@@ -269,6 +269,10 @@
       {
         "id": "0085.pwa_staff_testing",
         "sha256": "136e6b94e48660a48ac8097002dbf7cb64a4f4d6b85782c10aa8fe9a28bab322"
+      },
+      {
+        "id": "0086.pwa_review_history",
+        "sha256": "c2e68ee63e9d000cbae73de3a2ec942f37768c4588fe9eaaa8dbdc5dda12eb11"
       }
     ],
     "repository_head_status": {
@@ -279,7 +283,7 @@
     }
   },
   "product": {
-    "object_count": 429,
+    "object_count": 431,
     "objects": [
       {
         "columns": [
@@ -16365,6 +16369,46 @@
                 "seqno": 1
               },
               {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "problems_review_lesson_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
                 "cid": 3,
                 "collation": "BINARY",
                 "descending": false,
@@ -21467,6 +21511,46 @@
           {
             "columns": [
               {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "reviewer_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "created_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_reviews_reviewer_time_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
                 "cid": 2,
                 "collation": "BINARY",
                 "descending": false,
@@ -25877,6 +25961,13 @@
         "type": "index"
       },
       {
+        "name": "problems_review_lesson_idx",
+        "object_sha256": "5ee874099cd1b4170c7a19a5a4e4b3f3c7ac7d9c6365ceca365e7348f09f6ffc",
+        "sql": "CREATE INDEX problems_review_lesson_idx ON problems (group_id, lesson, id);",
+        "table_name": "problems",
+        "type": "index"
+      },
+      {
         "name": "push_subscriptions_account_idx",
         "object_sha256": "fa06c16a778b01d6d0080e29b210c161db155ff7fea14c985e722906b7efdc92",
         "sql": "CREATE INDEX push_subscriptions_account_idx\n    on push_subscriptions (account_id, updated_at desc);",
@@ -26049,6 +26140,13 @@
         "object_sha256": "9da3917806b6308e53e864fdd52b32dd929bb7b6085ff99a9e8f2ae763b4c2af",
         "sql": "CREATE INDEX submission_review_student_reaction_events_review_idx\n    on submission_review_student_reaction_events (review_id, created_at, id);",
         "table_name": "submission_review_student_reaction_events",
+        "type": "index"
+      },
+      {
+        "name": "submission_reviews_reviewer_time_idx",
+        "object_sha256": "7f7feb9b2e4084ce8ae43e907041898a050ffe38d5db89012e1d0537ace0fc6a",
+        "sql": "CREATE INDEX submission_reviews_reviewer_time_idx\n    ON submission_reviews (reviewer_user_id, created_at DESC, id DESC);",
+        "table_name": "submission_reviews",
         "type": "index"
       },
       {
@@ -27340,8 +27438,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "daa71d7ef892181e2830b6fc645336fc1be878e082f6a5ccf6743c8e84c5379d",
-    "sha256": "c768d9316bc13f5d1518a0984af4853bd2a2005d1a5ed9918ac3cdb99667f530"
+    "pragma_structure_sha256": "0c8b308a6428273ed9e73813868e703f801df2c425d9231dacd1af1a0df5350a",
+    "sha256": "a49415fb57965c6dfdf1c426e788e1e64b22d7c0131a0a4806803dc0b3e6305b"
   },
   "source_kind": "repository-migration-head"
 }

@@ -1,6 +1,10 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
+  reviewHistoryResponseSchema,
+  reviewHistoryDetailResponseSchema,
+  type ReviewHistoryResponse,
+  type ReviewHistoryDetailResponse,
   apiErrorSchema,
   claimReviewItemRequestSchema,
   correctWrittenReviewRequestSchema,
@@ -48,6 +52,14 @@ export interface ReviewQueueClientOptions {
 }
 
 export interface ReviewQueueClient {
+  history(
+    query: Record<string, string>,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewHistoryResponse>
+  historyDetail(
+    reviewId: string,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewHistoryDetailResponse>
   readonly runtime: RuntimeConfig
   list(
     query?: ReviewQueueListQuery,
@@ -109,6 +121,30 @@ interface ResponseParser<T> {
 }
 
 class BrowserReviewQueueClient implements ReviewQueueClient {
+  async history(
+    query: Record<string, string>,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewHistoryResponse> {
+    return this.#jsonRequest(
+      `/review/history?${new URLSearchParams(query)}`,
+      'GET',
+      undefined,
+      options,
+      reviewHistoryResponseSchema,
+    )
+  }
+  async historyDetail(
+    reviewId: string,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewHistoryDetailResponse> {
+    return this.#jsonRequest(
+      `/review/history?review=${encodeURIComponent(publicIdSchema.parse(reviewId))}`,
+      'GET',
+      undefined,
+      options,
+      reviewHistoryDetailResponseSchema,
+    )
+  }
   readonly runtime: RuntimeConfig
 
   readonly #fetch: typeof globalThis.fetch

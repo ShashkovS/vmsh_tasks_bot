@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 import {
   reviewEvidenceEntrySchema,
+  reviewAnnotationManifestSchema,
   writtenReviewVerdictSchema,
   writtenTeacherReactionIdSchema,
 } from './review-queue'
@@ -123,8 +124,37 @@ export const correctWrittenReviewRequestSchema = z
     verdict: writtenReviewVerdictSchema,
     comment: z.string().max(100_000).nullable(),
     confirmWithoutComment: z.boolean(),
+    annotations: z.array(reviewAnnotationManifestSchema).max(10).optional(),
+    expectedLatestReviewId: publicIdSchema.optional(),
+    expectedThreadVersion: z.number().int().positive().optional(),
+    confirmReplaceNewer: z.boolean().optional(),
   })
   .strict()
+  .superRefine((request, context) => {
+    const extended =
+      request.annotations !== undefined ||
+      request.expectedLatestReviewId !== undefined ||
+      request.expectedThreadVersion !== undefined ||
+      request.confirmReplaceNewer !== undefined
+    if (
+      extended &&
+      (request.expectedLatestReviewId === undefined ||
+        request.expectedThreadVersion === undefined ||
+        request.confirmReplaceNewer === undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Correction requires both current versions and explicit replacement confirmation',
+      })
+    }
+    if (
+      request.annotations &&
+      new Set(request.annotations.map((item) => item.attachmentId)).size !==
+        request.annotations.length
+    ) {
+      context.addIssue({ code: 'custom', message: 'Duplicate annotation attachment' })
+    }
+  })
 export type CorrectWrittenReviewRequest = z.infer<typeof correctWrittenReviewRequestSchema>
 
 export const correctWrittenReviewResponseSchema = z
