@@ -62,6 +62,18 @@ const navigation: StaffNavigationItem[] = [
     icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
     capability: 'content.manage',
   },
+  {
+    label: 'Очное занятие',
+    to: '/in-person',
+    icon: <Building2 className="size-4" aria-hidden="true" />,
+    capability: 'oral.manage',
+  },
+  {
+    label: 'Zoom-приём',
+    to: '/oral',
+    icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
+    capability: 'oral.manage',
+  },
   { label: 'Уроки', to: '/lessons', icon: <BookOpenCheck className="size-4" aria-hidden="true" /> },
   { label: 'Курсы', to: '/courses', icon: <Boxes className="size-4" aria-hidden="true" /> },
   { label: 'Новости', to: '/news', icon: <Newspaper className="size-4" aria-hidden="true" /> },
@@ -153,6 +165,7 @@ function AuthenticatedStaffShell({ pathname }: { pathname: string }) {
   const shell = (
     <AppShell
       product="staff"
+      compactHeader={localPathname.startsWith('/in-person') || localPathname.startsWith('/oral')}
       title="Учитель и администратор"
       displayName={principal.displayName}
       navigation={permittedNavigation}

@@ -1,15 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, type FormEvent } from 'react'
 import { z } from 'zod'
 
 import { publicIdSchema } from '@vmsh/contracts'
-import { PageLayout, useAuthenticatedPrincipal } from '@vmsh/app-shell'
-import { Button, Input, Label } from '@vmsh/ui'
+import { LiveMarkingPage } from '../live-marking-page'
+import { liveSearchSchema } from '../live-marking-state'
+import { useAuthenticatedPrincipal } from '@vmsh/app-shell'
+import { Button } from '@vmsh/ui'
 
 import { StaffOralResultsPage } from '../staff-oral-results-page'
 import { StaffOralWindowsPage } from '../staff-oral-windows-page'
 
-const searchSchema = z.object({
+const searchSchema = liveSearchSchema.extend({
   groupLesson: publicIdSchema.optional(),
   tab: z.enum(['results', 'windows']).optional(),
 })
@@ -22,7 +23,6 @@ function OralRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const principal = useAuthenticatedPrincipal()
-  const [groupLessonId, setGroupLessonId] = useState(search.groupLesson ?? '')
   if (search.groupLesson) {
     const tab = search.tab ?? 'results'
     return (
@@ -58,29 +58,13 @@ function OralRoute() {
     )
   }
 
-  const open = (event: FormEvent) => {
-    event.preventDefault()
-    const parsed = publicIdSchema.safeParse(groupLessonId.trim())
-    if (parsed.success) void navigate({ search: { groupLesson: parsed.data, tab: 'results' } })
-  }
   return (
-    <PageLayout
-      description="Выберите групповое занятие для внесения результатов или настройки окон устного приёма."
-      title="Устный приём"
-      width="reading"
-    >
-      <form className="flex items-end gap-2" onSubmit={open}>
-        <div className="min-w-0 flex-1 space-y-1">
-          <Label htmlFor="oral-group-lesson">ID группового занятия</Label>
-          <Input
-            id="oral-group-lesson"
-            onChange={(event) => setGroupLessonId(event.target.value)}
-            placeholder="group-lesson-41-n"
-            value={groupLessonId}
-          />
-        </div>
-        <Button type="submit">Открыть</Button>
-      </form>
-    </PageLayout>
+    <LiveMarkingPage
+      mode="zoom"
+      search={search}
+      onSearch={(next) => {
+        void navigate({ search: next })
+      }}
+    />
   )
 }

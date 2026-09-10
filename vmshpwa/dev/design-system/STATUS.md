@@ -1141,3 +1141,21 @@ sent|No recipients|Loading|Error` документирует ручной previe
 Пройдены 8 браузерных сценариев Product/Review, включая Ctrl+Enter из поля
 комментария; unit-тесты проверяют отключённую фоновую форму и подтверждение
 незачёта. Серийный переход сохраняет смонтированную следующую работу.
+
+
+## Live marking — 9 сентября 2026
+
+Реализованы Staff `/in-person` и новый `/oral`: общий редактор, durable undo,
+посещение, атомарный учительский перенос, Zoom-сессии/реакции/похвала и
+синхронизация через WS. Решения: `vmshpwa/docs/live-marking.md`;
+реализация: `apps/staff/src/live-marking-page.tsx`, `models/pwa/live_marking.py`,
+`migrations/0087.pwa_live_marking.sql`.
+
+Gates: 45 focused Python, 21 legacy, 9 production E2E (три браузера), 5 Storybook
+с axe и нагрузкой 200×50; TypeScript, targeted ESLint и production build проходят.
+Полные наборы: Python 1866 PASS / 6 SKIP / 5 прежних FAIL; frontend 723 PASS /
+3 прежних FAIL. Все 8 failures воспроизведены на исходном HEAD.
+Исправлена изоляция аналитической БД тестов; возможное влияние ранних прогонов
+на прежний общий файл описано в `pwa_tests/reports/live-marking.md` вместе с
+логами, ограничениями и мобильными снимками.
+10 сентября 2026 владелец разрешил commit и push в текущую ветку `vmshpwa`.

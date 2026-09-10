@@ -95,7 +95,7 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     elif mode == "classrooms":
         playwright.append("e2e/classroom-catalog.spec.ts")
     elif mode == "oral":
-        playwright.append("e2e/oral-admission.spec.ts")
+        playwright.extend(["e2e/oral-admission.spec.ts", "e2e/live-marking.spec.ts"])
     elif mode == "news":
         playwright.append("e2e/news-notifications.spec.ts")
     elif mode == "runtime-isolation":
@@ -208,7 +208,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         with exclusive_e2e_run():
             return run_commands(
                 commands_for_mode(args.mode),
-                reset_database_between_commands=args.mode == "all",
+                reset_database_between_commands=args.mode in {"all", "oral"},
             )
     except E2eSuiteAlreadyRunning as error:
         print(error)

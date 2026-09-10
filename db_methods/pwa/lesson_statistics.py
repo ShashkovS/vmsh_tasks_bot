@@ -44,7 +44,7 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
                r.ts, v.val AS verdict_weight, r.verdict > 0 AS trainable,
                u.public_id AS student_public_id,
                trim(coalesce(u.surname, '') || ' ' || coalesce(u.name, '')) AS student_name
-        FROM results r JOIN verdicts v ON v.id = r.verdict
+        FROM effective_results r JOIN verdicts v ON v.id = r.verdict
         JOIN users u ON u.id = r.student_id AND u.type IN (1, -2)
         JOIN problems p ON p.id = r.problem_id
         JOIN groups g ON g.group_id = p.group_id
@@ -72,6 +72,9 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
         JOIN problems p ON p.id = ta.problem_id JOIN groups g ON g.group_id = p.group_id
         LEFT JOIN verdicts v ON v.id = ta.verdict AND ta.check_status = 'checked'
         WHERE g.course_id = ? AND ta.counts_as_attempt = 1
+          AND NOT EXISTS(SELECT 1 FROM live_mark_cells mc
+            WHERE mc.student_id=ta.student_user_id AND mc.problem_id=ta.problem_id
+            AND mc.result_id IS NOT NULL)
         ORDER BY ta.server_received_at, ta.id
     """,
             (course_id,),

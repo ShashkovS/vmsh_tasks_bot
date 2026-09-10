@@ -585,3 +585,32 @@ describe('authentication provider and boundary', () => {
     expect(screen.getByText('Нет доступа')).not.toBeNull()
   })
 })
+
+it('keeps refresh identity stable when authority refetches, preserving live queues', async () => {
+  const callbacks: Array<ReturnType<typeof useAuthentication>['refresh']> = []
+  function Probe() {
+    const auth = useAuthentication()
+    callbacks.push(auth.refresh)
+    return <button onClick={() => void auth.refresh()}>Refresh authority</button>
+  }
+  const fetchImplementation = vi.fn<typeof fetch>(() =>
+    Promise.resolve(jsonResponse(studentAuthContext)),
+  )
+  render(
+    <AppProviders queryClient={createAppQueryClient()}>
+      <AuthenticationProvider
+        refreshCoordinator={createInMemoryAuthRefreshCoordinator()}
+        audience="student"
+        runtime={studentRuntime}
+        fetchImplementation={fetchImplementation}
+      >
+        <AuthenticationBoundary>
+          <Probe />
+        </AuthenticationBoundary>
+      </AuthenticationProvider>
+    </AppProviders>,
+  )
+  fireEvent.click(await screen.findByRole('button', { name: 'Refresh authority' }))
+  await vi.waitFor(() => expect(fetchImplementation).toHaveBeenCalledTimes(2))
+  expect(new Set(callbacks).size).toBe(1)
+})

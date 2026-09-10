@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
+
+from db_methods.pwa.effective_results import result_source
 from contextlib import nullcontext
 from collections.abc import Iterable, Mapping
 
@@ -48,7 +50,7 @@ def list_course_result_rows(
     connection: sqlite3.Connection, *, course_id: int
 ) -> list[dict[str, object]]:
     rows = connection.execute(
-        """
+        f"""
         SELECT result.id AS result_id,
                result.student_id AS student_user_id,
                result.ts,
@@ -62,7 +64,7 @@ def list_course_result_rows(
                    WHEN trim(problem.synonyms) <> '' THEN 'legacy:' || problem.synonyms
                    ELSE 'problem:' || problem.id
                END AS logical_problem_key
-        FROM results AS result
+        FROM {result_source(connection)} AS result
         JOIN verdicts AS verdict ON verdict.id = result.verdict
         JOIN problems AS problem ON problem.id = result.problem_id
         JOIN groups AS group_record ON group_record.group_id = problem.group_id

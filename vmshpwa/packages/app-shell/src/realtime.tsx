@@ -113,6 +113,7 @@ export function shouldInvalidateRealtimeQuery(
   meta: Record<string, unknown> | undefined,
   resources: readonly string[],
 ): boolean {
+  if (resources.includes('live-results')) return true
   const configured = meta?.realtimeResources
   if (!Array.isArray(configured) || !configured.every((resource) => typeof resource === 'string')) {
     return true

@@ -53,7 +53,7 @@ export interface AuthenticationController {
   readonly client: AuthClient
   readonly state: AuthenticationState
   login(request: AuthLoginRequest, options?: AuthRequestOptions): Promise<AuthSessionContext>
-  refresh(options?: AuthRequestOptions): Promise<AuthSessionContext>
+  refresh(this: void, options?: AuthRequestOptions): Promise<AuthSessionContext>
   logout(options?: AuthRequestOptions): Promise<void>
   logoutAll(options?: AuthRequestOptions): Promise<void>
   retry(): Promise<void>
@@ -130,7 +130,7 @@ export function AuthenticationProvider({
   >(() =>
     offlineStore === undefined ? { status: 'ready', snapshot: null } : { status: 'loading' },
   )
-  const queryKey = authQueryKeys.me(audience)
+  const queryKey = useMemo(() => authQueryKeys.me(audience), [audience])
 
   useEffect(() => {
     let active = true

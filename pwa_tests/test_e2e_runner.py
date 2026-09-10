@@ -71,7 +71,14 @@ def test_diagnostic_modes_keep_the_same_exclusive_build_boundary():
     )
     assert commands_for_mode("oral") == (
         ("pnpm", "build"),
-        ("pnpm", "exec", "playwright", "test", "e2e/oral-admission.spec.ts"),
+        (
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/oral-admission.spec.ts",
+            "e2e/live-marking.spec.ts",
+        ),
     )
     assert commands_for_mode("news") == (
         ("pnpm", "build"),

@@ -273,6 +273,10 @@
       {
         "id": "0086.pwa_review_history",
         "sha256": "c2e68ee63e9d000cbae73de3a2ec942f37768c4588fe9eaaa8dbdc5dda12eb11"
+      },
+      {
+        "id": "0087.pwa_live_marking",
+        "sha256": "8600638c0871183dd0412e5831dbe08bd58b660b9dca2fc30cac19ba4c665d4e"
       }
     ],
     "repository_head_status": {
@@ -283,7 +287,7 @@
     }
   },
   "product": {
-    "object_count": 431,
+    "object_count": 446,
     "objects": [
       {
         "columns": [
@@ -12573,6 +12577,801 @@
         "object_sha256": "a6d84f30196dc8fa7d211838d3b78b400e17cf180fab88e550062f9143e7b6b2",
         "sql": "CREATE TABLE \"lessons\"\n(\n    id       INTEGER\n        primary key,\n    group_id text\n        references groups (group_id),\n    lesson   INTEGER not null,\n    unique (lesson, group_id)\n);",
         "table_name": "lessons",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "event_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "in_person_events"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "event_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_live_attendance_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "live_attendance",
+        "object_sha256": "4c137d4c2559d05ff76ed22140bafccf034a0c7bbee992b2aab17a90ef80756d",
+        "sql": "CREATE TABLE live_attendance (\n    event_id INTEGER NOT NULL REFERENCES in_person_events(id),\n    student_id INTEGER NOT NULL REFERENCES users(id),\n    state TEXT NOT NULL CHECK(state IN ('unmarked','present','absent')),\n    version INTEGER NOT NULL,\n    teacher_id INTEGER NOT NULL REFERENCES users(id),\n    PRIMARY KEY(event_id, student_id)\n);",
+        "table_name": "live_attendance",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "change_seq",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_live_mark_cells_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "live_mark_cells",
+        "object_sha256": "893fe6fce46ffcd125a37d3c0461afba47483edd4bc2ad6b5609328f46f19c8b",
+        "sql": "CREATE TABLE live_mark_cells (\n    student_id INTEGER NOT NULL REFERENCES users(id),\n    problem_id INTEGER NOT NULL REFERENCES problems(id),\n    version INTEGER NOT NULL DEFAULT 0,\n    result_id INTEGER REFERENCES results(id),\n    change_seq INTEGER NOT NULL DEFAULT 0,\n    PRIMARY KEY(student_id, problem_id)\n);",
+        "table_name": "live_mark_cells",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "seq",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [],
+        "name": "live_mark_clock",
+        "object_sha256": "0d33eb26b096b0bf221e0d2461595ca36922ae4017c3658e98566ec01bf8fc50",
+        "sql": "CREATE TABLE live_mark_clock (id INTEGER PRIMARY KEY CHECK(id=1), seq INTEGER NOT NULL);",
+        "table_name": "live_mark_clock",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "context_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "before_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "after_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "undone_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "undoable",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "teacher_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "context_id",
+                "seqno": 1
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "created_at",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "live_mark_operations_history",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_live_mark_operations_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "live_mark_operations",
+        "object_sha256": "918695d2c13803f605a981bde96aaebe33be489363a339e023c493ccb5a70b47",
+        "sql": "CREATE TABLE live_mark_operations (\n    id TEXT PRIMARY KEY,\n    teacher_id INTEGER NOT NULL REFERENCES users(id),\n    context_id TEXT NOT NULL,\n    kind TEXT NOT NULL CHECK(kind IN ('mark','attendance','transfer','reaction','praise','undo')),\n    request_json TEXT NOT NULL,\n    before_json TEXT NOT NULL,\n    after_json TEXT NOT NULL,\n    created_at TEXT NOT NULL,\n    undone_at TEXT,\n    undoable INTEGER NOT NULL DEFAULT 1 CHECK(undoable IN (0,1))\n);",
+        "table_name": "live_mark_operations",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          }
+        ],
+        "indexes": [],
+        "name": "live_mark_results",
+        "object_sha256": "4b96b22f60d397bcd169237105fae09ece502c5bded37887924cb71aa83a9251",
+        "sql": "CREATE TABLE live_mark_results (\n    result_id INTEGER PRIMARY KEY REFERENCES results(id)\n);",
+        "table_name": "live_mark_results",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "finished_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "teacher_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "live_mark_sessions_active",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_live_mark_sessions_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "live_mark_sessions",
+        "object_sha256": "e081e73943d73ede7170dde8cbbd975b9e8e69e5d6841e0d63961225e40365da",
+        "sql": "CREATE TABLE live_mark_sessions (\n    id TEXT PRIMARY KEY,\n    teacher_id INTEGER NOT NULL REFERENCES users(id),\n    course_id INTEGER NOT NULL REFERENCES courses(id),\n    created_at TEXT NOT NULL,\n    finished_at TEXT\n);",
+        "table_name": "live_mark_sessions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "session_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_lesson_id",
+            "not_null": true,
+            "primary_key_ordinal": 3
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "conversation_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "praised_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "conversation_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "zoom_conversation"
+          },
+          {
+            "from_columns": [
+              "group_lesson_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "group_lessons"
+          },
+          {
+            "from_columns": [
+              "session_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "live_mark_sessions"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "session_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_lesson_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_live_mark_visits_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "live_mark_visits",
+        "object_sha256": "6f8e5df440f84d32fff1be9eed5d23cb328055a2015975736cd3677a214a9b0f",
+        "sql": "CREATE TABLE live_mark_visits (\n    session_id TEXT NOT NULL REFERENCES live_mark_sessions(id),\n    student_id INTEGER NOT NULL REFERENCES users(id),\n    group_lesson_id INTEGER NOT NULL REFERENCES group_lessons(id),\n    conversation_id INTEGER NOT NULL REFERENCES zoom_conversation(id),\n    updated_at TEXT NOT NULL,\n    version INTEGER NOT NULL DEFAULT 0,\n    praised_at TEXT,\n    PRIMARY KEY(session_id, student_id, group_lesson_id)\n);",
+        "table_name": "live_mark_visits",
         "type": "table"
       },
       {
@@ -25821,6 +26620,20 @@
         "type": "index"
       },
       {
+        "name": "live_mark_operations_history",
+        "object_sha256": "a953ba92f124d98156be26ebf1597fad5dddace7f230ff54fba5f95d7a4ef903",
+        "sql": "CREATE INDEX live_mark_operations_history\n    ON live_mark_operations(teacher_id, context_id, created_at DESC);",
+        "table_name": "live_mark_operations",
+        "type": "index"
+      },
+      {
+        "name": "live_mark_sessions_active",
+        "object_sha256": "ec98d6b87749aca2f50140f54f43cf2f8d0e30624c0e6c2739e1573bf5e514be",
+        "sql": "CREATE UNIQUE INDEX live_mark_sessions_active\n    ON live_mark_sessions(teacher_id, course_id) WHERE finished_at IS NULL;",
+        "table_name": "live_mark_sessions",
+        "type": "index"
+      },
+      {
         "name": "media_assets_content_hash_version_uq",
         "object_sha256": "c44ece1f5860877e80ca137ac3fbfb2aca2270889a51471bf501e62758eea7d3",
         "sql": "CREATE UNIQUE INDEX media_assets_content_hash_version_uq\n    on media_assets (storage_namespace, sha256, conversion_version)\n    where storage_namespace in ('content', 'generated') and deleted_at is null;",
@@ -26339,6 +27152,13 @@
         "type": "index"
       },
       {
+        "name": "effective_results",
+        "object_sha256": "231921c0349bf4b0e2ea4d2dcaf03e29e50345e534c982fec0a85389e30c7e3f",
+        "sql": "CREATE VIEW effective_results AS\n    SELECT r.* FROM results r\n    LEFT JOIN live_mark_cells c ON c.student_id=r.student_id AND c.problem_id=r.problem_id\n    WHERE (c.result_id IS NOT NULL AND r.id=c.result_id)\n       OR (c.result_id IS NULL AND NOT EXISTS (\n           SELECT 1 FROM live_mark_results m WHERE m.result_id=r.id));",
+        "table_name": "effective_results",
+        "type": "view"
+      },
+      {
         "name": "reaction_enum_view",
         "object_sha256": "96a5dfdd0b39495bbf83a3681c38ece482cc1ecd19e9e2304fd8e96cc8d0495b",
         "sql": "CREATE VIEW reaction_enum_view AS\nSELECT *\nFROM reaction_enum\n         JOIN reaction_type_enum USING (reaction_type_id);",
@@ -26798,6 +27618,41 @@
         "object_sha256": "191693ecf0e811156546d27404883e576b40fc6e44ea5338d222b1d5ca8b5722",
         "sql": "CREATE TRIGGER lesson_window_schedule_sources_scope_insert\nbefore insert on lesson_window_schedule_sources\nfor each row\nwhen not exists (\n    select 1\n    from lesson_windows as lesson_window\n    join group_lessons as group_lesson\n      on group_lesson.id = lesson_window.group_lesson_id\n    join course_schedule_rules as schedule_rule\n      on schedule_rule.id = new.course_schedule_rule_id\n     and schedule_rule.course_id = group_lesson.course_id\n     and schedule_rule.schedule_field = new.schedule_field\n     and schedule_rule.rule_version = new.course_rule_version\n     and schedule_rule.state = 'active'\n    where lesson_window.id = new.lesson_window_id\n      and (\n          (\n              new.group_schedule_override_id is null\n              and new.resolution_mode = 'inherit'\n              and new.resolved_day_offset = schedule_rule.day_offset\n              and new.resolved_local_time = schedule_rule.local_time\n              and new.resolved_timezone = schedule_rule.timezone\n          )\n          or exists (\n              select 1\n              from group_schedule_overrides as schedule_override\n              where schedule_override.id = new.group_schedule_override_id\n                and schedule_override.course_id = group_lesson.course_id\n                and schedule_override.group_id = group_lesson.group_id\n                and schedule_override.schedule_field = new.schedule_field\n                and schedule_override.override_version = new.group_override_version\n                and schedule_override.state = 'active'\n                and schedule_override.mode = new.resolution_mode\n                and (\n                    (\n                        schedule_override.mode = 'inherit'\n                        and new.resolved_day_offset = schedule_rule.day_offset\n                        and new.resolved_local_time = schedule_rule.local_time\n                        and new.resolved_timezone = schedule_rule.timezone\n                    )\n                    or (\n                        schedule_override.mode = 'override'\n                        and new.resolved_day_offset = schedule_override.day_offset\n                        and new.resolved_local_time = schedule_override.local_time\n                        and new.resolved_timezone = schedule_override.timezone\n                    )\n                    or schedule_override.mode = 'disabled'\n                )\n          )\n      )\n)\nbegin\n    select raise(abort, 'lesson window schedule source is outside its scope');\nend;",
         "table_name": "lesson_window_schedule_sources",
+        "type": "trigger"
+      },
+      {
+        "name": "live_cell_insert",
+        "object_sha256": "261cc3e9483bae9df308af2057d7d61219e96187e5475a162bd579b736e7bf8f",
+        "sql": "CREATE TRIGGER live_cell_insert AFTER INSERT ON live_mark_cells BEGIN\n    UPDATE live_mark_clock SET seq=seq+1 WHERE id=1;\n    UPDATE live_mark_cells SET change_seq=(SELECT seq FROM live_mark_clock WHERE id=1)\n    WHERE student_id=new.student_id AND problem_id=new.problem_id;\nEND;",
+        "table_name": "live_mark_cells",
+        "type": "trigger"
+      },
+      {
+        "name": "live_cell_update",
+        "object_sha256": "c58b90b69d4d19228a3c807347d4da165ed5c71cf46bcc941b383e7cd650aa99",
+        "sql": "CREATE TRIGGER live_cell_update AFTER UPDATE OF version,result_id ON live_mark_cells BEGIN\n    UPDATE live_mark_clock SET seq=seq+1 WHERE id=1;\n    UPDATE live_mark_cells SET change_seq=(SELECT seq FROM live_mark_clock WHERE id=1)\n    WHERE student_id=new.student_id AND problem_id=new.problem_id;\nEND;",
+        "table_name": "live_mark_cells",
+        "type": "trigger"
+      },
+      {
+        "name": "live_results_delete",
+        "object_sha256": "2fd290e8145eebca9e079fc1630e6e97fcf0b62db00b60edf10825acf7f71297",
+        "sql": "CREATE TRIGGER live_results_delete AFTER DELETE ON results BEGIN\n    UPDATE live_mark_cells SET version=version+1\n    WHERE student_id=old.student_id AND problem_id=old.problem_id;\nEND;",
+        "table_name": "results",
+        "type": "trigger"
+      },
+      {
+        "name": "live_results_insert",
+        "object_sha256": "a8010d6bc6019d373eee43d316a25eecb2fbf7e2a9895a1a5fef61aff5ffcc96",
+        "sql": "CREATE TRIGGER live_results_insert AFTER INSERT ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version,result_id)\n    VALUES(new.student_id,new.problem_id,1,\n           CASE WHEN new.res_type IN (3,4) THEN new.id END)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n        result_id=CASE WHEN new.res_type IN (3,4) THEN new.id\n                       ELSE live_mark_cells.result_id END;\nEND;",
+        "table_name": "results",
+        "type": "trigger"
+      },
+      {
+        "name": "live_results_update",
+        "object_sha256": "ea13891f01b798f7273c64ec1bc775d1676787c9382f3b91fdba110ed3690ebc",
+        "sql": "CREATE TRIGGER live_results_update AFTER UPDATE OF verdict, teacher_id ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version)\n    VALUES(new.student_id,new.problem_id,1)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1;\nEND;",
+        "table_name": "results",
         "type": "trigger"
       },
       {
@@ -27438,8 +28293,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "0c8b308a6428273ed9e73813868e703f801df2c425d9231dacd1af1a0df5350a",
-    "sha256": "a49415fb57965c6dfdf1c426e788e1e64b22d7c0131a0a4806803dc0b3e6305b"
+    "pragma_structure_sha256": "6852077771f3d5833bbaaeb7dbab1a07a59e65821f20d8a79cce87aa7db8ad38",
+    "sha256": "77681072c59c9d365b09c173f7272769e69b01d2b1b1814f008168fbe0d7fac5"
   },
   "source_kind": "repository-migration-head"
 }

@@ -85,8 +85,11 @@ def test_inventory_is_deterministic_and_does_not_read_rows(tmp_path):
     rendered_sql = render_schema_snapshot(second)
     assert sentinel not in rendered_json
     assert sentinel not in rendered_sql
-    assert "insert into" not in rendered_sql.casefold()
-    assert second["product"]["object_count"] == 431
+    # Trigger bodies contain DML definitions; the snapshot must not dump rows.
+    assert not any(
+        line.casefold().startswith("insert into") for line in rendered_sql.splitlines()
+    )
+    assert second["product"]["object_count"] == 446
     assert second["legacy_derived"]["object_count"] == 0
     assert all(
         not record["name"].startswith("sqlite_") and "yoyo" not in record["name"]

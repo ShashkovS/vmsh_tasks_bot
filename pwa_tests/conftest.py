@@ -24,6 +24,7 @@ os.chdir(ROOT)
 os.environ["VMSH_RUNTIME_PROFILE"] = "pwa-e2e"
 os.environ["VMSH_INSTANCE"] = "e2e-pytest"
 os.environ["VMSH_DB_FILENAME"] = "db/vmshpwa_e2e.sqlite3"
+os.environ["VMSH_ANALYTICS_DB_FILENAME"] = ".runtime/vmshpwa/e2e/analytics.sqlite3"
 os.environ["VMSH_MEDIA_ROOT"] = ".runtime/vmshpwa/e2e-pytest"
 os.environ["VMSH_NATS_SERVER"] = ""
 os.environ["VMSH_NATS_TOPIC_PREFIX"] = "vmshpwa_e2e_pytest"
@@ -48,8 +49,11 @@ def isolated_pwa_database(tmp_path_factory):
     database_path = tmp_path_factory.mktemp("pwa-runtime") / "pwa.sqlite3"
     apply_schema_migrations(database_path)
     original_database_path = config.db_filename
+    original_analytics_path = config.pwa_analytics_db_filename
     config.db_filename = str(database_path)
+    config.pwa_analytics_db_filename = str(database_path.with_name("analytics.sqlite3"))
     try:
         yield database_path
     finally:
         config.db_filename = original_database_path
+        config.pwa_analytics_db_filename = original_analytics_path

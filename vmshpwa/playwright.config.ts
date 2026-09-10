@@ -21,6 +21,7 @@ const backendEnv = {
   VMSH_RUNTIME_PROFILE: 'pwa-e2e',
   VMSH_INSTANCE: 'e2e',
   VMSH_DB_FILENAME: 'db/vmshpwa_e2e.sqlite3',
+  VMSH_ANALYTICS_DB_FILENAME: '.runtime/vmshpwa/e2e/analytics.sqlite3',
   VMSH_MEDIA_ROOT: '.runtime/vmshpwa/e2e',
   VMSH_NATS_SERVER: '',
   VMSH_NATS_TOPIC_PREFIX: 'vmshpwa_e2e',
@@ -64,7 +65,7 @@ export default defineConfig({
       // A clean checkout has no runtime DB. Seed is the explicit maintenance
       // boundary; aiohttp startup itself only verifies schema (ADR 0002).
       command:
-        'uv run python -m vmshpwa.scripts.seed_runtime && uv run python -m vmshpwa.scripts.seed_e2e_content && uv run python -m vmshpwa.scripts.seed_e2e_review && uv run python -m vmshpwa.scripts.seed_e2e_classrooms && uv run python -m vmshpwa.scripts.seed_e2e_family_progress && uv run python -m vmshpwa.scripts.seed_e2e_oral && uv run python -m vmshpwa.scripts.seed_e2e_news && uv run python -m vmshpwa.scripts.seed_e2e_statistics && uv run python main.py',
+        'uv run python -m vmshpwa.scripts.seed_runtime && uv run python -m vmshpwa.scripts.seed_e2e_content && uv run python -m vmshpwa.scripts.seed_e2e_review && uv run python -m vmshpwa.scripts.seed_e2e_classrooms && uv run python -m vmshpwa.scripts.seed_e2e_family_progress && uv run python -m vmshpwa.scripts.seed_e2e_oral && uv run python -m vmshpwa.scripts.seed_e2e_live_marking && uv run python -m vmshpwa.scripts.seed_e2e_news && uv run python -m vmshpwa.scripts.seed_e2e_statistics && uv run python main.py',
       cwd: repository,
       env: backendEnv,
       url: `${apiOrigin}/student/api/v1/health`,

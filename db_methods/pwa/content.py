@@ -1383,10 +1383,14 @@ def _student_problem_summary(
     verdict = None
     queue_checking = row["queue_checking"]
     verdict_id = row["verdict_id"]
-    queue_is_newer = queue_checking is not None and (
-        verdict_id is None
-        or parse_utc_timestamp(str(row["latest_queue_at"]))
-        > parse_utc_timestamp(str(row["verdict_at"]))
+    queue_is_newer = (
+        not row["manual_override"]
+        and queue_checking is not None
+        and (
+            verdict_id is None
+            or parse_utc_timestamp(str(row["latest_queue_at"]))
+            > parse_utc_timestamp(str(row["verdict_at"]))
+        )
     )
     if queue_is_newer:
         status = "checking" if int(queue_checking) == 1 else "sent"
@@ -1715,17 +1719,19 @@ ranked_result AS (
     SELECT logical_member.visible_problem_id,
            result.verdict AS verdict_id,
            result.ts AS verdict_at,
+           manual.result_id IS NOT NULL AS manual_override,
            verdict.tick AS verdict_symbol,
            verdict.val AS verdict_weight,
            row_number() OVER (
                PARTITION BY logical_member.visible_problem_id
-               ORDER BY result.ts DESC, result.id DESC
+               ORDER BY (manual.result_id IS NOT NULL) DESC, result.ts DESC, result.id DESC
            ) AS result_rank
     FROM logical_member
-    JOIN results AS result
+    JOIN effective_results AS result
       ON result.problem_id = logical_member.member_problem_id
      AND result.student_id = :student_user_id
     JOIN verdicts AS verdict ON verdict.id = result.verdict
+    LEFT JOIN live_mark_cells AS manual ON manual.result_id = result.id
 ),
 discussion_state AS (
     SELECT logical_member.visible_problem_id,
@@ -1745,6 +1751,7 @@ SELECT published_scope.group_lesson_public_id,
        queue_state.latest_queue_at,
        ranked_result.verdict_id,
        ranked_result.verdict_at,
+       ranked_result.manual_override,
        ranked_result.verdict_symbol,
        ranked_result.verdict_weight,
        discussion_state.has_discussion,

@@ -31,14 +31,16 @@ def list_course_result_rows(
                result.problem_id,
                result.ts,
                verdict.val AS verdict_weight,
+               manual.result_id IS NOT NULL AS manual_override,
                problem_scope.lesson_number,
                CASE
                    WHEN synonym_group.id IS NULL
                    THEN 'problem:' || result.problem_id
                    ELSE 'synonym:' || synonym_group.id
                END AS logical_problem_key
-        FROM results AS result
+        FROM effective_results AS result
         JOIN verdicts AS verdict ON verdict.id = result.verdict
+        LEFT JOIN live_mark_cells AS manual ON manual.result_id = result.id
         JOIN problem_scope ON problem_scope.problem_id = result.problem_id
         LEFT JOIN problem_synonym_members AS synonym_member
           ON synonym_member.problem_id = result.problem_id

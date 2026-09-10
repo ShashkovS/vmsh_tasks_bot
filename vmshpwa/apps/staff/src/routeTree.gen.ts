@@ -15,6 +15,7 @@ import { Route as AuditRouteImport } from './routes/audit'
 import { Route as BroadcastsRouteImport } from './routes/broadcasts'
 import { Route as ClassroomsRouteImport } from './routes/classrooms'
 import { Route as CoursesRouteImport } from './routes/courses'
+import { Route as InPersonRouteImport } from './routes/in-person'
 import { Route as LessonsRouteImport } from './routes/lessons'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewsRouteImport } from './routes/news'
@@ -66,6 +67,11 @@ const ClassroomsRoute = ClassroomsRouteImport.update({
 const CoursesRoute = CoursesRouteImport.update({
   id: '/courses',
   path: '/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InPersonRoute = InPersonRouteImport.update({
+  id: '/in-person',
+  path: '/in-person',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LessonsRoute = LessonsRouteImport.update({
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
   '/courses': typeof CoursesRoute
+  '/in-person': typeof InPersonRoute
   '/lessons': typeof LessonsRouteWithChildren
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
   '/courses': typeof CoursesRoute
+  '/in-person': typeof InPersonRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
   '/courses': typeof CoursesRoute
+  '/in-person': typeof InPersonRoute
   '/lessons': typeof LessonsRouteWithChildren
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/broadcasts'
     | '/classrooms'
     | '/courses'
+    | '/in-person'
     | '/lessons'
     | '/login'
     | '/news'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/broadcasts'
     | '/classrooms'
     | '/courses'
+    | '/in-person'
     | '/login'
     | '/news'
     | '/oral'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/broadcasts'
     | '/classrooms'
     | '/courses'
+    | '/in-person'
     | '/lessons'
     | '/login'
     | '/news'
@@ -362,6 +374,7 @@ export interface RootRouteChildren {
   BroadcastsRoute: typeof BroadcastsRoute
   ClassroomsRoute: typeof ClassroomsRoute
   CoursesRoute: typeof CoursesRoute
+  InPersonRoute: typeof InPersonRoute
   LessonsRoute: typeof LessonsRouteWithChildren
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
@@ -417,6 +430,13 @@ declare module '@tanstack/react-router' {
       path: '/courses'
       fullPath: '/courses'
       preLoaderRoute: typeof CoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/in-person': {
+      id: '/in-person'
+      path: '/in-person'
+      fullPath: '/in-person'
+      preLoaderRoute: typeof InPersonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lessons': {
@@ -643,6 +663,7 @@ const rootRouteChildren: RootRouteChildren = {
   BroadcastsRoute: BroadcastsRoute,
   ClassroomsRoute: ClassroomsRoute,
   CoursesRoute: CoursesRoute,
+  InPersonRoute: InPersonRoute,
   LessonsRoute: LessonsRouteWithChildren,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,

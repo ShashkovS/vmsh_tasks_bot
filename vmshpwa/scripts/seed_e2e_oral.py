@@ -71,23 +71,23 @@ def _web_document(*, revision_id: str, source_sha256: str, title: str) -> str:
     )
 
 
-def _seed(connection: sqlite3.Connection) -> int:
+def _seed(connection: sqlite3.Connection, targets=TARGETS) -> int:
     existing_lessons = {
         int(row["id"])
         for row in connection.execute(
             "SELECT id FROM group_lessons WHERE id IN (?, ?, ?)",
-            tuple(number for _project, number in TARGETS),
+            tuple(number for _project, number in targets),
         )
     }
     existing_windows = {
         int(row["id"])
         for row in connection.execute(
             "SELECT id FROM oral_windows WHERE id IN (?, ?, ?)",
-            tuple(number for _project, number in TARGETS),
+            tuple(number for _project, number in targets),
         )
     }
-    expected_lessons = {number for _project, number in TARGETS}
-    expected_windows = {number for _project, number in TARGETS}
+    expected_lessons = {number for _project, number in targets}
+    expected_windows = {number for _project, number in targets}
     if existing_lessons or existing_windows:
         if (
             existing_lessons == expected_lessons
@@ -96,15 +96,10 @@ def _seed(connection: sqlite3.Connection) -> int:
             return 0
         raise RuntimeError("Oral E2E fixture is only partially present")
 
-    course = connection.execute(
-        "SELECT id FROM courses WHERE id = 1"
-    ).fetchone()
-    admin = connection.execute(
-        "SELECT id FROM users WHERE id = 301"
-    ).fetchone()
+    course = connection.execute("SELECT id FROM courses WHERE id = 1").fetchone()
+    admin = connection.execute("SELECT id FROM users WHERE id = 301").fetchone()
     group = connection.execute(
-        "SELECT group_id, course_id FROM groups "
-        "WHERE id = 1"
+        "SELECT group_id, course_id FROM groups WHERE id = 1"
     ).fetchone()
     if course is None or admin is None or group is None:
         raise RuntimeError("Oral E2E seed requires baseline course, group and admin")
@@ -114,7 +109,7 @@ def _seed(connection: sqlite3.Connection) -> int:
         raise RuntimeError("Oral E2E group belongs to another course")
     group_id = str(group["group_id"])
 
-    for ordinal, (project, lesson_number) in enumerate(TARGETS, start=1):
+    for ordinal, (project, lesson_number) in enumerate(targets, start=1):
         title = f"Устная E2E {project}"
         source = f"{title}: расскажите решение преподавателю."
         source_sha256 = hashlib.sha256(source.encode()).hexdigest()
@@ -289,7 +284,7 @@ def _seed(connection: sqlite3.Connection) -> int:
                 TIMESTAMP,
             ),
         )
-    return len(TARGETS)
+    return len(targets)
 
 
 def seed_e2e_oral(runtime_config: PwaMaintenanceConfig) -> int:

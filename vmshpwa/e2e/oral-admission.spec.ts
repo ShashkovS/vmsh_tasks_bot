@@ -25,14 +25,18 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
     `/student/tasks?course=${contentFixture.coursePublicId}` +
       `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
   )
-  const task = page.locator('[data-slot="card-title"]').filter({ hasText: title })
+  const task = page.getByRole('heading', { name: `1 ${title}`, exact: true })
+  const earlier = page.getByRole('button', { name: 'Показать более ранние занятия' })
+  await expect(task.or(earlier).first()).toBeVisible()
+  if (!(await task.isVisible())) await earlier.click()
   await expect(task).toBeVisible()
-  await task.locator('xpath=following::button[@aria-label="Открыть задачу 1"][1]').click()
+  await task
+    .locator('xpath=ancestor::article')
+    .getByRole('button', { name: 'Открыть задачу 1' })
+    .click()
   await expect(page.getByRole('heading', { name: `1 ${title}`, exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Устный приём' })).toBeVisible()
-  await expect(
-    page.getByText('Задачу также можно отправить письменно ниже.'),
-  ).toBeVisible()
+  await expect(page.getByText('Задачу также можно отправить письменно ниже.')).toBeVisible()
 
   const joinResponse = page.waitForResponse(
     (response) =>
@@ -72,11 +76,12 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
     `/student/tasks?course=${contentFixture.coursePublicId}` +
       `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
   )
+  await expect(task.or(earlier).first()).toBeVisible()
+  if (!(await task.isVisible())) await earlier.click()
   await expect(
     page
-      .locator('[data-slot="card-title"]')
-      .filter({ hasText: title })
-      .locator('xpath=ancestor::*[@data-slot="card"][1]'),
+      .getByRole('heading', { name: `1 ${title}`, exact: true })
+      .locator('xpath=ancestor::article'),
   ).toContainText('Зачтено')
 
   await page.goto(`/student/progress?course=${contentFixture.coursePublicId}`)
@@ -106,7 +111,9 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
     .getByText(`Занятие ${target.lessonNumber}`, { exact: true })
     .locator('xpath=..')
   await expect(correctedLesson).toContainText('0 зачтено из 1')
-  await expect(page.getByText(/Здесь нет рейтинга и сравнения/)).toBeVisible()
+  await expect(
+    page.getByRole('figure', { name: /С другими школьниками здесь не сравниваем/ }),
+  ).toBeVisible()
 
   const progressPayload = await page.evaluate(async (courseId) => {
     const response = await fetch(`/student/api/v1/courses/${courseId}/progress`)
