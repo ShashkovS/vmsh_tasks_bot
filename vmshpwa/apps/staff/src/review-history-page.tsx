@@ -57,7 +57,7 @@ export function StaffReviewHistoryPage({
   onSearch,
 }: {
   search: HistorySearch
-  onSearch: (search: HistorySearch) => void
+  onSearch: (search: HistorySearch, replace?: boolean) => void
 }) {
   const auth = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -83,7 +83,8 @@ export function StaffReviewHistoryPage({
       options.lesson !== null &&
       (!search.course || search.lesson === undefined)
     ) {
-      onSearch({ ...search, course: options.courseId, lesson: options.lesson })
+      // student-results.md: default scope must preserve the Back destination.
+      onSearch({ ...search, course: options.courseId, lesson: options.lesson }, true)
     }
   }, [options, search, onSearch])
   const change = (patch: Partial<HistorySearch>) =>

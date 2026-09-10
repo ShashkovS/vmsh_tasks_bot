@@ -157,3 +157,15 @@ Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`
 даже при малом числе задач. Проверки и снимки:
 [отчёт](../../../pwa_tests/reports/live-marking-compact.md).
 Визуальное принятие владельцем остаётся открытым.
+
+
+## Результаты школьника (admin-only)
+
+[StudentResultsPage](../../apps/staff/src/student-results-page.tsx) и
+[ResultHistory](../../apps/staff/src/student-results-history.tsx) реализуют
+[принятые требования](../../docs/student-results.md): fuzzy-поиск, компактные
+таблицы по занятиям/уровням, read-only PWA/Telegram история выбранного занятия,
+защищённые фотографии/аннотации, версии условий и переходы в существующую
+проверку. URL сохраняет школьника, курс и номер занятия. Мобильная адаптация,
+клавиатура и обе темы проверены в трёх браузерах;
+[отчёт](../../../pwa_tests/reports/student-results/README.md).

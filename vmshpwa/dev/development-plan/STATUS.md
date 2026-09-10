@@ -2585,3 +2585,15 @@ Ruff прошли. Снимки mobile/desktop/light/dark просмотрены
 [отчёт и доказательства](../../../pwa_tests/reports/live-marking-compact.md).
 Визуальное принятие владельцем остаётся открытым.
 10 сентября владелец разрешил commit и push этого изменения в `vmshpwa`.
+
+## Результаты школьника — 10 сентября 2026, реализовано локально
+
+Выполнен принятый [план](../../docs/student-results.md): admin-only PWA/Telegram
+архив, сводка effective_results, несколько курсов/уровней, полная сохранённая
+история, защищённые вложения, версии условий, переходы в проверку и Back.
+Backend **21 passed**, unit **9 passed**, production E2E **6 passed** в
+Chromium/WebKit/Firefox. 320/390 px, desktop, light/dark, 200%, клавиатура,
+фотографии/аннотации и offline проверены. TypeScript, ESLint, Ruff прошли.
+[Отчёт и снимки](../../../pwa_tests/reports/student-results/README.md).
+Миграций нет. Владелец разрешил commit и push 10 сентября 2026.
+Развёртывание не выполнялось; визуальное принятие владельцем остаётся открытым.

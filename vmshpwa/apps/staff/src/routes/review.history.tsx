@@ -12,7 +12,9 @@ function History() {
   return (
     <StaffReviewHistoryPage
       search={search}
-      onSearch={(next) => void navigate({ search: next, resetScroll: false })}
+      onSearch={(next, replace = false) =>
+        void navigate({ search: next, replace, resetScroll: false })
+      }
     />
   )
 }

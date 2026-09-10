@@ -119,6 +119,7 @@ from apps.pwa_api.written_submission_routes import (
     PWA_WRITTEN_SUBMISSION_REPOSITORY,
     written_submission_routes,
 )
+from apps.pwa_api.student_results_routes import student_results_routes
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
 from db_methods.pwa.news import has_visible_local_post_due_between
@@ -1798,6 +1799,7 @@ def configure(
         app.add_routes(admin_schedule_routes)
         app.add_routes(admin_enrollment_routes)
         app.add_routes(audit_routes)
+        app.add_routes(student_results_routes)
         app.add_routes(staff_access_routes)
         app.add_routes(staff_dashboard_routes)
         app.add_routes(staff_statistics_routes)

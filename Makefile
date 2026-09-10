@@ -343,6 +343,10 @@ pwa-e2e-support:
 pwa-e2e-classrooms:
 	cd $(PWA_DIR) && CI=true pnpm e2e:classrooms
 
+.PHONY: pwa-e2e-student-results
+pwa-e2e-student-results:
+	cd $(PWA_DIR) && CI=true pnpm e2e:student-results
+
 pwa-e2e-oral:
 	cd $(PWA_DIR) && CI=true pnpm e2e:oral
 
