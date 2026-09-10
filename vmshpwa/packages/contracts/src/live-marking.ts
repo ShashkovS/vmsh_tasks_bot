@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { publicIdSchema } from './auth'
+import { webContentDocumentSchema } from './content'
 
 // vmshpwa/docs/live-marking.md; shared by both Staff workspaces and the outbox.
 const id = publicIdSchema
@@ -233,3 +234,8 @@ export const LIVE_REACTIONS = [
   { id: 305, label: 'Помогают родители', short: '👪 Родители' },
   { id: 303, label: 'Проблемы со связью', short: '📡 Связь' },
 ] as const
+
+export const liveConditionSchema = z.object({
+  ...envelope,
+  document: webContentDocumentSchema.nullable(),
+})

@@ -21,9 +21,9 @@ const board: LiveBoard = {
     attendance: 'unmarked',
     attendanceVersion: 0,
   })),
-  problems: Array.from({ length: 14 }, (_, i) => ({
+  problems: Array.from({ length: 24 }, (_, i) => ({
     problemId: `p-${i}`,
-    label: `${i + 1}`,
+    label: i < 20 ? `${i + 1}` : `${21 + Math.floor((i - 20) / 2)}${i % 2 ? 'б' : 'а'}`,
     title: 'Расскажите решение',
     oral: true,
     number: i + 1,
@@ -36,11 +36,14 @@ function Harness({
   zoom = false,
   status,
   large = false,
+  few = false,
 }: {
   zoom?: boolean
   status?: 'queued' | 'conflict'
   large?: boolean
+  few?: boolean
 }) {
+  const [condition, setCondition] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [marks, setMarks] = useState<Record<string, number>>({})
   const props = {
@@ -59,7 +62,9 @@ function Harness({
             number: i + 1,
           })),
         }
-      : board,
+      : few
+        ? { ...board, problems: board.problems.slice(0, 1) }
+        : board,
     display: (s: string, p: string) => ({
       symbol: ['', '+', '−'][marks[`${s}:${p}`] ?? 0]!,
       mine: !!marks[`${s}:${p}`],
@@ -73,7 +78,10 @@ function Harness({
   return (
     <div className="flex h-[480px] flex-col">
       {zoom ? (
-        <LiveZoomGrid {...props} />
+        <>
+          <LiveZoomGrid {...props} onCondition={(p) => setCondition(p.label)} />
+          <output aria-label="Открыто условие">{condition}</output>
+        </>
       ) : (
         <LiveSchoolGrid
           {...props}
@@ -105,7 +113,18 @@ export const Classroom: Story = {
     await expect(cell).toHaveAccessibleName(/\+/)
   },
 }
-export const Zoom: Story = { args: { zoom: true } }
+export const Zoom: Story = {
+  args: { zoom: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const marks = canvas.getAllByRole('button', { name: /^Задача / })
+    await expect(marks).toHaveLength(24)
+    await expect(marks[0]!.getBoundingClientRect().top).toBe(marks[1]!.getBoundingClientRect().top)
+    await userEvent.click(canvas.getByRole('button', { name: 'Показать условие задачи 21б' }))
+    await expect(canvas.getByLabelText('Открыто условие')).toHaveTextContent('21б')
+    await expect(canvas.getByRole('button', { name: /^Задача 21б:/ })).toHaveAccessibleName(/пусто/)
+  },
+}
 export const Offline: Story = { args: { status: 'queued' } }
 export const Conflict: Story = { args: { status: 'conflict' } }
 
@@ -140,5 +159,16 @@ export const LargeClassroom: Story = {
     const duration = performance.now() - start
     console.info(`Live marking fuzzy 2000: ${duration.toFixed(1)}ms`)
     await expect(duration).toBeLessThan(100)
+  },
+}
+
+export const OneProblemClassroom: Story = {
+  args: { few: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getAllByRole('rowheader').length).toBeGreaterThan(0))
+    await expect(
+      canvas.getAllByRole('rowheader')[0]!.getBoundingClientRect().width,
+    ).toBeLessThanOrEqual(161)
   },
 }

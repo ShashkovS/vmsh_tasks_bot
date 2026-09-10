@@ -143,3 +143,17 @@ Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`
 ## Gate
 
 Принимаются flow coherence, URL/history, responsive layouts, reading comfort, density, states и role permissions. Не принимать красивые happy-path pages без error/offline/empty/locked variants.
+
+
+### Компактный live-приём — 10 сентября 2026
+
+Замечания владельца и контракт: [live-marking.md](../../docs/live-marking.md).
+[LiveZoomGrid](../../apps/staff/src/live-marking-grid.tsx) размещает задачи
+адаптивной сеткой с независимыми кнопками оценки и условия;
+[LiveConditionDialog](../../apps/staff/src/live-marking-condition.tsx) открывает
+опубликованный математический документ и возвращает фокус к той же задаче.
+[LiveMarkingPage](../../apps/staff/src/live-marking-page.tsx) сворачивает мобильные
+селекторы очного занятия в настройки, а таблица ограничивает ФИО шириной 112 px
+даже при малом числе задач. Проверки и снимки:
+[отчёт](../../../pwa_tests/reports/live-marking-compact.md).
+Визуальное принятие владельцем остаётся открытым.

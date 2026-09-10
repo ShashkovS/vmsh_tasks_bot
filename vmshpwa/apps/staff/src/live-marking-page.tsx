@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Undo2, UserPlus, Search, ArrowLeft, Check, X } from 'lucide-react'
+import { Undo2, UserPlus, Search, ArrowLeft, Check, X, ChevronDown } from 'lucide-react'
 
 import {
   createLiveMarkingClient,
@@ -32,6 +32,7 @@ import {
 import { studentNameMatchesSearch } from './student-directory-search'
 import { liveCellKey, emptyLiveCell, mergeLiveCells, type LiveSearch } from './live-marking-state'
 import { LiveSchoolGrid, LiveZoomGrid, type MarkDisplay } from './live-marking-grid'
+import { LiveConditionDialog } from './live-marking-condition'
 
 // Page composition: live-marking.md and design-system/05-pages-and-flows.md.
 
@@ -141,6 +142,10 @@ export function LiveMarkingPage({
   const [busy, setBusy] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [findOpen, setFindOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [conditionProblem, setConditionProblem] = useState<LiveBoard['problems'][number] | null>(
+    null,
+  )
   const [visitsOpen, setVisitsOpen] = useState(false)
   const [transferStudent, setTransferStudent] = useState<LiveDirectoryStudent | null>(null)
   const [skippedUndo, setSkippedUndo] = useState<string[]>([])
@@ -462,6 +467,60 @@ export function LiveMarkingPage({
       ? 'Нет синхронизации'
       : 'Сохранено'
 
+  const lessonPicker = lesson ? (
+    <select
+      aria-label="Занятие"
+      value={lesson.lessonId}
+      className="h-11 rounded-md border bg-background px-2 text-sm"
+      onChange={(e) => navigate({ ...search, lesson: e.target.value })}
+    >
+      {lessons.map((l) => (
+        <option key={l.lessonId} value={l.lessonId}>
+          Занятие {l.number}
+        </option>
+      ))}
+    </select>
+  ) : null
+  const schoolSettings = (
+    <>
+      <select
+        aria-label="Очное событие"
+        className="h-11 max-w-44 rounded-md border bg-background px-2 text-sm"
+        value={event?.eventId ?? ''}
+        onChange={(e) =>
+          navigate({ ...search, event: e.target.value, room: undefined, lesson: undefined })
+        }
+      >
+        {catalog.data?.events.map((e) => (
+          <option key={e.eventId} value={e.eventId}>
+            {e.name}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Аудитория"
+        className="h-11 max-w-40 rounded-md border bg-background px-2 text-sm"
+        value={room?.roomId ?? ''}
+        onChange={(e) =>
+          navigate({
+            ...search,
+            event: event?.eventId,
+            room: e.target.value,
+            lesson: undefined,
+          })
+        }
+      >
+        <option value="">Выберите аудиторию</option>
+        {event?.rooms.map((r) => (
+          <option key={r.roomId} value={r.roomId}>
+            {r.name} · {r.groupName}
+          </option>
+        ))}
+      </select>
+      {lessonPicker}
+    </>
+  )
+
   if (!allowed) return <PageStatePanel state="forbidden" />
   if (catalog.isPending) return <PageStatePanel state="loading" />
   if (catalog.error) return <PageStatePanel state="error" />
@@ -470,43 +529,28 @@ export function LiveMarkingPage({
       className="flex h-[calc(100svh-2.5rem)] min-h-0 flex-col bg-background"
       aria-label={mode === 'school' ? 'Очное занятие' : 'Zoom-приём'}
     >
-      <div className="flex shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1">
+      <div className="relative flex shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1">
         {mode === 'school' ? (
           <>
-            <select
-              aria-label="Очное событие"
-              className="h-11 max-w-44 rounded-md border bg-background px-2 text-sm"
-              value={event?.eventId ?? ''}
-              onChange={(e) =>
-                navigate({ ...search, event: e.target.value, room: undefined, lesson: undefined })
-              }
+            <div className="hidden items-center gap-1 sm:flex">{schoolSettings}</div>
+            <Button
+              variant="ghost"
+              className="min-h-11 min-w-0 max-w-36 flex-1 justify-between px-1 sm:hidden"
+              aria-label="Настройки занятия"
+              title={`${room?.name ?? 'Аудитория'} · Занятие ${lesson?.number ?? '—'}`}
+              onClick={(event) => {
+                event.currentTarget.focus()
+                setSettingsOpen(true)
+              }}
             >
-              {catalog.data?.events.map((e) => (
-                <option key={e.eventId} value={e.eventId}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Аудитория"
-              className="h-11 max-w-40 rounded-md border bg-background px-2 text-sm"
-              value={room?.roomId ?? ''}
-              onChange={(e) =>
-                navigate({
-                  ...search,
-                  event: event?.eventId,
-                  room: e.target.value,
-                  lesson: undefined,
-                })
-              }
-            >
-              <option value="">Выберите аудиторию</option>
-              {event?.rooms.map((r) => (
-                <option key={r.roomId} value={r.roomId}>
-                  {r.name} · {r.groupName}
-                </option>
-              ))}
-            </select>
+              <span className="min-w-0 text-left">
+                <span className="block truncate text-sm">{room?.name ?? 'Аудитория'}</span>
+                <span className="block text-[11px] font-normal text-muted-foreground">
+                  Занятие {lesson?.number ?? '—'}
+                </span>
+              </span>
+              <ChevronDown className="size-3 shrink-0" />
+            </Button>
           </>
         ) : (
           <>
@@ -521,7 +565,7 @@ export function LiveMarkingPage({
               </Button>
             ) : null}
             {student ? (
-              <div className="min-w-0 basis-[calc(100%-3rem)] sm:flex-1 sm:basis-48">
+              <div className="min-w-0 basis-[calc(100%-3rem)] pr-5 sm:flex-1 sm:basis-48">
                 <div className="truncate text-sm font-semibold">{student.displayName}</div>
                 <div className="truncate text-xs text-muted-foreground">
                   {[
@@ -557,20 +601,7 @@ export function LiveMarkingPage({
             ) : null}
           </>
         )}
-        {lesson ? (
-          <select
-            aria-label="Занятие"
-            value={lesson.lessonId}
-            className="h-11 rounded-md border bg-background px-2 text-sm"
-            onChange={(e) => navigate({ ...search, lesson: e.target.value })}
-          >
-            {lessons.map((l) => (
-              <option key={l.lessonId} value={l.lessonId}>
-                Занятие {l.number}
-              </option>
-            ))}
-          </select>
-        ) : null}
+        {mode === 'zoom' ? lessonPicker : null}
         {boardEnabled ? (
           <Button
             variant="secondary"
@@ -612,8 +643,23 @@ export function LiveMarkingPage({
             <UserPlus />
           </Button>
         ) : null}
-        <span className="ml-auto px-1 text-[11px] text-muted-foreground" role="status">
-          {compactStatus}
+        <span
+          className={
+            mode === 'zoom' && !scopedPending.length && !isOffline
+              ? 'absolute right-2 top-3 px-1 text-[11px] text-muted-foreground sm:static sm:ml-auto'
+              : 'ml-auto px-1 text-[11px] text-muted-foreground'
+          }
+          role="status"
+          title={compactStatus}
+        >
+          {!scopedPending.length && !isOffline ? (
+            <>
+              <Check className="size-4 sm:hidden" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only">{compactStatus}</span>
+            </>
+          ) : (
+            compactStatus
+          )}
         </span>
       </div>
       {error || queueState.storageError || board.error || cells.error ? (
@@ -729,9 +775,14 @@ export function LiveMarkingPage({
       ) : null}
       {filterBoard && mode === 'zoom' ? (
         <>
-          <LiveZoomGrid board={filterBoard} display={display} onMark={mark} />
-          <div className="shrink-0 border-t bg-background px-2 py-1">
-            <div className="flex gap-1 overflow-x-auto py-1" aria-label="Внутренние пометки">
+          <LiveZoomGrid
+            board={filterBoard}
+            display={display}
+            onMark={mark}
+            onCondition={setConditionProblem}
+          />
+          <div className="shrink-0 border-t bg-background px-2 py-1 sm:flex sm:items-center sm:gap-2">
+            <div className="flex gap-1 overflow-x-auto" aria-label="Внутренние пометки">
               {LIVE_REACTIONS.map((reaction) => (
                 <Button
                   key={reaction.id}
@@ -766,7 +817,7 @@ export function LiveMarkingPage({
                 </Button>
               ))}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 sm:flex-1">
               <Button
                 size="sm"
                 className="min-h-11"
@@ -809,6 +860,27 @@ export function LiveMarkingPage({
           </div>
         </>
       ) : null}
+      {conditionProblem && spec ? (
+        <LiveConditionDialog
+          client={client}
+          accountId={accountId}
+          context={spec}
+          problem={conditionProblem}
+          onClose={() => setConditionProblem(null)}
+        />
+      ) : null}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-h-[85svh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Настройки занятия</DialogTitle>
+            <DialogDescription>Событие, аудитория и список задач</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 [&_select]:w-full [&_select]:max-w-full">
+            {schoolSettings}
+          </div>
+          <Button onClick={() => setSettingsOpen(false)}>Готово</Button>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={findOpen}
         onOpenChange={(open) => {

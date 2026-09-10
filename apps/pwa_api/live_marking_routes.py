@@ -340,3 +340,16 @@ async def post_operation(request):
     except Exception:
         logger.warning("Live-marking invalidation failed after commit", exc_info=True)
     return response
+
+
+@routes.get("/staff/api/v1/live-marking/condition")
+@_checked
+async def get_condition(request):
+    principal = _staff_principal(request)
+    query = dict(request.query)
+    problem_id = _id(query.pop("problemId", None))
+    spec = _context(query)
+    _id(spec.get("lessonId"))
+    return await _run(
+        request, lambda c: domain.condition(c, principal, spec, problem_id)
+    )

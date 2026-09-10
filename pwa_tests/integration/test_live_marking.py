@@ -523,3 +523,33 @@ async def test_legacy_oral_writer_is_a_new_manual_decision_and_recheck_skips_ora
         ),
     )
     assert response.status == 409
+
+
+async def test_live_condition_published_scope_and_read_only(content_http):
+    from urllib.parse import urlencode
+
+    f = content_http
+    problem_id, spec = await setup(f)
+    path = "condition?" + urlencode(dict(spec, problemId=problem_id))
+    response, data = await call(f, "get", path)
+    assert response.status == 200, data
+    assert data["document"]["materialKind"] == "condition"
+    assert len(data["document"]["problems"]) == 1
+    _, cells = await call(f, "get", "cells?" + urlencode(spec))
+    assert cells["cells"] == []
+    # A different staff member cannot read another teacher's session.
+    response, _ = await call(f, "get", path, role="admin")
+    assert response.status == 403
+    response, _ = await call(
+        f, "get", "condition?" + urlencode(dict(spec, problemId="p-missing"))
+    )
+    assert response.status == 404
+    # Removing the publication must not fall back to a draft/latest revision.
+    f.factory.run_write(
+        lambda c: c.execute(
+            "UPDATE lesson_publications SET state='hidden',version=version+1,hidden_at='2027-01-01',terminal_at='2027-01-01',updated_at='2027-01-01',terminal_by_user_id=created_by_user_id WHERE group_lesson_id=(SELECT id FROM group_lessons WHERE public_id=?) AND kind='condition'",
+            (spec["lessonId"],),
+        )
+    )
+    response, _ = await call(f, "get", path)
+    assert response.status == 404

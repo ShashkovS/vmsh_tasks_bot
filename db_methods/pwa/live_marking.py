@@ -605,3 +605,24 @@ def owner_accounts(connection, student_public_id):
         if student is None
         else list_assignment_owner_accounts(connection, (student["id"],))
     )
+
+
+def condition_document(connection, lesson_id, problem_id):
+    """Published condition including its shared stem/subparts; live-marking.md."""
+    material = connection.execute(
+        """SELECT d.content_text,pr.source_ordinal
+        FROM lesson_publications lp
+        JOIN problem_revisions pr ON pr.content_revision_id=lp.revision_id
+        JOIN content_derivatives d ON d.revision_id=lp.revision_id
+          AND d.kind='web_ast' AND d.invalidated_at IS NULL
+        WHERE lp.group_lesson_id=? AND lp.kind='condition' AND lp.state='published'
+          AND pr.problem_id=? ORDER BY d.id DESC LIMIT 1""",
+        (lesson_id, problem_id),
+    ).fetchone()
+    if material is None:
+        return None
+    document = json.loads(material["content_text"])
+    document["problems"] = [
+        p for p in document["problems"] if p["ordinal"] == material["source_ordinal"]
+    ]
+    return document if document["problems"] else None

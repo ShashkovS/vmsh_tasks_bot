@@ -307,3 +307,21 @@ Gates: 45 focused Python, 21 legacy, 9 production E2E (три браузера),
 на прежний общий файл описано в `pwa_tests/reports/live-marking.md` вместе с
 логами, ограничениями и мобильными снимками.
 10 сентября 2026 владелец разрешил commit и push в текущую ветку `vmshpwa`.
+
+
+## Компактный live-приём — 10 сентября 2026, проверено
+
+По замечаниям владельца перерабатывается плотность Zoom и мобильного очного
+экрана. Полноширинные карточки Zoom отклонены; задачи размещаются сеткой,
+условия открываются отдельным действием. На телефоне ФИО ограничено 112 px,
+селекторы очного занятия убраны в настройки. Контракт и реализация:
+[контракт](../../docs/live-marking.md),
+[сетка](../../apps/staff/src/live-marking-grid.tsx),
+[страница](../../apps/staff/src/live-marking-page.tsx),
+[условие](../../apps/staff/src/live-marking-condition.tsx).
+Backend: **11 passed**; Storybook/axe: **6 passed**; Chromium/WebKit/Firefox:
+**9 E2E passed** на финальной production-сборке. TypeScript, ESLint, Prettier,
+Ruff прошли. Снимки mobile/desktop/light/dark просмотрены;
+[отчёт и доказательства](../../../pwa_tests/reports/live-marking-compact.md).
+Визуальное принятие владельцем остаётся открытым.
+10 сентября владелец разрешил commit и push этого изменения в `vmshpwa`.

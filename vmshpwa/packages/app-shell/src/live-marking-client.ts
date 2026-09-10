@@ -3,6 +3,7 @@ import {
   apiErrorSchema,
   parseRuntimeConfigForAudience,
   liveBoardSchema,
+  liveConditionSchema,
   liveCatalogSchema,
   liveCellsSchema,
   liveDirectorySchema,
@@ -59,6 +60,10 @@ export function createLiveMarkingClient(runtime: RuntimeConfig, refresh?: () => 
       ),
     board: async (context: LiveContext) =>
       liveBoardSchema.parse(await request(`/board?${query(context)}`)),
+    condition: async (context: LiveContext, problemId: string) =>
+      liveConditionSchema.parse(
+        await request(`/condition?${query(context)}&problemId=${encodeURIComponent(problemId)}`),
+      ),
     cells: async (context: LiveContext, previous?: LiveCells) =>
       liveCellsSchema.parse(
         await request(

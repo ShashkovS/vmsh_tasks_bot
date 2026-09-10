@@ -790,3 +790,18 @@ def undo(connection, principal, command, now):
         undoable=False,
     )
     return dict(operationId=command["operationId"], replayed=False, state=state)
+
+
+def condition(connection, principal, spec, problem_id):
+    _, lesson = lesson_context(connection, principal, spec)
+    problem = require(
+        next(
+            (
+                p
+                for p in db.problems(connection, lesson["id"])
+                if p["public_id"] == problem_id
+            ),
+            None,
+        )
+    )
+    return dict(document=db.condition_document(connection, lesson["id"], problem["id"]))

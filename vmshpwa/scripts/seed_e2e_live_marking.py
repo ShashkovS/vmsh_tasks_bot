@@ -1,12 +1,66 @@
 """Isolated live-marking browser personas/events; vmshpwa/docs/live-marking.md."""
 
 import sqlite3
+import json
+import hashlib
 
 from vmshpwa.scripts.runtime_guard import require_pwa_profile_environment
 from vmshpwa.scripts.seed_e2e_oral import _require_e2e_target, _seed, TIMESTAMP
 from db_methods.pwa.classroom_assignments import insert_plan, confirm_plan
 
 TARGETS = (("live-chromium", 931), ("live-webkit", 932), ("live-firefox", 933))
+
+
+def _dense_problems(c, lesson_id):
+    # live-marking.md: realistic density, isolated from the legacy oral fixture.
+    if (
+        c.execute(
+            "SELECT count(*) FROM problem_revisions WHERE content_revision_id=?",
+            (lesson_id,),
+        ).fetchone()[0]
+        > 1
+    ):
+        return
+    for number in range(2, 25):
+        problem_id = c.execute(
+            """INSERT INTO problems(group_id,lesson,prob,item,title,prob_text,prob_type,ans_type,
+              ans_validation,validation_error,cor_ans,wrong_ans,congrat,synonyms)
+            SELECT group_id,lesson,?,'',title,prob_text,3,0,'','','','','',''
+            FROM problems WHERE id=? RETURNING id""",
+            (number, lesson_id),
+        ).fetchone()["id"]
+        c.execute(
+            """INSERT INTO content_problem_matches(content_revision_id,source_ordinal,source_item,
+            problem_id,decision,resolved_by_user_id,resolved_at,diagnostics_json,created_at)
+            VALUES(?,?,?,?,'manual_match',301,?,'[]',?)""",
+            (lesson_id, number, str(number), problem_id, TIMESTAMP, TIMESTAMP),
+        )
+        c.execute(
+            """INSERT INTO problem_revisions(problem_id,content_revision_id,source_ordinal,source_item,
+            display_number,title,normalized_title,problem_type,answer_type,answer_config_json,
+            attempt_policy_json,config_version,created_at)
+            VALUES(?,?,?,?,?,'Расскажите решение','расскажите решение',3,NULL,'{}','{}',1,?)""",
+            (problem_id, lesson_id, number, str(number), str(number), TIMESTAMP),
+        )
+    row = c.execute(
+        "SELECT id,content_text FROM content_derivatives WHERE revision_id=? AND kind='web_ast'",
+        (lesson_id,),
+    ).fetchone()
+    document = json.loads(row["content_text"])
+    template = document["problems"][0]
+    document["problems"] = [
+        dict(template, ordinal=n, sourceItem=str(n)) for n in range(1, 25)
+    ]
+    encoded = json.dumps(document, ensure_ascii=False)
+    c.execute(
+        "UPDATE content_derivatives SET invalidated_at=? WHERE id=?",
+        (TIMESTAMP, row["id"]),
+    )
+    c.execute(
+        """INSERT INTO content_derivatives(revision_id,kind,renderer_version,content_text,sha256,diagnostics_json,provenance_json,created_at)
+        VALUES(?,'web_ast','live-dense-v1',?,?,'[]','{}',?)""",
+        (lesson_id, encoded, hashlib.sha256(encoded.encode()).hexdigest(), TIMESTAMP),
+    )
 
 
 def seed(config):
@@ -16,6 +70,7 @@ def seed(config):
         c.execute("PRAGMA foreign_keys=ON")
         _seed(c, TARGETS)
         for project, lesson_id in TARGETS:
+            _dense_problems(c, lesson_id)
             fixture_id = 19000 + lesson_id
             if c.execute("SELECT 1 FROM users WHERE id=?", (fixture_id,)).fetchone():
                 continue

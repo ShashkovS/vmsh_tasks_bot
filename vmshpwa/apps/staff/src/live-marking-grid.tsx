@@ -2,6 +2,7 @@ import { memo, useRef, useLayoutEffect, useCallback } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { LiveBoard } from '@vmsh/contracts'
 import { cn } from '@vmsh/ui'
+import { BookOpen } from 'lucide-react'
 
 // live-marking.md: dense touch table, fixed names/header, independent authorship
 // and pending/change indicators. Both routes use the same cell interaction.
@@ -136,12 +137,12 @@ export function LiveSchoolGrid({
       className="min-h-0 flex-1 overflow-auto overscroll-contain"
       aria-label="Таблица очного занятия"
     >
-      <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+      <table className="w-max border-separate border-spacing-0 text-sm">
         <thead className="sticky top-0 z-30 bg-background">
           <tr>
             <th
               scope="col"
-              className="sticky left-0 z-30 w-40 min-w-40 border-b border-r bg-background px-2 py-2 text-left"
+              className="sticky left-0 z-30 w-28 min-w-28 max-w-28 border-b border-r bg-background px-1 py-2 text-left text-xs sm:w-40 sm:min-w-40 sm:max-w-40 sm:px-2 sm:text-sm"
             >
               Школьник
             </th>
@@ -179,13 +180,13 @@ export function LiveSchoolGrid({
                 <th
                   scope="row"
                   className={cn(
-                    'sticky left-0 z-20 w-40 max-w-40 border-b border-r bg-background p-0 text-left',
+                    'sticky left-0 z-20 w-28 min-w-28 max-w-28 border-b border-r bg-background p-0 text-left sm:w-40 sm:min-w-40 sm:max-w-40',
                     expanded === student.studentId && 'bg-accent',
                   )}
                 >
                   <button
                     type="button"
-                    className="flex min-h-11 w-full flex-col justify-center px-2 py-1 text-left leading-tight focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-h-11 w-28 max-w-28 flex-col justify-center break-words px-1 py-1 text-left text-xs font-medium leading-tight sm:w-40 sm:max-w-40 sm:px-2 sm:text-sm sm:font-semibold focus-visible:ring-2 focus-visible:ring-ring"
                     style={{ minHeight: expanded === student.studentId ? 88 : 44 }}
                     onClick={() => onExpand(student.studentId)}
                     aria-expanded={expanded === student.studentId}
@@ -242,53 +243,63 @@ export function LiveSchoolGrid({
   )
 }
 
+// live-marking.md, compact revision: label + two independent 44px actions.
+// Tasks follow publication order; subparts keep their full label when wrapping.
 export function LiveZoomGrid({
   board,
   display,
   onMark,
-}: Pick<LiveSchoolGridProps, 'board' | 'display' | 'onMark'>) {
+  onCondition,
+}: Pick<LiveSchoolGridProps, 'board' | 'display' | 'onMark'> & {
+  onCondition: (problem: LiveBoard['problems'][number]) => void
+}) {
   const mark = useMarkAction(onMark)
   const student = board.students[0]
   if (!student) return <p className="p-4">Школьник не найден.</p>
-  const groups = new Map<number, LiveBoard['problems']>()
-  for (const p of board.problems) groups.set(p.number, [...(groups.get(p.number) ?? []), p])
   return (
-    <div className="min-h-0 flex-1 overflow-auto p-2" aria-label="Оценки школьника">
-      <div className="mx-auto max-w-3xl space-y-2">
-        {[...groups].map(([number, problems]) => (
-          <div key={number} className="flex items-stretch gap-2 rounded-lg border p-2">
+    <div
+      className="min-h-0 flex-1 overflow-auto overscroll-contain p-2"
+      aria-label="Оценки школьника"
+    >
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(5.625rem,1fr))] content-start gap-1">
+        {board.problems.map((p) => (
+          <div key={p.problemId} className="min-w-0 overflow-hidden rounded-md border">
             <div
-              className="flex w-8 shrink-0 items-center justify-center font-semibold text-muted-foreground"
-              aria-hidden="true"
+              className="bg-muted px-1 text-center text-xs font-semibold leading-5"
+              title={p.title}
             >
-              {number}
+              {p.label}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {problems.map((p) => (
-                <div key={p.problemId} className="w-16 overflow-hidden rounded-md border">
-                  <div className="bg-muted px-1 py-0.5 text-center text-xs" title={p.title}>
-                    {p.label}
-                  </div>
-                  <div className="h-14">
-                    <LiveMarkButton
-                      label={`Задача ${p.label}`}
-                      display={display(student.studentId, p.problemId)}
-                      onMark={mark}
-                      studentId={student.studentId}
-                      problemId={p.problemId}
-                    />
-                  </div>
-                </div>
-              ))}
+            <div className="flex h-11">
+              <LiveMarkButton
+                label={`Задача ${p.label}`}
+                display={display(student.studentId, p.problemId)}
+                onMark={mark}
+                studentId={student.studentId}
+                problemId={p.problemId}
+              />
+              <button
+                type="button"
+                className="flex h-11 w-11 shrink-0 items-center justify-center border-l text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                aria-label={`Показать условие задачи ${p.label}`}
+                title="Показать условие"
+                onClick={(event) => {
+                  // Safari does not focus buttons on pointer click; restore this target after the dialog.
+                  event.currentTarget.focus()
+                  onCondition(p)
+                }}
+              >
+                <BookOpen className="size-4" aria-hidden="true" />
+              </button>
             </div>
           </div>
         ))}
-        {groups.size === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">
-            Устных задач нет. Переключитесь на «Все».
-          </p>
-        ) : null}
       </div>
+      {board.problems.length === 0 ? (
+        <p className="p-4 text-sm text-muted-foreground">
+          Устных задач нет. Переключитесь на «Все».
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -28,6 +28,34 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   page.on('request', (request) => {
     if (request.method() === 'POST' && request.url().endsWith('/live-marking/operations')) writes++
   })
+  const marks = page.getByRole('button', { name: /^Задача / })
+  await expect(marks).toHaveCount(24)
+  const firstBox = await marks.first().boundingBox()
+  const lastBox = await marks.last().boundingBox()
+  expect(lastBox!.y - firstBox!.y).toBeLessThan(380)
+  expect(lastBox!.y + lastBox!.height).toBeLessThan(740)
+  const conditionButton = page.getByRole('button', {
+    name: 'Показать условие задачи 1',
+    exact: true,
+  })
+  await conditionButton.click()
+  await expect(page.getByRole('dialog')).toContainText('Расскажите решение преподавателю')
+  await page.screenshot({
+    path: info.outputPath('live-condition-mobile.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'К оценкам' }).click()
+  await expect(conditionButton).toBeFocused()
+  await expect(cell).toHaveAccessibleName(/пусто/)
+  expect(writes).toBe(0)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.screenshot({
+    path: info.outputPath('live-zoom-desktop.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
   await cell.click()
   await cell.click()
   await cell.click()
@@ -57,7 +85,24 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   )
   await page.getByRole('button', { name: 'Похвалить ученика' }).click()
   await expect(page.getByRole('button', { name: 'Похвала отправлена' })).toBeVisible()
-  await page.screenshot({ path: info.outputPath('live-zoom-mobile.png'), fullPage: true })
+  await page.screenshot({
+    path: info.outputPath('live-zoom-mobile.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
+  await page.screenshot({
+    path: info.outputPath('live-zoom-mobile-dark.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'Переключить на светлую тему' }).click()
+  await page.setViewportSize({ width: 320, height: 640 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  expect((await cell.boundingBox())!.width).toBeGreaterThanOrEqual(44)
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('button', { name: /За сессию/ }).click()
   await expect(page.getByRole('dialog')).toContainText('Тестовый-Онлайн Алексей')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -113,5 +158,21 @@ test('Live classroom: teacher transfer, attendance and another teacher sees the 
   await expect(page.getByRole('button', { name: `${student}: Отсутствует` })).toHaveCount(0)
   await page.getByRole('button', { name: 'Пришли', exact: true }).click()
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.screenshot({ path: info.outputPath('live-classroom-mobile.png'), fullPage: true })
+  const settings = page.getByRole('button', { name: 'Настройки занятия' })
+  const settingsBox = await settings.boundingBox()
+  const filterBox = await page.getByRole('button', { name: 'Все', exact: true }).boundingBox()
+  expect(Math.abs(settingsBox!.y - filterBox!.y)).toBeLessThan(5)
+  const nameBox = await page.getByRole('rowheader').filter({ hasText: student }).boundingBox()
+  expect(nameBox!.width).toBeLessThanOrEqual(114)
+  await settings.click()
+  await expect(
+    page.getByRole('dialog').getByRole('combobox', { name: 'Аудитория', exact: true }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Готово', exact: true }).click()
+  await expect(settings).toBeFocused()
+  await page.screenshot({
+    path: info.outputPath('live-classroom-mobile.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
 })
