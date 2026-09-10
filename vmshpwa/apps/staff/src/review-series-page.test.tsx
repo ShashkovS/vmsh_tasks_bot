@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => {
     release: vi.fn(),
     correct: vi.fn(),
     historyDetail: vi.fn(),
+    seriesCondition: vi.fn(),
+    seriesHistory: vi.fn(),
+    seriesCurrent: vi.fn(),
   }
   const principal = { accountId: 'u-1', audience: 'staff' as const }
   const authentication = {
@@ -34,6 +37,9 @@ vi.mock('./review-workspace-page', async () => {
   const { useEffect } = await import('react')
   return {
     ReviewReadOnlyEvidence: () => null,
+    ReviewedWorkSnapshot: ({ comment }: { comment: string }) => (
+      <p>Проверенная работа: {comment}</p>
+    ),
     LoadedReviewWorkspace: ({
       queueId,
       inactive,
@@ -82,6 +88,14 @@ function lease(id: string): ReviewLease {
   }
 }
 beforeEach(() => {
+  mocks.client.seriesCondition.mockResolvedValue({ label: '1н.1 · Задача', document: null })
+  mocks.client.seriesHistory.mockResolvedValue({ items: [], nextCursor: null })
+  mocks.client.seriesCurrent.mockImplementation((): unknown => mocks.client.historyDetail())
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: vi.fn(),
+  })
+  vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
   const values = new Map<string, string>()
   Object.defineProperty(window, 'localStorage', {
     configurable: true,
@@ -194,6 +208,14 @@ it('prepares only one next work, promotes its existing render and releases remai
   await waitFor(() => expect(screen.getByRole('button', { name: nextId })).toBeTruthy())
   expect(mocks.mounts.get(nextId)).toBe(1)
   expect(mocks.client.claim).toHaveBeenCalledTimes(2)
+  expect(mocks.client.seriesHistory).not.toHaveBeenCalled()
+  mocks.client.seriesHistory.mockResolvedValue({
+    items: [{ reviewId: 'r-older', materialKey: '' }],
+    nextCursor: null,
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Показать предыдущие 20 проверок' }))
+  await waitFor(() => expect(mocks.client.seriesHistory).toHaveBeenCalledWith('p-1', undefined))
+  expect(screen.getAllByText(/Проверенная работа:/)).toHaveLength(1)
   mocks.client.correct.mockResolvedValue({ correction: { reviewId: 'r-2' } })
   mocks.client.historyDetail.mockResolvedValue({
     detail: {

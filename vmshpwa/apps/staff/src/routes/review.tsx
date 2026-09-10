@@ -1,11 +1,15 @@
-import { createFileRoute, Outlet, Link } from '@tanstack/react-router'
+import { createFileRoute, Outlet, Link, useRouterState } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useAuthentication, useAuthenticatedPrincipal } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace } from '@vmsh/contracts'
 import { lastCompletedReview } from '../last-completed-review'
+import { buttonVariants } from '@vmsh/ui'
 
 export const Route = createFileRoute('/review')({ component: ReviewNavigation })
 function ReviewNavigation() {
+  const inHistory = useRouterState({
+    select: (state) => state.location.pathname.includes('/review/history'),
+  })
   const auth = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   const namespace = createBrowserStorageNamespace(auth.client.runtime)
@@ -18,12 +22,33 @@ function ReviewNavigation() {
   }, [namespace, principal.accountId])
   return (
     <>
-      <nav aria-label="Проверки" className="flex flex-wrap gap-4 py-3">
-        <Link to="/review">Очередь</Link>
-        <Link to="/review/history">Завершённые проверки</Link>
+      <nav
+        aria-label="Проверки"
+        className="mx-4 mb-3 flex flex-wrap items-center gap-2 border-b border-border py-3"
+      >
+        <Link
+          className={buttonVariants({ variant: inHistory ? 'outline' : 'default', size: 'sm' })}
+          aria-current={!inHistory ? 'page' : undefined}
+          activeProps={{ 'aria-current': 'page' }}
+          activeOptions={{ exact: true }}
+          to="/review"
+        >
+          Очередь
+        </Link>
+        <Link
+          className={buttonVariants({ variant: inHistory ? 'default' : 'outline', size: 'sm' })}
+          activeProps={{ 'aria-current': 'page' }}
+          to="/review/history"
+        >
+          Проверено
+        </Link>
         {last && (
-          <Link to="/review/history" search={{ review: last }}>
-            Исправить последнюю свою проверку
+          <Link
+            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            to="/review/history"
+            search={{ review: last }}
+          >
+            Исправить последнюю
           </Link>
         )}
       </nav>

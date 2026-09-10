@@ -277,6 +277,10 @@
       {
         "id": "0087.pwa_live_marking",
         "sha256": "8600638c0871183dd0412e5831dbe08bd58b660b9dca2fc30cac19ba4c665d4e"
+      },
+      {
+        "id": "0087.pwa_review_entry_transfers",
+        "sha256": "566ca00c7e03edbaa45b7149cede96a8a656374c956b2b164b64069bb1eef345"
       }
     ],
     "repository_head_status": {
@@ -287,7 +291,7 @@
     }
   },
   "product": {
-    "object_count": 446,
+    "object_count": 450,
     "objects": [
       {
         "columns": [
@@ -20288,6 +20292,192 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "mode",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "target_entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "response_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "source_entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "target_entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "actor_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_entry_transfers_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "submission_entry_transfers_source_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_entry_transfers",
+        "object_sha256": "10ed91647019ef7e9ea80df4aa9bc3d3be818ef2e78124a97ad56c894f69e0cf",
+        "sql": "CREATE TABLE submission_entry_transfers (\n id INTEGER PRIMARY KEY,\n actor_user_id INTEGER NOT NULL REFERENCES users(id),\n idempotency_key TEXT NOT NULL,\n payload_sha256 TEXT NOT NULL,\n mode TEXT NOT NULL CHECK(mode IN ('move', 'clone')),\n source_entry_id INTEGER NOT NULL REFERENCES submission_entries(id),\n target_entry_id INTEGER NOT NULL REFERENCES submission_entries(id),\n created_at TEXT NOT NULL,\n response_json TEXT NOT NULL,\n UNIQUE(actor_user_id, idempotency_key)\n);",
+        "table_name": "submission_entry_transfers",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "reassignment_id",
             "not_null": true,
             "primary_key_ordinal": 1
@@ -26900,6 +27090,13 @@
         "type": "index"
       },
       {
+        "name": "submission_entry_transfers_source_idx",
+        "object_sha256": "6102c6667e70a4986ae8eebf993affe20365fa5edbd9f7fd6ec2398ae5dfb5b9",
+        "sql": "CREATE INDEX submission_entry_transfers_source_idx ON submission_entry_transfers(source_entry_id);",
+        "table_name": "submission_entry_transfers",
+        "type": "index"
+      },
+      {
         "name": "submission_material_reassignment_items_projection_idx",
         "object_sha256": "ce2c65c4bbc0434fa56037b2d9793d66e7f6d664ed0faa0c319946523ce993bf",
         "sql": "CREATE INDEX submission_material_reassignment_items_projection_idx\n    on submission_material_reassignment_items\n       (source_entry_id, item_kind, attachment_id, reassignment_id, ordinal);",
@@ -27936,6 +28133,20 @@
         "type": "trigger"
       },
       {
+        "name": "submission_entry_transfers_delete_forbidden",
+        "object_sha256": "87bec35ca744ec5ea87bb39bb5af3b21fcb7571e032358bc289092ecfcf594ee",
+        "sql": "CREATE TRIGGER submission_entry_transfers_delete_forbidden BEFORE DELETE ON submission_entry_transfers\nBEGIN SELECT RAISE(ABORT, 'entry transfer deletion is forbidden'); END;",
+        "table_name": "submission_entry_transfers",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entry_transfers_immutable",
+        "object_sha256": "ea8af087ec16bd333994252898b589da3b61a2178384de083bf8bb46655a41ca",
+        "sql": "CREATE TRIGGER submission_entry_transfers_immutable BEFORE UPDATE ON submission_entry_transfers\nBEGIN SELECT RAISE(ABORT, 'entry transfer is immutable'); END;",
+        "table_name": "submission_entry_transfers",
+        "type": "trigger"
+      },
+      {
         "name": "submission_material_reassignment_items_delete_forbidden",
         "object_sha256": "97ad82a44c80edb0133bcf1c5be8a90962b9055b8a5ae91d2ae3df9e4cb0968e",
         "sql": "CREATE TRIGGER submission_material_reassignment_items_delete_forbidden\nbefore delete on submission_material_reassignment_items\nfor each row\nbegin\n    select raise(abort, 'submission reassignment item deletion is forbidden');\nend;",
@@ -28189,8 +28400,8 @@
       },
       {
         "name": "submission_threads_state_transition_guard",
-        "object_sha256": "c106f8d5549aac8546f3eee3934e0cfa2a7cfea89a84675ce2aab709078b8ae3",
-        "sql": "CREATE TRIGGER submission_threads_state_transition_guard\nbefore update of status on submission_threads\nfor each row\nwhen new.status is not old.status and not (\n    (old.status = 'open' and new.status in ('awaiting_review', 'closed'))\n    or (\n        old.status = 'awaiting_review'\n        and new.status in ('needs_work', 'accepted', 'closed')\n    )\n    or (\n        old.status in ('needs_work', 'accepted')\n        and new.status in ('awaiting_review', 'closed')\n    )\n)\nbegin\n    select raise(abort, 'invalid submission thread state transition');\nend;",
+        "object_sha256": "e60b4fa2761a9caede62fe82d3d2b8655e94549ee8378999cf35c254bd03dbd3",
+        "sql": "CREATE TRIGGER submission_threads_state_transition_guard BEFORE UPDATE OF status ON submission_threads\nFOR EACH ROW WHEN new.status IS NOT old.status AND NOT (\n (old.status='open' AND new.status IN ('awaiting_review','closed')) OR\n (old.status='awaiting_review' AND new.status IN ('needs_work','accepted','closed')) OR\n (old.status IN ('needs_work','accepted') AND new.status IN ('awaiting_review','closed')) OR\n (old.status='closed' AND new.status='awaiting_review' AND EXISTS (\n   SELECT 1 FROM submission_entry_transfers transfer JOIN submission_entries entry ON entry.id=transfer.target_entry_id\n   WHERE entry.thread_id=old.id AND entry.state='submitted' AND transfer.created_at=new.updated_at\n   AND NOT EXISTS(SELECT 1 FROM submission_review_evidence_entries evidence WHERE evidence.entry_id=entry.id)\n ))\n)\nBEGIN SELECT RAISE(ABORT,'invalid submission thread state transition'); END;",
         "table_name": "submission_threads",
         "type": "trigger"
       },
@@ -28293,8 +28504,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "6852077771f3d5833bbaaeb7dbab1a07a59e65821f20d8a79cce87aa7db8ad38",
-    "sha256": "77681072c59c9d365b09c173f7272769e69b01d2b1b1814f008168fbe0d7fac5"
+    "pragma_structure_sha256": "b023916bd027bfbd3f3b26f462b41dceae460622bbb7650a1c91d0e0b0602fb4",
+    "sha256": "7f1a54709aa1623932fb561f39619fee6372676137a401bfd6486208acec875b"
   },
   "source_kind": "repository-migration-head"
 }

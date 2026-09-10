@@ -919,6 +919,14 @@ def _required_public_id(value: object, *, field: str) -> str:
 
 
 def _translate_queue_error(error: Exception) -> PwaApiError:
+    from models.pwa.review_transfers import ReviewTransferChanged
+
+    if isinstance(error, ReviewTransferChanged):
+        return PwaApiError(
+            status=409,
+            code="review_transfer_changed",
+            message="Посылка или её блокировка изменились. Обновите предпросмотр перед переносом.",
+        )
     if isinstance(error, ReviewQueueNotFound):
         return PwaApiError(
             status=404,
@@ -1433,6 +1441,191 @@ async def completed_review_history(request: web.Request) -> web.Response:
         }
 
     return web.json_response(await database.factory.run_read_async(read))
+
+
+@review_routes.get("/staff/api/v1/review/series/{problem_id}/{projection}")
+async def serial_review_projection(request):
+    from db_methods.pwa import review_series
+
+    actor, scope = _require_review_write(request)
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+    kind = request.match_info["projection"]
+    problem = request.match_info["problem_id"]
+    if kind not in ("history", "condition", "current") or not _PUBLIC_ID.fullmatch(
+        problem
+    ):
+        raise PwaApiError(status=404, code="not_found", message="Не найдено")
+    allowed = {"history": {"cursor"}, "condition": {"entry"}, "current": {"review"}}[
+        kind
+    ]
+    if set(request.query) - allowed or any(
+        not _PUBLIC_ID.fullmatch(v) for v in request.query.values()
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте параметры"
+        )
+
+    def read(c):
+        if kind == "history":
+            return review_series.history(
+                c, scope, actor, problem, request.query.get("cursor")
+            )
+        if kind == "current":
+            detail = review_series.current_detail(
+                c, scope, actor, request.query.get("review")
+            )
+            if detail is not None:
+                return {"schemaVersion": 1, "detail": detail}
+        else:
+            result = review_series.condition(
+                c, scope, problem, request.query.get("entry")
+            )
+            if result is not None:
+                return result
+        raise PwaApiError(
+            status=404,
+            code="review_not_found",
+            message="Материал не найден или недоступен",
+        )
+
+    return web.json_response(await database.factory.run_read_async(read))
+
+
+@review_routes.post("/staff/api/v1/review/items/{queue_public_id}/transfer-preview")
+async def preview_review_transfer(request):
+    from models.pwa.review_transfers import preview
+
+    actor, scope = _require_review_write(request)
+    body = await _json_object(
+        request, required_fields=frozenset({"schemaVersion", "entryId", "claimToken"})
+    )
+    if any(
+        not isinstance(body[k], str) or not _PUBLIC_ID.fullmatch(body[k])
+        for k in ("entryId", "claimToken")
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте посылку"
+        )
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+    try:
+        result = await database.factory.run_read_async(
+            lambda c: preview(
+                c,
+                entry_id=body["entryId"],
+                queue_id=_queue_public_id(request),
+                claim_token=body["claimToken"],
+                actor=actor,
+                scope=scope,
+            )
+        )
+    except (ReviewQueueNotFound, ReviewQueueForbidden, ReviewLeaseConflict) as error:
+        raise _translate_queue_error(error) from error
+    return web.json_response(result)
+
+
+@review_routes.post("/staff/api/v1/review/items/{queue_public_id}/transfer")
+async def transfer_review_entry(request):
+    from models.pwa.review_transfers import execute
+    from db_methods.pwa.review_transfers import source
+    from db_methods.pwa.reviews import _review_recipient_account_public_ids
+
+    actor, scope = _require_review_write(request)
+    fields = frozenset(
+        {
+            "schemaVersion",
+            "entryId",
+            "claimToken",
+            "targetProblemId",
+            "sourceVersion",
+            "entryVersion",
+            "targetVersion",
+            "targetThreadId",
+            "mode",
+            "idempotencyKey",
+        }
+    )
+    body = await _json_object(request, required_fields=fields)
+    if (
+        body["mode"] not in ("move", "clone")
+        or (
+            body["targetThreadId"] is not None
+            and (
+                not isinstance(body["targetThreadId"], str)
+                or not _PUBLIC_ID.fullmatch(body["targetThreadId"])
+            )
+        )
+        or any(
+            not isinstance(body[k], str) or not _PUBLIC_ID.fullmatch(body[k])
+            for k in ("entryId", "claimToken", "targetProblemId", "idempotencyKey")
+        )
+        or any(
+            type(body[k]) is not int or body[k] < 0
+            for k in ("sourceVersion", "entryVersion", "targetVersion")
+        )
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте параметры переноса"
+        )
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+
+    def write(c):
+        verb = "Перенесено" if body["mode"] == "move" else "Скопировано"
+        result = execute(
+            c,
+            payload=body,
+            queue_id=_queue_public_id(request),
+            actor=actor,
+            scope=scope,
+            notices=(
+                verb + " преподавателем в задачу {target}.",
+                verb + " преподавателем из задачи {source}.",
+            ),
+        )
+        original = source(c, body["entryId"])
+        owners, families = _review_recipient_account_public_ids(
+            c, student_user_id=original["student_user_id"]
+        )
+        return (
+            result,
+            owners,
+            families,
+            (original["problem_public_id"], result["targetProblemId"]),
+        )
+
+    try:
+        result, owners, families, problems = await database.factory.run_write_async(
+            write
+        )
+    except (ReviewQueueNotFound, ReviewQueueForbidden, ReviewLeaseConflict) as error:
+        raise _translate_queue_error(error) from error
+    await _invalidate_review_queue(request, reason="review-entry-transferred")
+    invalidator = request.app.get(PWA_REVIEW_COMPLETION_INVALIDATOR)
+    if invalidator is not None:
+        try:
+            await invalidator(owners, families, problems, "review-entry-transferred")
+        except Exception:
+            logger.warning(
+                "Review transfer invalidation failed after commit", exc_info=True
+            )
+    return web.json_response(result)
 
 
 @review_routes.post("/staff/api/v1/reviews/{review_public_id}/correction")

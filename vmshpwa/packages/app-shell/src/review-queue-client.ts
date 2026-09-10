@@ -1,5 +1,15 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  reviewSeriesHistorySchema,
+  reviewSeriesConditionSchema,
+  type ReviewSeriesHistory,
+  type ReviewSeriesCondition,
+  reviewTransferPreviewSchema,
+  reviewTransferRequestSchema,
+  reviewTransferResponseSchema,
+  type ReviewTransferPreview,
+  type ReviewTransferRequest,
+  type ReviewTransferResponse,
   ApiResponseError,
   reviewHistoryResponseSchema,
   reviewHistoryDetailResponseSchema,
@@ -52,6 +62,15 @@ export interface ReviewQueueClientOptions {
 }
 
 export interface ReviewQueueClient {
+  seriesHistory(problemId: string, cursor?: string): Promise<ReviewSeriesHistory>
+  seriesCondition(problemId: string, entryId?: string): Promise<ReviewSeriesCondition>
+  seriesCurrent(problemId: string, reviewId: string): Promise<ReviewHistoryDetailResponse>
+  transferPreview(
+    queueId: string,
+    entryId: string,
+    claimToken: string,
+  ): Promise<ReviewTransferPreview>
+  transfer(queueId: string, request: ReviewTransferRequest): Promise<ReviewTransferResponse>
   history(
     query: Record<string, string>,
     options?: ReviewQueueRequestOptions,
@@ -121,6 +140,33 @@ interface ResponseParser<T> {
 }
 
 class BrowserReviewQueueClient implements ReviewQueueClient {
+  async seriesHistory(problemId: string, cursor?: string): Promise<ReviewSeriesHistory> {
+    return this.#jsonRequest(
+      `/review/series/${encodeURIComponent(publicIdSchema.parse(problemId))}/history${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+      'GET',
+      undefined,
+      {},
+      reviewSeriesHistorySchema,
+    )
+  }
+  async seriesCondition(problemId: string, entryId?: string): Promise<ReviewSeriesCondition> {
+    return this.#jsonRequest(
+      `/review/series/${encodeURIComponent(publicIdSchema.parse(problemId))}/condition${entryId ? `?entry=${encodeURIComponent(entryId)}` : ''}`,
+      'GET',
+      undefined,
+      {},
+      reviewSeriesConditionSchema,
+    )
+  }
+  async seriesCurrent(problemId: string, reviewId: string): Promise<ReviewHistoryDetailResponse> {
+    return this.#jsonRequest(
+      `/review/series/${encodeURIComponent(publicIdSchema.parse(problemId))}/current?review=${encodeURIComponent(publicIdSchema.parse(reviewId))}`,
+      'GET',
+      undefined,
+      {},
+      reviewHistoryDetailResponseSchema,
+    )
+  }
   async history(
     query: Record<string, string>,
     options: ReviewQueueRequestOptions = {},
@@ -131,6 +177,32 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
       undefined,
       options,
       reviewHistoryResponseSchema,
+    )
+  }
+  async transferPreview(
+    queueId: string,
+    entryId: string,
+    claimToken: string,
+  ): Promise<ReviewTransferPreview> {
+    return this.#jsonRequest(
+      `/review/items/${encodeURIComponent(publicIdSchema.parse(queueId))}/transfer-preview`,
+      'POST',
+      JSON.stringify({
+        schemaVersion: 1,
+        entryId: publicIdSchema.parse(entryId),
+        claimToken: publicIdSchema.parse(claimToken),
+      }),
+      {},
+      reviewTransferPreviewSchema,
+    )
+  }
+  async transfer(queueId: string, request: ReviewTransferRequest): Promise<ReviewTransferResponse> {
+    return this.#jsonRequest(
+      `/review/items/${encodeURIComponent(publicIdSchema.parse(queueId))}/transfer`,
+      'POST',
+      JSON.stringify(reviewTransferRequestSchema.parse(request)),
+      {},
+      reviewTransferResponseSchema,
     )
   }
   async historyDetail(

@@ -19,6 +19,77 @@ const runtime = runtimeConfigSchema.parse({
   features: { telegram: false, google: false, nats: false, prototype: false },
 })
 
+it('uses strict serial-history and condition contracts without implicit history loading', async () => {
+  const fetchImplementation = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(Response.json({ schemaVersion: 1, items: [], nextCursor: null }))
+    .mockResolvedValueOnce(
+      Response.json({ schemaVersion: 1, label: '1н.1 · Задача', document: null }),
+    )
+  const client = createReviewQueueClient(runtime, { fetchImplementation })
+  expect(fetchImplementation).not.toHaveBeenCalled()
+  expect(await client.seriesHistory('p-1', 'r-20')).toEqual({
+    schemaVersion: 1,
+    items: [],
+    nextCursor: null,
+  })
+  expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+    '/staff/api/v1/review/series/p-1/history?cursor=r-20',
+  )
+  expect((await client.seriesCondition('p-1', 'se-1')).document).toBeNull()
+  expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+    '/staff/api/v1/review/series/p-1/condition?entry=se-1',
+  )
+})
+
+it('sends whole-entry preview and target thread identity with an idempotent clone', async () => {
+  const fetchImplementation = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      Response.json({
+        schemaVersion: 1,
+        entryId: 'se-1',
+        sourceVersion: 2,
+        entryVersion: 2,
+        studentName: 'Ученик',
+        sourceLabel: '1н.1',
+        photoCount: 1,
+        targets: [{ problemId: 'p-2', label: '1н.2', threadId: null, threadVersion: 0 }],
+      }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        schemaVersion: 1,
+        mode: 'clone',
+        sourceEntryId: 'se-1',
+        targetEntryId: 'se-2',
+        targetProblemId: 'p-2',
+        targetLabel: '1н.2',
+      }),
+    )
+  const client = createReviewQueueClient(runtime, { fetchImplementation })
+  await client.transferPreview('wq-1', 'se-1', 'claim-1')
+  expect(JSON.parse(fetchImplementation.mock.calls[0]?.[1]?.body as string)).toEqual({
+    schemaVersion: 1,
+    entryId: 'se-1',
+    claimToken: 'claim-1',
+  })
+  const payload = {
+    schemaVersion: 1 as const,
+    entryId: 'se-1',
+    claimToken: 'claim-1',
+    targetProblemId: 'p-2',
+    sourceVersion: 2,
+    entryVersion: 2,
+    targetVersion: 0,
+    targetThreadId: null,
+    mode: 'clone' as const,
+    idempotencyKey: 'clone-1',
+  }
+  await client.transfer('wq-1', payload)
+  expect(JSON.parse(fetchImplementation.mock.calls[1]?.[1]?.body as string)).toEqual(payload)
+})
+
 const branches = [
   {
     queueId: 'review-queue-one',

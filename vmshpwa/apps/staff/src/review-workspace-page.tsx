@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { ReviewTransfer } from './review-transfer'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import {
   PageLayout,
@@ -27,6 +28,7 @@ import {
 import {
   FeedbackThread,
   ReviewAnnotationEditor,
+  ReviewAnnotationViewer,
   ReviewFeedbackForm,
   ThreePaneReview,
   binaryVerdictScale,
@@ -149,6 +151,7 @@ export function LoadedReviewWorkspace({
   inactive = false,
   onCompleted,
   onBusyChange,
+  onMoved,
 }: {
   client: ReturnType<typeof createReviewQueueClient>
   lease: ReviewLease
@@ -156,11 +159,17 @@ export function LoadedReviewWorkspace({
   principal: ReturnType<typeof useAuthenticatedPrincipal>
   queueId: string
   inactive?: boolean
-  onCompleted?: (response: CompleteReviewResponse, draft: ReviewDraft) => void
+  onCompleted?: (
+    response: CompleteReviewResponse,
+    draft: ReviewDraft,
+    reviewedLease: ReviewLease,
+  ) => void
   onBusyChange?: (busy: boolean) => void
+  onMoved?: (targetLabel: string, entryId: string, transferredLease: ReviewLease) => void
 }) {
   const authentication = useAuthentication()
   const navigate = useNavigate()
+  const [transferBusy, setTransferBusy] = useState(false)
   const fingerprint = createReviewEvidenceFingerprint(lease)
   const namespace = createBrowserStorageNamespace(authentication.client.runtime)
   const storageKey = reviewDraftStorageKey(
@@ -184,8 +193,8 @@ export function LoadedReviewWorkspace({
   const leaseLost = Boolean(heartbeat.error)
 
   useEffect(() => {
-    if (!inactive) onBusyChange?.(complete.isPending || release.isPending)
-  }, [inactive, complete.isPending, release.isPending, onBusyChange])
+    if (!inactive) onBusyChange?.(complete.isPending || release.isPending || transferBusy)
+  }, [inactive, complete.isPending, release.isPending, transferBusy, onBusyChange])
 
   useEffect(() => {
     const renew = () => {
@@ -237,7 +246,7 @@ export function LoadedReviewWorkspace({
   }
 
   const submit = async (result: ReviewFeedbackResult) => {
-    if (inactive || complete.isPending || leaseLost) return
+    if (inactive || complete.isPending || leaseLost || transferBusy) return
     const verdict = verdictToWire[result.verdict.value as keyof typeof verdictToWire]
     const reaction = writtenTeacherReactionIdSchema.safeParse(result.reactionId)
     if (!verdict || (result.reactionId !== null && !reaction.success)) return
@@ -278,7 +287,7 @@ export function LoadedReviewWorkspace({
       if (queueId) recordProductAction('review.verdict', { type: 'submission', id: queueId })
       clearReviewDraft(window.localStorage, storageKey)
       rememberCompletedReview(namespace, principal.accountId, response.review.reviewId)
-      if (onCompleted) onCompleted(response, draft)
+      if (onCompleted) onCompleted(response, draft, currentLease)
       else await navigate({ to: '/review' })
     } catch (error) {
       authentication.handleApiError(error)
@@ -301,7 +310,27 @@ export function LoadedReviewWorkspace({
     mediaClient,
     draft.annotations,
     updateAnnotation,
-    inactive || complete.isPending || leaseLost,
+    inactive || complete.isPending || leaseLost || transferBusy,
+    false,
+    (entryId) => (
+      <ReviewTransfer
+        client={client}
+        queueId={queueId}
+        entryId={entryId}
+        claimToken={currentLease.claimToken}
+        disabled={inactive || complete.isPending || leaseLost || transferBusy}
+        onBusy={(busy) => {
+          setTransferBusy(busy)
+          onBusyChange?.(busy)
+        }}
+        onDone={async (result) => {
+          if (result.mode === 'move') {
+            if (onMoved) onMoved(result.targetLabel, result.sourceEntryId, currentLease)
+            else await navigate({ to: '/review' })
+          } else await heartbeat.mutateAsync(currentLease.claimToken)
+        }}
+      />
+    ),
   )
   const first = currentLease.branches[0]!
   const errors = complete.error ?? release.error
@@ -363,7 +392,7 @@ export function LoadedReviewWorkspace({
           }
           feedback={
             <ReviewFeedbackForm
-              disabled={inactive || complete.isPending || leaseLost}
+              disabled={inactive || complete.isPending || leaseLost || transferBusy}
               initialDraft={{
                 verdictValue: draft.verdictValue,
                 comment: draft.comment,
@@ -415,15 +444,19 @@ function timelineMessages(
   annotations: ReviewAnnotationManifest[],
   onAnnotationChange: (attachmentId: string, annotation: ReviewAnnotationManifest | null) => void,
   annotationDisabled: boolean,
+  readOnly = false,
+  entryActions?: (entryId: string) => ReactNode,
 ): ThreadMessageView[] {
   const editableAttachmentIds = new Set(
-    lease.evidenceBranches.flatMap((branch) =>
-      branch.thread
-        ? branch.thread.entries.flatMap((entry) =>
-            entry.attachments.map((attachment) => attachment.attachmentId),
-          )
-        : [],
-    ),
+    readOnly
+      ? []
+      : lease.evidenceBranches.flatMap((branch) =>
+          branch.thread
+            ? branch.thread.entries.flatMap((entry) =>
+                entry.attachments.map((attachment) => attachment.attachmentId),
+              )
+            : [],
+        ),
   )
   const annotationByAttachment = new Map(
     annotations.map((annotation) => [annotation.attachmentId, annotation]),
@@ -454,15 +487,22 @@ function timelineMessages(
             taskNumber: branch.problemNumber,
           },
           body: (
-            <TimelineEntryBody
-              annotationByAttachment={annotationByAttachment}
-              annotationDisabled={annotationDisabled}
-              editableAttachmentIds={editableAttachmentIds}
-              entry={entry}
-              key={entry.entryId}
-              mediaClient={mediaClient}
-              onAnnotationChange={onAnnotationChange}
-            />
+            <>
+              <TimelineEntryBody
+                annotationByAttachment={annotationByAttachment}
+                annotationDisabled={annotationDisabled}
+                editableAttachmentIds={editableAttachmentIds}
+                entry={entry}
+                key={entry.entryId}
+                mediaClient={mediaClient}
+                onAnnotationChange={onAnnotationChange}
+              />
+              {!readOnly &&
+                evidenceBranch.thread?.entries.some(
+                  (pending) => pending.entryId === entry.entryId,
+                ) &&
+                entryActions?.(entry.entryId)}
+            </>
           ),
         } satisfies ThreadMessageView,
       }))
@@ -531,7 +571,24 @@ export function ReviewAttachmentImage({
 }) {
   const [source, setSource] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+  const placeholder = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(editable || typeof IntersectionObserver === 'undefined')
   useEffect(() => {
+    if (visible || !placeholder.current) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '300px' },
+    )
+    observer.observe(placeholder.current)
+    return () => observer.disconnect()
+  }, [visible])
+  useEffect(() => {
+    if (!visible) return
     const controller = new AbortController()
     let objectUrl: string | null = null
     void mediaClient
@@ -547,13 +604,14 @@ export function ReviewAttachmentImage({
       controller.abort()
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [attachmentId, entryId, mediaClient])
+  }, [attachmentId, entryId, mediaClient, visible])
 
   if (failed)
     return <p className="text-caption text-status-error">Не удалось загрузить страницу.</p>
   if (!source)
     return (
       <div
+        ref={placeholder}
         aria-label="Загружаем страницу"
         className="h-48 animate-pulse rounded-md bg-surface-sunken"
       />
@@ -570,12 +628,49 @@ export function ReviewAttachmentImage({
       />
     )
   }
+  if (annotation)
+    return (
+      <ReviewAnnotationViewer
+        imageAlt={`Страница решения ${ordinal + 1}`}
+        imageSource={source}
+        manifest={annotation}
+      />
+    )
   return (
     <img
       alt={`Страница решения ${ordinal + 1}`}
       className="max-h-[42rem] w-full rounded-md border border-border bg-surface object-contain"
       src={source}
     />
+  )
+}
+
+/** Immutable session snapshot, without review leases/editors; docs/serial-review-feed.md. */
+export function ReviewedWorkSnapshot({
+  lease,
+  annotations,
+  comment,
+  verdict,
+  mediaClient,
+}: {
+  lease: ReviewLease
+  annotations: ReviewAnnotationManifest[]
+  comment: string
+  verdict: string
+  mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>
+}) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-subtitle font-semibold">
+        {lease.student.displayName} · {verdict}
+      </h2>
+      <FeedbackThread
+        messages={timelineMessages(lease, mediaClient, annotations, () => undefined, true, true)}
+      />
+      {comment && (
+        <p className="whitespace-pre-wrap rounded-lg border border-border p-3">{comment}</p>
+      )}
+    </section>
   )
 }
 

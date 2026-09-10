@@ -18,6 +18,77 @@ function reviewFixtureId(project: string): number {
   return fixtureId
 }
 
+test.describe('Series feed', () => {
+  test.describe.configure({ retries: 0 })
+  test('clone, complete, compare, correct and move whole entries', async ({ page }, testInfo) => {
+    // docs/serial-review-feed.md: real SQLite, media and correction editor in all engines.
+    test.setTimeout(120_000)
+    const id = reviewFixtureId(testInfo.project.name) + 50
+    const target = `p-${id + 100}`
+    const comment = page
+      .getByRole('textbox', { name: 'Комментарий', exact: true })
+      .and(page.locator(':enabled'))
+    await loginThroughUi(page, AUTH_PERSONAS.teacher, `/staff/review/series/p-${id}`)
+    await expect(
+      page.getByRole('heading', { level: 1, name: new RegExp(`^${id}н.1`) }),
+    ).toBeVisible()
+    await page.getByText('Условие задачи', { exact: true }).click()
+    await expect(page.getByText('Условие проверяемой версии недоступно.')).toBeVisible()
+    await page.getByRole('button', { name: 'Клонировать в другую задачу', exact: true }).click()
+    await page.getByLabel('Целевая задача').selectOption(target)
+    const clone = page.waitForResponse(
+      (r) => r.url().endsWith('/transfer') && r.request().method() === 'POST',
+    )
+    await page.getByRole('button', { name: 'Клонировать посылку', exact: true }).click()
+    expect((await clone).status()).toBe(200)
+    const firstComment = `Сравниваем решения ${testInfo.project.name}`
+    await comment.fill(firstComment)
+    await page.getByRole('button', { name: '1 Зачтено', exact: true }).click()
+    await comment.press('Control+Enter')
+    await expect(page.getByRole('button', { name: 'Перепроверить', exact: true })).toHaveCount(1)
+    await expect(page.getByText(firstComment, { exact: true })).toBeVisible()
+    await comment.fill('Черновик второй работы')
+    await page.getByRole('button', { name: 'Перепроверить', exact: true }).click()
+    // Current card remains mounted with disabled controls; only correction accepts input.
+    await expect(comment).toHaveValue(firstComment)
+    await comment.fill('Уточнённый комментарий')
+    await comment.press('Control+Enter')
+    await expect(comment).toHaveValue('Черновик второй работы')
+    await expect(page.getByText('Уточнённый комментарий', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Перенести в другую задачу', exact: true }).click()
+    await page.getByLabel('Целевая задача').selectOption(target)
+    const move = page.waitForResponse(
+      (r) => r.url().endsWith('/transfer') && r.request().method() === 'POST',
+    )
+    await page.getByRole('button', { name: 'Перенести посылку', exact: true }).click()
+    expect((await move).status()).toBe(200)
+    await expect(page.getByText('Доступных работ по этой задаче больше нет')).toBeVisible()
+    await expect(page.getByText(new RegExp(`Перенесено в ${id}н.2`))).toBeVisible()
+    await page.getByRole('button', { name: 'Показать предыдущие 20 проверок' }).click()
+    await expect(page.getByRole('button', { name: 'Перепроверить', exact: true })).toHaveCount(1)
+    await page.goto(`/staff/review/series/${target}`)
+    for (let index = 0; index < 2; index++) {
+      await comment.fill(`Целевая проверка ${index}`)
+      await page.getByRole('button', { name: '1 Зачтено', exact: true }).click()
+      await comment.press('Control+Enter')
+      await expect(page.getByRole('button', { name: 'Перепроверить', exact: true })).toHaveCount(
+        index + 1,
+      )
+    }
+    await expect(page.getByText('Доступных работ по этой задаче больше нет')).toBeVisible()
+    await loginThroughUi(page, AUTH_PERSONAS.student, '/student/')
+    const response = await page.request.get(`/student/api/v1/problems/${target}/thread`)
+    expect(response.status()).toBe(200)
+    const thread = writtenThreadResponseSchema.parse(await response.json()).thread
+    expect(thread?.reviews).toHaveLength(1)
+    expect(
+      thread?.entries.some(
+        (e) => e.authorKind === 'system' && e.text?.includes('преподавателем из задачи'),
+      ),
+    ).toBe(true)
+  })
+})
+
 test('Phase 6: Staff review restores its draft and completes one leased case', async ({
   page,
   secondaryContext,
@@ -469,8 +540,8 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   )
   await adminPage.getByRole('button', { name: 'Отправить вердикт' }).click()
   expect((await historySaved).status()).toBe(200)
-  const finalProjection = await page.evaluate(
-    async (id) => (await fetch(`/student/api/v1/problems/${id}/thread`)).json(),
+  const finalProjection: unknown = await page.evaluate(
+    async (id): Promise<unknown> => (await fetch(`/student/api/v1/problems/${id}/thread`)).json(),
     problemId,
   )
   const finalThread = writtenThreadResponseSchema.parse(finalProjection)

@@ -2,6 +2,9 @@
 
 ## Результат
 
+Расширение сентября 2026: [серийная лента и маршрутизация целых посылок](../../docs/serial-review-feed.md).
+Реализация и критерии проверки связаны в этом документе; старые URL/API сохраняются.
+
 Teacher выбирает problem/synonym group, атомарно получает одну работу, видит актуальные фото/контекст, ставит verdict, optional comment, immutable annotation и не более одной internal reaction. Если student дослал материал, complete требует refetch. Student видит заметный verdict в общем Telegram/PWA треде; admin может перепроверить без отдельного dispute workflow.
 
 Дизайн-контракт этапа: [review queue/workspace, verdict controls, feedback thread, annotations/reactions и Storybook stories](18-design-implementation-map.md#phase-6-design).

@@ -30,6 +30,9 @@ TARGETS = (
     ("chromium", 9701),
     ("webkit", 9702),
     ("firefox", 9703),
+    ("series-chromium", 9751),
+    ("series-webkit", 9752),
+    ("series-firefox", 9753),
 )
 
 
@@ -108,7 +111,7 @@ def _insert_review_cases(connection) -> int:
     )
 
     existing = connection.execute(
-        "SELECT id FROM written_tasks_queue WHERE id BETWEEN 9701 AND 9703"
+        "SELECT id FROM written_tasks_queue WHERE id BETWEEN 9701 AND 9703 OR id BETWEEN 9751 AND 9753"
     ).fetchall()
     expected_queue_ids = {fixture_id for _project, fixture_id in TARGETS}
     if existing:
@@ -315,6 +318,59 @@ def _insert_review_cases(connection) -> int:
             (fixture_id, student_id, problem_id, TIMESTAMP),
         )
         inserted += 1
+    # docs/serial-review-feed.md: two independent students plus an eligible
+    # same-lesson target, with shared immutable media bytes.
+    for project, fixture_id in TARGETS:
+        if not project.startswith("series-"):
+            continue
+        target_id = fixture_id + 100
+        connection.execute(
+            """INSERT INTO problems
+          (id,group_id,lesson,prob,item,title,prob_text,prob_type,ans_type,ans_validation,
+           validation_error,cor_ans,wrong_ans,congrat,synonyms)
+          SELECT ?,group_id,lesson,2,'','Цель серии','',2,0,'','','','','',''
+          FROM problems WHERE id=?""",
+            (target_id, fixture_id),
+        )
+        connection.execute(
+            """INSERT INTO content_problem_matches
+          (content_revision_id,source_ordinal,source_item,problem_id,decision,resolved_by_user_id,resolved_at,diagnostics_json,created_at)
+          VALUES(?,2,'2',?,'manual_match',?,?,'[]',?)""",
+            (fixture_id, target_id, teacher_id, TIMESTAMP, TIMESTAMP),
+        )
+        connection.execute(
+            """INSERT INTO problem_revisions
+          (problem_id,content_revision_id,source_ordinal,source_item,display_number,title,normalized_title,
+           problem_type,answer_type,answer_config_json,attempt_policy_json,config_version,created_at)
+          VALUES(?,?,2,'2',?,'Цель серии','цель серии',2,0,'{}','{}',1,?)""",
+            (target_id, fixture_id, f"{fixture_id}н.2", TIMESTAMP),
+        )
+        second = connection.execute(
+            "INSERT INTO users(type,name,surname) VALUES(1,'Второй',?) RETURNING id",
+            (project,),
+        ).fetchone()["id"]
+        thread = connection.execute(
+            """INSERT INTO submission_threads
+          (student_user_id,problem_id,condition_revision_id,status,latest_entry_at,created_at,updated_at)
+          VALUES(?,?,?,'awaiting_review',?,?,?) RETURNING id""",
+            (second, fixture_id, fixture_id, TIMESTAMP, TIMESTAMP, TIMESTAMP),
+        ).fetchone()["id"]
+        entry = connection.execute(
+            """INSERT INTO submission_entries
+          (thread_id,problem_revision_id,author_kind,author_user_id,channel,entry_kind,state,text,server_received_at)
+          SELECT ?,id,'student',?,'pwa','submission','submitted','Второе решение для сравнения',?
+          FROM problem_revisions WHERE problem_id=? RETURNING id""",
+            (thread, second, TIMESTAMP, fixture_id),
+        ).fetchone()["id"]
+        connection.execute(
+            """INSERT INTO submission_attachments(entry_id,asset_id,ordinal,client_filename,upload_status,created_at)
+          VALUES(?,?,0,'solution.webp','stored',?)""",
+            (entry, fixture_id, TIMESTAMP),
+        )
+        connection.execute(
+            "INSERT INTO written_tasks_queue(ts,student_id,problem_id,cur_status,updated_at) VALUES(?,?,?,0,?)",
+            (TIMESTAMP, second, fixture_id, TIMESTAMP),
+        )
     return inserted
 
 

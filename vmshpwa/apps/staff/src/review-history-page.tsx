@@ -296,9 +296,15 @@ export function StaffReviewHistoryPage({
 export function CompletedReviewCard({
   reviewId,
   onClose,
+  readOnly = false,
+  seriesProblemId,
+  onCorrected,
 }: {
   reviewId: string
   onClose: () => void
+  readOnly?: boolean
+  seriesProblemId?: string
+  onCorrected?: (reviewId: string) => void
 }) {
   const auth = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -307,13 +313,21 @@ export function CompletedReviewCard({
     [auth],
   )
   const query = useQuery({
-    queryKey: ['review-history-detail', principal.accountId, reviewId],
-    queryFn: ({ signal }) => client.historyDetail(reviewId, { signal }),
+    queryKey: [
+      'review-history-detail',
+      principal.accountId,
+      reviewId,
+      readOnly ? seriesProblemId : null,
+    ],
+    queryFn: ({ signal }) =>
+      readOnly && seriesProblemId
+        ? client.seriesCurrent(seriesProblemId, reviewId)
+        : client.historyDetail(reviewId, { signal }),
     refetchOnWindowFocus: false,
   })
   return (
     <div className="space-y-4">
-      <Button onClick={onClose}>Назад</Button>
+      {!readOnly && <Button onClick={onClose}>Назад</Button>}
       {query.isPending ? (
         <PageStatePanel state="loading" />
       ) : query.error ? (
@@ -323,14 +337,57 @@ export function CompletedReviewCard({
           actionLabel="Обновить"
           onAction={() => void query.refetch()}
         />
+      ) : readOnly ? (
+        <ReadOnlyReview detail={query.data.detail} />
       ) : (
         <CorrectionEditor
           detail={query.data.detail}
           refresh={() => void query.refetch()}
           onClose={onClose}
+          {...(onCorrected ? { onCorrected } : {})}
         />
       )}
     </div>
+  )
+}
+
+function ReadOnlyReview({ detail }: { detail: ReviewHistoryDetailResponse['detail'] }) {
+  const auth = useAuthentication()
+  const media = useMemo(
+    () =>
+      createWrittenMaterialReassignmentClient(auth.client.runtime, {
+        refreshSession: () => auth.refresh(),
+      }),
+    [auth],
+  )
+  return (
+    <section className="space-y-3">
+      <h2 className="font-semibold">
+        {detail.review.studentName} · {detail.review.problemNumber} ·{' '}
+        {writtenReviewVerdict(detail.review.verdict).label}
+      </h2>
+      {detail.entries.map((entry) => (
+        <article key={entry.entryId} className="space-y-2">
+          {entry.text && <p className="whitespace-pre-wrap">{entry.text}</p>}
+          {entry.attachments.map((a) => (
+            <ReviewAttachmentImage
+              key={a.attachmentId}
+              attachmentId={a.attachmentId}
+              entryId={entry.entryId}
+              ordinal={a.ordinal}
+              annotation={a.annotation}
+              annotationDisabled
+              editable={false}
+              mediaClient={media}
+              onAnnotationChange={() => undefined}
+            />
+          ))}
+        </article>
+      ))}
+      {detail.comment && (
+        <p className="whitespace-pre-wrap rounded-lg border border-border p-3">{detail.comment}</p>
+      )}
+    </section>
   )
 }
 
@@ -338,10 +395,12 @@ function CorrectionEditor({
   detail,
   refresh,
   onClose,
+  onCorrected,
 }: {
   detail: ReviewHistoryDetailResponse['detail']
   refresh: () => void
   onClose: () => void
+  onCorrected?: (reviewId: string) => void
 }) {
   const auth = useAuthentication()
   const queryClient = useQueryClient()
@@ -429,6 +488,7 @@ function CorrectionEditor({
         confirmReplaceNewer: newer,
       })
       rememberCompletedReview(namespace, principal.accountId, response.correction.reviewId)
+      onCorrected?.(response.correction.reviewId)
       void queryClient.invalidateQueries({ queryKey: ['review-history', principal.accountId] })
       void queryClient.invalidateQueries({
         queryKey: ['review-history-detail', principal.accountId],

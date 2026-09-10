@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 77681072c59c9d365b09c173f7272769e69b01d2b1b1814f008168fbe0d7fac5
+-- Product schema SHA-256: 7f1a54709aa1623932fb561f39619fee6372676137a401bfd6486208acec875b
 
 CREATE TABLE achievement_definitions
 (
@@ -2053,6 +2053,19 @@ CREATE TABLE submission_entry_replacements
     check (replaced_entry_id <> replacement_entry_id)
 );
 
+CREATE TABLE submission_entry_transfers (
+ id INTEGER PRIMARY KEY,
+ actor_user_id INTEGER NOT NULL REFERENCES users(id),
+ idempotency_key TEXT NOT NULL,
+ payload_sha256 TEXT NOT NULL,
+ mode TEXT NOT NULL CHECK(mode IN ('move', 'clone')),
+ source_entry_id INTEGER NOT NULL REFERENCES submission_entries(id),
+ target_entry_id INTEGER NOT NULL REFERENCES submission_entries(id),
+ created_at TEXT NOT NULL,
+ response_json TEXT NOT NULL,
+ UNIQUE(actor_user_id, idempotency_key)
+);
+
 CREATE TABLE submission_material_reassignment_items
 (
     reassignment_id integer not null references submission_material_reassignments (id),
@@ -3038,6 +3051,8 @@ CREATE INDEX submission_entries_thread_history_idx
 
 CREATE INDEX submission_entry_replacements_thread_history_idx
     on submission_entry_replacements (thread_id, replaced_at, id);
+
+CREATE INDEX submission_entry_transfers_source_idx ON submission_entry_transfers(source_entry_id);
 
 CREATE INDEX submission_material_reassignment_items_projection_idx
     on submission_material_reassignment_items
@@ -4540,6 +4555,12 @@ begin
     select raise(abort, 'submission replacement is outside mutable thread scope');
 end;
 
+CREATE TRIGGER submission_entry_transfers_delete_forbidden BEFORE DELETE ON submission_entry_transfers
+BEGIN SELECT RAISE(ABORT, 'entry transfer deletion is forbidden'); END;
+
+CREATE TRIGGER submission_entry_transfers_immutable BEFORE UPDATE ON submission_entry_transfers
+BEGIN SELECT RAISE(ABORT, 'entry transfer is immutable'); END;
+
 CREATE TRIGGER submission_material_reassignment_items_delete_forbidden
 before delete on submission_material_reassignment_items
 for each row
@@ -4978,23 +4999,18 @@ begin
     select raise(abort, 'submission thread latest result is not written evidence');
 end;
 
-CREATE TRIGGER submission_threads_state_transition_guard
-before update of status on submission_threads
-for each row
-when new.status is not old.status and not (
-    (old.status = 'open' and new.status in ('awaiting_review', 'closed'))
-    or (
-        old.status = 'awaiting_review'
-        and new.status in ('needs_work', 'accepted', 'closed')
-    )
-    or (
-        old.status in ('needs_work', 'accepted')
-        and new.status in ('awaiting_review', 'closed')
-    )
+CREATE TRIGGER submission_threads_state_transition_guard BEFORE UPDATE OF status ON submission_threads
+FOR EACH ROW WHEN new.status IS NOT old.status AND NOT (
+ (old.status='open' AND new.status IN ('awaiting_review','closed')) OR
+ (old.status='awaiting_review' AND new.status IN ('needs_work','accepted','closed')) OR
+ (old.status IN ('needs_work','accepted') AND new.status IN ('awaiting_review','closed')) OR
+ (old.status='closed' AND new.status='awaiting_review' AND EXISTS (
+   SELECT 1 FROM submission_entry_transfers transfer JOIN submission_entries entry ON entry.id=transfer.target_entry_id
+   WHERE entry.thread_id=old.id AND entry.state='submitted' AND transfer.created_at=new.updated_at
+   AND NOT EXISTS(SELECT 1 FROM submission_review_evidence_entries evidence WHERE evidence.entry_id=entry.id)
+ ))
 )
-begin
-    select raise(abort, 'invalid submission thread state transition');
-end;
+BEGIN SELECT RAISE(ABORT,'invalid submission thread state transition'); END;
 
 CREATE TRIGGER submission_threads_version_guard
 before update on submission_threads
