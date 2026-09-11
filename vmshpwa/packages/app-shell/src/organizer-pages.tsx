@@ -136,9 +136,15 @@ function OrganizerPageContent({
     ),
   }))
   return (
-    <section className="mx-auto w-full max-w-3xl space-y-4 p-3 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold">
+    <section
+      className={
+        staff
+          ? 'mx-auto w-full max-w-[1500px] space-y-4 px-4 py-5 sm:px-6 sm:py-7'
+          : 'mx-auto w-full max-w-3xl space-y-4 p-3 sm:p-5'
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <h1 className="text-title font-semibold tracking-tight">
           {isNew ? 'Задать вопрос организаторам' : 'Вопросы организаторам'}
         </h1>
         <div className="flex flex-wrap gap-2">
@@ -161,11 +167,6 @@ function OrganizerPageContent({
       <p className="text-small text-muted-foreground">
         Переписку видят только автор обращения и администраторы.
       </p>
-      {staff ? (
-        <a href="/staff/questions" className="text-small text-link underline">
-          Вопросы к занятиям
-        </a>
-      ) : null}
       {staff && !threadId ? (
         <nav className="flex flex-wrap gap-1" aria-label="Состояние обращения">
           {[
@@ -192,11 +193,11 @@ function OrganizerPageContent({
       ) : null}
       {!loading && !error && !threadId && !isNew ? (
         <>
-          <ol className="space-y-2">
+          <ol className={staff ? 'grid gap-3 lg:grid-cols-2' : 'space-y-2'}>
             {items.map((item) => (
               <li key={item.threadId}>
                 <button
-                  className="w-full rounded-lg border border-border p-3 text-left hover:bg-surface-subtle focus-visible:outline-ring"
+                  className="h-full w-full space-y-2 rounded-lg border border-border bg-surface p-4 text-left hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   onClick={() => onNavigate(item.threadId)}
                 >
                   <span className="block break-words font-medium">{item.title}</span>

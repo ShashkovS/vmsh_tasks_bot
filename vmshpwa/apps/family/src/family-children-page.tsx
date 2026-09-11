@@ -402,7 +402,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       : ''}
                   </p>
                   <FamilyCourseAchievements achievements={progress.achievements} />
-                  {progress.analytics?.lessons.length ? (
+                  {progress.analytics && progress.analytics.lessons.length >= 2 ? (
                     <StrengthTrend
                       points={progress.analytics.lessons.map((lesson) => ({
                         lesson: String(lesson.lessonNumber),

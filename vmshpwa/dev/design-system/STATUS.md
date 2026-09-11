@@ -1267,3 +1267,11 @@ Chromium/WebKit/Firefox, Storybook и PDF пройдены. Устранены �
 ## Written replacement recovery — 11 September 2026
 
 Implemented and verified: 18 unit tests, production build, targeted lint/typecheck and recovery E2E in Chromium/WebKit/Firefox (Firefox separate rerun after an auth safety-screen interruption). Mobile 320/390 screenshots: `pwa_tests/reports/written-replacement-recovery/`. Owner authorized commit and push. See [recovery contract](../../docs/written-replacement-recovery.md): restrict replacement to pending unlocked work; explicitly recover rejected snapshots without losing photographs or duplicating sends. No backend or migration change.
+
+## Organizer entry layout — 11 September 2026
+
+Implemented and verified: build, typecheck, ESLint; 3 E2E passed in Chromium/WebKit/Firefox at desktop/320/390 px and dark Staff theme. Screenshots: `pwa_tests/reports/organizer-layout/`. Owner authorized commit and push, including the Family chart threshold. See [organizer questions](../../docs/organizer-questions.md): prominent Family home action, aligned admin section navigation and organizer list. No API changes.
+
+### Family chart threshold
+
+The child course chart now requires at least two analytics lessons (unique X values enforced by the progress contract). Numeric results and history remain visible. See `apps/family/src/family-children-page.tsx` and [Family requirements](../../docs/family-worksheet-polish.md).

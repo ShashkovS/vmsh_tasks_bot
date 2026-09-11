@@ -1,4 +1,5 @@
-import { OrganizerLink } from '@vmsh/app-shell'
+import { MessageCircle } from 'lucide-react'
+import { buttonVariants, cn } from '@vmsh/ui'
 import { useMemo, useState } from 'react'
 
 import {
@@ -108,7 +109,19 @@ export function FamilyHomePage() {
       eyebrow={selectedChild?.displayName ?? 'Семейный кабинет'}
       title="Текущие занятия"
     >
-      <OrganizerLink create />
+      {/* docs/organizer-questions.md: a visible home action without another navigation item. */}
+      <div className="mb-6">
+        <a
+          className={cn(
+            buttonVariants({ variant: 'default' }),
+            'h-auto min-h-11 w-full gap-2 px-4 py-3 text-center whitespace-normal sm:w-auto',
+          )}
+          href="/family/organizers/new"
+        >
+          <MessageCircle aria-hidden="true" className="size-5 shrink-0" />
+          Задать вопрос организаторам
+        </a>
+      </div>
       {bannerQuery.data ? (
         <div className="space-y-2" aria-label="Объявления">
           {bannerQuery.data.items
