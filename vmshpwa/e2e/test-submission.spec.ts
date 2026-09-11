@@ -1,3 +1,4 @@
+import { writtenThreadResponseSchema } from '../packages/contracts/src/written-submissions'
 import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
 
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
@@ -391,7 +392,7 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
 
   const solutionText = 'Провёл дополнительную диагональ и получил два равных треугольника.'
   await page.getByLabel('Ваше решение').fill(solutionText)
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.locator('input[type="file"][multiple]').setInputFiles({
     name: 'page.png',
     mimeType: 'image/png',
     buffer: Buffer.from(
@@ -491,7 +492,10 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
   ).toBeVisible()
   await expect(page.getByLabel('Ваше решение')).toHaveValue(solutionText)
   await expect(
-    page.getByRole('region', { name: 'Изменить решение' }).getByRole('img', { name: 'Страница 1' }).last(),
+    page
+      .getByRole('region', { name: 'Изменить решение' })
+      .getByRole('img', { name: 'Страница 1' })
+      .last(),
   ).toBeVisible()
 
   const replacementText = `${solutionText} Исправил обоснование равенства углов.`
@@ -502,7 +506,10 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
   ).toBeVisible()
   await expect(page.getByLabel('Ваше решение')).toHaveValue(replacementText)
   await expect(
-    page.getByRole('region', { name: 'Изменить решение' }).getByRole('img', { name: 'Страница 1' }).last(),
+    page
+      .getByRole('region', { name: 'Изменить решение' })
+      .getByRole('img', { name: 'Страница 1' })
+      .last(),
   ).toBeVisible()
 
   const replaceResponse = page.waitForResponse(
@@ -544,10 +551,75 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
     ],
   })
 
+  // docs/written-replacement-recovery.md: the teacher finishes while a replacement is drafted.
+  const studentUrl = page.url()
+  await expect(page.getByRole('button', { name: 'Изменить', exact: true })).toBeVisible()
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByRole('button', { name: 'Изменить', exact: true }).click()
+  await expect(page.getByLabel('Ваше решение')).toHaveValue(replacementText)
+  await expect(page.getByText('Копируем прежнее решение…')).toHaveCount(0)
+
   // Phase 6 handoff is part of the submission commit: the existing Staff
   // session sees one review case without a compatibility import or page seed.
   await page.goto('/staff/review')
+  await page.getByRole('button', { name: 'Все работы', exact: true }).click()
   const reviewRow = page.getByRole('row').filter({ hasText: title })
   await expect(reviewRow).toHaveCount(1)
   await expect(reviewRow.getByRole('button', { name: 'Открыть' })).toBeVisible()
+  await reviewRow.getByRole('button', { name: 'Открыть' }).click()
+  await page.getByLabel('Комментарий').fill('Проверка во время подготовки исправления')
+  await page.getByRole('button', { name: /В целом верно/ }).click()
+  const completed = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/complete'),
+  )
+  await page.getByRole('button', { name: 'Отправить вердикт' }).click()
+  expect((await completed).status()).toBe(200)
+  await page.goto(studentUrl)
+  await expect(page.getByRole('button', { name: 'Изменить', exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('Ваше решение')).toHaveValue(replacementText)
+  const rejected = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/replace'),
+  )
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByRole('button', { name: 'Отправить', exact: true }).click()
+  expect((await rejected).status()).toBe(409)
+  const recover = page.getByRole('button', { name: 'Отправить новым сообщением' })
+  await expect(recover).toBeVisible()
+  await page.reload()
+  await expect(recover).toBeVisible()
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    await recover.scrollIntoViewIfNeeded()
+    await expect(recover).toBeInViewport()
+    await page.screenshot({ path: testInfo.outputPath(`replacement-recovery-${width}.png`) })
+  }
+  const recoveredResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/submit'),
+  )
+  await recover.click()
+  expect((await recoveredResponse).status()).toBe(200)
+  await expect(recover).toHaveCount(0)
+  const history = writtenThreadResponseSchema.parse(
+    await page.evaluate(async (id) => {
+      const response = await fetch(`/student/api/v1/problems/${id}/thread`)
+      return (await response.json()) as unknown
+    }, problemId),
+  ).thread!
+  expect(history.reviews).toHaveLength(1)
+  expect(
+    history.entries.filter(
+      (entry: { state: string; authorKind: string }) =>
+        ['submitted', 'locked'].includes(entry.state) && entry.authorKind === 'student',
+    ),
+  ).toHaveLength(2)
+  expect(history.entries.at(-1)).toMatchObject({
+    text: replacementText,
+    attachments: [{ mediaType: 'image/webp' }],
+  })
 })

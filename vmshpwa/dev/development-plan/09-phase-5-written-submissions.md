@@ -166,3 +166,7 @@ Text/photos/outbox/message сохраняют concrete `problem_id`. Logical syn
 ## Task interaction polish
 
 Implemented [full references and worksheet interaction corrections](../../docs/task-interaction-polish.md); [verification and screenshots](../../../pwa_tests/reports/task-interaction-polish/README.md) cover delayed sending, mobile input, closed answers and worksheet return. Existing task identities, drafts and print behavior are preserved.
+
+## Written replacement recovery — 11 September 2026
+
+Implemented and verified: 18 unit tests, production build, targeted lint/typecheck and recovery E2E in Chromium/WebKit/Firefox (Firefox separate rerun after an auth safety-screen interruption). Mobile 320/390 screenshots: `pwa_tests/reports/written-replacement-recovery/`. Owner authorized commit and push. See [recovery contract](../../docs/written-replacement-recovery.md): restrict replacement to pending unlocked work; explicitly recover rejected snapshots without losing photographs or duplicating sends. No backend or migration change.

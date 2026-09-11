@@ -2662,3 +2662,7 @@ story обновлены. **13 unit-тестов прошли**, формати�
 ## Family worksheet polish — implemented and verified
 
 [Requirements](../../docs/family-worksheet-polish.md), [proof and screenshots](../../../pwa_tests/reports/family-worksheet-polish/README.md): full-width child courses, prominent settings/history (newest first), read-only worksheets with marks and allowed groups, profile child links and concise copy. Backend: 8 passed; unit: 6 passed; E2E: 6 passed across Chromium/WebKit/Firefox; build, typecheck and targeted ESLint passed. No migration. Owner authorized commit and push on 11 September 2026.
+
+## Written replacement recovery — 11 September 2026
+
+Implemented and verified: 18 unit tests, production build, targeted lint/typecheck and recovery E2E in Chromium/WebKit/Firefox (Firefox separate rerun after an auth safety-screen interruption). Mobile 320/390 screenshots: `pwa_tests/reports/written-replacement-recovery/`. Owner authorized commit and push. See [recovery contract](../../docs/written-replacement-recovery.md): restrict replacement to pending unlocked work; explicitly recover rejected snapshots without losing photographs or duplicating sends. No backend or migration change.

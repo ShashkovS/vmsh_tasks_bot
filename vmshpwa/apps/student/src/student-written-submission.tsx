@@ -19,6 +19,7 @@ import {
 import {
   createWrittenSubmissionDraftStore,
   createWrittenSubmissionOutbox,
+  canRecoverWrittenReplacement,
   useOfflineDatabase,
   type ResolvedWrittenDraftPhoto,
   type WrittenDraftDescriptor,
@@ -778,6 +779,19 @@ export function StudentWrittenSubmission({
       ...(photo.error ? { error: photo.error } : {}),
     })),
   ]
+  const recoveryAvailable = canRecoverWrittenReplacement(queueItem)
+  const recoverReplacement = async () => {
+    if (!queueItem || !recoveryAvailable) return
+    try {
+      const recovered = await outbox.recoverReplacement(queueItem.id)
+      setStorageError(null)
+      setQueueItem(recovered)
+      setSendError(null)
+      if (online) await deliver()
+    } catch (error) {
+      setStorageError(error)
+    }
+  }
   const queued = queueItem !== null && ['queued', 'retrying', 'sending'].includes(queueItem.status)
   const totalBytes = photos.reduce((sum, photo) => sum + photo.byteSize, 0)
   const thread = threadQuery.data?.thread ?? null
@@ -912,7 +926,7 @@ export function StudentWrittenSubmission({
           </AlertContent>
         </Alert>
       ) : null}
-      {sendError && !queued ? (
+      {sendError && !queued && !recoveryAvailable ? (
         <Alert role="alert" tone="danger">
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
@@ -939,7 +953,19 @@ export function StudentWrittenSubmission({
         type="file"
       />
 
-      {queued ? (
+      {recoveryAvailable ? (
+        <Alert role="alert">
+          <AlertContent>
+            <AlertTitle>Отправьте исправление новым сообщением</AlertTitle>
+            <AlertDescription>
+              Прежнее решение уже начали проверять или изменили. Текст и фотографии сохранены.
+            </AlertDescription>
+            <Button onClick={() => void recoverReplacement()} className="mt-2" variant="outline">
+              Отправить новым сообщением
+            </Button>
+          </AlertContent>
+        </Alert>
+      ) : queued ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           {!online || sendError ? (
             <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />

@@ -45,6 +45,7 @@ function thread(entries: WrittenEntry[], reviews: WrittenThread['reviews']): Wri
     ...fixtureThread,
     entries,
     reviews,
+    status: 'awaiting_review',
     latestEntryAt: entries.at(-1)?.serverReceivedAt ?? fixtureThread.latestEntryAt,
   })
 }
@@ -53,10 +54,7 @@ describe('Student written thread as one conversation', () => {
   it('folds a review into the teacher comment it was written with', () => {
     const comment = teacherComment('written-entry-comment', '2026-09-20T15:00:00.000000Z')
     const items = buildWrittenChatItems(
-      thread(
-        [studentEntry, comment],
-        [review({ commentEntryId: comment.entryId })],
-      ),
+      thread([studentEntry, comment], [review({ commentEntryId: comment.entryId })]),
     )
     expect(items).toHaveLength(2)
     expect(items[0]).toMatchObject({ key: `entry:${studentEntry.entryId}`, review: null })
@@ -94,6 +92,23 @@ describe('Student written thread as one conversation', () => {
     expect(items.map((item) => item.key)).toEqual([`entry:${studentEntry.entryId}`])
   })
 
+  it('does not offer replacement after review or for locked photographs', () => {
+    const pending = thread([studentEntry], [])
+    for (const status of ['open', 'needs_work', 'accepted', 'closed'] as const) {
+      expect(replaceableWrittenEntry({ ...pending, status })).toBeNull()
+    }
+    const locked = {
+      ...studentEntry,
+      attachments: writtenThreadFixture.attachmentResponse.entry.attachments.map((photo) => ({
+        ...photo,
+        uploadStatus: 'locked' as const,
+        mediaType: 'image/webp' as const,
+      })),
+    }
+    expect(locked.attachments.length).toBeGreaterThan(0)
+    expect(replaceableWrittenEntry(thread([locked], []))).toBeNull()
+  })
+
   it('offers a replacement only for the last submitted own message', () => {
     const later = entry({
       entryId: 'written-entry-later',
@@ -101,7 +116,9 @@ describe('Student written thread as one conversation', () => {
     })
     expect(replaceableWrittenEntry(thread([studentEntry, later], []))?.entryId).toBe(later.entryId)
     expect(
-      replaceableWrittenEntry(thread([teacherComment('written-entry-c', studentEntry.serverReceivedAt)], [])),
+      replaceableWrittenEntry(
+        thread([teacherComment('written-entry-c', studentEntry.serverReceivedAt)], []),
+      ),
     ).toBeNull()
     expect(replaceableWrittenEntry(null)).toBeNull()
   })

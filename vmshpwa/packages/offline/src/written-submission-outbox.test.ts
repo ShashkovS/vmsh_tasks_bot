@@ -444,6 +444,55 @@ describe('written-submission outbox', () => {
     })
   })
 
+  it.each([
+    'written_replacement_unavailable',
+    'written_replacement_target_changed',
+    'written_attachment_locked',
+  ])('recovers persisted %s with photos once, without erasing evidence', async (code) => {
+    const { target, draft, outbox } = stores('replacement-recovery')
+    draft.saveText(descriptor(), 'Исправление после проверки')
+    await addPhoto(draft, PHOTO_ONE, 'photo evidence')
+    draft.saveReplacementTarget(descriptor(), {
+      entryId: 'written-entry-original',
+      entryVersion: 7,
+    })
+    const queued = await outbox.enqueue(descriptor())
+    const transport = new RecordingTransport()
+    transport.replace = () =>
+      Promise.reject(
+        new ApiResponseError(409, {
+          error: {
+            code,
+            message: 'Already reviewed',
+            requestId: 'req-replacement',
+          },
+        }),
+      )
+    expect((await outbox.deliverNext(transport)).state).toBe(
+      code.includes('locked') ? 'conflict' : 'failed',
+    )
+    const restored = createWrittenSubmissionOutbox(target, descriptor().ownerId, draft)
+    const [first, second] = await Promise.all([
+      restored.recoverReplacement(queued.id),
+      restored.recoverReplacement(queued.id),
+    ])
+    expect(first.payload.createIdempotencyKey).toBe(second.payload.createIdempotencyKey)
+    expect(first.payload.submitIdempotencyKey).not.toBe(queued.payload.submitIdempotencyKey)
+    expect(first.payload.replacementTarget).toBeNull()
+    expect(first.payload.text).toBe('Исправление после проверки')
+    expect(first.payload.photos).toHaveLength(1)
+    expect((await draft.load(descriptor())).compatible?.photos).toHaveLength(1)
+    const freshTransport = new RecordingTransport()
+    expect((await restored.deliverNext(freshTransport)).state).toBe('synced')
+    expect(freshTransport.calls.map((call) => call.operation)).toEqual([
+      'create',
+      'upload-0',
+      'submit',
+    ])
+    expect((await restored.deliverNext(transport)).state).toBe('idle')
+    expect(await restored.acknowledge(queued.id)).toBe(true)
+  })
+
   it('does not issue a redundant reorder request for one photo', async () => {
     const { draft, outbox } = stores('written-one-photo')
     await addPhoto(draft, PHOTO_ONE, 'first')

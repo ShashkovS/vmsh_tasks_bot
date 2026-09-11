@@ -59,7 +59,7 @@ export function buildWrittenChatItems(thread: WrittenThread | null): WrittenChat
 
 /** The last own message a replacement may still target. */
 export function replaceableWrittenEntry(thread: WrittenThread | null): WrittenEntry | null {
-  if (!thread) return null
+  if (!thread || thread.status !== 'awaiting_review') return null
   return (
     [...thread.entries]
       .reverse()
@@ -67,7 +67,8 @@ export function replaceableWrittenEntry(thread: WrittenThread | null): WrittenEn
         (entry) =>
           entry.authorKind === 'student' &&
           entry.entryKind === 'submission' &&
-          entry.state === 'submitted',
+          entry.state === 'submitted' &&
+          !entry.attachments.some((attachment) => attachment.uploadStatus === 'locked'),
       ) ?? null
   )
 }

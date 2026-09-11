@@ -194,6 +194,20 @@ const writtenSubmissionOutboxItemSchema = z
   })
 export type WrittenSubmissionOutboxItem = z.infer<typeof writtenSubmissionOutboxItemSchema>
 
+/** Explicit recovery only after an authoritative rejection; docs/written-replacement-recovery.md. */
+export function canRecoverWrittenReplacement(item: WrittenSubmissionOutboxItem | null): boolean {
+  return Boolean(
+    item &&
+    ['conflict', 'failed'].includes(item.status) &&
+    item.payload.replacementTarget &&
+    [
+      'written_replacement_unavailable',
+      'written_replacement_target_changed',
+      'written_attachment_locked',
+    ].includes(item.lastError?.split(':')[2] ?? ''),
+  )
+}
+
 export interface WrittenSubmissionTransport {
   create(problemId: string, request: CreateWrittenEntryRequest): Promise<CreateWrittenEntryResponse>
   upload(
@@ -239,6 +253,7 @@ export interface WrittenSubmissionOutbox {
   enqueue(descriptor: WrittenDraftDescriptor): Promise<WrittenSubmissionOutboxItem>
   list(): Promise<WrittenSubmissionOutboxItem[]>
   deliverNext(transport: WrittenSubmissionTransport): Promise<WrittenSubmissionDeliveryResult>
+  recoverReplacement(itemId: string): Promise<WrittenSubmissionOutboxItem>
   acknowledge(itemId: string): Promise<boolean>
 }
 
@@ -702,6 +717,50 @@ export function createWrittenSubmissionOutbox(
         const settled = await settle(item, state, error)
         return { state, item: settled, error }
       }
+    },
+
+    async recoverReplacement(itemId) {
+      const stored = await database.outbox.get(z.uuid().parse(itemId))
+      if (!stored || stored.ownerId !== parsedOwnerId || stored.kind !== 'written-answer') {
+        throw new TypeError('Replacement operation not found')
+      }
+      const item = validatedItem(stored)
+      // A repeated click or another tab must reuse the same recovery operation.
+      if (!item.payload.replacementTarget) return item
+      if (!canRecoverWrittenReplacement(item)) throw new TypeError('Replacement is not recoverable')
+      const payload = writtenSubmissionOutboxPayloadSchema.parse({
+        ...item.payload,
+        replacementTarget: null,
+        serverState: null,
+        reordered: false,
+        createIdempotencyKey: randomUUID(),
+        reorderIdempotencyKey: randomUUID(),
+        submitIdempotencyKey: randomUUID(),
+        photos: item.payload.photos.map((photo) => ({
+          ...photo,
+          serverAttachmentId: null,
+          uploadIdempotencyKey: randomUUID(),
+        })),
+      })
+      const payloadHash = await payloadHasher(payload)
+      return database.transaction('rw', database.outbox, async () => {
+        const current = await database.outbox.get(item.id)
+        if (!current) throw new TypeError('Replacement operation not found')
+        const latest = validatedItem(current)
+        if (!latest.payload.replacementTarget) return latest
+        if (!canRecoverWrittenReplacement(latest)) throw new TypeError('Replacement changed')
+        const recovered = writtenSubmissionOutboxItemSchema.parse({
+          ...latest,
+          payload,
+          payloadHash,
+          status: 'queued',
+          attempts: 0,
+          lastError: undefined,
+          updatedAtClient: now().toISOString(),
+        })
+        await database.outbox.put(recovered)
+        return recovered
+      })
     },
 
     async acknowledge(itemId) {
