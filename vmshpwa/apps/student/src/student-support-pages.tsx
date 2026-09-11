@@ -447,6 +447,7 @@ export function StudentProblemQuestionLink({
   return (
     <section
       aria-label="Обсуждение задачи"
+      data-print-hide
       className={compact ? 'contents font-sans' : 'mt-2 font-sans'}
     >
       <Button

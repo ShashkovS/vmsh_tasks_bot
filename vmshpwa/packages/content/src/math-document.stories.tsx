@@ -429,3 +429,17 @@ export const TaskTitles: Story = {
     await expect(canvas.getByText('«Второй квадрат»')).toBeVisible()
   },
 }
+
+// docs/worksheet-print.md: eager images retain the original editorial scale.
+export const EagerWorksheetImages: Story = {
+  render: () => <SemanticMathDocument document={semanticDocument} imageLoading="eager" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const image = canvas.getByRole('img')
+    await expect(image).toHaveAttribute('loading', 'eager')
+    const figure = canvas.getByTestId('asset-figure')
+    await userEvent.click(canvas.getByTestId('figure-canvas'))
+    await expect(figure.style.getPropertyValue('--vmsh-figure-scale')).toBe('1.25')
+    await expect(figure.style.getPropertyValue('--vmsh-print-figure-scale')).toBe('1')
+  },
+}

@@ -10,6 +10,7 @@ import type {
 } from '@vmsh/contracts'
 import { cn } from '@vmsh/ui'
 
+import { FigureLoadingContext } from './figure-loading'
 import { MathExpression } from './katex-rendering'
 import { ZoomableAssetFigure } from './zoomable-asset-figure'
 
@@ -281,6 +282,7 @@ function ContentBlocks({
 /* eslint-enable jsx-a11y/no-noninteractive-tabindex */
 
 export interface SemanticMathDocumentProps {
+  imageLoading?: 'eager' | 'lazy'
   document: WebContentDocument
   className?: string
   renderAfterProblem?: (problem: WebContentProblem) => ReactNode
@@ -292,6 +294,7 @@ export interface SemanticMathDocumentProps {
 
 /** Renders only an already runtime-validated WebContentDocument v1. */
 export function SemanticMathDocument({
+  imageLoading = 'lazy',
   document,
   className,
   renderAfterProblem,
@@ -301,50 +304,52 @@ export function SemanticMathDocument({
   onFigureScaleCycle,
 }: SemanticMathDocumentProps) {
   return (
-    <MathDocument
-      {...(className === undefined ? {} : { className })}
-      {...(document.title === null ? {} : { title: document.title })}
-    >
-      <ContentBlocks
-        blocks={document.introduction}
-        path="introduction"
-        {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-      />
-      {document.problems.map((problem) => {
-        const headingId = `problem-${problem.ordinal}`
-        return (
-          <Fragment key={problem.ordinal}>
-            <section aria-labelledby={headingId} className="vmsh-problem">
+    <FigureLoadingContext.Provider value={imageLoading}>
+      <MathDocument
+        {...(className === undefined ? {} : { className })}
+        {...(document.title === null ? {} : { title: document.title })}
+      >
+        <ContentBlocks
+          blocks={document.introduction}
+          path="introduction"
+          {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+        />
+        {document.problems.map((problem) => {
+          const headingId = `problem-${problem.ordinal}`
+          return (
+            <Fragment key={problem.ordinal}>
+              <section aria-labelledby={headingId} className="vmsh-problem">
+                <ContentBlocks
+                  blocks={problem.preambleBlocks ?? []}
+                  path={`problem-${problem.ordinal}-preamble`}
+                  {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+                />
+                <div className="vmsh-problem-header">
+                  <h2 id={headingId}>
+                    {problem.sourceItem ?? `Задача ${problem.ordinal}`}
+                    {problem.title ? <span>«{problem.title}»</span> : null}
+                  </h2>
+                  {renderProblemActions?.(problem)}
+                </div>
+                <ContentBlocks
+                  blocks={problem.blocks}
+                  path={`problem-${problem.ordinal}`}
+                  problem={problem}
+                  {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+                  {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+                  {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+                />
+                {renderAfterProblem?.(problem)}
+              </section>
               <ContentBlocks
-                blocks={problem.preambleBlocks ?? []}
-                path={`problem-${problem.ordinal}-preamble`}
+                blocks={problem.trailingBlocks ?? []}
+                path={`problem-${problem.ordinal}-trailing`}
                 {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
               />
-              <div className="vmsh-problem-header">
-                <h2 id={headingId}>
-                  {problem.sourceItem ?? `Задача ${problem.ordinal}`}
-                  {problem.title ? <span>«{problem.title}»</span> : null}
-                </h2>
-                {renderProblemActions?.(problem)}
-              </div>
-              <ContentBlocks
-                blocks={problem.blocks}
-                path={`problem-${problem.ordinal}`}
-                problem={problem}
-                {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
-                {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
-                {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-              />
-              {renderAfterProblem?.(problem)}
-            </section>
-            <ContentBlocks
-              blocks={problem.trailingBlocks ?? []}
-              path={`problem-${problem.ordinal}-trailing`}
-              {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-            />
-          </Fragment>
-        )
-      })}
-    </MathDocument>
+            </Fragment>
+          )
+        })}
+      </MathDocument>
+    </FigureLoadingContext.Provider>
   )
 }

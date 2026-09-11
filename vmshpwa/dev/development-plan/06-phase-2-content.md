@@ -526,3 +526,12 @@ approval остаются открытыми gates Phase 2.
 [`test_content_compiler.py`](../../../pwa_tests/domain/test_content_compiler.py),
 [`metadata-grid.test.tsx`](../../packages/product/src/metadata-grid.test.tsx),
 [`math-document.test.tsx`](../../packages/content/src/math-document.test.tsx).
+
+### Печать Student, 11 сентября 2026
+
+[Контракт печати](../../docs/worksheet-print.md) связывает Student routes,
+SemanticMathDocument и browser proof: условия и открытые учебные материалы
+печатаются без посылок/переписки и без дополнительных запросов раскрытия.
+
+Проверка завершена: три browser E2E, фактический PDF, Storybook, unit/runtime
+тесты и сборки прошли. [Отчёт](../../../pwa_tests/reports/worksheet-print/README.md).

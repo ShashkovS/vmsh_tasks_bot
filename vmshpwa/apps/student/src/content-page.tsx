@@ -168,19 +168,22 @@ export function StudentPublishedContentPage({
       : document.title || materialLabels[kind])
 
   const renderedContent = (
-    <>
-      <ContentUpdateMarker visible={contentWasReplaced} />
-      {beforeDocument}
+    <div data-print-lesson>
+      <div data-print-hide>
+        <ContentUpdateMarker visible={contentWasReplaced} />
+        {beforeDocument}
+      </div>
       <SemanticMathDocument
         {...(documentClassName ? { className: documentClassName } : {})}
         document={visibleDocument}
+        imageLoading="eager"
         {...(renderAfterProblem ? { renderAfterProblem } : {})}
         {...(renderAfterSubpart ? { renderAfterSubpart } : {})}
         {...(renderProblemActions ? { renderProblemActions } : {})}
         {...(renderSubpartActions ? { renderSubpartActions } : {})}
       />
-      {afterDocument}
-    </>
+      <div data-print-hide>{afterDocument}</div>
+    </div>
   )
 
   if (hidePageHeading) {

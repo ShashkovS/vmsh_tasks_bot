@@ -1,0 +1,173 @@
+/* Student worksheet contract: docs/worksheet-print.md; verified by
+ * e2e/worksheet-print.spec.ts. Physical paper/ink intentionally ignore theme. */
+.vmsh-print-material-label {
+  display: none;
+}
+
+@page student-worksheet {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  html:has([data-print-lesson]) {
+    color-scheme: light;
+    background: white;
+  }
+
+  body:has([data-print-lesson]) {
+    page: student-worksheet;
+    margin: 0;
+    background: white;
+    color: black;
+  }
+
+  /* Keep only worksheets and the ancestors needed to lay them out. This also
+   * excludes shell overlays and feed pagination without changing React state. */
+  body:has([data-print-lesson])
+    :not([data-print-lesson], [data-print-lesson] *, :has([data-print-lesson])) {
+    display: none !important;
+  }
+
+  body:has([data-print-lesson]),
+  body:has([data-print-lesson]) :has([data-print-lesson]),
+  [data-print-lesson] {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  [data-print-lesson] {
+    break-before: page;
+    font-size: 11pt;
+    line-height: 1.35;
+  }
+
+  body:has([data-print-lesson]) *,
+  body:has([data-print-lesson]) *::before,
+  body:has([data-print-lesson]) *::after {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  [data-print-lesson] [data-print-hide],
+  [data-print-lesson] button,
+  [data-print-lesson] .vmsh-problem-actions-row,
+  [data-print-lesson] .vmsh-material-reveal .vmsh-problem-header {
+    display: none !important;
+  }
+
+  [data-print-lesson] [data-slot='card-header'],
+  [data-print-lesson] [data-slot='card-content'],
+  [data-print-lesson] .vmsh-math-content,
+  [data-print-lesson] .vmsh-material-reveal,
+  [data-print-lesson] .vmsh-figure-canvas {
+    max-width: none;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  [data-print-lesson] .vmsh-math-body,
+  [data-print-lesson] .vmsh-document-title {
+    max-inline-size: none;
+    margin-inline: 0;
+  }
+
+  [data-print-lesson] .vmsh-math-content {
+    container-type: normal;
+    font-size: 11pt;
+    line-height: 1.35;
+  }
+
+  [data-print-lesson] .vmsh-problem-workspace {
+    display: block;
+    margin: 0;
+  }
+
+  [data-print-lesson] .vmsh-material-reveal {
+    margin-block: 2mm;
+  }
+
+  [data-print-lesson] .vmsh-print-material-label {
+    display: block;
+    margin-block: 2mm 1mm;
+    font-size: 11pt;
+    font-weight: bold;
+    break-after: avoid;
+  }
+
+  [data-print-lesson] h1,
+  [data-print-lesson] h2,
+  [data-print-lesson] h3,
+  [data-print-lesson] .vmsh-problem-header,
+  [data-print-lesson] .vmsh-subpart-header,
+  [data-print-lesson] [data-slot='card-header'] {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  [data-print-lesson] p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  [data-print-lesson] .vmsh-problem {
+    margin-block: 4mm 2mm;
+    break-inside: auto;
+  }
+
+  /* Keep the equation and its optional number together in the page flow. */
+  [data-print-lesson] .vmsh-eq {
+    display: block;
+    break-inside: avoid;
+  }
+
+  /* The inline KaTeX output host contains a block display. Making the host a
+   * block prevents Chromium's anonymous inline fragments adding blank pages
+   * after long subparts; worksheet-print.spec.ts checks the actual PDF count. */
+  [data-print-lesson] .vmsh-math-expression-display > span:first-child {
+    display: block;
+  }
+
+  [data-print-lesson] .vmsh-eqno {
+    display: block;
+    text-align: right;
+  }
+
+  [data-print-lesson] .vmsh-scroll-x,
+  [data-print-lesson] .katex-display,
+  [data-print-lesson] .vmsh-math-expression-display {
+    overflow: visible;
+    break-inside: avoid;
+  }
+
+  [data-print-lesson] .vmsh-asset-figure {
+    display: block;
+    float: none;
+    width: min(100%, calc(var(--vmsh-source-width, 100%) * var(--vmsh-print-figure-scale, 1)));
+    max-width: 100%;
+    margin: 2mm 0;
+    break-inside: avoid;
+  }
+
+  [data-print-lesson] img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+}

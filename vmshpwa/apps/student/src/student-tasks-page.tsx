@@ -207,7 +207,7 @@ export function StudentLessonFeedItem({
     expandedProblemIds.size === problemsQuery.data.problems.length
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden" data-print-lesson>
       <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
@@ -216,7 +216,7 @@ export function StudentLessonFeedItem({
             </p>
             <CardTitle>{lessonHeading(lesson)}</CardTitle>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2" data-print-hide>
             <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
             {problemsQuery.data.problems.length > 0 ? (
               <Button
@@ -239,13 +239,17 @@ export function StudentLessonFeedItem({
             ) : null}
           </div>
         </div>
-        <p className="inline-flex items-center gap-2 text-small text-muted-foreground">
+        <p
+          className="inline-flex items-center gap-2 text-small text-muted-foreground"
+          data-print-hide
+        >
           <BookOpen aria-hidden="true" className="size-4" />
           {problemCountLabel(lesson.problemCount)}
         </p>
       </CardHeader>
       <CardContent className="p-0">
         <SemanticMathDocument
+          imageLoading="eager"
           className="vmsh-student-feed-sheet px-5 py-6 sm:px-10 sm:py-8"
           document={contentQuery.data.document}
           renderAfterSubpart={(documentProblem, label) => {

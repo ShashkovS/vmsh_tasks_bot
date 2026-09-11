@@ -1,6 +1,15 @@
-import { useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
+import {
+  useContext,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 
 import type { WebFigureAvailableAsset } from '@vmsh/contracts'
+
+import { FigureLoadingContext } from './figure-loading'
 
 /* The Staff ladder is a persisted editorial choice. Student clicks are an
  * ephemeral reading convenience and intentionally use their own shorter set. */
@@ -54,6 +63,7 @@ export function ZoomableAssetFigure({
   scale,
   onScaleCycle,
 }: ZoomableAssetFigureProps) {
+  const imageLoading = useContext(FigureLoadingContext)
   const [studentScale, setStudentScale] = useState<number>()
   const [failedSource, setFailedSource] = useState<string | null>(null)
   const savedScale = normalizedScale(scale)
@@ -92,6 +102,7 @@ export function ZoomableAssetFigure({
         {
           '--vmsh-source-width': widthHint ?? '100%',
           '--vmsh-figure-scale': String(displayedScale),
+          '--vmsh-print-figure-scale': String(savedScale),
         } as CSSProperties
       }
     >
@@ -115,7 +126,7 @@ export function ZoomableAssetFigure({
             decoding="async"
             draggable={false}
             height={asset.height}
-            loading="lazy"
+            loading={imageLoading}
             onError={() => setFailedSource(asset.src)}
             src={asset.src}
             width={asset.width}

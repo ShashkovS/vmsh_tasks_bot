@@ -18,6 +18,7 @@ import {
 } from '@vmsh/offline'
 import '@vmsh/ui/styles.css'
 import '@vmsh/content/styles.css'
+import './student-worksheet-print.css'
 
 import { routeTree } from './routeTree.gen'
 import { PwaUpdateController } from './pwa-update'

@@ -210,7 +210,7 @@ export function StudentProblemWorkspace({
        * keeps the row intact instead of splitting it around an open panel.
        */}
       {answerOpen ? (
-        <div className="order-1 w-full basis-full">
+        <div className="order-1 w-full basis-full" data-print-hide>
           <StudentProblemActions
             conditionRevisionId={conditionRevisionId}
             courseId={courseId}
@@ -331,22 +331,29 @@ function StudentTaskMaterialsReady({
         )}
       </div>
       {error ? (
-        <p className="order-3 mt-2 w-full basis-full text-small text-danger">{error}</p>
+        <p data-print-hide className="order-3 mt-2 w-full basis-full text-small text-danger">
+          {error}
+        </p>
       ) : null}
       {loadingKind !== null && loadingKind === openKind ? (
-        <p className="order-3 mt-2 w-full basis-full text-small text-muted-foreground">
+        <p
+          data-print-hide
+          className="order-3 mt-2 w-full basis-full text-small text-muted-foreground"
+        >
           Загружаем…
         </p>
       ) : null}
       {openKind === 'hint' && hint ? (
         <div className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3">
-          <SemanticMathDocument document={hint.document} />
+          <span className="vmsh-print-material-label">Подсказка</span>
+          <SemanticMathDocument document={hint.document} imageLoading="eager" />
           <StudentCollapseAction label="Скрыть подсказку" onClick={() => setOpenKind(null)} />
         </div>
       ) : null}
       {openKind === 'solution' && solution ? (
         <div className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3">
-          <SemanticMathDocument document={solution.document} />
+          <span className="vmsh-print-material-label">Решение</span>
+          <SemanticMathDocument document={solution.document} imageLoading="eager" />
           <StudentCollapseAction label="Скрыть решение" onClick={() => setOpenKind(null)} />
         </div>
       ) : null}
@@ -473,8 +480,7 @@ export function CanonicalStudentTask({
             size="sm"
             variant="ghost"
           >
-            <ArrowLeft aria-hidden="true" className="size-4" />
-            К листку
+            <ArrowLeft aria-hidden="true" className="size-4" />К листку
           </Button>
         </div>
       }

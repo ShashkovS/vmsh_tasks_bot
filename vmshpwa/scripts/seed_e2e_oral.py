@@ -71,7 +71,9 @@ def _web_document(*, revision_id: str, source_sha256: str, title: str) -> str:
     )
 
 
-def _seed(connection: sqlite3.Connection, targets=TARGETS) -> int:
+def _seed(
+    connection: sqlite3.Connection, targets=TARGETS, *, document_factory=_web_document
+) -> int:
     existing_lessons = {
         int(row["id"])
         for row in connection.execute(
@@ -178,7 +180,7 @@ def _seed(connection: sqlite3.Connection, targets=TARGETS) -> int:
                     source_id,
                     source_sha256,
                     source,
-                    _web_document(
+                    document_factory(
                         revision_id=revision_public_id,
                         source_sha256=source_sha256,
                         title=title,
@@ -188,7 +190,7 @@ def _seed(connection: sqlite3.Connection, targets=TARGETS) -> int:
                 ),
             ).fetchone()["id"]
         )
-        web_document = _web_document(
+        web_document = document_factory(
             revision_id=revision_public_id,
             source_sha256=source_sha256,
             title=title,

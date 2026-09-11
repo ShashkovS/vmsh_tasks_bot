@@ -1246,3 +1246,12 @@ TypeScript приложений/app-shell/tooling, ESLint, Prettier и productio
 story обновлены. **13 unit-тестов прошли**, форматирование проверено.
 [Требование и реализация](../../docs/task-titles.md#отделение-названия-от-условия--11-сентября-2026).
 Владелец разрешил commit и push 11 сентября 2026.
+
+## Печать ученических листков — 11 сентября 2026
+
+Реализован [контракт](../../docs/worksheet-print.md): Student-only print CSS,
+условия и открытые учебные материалы; ответы, фото работ и переписка скрыты.
+Chromium/WebKit/Firefox, Storybook и PDF пройдены. Устранены лишние страницы
+около KaTeX; сохранены экранный масштаб и черновики. Снимки light/dark и PDF
+просмотрены: [отчёт](../../../pwa_tests/reports/worksheet-print/README.md).
+Владелец разрешил commit/push 11 сентября 2026.
