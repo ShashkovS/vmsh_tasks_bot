@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { MapPin, Radio } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -170,10 +170,7 @@ export function FamilyChildrenPage() {
   }
 
   return (
-    <PageLayout
-      description="Связи создаёт администратор при регистрации. Данные разных детей не смешиваются."
-      title="Дети"
-    >
+    <PageLayout title="Дети">
       {principal.linkedChildren.length === 0 ? (
         <PageStatePanel
           description="Обратитесь к администратору кружка, чтобы связать аккаунт с ребёнком."
@@ -287,9 +284,9 @@ export function FamilyChildPage({ childId }: { childId: string }) {
   const student = query.data.student
   return (
     <PageLayout
-      description="Режим и активная группа показаны отдельно для каждого курса."
       eyebrow={student.grade === null ? undefined : `${student.grade} класс`}
       title={student.displayName}
+      width="wide"
     >
       {query.data.courses.length === 0 ? (
         <PageStatePanel
@@ -298,7 +295,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
           title="Нет активных курсов"
         />
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="space-y-5">
           {query.data.courses.map(({ enrollment, currentLesson, progress }) => {
             const group = activeGroup(enrollment)
             const inPerson = enrollment.attendanceMode === 'in_person'
@@ -320,6 +317,70 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                   {group ? <LevelChip level={group} /> : null}
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  <FamilyEnrollmentSettings
+                    enrollment={enrollment}
+                    error={
+                      enrollmentMutation.isError &&
+                      enrollmentMutation.variables?.courseId === enrollment.course.courseId
+                    }
+                    onSave={(input) =>
+                      enrollmentMutation.mutateAsync({
+                        courseId: enrollment.course.courseId,
+                        input,
+                      })
+                    }
+                    saving={
+                      enrollmentMutation.isPending &&
+                      enrollmentMutation.variables?.courseId === enrollment.course.courseId
+                    }
+                    key={`${enrollment.enrollmentId}:${enrollment.version}`}
+                  />
+                  {progress.lessons.length || progress.activity.length ? (
+                    <details open className="rounded-md border border-border bg-surface px-3 py-2">
+                      <summary className="cursor-pointer text-small font-medium">
+                        История курса
+                      </summary>
+                      <div className="mt-3 space-y-4">
+                        {progress.lessons.length ? (
+                          <ul className="divide-y divide-border text-small">
+                            {[...progress.lessons]
+                              .sort((a, b) => b.lessonNumber - a.lessonNumber)
+                              .map((lesson) => (
+                                <li
+                                  className="flex items-center justify-between gap-3 py-2"
+                                  key={lesson.lessonNumber}
+                                >
+                                  {group ? (
+                                    <Link
+                                      className="text-link underline"
+                                      to="/tasks/$courseCode/$groupCode/$lessonNumber"
+                                      params={{
+                                        courseCode: enrollment.course.code,
+                                        groupCode: group.code,
+                                        lessonNumber: String(lesson.lessonNumber),
+                                      }}
+                                      search={
+                                        principal.linkedChildren.length > 1
+                                          ? { child: childNumber }
+                                          : {}
+                                      }
+                                    >
+                                      Занятие {lesson.lessonNumber}
+                                    </Link>
+                                  ) : (
+                                    <span>Занятие {lesson.lessonNumber}</span>
+                                  )}
+                                  <span className="text-muted-foreground">
+                                    {lesson.accepted} из {lesson.attempted} зачтено
+                                  </span>
+                                </li>
+                              ))}
+                          </ul>
+                        ) : null}
+                        <ActivityCalendar days={progress.activity} />
+                      </div>
+                    </details>
+                  ) : null}
                   {currentLesson ? (
                     <div className="space-y-1">
                       <p className="text-small font-medium text-foreground">
@@ -355,49 +416,6 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       }))}
                     />
                   ) : null}
-                  {progress.lessons.length || progress.activity.length ? (
-                    <details className="rounded-md border border-border bg-surface px-3 py-2">
-                      <summary className="cursor-pointer text-small font-medium">
-                        История курса
-                      </summary>
-                      <div className="mt-3 space-y-4">
-                        {progress.lessons.length ? (
-                          <ul className="divide-y divide-border text-small">
-                            {progress.lessons.map((lesson) => (
-                              <li
-                                className="flex items-center justify-between gap-3 py-2"
-                                key={lesson.lessonNumber}
-                              >
-                                <span>Занятие {lesson.lessonNumber}</span>
-                                <span className="text-muted-foreground">
-                                  {lesson.accepted} из {lesson.attempted} зачтено
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                        <ActivityCalendar days={progress.activity} />
-                      </div>
-                    </details>
-                  ) : null}
-                  <FamilyEnrollmentSettings
-                    enrollment={enrollment}
-                    error={
-                      enrollmentMutation.isError &&
-                      enrollmentMutation.variables?.courseId === enrollment.course.courseId
-                    }
-                    onSave={(input) =>
-                      enrollmentMutation.mutateAsync({
-                        courseId: enrollment.course.courseId,
-                        input,
-                      })
-                    }
-                    saving={
-                      enrollmentMutation.isPending &&
-                      enrollmentMutation.variables?.courseId === enrollment.course.courseId
-                    }
-                    key={`${enrollment.enrollmentId}:${enrollment.version}`}
-                  />
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-caption text-muted-foreground">
                       Доступно групп: {enrollment.allowedGroups.length}

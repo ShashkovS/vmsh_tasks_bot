@@ -3,6 +3,8 @@ import {
   ApiResponseError,
   apiErrorSchema,
   familyChildCoursesResponseSchema,
+  familyWorksheetResponseSchema,
+  type FamilyWorksheetResponse,
   familyChildHomeResponseSchema,
   familyCourseQueryKeys,
   familyEnrollmentUpdateRequestSchema,
@@ -23,6 +25,13 @@ export interface FamilyCourseClientOptions {
 }
 
 export interface FamilyCourseClient {
+  worksheet(
+    studentId: string,
+    courseId: string,
+    groupId: string,
+    lessonNumber: number,
+    signal?: AbortSignal,
+  ): Promise<FamilyWorksheetResponse>
   childCourses(studentId: string, signal?: AbortSignal): Promise<FamilyChildCoursesResponse>
   childHome(studentId: string, signal?: AbortSignal): Promise<FamilyChildHomeResponse>
   updateEnrollment(
@@ -46,7 +55,7 @@ export function createFamilyCourseClient(
 
   async function request<T>(
     studentId: string,
-    resource: 'courses' | 'home',
+    resource: string,
     parser: Parser<T>,
     signal?: AbortSignal,
   ): Promise<T> {
@@ -88,6 +97,24 @@ export function createFamilyCourseClient(
   }
 
   return {
+    async worksheet(studentId, courseId, groupId, lessonNumber, signal) {
+      if (!Number.isSafeInteger(lessonNumber) || lessonNumber < 0)
+        throw new TypeError('Invalid lesson number')
+      const result = await request(
+        studentId,
+        `courses/${encodeURIComponent(publicIdSchema.parse(courseId))}/lessons/${lessonNumber}?group=${encodeURIComponent(publicIdSchema.parse(groupId))}`,
+        familyWorksheetResponseSchema,
+        signal,
+      )
+      if (
+        result.studentId !== studentId ||
+        result.lesson.courseId !== courseId ||
+        result.lesson.groupId !== groupId ||
+        result.lesson.lessonNumber !== lessonNumber
+      )
+        throw new TypeError('Unexpected worksheet context')
+      return result
+    },
     childCourses(studentId, signal) {
       return request(studentId, 'courses', familyChildCoursesResponseSchema, signal)
     },
@@ -169,5 +196,27 @@ export function useFamilyEnrollmentMutation(
         queryKey: familyCourseQueryKeys.home(principal, studentId),
       })
     },
+  })
+}
+
+export function useFamilyWorksheetQuery(
+  client: FamilyCourseClient,
+  principal: PrincipalQueryScope,
+  studentId: string,
+  courseId: string,
+  groupId: string,
+  lessonNumber: number,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: [
+      ...familyCourseQueryKeys.home(principal, studentId),
+      'worksheet',
+      courseId,
+      groupId,
+      lessonNumber,
+    ],
+    queryFn: ({ signal }) => client.worksheet(studentId, courseId, groupId, lessonNumber, signal),
+    enabled,
   })
 }

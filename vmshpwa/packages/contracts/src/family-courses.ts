@@ -1,7 +1,13 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
-import { attendanceModeSchema, courseEnrollmentSchema } from './courses'
+import {
+  attendanceModeSchema,
+  courseEnrollmentSchema,
+  studentLessonSummarySchema,
+  studentProblemListResponseSchema,
+} from './courses'
+import { webContentDocumentSchema } from './content'
 import { courseProgressResponseSchema } from './progress'
 
 /** Phase-9 read model for one child already linked to the Family account. */
@@ -124,3 +130,23 @@ export const familyCourseQueryKeys = {
       publicIdSchema.parse(studentId),
     ] as const,
 }
+
+// docs/family-worksheet-polish.md: the same lesson/mark projection as Student, no dialogue.
+export const familyWorksheetResponseSchema = z
+  .object({
+    studentId: publicIdSchema,
+    lesson: studentLessonSummarySchema,
+    problems: studentProblemListResponseSchema,
+    document: webContentDocumentSchema,
+  })
+  .strip()
+  .superRefine((value, context) => {
+    if (
+      value.lesson.groupLessonId !== value.problems.groupLessonId ||
+      value.lesson.courseId !== value.problems.courseId ||
+      value.lesson.groupId !== value.problems.groupId
+    ) {
+      context.addIssue({ code: 'custom', message: 'Worksheet context must match its marks' })
+    }
+  })
+export type FamilyWorksheetResponse = z.infer<typeof familyWorksheetResponseSchema>

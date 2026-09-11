@@ -1,15 +1,14 @@
 import { useMemo } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 
 import {
   createFamilyCourseClient,
-  FamilyWrittenThreadNetworkError,
   PageLayout,
   PageStatePanel,
-  createFamilyWrittenThreadClient,
   useAuthenticatedPrincipal,
   useAuthentication,
-  useFamilyChildHomeQuery,
-  useFamilyWrittenThreadQuery,
+  useFamilyChildCoursesQuery,
+  useFamilyWorksheetQuery,
 } from '@vmsh/app-shell'
 import {
   ContentNetworkError,
@@ -18,110 +17,29 @@ import {
   usePublishedContentReplacement,
   usePublishedContentQuery,
 } from '@vmsh/content'
-import { ApiResponseError, publicIdSchema, type ContentMaterialKind } from '@vmsh/contracts'
-import { ContentUpdateMarker, WrittenReviewHistory } from '@vmsh/product'
-import { Button, Card, CardContent } from '@vmsh/ui'
+import {
+  ApiResponseError,
+  type ContentMaterialKind,
+  type StudentProblemSummary,
+  type CourseEnrollment,
+  type WebContentBlock,
+} from '@vmsh/contracts'
+import { ContentUpdateMarker } from '@vmsh/product'
+import { Badge } from '@vmsh/ui'
+
+function hasSubparts(blocks: WebContentBlock[]): boolean {
+  return blocks.some(
+    (block) =>
+      block.type === 'subpart' ||
+      ('blocks' in block && hasSubparts(block.blocks)) ||
+      (block.type === 'list' && block.items.some(hasSubparts)),
+  )
+}
 
 const materialLabels: Record<ContentMaterialKind, string> = {
   condition: 'Условие',
   hint: 'Подсказка',
   solution: 'Решение',
-}
-
-function FamilyWrittenThreadView({
-  studentId,
-  problemId,
-}: {
-  studentId: string
-  problemId: string
-}) {
-  const authentication = useAuthentication()
-  const principal = useAuthenticatedPrincipal()
-  if (principal.audience !== 'family') throw new Error('Family thread requires a Family principal')
-  const client = useMemo(
-    () =>
-      createFamilyWrittenThreadClient(authentication.client.runtime, {
-        refreshSession: async () => {
-          try {
-            return await authentication.refresh()
-          } catch (error) {
-            authentication.handleApiError(error)
-            throw error
-          }
-        },
-      }),
-    [authentication],
-  )
-  const query = useFamilyWrittenThreadQuery(
-    client,
-    { audience: 'family', accountId: principal.accountId },
-    studentId,
-    problemId,
-  )
-
-  if (query.isPending) {
-    return (
-      <p aria-live="polite" className="text-small text-muted-foreground">
-        Загружаем отправленное решение и результат проверки…
-      </p>
-    )
-  }
-  if (query.error) {
-    const offline = query.error instanceof FamilyWrittenThreadNetworkError
-    return (
-      <Card role="alert">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
-          <p className="text-small text-muted-foreground">
-            {offline
-              ? 'Результат пока недоступен без связи.'
-              : 'Не удалось безопасно загрузить результат проверки.'}
-          </p>
-          <Button onClick={() => void query.refetch()} size="sm" variant="outline">
-            Повторить
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
-  const thread = query.data.thread
-  if (thread === null) return null
-  const studentEntries = thread.entries.filter((entry) => entry.authorKind === 'student')
-
-  return (
-    <div className="mt-6 space-y-5">
-      <section aria-label="Отправленное решение ребёнка" className="space-y-3">
-        <h2 className="text-title font-semibold text-foreground">Отправленное решение</h2>
-        {studentEntries.map((entry) => (
-          <Card key={entry.entryId}>
-            <CardContent className="space-y-3 pt-5">
-              {entry.text ? <p className="font-reading text-body">{entry.text}</p> : null}
-              {entry.attachments.length ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {entry.attachments.map((attachment, index) => (
-                    <img
-                      alt={`Страница решения ${index + 1}`}
-                      className="w-full rounded-md border border-paper-edge bg-paper object-contain"
-                      key={attachment.attachmentId}
-                      loading="lazy"
-                      src={attachment.mediaPath}
-                    />
-                  ))}
-                </div>
-              ) : null}
-              <time className="block text-caption text-muted-foreground">
-                Отправлено {new Date(entry.serverReceivedAt).toLocaleString('ru-RU')}
-              </time>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-      {thread.reviews.length ? (
-        <WrittenReviewHistory entries={thread.entries} reviews={thread.reviews} />
-      ) : (
-        <p className="text-small text-muted-foreground">Решение ждёт проверки.</p>
-      )}
-    </div>
-  )
 }
 
 /** Family uses the same published derivative but always keeps child ownership explicit. */
@@ -224,6 +142,7 @@ export function FamilyPublishedContentPage({
                 description: 'Этот материал ещё не опубликован для выбранной группы ребёнка.',
               }
             : {})}
+          description="Не удалось загрузить материал. Попробуйте ещё раз."
           state={state}
           {...(state === 'empty' ? { title: 'Материал пока закрыт' } : {})}
         />
@@ -269,11 +188,6 @@ export function FamilyPublishedContentPage({
           document={visibleDocument}
         />
       </div>
-      {kind === 'condition' &&
-      problemOrdinal !== undefined &&
-      publicIdSchema.safeParse(taskId).success ? (
-        <FamilyWrittenThreadView problemId={taskId} studentId={studentPublicId} />
-      ) : null}
     </PageLayout>
   )
 }
@@ -313,7 +227,7 @@ export function FamilyReadableContentPage({
       }),
     [authentication],
   )
-  const query = useFamilyChildHomeQuery(
+  const query = useFamilyChildCoursesQuery(
     client,
     { audience: 'family', accountId: principal.accountId },
     selectedChild?.studentId ?? 'missing',
@@ -341,42 +255,146 @@ export function FamilyReadableContentPage({
           actionLabel="Повторить"
           onAction={() => void query.refetch()}
           state="error"
+          description="Не удалось загрузить данные ребёнка. Попробуйте ещё раз."
         />
       </PageLayout>
     )
   }
-  const course = query.data.courses.find(
-    ({ enrollment }) =>
+  const course = query.data.enrollments.find(
+    (enrollment) =>
       enrollment.course.code.toLocaleLowerCase('ru-RU') === courseCode.toLocaleLowerCase('ru-RU'),
   )
-  const group = course?.enrollment.allowedGroups.find(
+  const group = course?.allowedGroups.find(
     (candidate) =>
       candidate.code.toLocaleLowerCase('ru-RU') === groupCode.toLocaleLowerCase('ru-RU'),
   )
-  const lesson = course?.currentLesson
-  if (
-    !course ||
-    !group ||
-    course.enrollment.activeGroupId !== group.groupId ||
-    lesson?.lessonNumber !== lessonNumber
-  ) {
+  if (!course || !group) {
     return (
       <PageLayout title="Листок" width="content">
-        <PageStatePanel
-          description="Проверьте код курса, группы и номер занятия в ссылке."
-          state="empty"
-          title="Листок не найден"
-        />
+        <PageStatePanel state="forbidden" description="Эта группа недоступна выбранному ребёнку." />
       </PageLayout>
     )
   }
   return (
-    <FamilyPublishedContentPage
-      displayTitle={lesson.title?.trim() || `Занятие ${lesson.lessonNumber}`}
-      groupLessonId={lesson.groupLessonId}
-      kind="condition"
-      requestedStudentPublicId={selectedChild.studentId}
-      taskId={`lesson-${lesson.lessonNumber}`}
+    <FamilyWorksheet
+      client={client}
+      studentId={selectedChild.studentId}
+      course={course}
+      groupId={group.groupId}
+      lessonNumber={lessonNumber}
+      childNumber={childNumber}
     />
+  )
+}
+
+function FamilyWorksheet({
+  client,
+  studentId,
+  course,
+  groupId,
+  lessonNumber,
+  childNumber,
+}: {
+  client: ReturnType<typeof createFamilyCourseClient>
+  studentId: string
+  course: CourseEnrollment
+  groupId: string
+  lessonNumber: number
+  childNumber?: number | undefined
+}) {
+  const principal = useAuthenticatedPrincipal()
+  const navigate = useNavigate()
+  const query = useFamilyWorksheetQuery(
+    client,
+    { audience: 'family', accountId: principal.accountId },
+    studentId,
+    course.course.courseId,
+    groupId,
+    lessonNumber,
+  )
+  const mark = (problem: StudentProblemSummary | undefined) =>
+    problem ? (
+      <Badge variant={problem.status === 'accepted' ? 'success' : 'neutral'}>
+        {problem.verdict?.symbol ??
+          (problem.status === 'sent' || problem.status === 'checking'
+            ? 'На проверке'
+            : 'Не начата')}
+      </Badge>
+    ) : null
+  return (
+    <PageLayout
+      title={`Занятие ${lessonNumber}`}
+      width="content"
+      actions={
+        <label className="flex items-center gap-2 text-small">
+          Группа
+          <select
+            aria-label="Группа листка"
+            className="min-h-10 rounded-md border border-input bg-surface px-3"
+            value={groupId}
+            onChange={(event) => {
+              const group = course.allowedGroups.find((item) => item.groupId === event.target.value)
+              if (group)
+                void navigate({
+                  to: '/tasks/$courseCode/$groupCode/$lessonNumber',
+                  params: {
+                    courseCode: course.course.code,
+                    groupCode: group.code,
+                    lessonNumber: String(lessonNumber),
+                  },
+                  search: childNumber === undefined ? {} : { child: childNumber },
+                })
+            }}
+          >
+            {course.allowedGroups.map((group) => (
+              <option key={group.groupId} value={group.groupId}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      }
+    >
+      {query.isPending ? (
+        <PageStatePanel state="loading" />
+      ) : query.error ? (
+        <PageStatePanel
+          state={
+            query.error instanceof ApiResponseError && query.error.status === 404
+              ? 'empty'
+              : 'error'
+          }
+          title="Листок пока недоступен"
+          description={
+            query.error instanceof ApiResponseError && query.error.status === 404
+              ? 'Условие этого занятия для выбранной группы ещё не опубликовано.'
+              : 'Не удалось загрузить условия и оценки. Попробуйте ещё раз.'
+          }
+          actionLabel="Повторить"
+          onAction={() => void query.refetch()}
+        />
+      ) : (
+        <SemanticMathDocument
+          imageLoading="eager"
+          className="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 sm:px-7 sm:py-6"
+          document={query.data.document}
+          renderProblemActions={(problem) =>
+            mark(
+              query.data.problems.problems.find(
+                (item) => item.sourceOrdinal === problem.ordinal && !hasSubparts(problem.blocks),
+              ),
+            )
+          }
+          renderSubpartActions={(problem, label) =>
+            mark(
+              query.data.problems.problems.find(
+                (item) =>
+                  item.sourceOrdinal === problem.ordinal && item.displayNumber.endsWith(label),
+              ),
+            )
+          }
+        />
+      )}
+    </PageLayout>
   )
 }

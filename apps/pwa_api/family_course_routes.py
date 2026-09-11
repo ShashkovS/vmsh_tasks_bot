@@ -1,8 +1,8 @@
 """Family reads for one explicitly linked child's course context.
 
 The authentication middleware has already loaded and revalidated family links
-and course enrollments for this request.  These handlers only project that
-authority; they do not perform a second database read.  See Phase 9 in
+and course enrollments for this request. These handlers use that authority
+for child-scoped course and worksheet reads. See Phase 9 in
 ``vmshpwa/dev/development-plan/13-phase-9-family-and-progress.md``.
 """
 
@@ -15,12 +15,17 @@ from aiohttp import web
 
 from apps.pwa_api.auth_service import AuthenticatedSession
 from apps.pwa_api.course_routes import (
+    _allowed_group,
+    _repository,
+    _student_lesson_payload,
+    _student_problem_list_payload,
     course_achievements_payload,
     course_analytics_payload,
     course_enrollment_payload,
 )
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.content import ContentNotFound
 from db_methods.pwa.family import latest_published_lesson
 from db_methods.pwa.course_achievements import list_student_course_achievements
 from db_methods.pwa.course_analytics import latest_student_course_metrics
@@ -30,6 +35,7 @@ from db_methods.pwa.progress import (
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.content import ContentKind
 from models.pwa.family_enrollment import change_family_enrollment
 from models.pwa.progress import summarize_course_results
 
@@ -320,6 +326,77 @@ async def get_family_child_home(request: web.Request) -> web.Response:
         )
     return web.json_response(
         {"student": _child_payload(child), "courses": courses},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@family_course_routes.get(
+    "/family/api/v1/children/{student_public_id}/courses/"
+    "{course_public_id}/lessons/{lesson_number}"
+)
+async def get_family_worksheet(request: web.Request) -> web.Response:
+    """Read-only worksheet; see vmshpwa/docs/family-worksheet-polish.md."""
+    authenticated = _family_session(request)
+    child = _linked_child(authenticated, request.match_info["student_public_id"])
+    enrollment = next(
+        (
+            item for item in authenticated.course_enrollments
+            if item.student_public_id == child.student_public_id
+            and item.course_public_id == request.match_info["course_public_id"]
+        ),
+        None,
+    )
+    if enrollment is None:
+        raise PwaApiError(
+            status=403, code="forbidden", message="Курс ребёнка недоступен"
+        )
+    number = request.match_info["lesson_number"]
+    if (
+        not number.isascii() or not number.isdigit() or len(number) > 8
+        or set(request.query) - {"group"}
+        or len(request.query.getall("group", [])) > 1
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте занятие и группу"
+        )
+    group = _allowed_group(
+        enrollment, request.query.get("group", enrollment.active_group_public_id)
+    )
+    repository = _repository(request)
+    lessons = await repository.list_student_lessons(
+        course_public_id=enrollment.course_public_id,
+        group_public_id=group.group_public_id,
+        before_lesson_number=int(number) + 1,
+        limit=1,
+    )
+    if not lessons or lessons[0].lesson_number != int(number):
+        raise PwaApiError(
+            status=404, code="not_found",
+            message="Условие этого занятия ещё не опубликовано",
+        )
+    lesson = lessons[0]
+    try:
+        problems = await repository.list_student_problems(
+            student_user_id=child.student_user_id,
+            course_public_id=enrollment.course_public_id,
+            group_public_id=group.group_public_id,
+            group_lesson_public_id=lesson.group_lesson_public_id,
+        )
+        content = await repository.get_published_content(
+            group_lesson_public_id=lesson.group_lesson_public_id,
+            kind=ContentKind.CONDITION,
+        )
+    except ContentNotFound as error:
+        raise PwaApiError(
+            status=404, code="not_found", message="Листок пока недоступен"
+        ) from error
+    return web.json_response(
+        {
+            "studentId": child.student_public_id,
+            "lesson": _student_lesson_payload(lesson),
+            "problems": _student_problem_list_payload(problems),
+            "document": content.document,
+        },
         headers={"Cache-Control": "no-store"},
     )
 

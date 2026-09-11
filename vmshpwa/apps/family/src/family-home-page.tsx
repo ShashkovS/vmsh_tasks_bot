@@ -105,7 +105,6 @@ export function FamilyHomePage() {
           </label>
         ) : undefined
       }
-      description="Семья видит то же подтверждённое распределение, что и школьник."
       eyebrow={selectedChild?.displayName ?? 'Семейный кабинет'}
       title="Текущие занятия"
     >
@@ -123,10 +122,7 @@ export function FamilyHomePage() {
             ))}
         </div>
       ) : null}
-      <PageSection
-        description="Черновики распределения и данные других школьников здесь не показываются."
-        title="Очные занятия"
-      >
+      <PageSection title="Очные занятия">
         {selectedChildId.length === 0 ? (
           <PageStatePanel
             description="Обратитесь к администратору кружка, чтобы связать аккаунт с ребёнком."

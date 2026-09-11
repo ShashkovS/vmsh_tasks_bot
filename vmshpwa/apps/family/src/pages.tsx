@@ -165,10 +165,7 @@ export function FamilyHomePage({ state = 'ready' }: { state?: PageDisplayState }
         title="Текущие занятия"
       >
         <div className="space-y-5">
-          <PageSection
-            description="Семья видит опубликованное состояние всех курсов ребёнка."
-            title="Курсы"
-          >
+          <PageSection title="Курсы">
             <div className="grid gap-3 lg:grid-cols-2">
               <CourseCard
                 classroomName="201"
@@ -207,10 +204,7 @@ export function FamilyHomePage({ state = 'ready' }: { state?: PageDisplayState }
               ))}
             </CardContent>
           </Card>
-          <PageSection
-            description="Семья видит те же опубликованные статусы, что и ребёнок."
-            title="Занятие 41"
-          >
+          <PageSection title="Занятие 41">
             <div className="space-y-2">
               {tasks.map((task) => (
                 <TaskListItem key={task.id} task={task} />
@@ -226,10 +220,7 @@ export function FamilyHomePage({ state = 'ready' }: { state?: PageDisplayState }
 export function FamilyChildrenPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
     <StatefulPage state={state} title="Дети">
-      <PageLayout
-        description="Связи создаёт администратор при пакетной регистрации."
-        title="Связанные дети"
-      >
+      <PageLayout title="Связанные дети">
         <div className="grid gap-3 sm:grid-cols-2">
           {[
             ['Василий Петров', 'Начинающие · очно', '3 задачи зачтено'],
@@ -426,24 +417,25 @@ export function FamilyProfilePage({
   state = 'ready',
   sessionManagement,
   organizerLink,
+  displayName = 'Профиль',
+  childrenLinks,
 }: {
   state?: PageDisplayState
+  displayName?: string
+  childrenLinks?: ReactNode
   organizerLink?: ReactNode
   sessionManagement?: ReactNode
 }) {
   return (
     <StatefulPage state={state} title="Профиль">
-      <PageLayout
-        description="Отдельный семейный аккаунт без привязки к Telegram."
-        title="Сергей Петров"
-      >
+      <PageLayout title={displayName}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Дети</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-small">2 связанных профиля</p>
+              {childrenLinks ?? <p className="text-small">Нет связанных детей</p>}
             </CardContent>
           </Card>
           {sessionManagement ?? <AccountSessionManager />}
@@ -451,7 +443,7 @@ export function FamilyProfilePage({
             <CardHeader>
               <CardTitle>Помощь</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-3">
               {organizerLink}
               <a
                 className="inline-flex items-center gap-2 text-link underline"

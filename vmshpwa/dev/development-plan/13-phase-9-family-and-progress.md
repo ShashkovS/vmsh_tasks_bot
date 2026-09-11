@@ -93,3 +93,7 @@ Migration: `pwa_family_achievements`.
 Family activity и Student strength/progress/streak/achievements считаются раздельно по курсам. Для каждого lesson synonym-group учитывается один раз внутри каждого group sheet; best group выбирается по weighted score и stable sort order. Student/Family не получают distribution/self marker/percentile.
 
 Дополнительный proof: a53 parity per course, best-group tie, no cross-course aggregation, privacy assertions и stories `Product/Progress--courses-separated`, `Pages/Student--progress-by-course`, `Pages/Family--activity-by-course`.
+
+## Family worksheet polish
+
+Implemented [read-only worksheets and child/profile corrections](../../docs/family-worksheet-polish.md). The worksheet API reuses the Student lesson/mark projection within the authenticated child and allowed group; old and non-active-group lessons can be read. [Verification](../../../pwa_tests/reports/family-worksheet-polish/README.md) covers authorization, matching marks, child separation and all three browsers.

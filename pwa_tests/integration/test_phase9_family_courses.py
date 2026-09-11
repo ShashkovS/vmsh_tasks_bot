@@ -416,3 +416,50 @@ async def test_student_changes_own_allowed_group_and_attendance(content_http):
         cookies=content_support._cookie(fixture, "student"),
     )
     assert unavailable.status == 403
+
+
+async def test_family_worksheet_matches_student_marks_and_enforces_child_group(content_http):
+    fixture = content_http
+    problem, _ = await content_support._prepare_published_test_problem(fixture, problem_type=2)
+    url = '/family/api/v1/children/u-903101/courses/c-1/lessons/41'
+    headers = content_support._headers()
+    cookies = content_support._cookie(fixture, 'family')
+    fixture.factory.run_write(lambda c: c.execute(
+        "INSERT INTO results(student_id,problem_id,group_id,lesson,teacher_id,ts,verdict,answer,res_type) "
+        "VALUES (?,?,'content-a',41,?,'2026-09-20T12:00:00Z',17,'',2)",
+        (content_support.STUDENT_USER_ID, int(problem.removeprefix('p-')), content_support.TEACHER_USER_ID),
+    ))
+    response = await fixture.client.get(url, headers=headers, cookies=cookies)
+    assert response.status == 200, await response.text()
+    data = await response.json()
+    student = await fixture.client.get(
+        f'/student/api/v1/courses/c-1/lessons/{fixture.group_lesson_a}/problems',
+        headers=headers, cookies=content_support._cookie(fixture, 'student'),
+    )
+    assert data['problems'] == await student.json()
+    assert data['document']['problems'][0]['taskReference'].startswith('41a.')
+    assert data['problems']['problems'][0]['verdict']['verdictId'] == 17
+    assert 'entries' not in data and 'thread' not in data
+    assert response.headers['Cache-Control'] == 'no-store'
+    for path, status in ((url + '?group=g-2', 403), (url.replace('u-903101','u-999'),403),
+                         (url.replace('/41','/40'),404), (url + '?group=g-1&group=g-1',422)):
+        denied = await fixture.client.get(path, headers=headers, cookies=cookies)
+        assert denied.status == status, await denied.text()
+    forbidden = await fixture.client.get(url, headers=headers, cookies=content_support._cookie(fixture,'student'))
+    assert forbidden.status == 401
+
+    # A published non-active group is readable when explicitly allowed.
+    revision, _ = await content_support._upload_and_compile(fixture,
+        group_lesson=fixture.group_lesson_b, kind='condition', filename='family/b.tex',
+        source='\\задача Другой уровень \\кзадача')
+    published = await content_support._publish(fixture, group_lesson=fixture.group_lesson_b,
+        kind='condition', revision_id=revision['revisionId'])
+    assert published.status == 201
+    fixture.factory.run_write(lambda c: c.execute(
+        "INSERT INTO course_group_access(enrollment_id,course_id,group_id,valid_from,created_at,updated_at) "
+        "SELECT id,course_id,'content-b','2026-09-01T00:00:00Z','2026-09-01T00:00:00Z','2026-09-01T00:00:00Z' "
+        "FROM course_enrollments WHERE public_id='en-1'"
+    ))
+    other = await fixture.client.get(url + '?group=g-2', headers=headers, cookies=cookies)
+    assert other.status == 200, await other.text()
+    assert (await other.json())['lesson']['groupId'] == 'g-2'

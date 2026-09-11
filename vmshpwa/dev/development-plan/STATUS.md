@@ -2658,3 +2658,7 @@ story обновлены. **13 unit-тестов прошли**, формати�
 ### Task interaction polish — implemented and verified
 
 [Requirements](../../docs/task-interaction-polish.md), [proof and screenshots](../../../pwa_tests/reports/task-interaction-polish/README.md): neutral sending with a 2-second delay notice, full task references across audiences, worksheet position and expanded panels retained, full-width mobile input, no empty closed-task answer actions. Real-backend E2E: 6 passed across Chromium/WebKit/Firefox, including print regression. Backend checks, component/outbox tests, WrittenComposer story, build, typecheck and targeted lint passed. No migration. Owner authorized commit and push on 11 September 2026.
+
+## Family worksheet polish — implemented and verified
+
+[Requirements](../../docs/family-worksheet-polish.md), [proof and screenshots](../../../pwa_tests/reports/family-worksheet-polish/README.md): full-width child courses, prominent settings/history (newest first), read-only worksheets with marks and allowed groups, profile child links and concise copy. Backend: 8 passed; unit: 6 passed; E2E: 6 passed across Chromium/WebKit/Firefox; build, typecheck and targeted ESLint passed. No migration. Owner authorized commit and push on 11 September 2026.
