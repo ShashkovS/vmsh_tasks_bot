@@ -192,7 +192,7 @@ function ContentBlocks({
             </table>
           </div>
         )
-      case 'figure':
+      case 'figure': {
         if (block.asset.status === 'missing') {
           return (
             <figure
@@ -230,19 +230,20 @@ function ContentBlocks({
             {...(block.floatHint === undefined ? {} : { floatHint: block.floatHint })}
             {...(block.widthHint === undefined ? {} : { widthHint: block.widthHint })}
             {...(block.scale === undefined ? {} : { scale: block.scale })}
-            {...(
-              onFigureScaleCycle === undefined
-                ? {}
-                : { onScaleCycle: (nextScale: number) => onFigureScaleCycle(asset, nextScale) }
-            )}
+            {...(onFigureScaleCycle === undefined
+              ? {}
+              : { onScaleCycle: (nextScale: number) => onFigureScaleCycle(asset, nextScale) })}
             key={`${key}-${block.asset.assetId}`}
           />
         )
+      }
       case 'subpart':
         return (
           <div className="vmsh-subpart" key={key}>
             <div className="vmsh-subpart-header">
-              <strong className="vmsh-subpart-label">{block.label})</strong>
+              <strong className="vmsh-subpart-label">
+                {block.label}){block.title ? <span> {block.title}</span> : null}
+              </strong>
               {problem ? renderSubpartActions?.(problem, block.label) : null}
             </div>
             <div className="vmsh-subpart-content">

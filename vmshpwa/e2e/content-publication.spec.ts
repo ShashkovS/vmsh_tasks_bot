@@ -166,6 +166,7 @@ test.beforeEach(async ({ page }) => {
 
 test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solution and closes submissions', async ({
   page,
+  secondaryContext,
 }, testInfo) => {
   const target = targetForProject(testInfo.project.name)
   const projectOffset = target.lessonNumber - 900
@@ -179,9 +180,7 @@ test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solu
   const lessonForm = page.locator('form').filter({ hasText: 'Номер занятия' })
   await lessonForm.locator('select').first().selectOption(contentFixture.coursePublicId)
   await lessonForm.getByRole('checkbox', { name: /Создать занятие сразу для всех/ }).click()
-  await expect(lessonForm.getByRole('combobox', { name: 'Группа' })).toContainText(
-    'н · Начинающие',
-  )
+  await expect(lessonForm.getByRole('combobox', { name: 'Группа' })).toContainText('н · Начинающие')
   await lessonForm.getByLabel('Номер занятия').fill(String(lessonNumber))
   await lessonForm.getByLabel('Название (необязательно)').fill(lessonTitle)
   await lessonForm.getByLabel('Дата занятия').fill(`2027-02-0${projectOffset}`)
@@ -272,6 +271,24 @@ test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solu
     expect((await revealResponse).status()).toBe(200)
   }
   await expect(page.getByText(solutionText)).toBeVisible()
+
+  // docs/task-titles.md: reviewed names, not the different title in source TeX.
+  const family = await secondaryContext.newPage()
+  await loginThroughUi(family, AUTH_PERSONAS.family, '/family/children')
+  await family.setViewportSize({ width: 320, height: 760 })
+  await family.goto(`/family/tasks/math-5-7/${encodeURIComponent('н')}/${lessonNumber}?child=1`)
+  await expect(family.locator('.vmsh-problem-header h2')).toContainText(taskTitle)
+  expect(await family.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+  await family.screenshot({
+    path: testInfo.outputPath('task-titles-family-mobile.png'),
+    fullPage: true,
+  })
+  await family.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
+  await family.screenshot({
+    path: testInfo.outputPath('task-titles-family-dark.png'),
+    fullPage: true,
+  })
+  await family.close()
 })
 
 test('Phase 2: Staff publishes two real revisions, Student reads them, then rollback restores the first', async ({
@@ -310,6 +327,10 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await expect(page.getByRole('heading', { name: 'Сейчас', exact: true })).toBeVisible()
   await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
   await expect(page.getByText('1 задача в листке')).toBeVisible()
+
+  await page.goto(studentUrl.split('?')[0]!)
+  await expect(page.locator('.vmsh-problem-header h2')).toContainText(firstTaskTitle)
+  await page.screenshot({ path: testInfo.outputPath('task-titles-student.png'), fullPage: true })
 
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()
@@ -397,6 +418,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
 
   await page.goto(studentUrl)
   await expect(page.getByText(secondStatement)).toBeVisible()
+  await expect(page.locator('.vmsh-problem-header h2').first()).toContainText('Вторая E2E-задача')
   await expect(page.getByText(firstStatement)).toHaveCount(0)
 
   await page.goto(staffUrl)
@@ -420,6 +442,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()
   await expect(page.getByText(secondStatement)).toHaveCount(0)
+  await expect(page.locator('.vmsh-problem-header h2').first()).toContainText(firstTaskTitle)
 
   // Account-isolation checkpoint: bypass the local provider for the server
   // logout so an old-owner cache really exists until the next login performs

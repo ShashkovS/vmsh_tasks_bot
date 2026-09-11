@@ -1788,6 +1788,60 @@ def _scope_by_group_lesson_id(
     return _group_lesson_content_scope(row)
 
 
+def _overlay_problem_titles(
+    connection: sqlite3.Connection, document: dict[str, object], revision_id: int
+) -> None:
+    """Project reviewed names onto the exact source identities, without recompiling.
+
+    See vmshpwa/docs/task-titles.md and SemanticMathDocument: material matches may have
+    different ordinals from their condition, so hints use the stable problem ID.
+    """
+    rows = connection.execute(
+        "SELECT match.source_ordinal, match.source_item, metadata.title "
+        "FROM content_problem_matches AS match "
+        "JOIN content_revisions AS revision ON revision.id = match.content_revision_id "
+        "JOIN content_sources AS source ON source.id = revision.source_id "
+        "LEFT JOIN lesson_publications AS publication "
+        " ON publication.group_lesson_id = source.group_lesson_id "
+        " AND publication.kind = 'condition' AND publication.state = 'published' "
+        "JOIN problem_revisions AS metadata ON metadata.problem_id = match.problem_id "
+        " AND metadata.content_revision_id = CASE WHEN source.kind = 'condition' "
+        " THEN revision.id ELSE publication.revision_id END "
+        "WHERE match.content_revision_id = ? AND match.resolved_at IS NOT NULL "
+        " AND match.decision <> 'omit' "
+        " AND (source.kind <> 'condition' OR "
+        " (metadata.source_ordinal = match.source_ordinal "
+        " AND metadata.source_item = match.source_item))",
+        (revision_id,),
+    ).fetchall()
+    titles = {
+        (int(row["source_ordinal"]), str(row["source_item"])): str(row["title"]).strip()
+        for row in rows
+        if row["title"] and str(row["title"]).strip()
+    }
+
+    def subparts(blocks, ordinal):
+        found = False
+        for block in blocks:
+            if block.get("type") == "subpart":
+                found = True
+                title = titles.get((ordinal, block["label"]))
+                if title:
+                    block["title"] = title
+            if "blocks" in block:
+                found = subparts(block["blocks"], ordinal) or found
+            for item in block.get("items", []):
+                found = subparts(item, ordinal) or found
+        return found
+
+    for problem in document.get("problems", []):
+        ordinal = problem["ordinal"]
+        if not subparts(problem["blocks"], ordinal):
+            title = titles.get((ordinal, problem.get("sourceItem") or str(ordinal)))
+            if title:
+                problem["title"] = title
+
+
 def _overlay_figure_scales(document: dict[str, object], scales: Mapping[str, float]) -> None:
     """Apply current presentation preferences without changing the Web AST."""
 
@@ -4007,6 +4061,13 @@ class PwaContentRepository:
 
         return await self._factory.run_read_async(read)
 
+    async def apply_problem_titles(
+        self, *, document: dict[str, object], revision_id: int
+    ) -> None:
+        await self._factory.run_read_async(
+            lambda connection: _overlay_problem_titles(connection, document, revision_id)
+        )
+
     async def get_published_content(
         self,
         *,
@@ -4070,6 +4131,7 @@ class PwaContentRepository:
                 document,
                 {str(scale_row["asset_id"]): float(scale_row["scale"]) for scale_row in scale_rows},
             )
+            _overlay_problem_titles(connection, document, int(row["revision_id"]))
             return PublishedContentRecord(
                 publication=_publication(row),
                 revision_public_id=revision_public_id,
@@ -4181,6 +4243,7 @@ class PwaContentRepository:
                 document,
                 {str(scale_row["asset_id"]): float(scale_row["scale"]) for scale_row in scale_rows},
             )
+            _overlay_problem_titles(connection, document, int(row["revision_id"]))
             source_ordinal = int(row["material_source_ordinal"])
             selected = [
                 problem

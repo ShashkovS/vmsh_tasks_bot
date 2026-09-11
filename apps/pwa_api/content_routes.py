@@ -2390,6 +2390,9 @@ async def content_preview(request: web.Request) -> web.Response:
             document,
             await repository.get_figure_scales(revision_id=context.revision.id),
         )
+        await repository.apply_problem_titles(
+            document=document, revision_id=context.revision.id
+        )
         payload: dict[str, object] = {
             "revisionId": context.revision.public_id,
             "kind": "web",
@@ -2460,6 +2463,9 @@ async def put_content_figure_scale(request: web.Request) -> web.Response:
     _apply_figure_scales(
         document,
         await repository.get_figure_scales(revision_id=context.revision.id),
+    )
+    await repository.apply_problem_titles(
+        document=document, revision_id=context.revision.id
     )
     affected = _set_figure_scale(
         document.get("introduction"), asset_id=asset_id, scale=scale

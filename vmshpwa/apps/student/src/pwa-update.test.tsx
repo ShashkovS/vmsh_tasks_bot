@@ -5,15 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PwaUpdateController } from './pwa-update'
 import { safePwaUpdateEvent } from './pwa-update-events'
 
-const pwaMocks = vi.hoisted(() => ({
-  updateServiceWorker: vi.fn<() => Promise<void>>(),
-}))
-
 vi.mock('virtual:pwa-register/react', () => ({
   useRegisterSW: () => ({
     needRefresh: [true, vi.fn()],
     offlineReady: [false, vi.fn()],
-    updateServiceWorker: pwaMocks.updateServiceWorker,
   }),
 }))
 
@@ -39,49 +34,35 @@ afterEach(() => {
 })
 
 beforeEach(() => {
-  pwaMocks.updateServiceWorker.mockReset()
   Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
 })
 
 describe('PWA update controller', () => {
-  it('allows the button to retry after an automatic activation did not take control', async () => {
-    const postMessage = vi.fn()
+  it('shows activation progress and lets the user retry after a message failure', async () => {
+    const postMessage = vi.fn().mockImplementationOnce(() => {
+      throw new Error('activation failed')
+    })
+    const worker = Object.assign(new EventTarget(), { state: 'installed', postMessage })
+    const registration = Object.assign(new EventTarget(), {
+      waiting: worker,
+      active: null,
+      installing: null,
+    })
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
-      value: {
-        addEventListener: vi.fn(),
-        getRegistration: vi.fn().mockResolvedValue({ waiting: { postMessage } }),
-        removeEventListener: vi.fn(),
-      },
+      value: Object.assign(new EventTarget(), {
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      }),
     })
-
     render(<PwaUpdateController router={routerStub()} />)
-
     fireEvent(window, new Event(safePwaUpdateEvent))
-    await waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1))
-
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toContain('Попробуйте ещё раз'),
+    )
     fireEvent.click(screen.getByRole('button', { name: 'Обновить сейчас' }))
     await waitFor(() => expect(postMessage).toHaveBeenCalledTimes(2))
-  })
-
-  it('allows a manual retry after the fallback updater fails', async () => {
-    Object.defineProperty(navigator, 'serviceWorker', {
-      configurable: true,
-      value: {
-        addEventListener: vi.fn(),
-        getRegistration: vi.fn().mockResolvedValue({ waiting: null }),
-        removeEventListener: vi.fn(),
-      },
-    })
-    pwaMocks.updateServiceWorker.mockRejectedValueOnce(new Error('activation failed'))
-    pwaMocks.updateServiceWorker.mockResolvedValueOnce(undefined)
-
-    render(<PwaUpdateController router={routerStub()} />)
-
+    expect(screen.getByRole('button', { name: 'Обновляем…' }).hasAttribute('disabled')).toBe(true)
     fireEvent(window, new Event(safePwaUpdateEvent))
-    await waitFor(() => expect(pwaMocks.updateServiceWorker).toHaveBeenCalledTimes(1))
-
-    fireEvent.click(screen.getByRole('button', { name: 'Обновить сейчас' }))
-    await waitFor(() => expect(pwaMocks.updateServiceWorker).toHaveBeenCalledTimes(2))
+    expect(postMessage).toHaveBeenCalledTimes(2)
   })
 })

@@ -32,8 +32,14 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   await expect(marks).toHaveCount(24)
   const firstBox = await marks.first().boundingBox()
   const lastBox = await marks.last().boundingBox()
-  expect(lastBox!.y - firstBox!.y).toBeLessThan(380)
+  // docs/task-titles.md: six compact rows now include visible, wrapped names.
+  expect(lastBox!.y - firstBox!.y).toBeLessThan(560)
   expect(lastBox!.y + lastBox!.height).toBeLessThan(740)
+  await expect(page.getByText('Расскажите решение', { exact: true }).first()).toBeVisible()
+  await page.screenshot({
+    path: info.outputPath('live-zoom-titles-mobile.png'),
+    animations: 'disabled',
+  })
   const conditionButton = page.getByRole('button', {
     name: 'Показать условие задачи 1',
     exact: true,

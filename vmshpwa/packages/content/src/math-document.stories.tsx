@@ -389,3 +389,43 @@ export const AnnouncementMobile: Story = {
     await expect(canvas.getByText(/Последний срок сдачи/u)).toBeVisible()
   },
 }
+
+// docs/task-titles.md: names wrap on narrow worksheets and independent subparts.
+export const TaskTitles: Story = {
+  args: {
+    document: {
+      ...semanticDocument,
+      introduction: [],
+      problems: [
+        {
+          ordinal: 1,
+          sourceItem: null,
+          title: 'Два квадрата и прямоугольник с одинаковыми периметрами',
+          blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Найдите периметр.' }] }],
+        },
+        {
+          ordinal: 2,
+          sourceItem: null,
+          title: null,
+          blocks: ['Первый квадрат', 'Второй квадрат'].map((title, i) => ({
+            type: 'subpart' as const,
+            label: i === 0 ? 'а' : 'б',
+            title,
+            blocks: [
+              {
+                type: 'paragraph' as const,
+                children: [{ type: 'text' as const, value: 'Найдите сторону.' }],
+              },
+            ],
+          })),
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('heading', { name: /Задача 1 Два квадрата/ })).toBeVisible()
+    await expect(canvas.getByText('Первый квадрат')).toBeVisible()
+    await expect(canvas.getByText('Второй квадрат')).toBeVisible()
+  },
+}

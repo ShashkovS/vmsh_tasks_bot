@@ -157,6 +157,9 @@ export function LiveSchoolGrid({
                 className="h-11 min-w-11 border-b border-r px-1 text-center font-semibold"
               >
                 {p.label}
+                <span className="block w-24 whitespace-normal break-words pb-1 text-xs font-normal leading-tight text-muted-foreground">
+                  {p.title}
+                </span>
               </th>
             ))}
           </tr>
@@ -243,7 +246,7 @@ export function LiveSchoolGrid({
   )
 }
 
-// live-marking.md, compact revision: label + two independent 44px actions.
+// docs/task-titles.md: visible names, compact cards and two independent 44px actions.
 // Tasks follow publication order; subparts keep their full label when wrapping.
 export function LiveZoomGrid({
   board,
@@ -263,12 +266,18 @@ export function LiveZoomGrid({
     >
       <div className="grid grid-cols-[repeat(auto-fill,minmax(5.625rem,1fr))] content-start gap-1">
         {board.problems.map((p) => (
-          <div key={p.problemId} className="min-w-0 overflow-hidden rounded-md border">
+          <div
+            key={p.problemId}
+            className="flex min-w-0 flex-col overflow-hidden rounded-md border"
+          >
             <div
-              className="bg-muted px-1 text-center text-xs font-semibold leading-5"
+              className="flex-1 bg-muted px-1 text-center text-xs font-semibold leading-4"
               title={p.title}
             >
               {p.label}
+              <span className="block break-words font-normal leading-tight text-muted-foreground">
+                {p.title}
+              </span>
             </div>
             <div className="flex h-11">
               <LiveMarkButton

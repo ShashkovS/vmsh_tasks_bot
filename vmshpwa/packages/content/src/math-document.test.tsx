@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it } from 'vitest'
 
 import webDocumentFixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
-import { webContentContractFixtureSchema } from '@vmsh/contracts'
+import { webContentContractFixtureSchema, webContentDocumentSchema } from '@vmsh/contracts'
 
 import {
   katexRenderLimits,
@@ -52,25 +52,26 @@ describe('browser math content renderer', () => {
     ).toBe(true)
   })
 
-  it('adds the visible closing parenthesis to semantic subpart labels', () => {
+  it('renders a validated subpart name beside its label, retaining old unnamed documents', () => {
     const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
     render(
       <SemanticMathDocument
-        document={{
+        document={webContentDocumentSchema.parse({
           ...document,
           introduction: [
             {
               type: 'subpart',
               label: 'а',
+              title: 'Два квадрата',
               blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Первый пункт' }] }],
             },
           ],
           problems: [],
-        }}
+        })}
       />,
     )
 
-    expect(screen.getByText('а)')).not.toBeNull()
+    expect(screen.getByText('Два квадрата').closest('strong')?.textContent).toBe('а) Два квадрата')
   })
 
   it('keeps the normalized TeX width and source-side float on a figure', () => {
@@ -208,7 +209,9 @@ describe('browser math content renderer', () => {
     const preamble = screen.getByText('Теория перед задачей.')
     const taskHeading = section?.querySelector('h2')
     expect(taskHeading).not.toBeNull()
-    expect(preamble.compareDocumentPosition(taskHeading!) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+    expect(
+      preamble.compareDocumentPosition(taskHeading!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0)
   })
 
   it('keeps the rest of a document visible when one formula is invalid', async () => {

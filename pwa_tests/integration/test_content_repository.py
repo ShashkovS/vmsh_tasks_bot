@@ -1668,6 +1668,37 @@ async def test_problem_review_flattens_subparts_and_keeps_predicted_type(
     assert [row.problem.item for row in grid.rows] == ["а", "б"]
     assert [row.problem.problem_type for row in grid.rows] == [1, 1]
 
+    # docs/task-titles.md: independent names follow source items, not array order.
+    await fixture.repository.save_problem_metadata_grid(
+        revision_public_id=revision.public_id,
+        expected_review_version=grid.review_version,
+        drafts=tuple(
+            ProblemMetadataDraft(
+                problem_id=row.problem.problem_id,
+                source_ordinal=1, source_item=row.source.source_item,
+                display_number=row.source.display_number, title=title,
+                problem_type=2, answer_type=None, answer_validation=None,
+                validation_error=None, correct_answer=None, correct_answer_checker=None,
+                wrong_answer=None, congratulation=None,
+            )
+            for row, title in zip(grid.rows, ("Первый квадрат", "Второй квадрат"))
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+    document = {"problems": [{
+        "ordinal": 1, "sourceItem": None, "title": "Общее условие",
+        "blocks": [{"type": "callout", "blocks": [
+            {"type": "subpart", "label": "б", "blocks": []},
+            {"type": "subpart", "label": "а", "blocks": []},
+        ]}],
+    }]}
+    await fixture.repository.apply_problem_titles(document=document, revision_id=revision.id)
+    problem = document["problems"][0]
+    assert problem["title"] == "Общее условие"
+    assert [block["title"] for block in problem["blocks"][0]["blocks"]] == [
+        "Второй квадрат", "Первый квадрат",
+    ]
+
 
 async def test_metadata_grid_updates_projection_and_keeps_revision_history(
     content_fixture,

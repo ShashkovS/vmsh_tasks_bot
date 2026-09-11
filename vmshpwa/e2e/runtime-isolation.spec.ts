@@ -376,7 +376,9 @@ test('browser HTTP and WebSocket traffic cannot leave the E2E loopback origin', 
 })
 
 for (const audience of pwaAudiences) {
-  test(`${audience}: manifest and every icon have exact install boundaries`, async ({ request }) => {
+  test(`${audience}: manifest and every icon have exact install boundaries`, async ({
+    request,
+  }) => {
     // Install boundaries are HTTP contracts. Checking the shell through the
     // request context avoids an unrelated WebKit PWA cold-start timeout.
     const shellResponse = await request.get(`/${audience}/`)
@@ -525,9 +527,13 @@ test('student and family workers own disjoint scopes and Cache Storage', async (
   ).toBeNull()
 })
 
-for (const audience of pwaAudiences) {
-  test(`${audience}: a byte-different built worker reaches prompt and controls the page`, async ({
+for (const { audience, activation } of pwaAudiences.flatMap((audience) => [
+  { audience, activation: 'button' },
+  { audience, activation: 'another tab' },
+])) {
+  test(`${audience}: a byte-different built worker reaches prompt and controls the page (${activation})`, async ({
     page,
+    context,
   }) => {
     test.setTimeout(45_000)
     await page.goto(`/${audience}/`)
@@ -636,6 +642,19 @@ for (const audience of pwaAudiences) {
         }, `${gatewayOrigin}/${audience}/`),
       )
       .toBe('installed')
+    // Reproduce a stale banner: a different tab claims the already downloaded update.
+    if (activation === 'another tab') {
+      const other = await context.newPage()
+      await other.goto('/staff/login')
+      await other.evaluate(async (audience) => {
+        const registration = await navigator.serviceWorker.getRegistration(`/${audience}/`)
+        if (!registration?.waiting) throw new Error('Expected waiting worker')
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+      }, audience)
+      await expect.poll(() => activeWorkerGeneration(page)).toBe(generation)
+      await expect(page.getByText('Доступно обновление.')).toBeVisible()
+      await other.close()
+    }
     // The product reloads exactly once after the replacement worker really
     // becomes this document's controller. Arm the observer before the click:
     // a test-side reload would hide whether the real update UX works.

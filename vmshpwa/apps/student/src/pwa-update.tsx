@@ -3,43 +3,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 import { Button } from '@vmsh/ui'
+import { usePwaUpdateActivation } from '@vmsh/app-shell'
 
 import { safePwaUpdateEvent } from './pwa-update-events'
 
 export function PwaUpdateController({ router }: { router: AnyRouter }) {
-  const applyInProgress = useRef(false)
-  const activationRequested = useRef(false)
+  const { applyUpdate, applying, error } = usePwaUpdateActivation()
   const updatePending = useRef(false)
   const detectedAtHref = useRef<string | undefined>(undefined)
-  const reloadStarted = useRef(false)
   const [noticeHidden, setNoticeHidden] = useState(false)
-  const reloadAfterControllerChange = useCallback(() => {
-    if (!activationRequested.current || reloadStarted.current) return
-    reloadStarted.current = true
-    window.location.reload()
-  }, [])
   const {
     needRefresh: [needRefresh],
     offlineReady: [offlineReady, setOfflineReady],
-    updateServiceWorker,
-  } = useRegisterSW({ immediate: true, onNeedReload: reloadAfterControllerChange })
-  const applyUpdate = useCallback(async () => {
-    if (applyInProgress.current) return
-    applyInProgress.current = true
-    activationRequested.current = true
-    try {
-      const registration = await navigator.serviceWorker?.getRegistration(window.location.href)
-      if (registration?.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-        return
-      }
-      await updateServiceWorker(false)
-    } catch {
-      activationRequested.current = false
-    } finally {
-      applyInProgress.current = false
-    }
-  }, [updateServiceWorker])
+  } = useRegisterSW({ immediate: true, onNeedReload: () => undefined })
 
   const applyAtSafeMoment = useCallback(() => {
     if (!updatePending.current || !navigator.onLine) return
@@ -67,12 +43,6 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
     return () => window.removeEventListener(safePwaUpdateEvent, applyAtSafeMoment)
   }, [applyAtSafeMoment])
 
-  useEffect(() => {
-    navigator.serviceWorker?.addEventListener('controllerchange', reloadAfterControllerChange)
-    return () =>
-      navigator.serviceWorker?.removeEventListener('controllerchange', reloadAfterControllerChange)
-  }, [reloadAfterControllerChange])
-
   const showUpdateNotice = needRefresh && !noticeHidden
   if (!showUpdateNotice && !offlineReady) return null
 
@@ -85,15 +55,21 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
       <p className="text-sm font-medium">
         {showUpdateNotice ? 'Доступно обновление.' : 'Приложение готово к работе без сети'}
       </p>
+      {error ? (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          Не удалось применить обновление. Попробуйте ещё раз.
+        </p>
+      ) : null}
       <div className="mt-3 flex gap-2">
         {showUpdateNotice ? (
           <Button
             size="sm"
+            disabled={applying}
             onClick={() => {
               void applyUpdate()
             }}
           >
-            Обновить сейчас
+            {applying ? 'Обновляем…' : 'Обновить сейчас'}
           </Button>
         ) : null}
         <Button

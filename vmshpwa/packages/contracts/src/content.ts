@@ -158,7 +158,7 @@ export type WebContentBlock =
       scale?: number | undefined
       asset: WebFigureAvailableAsset | WebFigureMissingAsset
     }
-  | { type: 'subpart'; label: string; blocks: WebContentBlock[] }
+  | { type: 'subpart'; label: string; title?: string | undefined; blocks: WebContentBlock[] }
   | {
       type: 'callout'
       kind: 'note' | 'theorem' | 'proof'
@@ -256,6 +256,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
       .object({
         type: z.literal('subpart'),
         label: nonEmptyTextSchema,
+        title: z.string().trim().min(1).max(500).optional(),
         blocks: z.array(webContentBlockSchema).min(1).max(1_000),
       })
       .strict(),
@@ -318,10 +319,12 @@ function refineWebContentDocument(
   const stack = [
     ...document.introduction.map((block) => ({ block, depth: 1 })),
     ...document.problems.flatMap((problem) =>
-      [...(problem.preambleBlocks ?? []), ...problem.blocks, ...(problem.trailingBlocks ?? [])].map((block) => ({
-        block,
-        depth: 1,
-      })),
+      [...(problem.preambleBlocks ?? []), ...problem.blocks, ...(problem.trailingBlocks ?? [])].map(
+        (block) => ({
+          block,
+          depth: 1,
+        }),
+      ),
     ),
   ]
   while (stack.length > 0) {

@@ -340,6 +340,13 @@
 .vmsh-problem-header > h2 > span {
   color: var(--muted-foreground);
   font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.vmsh-subpart-label > span {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .vmsh-problem-header > :not(h2) {
@@ -462,7 +469,6 @@
     float: left;
     margin-inline: 0 1.25rem;
   }
-
 }
 
 .vmsh-figure-canvas {

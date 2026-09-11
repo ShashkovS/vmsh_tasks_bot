@@ -58,6 +58,9 @@ function Tables({
                       className="min-w-11 border-r bg-surface-subtle px-1 py-1 font-medium last:border-r-0"
                     >
                       {p.label}
+                      <span className="mx-auto block w-24 whitespace-normal break-words text-xs font-normal leading-tight text-muted-foreground">
+                        {p.title}
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -354,7 +357,10 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                           className="min-w-0 space-y-3 rounded-lg border p-3 sm:p-4"
                         >
                           <header className="flex flex-wrap items-center gap-2">
-                            <h4 className="mr-auto font-semibold">Задача {p.label}</h4>
+                            <h4 className="mr-auto min-w-0 break-words font-semibold">
+                              Задача {p.label}
+                              {p.title ? ` · ${p.title}` : ''}
+                            </h4>
                             <span className="text-caption text-muted-foreground">
                               Текущий результат
                             </span>

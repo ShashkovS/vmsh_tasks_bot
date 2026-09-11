@@ -245,3 +245,30 @@ Maintenance-entrypoints работают fail-closed: до импорта общ
 ## Запреты
 
 Agent никогда не запускает human-цели, Telegram polling, Google loaders и не использует реальные credentials. E2E не применяет MSW и поднимает настоящий aiohttp с seeded SQLite. Production build аварийно завершается, если включён `VITE_ENABLE_MSW=true` или `VITE_PROTOTYPE=true`.
+
+### Восстановление кнопки обновления — 11 сентября 2026
+
+Плашка может пережить активацию service worker в другой вкладке. Если `waiting`
+уже отсутствует, `updateServiceWorker()`/`messageSkipWaiting()` ничего не делают.
+По нажатию нужно перечитать регистрацию: ожидающего worker активировать и ждать
+`controllerchange`, устанавливающегося — дождаться, уже активированный — применить
+перезагрузкой текущего URL. Слушатель устанавливается до асинхронного чтения
+регистрации. Самостоятельная активация в другой вкладке не перезагружает страницу
+с незавершённым вводом; прежние безопасные моменты обновления сохраняются.
+
+Пока идёт попытка, кнопка показывает «Обновляем…» и блокирует повторный запуск.
+Ошибка или отсутствие подтверждения за 12 секунд показывают понятное сообщение
+и возвращают возможность повтора. При размонтировании слушатели снимаются.
+Исправление не сбрасывает регистрацию, локальные черновики или данные аккаунта.
+Прежняя очистка устаревших service worker кэшей сохраняется.
+
+Общая реализация Student/Family:
+`packages/app-shell/src/pwa-update-activation.ts`,
+`apps/student/src/pwa-update.tsx`, `apps/family/src/pwa-update.tsx`.
+Проверки: `pwa-update-activation.test.ts`, `apps/student/src/pwa-update.test.tsx`,
+`e2e/runtime-isolation.spec.ts` — обычная активация и плашка после активации
+в другой вкладке, включая недоступный из-за несовместимости runtime.
+
+Проверено локально: **8 unit**, **12 E2E** без повторов в Chromium/WebKit/Firefox,
+TypeScript Student/Family/app-shell и test tooling, ESLint, production build.
+[Отчёт](../../pwa_tests/reports/pwa-update-activation.md). Владелец разрешил commit/push 11 сентября 2026; серверное развёртывание не выполнялось.

@@ -290,3 +290,9 @@ Proof:
 [`student-support-pages.tsx`](../../apps/student/src/student-support-pages.tsx),
 [`zoomable-asset-figure.tsx`](../../packages/content/src/zoomable-asset-figure.tsx),
 [`course-client.ts`](../../packages/app-shell/src/course-client.ts).
+
+### Названия задач — 11 сентября 2026
+
+Общий документ Student/Family дополняется проверенными названиями задач и
+пунктов своей версии. Staff preview и списки плюсов показывают названия тоже.
+[Требования, реализация и проверки](../../docs/task-titles.md).

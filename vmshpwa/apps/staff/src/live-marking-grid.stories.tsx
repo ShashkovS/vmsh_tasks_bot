@@ -24,7 +24,8 @@ const board: LiveBoard = {
   problems: Array.from({ length: 24 }, (_, i) => ({
     problemId: `p-${i}`,
     label: i < 20 ? `${i + 1}` : `${21 + Math.floor((i - 20) / 2)}${i % 2 ? 'б' : 'а'}`,
-    title: 'Расскажите решение',
+    title:
+      i === 0 ? 'Два квадрата и прямоугольник с одинаковыми периметрами' : 'Расскажите решение',
     oral: true,
     number: i + 1,
   })),
@@ -104,6 +105,9 @@ type Story = StoryObj<typeof meta>
 export const Classroom: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await expect(
+      canvas.getByText('Два квадрата и прямоугольник с одинаковыми периметрами'),
+    ).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Анна Белова' }))
     await expect(
       canvas.getByRole('button', { name: /Анна Белова.*Александровна/ }),
@@ -117,6 +121,9 @@ export const Zoom: Story = {
   args: { zoom: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await expect(
+      canvas.getByText('Два квадрата и прямоугольник с одинаковыми периметрами'),
+    ).toBeVisible()
     const marks = canvas.getAllByRole('button', { name: /^Задача / })
     await expect(marks).toHaveLength(24)
     await expect(marks[0]!.getBoundingClientRect().top).toBe(marks[1]!.getBoundingClientRect().top)

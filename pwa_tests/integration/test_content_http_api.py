@@ -3778,6 +3778,7 @@ async def test_student_reveal_uses_resolved_material_match_without_duplicate_met
     payload = await revealed.json()
     assert payload["problemId"] == problem_public_id
     assert "Посмотрите на чётность" in json.dumps(payload, ensure_ascii=False)
+    assert payload["document"]["problems"][0]["title"] == "Чётность"
 
 
 async def test_staff_can_preview_and_stream_exact_persisted_pdf(
