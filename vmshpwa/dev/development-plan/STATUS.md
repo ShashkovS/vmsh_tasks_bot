@@ -2674,3 +2674,7 @@ Implemented and verified: build, typecheck, ESLint; 3 E2E passed in Chromium/Web
 ### Family chart threshold
 
 The child course chart now requires at least two analytics lessons (unique X values enforced by the progress contract). Numeric results and history remain visible. See `apps/family/src/family-children-page.tsx` and [Family requirements](../../docs/family-worksheet-polish.md).
+
+## Student profile help layout — 11 September 2026
+
+Aligned Help links using flex-wrap, explicit gaps and icons; removed forced line break. Implemented in `apps/student/src/student-profile-page.tsx` and story composition `pages.tsx`; see [organizer questions](../../docs/organizer-questions.md). Student typecheck, targeted ESLint and formatting passed. Owner authorized commit and push.

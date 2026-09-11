@@ -759,7 +759,7 @@ export function StudentProfilePage({
             <CardHeader>
               <CardTitle>Помощь</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-small">
+            <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-3 text-small">
               <a
                 className={buttonVariants({ size: 'sm', variant: 'outline' })}
                 href="/student/questions"

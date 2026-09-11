@@ -1,5 +1,6 @@
 import { OrganizerLink } from '@vmsh/app-shell'
 import { useMemo, useState } from 'react'
+import { Mail, MessageCircleQuestion } from 'lucide-react'
 
 import {
   AccountSessionManager,
@@ -191,13 +192,20 @@ export function StudentProfilePage() {
           <CardHeader>
             <CardTitle>Помощь</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-small">
+          <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-3 text-small">
             <OrganizerLink />
-            <a className="text-link underline-offset-2 hover:underline" href="/student/questions">
+            <a
+              className="inline-flex min-h-7 items-center gap-2 text-link underline-offset-2 hover:underline"
+              href="/student/questions"
+            >
+              <MessageCircleQuestion aria-hidden="true" className="size-4 shrink-0" />
               Мои вопросы
             </a>
-            <br />
-            <a className="text-link underline-offset-2 hover:underline" href="mailto:vmsh@179.ru">
+            <a
+              className="inline-flex min-h-7 items-center gap-2 text-link underline-offset-2 hover:underline"
+              href="mailto:vmsh@179.ru"
+            >
+              <Mail aria-hidden="true" className="size-4 shrink-0" />
               vmsh@179.ru
             </a>
           </CardContent>
