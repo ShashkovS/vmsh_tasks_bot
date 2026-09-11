@@ -1,6 +1,8 @@
 """Scoped history read model; see vmshpwa/docs/review-history.md."""
 
 import json
+
+from db_methods.pwa.content import _overlay_problem_titles
 from datetime import UTC, datetime
 from db_methods.pwa.review_corrections import find_source_review, active_review_owner
 from models.pwa.course_runtime_settings import DEFAULT_COURSE_RUNTIME_SETTINGS
@@ -197,7 +199,7 @@ def history_detail(connection, scope, reviewer_id, is_admin, review_id):
         else None
     )
     material = connection.execute(
-        "SELECT derivative.content_text, revision.source_ordinal FROM problem_revisions revision "
+        "SELECT content.id content_revision_id, derivative.content_text, revision.source_ordinal FROM problem_revisions revision "
         "JOIN content_revisions content ON content.id = revision.content_revision_id "
         "JOIN content_sources source ON source.id = content.source_id AND source.kind = 'condition' "
         "JOIN content_derivatives derivative ON derivative.revision_id = content.id "
@@ -211,6 +213,7 @@ def history_detail(connection, scope, reviewer_id, is_admin, review_id):
     document = None
     if material is not None:
         document = json.loads(material["content_text"])
+        _overlay_problem_titles(connection, document, material["content_revision_id"])
         document["problems"] = [
             p
             for p in document["problems"]

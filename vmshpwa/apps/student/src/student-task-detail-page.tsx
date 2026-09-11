@@ -1,3 +1,5 @@
+import { backToWorksheet } from './worksheet-return'
+
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, ChevronDown, ChevronUp, KeyRound, Lightbulb, PencilLine } from 'lucide-react'
@@ -194,11 +196,13 @@ export function StudentProblemWorkspace({
 }) {
   return (
     <div className="vmsh-problem-workspace mt-2 flex flex-wrap items-center gap-1.5 font-sans">
-      <Button aria-expanded={answerOpen} onClick={onToggleAnswer} size="sm" variant="ghost">
-        <PencilLine aria-hidden="true" className="size-4" />
-        {submissionClosed ? 'Мой ответ' : 'Ответить'}
-        {answerOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
-      </Button>
+      {!submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started') ? (
+        <Button aria-expanded={answerOpen} onClick={onToggleAnswer} size="sm" variant="ghost">
+          <PencilLine aria-hidden="true" className="size-4" />
+          {submissionClosed ? 'Мой ответ' : 'Ответить'}
+          {answerOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+        </Button>
+      ) : null}
       <StudentProblemQuestionLink
         compact
         groupLessonId={groupLessonId}
@@ -209,7 +213,8 @@ export function StudentProblemWorkspace({
        * Panels open below the whole button row, in button order: flex `order`
        * keeps the row intact instead of splitting it around an open panel.
        */}
-      {answerOpen ? (
+      {answerOpen &&
+      (!submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started')) ? (
         <div className="order-1 w-full basis-full" data-print-hide>
           <StudentProblemActions
             conditionRevisionId={conditionRevisionId}
@@ -472,6 +477,7 @@ export function CanonicalStudentTask({
         <div className="mb-4 flex justify-start border-b border-border pb-3 font-sans">
           <Button
             onClick={() =>
+              !backToWorksheet() &&
               void navigate({
                 to: '/tasks',
                 search: { course: courseCode, group: groupCode },

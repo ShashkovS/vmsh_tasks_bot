@@ -162,3 +162,7 @@ time, request ID и причину. `submission_material_reassignment_items` п�
 Text/photos/outbox/message сохраняют concrete `problem_id`. Logical synonym projection строит одну chronology без веточных вкладок и показывает provenance course/group/task на каждом блоке. Merge/split не копирует media objects и не меняет receipt IDs.
 
 Дополнительный proof: merged online/offline chronology, stable concrete IDs/media keys, split recovery и `Product/Feedback--synonym-merged-timeline`.
+
+## Task interaction polish
+
+Implemented [full references and worksheet interaction corrections](../../docs/task-interaction-polish.md); [verification and screenshots](../../../pwa_tests/reports/task-interaction-polish/README.md) cover delayed sending, mobile input, closed answers and worksheet return. Existing task identities, drafts and print behavior are preserved.

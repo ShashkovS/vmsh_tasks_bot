@@ -163,8 +163,7 @@ export function StudentPublishedContentPage({
   const visibleTitle =
     displayTitle ||
     (selectedProblem
-      ? selectedProblem.title ||
-        `Задача ${selectedProblem.ordinal}${selectedProblem.sourceItem ?? ''}`
+      ? `Задача ${selectedProblem.taskReference ?? selectedProblem.ordinal}.${selectedProblem.title ? ` «${selectedProblem.title}»` : ''}`
       : document.title || materialLabels[kind])
 
   const renderedContent = (

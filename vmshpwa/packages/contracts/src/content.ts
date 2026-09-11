@@ -158,7 +158,13 @@ export type WebContentBlock =
       scale?: number | undefined
       asset: WebFigureAvailableAsset | WebFigureMissingAsset
     }
-  | { type: 'subpart'; label: string; title?: string | undefined; blocks: WebContentBlock[] }
+  | {
+      type: 'subpart'
+      label: string
+      taskReference?: string | undefined
+      title?: string | undefined
+      blocks: WebContentBlock[]
+    }
   | {
       type: 'callout'
       kind: 'note' | 'theorem' | 'proof'
@@ -255,6 +261,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
     z
       .object({
         type: z.literal('subpart'),
+        taskReference: z.string().trim().min(1).max(80).optional(),
         label: nonEmptyTextSchema,
         title: z.string().trim().min(1).max(500).optional(),
         blocks: z.array(webContentBlockSchema).min(1).max(1_000),
@@ -276,6 +283,7 @@ export const webContentProblemSchema = z
   .object({
     ordinal: z.number().int().positive(),
     sourceItem: z.string().trim().min(1).max(80).nullable(),
+    taskReference: z.string().trim().min(1).max(80).optional(),
     title: z.string().trim().min(1).max(500).nullable(),
     // A preamble belongs to this problem, but is intentionally rendered
     // before its task heading (CONTENT-IMPORT-03).

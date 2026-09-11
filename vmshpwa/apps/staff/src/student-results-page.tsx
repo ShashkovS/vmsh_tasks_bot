@@ -358,8 +358,7 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                         >
                           <header className="flex flex-wrap items-center gap-2">
                             <h4 className="mr-auto min-w-0 break-words font-semibold">
-                              Задача {p.label}
-                              {p.title ? ` · ${p.title}` : ''}
+                              Задача {p.label}.{p.title ? ` «${p.title}»` : ''}
                             </h4>
                             <span className="text-caption text-muted-foreground">
                               Текущий результат

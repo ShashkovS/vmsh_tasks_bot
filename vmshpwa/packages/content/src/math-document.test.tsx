@@ -16,6 +16,38 @@ import {
 afterEach(() => cleanup())
 
 describe('browser math content renderer', () => {
+  it('renders full task references without changing subpart identity', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [],
+          problems: [
+            {
+              ...document.problems[0]!,
+              taskReference: '1н.11',
+              title: 'Никто никого не бьёт',
+              blocks: [
+                {
+                  type: 'subpart',
+                  label: 'а',
+                  taskReference: '1н.11а',
+                  title: 'Первый пункт',
+                  blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Условие' }] }],
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Задача 1н.11. «Никто никого не бьёт»' }),
+    ).not.toBeNull()
+    expect(screen.getByText('Задача 1н.11а.', { exact: false })).not.toBeNull()
+  })
+
   it('renders a runtime-validated semantic document with KaTeX and a responsive table', async () => {
     const contentDocument = webContentContractFixtureSchema.parse(webDocumentFixture).document
     render(<SemanticMathDocument document={contentDocument} />)

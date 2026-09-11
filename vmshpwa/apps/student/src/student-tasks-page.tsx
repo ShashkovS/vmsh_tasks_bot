@@ -1,3 +1,10 @@
+import {
+  rememberWorksheet,
+  useWorksheetReturn,
+  worksheetPageSizes,
+  worksheetExpandedProblems,
+} from './worksheet-return'
+
 import { useNavigate } from '@tanstack/react-router'
 import { BookOpen, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -121,7 +128,13 @@ export function StudentLessonFeedItem({
     { enabled: true },
   )
   const group = enrollment.allowedGroups.find((candidate) => candidate.groupId === groupId)
-  const [expandedProblemIds, setExpandedProblemIds] = useState<Set<string>>(() => new Set())
+  const worksheetKey = `${principal.accountId}:${lesson.groupLessonId}`
+  const [expandedProblemIds, setExpandedProblemIds] = useState<Set<string>>(
+    () => worksheetExpandedProblems.get(worksheetKey) ?? new Set(),
+  )
+  useEffect(() => {
+    worksheetExpandedProblems.set(worksheetKey, expandedProblemIds)
+  }, [worksheetKey, expandedProblemIds])
   const [openedAt] = useState(() => Date.now())
 
   if (problemsQuery.isPending || contentQuery.isPending) return <PageStatePanel state="loading" />
@@ -147,7 +160,8 @@ export function StudentLessonFeedItem({
     return <PageStatePanel state="forbidden" />
   }
 
-  const openProblem = (displayNumber: string) => {
+  const openProblem = (displayNumber: string, problemId: string) => {
+    rememberWorksheet(problemId)
     void navigate({
       to: '/tasks/$courseCode/$groupCode/$lessonNumber',
       params: {
@@ -166,7 +180,8 @@ export function StudentLessonFeedItem({
       <ProblemStatusBadge problem={problem} />
       <Button
         aria-label={`Открыть задачу ${problem.displayNumber}`}
-        onClick={() => openProblem(problem.displayNumber)}
+        data-task-return-id={problem.problemId}
+        onClick={() => openProblem(problem.displayNumber, problem.problemId)}
         size="sm"
         variant="ghost"
       >
@@ -202,9 +217,12 @@ export function StudentLessonFeedItem({
     problemsQuery.data.problems.filter(
       (problem) => problem.sourceOrdinal === documentProblem.ordinal,
     )
+  const answerableProblems = problemsQuery.data.problems.filter(
+    (problem) => !submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started'),
+  )
   const allExpanded =
-    problemsQuery.data.problems.length > 0 &&
-    expandedProblemIds.size === problemsQuery.data.problems.length
+    answerableProblems.length > 0 &&
+    answerableProblems.every((problem) => expandedProblemIds.has(problem.problemId))
 
   return (
     <Card className="overflow-hidden" data-print-lesson>
@@ -218,13 +236,13 @@ export function StudentLessonFeedItem({
           </div>
           <div className="flex flex-wrap items-center gap-2" data-print-hide>
             <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
-            {problemsQuery.data.problems.length > 0 ? (
+            {answerableProblems.length > 0 ? (
               <Button
                 onClick={() =>
                   setExpandedProblemIds(
                     allExpanded
                       ? new Set()
-                      : new Set(problemsQuery.data.problems.map((problem) => problem.problemId)),
+                      : new Set(answerableProblems.map((problem) => problem.problemId)),
                   )
                 }
                 size="sm"
@@ -298,7 +316,14 @@ function StudentLessonArchive({
 }) {
   const navigate = useNavigate({ from: '/tasks/' })
   const query = useStudentLessonArchiveQuery(client, principal, enrollment.course.courseId, groupId)
-  const [visibleLessonCount, setVisibleLessonCount] = useState(5)
+  const archiveKey = `${JSON.stringify(principal)}:${enrollment.course.courseId}:${groupId}`
+  const [visibleLessonCount, setVisibleLessonCount] = useState(
+    () => worksheetPageSizes.get(archiveKey) ?? 5,
+  )
+  useEffect(() => {
+    worksheetPageSizes.set(archiveKey, visibleLessonCount)
+  }, [archiveKey, visibleLessonCount])
+  useWorksheetReturn()
   const enrollmentView = toCourseEnrollmentView(enrollment)
   const selectedGroup = enrollment.allowedGroups.find((candidate) => candidate.groupId === groupId)
 

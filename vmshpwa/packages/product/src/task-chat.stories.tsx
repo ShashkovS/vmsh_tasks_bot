@@ -190,11 +190,7 @@ export const QueuedAndSystem: Story = {
 
 export const Empty: Story = {
   name: 'Пока пусто',
-  render: () => (
-    <TaskChat
-      emptyLabel="Пока ничего не отправлено." messages={[]}
-    />
-  ),
+  render: () => <TaskChat emptyLabel="Пока ничего не отправлено." messages={[]} />,
 }
 
 const composerPages: AttachmentView[] = [
@@ -210,6 +206,7 @@ export const WrittenComposer: Story = {
     return (
       <ChatComposer
         attachments={pages}
+        onCapture={() => undefined}
         {...(pages.length > 0 ? { hint: `${pages.length} из 10 фотографий` } : {})}
         onAttach={() => undefined}
         onRemoveAttachment={(id) => setPages((current) => current.filter((p) => p.id !== id))}
@@ -228,6 +225,7 @@ export const WrittenComposer: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Сделать фото' })).toBeEnabled()
     // Photos alone are a complete answer, so sending stays available; it closes
     // only once both the text and every page are gone.
     await expect(canvas.getByRole('button', { name: 'Отправить' })).toBeEnabled()

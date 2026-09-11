@@ -243,7 +243,8 @@ function ContentBlocks({
           <div className="vmsh-subpart" key={key}>
             <div className="vmsh-subpart-header">
               <strong className="vmsh-subpart-label">
-                {block.label}){block.title ? <span> «{block.title}»</span> : null}
+                {block.taskReference ? `Задача ${block.taskReference}.` : `${block.label})`}
+                {block.title ? <span> «{block.title}»</span> : null}
               </strong>
               {problem ? renderSubpartActions?.(problem, block.label) : null}
             </div>
@@ -326,7 +327,9 @@ export function SemanticMathDocument({
                 />
                 <div className="vmsh-problem-header">
                   <h2 id={headingId}>
-                    {problem.sourceItem ?? `Задача ${problem.ordinal}`}
+                    {problem.taskReference
+                      ? `Задача ${problem.taskReference}.`
+                      : (problem.sourceItem ?? `Задача ${problem.ordinal}`)}
                     {problem.title ? <span>«{problem.title}»</span> : null}
                   </h2>
                   {renderProblemActions?.(problem)}

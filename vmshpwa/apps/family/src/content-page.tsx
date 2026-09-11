@@ -250,7 +250,11 @@ export function FamilyPublishedContentPage({
   return (
     <PageLayout
       eyebrow={materialLabels[kind]}
-      title={selectedProblem?.title ?? displayTitle ?? document.title ?? materialLabels[kind]}
+      title={
+        selectedProblem
+          ? `Задача ${selectedProblem.taskReference ?? selectedProblem.ordinal}.${selectedProblem.title ? ` «${selectedProblem.title}»` : ''}`
+          : (displayTitle ?? document.title ?? materialLabels[kind])
+      }
       width={selectedProblem ? 'reading' : 'content'}
     >
       <ContentUpdateMarker visible={contentWasReplaced} />

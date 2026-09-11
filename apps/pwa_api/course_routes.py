@@ -272,6 +272,7 @@ def _student_problem_payload(
         "configVersion": problem.config_version,
         "sourceOrdinal": problem.source_ordinal,
         "displayNumber": problem.display_number,
+        "hasAnswer": problem.has_answer,
         "title": problem.title,
         "type": problem_type,
         "answerType": problem.answer_type,

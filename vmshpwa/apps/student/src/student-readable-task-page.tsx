@@ -1,3 +1,4 @@
+import { useWorksheetReturn } from './worksheet-return'
 import { useEffect, useMemo, useState } from 'react'
 
 import {
@@ -15,10 +16,7 @@ import { ApiResponseError, type CourseEnrollment } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
 
 import { createOfflineStudentCourseClient } from './offline-student-data'
-import {
-  CanonicalStudentTask,
-  STUDENT_SHEET_CONTAINER_CLASS,
-} from './student-task-detail-page'
+import { CanonicalStudentTask, STUDENT_SHEET_CONTAINER_CLASS } from './student-task-detail-page'
 import { StudentLessonFeedItem } from './student-tasks-page'
 
 function ReadableRouteState({ error }: { error: unknown }) {
@@ -130,6 +128,7 @@ function ReadableLesson({
   lessonNumber: number
   principal: { audience: 'student'; accountId: string }
 }) {
+  useWorksheetReturn(!displayNumber)
   const courseId = enrollment.course.courseId
   const [openedAt] = useState(() => Date.now())
   const archive = useStudentLessonArchiveQuery(client, principal, courseId, groupId)

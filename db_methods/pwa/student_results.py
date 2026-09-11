@@ -119,7 +119,7 @@ def problem(c, public_id):
 def material(c, problem_id, revision_id=None):
     return one(
         c,
-        """SELECT cr.public_id revision_id,pr.source_ordinal,d.content_text
+        """SELECT cr.id content_revision_id,cr.public_id revision_id,pr.source_ordinal,d.content_text
       FROM problem_revisions pr JOIN content_revisions cr ON cr.id=pr.content_revision_id
       JOIN content_sources cs ON cs.id=cr.source_id AND cs.kind='condition'
       JOIN content_derivatives d ON d.revision_id=cr.id AND d.kind='web_ast' AND d.invalidated_at IS NULL

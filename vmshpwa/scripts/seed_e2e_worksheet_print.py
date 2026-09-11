@@ -100,6 +100,14 @@ def seed(config):
     with sqlite3.connect(database) as c:
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
+        # Separate closed, unanswered worksheets for task-interaction-polish.spec.ts.
+        closed_targets = tuple((project, number + 1000) for project, number in TARGETS)
+        if _seed(c, closed_targets):
+            c.executemany(
+                "UPDATE lesson_windows SET submission_closes_at='2026-02-01T00:00:00Z', "
+                "version=version+1 WHERE group_lesson_id=?",
+                ((number,) for _, number in closed_targets),
+            )
         if not _seed(c, TARGETS, document_factory=document_factory):
             return
         c.execute(

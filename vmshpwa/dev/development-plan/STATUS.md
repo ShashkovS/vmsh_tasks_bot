@@ -2654,3 +2654,7 @@ story обновлены. **13 unit-тестов прошли**, формати�
 2 страницы для длинного листка, 10 для пяти занятий; пустых страниц нет.
 [Отчёт и просмотренные артефакты](../../../pwa_tests/reports/worksheet-print/README.md).
 Владелец разрешил commit/push 11 сентября 2026.
+
+### Task interaction polish — implemented and verified
+
+[Requirements](../../docs/task-interaction-polish.md), [proof and screenshots](../../../pwa_tests/reports/task-interaction-polish/README.md): neutral sending with a 2-second delay notice, full task references across audiences, worksheet position and expanded panels retained, full-width mobile input, no empty closed-task answer actions. Real-backend E2E: 6 passed across Chromium/WebKit/Firefox, including print regression. Backend checks, component/outbox tests, WrittenComposer story, build, typecheck and targeted lint passed. No migration. Owner authorized commit and push on 11 September 2026.

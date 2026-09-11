@@ -2,6 +2,8 @@
 
 import json
 
+from db_methods.pwa.content import _overlay_problem_titles
+
 from db_methods.pwa.review_history import scope_clause, history_detail
 
 
@@ -77,7 +79,7 @@ def condition(connection, scope, problem, entry=None):
     if row is None or not scope.allows(row):
         return None
     material = connection.execute(
-        """SELECT d.content_text,pr.source_ordinal
+        """SELECT cr.id content_revision_id,d.content_text,pr.source_ordinal
       FROM problem_revisions pr JOIN content_revisions cr ON cr.id=pr.content_revision_id
       JOIN content_sources cs ON cs.id=cr.source_id AND cs.kind='condition'
       JOIN content_derivatives d ON d.revision_id=cr.id AND d.kind='web_ast' AND d.invalidated_at IS NULL
@@ -90,6 +92,7 @@ def condition(connection, scope, problem, entry=None):
     document = None
     if material:
         document = json.loads(material["content_text"])
+        _overlay_problem_titles(connection, document, material["content_revision_id"])
         document["problems"] = [
             p
             for p in document["problems"]

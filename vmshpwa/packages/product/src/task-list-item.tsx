@@ -29,7 +29,7 @@ export function TaskListItem({ task, onOpen, className }: TaskListItemProps) {
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-num text-small font-medium text-muted-foreground">
-            {task.number}
+            Задача {task.number}.
           </span>
           {task.verdict ? (
             <VerdictMark showLabel verdict={task.verdict} />
@@ -43,7 +43,7 @@ export function TaskListItem({ task, onOpen, className }: TaskListItemProps) {
             </span>
           ) : null}
         </span>
-        <span className="mt-0.5 block font-medium text-foreground">{task.title}</span>
+        <span className="mt-0.5 block font-medium text-foreground">«{task.title}»</span>
       </span>
     </button>
   )

@@ -89,6 +89,7 @@ async def test_task_titles_in_published_documents_and_staff_preview(
         assert response.status == 200, await response.text()
         problem = (await response.json())["document"]["problems"][0]
         assert problem["title"] == title
+        assert problem["taskReference"] == "41a.1"
         assert "correctAnswer" not in problem and "answerConfig" not in problem
 
     # Omitted mappings are not a second source of visible metadata.

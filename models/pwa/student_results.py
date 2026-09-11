@@ -1,6 +1,8 @@
 """Archive composition; authoritative contract: vmshpwa/docs/student-results.md."""
 
 import json
+
+from db_methods.pwa.content import _overlay_problem_titles
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -64,7 +66,7 @@ def group_rows(problems, results):
         g["problems"].append(
             dict(
                 problemId=p["public_id"],
-                label=f"{p['prob']}{p['item'] or ''}",
+                label=f"{p['lesson']}{p['group_code']}.{p['prob']}{p['item'] or ''}",
                 title=p["title"] or "",
                 current=current(results.get(p["id"])),
                 hasSubmissions=bool(p["submitted"]),
@@ -131,6 +133,7 @@ def document(c, problem_id, revision_id=None):
         return None
     if not isinstance(doc, dict) or not isinstance(doc.get("problems"), list):
         return None
+    _overlay_problem_titles(c, doc, m["content_revision_id"])
     doc["introduction"] = []
     doc["problems"] = [
         p

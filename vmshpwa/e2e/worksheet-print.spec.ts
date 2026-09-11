@@ -68,6 +68,8 @@ test('worksheets print only mounted conditions and expanded learning materials',
   )
   await submission.getByRole('button', { name: 'Отправить', exact: true }).click()
   expect((await submitted).ok()).toBe(true)
+  // Wait for the local outbox receipt before discarding its active delivery lease.
+  await expect(draft).toHaveValue('')
   await page.reload()
   await page.getByRole('button', { name: 'Ответить', exact: true }).click()
   await expect(draft).toHaveValue('')

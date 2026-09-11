@@ -106,7 +106,9 @@ def test_condition_preserves_context_and_selects_evidence_revision(
             "document"
         ]
         assert result["introduction"] == document["introduction"]
-        assert result["problems"] == document["problems"][:1]
+        assert result["problems"][0]["blocks"] == document["problems"][0]["blocks"]
+        assert result["problems"][0]["taskReference"] == "41а.411"
+        assert len(result["problems"]) == 1
         assert (
             review_series.condition(c, fixtures.ALL_GROUPS_SCOPE, "p-1", "se-3")[
                 "document"

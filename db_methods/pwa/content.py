@@ -401,6 +401,7 @@ class StudentProblemSummaryRecord:
     solution_state: str
     status: str
     verdict: StudentProblemVerdictRecord | None
+    has_answer: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -1432,6 +1433,7 @@ def _student_problem_summary(
         ),
         status=status,
         verdict=verdict,
+        has_answer=bool(row["has_answer"]),
     )
 
 
@@ -1755,6 +1757,25 @@ SELECT published_scope.group_lesson_public_id,
        ranked_result.verdict_symbol,
        ranked_result.verdict_weight,
        discussion_state.has_discussion,
+       (discussion_state.has_discussion IS NOT NULL OR EXISTS (
+           SELECT 1 FROM logical_member member
+           JOIN test_attempts attempt ON attempt.problem_id = member.member_problem_id
+           WHERE member.visible_problem_id = visible_problem.problem_id
+             AND attempt.student_user_id = :student_user_id
+       ) OR EXISTS (
+           SELECT 1 FROM logical_member member
+           JOIN submission_threads thread ON thread.problem_id = member.member_problem_id
+           JOIN submission_entries entry ON entry.thread_id = thread.id
+           WHERE member.visible_problem_id = visible_problem.problem_id
+             AND thread.student_user_id = :student_user_id
+             AND entry.author_kind = 'student' AND entry.state IN ('submitted', 'locked')
+       ) OR EXISTS (
+           SELECT 1 FROM logical_member member
+           JOIN results result ON result.problem_id = member.member_problem_id
+           WHERE member.visible_problem_id = visible_problem.problem_id
+             AND result.student_id = :student_user_id AND result.res_type = 1
+             AND result.answer IS NOT NULL AND trim(result.answer) <> ''
+       )) AS has_answer,
        hint_state.hint_available,
        hint_state.hint_state,
        solution_state.solution_available,
@@ -1793,11 +1814,11 @@ def _overlay_problem_titles(
 ) -> None:
     """Project reviewed names onto the exact source identities, without recompiling.
 
-    See vmshpwa/docs/task-titles.md and SemanticMathDocument: material matches may have
+    See vmshpwa/docs/task-titles.md, task-interaction-polish.md and SemanticMathDocument: material matches may have
     different ordinals from their condition, so hints use the stable problem ID.
     """
     rows = connection.execute(
-        "SELECT match.source_ordinal, match.source_item, metadata.title "
+        "SELECT match.source_ordinal, match.source_item, metadata.title, metadata.display_number "
         "FROM content_problem_matches AS match "
         "JOIN content_revisions AS revision ON revision.id = match.content_revision_id "
         "JOIN content_sources AS source ON source.id = revision.source_id "
@@ -1814,10 +1835,29 @@ def _overlay_problem_titles(
         " AND metadata.source_item = match.source_item))",
         (revision_id,),
     ).fetchall()
+    scope = connection.execute(
+        "SELECT lesson.lesson_number, g.short_code FROM content_revisions r "
+        "JOIN content_sources s ON s.id = r.source_id "
+        "JOIN group_lessons gl ON gl.id = s.group_lesson_id "
+        "JOIN course_lessons lesson ON lesson.id = gl.course_lesson_id "
+        "JOIN groups g ON g.course_id = gl.course_id AND g.group_id = gl.group_id "
+        "WHERE r.id = ?",
+        (revision_id,),
+    ).fetchone()
+    prefix = f"{scope['lesson_number']}{scope['short_code']}." if scope else ""
     titles = {
         (int(row["source_ordinal"]), str(row["source_item"])): str(row["title"]).strip()
         for row in rows
         if row["title"] and str(row["title"]).strip()
+    }
+
+    references = {
+        (int(row["source_ordinal"]), str(row["source_item"])): (
+            str(row["display_number"])
+            if str(row["display_number"]).startswith(prefix)
+            else f"{prefix}{row['display_number']}"
+        )
+        for row in rows
     }
 
     def subparts(blocks, ordinal):
@@ -1825,6 +1865,10 @@ def _overlay_problem_titles(
         for block in blocks:
             if block.get("type") == "subpart":
                 found = True
+                if prefix:
+                    block["taskReference"] = references.get(
+                        (ordinal, block["label"]), f"{prefix}{ordinal}{block['label']}"
+                    )
                 title = titles.get((ordinal, block["label"]))
                 if title:
                     block["title"] = title
@@ -1836,6 +1880,10 @@ def _overlay_problem_titles(
 
     for problem in document.get("problems", []):
         ordinal = problem["ordinal"]
+        if prefix:
+            problem["taskReference"] = references.get(
+                (ordinal, problem.get("sourceItem") or str(ordinal)), f"{prefix}{ordinal}"
+            )
         if not subparts(problem["blocks"], ordinal):
             title = titles.get((ordinal, problem.get("sourceItem") or str(ordinal)))
             if title:

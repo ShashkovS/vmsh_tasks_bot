@@ -1324,6 +1324,11 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
     assert draft["threadStatus"] == "open"
     assert draft["threadVersion"] == 1
     assert draft["entry"]["state"] == "draft"
+    answer_list = f"/student/api/v1/courses/c-1/lessons/{fixture.group_lesson_a}/problems"
+    before_submit = await fixture.client.get(
+        answer_list, cookies=_cookie(fixture, "student"), headers=_headers()
+    )
+    assert not (await before_submit.json())["problems"][0]["hasAnswer"]
     assert draft["entry"]["problemRevision"] == create_payload["problemRevision"]
     assert draft["entry"]["attachments"] == []
     assert draft["requestId"] == "content.http.test"
@@ -1376,6 +1381,10 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
     assert receipt["threadStatus"] == "awaiting_review"
     assert receipt["threadVersion"] == 2
     assert receipt["entry"]["state"] == "submitted"
+    after_submit = await fixture.client.get(
+        answer_list, cookies=_cookie(fixture, "student"), headers=_headers()
+    )
+    assert (await after_submit.json())["problems"][0]["hasAnswer"]
     assert receipt["entry"]["version"] == 2
     assert receipt["clockSuspicious"] is False
     cursors_after_submit = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
@@ -5368,6 +5377,8 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
         5,
     ]
     assert all(problem["configVersion"] >= 1 for problem in payload["problems"])
+    # Closed-task actions follow submitted history, not a manual/legacy grade.
+    assert [p["hasAnswer"] for p in payload["problems"]] == [False, False, False, True, False]
     assert payload["problems"][0]["verdict"] == {
         "verdictId": 17,
         "symbol": "✅+",

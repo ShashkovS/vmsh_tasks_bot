@@ -226,7 +226,9 @@ def board(connection, principal, spec):
         problems=[
             dict(
                 problemId=p["public_id"],
-                label=p["display_number"],
+                label=(p["display_number"] if p["display_number"].startswith(
+                    f"{p['lesson']}{p['short_code']}."
+                ) else f"{p['lesson']}{p['short_code']}.{p['display_number']}"),
                 title=p["title"],
                 oral=p["problem_type"] in (3, 4),
                 number=p["prob"],

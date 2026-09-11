@@ -357,6 +357,8 @@ export function StudentWrittenSubmission({
   const inputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const deliveryActive = useRef(false)
+  const [isDelivering, setIsDelivering] = useState(false)
+  const [deliveryDelayed, setDeliveryDelayed] = useState(false)
   const photoProcessing = useRef(new Map<string, AbortController>())
   const [hydrated, setHydrated] = useState(false)
   const [text, setText] = useState('')
@@ -473,9 +475,22 @@ export function StudentWrittenSubmission({
     [descriptor],
   )
 
+  // docs/task-interaction-polish.md: queued work is neutral until delivery stalls.
+  const deliveryPending =
+    isDelivering ||
+    queueItem?.status === 'sending' ||
+    (online && queueItem?.status === 'queued' && !sendError)
+  useEffect(() => {
+    setDeliveryDelayed(false)
+    if (!deliveryPending) return
+    const timer = window.setTimeout(() => setDeliveryDelayed(true), 2_000)
+    return () => window.clearTimeout(timer)
+  }, [deliveryPending])
+
   const deliver = useCallback(async () => {
     if (!outbox || deliveryActive.current) return
     deliveryActive.current = true
+    setIsDelivering(true)
     setSendError(null)
     let result: Awaited<ReturnType<typeof outbox.deliverNext>>
     try {
@@ -488,6 +503,7 @@ export function StudentWrittenSubmission({
       // item. Its effect may run immediately; keeping the guard until after
       // setQueueItem would lose that reconnect retry until another event.
       deliveryActive.current = false
+      setIsDelivering(false)
     }
     if (result.state === 'idle') return
     if (
@@ -528,6 +544,45 @@ export function StudentWrittenSubmission({
     }
     return undefined
   }, [deliver, online, queueItem])
+
+  // A reload can leave a lease owned by the previous page. Observe completion
+  // and retry only after its expiry, preserving the outbox single-flight guard.
+  useEffect(() => {
+    if (!outbox || isDelivering || queueItem?.status !== 'sending') return
+    let active = true
+    const timer = window.setTimeout(() => {
+      void outbox
+        .list()
+        .then(async (items) => {
+          if (!active) return
+          const item = relevantItem(items, descriptor)
+          if (item?.status === 'synced') {
+            await outbox.acknowledge(item.id)
+            if (!active) return
+            setQueueItem(null)
+            setText('')
+            setPhotos([])
+            setReplacementTarget(null)
+            void refetchThread()
+          } else if (!item) {
+            await reloadDraft()
+            if (!active) return
+            setQueueItem(null)
+            void refetchThread()
+          } else {
+            setQueueItem(item)
+            if (online && Date.now() - Date.parse(item.updatedAtClient) >= 60_000) void deliver()
+          }
+        })
+        .catch((error: unknown) => {
+          if (active) setStorageError(error)
+        })
+    }, 1_000)
+    return () => {
+      active = false
+      window.clearTimeout(timer)
+    }
+  }, [outbox, isDelivering, queueItem, descriptor, online, deliver, refetchThread, reloadDraft])
 
   if (!hydrated) {
     return (
@@ -813,7 +868,8 @@ export function StudentWrittenSubmission({
                 ),
               }
             : {}),
-          delivery: queueItem.status === 'sending' ? 'sending' : 'queued',
+          delivery:
+            isDelivering || (online && queueItem.status === 'queued') ? 'sending' : 'queued',
         }
       : null
 
@@ -885,13 +941,20 @@ export function StudentWrittenSubmission({
 
       {queued ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
-          <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
+          {!online || sendError ? (
+            <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
+          ) : null}
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
-            {queueItem?.status === 'sending'
-              ? 'Отправляем…'
-              : (sendError ?? submissionFailureMessage(undefined, queueItem?.lastError))}
+            {deliveryPending
+              ? deliveryDelayed
+                ? 'Отправка занимает больше времени, чем обычно. Ждём подтверждения…'
+                : 'Отправляем…'
+              : (sendError ??
+                (!online
+                  ? 'Отправим, когда появится сеть.'
+                  : submissionFailureMessage(undefined, queueItem?.lastError)))}
           </p>
-          {online && queueItem?.status !== 'sending' ? (
+          {online && !isDelivering && (queueItem?.status === 'retrying' || sendError) ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">
               Повторить
             </Button>

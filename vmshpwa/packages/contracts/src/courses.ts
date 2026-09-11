@@ -266,6 +266,7 @@ export const studentProblemSummarySchema = z
     configVersion: z.number().int().positive(),
     sourceOrdinal: z.number().int().positive(),
     displayNumber: z.string().trim().min(1).max(80),
+    hasAnswer: z.boolean().optional(),
     title: z.string().trim().min(1).max(500),
     type: studentProblemTypeSchema,
     answerType: z.number().int().positive().max(99).nullable(),

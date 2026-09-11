@@ -299,3 +299,7 @@ Proof:
 
 Уточнение 11 сентября: названия задач и пунктов в `SemanticMathDocument`
 отделяются русскими кавычками; [решение](../../docs/task-titles.md#отделение-названия-от-условия--11-сентября-2026).
+
+## Task interaction polish
+
+Implemented [full references and worksheet interaction corrections](../../docs/task-interaction-polish.md); [verification and screenshots](../../../pwa_tests/reports/task-interaction-polish/README.md) cover delayed sending, mobile input, closed answers and worksheet return. Existing task identities, drafts and print behavior are preserved.

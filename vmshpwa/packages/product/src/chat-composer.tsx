@@ -11,6 +11,7 @@ import type { AttachmentView } from './attachment'
  * is still explicit and keyboard-operable — the strip keeps the numbered pages
  * of `AttachmentList` without its full-height rows. The input itself is a slot,
  * because a written solution and a typed test answer need different controls.
+ * Narrow screens give the input its own row (docs/task-interaction-polish.md).
  */
 
 export interface ChatAttachmentStripProps {
@@ -155,7 +156,7 @@ export function ChatComposer({
         onMoveUp={onMoveAttachmentUp}
         onRemove={onRemoveAttachment}
       />
-      <div className="flex items-end gap-2">
+      <div className="flex flex-wrap items-end gap-2">
         {onAttach ? (
           <Button
             aria-label={attachLabel}
@@ -179,8 +180,13 @@ export function ChatComposer({
             <Camera aria-hidden="true" />
           </Button>
         ) : null}
-        <div className="min-w-0 flex-1">{children}</div>
-        <Button aria-label={sendLabel} disabled={sendDisabled || sending} onClick={onSend}>
+        <div className="min-w-0 flex-1 max-sm:order-first max-sm:basis-full">{children}</div>
+        <Button
+          className="max-sm:ml-auto"
+          aria-label={sendLabel}
+          disabled={sendDisabled || sending}
+          onClick={onSend}
+        >
           <SendHorizontal aria-hidden="true" />
           <span className="max-sm:sr-only">{sending ? 'Отправляем…' : sendLabel}</span>
         </Button>

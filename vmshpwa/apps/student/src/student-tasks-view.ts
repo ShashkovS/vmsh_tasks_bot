@@ -48,8 +48,9 @@ export function resolveStudentTasksContext(
   const enrollment = search.course
     ? access.enrollments.find(
         (candidate) =>
-          candidate.course.code.localeCompare(search.course!, 'ru-RU', { sensitivity: 'accent' }) ===
-            0 || candidate.course.courseId === search.course,
+          candidate.course.code.localeCompare(search.course!, 'ru-RU', {
+            sensitivity: 'accent',
+          }) === 0 || candidate.course.courseId === search.course,
       )
     : access.enrollments[0]
   if (!enrollment) return { kind: 'forbidden', resource: 'course' }
@@ -131,7 +132,9 @@ export function toStudentTaskView(
   const verdict = problemVerdict(problem)
   return {
     id: problem.problemId,
-    number: `${lessonNumber}${groupCode}.${problem.displayNumber}`,
+    number: problem.displayNumber.startsWith(`${lessonNumber}${groupCode}.`)
+      ? problem.displayNumber
+      : `${lessonNumber}${groupCode}.${problem.displayNumber}`,
     title: problem.title,
     type: problem.type,
     status: taskStatusByValue[problem.status],

@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+
+from db_methods.pwa.content import _overlay_problem_titles
 import re
 import sqlite3
 from collections.abc import Callable
@@ -906,7 +908,7 @@ class PwaSupportThreadRepository:
     ) -> dict[str, object] | None:
         # Only the published condition; see docs/support-problem-context.md.
         row = connection.execute(
-            "SELECT derivative.content_text, revision.source_ordinal "
+            "SELECT content.id content_revision_id, derivative.content_text, revision.source_ordinal "
             "FROM lesson_publications publication "
             "JOIN content_revisions content ON content.id = publication.revision_id "
             "AND content.status = 'ready' "
@@ -922,6 +924,7 @@ class PwaSupportThreadRepository:
             return None
         try:
             document = json.loads(row["content_text"])
+            _overlay_problem_titles(connection, document, row["content_revision_id"])
             document["problems"] = [
                 problem
                 for problem in document["problems"]
