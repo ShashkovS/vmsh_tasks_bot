@@ -20,7 +20,7 @@ describe('browser math content renderer', () => {
     const contentDocument = webContentContractFixtureSchema.parse(webDocumentFixture).document
     render(<SemanticMathDocument document={contentDocument} />)
 
-    expect(screen.getByRole('heading', { name: /41н\.1 Загаданное число/u })).not.toBeNull()
+    expect(screen.getByRole('heading', { name: /41н\.1 «Загаданное число»/u })).not.toBeNull()
     expect(screen.getByRole('table', { name: 'Возможные разложения' })).not.toBeNull()
     expect(screen.getByRole('table').parentElement?.classList.contains('vmsh-scroll-x')).toBe(true)
     await waitFor(() =>
@@ -71,7 +71,9 @@ describe('browser math content renderer', () => {
       />,
     )
 
-    expect(screen.getByText('Два квадрата').closest('strong')?.textContent).toBe('а) Два квадрата')
+    expect(screen.getByText('«Два квадрата»').closest('strong')?.textContent).toBe(
+      'а) «Два квадрата»',
+    )
   })
 
   it('keeps the normalized TeX width and source-side float on a figure', () => {

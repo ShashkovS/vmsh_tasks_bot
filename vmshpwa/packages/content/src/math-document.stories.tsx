@@ -424,8 +424,8 @@ export const TaskTitles: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: /Задача 1 Два квадрата/ })).toBeVisible()
-    await expect(canvas.getByText('Первый квадрат')).toBeVisible()
-    await expect(canvas.getByText('Второй квадрат')).toBeVisible()
+    await expect(canvas.getByRole('heading', { name: /Задача 1 «Два квадрата/ })).toBeVisible()
+    await expect(canvas.getByText('«Первый квадрат»')).toBeVisible()
+    await expect(canvas.getByText('«Второй квадрат»')).toBeVisible()
   },
 }
