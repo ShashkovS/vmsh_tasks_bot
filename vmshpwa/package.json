@@ -39,6 +39,7 @@
     "e2e:review": "cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode review",
     "e2e:support": "cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode support",
     "e2e:classrooms": "cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode classrooms",
+    "e2e:organizers": "cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode organizers",
     "e2e:student-results": "cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode student-results",
     "e2e:oral": "cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode oral",
     "e2e:news": "cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode news",

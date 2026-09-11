@@ -1,3 +1,4 @@
+import { OrganizerLink } from '@vmsh/app-shell'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { BookOpen, MapPin, Radio } from 'lucide-react'
 import { useMemo } from 'react'
@@ -140,6 +141,7 @@ export function StudentHomePage() {
   if (query.isPending) {
     return (
       <PageLayout title="Сейчас">
+        <OrganizerLink create />
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -153,6 +155,7 @@ export function StudentHomePage() {
           : 'error'
     return (
       <PageLayout title="Сейчас">
+        <OrganizerLink create />
         <PageStatePanel
           {...(state === 'error' || state === 'offline'
             ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
@@ -165,6 +168,7 @@ export function StudentHomePage() {
 
   return (
     <PageLayout eyebrow="Ваши курсы" title="Сейчас">
+      <OrganizerLink create />
       {bannerQuery.data ? (
         <div className="space-y-2" aria-label="Объявления">
           {bannerQuery.data.items

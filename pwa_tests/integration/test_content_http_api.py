@@ -449,6 +449,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         review_queue_repository=review_queue_repository,
         written_attachment_service=written_attachment_service,
         content_asset_service=asset_service,
+        content_asset_converter=asset_converter,
         content_metadata_generator=metadata_generator,
     )
     app[PWA_DATABASE] = PwaDatabaseState(factory=factory)

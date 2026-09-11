@@ -35,9 +35,12 @@ import { Route as ProblemsProblemIdRouteImport } from './routes/problems.$proble
 import { Route as ProblemsSynonymsRouteImport } from './routes/problems.synonyms'
 import { Route as QuestionsIndexRouteImport } from './routes/questions.index'
 import { Route as QuestionsThreadIdRouteImport } from './routes/questions.$threadId'
+import { Route as QuestionsOrganizersRouteImport } from './routes/questions.organizers'
 import { Route as ReviewIndexRouteImport } from './routes/review.index'
 import { Route as ReviewSubmissionIdRouteImport } from './routes/review.$submissionId'
 import { Route as ReviewHistoryRouteImport } from './routes/review.history'
+import { Route as QuestionsOrganizersIndexRouteImport } from './routes/questions.organizers.index'
+import { Route as QuestionsOrganizersThreadIdRouteImport } from './routes/questions.organizers.$threadId'
 import { Route as ReviewSeriesProblemIdRouteImport } from './routes/review.series.$problemId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -170,6 +173,11 @@ const QuestionsThreadIdRoute = QuestionsThreadIdRouteImport.update({
   path: '/$threadId',
   getParentRoute: () => QuestionsRoute,
 } as any)
+const QuestionsOrganizersRoute = QuestionsOrganizersRouteImport.update({
+  id: '/organizers',
+  path: '/organizers',
+  getParentRoute: () => QuestionsRoute,
+} as any)
 const ReviewIndexRoute = ReviewIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -185,6 +193,18 @@ const ReviewHistoryRoute = ReviewHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => ReviewRoute,
 } as any)
+const QuestionsOrganizersIndexRoute =
+  QuestionsOrganizersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => QuestionsOrganizersRoute,
+  } as any)
+const QuestionsOrganizersThreadIdRoute =
+  QuestionsOrganizersThreadIdRouteImport.update({
+    id: '/$threadId',
+    path: '/$threadId',
+    getParentRoute: () => QuestionsOrganizersRoute,
+  } as any)
 const ReviewSeriesProblemIdRoute = ReviewSeriesProblemIdRouteImport.update({
   id: '/series/$problemId',
   path: '/series/$problemId',
@@ -215,13 +235,16 @@ export interface FileRoutesByFullPath {
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/problems/synonyms': typeof ProblemsSynonymsRoute
   '/questions/$threadId': typeof QuestionsThreadIdRoute
+  '/questions/organizers': typeof QuestionsOrganizersRouteWithChildren
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/review/history': typeof ReviewHistoryRoute
   '/lessons/': typeof LessonsIndexRoute
   '/problems/': typeof ProblemsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/review/': typeof ReviewIndexRoute
+  '/questions/organizers/$threadId': typeof QuestionsOrganizersThreadIdRoute
   '/review/series/$problemId': typeof ReviewSeriesProblemIdRoute
+  '/questions/organizers/': typeof QuestionsOrganizersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -249,7 +272,9 @@ export interface FileRoutesByTo {
   '/problems': typeof ProblemsIndexRoute
   '/questions': typeof QuestionsIndexRoute
   '/review': typeof ReviewIndexRoute
+  '/questions/organizers/$threadId': typeof QuestionsOrganizersThreadIdRoute
   '/review/series/$problemId': typeof ReviewSeriesProblemIdRoute
+  '/questions/organizers': typeof QuestionsOrganizersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -276,13 +301,16 @@ export interface FileRoutesById {
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/problems/synonyms': typeof ProblemsSynonymsRoute
   '/questions/$threadId': typeof QuestionsThreadIdRoute
+  '/questions/organizers': typeof QuestionsOrganizersRouteWithChildren
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/review/history': typeof ReviewHistoryRoute
   '/lessons/': typeof LessonsIndexRoute
   '/problems/': typeof ProblemsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/review/': typeof ReviewIndexRoute
+  '/questions/organizers/$threadId': typeof QuestionsOrganizersThreadIdRoute
   '/review/series/$problemId': typeof ReviewSeriesProblemIdRoute
+  '/questions/organizers/': typeof QuestionsOrganizersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -310,13 +338,16 @@ export interface FileRouteTypes {
     | '/problems/$problemId'
     | '/problems/synonyms'
     | '/questions/$threadId'
+    | '/questions/organizers'
     | '/review/$submissionId'
     | '/review/history'
     | '/lessons/'
     | '/problems/'
     | '/questions/'
     | '/review/'
+    | '/questions/organizers/$threadId'
     | '/review/series/$problemId'
+    | '/questions/organizers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -344,7 +375,9 @@ export interface FileRouteTypes {
     | '/problems'
     | '/questions'
     | '/review'
+    | '/questions/organizers/$threadId'
     | '/review/series/$problemId'
+    | '/questions/organizers'
   id:
     | '__root__'
     | '/'
@@ -370,13 +403,16 @@ export interface FileRouteTypes {
     | '/problems/$problemId'
     | '/problems/synonyms'
     | '/questions/$threadId'
+    | '/questions/organizers'
     | '/review/$submissionId'
     | '/review/history'
     | '/lessons/'
     | '/problems/'
     | '/questions/'
     | '/review/'
+    | '/questions/organizers/$threadId'
     | '/review/series/$problemId'
+    | '/questions/organizers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -585,6 +621,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuestionsThreadIdRouteImport
       parentRoute: typeof QuestionsRoute
     }
+    '/questions/organizers': {
+      id: '/questions/organizers'
+      path: '/organizers'
+      fullPath: '/questions/organizers'
+      preLoaderRoute: typeof QuestionsOrganizersRouteImport
+      parentRoute: typeof QuestionsRoute
+    }
     '/review/': {
       id: '/review/'
       path: '/'
@@ -605,6 +648,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/review/history'
       preLoaderRoute: typeof ReviewHistoryRouteImport
       parentRoute: typeof ReviewRoute
+    }
+    '/questions/organizers/': {
+      id: '/questions/organizers/'
+      path: '/'
+      fullPath: '/questions/organizers/'
+      preLoaderRoute: typeof QuestionsOrganizersIndexRouteImport
+      parentRoute: typeof QuestionsOrganizersRoute
+    }
+    '/questions/organizers/$threadId': {
+      id: '/questions/organizers/$threadId'
+      path: '/$threadId'
+      fullPath: '/questions/organizers/$threadId'
+      preLoaderRoute: typeof QuestionsOrganizersThreadIdRouteImport
+      parentRoute: typeof QuestionsOrganizersRoute
     }
     '/review/series/$problemId': {
       id: '/review/series/$problemId'
@@ -645,13 +702,28 @@ const ProblemsRouteWithChildren = ProblemsRoute._addFileChildren(
   ProblemsRouteChildren,
 )
 
+interface QuestionsOrganizersRouteChildren {
+  QuestionsOrganizersThreadIdRoute: typeof QuestionsOrganizersThreadIdRoute
+  QuestionsOrganizersIndexRoute: typeof QuestionsOrganizersIndexRoute
+}
+
+const QuestionsOrganizersRouteChildren: QuestionsOrganizersRouteChildren = {
+  QuestionsOrganizersThreadIdRoute: QuestionsOrganizersThreadIdRoute,
+  QuestionsOrganizersIndexRoute: QuestionsOrganizersIndexRoute,
+}
+
+const QuestionsOrganizersRouteWithChildren =
+  QuestionsOrganizersRoute._addFileChildren(QuestionsOrganizersRouteChildren)
+
 interface QuestionsRouteChildren {
   QuestionsThreadIdRoute: typeof QuestionsThreadIdRoute
+  QuestionsOrganizersRoute: typeof QuestionsOrganizersRouteWithChildren
   QuestionsIndexRoute: typeof QuestionsIndexRoute
 }
 
 const QuestionsRouteChildren: QuestionsRouteChildren = {
   QuestionsThreadIdRoute: QuestionsThreadIdRoute,
+  QuestionsOrganizersRoute: QuestionsOrganizersRouteWithChildren,
   QuestionsIndexRoute: QuestionsIndexRoute,
 }
 

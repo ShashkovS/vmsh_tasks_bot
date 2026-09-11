@@ -1,3 +1,4 @@
+import { OrganizerLink } from '@vmsh/app-shell'
 import { useMemo, useState } from 'react'
 
 import {
@@ -108,6 +109,7 @@ export function FamilyHomePage() {
       eyebrow={selectedChild?.displayName ?? 'Семейный кабинет'}
       title="Текущие занятия"
     >
+      <OrganizerLink create />
       {bannerQuery.data ? (
         <div className="space-y-2" aria-label="Объявления">
           {bannerQuery.data.items

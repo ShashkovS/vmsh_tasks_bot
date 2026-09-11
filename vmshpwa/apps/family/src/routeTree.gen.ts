@@ -13,11 +13,15 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChildrenRouteImport } from './routes/children'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as OrganizersRouteImport } from './routes/organizers'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ChildrenIndexRouteImport } from './routes/children.index'
 import { Route as ChildrenChildIdRouteImport } from './routes/children.$childId'
 import { Route as NewsIndexRouteImport } from './routes/news.index'
 import { Route as NewsPostIdRouteImport } from './routes/news.$postId'
+import { Route as OrganizersIndexRouteImport } from './routes/organizers.index'
+import { Route as OrganizersThreadIdRouteImport } from './routes/organizers.$threadId'
+import { Route as OrganizersNewRouteImport } from './routes/organizers.new'
 import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as ProfileNotificationsRouteImport } from './routes/profile.notifications'
 import { Route as TasksCourseCodeGroupCodeLessonNumberRouteImport } from './routes/tasks.$courseCode.$groupCode.$lessonNumber'
@@ -40,6 +44,11 @@ const LoginRoute = LoginRouteImport.update({
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizersRoute = OrganizersRouteImport.update({
+  id: '/organizers',
+  path: '/organizers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -67,6 +76,21 @@ const NewsPostIdRoute = NewsPostIdRouteImport.update({
   path: '/$postId',
   getParentRoute: () => NewsRoute,
 } as any)
+const OrganizersIndexRoute = OrganizersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizersRoute,
+} as any)
+const OrganizersThreadIdRoute = OrganizersThreadIdRouteImport.update({
+  id: '/$threadId',
+  path: '/$threadId',
+  getParentRoute: () => OrganizersRoute,
+} as any)
+const OrganizersNewRoute = OrganizersNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizersRoute,
+} as any)
 const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -89,12 +113,16 @@ export interface FileRoutesByFullPath {
   '/children': typeof ChildrenRouteWithChildren
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/organizers': typeof OrganizersRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/children/$childId': typeof ChildrenChildIdRoute
   '/news/$postId': typeof NewsPostIdRoute
+  '/organizers/$threadId': typeof OrganizersThreadIdRoute
+  '/organizers/new': typeof OrganizersNewRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
   '/children/': typeof ChildrenIndexRoute
   '/news/': typeof NewsIndexRoute
+  '/organizers/': typeof OrganizersIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
@@ -103,9 +131,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/children/$childId': typeof ChildrenChildIdRoute
   '/news/$postId': typeof NewsPostIdRoute
+  '/organizers/$threadId': typeof OrganizersThreadIdRoute
+  '/organizers/new': typeof OrganizersNewRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
   '/children': typeof ChildrenIndexRoute
   '/news': typeof NewsIndexRoute
+  '/organizers': typeof OrganizersIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
@@ -115,12 +146,16 @@ export interface FileRoutesById {
   '/children': typeof ChildrenRouteWithChildren
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/organizers': typeof OrganizersRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/children/$childId': typeof ChildrenChildIdRoute
   '/news/$postId': typeof NewsPostIdRoute
+  '/organizers/$threadId': typeof OrganizersThreadIdRoute
+  '/organizers/new': typeof OrganizersNewRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
   '/children/': typeof ChildrenIndexRoute
   '/news/': typeof NewsIndexRoute
+  '/organizers/': typeof OrganizersIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/tasks/$courseCode/$groupCode/$lessonNumber': typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
@@ -131,12 +166,16 @@ export interface FileRouteTypes {
     | '/children'
     | '/login'
     | '/news'
+    | '/organizers'
     | '/profile'
     | '/children/$childId'
     | '/news/$postId'
+    | '/organizers/$threadId'
+    | '/organizers/new'
     | '/profile/notifications'
     | '/children/'
     | '/news/'
+    | '/organizers/'
     | '/profile/'
     | '/tasks/$courseCode/$groupCode/$lessonNumber'
   fileRoutesByTo: FileRoutesByTo
@@ -145,9 +184,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/children/$childId'
     | '/news/$postId'
+    | '/organizers/$threadId'
+    | '/organizers/new'
     | '/profile/notifications'
     | '/children'
     | '/news'
+    | '/organizers'
     | '/profile'
     | '/tasks/$courseCode/$groupCode/$lessonNumber'
   id:
@@ -156,12 +198,16 @@ export interface FileRouteTypes {
     | '/children'
     | '/login'
     | '/news'
+    | '/organizers'
     | '/profile'
     | '/children/$childId'
     | '/news/$postId'
+    | '/organizers/$threadId'
+    | '/organizers/new'
     | '/profile/notifications'
     | '/children/'
     | '/news/'
+    | '/organizers/'
     | '/profile/'
     | '/tasks/$courseCode/$groupCode/$lessonNumber'
   fileRoutesById: FileRoutesById
@@ -171,6 +217,7 @@ export interface RootRouteChildren {
   ChildrenRoute: typeof ChildrenRouteWithChildren
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRouteWithChildren
+  OrganizersRoute: typeof OrganizersRouteWithChildren
   ProfileRoute: typeof ProfileRouteWithChildren
   TasksCourseCodeGroupCodeLessonNumberRoute: typeof TasksCourseCodeGroupCodeLessonNumberRoute
 }
@@ -203,6 +250,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizers': {
+      id: '/organizers'
+      path: '/organizers'
+      fullPath: '/organizers'
+      preLoaderRoute: typeof OrganizersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -239,6 +293,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/news/$postId'
       preLoaderRoute: typeof NewsPostIdRouteImport
       parentRoute: typeof NewsRoute
+    }
+    '/organizers/': {
+      id: '/organizers/'
+      path: '/'
+      fullPath: '/organizers/'
+      preLoaderRoute: typeof OrganizersIndexRouteImport
+      parentRoute: typeof OrganizersRoute
+    }
+    '/organizers/$threadId': {
+      id: '/organizers/$threadId'
+      path: '/$threadId'
+      fullPath: '/organizers/$threadId'
+      preLoaderRoute: typeof OrganizersThreadIdRouteImport
+      parentRoute: typeof OrganizersRoute
+    }
+    '/organizers/new': {
+      id: '/organizers/new'
+      path: '/new'
+      fullPath: '/organizers/new'
+      preLoaderRoute: typeof OrganizersNewRouteImport
+      parentRoute: typeof OrganizersRoute
     }
     '/profile/': {
       id: '/profile/'
@@ -290,6 +365,22 @@ const NewsRouteChildren: NewsRouteChildren = {
 
 const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
 
+interface OrganizersRouteChildren {
+  OrganizersThreadIdRoute: typeof OrganizersThreadIdRoute
+  OrganizersNewRoute: typeof OrganizersNewRoute
+  OrganizersIndexRoute: typeof OrganizersIndexRoute
+}
+
+const OrganizersRouteChildren: OrganizersRouteChildren = {
+  OrganizersThreadIdRoute: OrganizersThreadIdRoute,
+  OrganizersNewRoute: OrganizersNewRoute,
+  OrganizersIndexRoute: OrganizersIndexRoute,
+}
+
+const OrganizersRouteWithChildren = OrganizersRoute._addFileChildren(
+  OrganizersRouteChildren,
+)
+
 interface ProfileRouteChildren {
   ProfileNotificationsRoute: typeof ProfileNotificationsRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
@@ -308,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChildrenRoute: ChildrenRouteWithChildren,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRouteWithChildren,
+  OrganizersRoute: OrganizersRouteWithChildren,
   ProfileRoute: ProfileRouteWithChildren,
   TasksCourseCodeGroupCodeLessonNumberRoute:
     TasksCourseCodeGroupCodeLessonNumberRoute,

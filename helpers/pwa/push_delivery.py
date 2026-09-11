@@ -103,6 +103,8 @@ def _payload(item: dict[str, object], now: datetime) -> dict[str, object]:
             body = text.strip()
     audience = str(item["audience"])
     route = str(item["route"])
+    if category == "thread_updated" and route.startswith(f"/{audience}/organizers/"):
+        title, body = "Ответ организаторов", "В вашем обращении появился ответ."
     if not route.startswith(f"/{audience}/"):
         raise ValueError("notification route escaped its audience")
     sound_enabled = _preference_enabled(item.get("sound_enabled"), category)

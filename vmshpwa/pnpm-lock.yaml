@@ -630,6 +630,12 @@ importers:
       '@vmsh/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@vmsh/offline':
+        specifier: workspace:*
+        version: link:../offline
+      '@vmsh/product':
+        specifier: workspace:*
+        version: link:../product
       '@vmsh/ui':
         specifier: workspace:*
         version: link:../ui

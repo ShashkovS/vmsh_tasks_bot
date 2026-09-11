@@ -12,12 +12,16 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as OrganizersRouteImport } from './routes/organizers'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as QuestionsRouteImport } from './routes/questions'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as NewsIndexRouteImport } from './routes/news.index'
 import { Route as NewsPostIdRouteImport } from './routes/news.$postId'
+import { Route as OrganizersIndexRouteImport } from './routes/organizers.index'
+import { Route as OrganizersThreadIdRouteImport } from './routes/organizers.$threadId'
+import { Route as OrganizersNewRouteImport } from './routes/organizers.new'
 import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as ProfileNotificationsRouteImport } from './routes/profile.notifications'
 import { Route as QuestionsIndexRouteImport } from './routes/questions.index'
@@ -40,6 +44,11 @@ const LoginRoute = LoginRouteImport.update({
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizersRoute = OrganizersRouteImport.update({
+  id: '/organizers',
+  path: '/organizers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -71,6 +80,21 @@ const NewsPostIdRoute = NewsPostIdRouteImport.update({
   id: '/$postId',
   path: '/$postId',
   getParentRoute: () => NewsRoute,
+} as any)
+const OrganizersIndexRoute = OrganizersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizersRoute,
+} as any)
+const OrganizersThreadIdRoute = OrganizersThreadIdRouteImport.update({
+  id: '/$threadId',
+  path: '/$threadId',
+  getParentRoute: () => OrganizersRoute,
+} as any)
+const OrganizersNewRoute = OrganizersNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizersRoute,
 } as any)
 const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/',
@@ -118,16 +142,20 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/organizers': typeof OrganizersRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/progress': typeof ProgressRoute
   '/questions': typeof QuestionsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
   '/news/$postId': typeof NewsPostIdRoute
+  '/organizers/$threadId': typeof OrganizersThreadIdRoute
+  '/organizers/new': typeof OrganizersNewRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
   '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
   '/news/': typeof NewsIndexRoute
+  '/organizers/': typeof OrganizersIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/tasks/': typeof TasksIndexRoute
@@ -138,11 +166,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/progress': typeof ProgressRoute
   '/news/$postId': typeof NewsPostIdRoute
+  '/organizers/$threadId': typeof OrganizersThreadIdRoute
+  '/organizers/new': typeof OrganizersNewRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
   '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
   '/news': typeof NewsIndexRoute
+  '/organizers': typeof OrganizersIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/questions': typeof QuestionsIndexRoute
   '/tasks': typeof TasksIndexRoute
@@ -153,16 +184,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/organizers': typeof OrganizersRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/progress': typeof ProgressRoute
   '/questions': typeof QuestionsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
   '/news/$postId': typeof NewsPostIdRoute
+  '/organizers/$threadId': typeof OrganizersThreadIdRoute
+  '/organizers/new': typeof OrganizersNewRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
   '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
   '/news/': typeof NewsIndexRoute
+  '/organizers/': typeof OrganizersIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/tasks/': typeof TasksIndexRoute
@@ -174,16 +209,20 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/news'
+    | '/organizers'
     | '/profile'
     | '/progress'
     | '/questions'
     | '/tasks'
     | '/news/$postId'
+    | '/organizers/$threadId'
+    | '/organizers/new'
     | '/profile/notifications'
     | '/questions/$threadId'
     | '/questions/new'
     | '/submissions/$submissionId'
     | '/news/'
+    | '/organizers/'
     | '/profile/'
     | '/questions/'
     | '/tasks/'
@@ -194,11 +233,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/progress'
     | '/news/$postId'
+    | '/organizers/$threadId'
+    | '/organizers/new'
     | '/profile/notifications'
     | '/questions/$threadId'
     | '/questions/new'
     | '/submissions/$submissionId'
     | '/news'
+    | '/organizers'
     | '/profile'
     | '/questions'
     | '/tasks'
@@ -208,16 +250,20 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/news'
+    | '/organizers'
     | '/profile'
     | '/progress'
     | '/questions'
     | '/tasks'
     | '/news/$postId'
+    | '/organizers/$threadId'
+    | '/organizers/new'
     | '/profile/notifications'
     | '/questions/$threadId'
     | '/questions/new'
     | '/submissions/$submissionId'
     | '/news/'
+    | '/organizers/'
     | '/profile/'
     | '/questions/'
     | '/tasks/'
@@ -228,6 +274,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRouteWithChildren
+  OrganizersRoute: typeof OrganizersRouteWithChildren
   ProfileRoute: typeof ProfileRouteWithChildren
   ProgressRoute: typeof ProgressRoute
   QuestionsRoute: typeof QuestionsRouteWithChildren
@@ -256,6 +303,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizers': {
+      id: '/organizers'
+      path: '/organizers'
+      fullPath: '/organizers'
+      preLoaderRoute: typeof OrganizersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -299,6 +353,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/news/$postId'
       preLoaderRoute: typeof NewsPostIdRouteImport
       parentRoute: typeof NewsRoute
+    }
+    '/organizers/': {
+      id: '/organizers/'
+      path: '/'
+      fullPath: '/organizers/'
+      preLoaderRoute: typeof OrganizersIndexRouteImport
+      parentRoute: typeof OrganizersRoute
+    }
+    '/organizers/$threadId': {
+      id: '/organizers/$threadId'
+      path: '/$threadId'
+      fullPath: '/organizers/$threadId'
+      preLoaderRoute: typeof OrganizersThreadIdRouteImport
+      parentRoute: typeof OrganizersRoute
+    }
+    '/organizers/new': {
+      id: '/organizers/new'
+      path: '/new'
+      fullPath: '/organizers/new'
+      preLoaderRoute: typeof OrganizersNewRouteImport
+      parentRoute: typeof OrganizersRoute
     }
     '/profile/': {
       id: '/profile/'
@@ -371,6 +446,22 @@ const NewsRouteChildren: NewsRouteChildren = {
 
 const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
 
+interface OrganizersRouteChildren {
+  OrganizersThreadIdRoute: typeof OrganizersThreadIdRoute
+  OrganizersNewRoute: typeof OrganizersNewRoute
+  OrganizersIndexRoute: typeof OrganizersIndexRoute
+}
+
+const OrganizersRouteChildren: OrganizersRouteChildren = {
+  OrganizersThreadIdRoute: OrganizersThreadIdRoute,
+  OrganizersNewRoute: OrganizersNewRoute,
+  OrganizersIndexRoute: OrganizersIndexRoute,
+}
+
+const OrganizersRouteWithChildren = OrganizersRoute._addFileChildren(
+  OrganizersRouteChildren,
+)
+
 interface ProfileRouteChildren {
   ProfileNotificationsRoute: typeof ProfileNotificationsRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
@@ -417,6 +508,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRouteWithChildren,
+  OrganizersRoute: OrganizersRouteWithChildren,
   ProfileRoute: ProfileRouteWithChildren,
   ProgressRoute: ProgressRoute,
   QuestionsRoute: QuestionsRouteWithChildren,

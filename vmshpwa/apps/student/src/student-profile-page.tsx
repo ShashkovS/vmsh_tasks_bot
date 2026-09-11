@@ -1,3 +1,4 @@
+import { OrganizerLink } from '@vmsh/app-shell'
 import { useMemo, useState } from 'react'
 
 import {
@@ -138,6 +139,7 @@ export function StudentProfilePage() {
   if (courses.isPending) {
     return (
       <PageLayout title="Профиль">
+        <OrganizerLink />
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -145,6 +147,7 @@ export function StudentProfilePage() {
   if (courses.error) {
     return (
       <PageLayout title="Профиль">
+        <OrganizerLink />
         <PageStatePanel
           actionLabel="Повторить"
           onAction={() => void courses.refetch()}
@@ -189,6 +192,7 @@ export function StudentProfilePage() {
             <CardTitle>Помощь</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-small">
+            <OrganizerLink />
             <a className="text-link underline-offset-2 hover:underline" href="/student/questions">
               Мои вопросы
             </a>

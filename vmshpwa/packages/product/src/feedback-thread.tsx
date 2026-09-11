@@ -9,7 +9,7 @@ import { cn } from '@vmsh/ui'
  * never be confused with a live teacher. Asymmetric visibility is a permission
  * concern — a Student/Family view-model simply never contains hidden messages.
  */
-export type ThreadAuthorKind = 'student' | 'teacher' | 'admin' | 'ai' | 'system'
+export type ThreadAuthorKind = 'student' | 'family' | 'teacher' | 'admin' | 'ai' | 'system'
 export type ThreadChannel = 'pwa' | 'telegram' | 'staff' | 'system'
 
 export interface ThreadMessageView {
@@ -26,6 +26,7 @@ export interface ThreadMessageView {
 
 const authorName: Record<ThreadAuthorKind, string> = {
   student: 'Ученик',
+  family: 'Родитель',
   teacher: 'Преподаватель',
   admin: 'Администратор',
   ai: 'ИИ',

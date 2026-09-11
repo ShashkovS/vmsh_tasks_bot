@@ -39,6 +39,7 @@ type FamilyNotificationCategory =
   | 'deadline'
   | 'news'
   | 'group_announcement'
+  | 'thread_updated'
 
 // Per dev/development-plan/12-phase-8-news-and-notifications.md,
 // ``review_completed`` means one explicit lesson digest for Family; the server
@@ -51,9 +52,11 @@ const familyCategories: readonly FamilyNotificationCategory[] = [
   'deadline',
   'news',
   'group_announcement',
+  'thread_updated',
 ] as const
 
 const categoryCopy: Record<FamilyNotificationCategory, { title: string; description: string }> = {
+  thread_updated: { title: 'Ответ организаторов', description: 'Ответ в вашем личном обращении' },
   lesson_published: { title: 'Новый урок', description: 'Условия нового занятия' },
   hint_published: { title: 'Подсказки', description: 'Опубликованы подсказки к задачам' },
   solution_published: { title: 'Решения', description: 'Опубликованы решения занятия' },

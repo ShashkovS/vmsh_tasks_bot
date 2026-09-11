@@ -374,3 +374,33 @@ export const FamilyStudentReaction: Story = {
     await expect(canvas.queryByRole('button', { name: 'Непонятно, что не так…' })).toBeNull()
   },
 }
+
+/** Organizer identity remains distinct from a Student; docs/organizer-questions.md. */
+export const FamilyOrganizerConversation: Story = {
+  render: () => (
+    <FeedbackThread
+      messages={[
+        {
+          id: 'parent',
+          author: { kind: 'family' },
+          at: '11 сентября, 12:00',
+          channel: 'pwa',
+          own: true,
+          body: 'Можно изменить формат посещения?',
+        },
+        {
+          id: 'organizer',
+          author: { kind: 'admin' },
+          at: '11 сентября, 12:05',
+          channel: 'staff',
+          body: 'Да, это можно сделать в профиле ребёнка.',
+        },
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Родитель', { exact: true })).toBeVisible()
+    await expect(canvas.getByText('Администратор', { exact: true })).toBeVisible()
+  },
+}

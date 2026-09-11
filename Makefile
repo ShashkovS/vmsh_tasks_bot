@@ -388,3 +388,7 @@ pwa-systemd-check:
 	@test -n "$${VMSH_PWA_SYSTEMD_UNIT:-}" || (echo "Set VMSH_PWA_SYSTEMD_UNIT"; exit 2)
 	@test -n "$${VMSH_PWA_SYSTEMD_ENV:-}" || (echo "Set VMSH_PWA_SYSTEMD_ENV"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.systemd_config_check --unit "$${VMSH_PWA_SYSTEMD_UNIT}" --environment "$${VMSH_PWA_SYSTEMD_ENV}" --require-systemd-analyze
+
+.PHONY: pwa-e2e-organizers
+pwa-e2e-organizers:
+	cd $(PWA_DIR) && CI=true pnpm e2e:organizers

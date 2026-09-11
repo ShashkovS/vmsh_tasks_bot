@@ -220,3 +220,11 @@ tie-break. Client time в выборе target не участвует. Посл�
 
 Полный номер и название, раскрываемое опубликованное условие в Staff:
 [реализация и проверки](../../docs/support-problem-context.md).
+
+## Организационные обращения Student/Family
+
+[План](../../docs/organizer-questions.md), 11 сентября 2026: отдельные account-owned
+обращения без учебного контекста, только автор/global admin. Реализовано через
+миграцию 0088 и отдельный API. Проверки: backend 14 + migration 1, unit 5, E2E 9
+без повторов в Chromium/WebKit/Firefox. [Отчёт](../../../pwa_tests/reports/organizer-questions/README.md).
+Нужна миграция при выпуске; Telegram SOS и учебные вопросы сохраняют свой контур.

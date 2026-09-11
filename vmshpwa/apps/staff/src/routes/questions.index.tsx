@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { OrganizerLink, useAuthenticatedPrincipal } from '@vmsh/app-shell'
 
 import { publicIdSchema, supportThreadKindSchema } from '@vmsh/contracts'
 
@@ -19,14 +20,18 @@ export const Route = createFileRoute('/questions/')({
 
 function StaffQuestionsRoute() {
   const search = Route.useSearch()
+  const principal = useAuthenticatedPrincipal()
   return (
-    <StaffSupportInboxPage
-      filters={{
-        state: search.state,
-        ...(search.kind ? { kind: search.kind } : {}),
-        ...(search.course ? { courseId: search.course } : {}),
-        ...(search.group ? { groupId: search.group } : {}),
-      }}
-    />
+    <>
+      {principal.audience === 'staff' && principal.role === 'admin' ? <OrganizerLink /> : null}
+      <StaffSupportInboxPage
+        filters={{
+          state: search.state,
+          ...(search.kind ? { kind: search.kind } : {}),
+          ...(search.course ? { courseId: search.course } : {}),
+          ...(search.group ? { groupId: search.group } : {}),
+        }}
+      />
+    </>
   )
 }

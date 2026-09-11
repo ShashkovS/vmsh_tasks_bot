@@ -425,8 +425,10 @@ export function FamilyNewsDetailPage({
 export function FamilyProfilePage({
   state = 'ready',
   sessionManagement,
+  organizerLink,
 }: {
   state?: PageDisplayState
+  organizerLink?: ReactNode
   sessionManagement?: ReactNode
 }) {
   return (
@@ -450,6 +452,7 @@ export function FamilyProfilePage({
               <CardTitle>Помощь</CardTitle>
             </CardHeader>
             <CardContent>
+              {organizerLink}
               <a
                 className="inline-flex items-center gap-2 text-link underline"
                 href="mailto:vmsh@179.ru"
