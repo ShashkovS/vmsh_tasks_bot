@@ -13,6 +13,10 @@ from aiohttp import web
 from helpers.prometheus_metrics import canonical_route
 
 logger = logging.getLogger(__name__)
+# Production keeps the root logger at WARNING.  This diagnostic logger is
+# intentionally narrower: it emits only bounded slow-request and loop-lag
+# records described in vmshpwa/docs/request-tracing.md.
+logger.setLevel(logging.INFO)
 
 
 @dataclass

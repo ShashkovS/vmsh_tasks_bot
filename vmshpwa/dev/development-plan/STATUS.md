@@ -1,5 +1,14 @@
 # Статус плана разработки
 
+## Production performance-tracing — 12 сентября 2026, включён
+
+Production-аудит последних двух часов показал отсутствие записей
+`pwa_slow_request`/`pwa_event_loop_lag`: модульный logger наследовал корневой
+уровень WARNING, поэтому INFO отбрасывался. `helpers.pwa.request_trace` получил
+собственный уровень INFO без изменения общего logging level; payload и пороги
+остались прежними. Добавлен тест доставки INFO через production-подобный root
+handler; инструкция уточнена в `docs/request-tracing.md`.
+
 ## Большие пакеты родителей — 12 сентября 2026, выпущено
 
 Production access-log подтвердил `504` через 122 секунды на едином Family apply:

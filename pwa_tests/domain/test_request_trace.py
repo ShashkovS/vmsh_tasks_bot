@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import logging
 
@@ -9,11 +10,28 @@ from aiohttp.test_utils import make_mocked_request
 from helpers.pwa.request_trace import (
     RequestTrace,
     current_trace,
+    logger,
     trace_stage,
     traced_thread,
     request_trace_middleware,
     event_loop_trace_lifecycle,
 )
+
+
+def test_trace_info_reaches_root_handler_when_root_level_is_warning():
+    root_logger = logging.getLogger()
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    original_root_level = root_logger.level
+    root_logger.addHandler(handler)
+    try:
+        root_logger.setLevel(logging.WARNING)
+        logger.info("pwa_slow_request test")
+    finally:
+        root_logger.removeHandler(handler)
+        root_logger.setLevel(original_root_level)
+
+    assert stream.getvalue().strip() == "pwa_slow_request test"
 
 
 @pytest.mark.asyncio
