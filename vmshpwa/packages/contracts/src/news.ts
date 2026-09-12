@@ -24,7 +24,7 @@ export const newsEntitySchema = z
     length: z.number().int().positive(),
     href: z.string().min(1).optional(),
   })
-  .strict()
+  .strip()
 export type NewsEntity = z.infer<typeof newsEntitySchema>
 
 export const newsTextBlockSchema = z
@@ -33,7 +33,7 @@ export const newsTextBlockSchema = z
     text: z.string(),
     entities: z.array(newsEntitySchema).optional(),
   })
-  .strict()
+  .strip()
 export type NewsTextBlock = z.infer<typeof newsTextBlockSchema>
 
 const publicMediaUrlSchema = z
@@ -47,8 +47,8 @@ const newsMediaCommon = {
 }
 
 export const newsMediaSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('photo'), ...newsMediaCommon, alt: z.string() }).strict(),
-  z.object({ kind: z.literal('video'), ...newsMediaCommon }).strict(),
+  z.object({ kind: z.literal('photo'), ...newsMediaCommon, alt: z.string() }).strip(),
+  z.object({ kind: z.literal('video'), ...newsMediaCommon }).strip(),
   z
     .object({
       kind: z.literal('document'),
@@ -56,7 +56,7 @@ export const newsMediaSchema = z.discriminatedUnion('kind', [
       name: z.string().trim().min(1),
       url: publicMediaUrlSchema,
     })
-    .strict(),
+    .strip(),
 ])
 export type NewsMedia = z.infer<typeof newsMediaSchema>
 
@@ -70,14 +70,14 @@ export const newsPostSchema = z
     state: z.enum(['published', 'source-revised']),
     attribution: z
       .object({ channel: z.string().trim().min(1).max(200) })
-      .strict()
+      .strip()
       .nullable(),
     blocks: z.array(newsTextBlockSchema).min(1),
     media: z.array(newsMediaSchema),
     // Returned only for contentVersion=2 reads. v1 clients intentionally ignore it.
     document: richDocumentSchema.optional(),
   })
-  .strict()
+  .strip()
 export type NewsPost = z.infer<typeof newsPostSchema>
 
 export const newsFeedResponseSchema = z
@@ -87,7 +87,7 @@ export const newsFeedResponseSchema = z
     nextCursor: publicIdSchema.nullable(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type NewsFeedResponse = z.infer<typeof newsFeedResponseSchema>
 
 export const newsPostResponseSchema = z
@@ -96,7 +96,7 @@ export const newsPostResponseSchema = z
     item: newsPostSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type NewsPostResponse = z.infer<typeof newsPostResponseSchema>
 
 export const newsQueryKeys = {
@@ -135,7 +135,7 @@ export const staffNewsItemSchema = z
     isScheduled: z.boolean(),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 export type StaffNewsItem = z.infer<typeof staffNewsItemSchema>
 
 export const staffNewsListResponseSchema = z
@@ -144,7 +144,7 @@ export const staffNewsListResponseSchema = z
     items: z.array(staffNewsItemSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type StaffNewsListResponse = z.infer<typeof staffNewsListResponseSchema>
 
 export const changeNewsVisibilityRequestSchema = z
@@ -226,5 +226,5 @@ export const staffNewsItemResponseSchema = z
     item: staffNewsItemSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type StaffNewsItemResponse = z.infer<typeof staffNewsItemResponseSchema>

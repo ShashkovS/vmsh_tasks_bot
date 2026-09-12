@@ -258,6 +258,7 @@ export function ReviewAnnotationEditor({
         ...document.marks,
         {
           markId: nextMarkId(),
+          coordinateSpace: 'image',
           kind: 'text',
           data: { ...pendingText.point, text, size: 0.04, color },
         },
@@ -478,23 +479,35 @@ function markFromGesture(
       return null
     }
     return gesture.tool === 'pencil'
-      ? { markId, kind: 'pencil', data: { points: gesture.points, width: 0.008, color } }
-      : { markId, kind: 'eraser', data: { points: gesture.points, width: 0.025 } }
+      ? {
+          markId,
+          coordinateSpace: 'image',
+          kind: 'pencil',
+          data: { points: gesture.points, width: 0.008, color },
+        }
+      : {
+          markId,
+          coordinateSpace: 'image',
+          kind: 'eraser',
+          data: { points: gesture.points, width: 0.025 },
+        }
   }
   if (distance(gesture.start, gesture.current) < MIN_GESTURE) return null
   if (gesture.tool === 'arrow') {
     return {
       markId,
+      coordinateSpace: 'image',
       kind: 'arrow',
       data: { start: gesture.start, end: gesture.current, width: 0.008, color },
     }
   }
   const box = boxFromPoints(gesture.start, gesture.current)
   if (gesture.tool === 'highlight') {
-    return { markId, kind: 'highlight', data: box }
+    return { markId, coordinateSpace: 'image', kind: 'highlight', data: box }
   }
   return {
     markId,
+    coordinateSpace: 'image',
     kind: 'rectangle',
     data: { ...box, strokeWidth: 0.008, color },
   }

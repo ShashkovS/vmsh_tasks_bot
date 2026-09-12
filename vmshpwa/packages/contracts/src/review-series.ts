@@ -5,17 +5,17 @@ import { webContentDocumentSchema } from './content'
 export const reviewSeriesHistorySchema = z
   .object({
     schemaVersion: z.literal(1),
-    items: z.array(z.object({ reviewId: publicIdSchema, materialKey: z.string() }).strict()),
+    items: z.array(z.object({ reviewId: publicIdSchema, materialKey: z.string() }).strip()),
     nextCursor: publicIdSchema.nullable(),
   })
-  .strict()
+  .strip()
 export const reviewSeriesConditionSchema = z
   .object({
     schemaVersion: z.literal(1),
     label: z.string(),
     document: webContentDocumentSchema.nullable(),
   })
-  .strict()
+  .strip()
 export type ReviewSeriesHistory = z.infer<typeof reviewSeriesHistorySchema>
 export type ReviewSeriesCondition = z.infer<typeof reviewSeriesConditionSchema>
 
@@ -37,10 +37,10 @@ export const reviewTransferPreviewSchema = z
           threadVersion: z.number().int().nonnegative(),
           threadId: publicIdSchema.nullable(),
         })
-        .strict(),
+        .strip(),
     ),
   })
-  .strict()
+  .strip()
 export const reviewTransferRequestSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -64,7 +64,7 @@ export const reviewTransferResponseSchema = z
     targetProblemId: publicIdSchema,
     targetLabel: z.string(),
   })
-  .strict()
+  .strip()
 export type ReviewTransferPreview = z.infer<typeof reviewTransferPreviewSchema>
 export type ReviewTransferRequest = z.infer<typeof reviewTransferRequestSchema>
 export type ReviewTransferResponse = z.infer<typeof reviewTransferResponseSchema>

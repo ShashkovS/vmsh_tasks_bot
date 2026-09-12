@@ -7,7 +7,7 @@ const publicationStateSchema = z
     state: z.enum(['none', 'scheduled', 'published']),
     scheduledAt: z.iso.datetime({ offset: true }).nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((publication, context) => {
     if ((publication.state === 'scheduled') !== (publication.scheduledAt !== null)) {
       context.addIssue({
@@ -29,7 +29,7 @@ export const staffDashboardLessonSchema = z
         code: z.string().trim().min(1).max(32),
         name: z.string().trim().min(1).max(160),
       })
-      .strict(),
+      .strip(),
     group: z
       .object({
         groupId: publicIdSchema,
@@ -37,7 +37,7 @@ export const staffDashboardLessonSchema = z
         name: z.string().trim().min(1).max(160),
         colorKey: z.string().trim().min(1).max(32),
       })
-      .strict(),
+      .strip(),
     phase: z.enum([
       'draft',
       'scheduled',
@@ -52,22 +52,22 @@ export const staffDashboardLessonSchema = z
         hint: publicationStateSchema,
         solution: publicationStateSchema,
       })
-      .strict(),
+      .strip(),
     oral: z
       .object({
         openWindows: z.number().int().nonnegative(),
         upcomingWindows: z.number().int().nonnegative(),
       })
-      .strict(),
+      .strip(),
   })
-  .strict()
+  .strip()
 
 const deliverySummarySchema = z
   .object({
     failedBatches: z.number().int().nonnegative(),
     failedRecipients: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
 
 export const staffDashboardResponseSchema = z
   .object({
@@ -80,32 +80,32 @@ export const staffDashboardResponseSchema = z
             totalCases: z.number().int().nonnegative(),
             claimedByOthers: z.number().int().nonnegative(),
           })
-          .strict(),
+          .strip(),
         questions: z
           .object({
             awaitingStaff: z.number().int().nonnegative(),
             olderThanOneHour: z.number().int().nonnegative(),
           })
-          .strict(),
+          .strip(),
         publications: z
           .object({
             conditionsPublished: z.number().int().nonnegative(),
             groupLessons: z.number().int().nonnegative(),
           })
-          .strict(),
+          .strip(),
         oral: z
           .object({
             openWindows: z.number().int().nonnegative(),
             upcomingWindows: z.number().int().nonnegative(),
           })
-          .strict(),
+          .strip(),
         delivery: deliverySummarySchema.nullable(),
       })
-      .strict(),
+      .strip(),
     lessons: z.array(staffDashboardLessonSchema).max(500),
     requestId: z.string().trim().min(1).max(128),
   })
-  .strict()
+  .strip()
   .superRefine((dashboard, context) => {
     if (dashboard.summary.review.claimedByOthers > dashboard.summary.review.totalCases) {
       context.addIssue({

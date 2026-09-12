@@ -14,7 +14,7 @@ export const liveContextSchema = z
     lessonId: id.optional(),
     studentId: id.optional(),
   })
-  .strict()
+  .strip()
 export type LiveContext = z.infer<typeof liveContextSchema>
 const base = { operationId: id, context: liveContextSchema }
 export const liveCommandSchema = z.discriminatedUnion('kind', [

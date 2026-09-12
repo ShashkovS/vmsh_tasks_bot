@@ -48,13 +48,13 @@ describe('news client', () => {
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
   })
 
-  it('rejects a response outside the strict contract', async () => {
+  it('ignores additive response fields', async () => {
     const fetchImplementation = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(Response.json({ ...feedFixture, unexpected: true }))
 
     await expect(
       createNewsClient(runtime, 'student', { fetchImplementation }).list(),
-    ).rejects.toThrow()
+    ).resolves.toEqual(feedFixture)
   })
 })

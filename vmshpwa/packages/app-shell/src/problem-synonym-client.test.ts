@@ -127,7 +127,7 @@ describe('problem synonym client', () => {
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
   })
 
-  it('rejects additive response fields', async () => {
+  it('ignores additive response fields', async () => {
     const fetchImplementation = vi
       .fn<typeof fetch>()
       .mockResolvedValue(Response.json({ ...preview, hiddenRewrite: true }))
@@ -138,6 +138,6 @@ describe('problem synonym client', () => {
         problemIds: [problem.problemId, otherProblem.problemId],
         synonymId: null,
       }),
-    ).rejects.toThrow()
+    ).resolves.toEqual(preview)
   })
 })

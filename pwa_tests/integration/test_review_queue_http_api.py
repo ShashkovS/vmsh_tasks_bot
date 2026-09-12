@@ -786,8 +786,10 @@ async def test_review_mutations_reject_non_strict_body(review_http: ReviewHttpFi
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("image_coordinates", [False, True])
 async def test_complete_review_is_atomic_and_idempotent_over_http(
     review_http: ReviewHttpFixture,
+    image_coordinates,
 ):
     fixture = review_http
     queue_id = fixture.queue_public_ids[0]
@@ -815,6 +817,8 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
     payload = _complete_payload(lease)
     payload["internalReactionId"] = 100
     payload["annotations"] = [_annotation_payload()]
+    if image_coordinates:
+        payload["annotations"][0]["marks"][0]["coordinateSpace"] = "image"
 
     completed = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/complete",
@@ -1688,3 +1692,22 @@ async def test_complete_review_reports_thread_change_and_confirmation_errors(
     )
     assert conflict.status == 409
     assert (await conflict.json())["error"]["code"] == "review_thread_changed"
+
+
+def test_annotation_coordinate_space_round_trip_preserves_legacy_marks():
+    legacy = _annotation_payload()
+    assert review_routes_module._complete_annotations([legacy])[0].payload() == legacy
+    mixed = {**legacy, "marks": [*legacy["marks"], {
+        **legacy["marks"][0], "markId": "new-image-mark", "coordinateSpace": "image",
+    }]}
+    parsed = review_routes_module._complete_annotations([mixed])[0].payload()
+    assert parsed == mixed
+    assert "coordinateSpace" not in parsed["marks"][0]
+
+
+@pytest.mark.parametrize("coordinate_space", [None, "square", "future", True, {}])
+def test_annotation_coordinate_space_rejects_unknown_request_values(coordinate_space):
+    payload = _annotation_payload()
+    payload["marks"][0]["coordinateSpace"] = coordinate_space
+    with pytest.raises(review_routes_module.PwaApiError):
+        review_routes_module._complete_annotations([payload])

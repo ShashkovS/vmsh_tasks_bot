@@ -43,7 +43,7 @@ export const reviewQueueBranchSchema = z
     submittedAt: z.iso.datetime(),
     leaseVersion: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
 export type ReviewQueueBranch = z.infer<typeof reviewQueueBranchSchema>
 
 export const reviewEvidenceAttachmentSchema = z
@@ -51,7 +51,7 @@ export const reviewEvidenceAttachmentSchema = z
     attachmentId: publicIdSchema,
     ordinal: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
 export type ReviewEvidenceAttachment = z.infer<typeof reviewEvidenceAttachmentSchema>
 
 export const reviewEvidenceEntrySchema = z
@@ -63,7 +63,7 @@ export const reviewEvidenceEntrySchema = z
     submittedAt: z.iso.datetime(),
     attachments: z.array(reviewEvidenceAttachmentSchema).max(10),
   })
-  .strict()
+  .strip()
 export type ReviewEvidenceEntry = z.infer<typeof reviewEvidenceEntrySchema>
 
 export const reviewTimelineEntrySchema = z
@@ -75,7 +75,7 @@ export const reviewTimelineEntrySchema = z
     submittedAt: z.iso.datetime(),
     attachments: z.array(reviewEvidenceAttachmentSchema).max(10),
   })
-  .strict()
+  .strip()
 export type ReviewTimelineEntry = z.infer<typeof reviewTimelineEntrySchema>
 
 export const reviewLeaseEvidenceBranchSchema = z
@@ -88,10 +88,10 @@ export const reviewLeaseEvidenceBranchSchema = z
         entries: z.array(reviewEvidenceEntrySchema),
         timelineEntries: z.array(reviewTimelineEntrySchema),
       })
-      .strict()
+      .strip()
       .nullable(),
   })
-  .strict()
+  .strip()
 export type ReviewLeaseEvidenceBranch = z.infer<typeof reviewLeaseEvidenceBranchSchema>
 
 const reviewStudentSchema = z
@@ -99,7 +99,7 @@ const reviewStudentSchema = z
     studentId: publicIdSchema.nullable(),
     displayName: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 
 const reviewQueueLockSchema = z
   .object({
@@ -109,11 +109,11 @@ const reviewQueueLockSchema = z
         teacherId: publicIdSchema.nullable(),
         displayName: z.string().trim().min(1),
       })
-      .strict(),
+      .strip(),
     expiresAt: z.iso.datetime(),
     isOwnedByCurrentStaff: z.boolean(),
   })
-  .strict()
+  .strip()
 
 export const reviewQueueItemSchema = z
   .object({
@@ -124,7 +124,7 @@ export const reviewQueueItemSchema = z
     branches: z.array(reviewQueueBranchSchema).min(1),
     lock: reviewQueueLockSchema.nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((item, context) => {
     if (item.queueId !== item.branches[0]?.queueId) {
       context.addIssue({
@@ -154,7 +154,7 @@ export const reviewQueueListResponseSchema = z
     nextCursor: publicIdSchema.nullable(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ReviewQueueListResponse = z.infer<typeof reviewQueueListResponseSchema>
 
 export const reviewLeaseSchema = z
@@ -170,7 +170,7 @@ export const reviewLeaseSchema = z
       .enum(['verdict_plus_minus', 'verdict_plus_minus_half', 'verdict_plus_steps'])
       .optional(),
   })
-  .strict()
+  .strip()
   .refine((lease) => lease.expiresAt > lease.claimedAt, {
     message: 'Review lease must expire after it was claimed',
     path: ['expiresAt'],
@@ -199,7 +199,7 @@ export const reviewLeaseResponseSchema = z
     lease: reviewLeaseSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ReviewLeaseResponse = z.infer<typeof reviewLeaseResponseSchema>
 
 export const releaseReviewLeaseResponseSchema = z
@@ -208,7 +208,7 @@ export const releaseReviewLeaseResponseSchema = z
     releasedItems: z.number().int().positive(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ReleaseReviewLeaseResponse = z.infer<typeof releaseReviewLeaseResponseSchema>
 
 export const writtenReviewVerdictSchema = z.number().int().min(11).max(17)
@@ -245,7 +245,7 @@ export const reviewAnnotationColorSchema = z.enum(['red', 'blue', 'graphite', 'a
 export type ReviewAnnotationColor = z.infer<typeof reviewAnnotationColorSchema>
 const annotationPointSchema = z
   .object({ x: annotationCoordinateSchema, y: annotationCoordinateSchema })
-  .strict()
+  .strip()
 const annotationBoxShape = {
   x: annotationCoordinateSchema,
   y: annotationCoordinateSchema,
@@ -254,7 +254,7 @@ const annotationBoxShape = {
 }
 const annotationBoxDataSchema = z
   .object(annotationBoxShape)
-  .strict()
+  .strip()
   .refine((box) => box.x + box.width <= 1 && box.y + box.height <= 1, {
     message: 'Annotation box must stay inside the evidence image',
   })
@@ -263,6 +263,7 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
   z
     .object({
       markId: publicIdSchema,
+      coordinateSpace: z.literal('image').optional(),
       kind: z.literal('pencil'),
       data: z
         .object({
@@ -270,24 +271,26 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
           width: annotationStrokeWidthSchema,
           color: reviewAnnotationColorSchema,
         })
-        .strict(),
+        .strip(),
     })
-    .strict(),
+    .strip(),
   z
     .object({
       markId: publicIdSchema,
+      coordinateSpace: z.literal('image').optional(),
       kind: z.literal('eraser'),
       data: z
         .object({
           points: z.array(annotationPointSchema).min(2).max(4096),
           width: annotationStrokeWidthSchema,
         })
-        .strict(),
+        .strip(),
     })
-    .strict(),
+    .strip(),
   z
     .object({
       markId: publicIdSchema,
+      coordinateSpace: z.literal('image').optional(),
       kind: z.literal('text'),
       data: z
         .object({
@@ -303,12 +306,13 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
           size: z.number().min(0.01).max(0.2),
           color: reviewAnnotationColorSchema,
         })
-        .strict(),
+        .strip(),
     })
-    .strict(),
+    .strip(),
   z
     .object({
       markId: publicIdSchema,
+      coordinateSpace: z.literal('image').optional(),
       kind: z.literal('arrow'),
       data: z
         .object({
@@ -317,15 +321,16 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
           width: annotationStrokeWidthSchema,
           color: reviewAnnotationColorSchema,
         })
-        .strict()
+        .strip()
         .refine((arrow) => arrow.start.x !== arrow.end.x || arrow.start.y !== arrow.end.y, {
           message: 'Annotation arrow must have a direction',
         }),
     })
-    .strict(),
+    .strip(),
   z
     .object({
       markId: publicIdSchema,
+      coordinateSpace: z.literal('image').optional(),
       kind: z.literal('rectangle'),
       data: z
         .object({
@@ -333,19 +338,20 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
           strokeWidth: annotationStrokeWidthSchema,
           color: reviewAnnotationColorSchema,
         })
-        .strict()
+        .strip()
         .refine((box) => box.x + box.width <= 1 && box.y + box.height <= 1, {
           message: 'Annotation rectangle must stay inside the evidence image',
         }),
     })
-    .strict(),
+    .strip(),
   z
     .object({
       markId: publicIdSchema,
+      coordinateSpace: z.literal('image').optional(),
       kind: z.literal('highlight'),
       data: annotationBoxDataSchema,
     })
-    .strict(),
+    .strip(),
 ])
 export type ReviewAnnotationMark = z.infer<typeof reviewAnnotationMarkSchema>
 
@@ -356,7 +362,7 @@ export const reviewAnnotationManifestSchema = z
     rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
     marks: z.array(reviewAnnotationMarkSchema).min(1).max(250),
   })
-  .strict()
+  .strip()
   .superRefine((manifest, context) => {
     const markIds = manifest.marks.map((mark) => mark.markId)
     if (new Set(markIds).size !== markIds.length) {
@@ -435,7 +441,7 @@ export const reviewInternalReactionSchema = z
     updatedAt: z.iso.datetime(),
     deleted: z.boolean(),
   })
-  .strict()
+  .strip()
   .refine((state) => state.deleted === (state.reactionId === null), {
     message: 'Deleted internal-reaction state must not expose a reaction ID',
     path: ['deleted'],
@@ -473,7 +479,7 @@ export const reviewInternalReactionResponseSchema = z
     internalReaction: reviewInternalReactionSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ReviewInternalReactionResponse = z.infer<typeof reviewInternalReactionResponseSchema>
 
 export const completedReviewSchema = z
@@ -494,13 +500,13 @@ export const completedReviewSchema = z
           rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
           markCount: z.number().int().min(1).max(250),
         })
-        .strict(),
+        .strip(),
     ),
     internalReaction: reviewInternalReactionSchema.nullable(),
     completedAt: z.iso.datetime(),
     replayed: z.boolean(),
   })
-  .strict()
+  .strip()
 export type CompletedReview = z.infer<typeof completedReviewSchema>
 
 export const completeReviewResponseSchema = z
@@ -509,7 +515,7 @@ export const completeReviewResponseSchema = z
     review: completedReviewSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type CompleteReviewResponse = z.infer<typeof completeReviewResponseSchema>
 
 export const reviewQueueQueryKeys = {

@@ -228,3 +228,8 @@ tie-break. Client time в выборе target не участвует. Посл�
 миграцию 0088 и отдельный API. Проверки: backend 14 + migration 1, unit 5, E2E 9
 без повторов в Chromium/WebKit/Firefox. [Отчёт](../../../pwa_tests/reports/organizer-questions/README.md).
 Нужна миграция при выпуске; Telegram SOS и учебные вопросы сохраняют свой контур.
+
+
+## Геометрия аннотаций — 2026-09-12
+
+Новые пометки покрывают всю фотографию; старые сохраняют прежнее положение без пересчёта записей. [Контракт координат и регрессии](../../docs/review-annotation-geometry.md) реализуют `ReviewAnnotationSurface`, `ReviewAnnotationEditor`, `ReviewAnnotationMark` и parser в `review_routes.py`.

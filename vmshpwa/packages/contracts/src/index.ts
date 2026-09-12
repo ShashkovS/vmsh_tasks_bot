@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Response objects strip additive fields; request envelopes stay strict.
+// See docs/api-response-compatibility.md and response-compatibility.test.ts.
+
 import { audienceSchema, type Audience } from './auth'
 
 export * from './auth'

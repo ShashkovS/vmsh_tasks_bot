@@ -51,23 +51,23 @@ export type RichInline =
 
 export const richInlineSchema: z.ZodType<RichInline> = z.lazy(() =>
   z.discriminatedUnion('type', [
-    z.object({ type: z.literal('text'), text: richTextSchema }).strict(),
+    z.object({ type: z.literal('text'), text: richTextSchema }).strip(),
     z
       .object({
         type: z.enum(['bold', 'italic', 'underline', 'strike', 'mark', 'spoiler', 'sub', 'sup']),
         children: z.array(richInlineSchema).min(1).max(1_000),
       })
-      .strict(),
-    z.object({ type: z.literal('code'), text: richTextSchema }).strict(),
+      .strip(),
+    z.object({ type: z.literal('code'), text: richTextSchema }).strip(),
     z
       .object({
         type: z.literal('link'),
         href: richHttpsUrlSchema,
         children: z.array(richInlineSchema).min(1).max(1_000),
       })
-      .strict(),
-    z.object({ type: z.literal('math'), latex: richNonEmptyTextSchema }).strict(),
-    z.object({ type: z.literal('footnoteRef'), id: richIdentifierSchema }).strict(),
+      .strip(),
+    z.object({ type: z.literal('math'), latex: richNonEmptyTextSchema }).strip(),
+    z.object({ type: z.literal('footnoteRef'), id: richIdentifierSchema }).strip(),
   ]),
 )
 
@@ -86,7 +86,7 @@ export type RichBlock =
 
 const richTaskItemSchema = z
   .object({ checked: z.boolean(), children: z.array(richInlineSchema).min(1).max(1_000) })
-  .strict()
+  .strip()
 
 export const richBlockSchema: z.ZodType<RichBlock> = z.lazy(() =>
   z.discriminatedUnion('type', [
@@ -95,25 +95,25 @@ export const richBlockSchema: z.ZodType<RichBlock> = z.lazy(() =>
         type: z.literal('paragraph'),
         children: z.array(richInlineSchema).min(1).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('heading'),
         level: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
         children: z.array(richInlineSchema).min(1).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({ type: z.literal('quote'), blocks: z.array(richBlockSchema).min(1).max(200) })
-      .strict(),
-    z.object({ type: z.literal('divider') }).strict(),
+      .strip(),
+    z.object({ type: z.literal('divider') }).strip(),
     z
       .object({
         type: z.literal('code'),
         code: z.string().max(32_768),
         language: z.string().trim().min(1).max(64).optional(),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('list'),
@@ -121,10 +121,10 @@ export const richBlockSchema: z.ZodType<RichBlock> = z.lazy(() =>
         start: z.number().int().min(1).max(10_000).optional(),
         items: z.array(z.array(richInlineSchema).min(1).max(1_000)).min(1).max(200),
       })
-      .strict(),
+      .strip(),
     z
       .object({ type: z.literal('taskList'), items: z.array(richTaskItemSchema).min(1).max(200) })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('details'),
@@ -132,22 +132,22 @@ export const richBlockSchema: z.ZodType<RichBlock> = z.lazy(() =>
         open: z.boolean(),
         blocks: z.array(richBlockSchema).min(1).max(200),
       })
-      .strict(),
-    z.object({ type: z.literal('math'), latex: richNonEmptyTextSchema }).strict(),
+      .strip(),
+    z.object({ type: z.literal('math'), latex: richNonEmptyTextSchema }).strip(),
     z
       .object({
         type: z.literal('footnote'),
         id: richIdentifierSchema,
         children: z.array(richInlineSchema).min(1).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('image'),
         mediaId: richIdentifierSchema,
         alt: z.string().max(1_000),
       })
-      .strict(),
+      .strip(),
   ]),
 )
 
@@ -161,7 +161,7 @@ export const richMediaSchema = z
     width: z.number().int().positive().max(1_920),
     height: z.number().int().positive().max(1_920),
   })
-  .strict()
+  .strip()
 export type RichMedia = z.infer<typeof richMediaSchema>
 
 export const richDocumentSchema = z
@@ -170,7 +170,7 @@ export const richDocumentSchema = z
     blocks: z.array(richBlockSchema).min(1).max(1_000),
     media: z.array(richMediaSchema).max(10),
   })
-  .strict()
+  .strip()
   .superRefine((document, context) => {
     const mediaIds = new Set(document.media.map((item) => item.mediaId))
     const footnotes = new Set<string>()

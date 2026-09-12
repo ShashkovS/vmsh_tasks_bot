@@ -30,7 +30,7 @@ export const problemSynonymProblemSchema = z
     reviewCount: z.number().int().nonnegative(),
     synonymId: publicIdSchema.nullable(),
   })
-  .strict()
+  .strip()
 
 export const problemSynonymCandidateSchema = z
   .object({
@@ -39,7 +39,7 @@ export const problemSynonymCandidateSchema = z
     hasGroupConflict: z.boolean(),
     problems: z.array(problemSynonymProblemSchema).min(2).max(50),
   })
-  .strict()
+  .strip()
 
 export const activeProblemSynonymGroupSchema = z
   .object({
@@ -48,7 +48,7 @@ export const activeProblemSynonymGroupSchema = z
     version: z.number().int().positive(),
     problems: z.array(problemSynonymProblemSchema).min(2).max(50),
   })
-  .strict()
+  .strip()
 
 export const problemSynonymCandidatesResponseSchema = z
   .object({
@@ -58,7 +58,7 @@ export const problemSynonymCandidatesResponseSchema = z
     synonymGroups: z.array(activeProblemSynonymGroupSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 
 export const problemSynonymImpactRequestSchema = z
   .object({
@@ -112,7 +112,7 @@ const problemSynonymSummarySchema = z
     status: z.enum(['active', 'split', 'archived']),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 
 export const problemSynonymImpactResponseSchema = z
   .object({
@@ -126,10 +126,10 @@ export const problemSynonymImpactResponseSchema = z
     submissionCount: z.number().int().nonnegative(),
     reviewCount: z.number().int().nonnegative(),
     previewSha256: z.string().regex(/^[a-f0-9]{64}$/),
-    result: problemSynonymSummarySchema.extend({ changed: z.boolean() }).strict().optional(),
+    result: problemSynonymSummarySchema.extend({ changed: z.boolean() }).strip().optional(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 
 export type ProblemSynonymProblem = z.infer<typeof problemSynonymProblemSchema>
 export type ProblemSynonymCandidate = z.infer<typeof problemSynonymCandidateSchema>

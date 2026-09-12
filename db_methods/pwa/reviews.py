@@ -265,8 +265,12 @@ class ReviewAnnotationMark:
     kind: str
     data_json: str
     point_count: int
+    coordinate_space: str | None = None
 
     def __post_init__(self) -> None:
+        # See vmshpwa/docs/review-annotation-geometry.md: absent means legacy.
+        if self.coordinate_space not in (None, "image"):
+            raise ReviewCompletionInvalid("annotation coordinate space is invalid")
         if not _PUBLIC_ID.fullmatch(self.mark_public_id):
             raise ReviewCompletionInvalid("annotation mark ID is invalid")
         if self.kind not in _ANNOTATION_KINDS:
@@ -285,7 +289,12 @@ class ReviewAnnotationMark:
 
     @classmethod
     def from_payload(
-        cls, *, mark_public_id: str, kind: str, data: object
+        cls,
+        *,
+        mark_public_id: str,
+        kind: str,
+        data: object,
+        coordinate_space: str | None = None,
     ) -> ReviewAnnotationMark:
         if not _PUBLIC_ID.fullmatch(mark_public_id):
             raise ReviewCompletionInvalid("annotation mark ID is invalid")
@@ -297,10 +306,15 @@ class ReviewAnnotationMark:
             kind=kind,
             data_json=_canonical_json(normalized),
             point_count=point_count,
+            coordinate_space=coordinate_space,
         )
 
     def payload(self) -> dict[str, object]:
         return {
+            **(
+                {"coordinateSpace": self.coordinate_space}
+                if self.coordinate_space else {}
+            ),
             "markId": self.mark_public_id,
             "kind": self.kind,
             "data": json.loads(self.data_json),

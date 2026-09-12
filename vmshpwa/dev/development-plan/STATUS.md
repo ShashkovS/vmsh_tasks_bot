@@ -2678,3 +2678,17 @@ The child course chart now requires at least two analytics lessons (unique X val
 ## Student profile help layout — 11 September 2026
 
 Aligned Help links using flex-wrap, explicit gaps and icons; removed forced line break. Implemented in `apps/student/src/student-profile-page.tsx` and story composition `pages.tsx`; see [organizer questions](../../docs/organizer-questions.md). Student typecheck, targeted ESLint and formatting passed. Owner authorized commit and push.
+
+
+## 2026-09-12 — Обратная совместимость дополнительных полей API
+
+- Готово: общие модели ответов Student/Family/Staff удаляют неизвестные поля, включая вложенные документы и историю проверок. Валидация известных данных сохраняется.
+- Требование и реализация: [api-response-compatibility.md](../../docs/api-response-compatibility.md); контракты `packages/contracts/src`, регрессия `response-compatibility.test.ts` и `review-queue-client.test.ts`.
+- Проверка: 36 целевых тестов, все workspace typecheck, ESLint, Prettier и diff-check пройдены. В расширенном наборе 445/448 тестов прошли; 3 прежних падения auth/notification fixtures воспроизведены на исходном HEAD, см. отчёт в документе. Внешний вид не меняется.
+
+
+## 2026-09-12 — Геометрия разметки и сохранность старых пометок
+
+- Готово: весь прямоугольник фотографии доступен для новых пометок; старые пометки сохраняют прежнюю геометрию без миграции.
+- [Требование и регрессии](../../docs/review-annotation-geometry.md): общий renderer, признак координат отдельной пометки, браузерное сравнение со старым SVG и сохранение через API.
+- Проверено: Chromium 5 stories; Firefox/WebKit — совместимость в 32 комбинациях; 17 backend и 12 контрактных тестов. Typecheck, ESLint, Prettier и diff-check прошли. Снимок в документе проверен визуально. База и старые записи не мигрируют.

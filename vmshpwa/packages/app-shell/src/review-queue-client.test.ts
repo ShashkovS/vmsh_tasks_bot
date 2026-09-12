@@ -1,4 +1,5 @@
 import { ApiResponseError, runtimeConfigSchema } from '@vmsh/contracts'
+import contentFixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
@@ -19,7 +20,7 @@ const runtime = runtimeConfigSchema.parse({
   features: { telegram: false, google: false, nats: false, prototype: false },
 })
 
-it('uses strict serial-history and condition contracts without implicit history loading', async () => {
+it('uses validated serial-history and condition contracts without implicit history loading', async () => {
   const fetchImplementation = vi
     .fn<typeof fetch>()
     .mockResolvedValueOnce(Response.json({ schemaVersion: 1, items: [], nextCursor: null }))
@@ -40,6 +41,74 @@ it('uses strict serial-history and condition contracts without implicit history 
   expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
     '/staff/api/v1/review/series/p-1/condition?entry=se-1',
   )
+})
+
+it('loads previous reviews and conditions when the server adds nested metadata', async () => {
+  const document = {
+    ...contentFixture.document,
+    futureMetadata: true,
+    problems: contentFixture.document.problems.map((problem) => ({
+      ...problem,
+      futureMetadata: true,
+    })),
+  }
+  const review = {
+    reviewId: 'r-683',
+    verdict: 17,
+    completedAt: '2026-09-11T12:00:00Z',
+    studentId: 'u-1',
+    studentName: 'Ученик',
+    isTestStudent: false,
+    teacherId: 'u-2',
+    teacherName: 'Учитель',
+    problemId: 'p-44',
+    problemNumber: '1п.10',
+    problemTitle: 'Задача',
+    groupName: 'Продолжающие',
+    comment: '',
+    isLatestReview: true,
+    futureMetadata: true,
+  }
+  const fetchImplementation = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      Response.json({ schemaVersion: 1, label: '1п.10', document, futureMetadata: true }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        schemaVersion: 1,
+        futureMetadata: true,
+        detail: {
+          review,
+          statement: '',
+          document,
+          blockedBy: null,
+          verdictMode: 'verdict_plus_minus',
+          comment: '',
+          threadVersion: 1,
+          latestReviewId: 'r-683',
+          futureMetadata: true,
+          entries: [{ entryId: 'se-1', text: 'Решение', attachments: [], futureMetadata: true }],
+          timeline: [
+            {
+              reviewId: 'r-683',
+              verdict: 17,
+              completedAt: review.completedAt,
+              teacherName: 'Учитель',
+              comment: '',
+              futureMetadata: true,
+            },
+          ],
+        },
+      }),
+    )
+  const client = createReviewQueueClient(runtime, { fetchImplementation })
+  expect((await client.seriesCondition('p-44')).document).toEqual(contentFixture.document)
+  const { detail } = await client.seriesCurrent('p-44', 'r-683')
+  expect(detail.document).toEqual(contentFixture.document)
+  expect(detail.review.reviewId).toBe('r-683')
+  expect(detail.entries[0]?.text).toBe('Решение')
+  expect(JSON.stringify(detail)).not.toContain('futureMetadata')
 })
 
 it('sends whole-entry preview and target thread identity with an idempotent clone', async () => {

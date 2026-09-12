@@ -9,7 +9,7 @@ export const staffScopeSelectionSchema = z
     courseId: publicIdSchema,
     groupId: publicIdSchema.nullable(),
   })
-  .strict()
+  .strip()
 export type StaffScopeSelection = z.infer<typeof staffScopeSelectionSchema>
 
 export const staffAccessScopeSchema = staffScopeSelectionSchema
@@ -22,7 +22,7 @@ export const staffAccessScopeSchema = staffScopeSelectionSchema
     groupStatus: catalogStatusSchema.nullable(),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
   .superRefine((scope, context) => {
     const groupFields = [scope.groupCode, scope.groupName, scope.groupStatus]
     if (
@@ -47,11 +47,11 @@ export const staffAccessMemberSchema = z
         username: z.string().trim().min(1),
         status: z.enum(['active', 'blocked', 'disabled', 'archived']),
       })
-      .strict()
+      .strip()
       .nullable(),
     scopes: z.array(staffAccessScopeSchema),
   })
-  .strict()
+  .strip()
 export type StaffAccessMember = z.infer<typeof staffAccessMemberSchema>
 
 export const createStaffMemberRequestSchema = z
@@ -109,10 +109,10 @@ export const createStaffMemberBatchResponseSchema = z
     schemaVersion: z.literal(1),
     counts: z
       .object({ total: z.number().int().positive(), created: z.number().int().positive() })
-      .strict(),
+      .strip(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type CreateStaffMemberBatchResponse = z.infer<typeof createStaffMemberBatchResponseSchema>
 
 export const staffAccessDirectoryResponseSchema = z
@@ -121,7 +121,7 @@ export const staffAccessDirectoryResponseSchema = z
     members: z.array(staffAccessMemberSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type StaffAccessDirectoryResponse = z.infer<typeof staffAccessDirectoryResponseSchema>
 
 const expectedStaffScopeSchema = staffScopeSelectionSchema.extend({
@@ -166,7 +166,7 @@ export const staffAccessMemberResponseSchema = z
     member: staffAccessMemberSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type StaffAccessMemberResponse = z.infer<typeof staffAccessMemberResponseSchema>
 
 export const staffAccessQueryKey = (principal: PrincipalQueryScope) =>

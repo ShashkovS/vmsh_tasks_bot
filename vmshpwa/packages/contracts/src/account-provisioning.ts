@@ -60,7 +60,7 @@ const readyPreviewRowSchema = z
     loginAdjusted: z.boolean(),
     code: z.null(),
   })
-  .strict()
+  .strip()
 const invalidPreviewRowSchema = z
   .object({
     rowNumber: z.number().int().positive(),
@@ -69,7 +69,7 @@ const invalidPreviewRowSchema = z
     loginAdjusted: z.literal(false),
     code: z.string().trim().min(1).max(100),
   })
-  .strict()
+  .strip()
 export const accountProvisioningPreviewRowSchema = z.discriminatedUnion('state', [
   readyPreviewRowSchema,
   invalidPreviewRowSchema,
@@ -86,11 +86,11 @@ export const accountProvisioningPreviewResponseSchema = z
         ready: z.number().int().nonnegative(),
         invalid: z.number().int().nonnegative(),
       })
-      .strict(),
+      .strip(),
     rows: z.array(accountProvisioningPreviewRowSchema).min(1).max(2_000),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AccountProvisioningPreviewResponse = z.infer<
   typeof accountProvisioningPreviewResponseSchema
 >
@@ -129,14 +129,14 @@ const createdReceiptRowSchema = z
     userId: publicIdSchema.optional(),
     childCount: z.number().int().positive().optional(),
   })
-  .strict()
+  .strip()
 const skippedReceiptRowSchema = z
   .object({
     rowNumber: z.number().int().positive(),
     state: z.literal('skipped'),
     code: z.string().trim().min(1).max(100),
   })
-  .strict()
+  .strip()
 export const accountProvisioningReceiptRowSchema = z.discriminatedUnion('state', [
   createdReceiptRowSchema,
   skippedReceiptRowSchema,
@@ -150,11 +150,11 @@ export const accountProvisioningReceiptSchema = z
         created: z.number().int().nonnegative(),
         skipped: z.number().int().nonnegative(),
       })
-      .strict(),
+      .strip(),
     rows: z.array(accountProvisioningReceiptRowSchema).min(1).max(2_000),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AccountProvisioningReceipt = z.infer<typeof accountProvisioningReceiptSchema>
 
 export const courseEnrollmentProvisioningPreviewRequestSchema = previewRequest(
@@ -174,14 +174,14 @@ const readyEnrollmentPreviewRowSchema = z
     allowedGroupCodes: z.array(z.string().trim().min(1).max(50)).min(1).max(100),
     code: z.null(),
   })
-  .strict()
+  .strip()
 const invalidEnrollmentPreviewRowSchema = z
   .object({
     rowNumber: z.number().int().positive(),
     state: z.literal('invalid'),
     code: z.string().trim().min(1).max(100),
   })
-  .strict()
+  .strip()
 export const courseEnrollmentProvisioningPreviewResponseSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -192,7 +192,7 @@ export const courseEnrollmentProvisioningPreviewResponseSchema = z
         ready: z.number().int().nonnegative(),
         invalid: z.number().int().nonnegative(),
       })
-      .strict(),
+      .strip(),
     rows: z.array(
       z.discriminatedUnion('state', [
         readyEnrollmentPreviewRowSchema,
@@ -201,7 +201,7 @@ export const courseEnrollmentProvisioningPreviewResponseSchema = z
     ),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type CourseEnrollmentProvisioningPreviewResponse = z.infer<
   typeof courseEnrollmentProvisioningPreviewResponseSchema
 >
@@ -227,7 +227,7 @@ const createdEnrollmentReceiptRowSchema = z
     allowedGroupCodes: z.array(z.string().trim().min(1).max(50)).min(1).max(100),
     enrollmentId: publicIdSchema,
   })
-  .strict()
+  .strip()
 export const courseEnrollmentProvisioningReceiptSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -237,13 +237,13 @@ export const courseEnrollmentProvisioningReceiptSchema = z
         created: z.number().int().nonnegative(),
         skipped: z.number().int().nonnegative(),
       })
-      .strict(),
+      .strip(),
     rows: z.array(
       z.discriminatedUnion('state', [createdEnrollmentReceiptRowSchema, skippedReceiptRowSchema]),
     ),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type CourseEnrollmentProvisioningReceipt = z.infer<
   typeof courseEnrollmentProvisioningReceiptSchema
 >

@@ -86,28 +86,28 @@ export type WebInlineNode =
 
 export const webInlineNodeSchema: z.ZodType<WebInlineNode> = z.lazy(() =>
   z.discriminatedUnion('type', [
-    z.object({ type: z.literal('text'), value: boundedTextSchema }).strict(),
-    z.object({ type: z.literal('math'), latex: z.string().min(1).max(8_192) }).strict(),
-    z.object({ type: z.literal('code'), value: z.string().max(8_192) }).strict(),
+    z.object({ type: z.literal('text'), value: boundedTextSchema }).strip(),
+    z.object({ type: z.literal('math'), latex: z.string().min(1).max(8_192) }).strip(),
+    z.object({ type: z.literal('code'), value: z.string().max(8_192) }).strip(),
     z
       .object({
         type: z.literal('strong'),
         children: z.array(webInlineNodeSchema).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('emphasis'),
         children: z.array(webInlineNodeSchema).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('link'),
         href: webLinkUrlSchema,
         children: z.array(webInlineNodeSchema).min(1).max(1_000),
       })
-      .strict(),
+      .strip(),
   ]),
 )
 
@@ -181,7 +181,7 @@ const webContentTableCellSchema: z.ZodType<WebContentTableCell> = z
     rowSpan: z.number().int().min(1).max(200).optional(),
     scope: z.enum(['col', 'row']).optional(),
   })
-  .strict()
+  .strip()
 
 const webFigureAvailableAssetSchema = z
   .object({
@@ -193,14 +193,14 @@ const webFigureAvailableAssetSchema = z
     width: z.number().int().positive().max(20_000),
     height: z.number().int().positive().max(20_000),
   })
-  .strict()
+  .strip()
 
 const webFigureMissingAssetSchema = z
   .object({
     status: z.literal('missing'),
     logicalName: nonEmptyTextSchema,
   })
-  .strict()
+  .strip()
 
 export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
   z.discriminatedUnion('type', [
@@ -209,7 +209,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         type: z.literal('paragraph'),
         children: z.array(webInlineNodeSchema).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('heading'),
@@ -217,7 +217,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         anchor: anchorSchema.optional(),
         children: z.array(webInlineNodeSchema).min(1).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('formula'),
@@ -225,7 +225,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         anchor: anchorSchema.optional(),
         label: z.string().trim().min(1).max(80).optional(),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('list'),
@@ -233,14 +233,14 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         start: z.number().int().min(1).max(10_000).optional(),
         items: z.array(z.array(webContentBlockSchema).min(1).max(100)).min(1).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('table'),
         caption: z.array(webInlineNodeSchema).max(1_000).optional(),
         rows: z.array(z.array(webContentTableCellSchema).min(1).max(20)).min(1).max(200),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('figure'),
@@ -257,7 +257,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
           webFigureMissingAssetSchema,
         ]),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('subpart'),
@@ -266,7 +266,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         title: z.string().trim().min(1).max(500).optional(),
         blocks: z.array(webContentBlockSchema).min(1).max(1_000),
       })
-      .strict(),
+      .strip(),
     z
       .object({
         type: z.literal('callout'),
@@ -274,8 +274,8 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         title: nonEmptyTextSchema.optional(),
         blocks: z.array(webContentBlockSchema).min(1).max(1_000),
       })
-      .strict(),
-    z.object({ type: z.literal('divider') }).strict(),
+      .strip(),
+    z.object({ type: z.literal('divider') }).strip(),
   ]),
 )
 
@@ -294,7 +294,7 @@ export const webContentProblemSchema = z
     // routes retain the complete statement (CONTENT-IMPORT-03).
     trailingBlocks: z.array(webContentBlockSchema).max(2_000).optional(),
   })
-  .strict()
+  .strip()
 export type WebContentProblem = z.infer<typeof webContentProblemSchema>
 
 const webContentDocumentBaseSchema = z
@@ -306,7 +306,7 @@ const webContentDocumentBaseSchema = z
     introduction: z.array(webContentBlockSchema).max(2_000),
     problems: z.array(webContentProblemSchema).max(2_000),
   })
-  .strict()
+  .strip()
 
 function refineWebContentDocument(
   document: z.infer<typeof webContentDocumentBaseSchema>,
@@ -360,12 +360,12 @@ function refineWebContentDocument(
 
 const webContentDocumentShapeSchema = webContentDocumentBaseSchema
   .extend({ revisionId: publicIdSchema })
-  .strict()
+  .strip()
   .superRefine(refineWebContentDocument)
 
 const webContentPreviewDocumentShapeSchema = webContentDocumentBaseSchema
   .extend({ revisionId: z.null() })
-  .strict()
+  .strip()
   .superRefine(refineWebContentDocument)
 
 function checkBoundedUnknownStructure(value: unknown, context: z.RefinementCtx): void {

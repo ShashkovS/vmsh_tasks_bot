@@ -76,7 +76,7 @@ export function ReviewAnnotationSurface({
 
   return (
     <div
-      aria-label="Фотография с разметкой; область можно прокручивать после увеличения"
+      aria-label={`${imageAlt}; область можно прокручивать после увеличения`}
       className={cn(
         'max-w-full overflow-auto rounded-md border border-paper-edge bg-surface-sunken p-1',
         className,
@@ -116,12 +116,37 @@ export function ReviewAnnotationSurface({
             }}
             src={imageSource}
           />
+          {marks.some((mark) => mark.coordinateSpace !== 'image') ? (
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 size-full"
+              data-coordinate-space="legacy"
+              viewBox="0 0 1 1"
+            >
+              <ReviewAnnotationMarks
+                arrowMarkerId={`${markerId}-legacy`}
+                eraserMaskId={`${maskId}-legacy`}
+                marks={marks}
+                imageRatio={dimensions.width / dimensions.height}
+                coordinateSpace="legacy"
+              />
+            </svg>
+          ) : null}
           <svg
             {...overlayProps}
             className={cn('absolute inset-0 size-full', overlayProps?.className)}
+            // Unit coordinates cover both image axes; see docs/review-annotation-geometry.md.
+            data-coordinate-space="image"
+            preserveAspectRatio="none"
             viewBox="0 0 1 1"
           >
-            <ReviewAnnotationMarks arrowMarkerId={markerId} eraserMaskId={maskId} marks={marks} />
+            <ReviewAnnotationMarks
+              arrowMarkerId={markerId}
+              eraserMaskId={maskId}
+              marks={marks}
+              imageRatio={dimensions.width / dimensions.height}
+              coordinateSpace="image"
+            />
           </svg>
         </div>
       </div>
@@ -197,7 +222,10 @@ export function ReviewAnnotationViewer({
       {textMarks.length > 0 ? (
         <ul className="space-y-1 text-small text-foreground">
           {textMarks.map((mark) => (
-            <li className="rounded-md border border-border bg-surface px-2.5 py-1.5" key={mark.markId}>
+            <li
+              className="rounded-md border border-border bg-surface px-2.5 py-1.5"
+              key={mark.markId}
+            >
               {mark.data.text}
             </li>
           ))}
@@ -211,11 +239,31 @@ export function ReviewAnnotationMarks({
   arrowMarkerId,
   eraserMaskId,
   marks,
+  imageRatio,
+  coordinateSpace,
 }: {
   arrowMarkerId: string
   eraserMaskId: string
   marks: ReviewAnnotationMark[]
+  imageRatio: number
+  coordinateSpace: 'image' | 'legacy'
 }) {
+  // Separate viewports preserve the legacy renderer, including marker sizing.
+  // Cross-space erasers are mapped into each viewport without rewriting marks.
+  const sx = Math.min(1, 1 / imageRatio)
+  const sy = Math.min(1, imageRatio)
+  const tx = (1 - sx) / 2
+  const ty = (1 - sy) / 2
+  const placement = (mark: ReviewAnnotationMark) => {
+    const sourceSpace = mark.coordinateSpace ?? 'legacy'
+    if (sourceSpace === coordinateSpace) return {}
+    return {
+      transform:
+        coordinateSpace === 'image'
+          ? `translate(${tx} ${ty}) scale(${sx} ${sy})`
+          : `scale(${1 / sx} ${1 / sy}) translate(${-tx} ${-ty})`,
+    }
+  }
   const erasers = marks.filter((mark) => mark.kind === 'eraser')
   return (
     <>
@@ -224,6 +272,7 @@ export function ReviewAnnotationMarks({
           <rect fill="white" x="0" y="0" width="1" height="1" />
           {erasers.map((mark) => (
             <path
+              {...placement(mark)}
               d={pathFromPoints(mark.data.points)}
               fill="none"
               key={mark.markId}
@@ -248,78 +297,87 @@ export function ReviewAnnotationMarks({
         </marker>
       </defs>
       <g mask={`url(#${eraserMaskId})`}>
-        {marks.map((mark) => {
-          if (mark.kind === 'eraser') return null
-          if (mark.kind === 'pencil') {
+        {marks
+          .filter((mark) => (mark.coordinateSpace ?? 'legacy') === coordinateSpace)
+          .map((mark) => {
+            const render = () => {
+              if (mark.kind === 'eraser') return null
+              if (mark.kind === 'pencil') {
+                return (
+                  <path
+                    d={pathFromPoints(mark.data.points)}
+                    fill="none"
+                    key={mark.markId}
+                    stroke={strokeForColor[mark.data.color]}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={mark.data.width}
+                  />
+                )
+              }
+              if (mark.kind === 'arrow') {
+                return (
+                  <line
+                    key={mark.markId}
+                    markerEnd={`url(#${arrowMarkerId})`}
+                    stroke={strokeForColor[mark.data.color]}
+                    strokeLinecap="round"
+                    strokeWidth={mark.data.width}
+                    x1={mark.data.start.x}
+                    x2={mark.data.end.x}
+                    y1={mark.data.start.y}
+                    y2={mark.data.end.y}
+                  />
+                )
+              }
+              if (mark.kind === 'rectangle') {
+                return (
+                  <rect
+                    fill="none"
+                    height={mark.data.height}
+                    key={mark.markId}
+                    stroke={strokeForColor[mark.data.color]}
+                    strokeWidth={mark.data.strokeWidth}
+                    width={mark.data.width}
+                    x={mark.data.x}
+                    y={mark.data.y}
+                  />
+                )
+              }
+              if (mark.kind === 'highlight') {
+                return (
+                  <rect
+                    fill="var(--annotation-highlight)"
+                    fillOpacity="0.35"
+                    height={mark.data.height}
+                    key={mark.markId}
+                    width={mark.data.width}
+                    x={mark.data.x}
+                    y={mark.data.y}
+                  />
+                )
+              }
+              return (
+                <text
+                  dominantBaseline="hanging"
+                  fill={strokeForColor[mark.data.color]}
+                  fontFamily="var(--font-sans)"
+                  fontSize={mark.data.size}
+                  fontWeight="600"
+                  key={mark.markId}
+                  x={mark.data.x}
+                  y={mark.data.y}
+                >
+                  {mark.data.text}
+                </text>
+              )
+            }
             return (
-              <path
-                d={pathFromPoints(mark.data.points)}
-                fill="none"
-                key={mark.markId}
-                stroke={strokeForColor[mark.data.color]}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={mark.data.width}
-              />
+              <g key={mark.markId} data-mark-id={mark.markId} {...placement(mark)}>
+                {render()}
+              </g>
             )
-          }
-          if (mark.kind === 'arrow') {
-            return (
-              <line
-                key={mark.markId}
-                markerEnd={`url(#${arrowMarkerId})`}
-                stroke={strokeForColor[mark.data.color]}
-                strokeLinecap="round"
-                strokeWidth={mark.data.width}
-                x1={mark.data.start.x}
-                x2={mark.data.end.x}
-                y1={mark.data.start.y}
-                y2={mark.data.end.y}
-              />
-            )
-          }
-          if (mark.kind === 'rectangle') {
-            return (
-              <rect
-                fill="none"
-                height={mark.data.height}
-                key={mark.markId}
-                stroke={strokeForColor[mark.data.color]}
-                strokeWidth={mark.data.strokeWidth}
-                width={mark.data.width}
-                x={mark.data.x}
-                y={mark.data.y}
-              />
-            )
-          }
-          if (mark.kind === 'highlight') {
-            return (
-              <rect
-                fill="var(--annotation-highlight)"
-                fillOpacity="0.35"
-                height={mark.data.height}
-                key={mark.markId}
-                width={mark.data.width}
-                x={mark.data.x}
-                y={mark.data.y}
-              />
-            )
-          }
-          return (
-            <text
-              dominantBaseline="hanging"
-              fill={strokeForColor[mark.data.color]}
-              fontFamily="var(--font-sans)"
-              fontSize={mark.data.size}
-              fontWeight="600"
-              key={mark.markId}
-              x={mark.data.x}
-              y={mark.data.y}
-            >
-              {mark.data.text}
-            </text>
-          )
-        })}
+          })}
       </g>
     </>
   )

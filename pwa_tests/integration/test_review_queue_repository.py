@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import json
 import multiprocessing
 import os
 import sqlite3
@@ -605,8 +606,10 @@ def test_annotation_domain_rejects_invalid_normalized_geometry(kind, data):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("image_coordinates", [False, True])
 async def test_complete_persists_annotation_manifest_atomically_and_immutably(
     review_queue_fixture,
+    image_coordinates,
 ):
     fixture = review_queue_fixture
     lease = await fixture.repository.claim(
@@ -614,7 +617,15 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
         teacher_user_id=TEACHER_ONE_ID,
         scope=ALL_GROUPS_SCOPE,
     )
-    command = _complete_command(lease, annotations=(_annotation_manifest(),))
+    legacy = _annotation_manifest()
+    manifest = (
+        replace(legacy, marks=(
+            *legacy.marks,
+            replace(legacy.marks[0], mark_public_id="new-image-mark", coordinate_space="image"),
+        ))
+        if image_coordinates else legacy
+    )
+    command = _complete_command(lease, annotations=(manifest,))
 
     receipt = await fixture.repository.complete(command)
 
@@ -624,7 +635,7 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
             attachment_public_id="sa-1",
             schema_version=1,
             rotation=90,
-            mark_count=6,
+            mark_count=7 if image_coordinates else 6,
         ),
     )
     stored = fixture.factory.run_read(
@@ -632,6 +643,8 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
             "SELECT marks_json, payload_sha256 FROM submission_review_annotations"
         ).fetchone()
     )
+    assert json.loads(stored["marks_json"]) == manifest.marks_payload()
+    assert json.loads(stored["marks_json"])[:6] == legacy.marks_payload()
     assert len(stored["payload_sha256"]) == 64
     assert '"kind":"pencil"' in stored["marks_json"]
     assert '"kind":"text"' in stored["marks_json"]

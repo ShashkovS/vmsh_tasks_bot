@@ -4,7 +4,7 @@ import { webContentDocumentSchema } from './content'
 import { reviewAnnotationManifestSchema, writtenReviewVerdictSchema } from './review-queue'
 
 // Authoritative flow: docs/review-history.md.
-const named = z.object({ id: publicIdSchema, name: z.string() }).strict()
+const named = z.object({ id: publicIdSchema, name: z.string() }).strip()
 export const reviewHistoryItemSchema = z
   .object({
     reviewId: publicIdSchema,
@@ -22,7 +22,7 @@ export const reviewHistoryItemSchema = z
     comment: z.string(),
     isLatestReview: z.boolean(),
   })
-  .strict()
+  .strip()
 export const reviewHistoryResponseSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -34,14 +34,14 @@ export const reviewHistoryResponseSchema = z
         courseId: publicIdSchema.nullable(),
         lessons: z.array(z.number().int()),
         lesson: z.number().int().nullable(),
-        students: z.array(z.object({ studentId: publicIdSchema, name: z.string() }).strict()),
+        students: z.array(z.object({ studentId: publicIdSchema, name: z.string() }).strip()),
         teachers: z.array(named),
         problems: z.array(named),
         canChooseTeacher: z.boolean(),
       })
-      .strict(),
+      .strip(),
   })
-  .strict()
+  .strip()
 export const reviewHistoryDetailResponseSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -71,10 +71,10 @@ export const reviewHistoryDetailResponseSchema = z
                     ordinal: z.number().int(),
                     annotation: reviewAnnotationManifestSchema.nullable(),
                   })
-                  .strict(),
+                  .strip(),
               ),
             })
-            .strict(),
+            .strip(),
         ),
         timeline: z.array(
           z
@@ -85,11 +85,11 @@ export const reviewHistoryDetailResponseSchema = z
               teacherName: z.string(),
               comment: z.string(),
             })
-            .strict(),
+            .strip(),
         ),
       })
-      .strict(),
+      .strip(),
   })
-  .strict()
+  .strip()
 export type ReviewHistoryResponse = z.infer<typeof reviewHistoryResponseSchema>
 export type ReviewHistoryDetailResponse = z.infer<typeof reviewHistoryDetailResponseSchema>

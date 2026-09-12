@@ -26,7 +26,7 @@ export const adminCourseScheduleRuleSchema = z
     state: scheduleStateSchema,
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 
 export const adminCourseScheduleResponseSchema = z
   .object({
@@ -41,12 +41,12 @@ export const adminCourseScheduleResponseSchema = z
             groupLessons: z.number().int().nonnegative(),
             materializedWindows: z.number().int().nonnegative(),
           })
-          .strict(),
+          .strip(),
       )
       .max(4),
     requestId: requestIdSchema,
   })
-  .strict()
+  .strip()
 
 export const saveAdminCourseScheduleRuleSchema = z
   .object({
@@ -67,10 +67,10 @@ export const adminCourseScheduleDraftResponseSchema = z
         groupLessons: z.number().int().nonnegative(),
         materializedWindows: z.number().int().nonnegative(),
       })
-      .strict(),
+      .strip(),
     requestId: requestIdSchema,
   })
-  .strict()
+  .strip()
 
 export const adminCourseScheduleRuleResponseSchema = z
   .object({
@@ -78,7 +78,7 @@ export const adminCourseScheduleRuleResponseSchema = z
     rule: adminCourseScheduleRuleSchema,
     requestId: requestIdSchema,
   })
-  .strict()
+  .strip()
 
 export const adminGroupScheduleOverrideSchema = z
   .object({
@@ -93,7 +93,7 @@ export const adminGroupScheduleOverrideSchema = z
     state: scheduleStateSchema,
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 
 export const adminGroupScheduleResponseSchema = z
   .object({
@@ -103,7 +103,7 @@ export const adminGroupScheduleResponseSchema = z
     overrides: z.array(adminGroupScheduleOverrideSchema).max(8),
     requestId: requestIdSchema,
   })
-  .strict()
+  .strip()
 
 export const saveAdminGroupScheduleOverrideSchema = z
   .object({
@@ -137,7 +137,7 @@ export const adminGroupScheduleOverrideResponseSchema = z
     override: adminGroupScheduleOverrideSchema,
     requestId: requestIdSchema,
   })
-  .strict()
+  .strip()
 
 export type ScheduleField = z.infer<typeof scheduleFieldSchema>
 export type ScheduleOverrideMode = z.infer<typeof scheduleOverrideModeSchema>

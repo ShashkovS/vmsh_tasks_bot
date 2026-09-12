@@ -4,6 +4,10 @@
 
 ## Общие HTTP-правила
 
+- Добавление полей ответа обратно совместимо: браузерные Zod-модели удаляют
+  неизвестные поля на всех уровнях, сохраняя валидацию известных. Запросы остаются
+  строгими. Реализация и границы: [совместимость ответов](../../docs/api-response-compatibility.md),
+  `packages/contracts/src/response-compatibility.test.ts`.
 - Base paths: `/student/api/v1`, `/family/api/v1`, `/staff/api/v1`.
 - Успех возвращает предметный JSON. Ошибка — единый envelope: `error.code`, `error.message`, `error.details`, `requestId`.
 - `401` означает отсутствующую/истёкшую сессию; `403` — authenticated principal без права; `409` — version/idempotency/lease conflict; `422` — schema/domain validation. `429` с `Retry-After` может выставить nginx для IP-level защиты либо auth service для account/login-level throttling; эти уровни дополняют друг друга.

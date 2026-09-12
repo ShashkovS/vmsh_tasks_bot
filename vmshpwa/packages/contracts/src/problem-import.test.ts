@@ -49,19 +49,19 @@ describe('problem import contract', () => {
     expect(problemImportPreviewResponseSchema.parse(preview).summary.invalid).toBe(1)
   })
 
-  it('rejects inconsistent counts and additive row fields', () => {
+  it('rejects inconsistent counts and strips additive row fields', () => {
     expect(() =>
       problemImportPreviewResponseSchema.parse({
         ...preview,
         summary: { ...preview.summary, invalid: 0 },
       }),
     ).toThrow()
-    expect(() =>
+    expect(
       problemImportPreviewResponseSchema.parse({
         ...preview,
-        rows: [{ ...preview.rows[0], secret: 'must not pass' }],
+        rows: [{ ...preview.rows[0], futureMetadata: 'ignored' }],
       }),
-    ).toThrow()
+    ).toEqual(preview)
   })
 
   it('validates apply and rollback receipts', () => {

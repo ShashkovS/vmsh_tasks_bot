@@ -66,14 +66,14 @@ export const supportEntrySchema = z
         userId: publicIdSchema.nullable(),
         displayName: z.string().trim().min(1).max(200),
       })
-      .strict(),
+      .strip(),
     text: z.string().max(100_000).nullable(),
     assetId: publicIdSchema.nullable(),
     channel: z.enum(['pwa', 'telegram', 'staff', 'system']),
     clientCreatedAt: z.iso.datetime().nullable(),
     receivedAt: z.iso.datetime(),
   })
-  .strict()
+  .strip()
   .superRefine((entry, context) => {
     if ((entry.author.kind === 'system') !== (entry.author.userId === null)) {
       context.addIssue({
@@ -101,7 +101,7 @@ export const supportThreadSchema = z
         studentId: publicIdSchema,
         displayName: z.string().trim().min(1).max(200),
       })
-      .strict(),
+      .strip(),
     context: z
       .object({
         courseId: publicIdSchema.nullable(),
@@ -113,13 +113,13 @@ export const supportThreadSchema = z
         problemTitle: z.string().trim().min(1).max(500).nullable(),
         problemNumber: z.string().nullable().optional(),
       })
-      .strict(),
+      .strip(),
     latestEntryAt: z.iso.datetime(),
     version: z.number().int().positive(),
     entries: z.array(supportEntrySchema).min(1),
     problemDocument: webContentDocumentSchema.nullable().optional(),
   })
-  .strict()
+  .strip()
   .superRefine((thread, context) => {
     const problemContext = thread.context.problemId !== null && thread.context.problemTitle !== null
     if (thread.kind === 'problem_question' && !problemContext) {
@@ -166,7 +166,7 @@ export const supportThreadResponseSchema = z
     thread: supportThreadSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type SupportThreadResponse = z.infer<typeof supportThreadResponseSchema>
 
 export const supportThreadSummarySchema = z
@@ -178,7 +178,7 @@ export const supportThreadSummarySchema = z
         studentId: publicIdSchema,
         displayName: z.string().trim().min(1).max(200),
       })
-      .strict(),
+      .strip(),
     context: z
       .object({
         courseId: publicIdSchema.nullable(),
@@ -190,19 +190,19 @@ export const supportThreadSummarySchema = z
         problemTitle: z.string().trim().min(1).max(500).nullable(),
         problemNumber: z.string().nullable().optional(),
       })
-      .strict(),
+      .strip(),
     latestEntry: z
       .object({
         authorKind: supportAuthorKindSchema,
         textExcerpt: z.string().max(280).nullable(),
         receivedAt: z.iso.datetime(),
       })
-      .strict(),
+      .strip(),
     replyState: supportReplyStateSchema,
     entryCount: z.number().int().positive(),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
   .superRefine((summary, context) => {
     const expectedReplyState =
       summary.latestEntry.authorKind === 'student'
@@ -235,7 +235,7 @@ export const supportThreadPageSchema = z
     nextCursor: publicIdSchema.nullable(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type SupportThreadPage = z.infer<typeof supportThreadPageSchema>
 
 export const studentSupportListQuerySchema = z

@@ -850,11 +850,12 @@ def _complete_annotations(value: object) -> tuple[ReviewAnnotationManifest, ...]
                 )
             marks: list[ReviewAnnotationMark] = []
             for mark_index, mark in enumerate(marks_value):
-                if not isinstance(mark, dict) or set(mark) != {
-                    "markId",
-                    "kind",
-                    "data",
-                }:
+                if (
+                    not isinstance(mark, dict)
+                    or not {"markId", "kind", "data"}.issubset(mark)
+                    or set(mark) - {"markId", "kind", "data", "coordinateSpace"}
+                    or ("coordinateSpace" in mark and mark["coordinateSpace"] != "image")
+                ):
                     raise PwaApiError(
                         status=422,
                         code="validation_error",
@@ -879,6 +880,7 @@ def _complete_annotations(value: object) -> tuple[ReviewAnnotationManifest, ...]
                         ),
                         kind=kind,
                         data=mark["data"],
+                        coordinate_space=mark.get("coordinateSpace"),
                     )
                 )
             schema_version = annotation["schemaVersion"]

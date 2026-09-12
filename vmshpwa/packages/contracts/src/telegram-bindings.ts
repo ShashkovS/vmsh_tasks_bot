@@ -29,7 +29,7 @@ export const telegramBindingSchema = z
     updatedAt: z.iso.datetime(),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
   .superRefine((value, context) => {
     if (value.status === 'verified' && value.verifiedAt === null) {
       context.addIssue({
@@ -47,7 +47,7 @@ export const telegramBindingListResponseSchema = z
     items: z.array(telegramBindingSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type TelegramBindingListResponse = z.infer<typeof telegramBindingListResponseSchema>
 
 export const telegramBindingResponseSchema = z
@@ -56,7 +56,7 @@ export const telegramBindingResponseSchema = z
     binding: telegramBindingSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type TelegramBindingResponse = z.infer<typeof telegramBindingResponseSchema>
 
 const bindingOwnerStatusSchema = z.enum(['draft', 'active', 'archived'])
@@ -76,14 +76,14 @@ export const telegramBindingOwnersResponseSchema = z
                 groupName: z.string().trim().min(1),
                 status: bindingOwnerStatusSchema,
               })
-              .strict(),
+              .strip(),
           ),
         })
-        .strict(),
+        .strip(),
     ),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type TelegramBindingOwnersResponse = z.infer<typeof telegramBindingOwnersResponseSchema>
 
 export const saveTelegramBindingRequestSchema = z

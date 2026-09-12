@@ -29,7 +29,7 @@ export const notificationEventSchema = z
     deliverAfter: z.iso.datetime(),
     readAt: z.iso.datetime().nullable(),
   })
-  .strict()
+  .strip()
 export type NotificationEvent = z.infer<typeof notificationEventSchema>
 
 export const notificationEventListResponseSchema = z
@@ -38,7 +38,7 @@ export const notificationEventListResponseSchema = z
     items: z.array(notificationEventSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type NotificationEventListResponse = z.infer<typeof notificationEventListResponseSchema>
 
 export const familyDigestPreviewSchema = z
@@ -59,10 +59,10 @@ export const familyDigestPreviewSchema = z
           studentId: publicIdSchema,
           displayName: z.string().trim().min(1),
         })
-        .strict(),
+        .strip(),
     ),
   })
-  .strict()
+  .strip()
   .superRefine((value, context) => {
     if (value.alreadySentFamilyCount + value.pendingFamilyCount !== value.familyCount) {
       context.addIssue({
@@ -87,7 +87,7 @@ export const familyDigestPreviewResponseSchema = z
     digest: familyDigestPreviewSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type FamilyDigestPreviewResponse = z.infer<typeof familyDigestPreviewResponseSchema>
 
 export const sendFamilyDigestRequestSchema = z.object({ schemaVersion: versionSchema }).strict()
@@ -95,7 +95,7 @@ export type SendFamilyDigestRequest = z.infer<typeof sendFamilyDigestRequestSche
 
 export const sendFamilyDigestResponseSchema = familyDigestPreviewResponseSchema
   .extend({ createdFamilyCount: z.number().int().nonnegative() })
-  .strict()
+  .strip()
   .superRefine((value, context) => {
     if (value.createdFamilyCount > value.digest.familyCount) {
       context.addIssue({
@@ -118,7 +118,7 @@ export const notificationPreferenceSchema = z
     timezone: z.string().trim().min(1),
     updatedAt: z.iso.datetime().nullable(),
   })
-  .strict()
+  .strip()
 export type NotificationPreference = z.infer<typeof notificationPreferenceSchema>
 
 export const notificationPreferenceListResponseSchema = z
@@ -127,7 +127,7 @@ export const notificationPreferenceListResponseSchema = z
     items: z.array(notificationPreferenceSchema).length(notificationCategorySchema.options.length),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type NotificationPreferenceListResponse = z.infer<
   typeof notificationPreferenceListResponseSchema
 >
@@ -146,7 +146,7 @@ export const notificationPreferenceResponseSchema = z
     preference: notificationPreferenceSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type NotificationPreferenceResponse = z.infer<typeof notificationPreferenceResponseSchema>
 
 export const courseNotificationPreferenceSchema = z
@@ -156,7 +156,7 @@ export const courseNotificationPreferenceSchema = z
     inherited: z.boolean(),
     updatedAt: z.iso.datetime().nullable(),
   })
-  .strict()
+  .strip()
 export type CourseNotificationPreference = z.infer<typeof courseNotificationPreferenceSchema>
 
 export const courseNotificationPreferenceListResponseSchema = z
@@ -168,7 +168,7 @@ export const courseNotificationPreferenceListResponseSchema = z
       .length(notificationCategorySchema.options.length),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type CourseNotificationPreferenceListResponse = z.infer<
   typeof courseNotificationPreferenceListResponseSchema
 >
@@ -191,7 +191,7 @@ export const courseNotificationPreferenceResponseSchema = z
     preference: courseNotificationPreferenceSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type CourseNotificationPreferenceResponse = z.infer<
   typeof courseNotificationPreferenceResponseSchema
 >
@@ -206,7 +206,7 @@ export const acknowledgeNotificationResponseSchema = z
     readAt: z.iso.datetime(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AcknowledgeNotificationResponse = z.infer<typeof acknowledgeNotificationResponseSchema>
 
 const pushKeySchema = z
@@ -222,7 +222,7 @@ export const pushSubscriptionConfigResponseSchema = z
     applicationServerKey: pushKeySchema.nullable(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
   .superRefine((value, context) => {
     if (value.enabled !== (value.applicationServerKey !== null)) {
       context.addIssue({
@@ -255,7 +255,7 @@ export const savePushSubscriptionResponseSchema = z
     subscriptionId: publicIdSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type SavePushSubscriptionResponse = z.infer<typeof savePushSubscriptionResponseSchema>
 
 export const deletePushSubscriptionRequestSchema = z
@@ -272,7 +272,7 @@ export const deletePushSubscriptionResponseSchema = z
     deleted: z.boolean(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type DeletePushSubscriptionResponse = z.infer<typeof deletePushSubscriptionResponseSchema>
 
 export const nativePushPayloadSchema = z
@@ -286,7 +286,7 @@ export const nativePushPayloadSchema = z
     silent: z.boolean(),
     occurredAt: z.iso.datetime(),
   })
-  .strict()
+  .strip()
 export type NativePushPayload = z.infer<typeof nativePushPayloadSchema>
 
 export const notificationQueryKeys = {

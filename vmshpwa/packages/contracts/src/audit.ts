@@ -36,11 +36,11 @@ export const auditEventSchema = z
         accountId: publicIdSchema.nullable(),
         displayName: z.string().trim().min(1).max(200),
       })
-      .strict(),
+      .strip(),
     before: auditDiffSchema.nullable(),
     after: auditDiffSchema.nullable(),
   })
-  .strict()
+  .strip()
 export type AuditEvent = z.infer<typeof auditEventSchema>
 
 export const auditListResponseSchema = z
@@ -50,7 +50,7 @@ export const auditListResponseSchema = z
     nextCursor: publicIdSchema.nullable(),
     requestId: z.string().trim().min(1).max(128),
   })
-  .strict()
+  .strip()
 export type AuditListResponse = z.infer<typeof auditListResponseSchema>
 
 export const auditQueryKeys = {

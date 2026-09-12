@@ -8,9 +8,9 @@ const groupStatusSchema = z.enum(['draft', 'active', 'archived'])
 const attendanceModeSchema = z.enum(['online', 'in_person'])
 const enrollmentStatusSchema = z.enum(['active', 'paused', 'archived'])
 const usernameSuggestionSchema = z.discriminatedUnion('state', [
-  z.object({ username: z.string().trim().min(1).max(100), state: z.literal('ready') }).strict(),
-  z.object({ username: z.string().trim().min(1).max(100), state: z.literal('collision') }).strict(),
-  z.object({ username: z.null(), state: z.literal('invalid_identity') }).strict(),
+  z.object({ username: z.string().trim().min(1).max(100), state: z.literal('ready') }).strip(),
+  z.object({ username: z.string().trim().min(1).max(100), state: z.literal('collision') }).strip(),
+  z.object({ username: z.null(), state: z.literal('invalid_identity') }).strip(),
 ])
 
 export const adminEnrollmentGroupSchema = z
@@ -22,7 +22,7 @@ export const adminEnrollmentGroupSchema = z
     colorKey: z.string().trim().min(1).max(32),
     sortOrder: z.number().int(),
   })
-  .strict()
+  .strip()
 export type AdminEnrollmentGroup = z.infer<typeof adminEnrollmentGroupSchema>
 
 export const adminStudentCourseEnrollmentSchema = z
@@ -35,14 +35,14 @@ export const adminStudentCourseEnrollmentSchema = z
         name: z.string().trim().min(1).max(200),
         subjectCode: z.string().trim().min(1).max(50),
       })
-      .strict(),
+      .strip(),
     activeGroupId: publicIdSchema,
     allowedGroups: z.array(adminEnrollmentGroupSchema).min(1),
     attendanceMode: attendanceModeSchema,
     status: enrollmentStatusSchema,
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
   .superRefine((enrollment, context) => {
     const groupIds = new Set<string>()
     enrollment.allowedGroups.forEach((group, index) => {
@@ -83,7 +83,7 @@ export const adminStudentDirectoryEntrySchema = z
         status: managedAccountStatusSchema,
         credentialVersion: z.number().int().positive(),
       })
-      .strict()
+      .strip()
       .nullable(),
     familyAccounts: z.array(
       z
@@ -96,11 +96,11 @@ export const adminStudentDirectoryEntrySchema = z
           relationshipLabel: z.string().trim().min(1).nullable(),
           isPrimary: z.boolean(),
         })
-        .strict(),
+        .strip(),
     ),
     enrollments: z.array(adminStudentCourseEnrollmentSchema),
   })
-  .strict()
+  .strip()
 export type AdminStudentDirectoryEntry = z.infer<typeof adminStudentDirectoryEntrySchema>
 
 export const adminStudentEnrollmentDirectoryResponseSchema = z
@@ -109,7 +109,7 @@ export const adminStudentEnrollmentDirectoryResponseSchema = z
     students: z.array(adminStudentDirectoryEntrySchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AdminStudentEnrollmentDirectoryResponse = z.infer<
   typeof adminStudentEnrollmentDirectoryResponseSchema
 >
@@ -150,7 +150,7 @@ export const adminStudentEnrollmentResponseSchema = z
     enrollment: adminStudentCourseEnrollmentSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AdminStudentEnrollmentResponse = z.infer<typeof adminStudentEnrollmentResponseSchema>
 
 export const deleteStudentResponseSchema = z
@@ -160,7 +160,7 @@ export const deleteStudentResponseSchema = z
     deleted: z.literal(true),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type DeleteStudentResponse = z.infer<typeof deleteStudentResponseSchema>
 
 export const updateManagedAccountStatusRequestSchema = z
@@ -193,10 +193,10 @@ export const managedAccountResponseSchema = z
         status: managedAccountStatusSchema,
         credentialVersion: z.number().int().positive(),
       })
-      .strict(),
+      .strip(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ManagedAccountResponse = z.infer<typeof managedAccountResponseSchema>
 
 /** Student web-login creation uses the current legacy bot token server-side. */
@@ -242,17 +242,17 @@ export const familyAccountLinkResponseSchema = z
         status: managedAccountStatusSchema,
         credentialVersion: z.number().int().positive(),
       })
-      .strict(),
+      .strip(),
     link: z
       .object({
         studentId: publicIdSchema,
         relationshipLabel: z.string().trim().min(1).max(100),
         isPrimary: z.boolean(),
       })
-      .strict(),
+      .strip(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type FamilyAccountLinkResponse = z.infer<typeof familyAccountLinkResponseSchema>
 
 export const unlinkFamilyAccountResponseSchema = z
@@ -263,7 +263,7 @@ export const unlinkFamilyAccountResponseSchema = z
     revoked: z.literal(true),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type UnlinkFamilyAccountResponse = z.infer<typeof unlinkFamilyAccountResponseSchema>
 
 export const adminStudentEnrollmentsQueryKey = (principal: PrincipalQueryScope) =>

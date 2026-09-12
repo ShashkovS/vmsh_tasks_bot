@@ -15,7 +15,7 @@ export const writtenProblemRevisionSchema = z
     conditionRevisionId: publicIdSchema,
     configVersion: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 export type WrittenProblemRevision = z.infer<typeof writtenProblemRevisionSchema>
 
 const writtenAttachmentShape = {
@@ -38,7 +38,7 @@ export const writtenAttachmentSchema = z
         /^\/student\/api\/v1\/thread-entries\/[a-z0-9][a-z0-9._:-]*\/attachments\/[a-z0-9][a-z0-9._:-]*\/media$/,
       ),
   })
-  .strict()
+  .strip()
 export type WrittenAttachment = z.infer<typeof writtenAttachmentSchema>
 
 export const staffWrittenAttachmentSchema = z
@@ -50,7 +50,7 @@ export const staffWrittenAttachmentSchema = z
         /^\/staff\/api\/v1\/thread-entries\/[a-z0-9][a-z0-9._:-]*\/attachments\/[a-z0-9][a-z0-9._:-]*\/media$/,
       ),
   })
-  .strict()
+  .strip()
 export type StaffWrittenAttachment = z.infer<typeof staffWrittenAttachmentSchema>
 
 export const familyWrittenAttachmentSchema = z
@@ -62,7 +62,7 @@ export const familyWrittenAttachmentSchema = z
         /^\/family\/api\/v1\/children\/[a-z0-9][a-z0-9._:-]*\/thread-entries\/[a-z0-9][a-z0-9._:-]*\/attachments\/[a-z0-9][a-z0-9._:-]*\/media$/,
       ),
   })
-  .strict()
+  .strip()
 export type FamilyWrittenAttachment = z.infer<typeof familyWrittenAttachmentSchema>
 
 export const writtenMaterialProjectionSchema = z
@@ -75,7 +75,7 @@ export const writtenMaterialProjectionSchema = z
     targetProblemId: publicIdSchema,
     movedAt: z.iso.datetime(),
   })
-  .strict()
+  .strip()
   .superRefine((projection, context) => {
     if (projection.sourceThreadId === projection.targetThreadId) {
       context.addIssue({
@@ -108,7 +108,7 @@ export const writtenEntrySchema = z
     attachments: z.array(writtenAttachmentSchema).max(10),
     projection: writtenMaterialProjectionSchema.optional(),
   })
-  .strict()
+  .strip()
   .superRefine((entry, context) => {
     if (entry.authorKind === 'student' && entry.problemRevision === null) {
       context.addIssue({
@@ -152,7 +152,7 @@ export const writtenStudentReactionSchema = z
     updatedAt: z.iso.datetime(),
     deleted: z.boolean(),
   })
-  .strict()
+  .strip()
   .superRefine((reaction, context) => {
     if ((reaction.reactionId === null) !== reaction.deleted) {
       context.addIssue({
@@ -199,7 +199,7 @@ export const writtenStudentReactionResponseSchema = z
     studentReaction: writtenStudentReactionSchema,
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type WrittenStudentReactionResponse = z.infer<typeof writtenStudentReactionResponseSchema>
 
 /** Student/Family review projection. Internal Teacher reactions are excluded. */
@@ -217,7 +217,7 @@ export const writtenReviewProjectionSchema = z
     studentReaction: writtenStudentReactionSchema.nullable(),
     completedAt: z.iso.datetime(),
   })
-  .strict()
+  .strip()
   .superRefine((review, context) => {
     if (new Set(review.evidenceEntryIds).size !== review.evidenceEntryIds.length) {
       context.addIssue({
@@ -240,7 +240,7 @@ export const writtenThreadSchema = z
     entries: z.array(writtenEntrySchema),
     reviews: z.array(writtenReviewProjectionSchema),
   })
-  .strict()
+  .strip()
   .superRefine((thread, context) => {
     let previous: string | null = null
     const seen = new Set<string>()
@@ -311,7 +311,7 @@ export const writtenPasteEvidenceSchema = z
     pastedCharacterCount: z.number().int().nonnegative(),
     lastPastedAt: z.iso.datetime().nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((evidence, context) => {
     const empty =
       evidence.pasteCount === 0 &&
@@ -352,7 +352,7 @@ const writtenEntryMutationShape = {
 
 export const createWrittenEntryResponseSchema = z
   .object(writtenEntryMutationShape)
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (
       response.entry.authorKind !== 'student' ||
@@ -382,7 +382,7 @@ export type WrittenAttachmentUploadMetadata = z.infer<typeof writtenAttachmentUp
 
 export const createWrittenAttachmentResponseSchema = z
   .object(writtenEntryMutationShape)
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (
       response.entry.state !== 'draft' ||
@@ -435,7 +435,7 @@ export const mutateWrittenAttachmentsResponseSchema = z
     ...writtenEntryMutationShape,
     changed: z.boolean(),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (
       response.entry.attachments.some(
@@ -478,7 +478,7 @@ export const submitWrittenEntryResponseSchema = z
     ...writtenEntryMutationShape,
     clockSuspicious: z.boolean(),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (response.threadStatus !== 'awaiting_review' || response.entry.state !== 'submitted') {
       context.addIssue({
@@ -519,7 +519,7 @@ export const replaceWrittenEntryResponseSchema = z
     replacementEventId: publicIdSchema,
     clockSuspicious: z.boolean(),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (
       response.threadStatus !== 'awaiting_review' ||
@@ -541,7 +541,7 @@ export const writtenMaterialItemRefSchema = z
     itemKind: z.enum(['entry_text', 'attachment']),
     attachmentId: publicIdSchema.nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((item, context) => {
     const expectedAttachment = item.itemKind === 'attachment'
     if (expectedAttachment !== (item.attachmentId !== null)) {
@@ -588,7 +588,7 @@ export const writtenMaterialScopeSchema = z
     groupId: publicIdSchema,
     groupLessonId: publicIdSchema,
   })
-  .strict()
+  .strip()
 
 const writtenMaterialPreviewItemSchema = writtenMaterialItemRefSchema
   .safeExtend({
@@ -617,7 +617,7 @@ const writtenMaterialSourcePreviewSchema = z
     threadVersion: z.number().int().positive(),
     scope: writtenMaterialScopeSchema,
   })
-  .strict()
+  .strip()
 
 const writtenMaterialTargetPreviewSchema = z
   .object({
@@ -626,7 +626,7 @@ const writtenMaterialTargetPreviewSchema = z
     threadVersion: z.number().int().positive().nullable(),
     scope: writtenMaterialScopeSchema,
   })
-  .strict()
+  .strip()
   .superRefine((target, context) => {
     if ((target.threadId === null) !== (target.threadVersion === null)) {
       context.addIssue({
@@ -651,10 +651,10 @@ export const previewWrittenMaterialReassignmentResponseSchema = z
         targetRequiresReview: z.literal(true),
         studentLabel: z.literal('Перенесено преподавателем'),
       })
-      .strict(),
+      .strip(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type PreviewWrittenMaterialReassignmentResponse = z.infer<
   typeof previewWrittenMaterialReassignmentResponseSchema
 >
@@ -677,7 +677,7 @@ const writtenMaterialMutationThreadSchema = z
     threadStatus: z.enum(['awaiting_review', 'closed', 'needs_work', 'accepted']),
     threadVersion: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 
 export const reassignWrittenMaterialResponseSchema = z
   .object({
@@ -692,7 +692,7 @@ export const reassignWrittenMaterialResponseSchema = z
     studentLabel: z.literal('Перенесено преподавателем'),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (
       response.source.threadId === response.target.threadId ||
@@ -722,7 +722,7 @@ export const writtenThreadResponseSchema = z
     thread: writtenThreadSchema.nullable(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (response.thread !== null && response.thread.problemId !== response.problemId) {
       context.addIssue({
@@ -742,7 +742,7 @@ export const familyWrittenThreadResponseSchema = z
     thread: familyWrittenThreadSchema.nullable(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (response.thread !== null && response.thread.problemId !== response.problemId) {
       context.addIssue({

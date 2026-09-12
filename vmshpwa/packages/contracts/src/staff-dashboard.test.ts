@@ -41,8 +41,8 @@ describe('Staff dashboard contract', () => {
     expect(staffDashboardResponseSchema.parse(fixture).summary.review.totalCases).toBe(8)
   })
 
-  it('rejects row-level Student data and inconsistent counts', () => {
-    expect(() => staffDashboardResponseSchema.parse({ ...fixture, studentId: 17 })).toThrow()
+  it('strips unknown response data and rejects inconsistent counts', () => {
+    expect(staffDashboardResponseSchema.parse({ ...fixture, studentId: 17 })).toEqual(fixture)
     expect(() =>
       staffDashboardResponseSchema.parse({
         ...fixture,

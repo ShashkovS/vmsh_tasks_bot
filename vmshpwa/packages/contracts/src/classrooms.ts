@@ -26,7 +26,7 @@ export const classroomSchema = z
     updatedAt: z.iso.datetime(),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 export type Classroom = z.infer<typeof classroomSchema>
 
 export const classroomListQuerySchema = z
@@ -59,7 +59,7 @@ export const classroomResponseSchema = z
     classroom: classroomSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ClassroomResponse = z.infer<typeof classroomResponseSchema>
 
 export const classroomListResponseSchema = z
@@ -68,7 +68,7 @@ export const classroomListResponseSchema = z
     items: z.array(classroomSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ClassroomListResponse = z.infer<typeof classroomListResponseSchema>
 
 export const inPersonEventStatusSchema = z.enum(['draft', 'scheduled', 'completed', 'cancelled'])
@@ -88,7 +88,7 @@ export const classroomLayoutGroupSchema = z
     inPersonCount: z.number().int().nonnegative(),
     assignedCount: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
 export type ClassroomLayoutGroup = z.infer<typeof classroomLayoutGroupSchema>
 
 export const inPersonEventGroupSchema = classroomLayoutGroupSchema.omit({ assignedCount: true })
@@ -104,7 +104,7 @@ export const inPersonEventSchema = z
     version: z.number().int().positive(),
     groupLessons: z.array(inPersonEventGroupSchema),
   })
-  .strict()
+  .strip()
 export type InPersonEvent = z.infer<typeof inPersonEventSchema>
 
 export const inPersonEventListResponseSchema = z
@@ -116,12 +116,12 @@ export const inPersonEventListResponseSchema = z
         code: z.string().trim().min(1),
         title: z.string().trim().min(1),
       })
-      .strict(),
+      .strip(),
     events: z.array(inPersonEventSchema),
     candidates: z.array(inPersonEventGroupSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type InPersonEventListResponse = z.infer<typeof inPersonEventListResponseSchema>
 
 export const inPersonEventResponseSchema = z
@@ -130,7 +130,7 @@ export const inPersonEventResponseSchema = z
     event: inPersonEventSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type InPersonEventResponse = z.infer<typeof inPersonEventResponseSchema>
 
 export const saveInPersonEventRequestSchema = z
@@ -164,7 +164,7 @@ export const classroomLayoutRoomSchema = z
     groupName: z.string().trim().min(1),
     sourceLayoutPublicId: publicIdSchema.nullable(),
   })
-  .strict()
+  .strip()
 export type ClassroomLayoutRoom = z.infer<typeof classroomLayoutRoomSchema>
 
 export const classroomLayoutSchema = z
@@ -178,7 +178,7 @@ export const classroomLayoutSchema = z
         status: inPersonEventStatusSchema,
         version: z.number().int().positive(),
       })
-      .strict(),
+      .strip(),
     state: classroomLayoutStateSchema,
     publicId: publicIdSchema.nullable(),
     version: z.number().int().positive().nullable(),
@@ -190,10 +190,10 @@ export const classroomLayoutSchema = z
           classroomPublicId: publicIdSchema,
           classroomName: z.string().trim().min(1).max(200),
         })
-        .strict(),
+        .strip(),
     ),
   })
-  .strict()
+  .strip()
   .superRefine((layout, context) => {
     const virtual = layout.state === 'inherited'
     if (virtual !== (layout.publicId === null && layout.version === null)) {
@@ -212,7 +212,7 @@ export const classroomLayoutResponseSchema = z
     layout: classroomLayoutSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ClassroomLayoutResponse = z.infer<typeof classroomLayoutResponseSchema>
 
 export const materializeClassroomLayoutRequestSchema = z
@@ -263,7 +263,7 @@ export const classroomAssignmentPlanSchema = z
         endsAt: z.iso.datetime(),
         status: inPersonEventStatusSchema,
       })
-      .strict(),
+      .strip(),
     plan: z
       .object({
         publicId: publicIdSchema,
@@ -273,7 +273,7 @@ export const classroomAssignmentPlanSchema = z
         updatedAt: z.iso.datetime(),
         confirmedAt: z.iso.datetime().nullable(),
       })
-      .strict()
+      .strip()
       .nullable(),
     groups: z.array(classroomLayoutGroupSchema.omit({ assignedCount: true })),
     rooms: z.array(
@@ -284,7 +284,7 @@ export const classroomAssignmentPlanSchema = z
           status: classroomStatusSchema,
           groupLessonPublicId: publicIdSchema,
         })
-        .strict(),
+        .strip(),
     ),
     students: z.array(
       z
@@ -303,10 +303,10 @@ export const classroomAssignmentPlanSchema = z
           status: classroomAssignmentStatusSchema,
           source: classroomAssignmentSourceSchema,
         })
-        .strict(),
+        .strip(),
     ),
   })
-  .strict()
+  .strip()
 export type ClassroomAssignmentPlan = z.infer<typeof classroomAssignmentPlanSchema>
 
 export const classroomAssignmentPlanResponseSchema = z
@@ -315,7 +315,7 @@ export const classroomAssignmentPlanResponseSchema = z
     assignmentPlan: classroomAssignmentPlanSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ClassroomAssignmentPlanResponse = z.infer<typeof classroomAssignmentPlanResponseSchema>
 
 export const classroomAssignmentHistoryItemSchema = z
@@ -333,7 +333,7 @@ export const classroomAssignmentHistoryItemSchema = z
     groupName: z.string().trim().min(1),
     groupLessonPublicId: publicIdSchema,
   })
-  .strict()
+  .strip()
 export type ClassroomAssignmentHistoryItem = z.infer<typeof classroomAssignmentHistoryItemSchema>
 
 export const classroomAssignmentHistoryResponseSchema = z
@@ -342,7 +342,7 @@ export const classroomAssignmentHistoryResponseSchema = z
     items: z.array(classroomAssignmentHistoryItemSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ClassroomAssignmentHistoryResponse = z.infer<
   typeof classroomAssignmentHistoryResponseSchema
 >
@@ -374,7 +374,7 @@ export const publishedClassroomAssignmentSchema = z
     confirmedAt: z.iso.datetime().nullable(),
     announcedAt: z.iso.datetime().nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((item, context) => {
     const hasClassroom = item.classroomPublicId !== null && item.classroomName !== null
     if ((item.status === 'assigned') !== hasClassroom) {
@@ -410,7 +410,7 @@ export const publishedClassroomAssignmentListResponseSchema = z
     items: z.array(publishedClassroomAssignmentSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type PublishedClassroomAssignmentListResponse = z.infer<
   typeof publishedClassroomAssignmentListResponseSchema
 >
@@ -430,7 +430,7 @@ export const classroomDeliveryPreviewRecipientSchema = z
     pwaAvailable: z.boolean(),
     telegramAvailable: z.boolean(),
   })
-  .strict()
+  .strip()
 
 export const classroomDeliveryPreviewSchema = z
   .object({
@@ -443,7 +443,7 @@ export const classroomDeliveryPreviewSchema = z
     telegramUnavailableCount: z.number().int().nonnegative(),
     recipients: z.array(classroomDeliveryPreviewRecipientSchema),
   })
-  .strict()
+  .strip()
   .superRefine((preview, context) => {
     if (preview.recipientCount !== preview.recipients.length) {
       context.addIssue({ code: 'custom', message: 'Recipient count must match the preview rows' })
@@ -460,7 +460,7 @@ export const classroomDeliveryPreviewResponseSchema = z
     preview: classroomDeliveryPreviewSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ClassroomDeliveryPreviewResponse = z.infer<
   typeof classroomDeliveryPreviewResponseSchema
 >
@@ -486,7 +486,7 @@ const classroomDeliveryResultSchema = z
     errorCode: z.string().trim().min(1).nullable(),
     sentAt: z.iso.datetime().nullable(),
   })
-  .strict()
+  .strip()
 
 export const classroomDeliveryChannelReportSchema = z
   .object({
@@ -498,7 +498,7 @@ export const classroomDeliveryChannelReportSchema = z
     succeeded: z.number().int().nonnegative(),
     failed: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
 
 export const classroomDeliveryReportSchema = z
   .object({
@@ -507,12 +507,12 @@ export const classroomDeliveryReportSchema = z
         pwa: classroomDeliveryChannelReportSchema,
         telegram: classroomDeliveryChannelReportSchema,
       })
-      .strict(),
+      .strip(),
     deliveredAny: z.number().int().nonnegative(),
     deliveredAll: z.number().int().nonnegative(),
     partial: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
 
 export const classroomDeliveryBatchSchema = z
   .object({
@@ -535,7 +535,7 @@ export const classroomDeliveryBatchSchema = z
           z.number().int().nonnegative(),
         ),
       })
-      .strict(),
+      .strip(),
     deliveryReport: classroomDeliveryReportSchema,
     recipients: z.array(
       z
@@ -551,10 +551,10 @@ export const classroomDeliveryBatchSchema = z
           pwa: classroomDeliveryResultSchema,
           telegram: classroomDeliveryResultSchema,
         })
-        .strict(),
+        .strip(),
     ),
   })
-  .strict()
+  .strip()
 export type ClassroomDeliveryBatch = z.infer<typeof classroomDeliveryBatchSchema>
 
 export const classroomDeliveryBatchResponseSchema = z
@@ -563,7 +563,7 @@ export const classroomDeliveryBatchResponseSchema = z
     batch: classroomDeliveryBatchSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type ClassroomDeliveryBatchResponse = z.infer<typeof classroomDeliveryBatchResponseSchema>
 
 export const latestClassroomDeliveryBatchResponseSchema = z
@@ -572,7 +572,7 @@ export const latestClassroomDeliveryBatchResponseSchema = z
     batch: classroomDeliveryBatchSchema.nullable(),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type LatestClassroomDeliveryBatchResponse = z.infer<
   typeof latestClassroomDeliveryBatchResponseSchema
 >

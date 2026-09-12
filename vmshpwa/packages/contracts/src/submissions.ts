@@ -28,7 +28,7 @@ export const testProblemRevisionSchema = z
     conditionRevisionId: publicIdSchema,
     configVersion: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 export type TestProblemRevision = z.infer<typeof testProblemRevisionSchema>
 
 export const testAnswerInputResponseSchema = z
@@ -42,7 +42,7 @@ export const testAnswerInputResponseSchema = z
     options: z.array(z.string().trim().min(1).max(4_000)).max(100),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((input, context) => {
     if (input.answerType === 98 && input.options.length === 0) {
       context.addIssue({
@@ -260,7 +260,7 @@ export const testAttemptRecheckPreviewResponseSchema = z
     pendingAttempts: z.number().int().nonnegative(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type TestAttemptRecheckPreviewResponse = z.infer<
   typeof testAttemptRecheckPreviewResponseSchema
 >
@@ -279,7 +279,7 @@ export const testAttemptRecheckResponseSchema = z
     threadInvalidationKey: z.string().min(1).max(256),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((receipt, context) => {
     if (receipt.checked !== receipt.correct + receipt.wrong) {
       context.addIssue({

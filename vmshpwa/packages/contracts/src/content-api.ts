@@ -191,7 +191,7 @@ const sourcePositionSchema = z
     line: z.number().int().positive(),
     column: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 
 export const contentDiagnosticSchema = z
   .object({
@@ -204,10 +204,10 @@ export const contentDiagnosticSchema = z
         start: sourcePositionSchema,
         end: sourcePositionSchema,
       })
-      .strict(),
+      .strip(),
     recovery: z.string().trim().min(1).max(8_192).nullable(),
   })
-  .strict()
+  .strip()
 export type ContentDiagnostic = z.infer<typeof contentDiagnosticSchema>
 
 export const staffContentRevisionSchema = z
@@ -231,14 +231,14 @@ export const staffContentRevisionSchema = z
     missingAssets: z.array(z.string().trim().min(1).max(2_000)).max(10_000),
     requestId: z.string().trim().min(1).max(200).optional(),
   })
-  .strict()
+  .strip()
 export type StaffContentRevision = z.infer<typeof staffContentRevisionSchema>
 
 export const contentAssetsMissingDetailsSchema = z
   .object({
     missingAssets: z.array(z.string().trim().min(1).max(2_000)).min(1).max(10_000),
   })
-  .strict()
+  .strip()
 export type ContentAssetsMissingDetails = z.infer<typeof contentAssetsMissingDetailsSchema>
 
 export const contentAssetUploadKindSchema = z.enum(['raster', 'svg', 'tikz'])
@@ -256,7 +256,7 @@ export const contentRevisionAssetSchema = z
     width: z.number().int().positive().max(20_000),
     height: z.number().int().positive().max(20_000),
   })
-  .strict()
+  .strip()
 export type ContentRevisionAsset = z.infer<typeof contentRevisionAssetSchema>
 
 export const contentRevisionAssetSlotSchema = z
@@ -267,7 +267,7 @@ export const contentRevisionAssetSlotSchema = z
     acceptedUploadKinds: z.array(contentAssetUploadKindSchema).min(1).max(3),
     asset: contentRevisionAssetSchema.nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((slot, context) => {
     if (new Set(slot.acceptedUploadKinds).size !== slot.acceptedUploadKinds.length) {
       context.addIssue({
@@ -328,7 +328,7 @@ export const staffContentRevisionAssetsSchema = z
     assets: z.array(contentRevisionAssetSlotSchema).max(10_000),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     const logicalNames = response.assets.map((asset) => asset.logicalName)
     if (new Set(logicalNames).size !== logicalNames.length) {
@@ -372,7 +372,7 @@ export const staffContentAssetUploadSchema = z
     reused: z.boolean(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     if (response.sourceKind === 'tikz' && response.asset.mediaType !== 'image/svg+xml') {
       context.addIssue({
@@ -393,7 +393,7 @@ export const contentUploadTargetSchema = z
     colorKey: z.string().trim().min(1).max(80).nullable(),
     status: z.enum(['draft', 'active', 'archived']),
   })
-  .strict()
+  .strip()
 export type ContentUploadTarget = z.infer<typeof contentUploadTargetSchema>
 
 export const staffContentUploadTargetsSchema = z
@@ -405,7 +405,7 @@ export const staffContentUploadTargetsSchema = z
     targets: z.array(contentUploadTargetSchema).min(1).max(100),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((response, context) => {
     for (const field of ['groupLessonId', 'groupId'] as const) {
       const values = response.targets.map((target) => target[field])
@@ -426,7 +426,7 @@ export const staffWebContentPreviewSchema = z
     kind: z.literal('web'),
     document: webContentDocumentSchema,
   })
-  .strict()
+  .strip()
   .superRefine((preview, context) => {
     if (preview.document.revisionId !== preview.revisionId) {
       context.addIssue({
@@ -459,7 +459,7 @@ export const staffTelegramContentPreviewSchema = z
         }
       }),
   })
-  .strict()
+  .strip()
 
 export const staffPdfContentPreviewSchema = z
   .object({
@@ -477,7 +477,7 @@ export const staffPdfContentPreviewSchema = z
       .max(64 * 1024 * 1024),
     rendererVersion: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type StaffPdfContentPreview = z.infer<typeof staffPdfContentPreviewSchema>
 
 export const staffContentPreviewSchema = z.union([
@@ -500,7 +500,7 @@ export const contentPublicationSchema = z
     hiddenAt: z.iso.datetime().nullable(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type ContentPublication = z.infer<typeof contentPublicationSchema>
 
 export const contentPublicationHistoryItemSchema = z
@@ -515,12 +515,12 @@ export const contentPublicationHistoryItemSchema = z
     hiddenAt: z.iso.datetime().nullable(),
     etag: contentEtagSchema,
   })
-  .strict()
+  .strip()
 export type ContentPublicationHistoryItem = z.infer<typeof contentPublicationHistoryItemSchema>
 
 export const staffContentHistoryRevisionSchema = staffContentRevisionSchema
   .extend({ etag: contentEtagSchema })
-  .strict()
+  .strip()
 
 export const staffContentMaterialHistorySchema = z
   .object({
@@ -530,7 +530,7 @@ export const staffContentMaterialHistorySchema = z
     currentScheduled: contentPublicationHistoryItemSchema.nullable(),
     publicationHistory: z.array(contentPublicationHistoryItemSchema).max(10_000),
   })
-  .strict()
+  .strip()
   .superRefine((material, context) => {
     if (material.currentPublished && material.currentPublished.state !== 'published') {
       context.addIssue({
@@ -581,7 +581,7 @@ export const staffContentHistorySchema = z
     materials: z.array(staffContentMaterialHistorySchema).length(3),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((history, context) => {
     const kinds = new Set(history.materials.map((material) => material.kind))
     if (kinds.size !== 3) {
@@ -603,12 +603,12 @@ export const staffLessonTitleSchema = z
     version: z.number().int().positive(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type StaffLessonTitle = z.infer<typeof staffLessonTitleSchema>
 
 export const updateStaffLessonTitleSchema = z
   .object({ title: z.string().trim().min(1).max(200).nullable() })
-  .strict()
+  .strip()
 export type UpdateStaffLessonTitle = z.input<typeof updateStaffLessonTitleSchema>
 
 export const staffLessonWindowSchema = z
@@ -624,7 +624,7 @@ export const staffLessonWindowSchema = z
     version: z.number().int().positive(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type StaffLessonWindow = z.infer<typeof staffLessonWindowSchema>
 
 export const updateStaffLessonWindowScheduleSchema = z
@@ -634,7 +634,7 @@ export const updateStaffLessonWindowScheduleSchema = z
     solutionScheduledLocalTime: localPublicationTimeSchema.nullable(),
     businessTimezone: businessTimezoneSchema,
   })
-  .strict()
+  .strip()
 export type UpdateStaffLessonWindowSchedule = z.infer<typeof updateStaffLessonWindowScheduleSchema>
 
 export const updateStaffSubmissionCutoffSchema = z
@@ -643,7 +643,7 @@ export const updateStaffSubmissionCutoffSchema = z
     businessTimezone: businessTimezoneSchema,
     confirmChange: z.literal(true),
   })
-  .strict()
+  .strip()
 export type UpdateStaffSubmissionCutoff = z.infer<typeof updateStaffSubmissionCutoffSchema>
 
 // `problemId` is deliberately the only legacy integer on this Staff-only
@@ -715,7 +715,7 @@ export const legacyProblemCandidateSchema = z
     wrongAnswer: z.string().max(4_000).nullable(),
     congratulation: z.string().max(4_000).nullable(),
   })
-  .strict()
+  .strip()
 export type LegacyProblemCandidate = z.infer<typeof legacyProblemCandidateSchema>
 
 const resolvedProblemMatchSchema = z
@@ -723,7 +723,7 @@ const resolvedProblemMatchSchema = z
     decision: problemMatchDecisionSchema,
     problemId: legacyProblemIdSchema.nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((match, context) => {
     if (match.decision === 'omit' && match.problemId !== null) {
       context.addIssue({
@@ -750,7 +750,7 @@ export const problemMatchReviewItemSchema = z
     suggestedProblemId: legacyProblemIdSchema.nullable(),
     match: resolvedProblemMatchSchema.nullable(),
   })
-  .strict()
+  .strip()
 export type ProblemMatchReviewItem = z.infer<typeof problemMatchReviewItemSchema>
 
 export const problemMatchReviewSchema = z
@@ -763,7 +763,7 @@ export const problemMatchReviewSchema = z
     candidates: z.array(legacyProblemCandidateSchema).max(5_000),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((review, context) => {
     const identities = review.items.map((item) => `${item.sourceOrdinal}\u0000${item.sourceItem}`)
     if (new Set(identities).size !== identities.length) {
@@ -909,7 +909,7 @@ export const problemMetadataGridRowSchema = z
     congratulation: z.string().max(4_000).nullable(),
     reviewed: z.boolean(),
   })
-  .strict()
+  .strip()
   .superRefine((row, context) => {
     if (row.reviewed) {
       if (!row.title.trim()) {
@@ -935,7 +935,7 @@ export const problemMetadataGridSchema = z
     rows: z.array(problemMetadataGridRowSchema).max(2_000),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((grid, context) => {
     const identities = grid.rows.map((row) => `${row.sourceOrdinal}\u0000${row.sourceItem}`)
     const problemIds = grid.rows.map((row) => row.problemId)
@@ -981,7 +981,7 @@ export const problemMetadataGenerationSchema = z
     warnings: z.array(z.string().trim().min(1).max(600)).max(100),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
   .superRefine((result, context) => {
     const identities = result.rows.map((row) => `${row.sourceOrdinal}\u0000${row.sourceItem}`)
     const problemIds = result.rows.map((row) => row.problemId)
@@ -996,12 +996,12 @@ export type ProblemMetadataGeneration = z.infer<typeof problemMetadataGeneration
 
 export const contentPublicationCancellationSchema = contentPublicationSchema
   .extend({ action: z.literal('cancelled'), state: z.literal('superseded') })
-  .strict()
+  .strip()
 export type ContentPublicationCancellation = z.infer<typeof contentPublicationCancellationSchema>
 
 export const contentPublicationHidingSchema = contentPublicationSchema
   .extend({ action: z.literal('hidden'), state: z.literal('hidden') })
-  .strict()
+  .strip()
 export type ContentPublicationHiding = z.infer<typeof contentPublicationHidingSchema>
 
 export const publishedContentSchema = z
@@ -1016,7 +1016,7 @@ export const publishedContentSchema = z
     revisionId: publicIdSchema,
     document: webContentDocumentSchema,
   })
-  .strict()
+  .strip()
   .superRefine((published, context) => {
     if (published.document.revisionId !== published.revisionId) {
       context.addIssue({
@@ -1054,7 +1054,7 @@ export const studentProblemRevealSchema = z
     firstReveal: z.boolean(),
     document: webContentDocumentSchema,
   })
-  .strict()
+  .strip()
   .superRefine((revealed, context) => {
     if (revealed.document.revisionId !== revealed.revisionId) {
       context.addIssue({

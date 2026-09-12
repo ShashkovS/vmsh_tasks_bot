@@ -42,7 +42,7 @@ const reactionPersonSchema = z
   .object({
     displayName: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 
 const reactionStudentSchema = reactionPersonSchema.safeExtend({
   studentId: publicIdSchema.nullable(),
@@ -64,7 +64,7 @@ const reactionProblemSchema = z
     groupShortCode: z.string().trim().min(1).max(16),
     groupColorKey: z.string().trim().min(1).max(64).nullable(),
   })
-  .strict()
+  .strip()
 
 export const reviewReactionInboxItemSchema = z
   .object({
@@ -85,7 +85,7 @@ export const reviewReactionInboxItemSchema = z
     isLatestReview: z.boolean(),
     evidenceEntries: z.array(reviewEvidenceEntrySchema).min(1),
   })
-  .strict()
+  .strip()
   .superRefine((item, context) => {
     if (
       (item.kind === 'student' && item.reactionId >= 100) ||
@@ -114,7 +114,7 @@ export const reviewReactionInboxResponseSchema = z
     nextCursor: publicIdSchema.nullable(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type ReviewReactionInboxResponse = z.infer<typeof reviewReactionInboxResponseSchema>
 
 export const correctWrittenReviewRequestSchema = z
@@ -171,10 +171,10 @@ export const correctWrittenReviewResponseSchema = z
         completedAt: z.iso.datetime(),
         replayed: z.boolean(),
       })
-      .strict(),
+      .strip(),
     requestId: z.string().trim().min(1).max(200),
   })
-  .strict()
+  .strip()
 export type CorrectWrittenReviewResponse = z.infer<typeof correctWrittenReviewResponseSchema>
 
 export const reviewReactionInboxQueryKeys = {

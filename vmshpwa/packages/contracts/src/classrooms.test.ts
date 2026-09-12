@@ -68,14 +68,14 @@ describe('classroom catalog contracts', () => {
     )
   })
 
-  it('rejects unknown response fields and invalid versions', () => {
+  it('ignores additive response fields but rejects invalid versions', () => {
     expect(() =>
       classroomListResponseSchema.parse({
         ...fixture,
         items: [{ ...fixture.items[0], version: 0 }],
       }),
     ).toThrow()
-    expect(() => classroomListResponseSchema.parse({ ...fixture, unexpected: true })).toThrow()
+    expect(classroomListResponseSchema.parse({ ...fixture, unexpected: true })).toEqual(fixture)
   })
 })
 

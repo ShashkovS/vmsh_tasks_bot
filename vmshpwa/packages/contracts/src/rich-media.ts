@@ -10,7 +10,7 @@ export const staffRichMediaImageSchema = z
     width: z.number().int().positive().max(1_920),
     height: z.number().int().positive().max(1_920),
   })
-  .strict()
+  .strip()
 export type StaffRichMediaImage = z.infer<typeof staffRichMediaImageSchema>
 
 export const staffRichMediaUploadResponseSchema = z
@@ -19,5 +19,5 @@ export const staffRichMediaUploadResponseSchema = z
     image: staffRichMediaImageSchema,
     requestId: z.string().min(1),
   })
-  .strict()
+  .strip()
 export type StaffRichMediaUploadResponse = z.infer<typeof staffRichMediaUploadResponseSchema>

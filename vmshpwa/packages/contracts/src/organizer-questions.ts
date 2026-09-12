@@ -10,21 +10,21 @@ export const organizerPhotoSchema = z
     width: z.number().int().positive(),
     height: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 export const organizerSummarySchema = z
   .object({
     threadId: z.string().regex(/^oq-\d+$/),
     title: z.string(),
     owner: z
       .object({ accountId: z.string(), name: z.string(), audience: z.enum(['student', 'family']) })
-      .strict(),
-    child: z.object({ studentId: z.string(), name: z.string() }).strict().nullable(),
+      .strip(),
+    child: z.object({ studentId: z.string(), name: z.string() }).strip().nullable(),
     state: z.enum(['awaiting_staff', 'answered']),
     latestText: z.string(),
     latestAt: z.iso.datetime({ offset: true }),
     latestEntryId: z.number().int(),
   })
-  .strict()
+  .strip()
 export const organizerEntrySchema = z
   .object({
     entryId: z.string(),
@@ -33,10 +33,10 @@ export const organizerEntrySchema = z
     createdAt: z.iso.datetime({ offset: true }),
     author: z
       .object({ name: z.string(), audience: z.enum(['student', 'family', 'staff']) })
-      .strict(),
+      .strip(),
     photos: z.array(organizerPhotoSchema),
   })
-  .strict()
+  .strip()
 const envelope = { schemaVersion: z.literal(1), requestId: z.string() }
 export const organizerListSchema = z
   .object({
@@ -45,7 +45,7 @@ export const organizerListSchema = z
     nextCursor: z.string().nullable(),
     unreadCount: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
 export const organizerThreadSchema = z
   .object({
     ...envelope,
@@ -53,7 +53,7 @@ export const organizerThreadSchema = z
     entries: z.array(organizerEntrySchema),
     nextCursor: z.string().nullable(),
   })
-  .strict()
+  .strip()
 export const organizerSendSchema = z
   .object({
     text: z.string().max(100000),
@@ -68,10 +68,10 @@ export const organizerSendSchema = z
   )
 export const organizerSentSchema = z
   .object({ ...envelope, threadId: z.string().regex(/^oq-\d+$/) })
-  .strict()
+  .strip()
 export const organizerUploadedSchema = z
   .object({ ...envelope, photo: organizerPhotoSchema })
-  .strict()
+  .strip()
 export type OrganizerEntry = z.infer<typeof organizerEntrySchema>
 export type OrganizerSummary = z.infer<typeof organizerSummarySchema>
 export type OrganizerSend = z.infer<typeof organizerSendSchema>

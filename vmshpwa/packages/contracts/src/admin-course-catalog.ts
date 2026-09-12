@@ -20,7 +20,7 @@ export const adminGroupSchema = z
     activeStudents: z.number().int().nonnegative(),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 export type AdminGroup = z.infer<typeof adminGroupSchema>
 
 export const adminCourseSchema = z
@@ -36,7 +36,7 @@ export const adminCourseSchema = z
     groups: z.array(adminGroupSchema),
     version: z.number().int().positive(),
   })
-  .strict()
+  .strip()
 export type AdminCourse = z.infer<typeof adminCourseSchema>
 
 export const courseVerdictModeSchema = z.enum([
@@ -57,7 +57,7 @@ export const courseRuntimeSettingsValuesSchema = z
     ]),
     testAttemptRateLimit: z.enum(['rate_limit_none', 'rate_limit_3_and_6']),
   })
-  .strict()
+  .strip()
 export type CourseRuntimeSettingsValues = z.infer<typeof courseRuntimeSettingsValuesSchema>
 
 export const courseRuntimeSettingsSchema = z
@@ -68,7 +68,7 @@ export const courseRuntimeSettingsSchema = z
     source: z.enum(['defaults', 'stored']),
     appliesAfter: z.literal('restart'),
   })
-  .strict()
+  .strip()
 
 export const courseRuntimeSettingsResponseSchema = z
   .object({
@@ -76,7 +76,7 @@ export const courseRuntimeSettingsResponseSchema = z
     settings: courseRuntimeSettingsSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type CourseRuntimeSettingsResponse = z.infer<typeof courseRuntimeSettingsResponseSchema>
 
 export const updateCourseRuntimeSettingsRequestSchema = z
@@ -93,7 +93,7 @@ export const adminSeasonSchema = z
     title: z.string().trim().min(1),
     status: catalogStatusSchema,
   })
-  .strict()
+  .strip()
 
 export const adminCourseCatalogResponseSchema = z
   .object({
@@ -102,7 +102,7 @@ export const adminCourseCatalogResponseSchema = z
     courses: z.array(adminCourseSchema),
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AdminCourseCatalogResponse = z.infer<typeof adminCourseCatalogResponseSchema>
 
 export const createAdminSeasonRequestSchema = z
@@ -128,7 +128,7 @@ export const adminSeasonResponseSchema = z
     season: adminSeasonSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AdminSeasonResponse = z.infer<typeof adminSeasonResponseSchema>
 
 const codeSchema = z
@@ -176,7 +176,7 @@ export const adminCourseResponseSchema = z
     course: adminCourseSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AdminCourseResponse = z.infer<typeof adminCourseResponseSchema>
 
 export const adminGroupResponseSchema = z
@@ -185,7 +185,7 @@ export const adminGroupResponseSchema = z
     group: adminGroupSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AdminGroupResponse = z.infer<typeof adminGroupResponseSchema>
 
 export const createAdminGroupLessonRequestSchema = z
@@ -220,7 +220,7 @@ export const adminGroupLessonSchema = z
     hintScheduledAt: z.iso.datetime({ offset: true }).nullable(),
     solutionScheduledAt: z.iso.datetime({ offset: true }).nullable(),
   })
-  .strict()
+  .strip()
 
 export const adminGroupLessonResponseSchema = z
   .object({
@@ -228,7 +228,7 @@ export const adminGroupLessonResponseSchema = z
     groupLesson: adminGroupLessonSchema,
     requestId: z.string().trim().min(1),
   })
-  .strict()
+  .strip()
 export type AdminGroupLessonResponse = z.infer<typeof adminGroupLessonResponseSchema>
 
 export const adminCourseCatalogQueryKey = (principal: PrincipalQueryScope, seasonId?: string) =>

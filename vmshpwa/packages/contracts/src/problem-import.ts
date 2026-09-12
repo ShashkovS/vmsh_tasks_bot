@@ -12,7 +12,7 @@ export const problemImportDiagnosticSchema = z
     code: z.string().min(1),
     message: z.string().min(1),
   })
-  .strict()
+  .strip()
 
 export const problemImportRowSchema = z
   .object({
@@ -37,7 +37,7 @@ export const problemImportRowSchema = z
     problemId: publicIdSchema.nullable(),
     diagnostics: z.array(problemImportDiagnosticSchema),
   })
-  .strict()
+  .strip()
 
 export const problemImportSynonymCandidateSchema = z
   .object({
@@ -59,11 +59,11 @@ export const problemImportSynonymCandidateSchema = z
             problemType: z.number().int().min(1).max(4),
             answerType: z.number().int().positive().nullable(),
           })
-          .strict(),
+          .strip(),
       )
       .min(2),
   })
-  .strict()
+  .strip()
 
 const problemImportSummarySchema = z
   .object({
@@ -73,7 +73,7 @@ const problemImportSummarySchema = z
     unchanged: z.number().int().nonnegative(),
     invalid: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
   .superRefine((summary, context) => {
     if (summary.create + summary.update + summary.unchanged + summary.invalid !== summary.rows) {
       context.addIssue({ code: 'custom', message: 'Problem import summary does not add up' })
@@ -89,20 +89,20 @@ export const problemImportPreviewResponseSchema = z
         code: z.string().min(1),
         name: z.string().min(1),
       })
-      .strict(),
+      .strip(),
     source: z
       .object({
         filename: z.string().min(1),
         sha256: z.string().regex(/^[a-f0-9]{64}$/),
       })
-      .strict(),
+      .strip(),
     previewSha256: z.string().regex(/^[a-f0-9]{64}$/),
     summary: problemImportSummarySchema,
     rows: z.array(problemImportRowSchema).max(5_000),
     synonymCandidates: z.array(problemImportSynonymCandidateSchema),
     requestId: z.string().min(1),
   })
-  .strict()
+  .strip()
   .superRefine((preview, context) => {
     if (preview.rows.length !== preview.summary.rows) {
       context.addIssue({ code: 'custom', message: 'Problem import row count does not match' })
@@ -117,7 +117,7 @@ const problemImportReceiptSummarySchema = z
     unchanged: z.number().int().nonnegative(),
     skippedInvalid: z.number().int().nonnegative(),
   })
-  .strict()
+  .strip()
   .superRefine((summary, context) => {
     if (
       summary.created + summary.updated + summary.unchanged + summary.skippedInvalid !==
@@ -140,7 +140,7 @@ export const problemImportReceiptSchema = z
         filename: z.string().min(1),
         sha256: z.string().regex(/^[a-f0-9]{64}$/),
       })
-      .strict(),
+      .strip(),
     previewSha256: z.string().regex(/^[a-f0-9]{64}$/),
     summary: problemImportReceiptSummarySchema,
     appliedAt: z.iso.datetime({ offset: true }),
@@ -149,7 +149,7 @@ export const problemImportReceiptSchema = z
     replayed: z.boolean(),
     requestId: z.string().min(1),
   })
-  .strict()
+  .strip()
 
 export type ProblemImportAction = z.infer<typeof problemImportActionSchema>
 export type ProblemImportPreviewResponse = z.infer<typeof problemImportPreviewResponseSchema>
