@@ -104,14 +104,20 @@ def rooms(connection, event_id):
         """
         SELECT r.id,r.public_id,r.name,gl.id group_lesson_id,gl.public_id lesson_public_id,
                gl.group_id,gl.course_id,g.public_id group_public_id,g.public_name group_name,
-               c.public_id course_public_id,lv.id layout_id
+               c.public_id course_public_id,lv.id layout_id,
+               count(a.course_enrollment_id) student_count
         FROM classroom_layout_versions lv
         JOIN classroom_layout_rooms lr ON lr.layout_version_id=lv.id
         JOIN classrooms r ON r.id=lr.classroom_id AND r.status='active'
         JOIN group_lessons gl ON gl.id=lr.group_lesson_id
         JOIN groups g ON g.course_id=gl.course_id AND g.group_id=gl.group_id
         JOIN courses c ON c.id=gl.course_id
+        LEFT JOIN classroom_assignment_plans p
+          ON p.in_person_event_id=lv.in_person_event_id AND p.state='confirmed'
+        LEFT JOIN classroom_assignments a
+          ON a.plan_id=p.id AND a.classroom_id=r.id AND a.status='assigned'
         WHERE lv.in_person_event_id=? AND lv.state='confirmed'
+        GROUP BY lv.id,r.id,gl.id,g.course_id,g.group_id,c.id
         ORDER BY g.sort_order,r.name
     """,
         (event_id,),

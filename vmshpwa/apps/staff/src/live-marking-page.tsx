@@ -513,7 +513,7 @@ export function LiveMarkingPage({
         <option value="">Выберите аудиторию</option>
         {event?.rooms.map((r) => (
           <option key={r.roomId} value={r.roomId}>
-            {r.name} · {r.groupName}
+            {r.name} · {r.groupName} · {r.studentCount} шк.
           </option>
         ))}
       </select>
@@ -546,7 +546,7 @@ export function LiveMarkingPage({
               <span className="min-w-0 text-left">
                 <span className="block truncate text-sm">{room?.name ?? 'Аудитория'}</span>
                 <span className="block text-[11px] font-normal text-muted-foreground">
-                  Занятие {lesson?.number ?? '—'}
+                  Занятие {lesson?.number ?? '—'} · {room?.studentCount ?? 0} шк.
                 </span>
               </span>
               <ChevronDown className="size-3 shrink-0" />
@@ -737,11 +737,17 @@ export function LiveMarkingPage({
           {event?.rooms.map((r) => (
             <Button
               key={r.roomId}
-              className="h-16 justify-start"
+              className="h-16 justify-between gap-3"
               variant="outline"
               onClick={() => navigate({ ...search, event: event.eventId, room: r.roomId })}
             >
-              {r.name} · {r.groupName}
+              <span className="min-w-0 text-left">
+                <span className="block truncate font-semibold">{r.name}</span>
+                <span className="block truncate text-caption text-muted-foreground">
+                  {r.groupName}
+                </span>
+              </span>
+              <span className="shrink-0 tabular-nums">Школьников: {r.studentCount}</span>
             </Button>
           ))}
           {!event ? <p>Пока нет очных событий с подтверждёнными аудиториями.</p> : null}

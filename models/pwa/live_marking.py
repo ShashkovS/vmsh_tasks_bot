@@ -140,6 +140,7 @@ def catalog(connection, principal):
                             groupId=r["group_public_id"],
                             groupName=r["group_name"],
                             lessonId=r["lesson_public_id"],
+                            studentCount=r["student_count"],
                         )
                         for r in rooms
                     ],

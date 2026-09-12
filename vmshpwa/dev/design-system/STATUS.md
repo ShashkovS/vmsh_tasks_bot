@@ -1279,3 +1279,15 @@ The child course chart now requires at least two analytics lessons (unique X val
 ## Student profile help layout — 11 September 2026
 
 Aligned Help links using flex-wrap, explicit gaps and icons; removed forced line break. Implemented in `apps/student/src/student-profile-page.tsx` and story composition `pages.tsx`; see [organizer questions](../../docs/organizer-questions.md). Student typecheck, targeted ESLint and formatting passed. Owner authorized commit and push.
+
+## Статистика распределения по аудиториям — 12 сентября 2026
+
+- В конце блока очного события на `/staff/classrooms` добавлена таблица всех
+  комнат текущего плана: аудитория, выбранный уровень и число школьников.
+- `/staff/in-person` показывает число школьников в карточках и select аудиторий;
+  live transfer/undo инвалидирует каталог и сводку плана.
+- Источник и UI описаны в [classroom workflow](../../docs/classroom-and-oral-workflow.md)
+  и [live marking](../../docs/live-marking.md). Проверены backend transfer/catalog,
+  UI-проекция, Contracts/Staff/App Shell typecheck, ESLint, Prettier и Staff build.
+  Выпуск через `origin/vmshpwa` разрешён владельцем; production проверяется
+  после webhook.

@@ -118,6 +118,7 @@ export const liveCatalogSchema = z.object({
           groupId: id,
           groupName: z.string(),
           lessonId: id,
+          studentCount: z.number().int().nonnegative(),
         }),
       ),
     }),

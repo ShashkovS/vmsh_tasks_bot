@@ -12,6 +12,7 @@ import {
 import {
   ApiResponseError,
   classroomQueryKeys,
+  type ClassroomAssignmentPlan,
   type InPersonEvent,
   type InPersonEventStatus,
   type SaveInPersonEventRequest,
@@ -97,6 +98,71 @@ function describeError(error: Error): string {
   if (error instanceof ApiResponseError) return error.message
   if (error instanceof ClassroomNetworkError) return 'Проверьте соединение и повторите попытку.'
   return 'Обновите страницу и повторите попытку.'
+}
+
+export function ClassroomAssignmentStats({ plan }: { plan: ClassroomAssignmentPlan }) {
+  const groups = new Map(plan.groups.map((group) => [group.groupLessonPublicId, group]))
+  const counts = new Map<string, number>()
+  for (const student of plan.students) {
+    if (!student.classroomPublicId) continue
+    counts.set(student.classroomPublicId, (counts.get(student.classroomPublicId) ?? 0) + 1)
+  }
+
+  return (
+    <section className="grid gap-3 border-t border-border pt-4" aria-labelledby="room-stats-title">
+      <div>
+        <h3 className="text-label font-semibold" id="room-stats-title">
+          Распределение по аудиториям
+        </h3>
+        <p className="text-caption text-muted-foreground">
+          Текущий план выбранного очного занятия.
+        </p>
+      </div>
+      {plan.rooms.length === 0 ? (
+        <p className="text-small text-muted-foreground">Аудитории пока не выбраны.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-md border border-border">
+          <table className="w-full min-w-md text-left text-small">
+            <thead className="bg-muted/50 text-caption text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 font-medium" scope="col">
+                  Аудитория
+                </th>
+                <th className="px-3 py-2 font-medium" scope="col">
+                  Уровень
+                </th>
+                <th className="px-3 py-2 text-right font-medium" scope="col">
+                  Школьников
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {plan.rooms.map((room) => {
+                const group = groups.get(room.groupLessonPublicId)
+                return (
+                  <tr key={room.publicId}>
+                    <td className="px-3 py-2 font-medium">{room.name}</td>
+                    <td className="px-3 py-2">
+                      {group ? (
+                        <Badge variant="neutral">
+                          {group.shortCode} · {group.groupName}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">Не выбран</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold tabular-nums">
+                      {counts.get(room.publicId) ?? 0}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
 }
 
 function EventEditor({
@@ -296,6 +362,15 @@ export function StaffClassroomEventManager({
     meta: { realtimeResources: ['in-person-events'] },
   })
   const selected = catalog.data?.events.find((event) => event.publicId === selectedEventPublicId)
+  const assignmentPlan = useQuery({
+    queryKey: classroomQueryKeys.assignmentPlan(
+      principal,
+      selected?.publicId ?? 'no-selected-event',
+    ),
+    queryFn: ({ signal }) => client.getAssignmentPlan(selected!.publicId, { signal }),
+    enabled: selected !== undefined,
+    meta: { realtimeResources: ['classroom-assignment-plans'] },
+  })
 
   useEffect(() => {
     if (creating || !catalog.data) return
@@ -388,6 +463,22 @@ export function StaffClassroomEventManager({
               <AlertDescription>{describeError(mutation.error)}</AlertDescription>
             </AlertContent>
           </Alert>
+        ) : null}
+        {selected && assignmentPlan.isPending ? (
+          <p className="border-t border-border pt-4 text-small text-muted-foreground">
+            Загружаем распределение по аудиториям…
+          </p>
+        ) : null}
+        {selected && assignmentPlan.error ? (
+          <Alert role="alert" tone="danger">
+            <AlertContent>
+              <AlertTitle>Не удалось загрузить распределение по аудиториям</AlertTitle>
+              <AlertDescription>{describeError(assignmentPlan.error)}</AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
+        {selected && assignmentPlan.data ? (
+          <ClassroomAssignmentStats plan={assignmentPlan.data.assignmentPlan} />
         ) : null}
       </CardContent>
     </Card>

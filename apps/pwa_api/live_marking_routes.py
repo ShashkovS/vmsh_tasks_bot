@@ -311,7 +311,9 @@ async def post_operation(request):
         if kind in ("attendance", "transfer", "reaction", "praise", "undo"):
             resources.extend([f"live-board/{context_id}"])
         if kind in ("transfer", "undo"):
-            resources.append("live-directory")
+            resources.extend(
+                ["live-directory", "live-catalog", "classroom-assignment-plans"]
+            )
         await request.app[PWA_BROKER].publish(
             NATS_PWA_INVALIDATE,
             dict(resources=resources, reason="live-marking-changed", audience="staff"),

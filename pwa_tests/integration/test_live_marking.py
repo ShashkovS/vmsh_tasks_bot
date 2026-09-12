@@ -298,6 +298,13 @@ async def test_teacher_transfer_across_scope_attendance_and_composite_undo(
     )
     response, receipt = await call(f, "post", "operations", transfer)
     assert response.status == 200, receipt
+    response, catalog = await call(f, "get", "catalog")
+    assert response.status == 200, catalog
+    event = next(
+        item for item in catalog["events"] if item["eventId"] == spec["contextId"]
+    )
+    room = next(item for item in event["rooms"] if item["roomId"] == spec["roomId"])
+    assert room["studentCount"] == 1
     response, board = await call(f, "get", "board?" + urlencode(spec))
     assert response.status == 200, board
     assert board["students"][0]["attendance"] == "present"
