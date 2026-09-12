@@ -67,7 +67,7 @@ def test_reviews_share_one_batch_for_thirty_minutes(tmp_path):
             "SELECT route, payload_json, occurred_at, deliver_after "
             "FROM notification_events"
         ).fetchone()
-        assert row["route"] == "/student/notifications"
+        assert row["route"] == "/student/profile/notifications"
         assert (
             connection.execute("SELECT read_at FROM notification_events").fetchone()[
                 "read_at"

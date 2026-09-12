@@ -9,6 +9,7 @@ import {
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
   ProductPageView,
+  PushOnboarding,
   useAuthentication,
 } from '@vmsh/app-shell'
 import { ConnectionBanner } from '@vmsh/product'
@@ -85,6 +86,7 @@ function StudentProtectedShell({
           </div>
         ) : null}
         <StudentOfflineSessionNotice />
+        {!location.pathname.endsWith('/profile/notifications') ? <PushOnboarding /> : null}
         <Outlet />
       </AppShell>
     </AuthenticationRedirectBoundary>

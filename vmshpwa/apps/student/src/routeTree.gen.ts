@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OrganizersRouteImport } from './routes/organizers'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
@@ -44,6 +45,11 @@ const LoginRoute = LoginRouteImport.update({
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizersRoute = OrganizersRouteImport.update({
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/notifications': typeof NotificationsRoute
   '/organizers': typeof OrganizersRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/progress': typeof ProgressRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/progress': typeof ProgressRoute
   '/news/$postId': typeof NewsPostIdRoute
   '/organizers/$threadId': typeof OrganizersThreadIdRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/notifications': typeof NotificationsRoute
   '/organizers': typeof OrganizersRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/progress': typeof ProgressRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/news'
+    | '/notifications'
     | '/organizers'
     | '/profile'
     | '/progress'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/notifications'
     | '/progress'
     | '/news/$postId'
     | '/organizers/$threadId'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/news'
+    | '/notifications'
     | '/organizers'
     | '/profile'
     | '/progress'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRouteWithChildren
+  NotificationsRoute: typeof NotificationsRoute
   OrganizersRoute: typeof OrganizersRouteWithChildren
   ProfileRoute: typeof ProfileRouteWithChildren
   ProgressRoute: typeof ProgressRoute
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizers': {
@@ -508,6 +528,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRouteWithChildren,
+  NotificationsRoute: NotificationsRoute,
   OrganizersRoute: OrganizersRouteWithChildren,
   ProfileRoute: ProfileRouteWithChildren,
   ProgressRoute: ProgressRoute,

@@ -13,7 +13,16 @@ import {
 import { PushPermissionCard, type PushCategory } from './push-permission-card'
 
 export type PushDeviceControlState =
-  'loading' | 'available' | 'enabled' | 'dismissed' | 'denied' | 'unsupported' | 'error'
+  | 'loading'
+  | 'available'
+  | 'enabled'
+  | 'dismissed'
+  | 'denied'
+  | 'unsupported'
+  | 'error'
+  | 'enabling'
+  | 'disabling'
+  | 'install-required'
 
 /** Presentation for the shared Student/Family browser subscription handshake. */
 export function PushDeviceControls({
@@ -29,6 +38,25 @@ export function PushDeviceControls({
   onEnable: () => void
   state: PushDeviceControlState
 }) {
+  if (state === 'enabling' || state === 'disabling')
+    return (
+      <p role="status" className="text-small text-muted-foreground">
+        {state === 'enabling' ? 'Включаем уведомления…' : 'Отключаем уведомления…'}
+      </p>
+    )
+  if (state === 'install-required')
+    return (
+      <Alert>
+        <BellOff aria-hidden="true" />
+        <AlertContent>
+          <AlertTitle>Уведомления на iPhone и iPad</AlertTitle>
+          <AlertDescription>
+            Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося
+            значка. После этого здесь можно включить уведомления.
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
+    )
   if (state === 'loading') {
     return <p className="text-small text-muted-foreground">Проверяем это устройство…</p>
   }
@@ -69,6 +97,11 @@ export function PushDeviceControls({
               ? 'Все события всё равно останутся в приложении.'
               : 'Проверьте соединение и попробуйте ещё раз.'}
         </AlertDescription>
+        {state === 'error' ? (
+          <Button onClick={onEnable} size="sm" variant="outline">
+            Включить уведомления
+          </Button>
+        ) : null}
       </AlertContent>
     </Alert>
   )

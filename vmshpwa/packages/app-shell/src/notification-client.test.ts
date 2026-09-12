@@ -22,7 +22,7 @@ describe('notification client', () => {
     expect((await client.events({ unreadOnly: true })).items[0]?.category).toBe(
       'classroom_assignment',
     )
-    expect((await client.preferences()).items).toHaveLength(9)
+    expect((await client.preferences()).items).toHaveLength(10)
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
       '/student/api/v1/notification-events?limit=50&unreadOnly=true',
     )
@@ -94,7 +94,7 @@ describe('notification client', () => {
       )
     const client = createNotificationClient(runtime, 'student', { fetchImplementation })
 
-    expect((await client.coursePreferences('course.math')).items).toHaveLength(9)
+    expect((await client.coursePreferences('course.math')).items).toHaveLength(10)
     await client.updateCoursePreference('course.math', {
       schemaVersion: 1,
       category: 'news',

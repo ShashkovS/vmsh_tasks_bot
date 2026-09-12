@@ -40,7 +40,7 @@ export function PushPermissionCard({
             Уведомления
           </h2>
           <p className="text-small text-muted-foreground">
-            Разрешение у браузера спросим только после вашего согласия. Сообщать можем о:
+            Получайте важные сообщения, даже когда кабинет закрыт:
           </p>
         </div>
       </div>

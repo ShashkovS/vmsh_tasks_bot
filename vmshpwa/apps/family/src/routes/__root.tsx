@@ -10,6 +10,7 @@ import {
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
   ProductPageView,
+  PushOnboarding,
 } from '@vmsh/app-shell'
 
 const navigation = [
@@ -63,6 +64,7 @@ function FamilyProtectedShell({
         mobileNavigation
       >
         <ProductPageView audience="family" pathname={location.pathname} />
+        {!location.pathname.endsWith('/profile/notifications') ? <PushOnboarding /> : null}
         <Outlet />
       </AppShell>
     </AuthenticationRedirectBoundary>

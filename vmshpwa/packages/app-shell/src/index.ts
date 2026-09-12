@@ -46,3 +46,5 @@ export * from './student-results-client'
 export * from './organizer-client'
 export * from './organizer-pages'
 export { usePwaUpdateActivation } from './pwa-update-activation'
+
+export { PushOnboarding } from './push-onboarding'

@@ -283,3 +283,11 @@ group и `attendance_mode=online`, поэтому поздняя смена ре
 worker идемпотентными. Event не содержит Zoom URL/code, а owner-scoped NATS
 остаётся только refetch hint после durable SQLite commit. Proof:
 [`phase8-oral-window-notifications-2026-08-03.md`](../../../pwa_tests/reports/phase8-oral-window-notifications-2026-08-03.md).
+
+
+## Активация уведомлений — 2026-09-12
+
+Реализованы приглашение Student/Family, явное разрешение браузера, повтор подключения,
+инструкция iOS и исправленный переход из проверок. Foreground не подавляет Web Push.
+См. [решение](../../docs/notification-activation.md). Проверено: 16 frontend-тестов, 20 backend-тестов, 6 Chromium Storybook-состояний,
+production build. Реальная доставка на устройстве после выпуска остаётся отдельной проверкой.

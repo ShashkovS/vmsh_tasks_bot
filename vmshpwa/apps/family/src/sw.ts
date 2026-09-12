@@ -111,8 +111,8 @@ self.addEventListener('push', (event) => {
   if (!payload) return
   event.waitUntil(
     (async () => {
-      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      if (windows.some((client) => client.visibilityState === 'visible')) return
+      // Web Push is userVisibleOnly, including when another app tab is visible.
+      // See docs/notification-activation.md (Safari permission requirements).
       await self.registration.showNotification(payload.title, {
         body: payload.body,
         data: { route: payload.route },

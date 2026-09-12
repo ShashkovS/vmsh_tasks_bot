@@ -81,7 +81,7 @@ def record_review_notifications(
             account_id=account_id,
             category="review_completed",
             dedupe_key=review_public_id,
-            route="/student/notifications",
+            route="/student/profile/notifications",
             payload_json=json.dumps(
                 {
                     "count": 1,

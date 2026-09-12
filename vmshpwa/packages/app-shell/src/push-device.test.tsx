@@ -73,6 +73,8 @@ describe('usePushDevice', () => {
     )
     await waitFor(() => expect(result.current.state).toBe('available'))
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Inspect the stub, without calling the browser method.
+    expect(vi.mocked(Notification.requestPermission).mock.calls).toHaveLength(0)
     await act(() => result.current.enable())
 
     expect(registration.pushManager.subscribe).toHaveBeenCalledOnce()
@@ -90,6 +92,7 @@ describe('usePushDevice', () => {
       },
     }
     browser(registration)
+    vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() })
     const { result } = renderHook(() =>
       usePushDevice({ applicationServerKey: 'BA-_', client: saved.value }),
     )
@@ -101,4 +104,44 @@ describe('usePushDevice', () => {
     expect(existing.unsubscribe).toHaveBeenCalledOnce()
     expect(result.current.state).toBe('available')
   })
+})
+
+it.each(['denied', 'default'])('does not subscribe when permission is %s', async (permission) => {
+  const saved = client()
+  const registration = {
+    pushManager: { getSubscription: vi.fn().mockResolvedValue(null), subscribe: vi.fn() },
+  }
+  browser(registration)
+  vi.stubGlobal('Notification', {
+    permission: 'default',
+    requestPermission: vi.fn().mockResolvedValue(permission),
+  })
+  const { result } = renderHook(() =>
+    usePushDevice({ applicationServerKey: 'BA-_', client: saved.value }),
+  )
+  await waitFor(() => expect(result.current.state).toBe('available'))
+  await act(() => result.current.enable())
+  expect(saved.save).not.toHaveBeenCalled()
+  expect(registration.pushManager.subscribe).not.toHaveBeenCalled()
+  expect(result.current.state).toBe(permission === 'denied' ? 'denied' : 'available')
+})
+
+it('retries failed server registration using the existing browser subscription', async () => {
+  const saved = client()
+  const existing = subscription()
+  const registration = {
+    pushManager: { getSubscription: vi.fn().mockResolvedValue(existing), subscribe: vi.fn() },
+  }
+  browser(registration)
+  vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() })
+  saved.save.mockRejectedValueOnce(new Error('offline'))
+  const { result } = renderHook(() =>
+    usePushDevice({ applicationServerKey: 'BA-_', client: saved.value }),
+  )
+  await waitFor(() => expect(result.current.state).toBe('error'))
+  await act(() => result.current.enable())
+  expect(result.current.state).toBe('enabled')
+  expect(registration.pushManager.subscribe).not.toHaveBeenCalled()
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- Inspect the stub, without calling the browser method.
+  expect(vi.mocked(Notification.requestPermission).mock.calls).toHaveLength(0)
 })
