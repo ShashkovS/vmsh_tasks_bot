@@ -1289,5 +1289,5 @@ Aligned Help links using flex-wrap, explicit gaps and icons; removed forced line
 - Источник и UI описаны в [classroom workflow](../../docs/classroom-and-oral-workflow.md)
   и [live marking](../../docs/live-marking.md). Проверены backend transfer/catalog,
   UI-проекция, Contracts/Staff/App Shell typecheck, ESLint, Prettier и Staff build.
-  Выпуск через `origin/vmshpwa` разрешён владельцем; production проверяется
-  после webhook.
+  Production release `1af310bc3328-20260912085418` опубликован; в staff assets
+  проверены оба новых интерфейсных блока.
