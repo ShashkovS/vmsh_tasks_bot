@@ -1,0 +1,4 @@
+drop trigger lesson_window_changes_delete_forbidden;
+drop trigger lesson_window_changes_immutable_update;
+drop index lesson_window_changes_timeline_idx;
+drop table lesson_window_changes;

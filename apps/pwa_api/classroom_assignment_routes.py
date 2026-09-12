@@ -1,0 +1,586 @@
+"""Admin HTTP endpoints for classroom student-assignment plans."""
+
+from __future__ import annotations
+
+import json
+import logging
+import re
+import uuid
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
+
+from aiohttp import web
+
+from apps.pwa_api.errors import PwaApiError
+from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.classroom_assignments import list_assignment_owner_accounts
+from helpers.pwa.app_keys import PWA_DATABASE
+from helpers.pwa.permissions import Capability
+from models.pwa.auth import AuthAudience
+from models.pwa.classroom_assignments import (
+    ClassroomAssignmentConflict,
+    ClassroomAssignmentNotFound,
+    InvalidClassroomAssignment,
+    confirm_assignment_plan,
+    read_assignment_plan,
+    read_assignment_history,
+    recalculate_assignment_plan,
+    update_assignment_plan,
+)
+from models.pwa.classroom_public import read_student_classroom_assignments
+
+
+classroom_assignment_routes = web.RouteTableDef()
+ClassroomAssignmentInvalidator = Callable[
+    [tuple[str, ...], tuple[str, ...], str], Awaitable[None]
+]
+PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR = web.AppKey(
+    "pwa_classroom_assignment_invalidator", ClassroomAssignmentInvalidator
+)
+logger = logging.getLogger(__name__)
+_PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
+_ETAG = re.compile(r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):v([1-9]\d*)"$')
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def _factory(request: web.Request):
+    state = request.app.get(PWA_DATABASE)
+    if state is None or state.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="classroom_assignment_unavailable",
+            message="Распределение школьников временно недоступно",
+        )
+    return state.factory
+
+
+def _admin_user_id(request: web.Request) -> int:
+    principal = authenticated_session(request).principal
+    if (
+        principal.audience is not AuthAudience.STAFF
+        or principal.linked_user_id is None
+        or not principal.is_global_admin
+        or not principal.has_capability(Capability.CLASSROOM_MANAGE)
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Распределять школьников может только администратор",
+        )
+    return principal.linked_user_id
+
+
+def _student_user_id(request: web.Request) -> int:
+    principal = authenticated_session(request).principal
+    if (
+        principal.audience is not AuthAudience.STUDENT
+        or principal.linked_user_id is None
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для просмотра аудиторий",
+        )
+    return principal.linked_user_id
+
+
+def _family_student_user_id(request: web.Request) -> int:
+    authenticated = authenticated_session(request)
+    if authenticated.principal.audience is not AuthAudience.FAMILY:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для просмотра аудиторий",
+        )
+    requested_public_id = request.match_info["student_public_id"]
+    for child in authenticated.family_children:
+        if child.student_public_id == requested_public_id:
+            return child.student_user_id
+    raise PwaApiError(
+        status=403,
+        code="forbidden",
+        message="Недостаточно прав для просмотра этого ученика",
+    )
+
+
+def _public_id(request: web.Request, field: str) -> str:
+    value = request.match_info[field]
+    if _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=404,
+            code="classroom_assignment_not_found",
+            message="План распределения не найден",
+        )
+    return value
+
+
+async def _json(request: web.Request) -> dict[str, object]:
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Тело запроса должно быть JSON",
+        )
+    try:
+        payload = json.loads(await request.read())
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Тело запроса должно быть корректным JSON-объектом",
+        ) from error
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != 1:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля плана распределения",
+        )
+    return payload
+
+
+def _assignment_changes(payload: dict[str, object]) -> list[tuple[str, str, bool]]:
+    if set(payload) != {"schemaVersion", "assignments"} or not isinstance(
+        payload["assignments"], list
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте список школьников",
+        )
+    if len(payload["assignments"]) > 2000:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Слишком много школьников",
+        )
+    changes = []
+    for item in payload["assignments"]:
+        if not isinstance(item, dict) or set(item) != {
+            "enrollmentPublicId",
+            "classroomPublicId",
+            "confirmGroupChange",
+        }:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте список школьников",
+            )
+        enrollment_public_id = item["enrollmentPublicId"]
+        classroom_public_id = item["classroomPublicId"]
+        confirm_group_change = item["confirmGroupChange"]
+        if (
+            not isinstance(enrollment_public_id, str)
+            or _PUBLIC_ID.fullmatch(enrollment_public_id) is None
+            or not isinstance(classroom_public_id, str)
+            or _PUBLIC_ID.fullmatch(classroom_public_id) is None
+            or not isinstance(confirm_group_change, bool)
+        ):
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте список школьников",
+            )
+        changes.append(
+            (enrollment_public_id, classroom_public_id, confirm_group_change)
+        )
+    return changes
+
+
+def _expected_version(request: web.Request, plan_public_id: str) -> int:
+    values = request.headers.getall("If-Match", [])
+    match = _ETAG.fullmatch(values[0]) if len(values) == 1 else None
+    if match is None:
+        raise PwaApiError(
+            status=422,
+            code="if_match_required",
+            message="Обновите план перед сохранением",
+        )
+    if match.group(1) != plan_public_id:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="План уже изменился. Обновите страницу.",
+        )
+    return int(match.group(2))
+
+
+def _working_plan_version(request: web.Request) -> tuple[str, int] | None:
+    values = request.headers.getall("If-Match", [])
+    if not values:
+        return None
+    match = _ETAG.fullmatch(values[0]) if len(values) == 1 else None
+    if match is None:
+        raise PwaApiError(
+            status=422,
+            code="if_match_required",
+            message="Обновите план перед сохранением",
+        )
+    return match.group(1), int(match.group(2))
+
+
+def _serialize(result: dict[str, object]) -> dict[str, object]:
+    event = result["event"]
+    plan = result["plan"]
+    groups_by_id = {int(group["group_lesson_id"]): group for group in result["groups"]}
+    return {
+        "event": {
+            "publicId": event["public_id"],
+            "name": event["name"],
+            "startsAt": event["starts_at"],
+            "endsAt": event["ends_at"],
+            "status": event["status"],
+        },
+        "plan": (
+            None
+            if plan is None
+            else {
+                "publicId": plan["public_id"],
+                "state": plan["state"],
+                "staleReason": plan["stale_reason"],
+                "version": plan["version"],
+                "updatedAt": plan["updated_at"],
+                "confirmedAt": plan["confirmed_at"],
+            }
+        ),
+        "groups": [
+            {
+                "groupLessonPublicId": group["group_lesson_public_id"],
+                "coursePublicId": group["course_public_id"],
+                "courseName": group["course_name"],
+                "groupPublicId": group["group_public_id"],
+                "groupName": group["group_name"],
+                "shortCode": group["short_code"],
+                "colorKey": group["color_key"],
+                "lessonNumber": group["lesson_number"],
+                "inPersonCount": group["in_person_count"],
+            }
+            for group in result["groups"]
+        ],
+        "rooms": [
+            {
+                "publicId": room["classroom_public_id"],
+                "name": room["classroom_name"],
+                "status": room["classroom_status"],
+                "groupLessonPublicId": groups_by_id[int(room["group_lesson_id"])][
+                    "group_lesson_public_id"
+                ],
+            }
+            for room in result["rooms"]
+        ],
+        "students": [
+            {
+                "enrollmentPublicId": student["enrollment_public_id"],
+                "studentPublicId": student["student_public_id"],
+                "surname": student["surname"],
+                "name": student["name"],
+                "age": student["age_years"],
+                "grade": student["grade"],
+                "strength": student["strength"],
+                "groupLessonPublicId": student["group_lesson_public_id"],
+                "groupPublicId": groups_by_id[int(student["group_lesson_id"])][
+                    "group_public_id"
+                ],
+                "classroomPublicId": student["classroom_public_id"],
+                "classroomName": student["classroom_name"],
+                "status": student["status"],
+                "source": student["source"],
+            }
+            for student in result["students"]
+        ],
+    }
+
+
+def _response(request: web.Request, result: dict[str, object]) -> web.Response:
+    response = web.json_response(
+        {
+            "schemaVersion": 1,
+            "assignmentPlan": _serialize(result),
+            "requestId": request["request_id"],
+        }
+    )
+    plan = result["plan"]
+    if plan is not None:
+        response.headers["ETag"] = f'"{plan["public_id"]}:v{plan["version"]}"'
+    return response
+
+
+async def _public_response(request: web.Request, student_user_id: int) -> web.Response:
+    items = await _factory(request).run_read_async(
+        lambda connection: read_student_classroom_assignments(
+            connection, student_user_id
+        )
+    )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "items": [
+                {
+                    "eventPublicId": item["event_public_id"],
+                    "eventName": item["event_name"],
+                    "startsAt": item["starts_at"],
+                    "endsAt": item["ends_at"],
+                    "coursePublicId": item["course_public_id"],
+                    "courseName": item["course_name"],
+                    "groupPublicId": item["group_public_id"],
+                    "groupName": item["group_name"],
+                    "groupLessonPublicId": item["group_lesson_public_id"],
+                    "attendanceMode": item["attendance_mode"],
+                    "status": item["status"],
+                    "classroomPublicId": item["classroom_public_id"],
+                    "classroomName": item["classroom_name"],
+                    "confirmedAt": item["confirmed_at"],
+                    "announcedAt": item["announced_at"],
+                }
+                for item in items
+            ],
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@classroom_assignment_routes.get("/student/api/v1/classroom-assignments")
+async def get_student_classroom_assignments(request: web.Request) -> web.Response:
+    return await _public_response(request, _student_user_id(request))
+
+
+@classroom_assignment_routes.get(
+    "/family/api/v1/children/{student_public_id}/classroom-assignments"
+)
+async def get_family_classroom_assignments(request: web.Request) -> web.Response:
+    return await _public_response(request, _family_student_user_id(request))
+
+
+def _raise_domain_error(error: Exception) -> None:
+    if isinstance(error, ClassroomAssignmentNotFound):
+        raise PwaApiError(
+            status=404,
+            code="classroom_assignment_not_found",
+            message="План распределения не найден",
+        ) from error
+    if isinstance(error, ClassroomAssignmentConflict):
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="План уже изменился. Обновите страницу.",
+        ) from error
+    if isinstance(error, InvalidClassroomAssignment):
+        raise PwaApiError(
+            status=422,
+            code="invalid_classroom_assignment",
+            message="Проверьте распределение школьников по аудиториям",
+        ) from error
+    raise error
+
+
+async def _invalidate_confirmed_assignments(
+    request: web.Request, result: dict[str, object]
+) -> None:
+    invalidator = request.app.get(PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR)
+    if invalidator is None:
+        return
+    student_user_ids = tuple(
+        sorted({int(student["student_user_id"]) for student in result["students"]})
+    )
+    owners = await _factory(request).run_read_async(
+        lambda connection: list_assignment_owner_accounts(connection, student_user_ids)
+    )
+    try:
+        await invalidator(
+            tuple(
+                str(owner["public_id"])
+                for owner in owners
+                if owner["audience"] == AuthAudience.STUDENT.value
+            ),
+            tuple(
+                str(owner["public_id"])
+                for owner in owners
+                if owner["audience"] == AuthAudience.FAMILY.value
+            ),
+            "classroom-assignment-confirmed",
+        )
+    except Exception:
+        logger.warning(
+            "Classroom assignment invalidation failed after commit", exc_info=True
+        )
+
+
+@classroom_assignment_routes.get(
+    "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan"
+)
+async def get_classroom_assignment_plan(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    event_public_id = _public_id(request, "event_public_id")
+    try:
+        result = await _factory(request).run_read_async(
+            lambda connection: read_assignment_plan(connection, event_public_id)
+        )
+    except ClassroomAssignmentNotFound as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+    return _response(request, result)
+
+
+@classroom_assignment_routes.post(
+    "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/recalculate"
+)
+async def post_recalculate_classroom_assignment_plan(
+    request: web.Request,
+) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    event_public_id = _public_id(request, "event_public_id")
+    payload = await _json(request)
+    if set(payload) != {"schemaVersion"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля плана распределения",
+        )
+    working_plan = _working_plan_version(request)
+    plan_public_id, expected_version = (
+        (None, None) if working_plan is None else working_plan
+    )
+    try:
+        result = await _factory(request).run_write_async(
+            lambda connection: recalculate_assignment_plan(
+                connection,
+                event_public_id=event_public_id,
+                plan_public_id=plan_public_id,
+                expected_version=expected_version,
+                actor_user_id=actor_user_id,
+                now=_now(),
+            )
+        )
+    except (
+        ClassroomAssignmentNotFound,
+        ClassroomAssignmentConflict,
+        InvalidClassroomAssignment,
+    ) as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+    return _response(request, result)
+
+
+@classroom_assignment_routes.get(
+    "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/"
+    "{plan_public_id}/students/{enrollment_public_id}/history"
+)
+async def get_classroom_assignment_history(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    event_public_id = _public_id(request, "event_public_id")
+    plan_public_id = _public_id(request, "plan_public_id")
+    enrollment_public_id = _public_id(request, "enrollment_public_id")
+    try:
+        items = await _factory(request).run_read_async(
+            lambda connection: read_assignment_history(
+                connection,
+                event_public_id=event_public_id,
+                plan_public_id=plan_public_id,
+                enrollment_public_id=enrollment_public_id,
+            )
+        )
+    except ClassroomAssignmentNotFound as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "items": [
+                {
+                    "eventPublicId": item["event_public_id"],
+                    "eventName": item["event_name"],
+                    "startsAt": item["starts_at"],
+                    "planPublicId": item["plan_public_id"],
+                    "confirmedAt": item["confirmed_at"],
+                    "classroomPublicId": item["classroom_public_id"],
+                    "classroomName": item["classroom_name"],
+                    "coursePublicId": item["course_public_id"],
+                    "courseName": item["course_name"],
+                    "groupPublicId": item["group_public_id"],
+                    "groupName": item["group_name"],
+                    "groupLessonPublicId": item["group_lesson_public_id"],
+                }
+                for item in items
+            ],
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@classroom_assignment_routes.put(
+    "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/"
+    "{plan_public_id}/assignments"
+)
+async def put_classroom_assignments(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    event_public_id = _public_id(request, "event_public_id")
+    plan_public_id = _public_id(request, "plan_public_id")
+    expected_version = _expected_version(request, plan_public_id)
+    assignments = _assignment_changes(await _json(request))
+    try:
+        result = await _factory(request).run_write_async(
+            lambda connection: update_assignment_plan(
+                connection,
+                event_public_id=event_public_id,
+                plan_public_id=plan_public_id,
+                expected_version=expected_version,
+                assignments=assignments,
+                actor_user_id=actor_user_id,
+                request_id=request["request_id"],
+                now=_now(),
+            )
+        )
+    except (
+        ClassroomAssignmentNotFound,
+        ClassroomAssignmentConflict,
+        InvalidClassroomAssignment,
+    ) as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+    return _response(request, result)
+
+
+@classroom_assignment_routes.post(
+    "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/"
+    "{plan_public_id}/confirm"
+)
+async def post_confirm_classroom_assignment_plan(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    event_public_id = _public_id(request, "event_public_id")
+    plan_public_id = _public_id(request, "plan_public_id")
+    expected_version = _expected_version(request, plan_public_id)
+    payload = await _json(request)
+    if set(payload) != {"schemaVersion"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля плана распределения",
+        )
+    try:
+        result = await _factory(request).run_write_async(
+            lambda connection: confirm_assignment_plan(
+                connection,
+                event_public_id=event_public_id,
+                plan_public_id=plan_public_id,
+                expected_version=expected_version,
+                actor_user_id=actor_user_id,
+                now=_now(),
+            )
+        )
+    except (
+        ClassroomAssignmentNotFound,
+        ClassroomAssignmentConflict,
+        InvalidClassroomAssignment,
+    ) as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+    await _invalidate_confirmed_assignments(request, result)
+    return _response(request, result)
+
+
+__all__ = [
+    "PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR",
+    "classroom_assignment_routes",
+]

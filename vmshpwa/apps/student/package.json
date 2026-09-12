@@ -1,0 +1,43 @@
+{
+  "name": "@vmsh/student",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port ${VITE_PORT:-5173} --strictPort",
+    "preview": "vite preview --host 127.0.0.1 --port ${VITE_PORT:-5173} --strictPort",
+    "routes:generate": "tsr generate",
+    "build": "tsr generate && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "@visx/responsive": "catalog:",
+    "@visx/scale": "catalog:",
+    "@visx/shape": "catalog:",
+    "@vmsh/app-shell": "workspace:*",
+    "@vmsh/content": "workspace:*",
+    "@vmsh/contracts": "workspace:*",
+    "@vmsh/offline": "workspace:*",
+    "@vmsh/product": "workspace:*",
+    "@vmsh/ui": "workspace:*",
+    "d3-array": "catalog:",
+    "d3-scale": "catalog:",
+    "d3-shape": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "workbox-cacheable-response": "catalog:",
+    "workbox-core": "catalog:",
+    "workbox-expiration": "catalog:",
+    "workbox-precaching": "catalog:",
+    "workbox-routing": "catalog:",
+    "workbox-strategies": "catalog:",
+    "workbox-window": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "catalog:"
+  }
+}

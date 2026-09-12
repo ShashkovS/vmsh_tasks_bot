@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "types": ["vite/client", "vite-plugin-pwa/client", "node"] },
+  "include": ["src", "vite.config.ts", "../../env.d.ts"]
+}

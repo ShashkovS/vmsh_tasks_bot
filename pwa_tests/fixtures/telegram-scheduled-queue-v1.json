@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "itemKey": "pending-001",
+      "destinationKey": "course-math-news",
+      "scheduledFor": "2026-09-07T13:00:00+03:00",
+      "currentRevisionSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reviewedRevisionSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "currentMediaManifestSha256": null,
+      "reviewedMediaManifestSha256": null,
+      "decision": "retain_in_telegram",
+      "staffDraftKey": null
+    },
+    {
+      "itemKey": "pending-002",
+      "destinationKey": "group-beginners-news",
+      "scheduledFor": "2026-09-07T13:00:00+03:00",
+      "currentRevisionSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reviewedRevisionSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "currentMediaManifestSha256": null,
+      "reviewedMediaManifestSha256": null,
+      "decision": "retain_in_telegram",
+      "staffDraftKey": null
+    },
+    {
+      "itemKey": "pending-003",
+      "destinationKey": "course-physics-news",
+      "scheduledFor": "2026-09-08T14:30:00+03:00",
+      "currentRevisionSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "reviewedRevisionSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "currentMediaManifestSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "reviewedMediaManifestSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "decision": "cancel_and_recreate_in_staff",
+      "staffDraftKey": "staff-draft-001"
+    },
+    {
+      "itemKey": "pending-004",
+      "destinationKey": "group-experts-news",
+      "scheduledFor": "2026-09-10T10:00:00+03:00",
+      "currentRevisionSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "reviewedRevisionSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "currentMediaManifestSha256": null,
+      "reviewedMediaManifestSha256": null,
+      "decision": "cancel_as_obsolete",
+      "staffDraftKey": null
+    }
+  ]
+}

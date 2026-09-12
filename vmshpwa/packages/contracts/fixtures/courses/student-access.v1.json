@@ -1,0 +1,78 @@
+{
+  "fixtureVersion": 1,
+  "response": {
+    "studentId": "user-student-fixture",
+    "enrollments": [
+      {
+        "enrollmentId": "enrollment-fixture-alpha",
+        "studentId": "user-student-fixture",
+        "course": {
+          "courseId": "course-fixture-alpha",
+          "code": "synthetic-alpha",
+          "name": "Синтетический курс А",
+          "subjectCode": "synthetic-subject-a",
+          "status": "active",
+          "sortOrder": 10,
+          "accentKey": "accent_1",
+          "version": 2
+        },
+        "activeGroupId": "group-fixture-alpha-one",
+        "allowedGroups": [
+          {
+            "groupId": "group-fixture-alpha-one",
+            "courseId": "course-fixture-alpha",
+            "code": "alpha-one",
+            "name": "Синтетическая группа А1",
+            "status": "active",
+            "sortOrder": 10,
+            "colorKey": "group_1",
+            "version": 1
+          },
+          {
+            "groupId": "group-fixture-alpha-two",
+            "courseId": "course-fixture-alpha",
+            "code": "alpha-two",
+            "name": "Синтетическая группа А2",
+            "status": "active",
+            "sortOrder": 20,
+            "colorKey": "group_2",
+            "version": 1
+          }
+        ],
+        "attendanceMode": "in_person",
+        "status": "active",
+        "version": 4
+      },
+      {
+        "enrollmentId": "enrollment-fixture-beta",
+        "studentId": "user-student-fixture",
+        "course": {
+          "courseId": "course-fixture-beta",
+          "code": "synthetic-beta",
+          "name": "Синтетический курс Б",
+          "subjectCode": "synthetic-subject-b",
+          "status": "active",
+          "sortOrder": 20,
+          "accentKey": "accent_2",
+          "version": 1
+        },
+        "activeGroupId": "group-fixture-beta-one",
+        "allowedGroups": [
+          {
+            "groupId": "group-fixture-beta-one",
+            "courseId": "course-fixture-beta",
+            "code": "beta-one",
+            "name": "Синтетическая группа Б1",
+            "status": "active",
+            "sortOrder": 10,
+            "colorKey": "group_3",
+            "version": 2
+          }
+        ],
+        "attendanceMode": "online",
+        "status": "active",
+        "version": 3
+      }
+    ]
+  }
+}

@@ -1,0 +1,413 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
+
+import {
+  PageLayout,
+  PageSection,
+  PageStatePanel,
+  createStaffGroupBannerClient,
+  createStaffRichMediaClient,
+  createTelegramBindingClient,
+  useAuthenticatedPrincipal,
+  useAuthentication,
+  useStaffGroupBannersQuery,
+  useTelegramBindingOwnersQuery,
+} from '@vmsh/app-shell'
+import {
+  ApiResponseError,
+  groupBannerQueryKeys,
+  type GroupBanner as GroupBannerData,
+  type GroupBannerAudience,
+  type RichDocument,
+} from '@vmsh/contracts'
+import { GroupBanner } from '@vmsh/product'
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  Input,
+  Label,
+} from '@vmsh/ui'
+
+const RichMarkdownEditor = lazy(() =>
+  import('./rich-markdown-editor').then((module) => ({ default: module.RichMarkdownEditor })),
+)
+
+type Draft = {
+  groupId: string
+  audience: GroupBannerAudience
+  markdown: string
+  startsAt: string
+  endsAt: string
+  priority: string
+  dismissible: boolean
+}
+
+const emptyDraft: Draft = {
+  groupId: '',
+  audience: 'both',
+  markdown: '',
+  startsAt: '',
+  endsAt: '',
+  priority: '0',
+  dismissible: true,
+}
+
+function readDraft(accountId: string): Draft {
+  try {
+    const stored: unknown = JSON.parse(
+      globalThis.localStorage.getItem(`vmshpwa:staff:${accountId}:group-banner-draft`) ?? 'null',
+    )
+    if (!stored || typeof stored !== 'object') return emptyDraft
+    return { ...emptyDraft, ...(stored as Partial<Draft>) }
+  } catch {
+    return emptyDraft
+  }
+}
+
+function moscowIso(value: string): string {
+  return new Date(`${value}:00+03:00`).toISOString()
+}
+
+function moscowInput(value: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'Europe/Moscow',
+  }).formatToParts(new Date(value))
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
+}
+
+function errorText(error: Error): string {
+  return error instanceof ApiResponseError
+    ? error.message
+    : 'Проверьте соединение и повторите попытку.'
+}
+
+export function StaffGroupBannersPage() {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'staff') throw new Error('Group banners require Staff auth')
+  const scope = { audience: 'staff' as const, accountId: principal.accountId }
+  const bannerClient = useMemo(
+    () =>
+      createStaffGroupBannerClient(authentication.client.runtime, {
+        refreshSession: () => authentication.refresh(),
+      }),
+    [authentication],
+  )
+  const ownerClient = useMemo(
+    () =>
+      createTelegramBindingClient(authentication.client.runtime, {
+        refreshSession: () => authentication.refresh(),
+      }),
+    [authentication],
+  )
+  const richMediaClient = useMemo(
+    () =>
+      createStaffRichMediaClient(authentication.client.runtime, {
+        refreshSession: () => authentication.refresh(),
+      }),
+    [authentication],
+  )
+  const banners = useStaffGroupBannersQuery(bannerClient, scope)
+  const owners = useTelegramBindingOwnersQuery(ownerClient, scope)
+  const queryClient = useQueryClient()
+  const [draft, setDraft] = useState<Draft>(() => readDraft(principal.accountId))
+  const [editing, setEditing] = useState<GroupBannerData | null>(null)
+  const [document, setDocument] = useState<RichDocument | null>(null)
+
+  useEffect(() => {
+    globalThis.localStorage.setItem(
+      `vmshpwa:staff:${principal.accountId}:group-banner-draft`,
+      JSON.stringify(draft),
+    )
+  }, [draft, principal.accountId])
+
+  const groups =
+    owners.data?.courses.flatMap((course) =>
+      course.groups
+        .filter((group) => group.status === 'active')
+        .map((group) => ({
+          groupId: group.groupId,
+          label: `${course.courseName} · ${group.groupName}`,
+          courseId: course.courseId,
+          courseName: course.courseName,
+          groupName: group.groupName,
+        })),
+    ) ?? []
+  const groupId = draft.groupId || groups[0]?.groupId || ''
+
+  const mutation = useMutation({
+    mutationFn: async (command: { kind: 'save' } | { kind: 'cancel'; banner: GroupBannerData }) => {
+      if (command.kind === 'cancel') {
+        return bannerClient.cancel(command.banner.bannerId, command.banner.version)
+      }
+      if (document === null) throw new Error('Rich Markdown has not passed validation')
+      const common = {
+        schemaVersion: 2 as const,
+        audience: draft.audience,
+        markdown: draft.markdown,
+        document,
+        startsAt: moscowIso(draft.startsAt),
+        endsAt: moscowIso(draft.endsAt),
+        priority: Number(draft.priority),
+        dismissible: draft.dismissible,
+      }
+      return editing
+        ? bannerClient.update(editing.bannerId, editing.version, common)
+        : bannerClient.create({ ...common, groupId })
+    },
+    onSuccess: async () => {
+      setDraft(emptyDraft)
+      setEditing(null)
+      setDocument(null)
+      await queryClient.invalidateQueries({ queryKey: groupBannerQueryKeys.staff(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!groupId || !draft.startsAt || !draft.endsAt || document === null) return
+    mutation.mutate({ kind: 'save' })
+  }
+
+  function beginEdit(banner: GroupBannerData) {
+    setEditing(banner)
+    setDraft({
+      groupId: banner.group.groupId,
+      audience: banner.audience,
+      markdown: banner.markdown ?? '',
+      startsAt: moscowInput(banner.startsAt),
+      endsAt: moscowInput(banner.endsAt),
+      priority: String(banner.priority),
+      dismissible: banner.dismissible,
+    })
+    setDocument(banner.document ?? null)
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  return (
+    <PageLayout
+      description="Короткие сообщения для группы: появятся на «Сейчас» и придут уведомлением на устройства с включёнными push."
+      eyebrow="Admin only"
+      title="Рассылки"
+      width="wide"
+    >
+      <PageSection title={editing ? 'Изменить объявление' : 'Новое объявление'}>
+        {owners.isPending ? <PageStatePanel state="loading" /> : null}
+        {owners.error ? <PageStatePanel state="error" /> : null}
+        {owners.data ? (
+          <Card>
+            <CardContent className="pt-4">
+              <form className="grid gap-4" onSubmit={submit}>
+                <div className="grid gap-3 lg:grid-cols-3">
+                  <Label className="grid gap-1">
+                    Группа
+                    <select
+                      className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+                      disabled={editing !== null}
+                      onChange={(event) =>
+                        setDraft((value) => ({ ...value, groupId: event.target.value }))
+                      }
+                      value={groupId}
+                    >
+                      {groups.map((group) => (
+                        <option key={group.groupId} value={group.groupId}>
+                          {group.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Label>
+                  <Label className="grid gap-1">
+                    Показывать
+                    <select
+                      className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+                      onChange={(event) =>
+                        setDraft((value) => ({
+                          ...value,
+                          audience: event.target.value as GroupBannerAudience,
+                        }))
+                      }
+                      value={draft.audience}
+                    >
+                      <option value="both">Школьнику и семье</option>
+                      <option value="student">Только школьнику</option>
+                      <option value="family">Только семье</option>
+                    </select>
+                  </Label>
+                  <Label className="grid gap-1">
+                    Приоритет
+                    <Input
+                      max="100"
+                      min="-100"
+                      onChange={(event) =>
+                        setDraft((value) => ({ ...value, priority: event.target.value }))
+                      }
+                      type="number"
+                      value={draft.priority}
+                    />
+                  </Label>
+                </div>
+                <div className="grid gap-1">
+                  <Label>Текст объявления (Markdown)</Label>
+                  <Suspense
+                    fallback={
+                      <div className="min-h-[22rem] rounded-md border border-border p-3 text-caption text-muted-foreground">
+                        Загружаем редактор…
+                      </div>
+                    }
+                  >
+                    <RichMarkdownEditor
+                      onChange={(markdown) => setDraft((value) => ({ ...value, markdown }))}
+                      onDocumentChange={setDocument}
+                      onImageUpload={richMediaClient.uploadImage}
+                      value={draft.markdown}
+                    />
+                  </Suspense>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Начало показа · Москва</Label>
+                      <Button
+                        onClick={() =>
+                          setDraft((value) => ({
+                            ...value,
+                            startsAt: moscowInput(new Date().toISOString()),
+                          }))
+                        }
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        Сейчас
+                      </Button>
+                    </div>
+                    <Input
+                      onChange={(event) =>
+                        setDraft((value) => ({ ...value, startsAt: event.target.value }))
+                      }
+                      required
+                      type="datetime-local"
+                      value={draft.startsAt}
+                    />
+                  </div>
+                  <Label className="grid gap-1">
+                    Конец показа · Москва
+                    <Input
+                      onChange={(event) =>
+                        setDraft((value) => ({ ...value, endsAt: event.target.value }))
+                      }
+                      required
+                      type="datetime-local"
+                      value={draft.endsAt}
+                    />
+                  </Label>
+                </div>
+                <Label className="flex items-center gap-2">
+                  <Checkbox
+                    checked={draft.dismissible}
+                    onCheckedChange={(checked) =>
+                      setDraft((value) => ({ ...value, dismissible: checked === true }))
+                    }
+                  />
+                  Разрешить получателю скрыть объявление
+                </Label>
+                <p className="text-caption text-muted-foreground">
+                  Скрытие действует только в текущем браузере получателя. Уведомление создаётся
+                  в момент начала показа; уже отправленное уведомление после правки не повторяется.
+                  Внешние картинки копируются на сервер.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    disabled={mutation.isPending || groups.length === 0 || document === null}
+                    type="submit"
+                  >
+                    {editing ? 'Сохранить изменения' : 'Запланировать'}
+                  </Button>
+                  {editing ? (
+                    <Button
+                      onClick={() => {
+                        setEditing(null)
+                        setDraft(emptyDraft)
+                        setDocument(null)
+                      }}
+                      type="button"
+                      variant="outline"
+                    >
+                      Отмена
+                    </Button>
+                  ) : null}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        ) : null}
+        {mutation.error ? (
+          <Alert role="alert" tone="danger">
+            <AlertContent>
+              <AlertTitle>Изменение не сохранено</AlertTitle>
+              <AlertDescription>{errorText(mutation.error)}</AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
+      </PageSection>
+      <PageSection title="Запланированные и прошлые">
+        {banners.isPending ? <PageStatePanel state="loading" /> : null}
+        {banners.error ? <PageStatePanel state="error" /> : null}
+        {banners.data?.items.length === 0 ? <PageStatePanel state="empty" /> : null}
+        <div className="space-y-3">
+          {banners.data?.items.map((banner) => (
+            <Card key={banner.bannerId}>
+              <CardContent className="space-y-3 pt-4">
+                <GroupBanner banner={banner} />
+                <p className="font-num text-caption text-muted-foreground">
+                  {new Intl.DateTimeFormat('ru-RU', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                    timeZone: 'Europe/Moscow',
+                  }).format(new Date(banner.startsAt))}{' '}
+                  —{' '}
+                  {new Intl.DateTimeFormat('ru-RU', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                    timeZone: 'Europe/Moscow',
+                  }).format(new Date(banner.endsAt))}
+                </p>
+                {banner.status === 'active' ? (
+                  <div className="flex gap-2">
+                    <Button onClick={() => beginEdit(banner)} size="sm" variant="outline">
+                      Изменить
+                    </Button>
+                    <Button
+                      onClick={() => mutation.mutate({ kind: 'cancel', banner })}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      Отменить
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-caption text-muted-foreground">Отменено</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </PageSection>
+    </PageLayout>
+  )
+}

@@ -1,0 +1,21 @@
+-- depends: 0045.pwa_material_reveal_matches
+
+drop trigger test_attempts_delete_forbidden;
+drop trigger test_attempts_result_contract_update;
+drop trigger test_attempts_result_contract_insert;
+drop trigger test_attempts_check_transition_guard;
+drop trigger test_attempts_payload_immutable;
+
+drop index test_attempts_pending_configuration_idx;
+drop index test_attempts_student_problem_counted_idx;
+drop index test_attempts_student_problem_history_idx;
+drop table test_attempts;
+
+drop index results_id_student_problem_uq;
+drop index problem_revisions_id_problem_uq;
+
+drop trigger idempotency_records_state_transition_guard;
+drop trigger idempotency_records_identity_immutable;
+drop trigger idempotency_records_account_scope_insert;
+drop index idempotency_records_expiry_idx;
+drop table idempotency_records;

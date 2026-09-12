@@ -1,0 +1,4 @@
+drop index if exists classroom_assignment_delivery_recipients_student_idx;
+drop table if exists classroom_assignment_delivery_recipients;
+drop index if exists classroom_assignment_delivery_batches_plan_idx;
+drop table if exists classroom_assignment_delivery_batches;

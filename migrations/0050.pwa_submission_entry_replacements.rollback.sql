@@ -1,0 +1,7 @@
+-- depends: 0049.pwa_submission_attachment_mutations
+
+drop trigger submission_entry_replacements_delete_forbidden;
+drop trigger submission_entry_replacements_immutable_update;
+drop trigger submission_entry_replacements_scope_insert;
+drop index submission_entry_replacements_thread_history_idx;
+drop table submission_entry_replacements;

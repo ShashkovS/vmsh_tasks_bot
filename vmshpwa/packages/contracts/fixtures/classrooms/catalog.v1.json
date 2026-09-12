@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "publicId": "classroom.201",
+      "name": "201",
+      "status": "active",
+      "createdAt": "2026-07-29T08:00:00.000000Z",
+      "updatedAt": "2026-07-29T08:02:00.000000Z",
+      "version": 3
+    },
+    {
+      "publicId": "classroom.hall",
+      "name": "Актовый зал",
+      "status": "archived",
+      "createdAt": "2026-07-29T08:00:00.000000Z",
+      "updatedAt": "2026-07-29T08:05:00.000000Z",
+      "version": 4
+    }
+  ],
+  "requestId": "classroom-contract-fixture"
+}

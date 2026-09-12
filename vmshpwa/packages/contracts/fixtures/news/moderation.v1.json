@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "postId": "news.visible",
+      "source": "telegram",
+      "channelTitle": "ВМШ 179",
+      "ownerType": "course",
+      "ownerId": "course.math",
+      "ownerName": "Математика 5–7",
+      "publishedAt": "2026-10-05T10:00:00Z",
+      "editedAt": null,
+      "revision": 1,
+      "textExcerpt": "Опубликованы условия занятия.",
+      "editableText": null,
+      "mediaCount": 2,
+      "visibility": "visible",
+      "moderationReason": null,
+      "visibilityUpdatedAt": "2026-10-05T10:00:00Z",
+      "isScheduled": false,
+      "version": 1
+    },
+    {
+      "postId": "news.hidden",
+      "source": "telegram",
+      "channelTitle": "Начинающие",
+      "ownerType": "group",
+      "ownerId": "group.beginner",
+      "ownerName": "Начинающие",
+      "publishedAt": "2026-10-04T10:00:00Z",
+      "editedAt": "2026-10-04T10:05:00Z",
+      "revision": 2,
+      "textExcerpt": "Повторная публикация.",
+      "editableText": null,
+      "mediaCount": 0,
+      "visibility": "manual_hidden",
+      "moderationReason": "Дубль",
+      "visibilityUpdatedAt": "2026-10-04T10:06:00Z",
+      "isScheduled": false,
+      "version": 2
+    },
+    {
+      "postId": "news.deleted",
+      "source": "telegram",
+      "channelTitle": "ВМШ 179",
+      "ownerType": "course",
+      "ownerId": "course.math",
+      "ownerName": "Математика 5–7",
+      "publishedAt": "2026-10-03T10:00:00Z",
+      "editedAt": null,
+      "revision": 1,
+      "textExcerpt": "Удалённая публикация.",
+      "editableText": null,
+      "mediaCount": 0,
+      "visibility": "source_deleted",
+      "moderationReason": null,
+      "visibilityUpdatedAt": "2026-10-03T11:00:00Z",
+      "isScheduled": false,
+      "version": 2
+    }
+  ],
+  "requestId": "request-news-moderation"
+}

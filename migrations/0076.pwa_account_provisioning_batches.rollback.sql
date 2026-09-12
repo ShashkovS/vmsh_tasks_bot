@@ -1,0 +1,4 @@
+drop trigger family_account_emails_family_only_insert;
+drop index family_account_emails_normalized_idx;
+drop table family_account_emails;
+alter table auth_accounts drop column provisioning_password_plaintext;

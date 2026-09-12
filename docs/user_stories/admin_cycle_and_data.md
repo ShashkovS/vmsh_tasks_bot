@@ -93,3 +93,33 @@ As a trusted operator, I want to turn my account into an admin using a secret, s
 Main flow:
 - User runs `/set_admin secret`.
 - If the secret matches config, the user is upgraded into the elevated role.
+
+### A-CYCLE-12. Maintain the classroom catalog
+As an admin, I want to maintain one reusable catalog of classrooms, so that room names are entered once and corrected consistently for every lesson.
+
+Main flow:
+- Admin opens `/staff/classrooms?tab=catalog`.
+- Admin adds or renames a classroom, searches the catalog, and filters active or hidden rooms.
+- The system trims outer whitespace, rejects an empty name, and detects duplicates using Unicode NFKC plus case-insensitive comparison while preserving the entered display name and internal spaces.
+- Admin can hide and restore a room; hard delete is unavailable, and rename/archive/restore operations remain in audit history.
+
+### A-CYCLE-13. Map classrooms to groups for an effective lesson
+As an admin, I want to map active classrooms to groups and inherit the last confirmed mapping, so that a normal week needs no repetitive setup but a changed week can be prepared safely.
+
+Main flow:
+- Admin opens `/staff/classrooms?tab=groups&lesson=...` and sees the effective confirmed layout for that lesson.
+- On the first edit, the system materializes a draft based on the inherited layout.
+- Admin assigns zero or one group to each room; one group may use any number of rooms, but one room cannot contain students from different groups.
+- Admin previews and confirms the layout with optimistic version checks. Rooms have no capacity or weight settings; displayed `6/5/2`-style values are actual room counts by group.
+
+### A-CYCLE-14. Preview and confirm student classroom assignments
+As an admin, I want to preview, adjust, recalculate, and confirm classroom assignments for an in-person lesson, so that every in-person student has a valid room before the circle starts.
+
+Main flow:
+- The system keeps a student's previous eligible room where possible, otherwise assigns the least-loaded room of the student's current group; ties use natural room-name order.
+- Admin reviews students by group and room, moves a student with a select control, resolves `reassigning`/unassigned incidents, and confirms a versioned plan.
+- A group or attendance-mode change triggers the same assignment rule immediately. A student who switches online loses the room assignment.
+- Changing the room layout makes the current plan stale and requires preview, recalculation, and a new confirmation.
+- Hiding an assigned room immediately withdraws affected current assignments and shows “Аудитория переназначается”; restoring the room does not restore assignments automatically and past lessons do not change.
+- Confirmation is blocked by mixed groups, a student/room group mismatch, or any in-person student without a room. Unused active rooms are allowed.
+- Student and Family see the confirmed result; only Student receives assignment, withdrawal, and reassignment notifications. Teacher access to classroom management is forbidden.

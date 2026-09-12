@@ -271,6 +271,10 @@ class Msgs:
 
     # handlers\admin_handlers.py
     a_all_data_updated = "Все данные обновлены"
+    a_all_data_update_disabled = (
+        "Полное обновление из Google отключено после частичного перехода на Staff. "
+        "Используйте только отдельную команду нужного раздела."
+    )
     a_teachers_updated = "Учителя обновлены"
     a_students_updated = "Студенты обновлены"
     a_problems_updated = "Задачи обновлены"
@@ -295,7 +299,10 @@ class Msgs:
     a_teachers_commands_updated = "Команды учителей обновлены"
     a_teachers_commands_task_created = "Создано задание обновления статусов"
     a_recheck_task_created = "Создано задание по перепроверке тестовой задачи"
-    a_recheck_summary = "Задача {problem} перепроверена. {oks} плюсов, {errs} минусов. Исправлено {changes} посылок"
+    a_recheck_summary = (
+        "Задача {problem} перепроверена. {oks} плюсов, {errs} минусов, "
+        "{skipped} без изменения. Исправлено {changes} посылок"
+    )
     a_all_students_awakened = "Все школьники переведены в режим сдачи задач"
     a_pluses_refreshed = "Все плюсики обновлены: {num_updated} обновлено, {not_updated} не обновлено, {errors_count} ошибок."
     a_pluses_errors = "Ошибки по: `{errors_joined}`"

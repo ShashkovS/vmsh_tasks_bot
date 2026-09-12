@@ -1,0 +1,185 @@
+# Install this rendered file inside nginx's `http` context, normally as
+# /etc/nginx/conf.d/vmshpwa.conf. Every @@...@@ marker is mandatory deployment
+# input; unresolved markers are a failed deployment, never a default.
+
+map $uri $vmshpwa_login_limit_key {
+    default "";
+    ~^/(student|family|staff)/api/v1/auth/login$ $binary_remote_addr;
+}
+
+map $limit_req_status $vmshpwa_retry_after {
+    default "";
+    REJECTED 60;
+}
+
+# Stable release entrypoints must not hide a switched revision. URI maps live
+# at http scope so the TLS server can add this header beside CSP/HSTS; a child
+# location add_header would drop the inherited security-header set on nginx
+# versions before add_header_inherit merge.
+map $uri $vmshpwa_release_cache_control {
+    default "";
+    /student/sw.js "no-store";
+    /family/sw.js "no-store";
+    /student/index.html "no-cache";
+    /family/index.html "no-cache";
+    /staff/index.html "no-cache";
+    / "no-cache";
+    /landing/index.html "no-cache";
+    ~^/landing/assets/ "public, max-age=31536000, immutable";
+}
+
+map $uri $vmshpwa_service_worker_scope {
+    default "";
+    /student/sw.js "/student/";
+    /family/sw.js "/family/";
+}
+
+limit_req_zone $vmshpwa_login_limit_key zone=vmshpwa_login_per_ip:10m rate=6r/m;
+
+upstream vmshpwa_backend {
+    server unix:@@BACKEND_UNIX_SOCKET@@ fail_timeout=0;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name @@PUBLIC_HOST@@;
+    return 308 https://@@PUBLIC_HOST@@$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name @@PUBLIC_HOST@@;
+    include @@TLS_CONFIG_FILE@@;
+
+    root @@STATIC_ROOT@@;
+    server_tokens off;
+    client_header_timeout 15s;
+    client_body_timeout 120s;
+    send_timeout 60s;
+    proxy_send_timeout 120s;
+    proxy_read_timeout 120s;
+    proxy_buffering off;
+
+    limit_req zone=vmshpwa_login_per_ip burst=4 nodelay;
+    limit_req_status 429;
+
+    # `default-src 'none'` keeps an omitted deployment allowance closed.
+    # MEDIA is exactly one public Hetzner object origin. SENTRY is either one
+    # exact ingest origin or an empty replacement; wildcards are forbidden.
+    add_header Content-Security-Policy "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://@@PUBLIC_HOST@@ @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Permissions-Policy "camera=(self), geolocation=(), microphone=(), payment=(), usb=()" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header Retry-After $vmshpwa_retry_after always;
+    add_header Cache-Control $vmshpwa_release_cache_control always;
+    add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
+
+    location = /student { return 308 /student/; }
+    location = /family { return 308 /family/; }
+    location = /staff { return 308 /staff/; }
+
+    location = /metrics {
+        access_log off;
+        return 404;
+    }
+
+    # Public entry page. It has no API or session state and deliberately does
+    # not expose the Staff application link.
+    location = / {
+        try_files /landing/index.html =404;
+    }
+
+    location ^~ /landing/ {
+        try_files $uri =404;
+    }
+
+    # API locations are deliberately outside SPA fallback. The backend keeps
+    # stricter endpoint-specific limits (for example the 16 KiB auth JSON cap).
+    location ^~ /student/api/ {
+        client_max_body_size 64m;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+        proxy_pass http://vmshpwa_backend;
+    }
+    location ^~ /family/api/ {
+        client_max_body_size 64m;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+        proxy_pass http://vmshpwa_backend;
+    }
+    location ^~ /staff/api/ {
+        client_max_body_size 64m;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location = /student/api { return 404; }
+    location = /family/api { return 404; }
+    location = /staff/api { return 404; }
+
+    # Filesystem-backed dev/test content uses this audience-neutral immutable
+    # URL. Production S3 descriptors normally point straight at the public
+    # object origin, but retaining the exact proxy keeps both adapters valid.
+    location ^~ /pwa-content-assets/ {
+        limit_except GET { deny all; }
+        client_max_body_size 1k;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    # aiohttp sends a heartbeat every 25 seconds. A 75-second upstream read
+    # window tolerates one delayed heartbeat without leaving dead tunnels open.
+    location = /student/ws {
+        client_max_body_size 64k;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_buffering off;
+        proxy_pass http://vmshpwa_backend;
+    }
+    location = /family/ws {
+        client_max_body_size 64k;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_buffering off;
+        proxy_pass http://vmshpwa_backend;
+    }
+    location = /staff/ws {
+        client_max_body_size 64k;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_buffering off;
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location = /student/ws/ { return 404; }
+    location = /family/ws/ { return 404; }
+    location = /staff/ws/ { return 404; }
+
+    location ^~ /student/ {
+        try_files $uri $uri/ /student/index.html;
+    }
+    location ^~ /family/ {
+        try_files $uri $uri/ /family/index.html;
+    }
+    location ^~ /staff/ {
+        try_files $uri $uri/ /staff/index.html;
+    }
+
+    location / { return 404; }
+}

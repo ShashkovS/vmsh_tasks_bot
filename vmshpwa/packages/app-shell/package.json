@@ -1,0 +1,23 @@
+{
+  "name": "@vmsh/app-shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@sentry/react": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "@vmsh/contracts": "workspace:*",
+    "@vmsh/ui": "workspace:*",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "@vmsh/product": "workspace:*",
+    "@vmsh/offline": "workspace:*"
+  }
+}

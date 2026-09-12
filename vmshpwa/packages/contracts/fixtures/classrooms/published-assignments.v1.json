@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "eventPublicId": "event-41",
+      "eventName": "Очное занятие 41",
+      "startsAt": "2026-10-11T10:00:00Z",
+      "endsAt": "2026-10-11T13:00:00Z",
+      "coursePublicId": "course-math",
+      "courseName": "Математика 5–7",
+      "groupPublicId": "group-beginner",
+      "groupName": "Начинающие",
+      "groupLessonPublicId": "group-lesson-41",
+      "attendanceMode": "in_person",
+      "status": "assigned",
+      "classroomPublicId": "room-202",
+      "classroomName": "202",
+      "confirmedAt": "2026-10-05T12:00:00Z",
+      "announcedAt": null
+    }
+  ],
+  "requestId": "classroom.fixture"
+}

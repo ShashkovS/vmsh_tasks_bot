@@ -1,0 +1,528 @@
+@import 'katex/dist/katex.min.css';
+
+@font-face {
+  font-family: 'Computer Modern Serif';
+  src: url('./fonts/CMUSerif-Roman.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Computer Modern Serif';
+  src: url('./fonts/CMUSerif-Bold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Computer Modern Serif';
+  src: url('./fonts/CMUSerif-Italic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Computer Modern Serif';
+  src: url('./fonts/CMUSerif-BoldItalic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+.vmsh-math-content {
+  container-type: inline-size;
+  font-family: 'Computer Modern Serif', serif;
+  font-size: clamp(18px, calc(1.15vw + 13px), 21px);
+  font-kerning: normal;
+  font-optical-sizing: auto;
+  font-synthesis: none;
+  font-variant-ligatures: common-ligatures contextual;
+  hyphens: auto;
+  text-wrap: pretty;
+}
+
+.vmsh-document-title,
+.vmsh-math-content h1,
+.vmsh-math-content h2,
+.vmsh-math-content h3 {
+  text-wrap: balance;
+}
+
+.vmsh-document-title {
+  max-inline-size: 90ch;
+  margin: 0 auto 1.25rem;
+  font-size: 1.55em;
+  font-weight: 700;
+}
+
+.vmsh-math-content .katex,
+.vmsh-math-content .katex * {
+  user-select: none;
+}
+
+.vmsh-math-content .katex {
+  font-size: 1em;
+}
+
+.vmsh-math-content .katex-display {
+  max-width: 100%;
+  margin-block: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.125rem;
+  scrollbar-width: thin;
+}
+
+/* Deliberate opt-in for formula sources authored as genuinely breakable
+ * display math; normal displays keep horizontal scrolling. */
+.math-wrap .katex-display > .katex {
+  white-space: normal;
+}
+
+.math-wrap .katex-display > .katex > .katex-html > .katex-base {
+  margin: 0.25em 0;
+}
+
+.vmsh-math-expression-display {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.125rem;
+}
+
+.vmsh-formula-fallback,
+.vmsh-content-fallback,
+.vmsh-content-formula-warning {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: 1.45;
+  padding: 0.625rem 0.75rem;
+}
+
+.vmsh-content-formula-warning {
+  margin-block-end: 0.75rem;
+}
+
+.vmsh-formula-fallback code {
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+
+.vmsh-math-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Telegram preview uses Telegram's compact, linear reading flow while still
+ * making the document structure visible to Staff before publication. */
+.vmsh-telegram-preview h2,
+.vmsh-telegram-preview h3,
+.vmsh-telegram-preview h4 {
+  font-family: var(--font-sans);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.vmsh-telegram-preview h2 {
+  margin-block: 1.75rem 0.625rem;
+  font-size: 1.2rem;
+}
+
+.vmsh-telegram-preview h3 {
+  margin-block: 1.25rem 0.5rem;
+  font-size: 1.05rem;
+}
+
+.vmsh-telegram-preview h4 {
+  margin-block: 1rem 0.375rem;
+  font-size: 1rem;
+}
+
+.vmsh-telegram-preview p {
+  margin-block: 0.5rem;
+}
+
+.vmsh-telegram-preview figure {
+  margin-block: 0.875rem;
+}
+
+.vmsh-telegram-preview figure img {
+  display: block;
+  margin-inline: auto;
+}
+
+.vmsh-telegram-preview figcaption {
+  margin-block-start: 0.25rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  text-align: center;
+}
+
+/* Wide artifacts (tables, display math) scroll locally, never the whole page. */
+.vmsh-scroll-x {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.vmsh-scroll-x:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vmsh-math-content table {
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.vmsh-math-content th,
+.vmsh-math-content td {
+  border: 1px solid var(--border);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.vmsh-math-content thead th {
+  background: var(--surface-subtle);
+  font-weight: 600;
+}
+
+/* Announcement blocks mirror the semantic note/theorem projection emitted by
+ * the LaTeX compiler. See docs/content-compiler-support-matrix.md. */
+.vmsh-callout.vmsh-callout-note,
+.vmsh-math-content .vmsh-note {
+  width: min(100%, 48rem);
+  margin-block: 1.25rem;
+  margin-inline: auto;
+  border-block: 1px solid var(--border);
+  border-inline: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-style: italic;
+  text-align: center;
+}
+
+.vmsh-callout.vmsh-callout-theorem,
+.vmsh-math-content .vmsh-theorem {
+  width: min(100%, 48rem);
+  margin-block: 1.5rem;
+  margin-inline: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  box-shadow: inset 0 0 0 3px var(--surface);
+  padding: 0.875rem 1rem;
+  text-align: center;
+}
+
+.vmsh-callout.vmsh-callout-note > :first-child,
+.vmsh-callout.vmsh-callout-theorem > :first-child,
+.vmsh-math-content .vmsh-note > :first-child,
+.vmsh-math-content .vmsh-theorem > :first-child {
+  margin-block-start: 0;
+}
+
+.vmsh-callout.vmsh-callout-note > :last-child,
+.vmsh-callout.vmsh-callout-theorem > :last-child,
+.vmsh-math-content .vmsh-note > :last-child,
+.vmsh-math-content .vmsh-theorem > :last-child {
+  margin-block-end: 0;
+}
+
+.vmsh-callout.vmsh-callout-theorem .vmsh-note-title,
+.vmsh-math-content .vmsh-theorem .vmsh-note-title {
+  display: block;
+  margin-block-end: 0.375rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Numbered, deep-linkable display formula. */
+.vmsh-math-content .vmsh-eq {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vmsh-math-content .vmsh-eq > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vmsh-math-content .vmsh-eqno {
+  flex: none;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.vmsh-math-content :target {
+  border-radius: 0.25rem;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vmsh-math-body {
+  max-inline-size: 90ch;
+  margin-inline: auto;
+  line-height: 1.45;
+  text-align: start;
+}
+
+@container (min-width: 90ch) {
+  .vmsh-math-body {
+    text-align: justify;
+  }
+
+  .vmsh-problem-header,
+  .vmsh-subpart-header,
+  .vmsh-content-heading,
+  .vmsh-callout,
+  .vmsh-problem-actions {
+    text-align: start;
+  }
+}
+
+.vmsh-math-body p {
+  margin-block: 0.4rem;
+}
+
+.vmsh-problem {
+  display: block;
+  margin-block: 2rem 1.1rem;
+}
+
+.vmsh-problem::after {
+  display: block;
+  clear: both;
+  content: '';
+}
+
+.vmsh-student-sheet > div {
+  line-height: 1.45;
+}
+
+.vmsh-student-sheet .vmsh-problem {
+  margin-block: 2.25rem 1.25rem;
+}
+
+.vmsh-problem-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.625rem;
+  margin-block-end: 0.5rem;
+}
+
+.vmsh-problem-header > h2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
+  margin: 0;
+  font-family: 'Computer Modern Serif', serif;
+  font-size: 1.08em;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.vmsh-problem-header > h2 > span {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.vmsh-subpart-label > span {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.vmsh-problem-header > :not(h2) {
+  margin-inline-start: auto;
+}
+
+.vmsh-inline-problem-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+  text-align: start;
+}
+
+.vmsh-inline-problem-actions button {
+  min-height: 1.75rem;
+  padding-inline: 0.5rem;
+}
+
+/*
+ * Task heading row: the status chip stays next to the task number while the
+ * "Открыть" action is pinned to the opposite edge. Used by the Student tasks
+ * feed (apps/student StudentLessonFeedItem) and the single-task page.
+ */
+.vmsh-problem-header > .vmsh-problem-actions-row,
+.vmsh-subpart-header > .vmsh-problem-actions-row {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.625rem;
+  min-width: 0;
+  margin-inline-start: 0;
+  text-align: start;
+}
+
+.vmsh-problem-actions-row button {
+  min-height: 1.75rem;
+  padding-inline: 0.5rem;
+}
+
+/*
+ * Answering happens at full width. A floated drawing may narrow the condition
+ * text beside it, but the conversation under the task starts below the float.
+ */
+.vmsh-problem-workspace {
+  clear: both;
+}
+
+.vmsh-content-heading {
+  margin-block: 2rem 0.75rem;
+  font-family: 'Computer Modern Serif', serif;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.vmsh-subpart {
+  margin-block: 0.75rem;
+}
+
+.vmsh-subpart-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.125rem;
+  font-family: 'Computer Modern Serif', serif;
+}
+
+.vmsh-subpart-label {
+  font-weight: 650;
+}
+
+.vmsh-subpart-header > :not(.vmsh-subpart-label) {
+  margin-inline-start: auto;
+}
+
+.vmsh-subpart-content > p {
+  margin-block: 0;
+}
+
+.vmsh-callout {
+  margin-block: 1rem;
+  border-inline-start: 3px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: 0.625rem 0.875rem;
+}
+
+.vmsh-callout > :last-child {
+  margin-block-end: 0;
+}
+
+.vmsh-asset-figure {
+  display: grid;
+  gap: 0.375rem;
+  width: min(100%, calc(var(--vmsh-source-width, 100%) * var(--vmsh-figure-scale, 1)));
+  max-width: 100%;
+  margin-block: 0.875rem 1.125rem;
+}
+
+/* The React renderer sets data-float-hint only while the effective source
+ * width is <= 70%. Larger images become normal blocks. */
+@media (min-width: 48rem) {
+  .vmsh-asset-figure[data-float-hint='right'],
+  .vmsh-asset-figure[data-float-hint='left'] {
+    width: min(70%, calc(var(--vmsh-source-width, 100%) * var(--vmsh-figure-scale, 1)));
+    max-width: 70%;
+    margin-block: 0.25rem 1rem;
+  }
+
+  .vmsh-asset-figure[data-float-hint='right'] {
+    float: right;
+    margin-inline: 1.25rem 0;
+  }
+
+  .vmsh-asset-figure[data-float-hint='left'] {
+    float: left;
+    margin-inline: 0 1.25rem;
+  }
+}
+
+.vmsh-figure-canvas {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  background: #fafaf7;
+  box-shadow: var(--elevation-1);
+  padding: 0.25rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.vmsh-figure-canvas:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vmsh-figure-canvas img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+.vmsh-asset-figure figcaption {
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: 1.45;
+}
+
+.vmsh-figure-missing {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 8rem;
+  place-content: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  padding: 1rem;
+  text-align: center;
+}
+
+.vmsh-figure-missing strong {
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vmsh-math-content * {
+    scroll-behavior: auto;
+  }
+}

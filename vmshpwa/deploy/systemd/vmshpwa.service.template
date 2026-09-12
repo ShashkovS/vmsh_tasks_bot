@@ -1,0 +1,40 @@
+[Unit]
+Description=VMSH 179 Student, Family and Staff PWA API
+# This is the production unit for vmshbeget. Install it without substitutions
+# into /web/vmsh_tasks_bot/vmshpwa/runtime and link it from /etc/systemd/system.
+After=network-online.target nats-server.service
+Wants=network-online.target nats-server.service
+ConditionPathIsDirectory=/web/vmsh_tasks_bot/vmsh_tasks_bot
+ConditionPathExists=/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env
+
+[Service]
+Type=simple
+User=vmsh_tasks_bot
+Group=nginx
+WorkingDirectory=/web/vmsh_tasks_bot/vmsh_tasks_bot
+EnvironmentFile=/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env
+Environment=PATH=/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin:/usr/local/texlive/2026/bin/x86_64-linux:/usr/local/bin:/usr/bin:/bin
+RuntimeDirectory=vmsh-prometheus
+RuntimeDirectoryMode=0750
+Environment=PROMETHEUS_MULTIPROC_DIR=/run/vmsh-prometheus
+ExecStartPre=/usr/bin/find /run/vmsh-prometheus -mindepth 1 -maxdepth 1 -type f -delete
+# EnvironmentFile takes precedence over Environment= in systemd. Put the two
+# security boundary values on the actual command line so the secret file cannot
+# accidentally select a local profile or prototype auth.
+ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/gunicorn --config /web/vmsh_tasks_bot/vmsh_tasks_bot/gunicorn.conf.py --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock --bind 127.0.0.1:8000 --no-control-socket --umask 007 --timeout 120 --graceful-timeout 30 --error-logfile - --capture-output main:app
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=45
+UMask=0007
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/web/vmsh_tasks_bot/vmsh_tasks_bot/db /web/vmsh_tasks_bot/vmshpwa/runtime/media /web/vmsh_tasks_bot/vmshpwa/runtime/write /web/vmsh_tasks_bot/vmshpwa/runtime /run/vmsh-prometheus
+LimitNOFILE=8192
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

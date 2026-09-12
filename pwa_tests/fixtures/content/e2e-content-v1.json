@@ -1,0 +1,55 @@
+{
+  "fixture": "phase2-content-e2e-v1",
+  "fixtureVersion": 1,
+  "coursePublicId": "c-1",
+  "groupPublicId": "g-1",
+  "actorUserPublicId": "u-301",
+  "cycleAnchorDate": "2026-07-26",
+  "businessTimezone": "Europe/Moscow",
+  "targets": [
+    {
+      "project": "chromium",
+      "courseLessonPublicId": "cl-1",
+      "groupLessonPublicId": "gl-1",
+      "lessonNumber": 901,
+      "title": "E2E Chromium"
+    },
+    {
+      "project": "webkit",
+      "courseLessonPublicId": "cl-2",
+      "groupLessonPublicId": "gl-2",
+      "lessonNumber": 902,
+      "title": "E2E WebKit"
+    },
+    {
+      "project": "firefox",
+      "courseLessonPublicId": "cl-3",
+      "groupLessonPublicId": "gl-3",
+      "lessonNumber": 903,
+      "title": "E2E Firefox"
+    }
+  ],
+  "submissionTargets": [
+    {
+      "project": "chromium",
+      "courseLessonPublicId": "cl-4",
+      "groupLessonPublicId": "gl-4",
+      "lessonNumber": 911,
+      "title": "E2E сдача Chromium"
+    },
+    {
+      "project": "webkit",
+      "courseLessonPublicId": "cl-5",
+      "groupLessonPublicId": "gl-5",
+      "lessonNumber": 912,
+      "title": "E2E сдача WebKit"
+    },
+    {
+      "project": "firefox",
+      "courseLessonPublicId": "cl-6",
+      "groupLessonPublicId": "gl-6",
+      "lessonNumber": 913,
+      "title": "E2E сдача Firefox"
+    }
+  ]
+}

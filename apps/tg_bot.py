@@ -13,7 +13,7 @@ from helpers.shutdown import wait_for_valuable_tasks
 from helpers.trace import init_trace
 from helpers.trace_middleware import TraceMessageMiddleware, TraceCallbackMiddleware
 import db_methods as db
-from models.spreadsheets import google_spreadsheet_loader, update_from_google_if_db_is_empty
+from models.spreadsheets import google_spreadsheet_loader
 from handlers.student_handlers import register_group_switch_commands
 import handlers
 
@@ -65,8 +65,8 @@ async def on_startup(bot: Bot, **_kwargs):
 
     # Настраиваем загрузчик из гугль-таблиц
     google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
-    # Подгружаем данные, если база пуста
-    update_from_google_if_db_is_empty()
+    # A clean PWA database must stay clean. Importing the legacy Google sheet is
+    # now an explicit operator action, never an implicit bot-start side effect.
     register_group_switch_commands()
 
     if USE_WEBHOOKS:
@@ -74,7 +74,7 @@ async def on_startup(bot: Bot, **_kwargs):
 
     bot.username = (await bot.get_me()).username
 
-    await bot.post_logging_message(f'Бот начал свою работу')
+    await bot.post_logging_message('Бот начал свою работу')
     asyncio.create_task(log_bot_name(bot.username))
 
 
@@ -147,14 +147,17 @@ def start_bot_in_webhook_mode(app):
     setup_tgbot_webhook(app)
 
 
-def configue(app):
+def configure(app):
     dispatcher.startup.register(on_startup)
     dispatcher.shutdown.register(on_shutdown)
 
 
+configue = configure
+
+
 if __name__ == "__main__":
     app = web.Application()
-    configue(app)
+    configure(app)
     start_bot_in_polling_mode()
     # В режиме отладки запускаем без вебхуков
     asyncio.run(run_tg_bot_in_polling_mode())

@@ -1,0 +1,1539 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
+import { expect, userEvent, within } from 'storybook/test'
+
+import type { StaffFamilyDigestClient } from '@vmsh/app-shell'
+import fixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
+import { ContentNetworkError, type ContentApiClient } from '@vmsh/content'
+import {
+  ApiResponseError,
+  contentEtagSchema,
+  publishedContentSchema,
+  staffContentHistorySchema,
+  staffContentRevisionSchema,
+  webContentDocumentSchema,
+  type StaffContentHistory,
+} from '@vmsh/contracts'
+import { Button } from '@vmsh/ui'
+
+import { StaffContentWorkspace } from './content-page'
+import { BulkContentUpload } from './bulk-content-upload'
+import { problemReviewDraftStorageKey } from './problem-review-draft'
+import { ProblemReviewWorkflow } from './problem-review-workflow'
+import { RevisionAssetsRecovery } from './revision-assets-recovery'
+
+const revisionId = fixture.document.revisionId
+const groupLessonId = 'group-lesson-41-n'
+const storyDraftNamespace = 'storybook:staff-content'
+const webDocument = webContentDocumentSchema.parse(
+  JSON.parse(
+    JSON.stringify(fixture.document).replace(
+      '/student/api/v1/content/assets/asset:53a5d2ba',
+      '/content/geometry.svg',
+    ),
+  ),
+)
+const readyRevision = staffContentRevisionSchema.parse({
+  revisionId,
+  sourceId: 'content-source-41-condition',
+  groupLessonId,
+  courseId: 'course-math-5-7',
+  groupId: 'group-beginner',
+  kind: 'condition',
+  logicalFilename: 'condition.tex',
+  revisionNumber: 1,
+  uploadedAt: '2026-01-26T12:30:00Z',
+  status: 'ready',
+  version: 2,
+  compileLeaseExpiresAt: null,
+  compileAttempt: 1,
+  sourceSha256: fixture.document.sourceSha256,
+  parserVersion: 'vmsh-content-1',
+  diagnostics: [
+    {
+      code: 'latex.layout_crosses_semantic_boundary',
+      severity: 'warning',
+      message: 'Команда вертикального отступа не влияет на смысл документа.',
+      span: {
+        source_name: 'condition.tex',
+        start: { offset: 18, line: 3, column: 1 },
+        end: { offset: 24, line: 3, column: 7 },
+      },
+      recovery: null,
+    },
+  ],
+  missingAssets: [],
+  requestId: 'storybook-content',
+})
+
+function storyClient(overrides: Partial<ContentApiClient> = {}): ContentApiClient {
+  return {
+    audience: 'staff',
+    uploadSource(input) {
+      return Promise.resolve({
+        data: {
+          ...readyRevision,
+          kind: input.kind,
+          status: 'uploaded',
+          version: 1,
+          compileAttempt: 0,
+        },
+        etag: contentEtagSchema.parse(`"${revisionId}:v1"`),
+      })
+    },
+    uploadTargets() {
+      return Promise.resolve({
+        courseLessonId: 'course-lesson-41',
+        courseId: 'course-math-5-7',
+        courseName: 'Математика 5–7',
+        lessonNumber: 41,
+        targets: [
+          {
+            groupLessonId,
+            groupId: 'group-beginner',
+            groupName: 'Начинающие',
+            groupShortCode: 'н',
+            colorKey: 'level-1',
+            status: 'active',
+          },
+          {
+            groupLessonId: 'group-lesson-41-p',
+            groupId: 'group-continuing',
+            groupName: 'Продолжающие',
+            groupShortCode: 'п',
+            colorKey: 'level-2',
+            status: 'active',
+          },
+        ],
+        requestId: 'storybook-upload-targets',
+      })
+    },
+    compileRevision() {
+      return Promise.resolve({
+        data: readyRevision,
+        etag: contentEtagSchema.parse(`"${revisionId}:v2"`),
+      })
+    },
+    diagnostics() {
+      return Promise.resolve({
+        data: readyRevision,
+        etag: contentEtagSchema.parse(`"${revisionId}:v2"`),
+      })
+    },
+    revisionAssets(targetRevisionId) {
+      return Promise.resolve({
+        data: {
+          revisionId: targetRevisionId,
+          status: 'ready',
+          version: 2,
+          missingAssets: [],
+          assets: [],
+          requestId: 'storybook-assets',
+        },
+        etag: contentEtagSchema.parse(`"${targetRevisionId}:v2"`),
+      })
+    },
+    uploadRevisionAsset() {
+      return Promise.reject(new Error('В этом Storybook-сценарии нет недостающих ресурсов'))
+    },
+    problemMatches(targetRevisionId) {
+      const etag = contentEtagSchema.parse(`"review-${targetRevisionId}:v1"`)
+      return Promise.resolve({
+        data: {
+          revisionId: targetRevisionId,
+          groupLessonId,
+          version: 1,
+          etag,
+          items: [],
+          candidates: [],
+          requestId: 'storybook-problem-matches',
+        },
+        etag,
+      })
+    },
+    resolveProblemMatches() {
+      return Promise.reject(new Error('В базовом сценарии задачи уже сопоставлены'))
+    },
+    metadataGrid(_targetGroupLessonId, targetRevisionId) {
+      const etag = contentEtagSchema.parse(`"review-${targetRevisionId}:v1"`)
+      return Promise.resolve({
+        data: {
+          revisionId: targetRevisionId,
+          groupLessonId,
+          version: 1,
+          etag,
+          rows: [],
+          requestId: 'storybook-metadata-grid',
+        },
+        etag,
+      })
+    },
+    saveMetadataGrid() {
+      return Promise.reject(new Error('В базовом сценарии метаданные уже подтверждены'))
+    },
+    preview(_revisionId, kind) {
+      return Promise.resolve(
+        kind === 'web'
+          ? { revisionId, kind: 'web', document: webDocument }
+          : kind === 'telegram'
+            ? {
+                revisionId,
+                kind: 'telegram',
+                html: '<h2>Занятие 41</h2><p>Решите задачи.</p><tg-math>n^2</tg-math>',
+              }
+            : {
+                revisionId,
+                kind: 'pdf',
+                src: `/staff/api/v1/content/revisions/${revisionId}/pdf`,
+                contentSha256: 'd'.repeat(64),
+                byteSize: 42_179,
+                rendererVersion: 'vmsh-content-pdf/1',
+              },
+      )
+    },
+    history() {
+      return Promise.resolve(
+        staffContentHistorySchema.parse({
+          groupLessonId,
+          courseId: 'course-math-5-7',
+          groupId: 'group-beginner',
+          businessTimezone: 'Europe/Moscow',
+          materials: ['condition', 'hint', 'solution'].map((kind) => ({
+            kind,
+            revisions: [],
+            currentPublished: null,
+            currentScheduled: null,
+            publicationHistory: [],
+          })),
+          requestId: 'storybook-history',
+        }),
+      )
+    },
+    publish(input) {
+      const scheduled = input.mode === 'schedule'
+      return Promise.resolve({
+        data: {
+          publicationId: scheduled ? 'publication-scheduled-41' : 'publication-41',
+          groupLessonId,
+          revisionId,
+          kind: input.kind,
+          state: scheduled ? 'scheduled' : 'published',
+          version: 1,
+          scheduledAt: scheduled ? '2026-02-01T10:00:00Z' : null,
+          publishedAt: scheduled ? null : '2026-01-26T13:00:00Z',
+          hiddenAt: null,
+          requestId: 'storybook-publish',
+        },
+        etag: contentEtagSchema.parse(
+          scheduled ? '"publication-scheduled-41:v1"' : '"publication-41:v1"',
+        ),
+      })
+    },
+    rollback() {
+      return Promise.reject(new Error('Для первого Storybook revision откат ещё недоступен'))
+    },
+    cancelScheduled() {
+      return Promise.reject(new Error('В этом Storybook-сценарии расписание ещё не создано'))
+    },
+    hidePublished() {
+      return Promise.reject(new Error('В этом Storybook-сценарии скрытие не выполняется'))
+    },
+    published() {
+      return Promise.resolve(
+        publishedContentSchema.parse({
+          groupLessonId,
+          courseId: 'course-math-5-7',
+          groupId: 'group-beginner',
+          kind: 'condition',
+          publicationId: 'publication-41',
+          publicationVersion: 1,
+          publishedAt: '2026-01-26T13:00:00Z',
+          revisionId,
+          document: webDocument,
+        }),
+      )
+    },
+    revealStudentProblemMaterial() {
+      return Promise.reject(new Error('Staff не раскрывает ученические материалы'))
+    },
+    ...overrides,
+  }
+}
+
+function publishedHistory(
+  publicationId: string,
+  publishedRevisionId: string,
+  version: number,
+): StaffContentHistory {
+  const publication = {
+    publicationId,
+    revisionId: publishedRevisionId,
+    kind: 'condition' as const,
+    state: 'published' as const,
+    version,
+    scheduledAt: null,
+    publishedAt: '2026-01-26T13:00:00Z',
+    hiddenAt: null,
+    etag: contentEtagSchema.parse(`"${publicationId}:v${version}"`),
+  }
+  return staffContentHistorySchema.parse({
+    groupLessonId,
+    courseId: 'course-math-5-7',
+    groupId: 'group-beginner',
+    businessTimezone: 'Europe/Moscow',
+    materials: [
+      {
+        kind: 'condition',
+        revisions: [
+          {
+            ...readyRevision,
+            revisionId: publishedRevisionId,
+            revisionNumber: version,
+            etag: contentEtagSchema.parse(`"${publishedRevisionId}:v2"`),
+          },
+        ],
+        currentPublished: publication,
+        currentScheduled: null,
+        publicationHistory: [publication],
+      },
+      {
+        kind: 'hint',
+        revisions: [],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      },
+      {
+        kind: 'solution',
+        revisions: [],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      },
+    ],
+    requestId: `history-${version}`,
+  })
+}
+
+function revisionHistoryScenario(): StaffContentHistory {
+  const revision = (
+    revisionPublicId: string,
+    revisionNumber: number,
+    status: 'uploaded' | 'compiling',
+    lease: string | null,
+  ) => ({
+    ...readyRevision,
+    revisionId: revisionPublicId,
+    revisionNumber,
+    status,
+    version: status === 'uploaded' ? 1 : 2,
+    compileLeaseExpiresAt: lease,
+    compileAttempt: status === 'uploaded' ? 0 : 1,
+    etag: contentEtagSchema.parse(`"${revisionPublicId}:v${status === 'uploaded' ? 1 : 2}"`),
+  })
+  return staffContentHistorySchema.parse({
+    groupLessonId,
+    courseId: 'course-math-5-7',
+    groupId: 'group-beginner',
+    businessTimezone: 'Europe/Moscow',
+    materials: [
+      {
+        kind: 'condition',
+        revisions: [
+          revision(revisionId, 1, 'uploaded', null),
+          revision('revision-expired-compile', 2, 'compiling', '2026-01-01T10:00:00Z'),
+          revision('revision-active-compile', 3, 'compiling', '2099-01-01T10:00:00Z'),
+        ],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      },
+      ...(['hint', 'solution'] as const).map((kind) => ({
+        kind,
+        revisions: [],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      })),
+    ],
+    requestId: 'history-recovery',
+  })
+}
+
+function missingAssetHistory(): StaffContentHistory {
+  const missingRevision = {
+    ...readyRevision,
+    status: 'uploaded' as const,
+    version: 1,
+    compileAttempt: 0,
+    missingAssets: ['figures/rook.png'],
+    etag: contentEtagSchema.parse(`"${revisionId}:v1"`),
+  }
+  return staffContentHistorySchema.parse({
+    groupLessonId,
+    courseId: 'course-math-5-7',
+    groupId: 'group-beginner',
+    businessTimezone: 'Europe/Moscow',
+    materials: [
+      {
+        kind: 'condition',
+        revisions: [missingRevision],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      },
+      ...(['hint', 'solution'] as const).map((kind) => ({
+        kind,
+        revisions: [],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      })),
+    ],
+    requestId: 'history-missing-asset',
+  })
+}
+
+function rollbackHistory(): StaffContentHistory {
+  const revisions = [1, 2, 3].map((revisionNumber) => {
+    const revisionPublicId = `revision-ready-${revisionNumber}`
+    return {
+      ...readyRevision,
+      revisionId: revisionPublicId,
+      revisionNumber,
+      version: 2,
+      etag: contentEtagSchema.parse(`"${revisionPublicId}:v2"`),
+    }
+  })
+  const publication = {
+    publicationId: 'publication-current-rollback',
+    revisionId: 'revision-ready-3',
+    kind: 'condition' as const,
+    state: 'published' as const,
+    version: 4,
+    scheduledAt: null,
+    publishedAt: '2026-07-27T10:00:00Z',
+    hiddenAt: null,
+    etag: contentEtagSchema.parse('"publication-current-rollback:v4"'),
+  }
+  return staffContentHistorySchema.parse({
+    groupLessonId,
+    courseId: 'course-math-5-7',
+    groupId: 'group-beginner',
+    businessTimezone: 'Europe/Moscow',
+    materials: [
+      {
+        kind: 'condition',
+        revisions,
+        currentPublished: publication,
+        currentScheduled: null,
+        publicationHistory: [publication],
+      },
+      ...(['hint', 'solution'] as const).map((kind) => ({
+        kind,
+        revisions: [],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      })),
+    ],
+    requestId: 'history-rollback',
+  })
+}
+
+const meta = {
+  title: 'Pages/Staff/Content publication',
+  parameters: { layout: 'fullscreen' },
+} satisfies Meta
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const UploadPreviewPublish: Story = {
+  name: 'Upload → diagnostics → two previews → publish',
+  render: () => (
+    <StaffContentWorkspace
+      client={storyClient()}
+      draftNamespace={storyDraftNamespace}
+      groupLessonId={groupLessonId}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const workflow = within(await canvas.findByTestId('content-workflow-condition'))
+    const conditionInput = await workflow.findByLabelText('LaTeX-файл')
+    await userEvent.upload(
+      conditionInput,
+      new File(['\\задача Загаданное число \\кзадача'], 'condition.tex', {
+        type: 'text/plain',
+      }),
+    )
+    const uploadButton = await workflow.findByRole('button', { name: 'Загрузить и проверить' })
+    await expect(uploadButton).toBeEnabled()
+    await userEvent.click(uploadButton)
+
+    await expect(await canvas.findByText('Занятие 41 · Начинающие')).toBeVisible()
+    await expect(canvas.getByText(/3:1 · Команда вертикального отступа/)).toBeVisible()
+    await expect(canvas.getByRole('tab', { name: 'PWA' })).toBeVisible()
+    await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('tab', { name: 'PDF' }))
+    await expect(canvas.getByRole('link', { name: 'Открыть PDF' })).toHaveAttribute(
+      'href',
+      `/staff/api/v1/content/revisions/${revisionId}/pdf`,
+    )
+    await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
+    await expect(canvas.getByText(/Опубликовать условие версии 1 сейчас/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
+    await expect(canvas.getByText('Опубликовано')).toBeVisible()
+    await expect(canvas.getByText(/Опубликована версия 1 · condition\.tex/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Скрыть опубликованное' }))
+    await expect(canvas.getByText(/Скрыть опубликованное условие/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Отмена' }))
+    await expect(canvas.getByRole('button', { name: 'Скрыть опубликованное' })).toBeVisible()
+  },
+}
+
+export const FamilyDigestAfterReview: Story = {
+  name: 'Explicit Family digest after review',
+  render: () => {
+    let sent = false
+    const digestClient: StaffFamilyDigestClient = {
+      preview() {
+        return Promise.resolve({
+          schemaVersion: 1,
+          digest: {
+            groupLessonId,
+            courseId: 'course-math-5-7',
+            courseName: 'Математика 5–7',
+            groupId: 'group-beginner',
+            groupName: 'Начинающие',
+            lessonNumber: 41,
+            studentCount: 28,
+            familyCount: 26,
+            alreadySentFamilyCount: sent ? 26 : 0,
+            pendingFamilyCount: sent ? 0 : 26,
+            unlinkedStudents: [{ studentId: 'student-without-family', displayName: 'Иванов Иван' }],
+          },
+          requestId: 'storybook-family-digest-preview',
+        })
+      },
+      send() {
+        sent = true
+        return this.preview(groupLessonId).then((response) => ({
+          ...response,
+          createdFamilyCount: 26,
+          requestId: 'storybook-family-digest-send',
+        }))
+      },
+    }
+    return (
+      <StaffContentWorkspace
+        client={storyClient()}
+        draftNamespace={storyDraftNamespace}
+        familyDigest={{
+          client: digestClient,
+          scope: { audience: 'staff', accountId: 'staff.admin' },
+        }}
+        groupLessonId={groupLessonId}
+      />
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Итоги для семей')).toBeVisible()
+    await userEvent.click(await canvas.findByRole('button', { name: 'Разослать итог' }))
+    await expect(canvas.getByRole('alertdialog')).toHaveTextContent('Отправить итог 26 семьям?')
+    await userEvent.click(canvas.getByRole('button', { name: 'Отправить' }))
+    await expect(await canvas.findByText('Итог уже разослан')).toBeVisible()
+  },
+}
+
+export const BulkUploadExplicitMapping: Story = {
+  name: 'Bulk upload → explicit groups and partial result',
+  render: () => {
+    const client = storyClient({
+      uploadSource(input) {
+        const targetRevisionId = `revision-${input.groupLessonId}-${input.kind}`
+        return Promise.resolve({
+          data: {
+            ...readyRevision,
+            revisionId: targetRevisionId,
+            groupLessonId: input.groupLessonId,
+            kind: input.kind,
+            logicalFilename: input.logicalFilename,
+            status: 'uploaded',
+            version: 1,
+            compileAttempt: 0,
+          },
+          etag: contentEtagSchema.parse(`"${targetRevisionId}:v1"`),
+        })
+      },
+      compileRevision(targetRevisionId) {
+        if (targetRevisionId.includes('group-lesson-41-p')) {
+          return Promise.reject(new Error('Не найден рисунок diagrams/angle.svg'))
+        }
+        return Promise.resolve({
+          data: {
+            ...readyRevision,
+            revisionId: targetRevisionId,
+          },
+          etag: contentEtagSchema.parse(`"${targetRevisionId}:v2"`),
+        })
+      },
+    })
+    return (
+      <div className="max-w-6xl p-4">
+        <BulkContentUpload
+          client={client}
+          groupLessonId={groupLessonId}
+          onCompleted={() => Promise.resolve()}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(canvasElement.ownerDocument.body)
+    const input = await canvas.findByLabelText('LaTeX-файлы')
+    await userEvent.upload(input, [
+      new File(['\\задача Простая задача \\кзадача'], 'beginners.tex', {
+        type: 'text/plain',
+      }),
+      new File(['\\задача Задача с рисунком \\кзадача'], 'continuing.tex', {
+        type: 'text/plain',
+      }),
+    ])
+
+    await userEvent.click(await canvas.findByLabelText('Группа для файла beginners.tex'))
+    await userEvent.click(await body.findByRole('option', { name: /Начинающие/ }))
+
+    await userEvent.click(await canvas.findByLabelText('Группа для файла continuing.tex'))
+    await userEvent.click(await body.findByRole('option', { name: /Продолжающие/ }))
+
+    await expect(canvas.getByText('Начинающие')).toBeVisible()
+    await expect(canvas.getByText('Продолжающие')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Загрузить набор и проверить' }))
+    await expect(await canvas.findByText('Готово: 1 · требуют внимания: 1')).toBeVisible()
+    await expect(canvas.getByText('Не найден рисунок diagrams/angle.svg')).toBeVisible()
+    await expect(canvas.getByText(/Загрузка ничего не публикует/)).toBeVisible()
+    await expect(canvas.getByRole('link', { name: 'Открыть недостающие рисунки' })).toBeVisible()
+  },
+}
+
+export const ResumeInterruptedRevision: Story = {
+  name: 'Reload → resume uploaded and expired compile',
+  render: () => (
+    <StaffContentWorkspace
+      client={storyClient({ history: () => Promise.resolve(revisionHistoryScenario()) })}
+      draftNamespace={storyDraftNamespace}
+      groupLessonId={groupLessonId}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      await canvas.findByRole('button', { name: 'Найти недостающие рисунки в версии 1' }),
+    ).toBeVisible()
+    await expect(
+      canvas.getByRole('button', { name: 'Найти недостающие рисунки в версии 2' }),
+    ).toBeVisible()
+    await expect(canvas.getByText(/Версия 3 проверяется/)).toBeVisible()
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Найти недостающие рисунки в версии 1' }),
+    )
+    await expect(await canvas.findByRole('tab', { name: 'PWA' })).toBeVisible()
+    await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
+  },
+}
+
+export const RecoverMissingAsset: Story = {
+  name: 'Missing asset → reuse → recompile',
+  render: () => {
+    let compileCall = 0
+    let assetAttached = false
+    let compiledReady = false
+    const missingRevision = staffContentRevisionSchema.parse({
+      ...readyRevision,
+      status: 'uploaded',
+      version: 2,
+      compileAttempt: 1,
+      missingAssets: ['figures/rook.png'],
+      requestId: 'storybook-missing-asset',
+    })
+    const attachedAsset = {
+      assetId: 'asset-rook',
+      contentSha256: 'b'.repeat(64),
+      src: '/pwa-content-assets/asset-rook',
+      mediaType: 'image/webp' as const,
+      width: 1280,
+      height: 720,
+    }
+    const client = storyClient({
+      history: () => Promise.resolve(missingAssetHistory()),
+      compileRevision() {
+        compileCall += 1
+        if (compileCall === 1) {
+          return Promise.reject(
+            new ApiResponseError(422, {
+              error: {
+                code: 'content_assets_missing',
+                message: 'Прикрепите недостающие ресурсы',
+                requestId: 'storybook-compile-missing',
+                details: { missingAssets: ['figures/rook.png'] },
+              },
+            }),
+          )
+        }
+        compiledReady = true
+        return Promise.resolve({
+          data: { ...readyRevision, version: 4 },
+          etag: contentEtagSchema.parse(`"${revisionId}:v4"`),
+        })
+      },
+      diagnostics() {
+        return Promise.resolve({
+          data: compiledReady
+            ? { ...readyRevision, version: 4 }
+            : assetAttached
+              ? { ...missingRevision, version: 3, missingAssets: [] }
+              : missingRevision,
+          etag: contentEtagSchema.parse(
+            `"${revisionId}:v${compiledReady ? 4 : assetAttached ? 3 : 2}"`,
+          ),
+        })
+      },
+      revisionAssets() {
+        return Promise.resolve({
+          data: {
+            revisionId,
+            status: 'uploaded',
+            version: assetAttached ? 3 : 2,
+            missingAssets: assetAttached ? [] : ['figures/rook.png'],
+            assets: [
+              {
+                logicalName: 'figures/rook.png',
+                sourceKind: 'figure',
+                status: assetAttached ? ('attached' as const) : ('missing' as const),
+                acceptedUploadKinds: ['raster', 'svg'],
+                asset: assetAttached ? attachedAsset : null,
+              },
+            ],
+            requestId: 'storybook-revision-assets',
+          },
+          etag: contentEtagSchema.parse(`"${revisionId}:v${assetAttached ? 3 : 2}"`),
+        })
+      },
+      uploadRevisionAsset() {
+        assetAttached = true
+        return Promise.resolve({
+          data: {
+            revisionId,
+            status: 'uploaded',
+            version: 3,
+            logicalName: 'figures/rook.png',
+            sourceKind: 'figure',
+            asset: attachedAsset,
+            reused: true,
+            requestId: 'storybook-asset-reused',
+          },
+          etag: contentEtagSchema.parse(`"${revisionId}:v3"`),
+        })
+      },
+    })
+    return (
+      <StaffContentWorkspace
+        client={client}
+        draftNamespace={storyDraftNamespace}
+        groupLessonId={groupLessonId}
+      />
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(
+      await canvas.findByRole('button', { name: 'Найти недостающие рисунки в версии 1' }),
+    )
+    await expect(await canvas.findByText('figures/rook.png')).toBeVisible()
+    await userEvent.upload(
+      canvas.getByLabelText('Изображение'),
+      new File(['synthetic image'], 'rook.png', { type: 'image/png' }),
+    )
+    await expect(canvas.getByText('Выбран: rook.png')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Загрузить' }))
+    await expect(await canvas.findByText('Переиспользован')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Повторить сборку материала' }))
+    await expect(await canvas.findByRole('tab', { name: 'PWA' })).toBeVisible()
+    await expect(canvas.queryByText('figures/rook.png')).not.toBeInTheDocument()
+  },
+}
+
+export const AssetUploadErrorKeepsSelection: Story = {
+  name: 'Asset upload error → keep file for retry',
+  render: () => {
+    const client = storyClient({
+      revisionAssets() {
+        return Promise.resolve({
+          data: {
+            revisionId,
+            status: 'uploaded',
+            version: 2,
+            missingAssets: ['figures/rook.png'],
+            assets: [
+              {
+                logicalName: 'figures/rook.png',
+                sourceKind: 'figure',
+                status: 'missing',
+                acceptedUploadKinds: ['raster'],
+                asset: null,
+              },
+            ],
+            requestId: 'storybook-revision-assets-error',
+          },
+          etag: contentEtagSchema.parse(`"${revisionId}:v2"`),
+        })
+      },
+      uploadRevisionAsset() {
+        return Promise.reject(new ContentNetworkError({ cause: new TypeError('socket closed') }))
+      },
+    })
+    return (
+      <div className="max-w-2xl p-4">
+        <RevisionAssetsRecovery
+          client={client}
+          onCompile={() => Promise.resolve()}
+          revisionId={revisionId}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.upload(
+      await canvas.findByLabelText('Изображение'),
+      new File(['synthetic image'], 'rook.png', { type: 'image/png' }),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Загрузить' }))
+    await expect(
+      await canvas.findByText('Нет связи с сервером. Проверьте подключение и повторите действие.'),
+    ).toBeVisible()
+    await expect(canvas.getByText('Выбран: rook.png')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Повторить' })).toBeEnabled()
+  },
+}
+
+export const RollbackReadyHistory: Story = {
+  name: 'Rollback → select any ready revision',
+  render: () => {
+    const client = storyClient({
+      history: () => Promise.resolve(rollbackHistory()),
+      rollback(_current, targetRevisionId) {
+        return Promise.resolve({
+          data: {
+            publicationId: 'publication-after-rollback',
+            groupLessonId,
+            revisionId: targetRevisionId,
+            kind: 'condition',
+            state: 'published',
+            version: 1,
+            scheduledAt: null,
+            publishedAt: '2026-07-28T10:00:00Z',
+            hiddenAt: null,
+            requestId: 'storybook-rollback',
+          },
+          etag: contentEtagSchema.parse('"publication-after-rollback:v1"'),
+        })
+      },
+    })
+    return (
+      <StaffContentWorkspace
+        client={client}
+        draftNamespace={storyDraftNamespace}
+        groupLessonId={groupLessonId}
+      />
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const selector = await canvas.findByLabelText('Версия для отката')
+    await expect(selector).toHaveTextContent('Версия 2')
+    await userEvent.click(selector)
+    const body = within(canvasElement.ownerDocument.body)
+    await userEvent.click(await body.findByRole('option', { name: /Версия 1/ }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Откатить опубликованное' }))
+    await expect(canvas.getByText(/Вернуть опубликованный материал к версии 1/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
+    await expect(canvas.getByText(/Опубликована версия 1/)).toBeVisible()
+  },
+}
+
+export const ScheduleInBusinessTimezone: Story = {
+  name: 'Schedule → authoritative lesson timezone',
+  render: () => (
+    <StaffContentWorkspace
+      client={storyClient({
+        history: () => Promise.resolve(publishedHistory('publication-current', revisionId, 1)),
+      })}
+      draftNamespace={storyDraftNamespace}
+      groupLessonId={groupLessonId}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const dateInput = await canvas.findByLabelText('Опубликовать по расписанию')
+    await userEvent.type(dateInput, '2026-02-01T13:00')
+    await userEvent.click(canvas.getByRole('button', { name: 'Запланировать' }))
+    await expect(canvas.getByText(/2026-02-01 13:00 \(Europe\/Moscow\)/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
+    await expect(canvas.getAllByText(/Europe\/Moscow/).length).toBeGreaterThanOrEqual(2)
+  },
+}
+
+export const OptimisticConflictRefetch: Story = {
+  name: 'Optimistic conflict → authoritative refetch',
+  render: () => {
+    let historyCall = 0
+    const client = storyClient({
+      history() {
+        historyCall += 1
+        return Promise.resolve(
+          historyCall === 1
+            ? publishedHistory('publication-before-conflict', revisionId, 1)
+            : publishedHistory('publication-after-conflict', 'revision-after-conflict', 2),
+        )
+      },
+      publish() {
+        return Promise.reject(
+          new ApiResponseError(409, {
+            error: {
+              code: 'version_conflict',
+              message: 'Публикация уже изменилась',
+              requestId: 'storybook-conflict',
+            },
+          }),
+        )
+      },
+    })
+    return (
+      <StaffContentWorkspace
+        client={client}
+        draftNamespace={storyDraftNamespace}
+        groupLessonId={groupLessonId}
+      />
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
+
+    await expect(
+      await canvas.findByText('Материал уже изменён. Обновляем версии и публикации…'),
+    ).toBeVisible()
+    await expect(await canvas.findByText(/Опубликована версия/)).toBeVisible()
+  },
+}
+
+export const MatchThenReviewMetadata: Story = {
+  name: 'Problem matching → condition metadata → ready',
+  render: () => {
+    let matched = false
+    let metadataSaved = false
+    const unresolvedEtag = contentEtagSchema.parse('"review-story-problem:v1"')
+    const matchedEtag = contentEtagSchema.parse('"review-story-problem:v2"')
+    const metadataEtag = contentEtagSchema.parse('"review-story-problem:v3"')
+    const candidate = {
+      problemId: -41,
+      problemNumber: 1,
+      item: '',
+      title: '',
+      problemType: 2,
+      answerType: null,
+      answerValidation: null,
+      validationError: null,
+      correctAnswer: null,
+      correctAnswerChecker: null,
+      wrongAnswer: null,
+      congratulation: null,
+    } as const
+    const reviewItem = {
+      sourceOrdinal: 1,
+      sourceItem: '1',
+      displayNumber: '1',
+      sourceTitle: 'Орехи и клетки',
+      suggestedProblemId: null,
+    } as const
+    const problemMatches = () =>
+      Promise.resolve({
+        data: {
+          revisionId,
+          groupLessonId,
+          version: matched ? 2 : 1,
+          etag: matched ? matchedEtag : unresolvedEtag,
+          items: [
+            {
+              ...reviewItem,
+              match: matched ? { decision: 'insert_new' as const, problemId: -41 } : null,
+            },
+          ],
+          candidates: matched ? [candidate] : [],
+          requestId: 'storybook-problem-review',
+        },
+        etag: matched ? matchedEtag : unresolvedEtag,
+      })
+    const metadataGrid = () => {
+      const etag = metadataSaved ? metadataEtag : matchedEtag
+      return Promise.resolve({
+        data: {
+          revisionId,
+          groupLessonId,
+          version: metadataSaved ? 3 : 2,
+          etag,
+          rows: [
+            {
+              problemId: -41,
+              sourceOrdinal: 1,
+              sourceItem: '1',
+              displayNumber: '1',
+              title: metadataSaved ? 'Орехи и клетки' : '',
+              problemType: 2,
+              answerType: null,
+              answerValidation: null,
+              validationError: null,
+              correctAnswer: null,
+              correctAnswerChecker: null,
+              wrongAnswer: null,
+              congratulation: null,
+              reviewed: metadataSaved,
+            },
+          ],
+          requestId: 'storybook-metadata-review',
+        },
+        etag,
+      })
+    }
+    const client = storyClient({
+      problemMatches,
+      resolveProblemMatches() {
+        matched = true
+        return problemMatches()
+      },
+      metadataGrid,
+      saveMetadataGrid() {
+        metadataSaved = true
+        return metadataGrid()
+      },
+    })
+    return (
+      <div className="max-w-6xl p-4">
+        <ProblemReviewWorkflow
+          client={client}
+          draftNamespace={storyDraftNamespace}
+          groupLessonId={groupLessonId}
+          kind="condition"
+          onReadyChange={() => undefined}
+          revisionId={revisionId}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const storage = canvasElement.ownerDocument.defaultView?.localStorage
+    const matchingKey = problemReviewDraftStorageKey(
+      storyDraftNamespace,
+      'matching',
+      groupLessonId,
+      revisionId,
+    )
+    const metadataKey = problemReviewDraftStorageKey(
+      storyDraftNamespace,
+      'metadata',
+      groupLessonId,
+      revisionId,
+    )
+    const title = await canvas.findByLabelText('Название, строка 1')
+    await userEvent.type(title, 'Орехи и клетки')
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить метаданные' }))
+    await expect(await canvas.findByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
+    await expect(storage?.getItem(matchingKey)).toBeNull()
+    await expect(storage?.getItem(metadataKey)).toBeNull()
+  },
+}
+
+export const HintNeedsOnlyStructuralMatching: Story = {
+  name: 'Hint matching → no duplicate metadata',
+  render: () => {
+    const etag = contentEtagSchema.parse('"review-story-hint:v2"')
+    return (
+      <div className="max-w-4xl p-4">
+        <ProblemReviewWorkflow
+          client={storyClient({
+            problemMatches() {
+              return Promise.resolve({
+                data: {
+                  revisionId,
+                  groupLessonId,
+                  version: 2,
+                  etag,
+                  items: [
+                    {
+                      sourceOrdinal: 1,
+                      sourceItem: '1',
+                      displayNumber: '1',
+                      sourceTitle: 'Посмотрите на чётность',
+                      suggestedProblemId: -41,
+                      match: { decision: 'auto_position', problemId: -41 },
+                    },
+                  ],
+                  candidates: [
+                    {
+                      problemId: -41,
+                      problemNumber: 1,
+                      item: '',
+                      title: 'Орехи и клетки',
+                      problemType: 2,
+                      answerType: null,
+                      answerValidation: null,
+                      validationError: null,
+                      correctAnswer: null,
+                      correctAnswerChecker: null,
+                      wrongAnswer: null,
+                      congratulation: null,
+                    },
+                  ],
+                  requestId: 'storybook-hint-review',
+                },
+                etag,
+              })
+            },
+            metadataGrid() {
+              return Promise.reject(new Error('Hint must not request metadata'))
+            },
+          })}
+          draftNamespace={storyDraftNamespace}
+          groupLessonId={groupLessonId}
+          kind="hint"
+          onReadyChange={() => undefined}
+          revisionId={revisionId}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      await canvas.findByText('Сопоставление задач подтверждено; метаданные берутся из условия.'),
+    ).toBeVisible()
+  },
+}
+
+export const MatchingDraftSurvivesReload: Story = {
+  name: 'Matching draft survives reload',
+  render: () => {
+    function Harness() {
+      const [generation, setGeneration] = useState(0)
+      const draftRevisionId = 'revision-matching-draft-recovery'
+      const etag = contentEtagSchema.parse('"review-matching-draft-recovery:v1"')
+      const client = storyClient({
+        problemMatches() {
+          return Promise.resolve({
+            data: {
+              revisionId: draftRevisionId,
+              groupLessonId,
+              version: 1,
+              etag,
+              items: [
+                {
+                  sourceOrdinal: 1,
+                  sourceItem: '1',
+                  displayNumber: '1',
+                  sourceTitle: 'Черновик сопоставления',
+                  suggestedProblemId: null,
+                  match: null,
+                },
+              ],
+              candidates: [
+                {
+                  problemId: -61,
+                  problemNumber: 7,
+                  item: '',
+                  title: 'Старая задача с другой структурой',
+                  problemType: 2,
+                  answerType: null,
+                  answerValidation: null,
+                  validationError: null,
+                  correctAnswer: null,
+                  correctAnswerChecker: null,
+                  wrongAnswer: null,
+                  congratulation: null,
+                },
+              ],
+              requestId: 'storybook-matching-draft',
+            },
+            etag,
+          })
+        },
+      })
+      return (
+        <div className="max-w-4xl space-y-3 p-4">
+          <Button onClick={() => setGeneration((value) => value + 1)} size="sm" variant="outline">
+            Перезагрузить интерфейс
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            draftNamespace={storyDraftNamespace}
+            groupLessonId={groupLessonId}
+            key={generation}
+            kind="condition"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const selector = await canvas.findByLabelText('Сопоставление задачи 1')
+    await userEvent.selectOptions(selector, 'insert_new')
+    await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
+    await expect(await canvas.findByLabelText('Сопоставление задачи 1')).toHaveValue('insert_new')
+  },
+}
+
+export const MetadataDraftSurvivesReload: Story = {
+  name: 'Metadata draft survives reload',
+  render: () => {
+    function Harness() {
+      const [generation, setGeneration] = useState(0)
+      const draftRevisionId = 'revision-metadata-draft-recovery'
+      const etag = contentEtagSchema.parse('"review-metadata-draft-recovery:v2"')
+      const client = storyClient({
+        problemMatches() {
+          return Promise.resolve({
+            data: {
+              revisionId: draftRevisionId,
+              groupLessonId,
+              version: 2,
+              etag,
+              items: [
+                {
+                  sourceOrdinal: 1,
+                  sourceItem: '1',
+                  displayNumber: '1',
+                  sourceTitle: 'Черновик метаданных',
+                  suggestedProblemId: -51,
+                  match: { decision: 'auto_position', problemId: -51 },
+                },
+              ],
+              candidates: [
+                {
+                  problemId: -51,
+                  problemNumber: 1,
+                  item: '',
+                  title: '',
+                  problemType: 2,
+                  answerType: null,
+                  answerValidation: null,
+                  validationError: null,
+                  correctAnswer: null,
+                  correctAnswerChecker: null,
+                  wrongAnswer: null,
+                  congratulation: null,
+                },
+              ],
+              requestId: 'storybook-metadata-draft-match',
+            },
+            etag,
+          })
+        },
+        metadataGrid() {
+          return Promise.resolve({
+            data: {
+              revisionId: draftRevisionId,
+              groupLessonId,
+              version: 2,
+              etag,
+              rows: [
+                {
+                  problemId: -51,
+                  sourceOrdinal: 1,
+                  sourceItem: '1',
+                  displayNumber: '1',
+                  title: '',
+                  problemType: 2,
+                  answerType: null,
+                  answerValidation: null,
+                  validationError: null,
+                  correctAnswer: null,
+                  correctAnswerChecker: null,
+                  wrongAnswer: null,
+                  congratulation: null,
+                  reviewed: false,
+                },
+              ],
+              requestId: 'storybook-metadata-draft-grid',
+            },
+            etag,
+          })
+        },
+      })
+      return (
+        <div className="max-w-6xl space-y-3 p-4">
+          <Button onClick={() => setGeneration((value) => value + 1)} size="sm" variant="outline">
+            Перезагрузить интерфейс
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            draftNamespace={storyDraftNamespace}
+            groupLessonId={groupLessonId}
+            key={generation}
+            kind="condition"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const key = problemReviewDraftStorageKey(
+      storyDraftNamespace,
+      'metadata',
+      groupLessonId,
+      'revision-metadata-draft-recovery',
+    )
+    canvasElement.ownerDocument.defaultView?.localStorage.removeItem(key)
+    const title = await canvas.findByLabelText('Название, строка 1')
+    await userEvent.type(title, 'Сохранённый локально заголовок')
+    await expect(canvasElement.ownerDocument.defaultView?.localStorage.getItem(key)).toContain(
+      'Сохранённый локально заголовок',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue(
+      'Сохранённый локально заголовок',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Отменить правки' }))
+    await expect(canvas.getByLabelText('Название, строка 1')).toHaveValue('')
+    await expect(canvasElement.ownerDocument.defaultView?.localStorage.getItem(key)).toBeNull()
+  },
+}
+
+function metadataDraftClient(
+  draftRevisionId: string,
+  etagValue: () => string,
+  saveMetadataGrid?: ContentApiClient['saveMetadataGrid'],
+): ContentApiClient {
+  const resourceEtag = () => contentEtagSchema.parse(etagValue())
+  return storyClient({
+    problemMatches() {
+      const etag = resourceEtag()
+      return Promise.resolve({
+        data: {
+          revisionId: draftRevisionId,
+          groupLessonId,
+          version: Number(etagValue().match(/v(\d+)/)?.[1] ?? 1),
+          etag,
+          items: [
+            {
+              sourceOrdinal: 1,
+              sourceItem: '1',
+              displayNumber: '1',
+              sourceTitle: 'Изоляция черновика',
+              suggestedProblemId: -61,
+              match: { decision: 'auto_position', problemId: -61 },
+            },
+          ],
+          candidates: [
+            {
+              problemId: -61,
+              problemNumber: 1,
+              item: '',
+              title: '',
+              problemType: 2,
+              answerType: null,
+              answerValidation: null,
+              validationError: null,
+              correctAnswer: null,
+              correctAnswerChecker: null,
+              wrongAnswer: null,
+              congratulation: null,
+            },
+          ],
+          requestId: 'storybook-metadata-draft-scope',
+        },
+        etag,
+      })
+    },
+    metadataGrid() {
+      const etag = resourceEtag()
+      return Promise.resolve({
+        data: {
+          revisionId: draftRevisionId,
+          groupLessonId,
+          version: Number(etagValue().match(/v(\d+)/)?.[1] ?? 1),
+          etag,
+          rows: [
+            {
+              problemId: -61,
+              sourceOrdinal: 1,
+              sourceItem: '1',
+              displayNumber: '1',
+              title: '',
+              problemType: 2,
+              answerType: null,
+              answerValidation: null,
+              validationError: null,
+              correctAnswer: null,
+              correctAnswerChecker: null,
+              wrongAnswer: null,
+              congratulation: null,
+              reviewed: false,
+            },
+          ],
+          requestId: 'storybook-metadata-draft-grid-scope',
+        },
+        etag,
+      })
+    },
+    ...(saveMetadataGrid ? { saveMetadataGrid } : {}),
+  })
+}
+
+export const MetadataDraftIsAccountScoped: Story = {
+  name: 'Metadata draft is account scoped',
+  render: () => {
+    function Harness() {
+      const [account, setAccount] = useState<'teacher-a' | 'teacher-b'>('teacher-a')
+      const draftRevisionId = 'revision-metadata-account-isolation'
+      const client = metadataDraftClient(
+        draftRevisionId,
+        () => '"review-metadata-account-isolation:v2"',
+      )
+      return (
+        <div className="max-w-6xl space-y-3 p-4">
+          <p className="text-small">Текущий аккаунт: {account}</p>
+          <Button
+            onClick={() =>
+              setAccount((value) => (value === 'teacher-a' ? 'teacher-b' : 'teacher-a'))
+            }
+            size="sm"
+            variant="outline"
+          >
+            Переключить аккаунт
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            draftNamespace={`storybook:${account}`}
+            groupLessonId={groupLessonId}
+            key={account}
+            kind="condition"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const storage = canvasElement.ownerDocument.defaultView?.localStorage
+    const revision = 'revision-metadata-account-isolation'
+    const keyA = problemReviewDraftStorageKey(
+      'storybook:teacher-a',
+      'metadata',
+      groupLessonId,
+      revision,
+    )
+    const keyB = problemReviewDraftStorageKey(
+      'storybook:teacher-b',
+      'metadata',
+      groupLessonId,
+      revision,
+    )
+    storage?.removeItem(keyA)
+    storage?.removeItem(keyB)
+
+    await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Черновик А')
+    await userEvent.click(canvas.getByRole('button', { name: 'Переключить аккаунт' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('')
+    await userEvent.type(canvas.getByLabelText('Название, строка 1'), 'Черновик Б')
+    await userEvent.click(canvas.getByRole('button', { name: 'Переключить аккаунт' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Черновик А')
+    await expect(storage?.getItem(keyB)).toContain('Черновик Б')
+
+    storage?.removeItem(keyA)
+    storage?.removeItem(keyB)
+  },
+}
+
+export const MetadataConflictKeepsDraft: Story = {
+  name: 'Metadata conflict keeps local draft',
+  render: () => {
+    let conflicted = false
+    function Harness() {
+      const [generation, setGeneration] = useState(0)
+      const draftRevisionId = 'revision-metadata-conflict-recovery'
+      const client = metadataDraftClient(
+        draftRevisionId,
+        () =>
+          conflicted
+            ? '"review-metadata-conflict-recovery:v3"'
+            : '"review-metadata-conflict-recovery:v2"',
+        () => {
+          conflicted = true
+          return Promise.reject(
+            new ApiResponseError(409, {
+              error: {
+                code: 'version_conflict',
+                message: 'Метаданные уже изменились',
+                requestId: 'storybook-metadata-conflict',
+              },
+            }),
+          )
+        },
+      )
+      return (
+        <div className="max-w-6xl space-y-3 p-4">
+          <Button onClick={() => setGeneration((value) => value + 1)} size="sm" variant="outline">
+            Перезагрузить интерфейс
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            draftNamespace="storybook:metadata-conflict"
+            groupLessonId={groupLessonId}
+            key={generation}
+            kind="condition"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const key = problemReviewDraftStorageKey(
+      'storybook:metadata-conflict',
+      'metadata',
+      groupLessonId,
+      'revision-metadata-conflict-recovery',
+    )
+    const storage = canvasElement.ownerDocument.defaultView?.localStorage
+    storage?.removeItem(key)
+
+    await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Не потерять')
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить метаданные' }))
+    await expect(await canvas.findByText('Серверная версия изменилась')).toBeVisible()
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
+    await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
+    await expect(storage?.getItem(key)).toContain('Не потерять')
+
+    storage?.removeItem(key)
+  },
+}

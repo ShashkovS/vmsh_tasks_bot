@@ -1,0 +1,349 @@
+import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+
+import {
+  ContentNetworkError,
+  ContentProtocolError,
+  useContentRevisionAssetsQuery,
+  type ContentApiClient,
+  type VersionedContentResource,
+} from '@vmsh/content'
+import {
+  ApiResponseError,
+  type ContentAssetUploadKind,
+  type StaffContentRevision,
+} from '@vmsh/contracts'
+import { MissingAssetsFlow, type MissingAsset } from '@vmsh/product'
+import { Alert, AlertContent, AlertDescription, AlertTitle, Button, Skeleton } from '@vmsh/ui'
+
+import { stableBrowserFile } from './stable-browser-file'
+
+interface AssetDraft {
+  kind: ContentAssetUploadKind
+  file?: File | undefined
+  phase?: 'uploading' | 'error' | 'attached' | 'reused' | undefined
+  errorMessage?: string | undefined
+}
+
+export type RevisionAssetRecoveryClient = Pick<
+  ContentApiClient,
+  'diagnostics' | 'revisionAssets' | 'resolveRevisionAssets' | 'uploadRevisionAsset'
+>
+
+export interface RevisionAssetsRecoveryProps {
+  client: RevisionAssetRecoveryClient
+  revisionId: string
+  onCompile: (revision: VersionedContentResource<StaffContentRevision>) => Promise<void>
+}
+
+function describeError(error: unknown, assetRef?: string): string {
+  if (
+    error instanceof ApiResponseError &&
+    (error.code === 'asset_conversion_failed' || error.code === 'content_assets_unavailable')
+  ) {
+    const details = error.details
+    const capability =
+      details && typeof details === 'object' && typeof details.capability === 'string'
+        ? details.capability
+        : undefined
+    const detail =
+      details && typeof details === 'object' && typeof details.detail === 'string'
+        ? details.detail
+        : undefined
+    const subject = assetRef ? `Рисунок TikZ ${assetRef}` : 'Рисунок TikZ'
+    if (error.code === 'content_assets_unavailable') {
+      return `${subject}: на сервере временно недоступен ${capability ?? 'нужный конвертер'}. Повторите позднее.`
+    }
+    return `${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
+  }
+  if (error instanceof ApiResponseError && error.status === 409) {
+    return 'Revision уже изменилась. Список ресурсов обновлён; проверьте его и повторите действие.'
+  }
+  if (error instanceof ApiResponseError) {
+    return `${error.message} Код обращения: ${error.requestId}.`
+  }
+  if (error instanceof ContentNetworkError) {
+    return 'Нет связи с сервером. Проверьте подключение и повторите действие.'
+  }
+  if (error instanceof ContentProtocolError) {
+    return 'Сервер вернул неожиданный ответ. Обновите страницу и повторите действие.'
+  }
+  return 'Не удалось обработать ресурс. Повторите действие.'
+}
+
+function uploadKindForFile(file: File): 'raster' | 'svg' {
+  return file.type === 'image/svg+xml' || file.name.toLocaleLowerCase('en').endsWith('.svg')
+    ? 'svg'
+    : 'raster'
+}
+
+/**
+ * Exact-revision asset recovery for the Staff content workflow. The server
+ * owns conversion, deduplication and TikZ source lookup; this component keeps
+ * only recoverable browser draft state. See Phase 2 in
+ * `dev/development-plan/06-phase-2-content.md` and `MissingAssetsFlow`.
+ */
+export function RevisionAssetsRecovery({
+  client,
+  revisionId,
+  onCompile,
+}: RevisionAssetsRecoveryProps) {
+  const assetsQuery = useContentRevisionAssetsQuery(client, revisionId)
+  const [drafts, setDrafts] = useState<Record<string, AssetDraft>>({})
+  const [busyAssetId, setBusyAssetId] = useState<string>()
+  const [compilePending, setCompilePending] = useState(false)
+  const [resolvePending, setResolvePending] = useState(false)
+  const [compileError, setCompileError] = useState<string>()
+  const automaticAttemptRef = useRef<string | undefined>(undefined)
+
+  const items = useMemo<MissingAsset[]>(() => {
+    if (!assetsQuery.data) return []
+    return assetsQuery.data.data.assets.map((slot) => {
+      const draft = drafts[slot.logicalName]
+      const attached = slot.status === 'attached'
+      const status: MissingAsset['status'] = attached
+        ? draft?.phase === 'reused'
+          ? 'reused'
+          : 'attached'
+        : draft?.phase === 'uploading'
+          ? 'uploading'
+          : draft?.phase === 'error'
+            ? 'error'
+            : 'missing'
+      return {
+        id: slot.logicalName,
+        ref: slot.logicalName,
+        sourceKind: slot.sourceKind,
+        acceptedUploadKinds: slot.acceptedUploadKinds,
+        status,
+        ...(draft?.file ? { fileName: draft.file.name } : {}),
+        ...(slot.asset ? { assetHref: slot.asset.src } : {}),
+        ...(draft?.errorMessage ? { errorMessage: draft.errorMessage } : {}),
+      }
+    })
+  }, [assetsQuery.data, drafts])
+
+  const updateDraft = (logicalName: string, update: Partial<AssetDraft>) => {
+    setDrafts((current) => {
+      const slot = assetsQuery.data?.data.assets.find(
+        (candidate) => candidate.logicalName === logicalName,
+      )
+      const existing =
+        current[logicalName] ?? (slot ? { kind: slot.acceptedUploadKinds[0]! } : undefined)
+      if (!existing) return current
+      return { ...current, [logicalName]: { ...existing, ...update } }
+    })
+  }
+
+  const resolveAsset = async (logicalName: string) => {
+    const resource = assetsQuery.data
+    const slot = resource?.data.assets.find((asset) => asset.logicalName === logicalName)
+    const draft = drafts[logicalName] ?? (slot ? { kind: slot.acceptedUploadKinds[0]! } : undefined)
+    if (!resource || !slot || !draft || busyAssetId || slot.status === 'attached') return
+    if (draft.kind !== 'tikz' && !draft.file) return
+
+    setBusyAssetId(logicalName)
+    setCompileError(undefined)
+    updateDraft(logicalName, { phase: 'uploading', errorMessage: undefined })
+    try {
+      const uploaded = await client.uploadRevisionAsset({
+        revisionId,
+        etag: resource.etag,
+        logicalName,
+        kind: draft.kind,
+        ...(draft.file ? { asset: draft.file } : {}),
+      })
+      updateDraft(logicalName, { phase: uploaded.data.reused ? 'reused' : 'attached' })
+      const refreshed = await assetsQuery.refetch()
+      if (refreshed.error) throw refreshed.error
+      const refreshedSlot = refreshed.data?.data.assets.find(
+        (asset) => asset.logicalName === logicalName,
+      )
+      if (!refreshedSlot || refreshedSlot.status !== 'attached') {
+        throw new Error('Сервер не подтвердил прикрепление ресурса')
+      }
+    } catch (error) {
+      updateDraft(logicalName, {
+        phase: 'error',
+        errorMessage: describeError(error, logicalName),
+      })
+      if (error instanceof ApiResponseError && error.status === 409) await assetsQuery.refetch()
+    } finally {
+      setBusyAssetId(undefined)
+    }
+  }
+
+  const compileResolvedRevision = async () => {
+    if (compilePending) return
+    setCompilePending(true)
+    setCompileError(undefined)
+    try {
+      const refreshedAssets = await assetsQuery.refetch()
+      if (refreshedAssets.error) throw refreshedAssets.error
+      if (!refreshedAssets.data || refreshedAssets.data.data.missingAssets.length > 0) {
+        throw new Error('Сначала прикрепите все недостающие ресурсы')
+      }
+      // Diagnostics is intentionally fetched after the asset list so compile
+      // receives the latest strong revision ETag, not the one shown initially.
+      const revision = await client.diagnostics(revisionId)
+      await onCompile(revision)
+    } catch (error) {
+      setCompileError(describeError(error))
+    } finally {
+      setCompilePending(false)
+    }
+  }
+
+  useEffect(() => {
+    const resource = assetsQuery.data
+    const missing = resource?.data.assets.filter((asset) => asset.status === 'missing') ?? []
+    if (
+      !resource ||
+      missing.length === 0 ||
+      !client.resolveRevisionAssets ||
+      resolvePending ||
+      busyAssetId
+    ) {
+      return
+    }
+    const attemptKey = `${revisionId}:${missing.map((asset) => asset.logicalName).join('|')}`
+    if (automaticAttemptRef.current === attemptKey) return
+    automaticAttemptRef.current = attemptKey
+
+    const resolveAutomatically = async () => {
+      setResolvePending(true)
+      setCompileError(undefined)
+      try {
+        const resolved = await client.resolveRevisionAssets!(revisionId, resource.etag)
+        let etag = resolved.etag
+        for (const slot of resolved.data.assets) {
+          const previous = resource.data.assets.find(
+            (candidate) => candidate.logicalName === slot.logicalName,
+          )
+          if (previous?.status === 'missing' && slot.status === 'attached') {
+            setDrafts((current) => ({
+              ...current,
+              [slot.logicalName]: {
+                kind: slot.acceptedUploadKinds[0]!,
+                phase: 'reused',
+              },
+            }))
+          }
+        }
+
+        for (const slot of resolved.data.assets.filter(
+          (asset) => asset.status === 'missing' && asset.sourceKind === 'tikz',
+        )) {
+          setBusyAssetId(slot.logicalName)
+          setDrafts((current) => ({
+            ...current,
+            [slot.logicalName]: { kind: 'tikz', phase: 'uploading' },
+          }))
+          const uploaded = await client.uploadRevisionAsset({
+            revisionId,
+            etag,
+            logicalName: slot.logicalName,
+            kind: 'tikz',
+          })
+          etag = uploaded.etag
+          setDrafts((current) => ({
+            ...current,
+            [slot.logicalName]: {
+              kind: 'tikz',
+              phase: uploaded.data.reused ? 'reused' : 'attached',
+            },
+          }))
+        }
+        const refreshed = await assetsQuery.refetch()
+        if (refreshed.error) throw refreshed.error
+        if (refreshed.data?.data.missingAssets.length === 0) {
+          setCompilePending(true)
+          const revision = await client.diagnostics(revisionId)
+          await onCompile(revision)
+        }
+      } catch (error) {
+        setCompileError(describeError(error))
+        if (error instanceof ApiResponseError && error.status === 409) {
+          automaticAttemptRef.current = undefined
+          await assetsQuery.refetch()
+        }
+      } finally {
+        setBusyAssetId(undefined)
+        setCompilePending(false)
+        setResolvePending(false)
+      }
+    }
+
+    void resolveAutomatically()
+  }, [assetsQuery, busyAssetId, client, onCompile, resolvePending, revisionId])
+
+  if (assetsQuery.isPending) {
+    return (
+      <section aria-label="Загрузка списка ресурсов" className="space-y-2">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </section>
+    )
+  }
+
+  if (assetsQuery.error) {
+    return (
+      <Alert role="alert" tone="danger">
+        <AlertTriangle aria-hidden="true" />
+        <AlertContent>
+          <AlertTitle>Не удалось загрузить список ресурсов</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <span className="block">{describeError(assetsQuery.error)}</span>
+            <Button onClick={() => void assetsQuery.refetch()} size="xs" variant="outline">
+              <RefreshCw aria-hidden="true" /> Повторить
+            </Button>
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
+    )
+  }
+
+  const allResolved = assetsQuery.data.data.missingAssets.length === 0
+
+  return (
+    <section aria-label="Ресурсы revision" className="space-y-3">
+      <MissingAssetsFlow
+        assets={items}
+        disabled={busyAssetId !== undefined || compilePending || resolvePending}
+        onFileSelect={(logicalName, file) => {
+          if (!file) {
+            updateDraft(logicalName, { file: undefined, phase: undefined })
+            return
+          }
+          void stableBrowserFile(file)
+            .then((stableFile) =>
+              updateDraft(logicalName, {
+                kind: uploadKindForFile(stableFile),
+                file: stableFile,
+                phase: undefined,
+                errorMessage: undefined,
+              }),
+            )
+            .catch(() =>
+              updateDraft(logicalName, {
+                phase: 'error',
+                errorMessage: 'Не удалось прочитать файл. Выберите его ещё раз.',
+              }),
+            )
+        }}
+        onResolve={(logicalName) => void resolveAsset(logicalName)}
+      />
+      {allResolved ? (
+        <Button disabled={compilePending} onClick={() => void compileResolvedRevision()} size="sm">
+          <RefreshCw aria-hidden="true" className={compilePending ? 'animate-spin' : undefined} />
+          {compilePending ? 'Собираем материал…' : 'Повторить сборку материала'}
+        </Button>
+      ) : null}
+      {compileError ? (
+        <p className="text-small text-status-error" role="alert">
+          {compileError}
+        </p>
+      ) : null}
+    </section>
+  )
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@vmsh/content",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.tsx",
+    "./styles.css": "./src/content.css"
+  },
+  "sideEffects": [
+    "./src/content.css"
+  ],
+  "dependencies": {
+    "@tanstack/react-query": "catalog:",
+    "@vmsh/contracts": "workspace:*",
+    "dompurify": "catalog:",
+    "katex": "catalog:",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@types/katex": "catalog:"
+  }
+}
