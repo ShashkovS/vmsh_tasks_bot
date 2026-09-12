@@ -19,6 +19,7 @@ from db_methods.pwa.account_batches import (
     available_student_logins,
     course_for_code,
     enrollment_for_student_course,
+    family_emails,
     groups_for_course,
     insert_course_enrollment,
     insert_course_enrollment_created_event,
@@ -418,9 +419,10 @@ async def preview_family_accounts(request: web.Request) -> web.Response:
     _admin(request)
     payload = await _payload(request, apply=False)
     source_rows = payload["rows"]
-    used, student_logins = await _factory(request).run_read_async(
+    used_logins, used_emails, student_logins = await _factory(request).run_read_async(
         lambda connection: (
             account_logins(connection, audience="family"),
+            family_emails(connection),
             available_student_logins(connection),
         )
     )
@@ -429,6 +431,14 @@ async def preview_family_accounts(request: web.Request) -> web.Response:
     for number, source in enumerate(source_rows, start=1):
         try:
             normalized = normalize_family_batch_row(source)
+            duplicate_code = _family_duplicate_code(
+                login_normalized=str(normalized["login_normalized"]),
+                emails=tuple(str(email).casefold() for email in normalized["emails"]),
+                used_logins=used_logins,
+                used_emails=used_emails,
+            )
+            if duplicate_code is not None:
+                raise InvalidAccountBatchRow(duplicate_code)
             missing = [
                 login
                 for login in normalized["child_logins"]
@@ -436,11 +446,10 @@ async def preview_family_accounts(request: web.Request) -> web.Response:
             ]
             if missing:
                 raise InvalidAccountBatchRow("child_login_not_found")
-            login, _, adjusted = choose_available_login(
-                str(normalized["login"]),
-                str(normalized["login_normalized"]),
-                used,
-                _suffixes(),
+            login = str(normalized["login"])
+            used_logins.add(str(normalized["login_normalized"]))
+            used_emails.update(
+                str(email).casefold() for email in normalized["emails"]
             )
         except InvalidAccountBatchRow as error:
             rows.append(
@@ -456,7 +465,7 @@ async def preview_family_accounts(request: web.Request) -> web.Response:
         row = _preview_row(
             row_number=number, state="ready", resolved_login=login, code=None
         )
-        row["loginAdjusted"] = adjusted
+        row["loginAdjusted"] = False
         rows.append(row)
         resolved_logins.append(login)
     return _preview_response(
@@ -465,6 +474,24 @@ async def preview_family_accounts(request: web.Request) -> web.Response:
         source_rows=source_rows,
         resolved_logins=resolved_logins,
     )
+
+
+def _family_duplicate_code(
+    *,
+    login_normalized: str,
+    emails: tuple[str, ...],
+    used_logins: set[str],
+    used_emails: set[str],
+) -> str | None:
+    duplicate_login = login_normalized in used_logins
+    duplicate_email = bool(set(emails) & used_emails)
+    if duplicate_login and duplicate_email:
+        return "family_login_email_duplicate"
+    if duplicate_login:
+        return "family_login_duplicate"
+    if duplicate_email:
+        return "family_email_duplicate"
+    return None
 
 
 def _validated_apply(
@@ -486,19 +513,37 @@ async def _hash_rows(
     request: web.Request,
     rows: list[object],
     normalize,
-) -> list[tuple[dict[str, object] | None, str | None]]:
-    result: list[tuple[dict[str, object] | None, str | None]] = []
+) -> list[tuple[dict[str, object] | None, str | None, str | None]]:
+    result: list[tuple[dict[str, object] | None, str | None, str | None]] = []
     for source in rows:
         try:
             row = normalize(source)
-        except InvalidAccountBatchRow:
-            result.append((None, None))
+        except InvalidAccountBatchRow as error:
+            result.append((None, None, str(error)))
             continue
         digest = await asyncio.to_thread(
             auth_service(request).credential_hasher.hash, str(row["password"])
         )
-        result.append((row, digest))
+        result.append((row, digest, None))
     return result
+
+
+def _row_integrity_code(error: sqlite3.IntegrityError) -> str:
+    """Project expected row-local SQLite conflicts to safe diagnostics."""
+
+    message = str(error)
+    if "users.token" in message:
+        return "student_token_conflict"
+    if "family_account_emails" in message:
+        return "invalid_emails"
+    if "auth_accounts" in message:
+        return "account_conflict"
+    return "row_conflict"
+
+
+def _rollback_row(connection: sqlite3.Connection) -> None:
+    connection.execute("ROLLBACK TO SAVEPOINT account_batch_row")
+    connection.execute("RELEASE SAVEPOINT account_batch_row")
 
 
 def _batch_audit(
@@ -589,12 +634,16 @@ async def apply_student_accounts(request: web.Request) -> web.Response:
             normalize_telegram_token(token) for token in student_tokens(connection)
         }
         result: list[dict[str, object]] = []
-        for number, ((row, digest), resolved_login) in enumerate(
+        for number, ((row, digest, invalid_code), resolved_login) in enumerate(
             zip(prepared, resolved_logins, strict=True), start=1
         ):
             if row is None or digest is None or resolved_login is None:
                 result.append(
-                    {"rowNumber": number, "state": "skipped", "code": "invalid_row"}
+                    {
+                        "rowNumber": number,
+                        "state": "skipped",
+                        "code": invalid_code or "invalid_row",
+                    }
                 )
                 continue
             resolved_normalized = normalize_student_login(str(resolved_login))
@@ -622,39 +671,53 @@ async def apply_student_accounts(request: web.Request) -> web.Response:
                     }
                 )
                 continue
-            user_id, user_public_id = insert_student_user(
-                connection,
-                surname=str(row["surname"]),
-                name=str(row["name"]),
-                patronymic=str(row["patronymic"]),
-                token=str(row["password"]),
-                grade=row["grade"],
-                birth_date=row["birth_date"],
-            )
-            account_id, account_public_id = insert_provisioned_account(
-                connection,
-                audience="student",
-                username=resolved_login,
-                username_normalized=resolved_normalized,
-                display_name=" ".join(
-                    part for part in (str(row["name"]), str(row["surname"])) if part
-                ),
-                credential_kind="telegram_token",
-                credential_hash=digest,
-                credential_plaintext=str(row["password"]),
-                linked_user_id=user_id,
-                now=now,
-            )
-            insert_account_event(
-                connection,
-                account_id=account_id,
-                event_type="student.account_batch_created",
-                request_id=request["request_id"],
-                occurred_at=now,
-                metadata_json=json.dumps(
-                    {"actorUserId": principal.linked_user_id}, separators=(",", ":")
-                ),
-            )
+            connection.execute("SAVEPOINT account_batch_row")
+            try:
+                user_id, user_public_id = insert_student_user(
+                    connection,
+                    surname=str(row["surname"]),
+                    name=str(row["name"]),
+                    patronymic=str(row["patronymic"]),
+                    token=str(row["password"]),
+                    grade=row["grade"],
+                    birth_date=row["birth_date"],
+                )
+                account_id, account_public_id = insert_provisioned_account(
+                    connection,
+                    audience="student",
+                    username=resolved_login,
+                    username_normalized=resolved_normalized,
+                    display_name=" ".join(
+                        part for part in (str(row["name"]), str(row["surname"])) if part
+                    ),
+                    credential_kind="telegram_token",
+                    credential_hash=digest,
+                    credential_plaintext=str(row["password"]),
+                    linked_user_id=user_id,
+                    now=now,
+                )
+                insert_account_event(
+                    connection,
+                    account_id=account_id,
+                    event_type="student.account_batch_created",
+                    request_id=request["request_id"],
+                    occurred_at=now,
+                    metadata_json=json.dumps(
+                        {"actorUserId": principal.linked_user_id},
+                        separators=(",", ":"),
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                _rollback_row(connection)
+                result.append(
+                    {
+                        "rowNumber": number,
+                        "state": "skipped",
+                        "code": _row_integrity_code(error),
+                    }
+                )
+                continue
+            connection.execute("RELEASE SAVEPOINT account_batch_row")
             used.add(resolved_normalized)
             used_tokens.add(str(row["password"]))
             result.append(
@@ -798,36 +861,53 @@ async def apply_family_accounts(request: web.Request) -> web.Response:
     now = _now()
 
     def write(connection: sqlite3.Connection) -> list[dict[str, object]]:
-        used = account_logins(connection, audience="family")
+        used_logins = account_logins(connection, audience="family")
+        used_emails = family_emails(connection)
         result: list[dict[str, object]] = []
-        for number, ((row, digest), resolved_login) in enumerate(
+        for number, ((row, digest, invalid_code), resolved_login) in enumerate(
             zip(prepared, resolved_logins, strict=True), start=1
         ):
-            if row is None or digest is None or resolved_login is None:
+            if row is None or digest is None:
                 result.append(
-                    {"rowNumber": number, "state": "skipped", "code": "invalid_row"}
+                    {
+                        "rowNumber": number,
+                        "state": "skipped",
+                        "code": invalid_code or "invalid_row",
+                    }
                 )
                 continue
-            resolved_normalized = normalize_login(str(resolved_login))
-            original = str(row["login"])
-            allowed_suffix = (
-                len(resolved_login) == min(len(original), 97) + 3
-                and resolved_login.startswith(original[:97] + "-")
-                and resolved_login[-2:].isdigit()
+            duplicate_code = _family_duplicate_code(
+                login_normalized=str(row["login_normalized"]),
+                emails=tuple(str(email).casefold() for email in row["emails"]),
+                used_logins=used_logins,
+                used_emails=used_emails,
             )
+            if duplicate_code is not None:
+                result.append(
+                    {
+                        "rowNumber": number,
+                        "state": "skipped",
+                        "code": duplicate_code,
+                    }
+                )
+                continue
             students = [
                 student_for_login(connection, login_normalized=str(login))
                 for login in row["child_logins"]
             ]
-            if (
-                not resolved_normalized
-                or resolved_normalized in used
-                or any(student is None for student in students)
-                or (resolved_login != original and not allowed_suffix)
-                or (
-                    resolved_login != original
-                    and str(row["login_normalized"]) not in used
+            if any(student is None for student in students):
+                result.append(
+                    {
+                        "rowNumber": number,
+                        "state": "skipped",
+                        "code": "child_login_not_found",
+                    }
                 )
+                continue
+            if (
+                resolved_login is None
+                or resolved_login != row["login"]
+                or normalize_login(str(resolved_login)) != row["login_normalized"]
             ):
                 result.append(
                     {
@@ -837,46 +917,60 @@ async def apply_family_accounts(request: web.Request) -> web.Response:
                     }
                 )
                 continue
-            account_id, account_public_id = insert_provisioned_account(
-                connection,
-                audience="family",
-                username=resolved_login,
-                username_normalized=resolved_normalized,
-                display_name=str(row["name"]),
-                credential_kind="password",
-                credential_hash=digest,
-                credential_plaintext=str(row["password"]),
-                linked_user_id=None,
-                now=now,
-            )
-            insert_family_emails(
-                connection,
-                family_account_id=account_id,
-                emails=row["emails"],
-                now=now,
-            )
-            for student in students:
-                insert_family_link(
+            connection.execute("SAVEPOINT account_batch_row")
+            try:
+                account_id, account_public_id = insert_provisioned_account(
                     connection,
-                    family_account_id=account_id,
-                    student_user_id=int(student["user_id"]),
+                    audience="family",
+                    username=resolved_login,
+                    username_normalized=str(row["login_normalized"]),
+                    display_name=str(row["name"]),
+                    credential_kind="password",
+                    credential_hash=digest,
+                    credential_plaintext=str(row["password"]),
+                    linked_user_id=None,
                     now=now,
                 )
-            insert_account_event(
-                connection,
-                account_id=account_id,
-                event_type="family.account_batch_created",
-                request_id=request["request_id"],
-                occurred_at=now,
-                metadata_json=json.dumps(
+                insert_family_emails(
+                    connection,
+                    family_account_id=account_id,
+                    emails=row["emails"],
+                    now=now,
+                )
+                for student in students:
+                    insert_family_link(
+                        connection,
+                        family_account_id=account_id,
+                        student_user_id=int(student["user_id"]),
+                        now=now,
+                    )
+                insert_account_event(
+                    connection,
+                    account_id=account_id,
+                    event_type="family.account_batch_created",
+                    request_id=request["request_id"],
+                    occurred_at=now,
+                    metadata_json=json.dumps(
+                        {
+                            "actorUserId": principal.linked_user_id,
+                            "childCount": len(students),
+                        },
+                        separators=(",", ":"),
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                _rollback_row(connection)
+                result.append(
                     {
-                        "actorUserId": principal.linked_user_id,
-                        "childCount": len(students),
-                    },
-                    separators=(",", ":"),
-                ),
-            )
-            used.add(resolved_normalized)
+                        "rowNumber": number,
+                        "state": "skipped",
+                        "code": _row_integrity_code(error),
+                    }
+                )
+                continue
+            connection.execute("RELEASE SAVEPOINT account_batch_row")
+            used_logins.add(str(row["login_normalized"]))
+            used_emails.update(str(email).casefold() for email in row["emails"])
             result.append(
                 {
                     "rowNumber": number,

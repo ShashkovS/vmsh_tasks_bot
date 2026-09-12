@@ -184,6 +184,20 @@ def available_student_logins(connection: sqlite3.Connection) -> set[str]:
     }
 
 
+def family_emails(connection: sqlite3.Connection) -> set[str]:
+    """Return every normalized email already assigned to a Family account."""
+
+    return {
+        str(row["email_normalized"])
+        for row in connection.execute(
+            "SELECT DISTINCT email.email_normalized "
+            "FROM family_account_emails AS email "
+            "JOIN auth_accounts AS account ON account.id = email.family_account_id "
+            "WHERE account.audience = 'family'"
+        )
+    }
+
+
 def insert_student_user(
     connection: sqlite3.Connection,
     *,
@@ -296,6 +310,7 @@ __all__ = [
     "insert_imported_group_access",
     "insert_provisioned_account",
     "insert_student_user",
+    "family_emails",
     "student_has_course_enrollment",
     "student_for_login",
     "student_tokens",

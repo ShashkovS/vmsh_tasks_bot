@@ -82,6 +82,36 @@ export function parseFamilyProvisioningTsv(source: string): FamilyProvisioningRo
   })
 }
 
+export function serializeStudentProvisioningTsv(rows: StudentProvisioningRow[]): string {
+  return rows
+    .map((row) =>
+      [
+        row.surname,
+        row.name,
+        row.patronymic ?? '',
+        row.birthDate ?? '',
+        row.grade?.toString() ?? '',
+        row.login,
+        row.password,
+      ].join('\t'),
+    )
+    .join('\n')
+}
+
+export function serializeFamilyProvisioningTsv(rows: FamilyProvisioningRow[]): string {
+  return rows
+    .map((row) =>
+      [
+        row.name,
+        row.login,
+        row.password,
+        Array.isArray(row.emails) ? row.emails.join(', ') : row.emails,
+        row.childLogins.join(', '),
+      ].join('\t'),
+    )
+    .join('\n')
+}
+
 export function parseCourseEnrollmentProvisioningTsv(
   source: string,
 ): CourseEnrollmentProvisioningRow[] {

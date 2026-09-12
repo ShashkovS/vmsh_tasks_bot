@@ -6,6 +6,8 @@ import {
   parseFamilyProvisioningTsv,
   parseStudentProvisioningTsv,
   provisioningDraftKey,
+  serializeFamilyProvisioningTsv,
+  serializeStudentProvisioningTsv,
 } from './account-provisioning-tsv'
 
 describe('account provisioning TSV', () => {
@@ -43,6 +45,31 @@ describe('account provisioning TSV', () => {
         childLogins: ['ivanov', 'petrova'],
       },
     ])
+  })
+
+  it('serializes skipped rows back to editable TSV without losing optional columns', () => {
+    expect(
+      serializeStudentProvisioningTsv([
+        {
+          surname: 'Иванов',
+          name: 'Иван',
+          birthDate: '2013-04-05',
+          login: 'ivanov',
+          password: 'token',
+        },
+      ]),
+    ).toBe('Иванов\tИван\t\t2013-04-05\t\tivanov\ttoken')
+    expect(
+      serializeFamilyProvisioningTsv([
+        {
+          name: 'Семья Ивановых',
+          login: 'parent',
+          password: 'password',
+          emails: ['one@example.org', 'two@example.org'],
+          childLogins: ['ivanov', 'petrova'],
+        },
+      ]),
+    ).toBe('Семья Ивановых\tparent\tpassword\tone@example.org, two@example.org\tivanov, petrova')
   })
 
   it('reports the exact malformed line and scopes drafts to an account', () => {
