@@ -187,6 +187,22 @@ export function StudentProfilePage() {
             </Card>
           )
         })}
+        <Card>
+          <CardHeader>
+            <CardTitle>Уведомления</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-small text-muted-foreground">
+              Выберите, какие уведомления получать, и подключите это устройство.
+            </p>
+            <a
+              className="inline-flex min-h-10 items-center text-link underline underline-offset-2"
+              href="/student/profile/notifications"
+            >
+              Настроить уведомления
+            </a>
+          </CardContent>
+        </Card>
         <AccountSessionManager title="Устройства и сеансы" />
         <Card>
           <CardHeader>

@@ -10,7 +10,7 @@ import { CacheFirst } from 'workbox-strategies'
 
 import {
   immutableContentAssetNavigationPattern,
-  isAudienceRoute,
+  openPushNotification,
   parseAudiencePushPayload,
   shouldCacheRecentMediaRequest,
 } from '@vmsh/offline'
@@ -127,22 +127,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const notificationData = event.notification.data as unknown
-  const route =
-    typeof notificationData === 'object' && notificationData !== null && 'route' in notificationData
-      ? notificationData.route
-      : null
-  if (!isAudienceRoute(route, 'student')) return
   event.waitUntil(
-    (async () => {
-      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      const owned = windows.find((client) => new URL(client.url).pathname.startsWith('/student/'))
-      if (owned) {
-        await owned.navigate(route)
-        await owned.focus()
-        return
-      }
-      await self.clients.openWindow(route)
-    })(),
+    openPushNotification(self.clients, self.location.origin, 'student', event.notification.data),
   )
 })
