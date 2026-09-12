@@ -104,6 +104,7 @@ class Config:
     set_admin_secret: str = field(default="", repr=False)
     zoom_secret_token: str = field(default="", repr=False)
     conduit_import_api_token: str = field(default="", repr=False)
+    legacy_print_api_token: str = field(default="", repr=False)
     synonyms_mode: str = "synonyms_join"
     trace_enabled: bool = False
     trace_log_path: str = "logs/events.jsonl"
@@ -275,6 +276,7 @@ def _setup(*, force_production=False):
                 profile_values.get("pwa_throttle_pepper_b64", "")
             ).strip(),
             first_admin_password=configured_first_admin_password,
+            legacy_print_api_token=profile_values.get("legacy_print_api_token", ""),
             openrouter_api_key=str(
                 profile_values.get(
                     "openrouter_api_key", profile_values.get("OPENROUTER_API_KEY", "")
