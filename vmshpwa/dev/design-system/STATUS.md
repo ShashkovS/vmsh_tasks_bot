@@ -1397,3 +1397,5 @@ HTTP-кода и request ID. Тестовая и письменная формы
 описано в [task interaction polish](../../docs/task-interaction-polish.md).
 Проверены 28 целевых unit-тестов, Offline/App Shell/Student typecheck, ESLint,
 целевой Prettier и production build Student.
+Production release `b664bb9f13c8-20260913164452` опубликован; новая формулировка
+и интерфейс предупреждения проверены в загруженных Student assets.
