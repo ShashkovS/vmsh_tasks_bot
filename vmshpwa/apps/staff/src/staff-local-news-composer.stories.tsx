@@ -41,7 +41,10 @@ const meta = {
   args: {
     courses,
     draft: {
-      owner: 'group:group.beginners',
+      courseId: 'course.math',
+      groupId: 'group.beginners',
+      audience: 'both',
+      attendanceMode: 'all',
       text: 'Разбор задач состоится завтра в 17:00.',
       publishedLocal: '2026-08-04T17:00',
     },
@@ -72,12 +75,12 @@ export const Scheduled: Story = {
 
 export const EditingScheduled: Story = {
   args: {
-    ownerDisabled: true,
     submitLabel: 'Сохранить изменения',
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByLabelText('Кому показать')).toBeDisabled()
+    await expect(canvas.getByLabelText('Группа')).toBeEnabled()
+    await expect(canvas.getByLabelText('Очность')).toBeEnabled()
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
     await expect(args.onSubmit).toHaveBeenCalledOnce()
   },
@@ -85,13 +88,14 @@ export const EditingScheduled: Story = {
 
 export const EditingPublished: Story = {
   args: {
-    ownerDisabled: true,
+    targetDisabled: true,
     publishedAtDisabled: true,
     submitLabel: 'Сохранить исправление',
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByLabelText('Кому показать')).toBeDisabled()
+    await expect(canvas.getByLabelText('Группа')).toBeDisabled()
+    await expect(canvas.getByLabelText('Очность')).toBeDisabled()
     await expect(canvas.getByLabelText('Опубликовано по московскому времени')).toBeDisabled()
     await userEvent.type(canvas.getByLabelText('Текст публикации'), ' Уточнение.')
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить исправление' }))

@@ -77,7 +77,6 @@ const backendTeacherCapabilities = [
   'review.write',
   'self.read',
   'statistics.read',
-  'product-analytics.read',
   'student.active-group.write',
   'student.read',
 ] as const

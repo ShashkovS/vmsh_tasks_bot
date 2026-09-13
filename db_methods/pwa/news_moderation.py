@@ -24,6 +24,7 @@ def list_news_for_moderation(
     values.append(limit)
     rows = connection.execute(
         "SELECT post.public_id, post.source_type, post.published_at, "
+        "post.audience, post.attendance_mode, "
         "post.last_source_edited_at, post.source_deleted_at, "
         "visibility.state AS visibility_state, "
         "visibility.moderation_reason, visibility.updated_at AS visibility_updated_at, "
@@ -34,6 +35,8 @@ def list_news_for_moderation(
         "CASE WHEN post.owner_course_id IS NOT NULL THEN 'course' ELSE 'group' END "
         "AS owner_type, coalesce(course.public_id, owner_group.public_id) AS owner_public_id, "
         "coalesce(course.name, owner_group.public_name) AS owner_name, "
+        "coalesce(course.public_id, group_course.public_id) AS course_public_id, "
+        "owner_group.public_id AS group_public_id, "
         "(SELECT count(*) FROM news_media media WHERE media.revision_id = revision.id) "
         "AS media_count FROM news_posts post "
         "JOIN news_visibility visibility ON visibility.post_id = post.id "
@@ -44,6 +47,7 @@ def list_news_for_moderation(
         "ON binding.id = post.source_binding_id "
         "LEFT JOIN courses course ON course.id = post.owner_course_id "
         "LEFT JOIN groups owner_group ON owner_group.group_id = post.owner_group_id "
+        "LEFT JOIN courses group_course ON group_course.id = owner_group.course_id "
         + where
         + " ORDER BY post.published_at DESC, post.id DESC LIMIT ?",
         tuple(values),

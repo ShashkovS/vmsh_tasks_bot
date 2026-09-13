@@ -29,7 +29,10 @@ describe('local news draft', () => {
     const key = 'test:local-news-draft'
     clearLocalNewsDraft(storage, key)
     const draft = {
-      owner: 'group:group.beginners',
+      courseId: 'course.math',
+      groupId: 'group.beginners',
+      audience: 'student' as const,
+      attendanceMode: 'online' as const,
       text: 'Разбор в 17:00',
       publishedLocal: '2026-08-04T17:00',
     }
@@ -47,5 +50,40 @@ describe('local news draft', () => {
     expect(moscowDateTime('tomorrow')).toBeNull()
     expect(toMoscowLocalDateTime('2026-08-04T14:00:00Z')).toBe('2026-08-04T17:00')
     expect(toMoscowLocalDateTime('tomorrow')).toBeNull()
+  })
+
+  it('keeps the text and owner of a draft saved by the previous Staff client', () => {
+    const storage = memoryStorage()
+    const key = 'test:legacy-local-news-draft'
+    storage.setItem(
+      key,
+      JSON.stringify({
+        owner: 'group:g-41',
+        text: 'Старый черновик',
+        publishedLocal: '2026-09-14T16:40',
+      }),
+    )
+
+    expect(loadLocalNewsDraft(storage, key)).toEqual({
+      ...EMPTY_LOCAL_NEWS_DRAFT,
+      groupId: 'g-41',
+      text: 'Старый черновик',
+      publishedLocal: '2026-09-14T16:40',
+    })
+    expect(
+      loadLocalNewsDraft(storage, key, {
+        courseId: 'c-1',
+        groupId: 'g-2',
+        audience: 'family',
+        attendanceMode: 'in_person',
+      }),
+    ).toEqual({
+      courseId: 'c-1',
+      groupId: 'g-41',
+      audience: 'family',
+      attendanceMode: 'in_person',
+      text: 'Старый черновик',
+      publishedLocal: '2026-09-14T16:40',
+    })
   })
 })

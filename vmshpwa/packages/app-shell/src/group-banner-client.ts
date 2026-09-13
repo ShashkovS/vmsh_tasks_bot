@@ -104,7 +104,7 @@ export function createStaffGroupBannerClient(
   return {
     async list(signal?: AbortSignal): Promise<GroupBannerListResponse> {
       return groupBannerListResponseSchema.parse(
-        await request('/group-banners?limit=200&contentVersion=2', {
+        await request('/group-banners?limit=200&contentVersion=3', {
           method: 'GET',
           ...(signal === undefined ? {} : { signal }),
         }),
@@ -125,7 +125,7 @@ export function createStaffGroupBannerClient(
     cancel(rawId: string, version: number) {
       const id = publicIdSchema.parse(rawId)
       return mutation(
-        `/group-banners/${encodeURIComponent(id)}/cancel`,
+        `/group-banners/${encodeURIComponent(id)}/cancel?contentVersion=3`,
         'POST',
         cancelGroupBannerRequestSchema.parse({ schemaVersion: 1 }),
         `"${id}:v${version}"`,

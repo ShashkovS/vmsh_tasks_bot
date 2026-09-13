@@ -10,6 +10,8 @@
         "courseName": "Математика 5–7"
       },
       "audience": "both",
+      "targetGroupId": "group-beginner",
+      "attendanceMode": "all",
       "html": "<b>Разбор сегодня в 17:00</b> · <a href=\"https://example.test\">Подключиться</a>",
       "startsAt": "2026-10-05T09:00:00Z",
       "endsAt": "2026-10-05T18:00:00Z",
@@ -27,6 +29,8 @@
         "courseName": "Математика 5–7"
       },
       "audience": "student",
+      "targetGroupId": "group-continuing",
+      "attendanceMode": "online",
       "html": "Проверьте режим участия до пятницы.",
       "startsAt": "2026-10-05T09:00:00Z",
       "endsAt": "2026-10-09T18:00:00Z",

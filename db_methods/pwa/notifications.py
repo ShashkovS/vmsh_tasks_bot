@@ -350,3 +350,39 @@ def active_group_notification_accounts(
         (course_id, group_id),
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+def targeted_notification_accounts(
+    connection: sqlite3.Connection,
+    *,
+    course_id: int,
+    group_id: str | None,
+    attendance_mode: str,
+) -> list[dict[str, object]]:
+    """Resolve current Student/Family accounts for one communication target."""
+
+    rows = connection.execute(
+        "WITH recipient_students AS ("
+        "SELECT enrollment.student_user_id, student.public_id AS student_public_id "
+        "FROM course_enrollments AS enrollment "
+        "JOIN users AS student ON student.id = enrollment.student_user_id "
+        "WHERE enrollment.course_id = ? AND enrollment.status = 'active' "
+        "AND (? IS NULL OR enrollment.active_group_id = ?) "
+        "AND (? = 'all' OR enrollment.attendance_mode = ?)) "
+        "SELECT account.id AS account_id, account.public_id AS account_public_id, "
+        "account.audience, student.student_public_id "
+        "FROM recipient_students AS student "
+        "JOIN auth_accounts AS account "
+        "ON account.linked_user_id = student.student_user_id "
+        "AND account.audience = 'student' AND account.status = 'active' "
+        "UNION ALL "
+        "SELECT account.id, account.public_id, account.audience, "
+        "student.student_public_id FROM recipient_students AS student "
+        "JOIN family_student_links AS link "
+        "ON link.student_user_id = student.student_user_id AND link.revoked_at IS NULL "
+        "JOIN auth_accounts AS account ON account.id = link.family_account_id "
+        "AND account.audience = 'family' AND account.status = 'active' "
+        "ORDER BY account_id, student_public_id",
+        (course_id, group_id, group_id, attendance_mode, attendance_mode),
+    ).fetchall()
+    return [dict(row) for row in rows]

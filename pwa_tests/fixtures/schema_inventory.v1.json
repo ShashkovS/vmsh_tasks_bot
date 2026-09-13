@@ -281,6 +281,14 @@
       {
         "id": "0087.pwa_review_entry_transfers",
         "sha256": "566ca00c7e03edbaa45b7149cede96a8a656374c956b2b164b64069bb1eef345"
+      },
+      {
+        "id": "0088.pwa_organizer_questions",
+        "sha256": "3aef07b85f33eab451bfa63b92d99cfe2c9b89c85c661b224befac5333ff2b21"
+      },
+      {
+        "id": "0089.pwa_communication_targeting",
+        "sha256": "658ca8f3eb0dcddb5414be64a4292c53e6ffe758757ef8ee2c7aa06563faf63e"
       }
     ],
     "repository_head_status": {
@@ -291,7 +299,7 @@
     }
   },
   "product": {
-    "object_count": 450,
+    "object_count": 460,
     "objects": [
       {
         "columns": [
@@ -9160,8 +9168,8 @@
           }
         ],
         "name": "group_banner_media",
-        "object_sha256": "a42435cd9e9acc15f407f384d464fb4f920529dc37246016b838f28246657771",
-        "sql": "CREATE TABLE group_banner_media\n(\n    id          integer primary key,\n    banner_id   integer not null references group_banners (id) on delete cascade,\n    ordinal     integer not null check (ordinal >= 0),\n    media_id    text not null,\n    source_url  text not null,\n    storage_key text not null,\n    public_url  text,\n    mime_type   text not null check (mime_type in ('image/webp', 'image/gif')),\n    width       integer not null check (width > 0 and width <= 1920),\n    height      integer not null check (height > 0 and height <= 1920),\n    created_at  text not null,\n    unique (banner_id, ordinal),\n    unique (banner_id, media_id)\n);",
+        "object_sha256": "b31401fcab32c638b8b562bbd03dbded6448783ec0f2d5bd648c1ebd862d9be0",
+        "sql": "CREATE TABLE \"group_banner_media\"\n(\n    id          INTEGER PRIMARY KEY,\n    banner_id   INTEGER NOT NULL REFERENCES \"group_banners\" (id) ON DELETE CASCADE,\n    ordinal     INTEGER NOT NULL CHECK (ordinal >= 0),\n    media_id    TEXT NOT NULL,\n    source_url  TEXT NOT NULL,\n    storage_key TEXT NOT NULL,\n    public_url  TEXT,\n    mime_type   TEXT NOT NULL CHECK (mime_type IN ('image/webp', 'image/gif')),\n    width       INTEGER NOT NULL CHECK (width > 0 AND width <= 1920),\n    height      INTEGER NOT NULL CHECK (height > 0 AND height <= 1920),\n    created_at  TEXT NOT NULL,\n    UNIQUE (banner_id, ordinal),\n    UNIQUE (banner_id, media_id)\n);",
         "table_name": "group_banner_media",
         "type": "table"
       },
@@ -9187,10 +9195,10 @@
           },
           {
             "cid": 2,
-            "declared_type": "TEXT",
+            "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
-            "name": "group_id",
+            "name": "course_id",
             "not_null": true,
             "primary_key_ordinal": 0
           },
@@ -9199,8 +9207,8 @@
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
-            "name": "audience",
-            "not_null": true,
+            "name": "group_id",
+            "not_null": false,
             "primary_key_ordinal": 0
           },
           {
@@ -9208,16 +9216,16 @@
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
-            "name": "html_sanitized",
+            "name": "audience",
             "not_null": true,
             "primary_key_ordinal": 0
           },
           {
             "cid": 5,
-            "declared_type": "INTEGER",
-            "default_sql": "1",
+            "declared_type": "TEXT",
+            "default_sql": "'all'",
             "hidden": 0,
-            "name": "sanitizer_policy_version",
+            "name": "attendance_mode",
             "not_null": true,
             "primary_key_ordinal": 0
           },
@@ -9226,12 +9234,30 @@
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
-            "name": "starts_at",
+            "name": "html_sanitized",
             "not_null": true,
             "primary_key_ordinal": 0
           },
           {
             "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "sanitizer_policy_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "starts_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -9240,7 +9266,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 8,
+            "cid": 10,
             "declared_type": "INTEGER",
             "default_sql": "0",
             "hidden": 0,
@@ -9249,7 +9275,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 9,
+            "cid": 11,
             "declared_type": "INTEGER",
             "default_sql": "1",
             "hidden": 0,
@@ -9258,7 +9284,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 10,
+            "cid": 12,
             "declared_type": "TEXT",
             "default_sql": "'active'",
             "hidden": 0,
@@ -9267,7 +9293,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 11,
+            "cid": 13,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -9276,7 +9302,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 12,
+            "cid": 14,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -9285,7 +9311,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 13,
+            "cid": 15,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -9294,7 +9320,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 14,
+            "cid": 16,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -9303,7 +9329,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 15,
+            "cid": 17,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -9312,7 +9338,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 16,
+            "cid": 18,
             "declared_type": "INTEGER",
             "default_sql": "1",
             "hidden": 0,
@@ -9321,7 +9347,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 17,
+            "cid": 19,
             "declared_type": "TEXT",
             "default_sql": "'legacy_html'",
             "hidden": 0,
@@ -9330,7 +9356,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 18,
+            "cid": 20,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -9339,7 +9365,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 19,
+            "cid": 21,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -9351,6 +9377,32 @@
         "foreign_keys": [
           {
             "from_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
               "created_by_user_id"
             ],
             "match": "NONE",
@@ -9360,18 +9412,6 @@
               "id"
             ],
             "target_table": "users"
-          },
-          {
-            "from_columns": [
-              "group_id"
-            ],
-            "match": "NONE",
-            "on_delete": "NO ACTION",
-            "on_update": "NO ACTION",
-            "target_columns": [
-              "group_id"
-            ],
-            "target_table": "groups"
           },
           {
             "from_columns": [
@@ -9394,40 +9434,56 @@
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
-                "name": "group_id",
+                "name": "course_id",
                 "seqno": 0
               },
               {
-                "cid": 10,
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 1
+              },
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attendance_mode",
+                "seqno": 2
+              },
+              {
+                "cid": 12,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
                 "name": "status",
-                "seqno": 1
-              },
-              {
-                "cid": 6,
-                "collation": "BINARY",
-                "descending": false,
-                "key": true,
-                "name": "starts_at",
-                "seqno": 2
-              },
-              {
-                "cid": 7,
-                "collation": "BINARY",
-                "descending": false,
-                "key": true,
-                "name": "ends_at",
                 "seqno": 3
               },
               {
                 "cid": 8,
                 "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "starts_at",
+                "seqno": 4
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ends_at",
+                "seqno": 5
+              },
+              {
+                "cid": 10,
+                "collation": "BINARY",
                 "descending": true,
                 "key": true,
                 "name": "priority",
-                "seqno": 4
+                "seqno": 6
               },
               {
                 "cid": 0,
@@ -9435,7 +9491,7 @@
                 "descending": false,
                 "key": true,
                 "name": "id",
-                "seqno": 5
+                "seqno": 7
               },
               {
                 "cid": -1,
@@ -9443,7 +9499,7 @@
                 "descending": false,
                 "key": false,
                 "name": null,
-                "seqno": 6
+                "seqno": 8
               }
             ],
             "name": "group_banners_window_idx",
@@ -9453,8 +9509,8 @@
           }
         ],
         "name": "group_banners",
-        "object_sha256": "13a38c33e738097b641a0599d5e362e802356851eb37b725515fbda3c2ffe133",
-        "sql": "CREATE TABLE group_banners\n(\n    id                       integer primary key,\n    public_id text generated always as ('bn-' || id) virtual,\n    group_id                 text    not null references groups (group_id),\n    audience                 text    not null\n        check (audience in ('student', 'family', 'both')),\n    html_sanitized           text    not null,\n    sanitizer_policy_version integer not null default 1,\n    starts_at                text    not null,\n    ends_at                  text    not null,\n    priority                 integer not null default 0,\n    dismissible              integer not null default 1\n        check (dismissible in (0, 1)),\n    status                   text    not null default 'active'\n        check (status in ('active', 'cancelled')),\n    created_by_user_id       integer not null references users (id),\n    updated_by_user_id       integer not null references users (id),\n    created_at               text    not null,\n    updated_at               text    not null,\n    cancelled_at             text,\n    version                  integer not null default 1 check (version > 0), content_format text not null default 'legacy_html'\n    check (content_format in ('legacy_html', 'rich_markdown_v1')), markdown_source text, rich_document_json text,\n    check (length(trim(public_id)) > 0),\n    check (length(trim(html_sanitized)) > 0),\n    check (sanitizer_policy_version = 1),\n    check (ends_at > starts_at),\n    check (\n        (status = 'active' and cancelled_at is null)\n        or (status = 'cancelled' and cancelled_at is not null)\n    )\n);",
+        "object_sha256": "5edbbb237e2cf2bdccbde67e23229b9f95c4100f0e25962bc7b2bacb18be202b",
+        "sql": "CREATE TABLE \"group_banners\"\n(\n    id                       INTEGER PRIMARY KEY,\n    public_id TEXT GENERATED ALWAYS AS ('bn-' || id) VIRTUAL,\n    course_id                INTEGER NOT NULL REFERENCES courses (id),\n    group_id                 TEXT,\n    audience                 TEXT NOT NULL\n        CHECK (audience IN ('student', 'family', 'both')),\n    attendance_mode          TEXT NOT NULL DEFAULT 'all'\n        CHECK (attendance_mode IN ('all', 'online', 'in_person')),\n    html_sanitized           TEXT NOT NULL,\n    sanitizer_policy_version INTEGER NOT NULL DEFAULT 1,\n    starts_at                TEXT NOT NULL,\n    ends_at                  TEXT NOT NULL,\n    priority                 INTEGER NOT NULL DEFAULT 0,\n    dismissible              INTEGER NOT NULL DEFAULT 1\n        CHECK (dismissible IN (0, 1)),\n    status                   TEXT NOT NULL DEFAULT 'active'\n        CHECK (status IN ('active', 'cancelled')),\n    created_by_user_id       INTEGER NOT NULL REFERENCES users (id),\n    updated_by_user_id       INTEGER NOT NULL REFERENCES users (id),\n    created_at               TEXT NOT NULL,\n    updated_at               TEXT NOT NULL,\n    cancelled_at             TEXT,\n    version                  INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),\n    content_format           TEXT NOT NULL DEFAULT 'legacy_html'\n        CHECK (content_format IN ('legacy_html', 'rich_markdown_v1')),\n    markdown_source          TEXT,\n    rich_document_json       TEXT,\n    FOREIGN KEY (course_id, group_id) REFERENCES groups (course_id, group_id),\n    CHECK (length(trim(public_id)) > 0),\n    CHECK (length(trim(html_sanitized)) > 0),\n    CHECK (sanitizer_policy_version = 1),\n    CHECK (ends_at > starts_at),\n    CHECK (\n        (status = 'active' AND cancelled_at IS NULL)\n        OR (status = 'cancelled' AND cancelled_at IS NOT NULL)\n    )\n);",
         "table_name": "group_banners",
         "type": "table"
       },
@@ -14295,6 +14351,24 @@
             "name": "version",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": "'both'",
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default_sql": "'all'",
+            "hidden": 0,
+            "name": "attendance_mode",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -14379,6 +14453,62 @@
           {
             "columns": [
               {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "owner_course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 1
+              },
+              {
+                "cid": 16,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attendance_mode",
+                "seqno": 2
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "published_at",
+                "seqno": 3
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 4
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 5
+              }
+            ],
+            "name": "news_posts_course_target_feed_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
                 "cid": 5,
                 "collation": "BINARY",
                 "descending": false,
@@ -14412,6 +14542,62 @@
               }
             ],
             "name": "news_posts_group_feed_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "owner_group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 1
+              },
+              {
+                "cid": 16,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attendance_mode",
+                "seqno": 2
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "published_at",
+                "seqno": 3
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 4
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 5
+              }
+            ],
+            "name": "news_posts_group_target_feed_idx",
             "origin": "c",
             "partial": false,
             "unique": false
@@ -14482,8 +14668,8 @@
           }
         ],
         "name": "news_posts",
-        "object_sha256": "4635e896ecd187770635a4f3e327f7d53f6266cec5e9c90d9fee1cf423e65365",
-        "sql": "CREATE TABLE news_posts\n(\n    id                       integer primary key,\n    public_id text generated always as ('news-' || id) virtual,\n    source_type              text    not null check (source_type in ('telegram', 'local')),\n    source_binding_id        integer references telegram_bindings (id),\n    owner_course_id          integer references courses (id),\n    owner_group_id           text references groups (group_id),\n    source_chat_id           integer,\n    source_message_id        integer,\n    source_media_group_id    text,\n    published_at             text    not null,\n    last_source_edited_at    text,\n    source_deleted_at        text,\n    created_at               text    not null,\n    updated_at               text    not null,\n    version                  integer not null default 1 check (version > 0),\n    check (\n        (source_type = 'telegram'\n            and source_binding_id is not null\n            and source_chat_id is not null\n            and source_message_id is not null)\n        or\n        (source_type = 'local'\n            and source_binding_id is null\n            and source_chat_id is null\n            and source_message_id is null\n            and source_media_group_id is null)\n    ),\n    check (\n        (owner_course_id is not null and owner_group_id is null)\n        or (owner_course_id is null and owner_group_id is not null)\n    )\n);",
+        "object_sha256": "5a5286fb989c628f1d03d606134d6e9e1e86ecadc44140d6e8e1d6216fd51dcf",
+        "sql": "CREATE TABLE news_posts\n(\n    id                       integer primary key,\n    public_id text generated always as ('news-' || id) virtual,\n    source_type              text    not null check (source_type in ('telegram', 'local')),\n    source_binding_id        integer references telegram_bindings (id),\n    owner_course_id          integer references courses (id),\n    owner_group_id           text references groups (group_id),\n    source_chat_id           integer,\n    source_message_id        integer,\n    source_media_group_id    text,\n    published_at             text    not null,\n    last_source_edited_at    text,\n    source_deleted_at        text,\n    created_at               text    not null,\n    updated_at               text    not null,\n    version                  integer not null default 1 check (version > 0), audience TEXT NOT NULL DEFAULT 'both'\n    CHECK (audience IN ('student', 'family', 'both')), attendance_mode TEXT NOT NULL DEFAULT 'all'\n    CHECK (attendance_mode IN ('all', 'online', 'in_person')),\n    check (\n        (source_type = 'telegram'\n            and source_binding_id is not null\n            and source_chat_id is not null\n            and source_message_id is not null)\n        or\n        (source_type = 'local'\n            and source_binding_id is null\n            and source_chat_id is null\n            and source_message_id is null\n            and source_media_group_id is null)\n    ),\n    check (\n        (owner_course_id is not null and owner_group_id is null)\n        or (owner_course_id is null and owner_group_id is not null)\n    )\n);",
         "table_name": "news_posts",
         "type": "table"
       },
@@ -15812,6 +15998,494 @@
         "object_sha256": "02bc6e894571050e52e777422e77a8a0a99785fd791dc69f5b68d85d64df95c8",
         "sql": "CREATE TABLE oral_windows\n(\n    id                 integer primary key,\n    public_id text generated always as ('ow-' || id) virtual,\n    group_lesson_id    integer not null references group_lessons (id),\n    sequence_number    integer not null check (sequence_number > 0),\n    opens_at           text    not null,\n    closes_at          text    not null,\n    join_label         text    not null,\n    join_url           text    not null,\n    join_code          text,\n    status             text    not null check (status in ('active', 'cancelled')),\n    created_by_user_id integer not null references users (id),\n    updated_by_user_id integer not null references users (id),\n    created_at         text    not null,\n    updated_at         text    not null,\n    version            integer not null default 1 check (version > 0),\n    unique (group_lesson_id, sequence_number),\n    check (opens_at < closes_at),\n    check (length(trim(join_label)) > 0),\n    check (length(trim(join_url)) > 0),\n    check (join_code is null or length(trim(join_code)) > 0)\n);",
         "table_name": "oral_windows",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 2,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "question_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "author_account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "text",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "author_account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "question_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "organizer_questions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "question_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "organizer_entries_question_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "author_account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_organizer_question_entries_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "organizer_question_entries",
+        "object_sha256": "cbde27a51b7da4b8ee2b09723ba197e2fad4ba59050d9a072a6352e65dc7ad88",
+        "sql": "CREATE TABLE organizer_question_entries (\n id INTEGER PRIMARY KEY,\n public_id TEXT GENERATED ALWAYS AS ('oqe-' || id) VIRTUAL,\n question_id INTEGER NOT NULL REFERENCES organizer_questions(id),\n author_account_id INTEGER NOT NULL REFERENCES auth_accounts(id),\n text TEXT NOT NULL CHECK(length(text)<=100000),\n created_at TEXT NOT NULL,\n idempotency_key TEXT NOT NULL,\n payload_sha256 TEXT NOT NULL,\n UNIQUE(author_account_id, idempotency_key)\n);",
+        "table_name": "organizer_question_entries",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 2,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "uploader_account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entry_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "object_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "byte_size",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "width",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "height",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "organizer_question_entries"
+          },
+          {
+            "from_columns": [
+              "uploader_account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "organizer_photos_entry_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "object_key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_organizer_question_photos_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "organizer_question_photos",
+        "object_sha256": "4abaa644a440de93c259c11544cbbaf3dda802e740382882fedf3deab4608de8",
+        "sql": "CREATE TABLE organizer_question_photos (\n id INTEGER PRIMARY KEY,\n public_id TEXT GENERATED ALWAYS AS ('oqp-' || id) VIRTUAL,\n uploader_account_id INTEGER NOT NULL REFERENCES auth_accounts(id),\n entry_id INTEGER REFERENCES organizer_question_entries(id),\n object_key TEXT NOT NULL UNIQUE,\n sha256 TEXT NOT NULL,\n byte_size INTEGER NOT NULL,\n width INTEGER NOT NULL,\n height INTEGER NOT NULL,\n created_at TEXT NOT NULL\n);",
+        "table_name": "organizer_question_photos",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 2,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "owner_account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "child_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "latest_entry_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "owner_read_entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "child_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "owner_account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "owner_account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "latest_entry_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "organizer_questions_owner_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "organizer_questions",
+        "object_sha256": "a1981ddb8e368b369069ab496a0667aa1bc6000f316a5f9392cb6955666fd61d",
+        "sql": "CREATE TABLE organizer_questions (\n id INTEGER PRIMARY KEY,\n public_id TEXT GENERATED ALWAYS AS ('oq-' || id) VIRTUAL,\n owner_account_id INTEGER NOT NULL REFERENCES auth_accounts(id),\n child_user_id INTEGER REFERENCES users(id),\n created_at TEXT NOT NULL,\n latest_entry_id INTEGER,\n owner_read_entry_id INTEGER NOT NULL DEFAULT 0\n);",
+        "table_name": "organizer_questions",
         "type": "table"
       },
       {
@@ -26678,15 +27352,15 @@
       },
       {
         "name": "group_banner_media_banner_idx",
-        "object_sha256": "ca7056d4609b5230105d0822a69c3befffc9cdc5453d88c94b57b32f48212e12",
-        "sql": "CREATE INDEX group_banner_media_banner_idx on group_banner_media (banner_id, ordinal);",
+        "object_sha256": "8f8ef6f4b4dd9311a9f55dba800bf052bf988a422cbe1816eec87220b84c35a0",
+        "sql": "CREATE INDEX group_banner_media_banner_idx\n    ON group_banner_media (banner_id, ordinal);",
         "table_name": "group_banner_media",
         "type": "index"
       },
       {
         "name": "group_banners_window_idx",
-        "object_sha256": "21ea94dbf8f6194761e4c2cad114684c7f93ac46ab651c8fd98821ef8a5e7365",
-        "sql": "CREATE INDEX group_banners_window_idx\n    on group_banners (group_id, status, starts_at, ends_at, priority desc, id);",
+        "object_sha256": "ab07c4bef9bd6cb451c552fca962a17e2016414a1cfd636661ada32a4c320440",
+        "sql": "CREATE INDEX group_banners_window_idx\n    ON group_banners\n       (course_id, group_id, attendance_mode, status, starts_at, ends_at,\n        priority DESC, id);",
         "table_name": "group_banners",
         "type": "index"
       },
@@ -26852,9 +27526,23 @@
         "type": "index"
       },
       {
+        "name": "news_posts_course_target_feed_idx",
+        "object_sha256": "118870aa3660ff4184b6605381f2d93bbeeb3cf0bc2ca0915588726a14b8e7bb",
+        "sql": "CREATE INDEX news_posts_course_target_feed_idx\n    ON news_posts\n       (owner_course_id, audience, attendance_mode, published_at DESC, id DESC);",
+        "table_name": "news_posts",
+        "type": "index"
+      },
+      {
         "name": "news_posts_group_feed_idx",
         "object_sha256": "4b263954d13378c622bd37633d511905f913e109508ee3d06afcb1477042c708",
         "sql": "CREATE INDEX news_posts_group_feed_idx\n    on news_posts (owner_group_id, published_at desc, id desc);",
+        "table_name": "news_posts",
+        "type": "index"
+      },
+      {
+        "name": "news_posts_group_target_feed_idx",
+        "object_sha256": "c69becd7375b4b6c9ace846a2ccf5efde3bc36986fdb84c57f1a79c2de5c1a81",
+        "sql": "CREATE INDEX news_posts_group_target_feed_idx\n    ON news_posts\n       (owner_group_id, audience, attendance_mode, published_at DESC, id DESC);",
         "table_name": "news_posts",
         "type": "index"
       },
@@ -26905,6 +27593,27 @@
         "object_sha256": "61a9389f42cf35ff37aaa6571fc275ada535c775fe9bd7f611b18495ff87bc3e",
         "sql": "CREATE INDEX oral_windows_group_time_idx\n    on oral_windows (group_lesson_id, opens_at, sequence_number);",
         "table_name": "oral_windows",
+        "type": "index"
+      },
+      {
+        "name": "organizer_entries_question_idx",
+        "object_sha256": "155935a2f76d828e5dd7d58826619ec7414efbc80527710133e81fd0c063dd72",
+        "sql": "CREATE INDEX organizer_entries_question_idx ON organizer_question_entries(question_id, id);",
+        "table_name": "organizer_question_entries",
+        "type": "index"
+      },
+      {
+        "name": "organizer_photos_entry_idx",
+        "object_sha256": "f82cc868b13cf0ed5e478d0aa26a9df5541c60ca2360f9efbe38b2dde6320a05",
+        "sql": "CREATE INDEX organizer_photos_entry_idx ON organizer_question_photos(entry_id, id);",
+        "table_name": "organizer_question_photos",
+        "type": "index"
+      },
+      {
+        "name": "organizer_questions_owner_idx",
+        "object_sha256": "3e4c93a609f9a6abea7c033c26a90d459ab0663b65428a3fe198b2c626403a48",
+        "sql": "CREATE INDEX organizer_questions_owner_idx ON organizer_questions(owner_account_id, latest_entry_id DESC);",
+        "table_name": "organizer_questions",
         "type": "index"
       },
       {
@@ -27867,6 +28576,20 @@
         "type": "trigger"
       },
       {
+        "name": "organizer_entry_immutable",
+        "object_sha256": "3b3add8553e098c504adfd58cd9019595c56dbfada4cba63e82783b3520f2629",
+        "sql": "CREATE TRIGGER organizer_entry_immutable BEFORE UPDATE ON organizer_question_entries\nBEGIN SELECT RAISE(ABORT,'organizer entry is immutable'); END;",
+        "table_name": "organizer_question_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "organizer_entry_no_delete",
+        "object_sha256": "0cd585ac6f9a96a7c6abfc43cfecc554c9a8d2fb626ff77f34cfa79986220246",
+        "sql": "CREATE TRIGGER organizer_entry_no_delete BEFORE DELETE ON organizer_question_entries\nBEGIN SELECT RAISE(ABORT,'organizer entry deletion is forbidden'); END;",
+        "table_name": "organizer_question_entries",
+        "type": "trigger"
+      },
+      {
         "name": "problem_revisions_delete_forbidden",
         "object_sha256": "c1633df6b6255b5bd7f77caefa03975efa296fab79ea19aa95df630a1a12a4e8",
         "sql": "CREATE TRIGGER problem_revisions_delete_forbidden\nbefore delete on problem_revisions\nfor each row\nbegin\n    select raise(abort, 'problem revision deletion is forbidden');\nend;",
@@ -28504,8 +29227,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "b023916bd027bfbd3f3b26f462b41dceae460622bbb7650a1c91d0e0b0602fb4",
-    "sha256": "7f1a54709aa1623932fb561f39619fee6372676137a401bfd6486208acec875b"
+    "pragma_structure_sha256": "316cee3896b63bd810306906270a56fb53feb13ae80a7ec277b1addf6ff82133",
+    "sha256": "5f25452ab1cb6e819440e1291f0d69f944eccb4fb5b4523be6e14b7b89df3ae3"
   },
   "source_kind": "repository-migration-head"
 }

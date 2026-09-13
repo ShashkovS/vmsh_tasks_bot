@@ -8,11 +8,17 @@ from pathlib import Path
 
 import pytest
 
-from db_methods.pwa.news import get_post, list_media
+from db_methods.pwa.news import (
+    get_post,
+    get_visible_post_by_public_id,
+    list_media,
+    list_visible_posts,
+)
 from db_methods.pwa.telegram_bindings import set_binding_status
 from helpers.pwa.telegram_news import iter_export_updates
 from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.news import ingest_telegram_news
+from models.pwa.local_news import create_local_news
 from models.pwa.auth import AuthAudience
 from models.pwa.telegram_bindings import create_binding
 from pwa_tests.integration.test_classroom_catalog_http_api import _headers
@@ -29,6 +35,7 @@ from pwa_tests.integration.test_phase8_notification_core import (
 
 MIGRATION_ID = "0067.pwa_news_mirror"
 RICH_MARKDOWN_MIGRATION_ID = "0081.pwa_rich_markdown"
+COMMUNICATION_TARGETING_MIGRATION_ID = "0089.pwa_communication_targeting"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
@@ -52,7 +59,15 @@ def test_news_migration_up_down_up_is_exact(tmp_path):
     }
     # 0081 extends news_revisions and is tested independently; it cannot be
     # applied while this historical table is intentionally absent.
-    _apply(database_path, set(migrations) - {MIGRATION_ID, RICH_MARKDOWN_MIGRATION_ID})
+    _apply(
+        database_path,
+        set(migrations)
+        - {
+            MIGRATION_ID,
+            RICH_MARKDOWN_MIGRATION_ID,
+            COMMUNICATION_TARGETING_MIGRATION_ID,
+        },
+    )
     assert _objects(database_path) == set()
 
     expected = {
@@ -203,6 +218,103 @@ def test_unmapped_source_stops_in_diagnostics(tmp_path):
             "SELECT code, detail FROM news_ingest_diagnostics"
         ).fetchone()
         assert tuple(diagnostic) == ("news_source_unmapped", None)
+
+
+def test_news_visibility_matches_active_group_audience_and_attendance(tmp_path):
+    with _database(tmp_path) as connection:
+        connection.execute(
+            "INSERT INTO groups "
+            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, course_id, status, color_key, "
+            "created_at, updated_at) VALUES "
+            "('assignment-p', 'ап', 'Продолжающие', 2, 1, 0, 1, 0, 1.0, "
+            "1, 'active', 'level-2', ?, ?)",
+            (NOW, NOW),
+        )
+        other_group_public_id = str(
+            connection.execute(
+                "SELECT public_id FROM groups WHERE group_id = 'assignment-p'"
+            ).fetchone()["public_id"]
+        )
+        active_group_public_id = str(
+            connection.execute(
+                "SELECT public_id FROM groups WHERE group_id = 'assignment-n'"
+            ).fetchone()["public_id"]
+        )
+
+        created: dict[str, str] = {}
+        for key, owner_type, owner_id, audience, attendance_mode in (
+            ("course-all", "course", "c-1", "both", "all"),
+            ("student-only", "course", "c-1", "student", "all"),
+            ("family-only", "course", "c-1", "family", "all"),
+            ("in-person", "course", "c-1", "both", "in_person"),
+            ("online", "course", "c-1", "both", "online"),
+            ("active-group", "group", active_group_public_id, "both", "all"),
+            ("other-group", "group", other_group_public_id, "both", "all"),
+        ):
+            item = create_local_news(
+                connection,
+                owner_type=owner_type,
+                owner_public_id=owner_id,
+                text=key,
+                published_at="2026-07-05T10:00:00Z",
+                actor_user_id=2,
+                now=NOW,
+                audience=audience,
+                attendance_mode=attendance_mode,
+            )
+            created[key] = str(item["public_id"])
+
+        target = ((1, "assignment-n", "in_person"),)
+        student_rows = list_visible_posts(
+            connection,
+            enrollment_targets=target,
+            audience="student",
+            cursor_public_id=None,
+            now="2026-10-05T13:00:00Z",
+            limit=100,
+        )
+        family_rows = list_visible_posts(
+            connection,
+            enrollment_targets=target,
+            audience="family",
+            cursor_public_id=None,
+            now="2026-10-05T13:00:00Z",
+            limit=100,
+        )
+
+        assert {str(row["text_plain"]) for row in student_rows} == {
+            "course-all",
+            "student-only",
+            "in-person",
+            "active-group",
+        }
+        assert {str(row["text_plain"]) for row in family_rows} == {
+            "course-all",
+            "family-only",
+            "in-person",
+            "active-group",
+        }
+        assert (
+            get_visible_post_by_public_id(
+                connection,
+                public_id=created["other-group"],
+                enrollment_targets=target,
+                audience="student",
+                now="2026-10-05T13:00:00Z",
+            )
+            is None
+        )
+        assert (
+            get_visible_post_by_public_id(
+                connection,
+                public_id=created["student-only"],
+                enrollment_targets=target,
+                audience="family",
+                now="2026-10-05T13:00:00Z",
+            )
+            is None
+        )
 
 
 def test_historical_export_is_fully_partitioned_without_copying_content():

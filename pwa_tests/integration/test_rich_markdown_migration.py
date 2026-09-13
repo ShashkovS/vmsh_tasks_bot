@@ -12,6 +12,7 @@ from pwa_tests.integration.test_phase8_notification_core import (
 
 
 MIGRATION_ID = "0081.pwa_rich_markdown"
+COMMUNICATION_TARGETING_MIGRATION_ID = "0089.pwa_communication_targeting"
 
 
 def _columns(database_path, table: str) -> set[str]:
@@ -37,7 +38,10 @@ def test_rich_markdown_migration_up_down_up_on_clean_sqlite(tmp_path) -> None:
         "0080.pwa_submission_paste_evidence"
     }
 
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
+    _apply(
+        database_path,
+        set(migrations) - {MIGRATION_ID, COMMUNICATION_TARGETING_MIGRATION_ID},
+    )
     assert {"content_format", "markdown_source", "rich_document_json"}.isdisjoint(
         _columns(database_path, "news_revisions")
     )

@@ -11,7 +11,8 @@ def find_local_post_for_edit(
     public_id: str,
 ) -> dict[str, object] | None:
     row = connection.execute(
-        "SELECT post.id, post.public_id, post.published_at, visibility.state, "
+        "SELECT post.id, post.public_id, post.owner_course_id, post.owner_group_id, "
+        "post.audience, post.attendance_mode, post.published_at, visibility.state, "
         "visibility.version, revision.revision_number, revision.text_plain, "
         "revision.source_payload_json, revision.content_format, "
         "revision.markdown_source, revision.rich_document_json "
@@ -32,6 +33,10 @@ def update_local_post_header(
     post_id: int,
     public_id: str,
     expected_version: int,
+    owner_course_id: int | None,
+    owner_group_id: str | None,
+    audience: str,
+    attendance_mode: str,
     published_at: str,
     actor_user_id: int,
     now: str,
@@ -44,10 +49,21 @@ def update_local_post_header(
     if visibility.rowcount != 1:
         return False
     connection.execute(
-        "UPDATE news_posts SET published_at = ?, last_source_edited_at = ?, "
+        "UPDATE news_posts SET owner_course_id = ?, owner_group_id = ?, audience = ?, "
+        "attendance_mode = ?, published_at = ?, last_source_edited_at = ?, "
         "updated_at = ?, version = version + 1 "
         "WHERE id = ? AND public_id = ? AND source_type = 'local'",
-        (published_at, now, now, post_id, public_id),
+        (
+            owner_course_id,
+            owner_group_id,
+            audience,
+            attendance_mode,
+            published_at,
+            now,
+            now,
+            post_id,
+            public_id,
+        ),
     )
     return True
 

@@ -7,7 +7,7 @@ import json
 import re
 import sqlite3
 
-from db_methods.pwa.notifications import active_group_notification_accounts, insert_event
+from db_methods.pwa.notifications import insert_event, targeted_notification_accounts
 from models.pwa.rich_document import rich_document_plain_text
 
 
@@ -67,18 +67,14 @@ def sync_group_banner_notifications(
         if banner["audience"] == "both"
         else {str(banner["audience"])}
     )
-    group_id = str(banner["group_id"])
-    group = connection.execute(
-        "SELECT course_id FROM groups WHERE group_id = ?", (group_id,)
-    ).fetchone()
-    if group is None:
-        raise ValueError("group banner references a missing group")
+    group_id = None if banner["group_id"] is None else str(banner["group_id"])
     recipients = {
         int(item["account_id"]): str(item["audience"])
-        for item in active_group_notification_accounts(
+        for item in targeted_notification_accounts(
             connection,
-            course_id=int(group["course_id"]),
+            course_id=int(banner["course_id"]),
             group_id=group_id,
+            attendance_mode=str(banner["attendance_mode"]),
         )
         if str(item["audience"]) in selected_audiences
     }

@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 7f1a54709aa1623932fb561f39619fee6372676137a401bfd6486208acec875b
+-- Product schema SHA-256: 5f25452ab1cb6e819440e1291f0d69f944eccb4fb5b4523be6e14b7b89df3ae3
 
 CREATE TABLE achievement_definitions
 (
@@ -923,53 +923,60 @@ CREATE TABLE "game_students_commands"
         references groups
 );
 
-CREATE TABLE group_banner_media
+CREATE TABLE "group_banner_media"
 (
-    id          integer primary key,
-    banner_id   integer not null references group_banners (id) on delete cascade,
-    ordinal     integer not null check (ordinal >= 0),
-    media_id    text not null,
-    source_url  text not null,
-    storage_key text not null,
-    public_url  text,
-    mime_type   text not null check (mime_type in ('image/webp', 'image/gif')),
-    width       integer not null check (width > 0 and width <= 1920),
-    height      integer not null check (height > 0 and height <= 1920),
-    created_at  text not null,
-    unique (banner_id, ordinal),
-    unique (banner_id, media_id)
+    id          INTEGER PRIMARY KEY,
+    banner_id   INTEGER NOT NULL REFERENCES "group_banners" (id) ON DELETE CASCADE,
+    ordinal     INTEGER NOT NULL CHECK (ordinal >= 0),
+    media_id    TEXT NOT NULL,
+    source_url  TEXT NOT NULL,
+    storage_key TEXT NOT NULL,
+    public_url  TEXT,
+    mime_type   TEXT NOT NULL CHECK (mime_type IN ('image/webp', 'image/gif')),
+    width       INTEGER NOT NULL CHECK (width > 0 AND width <= 1920),
+    height      INTEGER NOT NULL CHECK (height > 0 AND height <= 1920),
+    created_at  TEXT NOT NULL,
+    UNIQUE (banner_id, ordinal),
+    UNIQUE (banner_id, media_id)
 );
 
-CREATE TABLE group_banners
+CREATE TABLE "group_banners"
 (
-    id                       integer primary key,
-    public_id text generated always as ('bn-' || id) virtual,
-    group_id                 text    not null references groups (group_id),
-    audience                 text    not null
-        check (audience in ('student', 'family', 'both')),
-    html_sanitized           text    not null,
-    sanitizer_policy_version integer not null default 1,
-    starts_at                text    not null,
-    ends_at                  text    not null,
-    priority                 integer not null default 0,
-    dismissible              integer not null default 1
-        check (dismissible in (0, 1)),
-    status                   text    not null default 'active'
-        check (status in ('active', 'cancelled')),
-    created_by_user_id       integer not null references users (id),
-    updated_by_user_id       integer not null references users (id),
-    created_at               text    not null,
-    updated_at               text    not null,
-    cancelled_at             text,
-    version                  integer not null default 1 check (version > 0), content_format text not null default 'legacy_html'
-    check (content_format in ('legacy_html', 'rich_markdown_v1')), markdown_source text, rich_document_json text,
-    check (length(trim(public_id)) > 0),
-    check (length(trim(html_sanitized)) > 0),
-    check (sanitizer_policy_version = 1),
-    check (ends_at > starts_at),
-    check (
-        (status = 'active' and cancelled_at is null)
-        or (status = 'cancelled' and cancelled_at is not null)
+    id                       INTEGER PRIMARY KEY,
+    public_id TEXT GENERATED ALWAYS AS ('bn-' || id) VIRTUAL,
+    course_id                INTEGER NOT NULL REFERENCES courses (id),
+    group_id                 TEXT,
+    audience                 TEXT NOT NULL
+        CHECK (audience IN ('student', 'family', 'both')),
+    attendance_mode          TEXT NOT NULL DEFAULT 'all'
+        CHECK (attendance_mode IN ('all', 'online', 'in_person')),
+    html_sanitized           TEXT NOT NULL,
+    sanitizer_policy_version INTEGER NOT NULL DEFAULT 1,
+    starts_at                TEXT NOT NULL,
+    ends_at                  TEXT NOT NULL,
+    priority                 INTEGER NOT NULL DEFAULT 0,
+    dismissible              INTEGER NOT NULL DEFAULT 1
+        CHECK (dismissible IN (0, 1)),
+    status                   TEXT NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active', 'cancelled')),
+    created_by_user_id       INTEGER NOT NULL REFERENCES users (id),
+    updated_by_user_id       INTEGER NOT NULL REFERENCES users (id),
+    created_at               TEXT NOT NULL,
+    updated_at               TEXT NOT NULL,
+    cancelled_at             TEXT,
+    version                  INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+    content_format           TEXT NOT NULL DEFAULT 'legacy_html'
+        CHECK (content_format IN ('legacy_html', 'rich_markdown_v1')),
+    markdown_source          TEXT,
+    rich_document_json       TEXT,
+    FOREIGN KEY (course_id, group_id) REFERENCES groups (course_id, group_id),
+    CHECK (length(trim(public_id)) > 0),
+    CHECK (length(trim(html_sanitized)) > 0),
+    CHECK (sanitizer_policy_version = 1),
+    CHECK (ends_at > starts_at),
+    CHECK (
+        (status = 'active' AND cancelled_at IS NULL)
+        OR (status = 'cancelled' AND cancelled_at IS NOT NULL)
     )
 );
 
@@ -1484,7 +1491,9 @@ CREATE TABLE news_posts
     source_deleted_at        text,
     created_at               text    not null,
     updated_at               text    not null,
-    version                  integer not null default 1 check (version > 0),
+    version                  integer not null default 1 check (version > 0), audience TEXT NOT NULL DEFAULT 'both'
+    CHECK (audience IN ('student', 'family', 'both')), attendance_mode TEXT NOT NULL DEFAULT 'all'
+    CHECK (attendance_mode IN ('all', 'online', 'in_person')),
     check (
         (source_type = 'telegram'
             and source_binding_id is not null
@@ -1634,6 +1643,41 @@ CREATE TABLE oral_windows
     check (length(trim(join_label)) > 0),
     check (length(trim(join_url)) > 0),
     check (join_code is null or length(trim(join_code)) > 0)
+);
+
+CREATE TABLE organizer_question_entries (
+ id INTEGER PRIMARY KEY,
+ public_id TEXT GENERATED ALWAYS AS ('oqe-' || id) VIRTUAL,
+ question_id INTEGER NOT NULL REFERENCES organizer_questions(id),
+ author_account_id INTEGER NOT NULL REFERENCES auth_accounts(id),
+ text TEXT NOT NULL CHECK(length(text)<=100000),
+ created_at TEXT NOT NULL,
+ idempotency_key TEXT NOT NULL,
+ payload_sha256 TEXT NOT NULL,
+ UNIQUE(author_account_id, idempotency_key)
+);
+
+CREATE TABLE organizer_question_photos (
+ id INTEGER PRIMARY KEY,
+ public_id TEXT GENERATED ALWAYS AS ('oqp-' || id) VIRTUAL,
+ uploader_account_id INTEGER NOT NULL REFERENCES auth_accounts(id),
+ entry_id INTEGER REFERENCES organizer_question_entries(id),
+ object_key TEXT NOT NULL UNIQUE,
+ sha256 TEXT NOT NULL,
+ byte_size INTEGER NOT NULL,
+ width INTEGER NOT NULL,
+ height INTEGER NOT NULL,
+ created_at TEXT NOT NULL
+);
+
+CREATE TABLE organizer_questions (
+ id INTEGER PRIMARY KEY,
+ public_id TEXT GENERATED ALWAYS AS ('oq-' || id) VIRTUAL,
+ owner_account_id INTEGER NOT NULL REFERENCES auth_accounts(id),
+ child_user_id INTEGER REFERENCES users(id),
+ created_at TEXT NOT NULL,
+ latest_entry_id INTEGER,
+ owner_read_entry_id INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE problem_complexity
@@ -2860,10 +2904,13 @@ CREATE INDEX family_account_emails_normalized_idx
 CREATE INDEX family_student_links_student_revoked_idx
     on family_student_links (student_user_id, revoked_at);
 
-CREATE INDEX group_banner_media_banner_idx on group_banner_media (banner_id, ordinal);
+CREATE INDEX group_banner_media_banner_idx
+    ON group_banner_media (banner_id, ordinal);
 
 CREATE INDEX group_banners_window_idx
-    on group_banners (group_id, status, starts_at, ends_at, priority desc, id);
+    ON group_banners
+       (course_id, group_id, attendance_mode, status, starts_at, ends_at,
+        priority DESC, id);
 
 CREATE INDEX group_lessons_course_group_idx
     on group_lessons (course_id, group_id, course_lesson_id, id);
@@ -2943,8 +2990,16 @@ CREATE INDEX news_ingest_diagnostics_created_idx
 CREATE INDEX news_posts_course_feed_idx
     on news_posts (owner_course_id, published_at desc, id desc);
 
+CREATE INDEX news_posts_course_target_feed_idx
+    ON news_posts
+       (owner_course_id, audience, attendance_mode, published_at DESC, id DESC);
+
 CREATE INDEX news_posts_group_feed_idx
     on news_posts (owner_group_id, published_at desc, id desc);
+
+CREATE INDEX news_posts_group_target_feed_idx
+    ON news_posts
+       (owner_group_id, audience, attendance_mode, published_at DESC, id DESC);
 
 CREATE UNIQUE INDEX news_posts_telegram_album_uq
     on news_posts (source_chat_id, source_media_group_id)
@@ -2967,6 +3022,12 @@ CREATE INDEX notification_events_account_unread_idx
 
 CREATE INDEX oral_windows_group_time_idx
     on oral_windows (group_lesson_id, opens_at, sequence_number);
+
+CREATE INDEX organizer_entries_question_idx ON organizer_question_entries(question_id, id);
+
+CREATE INDEX organizer_photos_entry_idx ON organizer_question_photos(entry_id, id);
+
+CREATE INDEX organizer_questions_owner_idx ON organizer_questions(owner_account_id, latest_entry_id DESC);
 
 CREATE INDEX problem_import_receipts_course_idx
     on problem_import_receipts (course_id, applied_at desc, id desc);
@@ -4065,6 +4126,12 @@ when exists (
 begin
     select raise(abort, 'reviewed submission media asset is immutable');
 end;
+
+CREATE TRIGGER organizer_entry_immutable BEFORE UPDATE ON organizer_question_entries
+BEGIN SELECT RAISE(ABORT,'organizer entry is immutable'); END;
+
+CREATE TRIGGER organizer_entry_no_delete BEFORE DELETE ON organizer_question_entries
+BEGIN SELECT RAISE(ABORT,'organizer entry deletion is forbidden'); END;
 
 CREATE TRIGGER problem_revisions_delete_forbidden
 before delete on problem_revisions

@@ -56,6 +56,20 @@ export function NewsModerationList({
                     <span className="text-caption text-muted-foreground">
                       {item.ownerName} · {item.channelTitle ?? 'Локальная публикация'}
                     </span>
+                    <Badge variant="outline">
+                      {item.audience === 'both'
+                        ? 'Школьник и семья'
+                        : item.audience === 'student'
+                          ? 'Только школьник'
+                          : 'Только семья'}
+                    </Badge>
+                    <Badge variant="outline">
+                      {item.attendanceMode === 'all'
+                        ? 'Очно и онлайн'
+                        : item.attendanceMode === 'in_person'
+                          ? 'Только очные'
+                          : 'Только онлайн'}
+                    </Badge>
                     {item.mediaCount > 0 ? (
                       <span className="inline-flex items-center gap-1 text-caption text-muted-foreground">
                         <Images aria-hidden="true" className="size-3.5" />

@@ -2758,3 +2758,17 @@ targeted ESLint и Prettier, production build Student, `git diff --check`.
 `contracts/src/auth.test.ts` из-за рассинхронного teacher capability fixture;
 тот же класс известных fixture-regression зафиксирован выше в разделе
 совместимости API. Миграция и серверные настройки не нужны.
+
+## Таргетинг новостей и объявлений — 13 сентября 2026, реализовано локально
+
+Новости и `/staff/broadcasts` получили единые фильтры курса/группы, аудитории и
+очности. Student/Family читают записи только по текущей активной группе и
+формату, а не по всем разрешённым группам; смена профиля инвалидирует обе ленты.
+Опубликованная новость блокирует смену получателей, активное объявление разрешает
+её с явным предупреждением о ранее отправленном push. Миграция 0089 сохраняет
+старые записи и медиа. Контракт и точки реализации:
+[`communication-targeting.md`](../../docs/communication-targeting.md).
+
+Проверено: 53 backend/integration, 780 frontend unit, полный workspace typecheck,
+сборки всех PWA, schema inventory, Ruff и целевые ESLint/Prettier. Заодно исправлен
+устаревший эталон teacher capabilities, поэтому полный unit-набор снова зелёный.

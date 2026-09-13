@@ -8,6 +8,7 @@ import {
   familyChildHomeResponseSchema,
   familyCourseQueryKeys,
   familyEnrollmentUpdateRequestSchema,
+  groupBannerQueryKeys,
   parseRuntimeConfigForAudience,
   publicIdSchema,
   courseEnrollmentSchema,
@@ -192,9 +193,13 @@ export function useFamilyEnrollmentMutation(
     mutationFn: ({ courseId, input }: { courseId: string; input: FamilyEnrollmentUpdateRequest }) =>
       client.updateEnrollment(studentId, courseId, input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: familyCourseQueryKeys.home(principal, studentId),
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: familyCourseQueryKeys.home(principal, studentId),
+        }),
+        queryClient.invalidateQueries({ queryKey: groupBannerQueryKeys.active(principal) }),
+        queryClient.invalidateQueries({ queryKey: ['news'] }),
+      ])
     },
   })
 }

@@ -16,6 +16,7 @@ import {
 import {
   ApiResponseError,
   groupBannerQueryKeys,
+  type CommunicationAttendanceMode,
   type GroupBanner as GroupBannerData,
   type GroupBannerAudience,
   type RichDocument,
@@ -39,8 +40,10 @@ const RichMarkdownEditor = lazy(() =>
 )
 
 type Draft = {
+  courseId: string
   groupId: string
   audience: GroupBannerAudience
+  attendanceMode: CommunicationAttendanceMode
   markdown: string
   startsAt: string
   endsAt: string
@@ -49,8 +52,10 @@ type Draft = {
 }
 
 const emptyDraft: Draft = {
+  courseId: '',
   groupId: '',
   audience: 'both',
+  attendanceMode: 'all',
   markdown: '',
   startsAt: '',
   endsAt: '',
@@ -64,7 +69,24 @@ function readDraft(accountId: string): Draft {
       globalThis.localStorage.getItem(`vmshpwa:staff:${accountId}:group-banner-draft`) ?? 'null',
     )
     if (!stored || typeof stored !== 'object') return emptyDraft
-    return { ...emptyDraft, ...(stored as Partial<Draft>) }
+    const item = stored as Record<string, unknown>
+    return {
+      courseId: typeof item.courseId === 'string' ? item.courseId : '',
+      groupId: typeof item.groupId === 'string' ? item.groupId : '',
+      audience:
+        item.audience === 'student' || item.audience === 'family' || item.audience === 'both'
+          ? item.audience
+          : 'both',
+      attendanceMode:
+        item.attendanceMode === 'online' || item.attendanceMode === 'in_person'
+          ? item.attendanceMode
+          : 'all',
+      markdown: typeof item.markdown === 'string' ? item.markdown : '',
+      startsAt: typeof item.startsAt === 'string' ? item.startsAt : '',
+      endsAt: typeof item.endsAt === 'string' ? item.endsAt : '',
+      priority: typeof item.priority === 'string' ? item.priority : '0',
+      dismissible: typeof item.dismissible === 'boolean' ? item.dismissible : true,
+    }
   } catch {
     return emptyDraft
   }
@@ -129,25 +151,23 @@ export function StaffGroupBannersPage() {
   const [document, setDocument] = useState<RichDocument | null>(null)
 
   useEffect(() => {
-    globalThis.localStorage.setItem(
-      `vmshpwa:staff:${principal.accountId}:group-banner-draft`,
-      JSON.stringify(draft),
-    )
+    try {
+      globalThis.localStorage.setItem(
+        `vmshpwa:staff:${principal.accountId}:group-banner-draft`,
+        JSON.stringify(draft),
+      )
+    } catch {
+      // Storage denial must not crash the editor; the visible draft remains in React state.
+    }
   }, [draft, principal.accountId])
 
-  const groups =
-    owners.data?.courses.flatMap((course) =>
-      course.groups
-        .filter((group) => group.status === 'active')
-        .map((group) => ({
-          groupId: group.groupId,
-          label: `${course.courseName} · ${group.groupName}`,
-          courseId: course.courseId,
-          courseName: course.courseName,
-          groupName: group.groupName,
-        })),
-    ) ?? []
-  const groupId = draft.groupId || groups[0]?.groupId || ''
+  const courses = owners.data?.courses.filter((course) => course.status === 'active') ?? []
+  const legacyGroupCourseId = courses.find((course) =>
+    course.groups.some((group) => group.groupId === draft.groupId),
+  )?.courseId
+  const courseId = draft.courseId || legacyGroupCourseId || courses[0]?.courseId || ''
+  const selectedCourse = courses.find((course) => course.courseId === courseId)
+  const groups = selectedCourse?.groups.filter((group) => group.status === 'active') ?? []
 
   const mutation = useMutation({
     mutationFn: async (command: { kind: 'save' } | { kind: 'cancel'; banner: GroupBannerData }) => {
@@ -156,8 +176,11 @@ export function StaffGroupBannersPage() {
       }
       if (document === null) throw new Error('Rich Markdown has not passed validation')
       const common = {
-        schemaVersion: 2 as const,
+        schemaVersion: 3 as const,
+        courseId,
+        groupId: draft.groupId || null,
         audience: draft.audience,
+        attendanceMode: draft.attendanceMode,
         markdown: draft.markdown,
         document,
         startsAt: moscowIso(draft.startsAt),
@@ -167,7 +190,7 @@ export function StaffGroupBannersPage() {
       }
       return editing
         ? bannerClient.update(editing.bannerId, editing.version, common)
-        : bannerClient.create({ ...common, groupId })
+        : bannerClient.create(common)
     },
     onSuccess: async () => {
       setDraft(emptyDraft)
@@ -180,15 +203,17 @@ export function StaffGroupBannersPage() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!groupId || !draft.startsAt || !draft.endsAt || document === null) return
+    if (!courseId || !draft.startsAt || !draft.endsAt || document === null) return
     mutation.mutate({ kind: 'save' })
   }
 
   function beginEdit(banner: GroupBannerData) {
     setEditing(banner)
     setDraft({
-      groupId: banner.group.groupId,
+      courseId: banner.group.courseId,
+      groupId: banner.targetGroupId ?? '',
       audience: banner.audience,
+      attendanceMode: banner.attendanceMode,
       markdown: banner.markdown ?? '',
       startsAt: moscowInput(banner.startsAt),
       endsAt: moscowInput(banner.endsAt),
@@ -201,7 +226,7 @@ export function StaffGroupBannersPage() {
 
   return (
     <PageLayout
-      description="Короткие сообщения для группы: появятся на «Сейчас» и придут уведомлением на устройства с включёнными push."
+      description="Короткие сообщения для курса или группы: появятся на «Сейчас» и придут уведомлением на устройства с включёнными push."
       eyebrow="Admin only"
       title="Рассылки"
       width="wide"
@@ -213,20 +238,40 @@ export function StaffGroupBannersPage() {
           <Card>
             <CardContent className="pt-4">
               <form className="grid gap-4" onSubmit={submit}>
-                <div className="grid gap-3 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <Label className="grid gap-1">
+                    Курс
+                    <select
+                      className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+                      onChange={(event) =>
+                        setDraft((value) => ({
+                          ...value,
+                          courseId: event.target.value,
+                          groupId: '',
+                        }))
+                      }
+                      value={courseId}
+                    >
+                      {courses.map((course) => (
+                        <option key={course.courseId} value={course.courseId}>
+                          {course.courseName}
+                        </option>
+                      ))}
+                    </select>
+                  </Label>
                   <Label className="grid gap-1">
                     Группа
                     <select
                       className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
-                      disabled={editing !== null}
                       onChange={(event) =>
                         setDraft((value) => ({ ...value, groupId: event.target.value }))
                       }
-                      value={groupId}
+                      value={draft.groupId}
                     >
+                      <option value="">Все</option>
                       {groups.map((group) => (
                         <option key={group.groupId} value={group.groupId}>
-                          {group.label}
+                          {group.groupName}
                         </option>
                       ))}
                     </select>
@@ -243,9 +288,26 @@ export function StaffGroupBannersPage() {
                       }
                       value={draft.audience}
                     >
-                      <option value="both">Школьнику и семье</option>
+                      <option value="both">Всем</option>
                       <option value="student">Только школьнику</option>
                       <option value="family">Только семье</option>
+                    </select>
+                  </Label>
+                  <Label className="grid gap-1">
+                    Очность
+                    <select
+                      className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+                      onChange={(event) =>
+                        setDraft((value) => ({
+                          ...value,
+                          attendanceMode: event.target.value as CommunicationAttendanceMode,
+                        }))
+                      }
+                      value={draft.attendanceMode}
+                    >
+                      <option value="all">Всем</option>
+                      <option value="in_person">Только очные</option>
+                      <option value="online">Только онлайн</option>
                     </select>
                   </Label>
                   <Label className="grid gap-1">
@@ -273,7 +335,7 @@ export function StaffGroupBannersPage() {
                     <RichMarkdownEditor
                       onChange={(markdown) => setDraft((value) => ({ ...value, markdown }))}
                       onDocumentChange={setDocument}
-                      onImageUpload={richMediaClient.uploadImage}
+                      onImageUpload={(image) => richMediaClient.uploadImage(image)}
                       value={draft.markdown}
                     />
                   </Suspense>
@@ -327,13 +389,13 @@ export function StaffGroupBannersPage() {
                   Разрешить получателю скрыть объявление
                 </Label>
                 <p className="text-caption text-muted-foreground">
-                  Скрытие действует только в текущем браузере получателя. Уведомление создаётся
-                  в момент начала показа; уже отправленное уведомление после правки не повторяется.
-                  Внешние картинки копируются на сервер.
+                  Скрытие действует только в текущем браузере получателя. Уже отправленный push
+                  после изменения фильтров не отзывается и не повторяется. Внешние картинки
+                  копируются на сервер.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    disabled={mutation.isPending || groups.length === 0 || document === null}
+                    disabled={mutation.isPending || courses.length === 0 || document === null}
                     type="submit"
                   >
                     {editing ? 'Сохранить изменения' : 'Запланировать'}
@@ -374,6 +436,19 @@ export function StaffGroupBannersPage() {
             <Card key={banner.bannerId}>
               <CardContent className="space-y-3 pt-4">
                 <GroupBanner banner={banner} />
+                <p className="text-caption text-muted-foreground">
+                  {banner.audience === 'both'
+                    ? 'Школьник и семья'
+                    : banner.audience === 'student'
+                      ? 'Только школьник'
+                      : 'Только семья'}
+                  {' · '}
+                  {banner.attendanceMode === 'all'
+                    ? 'Очно и онлайн'
+                    : banner.attendanceMode === 'in_person'
+                      ? 'Только очные'
+                      : 'Только онлайн'}
+                </p>
                 <p className="font-num text-caption text-muted-foreground">
                   {new Intl.DateTimeFormat('ru-RU', {
                     dateStyle: 'short',

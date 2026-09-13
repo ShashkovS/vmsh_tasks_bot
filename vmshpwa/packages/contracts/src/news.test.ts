@@ -104,5 +104,26 @@ describe('news contracts', () => {
       schemaVersion: 1,
       text: 'Исправление уже опубликованной новости',
     })
+    expect(
+      createLocalNewsRequestSchema.parse({
+        schemaVersion: 3,
+        courseId: 'course.math',
+        groupId: null,
+        audience: 'family',
+        attendanceMode: 'in_person',
+        markdown: 'Новость для очных семей',
+        document: {
+          schemaVersion: 1,
+          media: [],
+          blocks: [
+            {
+              type: 'paragraph',
+              children: [{ type: 'text', text: 'Новость для очных семей' }],
+            },
+          ],
+        },
+        publishedAt: '2026-08-05T14:30:00Z',
+      }),
+    ).toMatchObject({ attendanceMode: 'in_person' })
   })
 })

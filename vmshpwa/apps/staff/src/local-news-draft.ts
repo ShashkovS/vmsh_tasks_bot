@@ -1,11 +1,17 @@
 export interface LocalNewsDraft {
-  owner: string
+  courseId: string
+  groupId: string
+  audience: 'student' | 'family' | 'both'
+  attendanceMode: 'all' | 'online' | 'in_person'
   text: string
   publishedLocal: string
 }
 
 export const EMPTY_LOCAL_NEWS_DRAFT: LocalNewsDraft = {
-  owner: '',
+  courseId: '',
+  groupId: '',
+  audience: 'both',
+  attendanceMode: 'all',
   text: '',
   publishedLocal: '',
 }
@@ -14,9 +20,15 @@ function isDraft(value: unknown): value is LocalNewsDraft {
   if (value === null || typeof value !== 'object') return false
   const item = value as Record<string, unknown>
   return (
-    Object.keys(item).length === 3 &&
-    typeof item.owner === 'string' &&
-    item.owner.length <= 160 &&
+    Object.keys(item).length === 6 &&
+    typeof item.courseId === 'string' &&
+    item.courseId.length <= 128 &&
+    typeof item.groupId === 'string' &&
+    item.groupId.length <= 128 &&
+    (item.audience === 'student' || item.audience === 'family' || item.audience === 'both') &&
+    (item.attendanceMode === 'all' ||
+      item.attendanceMode === 'online' ||
+      item.attendanceMode === 'in_person') &&
     typeof item.text === 'string' &&
     item.text.length <= 32_768 &&
     typeof item.publishedLocal === 'string' &&
@@ -24,13 +36,53 @@ function isDraft(value: unknown): value is LocalNewsDraft {
   )
 }
 
+type LegacyTargetDefaults = Pick<
+  LocalNewsDraft,
+  'courseId' | 'groupId' | 'audience' | 'attendanceMode'
+>
+
+function migrateLegacyDraft(
+  value: unknown,
+  targetDefaults: LegacyTargetDefaults,
+): LocalNewsDraft | null {
+  if (value === null || typeof value !== 'object') return null
+  const item = value as Record<string, unknown>
+  if (
+    Object.keys(item).length !== 3 ||
+    typeof item.owner !== 'string' ||
+    typeof item.text !== 'string' ||
+    typeof item.publishedLocal !== 'string' ||
+    item.text.length > 32_768 ||
+    item.publishedLocal.length > 32
+  )
+    return null
+  const separator = item.owner.indexOf(':')
+  if (separator < 1) return null
+  const ownerType = item.owner.slice(0, separator)
+  const ownerId = item.owner.slice(separator + 1)
+  if ((ownerType !== 'course' && ownerType !== 'group') || ownerId.length > 128) return null
+  return {
+    ...targetDefaults,
+    courseId: ownerType === 'course' ? ownerId : targetDefaults.courseId,
+    groupId: ownerType === 'group' ? ownerId : '',
+    text: item.text,
+    publishedLocal: item.publishedLocal,
+  }
+}
+
 /** Reload-safe Staff draft; server data still remains authoritative. */
-export function loadLocalNewsDraft(storage: Storage, key: string): LocalNewsDraft {
+export function loadLocalNewsDraft(
+  storage: Storage,
+  key: string,
+  legacyTargetDefaults: LegacyTargetDefaults = EMPTY_LOCAL_NEWS_DRAFT,
+): LocalNewsDraft {
   try {
     const raw = storage.getItem(key)
     if (raw === null) return EMPTY_LOCAL_NEWS_DRAFT
     const parsed: unknown = JSON.parse(raw)
-    return isDraft(parsed) ? parsed : EMPTY_LOCAL_NEWS_DRAFT
+    return isDraft(parsed)
+      ? parsed
+      : (migrateLegacyDraft(parsed, legacyTargetDefaults) ?? EMPTY_LOCAL_NEWS_DRAFT)
   } catch {
     return EMPTY_LOCAL_NEWS_DRAFT
   }

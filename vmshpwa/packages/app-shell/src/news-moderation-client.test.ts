@@ -65,7 +65,7 @@ describe('news moderation client', () => {
     })
 
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
-      '/staff/api/v1/news?state=all&limit=100&contentVersion=2',
+      '/staff/api/v1/news?state=all&limit=100&contentVersion=3',
     )
     expect(fetchImplementation.mock.calls[1]?.[1]).toEqual(
       expect.objectContaining({
@@ -73,8 +73,11 @@ describe('news moderation client', () => {
         headers: expect.objectContaining({ 'If-Match': '"news.visible:v1"' }),
       }),
     )
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/news/news.visible/visibility?contentVersion=3',
+    )
     expect(fetchImplementation.mock.calls[2]?.[0]).toBe(
-      '/staff/api/v1/news/news.visible/source-state',
+      '/staff/api/v1/news/news.visible/source-state?contentVersion=3',
     )
     expect(fetchImplementation.mock.calls[2]?.[1]).toEqual(
       expect.objectContaining({
@@ -86,7 +89,9 @@ describe('news moderation client', () => {
     expect(fetchImplementation.mock.calls[3]?.[1]).toEqual(
       expect.objectContaining({ method: 'POST' }),
     )
-    expect(fetchImplementation.mock.calls[4]?.[0]).toBe('/staff/api/v1/news/news.visible/local')
+    expect(fetchImplementation.mock.calls[4]?.[0]).toBe(
+      '/staff/api/v1/news/news.visible/local?contentVersion=3',
+    )
     expect(fetchImplementation.mock.calls[4]?.[1]).toEqual(
       expect.objectContaining({
         method: 'PATCH',

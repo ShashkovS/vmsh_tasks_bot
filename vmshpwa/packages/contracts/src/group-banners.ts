@@ -5,6 +5,8 @@ import { richDocumentCommandSchema, richDocumentSchema } from './rich-document'
 
 export const groupBannerAudienceSchema = z.enum(['student', 'family', 'both'])
 export type GroupBannerAudience = z.infer<typeof groupBannerAudienceSchema>
+export const communicationAttendanceModeSchema = z.enum(['all', 'online', 'in_person'])
+export type CommunicationAttendanceMode = z.infer<typeof communicationAttendanceModeSchema>
 
 export const groupBannerStatusSchema = z.enum(['active', 'cancelled'])
 export type GroupBannerStatus = z.infer<typeof groupBannerStatusSchema>
@@ -24,6 +26,8 @@ export const groupBannerSchema = z
     bannerId: publicIdSchema,
     group: groupBannerOwnerSchema,
     audience: groupBannerAudienceSchema,
+    targetGroupId: publicIdSchema.nullable().optional(),
+    attendanceMode: communicationAttendanceModeSchema.default('all'),
     html: z.string().min(1).max(5_000),
     markdown: z.string().max(32_768).nullable().optional(),
     document: richDocumentSchema.nullable().optional(),
@@ -106,6 +110,29 @@ export const saveGroupBannerRequestSchema = z.union([
           path: ['endsAt'],
         })
     }),
+  z
+    .object({
+      schemaVersion: z.literal(3),
+      courseId: publicIdSchema,
+      groupId: publicIdSchema.nullable(),
+      audience: groupBannerAudienceSchema,
+      attendanceMode: communicationAttendanceModeSchema,
+      markdown: z.string().trim().min(1).max(32_768),
+      document: richDocumentSchema,
+      startsAt: z.iso.datetime(),
+      endsAt: z.iso.datetime(),
+      priority: z.number().int().min(-100).max(100),
+      dismissible: z.boolean(),
+    })
+    .strict()
+    .superRefine((banner, context) => {
+      if (banner.endsAt <= banner.startsAt)
+        context.addIssue({
+          code: 'custom',
+          message: 'Banner end must follow start',
+          path: ['endsAt'],
+        })
+    }),
 ])
 export type SaveGroupBannerRequest = z.infer<typeof saveGroupBannerRequestSchema>
 
@@ -140,6 +167,29 @@ export const updateGroupBannerRequestSchema = z.union([
       dismissible: z.boolean(),
     })
     .extend(richDocumentCommandSchema.shape)
+    .strict()
+    .superRefine((banner, context) => {
+      if (banner.endsAt <= banner.startsAt)
+        context.addIssue({
+          code: 'custom',
+          message: 'Banner end must follow start',
+          path: ['endsAt'],
+        })
+    }),
+  z
+    .object({
+      schemaVersion: z.literal(3),
+      courseId: publicIdSchema,
+      groupId: publicIdSchema.nullable(),
+      audience: groupBannerAudienceSchema,
+      attendanceMode: communicationAttendanceModeSchema,
+      markdown: z.string().trim().min(1).max(32_768),
+      document: richDocumentSchema,
+      startsAt: z.iso.datetime(),
+      endsAt: z.iso.datetime(),
+      priority: z.number().int().min(-100).max(100),
+      dismissible: z.boolean(),
+    })
     .strict()
     .superRefine((banner, context) => {
       if (banner.endsAt <= banner.startsAt)

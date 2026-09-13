@@ -37,7 +37,7 @@ describe('group banner clients', () => {
     const client = createStaffGroupBannerClient(staffRuntime, { fetchImplementation })
     await client.cancel(item.bannerId, item.version)
     expect(fetchImplementation).toHaveBeenCalledWith(
-      `/staff/api/v1/group-banners/${item.bannerId}/cancel`,
+      `/staff/api/v1/group-banners/${item.bannerId}/cancel?contentVersion=3`,
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ 'If-Match': `"${item.bannerId}:v1"` }),

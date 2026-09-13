@@ -28,7 +28,7 @@ export function StaffLocalNewsComposer({
   courses,
   draft,
   pending = false,
-  ownerDisabled = false,
+  targetDisabled = false,
   publishedAtDisabled = false,
   submitLabel = 'Запланировать публикацию',
   onChange,
@@ -38,50 +38,105 @@ export function StaffLocalNewsComposer({
   courses: AdminCourse[]
   draft: LocalNewsDraft
   pending?: boolean
-  ownerDisabled?: boolean
+  targetDisabled?: boolean
   publishedAtDisabled?: boolean
   submitLabel?: string
   onChange: (draft: LocalNewsDraft) => void
   onImageUpload?: (image: File) => Promise<{ url: string }>
-  onSubmit: (document: RichDocument) => void
+  onSubmit: (document: RichDocument, courseId: string) => void
 }) {
   const [document, setDocument] = useState<RichDocument | null>(null)
-  const valid = draft.owner !== '' && document !== null && draft.publishedLocal !== ''
+  const activeCourses = courses.filter((course) => course.status === 'active')
+  const legacyGroupCourseId = activeCourses.find((course) =>
+    course.groups.some((group) => group.groupId === draft.groupId),
+  )?.courseId
+  const courseId = draft.courseId || legacyGroupCourseId || activeCourses[0]?.courseId || ''
+  const selectedCourse = activeCourses.find((course) => course.courseId === courseId)
+  const valid = courseId !== '' && document !== null && draft.publishedLocal !== ''
   return (
     <form
       className="grid gap-4"
       onSubmit={(event) => {
         event.preventDefault()
-        if (valid && document) onSubmit(document)
+        if (valid && document) onSubmit(document, courseId)
       }}
     >
-      <Label className="grid gap-1.5" htmlFor="local-news-owner">
-        Кому показать
-        <select
-          className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
-          disabled={ownerDisabled}
-          id="local-news-owner"
-          onChange={(event) => onChange({ ...draft, owner: event.target.value })}
-          required
-          value={draft.owner}
-        >
-          <option value="">Выберите курс или группу</option>
-          {courses
-            .filter((course) => course.status === 'active')
-            .map((course) => (
-              <optgroup key={course.courseId} label={course.name}>
-                <option value={`course:${course.courseId}`}>Весь курс</option>
-                {course.groups
-                  .filter((group) => group.status === 'active')
-                  .map((group) => (
-                    <option key={group.groupId} value={`group:${group.groupId}`}>
-                      {group.name}
-                    </option>
-                  ))}
-              </optgroup>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Label className="grid gap-1.5" htmlFor="local-news-course">
+          Курс
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={targetDisabled}
+            id="local-news-course"
+            onChange={(event) => onChange({ ...draft, courseId: event.target.value, groupId: '' })}
+            required
+            value={courseId}
+          >
+            {activeCourses.map((course) => (
+              <option key={course.courseId} value={course.courseId}>
+                {course.name}
+              </option>
             ))}
-        </select>
-      </Label>
+          </select>
+        </Label>
+        <Label className="grid gap-1.5" htmlFor="local-news-group">
+          Группа
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={targetDisabled}
+            id="local-news-group"
+            onChange={(event) => onChange({ ...draft, groupId: event.target.value })}
+            value={draft.groupId}
+          >
+            <option value="">Все</option>
+            {selectedCourse?.groups
+              .filter((group) => group.status === 'active')
+              .map((group) => (
+                <option key={group.groupId} value={group.groupId}>
+                  {group.name}
+                </option>
+              ))}
+          </select>
+        </Label>
+        <Label className="grid gap-1.5" htmlFor="local-news-audience">
+          Показывать
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={targetDisabled}
+            id="local-news-audience"
+            onChange={(event) =>
+              onChange({
+                ...draft,
+                audience: event.target.value as LocalNewsDraft['audience'],
+              })
+            }
+            value={draft.audience}
+          >
+            <option value="both">Всем</option>
+            <option value="student">Только школьнику</option>
+            <option value="family">Только семье</option>
+          </select>
+        </Label>
+        <Label className="grid gap-1.5" htmlFor="local-news-attendance">
+          Очность
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={targetDisabled}
+            id="local-news-attendance"
+            onChange={(event) =>
+              onChange({
+                ...draft,
+                attendanceMode: event.target.value as LocalNewsDraft['attendanceMode'],
+              })
+            }
+            value={draft.attendanceMode}
+          >
+            <option value="all">Всем</option>
+            <option value="in_person">Только очные</option>
+            <option value="online">Только онлайн</option>
+          </select>
+        </Label>
+      </div>
       <div className="grid gap-1.5">
         <Label htmlFor="local-news-editor">Текст публикации (Markdown)</Label>
         <Suspense

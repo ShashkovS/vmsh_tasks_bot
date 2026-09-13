@@ -281,12 +281,13 @@ def _seed(connection: sqlite3.Connection) -> int:
     )
     connection.execute(
         "INSERT INTO group_banners "
-        "(id, group_id, audience, html_sanitized, starts_at, ends_at, "
+        "(id, course_id, group_id, audience, html_sanitized, starts_at, ends_at, "
         "priority, dismissible, created_by_user_id, updated_by_user_id, created_at, "
-        "updated_at) VALUES (?, ?, 'both', ?, '2020-01-01T00:00:00Z', "
+        "updated_at) VALUES (?, ?, ?, 'both', ?, '2020-01-01T00:00:00Z', "
         "'2030-01-01T00:00:00Z', 20, 1, ?, ?, ?, ?)",
         (
             BANNER_ID,
+            course_id,
             group_id,
             "<b>Разбор сегодня в 17:00</b> · новости уже опубликованы",
             actor_id,

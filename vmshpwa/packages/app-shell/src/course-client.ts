@@ -5,6 +5,7 @@ import {
   courseEnrollmentSchema,
   courseProgressResponseSchema,
   courseQueryKeys,
+  groupBannerQueryKeys,
   familyEnrollmentUpdateRequestSchema,
   lessonCursorSchema,
   parseRuntimeConfigForAudience,
@@ -336,9 +337,11 @@ export function useStudentEnrollmentMutation(
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: courseQueryKeys.list(principal) }),
         queryClient.invalidateQueries({ queryKey: courseQueryKeys.home(principal) }),
+        queryClient.invalidateQueries({ queryKey: groupBannerQueryKeys.active(principal) }),
         queryClient.invalidateQueries({
           queryKey: courseQueryKeys.enrollment(principal, variables.courseId),
         }),
+        queryClient.invalidateQueries({ queryKey: ['news'] }),
       ])
     },
   })

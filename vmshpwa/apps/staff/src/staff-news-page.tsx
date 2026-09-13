@@ -120,7 +120,7 @@ export function StaffNewsPage({
       ? null
       : `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-edit:${editingItem.postId}:v${editingItem.version}`
   useEffect(() => {
-    if (localDraft.owner === '' && localDraft.text === '' && localDraft.publishedLocal === '') {
+    if (localDraft.text === '' && localDraft.publishedLocal === '') {
       clearLocalNewsDraft(globalThis.localStorage, draftKey)
     } else {
       saveLocalNewsDraft(globalThis.localStorage, draftKey, localDraft)
@@ -194,16 +194,39 @@ export function StaffNewsPage({
         onEdit={(item) => {
           const key = `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-edit:${item.postId}:v${item.version}`
           const initial = {
-            owner: `${item.ownerType}:${item.ownerId}`,
+            courseId: item.courseId,
+            groupId: item.groupId ?? '',
+            audience: item.audience,
+            attendanceMode: item.attendanceMode,
             text: item.markdown ?? item.editableText ?? '',
             publishedLocal: toMoscowLocalDateTime(item.publishedAt) ?? '',
           }
-          const saved = loadLocalNewsDraft(globalThis.localStorage, key)
-          const restored = saved.owner === '' ? initial : { ...saved, owner: initial.owner }
+          const saved = loadLocalNewsDraft(globalThis.localStorage, key, initial)
+          const hasSavedDraft =
+            saved.courseId !== '' ||
+            saved.groupId !== '' ||
+            saved.text !== '' ||
+            saved.publishedLocal !== ''
+          const restored = !hasSavedDraft
+            ? initial
+            : {
+                ...saved,
+                courseId: saved.courseId || initial.courseId,
+                groupId: saved.groupId || initial.groupId,
+              }
           // Published news keeps its original ordering and notification moment.
           // See docs/local-scheduled-news.md and the matching HTTP integration test.
           setEditDraft(
-            item.isScheduled ? restored : { ...restored, publishedLocal: initial.publishedLocal },
+            item.isScheduled
+              ? restored
+              : {
+                  ...restored,
+                  courseId: initial.courseId,
+                  groupId: initial.groupId,
+                  audience: initial.audience,
+                  attendanceMode: initial.attendanceMode,
+                  publishedLocal: initial.publishedLocal,
+                },
           )
           setEditingItem(item)
         }}
@@ -276,17 +299,18 @@ export function StaffNewsPage({
                   courses={catalog.data.courses}
                   draft={localDraft}
                   onChange={setLocalDraft}
-                  onImageUpload={richMediaClient.uploadImage}
-                  onSubmit={(document) => {
-                    const separator = localDraft.owner.indexOf(':')
+                  onImageUpload={(image) => richMediaClient.uploadImage(image)}
+                  onSubmit={(document, courseId) => {
                     const publishedAt = moscowDateTime(localDraft.publishedLocal)
-                    if (separator < 1 || publishedAt === null) return
+                    if (publishedAt === null) return
                     mutation.mutate({
                       kind: 'local',
                       request: {
-                        schemaVersion: 2,
-                        ownerType: localDraft.owner.slice(0, separator) as 'course' | 'group',
-                        ownerId: localDraft.owner.slice(separator + 1),
+                        schemaVersion: 3,
+                        courseId,
+                        groupId: localDraft.groupId || null,
+                        audience: localDraft.audience,
+                        attendanceMode: localDraft.attendanceMode,
                         markdown: localDraft.text,
                         document,
                         publishedAt,
@@ -332,8 +356,8 @@ export function StaffNewsPage({
                 courses={catalog.data.courses}
                 draft={editDraft}
                 onChange={setEditDraft}
-                onImageUpload={richMediaClient.uploadImage}
-                onSubmit={(document) => {
+                onImageUpload={(image) => richMediaClient.uploadImage(image)}
+                onSubmit={(document, courseId) => {
                   if (editingItem.isScheduled) {
                     const publishedAt = moscowDateTime(editDraft.publishedLocal)
                     if (publishedAt === null) return
@@ -341,7 +365,11 @@ export function StaffNewsPage({
                       kind: 'edit-local',
                       item: editingItem,
                       request: {
-                        schemaVersion: 2,
+                        schemaVersion: 3,
+                        courseId,
+                        groupId: editDraft.groupId || null,
+                        audience: editDraft.audience,
+                        attendanceMode: editDraft.attendanceMode,
                         markdown: editDraft.text,
                         document,
                         publishedAt,
@@ -355,10 +383,10 @@ export function StaffNewsPage({
                     request: { schemaVersion: 2, markdown: editDraft.text, document },
                   })
                 }}
-                ownerDisabled
                 pending={mutation.isPending && mutation.variables.kind === 'edit-local'}
                 publishedAtDisabled={!editingItem.isScheduled}
                 submitLabel="Сохранить изменения"
+                targetDisabled={!editingItem.isScheduled}
               />
             ) : null}
           </DialogContent>

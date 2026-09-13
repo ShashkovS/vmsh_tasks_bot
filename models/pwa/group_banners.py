@@ -68,8 +68,10 @@ def _window(starts_at: str, ends_at: str) -> None:
 def create_group_banner(
     connection: sqlite3.Connection,
     *,
-    group_id: str,
+    course_id: int,
+    group_id: str | None,
     audience: str,
+    attendance_mode: str,
     html_source: str,
     starts_at: str,
     ends_at: str,
@@ -81,7 +83,11 @@ def create_group_banner(
     document: object | None = None,
 ) -> dict[str, object]:
     _window(starts_at, ends_at)
-    if audience not in _AUDIENCES or not -100 <= priority <= 100:
+    if (
+        audience not in _AUDIENCES
+        or attendance_mode not in {"all", "online", "in_person"}
+        or not -100 <= priority <= 100
+    ):
         raise InvalidGroupBanner("settings")
     if document is None:
         html_sanitized = sanitize_group_banner_html(html_source)
@@ -100,8 +106,10 @@ def create_group_banner(
         )
     return insert_group_banner(
         connection,
+        course_id=course_id,
         group_id=group_id,
         audience=audience,
+        attendance_mode=attendance_mode,
         html_sanitized=html_sanitized,
         starts_at=starts_at,
         ends_at=ends_at,
@@ -120,7 +128,10 @@ def edit_group_banner(
     *,
     public_id: str,
     expected_version: int,
+    course_id: int,
+    group_id: str | None,
     audience: str,
+    attendance_mode: str,
     html_source: str,
     starts_at: str,
     ends_at: str,
@@ -132,7 +143,11 @@ def edit_group_banner(
     document: object | None = None,
 ) -> dict[str, object]:
     _window(starts_at, ends_at)
-    if audience not in _AUDIENCES or not -100 <= priority <= 100:
+    if (
+        audience not in _AUDIENCES
+        or attendance_mode not in {"all", "online", "in_person"}
+        or not -100 <= priority <= 100
+    ):
         raise InvalidGroupBanner("settings")
     if document is None:
         html_sanitized = sanitize_group_banner_html(html_source)
@@ -153,7 +168,10 @@ def edit_group_banner(
         connection,
         public_id=public_id,
         expected_version=expected_version,
+        course_id=course_id,
+        group_id=group_id,
         audience=audience,
+        attendance_mode=attendance_mode,
         html_sanitized=html_sanitized,
         starts_at=starts_at,
         ends_at=ends_at,

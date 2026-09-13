@@ -31,6 +31,8 @@ def create_news_notifications(
         owner_group_id=(
             None if post["owner_group_id"] is None else str(post["owner_group_id"])
         ),
+        audience=str(post["audience"]),
+        attendance_mode=str(post["attendance_mode"]),
     )
     course_public_id = news_course_public_id(
         connection,

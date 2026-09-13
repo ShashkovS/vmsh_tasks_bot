@@ -47,6 +47,24 @@ def _rich_document() -> dict[str, object]:
     }
 
 
+def _targeted_body(
+    *, group_id: str | None, attendance_mode: str
+) -> dict[str, object]:
+    return {
+        "schemaVersion": 3,
+        "courseId": "c-1",
+        "groupId": group_id,
+        "audience": "student",
+        "attendanceMode": attendance_mode,
+        "markdown": "**Важное объявление**",
+        "document": _rich_document(),
+        "startsAt": "2020-01-01T00:00:00Z",
+        "endsAt": "2030-01-01T00:00:00Z",
+        "priority": 10,
+        "dismissible": True,
+    }
+
+
 @pytest.mark.asyncio
 async def test_admin_creates_updates_and_cancels_banner(classroom_http):
     teacher = await classroom_http.client.get(
@@ -155,6 +173,51 @@ async def test_student_and_family_only_receive_their_active_banners(classroom_ht
     ]
     assert [item["html"] for item in (await family.json())["items"]] == [
         "<i>family</i>"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_admin_targets_and_retargets_active_banner(classroom_http):
+    created = await classroom_http.client.post(
+        "/staff/api/v1/group-banners",
+        json=_targeted_body(group_id="g-5", attendance_mode="online"),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    item = (await created.json())["item"]
+    assert (item["targetGroupId"], item["attendanceMode"]) == ("g-5", "online")
+
+    student_cookies = {
+        COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie
+    }
+    hidden = await classroom_http.client.get(
+        "/student/api/v1/banners/active?contentVersion=2",
+        headers=_headers(),
+        cookies=student_cookies,
+    )
+    assert [entry["bannerId"] for entry in (await hidden.json())["items"]] == []
+
+    updated = await classroom_http.client.patch(
+        f"/staff/api/v1/group-banners/{item['bannerId']}",
+        json=_targeted_body(group_id=None, attendance_mode="in_person"),
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert updated.status == 200, await updated.text()
+    updated_item = (await updated.json())["item"]
+    assert (updated_item["targetGroupId"], updated_item["attendanceMode"]) == (
+        None,
+        "in_person",
+    )
+
+    visible = await classroom_http.client.get(
+        "/student/api/v1/banners/active?contentVersion=2",
+        headers=_headers(),
+        cookies=student_cookies,
+    )
+    assert [entry["bannerId"] for entry in (await visible.json())["items"]] == [
+        item["bannerId"]
     ]
 
 

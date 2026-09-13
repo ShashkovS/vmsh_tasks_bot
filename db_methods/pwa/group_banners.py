@@ -10,10 +10,11 @@ def get_group_banner(
 ) -> dict[str, object] | None:
     row = connection.execute(
         "SELECT banner.*, owner_group.public_id AS group_public_id, "
-        "owner_group.public_name AS group_name, course.public_id AS course_public_id, "
+        "coalesce(owner_group.public_name, 'Все группы') AS group_name, "
+        "course.public_id AS course_public_id, "
         "course.name AS course_name FROM group_banners banner "
-        "JOIN groups owner_group ON owner_group.group_id = banner.group_id "
-        "JOIN courses course ON course.id = owner_group.course_id "
+        "JOIN courses course ON course.id = banner.course_id "
+        "LEFT JOIN groups owner_group ON owner_group.group_id = banner.group_id "
         "WHERE banner.public_id = ?",
         (public_id,),
     ).fetchone()
@@ -23,8 +24,10 @@ def get_group_banner(
 def insert_group_banner(
     connection: sqlite3.Connection,
     *,
-    group_id: str,
+    course_id: int,
+    group_id: str | None,
     audience: str,
+    attendance_mode: str,
     html_sanitized: str,
     starts_at: str,
     ends_at: str,
@@ -38,14 +41,17 @@ def insert_group_banner(
 ) -> dict[str, object]:
     row = connection.execute(
         "INSERT INTO group_banners "
-        "(group_id, audience, html_sanitized, content_format, markdown_source, "
+        "(course_id, group_id, audience, attendance_mode, html_sanitized, "
+        "content_format, markdown_source, "
         "rich_document_json, starts_at, ends_at, "
         "priority, dismissible, created_by_user_id, updated_by_user_id, "
-        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "RETURNING public_id",
         (
+            course_id,
             group_id,
             audience,
+            attendance_mode,
             html_sanitized,
             content_format,
             markdown_source,
@@ -70,7 +76,10 @@ def update_group_banner(
     *,
     public_id: str,
     expected_version: int,
+    course_id: int,
+    group_id: str | None,
     audience: str,
+    attendance_mode: str,
     html_sanitized: str,
     starts_at: str,
     ends_at: str,
@@ -83,13 +92,17 @@ def update_group_banner(
     rich_document_json: str | None = None,
 ) -> dict[str, object] | None:
     cursor = connection.execute(
-        "UPDATE group_banners SET audience = ?, html_sanitized = ?, content_format = ?, "
+        "UPDATE group_banners SET course_id = ?, group_id = ?, audience = ?, "
+        "attendance_mode = ?, html_sanitized = ?, content_format = ?, "
         "markdown_source = ?, rich_document_json = ?, starts_at = ?, "
         "ends_at = ?, priority = ?, dismissible = ?, updated_by_user_id = ?, "
         "updated_at = ?, version = version + 1 WHERE public_id = ? "
         "AND version = ? AND status = 'active'",
         (
+            course_id,
+            group_id,
             audience,
+            attendance_mode,
             html_sanitized,
             content_format,
             markdown_source,
@@ -155,34 +168,77 @@ def cancel_group_banner(
 def list_current_group_banners(
     connection: sqlite3.Connection,
     *,
-    group_ids: tuple[str, ...],
+    enrollment_targets: tuple[tuple[int, str, str], ...],
     audience: str,
     now: str,
 ) -> list[dict[str, object]]:
-    if not group_ids:
+    if not enrollment_targets:
         return []
+    target_values = ",".join("(?,?,?)" for _ in enrollment_targets)
+    parameters = [value for target in enrollment_targets for value in target]
+    parameters.extend((now, now, audience))
     rows = connection.execute(
+        f"WITH enrollment_target(course_id, group_id, attendance_mode) AS "
+        f"(VALUES {target_values}) "
         "SELECT banner.*, owner_group.public_id AS group_public_id, "
-        "owner_group.public_name AS group_name, course.public_id AS course_public_id, "
+        "coalesce(owner_group.public_name, 'Все группы') AS group_name, "
+        "course.public_id AS course_public_id, "
         "course.name AS course_name FROM group_banners banner "
-        "JOIN groups owner_group ON owner_group.group_id = banner.group_id "
-        "JOIN courses course ON course.id = owner_group.course_id "
-        "WHERE banner.group_id IN ("
-        + ",".join("?" for _ in group_ids)
-        + ") AND banner.status = 'active' AND banner.starts_at <= ? "
+        "JOIN courses course ON course.id = banner.course_id "
+        "LEFT JOIN groups owner_group ON owner_group.group_id = banner.group_id "
+        "WHERE EXISTS (SELECT 1 FROM enrollment_target target "
+        "WHERE target.course_id = banner.course_id "
+        "AND (banner.group_id IS NULL OR banner.group_id = target.group_id) "
+        "AND (banner.attendance_mode = 'all' "
+        "OR banner.attendance_mode = target.attendance_mode)) "
+        "AND banner.status = 'active' AND banner.starts_at <= ? "
         "AND banner.ends_at > ? AND banner.audience IN (?, 'both') "
         "ORDER BY banner.priority DESC, banner.starts_at DESC, banner.id DESC",
-        (*group_ids, now, now, audience),
+        tuple(parameters),
     ).fetchall()
     return [dict(row) for row in rows]
 
 
+def find_banner_target(
+    connection: sqlite3.Connection,
+    *,
+    course_public_id: str,
+    group_public_id: str | None,
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT course.id AS course_id, owner_group.group_id AS group_id "
+        "FROM courses course LEFT JOIN groups owner_group "
+        "ON owner_group.course_id = course.id AND owner_group.public_id = ? "
+        "AND owner_group.status = 'active' "
+        "WHERE course.public_id = ? AND course.status = 'active' "
+        "AND (? IS NULL OR owner_group.group_id IS NOT NULL)",
+        (group_public_id, course_public_id, group_public_id),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
 def find_group_id(connection: sqlite3.Connection, public_id: str) -> str | None:
+    """Legacy v1/v2 target lookup retained for deployed clients."""
+
     row = connection.execute(
         "SELECT group_id FROM groups WHERE public_id = ? AND status = 'active'",
         (public_id,),
     ).fetchone()
     return None if row is None else str(row["group_id"])
+
+
+def find_legacy_banner_target(
+    connection: sqlite3.Connection, group_public_id: str
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT course.id AS course_id, owner_group.group_id "
+        "FROM groups owner_group JOIN courses course "
+        "ON course.id = owner_group.course_id "
+        "WHERE owner_group.public_id = ? AND owner_group.status = 'active' "
+        "AND course.status = 'active'",
+        (group_public_id,),
+    ).fetchone()
+    return None if row is None else dict(row)
 
 
 def list_group_banners(
@@ -203,10 +259,11 @@ def list_group_banners(
     where = " WHERE " + " AND ".join(filters) if filters else ""
     rows = connection.execute(
         "SELECT banner.*, owner_group.public_id AS group_public_id, "
-        "owner_group.public_name AS group_name, course.public_id AS course_public_id, "
+        "coalesce(owner_group.public_name, 'Все группы') AS group_name, "
+        "course.public_id AS course_public_id, "
         "course.name AS course_name FROM group_banners banner "
-        "JOIN groups owner_group ON owner_group.group_id = banner.group_id "
-        "JOIN courses course ON course.id = owner_group.course_id"
+        "JOIN courses course ON course.id = banner.course_id "
+        "LEFT JOIN groups owner_group ON owner_group.group_id = banner.group_id"
         + where
         + " ORDER BY banner.starts_at DESC, banner.id DESC LIMIT ?",
         (*parameters, limit),
@@ -217,6 +274,8 @@ def list_group_banners(
 __all__ = [
     "cancel_group_banner",
     "get_group_banner",
+    "find_banner_target",
+    "find_legacy_banner_target",
     "find_group_id",
     "insert_group_banner",
     "list_current_group_banners",

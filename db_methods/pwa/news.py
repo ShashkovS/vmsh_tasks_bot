@@ -107,6 +107,8 @@ def insert_local_post(
     *,
     owner_course_id: int | None,
     owner_group_id: str | None,
+    audience: str,
+    attendance_mode: str,
     published_at: str,
     actor_user_id: int,
     now: str,
@@ -115,9 +117,18 @@ def insert_local_post(
 
     row = connection.execute(
         "INSERT INTO news_posts "
-        "(source_type, owner_course_id, owner_group_id, published_at, "
-        "created_at, updated_at) VALUES ('local', ?, ?, ?, ?, ?) RETURNING id",
-        (owner_course_id, owner_group_id, published_at, now, now),
+        "(source_type, owner_course_id, owner_group_id, audience, attendance_mode, "
+        "published_at, created_at, updated_at) "
+        "VALUES ('local', ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+        (
+            owner_course_id,
+            owner_group_id,
+            audience,
+            attendance_mode,
+            published_at,
+            now,
+            now,
+        ),
     ).fetchone()
     post_id = int(row["id"])
     connection.execute(
@@ -293,24 +304,35 @@ def list_news_recipient_accounts(
     *,
     owner_course_id: int | None,
     owner_group_id: str | None,
+    audience: str,
+    attendance_mode: str,
 ) -> list[dict[str, object]]:
     rows = connection.execute(
         "WITH recipient_students AS ("
         "SELECT DISTINCT enrollment.student_user_id FROM course_enrollments enrollment "
-        "WHERE enrollment.status = 'active' AND ("
-        "(? IS NOT NULL AND enrollment.course_id = ?) OR "
-        "(? IS NOT NULL AND EXISTS (SELECT 1 FROM course_group_access access "
-        "WHERE access.enrollment_id = enrollment.id AND access.group_id = ? "
-        "AND access.valid_to IS NULL)))) "
+        "WHERE enrollment.status = 'active' "
+        "AND ((? IS NOT NULL AND enrollment.course_id = ?) OR "
+        "(? IS NOT NULL AND enrollment.active_group_id = ?)) "
+        "AND (? = 'all' OR enrollment.attendance_mode = ?)) "
         "SELECT account.id, account.audience FROM auth_accounts account "
-        "WHERE account.status = 'active' AND ("
+        "WHERE account.status = 'active' "
+        "AND (? = 'both' OR account.audience = ?) AND ("
         "(account.audience = 'student' AND account.linked_user_id IN "
         "(SELECT student_user_id FROM recipient_students)) OR "
         "(account.audience = 'family' AND EXISTS (SELECT 1 FROM family_student_links link "
         "WHERE link.family_account_id = account.id AND link.revoked_at IS NULL "
         "AND link.student_user_id IN (SELECT student_user_id FROM recipient_students)))) "
         "ORDER BY account.id",
-        (owner_course_id, owner_course_id, owner_group_id, owner_group_id),
+        (
+            owner_course_id,
+            owner_course_id,
+            owner_group_id,
+            owner_group_id,
+            attendance_mode,
+            attendance_mode,
+            audience,
+            audience,
+        ),
     ).fetchall()
     return [dict(row) for row in rows]
 
@@ -350,26 +372,17 @@ def has_visible_local_post_due_between(
 def list_visible_posts(
     connection: sqlite3.Connection,
     *,
-    course_ids: tuple[int, ...],
-    group_ids: tuple[str, ...],
+    enrollment_targets: tuple[tuple[int, str, str], ...],
+    audience: str,
     cursor_public_id: str | None,
     now: str,
     limit: int,
 ) -> list[dict[str, object]]:
-    if not course_ids and not group_ids:
+    if not enrollment_targets:
         return []
-    scope_parts: list[str] = []
-    values: list[object] = []
-    if course_ids:
-        scope_parts.append(
-            f"post.owner_course_id IN ({','.join('?' for _ in course_ids)})"
-        )
-        values.extend(course_ids)
-    if group_ids:
-        scope_parts.append(
-            f"post.owner_group_id IN ({','.join('?' for _ in group_ids)})"
-        )
-        values.extend(group_ids)
+    target_values = ",".join("(?,?,?)" for _ in enrollment_targets)
+    values: list[object] = [value for target in enrollment_targets for value in target]
+    values.append(audience)
     cursor_clause = ""
     values.append(now)
     if cursor_public_id is not None:
@@ -381,6 +394,8 @@ def list_visible_posts(
         values.append(cursor_public_id)
     values.append(limit)
     rows = connection.execute(
+        f"WITH enrollment_target(course_id, group_id, attendance_mode) AS "
+        f"(VALUES {target_values}) "
         "SELECT post.id, post.public_id, post.source_type, post.source_chat_id, "
         "post.source_message_id, post.published_at, post.last_source_edited_at, "
         "revision.id AS revision_id, revision.revision_number, revision.text_plain, "
@@ -393,9 +408,14 @@ def list_visible_posts(
         "JOIN news_revisions revision ON revision.id = ("
         "SELECT latest.id FROM news_revisions latest WHERE latest.post_id = post.id "
         "ORDER BY latest.revision_number DESC LIMIT 1) "
-        "WHERE visibility.state = 'visible' AND ("
-        + " OR ".join(scope_parts)
-        + ") AND post.published_at <= ? "
+        "WHERE visibility.state = 'visible' "
+        "AND (post.audience = 'both' OR post.audience = ?) "
+        "AND EXISTS (SELECT 1 FROM enrollment_target target WHERE "
+        "((post.owner_course_id IS NOT NULL AND post.owner_course_id = target.course_id) "
+        "OR (post.owner_group_id IS NOT NULL AND post.owner_group_id = target.group_id)) "
+        "AND (post.attendance_mode = 'all' "
+        "OR post.attendance_mode = target.attendance_mode)) "
+        "AND post.published_at <= ? "
         + cursor_clause
         + "AND NOT EXISTS (SELECT 1 FROM news_media media "
         "WHERE media.revision_id = revision.id AND media.storage_status <> 'stored') "
@@ -409,25 +429,18 @@ def get_visible_post_by_public_id(
     connection: sqlite3.Connection,
     *,
     public_id: str,
-    course_ids: tuple[int, ...],
-    group_ids: tuple[str, ...],
+    enrollment_targets: tuple[tuple[int, str, str], ...],
+    audience: str,
     now: str,
 ) -> dict[str, object] | None:
-    if not course_ids and not group_ids:
+    if not enrollment_targets:
         return None
-    scope_parts: list[str] = []
-    values: list[object] = [public_id]
-    if course_ids:
-        scope_parts.append(
-            f"post.owner_course_id IN ({','.join('?' for _ in course_ids)})"
-        )
-        values.extend(course_ids)
-    if group_ids:
-        scope_parts.append(
-            f"post.owner_group_id IN ({','.join('?' for _ in group_ids)})"
-        )
-        values.extend(group_ids)
+    target_values = ",".join("(?,?,?)" for _ in enrollment_targets)
+    values: list[object] = [value for target in enrollment_targets for value in target]
+    values.extend((public_id, audience, now))
     row = connection.execute(
+        f"WITH enrollment_target(course_id, group_id, attendance_mode) AS "
+        f"(VALUES {target_values}) "
         "SELECT post.id, post.public_id, post.source_type, post.source_chat_id, "
         "post.source_message_id, post.published_at, post.last_source_edited_at, "
         "revision.id AS revision_id, revision.revision_number, revision.text_plain, "
@@ -440,12 +453,17 @@ def get_visible_post_by_public_id(
         "JOIN news_revisions revision ON revision.id = ("
         "SELECT latest.id FROM news_revisions latest WHERE latest.post_id = post.id "
         "ORDER BY latest.revision_number DESC LIMIT 1) "
-        "WHERE post.public_id = ? AND visibility.state = 'visible' AND ("
-        + " OR ".join(scope_parts)
-        + ") AND post.published_at <= ? "
+        "WHERE post.public_id = ? AND visibility.state = 'visible' "
+        "AND (post.audience = 'both' OR post.audience = ?) "
+        "AND EXISTS (SELECT 1 FROM enrollment_target target WHERE "
+        "((post.owner_course_id IS NOT NULL AND post.owner_course_id = target.course_id) "
+        "OR (post.owner_group_id IS NOT NULL AND post.owner_group_id = target.group_id)) "
+        "AND (post.attendance_mode = 'all' "
+        "OR post.attendance_mode = target.attendance_mode)) "
+        "AND post.published_at <= ? "
         "AND NOT EXISTS (SELECT 1 FROM news_media media "
         "WHERE media.revision_id = revision.id AND media.storage_status <> 'stored')",
-        (*values, now),
+        tuple(values),
     ).fetchone()
     return None if row is None else dict(row)
 

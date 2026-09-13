@@ -86,7 +86,7 @@ export function createNewsModerationClient(
     async list(rawState, { signal } = {}) {
       const state = staffNewsVisibilityFilterSchema.parse(rawState)
       return staffNewsListResponseSchema.parse(
-        await request(`/news?state=${state}&limit=100&contentVersion=2`, {
+        await request(`/news?state=${state}&limit=100&contentVersion=3`, {
           method: 'GET',
           ...(signal === undefined ? {} : { signal }),
         }),
@@ -105,7 +105,7 @@ export function createNewsModerationClient(
       const postId = publicIdSchema.parse(rawPostId)
       const body = updateLocalNewsRequestSchema.parse(input)
       return staffNewsItemResponseSchema.parse(
-        await request(`/news/${encodeURIComponent(postId)}/local`, {
+        await request(`/news/${encodeURIComponent(postId)}/local?contentVersion=3`, {
           method: 'PATCH',
           headers: { 'If-Match': `"${postId}:v${version}"` },
           body: JSON.stringify(body),
@@ -116,7 +116,7 @@ export function createNewsModerationClient(
       const postId = publicIdSchema.parse(rawPostId)
       const body = changeNewsVisibilityRequestSchema.parse(input)
       return staffNewsItemResponseSchema.parse(
-        await request(`/news/${encodeURIComponent(postId)}/visibility`, {
+        await request(`/news/${encodeURIComponent(postId)}/visibility?contentVersion=3`, {
           method: 'PATCH',
           headers: { 'If-Match': `"${postId}:v${version}"` },
           body: JSON.stringify(body),
@@ -127,7 +127,7 @@ export function createNewsModerationClient(
       const postId = publicIdSchema.parse(rawPostId)
       const body = reconcileNewsSourceRequestSchema.parse(input)
       return staffNewsItemResponseSchema.parse(
-        await request(`/news/${encodeURIComponent(postId)}/source-state`, {
+        await request(`/news/${encodeURIComponent(postId)}/source-state?contentVersion=3`, {
           method: 'PATCH',
           headers: { 'If-Match': `"${postId}:v${version}"` },
           body: JSON.stringify(body),

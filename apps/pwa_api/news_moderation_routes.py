@@ -22,6 +22,7 @@ from models.pwa.local_news import (
     LocalNewsNotFound,
     LocalNewsOwnerNotFound,
     LocalNewsPublicationTimeLocked,
+    LocalNewsTargetLocked,
     create_local_news,
     edit_local_news,
     sync_scheduled_local_news_notifications,
@@ -81,6 +82,18 @@ def _admin_user_id(request: web.Request) -> int:
     return principal.linked_user_id
 
 
+def _response_content_version(request: web.Request, *, default: int = 1) -> int:
+    if set(request.query) - {"contentVersion"} or request.query.get(
+        "contentVersion", "1"
+    ) not in {"1", "2", "3"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры запроса",
+        )
+    return int(request.query.get("contentVersion", str(default)))
+
+
 def _payload(
     item: dict[str, object], *, now: str, content_version: int = 1
 ) -> dict[str, object]:
@@ -129,9 +142,14 @@ def _payload(
     }
     # Keep existing strict v1 Staff clients working. Rich authoring fields are
     # opt-in with contentVersion=2; see Phase 8 Rich Markdown API contract.
-    if content_version == 2:
+    if content_version >= 2:
         payload["markdown"] = editable_text if rich_document is not None else None
         payload["document"] = rich_document
+    if content_version >= 3:
+        payload["courseId"] = item["course_public_id"]
+        payload["groupId"] = item["group_public_id"]
+        payload["audience"] = item["audience"]
+        payload["attendanceMode"] = item["attendance_mode"]
     return payload
 
 
@@ -258,7 +276,7 @@ async def list_news(request: web.Request) -> web.Response:
     if (
         (state is not None and state not in _STATES)
         or not 1 <= limit <= 200
-        or content_version not in {"1", "2"}
+        or content_version not in {"1", "2", "3"}
     ):
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте параметры списка"
@@ -306,13 +324,51 @@ async def create_local_publication(request: web.Request) -> web.Response:
         "document",
         "publishedAt",
     }
-    is_v2 = isinstance(body, dict) and body.get("schemaVersion") == 2
+    v3_fields = {
+        "schemaVersion",
+        "courseId",
+        "groupId",
+        "audience",
+        "attendanceMode",
+        "markdown",
+        "document",
+        "publishedAt",
+    }
+    schema_version = body.get("schemaVersion") if isinstance(body, dict) else None
+    is_rich = schema_version in {2, 3}
+    expected_fields = v3_fields if schema_version == 3 else v2_fields if schema_version == 2 else v1_fields
     if (
         not isinstance(body, dict)
-        or set(body) != (v2_fields if is_v2 else v1_fields)
-        or body.get("schemaVersion") not in {1, 2}
-        or not isinstance(body.get("ownerId"), str)
-        or _PUBLIC_ID.fullmatch(body["ownerId"]) is None
+        or set(body) != expected_fields
+        or schema_version not in {1, 2, 3}
+        or (
+            schema_version == 3
+            and (
+                body.get("audience") not in {"student", "family", "both"}
+                or body.get("attendanceMode") not in {"all", "online", "in_person"}
+            )
+        )
+        or (
+            schema_version in {1, 2}
+            and (
+                not isinstance(body.get("ownerId"), str)
+                or _PUBLIC_ID.fullmatch(body["ownerId"]) is None
+            )
+        )
+        or (
+            schema_version == 3
+            and (
+                not isinstance(body.get("courseId"), str)
+                or _PUBLIC_ID.fullmatch(body["courseId"]) is None
+                or (
+                    body.get("groupId") is not None
+                    and (
+                        not isinstance(body["groupId"], str)
+                        or _PUBLIC_ID.fullmatch(body["groupId"]) is None
+                    )
+                )
+            )
+        )
     ):
         raise PwaApiError(
             status=422,
@@ -322,7 +378,7 @@ async def create_local_publication(request: web.Request) -> web.Response:
     try:
         document, media_manifest = (
             await _copy_document_media(request, body["document"])
-            if is_v2
+            if is_rich
             else (None, [])
         )
     except (InvalidRichDocument, RichMediaCopyError) as error:
@@ -333,17 +389,35 @@ async def create_local_publication(request: web.Request) -> web.Response:
             details={"diagnostic": str(error)},
         ) from error
     now = _now()
+    owner_type = (
+        "group"
+        if schema_version == 3 and body["groupId"] is not None
+        else "course"
+        if schema_version == 3
+        else body["ownerType"]
+    )
+    owner_id = (
+        body["groupId"]
+        if schema_version == 3 and body["groupId"] is not None
+        else body["courseId"]
+        if schema_version == 3
+        else body["ownerId"]
+    )
 
     def write(connection):
         created = create_local_news(
             connection,
-            owner_type=body["ownerType"],
-            owner_public_id=body["ownerId"],
-            text=body["markdown"] if is_v2 else body["text"],
+            owner_type=owner_type,
+            owner_public_id=owner_id,
+            text=body["markdown"] if is_rich else body["text"],
             published_at=body["publishedAt"],
             actor_user_id=actor_user_id,
             now=now,
             document=document,
+            audience=body["audience"] if schema_version == 3 else "both",
+            attendance_mode=(
+                body["attendanceMode"] if schema_version == 3 else "all"
+            ),
         )
         if media_manifest:
             insert_media(
@@ -381,6 +455,8 @@ async def create_local_publication(request: web.Request) -> web.Response:
                     "source": "local",
                     "ownerType": item["owner_type"],
                     "ownerId": item["owner_public_id"],
+                    "audience": item["audience"],
+                    "attendanceMode": item["attendance_mode"],
                     "publishedAt": item["published_at"],
                     "visibility": item["visibility_state"],
                     "version": item["visibility_version"],
@@ -410,7 +486,7 @@ async def create_local_publication(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, now=now, content_version=2 if is_v2 else 1),
+            "item": _payload(item, now=now, content_version=schema_version),
             "requestId": request["request_id"],
         },
         status=201,
@@ -459,21 +535,61 @@ async def edit_local_publication(request: web.Request) -> web.Response:
         {"schemaVersion", "markdown", "document"},
         {"schemaVersion", "markdown", "document", "publishedAt"},
     )
-    is_v2 = isinstance(body, dict) and body.get("schemaVersion") == 2
+    v3_fields = {
+        "schemaVersion",
+        "courseId",
+        "groupId",
+        "audience",
+        "attendanceMode",
+        "markdown",
+        "document",
+        "publishedAt",
+    }
+    schema_version = body.get("schemaVersion") if isinstance(body, dict) else None
+    is_rich = schema_version in {2, 3}
+    fields_valid = (
+        set(body) == v3_fields
+        if isinstance(body, dict) and schema_version == 3
+        else isinstance(body, dict) and set(body) in (v2_fields if schema_version == 2 else v1_fields)
+    )
     if (
         not isinstance(body, dict)
-        or set(body) not in (v2_fields if is_v2 else v1_fields)
-        or body.get("schemaVersion") not in {1, 2}
+        or not fields_valid
+        or schema_version not in {1, 2, 3}
+        or (
+            schema_version == 3
+            and (
+                body.get("audience") not in {"student", "family", "both"}
+                or body.get("attendanceMode") not in {"all", "online", "in_person"}
+            )
+        )
+        or (
+            schema_version == 3
+            and (
+                not isinstance(body.get("courseId"), str)
+                or _PUBLIC_ID.fullmatch(body["courseId"]) is None
+                or (
+                    body.get("groupId") is not None
+                    and (
+                        not isinstance(body["groupId"], str)
+                        or _PUBLIC_ID.fullmatch(body["groupId"]) is None
+                    )
+                )
+            )
+        )
     ):
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Проверьте текст и время публикации",
         )
+    response_content_version = _response_content_version(
+        request, default=int(schema_version)
+    )
     try:
         document, media_manifest = (
             await _copy_document_media(request, body["document"])
-            if is_v2
+            if is_rich
             else (None, [])
         )
     except (InvalidRichDocument, RichMediaCopyError) as error:
@@ -493,11 +609,29 @@ async def edit_local_publication(request: web.Request) -> web.Response:
             connection,
             public_id=public_id,
             expected_version=int(match.group(2)),
-            text=body["markdown"] if is_v2 else body["text"],
+            text=body["markdown"] if is_rich else body["text"],
             published_at=body.get("publishedAt"),
             actor_user_id=actor_user_id,
             now=now,
             document=document,
+            owner_type=(
+                "group"
+                if schema_version == 3 and body["groupId"] is not None
+                else "course"
+                if schema_version == 3
+                else None
+            ),
+            owner_public_id=(
+                body["groupId"]
+                if schema_version == 3 and body["groupId"] is not None
+                else body["courseId"]
+                if schema_version == 3
+                else None
+            ),
+            audience=body["audience"] if schema_version == 3 else None,
+            attendance_mode=(
+                body["attendanceMode"] if schema_version == 3 else None
+            ),
         )
         after_rows = list_news_for_moderation(
             connection, state=None, limit=1, public_id=public_id
@@ -507,7 +641,9 @@ async def edit_local_publication(request: web.Request) -> web.Response:
         before = before_rows[0]
         item = after_rows[0]
         if changed:
-            if media_manifest:
+            if media_manifest and (
+                int(item["revision_number"]) != int(before["revision_number"])
+            ):
                 # The freshly created immutable revision is selected by the
                 # moderation projection; lookup its id without exposing it.
                 revision_id = connection.execute(
@@ -536,6 +672,10 @@ async def edit_local_publication(request: web.Request) -> web.Response:
                         "publishedAt": before["published_at"],
                         "revision": before["revision_number"],
                         "version": before["visibility_version"],
+                        "ownerType": before["owner_type"],
+                        "ownerId": before["owner_public_id"],
+                        "audience": before["audience"],
+                        "attendanceMode": before["attendance_mode"],
                     }
                 ),
                 after_json=json.dumps(
@@ -543,6 +683,10 @@ async def edit_local_publication(request: web.Request) -> web.Response:
                         "publishedAt": item["published_at"],
                         "revision": item["revision_number"],
                         "version": item["visibility_version"],
+                        "ownerType": item["owner_type"],
+                        "ownerId": item["owner_public_id"],
+                        "audience": item["audience"],
+                        "attendanceMode": item["attendance_mode"],
                     }
                 ),
                 occurred_at=now,
@@ -554,6 +698,12 @@ async def edit_local_publication(request: web.Request) -> web.Response:
     except LocalNewsNotFound as error:
         raise PwaApiError(
             status=404, code="news_post_not_found", message="Публикация не найдена"
+        ) from error
+    except LocalNewsOwnerNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="news_owner_not_found",
+            message="Курс или группа не найдены",
         ) from error
     except LocalNewsConflict as error:
         raise PwaApiError(
@@ -567,6 +717,12 @@ async def edit_local_publication(request: web.Request) -> web.Response:
             code="local_news_publication_time_locked",
             message="У уже опубликованной новости можно исправить текст, но не время",
         ) from error
+    except LocalNewsTargetLocked as error:
+        raise PwaApiError(
+            status=409,
+            code="local_news_target_locked",
+            message="У уже опубликованной новости нельзя менять получателей",
+        ) from error
     except InvalidLocalNews as error:
         raise PwaApiError(
             status=422,
@@ -578,7 +734,9 @@ async def edit_local_publication(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, now=_now(), content_version=2 if is_v2 else 1),
+            "item": _payload(
+                item, now=_now(), content_version=response_content_version
+            ),
             "requestId": request["request_id"],
         }
     )
@@ -589,6 +747,7 @@ async def edit_local_publication(request: web.Request) -> web.Response:
 @news_moderation_routes.patch("/staff/api/v1/news/{post_id}/visibility")
 async def change_visibility(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    content_version = _response_content_version(request)
     public_id = request.match_info["post_id"]
     if _PUBLIC_ID.fullmatch(public_id) is None:
         raise PwaApiError(
@@ -667,7 +826,7 @@ async def change_visibility(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, now=_now()),
+            "item": _payload(item, now=_now(), content_version=content_version),
             "requestId": request["request_id"],
         }
     )
@@ -694,6 +853,7 @@ def _source_audit_values(
 @news_moderation_routes.patch("/staff/api/v1/news/{post_id}/source-state")
 async def reconcile_source_state(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    content_version = _response_content_version(request)
     principal = authenticated_session(request).principal
     public_id = request.match_info["post_id"]
     if _PUBLIC_ID.fullmatch(public_id) is None:
@@ -795,7 +955,7 @@ async def reconcile_source_state(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, now=_now()),
+            "item": _payload(item, now=_now(), content_version=content_version),
             "requestId": request["request_id"],
         }
     )

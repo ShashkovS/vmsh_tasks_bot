@@ -112,6 +112,10 @@ export const staffNewsVisibilitySchema = z.enum(['visible', 'manual_hidden', 'so
 export type StaffNewsVisibility = z.infer<typeof staffNewsVisibilitySchema>
 export const staffNewsVisibilityFilterSchema = z.enum(['all', ...staffNewsVisibilitySchema.options])
 export type StaffNewsVisibilityFilter = z.infer<typeof staffNewsVisibilityFilterSchema>
+export const newsAudienceSchema = z.enum(['student', 'family', 'both'])
+export type NewsAudience = z.infer<typeof newsAudienceSchema>
+export const newsAttendanceModeSchema = z.enum(['all', 'online', 'in_person'])
+export type NewsAttendanceMode = z.infer<typeof newsAttendanceModeSchema>
 
 export const staffNewsItemSchema = z
   .object({
@@ -121,6 +125,10 @@ export const staffNewsItemSchema = z
     ownerType: z.enum(['course', 'group']),
     ownerId: publicIdSchema,
     ownerName: z.string().trim().min(1).max(200),
+    courseId: publicIdSchema,
+    groupId: publicIdSchema.nullable(),
+    audience: newsAudienceSchema,
+    attendanceMode: newsAttendanceModeSchema,
     publishedAt: z.iso.datetime(),
     editedAt: z.iso.datetime().nullable(),
     revision: z.number().int().positive(),
@@ -193,6 +201,18 @@ export const createLocalNewsRequestSchema = z.union([
     })
     .extend(richDocumentCommandSchema.shape)
     .strict(),
+  z
+    .object({
+      schemaVersion: z.literal(3),
+      courseId: publicIdSchema,
+      groupId: publicIdSchema.nullable(),
+      audience: newsAudienceSchema,
+      attendanceMode: newsAttendanceModeSchema,
+      markdown: z.string().trim().min(1).max(32_768),
+      document: richDocumentSchema,
+      publishedAt: z.iso.datetime({ offset: true }),
+    })
+    .strict(),
 ])
 export type CreateLocalNewsRequest = z.infer<typeof createLocalNewsRequestSchema>
 
@@ -216,6 +236,18 @@ export const updateLocalNewsRequestSchema = z.union([
   z
     .object({ publishedAt: z.iso.datetime({ offset: true }).optional() })
     .extend(richDocumentCommandSchema.shape)
+    .strict(),
+  z
+    .object({
+      schemaVersion: z.literal(3),
+      courseId: publicIdSchema,
+      groupId: publicIdSchema.nullable(),
+      audience: newsAudienceSchema,
+      attendanceMode: newsAttendanceModeSchema,
+      markdown: z.string().trim().min(1).max(32_768),
+      document: richDocumentSchema,
+      publishedAt: z.iso.datetime({ offset: true }),
+    })
     .strict(),
 ])
 export type UpdateLocalNewsRequest = z.infer<typeof updateLocalNewsRequestSchema>

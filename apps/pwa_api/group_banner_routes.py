@@ -12,7 +12,9 @@ from aiohttp import web
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.group_banners import (
-    find_group_id,
+    find_banner_target,
+    find_legacy_banner_target,
+    get_group_banner,
     list_current_group_banners,
     list_group_banners,
     replace_group_banner_media,
@@ -68,22 +70,27 @@ def _admin_user_id(request: web.Request) -> int:
     return principal.linked_user_id
 
 
-def _audience_scope(request: web.Request) -> tuple[str, tuple[str, ...]]:
+def _audience_scope(
+    request: web.Request,
+) -> tuple[str, tuple[tuple[int, str, str], ...]]:
     authenticated = authenticated_session(request)
     audience = authenticated.principal.audience
     if audience not in {AuthAudience.STUDENT, AuthAudience.FAMILY}:
         raise PwaApiError(status=403, code="forbidden", message="Недостаточно прав")
-    group_ids = tuple(
+    enrollment_targets = tuple(
         sorted(
             {
-                group.group_id
+                (
+                    enrollment.course_id,
+                    enrollment.active_group_id,
+                    enrollment.attendance_mode,
+                )
                 for enrollment in authenticated.course_enrollments
                 if enrollment.enrollment_status == "active"
-                for group in enrollment.allowed_groups
             }
         )
     )
-    return audience.value, group_ids
+    return audience.value, enrollment_targets
 
 
 def _payload(item: dict[str, object], *, content_version: int = 1) -> dict[str, object]:
@@ -98,7 +105,7 @@ def _payload(item: dict[str, object], *, content_version: int = 1) -> dict[str, 
     payload: dict[str, object] = {
         "bannerId": item["public_id"],
         "group": {
-            "groupId": item["group_public_id"],
+            "groupId": item["group_public_id"] or item["course_public_id"],
             "name": item["group_name"],
             "courseId": item["course_public_id"],
             "courseName": item["course_name"],
@@ -112,9 +119,12 @@ def _payload(item: dict[str, object], *, content_version: int = 1) -> dict[str, 
         "status": item["status"],
         "version": item["version"],
     }
-    if content_version == 2:
+    if content_version >= 2:
         payload["markdown"] = item.get("markdown_source") if document is not None else None
         payload["document"] = document
+    if content_version >= 3:
+        payload["targetGroupId"] = item["group_public_id"]
+        payload["attendanceMode"] = item["attendance_mode"]
     return payload
 
 
@@ -199,10 +209,13 @@ async def _active(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
         )
-    audience, group_ids = _audience_scope(request)
+    audience, enrollment_targets = _audience_scope(request)
     rows = await _factory(request).run_read_async(
         lambda connection: list_current_group_banners(
-            connection, group_ids=group_ids, audience=audience, now=_now()
+            connection,
+            enrollment_targets=enrollment_targets,
+            audience=audience,
+            now=_now(),
         )
     )
     return web.json_response(
@@ -236,7 +249,7 @@ async def list_banners(request: web.Request) -> web.Response:
         (group_id is not None and _PUBLIC_ID.fullmatch(group_id) is None)
         or status not in {None, "active", "cancelled"}
         or not 1 <= limit <= 200
-        or request.query.get("contentVersion", "1") not in {"1", "2"}
+        or request.query.get("contentVersion", "1") not in {"1", "2", "3"}
     ):
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте параметры списка"
@@ -269,13 +282,41 @@ async def create_banner(request: web.Request) -> web.Response:
     v2_fields = {
         "schemaVersion", "groupId", "audience", "markdown", "document", "startsAt", "endsAt", "priority", "dismissible"
     }
-    is_v2 = body.get("schemaVersion") == 2
-    if set(body) != (v2_fields if is_v2 else v1_fields) or body.get("schemaVersion") not in {1, 2}:
+    v3_fields = {
+        "schemaVersion", "courseId", "groupId", "audience", "attendanceMode",
+        "markdown", "document", "startsAt", "endsAt", "priority", "dismissible"
+    }
+    schema_version = body.get("schemaVersion")
+    is_rich = schema_version in {2, 3}
+    expected_fields = v3_fields if schema_version == 3 else v2_fields if schema_version == 2 else v1_fields
+    if (
+        set(body) != expected_fields
+        or schema_version not in {1, 2, 3}
+        or body.get("audience") not in {"student", "family", "both"}
+        or (
+            schema_version == 3
+            and body.get("attendanceMode") not in {"all", "online", "in_person"}
+        )
+        or (
+            schema_version == 3
+            and (
+                not isinstance(body.get("courseId"), str)
+                or _PUBLIC_ID.fullmatch(body["courseId"]) is None
+                or (
+                    body.get("groupId") is not None
+                    and (
+                        not isinstance(body["groupId"], str)
+                        or _PUBLIC_ID.fullmatch(body["groupId"]) is None
+                    )
+                )
+            )
+        )
+    ):
         raise PwaApiError(status=422, code="validation_error", message="Проверьте поля объявления")
     try:
         document, media_manifest = (
             await _copy_document_media(request, body["document"])
-            if is_v2
+            if is_rich
             else (None, [])
         )
     except (InvalidRichDocument, RichMediaCopyError) as error:
@@ -287,21 +328,33 @@ async def create_banner(request: web.Request) -> web.Response:
         ) from error
 
     def write(connection):
-        group_id = find_group_id(connection, str(body["groupId"]))
-        if group_id is None:
+        target = (
+            find_banner_target(
+                connection,
+                course_public_id=str(body["courseId"]),
+                group_public_id=(
+                    None if body["groupId"] is None else str(body["groupId"])
+                ),
+            )
+            if schema_version == 3
+            else find_legacy_banner_target(connection, str(body["groupId"]))
+        )
+        if target is None:
             return None
         item = create_group_banner(
             connection,
-            group_id=group_id,
+            course_id=int(target["course_id"]),
+            group_id=(None if target["group_id"] is None else str(target["group_id"])),
             audience=body["audience"],
-            html_source=body["html"] if not is_v2 else "<p>Rich Markdown</p>",
+            attendance_mode=body["attendanceMode"] if schema_version == 3 else "all",
+            html_source=body["html"] if not is_rich else "<p>Rich Markdown</p>",
             starts_at=body["startsAt"],
             ends_at=body["endsAt"],
             priority=body["priority"],
             dismissible=body["dismissible"],
             actor_user_id=actor_user_id,
             now=now,
-            markdown=body["markdown"] if is_v2 else None,
+            markdown=body["markdown"] if is_rich else None,
             document=document,
         )
         if media_manifest:
@@ -319,13 +372,13 @@ async def create_banner(request: web.Request) -> web.Response:
         ) from error
     if item is None:
         raise PwaApiError(
-            status=404, code="group_not_found", message="Группа не найдена"
+            status=404, code="group_not_found", message="Курс или группа не найдены"
         )
     await request.app[PWA_BANNER_INVALIDATOR]("group-banner-created")
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, content_version=2 if is_v2 else 1),
+            "item": _payload(item, content_version=schema_version),
             "requestId": request["request_id"],
         },
         status=201,
@@ -347,13 +400,41 @@ async def update_banner(request: web.Request) -> web.Response:
     body = await _read_json(request)
     v1_fields = {"schemaVersion", "audience", "html", "startsAt", "endsAt", "priority", "dismissible"}
     v2_fields = {"schemaVersion", "audience", "markdown", "document", "startsAt", "endsAt", "priority", "dismissible"}
-    is_v2 = body.get("schemaVersion") == 2
-    if set(body) != (v2_fields if is_v2 else v1_fields) or body.get("schemaVersion") not in {1, 2}:
+    v3_fields = {
+        "schemaVersion", "courseId", "groupId", "audience", "attendanceMode",
+        "markdown", "document", "startsAt", "endsAt", "priority", "dismissible"
+    }
+    schema_version = body.get("schemaVersion")
+    is_rich = schema_version in {2, 3}
+    expected_fields = v3_fields if schema_version == 3 else v2_fields if schema_version == 2 else v1_fields
+    if (
+        set(body) != expected_fields
+        or schema_version not in {1, 2, 3}
+        or body.get("audience") not in {"student", "family", "both"}
+        or (
+            schema_version == 3
+            and body.get("attendanceMode") not in {"all", "online", "in_person"}
+        )
+        or (
+            schema_version == 3
+            and (
+                not isinstance(body.get("courseId"), str)
+                or _PUBLIC_ID.fullmatch(body["courseId"]) is None
+                or (
+                    body.get("groupId") is not None
+                    and (
+                        not isinstance(body["groupId"], str)
+                        or _PUBLIC_ID.fullmatch(body["groupId"]) is None
+                    )
+                )
+            )
+        )
+    ):
         raise PwaApiError(status=422, code="validation_error", message="Проверьте поля объявления")
     try:
         document, media_manifest = (
             await _copy_document_media(request, body["document"])
-            if is_v2
+            if is_rich
             else (None, [])
         )
     except (InvalidRichDocument, RichMediaCopyError) as error:
@@ -365,19 +446,47 @@ async def update_banner(request: web.Request) -> web.Response:
         ) from error
     try:
         def write(connection):
+            current = get_group_banner(connection, public_id)
+            if current is None:
+                return None
+            target = (
+                find_banner_target(
+                    connection,
+                    course_public_id=str(body["courseId"]),
+                    group_public_id=(
+                        None if body["groupId"] is None else str(body["groupId"])
+                    ),
+                )
+                if schema_version == 3
+                else {
+                    "course_id": current["course_id"],
+                    "group_id": current["group_id"],
+                }
+            )
+            if target is None:
+                return None
             item = edit_group_banner(
                 connection,
                 public_id=public_id,
                 expected_version=expected_version,
+                course_id=int(target["course_id"]),
+                group_id=(
+                    None if target["group_id"] is None else str(target["group_id"])
+                ),
                 audience=body["audience"],
-                html_source=body["html"] if not is_v2 else "<p>Rich Markdown</p>",
+                attendance_mode=(
+                    body["attendanceMode"]
+                    if schema_version == 3
+                    else str(current["attendance_mode"])
+                ),
+                html_source=body["html"] if not is_rich else "<p>Rich Markdown</p>",
                 starts_at=body["startsAt"],
                 ends_at=body["endsAt"],
                 priority=body["priority"],
                 dismissible=body["dismissible"],
                 actor_user_id=actor_user_id,
                 now=now,
-                markdown=body["markdown"] if is_v2 else None,
+                markdown=body["markdown"] if is_rich else None,
                 document=document,
             )
             replace_group_banner_media(connection, banner_id=int(item["id"]), media=media_manifest, now=now)
@@ -394,11 +503,17 @@ async def update_banner(request: web.Request) -> web.Response:
             code="version_conflict",
             message="Объявление уже изменилось. Обновите список.",
         ) from error
+    if item is None:
+        raise PwaApiError(
+            status=404,
+            code="group_not_found",
+            message="Объявление, курс или группа не найдены",
+        )
     await request.app[PWA_BANNER_INVALIDATOR]("group-banner-updated")
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item, content_version=2 if is_v2 else 1),
+            "item": _payload(item, content_version=schema_version),
             "requestId": request["request_id"],
         }
     )
@@ -416,6 +531,14 @@ async def cancel_group_banner_route(request: web.Request) -> web.Response:
             status=404, code="banner_not_found", message="Объявление не найдено"
         )
     expected_version = _version(request, public_id)
+    if set(request.query) - {"contentVersion"} or request.query.get(
+        "contentVersion", "1"
+    ) not in {"1", "2", "3"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры запроса",
+        )
     body = await _read_json(request)
     if set(body) != {"schemaVersion"} or body.get("schemaVersion") != 1:
         raise PwaApiError(status=422, code="validation_error", message="Проверьте поля объявления")
@@ -440,7 +563,14 @@ async def cancel_group_banner_route(request: web.Request) -> web.Response:
         ) from error
     await request.app[PWA_BANNER_INVALIDATOR]("group-banner-cancelled")
     return web.json_response(
-        {"schemaVersion": 1, "item": _payload(item), "requestId": request["request_id"]}
+        {
+            "schemaVersion": 1,
+            "item": _payload(
+                item,
+                content_version=int(request.query.get("contentVersion", "1")),
+            ),
+            "requestId": request["request_id"],
+        }
     )
 
 

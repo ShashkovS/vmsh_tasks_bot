@@ -10,7 +10,6 @@ from datetime import UTC, datetime
 from db_methods.pwa.local_news import (
     delete_local_news_events,
     find_local_post_for_edit,
-    reschedule_local_news_events,
     update_local_post_header,
 )
 from db_methods.pwa.news import (
@@ -39,6 +38,10 @@ class LocalNewsConflict(Exception):
 
 
 class LocalNewsPublicationTimeLocked(Exception):
+    pass
+
+
+class LocalNewsTargetLocked(Exception):
     pass
 
 
@@ -148,11 +151,17 @@ def create_local_news(
     actor_user_id: int,
     now: str,
     document: object | None = None,
+    audience: object = "both",
+    attendance_mode: object = "all",
 ) -> dict[str, object]:
     """Create one Staff-authored post with Telegram-compatible inline Markdown."""
 
     if owner_type not in {"course", "group"}:
         raise InvalidLocalNews("owner_type")
+    if audience not in {"student", "family", "both"}:
+        raise InvalidLocalNews("audience")
+    if attendance_mode not in {"all", "online", "in_person"}:
+        raise InvalidLocalNews("attendance_mode")
     if not isinstance(owner_public_id, str) or not owner_public_id:
         raise InvalidLocalNews("owner_public_id")
     if not isinstance(text, str):
@@ -206,6 +215,8 @@ def create_local_news(
         owner_group_id=(
             None if owner["owner_group_id"] is None else str(owner["owner_group_id"])
         ),
+        audience=str(audience),
+        attendance_mode=str(attendance_mode),
         published_at=normalized_published_at,
         actor_user_id=actor_user_id,
         now=now,
@@ -245,6 +256,10 @@ def edit_local_news(
     actor_user_id: int,
     now: str,
     document: object | None = None,
+    owner_type: object | None = None,
+    owner_public_id: object | None = None,
+    audience: object | None = None,
+    attendance_mode: object | None = None,
 ) -> bool:
     """Create a revision, allowing only text corrections after publication.
 
@@ -265,15 +280,68 @@ def edit_local_news(
     if int(current["version"]) != expected_version:
         raise LocalNewsConflict
     already_published = str(current["published_at"]) <= now
+    target_values = (owner_type, owner_public_id, audience, attendance_mode)
+    target_supplied = any(value is not None for value in target_values)
+    if target_supplied and any(value is None for value in target_values):
+        raise InvalidLocalNews("target")
     if already_published:
+        if target_supplied:
+            raise LocalNewsTargetLocked
         if published_at is not None:
             raise LocalNewsPublicationTimeLocked
         normalized_published_at = str(current["published_at"])
     else:
         normalized_published_at = _published_at(published_at)
-    if _stored_markdown(current) == normalized_text and current[
-        "published_at"
-    ] == normalized_published_at:
+
+    if target_supplied:
+        if owner_type not in {"course", "group"}:
+            raise InvalidLocalNews("owner_type")
+        if audience not in {"student", "family", "both"}:
+            raise InvalidLocalNews("audience")
+        if attendance_mode not in {"all", "online", "in_person"}:
+            raise InvalidLocalNews("attendance_mode")
+        if not isinstance(owner_public_id, str) or not owner_public_id:
+            raise InvalidLocalNews("owner_public_id")
+        owner = find_local_news_owner(
+            connection,
+            owner_type=str(owner_type),
+            owner_public_id=owner_public_id,
+        )
+        if owner is None:
+            raise LocalNewsOwnerNotFound
+        owner_course_id = (
+            None if owner["owner_course_id"] is None else int(owner["owner_course_id"])
+        )
+        owner_group_id = (
+            None if owner["owner_group_id"] is None else str(owner["owner_group_id"])
+        )
+        normalized_audience = str(audience)
+        normalized_attendance_mode = str(attendance_mode)
+    else:
+        owner_course_id = (
+            None
+            if current["owner_course_id"] is None
+            else int(current["owner_course_id"])
+        )
+        owner_group_id = (
+            None
+            if current["owner_group_id"] is None
+            else str(current["owner_group_id"])
+        )
+        normalized_audience = str(current["audience"])
+        normalized_attendance_mode = str(current["attendance_mode"])
+
+    content_changed = (
+        _stored_markdown(current) != normalized_text
+        or current["published_at"] != normalized_published_at
+    )
+    target_changed = (
+        current["owner_course_id"] != owner_course_id
+        or current["owner_group_id"] != owner_group_id
+        or current["audience"] != normalized_audience
+        or current["attendance_mode"] != normalized_attendance_mode
+    )
+    if not content_changed and not target_changed:
         return False
 
     if document is None:
@@ -313,30 +381,38 @@ def edit_local_news(
         post_id=int(current["id"]),
         public_id=public_id,
         expected_version=expected_version,
+        owner_course_id=owner_course_id,
+        owner_group_id=owner_group_id,
+        audience=normalized_audience,
+        attendance_mode=normalized_attendance_mode,
         published_at=normalized_published_at,
         actor_user_id=actor_user_id,
         now=now,
     ):
         raise LocalNewsConflict
-    insert_revision(
-        connection,
-        post_id=int(current["id"]),
-        source_hash=source_hash,
-        source_edited_at=now,
-        text_plain=plain_text,
-        content_json=content_json,
-        source_payload_json=source_payload_json,
-        now=now,
-        content_format=content_format,
-        markdown_source=normalized_text if rich_document_json else None,
-        rich_document_json=rich_document_json,
-    )
-    if not already_published:
-        reschedule_local_news_events(
+    if content_changed:
+        insert_revision(
             connection,
-            public_id=public_id,
-            published_at=normalized_published_at,
+            post_id=int(current["id"]),
+            source_hash=source_hash,
+            source_edited_at=now,
+            text_plain=plain_text,
+            content_json=content_json,
+            source_payload_json=source_payload_json,
+            now=now,
+            content_format=content_format,
+            markdown_source=normalized_text if rich_document_json else None,
+            rich_document_json=rich_document_json,
         )
+    if not already_published:
+        delete_local_news_events(connection, public_id=public_id)
+        if current["state"] == "visible":
+            create_news_notifications(
+                connection,
+                post_id=int(current["id"]),
+                now=now,
+                deliver_after=normalized_published_at,
+            )
     return True
 
 
@@ -368,6 +444,7 @@ __all__ = [
     "LocalNewsNotFound",
     "LocalNewsOwnerNotFound",
     "LocalNewsPublicationTimeLocked",
+    "LocalNewsTargetLocked",
     "create_local_news",
     "edit_local_news",
     "parse_telegram_markdown",

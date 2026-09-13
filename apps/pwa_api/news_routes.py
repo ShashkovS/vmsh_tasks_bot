@@ -53,7 +53,7 @@ def _factory(request: web.Request):
     return state.factory
 
 
-def _scope(request: web.Request) -> tuple[tuple[int, ...], tuple[str, ...]]:
+def _scope(request: web.Request) -> tuple[str, tuple[tuple[int, str, str], ...]]:
     authenticated = authenticated_session(request)
     principal = authenticated.principal
     if principal.audience not in {
@@ -70,13 +70,15 @@ def _scope(request: web.Request) -> tuple[tuple[int, ...], tuple[str, ...]]:
         for item in authenticated.course_enrollments
         if item.enrollment_status == "active"
     ]
-    course_ids = tuple(sorted({item.course_id for item in enrollments}))
-    group_ids = tuple(
+    targets = tuple(
         sorted(
-            {group.group_id for item in enrollments for group in item.allowed_groups}
+            {
+                (item.course_id, item.active_group_id, item.attendance_mode)
+                for item in enrollments
+            }
         )
     )
-    return course_ids, group_ids
+    return principal.audience.value, targets
 
 
 def _utf16_length(value: str) -> int:
@@ -172,7 +174,7 @@ def _post_payload(
 
 
 async def _get_news(request: web.Request) -> web.Response:
-    course_ids, group_ids = _scope(request)
+    audience, enrollment_targets = _scope(request)
     if set(request.query) - {"limit", "cursor", "contentVersion"}:
         raise PwaApiError(
             status=422,
@@ -204,8 +206,8 @@ async def _get_news(request: web.Request) -> web.Response:
     def read(connection):
         rows = list_visible_posts(
             connection,
-            course_ids=course_ids,
-            group_ids=group_ids,
+            enrollment_targets=enrollment_targets,
+            audience=audience,
             cursor_public_id=cursor,
             now=_now(),
             limit=limit + 1,
@@ -239,7 +241,7 @@ async def _get_news(request: web.Request) -> web.Response:
 
 
 async def _get_news_post(request: web.Request) -> web.Response:
-    course_ids, group_ids = _scope(request)
+    audience, enrollment_targets = _scope(request)
     if set(request.query) - {"contentVersion"} or request.query.get(
         "contentVersion", "1"
     ) not in {"1", "2"}:
@@ -260,8 +262,8 @@ async def _get_news_post(request: web.Request) -> web.Response:
         post = get_visible_post_by_public_id(
             connection,
             public_id=public_id,
-            course_ids=course_ids,
-            group_ids=group_ids,
+            enrollment_targets=enrollment_targets,
+            audience=audience,
             now=_now(),
         )
         if post is None:

@@ -1121,3 +1121,166 @@ async def test_rich_local_news_keeps_v1_reads_and_persists_immutable_v2_revision
     ]
     assert json.loads(str(stored[0]["rich_document_json"])) == first_document
     assert json.loads(str(stored[1]["rich_document_json"])) == second_document
+
+
+@pytest.mark.asyncio
+async def test_targeted_news_filters_feed_and_locks_recipients_after_publish(
+    classroom_http,
+):
+    document = {
+        "schemaVersion": 1,
+        "media": [],
+        "blocks": [
+            {
+                "type": "paragraph",
+                "children": [{"type": "text", "text": "Только очным начинающим"}],
+            }
+        ],
+    }
+    body = {
+        "schemaVersion": 3,
+        "courseId": "c-1",
+        "groupId": "g-5",
+        "audience": "student",
+        "attendanceMode": "in_person",
+        "markdown": "Только очным начинающим",
+        "document": document,
+        "publishedAt": "2020-01-01T00:00:00Z",
+    }
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json=body,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    item = (await created.json())["item"]
+    assert (
+        item["courseId"],
+        item["groupId"],
+        item["audience"],
+        item["attendanceMode"],
+    ) == ("c-1", "g-5", "student", "in_person")
+
+    student = await classroom_http.client.get(
+        "/student/api/v1/news",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie
+        },
+    )
+    family = await classroom_http.client.get(
+        "/family/api/v1/news",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+        },
+    )
+    assert [entry["postId"] for entry in (await student.json())["items"]] == [
+        item["postId"]
+    ]
+    assert (await family.json())["items"] == []
+
+    locked = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{item['postId']}/local?contentVersion=3",
+        json={**body, "audience": "both"},
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert locked.status == 409
+    assert (await locked.json())["error"]["code"] == "local_news_target_locked"
+
+    corrected_document = {
+        **document,
+        "blocks": [
+            {
+                "type": "paragraph",
+                "children": [{"type": "text", "text": "Исправленный текст"}],
+            }
+        ],
+    }
+    corrected = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{item['postId']}/local?contentVersion=3",
+        json={
+            "schemaVersion": 2,
+            "markdown": "Исправленный текст",
+            "document": corrected_document,
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert corrected.status == 200, await corrected.text()
+    corrected_item = (await corrected.json())["item"]
+    assert (
+        corrected_item["groupId"],
+        corrected_item["audience"],
+        corrected_item["attendanceMode"],
+    ) == ("g-5", "student", "in_person")
+
+
+@pytest.mark.asyncio
+async def test_scheduled_news_can_retarget_pending_notifications(classroom_http):
+    document = {
+        "schemaVersion": 1,
+        "media": [],
+        "blocks": [
+            {
+                "type": "paragraph",
+                "children": [{"type": "text", "text": "Будущая новость"}],
+            }
+        ],
+    }
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 3,
+            "courseId": "c-1",
+            "groupId": "g-5",
+            "audience": "student",
+            "attendanceMode": "in_person",
+            "markdown": "Будущая новость",
+            "document": document,
+            "publishedAt": "2099-01-01T00:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    item = (await created.json())["item"]
+
+    updated = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{item['postId']}/local?contentVersion=3",
+        json={
+            "schemaVersion": 3,
+            "courseId": "c-1",
+            "groupId": None,
+            "audience": "family",
+            "attendanceMode": "in_person",
+            "markdown": "Будущая новость",
+            "document": document,
+            "publishedAt": "2099-01-02T00:00:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert updated.status == 200, await updated.text()
+    updated_item = (await updated.json())["item"]
+    assert (
+        updated_item["groupId"],
+        updated_item["audience"],
+        updated_item["attendanceMode"],
+        updated_item["publishedAt"],
+    ) == (None, "family", "in_person", "2099-01-02T00:00:00.000000Z")
+
+    def notification_audiences(connection):
+        return [
+            str(row["audience"])
+            for row in connection.execute(
+                "SELECT account.audience FROM notification_events event "
+                "JOIN auth_accounts account ON account.id = event.account_id "
+                "WHERE event.category = 'news' AND event.dedupe_key = ?",
+                (item["postId"],),
+            )
+        ]
+
+    assert classroom_http.factory.run_read(notification_audiences) == ["family"]
