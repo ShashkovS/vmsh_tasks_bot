@@ -2807,3 +2807,14 @@ baseline-падения старых Staff-тестов описаны в отч
 `SupportComposer` и `OrganizerCompose` используют одну строку; миниатюры и статус
 сохранения вынесены отдельно. Геометрия 320/390/800 px: проверки прошли
 в Chromium, Firefox и WebKit; typecheck, ESLint и diff-check тоже прошли.
+
+
+## PNG для разбора — 2026-09-13, реализовано
+
+Staff `/whiteboard-export`: опубликованные условия доступных преподавателю
+уровней, PNG задач и базовой статистики, браузерный ZIP, прогресс и отмена.
+`html-to-image` и ZIP worker загружаются лениво; общие бумажные стили переиспользованы.
+Backend: 3 теста прошли; PNG/ZIP и регрессия печати проверены в Chromium,
+Firefox и WebKit. Typecheck, ESLint, Stylelint и Ruff прошли. Миграций нет.
+Требования: `vmshpwa/docs/whiteboard-export.md`; отчёт и снимки:
+`vmshpwa/docs/whiteboard-export-report.md`. Финальная ручная приёмка — импорт PNG в Zoom.

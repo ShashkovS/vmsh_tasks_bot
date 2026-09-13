@@ -47,6 +47,8 @@ catalog:
   '@lezer/markdown': ^1.7.2
   '@codemirror/lint': ^6.9.7
   '@codemirror/lang-markdown': ^6.5.2
+  html-to-image: ^1.11.13
+  fflate: ^0.8.3
 
 allowBuilds:
   esbuild: true

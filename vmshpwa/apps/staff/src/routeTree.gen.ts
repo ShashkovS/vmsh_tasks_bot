@@ -28,6 +28,7 @@ import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as StudentResultsRouteImport } from './routes/student-results'
 import { Route as TestingRouteImport } from './routes/testing'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as WhiteboardExportRouteImport } from './routes/whiteboard-export'
 import { Route as LessonsIndexRouteImport } from './routes/lessons.index'
 import { Route as LessonsLessonIdRouteImport } from './routes/lessons.$lessonId'
 import { Route as ProblemsIndexRouteImport } from './routes/problems.index'
@@ -138,6 +139,11 @@ const UsersRoute = UsersRouteImport.update({
   path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WhiteboardExportRoute = WhiteboardExportRouteImport.update({
+  id: '/whiteboard-export',
+  path: '/whiteboard-export',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LessonsIndexRoute = LessonsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/student-results': typeof StudentResultsRoute
   '/testing': typeof TestingRoute
   '/users': typeof UsersRoute
+  '/whiteboard-export': typeof WhiteboardExportRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/problems/synonyms': typeof ProblemsSynonymsRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/student-results': typeof StudentResultsRoute
   '/testing': typeof TestingRoute
   '/users': typeof UsersRoute
+  '/whiteboard-export': typeof WhiteboardExportRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/problems/synonyms': typeof ProblemsSynonymsRoute
@@ -297,6 +305,7 @@ export interface FileRoutesById {
   '/student-results': typeof StudentResultsRoute
   '/testing': typeof TestingRoute
   '/users': typeof UsersRoute
+  '/whiteboard-export': typeof WhiteboardExportRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/problems/synonyms': typeof ProblemsSynonymsRoute
@@ -334,6 +343,7 @@ export interface FileRouteTypes {
     | '/student-results'
     | '/testing'
     | '/users'
+    | '/whiteboard-export'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
     | '/problems/synonyms'
@@ -365,6 +375,7 @@ export interface FileRouteTypes {
     | '/student-results'
     | '/testing'
     | '/users'
+    | '/whiteboard-export'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
     | '/problems/synonyms'
@@ -399,6 +410,7 @@ export interface FileRouteTypes {
     | '/student-results'
     | '/testing'
     | '/users'
+    | '/whiteboard-export'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
     | '/problems/synonyms'
@@ -435,6 +447,7 @@ export interface RootRouteChildren {
   StudentResultsRoute: typeof StudentResultsRoute
   TestingRoute: typeof TestingRoute
   UsersRoute: typeof UsersRoute
+  WhiteboardExportRoute: typeof WhiteboardExportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -570,6 +583,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/whiteboard-export': {
+      id: '/whiteboard-export'
+      path: '/whiteboard-export'
+      fullPath: '/whiteboard-export'
+      preLoaderRoute: typeof WhiteboardExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lessons/': {
@@ -768,6 +788,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudentResultsRoute: StudentResultsRoute,
   TestingRoute: TestingRoute,
   UsersRoute: UsersRoute,
+  WhiteboardExportRoute: WhiteboardExportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

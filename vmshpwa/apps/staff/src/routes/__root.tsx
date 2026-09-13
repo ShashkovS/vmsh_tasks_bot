@@ -75,6 +75,12 @@ const navigation: StaffNavigationItem[] = [
     capability: 'oral.manage',
   },
   { label: 'Уроки', to: '/lessons', icon: <BookOpenCheck className="size-4" aria-hidden="true" /> },
+  {
+    label: 'Материалы для разбора',
+    to: '/whiteboard-export',
+    icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
+    capability: 'course.read',
+  },
   { label: 'Курсы', to: '/courses', icon: <Boxes className="size-4" aria-hidden="true" /> },
   { label: 'Новости', to: '/news', icon: <Newspaper className="size-4" aria-hidden="true" /> },
   {

@@ -8,10 +8,12 @@
   },
   "exports": {
     ".": "./src/index.tsx",
-    "./styles.css": "./src/content.css"
+    "./styles.css": "./src/content.css",
+    "./worksheet-paper.css": "./src/worksheet-paper.css"
   },
   "sideEffects": [
-    "./src/content.css"
+    "./src/content.css",
+    "./src/worksheet-paper.css"
   ],
   "dependencies": {
     "@tanstack/react-query": "catalog:",

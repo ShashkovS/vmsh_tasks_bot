@@ -34,6 +34,8 @@
     "d3-array": "catalog:",
     "d3-scale": "catalog:",
     "d3-shape": "catalog:",
+    "fflate": "catalog:",
+    "html-to-image": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

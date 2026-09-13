@@ -243,3 +243,14 @@ Proof:
 Staff получает полный каталог CRUD/archive курсов и групп, enrollment/access/scopes, schedule overrides, Telegram bindings и synonym impact preview. Google replacement imports становятся course-aware и не используют один глобальный level context.
 
 Дополнительный proof: optimistic conflicts, duplicate codes only within course, teacher `403`, import dry-run/rollback и stories `Product/Staff-admin--course-and-group-catalog`, `--independent-schedules`, `--telegram-bindings`.
+
+
+## PNG для разбора — 2026-09-13, реализовано
+
+Staff `/whiteboard-export`: опубликованные условия доступных преподавателю
+уровней, PNG задач и базовой статистики, браузерный ZIP, прогресс и отмена.
+`html-to-image` и ZIP worker загружаются лениво; общие бумажные стили переиспользованы.
+Backend: 3 теста прошли; PNG/ZIP и регрессия печати проверены в Chromium,
+Firefox и WebKit. Typecheck, ESLint, Stylelint и Ruff прошли. Миграций нет.
+Требования: `vmshpwa/docs/whiteboard-export.md`; отчёт и снимки:
+`vmshpwa/docs/whiteboard-export-report.md`. Финальная ручная приёмка — импорт PNG в Zoom.
