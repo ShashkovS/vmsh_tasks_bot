@@ -2890,3 +2890,7 @@ problems и results в один атомарный `portal-print.json`; `a13` б
 backend/client тест, Ruff и `py_compile`. Выпуск нового endpoint выполняется
 обычным push в `vmshpwa`; authenticated production smoke с токеном остаётся
 операционной проверкой. Контракт: `docs/printing/legacy-api.md`.
+
+Hotfix 14 сентября: пустые `problems.synonyms` больше не связывают все задачи
+занятия. Печать переносит результат только на саму задачу, активную современную
+группу синонимов или явно перечисленный legacy-вариант.

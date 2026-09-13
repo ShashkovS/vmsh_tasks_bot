@@ -95,13 +95,61 @@ def list_print_previous_results(
     source = result_source(connection)
     rows = connection.execute(
         f"""
+        WITH target_problem AS (
+            SELECT problem.id, problem.lesson, problem.group_id, problem.synonyms
+            FROM problems AS problem
+            WHERE problem.lesson = ?
+              AND problem.group_id IN ({placeholders})
+        ),
+        logical_member AS (
+            SELECT target.id AS target_problem_id,
+                   target.id AS member_problem_id
+            FROM target_problem AS target
+            UNION
+            SELECT target.id,
+                   peer.problem_id
+            FROM target_problem AS target
+            JOIN problem_synonym_members AS own
+              ON own.problem_id = target.id
+             AND own.removed_at IS NULL
+            JOIN problem_synonym_groups AS synonym_group
+              ON synonym_group.id = own.synonym_group_id
+             AND synonym_group.status = 'active'
+            JOIN problem_synonym_members AS peer
+              ON peer.synonym_group_id = synonym_group.id
+             AND peer.removed_at IS NULL
+            UNION
+            SELECT target.id,
+                   legacy_peer.id
+            FROM target_problem AS target
+            JOIN groups AS target_group
+              ON target_group.group_id = target.group_id
+            JOIN problems AS legacy_peer
+              ON legacy_peer.lesson = target.lesson
+             AND instr(
+                 ';' || target.synonyms || ';',
+                 ';' || cast(legacy_peer.id AS text) || ';'
+             ) > 0
+            JOIN groups AS legacy_group
+              ON legacy_group.group_id = legacy_peer.group_id
+             AND legacy_group.course_id = target_group.course_id
+            WHERE trim(target.synonyms) <> ''
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM problem_synonym_members AS current_member
+                  JOIN problem_synonym_groups AS current_group
+                    ON current_group.id = current_member.synonym_group_id
+                   AND current_group.status = 'active'
+                  WHERE current_member.problem_id = target.id
+                    AND current_member.removed_at IS NULL
+              )
+        )
         SELECT result.student_id,
-               target_problem.id AS syn_problem_id,
+               logical_member.target_problem_id AS syn_problem_id,
                max(verdict.val) AS max_verdict
-        FROM {source} AS result
-        JOIN problems AS source_problem ON source_problem.id = result.problem_id
-        JOIN problems AS target_problem
-          ON target_problem.synonyms = source_problem.synonyms
+        FROM logical_member
+        JOIN {source} AS result
+          ON result.problem_id = logical_member.member_problem_id
         JOIN verdicts AS verdict ON verdict.id = result.verdict
         JOIN course_enrollments AS enrollment
           ON enrollment.student_user_id = result.student_id
@@ -109,12 +157,10 @@ def list_print_previous_results(
           ON assignment.course_enrollment_id = enrollment.id
          AND assignment.plan_id = ?
          AND assignment.status = 'assigned'
-        WHERE target_problem.lesson = ?
-          AND target_problem.group_id IN ({placeholders})
-        GROUP BY result.student_id, target_problem.id
-        ORDER BY result.student_id, target_problem.id
+        GROUP BY result.student_id, logical_member.target_problem_id
+        ORDER BY result.student_id, logical_member.target_problem_id
         """,
-        (plan_id, lesson, *group_ids),
+        (lesson, *group_ids, plan_id),
     ).fetchall()
     return [dict(row) for row in rows]
 

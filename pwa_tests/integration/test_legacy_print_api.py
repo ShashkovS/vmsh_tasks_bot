@@ -56,12 +56,19 @@ async def print_api(tmp_path, aiohttp_client):
             "VALUES (9002, 'assignment-n', 39, 1, '', 'Синоним', '', 2, '9001')"
         )
         connection.execute(
+            "INSERT INTO problems "
+            "(id, group_id, lesson, prob, item, title, prob_text, prob_type, synonyms) "
+            "VALUES (9003, 'assignment-n', 40, 2, '', 'Без синонимов', '', 2, ''), "
+            "(9004, 'assignment-n', 39, 2, '', 'Другая задача без синонимов', '', 2, '')"
+        )
+        connection.execute(
             "INSERT INTO results "
             "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, res_type) "
             "VALUES (1, 9001, 'assignment-n', 40, 2, ?, 15, 2), "
             "(1, 9002, 'assignment-n', 39, 2, ?, 17, 2), "
+            "(1, 9004, 'assignment-n', 39, 2, ?, 17, 2), "
             "(98, 9001, 'assignment-n', 40, 2, ?, 17, 2)",
-            (NOW, NOW, NOW),
+            (NOW, NOW, NOW, NOW),
         )
         connection.execute(
             "INSERT INTO auth_accounts (audience, username, username_normalized, "
@@ -189,9 +196,18 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
                 "item": "",
                 "full_prob": "1<br>",
                 "prob_type": 2,
-            }
+            },
+            {
+                "id": 9003,
+                "lesson": 40,
+                "group_id": "assignment-n",
+                "prob": 2,
+                "item": "",
+                "full_prob": "2<br>",
+                "prob_type": 2,
+            },
         ],
-        "results": [{"student_id": 1, "syn_problem_id": 9001, "max_verdict": 1.0}],
+        "results": [{"student_id": 1, "syn_problem_id": 9001, "max_verdict": 0.7}],
     }
     history_etag = history_response.headers["ETag"]
     same_history = await client.get(
@@ -215,7 +231,7 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
     )
     assert before == after
     factory.run_write(
-        lambda c: c.execute("UPDATE results SET verdict=14 WHERE problem_id=9002")
+        lambda c: c.execute("UPDATE results SET verdict=14 WHERE problem_id=9001")
     )
     changed_history = await client.get(
         history_url, headers=headers(**{"If-Match": history_etag})
