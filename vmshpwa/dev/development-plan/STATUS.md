@@ -1,5 +1,14 @@
 # Статус плана разработки
 
+## Короткие номера пунктов — 13 сентября 2026, реализовано локально
+
+Общий `SemanticMathDocument` сохраняет полный заголовок задачи
+`Задача 1э.2.`, а пункты показывает как `2а)`. Полные `taskReference` в API
+не меняются. Формат общий для Student, Family, Staff preview и отдельных
+экранов условия; см. [`task-titles.md`](../../docs/task-titles.md).
+Проверено: 16 целевых и 787 полных unit-тестов, 3 браузерные story,
+workspace typecheck и production build, целевой ESLint, Stylelint и Prettier.
+
 ## Production performance-tracing — 12 сентября 2026, включён
 
 Production-аудит последних двух часов показал отсутствие записей

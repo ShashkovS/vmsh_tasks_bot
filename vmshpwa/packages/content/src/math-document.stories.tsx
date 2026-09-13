@@ -259,7 +259,9 @@ export const LongSheet: Story = {
   args: { document: buildLongDocument() },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelectorAll('.katex').length).toBeGreaterThan(60))
-    await expect(within(canvasElement).getByText('41н.36')).toBeVisible()
+    await expect(
+      within(canvasElement).getByRole('heading', { name: /Задача 41н\.36\./u }),
+    ).toBeVisible()
   },
 }
 
@@ -344,7 +346,9 @@ export const InvalidFormula: Story = {
     await expect(await within(canvasElement).findByRole('status')).toHaveTextContent(
       'Формулу не удалось отобразить',
     )
-    await expect(within(canvasElement).getByText('41н.1')).toBeVisible()
+    await expect(
+      within(canvasElement).getByRole('heading', { name: /Задача 41н\.1\./u }),
+    ).toBeVisible()
   },
 }
 
@@ -424,7 +428,10 @@ export const TaskTitles: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: /Задача 1 «Два квадрата/ })).toBeVisible()
+    await expect(canvas.getByRole('heading', { name: /Задача 1\. «Два квадрата/ })).toBeVisible()
+    await expect(canvasElement.querySelectorAll('.vmsh-subpart-label')[0]).toHaveTextContent(
+      '2а) «Первый квадрат»',
+    )
     await expect(canvas.getByText('«Первый квадрат»')).toBeVisible()
     await expect(canvas.getByText('«Второй квадрат»')).toBeVisible()
   },

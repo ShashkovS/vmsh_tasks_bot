@@ -114,6 +114,25 @@ function TableCell({ cell, path }: { cell: WebContentTableCell; path: string }) 
   )
 }
 
+/** Display-only task labels; full references stay in the document contract. See docs/task-titles.md. */
+function problemReference(problem: WebContentProblem): string {
+  return problem.taskReference ?? problem.sourceItem ?? String(problem.ordinal)
+}
+
+function shortProblemReference(problem: WebContentProblem): string {
+  const reference = problemReference(problem)
+  const scopeSeparator = reference.indexOf('.')
+  return scopeSeparator === -1 ? reference : reference.slice(scopeSeparator + 1)
+}
+
+function subpartReference(
+  block: Extract<WebContentBlock, { type: 'subpart' }>,
+  problem: WebContentProblem | undefined,
+): string {
+  const normalizedLabel = block.label.replace(/[.)]+$/u, '') || block.label
+  return problem ? `${shortProblemReference(problem)}${normalizedLabel})` : `${normalizedLabel})`
+}
+
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex -- Axe requires each overflow table region to be keyboard-focusable. */
 interface ContentBlocksProps {
   blocks: WebContentBlock[]
@@ -254,7 +273,7 @@ function ContentBlocks({
             {!hideHeadings ? (
               <div className="vmsh-subpart-header">
                 <strong className="vmsh-subpart-label">
-                  {block.taskReference ? `${block.taskReference}.` : `${block.label})`}
+                  {subpartReference(block, problem)}
                   {block.title ? <span> «{block.title}»</span> : null}
                 </strong>
                 {problem ? renderSubpartActions?.(problem, block.label) : null}
@@ -347,9 +366,7 @@ export function SemanticMathDocument({
                   {!hideProblemHeadings ? (
                     <div className="vmsh-problem-header">
                       <h2 id={headingId}>
-                        {problem.taskReference
-                          ? `Задача ${problem.taskReference}.`
-                          : (problem.sourceItem ?? `Задача ${problem.ordinal}`)}
+                        {`Задача ${problemReference(problem)}.`}
                         {problem.title ? <span>«{problem.title}»</span> : null}
                       </h2>
                       {renderProblemActions?.(problem)}

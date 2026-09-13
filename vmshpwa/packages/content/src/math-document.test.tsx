@@ -16,7 +16,7 @@ import {
 afterEach(() => cleanup())
 
 describe('browser math content renderer', () => {
-  it('renders full task references without changing subpart identity', () => {
+  it('renders a full problem reference and a short subpart reference', () => {
     const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
     render(
       <SemanticMathDocument
@@ -45,7 +45,43 @@ describe('browser math content renderer', () => {
     expect(
       screen.getByRole('heading', { name: 'Задача 1н.11. «Никто никого не бьёт»' }),
     ).not.toBeNull()
-    expect(screen.getByText('1н.11а.', { exact: false })).not.toBeNull()
+    expect(globalThis.document.querySelector('.vmsh-subpart-label')?.textContent).toBe(
+      '11а) «Первый пункт»',
+    )
+    expect(screen.queryByText('1н.11а.', { exact: false })).toBeNull()
+  })
+
+  it('builds a short subpart reference for a legacy problem without taskReference', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [],
+          problems: [
+            {
+              ...document.problems[0]!,
+              ordinal: 7,
+              sourceItem: null,
+              taskReference: undefined,
+              title: null,
+              blocks: [
+                {
+                  type: 'subpart',
+                  label: 'б)',
+                  title: 'Запасной формат',
+                  blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Условие' }] }],
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Задача 7.' })).not.toBeNull()
+    expect(globalThis.document.querySelector('.vmsh-subpart-label')?.textContent).toBe(
+      '7б) «Запасной формат»',
+    )
   })
 
   it('omits headings and task references in inline materials while preserving content', () => {
@@ -60,7 +96,9 @@ describe('browser math content renderer', () => {
     const contentDocument = webContentContractFixtureSchema.parse(webDocumentFixture).document
     render(<SemanticMathDocument document={contentDocument} />)
 
-    expect(screen.getByRole('heading', { name: /41н\.1 «Загаданное число»/u })).not.toBeNull()
+    expect(
+      screen.getByRole('heading', { name: /Задача 41н\.1\. «Загаданное число»/u }),
+    ).not.toBeNull()
     expect(screen.getByRole('table', { name: 'Возможные разложения' })).not.toBeNull()
     expect(screen.getByRole('table').parentElement?.classList.contains('vmsh-scroll-x')).toBe(true)
     await waitFor(() =>

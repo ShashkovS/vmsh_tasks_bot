@@ -80,7 +80,9 @@ export const Hints: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('heading', { name: 'Задача 1э.1.' })).toBeVisible()
     await expect(canvas.queryByText('Задача 1э.1а.', { exact: false })).toBeNull()
-    await expect(canvas.getByText('1э.1а.', { exact: false })).toBeVisible()
+    await expect(canvasElement.querySelector('.vmsh-subpart-label')).toHaveTextContent(
+      '1а) «Пирожное и чай — а»',
+    )
     await expect(canvas.getAllByRole('button', { name: 'Открыть' })[0]).toBeDisabled()
     const buttons = canvas.getAllByRole('button', { name: 'Скрыть подсказку' })
     await expect(buttons).toHaveLength(2)
