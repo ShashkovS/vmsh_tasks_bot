@@ -60,8 +60,9 @@ export function StudentPhotoSupportComposer({
       }
       error={error || props.error || null}
       onSubmit={() => void submit()}
-      attachments={
+      attachments={(action) => (
         <QuestionPhotoPicker
+          action={action}
           photos={editor.draft.photos}
           disabled={props.busy || uploading || !editor.ready}
           onChange={(photos, removedIndex) =>
@@ -75,7 +76,7 @@ export function StudentPhotoSupportComposer({
             })
           }
         />
-      }
+      )}
     />
   )
 }

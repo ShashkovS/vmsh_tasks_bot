@@ -1,6 +1,6 @@
 import { ZoomableFigure } from './zoomable-figure'
 import { Camera, ImagePlus, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@vmsh/ui'
 
 /** Shared question attachment controls; docs/question-photos.md. */
@@ -8,9 +8,11 @@ export function QuestionPhotoPicker({
   photos,
   onChange,
   disabled = false,
+  action,
 }: {
   photos: Blob[]
   onChange: (photos: Blob[], removedIndex?: number) => void
+  action?: ReactNode
   disabled?: boolean
 }) {
   const gallery = useRef<HTMLInputElement>(null)
@@ -35,7 +37,7 @@ export function QuestionPhotoPicker({
   }
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 empty:hidden">
         {photos.map((photo, index) => (
           <div className="relative" key={index}>
             <QuestionPhotoPreview photo={photo} />
@@ -79,7 +81,7 @@ export function QuestionPhotoPicker({
         disabled={disabled}
         onChange={(event) => select(event.currentTarget)}
       />
-      <div className="flex gap-2">
+      <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2">
         <Button
           type="button"
           variant="secondary"
@@ -102,6 +104,7 @@ export function QuestionPhotoPicker({
         >
           <Camera aria-hidden="true" />
         </Button>
+        <div className="flex min-w-0 justify-end">{action}</div>
       </div>
       {error ? (
         <p role="alert" className="text-small text-danger">

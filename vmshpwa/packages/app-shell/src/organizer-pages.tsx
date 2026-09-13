@@ -358,6 +358,19 @@ function OrganizerCompose({
             }}
           />
           <QuestionPhotoPicker
+            action={
+              <Button
+                type="submit"
+                className="min-w-0 max-w-full"
+                disabled={
+                  mutation.isPending ||
+                  !editor.ready ||
+                  (!draft.text.trim() && !draft.photos.length)
+                }
+              >
+                {mutation.isPending ? 'Отправляем…' : 'Отправить'}
+              </Button>
+            }
             photos={draft.photos}
             disabled={mutation.isPending || !editor.ready}
             onChange={(photos, removedIndex) =>
@@ -371,7 +384,7 @@ function OrganizerCompose({
               })
             }
           />
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
             <p role="status" className="text-caption text-muted-foreground">
               {editor.unavailable
                 ? 'Черновик не сохраняется. Не закрывайте страницу.'
@@ -379,14 +392,6 @@ function OrganizerCompose({
                   ? 'Черновик сохранён на устройстве.'
                   : ''}
             </p>
-            <Button
-              type="submit"
-              disabled={
-                mutation.isPending || !editor.ready || (!draft.text.trim() && !draft.photos.length)
-              }
-            >
-              {mutation.isPending ? 'Отправляем…' : 'Отправить'}
-            </Button>
           </div>
           {error ? (
             <p role="alert" className="text-small text-danger">

@@ -9,7 +9,7 @@ import { Alert, AlertContent, AlertDescription, Button, Textarea, cn } from '@vm
  * state visible and never implies that an unsaved browser value is durable.
  */
 export interface SupportComposerProps {
-  attachments?: ReactNode
+  attachments?: ReactNode | ((action: ReactNode) => ReactNode)
   value: string
   onValueChange: (value: string) => void
   onSubmit: () => void
@@ -46,6 +46,20 @@ export function SupportComposer({
     }
   }
 
+  const action = (
+    <Button
+      disabled={disabled || busy || !value.trim()}
+      size="sm"
+      className="min-w-0 max-w-full"
+      aria-label={busy ? 'Отправляем…' : submitLabel}
+      title={`${submitLabel} (Ctrl/Cmd+Enter)`}
+      type="submit"
+    >
+      <Send aria-hidden="true" />
+      <span className="truncate">{busy ? 'Отправляем…' : submitLabel}</span>
+    </Button>
+  )
+
   return (
     <form className={cn('space-y-2', className)} onSubmit={submit}>
       <Textarea
@@ -59,8 +73,7 @@ export function SupportComposer({
         rows={density === 'compact' ? 3 : 5}
         value={value}
       />
-      {attachments}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="empty:hidden">
         {saveState === 'saved' ? (
           <p className="text-caption text-muted-foreground" role="status">
             Черновик сохранён на этом устройстве.
@@ -69,19 +82,16 @@ export function SupportComposer({
           <p className="text-caption text-danger" role="status">
             Черновик не сохраняется. Не закрывайте страницу до отправки.
           </p>
-        ) : (
-          <span />
-        )}
-        <Button
-          disabled={disabled || busy || !value.trim()}
-          size="sm"
-          title={`${submitLabel} (Ctrl/Cmd+Enter)`}
-          type="submit"
-        >
-          <Send aria-hidden="true" />
-          {busy ? 'Отправляем…' : submitLabel}
-        </Button>
+        ) : null}
       </div>
+      {typeof attachments === 'function' ? (
+        attachments(action)
+      ) : (
+        <>
+          {attachments}
+          <div className="flex justify-end">{action}</div>
+        </>
+      )}
       {error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>

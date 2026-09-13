@@ -20,7 +20,9 @@ export const Composer: Story = {
           onValueChange={setText}
           onSubmit={() => {}}
           submitLabel="Отправить вопрос"
-          attachments={<QuestionPhotoPicker photos={photos} onChange={setPhotos} />}
+          attachments={(action) => (
+            <QuestionPhotoPicker photos={photos} onChange={setPhotos} action={action} />
+          )}
         />
       </div>
     )
@@ -50,5 +52,22 @@ export const Composer: Story = {
     await expect(canvas.queryByAltText('Выбранная фотография')).not.toBeInTheDocument()
     await userEvent.upload(camera, new File([blob], 'camera.png', { type: 'image/png' }))
     await expect(canvas.getByAltText('Выбранная фотография')).toBeVisible()
+    const form = canvasElement.querySelector('form')!
+    const container = form.parentElement!
+    for (const width of [320, 390, 800]) {
+      container.style.width = `${width}px`
+      const gallery = canvas
+        .getByRole('button', { name: 'Выбрать фотографии' })
+        .getBoundingClientRect()
+      const cameraButton = canvas
+        .getByRole('button', { name: 'Сделать фотографию' })
+        .getBoundingClientRect()
+      const send = canvas.getByRole('button', { name: 'Отправить вопрос' }).getBoundingClientRect()
+      await expect(
+        Math.abs(gallery.top + gallery.height / 2 - send.top - send.height / 2),
+      ).toBeLessThan(1)
+      await expect(cameraButton.right).toBeLessThanOrEqual(send.left)
+      await expect(send.right).toBeLessThanOrEqual(form.getBoundingClientRect().right + 1)
+    }
   },
 }

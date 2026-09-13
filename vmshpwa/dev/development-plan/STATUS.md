@@ -2799,3 +2799,11 @@ baseline-падения старых Staff-тестов описаны в отч
 
 Проверено: 45 backend/schema, 11 unit, 3 browser, 12 E2E в трёх браузерах;
 сборки, typecheck, Ruff и целевой ESLint. Снимки — в отчёте `question-photos.md`.
+
+
+### Компактная строка действий — 2026-09-13
+
+`QuestionPhotoPicker.action` размещает отправку справа от галереи и камеры.
+`SupportComposer` и `OrganizerCompose` используют одну строку; миниатюры и статус
+сохранения вынесены отдельно. Геометрия 320/390/800 px: проверки прошли
+в Chromium, Firefox и WebKit; typecheck, ESLint и diff-check тоже прошли.
