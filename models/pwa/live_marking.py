@@ -188,7 +188,11 @@ def directory(connection, principal, course_id):
         )
     return dict(
         students=[
-            dict(**student_payload(s), rooms=histories.get(s["student_id"], []))
+            dict(
+                **student_payload(s),
+                surname=s["surname"],
+                rooms=histories.get(s["student_id"], []),
+            )
             for s in db.students(connection, course["id"])
         ]
     )

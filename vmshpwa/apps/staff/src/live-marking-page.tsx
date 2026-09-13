@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Undo2, UserPlus, Search, ArrowLeft, Check, X, ChevronDown } from 'lucide-react'
 
@@ -22,7 +30,9 @@ import {
 import { LiveMarkingDatabase, LiveMarkingQueue } from '@vmsh/offline'
 import {
   Button,
+  FieldLabel,
   Input,
+  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -36,16 +46,21 @@ import { LiveConditionDialog } from './live-marking-condition'
 
 // Page composition: live-marking.md and design-system/05-pages-and-flows.md.
 
-function StudentSearch({
+export function StudentSearch({
   students,
   onSelect,
   transfer,
+  surnameOnly,
+  onSurnameOnlyChange,
 }: {
   students: LiveDirectoryStudent[]
   onSelect: (student: LiveDirectoryStudent) => void
   transfer: boolean
+  surnameOnly: boolean
+  onSurnameOnlyChange: (surnameOnly: boolean) => void
 }) {
   const [query, setQuery] = useState('')
+  const surnameOnlyId = useId()
   const input = useRef<HTMLInputElement>(null)
   useEffect(() => {
     input.current?.focus()
@@ -54,24 +69,28 @@ function StudentSearch({
     () =>
       query.trim()
         ? students
-            .filter((s) =>
-              studentNameMatchesSearch(`${s.displayName} ${s.middleName ?? ''}`, query),
-            )
+            .filter((s) => studentNameMatchesSearch(surnameOnly ? s.surname : s.displayName, query))
             .slice(0, 30)
         : [],
-    [students, query],
+    [students, query, surnameOnly],
   )
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <Input
         ref={input}
         aria-label="Поиск школьника"
-        placeholder="Фамилия или имя…"
+        placeholder={surnameOnly ? 'Фамилия…' : 'Фамилия или имя…'}
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="min-h-11"
       />
+      <div className="flex min-h-9 items-center gap-2 px-1">
+        <Switch id={surnameOnlyId} checked={surnameOnly} onCheckedChange={onSurnameOnlyChange} />
+        <FieldLabel className="cursor-pointer text-sm font-normal" htmlFor={surnameOnlyId}>
+          Искать только по фамилии
+        </FieldLabel>
+      </div>
       <div className="min-h-0 overflow-auto" aria-live="polite">
         {matches.map((s) => (
           <button
@@ -106,11 +125,13 @@ function StudentSearch({
         ))}
         {query && matches.length === 0 ? (
           <p className="p-3 text-sm text-muted-foreground">
-            Никого не нашли. Попробуйте другую часть имени.
+            Никого не нашли. Попробуйте другую часть {surnameOnly ? 'фамилии' : 'имени'}.
           </p>
         ) : null}
         {!query ? (
-          <p className="p-3 text-sm text-muted-foreground">Введите фамилию или имя школьника.</p>
+          <p className="p-3 text-sm text-muted-foreground">
+            {surnameOnly ? 'Введите фамилию школьника.' : 'Введите фамилию или имя школьника.'}
+          </p>
         ) : null}
       </div>
     </div>
@@ -142,6 +163,7 @@ export function LiveMarkingPage({
   const [busy, setBusy] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [findOpen, setFindOpen] = useState(false)
+  const [surnameOnly, setSurnameOnly] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [conditionProblem, setConditionProblem] = useState<LiveBoard['problems'][number] | null>(
     null,
@@ -759,6 +781,8 @@ export function LiveMarkingPage({
             students={directory.data?.students ?? []}
             onSelect={openStudent}
             transfer={false}
+            surnameOnly={surnameOnly}
+            onSurnameOnlyChange={setSurnameOnly}
           />
         </div>
       ) : null}
@@ -949,6 +973,8 @@ export function LiveMarkingPage({
               students={directory.data?.students ?? []}
               transfer={mode === 'school'}
               onSelect={mode === 'school' ? setTransferStudent : openStudent}
+              surnameOnly={surnameOnly}
+              onSurnameOnlyChange={setSurnameOnly}
             />
           )}
         </DialogContent>

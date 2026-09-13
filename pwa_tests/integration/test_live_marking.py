@@ -364,6 +364,7 @@ async def test_teacher_transfer_across_scope_attendance_and_composite_undo(
     response, body = await call(f, "get", "directory?courseId=c-1")
     assert response.status == 200, body
     assert body["students"][0]["groupName"] == "B"
+    assert body["students"][0]["surname"] == "Тестова"
     transfer = dict(
         kind="transfer",
         operationId=uuid4().hex,

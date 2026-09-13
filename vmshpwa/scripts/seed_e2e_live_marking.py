@@ -72,6 +72,10 @@ def seed(config):
         for project, lesson_id in TARGETS:
             _dense_problems(c, lesson_id)
             fixture_id = 19000 + lesson_id
+            c.execute(
+                "UPDATE users SET middlename=? WHERE surname=?",
+                (f"Тестов {project}", f"БезАккаунта {project}"),
+            )
             if c.execute("SELECT 1 FROM users WHERE id=?", (fixture_id,)).fetchone():
                 continue
             c.execute(

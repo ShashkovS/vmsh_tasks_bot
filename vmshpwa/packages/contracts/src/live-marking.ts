@@ -139,6 +139,7 @@ export const liveDirectorySchema = z.object({
   ...envelope,
   students: z.array(
     studentSchema.extend({
+      surname: z.string(),
       rooms: z.array(
         z.object({
           eventId: id,

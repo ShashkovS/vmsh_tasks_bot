@@ -12,6 +12,47 @@ function persona(project: string): AuthPersona {
 }
 test.setTimeout(120_000)
 
+test('Live student search ignores patronymics and can match only surnames', async ({
+  page,
+}, info) => {
+  const project = info.project.name
+  const fixture = 19000 + numbers[project]!
+  const classroomStudentName = `Тестов ${project} Ученик`
+  const patronymicOnlyStudentName = `БезАккаунта ${project} Новый`
+
+  await loginThroughUi(page, persona(project), '/staff/oral?course=c-1')
+  let search = page.getByRole('searchbox', { name: 'Поиск школьника' })
+  let surnameOnly = page.getByRole('switch', { name: 'Искать только по фамилии' })
+  let classroomStudent = page.getByRole('button', {
+    name: new RegExp(classroomStudentName),
+  })
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+  await expect(page.getByText(patronymicOnlyStudentName, { exact: true })).toHaveCount(0)
+  await surnameOnly.click()
+  await expect(surnameOnly).toHaveAttribute('aria-checked', 'true')
+  await search.fill('Ученик')
+  await expect(classroomStudent).toHaveCount(0)
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+
+  await page.goto(`/staff/in-person?event=ipe-${fixture}&room=room-${fixture}`)
+  await page.getByRole('button', { name: 'Добавить в группу школьника' }).click()
+  search = page.getByRole('searchbox', { name: 'Поиск школьника' })
+  surnameOnly = page.getByRole('switch', { name: 'Искать только по фамилии' })
+  classroomStudent = page.getByRole('button', { name: new RegExp(classroomStudentName) })
+  await expect(surnameOnly).toHaveAttribute('aria-checked', 'false')
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+  await expect(page.getByText(patronymicOnlyStudentName, { exact: true })).toHaveCount(0)
+  await surnameOnly.click()
+  await expect(surnameOnly).toHaveAttribute('aria-checked', 'true')
+  await search.fill('Ученик')
+  await expect(classroomStudent).toHaveCount(0)
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+})
+
 test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions', async ({
   page,
   context,
