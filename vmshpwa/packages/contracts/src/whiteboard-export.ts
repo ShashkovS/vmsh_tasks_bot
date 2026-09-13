@@ -7,7 +7,7 @@ export const whiteboardSheetSchema = z.object({
   courseId: publicIdSchema,
   courseCode: z.string(),
   courseName: z.string(),
-  lessonNumber: z.number().int().positive(),
+  lessonNumber: z.number().int().nonnegative(),
   lessonTitle: z.string().nullable(),
   groupId: publicIdSchema,
   groupCode: z.string(),

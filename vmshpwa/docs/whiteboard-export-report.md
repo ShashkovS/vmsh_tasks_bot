@@ -56,3 +56,14 @@ PNG одной задачи:
 [Chromium](assets/whiteboard-export/chromium-task.png),
 [WebKit](assets/whiteboard-export/webkit-task.png),
 [Firefox](assets/whiteboard-export/firefox-task.png).
+
+## Исправление загрузки каталога с занятием 0 — 2026-09-13
+
+Production-ответ содержал корректное вводное занятие 0, но `lessonNumber`
+в общей Zod-схеме требовал значение больше нуля. Заменено на неотрицательное
+целое в `packages/contracts/src/whiteboard-export.ts`.
+
+Новые тесты `packages/contracts/src/whiteboard-export.test.ts` воспроизвели
+два отказа до исправления: смешанный каталог занятий 1/0 трёх уровней и
+выбранный листок занятия 0. После исправления оба проходят; отрицательные
+и дробные номера по-прежнему отклоняются. Все 224 теста контрактов прошли.
