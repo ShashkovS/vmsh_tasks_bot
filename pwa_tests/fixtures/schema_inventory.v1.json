@@ -293,6 +293,10 @@
       {
         "id": "0090.pwa_support_photos",
         "sha256": "9a9ce321d12fd6432983dac68f7c99758220d21d94637b0d625063786868d19a"
+      },
+      {
+        "id": "0091.pwa_test_result_live_mark_precedence",
+        "sha256": "df2885b88b8ca04d19ebc1cdb898ed6f6bbd80ae1cfad6eb19a93fb6d1cdc22b"
       }
     ],
     "repository_head_status": {
@@ -28735,15 +28739,15 @@
       },
       {
         "name": "live_results_insert",
-        "object_sha256": "a8010d6bc6019d373eee43d316a25eecb2fbf7e2a9895a1a5fef61aff5ffcc96",
-        "sql": "CREATE TRIGGER live_results_insert AFTER INSERT ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version,result_id)\n    VALUES(new.student_id,new.problem_id,1,\n           CASE WHEN new.res_type IN (3,4) THEN new.id END)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n        result_id=CASE WHEN new.res_type IN (3,4) THEN new.id\n                       ELSE live_mark_cells.result_id END;\nEND;",
+        "object_sha256": "2224cf03f6d1aa580b0fbdf31e455560bd9adc95cffc07210ad1e04ef3c8d570",
+        "sql": "CREATE TRIGGER live_results_insert AFTER INSERT ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version,result_id)\n    VALUES(new.student_id,new.problem_id,1,\n           CASE WHEN new.res_type IN (3,4) THEN new.id END)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n        result_id=CASE\n            WHEN new.res_type IN (3,4) THEN new.id\n            WHEN new.res_type=1\n             AND new.id>coalesce(live_mark_cells.result_id,0)\n             AND EXISTS(\n                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8\n            ) THEN NULL\n            ELSE live_mark_cells.result_id\n        END;\nEND;",
         "table_name": "results",
         "type": "trigger"
       },
       {
         "name": "live_results_update",
-        "object_sha256": "ea13891f01b798f7273c64ec1bc775d1676787c9382f3b91fdba110ed3690ebc",
-        "sql": "CREATE TRIGGER live_results_update AFTER UPDATE OF verdict, teacher_id ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version)\n    VALUES(new.student_id,new.problem_id,1)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1;\nEND;",
+        "object_sha256": "6fec74326fcecaf1a8893cfb3f22ee55142c10d42bbf1e74cabc45bc8f0ecd81",
+        "sql": "CREATE TRIGGER live_results_update AFTER UPDATE OF verdict, teacher_id ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version)\n    VALUES(new.student_id,new.problem_id,1)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n        result_id=CASE\n            WHEN new.res_type=1\n             AND new.id>coalesce(live_mark_cells.result_id,0)\n             AND EXISTS(\n                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8\n             ) THEN NULL\n            ELSE live_mark_cells.result_id\n        END;\nEND;",
         "table_name": "results",
         "type": "trigger"
       },
@@ -29413,8 +29417,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "977d5119a82dc27f7f3a7e87e6870dbfd56ce03b16a13a6f7d35d13733b96d56",
-    "sha256": "2d5a7570f0e5526faed36b4d3209645738bcb78ba494d49dc93e754c5720d178"
+    "pragma_structure_sha256": "68426e310b8da313166e50910f2db94ad98dc2eac4f2c3255c125a69191ac67c",
+    "sha256": "9b5995e0a588113ddb35ea7c2373a4841c0f3b1d36ab40a03c6deed46281d968"
   },
   "source_kind": "repository-migration-head"
 }

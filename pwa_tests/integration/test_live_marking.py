@@ -202,6 +202,82 @@ async def test_live_mark_prior_written_plus_reactions_praise_and_finish(content_
     assert response.status == 409, body
 
 
+async def test_accepted_test_attempt_replaces_older_live_manual_mark(content_http):
+    f = content_http
+    problem_id, condition_revision_id = await support._prepare_published_test_problem(
+        f, problem_type=1
+    )
+    response, catalog = await call(f, "get", "catalog")
+    assert response.status == 200, catalog
+    response, session = await call(
+        f,
+        "post",
+        "sessions",
+        dict(courseId=catalog["courses"][0]["courseId"], sessionId=uuid4().hex),
+    )
+    assert response.status == 200, session
+    spec = dict(
+        mode="zoom",
+        contextId=session["sessionId"],
+        studentId="u-903101",
+        lessonId=f.group_lesson_a,
+    )
+    response, manual, _ = await operation(f, spec, problem_id, 0, "minus")
+    assert response.status == 200, manual
+    assert manual["state"]["symbol"] == "−"
+
+    submitted = await f.client.post(
+        f"/student/api/v1/problems/{problem_id}/test-attempts",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": str(uuid4()),
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "displayAnswer": "7",
+            "clientCreatedAt": support._timestamp(),
+        },
+        cookies=support._cookie(f, "student"),
+        headers=support._headers(unsafe=True),
+    )
+    assert submitted.status == 201, await submitted.text()
+    assert (await submitted.json())["outcome"] == "correct"
+
+    state = f.factory.run_read(
+        lambda connection: {
+            "pin": connection.execute(
+                "SELECT result_id FROM live_mark_cells "
+                "WHERE student_id=? AND problem_id=(SELECT id FROM problems WHERE public_id=?)",
+                (support.STUDENT_USER_ID, problem_id),
+            ).fetchone()["result_id"],
+            "effective": [
+                row["verdict"]
+                for row in connection.execute(
+                    "SELECT verdict FROM effective_results "
+                    "WHERE student_id=? AND problem_id=(SELECT id FROM problems WHERE public_id=?)",
+                    (support.STUDENT_USER_ID, problem_id),
+                )
+            ],
+        }
+    )
+    assert state == {"pin": None, "effective": [18]}
+
+    problem_list = await f.client.get(
+        f"/student/api/v1/courses/c-1/lessons/{f.group_lesson_a}/problems",
+        cookies=support._cookie(f, "student"),
+        headers=support._headers(),
+    )
+    assert problem_list.status == 200, await problem_list.text()
+    problem = next(
+        item
+        for item in (await problem_list.json())["problems"]
+        if item["problemId"] == problem_id
+    )
+    assert problem["status"] == "accepted"
+    assert problem["verdict"] == {"verdictId": 18, "symbol": "✅+", "weight": 1.0}
+
+
 async def test_live_mark_cannot_use_another_teachers_session_or_bad_payload(
     content_http,
 ):

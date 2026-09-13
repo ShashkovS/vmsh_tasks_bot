@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 2d5a7570f0e5526faed36b4d3209645738bcb78ba494d49dc93e754c5720d178
+-- Product schema SHA-256: 9b5995e0a588113ddb35ea7c2373a4841c0f3b1d36ab40a03c6deed46281d968
 
 CREATE TABLE achievement_definitions
 (
@@ -4106,8 +4106,15 @@ WHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)
     VALUES(new.student_id,new.problem_id,1,
            CASE WHEN new.res_type IN (3,4) THEN new.id END)
     ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,
-        result_id=CASE WHEN new.res_type IN (3,4) THEN new.id
-                       ELSE live_mark_cells.result_id END;
+        result_id=CASE
+            WHEN new.res_type IN (3,4) THEN new.id
+            WHEN new.res_type=1
+             AND new.id>coalesce(live_mark_cells.result_id,0)
+             AND EXISTS(
+                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8
+            ) THEN NULL
+            ELSE live_mark_cells.result_id
+        END;
 END;
 
 CREATE TRIGGER live_results_update AFTER UPDATE OF verdict, teacher_id ON results
@@ -4115,7 +4122,15 @@ WHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)
  AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN
     INSERT INTO live_mark_cells(student_id,problem_id,version)
     VALUES(new.student_id,new.problem_id,1)
-    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1;
+    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,
+        result_id=CASE
+            WHEN new.res_type=1
+             AND new.id>coalesce(live_mark_cells.result_id,0)
+             AND EXISTS(
+                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8
+             ) THEN NULL
+            ELSE live_mark_cells.result_id
+        END;
 END;
 
 CREATE TRIGGER media_assets_locked_submission_immutable
