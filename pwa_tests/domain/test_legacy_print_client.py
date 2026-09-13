@@ -23,6 +23,33 @@ def test_snapshot_reuse_and_a13_identity_adapter(tmp_path, monkeypatch):
             "Аудитория": "201",
         }
     ]
+    history = {
+        "lesson": 3,
+        "problems": [
+            {
+                "id": 91,
+                "lesson": 3,
+                "group_id": "н",
+                "prob": 1,
+                "item": "",
+                "full_prob": "1<br>",
+                "prob_type": 2,
+            },
+            {
+                "id": 92,
+                "lesson": 3,
+                "group_id": "п",
+                "prob": 1,
+                "item": "",
+                "full_prob": "1<br>",
+                "prob_type": 2,
+            },
+        ],
+        "results": [
+            {"student_id": 42, "syn_problem_id": 91, "max_verdict": 0.7},
+            {"student_id": 42, "syn_problem_id": 92, "max_verdict": 1.0},
+        ],
+    }
 
     def fake_get(path, token=None):
         requested_paths.append(path)
@@ -39,6 +66,15 @@ def test_snapshot_reuse_and_a13_identity_adapter(tmp_path, monkeypatch):
                     }
                 ]
             }, {}
+        if path == "/events/event-one/previous-results?lesson=4":
+            return history, {
+                "ETag": '"history-digest"',
+                "X-Print-Event": "event-one",
+                "X-Print-Lesson": "4",
+                "X-Print-Previous-Lesson": "3",
+                "X-Print-Plan": "plan-one",
+                "X-Print-Plan-Version": "2",
+            }
         return rows, {
             "ETag": '"digest"',
             "X-Print-Event": "event-one",
@@ -52,8 +88,12 @@ def test_snapshot_reuse_and_a13_identity_adapter(tmp_path, monkeypatch):
     assert (
         client.refresh_portal_conduit(4, filename, token="explicit-test-token") == rows
     )
-    assert requested_paths == ["/events", "/events/event-one/pupils?lesson=4"]
-    assert supplied_tokens == ["explicit-test-token", "explicit-test-token"]
+    assert requested_paths == [
+        "/events",
+        "/events/event-one/pupils?lesson=4",
+        "/events/event-one/previous-results?lesson=4",
+    ]
+    assert supplied_tokens == ["explicit-test-token"] * 3
     first = client.load_portal_conduit(4, filename)
     first[0]["Аудитория"] = "202"
     assert client.load_portal_conduit(4, filename)[0]["Аудитория"] == "201"
@@ -67,6 +107,10 @@ def test_snapshot_reuse_and_a13_identity_adapter(tmp_path, monkeypatch):
             "grade": "7",
         }
     ]
+    assert client.get_portal_problems(3, "н", filename) == [history["problems"][0]]
+    assert client.get_portal_results([42], 3, "н", filename) == {(42, 91): 0.7}
+    with pytest.raises(RuntimeError, match="результатов относится к другому"):
+        client.get_portal_problems(2, "н", filename)
     with pytest.raises(RuntimeError, match="другому занятию"):
         client.load_portal_conduit(5, filename)
     assert json.loads(filename.read_text())["planId"] == "plan-one"
@@ -101,13 +145,19 @@ def test_event_selection_requires_unique_match_and_allows_override(
     rows = [{"ID": "student.login"}]
 
     def fake_pupils(path, token=None):
-        assert path == "/events/event-two/pupils?lesson=4"
-        return rows, {
+        metadata = {
             "ETag": '"digest"',
             "X-Print-Event": "event-two",
             "X-Print-Lesson": "4",
             "X-Print-Plan": "plan-event-two",
             "X-Print-Plan-Version": "1",
+        }
+        if path == "/events/event-two/pupils?lesson=4":
+            return rows, metadata
+        assert path == "/events/event-two/previous-results?lesson=4"
+        return {"lesson": 3, "problems": [], "results": []}, {
+            **metadata,
+            "X-Print-Previous-Lesson": "3",
         }
 
     monkeypatch.setattr(client, "_get", fake_pupils)

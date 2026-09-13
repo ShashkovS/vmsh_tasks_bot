@@ -2876,3 +2876,17 @@ TypeScript, ESLint, Prettier и Ruff — без ошибок.
 Браузерный сценарий прошёл в Chromium, WebKit и Firefox (обе темы, 320–390px,
 desktop, фокус и CSS zoom 200%). Финальные снимки сохранены и просмотрены. [Требования](../../docs/lesson-statistics.md),
 [отчёт](../statistics-recalculation-report.md).
+
+## Полный снимок для печати a13 — 2026-09-14, реализовано локально
+
+Token-only legacy print API дополнен экспортом задач и результатов предыдущего
+занятия для учеников подтверждённой рассадки. `a11` сохраняет roster, plan,
+problems и results в один атомарный `portal-print.json`; `a13` больше не читает
+локальные таблицы `problems`, `results` и `verdicts`. Выборка ограничена plan ID,
+а максимальные веса проецируются на варианты задач через legacy synonyms.
+
+Обновлены копируемый клиент, фактические `z_portal_print.py` и
+`a13_print_per_aud_conds_tex.py` в папке печати 2026–2027. Проверено: 21
+backend/client тест, Ruff и `py_compile`. Выпуск нового endpoint выполняется
+обычным push в `vmshpwa`; authenticated production smoke с токеном остаётся
+операционной проверкой. Контракт: `docs/printing/legacy-api.md`.

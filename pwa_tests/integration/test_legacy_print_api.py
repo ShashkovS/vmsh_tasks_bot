@@ -42,6 +42,28 @@ async def print_api(tmp_path, aiohttp_client):
         connection.execute("UPDATE groups SET short_code='н'")
         connection.execute("UPDATE users SET token='old-token', grade='7' WHERE id=1")
         connection.execute(
+            "INSERT INTO users (id, type, name, surname) "
+            "VALUES (98, 1, 'Посторонний', 'Ученик')"
+        )
+        connection.execute(
+            "INSERT INTO problems "
+            "(id, group_id, lesson, prob, item, title, prob_text, prob_type, synonyms) "
+            "VALUES (9001, 'assignment-n', 40, 1, '', 'Прошлая задача', '', 2, '9001')"
+        )
+        connection.execute(
+            "INSERT INTO problems "
+            "(id, group_id, lesson, prob, item, title, prob_text, prob_type, synonyms) "
+            "VALUES (9002, 'assignment-n', 39, 1, '', 'Синоним', '', 2, '9001')"
+        )
+        connection.execute(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, res_type) "
+            "VALUES (1, 9001, 'assignment-n', 40, 2, ?, 15, 2), "
+            "(1, 9002, 'assignment-n', 39, 2, ?, 17, 2), "
+            "(98, 9001, 'assignment-n', 40, 2, ?, 17, 2)",
+            (NOW, NOW, NOW),
+        )
+        connection.execute(
             "INSERT INTO auth_accounts (audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) "
@@ -151,6 +173,31 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
     assert response.headers["X-Print-Lesson"] == "41"
     same = await client.get(url, headers=headers(**{"If-Match": etag}))
     assert same.status == 200
+    history_url = url.replace("/pupils", "/previous-results")
+    history_response = await client.get(history_url, headers=headers())
+    assert history_response.status == 200, await history_response.text()
+    assert history_response.headers["X-Print-Previous-Lesson"] == "40"
+    assert history_response.headers["X-Print-Plan"] == response.headers["X-Print-Plan"]
+    assert await history_response.json() == {
+        "lesson": 40,
+        "problems": [
+            {
+                "id": 9001,
+                "lesson": 40,
+                "group_id": "assignment-n",
+                "prob": 1,
+                "item": "",
+                "full_prob": "1<br>",
+                "prob_type": 2,
+            }
+        ],
+        "results": [{"student_id": 1, "syn_problem_id": 9001, "max_verdict": 1.0}],
+    }
+    history_etag = history_response.headers["ETag"]
+    same_history = await client.get(
+        history_url, headers=headers(**{"If-Match": history_etag})
+    )
+    assert same_history.status == 200
     listing = await client.get(PREFIX + "/events", headers=headers())
     assert listing.status == 200
     listed_events = (await listing.json())["events"]
@@ -167,6 +214,13 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
         )
     )
     assert before == after
+    factory.run_write(
+        lambda c: c.execute("UPDATE results SET verdict=14 WHERE problem_id=9002")
+    )
+    changed_history = await client.get(
+        history_url, headers=headers(**{"If-Match": history_etag})
+    )
+    assert changed_history.status == 412
     factory.run_write(lambda c: c.execute("UPDATE users SET name='Пётр' WHERE id=1"))
     changed = await client.get(url, headers=headers(**{"If-Match": etag}))
     assert changed.status == 412

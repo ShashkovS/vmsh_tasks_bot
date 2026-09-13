@@ -61,13 +61,35 @@ def download_portal_conduit(event_id, lesson, filename=DEFAULT_SNAPSHOT, token=N
         or metadata.get("x-print-lesson") != str(lesson)
     ):
         raise RuntimeError("Некорректный ответ API печати")
+    history, history_headers = _get(
+        "/events/%s/previous-results?lesson=%d" % (quote(event_id, safe=""), lesson),
+        token,
+    )
+    history_metadata = {key.lower(): value for key, value in history_headers.items()}
+    if (
+        not isinstance(history, dict)
+        or history.get("lesson") != lesson - 1
+        or not isinstance(history.get("problems"), list)
+        or not isinstance(history.get("results"), list)
+        or history_metadata.get("x-print-event") != event_id
+        or history_metadata.get("x-print-lesson") != str(lesson)
+        or history_metadata.get("x-print-previous-lesson") != str(lesson - 1)
+        or history_metadata.get("x-print-plan") != metadata.get("x-print-plan")
+        or history_metadata.get("x-print-plan-version")
+        != metadata.get("x-print-plan-version")
+    ):
+        raise RuntimeError("Некорректный ответ API результатов печати")
     snapshot = {
         "eventId": event_id,
         "lesson": lesson,
         "etag": metadata["etag"],
+        "historyEtag": history_metadata["etag"],
         "planId": metadata["x-print-plan"],
         "planVersion": metadata["x-print-plan-version"],
         "pupils": pupils,
+        "previousLesson": history["lesson"],
+        "problems": history["problems"],
+        "results": history["results"],
     }
     destination = Path(filename)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
@@ -141,6 +163,22 @@ def load_portal_conduit(lesson, filename=DEFAULT_SNAPSHOT):
     return copy.deepcopy(snapshot["pupils"])
 
 
+def _load_portal_history(lesson, filename=DEFAULT_SNAPSHOT):
+    try:
+        snapshot = json.loads(Path(filename).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Снимок portal-print.json не найден; сначала запустите a11"
+        ) from None
+    if snapshot.get("previousLesson") != lesson:
+        raise RuntimeError("Снимок результатов относится к другому занятию")
+    if not isinstance(snapshot.get("problems"), list) or not isinstance(
+        snapshot.get("results"), list
+    ):
+        raise RuntimeError("В снимке нет задач и результатов; сначала запустите a11")
+    return snapshot
+
+
 def get_portal_pupils_for_results(logins, lesson, filename=DEFAULT_SNAPSHOT):
     """Replacement for a13 get_pupils: identity/group come from the same plan."""
     by_login = {row["IDd"]: row for row in load_portal_conduit(lesson, filename)}
@@ -157,6 +195,31 @@ def get_portal_pupils_for_results(logins, lesson, filename=DEFAULT_SNAPSHOT):
         }
         for row in selected
     ]
+
+
+def get_portal_problems(lesson, group_id, filename=DEFAULT_SNAPSHOT):
+    """Replacement for the a13 problem query."""
+    snapshot = _load_portal_history(lesson, filename)
+    return copy.deepcopy(
+        [row for row in snapshot["problems"] if row.get("group_id") == group_id]
+    )
+
+
+def get_portal_results(pupil_ids, lesson, group_id, filename=DEFAULT_SNAPSHOT):
+    """Return raw verdict weights keyed exactly as the a13 conduit expects."""
+    snapshot = _load_portal_history(lesson, filename)
+    selected_pupils = {int(pupil_id) for pupil_id in pupil_ids}
+    selected_problems = {
+        int(problem["id"])
+        for problem in snapshot["problems"]
+        if problem.get("group_id") == group_id
+    }
+    return {
+        (int(row["student_id"]), int(row["syn_problem_id"])): float(row["max_verdict"])
+        for row in snapshot["results"]
+        if int(row["student_id"]) in selected_pupils
+        and int(row["syn_problem_id"]) in selected_problems
+    }
 
 
 def main():

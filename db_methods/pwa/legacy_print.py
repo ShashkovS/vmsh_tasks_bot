@@ -2,6 +2,8 @@
 
 import sqlite3
 
+from db_methods.pwa.effective_results import result_source
+
 
 def list_print_events(connection: sqlite3.Connection) -> list[dict]:
     return [
@@ -49,3 +51,77 @@ def list_print_identities(connection: sqlite3.Connection, plan_id: int) -> list[
             (plan_id,),
         ).fetchall()
     ]
+
+
+def list_print_previous_problems(
+    connection: sqlite3.Connection,
+    *,
+    group_ids: tuple[str, ...],
+    lesson: int,
+) -> list[dict]:
+    """Return the legacy problem columns used by ``a13``."""
+
+    if not group_ids:
+        return []
+    placeholders = ", ".join("?" for _ in group_ids)
+    rows = connection.execute(
+        f"""
+        SELECT problem.id, problem.lesson, problem.group_id, problem.prob,
+               problem.item,
+               problem.prob || '<br>' || problem.item AS full_prob,
+               problem.prob_type
+        FROM problems AS problem
+        WHERE problem.lesson = ?
+          AND problem.group_id IN ({placeholders})
+        ORDER BY problem.group_id, problem.prob, problem.item, problem.id
+        """,
+        (lesson, *group_ids),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_print_previous_results(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: int,
+    group_ids: tuple[str, ...],
+    lesson: int,
+) -> list[dict]:
+    """Project roster results onto the previous lesson's synonym columns."""
+
+    if not group_ids:
+        return []
+    placeholders = ", ".join("?" for _ in group_ids)
+    source = result_source(connection)
+    rows = connection.execute(
+        f"""
+        SELECT result.student_id,
+               target_problem.id AS syn_problem_id,
+               max(verdict.val) AS max_verdict
+        FROM {source} AS result
+        JOIN problems AS source_problem ON source_problem.id = result.problem_id
+        JOIN problems AS target_problem
+          ON target_problem.synonyms = source_problem.synonyms
+        JOIN verdicts AS verdict ON verdict.id = result.verdict
+        JOIN course_enrollments AS enrollment
+          ON enrollment.student_user_id = result.student_id
+        JOIN classroom_assignments AS assignment
+          ON assignment.course_enrollment_id = enrollment.id
+         AND assignment.plan_id = ?
+         AND assignment.status = 'assigned'
+        WHERE target_problem.lesson = ?
+          AND target_problem.group_id IN ({placeholders})
+        GROUP BY result.student_id, target_problem.id
+        ORDER BY result.student_id, target_problem.id
+        """,
+        (plan_id, lesson, *group_ids),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+__all__ = [
+    "list_print_events",
+    "list_print_identities",
+    "list_print_previous_problems",
+    "list_print_previous_results",
+]

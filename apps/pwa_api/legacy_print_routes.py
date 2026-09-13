@@ -13,7 +13,11 @@ from db_methods.pwa.legacy_print import list_print_events
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG
 from models.pwa.auth import AuthAudience
 from models.pwa.classroom_assignments import ClassroomAssignmentNotFound
-from models.pwa.legacy_print import LegacyPrintConflict, export_print_pupils
+from models.pwa.legacy_print import (
+    LegacyPrintConflict,
+    export_print_previous_results,
+    export_print_pupils,
+)
 
 
 routes = web.RouteTableDef()
@@ -70,9 +74,7 @@ async def events(request):
     return web.json_response({"events": rows})
 
 
-@routes.get(PREFIX + "/events/{event_id}/pupils")
-async def pupils(request):
-    factory = _authorize(request)
+def _lesson(request):
     lesson = request.query.get("lesson", "")
     if (
         set(request.query) != {"lesson"}
@@ -84,24 +86,22 @@ async def pupils(request):
             code="legacy_print_lesson_required",
             message="Укажите номер занятия в параметре lesson",
         )
-    try:
-        event, plan, rows = await factory.run_read_async(
-            lambda connection: export_print_pupils(
-                connection, request.match_info["event_id"], int(lesson)
-            )
-        )
-    except ClassroomAssignmentNotFound:
-        raise PwaApiError(
+    return lesson
+
+
+def _export_error(error):
+    if isinstance(error, ClassroomAssignmentNotFound):
+        return PwaApiError(
             status=404,
             code="legacy_print_event_not_found",
             message="Очное событие не найдено",
-        ) from None
-    except LegacyPrintConflict as error:
-        code = str(error)
-        raise PwaApiError(
-            status=409, code="legacy_print_" + code, message=_MESSAGES[code]
-        ) from None
-    body = json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode()
+        )
+    code = str(error)
+    return PwaApiError(status=409, code="legacy_print_" + code, message=_MESSAGES[code])
+
+
+def _export_response(request, event, plan, lesson, payload, *, extra_headers=None):
+    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
     digest = hashlib.sha256(
         body + str(plan["public_id"]).encode() + str(plan["version"]).encode()
     ).hexdigest()
@@ -110,7 +110,7 @@ async def pupils(request):
         raise PwaApiError(
             status=412,
             code="legacy_print_changed",
-            message="Распределение изменилось после предыдущего экспорта",
+            message="Данные печати изменились после предыдущего экспорта",
         )
     return web.Response(
         body=body,
@@ -122,5 +122,43 @@ async def pupils(request):
             "X-Print-Plan": str(plan["public_id"]),
             "X-Print-Lesson": lesson,
             "X-Print-Plan-Version": str(plan["version"]),
+            **(extra_headers or {}),
         },
+    )
+
+
+@routes.get(PREFIX + "/events/{event_id}/pupils")
+async def pupils(request):
+    factory = _authorize(request)
+    lesson = _lesson(request)
+    try:
+        event, plan, rows = await factory.run_read_async(
+            lambda connection: export_print_pupils(
+                connection, request.match_info["event_id"], int(lesson)
+            )
+        )
+    except (ClassroomAssignmentNotFound, LegacyPrintConflict) as error:
+        raise _export_error(error) from None
+    return _export_response(request, event, plan, lesson, rows)
+
+
+@routes.get(PREFIX + "/events/{event_id}/previous-results")
+async def previous_results(request):
+    factory = _authorize(request)
+    lesson = _lesson(request)
+    try:
+        event, plan, payload = await factory.run_read_async(
+            lambda connection: export_print_previous_results(
+                connection, request.match_info["event_id"], int(lesson)
+            )
+        )
+    except (ClassroomAssignmentNotFound, LegacyPrintConflict) as error:
+        raise _export_error(error) from None
+    return _export_response(
+        request,
+        event,
+        plan,
+        lesson,
+        payload,
+        extra_headers={"X-Print-Previous-Lesson": str(payload["lesson"])},
     )
