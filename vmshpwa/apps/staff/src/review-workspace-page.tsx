@@ -288,7 +288,7 @@ export function LoadedReviewWorkspace({
       clearReviewDraft(window.localStorage, storageKey)
       rememberCompletedReview(namespace, principal.accountId, response.review.reviewId)
       if (onCompleted) onCompleted(response, draft, currentLease)
-      else await navigate({ to: '/review' })
+      else await navigate({ to: '/review', search: true })
     } catch (error) {
       authentication.handleApiError(error)
     }
@@ -299,7 +299,7 @@ export function LoadedReviewWorkspace({
     release.reset()
     try {
       await release.mutateAsync(currentLease.claimToken)
-      await navigate({ to: '/review' })
+      await navigate({ to: '/review', search: true })
     } catch (error) {
       authentication.handleApiError(error)
     }
@@ -326,7 +326,7 @@ export function LoadedReviewWorkspace({
         onDone={async (result) => {
           if (result.mode === 'move') {
             if (onMoved) onMoved(result.targetLabel, result.sourceEntryId, currentLease)
-            else await navigate({ to: '/review' })
+            else await navigate({ to: '/review', search: true })
           } else await heartbeat.mutateAsync(currentLease.claimToken)
         }}
       />

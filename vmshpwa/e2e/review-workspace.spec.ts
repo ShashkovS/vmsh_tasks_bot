@@ -116,7 +116,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   await expect(adminRow.getByRole('button', { name: 'Открыть' })).toBeVisible()
 
   await row.getByRole('button', { name: 'Открыть' }).click()
-  await expect(page).toHaveURL(new RegExp(`/staff/review/${queueId}$`))
+  await expect(page).toHaveURL(new RegExp(`/staff/review/${queueId}\\?`))
   await expect(adminRow).toContainText('Проверяет Преподаватель Тестовый')
 
   await expect(page.getByText('Поясните, почему этот переход верен.')).toBeVisible()
@@ -222,7 +222,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
       markCount: 1,
     },
   ])
-  await expect(page).toHaveURL(/\/staff\/review\/?$/)
+  await expect(page).toHaveURL(/\/staff\/review\/?\?/)
   await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0)
   await expect(adminRow).toHaveCount(0)
   const teacherReactionInboxStatus = await page.evaluate(async () => {

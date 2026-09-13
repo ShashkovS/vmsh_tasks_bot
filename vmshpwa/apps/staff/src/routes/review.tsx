@@ -2,10 +2,14 @@ import { createFileRoute, Outlet, Link, useRouterState } from '@tanstack/react-r
 import { useState, useEffect } from 'react'
 import { useAuthentication, useAuthenticatedPrincipal } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace } from '@vmsh/contracts'
+import { reviewQueueSearchSchema } from '../review-queue-model'
 import { lastCompletedReview } from '../last-completed-review'
 import { buttonVariants } from '@vmsh/ui'
 
-export const Route = createFileRoute('/review')({ component: ReviewNavigation })
+export const Route = createFileRoute('/review')({
+  validateSearch: reviewQueueSearchSchema,
+  component: ReviewNavigation,
+})
 function ReviewNavigation() {
   const inHistory = useRouterState({
     select: (state) => state.location.pathname.includes('/review/history'),
@@ -32,6 +36,7 @@ function ReviewNavigation() {
           activeProps={{ 'aria-current': 'page' }}
           activeOptions={{ exact: true }}
           to="/review"
+          search={true}
         >
           Очередь
         </Link>

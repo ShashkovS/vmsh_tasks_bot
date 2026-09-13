@@ -364,7 +364,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
         ref={toolbarElement}
         className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background py-2"
       >
-        <Button render={<Link to="/review" />} variant="outline" size="sm">
+        <Button render={<Link to="/review" search={true} />} variant="outline" size="sm">
           К списку задач
         </Button>
         <Button

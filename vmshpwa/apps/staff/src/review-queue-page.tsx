@@ -1,6 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentProps } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 import {
   PageLayout,
@@ -15,19 +16,41 @@ import {
   reviewQueueQueryKeys,
   type ReviewQueueItem as ReviewQueueContractItem,
 } from '@vmsh/contracts'
-import { ReviewQueue, type GroupView, type ReviewQueueItem, type ReviewSort } from '@vmsh/product'
+import { ReviewQueue, type GroupView, type ReviewQueueItem } from '@vmsh/product'
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh/ui'
-import { allReviewItems, reviewProblemGroups } from './review-series-model'
+import { allReviewItems } from './review-series-model'
+import { Route } from './routes/review'
+import {
+  filterReviewQueue,
+  formatReviewWaiting,
+  queueOptions,
+  reviewQueueCounts,
+  sortedReviewProblems,
+  workCount,
+  type ReviewQueueSearch,
+} from './review-queue-model'
 
 import { describeReviewError } from './review-errors'
 
-/** Live Phase-6 Staff queue; see development-plan/10-phase-6-review-and-feedback.md. */
+/** Staff queue: docs/serial-review.md; dev/design-system/05-pages-and-flows.md. */
 export function StaffReviewQueuePage() {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   const navigate = useNavigate()
-  const [sort, setSort] = useState<ReviewSort>('waiting')
-  const [byProblem, setByProblem] = useState(true)
+  const search = Route.useSearch()
+  const byProblem = search.queueView !== 'works'
+  const sort = search.queueTableSort ?? 'waiting'
+  const updateSearch = (patch: Partial<ReviewQueueSearch>) =>
+    void navigate({
+      to: '/review',
+      search: (previous) => ({ ...previous, ...patch }),
+      resetScroll: false,
+    })
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
   const [openingId, setOpeningId] = useState<string | null>(null)
   const client = useMemo(
     () =>
@@ -56,7 +79,11 @@ export function StaffReviewQueuePage() {
     setOpeningId(queueId)
     try {
       await claim.mutateAsync(queueId)
-      await navigate({ to: '/review/$submissionId', params: { submissionId: queueId } })
+      await navigate({
+        to: '/review/$submissionId',
+        params: { submissionId: queueId },
+        search: true,
+      })
     } catch (error) {
       authentication.handleApiError(error)
       setOpeningId(null)
@@ -88,7 +115,10 @@ export function StaffReviewQueuePage() {
       />
     )
   } else {
-    const items = queue.data.items.map((item) => mapQueueItem(item, openingId))
+    const filtered = filterReviewQueue(queue.data.items, search)
+    const counts = reviewQueueCounts(filtered)
+    const options = queueOptions(queue.data.items, search.queueCourse)
+    const items = filtered.map((item) => mapQueueItem(item, openingId, now))
     content = (
       <div className="space-y-3">
         {claim.error ? (
@@ -99,60 +129,157 @@ export function StaffReviewQueuePage() {
             </AlertContent>
           </Alert>
         ) : null}
-        <div className="flex gap-2">
-          <Button variant={byProblem ? 'default' : 'outline'} onClick={() => setByProblem(true)}>
-            По задачам
-          </Button>
-          <Button variant={byProblem ? 'outline' : 'default'} onClick={() => setByProblem(false)}>
-            Все работы
-          </Button>
+        <dl
+          aria-label="Сводка очереди"
+          className="grid gap-3 rounded-md border border-border bg-surface p-3 sm:grid-cols-3"
+        >
+          {[
+            ['Ждут проверки', counts.total],
+            ['Можно проверить', counts.available],
+            ['У других преподавателей', counts.busy],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-small text-muted-foreground">{label}</dt>
+              <dd className="font-num text-lg font-semibold">{workCount(Number(value))}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <QueueSelect
+            label="Курс"
+            value={search.queueCourse ?? ''}
+            onChange={(event) => {
+              const course = event.target.value || undefined
+              const groups = queueOptions(queue.data.items, course).groups
+              updateSearch({
+                queueCourse: course,
+                queueGroup: groups.some((g) => g.id === search.queueGroup)
+                  ? search.queueGroup
+                  : undefined,
+              })
+            }}
+          >
+            <option value="">Все курсы</option>
+            {search.queueCourse && !options.courses.some((c) => c.id === search.queueCourse) ? (
+              <option value={search.queueCourse}>Выбранный курс — нет работ</option>
+            ) : null}
+            {options.courses.map((course) => (
+              <option key={course.id} value={course.id}>
+                {course.name}
+              </option>
+            ))}
+          </QueueSelect>
+          <QueueSelect
+            label="Группа"
+            value={search.queueGroup ?? ''}
+            onChange={(event) => updateSearch({ queueGroup: event.target.value || undefined })}
+          >
+            <option value="">Все группы</option>
+            {search.queueGroup && !options.groups.some((g) => g.id === search.queueGroup) ? (
+              <option value={search.queueGroup}>Выбранная группа — нет работ</option>
+            ) : null}
+            {options.groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </QueueSelect>
         </div>
-        {byProblem ? (
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              aria-pressed={byProblem}
+              variant={byProblem ? 'default' : 'outline'}
+              onClick={() => updateSearch({ queueView: 'problems' })}
+            >
+              По задачам
+            </Button>
+            <Button
+              aria-pressed={!byProblem}
+              variant={byProblem ? 'outline' : 'default'}
+              onClick={() => updateSearch({ queueView: 'works' })}
+            >
+              Все работы
+            </Button>
+          </div>
+          {byProblem ? (
+            <QueueSelect
+              label="Порядок задач"
+              value={search.queueSort ?? 'waiting'}
+              onChange={(event) =>
+                updateSearch({ queueSort: event.target.value === 'count' ? 'count' : 'waiting' })
+              }
+            >
+              <option value="waiting">Дольше ждут</option>
+              <option value="count">Больше работ</option>
+            </QueueSelect>
+          ) : null}
+        </div>
+        {!filtered.length ? (
+          <PageStatePanel
+            state="empty"
+            title="По выбранным фильтрам работ нет"
+            actionLabel="Сбросить фильтры"
+            onAction={() => updateSearch({ queueCourse: undefined, queueGroup: undefined })}
+          />
+        ) : byProblem ? (
           <div className="space-y-2">
-            {reviewProblemGroups(queue.data.items).map(({ problem, items: grouped, oldest }) => {
-              const available = grouped.filter(
-                (item) => !item.lock || item.lock.isOwnedByCurrentStaff,
-              ).length
-              return (
-                <div
-                  key={problem.problemId}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface p-3"
-                >
-                  <div>
-                    <div className="font-semibold">
-                      {problem.problemNumber} · {problem.problemTitle}
-                    </div>
-                    <div className="text-caption text-muted-foreground">
-                      {problem.courseName} · {problem.groupName} · {available} свободно из{' '}
-                      {grouped.length} · ждёт{' '}
-                      {formatWaiting(
-                        Math.max(
-                          0,
-                          Math.floor((queue.dataUpdatedAt - Date.parse(oldest)) / 60_000),
-                        ),
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    disabled={!available}
-                    render={
-                      <Link
-                        to="/review/series/$problemId"
-                        params={{ problemId: problem.problemId }}
-                      />
-                    }
+            {sortedReviewProblems(filtered, search.queueSort).map(
+              ({ problem, items: grouped, oldest }) => {
+                const { total, available, busy } = reviewQueueCounts(grouped)
+                return (
+                  <article
+                    aria-label={`${problem.problemNumber} · ${problem.problemTitle}`}
+                    key={problem.problemId}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface p-3"
                   >
-                    Проверять подряд
-                  </Button>
-                </div>
-              )
-            })}
+                    <div className="min-w-0 flex-1 basis-64 break-words">
+                      <div className="font-semibold">
+                        {problem.problemNumber} · {problem.problemTitle}
+                      </div>
+                      <div className="text-caption text-muted-foreground">
+                        {problem.courseName} · {problem.groupName}
+                      </div>
+                      <p className="mt-2 font-medium">Ждут проверки: {workCount(total)}</p>
+                      {busy > 0 ? (
+                        <p className="text-small text-muted-foreground">
+                          Можно проверить: {available} · У других преподавателей: {busy}
+                        </p>
+                      ) : null}
+                      <p className="text-small text-muted-foreground">
+                        Самая давняя работа ждёт{' '}
+                        {formatReviewWaiting((now - Date.parse(oldest)) / 60_000)}
+                      </p>
+                      {!available ? (
+                        <p className="text-small text-muted-foreground">
+                          Все работы уже взяты другими преподавателями
+                        </p>
+                      ) : null}
+                    </div>
+                    <Button
+                      disabled={!available}
+                      className="aria-disabled:opacity-50"
+                      render={
+                        <Link
+                          to="/review/series/$problemId"
+                          search={true}
+                          params={{ problemId: problem.problemId }}
+                        />
+                      }
+                    >
+                      Проверять подряд
+                    </Button>
+                  </article>
+                )
+              },
+            )}
           </div>
         ) : (
           <ReviewQueue
             items={items}
             onOpen={(id) => void open(id)}
-            onSortChange={setSort}
+            onSortChange={(queueTableSort) => updateSearch({ queueTableSort })}
+            showSummary={false}
             sort={sort}
           />
         )}
@@ -162,7 +289,7 @@ export function StaffReviewQueuePage() {
 
   return (
     <PageLayout
-      description="Выберите задачу для серийной проверки. Сверху — задачи, по которым дольше всего ждут проверки."
+      description="Выберите задачу для серийной проверки или откройте отдельную работу."
       eyebrow="Письменные задачи"
       title="Очередь проверки"
       width="wide"
@@ -172,11 +299,15 @@ export function StaffReviewQueuePage() {
   )
 }
 
-function mapQueueItem(item: ReviewQueueContractItem, openingId: string | null): ReviewQueueItem {
+function mapQueueItem(
+  item: ReviewQueueContractItem,
+  openingId: string | null,
+  now: number,
+): ReviewQueueItem {
   const first = item.branches[0]!
   const waitingMinutes = Math.max(
     0,
-    Math.floor((Date.now() - new Date(item.submittedAt).getTime()) / 60_000),
+    Math.floor((now - new Date(item.submittedAt).getTime()) / 60_000),
   )
   const group: GroupView = {
     id: first.groupId ?? first.groupShortCode,
@@ -198,7 +329,7 @@ function mapQueueItem(item: ReviewQueueContractItem, openingId: string | null): 
       item.branches.length === 1
         ? first.groupName
         : [...new Set(item.branches.map((branch) => branch.groupName))].join(', '),
-    waitingLabel: formatWaiting(waitingMinutes),
+    waitingLabel: formatReviewWaiting(waitingMinutes),
     waitingMinutes,
     ...(openingId === item.queueId
       ? { busyBy: 'открываем…' }
@@ -213,9 +344,23 @@ function colorIndex(colorKey: string | null): 0 | 1 | 2 | 3 | 4 {
   return match ? (Number(match[1]) as 1 | 2 | 3 | 4) : 0
 }
 
-function formatWaiting(minutes: number): string {
-  if (minutes < 60) return `${minutes} мин`
-  const hours = Math.floor(minutes / 60)
-  const remainder = minutes % 60
-  return remainder ? `${hours} ч ${remainder} мин` : `${hours} ч`
+/** Native keyboard behavior with consistent WebKit sizing; docs/serial-review.md. */
+function QueueSelect({ label, children, ...props }: ComponentProps<'select'> & { label: string }) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1 text-small">
+      <span>{label}</span>
+      <span className="relative block">
+        <select
+          {...props}
+          className="min-h-10 w-full min-w-0 appearance-none rounded-md border border-border bg-surface py-2 pr-9 pl-3 text-small text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+        >
+          {children}
+        </select>
+        <ChevronDown
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+        />
+      </span>
+    </label>
+  )
 }

@@ -36,6 +36,7 @@ export interface ReviewQueueProps {
   onOpen?: (id: string) => void
   onRecheck?: (id: string) => void
   className?: string
+  showSummary?: boolean
 }
 
 function sortItems(items: ReviewQueueItem[], sort: ReviewSort): ReviewQueueItem[] {
@@ -89,6 +90,7 @@ export function ReviewQueue({
   sort,
   onSortChange,
   mode = 'list',
+  showSummary = true,
   onModeChange,
   onOpen,
   onRecheck,
@@ -99,32 +101,38 @@ export function ReviewQueue({
 
   return (
     <div className={cn('space-y-3', className)} data-density="staff">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-small text-muted-foreground" role="status">
-          В очереди: <span className="font-medium text-foreground">{items.length}</span>
-          {oldest > 0 ? `, дольше всех ждёт ${Math.floor(oldest / 60)} ч ${oldest % 60} мин` : ''}
-        </p>
-        {onModeChange ? (
-          <div className="inline-flex overflow-hidden rounded-md border border-border">
-            {(['list', 'fast'] as ReviewMode[]).map((value) => (
-              <button
-                aria-pressed={mode === value}
-                className={cn(
-                  'px-3 py-1 text-small focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
-                  mode === value
-                    ? 'bg-primary/10 font-medium text-foreground'
-                    : 'text-muted-foreground hover:bg-surface-subtle',
-                )}
-                key={value}
-                onClick={() => onModeChange(value)}
-                type="button"
-              >
-                {value === 'list' ? 'Список' : 'По одной'}
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
+      {showSummary || onModeChange ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {showSummary ? (
+            <p className="text-small text-muted-foreground" role="status">
+              В очереди: <span className="font-medium text-foreground">{items.length}</span>
+              {oldest > 0
+                ? `, дольше всех ждёт ${Math.floor(oldest / 60)} ч ${oldest % 60} мин`
+                : ''}
+            </p>
+          ) : null}
+          {onModeChange ? (
+            <div className="inline-flex overflow-hidden rounded-md border border-border">
+              {(['list', 'fast'] as ReviewMode[]).map((value) => (
+                <button
+                  aria-pressed={mode === value}
+                  className={cn(
+                    'px-3 py-1 text-small focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+                    mode === value
+                      ? 'bg-primary/10 font-medium text-foreground'
+                      : 'text-muted-foreground hover:bg-surface-subtle',
+                  )}
+                  key={value}
+                  onClick={() => onModeChange(value)}
+                  type="button"
+                >
+                  {value === 'list' ? 'Список' : 'По одной'}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="overflow-x-auto rounded-md border border-border">
         <Table>

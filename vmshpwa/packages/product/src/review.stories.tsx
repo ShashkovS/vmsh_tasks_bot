@@ -298,3 +298,17 @@ export const Workspace: Story = {
     </div>
   ),
 }
+
+// StaffReviewQueuePage supplies its own filtered summary; docs/serial-review.md.
+export const QueueWithExternalSummary: Story = {
+  name: 'Очередь с внешней сводкой',
+  render: () => (
+    <ReviewQueue items={items} sort="waiting" onSortChange={() => undefined} showSummary={false} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByText(/В очереди:/)).not.toBeInTheDocument()
+    await expect(canvas.getAllByRole('row')).toHaveLength(5)
+    await expect(canvas.getByText('Проверяет И. Соколов')).toBeInTheDocument()
+  },
+}
