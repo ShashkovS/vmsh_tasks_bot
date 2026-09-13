@@ -79,6 +79,7 @@ class CreateSupportThreadCommand:
     text: str
     client_created_at: datetime
     idempotency_key: str
+    photo_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _validate_user_id(self.student_user_id)
@@ -90,6 +91,8 @@ class CreateSupportThreadCommand:
         elif self.problem_public_id is not None:
             raise ValueError("general question cannot reference a problem")
         _validate_text(self.text)
+        if len(self.photo_ids) > 10 or len(set(self.photo_ids)) != len(self.photo_ids):
+            raise ValueError("invalid photo count")
         _validate_client_time(self.client_created_at)
         _validate_idempotency_key(self.idempotency_key)
 
@@ -101,11 +104,14 @@ class AppendStudentSupportEntryCommand:
     text: str
     client_created_at: datetime
     idempotency_key: str
+    photo_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _validate_user_id(self.student_user_id)
         _validate_public_id(self.thread_public_id, "support thread")
         _validate_text(self.text)
+        if len(self.photo_ids) > 10 or len(set(self.photo_ids)) != len(self.photo_ids):
+            raise ValueError("invalid photo count")
         _validate_client_time(self.client_created_at)
         _validate_idempotency_key(self.idempotency_key)
 
@@ -139,6 +145,7 @@ class SupportEntryRecord:
     channel: str
     client_created_at: datetime | None
     server_received_at: datetime
+    photo_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -340,12 +347,59 @@ class PwaSupportThreadRepository:
         self._factory = connection_factory
         self._clock = clock
 
+    async def store_photo(
+        self, *, student_user_id, object_key, sha256, byte_size, width, height
+    ):
+        def write(connection):
+            return connection.execute(
+                "INSERT INTO support_photos (uploader_user_id, object_key, sha256, byte_size, width, height, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
+                (
+                    student_user_id,
+                    object_key,
+                    sha256,
+                    byte_size,
+                    width,
+                    height,
+                    _timestamp(self._clock()),
+                ),
+            ).fetchone()["public_id"]
+
+        return await self._factory.run_write_async(write)
+
+    async def read_photo(self, *, public_id, student_user_id=None, scope=None):
+        def read(connection):
+            photo = connection.execute(
+                "SELECT photo.*, thread.public_id thread_public_id FROM support_photos photo "
+                "LEFT JOIN support_entries entry ON entry.id = photo.entry_id "
+                "LEFT JOIN support_threads thread ON thread.id = entry.thread_id "
+                "WHERE photo.public_id = ?",
+                (public_id,),
+            ).fetchone()
+            if photo is None:
+                raise SupportNotFound("photo not found")
+            if (
+                student_user_id is not None
+                and photo["uploader_user_id"] == student_user_id
+            ):
+                return photo
+            if photo["thread_public_id"] is not None and scope is not None:
+                thread = self._thread_row(
+                    connection, thread_public_id=photo["thread_public_id"]
+                )
+                if scope.allows(thread):
+                    return photo
+            raise SupportForbidden("photo outside question scope")
+
+        return await self._factory.run_read_async(read)
+
     async def create_student_thread(
         self, command: CreateSupportThreadCommand
     ) -> SupportThreadRecord:
         payload_hash = _payload_hash(
             {
                 "operation": "support-thread:create",
+                **({"photoIds": command.photo_ids} if command.photo_ids else {}),
                 "kind": command.kind,
                 "groupLessonId": command.group_lesson_public_id,
                 "problemId": command.problem_public_id,
@@ -428,6 +482,7 @@ class PwaSupportThreadRepository:
                 server_received_at=received_at,
                 idempotency_key=command.idempotency_key,
                 payload_hash=payload_hash,
+                photo_ids=command.photo_ids,
             )
             if touch_thread:
                 self._touch_thread(connection, thread_id=thread_id, now=received_at)
@@ -446,6 +501,7 @@ class PwaSupportThreadRepository:
             client_created_at=command.client_created_at,
             idempotency_key=command.idempotency_key,
             scope=None,
+            photo_ids=command.photo_ids,
         )
 
     async def append_staff_entry(
@@ -642,10 +698,12 @@ class PwaSupportThreadRepository:
         client_created_at: datetime,
         idempotency_key: str,
         scope: SupportStaffScope | None,
+        photo_ids: tuple[str, ...] = (),
     ) -> SupportThreadRecord:
         payload_hash = _payload_hash(
             {
                 "operation": "support-entry:append",
+                **({"photoIds": photo_ids} if photo_ids else {}),
                 "threadId": thread_public_id,
                 "authorKind": author_kind,
                 "text": text,
@@ -715,6 +773,7 @@ class PwaSupportThreadRepository:
                 server_received_at=received_at,
                 idempotency_key=idempotency_key,
                 payload_hash=payload_hash,
+                photo_ids=photo_ids,
             )
             self._touch_thread(connection, thread_id=thread_id, now=received_at)
             return self._load_thread(connection, thread_id=thread_id)
@@ -840,6 +899,13 @@ class PwaSupportThreadRepository:
                     None
                     if entry["asset_public_id"] is None
                     else str(entry["asset_public_id"])
+                ),
+                photo_ids=tuple(
+                    photo["public_id"]
+                    for photo in connection.execute(
+                        "SELECT public_id FROM support_photos WHERE entry_id = ? ORDER BY id",
+                        (entry["id"],),
+                    )
                 ),
                 channel=str(entry["channel"]),
                 client_created_at=(
@@ -1032,8 +1098,9 @@ class PwaSupportThreadRepository:
         server_received_at: str,
         idempotency_key: str,
         payload_hash: str,
+        photo_ids: tuple[str, ...] = (),
     ) -> None:
-        connection.execute(
+        cursor = connection.execute(
             "INSERT INTO support_entries "
             "(thread_id, author_kind, author_user_id, text, channel, "
             "client_created_at, server_received_at, idempotency_key, payload_sha256, "
@@ -1051,6 +1118,18 @@ class PwaSupportThreadRepository:
                 server_received_at,
             ),
         )
+
+        # Bind all attachments in the message transaction; see question-photos.md.
+        for photo_id in photo_ids:
+            changed = connection.execute(
+                "UPDATE support_photos SET entry_id = ? WHERE public_id = ? "
+                "AND uploader_user_id = ? AND entry_id IS NULL",
+                (cursor.lastrowid, photo_id, author_user_id),
+            ).rowcount
+            if changed != 1:
+                raise SupportForbidden(
+                    "photo is unavailable or belongs to another sender"
+                )
 
     @staticmethod
     def _touch_thread(

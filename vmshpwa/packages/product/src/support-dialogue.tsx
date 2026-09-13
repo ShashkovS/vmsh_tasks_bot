@@ -1,14 +1,15 @@
 import { Send } from 'lucide-react'
-import type { FormEvent, KeyboardEvent } from 'react'
+import type { FormEvent, KeyboardEvent, ReactNode } from 'react'
 
 import { Alert, AlertContent, AlertDescription, Button, Textarea, cn } from '@vmsh/ui'
 
 /**
- * Text-only private dialogue composer for Phase 6. Persistence and submission
- * remain application concerns; this component makes the true saved/failed
+ * Private dialogue composer; attachment slot: docs/question-photos.md.
+ * Persistence and submission remain application concerns; this shows the saved/failed
  * state visible and never implies that an unsaved browser value is durable.
  */
 export interface SupportComposerProps {
+  attachments?: ReactNode
   value: string
   onValueChange: (value: string) => void
   onSubmit: () => void
@@ -22,6 +23,7 @@ export interface SupportComposerProps {
 }
 
 export function SupportComposer({
+  attachments,
   value,
   onValueChange,
   onSubmit,
@@ -57,6 +59,7 @@ export function SupportComposer({
         rows={density === 'compact' ? 3 : 5}
         value={value}
       />
+      {attachments}
       <div className="flex flex-wrap items-center justify-between gap-2">
         {saveState === 'saved' ? (
           <p className="text-caption text-muted-foreground" role="status">

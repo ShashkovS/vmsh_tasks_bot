@@ -89,7 +89,7 @@ def test_inventory_is_deterministic_and_does_not_read_rows(tmp_path):
     assert not any(
         line.casefold().startswith("insert into") for line in rendered_sql.splitlines()
     )
-    assert second["product"]["object_count"] == 460
+    assert second["product"]["object_count"] == 462
     assert second["legacy_derived"]["object_count"] == 0
     assert all(
         not record["name"].startswith("sqlite_") and "yoyo" not in record["name"]
@@ -341,6 +341,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
                 # Communication targeting rebuilds group banners using the
                 # course columns introduced by the omitted auth/course branch.
                 "0089.pwa_communication_targeting",
+                "0090.pwa_support_photos",
             }
         )
     )
@@ -363,6 +364,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
         "0051.pwa_review_queue_leases",
         "0076.pwa_account_provisioning_batches",
         "0089.pwa_communication_targeting",
+        "0090.pwa_support_photos",
     ]
     assert {item["name"] for item in report["missing_product_objects"]} >= {
         "auth_accounts",

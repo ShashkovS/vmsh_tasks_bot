@@ -1,3 +1,4 @@
+import { StudentPhotoSupportComposer } from './student-photo-support-composer'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { MessageCircleQuestion } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -16,7 +17,7 @@ import {
 } from '@vmsh/app-shell'
 import { ApiResponseError, type SupportEntry, type SupportThreadSummary } from '@vmsh/contracts'
 import { useSupportDraftEditor, type SupportDraftDescriptor } from '@vmsh/offline'
-import { FeedbackThread, SupportComposer, type ThreadMessageView } from '@vmsh/product'
+import { FeedbackThread, SupportPhotoBody, type ThreadMessageView } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, buttonVariants } from '@vmsh/ui'
 
 import { StudentCollapseAction } from './student-collapse-action'
@@ -188,7 +189,7 @@ export function StudentNewSupportPage({
     }
   }, [existingThread, navigate, threadList])
 
-  const submit = async () => {
+  const submit = async (photoIds: string[], clearPhotos: () => Promise<void>) => {
     mutation.reset()
     try {
       const response = await mutation.mutateAsync({
@@ -198,8 +199,10 @@ export function StudentNewSupportPage({
         groupLessonId,
         problemId: problemId ?? null,
         text: editor.text,
+        photoIds,
         clientCreatedAt: editor.delivery.clientCreatedAt,
       })
+      await clearPhotos()
       editor.clearAfterConfirmedSend()
       await navigate({
         to: '/questions/$threadId',
@@ -208,6 +211,7 @@ export function StudentNewSupportPage({
       })
     } catch (error) {
       authentication.handleApiError(error)
+      throw error
     }
   }
 
@@ -237,10 +241,13 @@ export function StudentNewSupportPage({
     >
       <Card>
         <CardContent className="pt-4">
-          <SupportComposer
+          <StudentPhotoSupportComposer
+            key={JSON.stringify(descriptor)}
+            client={client}
+            photoDraftKey={JSON.stringify(descriptor)}
             busy={mutation.isPending}
             error={mutation.error ? describeSupportError(mutation.error) : null}
-            onSubmit={() => void submit()}
+            onSubmit={submit}
             onValueChange={(value) => {
               mutation.reset()
               editor.setText(value)
@@ -309,18 +316,21 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
   }
 
   const thread = query.data.thread
-  const submit = async () => {
+  const submit = async (photoIds: string[], clearPhotos: () => Promise<void>) => {
     mutation.reset()
     try {
       await mutation.mutateAsync({
         schemaVersion: 1,
         idempotencyKey: editor.delivery.idempotencyKey,
         text: editor.text,
+        photoIds,
         clientCreatedAt: editor.delivery.clientCreatedAt,
       })
+      await clearPhotos()
       editor.clearAfterConfirmedSend()
     } catch (error) {
       authentication.handleApiError(error)
+      throw error
     }
   }
 
@@ -342,10 +352,13 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
         />
         <Card>
           <CardContent className="pt-4">
-            <SupportComposer
+            <StudentPhotoSupportComposer
+              key={JSON.stringify(descriptor)}
+              client={client}
+              photoDraftKey={JSON.stringify(descriptor)}
               busy={mutation.isPending}
               error={mutation.error ? describeSupportError(mutation.error) : null}
-              onSubmit={() => void submit()}
+              onSubmit={submit}
               onValueChange={(value) => {
                 mutation.reset()
                 editor.setText(value)
@@ -366,7 +379,7 @@ function studentMessage(entry: SupportEntry, studentUserId: string): ThreadMessa
     id: entry.entryId,
     author: { kind: entry.author.kind, name: entry.author.displayName },
     at: formatSupportTime(entry.receivedAt),
-    body: entry.text ?? 'Приложено изображение.',
+    body: <SupportPhotoBody text={entry.text} photoIds={entry.photoIds ?? []} audience="student" />,
     own: entry.author.userId === studentUserId,
   }
 }
@@ -506,7 +519,7 @@ function InlineNewProblemQuestion({
     descriptor,
   )
   const mutation = useCreateSupportThreadMutation(client, principal)
-  const submit = async () => {
+  const submit = async (photoIds: string[], clearPhotos: () => Promise<void>) => {
     mutation.reset()
     try {
       const response = await mutation.mutateAsync({
@@ -516,19 +529,25 @@ function InlineNewProblemQuestion({
         groupLessonId,
         problemId,
         text: editor.text,
+        photoIds,
         clientCreatedAt: editor.delivery.clientCreatedAt,
       })
+      await clearPhotos()
       editor.clearAfterConfirmedSend()
       onCreated(response.thread.threadId)
     } catch (error) {
       authentication.handleApiError(error)
+      throw error
     }
   }
   return (
-    <SupportComposer
+    <StudentPhotoSupportComposer
+      key={JSON.stringify(descriptor)}
+      client={client}
+      photoDraftKey={JSON.stringify(descriptor)}
       busy={mutation.isPending}
       error={mutation.error ? describeSupportError(mutation.error) : null}
-      onSubmit={() => void submit()}
+      onSubmit={submit}
       onValueChange={(value) => {
         mutation.reset()
         editor.setText(value)
@@ -573,18 +592,21 @@ function InlineStudentSupportThread({
       </p>
     )
   }
-  const submit = async () => {
+  const submit = async (photoIds: string[], clearPhotos: () => Promise<void>) => {
     mutation.reset()
     try {
       await mutation.mutateAsync({
         schemaVersion: 1,
         idempotencyKey: editor.delivery.idempotencyKey,
         text: editor.text,
+        photoIds,
         clientCreatedAt: editor.delivery.clientCreatedAt,
       })
+      await clearPhotos()
       editor.clearAfterConfirmedSend()
     } catch (error) {
       authentication.handleApiError(error)
+      throw error
     }
   }
   return (
@@ -592,10 +614,13 @@ function InlineStudentSupportThread({
       <FeedbackThread
         messages={query.data.thread.entries.map((entry) => studentMessage(entry, principal.userId))}
       />
-      <SupportComposer
+      <StudentPhotoSupportComposer
+        key={JSON.stringify(descriptor)}
+        client={client}
+        photoDraftKey={JSON.stringify(descriptor)}
         busy={mutation.isPending}
         error={mutation.error ? describeSupportError(mutation.error) : null}
-        onSubmit={() => void submit()}
+        onSubmit={submit}
         onValueChange={(value) => {
           mutation.reset()
           editor.setText(value)

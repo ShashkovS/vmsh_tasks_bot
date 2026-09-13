@@ -29,21 +29,26 @@ def test_question_document_is_focused_and_only_published_condition():
     connection.row_factory = sqlite3.Row
     connection.executescript("""
         CREATE TABLE lesson_publications(group_lesson_id, revision_id, kind, state);
-        CREATE TABLE content_revisions(id, status);
-        CREATE TABLE problem_revisions(problem_id, content_revision_id, source_ordinal);
+        CREATE TABLE content_revisions(id, status, source_id);
+        CREATE TABLE content_sources(id, group_lesson_id, kind);
+        CREATE TABLE group_lessons(id, course_lesson_id, course_id, group_id);
+        CREATE TABLE course_lessons(id, lesson_number);
+        CREATE TABLE groups(course_id, group_id, short_code);
+        CREATE TABLE content_problem_matches(content_revision_id, problem_id, source_ordinal, source_item, resolved_at, decision);
+        CREATE TABLE problem_revisions(problem_id, content_revision_id, source_ordinal, source_item, title, display_number);
         CREATE TABLE content_derivatives(id, revision_id, kind, invalidated_at, content_text);
         INSERT INTO lesson_publications VALUES (1, 1, 'condition', 'published');
-        INSERT INTO content_revisions VALUES (1, 'ready');
-        INSERT INTO problem_revisions VALUES (7, 1, 2);
+        INSERT INTO content_revisions VALUES (1, 'ready', NULL);
+        INSERT INTO problem_revisions VALUES (7, 1, 2, NULL, NULL, NULL);
     """)
-    document = {"introduction": [], "problems": [{"ordinal": 1}, {"ordinal": 2}]}
+    document = {"introduction": [], "problems": [{"ordinal": 1, "blocks": []}, {"ordinal": 2, "blocks": []}]}
     connection.execute(
         "INSERT INTO content_derivatives VALUES (1, 1, ?, NULL, ?)",
         ("web_ast", json.dumps(document)),
     )
     target = {"problem_id": 7, "group_lesson_id": 1}
     result = PwaSupportThreadRepository._problem_document(connection, target)
-    assert result["problems"] == [{"ordinal": 2}]
+    assert result["problems"] == [{"ordinal": 2, "blocks": []}]
     connection.execute("UPDATE lesson_publications SET kind = 'solution'")
     assert PwaSupportThreadRepository._problem_document(connection, target) is None
     connection.execute(

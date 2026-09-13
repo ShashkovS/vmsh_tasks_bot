@@ -1346,3 +1346,12 @@ production build. Реальная доставка на устройстве п
 Проверено: 36 unit, 4 backend, 15 browser и 6 E2E в Chromium/Firefox/WebKit;
 320/390/1280 px, обе темы, печать, typecheck, production build. Снимки и известные
 baseline-падения старых Staff-тестов описаны в отчёте. Миграций нет.
+
+
+## Фото в вопросах — 2026-09-13, реализовано локально
+
+Общие кнопки галереи/камеры, вложения учебных вопросов и защищённое чтение.
+См. `vmshpwa/docs/question-photos.md`; миграция `0090.pwa_support_photos`.
+
+Проверено: 45 backend/schema, 11 unit, 3 browser, 12 E2E в трёх браузерах;
+сборки, typecheck, Ruff и целевой ESLint. Снимки — в отчёте `question-photos.md`.

@@ -19,7 +19,7 @@ for (const audience of ['student', 'family'] as const) {
     await composer.fill(question)
     if (audience === 'family') await expect(page.getByLabel('О ком вопрос')).toHaveValue('')
     await page
-      .getByLabel('Прикрепить фотографии')
+      .locator('input[type="file"][multiple]')
       .setInputFiles(path.resolve('../pwa_tests/fixtures/student-results-photo.webp'))
     await expect(page.getByText('Черновик сохранён на устройстве.')).toBeVisible()
     await page.reload()
@@ -56,12 +56,12 @@ for (const audience of ['student', 'family'] as const) {
       .toBeGreaterThan(0)
     const admin = await secondaryContext.newPage()
     await loginThroughUi(admin, AUTH_PERSONAS.admin, '/staff/questions?state=awaiting_staff')
-    await admin.getByRole('link', { name: /Вопросы организаторам/ }).click()
+    await admin.getByRole('link', { name: /^Организаторам/ }).click()
     await admin.getByRole('button').filter({ hasText: question }).click()
     await expect(admin).toHaveURL(`/staff/questions/organizers/${id}`)
     await admin.getByLabel('Сообщение организаторам').fill(reply)
     await admin
-      .getByLabel('Прикрепить фотографии')
+      .locator('input[type="file"][multiple]')
       .setInputFiles(path.resolve('../pwa_tests/fixtures/student-results-photo.webp'))
     await admin.getByRole('button', { name: 'Отправить', exact: true }).click()
     await expect(admin.getByText(reply, { exact: true })).toBeVisible()
@@ -86,14 +86,14 @@ for (const audience of ['student', 'family'] as const) {
       await expect
         .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
         .toBe(true)
-      await page.screenshot({
+      await page.locator('form').screenshot({
         path: info.outputPath(`organizers-${audience}-${width}.png`),
         animations: 'disabled',
       })
     }
     await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
     await expect(page.getByRole('button', { name: 'Переключить на светлую тему' })).toBeVisible()
-    await page.screenshot({
+    await page.locator('form').screenshot({
       path: info.outputPath(`organizers-${audience}-dark.png`),
       animations: 'disabled',
     })

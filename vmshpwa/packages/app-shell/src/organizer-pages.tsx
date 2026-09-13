@@ -1,3 +1,4 @@
+import { QuestionPhotoPicker } from '@vmsh/product'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FeedbackThread, ZoomableFigure, type ThreadMessageView } from '@vmsh/product'
@@ -262,17 +263,6 @@ function OrganizerPageContent({
     </section>
   )
 }
-function PhotoPreview({ blob }: { blob: Blob }) {
-  const imageRef = useRef<HTMLImageElement>(null)
-  useEffect(() => {
-    const next = URL.createObjectURL(blob)
-    if (imageRef.current) imageRef.current.src = next
-    return () => URL.revokeObjectURL(next)
-  }, [blob])
-  return (
-    <img ref={imageRef} alt="Выбранная фотография" className="h-20 w-20 rounded object-cover" />
-  )
-}
 function OrganizerCompose({
   threadId,
   onSent,
@@ -367,58 +357,20 @@ function OrganizerCompose({
               }
             }}
           />
-          <div className="flex flex-wrap gap-2">
-            {draft.photos.map((blob, index) => (
-              <div key={index}>
-                <PhotoPreview blob={blob} />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={mutation.isPending}
-                  onClick={() =>
-                    editor.update({
-                      ...draft,
-                      photos: draft.photos.filter((_, i) => i !== index),
-                      uploadedIds: draft.uploadedIds.filter((_, i) => i !== index),
-                    })
-                  }
-                  aria-label={`Убрать фотографию ${index + 1}`}
-                >
-                  Убрать
-                </Button>
-              </div>
-            ))}
-          </div>
-          <label className="block text-small">
-            Прикрепить фотографии
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              disabled={mutation.isPending || !editor.ready}
-              className="mt-1 block w-full max-w-full text-small"
-              onChange={(event) => {
-                const files = Array.from(event.target.files ?? [])
-                event.target.value = ''
-                if (
-                  files.length + draft.photos.length > 10 ||
-                  files.some(
-                    (file) =>
-                      file.size > 25 * 1024 * 1024 ||
-                      !['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
-                  )
-                ) {
-                  setError(
-                    'Можно прикрепить до 10 фотографий JPEG, PNG или WebP размером до 25 МиБ каждая.',
-                  )
-                  return
-                }
-                setError('')
-                editor.update({ ...draft, photos: [...draft.photos, ...files] })
-              }}
-            />
-          </label>
+          <QuestionPhotoPicker
+            photos={draft.photos}
+            disabled={mutation.isPending || !editor.ready}
+            onChange={(photos, removedIndex) =>
+              editor.update({
+                ...draft,
+                photos,
+                uploadedIds:
+                  removedIndex === undefined
+                    ? draft.uploadedIds
+                    : draft.uploadedIds.filter((_, i) => i !== removedIndex),
+              })
+            }
+          />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p role="status" className="text-caption text-muted-foreground">
               {editor.unavailable

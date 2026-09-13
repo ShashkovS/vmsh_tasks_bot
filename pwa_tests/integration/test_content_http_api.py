@@ -14,6 +14,7 @@ import pytest
 from aiohttp import FormData, web
 from argon2 import PasswordHasher
 
+from db_methods.pwa.support import PwaSupportThreadRepository
 from apps import pwa_app
 from apps.pwa_api import content_routes as content_routes_module
 from apps.pwa_api.auth_service import PwaAuthService
@@ -444,6 +445,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         auth_runtime_config=auth_config,
         auth_service=auth_service,
         content_repository=content_repository,
+        support_repository=PwaSupportThreadRepository(factory, clock=lambda: NOW),
         test_submission_repository=test_submission_repository,
         written_submission_repository=written_submission_repository,
         review_queue_repository=review_queue_repository,

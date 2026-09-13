@@ -289,6 +289,10 @@
       {
         "id": "0089.pwa_communication_targeting",
         "sha256": "658ca8f3eb0dcddb5414be64a4292c53e6ffe758757ef8ee2c7aa06563faf63e"
+      },
+      {
+        "id": "0090.pwa_support_photos",
+        "sha256": "9a9ce321d12fd6432983dac68f7c99758220d21d94637b0d625063786868d19a"
       }
     ],
     "repository_head_status": {
@@ -299,7 +303,7 @@
     }
   },
   "product": {
-    "object_count": 460,
+    "object_count": 462,
     "objects": [
       {
         "columns": [
@@ -23891,6 +23895,181 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "uploader_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entry_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "object_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "byte_size",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "width",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "height",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "support_entries"
+          },
+          {
+            "from_columns": [
+              "uploader_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "object_key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_support_photos_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "support_photos_entry_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "support_photos",
+        "object_sha256": "6a86eade7f984e9cb50b57d3abf0d8d0e5b11d65615aa40064d33f87dee4d52d",
+        "sql": "CREATE TABLE support_photos (\n id INTEGER PRIMARY KEY,\n public_id TEXT GENERATED ALWAYS AS ('sup-' || id) VIRTUAL,\n uploader_user_id INTEGER NOT NULL REFERENCES users(id),\n entry_id INTEGER REFERENCES support_entries(id),\n object_key TEXT NOT NULL UNIQUE,\n sha256 TEXT NOT NULL,\n byte_size INTEGER NOT NULL,\n width INTEGER NOT NULL,\n height INTEGER NOT NULL,\n created_at TEXT NOT NULL\n);",
+        "table_name": "support_photos",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 2,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "student_user_id",
             "not_null": true,
             "primary_key_ordinal": 0
@@ -27925,6 +28104,13 @@
         "type": "index"
       },
       {
+        "name": "support_photos_entry_idx",
+        "object_sha256": "dc2029ade219e758faaa7ab8ae319394f39ce4ec17ddf6b24e9dd6cf68518c3d",
+        "sql": "CREATE INDEX support_photos_entry_idx ON support_photos(entry_id);",
+        "table_name": "support_photos",
+        "type": "index"
+      },
+      {
         "name": "support_threads_general_question_uq",
         "object_sha256": "22f67c9619bf52e4dbe8ff734f57354f7923d395592eb6d0e5815c595b0afce9",
         "sql": "CREATE UNIQUE INDEX support_threads_general_question_uq\n    on support_threads (student_user_id, group_lesson_id)\n    where kind = 'general';",
@@ -29227,8 +29413,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "316cee3896b63bd810306906270a56fb53feb13ae80a7ec277b1addf6ff82133",
-    "sha256": "5f25452ab1cb6e819440e1291f0d69f944eccb4fb5b4523be6e14b7b89df3ae3"
+    "pragma_structure_sha256": "977d5119a82dc27f7f3a7e87e6870dbfd56ce03b16a13a6f7d35d13733b96d56",
+    "sha256": "2d5a7570f0e5526faed36b4d3209645738bcb78ba494d49dc93e754c5720d178"
   },
   "source_kind": "repository-migration-head"
 }

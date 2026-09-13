@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test } from './fixtures'
 
@@ -36,7 +37,15 @@ test('Phase 6: private Student and Staff dialogue survives reload and syncs live
   await expect(
     page.getByText('Черновик сохранён на этом устройстве.', { exact: true }),
   ).toBeVisible()
+  await page
+    .locator('input[type="file"][multiple]')
+    .setInputFiles(path.resolve('../pwa_tests/fixtures/student-results-photo.webp'))
+  await expect(page.getByAltText('Выбранная фотография')).toBeVisible()
+  await expect(
+    page.getByText('Черновик сохранён на этом устройстве.', { exact: true }),
+  ).toBeVisible()
   await page.reload()
+  await expect(page.getByAltText('Выбранная фотография')).toBeVisible()
   await expect(page.getByLabel('Сообщение')).toHaveValue(studentQuestion)
 
   const createResponse = page.waitForResponse(
@@ -59,6 +68,22 @@ test('Phase 6: private Student and Staff dialogue survives reload and syncs live
   await expect(staffPage).toHaveURL(`/staff/questions/${threadId}`)
   await expect(staffPage.getByText(studentQuestion, { exact: true })).toBeVisible()
 
+  await expect(staffPage.locator('img[alt="Фотография 1"]')).toBeVisible()
+  await expect
+    .poll(() =>
+      staffPage
+        .locator('img[alt="Фотография 1"]')
+        .evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0)
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect(page.getByRole('button', { name: 'Сделать фотографию' })).toBeVisible()
+    await page.screenshot({
+      path: testInfo.outputPath(`question-photos-${width}.png`),
+      animations: 'disabled',
+    })
+  }
   const staffComposer = staffPage.getByLabel('Сообщение')
   await staffComposer.fill(staffReply)
   await expect(

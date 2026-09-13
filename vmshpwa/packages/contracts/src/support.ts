@@ -26,6 +26,7 @@ export const createSupportThreadRequestSchema = z
     groupLessonId: publicIdSchema,
     problemId: publicIdSchema.nullable(),
     text: supportTextSchema,
+    photoIds: z.array(publicIdSchema).max(10).optional(),
     clientCreatedAt: z.iso.datetime(),
   })
   .strict()
@@ -52,6 +53,7 @@ export const appendSupportEntryRequestSchema = z
     schemaVersion: supportContractVersionSchema,
     idempotencyKey: idempotencyKeySchema,
     text: supportTextSchema,
+    photoIds: z.array(publicIdSchema).max(10).optional(),
     clientCreatedAt: z.iso.datetime(),
   })
   .strict()
@@ -69,6 +71,7 @@ export const supportEntrySchema = z
       .strip(),
     text: z.string().max(100_000).nullable(),
     assetId: publicIdSchema.nullable(),
+    photoIds: z.array(publicIdSchema).max(10).optional(),
     channel: z.enum(['pwa', 'telegram', 'staff', 'system']),
     clientCreatedAt: z.iso.datetime().nullable(),
     receivedAt: z.iso.datetime(),
@@ -279,3 +282,5 @@ export const supportQueryKeys = {
   thread: (principal: PrincipalQueryScope, threadId: string) =>
     [...supportQueryKeys.all(principal), 'thread', publicIdSchema.parse(threadId)] as const,
 } as const
+
+export const supportPhotoUploadResponseSchema = z.object({ photoId: publicIdSchema })

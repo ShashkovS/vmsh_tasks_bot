@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  supportPhotoUploadResponseSchema,
   ApiResponseError,
   apiErrorSchema,
   appendSupportEntryRequestSchema,
@@ -34,6 +35,7 @@ export interface SupportClientOptions {
 
 export interface SupportClient {
   readonly runtime: RuntimeConfig
+  uploadPhoto?(photo: Blob): Promise<string>
   listStudent(
     query?: StudentSupportListQuery,
     options?: SupportRequestOptions,
@@ -86,6 +88,25 @@ class BrowserSupportClient implements SupportClient {
     const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
+  }
+
+  async uploadPhoto(photo: Blob): Promise<string> {
+    const send = () =>
+      this.#fetch(`${this.runtime.apiBase}/questions/photos`, {
+        method: 'POST',
+        credentials: 'include',
+        redirect: 'error',
+        headers: { 'Content-Type': photo.type, 'X-Vmsh-Support-Context': '1' },
+        body: photo,
+      })
+    let response = await send()
+    if (response.status === 401 && this.#refreshSession) {
+      await response.body?.cancel()
+      await this.#refreshSession()
+      response = await send()
+    }
+    if (!response.ok) throw await this.#responseError(response)
+    return supportPhotoUploadResponseSchema.parse(await response.json()).photoId
   }
 
   async listStudent(

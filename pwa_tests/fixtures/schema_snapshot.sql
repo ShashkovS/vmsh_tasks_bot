@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 5f25452ab1cb6e819440e1291f0d69f944eccb4fb5b4523be6e14b7b89df3ae3
+-- Product schema SHA-256: 2d5a7570f0e5526faed36b4d3209645738bcb78ba494d49dc93e754c5720d178
 
 CREATE TABLE achievement_definitions
 (
@@ -2376,6 +2376,19 @@ CREATE TABLE support_entries
     check (server_received_at >= created_at)
 );
 
+CREATE TABLE support_photos (
+ id INTEGER PRIMARY KEY,
+ public_id TEXT GENERATED ALWAYS AS ('sup-' || id) VIRTUAL,
+ uploader_user_id INTEGER NOT NULL REFERENCES users(id),
+ entry_id INTEGER REFERENCES support_entries(id),
+ object_key TEXT NOT NULL UNIQUE,
+ sha256 TEXT NOT NULL,
+ byte_size INTEGER NOT NULL,
+ width INTEGER NOT NULL,
+ height INTEGER NOT NULL,
+ created_at TEXT NOT NULL
+);
+
 CREATE TABLE support_threads
 (
     id                integer primary key,
@@ -3170,6 +3183,8 @@ CREATE INDEX support_entries_legacy_question_idx
 
 CREATE INDEX support_entries_thread_timeline_idx
     on support_entries (thread_id, server_received_at, id);
+
+CREATE INDEX support_photos_entry_idx ON support_photos(entry_id);
 
 CREATE UNIQUE INDEX support_threads_general_question_uq
     on support_threads (student_user_id, group_lesson_id)

@@ -1,3 +1,4 @@
+import { SupportPhotoBody } from '@vmsh/product'
 import { Link } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { SemanticMathDocument } from '@vmsh/content'
@@ -294,7 +295,7 @@ function staffMessage(entry: SupportEntry, staffUserId: string): ThreadMessageVi
     author: { kind: entry.author.kind, name: entry.author.displayName },
     at: formatSupportTime(entry.receivedAt),
     channel: entry.channel,
-    body: entry.text ?? 'Приложено изображение.',
+    body: <SupportPhotoBody text={entry.text} photoIds={entry.photoIds ?? []} audience="staff" />,
     own: entry.author.userId === staffUserId,
   }
 }

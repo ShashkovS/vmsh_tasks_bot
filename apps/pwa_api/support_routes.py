@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import uuid
 import json
 import logging
 import re
@@ -27,6 +29,8 @@ from db_methods.pwa.support import (
     SupportThreadSummaryRecord,
 )
 from helpers.pwa.permissions import Capability
+from helpers.pwa.content import AssetConversionError
+from helpers.object_storage import ObjectStorageOperationError
 from models.pwa.auth import AuthAudience
 
 
@@ -182,7 +186,10 @@ async def _json_object(
             code="validation_error",
             message="Тело запроса должно быть корректным JSON-объектом",
         ) from error
-    if not isinstance(payload, dict) or set(payload) != required_fields:
+    if not isinstance(payload, dict) or (
+        not required_fields <= set(payload)
+        or set(payload) - required_fields - {"photoIds"}
+    ):
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -296,6 +303,7 @@ def _thread_payload(thread: SupportThreadRecord) -> dict[str, object]:
                 },
                 "text": entry.text,
                 "assetId": entry.asset_public_id,
+                "photoIds": list(entry.photo_ids),
                 "channel": entry.channel,
                 "clientCreatedAt": (
                     None
@@ -447,6 +455,7 @@ async def create_student_question(request: web.Request) -> web.Response:
                 text=_text(payload["text"]),
                 client_created_at=_client_created_at(payload["clientCreatedAt"]),
                 idempotency_key=_idempotency_key(payload["idempotencyKey"]),
+                photo_ids=_photo_ids(payload),
             )
         )
     except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
@@ -513,6 +522,7 @@ async def append_student_question_entry(request: web.Request) -> web.Response:
                 text=_text(payload["text"]),
                 client_created_at=_client_created_at(payload["clientCreatedAt"]),
                 idempotency_key=_idempotency_key(payload["idempotencyKey"]),
+                photo_ids=_photo_ids(payload),
             )
         )
     except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
@@ -614,3 +624,119 @@ async def append_staff_question_entry(request: web.Request) -> web.Response:
 
 
 __all__ = ["PWA_SUPPORT_INVALIDATOR", "PWA_SUPPORT_REPOSITORY", "support_routes"]
+
+
+def _photo_ids(payload):
+    ids = payload.get("photoIds", [])
+    if (
+        not isinstance(ids, list)
+        or len(ids) > 10
+        or any(
+            not isinstance(i, str) or re.fullmatch(r"sup-[0-9]+", i) is None
+            for i in ids
+        )
+        or len(set(ids)) != len(ids)
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте фотографии"
+        )
+    return tuple(ids)
+
+
+@support_routes.post("/student/api/v1/questions/photos")
+async def upload_photo(request):
+    from apps.pwa_app import PWA_CONTENT_ASSET_CONVERTER
+    from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
+
+    student_id = _student_user_id(request)
+    if request.content_type not in ("image/jpeg", "image/png", "image/webp"):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Выберите JPEG, PNG или WebP"
+        )
+    data = bytearray()
+    async for part in request.content.iter_chunked(65536):
+        data.extend(part)
+        if len(data) > 25 * 1024 * 1024:
+            raise PwaApiError(
+                status=413, code="payload_too_large", message="Фотография больше 25 МиБ"
+            )
+    signatures = (
+        data.startswith(b"\xff\xd8\xff"),
+        data.startswith(b"\x89PNG\r\n\x1a\n"),
+        data[:4] == b"RIFF" and data[8:12] == b"WEBP",
+    )
+    if not any(signatures):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Не удалось прочитать фотографию",
+        )
+    converter = request.app.get(PWA_CONTENT_ASSET_CONVERTER)
+    storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
+    if converter is None or storage is None:
+        raise PwaApiError(
+            status=503,
+            code="unavailable",
+            message="Загрузка фотографий временно недоступна",
+        )
+    try:
+        converted = await converter.raster_to_webp(bytes(data))
+    except AssetConversionError as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Не удалось прочитать фотографию",
+        ) from error
+    key = f"support-questions/{uuid.uuid4().hex}.webp"
+    await storage.put(key, converted.data, "image/webp")
+    try:
+        photo = await _repository(request).store_photo(
+            student_user_id=student_id,
+            object_key=key,
+            sha256=hashlib.sha256(converted.data).hexdigest(),
+            byte_size=len(converted.data),
+            width=converted.width,
+            height=converted.height,
+        )
+    except Exception:
+        await storage.delete(key)
+        raise
+    return web.json_response({"photoId": photo}, headers={"Cache-Control": "no-store"})
+
+
+@support_routes.get(
+    "/{audience:student|staff}/api/v1/questions/photos/{photo:sup-[0-9]+}"
+)
+async def get_support_photo(request):
+    from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
+
+    kwargs = (
+        {"student_user_id": _student_user_id(request)}
+        if request.match_info["audience"] == "student"
+        else {"scope": _staff_context(request, write=False)[2]}
+    )
+    try:
+        photo = await _repository(request).read_photo(
+            public_id=request.match_info["photo"], **kwargs
+        )
+    except (SupportNotFound, SupportForbidden) as error:
+        raise _translate_error(error) from error
+    try:
+        payload = await request.app[PWA_CONTENT_OBJECT_STORAGE].get(photo["object_key"])
+    except (ObjectStorageOperationError, FileNotFoundError) as error:
+        raise PwaApiError(
+            status=404, code="not_found", message="Фотография недоступна"
+        ) from error
+    if (
+        len(payload) != photo["byte_size"]
+        or hashlib.sha256(payload).hexdigest() != photo["sha256"]
+    ):
+        raise PwaApiError(status=404, code="not_found", message="Фотография недоступна")
+    return web.Response(
+        body=payload,
+        content_type="image/webp",
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
