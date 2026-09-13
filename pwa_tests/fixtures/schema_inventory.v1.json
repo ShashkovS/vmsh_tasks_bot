@@ -297,6 +297,10 @@
       {
         "id": "0091.pwa_test_result_live_mark_precedence",
         "sha256": "df2885b88b8ca04d19ebc1cdb898ed6f6bbd80ae1cfad6eb19a93fb6d1cdc22b"
+      },
+      {
+        "id": "0092.pwa_statistics_recalculation",
+        "sha256": "aad44b34b87bb122039da5353e8ae2128626aa1790c73acd04966562fdc96f00"
       }
     ],
     "repository_head_status": {
@@ -307,7 +311,7 @@
     }
   },
   "product": {
-    "object_count": 462,
+    "object_count": 464,
     "objects": [
       {
         "columns": [
@@ -19758,6 +19762,212 @@
         "columns": [
           {
             "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "operation_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "started_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "completed_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "run_public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "error_code",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "SET NULL",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "operation_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_statistics_recalculations_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "actor_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_statistics_recalculations_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "started_at",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "statistics_recalculations_course",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "statistics_recalculations",
+        "object_sha256": "ae71a0072415cf524ffc11a03f63b85982db57b87504e429e7e9a2b5a61d72db",
+        "sql": "CREATE TABLE statistics_recalculations (\n    operation_id text PRIMARY KEY,\n    course_id integer NOT NULL REFERENCES courses(id),\n    actor_user_id integer REFERENCES users(id) ON DELETE SET NULL,\n    idempotency_key text NOT NULL,\n    state text NOT NULL CHECK(state IN ('running','completed','failed')),\n    started_at text NOT NULL,\n    completed_at text,\n    run_public_id text,\n    error_code text,\n    UNIQUE(actor_user_id, idempotency_key),\n    CHECK ((state='running' AND completed_at IS NULL) OR\n           (state IN ('completed','failed') AND completed_at IS NOT NULL))\n);",
+        "table_name": "statistics_recalculations",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -27919,6 +28129,13 @@
         "type": "index"
       },
       {
+        "name": "statistics_recalculations_course",
+        "object_sha256": "460a821e4b10373713092d00c068ebb5069a1159b750841e0dd535a56003e637",
+        "sql": "CREATE INDEX statistics_recalculations_course ON statistics_recalculations(course_id, started_at DESC);",
+        "table_name": "statistics_recalculations",
+        "type": "index"
+      },
+      {
         "name": "student_lesson_metrics_student_run_idx",
         "object_sha256": "6c29f81a120961e5dcf15080c6edc95915450dfa167598e5c12b095ebec11f59",
         "sql": "CREATE INDEX student_lesson_metrics_student_run_idx\n    on student_lesson_metrics (student_user_id, run_id, lesson_number);",
@@ -29417,8 +29634,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "68426e310b8da313166e50910f2db94ad98dc2eac4f2c3255c125a69191ac67c",
-    "sha256": "9b5995e0a588113ddb35ea7c2373a4841c0f3b1d36ab40a03c6deed46281d968"
+    "pragma_structure_sha256": "582e73976efcdb61ad4d21023bc012c17363eb9072ce83076e082dae13bc9cf5",
+    "sha256": "6fbeba50f207d03deb0b0be172fc604bfc63b6d226ec530b141ce0c4b1f8c266"
   },
   "source_kind": "repository-migration-head"
 }

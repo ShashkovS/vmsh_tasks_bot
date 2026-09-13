@@ -87,3 +87,52 @@ No production units or databases were modified by local verification.
 - Frontend: `lesson-statistics.test.tsx`, contracts/client tests and Storybook
   `lesson-statistics`, `staff-statistics-page`, `course-progress`, `progress`.
   Existing StrengthTrend renders the same persisted smoothing in Student/Family.
+
+
+## Dense Staff statistics and manual recalculation (2026-09-13)
+
+Staff distributions use 260px height, including one participant, with a common
+scale for compared groups. The accessible metric is «Число решённых задач»;
+captions show group and participant count. «Решили» replaces «Баллы» in the live
+table without rounding or changing fractional credit or percentages. Page-local
+`apps/staff/src/staff-statistics.css` sets 4px × 8px cell padding, aligns numeric
+columns right and wraps task names; other application tables are unchanged.
+`lesson-statistics.tsx` and shared `DistributionViolin` render these views.
+
+Only global administrators see «Пересчитать сложность». It performs one step for
+the entire selected course; group, lesson and student filters affect display
+only. «Обновить статистику» only reloads data. The control disables repeat starts,
+polls the operation and reloads statistics after completion without losing URL
+filters. A failed calculation preserves the previous model; retry is explicit.
+Completion time and status survive navigation, reload and device changes.
+
+- `POST /staff/api/v1/statistics/recalculate`: `{courseId, idempotencyKey}`.
+- `GET /staff/api/v1/statistics/recalculate?courseId=...`: latest operation for the
+  course and global lock contention status. Both endpoints require global admin;
+  POST uses existing Origin/Fetch-Metadata CSRF checks.
+- Both return `{busy, operation}`. Operation contains `operationId`, `state`
+  (`running/completed/failed`), `startedAt`, `completedAt`, `runId`, `errorCode`.
+  Contracts: `packages/contracts/src/statistics-recalculation.ts`.
+- Migration `0092.pwa_statistics_recalculation` stores course, initiating user,
+  idempotency key and lifecycle. A repeated key returns the same operation;
+  reusing it for a different course is rejected. Failed requests with unknown
+  outcomes keep the key in browser storage so retry cannot execute twice.
+- `models/pwa/statistics_recalculation.py` runs outside the HTTP event loop in a
+  background thread with its own SQLite connection. It acquires the same adjacent
+  `.analytics.lock` as `scripts/course_analytics.py` before recording a start and
+  keeps it through publication. Busy means no second job and no hidden queue.
+- `models/pwa/course_analytics_runner.py` is the shared CLI/manual calculation.
+  Input boundary (`max(results.id)`), facts and previous model are read in one
+  snapshot. The snapshot ends before CPU work; later checks/corrections enter the
+  next step. The math in `models/pwa/iterative_analytics.py` is unchanged.
+- `db_methods/pwa/iterative_analytics.py` publishes state, immutable run, metrics
+  and operation completion in one transaction. A failed publication rolls back
+  all of them. Operations keep public run identifiers without preventing the
+  existing two-run retention. Timer achievement updates remain separate.
+- A running record is marked interrupted only after acquiring the shared lock;
+  active workers in another process and the timer cannot be mistaken for orphans.
+  Application shutdown awaits its worker before database cleanup.
+
+Deploy migration 0092 before the new backend/frontend; no new configuration or
+scheduler changes. Stop manual workers before rolling migration 0092 back. See
+[verification report](../dev/statistics-recalculation-report.md).

@@ -82,3 +82,110 @@ async def test_current_state_retention_and_failed_publish_rollback(content_http)
             )
         assert read_state(db, 1) == previous
         assert db.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+async def test_manual_step_matches_cli_and_operation_failure_is_atomic(
+    content_http, tmp_path
+):
+    from db_methods.pwa.statistics_recalculations import create_operation
+    from models.pwa.course_analytics_runner import calculate_course
+
+    fixture = content_http
+    pid, _ = await support._prepare_published_test_problem(fixture, problem_type=2)
+
+    def seed(db):
+        problem = db.execute(
+            "SELECT * FROM problems WHERE public_id=?", (pid,)
+        ).fetchone()
+        db.execute(
+            "INSERT INTO results(student_id,problem_id,group_id,lesson,ts,verdict,res_type) VALUES(?,?,?,?,?,17,2)",
+            (
+                support.STUDENT_USER_ID,
+                problem["id"],
+                problem["group_id"],
+                problem["lesson"],
+                "2026-09-17T10:00:00",
+            ),
+        )
+
+    fixture.factory.run_write(seed)
+    with (
+        fixture.factory.connect() as source,
+        sqlite3.connect(tmp_path / "cli.sqlite3") as cli,
+    ):
+        source.backup(cli)
+        cli.row_factory = sqlite3.Row
+        operation = create_operation(
+            source, 1, support.STUDENT_USER_ID, "compare", "2026-09-18T00:00:00Z"
+        )
+        calculate_course(source, 1, operation_id=operation)
+        calculate_active_courses(cli, completed_at="2026-09-18T00:00:00Z")
+        assert read_state(source, 1) == read_state(cli, 1)
+        metrics = "SELECT student_user_id,lesson_number,simple_strength,complex_strength,solved_items,simple_smooth,complex_smooth FROM student_lesson_metrics ORDER BY student_user_id,lesson_number"
+        assert [tuple(r.values()) for r in source.execute(metrics)] == [
+            tuple(r) for r in cli.execute(metrics)
+        ]
+        before = read_state(source, 1)
+        runs = source.execute("SELECT count(*) AS n FROM analytics_runs").fetchone()[
+            "n"
+        ]
+        with pytest.raises(ValueError, match="no longer running"):
+            calculate_course(source, 1, operation_id="missing-operation")
+        assert read_state(source, 1) == before
+        assert (
+            source.execute("SELECT count(*) AS n FROM analytics_runs").fetchone()["n"]
+            == runs
+        )
+        assert (
+            source.execute(
+                "SELECT state FROM statistics_recalculations WHERE operation_id=?",
+                (operation,),
+            ).fetchone()["state"]
+            == "completed"
+        )
+
+
+async def test_manual_input_boundary_uses_same_snapshot(content_http, monkeypatch):
+    from models.pwa import course_analytics_runner as runner
+
+    fixture = content_http
+    pid, _ = await support._prepare_published_test_problem(fixture, problem_type=2)
+
+    def insert_result(connection):
+        problem = connection.execute(
+            "SELECT * FROM problems WHERE public_id=?", (pid,)
+        ).fetchone()
+        connection.execute(
+            "INSERT INTO results(student_id,problem_id,group_id,lesson,ts,verdict,res_type) VALUES(?,?,?,?,?,17,2)",
+            (
+                support.STUDENT_USER_ID,
+                problem["id"],
+                problem["group_id"],
+                problem["lesson"],
+                "2026-09-18T10:00:00",
+            ),
+        )
+
+    original = runner.course_facts
+
+    def facts_after_concurrent_check(connection, course_id):
+        # The first SELECT fixed the snapshot; a check committed now is next-run input.
+        fixture.factory.run_write(insert_result)
+        return original(connection, course_id)
+
+    monkeypatch.setattr(runner, "course_facts", facts_after_concurrent_check)
+    with fixture.factory.connect() as connection:
+        boundary = connection.execute(
+            "SELECT coalesce(max(id),0) AS n FROM results"
+        ).fetchone()["n"]
+        runner.calculate_course(connection, 1)
+        run = connection.execute(
+            "SELECT * FROM analytics_runs ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        assert run["input_through_result_id"] == boundary
+        assert not connection.execute(
+            "SELECT * FROM course_student_strength"
+        ).fetchall()
+        monkeypatch.setattr(runner, "course_facts", original)
+        runner.calculate_course(connection, 1)
+        assert connection.execute("SELECT * FROM course_student_strength").fetchall()

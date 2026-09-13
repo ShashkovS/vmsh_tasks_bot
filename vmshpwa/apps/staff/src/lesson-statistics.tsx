@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { DistributionViolin, StrengthTrend } from '@vmsh/product'
 import type { StaffStatisticsResponse } from '@vmsh/contracts'
 import { StatisticsStudentSearch } from './statistics-student-search'
@@ -19,18 +20,20 @@ export function LessonStatistics({
   studentId,
   onStudentChange,
   onRefresh,
+  recalculationControl,
 }: {
   data: StaffStatisticsResponse
   onLessonChange: (lesson: number) => void
   studentId: string | null
   onStudentChange: (student: string | null) => void
   onRefresh: () => void
+  recalculationControl?: ReactNode
 }) {
   const lesson = data.basicLesson
   const maximum = Math.max(1, ...(lesson?.groups.map((g) => g.problems.length) ?? []))
   return (
     <section className="space-y-4" aria-label="Статистика по отправленным задачам">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-start gap-3">
         <Label>
           Занятие
           <select
@@ -49,41 +52,38 @@ export function LessonStatistics({
         <Button onClick={onRefresh} variant="outline">
           Обновить статистику
         </Button>
+        {recalculationControl}
       </div>
-      <p className="text-small text-muted-foreground">
-        Зачёт — 1 балл, половина — 0,5. Участники — все отправлявшие задачи этой группы занятия,
-        включая тех, у кого пока 0 баллов.
-      </p>
       <div className="flex flex-wrap gap-6">
         {lesson?.groups.map((group, index) => (
-          <div key={group.groupId} className="w-52">
+          <div key={group.groupId} className="w-55">
             {group.distribution.length === 0 ? (
               <p>{group.name}: пока нет отправок</p>
             ) : group.distribution.length === 1 ? (
               <figure>
                 <svg
-                  viewBox="0 0 100 120"
+                  viewBox="0 0 220 260"
                   role="img"
-                  aria-label={`${group.name}: один участник, ${group.distribution[0]} баллов`}
-                  className="h-40 w-full"
+                  aria-label={`${group.name}: один участник, число решённых задач ${group.distribution[0]}`}
+                  className="h-65 w-full"
                 >
                   <circle
-                    cx="50"
-                    cy={110 - ((group.distribution[0] ?? 0) / maximum) * 100}
+                    cx="110"
+                    cy={248 - ((group.distribution[0] ?? 0) / maximum) * 236}
                     r="4"
                     className="fill-chart-1"
                   />
                 </svg>
-                <figcaption>
-                  {group.name}: {group.distribution[0]} баллов
-                </figcaption>
+                <figcaption>{group.name} · 1 участник</figcaption>
               </figure>
             ) : (
               <DistributionViolin
+                height={260}
+                valueLabel="Число решённых задач"
                 colorIndex={index % 3 === 0 ? 1 : index % 3 === 1 ? 2 : 3}
                 values={group.distribution}
                 domain={[0, maximum]}
-                caption={`${group.name} · ${group.participantCount} участников · баллы`}
+                caption={`${group.name} · ${group.participantCount} участников`}
               />
             )}
           </div>
@@ -95,20 +95,25 @@ export function LessonStatistics({
             {group.name} · занятие {lesson.lessonNumber}
           </h2>
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="lesson-statistics-table">
               <TableHeader>
                 <TableRow>
                   {[
                     'Задача',
                     'Название',
-                    'Баллы',
+                    'Решили',
                     'Пробовали',
                     'Участников',
                     'Доля',
                     'Сложность для слабых',
                     'Сложность для сильных',
                   ].map((label) => (
-                    <TableHead key={label}>{label}</TableHead>
+                    <TableHead
+                      className={label === 'Задача' || label === 'Название' ? '' : 'text-right'}
+                      key={label}
+                    >
+                      {label}
+                    </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>

@@ -1,5 +1,7 @@
+import './staff-statistics.css'
+import { StatisticsRecalculationControl } from './statistics-recalculation-control'
 import { BarChart3, CalendarDays, UsersRound } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { LessonStatistics } from './lesson-statistics'
 
 import {
@@ -94,6 +96,7 @@ export function StaffStatisticsView({
   studentId = null,
   onStudentChange = () => {},
   onRefresh = () => {},
+  recalculationControl,
 }: {
   data: StaffStatisticsResponse
   lessonNumber: number | null
@@ -103,6 +106,7 @@ export function StaffStatisticsView({
   studentId?: string | null
   onStudentChange?: (student: string | null) => void
   onRefresh?: () => void
+  recalculationControl?: ReactNode
 }) {
   const course = data.courses.find((item) => item.courseId === data.selectedCourseId) ?? null
   const lesson = selectedLesson(
@@ -150,7 +154,7 @@ export function StaffStatisticsView({
           </Label>
         </div>
       }
-      description="Отправленные задачи и баллы по занятиям. Сила и сложность обновляются отдельным расчётом."
+      className="staff-statistics"
       title="Статистика курса"
       width="wide"
     >
@@ -160,6 +164,7 @@ export function StaffStatisticsView({
         studentId={studentId}
         onStudentChange={onStudentChange}
         onRefresh={onRefresh}
+        recalculationControl={recalculationControl}
       />
       {data.courses.length === 0 ? (
         <PageStatePanel
@@ -283,6 +288,8 @@ export function StaffStatisticsView({
                 </CardHeader>
                 <CardContent>
                   <DistributionViolin
+                    height={260}
+                    valueLabel="Число решённых задач"
                     caption={`Распределение по ${lesson.studentCount} школьникам.`}
                     domain={[0, distributionMaximum]}
                     values={lesson.solvedDistribution}
@@ -390,6 +397,15 @@ export function StaffStatisticsPage({
       studentId={studentId}
       onStudentChange={onStudentChange}
       onRefresh={() => void result.refetch()}
+      recalculationControl={
+        principal.role === 'admin' && result.data.selectedCourseId ? (
+          <StatisticsRecalculationControl
+            key={result.data.selectedCourseId}
+            courseId={result.data.selectedCourseId}
+            onRefresh={() => void result.refetch()}
+          />
+        ) : undefined
+      }
     />
   )
 }

@@ -58,6 +58,7 @@ function buildViolinPath(
 }
 
 export interface DistributionViolinProps {
+  valueLabel?: string | undefined
   values: number[]
   domain?: [number, number] | undefined
   width?: number | undefined
@@ -76,6 +77,7 @@ export function DistributionViolin({
   domain,
   width = 220,
   height = 200,
+  valueLabel,
   caption,
   className,
   colorIndex = 1,
@@ -109,7 +111,7 @@ export function DistributionViolin({
     (_, i) => lo + i * tickStep,
   )
 
-  const label = `Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}.`
+  const label = `${valueLabel ? `${valueLabel}. ` : ''}Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}.`
 
   return (
     <figure className={cn('space-y-1', className)}>
@@ -160,6 +162,7 @@ export function DistributionViolin({
       <details className="text-caption text-muted-foreground">
         <summary className="cursor-pointer">Показать числами</summary>
         <table className="mt-1">
+          {valueLabel ? <caption>{valueLabel}</caption> : null}
           <tbody>
             <tr>
               <td className="pr-3">Медиана</td>

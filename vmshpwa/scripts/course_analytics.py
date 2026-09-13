@@ -5,7 +5,6 @@ from __future__ import annotations
 import sqlite3
 import fcntl
 import logging
-import time
 from datetime import UTC, datetime
 
 from db_methods.pwa.course_achievements import (
@@ -14,9 +13,7 @@ from db_methods.pwa.course_achievements import (
     save_course_achievements,
 )
 from db_methods.pwa.migrations import require_current_schema
-from db_methods.pwa.lesson_statistics import course_facts
-from db_methods.pwa.iterative_analytics import read_state, publish_step
-from models.pwa.iterative_analytics import calculate_step
+from models.pwa.course_analytics_runner import calculate_course
 from models.pwa.course_achievements import calculate_initial_course_achievements
 from vmshpwa.scripts.runtime_guard import (
     PwaMaintenanceConfig,
@@ -35,41 +32,12 @@ def calculate_active_courses(
     courses = connection.execute(
         "SELECT id, public_id FROM courses WHERE status = 'active' ORDER BY id"
     ).fetchall()
-    result_row = connection.execute(
-        "SELECT coalesce(max(id), 0) AS result_id FROM results"
-    ).fetchone()
-    input_through_result_id = int(result_row["result_id"])
     calculated: list[tuple[str, int]] = []
 
     for course in courses:
         course_id = int(course["id"])
         course_public_id = str(course["public_id"])
-        started = time.monotonic()
-        connection.execute("BEGIN")
-        try:
-            problems, results, _ = course_facts(connection, course_id)
-            difficulty, strength = read_state(connection, course_id)
-        finally:
-            connection.execute("ROLLBACK")
-        difficulty, strength, metrics, diagnostics = calculate_step(
-            problems, results, difficulty, strength
-        )
-        publish_step(
-            connection,
-            course_id,
-            difficulty,
-            strength,
-            metrics,
-            diagnostics,
-            completed_at,
-            input_through_result_id,
-        )
-        logging.getLogger(__name__).info(
-            "Analytics course=%s duration=%.3fs diagnostics=%s",
-            course_public_id,
-            time.monotonic() - started,
-            diagnostics,
-        )
+        point_count = calculate_course(connection, course_id, completed_at=completed_at)
         for student_user_id in list_course_student_ids(connection, course_id=course_id):
             facts = list_course_achievement_facts(
                 connection,
@@ -83,7 +51,7 @@ def calculate_active_courses(
                 achievements=calculate_initial_course_achievements(facts),
             )
             connection.commit()
-        calculated.append((course_public_id, len(metrics)))
+        calculated.append((course_public_id, point_count))
         connection.commit()
 
     return calculated

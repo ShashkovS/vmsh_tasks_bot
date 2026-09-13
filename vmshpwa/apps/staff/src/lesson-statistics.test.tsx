@@ -56,6 +56,11 @@ it('shows fractional live points and a singleton without a model run', () => {
     />,
   )
   expect(screen.getByText('0,5')).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Решили' })).toBeTruthy()
+  expect(screen.queryByText('Баллы')).toBeNull()
+  expect(screen.getByRole('img', { name: /Число решённых задач/i }).getAttribute('viewBox')).toBe(
+    '0 0 220 260',
+  )
   expect(screen.getByText('50.0%')).toBeTruthy()
   expect(screen.getAllByText('Ещё не рассчитано')).toHaveLength(2)
   expect(screen.getByRole('img', { name: /один участник/ })).toBeTruthy()

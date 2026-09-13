@@ -1412,3 +1412,14 @@ URL сохраняется при возврате из одиночной/се�
 высота select в WebKit. Workspace typecheck, Staff typecheck, сборки всех приложений,
 ESLint, Prettier и diff-check прошли. Снимки просмотрены; приёмка владельцем открыта.
 Требования: `vmshpwa/docs/serial-review.md`; отчёт: `vmshpwa/docs/review-queue-report.md`.
+
+## Плотная статистика и ручной пересчёт — 2026-09-13
+
+Реализованы 260px распределения, компактные таблицы и подписи без «баллов».
+Административный ручной шаг курса использует общий с CLI алгоритм и lock,
+фоновый поток, durable/idempotent операции (миграция 0092) и атомарную публикацию.
+26 серверных, 21 проверка schema inventory и 5 frontend тестов прошли;
+TypeScript, ESLint, Prettier и Ruff — без ошибок.
+Браузерный сценарий прошёл в Chromium, WebKit и Firefox (обе темы, 320–390px,
+desktop, фокус и CSS zoom 200%). Финальные снимки сохранены и просмотрены. [Требования](../../docs/lesson-statistics.md),
+[отчёт](../statistics-recalculation-report.md).

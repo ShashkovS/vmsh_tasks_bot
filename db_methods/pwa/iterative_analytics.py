@@ -32,6 +32,8 @@ def publish_step(
     diagnostics,
     timestamp,
     result_id,
+    *,
+    operation_id=None,
 ):
     try:
         connection.execute("BEGIN IMMEDIATE")
@@ -80,6 +82,15 @@ def publish_step(
             "DELETE FROM analytics_runs WHERE course_id = ? AND algorithm = ? AND id NOT IN (SELECT id FROM analytics_runs WHERE course_id = ? AND algorithm = ? ORDER BY id DESC LIMIT 2)",
             (course_id, ALGORITHM, course_id, ALGORITHM),
         )
+        if operation_id is not None:
+            updated = connection.execute(
+                "UPDATE statistics_recalculations SET state='completed', "
+                "completed_at=?, run_public_id=(SELECT public_id FROM analytics_runs WHERE id=?) "
+                "WHERE operation_id=? AND state='running'",
+                (timestamp, run_id, operation_id),
+            )
+            if updated.rowcount != 1:
+                raise ValueError("Manual analytics operation is no longer running")
         connection.execute("COMMIT")
     except BaseException:
         if connection.in_transaction:

@@ -254,3 +254,14 @@ Backend: 3 теста прошли; PNG/ZIP и регрессия печати �
 Firefox и WebKit. Typecheck, ESLint, Stylelint и Ruff прошли. Миграций нет.
 Требования: `vmshpwa/docs/whiteboard-export.md`; отчёт и снимки:
 `vmshpwa/docs/whiteboard-export-report.md`. Финальная ручная приёмка — импорт PNG в Zoom.
+
+
+### 2026-09-13 — плотная статистика и ручной шаг a53
+
+Требования: [lesson-statistics.md](../../docs/lesson-statistics.md#dense-staff-statistics-and-manual-recalculation-2026-09-13).
+Реализация: `StatisticsRecalculationControl`, GET/POST
+`/staff/api/v1/statistics/recalculate`, миграция 0092 и общий
+`models/pwa/course_analytics_runner.py`. Учителя сохраняют доступ на чтение;
+запуск разрешён только глобальному администратору. Существующий CLI и таймер
+сохраняют алгоритм, используя тот же `.analytics.lock`.
+Проверки и снимки: [отчёт](../statistics-recalculation-report.md).

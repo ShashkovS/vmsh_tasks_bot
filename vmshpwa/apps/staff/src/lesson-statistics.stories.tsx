@@ -1,10 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { staffStatisticsResponseSchema } from '@vmsh/contracts'
+import './staff-statistics.css'
 import { LessonStatistics } from './lesson-statistics'
 
-const meta = { title: 'Staff/Lesson statistics', component: LessonStatistics } satisfies Meta<
-  typeof LessonStatistics
->
+const meta = {
+  title: 'Staff/Lesson statistics',
+  component: LessonStatistics,
+  decorators: [
+    (Story) => (
+      <div className="staff-statistics">
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof LessonStatistics>
 export default meta
 type Story = StoryObj<typeof meta>
 export const LiveWithoutModel: Story = {

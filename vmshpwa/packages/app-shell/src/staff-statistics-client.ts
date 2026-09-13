@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 
 import {
   ApiResponseError,
+  statisticsRecalculationRequestSchema,
+  statisticsRecalculationSchema,
   apiErrorSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
@@ -77,4 +79,41 @@ export function useStaffStatisticsQuery(
     refetchOnWindowFocus: 'always',
     queryFn: ({ signal }) => client.get(filter, signal),
   })
+}
+
+/** Admin calculation transport; shares the regular same-origin CSRF boundary. */
+export function createStatisticsRecalculationClient(
+  runtime: RuntimeConfig,
+  refreshSession: () => Promise<unknown>,
+) {
+  const configured = parseRuntimeConfigForAudience('staff', runtime)
+  return async (courseId: string, idempotencyKey?: string) => {
+    const body = idempotencyKey
+      ? statisticsRecalculationRequestSchema.parse({ courseId, idempotencyKey })
+      : undefined
+    const request = () =>
+      fetch(
+        `${configured.apiBase}/statistics/recalculate${body ? '' : `?courseId=${encodeURIComponent(publicIdSchema.parse(courseId))}`}`,
+        {
+          method: body ? 'POST' : 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+          redirect: 'error',
+          headers: {
+            Accept: 'application/json',
+            ...(body ? { 'Content-Type': 'application/json' } : {}),
+          },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        },
+      )
+    let response = await request()
+    if (response.status === 401) {
+      await response.body?.cancel()
+      await refreshSession()
+      response = await request()
+    }
+    const payload: unknown = await response.json()
+    if (!response.ok) throw new ApiResponseError(response.status, apiErrorSchema.parse(payload))
+    return statisticsRecalculationSchema.parse(payload)
+  }
 }

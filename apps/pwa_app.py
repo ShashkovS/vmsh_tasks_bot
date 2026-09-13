@@ -24,6 +24,11 @@ from apps.pwa_api.staff_access_routes import staff_access_routes
 from apps.pwa_api.staff_dashboard_routes import staff_dashboard_routes
 from apps.pwa_api.whiteboard_export_routes import routes as whiteboard_export_routes
 from apps.pwa_api.staff_statistics_routes import staff_statistics_routes
+from apps.pwa_api.statistics_recalculation_routes import (
+    statistics_recalculation_routes,
+    close_statistics_recalculation,
+    SERVICE as STATISTICS_RECALCULATION,
+)
 from apps.pwa_api.product_analytics_routes import product_analytics_routes
 from apps.pwa_api.problem_import_routes import problem_import_routes
 from apps.pwa_api.problem_synonym_routes import (
@@ -1807,6 +1812,9 @@ def configure(
         app.add_routes(staff_access_routes)
         app.add_routes(staff_dashboard_routes)
         app.add_routes(staff_statistics_routes)
+        app[STATISTICS_RECALCULATION] = {}
+        app.add_routes(statistics_recalculation_routes)
+        app.on_shutdown.append(close_statistics_recalculation)
         app.add_routes(whiteboard_export_routes)
         app.add_routes(product_analytics_routes)
         app.add_routes(problem_import_routes)

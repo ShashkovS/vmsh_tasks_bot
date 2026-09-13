@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 9b5995e0a588113ddb35ea7c2373a4841c0f3b1d36ab40a03c6deed46281d968
+-- Product schema SHA-256: 6fbeba50f207d03deb0b0be172fc604bfc63b6d226ec530b141ce0c4b1f8c266
 
 CREATE TABLE achievement_definitions
 (
@@ -1964,6 +1964,21 @@ CREATE TABLE states
     info            blob default null
 );
 
+CREATE TABLE statistics_recalculations (
+    operation_id text PRIMARY KEY,
+    course_id integer NOT NULL REFERENCES courses(id),
+    actor_user_id integer REFERENCES users(id) ON DELETE SET NULL,
+    idempotency_key text NOT NULL,
+    state text NOT NULL CHECK(state IN ('running','completed','failed')),
+    started_at text NOT NULL,
+    completed_at text,
+    run_public_id text,
+    error_code text,
+    UNIQUE(actor_user_id, idempotency_key),
+    CHECK ((state='running' AND completed_at IS NULL) OR
+           (state IN ('completed','failed') AND completed_at IS NOT NULL))
+);
+
 CREATE TABLE student_lesson_metrics
 (
     run_id               integer not null references analytics_runs (id) on delete cascade,
@@ -3096,6 +3111,8 @@ CREATE UNIQUE INDEX staff_scopes_one_active_course_role_uq
 CREATE UNIQUE INDEX staff_scopes_one_active_group_role_uq
     on staff_scopes (staff_user_id, course_id, group_id, role)
     where group_id is not null and valid_to is null;
+
+CREATE INDEX statistics_recalculations_course ON statistics_recalculations(course_id, started_at DESC);
 
 CREATE INDEX student_lesson_metrics_student_run_idx
     on student_lesson_metrics (student_user_id, run_id, lesson_number);
