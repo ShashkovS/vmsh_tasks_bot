@@ -146,6 +146,8 @@ export function submissionFailureMessage(error?: unknown, storedLabel?: string):
     return 'На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем.'
   if (domainCode === 'test_attempt_day_limit')
     return 'На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра. Ответ не отправлен; автоматически отправлять его не будем.'
+  if (storedLabel === 'client:stale-sending-lease')
+    return 'Предыдущая отправка прервалась до подтверждения. Ответ сохранён — нажмите «Повторить».'
   const status = api?.status ?? Number(storedLabel?.split(':')[1])
   let message: string
   if (status === 401) message = 'Сессия истекла. Войдите снова, затем повторите отправку.'
@@ -158,6 +160,12 @@ export function submissionFailureMessage(error?: unknown, storedLabel?: string):
   else if (api) message = api.message
   else if (status >= 400)
     message = 'Сервер отклонил отправку. Обновите задачу и проверьте условия приёма.'
+  else if (
+    (error instanceof Error && /TimeoutError/.test(error.name)) ||
+    /TimeoutError/.test(storedLabel ?? '')
+  )
+    message =
+      'Сервер не ответил за 30 секунд. Ответ сохранён — повторите отправку. Это не означает, что на устройстве нет интернета.'
   else if (
     (error instanceof Error && /NetworkError|AbortError/.test(error.name)) ||
     /NetworkError|AbortError/.test(storedLabel ?? '')

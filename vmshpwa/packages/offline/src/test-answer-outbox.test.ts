@@ -212,6 +212,26 @@ describe('test-answer Dexie outbox', () => {
     })
   })
 
+  it('exposes an expired sending lease as a retry instead of permanent sending', async () => {
+    const target = database('test-answer-expired-list-lease')
+    const queue = outbox(target)
+    const original = await enqueue(queue)
+    await target.outbox.update(original.id, {
+      status: 'sending',
+      attempts: 1,
+      updatedAtClient: new Date(NOW.getTime() - 60_001).toISOString(),
+    })
+
+    await expect(queue.list()).resolves.toMatchObject([
+      {
+        id: original.id,
+        status: 'retrying',
+        attempts: 1,
+        lastError: 'client:stale-sending-lease',
+      },
+    ])
+  })
+
   it('does not let one owner deliver or acknowledge another owner queue', async () => {
     const target = database('test-answer-owner')
     const first = outbox(target, 'account-student-one')

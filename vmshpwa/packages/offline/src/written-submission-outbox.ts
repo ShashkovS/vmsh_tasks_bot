@@ -344,7 +344,8 @@ function failureState(error: unknown): 'retrying' | 'conflict' | 'failed' {
   if (
     error instanceof TypeError ||
     (error instanceof DOMException && error.name === 'AbortError') ||
-    (error instanceof Error && error.name === 'WrittenSubmissionNetworkError')
+    (error instanceof Error &&
+      ['WrittenSubmissionNetworkError', 'WrittenSubmissionTimeoutError'].includes(error.name))
   ) {
     return 'retrying'
   }
@@ -731,16 +732,7 @@ export function createWrittenSubmissionOutbox(
       const payload = writtenSubmissionOutboxPayloadSchema.parse({
         ...item.payload,
         replacementTarget: null,
-        serverState: null,
-        reordered: false,
-        createIdempotencyKey: randomUUID(),
-        reorderIdempotencyKey: randomUUID(),
         submitIdempotencyKey: randomUUID(),
-        photos: item.payload.photos.map((photo) => ({
-          ...photo,
-          serverAttachmentId: null,
-          uploadIdempotencyKey: randomUUID(),
-        })),
       })
       const payloadHash = await payloadHasher(payload)
       return database.transaction('rw', database.outbox, async () => {

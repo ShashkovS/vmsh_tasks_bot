@@ -14,6 +14,7 @@ import {
 import {
   TestSubmissionNetworkError,
   TestSubmissionProtocolError,
+  TestSubmissionTimeoutError,
   createTestSubmissionClient,
 } from './submission-client'
 
@@ -44,6 +45,7 @@ describe('Student test-submission client', () => {
         credentials: 'include',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         redirect: 'error',
+        signal: expect.any(AbortSignal),
       },
     )
   })
@@ -93,6 +95,7 @@ describe('Student test-submission client', () => {
         credentials: 'include',
         headers: { Accept: 'application/json' },
         redirect: 'error',
+        signal: expect.any(AbortSignal),
       },
     )
   })
@@ -128,7 +131,14 @@ describe('Student test-submission client', () => {
 
     expect(refreshSession).toHaveBeenCalledOnce()
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
-    expect(fetchImplementation.mock.calls[0]?.[1]).toEqual(fetchImplementation.mock.calls[1]?.[1])
+    expect(fetchImplementation.mock.calls[0]?.[1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify(request),
+    })
+    expect(fetchImplementation.mock.calls[1]?.[1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify(request),
+    })
   })
 
   it('maps a valid correlated error and rejects malformed success/protocol status', async () => {
@@ -196,5 +206,22 @@ describe('Student test-submission client', () => {
       fetchImplementation: vi.fn(() => Promise.reject(abort)),
     })
     await expect(cancelled.history(historyFixture.response.problemId)).rejects.toBe(abort)
+  })
+
+  it('settles a fetch that never resolves after the configured deadline', async () => {
+    let requestSignal: AbortSignal | undefined
+    const client = createTestSubmissionClient(runtime, {
+      fetchImplementation: vi.fn((_input, init) => {
+        requestSignal = init?.signal ?? undefined
+        return new Promise<Response>(() => undefined)
+      }),
+      requestTimeoutMilliseconds: 5,
+    })
+
+    await expect(client.submit(mutationFixture.response.problemId, request)).rejects.toMatchObject({
+      name: TestSubmissionTimeoutError.name,
+      timeoutMilliseconds: 5,
+    })
+    expect(requestSignal?.aborted).toBe(true)
   })
 })

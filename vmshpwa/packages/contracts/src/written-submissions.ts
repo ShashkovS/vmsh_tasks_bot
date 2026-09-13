@@ -708,8 +708,8 @@ export const reassignWrittenMaterialResponseSchema = z
 export type ReassignWrittenMaterialResponse = z.infer<typeof reassignWrittenMaterialResponseSchema>
 
 export const writtenSubmissionCompletionResponseSchema = z.union([
-  submitWrittenEntryResponseSchema,
   replaceWrittenEntryResponseSchema,
+  submitWrittenEntryResponseSchema,
 ])
 export type WrittenSubmissionCompletionResponse = z.infer<
   typeof writtenSubmissionCompletionResponseSchema

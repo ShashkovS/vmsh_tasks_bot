@@ -27,3 +27,17 @@ QueryCache/MutationCache покрывают обработанные ошибк�
 Проверки: observability.test.ts, submission-error-diagnostics.test.ts,
 test-answer-outbox.test.ts, written-submission-outbox.test.ts, auth-context.test.tsx.
 Для выпуска нужны frontend-сборки Student/Family/Staff, серверная миграция не нужна.
+
+## Ограничение зависшего запроса — 13 сентября 2026
+
+Транспорт тестовых и письменных отправок ограничивает каждый HTTP-запрос 30
+секундами. Дедлайн прерывает `fetch`, но также завершает клиентское ожидание,
+если браузер не разрешил промис после abort. Идемпотентный outbox переводит
+такой запрос в `retrying`, сохраняет ответ/фотографии и показывает отдельное
+сообщение: доступность обычного интернета из таймаута не выводится.
+
+При запуске Test UI просроченная `sending`-аренда атомарно становится
+`retrying`, поэтому закрытая во время запроса вкладка не оставляет вечное
+«Отправляем…». Реализация: `app-shell/src/request-deadline.ts`, клиенты
+`submission-client.ts` и `written-submission-client.ts`, очереди пакета
+`offline`.

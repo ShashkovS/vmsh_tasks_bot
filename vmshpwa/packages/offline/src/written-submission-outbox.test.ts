@@ -448,7 +448,7 @@ describe('written-submission outbox', () => {
     'written_replacement_unavailable',
     'written_replacement_target_changed',
     'written_attachment_locked',
-  ])('recovers persisted %s with photos once, without erasing evidence', async (code) => {
+  ])('recovers persisted %s using the uploaded server draft once', async (code) => {
     const { target, draft, outbox } = stores('replacement-recovery')
     draft.saveText(descriptor(), 'Исправление после проверки')
     await addPhoto(draft, PHOTO_ONE, 'photo evidence')
@@ -480,15 +480,12 @@ describe('written-submission outbox', () => {
     expect(first.payload.submitIdempotencyKey).not.toBe(queued.payload.submitIdempotencyKey)
     expect(first.payload.replacementTarget).toBeNull()
     expect(first.payload.text).toBe('Исправление после проверки')
-    expect(first.payload.photos).toHaveLength(1)
+    expect(first.payload.serverState).not.toBeNull()
+    expect(first.payload.photos).toMatchObject([{ serverAttachmentId: 'written-attachment-0' }])
     expect((await draft.load(descriptor())).compatible?.photos).toHaveLength(1)
-    const freshTransport = new RecordingTransport()
-    expect((await restored.deliverNext(freshTransport)).state).toBe('synced')
-    expect(freshTransport.calls.map((call) => call.operation)).toEqual([
-      'create',
-      'upload-0',
-      'submit',
-    ])
+    transport.calls.length = 0
+    expect((await restored.deliverNext(transport)).state).toBe('synced')
+    expect(transport.calls.map((call) => call.operation)).toEqual(['submit'])
     expect((await restored.deliverNext(transport)).state).toBe('idle')
     expect(await restored.acknowledge(queued.id)).toBe(true)
   })

@@ -19,6 +19,11 @@ import {
   type TestAttemptHistoryResponse,
 } from '@vmsh/contracts'
 import { recordProductAction } from './product-analytics'
+import {
+  DEFAULT_SUBMISSION_REQUEST_TIMEOUT_MS,
+  RequestDeadlineExceededError,
+  withRequestDeadline,
+} from './request-deadline'
 
 /**
  * Same-origin Student transport for Phase-4 test attempts. A 401 retry reuses
@@ -37,6 +42,7 @@ export interface TestAttemptHistoryOptions extends TestSubmissionRequestOptions 
 export interface TestSubmissionClientOptions {
   fetchImplementation?: typeof globalThis.fetch
   refreshSession?: () => Promise<unknown>
+  requestTimeoutMilliseconds?: number
 }
 
 export interface TestSubmissionClient {
@@ -70,6 +76,16 @@ export class TestSubmissionNetworkError extends Error {
   }
 }
 
+export class TestSubmissionTimeoutError extends Error {
+  readonly timeoutMilliseconds: number
+
+  constructor(timeoutMilliseconds: number, options: { cause: unknown }) {
+    super('Test-submission request timed out', { cause: options.cause })
+    this.name = 'TestSubmissionTimeoutError'
+    this.timeoutMilliseconds = timeoutMilliseconds
+  }
+}
+
 interface ResponseParser<T> {
   parse(payload: unknown): T
 }
@@ -79,12 +95,21 @@ class BrowserTestSubmissionClient implements TestSubmissionClient {
 
   readonly #fetch: typeof globalThis.fetch
   readonly #refreshSession: (() => Promise<unknown>) | undefined
+  readonly #requestTimeoutMilliseconds: number
 
   constructor(runtime: RuntimeConfig, options: TestSubmissionClientOptions) {
     this.runtime = parseRuntimeConfigForAudience('student', runtime)
     const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
+    this.#requestTimeoutMilliseconds =
+      options.requestTimeoutMilliseconds ?? DEFAULT_SUBMISSION_REQUEST_TIMEOUT_MS
+    if (
+      !Number.isSafeInteger(this.#requestTimeoutMilliseconds) ||
+      this.#requestTimeoutMilliseconds < 1
+    ) {
+      throw new RangeError('Test-submission request timeout must be a positive integer')
+    }
   }
 
   async input(
@@ -188,16 +213,26 @@ class BrowserTestSubmissionClient implements TestSubmissionClient {
     const headers: Record<string, string> = { Accept: 'application/json' }
     if (input.method === 'POST') headers['Content-Type'] = 'application/json'
     try {
-      return await this.#fetch(`${this.runtime.apiBase}${path}`, {
-        method: input.method,
-        cache: 'no-store',
-        credentials: 'include',
-        headers,
-        redirect: 'error',
-        ...(input.body === undefined ? {} : { body: input.body }),
-        ...(options.signal === undefined ? {} : { signal: options.signal }),
-      })
+      return await withRequestDeadline(
+        (signal) =>
+          this.#fetch(`${this.runtime.apiBase}${path}`, {
+            method: input.method,
+            cache: 'no-store',
+            credentials: 'include',
+            headers,
+            redirect: 'error',
+            signal,
+            ...(input.body === undefined ? {} : { body: input.body }),
+          }),
+        {
+          timeoutMilliseconds: this.#requestTimeoutMilliseconds,
+          ...(options.signal === undefined ? {} : { signal: options.signal }),
+        },
+      )
     } catch (error) {
+      if (error instanceof RequestDeadlineExceededError) {
+        throw new TestSubmissionTimeoutError(this.#requestTimeoutMilliseconds, { cause: error })
+      }
       if (error instanceof DOMException && error.name === 'AbortError') throw error
       throw new TestSubmissionNetworkError({ cause: error })
     }

@@ -2741,3 +2741,20 @@ production build. Реальная доставка на устройстве п
 без ожидания navigate фоновой вкладки. Абсолютный URL проверяется после нормализации
 на origin и audience. Причина на устройстве не подтверждена; повтор Android после
 обновления SW остаётся обязательным. 8 unit-тестов, typecheck и сборки Student/Family прошли.
+
+## Восстановление зависших отправок — 13 сентября 2026, реализовано локально
+
+По production DB и Sentry подтверждены два независимых дефекта: Test `fetch`
+мог навсегда оставить outbox в `sending`, а восстановление отклонённой замены
+повторно требовало уже загруженную фотографию из IndexedDB. Исправление вводит
+30-секундный deadline, возврат просроченной аренды в `retrying` и повторное
+использование серверного черновика/вложений. См.
+[диагностику](../../docs/submission-error-diagnostics.md) и
+[восстановление замены](../../docs/written-replacement-recovery.md).
+
+Проверено: 51 целевой unit-тест, typecheck Contracts/App Shell/Offline/Student,
+targeted ESLint и Prettier, production build Student, `git diff --check`.
+Полный unit-набор: 777 passed, одно прежнее падение
+`contracts/src/auth.test.ts` из-за рассинхронного teacher capability fixture;
+тот же класс известных fixture-regression зафиксирован выше в разделе
+совместимости API. Миграция и серверные настройки не нужны.

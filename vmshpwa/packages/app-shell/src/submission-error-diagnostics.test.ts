@@ -21,6 +21,12 @@ describe('submission error diagnostics', () => {
     expect(submissionFailureMessage(undefined, 'client:TestSubmissionNetworkError')).toContain(
       'недоступность сервера',
     )
+    expect(submissionFailureMessage(undefined, 'client:TestSubmissionTimeoutError')).toContain(
+      '30 секунд',
+    )
+    expect(submissionFailureMessage(undefined, 'client:stale-sending-lease')).toContain(
+      'Ответ сохранён',
+    )
     expect(submissionFailureMessage(undefined, 'client:TypeError')).toContain('Ошибка приложения')
     expect(submissionFailureMessage()).not.toContain('появится сеть')
   })

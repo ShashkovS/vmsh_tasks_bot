@@ -154,7 +154,8 @@ function failureState(error: unknown): 'retrying' | 'conflict' | 'failed' {
   if (
     error instanceof TypeError ||
     (error instanceof DOMException && error.name === 'AbortError') ||
-    (error instanceof Error && error.name === 'TestSubmissionNetworkError')
+    (error instanceof Error &&
+      ['TestSubmissionNetworkError', 'TestSubmissionTimeoutError'].includes(error.name))
   ) {
     return 'retrying'
   }
@@ -312,6 +313,22 @@ export function createTestAnswerOutbox(
     },
 
     async list() {
+      const leaseCutoff = new Date(now().getTime() - sendingLeaseMilliseconds).toISOString()
+      await database.transaction('rw', database.outbox, async () => {
+        for (const item of await database.outbox.where('ownerId').equals(parsedOwnerId).toArray()) {
+          if (
+            item.kind === 'test-answer' &&
+            item.status === 'sending' &&
+            item.updatedAtClient <= leaseCutoff
+          ) {
+            await database.outbox.update(item.id, {
+              status: 'retrying',
+              updatedAtClient: now().toISOString(),
+              lastError: 'client:stale-sending-lease',
+            })
+          }
+        }
+      })
       const records = await database.outbox.where('ownerId').equals(parsedOwnerId).toArray()
       return records
         .filter((item) => item.kind === 'test-answer')

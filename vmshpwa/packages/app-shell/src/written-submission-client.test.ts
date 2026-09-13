@@ -16,6 +16,7 @@ import {
 import {
   WrittenSubmissionNetworkError,
   WrittenSubmissionProtocolError,
+  WrittenSubmissionTimeoutError,
   createWrittenSubmissionClient,
 } from './written-submission-client'
 
@@ -51,6 +52,7 @@ describe('Student written-submission client', () => {
         credentials: 'include',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         redirect: 'error',
+        signal: expect.any(AbortSignal),
       },
     )
   })
@@ -116,6 +118,7 @@ describe('Student written-submission client', () => {
         credentials: 'include',
         headers: { Accept: 'image/webp' },
         redirect: 'error',
+        signal: expect.any(AbortSignal),
       },
     )
   })
@@ -317,5 +320,28 @@ describe('Student written-submission client', () => {
       fetchImplementation: vi.fn(() => Promise.reject(abort)),
     })
     await expect(cancelled.thread(writtenFixture.threadResponse.problemId)).rejects.toBe(abort)
+  })
+
+  it('settles an upload whose fetch never resolves after the configured deadline', async () => {
+    let requestSignal: AbortSignal | undefined
+    const client = createWrittenSubmissionClient(runtime, {
+      fetchImplementation: vi.fn((_input, init) => {
+        requestSignal = init?.signal ?? undefined
+        return new Promise<Response>(() => undefined)
+      }),
+      requestTimeoutMilliseconds: 5,
+    })
+
+    await expect(
+      client.upload(writtenFixture.createResponse.entry.entryId, {
+        metadata: attachmentMetadata,
+        asset: new File(['webp'], 'page.webp', { type: 'image/webp' }),
+        fileName: 'page.webp',
+      }),
+    ).rejects.toMatchObject({
+      name: WrittenSubmissionTimeoutError.name,
+      timeoutMilliseconds: 5,
+    })
+    expect(requestSignal?.aborted).toBe(true)
   })
 })
