@@ -567,4 +567,46 @@ describe('written-submission outbox', () => {
     })
     expect((await draft.load(descriptor())).compatible?.text).toBe('Текст решения')
   })
+
+  it('keeps text and photos after a terminal deadline rejection', async () => {
+    const { draft, outbox } = stores('written-deadline')
+    draft.saveText(descriptor(), 'Текст решения перед дедлайном')
+    await addPhoto(draft, PHOTO_ONE, 'deadline photo')
+    await outbox.enqueue(descriptor())
+    const transport = new RecordingTransport()
+    transport.submit = (_entryId, request) => {
+      transport.calls.push({ operation: 'submit', request })
+      return Promise.reject(
+        new ApiResponseError(409, {
+          error: {
+            code: 'submission_deadline_passed',
+            message: 'Срок сдачи закончился',
+            requestId: 'request-deadline',
+          },
+        }),
+      )
+    }
+
+    await expect(outbox.deliverNext(transport)).resolves.toMatchObject({
+      state: 'failed',
+      item: {
+        status: 'failed',
+        lastError: 'api:409:submission_deadline_passed:request=request-deadline',
+      },
+    })
+    const restored = await draft.load(descriptor())
+    expect(restored.compatible?.text).toBe('Текст решения перед дедлайном')
+    expect(restored.compatible?.photos).toHaveLength(1)
+    await expect(outbox.deliverNext(transport)).resolves.toEqual({ state: 'idle' })
+    expect(transport.calls.map(({ operation }) => operation)).toEqual([
+      'create',
+      'upload-0',
+      'submit',
+    ])
+    await expect(outbox.enqueue(descriptor())).resolves.toMatchObject({ status: 'queued' })
+    expect(await outbox.list()).toHaveLength(1)
+    const reopened = await draft.load(descriptor())
+    expect(reopened.compatible?.text).toBe('Текст решения перед дедлайном')
+    expect(reopened.compatible?.photos).toHaveLength(1)
+  })
 })

@@ -3,6 +3,7 @@ import { CloudOff, Pencil, TriangleAlert } from 'lucide-react'
 
 import {
   createWrittenSubmissionClient,
+  isSubmissionDeadlineFailure,
   submissionFailureMessage,
   reportHandledError,
   useAuthentication,
@@ -52,6 +53,7 @@ import {
 
 import { compressWrittenSubmissionImage } from './image-compression'
 import { announceSafePwaUpdateMoment } from './pwa-update-events'
+import { StudentSubmissionDeadlineNotice } from './student-submission-deadline-notice'
 import {
   buildWrittenChatItems,
   chatDate,
@@ -311,6 +313,7 @@ export function StudentWrittenSubmission({
     () => ({ ownerId, problemId, conditionRevisionId, configVersion }),
     [conditionRevisionId, configVersion, ownerId, problemId],
   )
+  const descriptorIdentity = `${ownerId}:${problemId}:${conditionRevisionId}:${configVersion}`
   const client = useMemo(
     () =>
       createWrittenSubmissionClient(authentication.client.runtime, {
@@ -376,6 +379,7 @@ export function StudentWrittenSubmission({
       reportHandledError(storageError, 'written.storage', { accountId: ownerId, problemId })
   }, [storageError, ownerId, problemId])
   const [sendError, setSendError] = useState<string | null>(null)
+  const [deadlineClosedIdentity, setDeadlineClosedIdentity] = useState<string | null>(null)
   const [studentReactionError, setStudentReactionError] = useState<{
     reviewId: string
     message: string
@@ -432,7 +436,12 @@ export function StudentWrittenSubmission({
         setPhotos(loaded.compatible?.photos ?? [])
         setReplacementTarget(loaded.compatible?.replacementTarget ?? null)
         setQueueItem(item)
-        setSendError(item?.lastError ? submissionFailureMessage(undefined, item.lastError) : null)
+        const storedDeadline = isSubmissionDeadlineFailure(undefined, item?.lastError)
+        setSendError(
+          item?.lastError && !storedDeadline
+            ? submissionFailureMessage(undefined, item.lastError)
+            : null,
+        )
         setStorageError(null)
         setHydrated(true)
         if (item?.status === 'synced') {
@@ -497,7 +506,10 @@ export function StudentWrittenSubmission({
     try {
       result = await outbox.deliverNext(client)
     } catch (error) {
-      setSendError(deliveryMessage(error))
+      const deadlinePassed = isSubmissionDeadlineFailure(error)
+      if (deadlinePassed) setDeadlineClosedIdentity(descriptorIdentity)
+      if (deadlinePassed) reportHandledError(error, 'written.submit')
+      setSendError(deadlinePassed ? null : deliveryMessage(error))
       return
     } finally {
       // Release the single-flight guard before publishing a retrying queue
@@ -516,13 +528,15 @@ export function StudentWrittenSubmission({
     }
     setQueueItem(result.item)
     if (result.state !== 'synced') {
+      const deadlinePassed = isSubmissionDeadlineFailure(result.error, result.item.lastError)
+      if (deadlinePassed) setDeadlineClosedIdentity(descriptorIdentity)
       reportHandledError(result.error, 'written.submit', {
         accountId: ownerId,
         problemId,
         outboxId: result.item.id,
         attempts: result.item.attempts,
       })
-      setSendError(deliveryMessage(result.error))
+      setSendError(deadlinePassed ? null : deliveryMessage(result.error))
       return
     }
     await outbox.acknowledge(result.item.id)
@@ -532,7 +546,7 @@ export function StudentWrittenSubmission({
     setReplacementTarget(null)
     await refetchThread()
     announceSafePwaUpdateMoment()
-  }, [client, descriptor, outbox, refetchThread, ownerId, problemId])
+  }, [client, descriptor, descriptorIdentity, outbox, refetchThread, ownerId, problemId])
 
   useEffect(() => {
     if (online && queueItem && ['queued', 'retrying'].includes(queueItem.status)) {
@@ -607,14 +621,18 @@ export function StudentWrittenSubmission({
       : null,
     reactionError: studentReactionError,
   })
+  const deadlineClosed = deadlineClosedIdentity === descriptorIdentity
+  const storedDeadlineFailure = isSubmissionDeadlineFailure(undefined, queueItem?.lastError)
+  const showDeadlineNotice = deadlineClosed || (closed && storedDeadlineFailure)
 
-  if (closed) {
+  if (closed || deadlineClosed) {
     return (
       <section aria-label="Отправленные решения" className="mt-4 space-y-3">
         <TaskChat
           emptyLabel="Приём решений завершён, ничего не отправлено."
           messages={chatMessages}
         />
+        {showDeadlineNotice ? <StudentSubmissionDeadlineNotice /> : null}
       </section>
     )
   }

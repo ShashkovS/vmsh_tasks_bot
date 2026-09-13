@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ApiResponseError } from '@vmsh/contracts'
-import { reportHandledError, setObservabilityUser, submissionFailureMessage } from './observability'
+import {
+  isSubmissionDeadlineFailure,
+  reportHandledError,
+  setObservabilityUser,
+  submissionFailureMessage,
+} from './observability'
 import * as Sentry from '@sentry/react'
 
 vi.mock('@sentry/react', () => ({ captureException: vi.fn(), setUser: vi.fn() }))
@@ -10,6 +15,30 @@ const failure = (status: number) =>
   })
 
 describe('submission error diagnostics', () => {
+  it('treats direct and persisted deadline failures as an expected closed window', () => {
+    const direct = new ApiResponseError(409, {
+      error: {
+        code: 'submission_deadline_passed',
+        message: 'internal deadline message',
+        requestId: 'request-deadline',
+      },
+    })
+    const persisted = 'api:409:submission_deadline_passed:request=request-deadline'
+
+    expect(isSubmissionDeadlineFailure(direct)).toBe(true)
+    expect(isSubmissionDeadlineFailure(undefined, persisted)).toBe(true)
+    expect(isSubmissionDeadlineFailure(failure(409))).toBe(false)
+    for (const message of [
+      submissionFailureMessage(direct),
+      submissionFailureMessage(undefined, persisted),
+    ]) {
+      expect(message).toBe(
+        'Срок сдачи закончился, поэтому ответ не отправлен. Черновик сохранён на этом устройстве.',
+      )
+      expect(message).not.toMatch(/api:|409|request-deadline|internal deadline message/i)
+    }
+  })
+
   it('distinguishes server failures, auth, rate limits and ambiguous transport failures', () => {
     expect(submissionFailureMessage(failure(503))).toContain('не проблема вашего интернета')
     expect(submissionFailureMessage(failure(503))).toContain('req-42')

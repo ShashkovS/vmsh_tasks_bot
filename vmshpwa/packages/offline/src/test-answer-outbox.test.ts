@@ -95,6 +95,32 @@ describe('test-answer Dexie outbox', () => {
       expect(submit).toHaveBeenCalledOnce()
     },
   )
+  it('keeps the answer snapshot after a terminal deadline rejection', async () => {
+    const target = database('submission-deadline')
+    const queue = outbox(target)
+    const queued = await enqueue(queue)
+    const submit = vi.fn().mockRejectedValue(
+      new ApiResponseError(409, {
+        error: {
+          code: 'submission_deadline_passed',
+          message: 'Срок сдачи закончился',
+          requestId: 'request-deadline',
+        },
+      }),
+    )
+
+    await expect(queue.deliverNext({ submit })).resolves.toMatchObject({ state: 'failed' })
+    expect((await queue.list())[0]).toMatchObject({
+      status: 'failed',
+      payload: queued.payload,
+      lastError: 'api:409:submission_deadline_passed:request=request-deadline',
+    })
+    await expect(queue.deliverNext({ submit })).resolves.toEqual({ state: 'idle' })
+    expect(submit).toHaveBeenCalledOnce()
+    await expect(enqueue(queue)).resolves.toMatchObject({ status: 'queued' })
+    expect(await queue.list()).toHaveLength(1)
+  })
+
   it('persists one immutable versioned wire request and its client timestamp', async () => {
     const target = database('test-answer-enqueue')
     const queue = outbox(target)

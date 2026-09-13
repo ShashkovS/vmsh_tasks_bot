@@ -8,10 +8,12 @@
 - «К листку» возвращает к исходному месту в отдельном листке или общей ленте. Подгруженные занятия и раскрытые ответы сохраняются при переходах внутри приложения и обновлении данных. При прямом входе в задачу без предыдущего листка действует обычный переход в ленту.
 - При ширине меньше 640 px поле общего композера занимает полную строку; фото, камера и отправка располагаются ниже. На широком экране остаётся одна строка.
 - Если приём закрыт и нет отправленных ответов, кнопки «Мой ответ» и «Показать все ответы» не появляются. Сохранившиеся ответы доступны для чтения. Черновики и оценка без ответа не создают пустую панель.
+- Серверный отказ `submission_deadline_passed` считается ожидаемым завершением приёма. Тестовый и письменный редакторы показывают спокойное предупреждение без HTTP-кода и `requestId`, убирают повторную отправку и сохраняют локальный черновик. После повторного открытия приёма reload восстанавливает редактор и черновик.
 
 ## Реализация
 
 - [StudentWrittenSubmission](../apps/student/src/student-written-submission.tsx): обратная связь об отправке и наблюдение за очередью; [ChatComposer](../packages/product/src/chat-composer.tsx): мобильная раскладка.
+- [Submission diagnostics](../packages/app-shell/src/observability.ts) одинаково распознаёт дедлайн в живом `ApiResponseError` и сохранённой outbox-метке; технические идентификаторы остаются только в диагностике.
 - [Student task pages](../apps/student/src/student-tasks-page.tsx), [workspace](../apps/student/src/student-task-detail-page.tsx), [worksheet-return](../apps/student/src/worksheet-return.ts): восстановление контекста и показ ответов.
 - [Content repository](../../db_methods/pwa/content.py): `has_answer` по PWA, тестовым попыткам и архивной переписке с учётом синонимов; `taskReference` в производной документа. [Course API](../../apps/pwa_api/course_routes.py), [Zod](../packages/contracts/src/courses.ts) передают признак `hasAnswer`; необязательность полей сохраняет совместимость со старым кешем.
 - [SemanticMathDocument](../packages/content/src/math-document.tsx) использует `taskReference`, сохраняя исходные `sourceItem`, `displayNumber`, ordinal и маршруты. Проекция также применяется к Family, Staff-проверке, истории результатов и обсуждениям. См. [названия задач](task-titles.md).

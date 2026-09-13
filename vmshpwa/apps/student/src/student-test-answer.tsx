@@ -3,6 +3,7 @@ import { CloudOff, TriangleAlert } from 'lucide-react'
 
 import {
   createTestSubmissionClient,
+  isSubmissionDeadlineFailure,
   submissionFailureMessage,
   reportHandledError,
   useAuthentication,
@@ -38,6 +39,7 @@ import {
 
 import { createOfflineStudentTestAnswerInputClient } from './offline-student-data'
 import { announceSafePwaUpdateMoment } from './pwa-update-events'
+import { StudentSubmissionDeadlineNotice } from './student-submission-deadline-notice'
 import { chatDate, chatTime } from './student-written-chat'
 import { testAnswerSpec, testAttemptReply, testAttemptVerdict } from './student-test-answer-view'
 
@@ -174,6 +176,7 @@ export function StudentTestAnswer({
   const [pendingItem, setPendingItem] = useState<TestAnswerOutboxItem | null>(null)
   const [receipt, setReceipt] = useState<SubmitTestAnswerResponse | null>(null)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [deadlineClosedIdentity, setDeadlineClosedIdentity] = useState<string | null>(null)
   const [showFormatError, setShowFormatError] = useState(false)
   const [editorEpoch, setEditorEpoch] = useState(0)
   const [showEveryTurn, setShowEveryTurn] = useState(false)
@@ -201,7 +204,12 @@ export function StudentTestAnswer({
           if (!item) return
           setPendingItem(item)
           setSendState(queueState(item))
-          setSendError(item.lastError ? submissionFailureMessage(undefined, item.lastError) : null)
+          const storedDeadline = isSubmissionDeadlineFailure(undefined, item.lastError)
+          setSendError(
+            item.lastError && !storedDeadline
+              ? submissionFailureMessage(undefined, item.lastError)
+              : null,
+          )
           if (item.status !== 'synced' || !item.result) return
           setReceipt(item.result)
           try {
@@ -292,8 +300,12 @@ export function StudentTestAnswer({
       } else {
         setPendingItem(stored ?? null)
         setSendState(queueState(stored ?? null))
+        const storedDeadline = isSubmissionDeadlineFailure(undefined, stored?.lastError)
+        if (storedDeadline) setDeadlineClosedIdentity(identity)
         setSendError(
-          stored?.lastError ? submissionFailureMessage(undefined, stored.lastError) : null,
+          stored?.lastError && !storedDeadline
+            ? submissionFailureMessage(undefined, stored.lastError)
+            : null,
         )
         return
       }
@@ -305,13 +317,15 @@ export function StudentTestAnswer({
     setPendingItem(result.item)
     setSendState(result.state === 'retrying' ? 'queued' : result.state)
     if (result.state !== 'synced') {
+      const deadlinePassed = isSubmissionDeadlineFailure(result.error, result.item.lastError)
+      if (deadlinePassed) setDeadlineClosedIdentity(identity)
       reportHandledError(result.error, 'test.submit', {
         accountId: result.item.ownerId,
         problemId,
         outboxId: result.item.id,
         attempts: result.item.attempts,
       })
-      setSendError(sendErrorMessage(result.error))
+      setSendError(deadlinePassed ? null : sendErrorMessage(result.error))
       if (result.state === 'conflict') void inputQuery.refetch()
       return
     }
@@ -357,13 +371,15 @@ export function StudentTestAnswer({
       setPendingItem(result.item)
       setSendState(result.state === 'retrying' ? 'queued' : result.state)
       if (result.state !== 'synced') {
+        const deadlinePassed = isSubmissionDeadlineFailure(result.error, result.item.lastError)
+        if (deadlinePassed) setDeadlineClosedIdentity(identity)
         reportHandledError(result.error, 'test.submit', {
           accountId: result.item.ownerId,
           problemId,
           outboxId: result.item.id,
           attempts: result.item.attempts,
         })
-        setSendError(sendErrorMessage(result.error))
+        setSendError(deadlinePassed ? null : sendErrorMessage(result.error))
         if (result.state === 'conflict') void inputQuery.refetch()
         return
       }
@@ -377,12 +393,19 @@ export function StudentTestAnswer({
       announceSafePwaUpdateMoment()
     } catch (error) {
       setSendState('failed')
-      setSendError(sendErrorMessage(error))
+      const deadlinePassed = isSubmissionDeadlineFailure(error)
+      if (deadlinePassed) setDeadlineClosedIdentity(identity)
+      if (deadlinePassed) reportHandledError(error, 'test.submit')
+      setSendError(deadlinePassed ? null : sendErrorMessage(error))
     }
   }
 
   const queuedSend =
     pendingItem !== null && ['queued', 'retrying', 'sending'].includes(pendingItem.status)
+  const deadlineClosed = identity !== null && deadlineClosedIdentity === identity
+  const storedDeadlineFailure = isSubmissionDeadlineFailure(undefined, pendingItem?.lastError)
+  const showDeadlineNotice = deadlineClosed || (closed && storedDeadlineFailure)
+  const submissionClosed = closed || deadlineClosed
   const fieldLocked = sendState === 'sending' || queuedSend
   const history = historyQuery.data?.pages.flatMap((page) => page.attempts) ?? []
   // The API pages newest first; a conversation reads the other way round.
@@ -470,7 +493,9 @@ export function StudentTestAnswer({
         </Alert>
       ) : null}
 
-      {sendError && sendState !== 'queued' ? (
+      {showDeadlineNotice ? (
+        <StudentSubmissionDeadlineNotice />
+      ) : sendError && sendState !== 'queued' ? (
         <Alert role="alert" tone={sendState === 'conflict' ? 'warning' : 'danger'}>
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
@@ -482,8 +507,10 @@ export function StudentTestAnswer({
         </Alert>
       ) : null}
 
-      {closed ? (
-        <p className="text-small text-muted-foreground">Приём ответов завершён.</p>
+      {submissionClosed ? (
+        showDeadlineNotice ? null : (
+          <p className="text-small text-muted-foreground">Приём ответов завершён.</p>
+        )
       ) : queuedSend ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />

@@ -139,9 +139,22 @@ export function reportHandledError(
   }
 }
 
+function submissionFailureDomainCode(error?: unknown, storedLabel?: string): string | undefined {
+  const api = error instanceof ApiResponseError ? error : null
+  return api?.code ?? storedLabel?.split(':')[2]
+}
+
+export const SUBMISSION_DEADLINE_MESSAGE =
+  'Срок сдачи закончился, поэтому ответ не отправлен. Черновик сохранён на этом устройстве.'
+
+export function isSubmissionDeadlineFailure(error?: unknown, storedLabel?: string): boolean {
+  return submissionFailureDomainCode(error, storedLabel) === 'submission_deadline_passed'
+}
+
 export function submissionFailureMessage(error?: unknown, storedLabel?: string): string {
   const api = error instanceof ApiResponseError ? error : null
-  const domainCode = api?.code ?? storedLabel?.split(':')[2]
+  const domainCode = submissionFailureDomainCode(error, storedLabel)
+  if (domainCode === 'submission_deadline_passed') return SUBMISSION_DEADLINE_MESSAGE
   if (domainCode === 'test_attempt_hour_limit')
     return 'На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем.'
   if (domainCode === 'test_attempt_day_limit')

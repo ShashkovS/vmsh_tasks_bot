@@ -139,6 +139,10 @@ function failureLabel(error: unknown): string {
   return 'client:unknown'
 }
 
+function isDeadlineFailureLabel(label?: string): boolean {
+  return /\bsubmission_deadline_passed\b/.test(label ?? '')
+}
+
 function failureState(error: unknown): 'retrying' | 'conflict' | 'failed' {
   if (error instanceof ApiResponseError) {
     if (['test_attempt_hour_limit', 'test_attempt_day_limit'].includes(error.code)) return 'failed'
@@ -308,7 +312,25 @@ export function createTestAnswerOutbox(
         attempts: 0,
         payload,
       })
-      await database.outbox.add(item)
+      // docs/task-interaction-polish.md: an explicit send after staff reopens
+      // reception replaces the terminal deadline snapshot, while the draft survives.
+      await database.transaction('rw', database.outbox, async () => {
+        for (const stored of await database.outbox
+          .where('ownerId')
+          .equals(parsedOwnerId)
+          .toArray()) {
+          const parsed = testAnswerOutboxItemSchema.safeParse(stored)
+          if (
+            parsed.success &&
+            parsed.data.status === 'failed' &&
+            parsed.data.payload.problemId === item.payload.problemId &&
+            isDeadlineFailureLabel(parsed.data.lastError)
+          ) {
+            await database.outbox.delete(parsed.data.id)
+          }
+        }
+        await database.outbox.add(item)
+      })
       return item
     },
 

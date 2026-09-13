@@ -1388,3 +1388,12 @@ Firefox и WebKit. Typecheck, ESLint, Stylelint и Ruff прошли. Мигра
 Исправлены каталог и ответ выбранного листка через общую схему; интерфейс и API
 не меняются. Регрессия: 4 новых теста, все 224 теста контрактов прошли.
 Подробности: [отчёт](../../docs/whiteboard-export-report.md).
+
+## Сообщение после закрытия приёма — 2026-09-13
+
+`submission_deadline_passed` отображается как спокойное завершение приёма без
+HTTP-кода и request ID. Тестовая и письменная формы закрываются после отказа,
+но сохраняют локальные текст и фотографии; история остаётся доступной. Поведение
+описано в [task interaction polish](../../docs/task-interaction-polish.md).
+Проверены 28 целевых unit-тестов, Offline/App Shell/Student typecheck, ESLint,
+целевой Prettier и production build Student.

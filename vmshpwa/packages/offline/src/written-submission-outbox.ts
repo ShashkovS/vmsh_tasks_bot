@@ -321,6 +321,10 @@ function failureLabel(error: unknown): string {
   return 'client:unknown'
 }
 
+function isDeadlineFailureLabel(label?: string): boolean {
+  return /\bsubmission_deadline_passed\b/.test(label ?? '')
+}
+
 function failureState(error: unknown): 'retrying' | 'conflict' | 'failed' {
   if (
     error instanceof WrittenSubmissionLocalEvidenceError ||
@@ -491,7 +495,11 @@ export function createWrittenSubmissionOutbox(
             item.payload.descriptor.conditionRevisionId === parsedDescriptor.conditionRevisionId &&
             item.payload.descriptor.configVersion === parsedDescriptor.configVersion,
         )
-      if (existing) return existing
+      if (existing) {
+        if (existing.status !== 'failed' || !isDeadlineFailureLabel(existing.lastError)) {
+          return existing
+        }
+      }
 
       const loaded = await draftStore.load(parsedDescriptor)
       const draft = loaded.compatible
@@ -543,7 +551,12 @@ export function createWrittenSubmissionOutbox(
         attempts: 0,
         payload,
       })
-      await database.outbox.add(item)
+      // docs/task-interaction-polish.md: an explicit send after staff reopens
+      // reception replaces the terminal deadline snapshot, while the draft survives.
+      await database.transaction('rw', database.outbox, async () => {
+        if (existing) await database.outbox.delete(existing.id)
+        await database.outbox.add(item)
+      })
       return item
     },
 
