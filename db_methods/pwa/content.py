@@ -401,6 +401,10 @@ class StudentProblemSummaryRecord:
     solution_state: str
     status: str
     verdict: StudentProblemVerdictRecord | None
+    hint_publication_id: str | None = None
+    solution_publication_id: str | None = None
+    # Lifetime consent is separate from publication audit; docs/worksheet-materials.md.
+    hint_confirmation_required: bool = True
     has_answer: bool = False
 
 
@@ -1433,6 +1437,9 @@ def _student_problem_summary(
         ),
         status=status,
         verdict=verdict,
+        hint_publication_id=row["hint_publication_id"],
+        solution_publication_id=row["solution_publication_id"],
+        hint_confirmation_required=bool(row["hint_confirmation_required"]),
         has_answer=bool(row["has_answer"]),
     )
 
@@ -1613,6 +1620,7 @@ visible_problem AS (
 ),
 hint_state AS (
     SELECT visible.problem_id,
+           publication.public_id AS hint_publication_id,
            1 AS hint_available,
            CASE WHEN reveal.id IS NULL THEN 'available' ELSE 'revealed' END AS hint_state
     FROM visible_problem AS visible
@@ -1640,6 +1648,7 @@ hint_state AS (
 ),
 solution_state AS (
     SELECT visible.problem_id,
+           publication.public_id AS solution_publication_id,
            1 AS solution_available,
            CASE WHEN reveal.id IS NULL THEN 'available' ELSE 'revealed' END AS solution_state
     FROM visible_problem AS visible
@@ -1776,6 +1785,13 @@ SELECT published_scope.group_lesson_public_id,
              AND result.student_id = :student_user_id AND result.res_type = 1
              AND result.answer IS NOT NULL AND trim(result.answer) <> ''
        )) AS has_answer,
+       NOT EXISTS (
+           SELECT 1 FROM hint_reveals AS previous_hint
+           WHERE previous_hint.student_user_id = :student_user_id
+             AND previous_hint.problem_id = visible_problem.problem_id
+       ) AS hint_confirmation_required,
+       hint_state.hint_publication_id,
+       solution_state.solution_publication_id,
        hint_state.hint_available,
        hint_state.hint_state,
        solution_state.solution_available,

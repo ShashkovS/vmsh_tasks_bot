@@ -1,8 +1,5 @@
 /* Student worksheet contract: docs/worksheet-print.md; verified by
  * e2e/worksheet-print.spec.ts. Physical paper/ink intentionally ignore theme. */
-.vmsh-print-material-label {
-  display: none;
-}
 
 @page student-worksheet {
   size: A4;
@@ -103,7 +100,7 @@
     margin-block: 2mm;
   }
 
-  [data-print-lesson] .vmsh-print-material-label {
+  [data-print-lesson] .vmsh-material-label {
     display: block;
     margin-block: 2mm 1mm;
     font-size: 11pt;

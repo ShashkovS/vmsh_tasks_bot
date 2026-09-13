@@ -198,6 +198,16 @@ def seed(config):
                         TIMESTAMP,
                     ),
                 )
+        # Staff opens web and Telegram previews together. The original print-only
+        # fixture needed just web_ast; add the other derivative for preview E2E.
+        for _, lesson in TARGETS:
+            for revision_id in (lesson, lesson + 10, lesson + 20):
+                html = "<p>Учебный материал для проверки предпросмотра.</p>"
+                c.execute(
+                    "INSERT INTO content_derivatives(revision_id,kind,renderer_version,content_text,sha256,diagnostics_json,provenance_json,created_at) "
+                    "VALUES(?,'telegram_html','print-e2e',?,?,'[]','{}',?)",
+                    (revision_id, html, hashlib.sha256(html.encode()).hexdigest(), TIMESTAMP),
+                )
     print("Seeded worksheet print lessons")
 
 

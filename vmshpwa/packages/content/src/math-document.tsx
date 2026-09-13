@@ -1,4 +1,11 @@
-import { Fragment, type CSSProperties, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useId,
+  Fragment,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 
 import type {
   WebContentBlock,
@@ -117,6 +124,8 @@ interface ContentBlocksProps {
   renderSubpartActions?: (problem: WebContentProblem, label: string) => ReactNode
 }
 
+const HideMaterialHeadings = createContext(false)
+
 function ContentBlocks({
   blocks,
   path,
@@ -125,6 +134,7 @@ function ContentBlocks({
   renderAfterSubpart,
   renderSubpartActions,
 }: ContentBlocksProps) {
+  const hideHeadings = useContext(HideMaterialHeadings)
   return blocks.map((block, index) => {
     const key = `${path}-${index}`
     switch (block.type) {
@@ -241,13 +251,15 @@ function ContentBlocks({
       case 'subpart':
         return (
           <div className="vmsh-subpart" key={key}>
-            <div className="vmsh-subpart-header">
-              <strong className="vmsh-subpart-label">
-                {block.taskReference ? `Задача ${block.taskReference}.` : `${block.label})`}
-                {block.title ? <span> «{block.title}»</span> : null}
-              </strong>
-              {problem ? renderSubpartActions?.(problem, block.label) : null}
-            </div>
+            {!hideHeadings ? (
+              <div className="vmsh-subpart-header">
+                <strong className="vmsh-subpart-label">
+                  {block.taskReference ? `${block.taskReference}.` : `${block.label})`}
+                  {block.title ? <span> «{block.title}»</span> : null}
+                </strong>
+                {problem ? renderSubpartActions?.(problem, block.label) : null}
+              </div>
+            ) : null}
             <div className="vmsh-subpart-content">
               <ContentBlocks
                 blocks={block.blocks}
@@ -284,6 +296,7 @@ function ContentBlocks({
 
 export interface SemanticMathDocumentProps {
   imageLoading?: 'eager' | 'lazy'
+  hideProblemHeadings?: boolean
   document: WebContentDocument
   className?: string
   renderAfterProblem?: (problem: WebContentProblem) => ReactNode
@@ -296,6 +309,7 @@ export interface SemanticMathDocumentProps {
 /** Renders only an already runtime-validated WebContentDocument v1. */
 export function SemanticMathDocument({
   imageLoading = 'lazy',
+  hideProblemHeadings = false,
   document,
   className,
   renderAfterProblem,
@@ -304,55 +318,63 @@ export function SemanticMathDocument({
   renderSubpartActions,
   onFigureScaleCycle,
 }: SemanticMathDocumentProps) {
+  const documentId = useId()
   return (
     <FigureLoadingContext.Provider value={imageLoading}>
-      <MathDocument
-        {...(className === undefined ? {} : { className })}
-        {...(document.title === null ? {} : { title: document.title })}
-      >
-        <ContentBlocks
-          blocks={document.introduction}
-          path="introduction"
-          {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-        />
-        {document.problems.map((problem) => {
-          const headingId = `problem-${problem.ordinal}`
-          return (
-            <Fragment key={problem.ordinal}>
-              <section aria-labelledby={headingId} className="vmsh-problem">
+      <HideMaterialHeadings.Provider value={hideProblemHeadings}>
+        <MathDocument
+          {...(className === undefined ? {} : { className })}
+          {...(document.title === null || hideProblemHeadings ? {} : { title: document.title })}
+        >
+          <ContentBlocks
+            blocks={document.introduction}
+            path="introduction"
+            {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+          />
+          {document.problems.map((problem) => {
+            const headingId = `${documentId}-problem-${problem.ordinal}`
+            return (
+              <Fragment key={problem.ordinal}>
+                <section
+                  aria-labelledby={hideProblemHeadings ? undefined : headingId}
+                  className="vmsh-problem"
+                >
+                  <ContentBlocks
+                    blocks={problem.preambleBlocks ?? []}
+                    path={`problem-${problem.ordinal}-preamble`}
+                    {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+                  />
+                  {!hideProblemHeadings ? (
+                    <div className="vmsh-problem-header">
+                      <h2 id={headingId}>
+                        {problem.taskReference
+                          ? `Задача ${problem.taskReference}.`
+                          : (problem.sourceItem ?? `Задача ${problem.ordinal}`)}
+                        {problem.title ? <span>«{problem.title}»</span> : null}
+                      </h2>
+                      {renderProblemActions?.(problem)}
+                    </div>
+                  ) : null}
+                  <ContentBlocks
+                    blocks={problem.blocks}
+                    path={`problem-${problem.ordinal}`}
+                    problem={problem}
+                    {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+                    {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+                    {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+                  />
+                  {renderAfterProblem?.(problem)}
+                </section>
                 <ContentBlocks
-                  blocks={problem.preambleBlocks ?? []}
-                  path={`problem-${problem.ordinal}-preamble`}
+                  blocks={problem.trailingBlocks ?? []}
+                  path={`problem-${problem.ordinal}-trailing`}
                   {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
                 />
-                <div className="vmsh-problem-header">
-                  <h2 id={headingId}>
-                    {problem.taskReference
-                      ? `Задача ${problem.taskReference}.`
-                      : (problem.sourceItem ?? `Задача ${problem.ordinal}`)}
-                    {problem.title ? <span>«{problem.title}»</span> : null}
-                  </h2>
-                  {renderProblemActions?.(problem)}
-                </div>
-                <ContentBlocks
-                  blocks={problem.blocks}
-                  path={`problem-${problem.ordinal}`}
-                  problem={problem}
-                  {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
-                  {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
-                  {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-                />
-                {renderAfterProblem?.(problem)}
-              </section>
-              <ContentBlocks
-                blocks={problem.trailingBlocks ?? []}
-                path={`problem-${problem.ordinal}-trailing`}
-                {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-              />
-            </Fragment>
-          )
-        })}
-      </MathDocument>
+              </Fragment>
+            )
+          })}
+        </MathDocument>
+      </HideMaterialHeadings.Provider>
     </FigureLoadingContext.Provider>
   )
 }

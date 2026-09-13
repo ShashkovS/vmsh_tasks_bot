@@ -277,8 +277,15 @@ def _student_problem_payload(
         "type": problem_type,
         "answerType": problem.answer_type,
         "materials": {
-            "hint": {"status": problem.hint_state},
-            "solution": {"status": problem.solution_state},
+            "hint": {
+                "status": problem.hint_state,
+                "confirmationRequired": problem.hint_confirmation_required,
+                "publicationId": problem.hint_publication_id,
+            },
+            "solution": {
+                "status": problem.solution_state,
+                "publicationId": problem.solution_publication_id,
+            },
         },
         "status": problem.status,
         "verdict": (

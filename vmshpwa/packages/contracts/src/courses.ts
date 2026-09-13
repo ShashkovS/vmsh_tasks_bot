@@ -233,7 +233,10 @@ export const studentProblemMaterialStatusSchema = z.enum(['unavailable', 'availa
 export type StudentProblemMaterialStatus = z.infer<typeof studentProblemMaterialStatusSchema>
 
 const studentProblemMaterialSchema = z
-  .object({ status: studentProblemMaterialStatusSchema })
+  .object({
+    status: studentProblemMaterialStatusSchema,
+    publicationId: publicIdSchema.nullable().optional(),
+  })
   .strip()
 
 export const legacyVerdictIdSchema = z.union([
@@ -272,7 +275,7 @@ export const studentProblemSummarySchema = z
     answerType: z.number().int().positive().max(99).nullable(),
     materials: z
       .object({
-        hint: studentProblemMaterialSchema,
+        hint: studentProblemMaterialSchema.extend({ confirmationRequired: z.boolean().optional() }),
         solution: studentProblemMaterialSchema,
       })
       .strip(),

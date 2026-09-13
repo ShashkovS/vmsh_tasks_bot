@@ -310,12 +310,9 @@
   content: '';
 }
 
-.vmsh-student-sheet > div {
-  line-height: 1.45;
-}
-
-.vmsh-student-sheet .vmsh-problem {
-  margin-block: 2.25rem 1.25rem;
+/* Inline learning material is already labelled by WorksheetMaterials. */
+.vmsh-material-reveal .vmsh-problem {
+  margin-block: 0.5rem;
 }
 
 .vmsh-problem-header {

@@ -22,7 +22,7 @@ import {
 } from '@vmsh/app-shell'
 import {
   ContentNetworkError,
-  SemanticMathDocument,
+  WorksheetDocument,
   createContentApiClient,
   usePublishedContentQuery,
 } from '@vmsh/content'
@@ -266,9 +266,7 @@ export function StudentLessonFeedItem({
         </p>
       </CardHeader>
       <CardContent className="p-0">
-        <SemanticMathDocument
-          imageLoading="eager"
-          className="vmsh-student-feed-sheet px-5 py-6 sm:px-10 sm:py-8"
+        <WorksheetDocument
           document={contentQuery.data.document}
           renderAfterSubpart={(documentProblem, label) => {
             const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)

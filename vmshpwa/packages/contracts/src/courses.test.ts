@@ -21,6 +21,7 @@ import {
   studentLessonSummarySchema,
   studentProblemContractFixtureSchema,
   studentProblemListResponseSchema,
+  studentProblemSummarySchema,
   studentCourseAccessResponseSchema,
   type CourseInvalidFixtureTarget,
 } from './courses'
@@ -249,5 +250,24 @@ describe('Phase-1 course access contracts', () => {
         fixtureVersion: 2,
       }).success,
     ).toBe(false)
+  })
+})
+
+it('distinguishes lifetime hint consent from the current publication audit', () => {
+  const problem =
+    studentProblemContractFixtureSchema.parse(studentProblemsFixture).response.problems[0]!
+  const older = studentProblemSummarySchema.parse(problem)
+  expect(older.materials.hint.confirmationRequired).toBeUndefined()
+  const updated = studentProblemSummarySchema.parse({
+    ...problem,
+    materials: {
+      ...problem.materials,
+      hint: { status: 'available', confirmationRequired: false, publicationId: 'lp-new' },
+    },
+  })
+  expect(updated.materials.hint).toEqual({
+    status: 'available',
+    confirmationRequired: false,
+    publicationId: 'lp-new',
   })
 })

@@ -303,3 +303,12 @@ Proof:
 ## Task interaction polish
 
 Implemented [full references and worksheet interaction corrections](../../docs/task-interaction-polish.md); [verification and screenshots](../../../pwa_tests/reports/task-interaction-polish/README.md) cover delayed sending, mobile input, closed answers and worksheet return. Existing task identities, drafts and print behavior are preserved.
+
+
+## Единый листок и просмотры — 2026-09-13, реализовано локально
+
+См. [решение](../../docs/worksheet-materials.md). Общие бумага/спойлеры, подтверждение
+один раз на задачу с отдельным аудитом каждой публикации, ученическое Staff-превью.
+Проверено: 36 unit, 4 backend, 15 browser и 6 E2E в Chromium/Firefox/WebKit;
+320/390/1280 px, обе темы, печать, typecheck, production build. Снимки и известные
+baseline-падения старых Staff-тестов описаны в отчёте. Миграций нет.

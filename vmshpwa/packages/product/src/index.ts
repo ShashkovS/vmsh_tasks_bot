@@ -66,3 +66,5 @@ export * from './notification-event-card'
 export * from './oral-admission'
 export * from './oral-result-form'
 export * from './content-update-marker'
+
+export { WorksheetMaterials, type WorksheetMaterial } from './worksheet-materials'

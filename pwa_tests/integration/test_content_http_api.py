@@ -3775,7 +3775,8 @@ async def test_student_reveal_uses_resolved_material_match_without_duplicate_met
     problems = (await problem_list.json())["problems"]
     problem_public_id = problems[0]["problemId"]
     assert problem_public_id.startswith("p-")
-    assert problems[0]["materials"]["hint"] == {"status": "available"}
+    assert problems[0]["materials"]["hint"]["status"] == "available"
+    assert problems[0]["materials"]["hint"]["confirmationRequired"] is True
 
     revealed = await _student_reveal(
         fixture,
@@ -4335,8 +4336,8 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
     problem_list = await problem_list_response.json()
     problem_id = problem_list["problems"][0]["problemId"]
     assert problem_list["problems"][0]["materials"] == {
-        "hint": {"status": "available"},
-        "solution": {"status": "unavailable"},
+        "hint": {"status": "available", "confirmationRequired": True, "publicationId": (await published_hint.json())["publicationId"]},
+        "solution": {"status": "unavailable", "publicationId": None},
     }
     unpublished_solution_reveal = await _student_reveal(
         fixture,
@@ -4387,7 +4388,7 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
     )
     assert (await problem_list_after_reveal.json())["problems"][0]["materials"][
         "hint"
-    ] == {"status": "revealed"}
+    ] == {"status": "revealed", "confirmationRequired": False, "publicationId": hint_payload["publicationId"]}
 
     family = await fixture.client.get(
         f"/family/api/v1/children/u-903101/group-lessons/"
@@ -4469,6 +4470,32 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
         "revisions": [{"actor": ADMIN_USER_ID}],
         "publications": [{"actor": ADMIN_USER_ID}],
     }
+
+
+    # A replaced publication needs its own audit, but not another consent.
+    old_publication = await published_hint.json()
+    new_hint, _ = await _upload_and_compile(
+        fixture, group_lesson=fixture.group_lesson_a, kind="hint",
+        filename="lesson/hint-new.tex", source=source.replace("ПОДСКАЗКА_ТОЛЬКО", "НОВАЯ_ПОДСКАЗКА"),
+    )
+    replacement = await _publish(
+        fixture, group_lesson=fixture.group_lesson_a, kind="hint",
+        revision_id=new_hint["revisionId"], expected_id=old_publication["publicationId"],
+        expected_version=old_publication["version"], if_match=published_hint.headers["ETag"],
+    )
+    assert replacement.status == 201, await replacement.text()
+    updated_list = await fixture.client.get(
+        "/student/api/v1/courses/c-1/lessons/" f"{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"), headers=_headers(),
+    )
+    assert (await updated_list.json())["problems"][0]["materials"]["hint"] == {
+        "status": "available", "confirmationRequired": False, "publicationId": (await replacement.json())["publicationId"],
+    }
+    new_reveal = await _student_reveal(fixture, group_lesson=fixture.group_lesson_a, problem_id=problem_id, kind="hint")
+    new_payload = await new_reveal.json()
+    assert new_payload["firstReveal"] is True
+    assert new_payload["publicationId"] != hint_payload["publicationId"]
+    assert "НОВАЯ_ПОДСКАЗКА" in json.dumps(new_payload, ensure_ascii=False)
 
 
 async def test_publish_current_conflict_and_exact_revision_rollback(

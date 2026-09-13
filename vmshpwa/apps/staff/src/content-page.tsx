@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, FileCode2, RefreshCw, Send, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -10,7 +11,6 @@ import {
   useAuthentication,
 } from '@vmsh/app-shell'
 import {
-  SemanticMathDocument,
   TelegramMathHtml,
   createContentApiClient,
   type ContentApiClient,
@@ -24,6 +24,7 @@ import {
 } from '@vmsh/content'
 import {
   ApiResponseError,
+  contentQueryKeys,
   contentAssetsMissingDetailsSchema,
   localPublicationTimeSchema,
   staffContentRevisionSchema,
@@ -39,6 +40,7 @@ import {
   type WebContentDocument,
 } from '@vmsh/contracts'
 import { LatexUpload } from '@vmsh/product'
+import { StaffWorksheetPreview, FigureScaleTools } from './staff-worksheet-preview'
 import {
   Alert,
   AlertContent,
@@ -97,6 +99,9 @@ interface MaterialWorkflowState {
   processingMessage: string | undefined
   revisions: VersionedRevision[]
   invalidRevision: StaffContentRevision | undefined
+  hintDocument: WebContentDocument | undefined
+  solutionDocument: WebContentDocument | undefined
+  conditionDocument: WebContentDocument | undefined
   webDocument: WebContentDocument | undefined
   telegramHtml: string | undefined
   pdfPreview: StaffPdfContentPreview | undefined
@@ -191,6 +196,9 @@ function initialMaterialState(history?: StaffContentMaterialHistory): MaterialWo
     processingMessage: undefined,
     revisions,
     invalidRevision: undefined,
+    hintDocument: undefined,
+    solutionDocument: undefined,
+    conditionDocument: undefined,
     webDocument: undefined,
     telegramHtml: undefined,
     pdfPreview: undefined,
@@ -240,7 +248,8 @@ function errorMessage(error: unknown): string {
     (error.code === 'asset_conversion_failed' || error.code === 'content_assets_unavailable')
   ) {
     const details = error.details as Record<string, unknown> | undefined
-    const logicalAsset = typeof details?.logicalAsset === 'string' ? details.logicalAsset : undefined
+    const logicalAsset =
+      typeof details?.logicalAsset === 'string' ? details.logicalAsset : undefined
     const capability = typeof details?.capability === 'string' ? details.capability : undefined
     const detail = typeof details?.detail === 'string' ? details.detail : undefined
     const subject = logicalAsset ? `Рисунок TikZ ${logicalAsset}` : 'Рисунок TikZ'
@@ -308,35 +317,6 @@ function revisionLabel(revision: StaffContentRevision, timezone: BusinessTimezon
   return `Версия ${revision.revisionNumber} · ${revision.logicalFilename} · ${formatInBusinessTimezone(revision.uploadedAt, timezone)}`
 }
 
-function hintPreviewWithConditions(
-  condition: WebContentDocument,
-  hint: WebContentDocument,
-): WebContentDocument {
-  const hints = new Map(hint.problems.map((problem) => [problem.ordinal, problem]))
-  return {
-    ...hint,
-    title: condition.title,
-    introduction: condition.introduction,
-    problems: condition.problems.map((problem) => {
-      const matchingHint = hints.get(problem.ordinal)
-      return {
-        ...problem,
-        blocks: matchingHint
-          ? [
-              ...problem.blocks,
-              {
-                type: 'callout' as const,
-                kind: 'note' as const,
-                title: 'Подсказка',
-                blocks: matchingHint.blocks,
-              },
-            ]
-          : problem.blocks,
-      }
-    }),
-  }
-}
-
 function MaterialWorkflowCard({
   client,
   draftNamespace,
@@ -344,6 +324,8 @@ function MaterialWorkflowCard({
   history,
   kind,
   conditionRevisionId,
+  publishedHintRevisionId,
+  publishedSolutionRevisionId,
   businessTimezone,
   onConflict,
 }: {
@@ -353,10 +335,17 @@ function MaterialWorkflowCard({
   history: StaffContentMaterialHistory
   kind: ContentMaterialKind
   conditionRevisionId?: string
+  publishedHintRevisionId?: string
+  publishedSolutionRevisionId?: string
   businessTimezone: BusinessTimezone
   onConflict: () => Promise<unknown>
 }) {
   const [state, setState] = useState<MaterialWorkflowState>(() => initialMaterialState(history))
+  const previewWindow = useQuery({
+    queryKey: contentQueryKeys.lessonWindow(groupLessonId),
+    queryFn: () => client.lessonWindow!(groupLessonId),
+    enabled: typeof client.lessonWindow === 'function',
+  })
   const [confirmation, setConfirmation] = useState<ConfirmationAction | null>(null)
   // Button disabled state is applied on the next React render. Keep one
   // synchronous guard too: otherwise a double click can recompile a revision
@@ -467,6 +456,20 @@ function MaterialWorkflowCard({
     })
   }
 
+  const supplementalPreviews = async () => {
+    const read = async (revisionId: string | undefined) => {
+      if (!revisionId) return undefined
+      const result = await client.preview(revisionId, 'web')
+      if (result.kind !== 'web') throw new Error('Несовместимый предпросмотр материала')
+      return result.document
+    }
+    const [hintDocument, solutionDocument] = await Promise.all([
+      read(kind === 'hint' ? undefined : publishedHintRevisionId),
+      read(kind === 'solution' ? undefined : publishedSolutionRevisionId),
+    ])
+    return { hintDocument, solutionDocument }
+  }
+
   const inspectCompiledRevision = async (revisionId: string) => {
     const [inspected, webPreview, telegramPreview, pdf, conditionWeb, conditionTelegram] =
       await Promise.all([
@@ -474,7 +477,7 @@ function MaterialWorkflowCard({
         client.preview(revisionId, 'web'),
         client.preview(revisionId, 'telegram'),
         optionalPdfPreview(client, revisionId),
-        kind === 'hint' && conditionRevisionId
+        kind !== 'condition' && conditionRevisionId
           ? client.preview(conditionRevisionId, 'web')
           : Promise.resolve(undefined),
         kind === 'hint' && conditionRevisionId
@@ -484,8 +487,10 @@ function MaterialWorkflowCard({
     if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
       throw new Error('Сервер вернул несовместимые preview')
     }
+    const supplementary = await supplementalPreviews()
     setState((current) => ({
       ...current,
+      ...supplementary,
       phase: 'ready',
       processingMessage: undefined,
       revisions: [
@@ -496,10 +501,8 @@ function MaterialWorkflowCard({
       ].sort((left, right) => left.data.revisionNumber - right.data.revisionNumber),
       selectedRevisionId: inspected.data.revisionId,
       reviewReadyRevisionId: undefined,
-      webDocument:
-        kind === 'hint' && conditionWeb?.kind === 'web'
-          ? hintPreviewWithConditions(conditionWeb.document, webPreview.document)
-          : webPreview.document,
+      webDocument: webPreview.document,
+      conditionDocument: conditionWeb?.kind === 'web' ? conditionWeb.document : undefined,
       telegramHtml:
         kind === 'hint' && conditionTelegram?.kind === 'telegram'
           ? `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
@@ -515,10 +518,7 @@ function MaterialWorkflowCard({
     }))
   }
 
-  const compileStoredRevision = async (
-    revision: VersionedRevision,
-    refreshedOnce = false,
-  ) => {
+  const compileStoredRevision = async (revision: VersionedRevision, refreshedOnce = false) => {
     patchState({
       phase: 'processing',
       processingMessage: 'Проверяем LaTeX-файл…',
@@ -655,7 +655,9 @@ function MaterialWorkflowCard({
       const stableFile = await stableBrowserFile(state.file)
       const sourceText = await stableFile.text()
       if (/\\(?:begin\s*\{tikzpicture\}|tikz\b)/u.test(sourceText)) {
-        patchState({ processingMessage: 'Готовим рисунки из TikZ. Это может занять немного времени…' })
+        patchState({
+          processingMessage: 'Готовим рисунки из TikZ. Это может занять немного времени…',
+        })
       } else {
         patchState({ processingMessage: 'Загружаем и проверяем LaTeX-файл…' })
       }
@@ -723,7 +725,7 @@ function MaterialWorkflowCard({
           client.preview(selectedRevision.data.revisionId, 'web'),
           client.preview(selectedRevision.data.revisionId, 'telegram'),
           optionalPdfPreview(client, selectedRevision.data.revisionId),
-          kind === 'hint' && conditionRevisionId
+          kind !== 'condition' && conditionRevisionId
             ? client.preview(conditionRevisionId, 'web')
             : Promise.resolve(undefined),
           kind === 'hint' && conditionRevisionId
@@ -734,12 +736,12 @@ function MaterialWorkflowCard({
       if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
         throw new Error('Сервер вернул несовместимые preview')
       }
+      const supplementary = await supplementalPreviews()
       patchState({
+        ...supplementary,
         previewLoading: false,
-        webDocument:
-          kind === 'hint' && conditionWeb?.kind === 'web'
-            ? hintPreviewWithConditions(conditionWeb.document, webPreview.document)
-            : webPreview.document,
+        webDocument: webPreview.document,
+        conditionDocument: conditionWeb?.kind === 'web' ? conditionWeb.document : undefined,
         telegramHtml:
           kind === 'hint' && conditionTelegram?.kind === 'telegram'
             ? `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
@@ -944,7 +946,10 @@ function MaterialWorkflowCard({
         </div>
 
         {state.phase === 'processing' && state.processingMessage ? (
-          <p className="inline-flex items-center gap-2 text-small text-muted-foreground" role="status">
+          <p
+            className="inline-flex items-center gap-2 text-small text-muted-foreground"
+            role="status"
+          >
             <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
             {state.processingMessage}
           </p>
@@ -1116,7 +1121,9 @@ function MaterialWorkflowCard({
                     <pre className="mt-1 max-h-80 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
                       {state.conversionDebug.generatedTex}
                     </pre>
-                    <p className="mt-3 text-small font-medium">Вывод {state.conversionDebug.stage}</p>
+                    <p className="mt-3 text-small font-medium">
+                      Вывод {state.conversionDebug.stage}
+                    </p>
                     <pre className="mt-1 max-h-64 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
                       {state.conversionDebug.toolOutput}
                     </pre>
@@ -1152,16 +1159,21 @@ function MaterialWorkflowCard({
                 <TabsTrigger value="pdf">PDF</TabsTrigger>
               </TabsList>
               <TabsContent className="min-w-0" value="pwa">
-                <div className="mx-auto max-w-[112rem] rounded-md border border-border bg-surface p-4 sm:p-6">
-                  <SemanticMathDocument
-                    document={state.webDocument}
-                    {...(
-                      kind === 'condition' && client.updateFigureScale
-                        ? { onFigureScaleCycle: updateFigureScale }
-                        : {}
-                    )}
-                  />
-                </div>
+                <StaffWorksheetPreview
+                  key={`${state.previewRevisionId}:${kind}`}
+                  document={state.webDocument}
+                  condition={state.conditionDocument}
+                  hintDocument={state.hintDocument}
+                  solutionDocument={state.solutionDocument}
+                  submissionClosed={
+                    previewWindow.data
+                      ? Date.now() >= Date.parse(previewWindow.data.data.submissionClosesAt)
+                      : kind === 'solution'
+                  }
+                />
+                {kind === 'condition' && client.updateFigureScale ? (
+                  <FigureScaleTools document={state.webDocument} onScale={updateFigureScale} />
+                ) : null}
               </TabsContent>
               <TabsContent className="min-w-0" value="telegram">
                 <div className="mx-auto max-w-[42rem] rounded-md border border-border bg-surface p-4 sm:p-5">
@@ -1732,6 +1744,10 @@ export function StaffContentWorkspace({
     )
   }
 
+  const publishedHintRevisionId = materialHistoryFor(history.data.materials, 'hint')
+    .currentPublished?.revisionId
+  const publishedSolutionRevisionId = materialHistoryFor(history.data.materials, 'solution')
+    .currentPublished?.revisionId
   const conditionRevisionId = materialHistoryFor(history.data.materials, 'condition')
     .revisions.filter(
       (revision) => revision.status === 'ready' && revision.missingAssets.length === 0,
@@ -1767,6 +1783,8 @@ export function StaffContentWorkspace({
             client={client}
             draftNamespace={draftNamespace}
             businessTimezone={history.data.businessTimezone}
+            {...(publishedHintRevisionId ? { publishedHintRevisionId } : {})}
+            {...(publishedSolutionRevisionId ? { publishedSolutionRevisionId } : {})}
             {...(conditionRevisionId ? { conditionRevisionId } : {})}
             groupLessonId={groupLessonId}
             history={materialHistoryFor(history.data.materials, kind)}

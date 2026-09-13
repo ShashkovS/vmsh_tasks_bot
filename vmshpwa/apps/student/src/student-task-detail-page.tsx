@@ -1,8 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { backToWorksheet } from './worksheet-return'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, ChevronDown, ChevronUp, KeyRound, Lightbulb, PencilLine } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, PencilLine } from 'lucide-react'
 
 import {
   CourseNetworkError,
@@ -16,12 +17,14 @@ import {
 import { ContentNetworkError, SemanticMathDocument, createContentApiClient } from '@vmsh/content'
 import {
   ApiResponseError,
+  courseQueryKeys,
   type StudentProblemReveal,
   type StudentProblemSummary,
   type StudentRevealKind,
 } from '@vmsh/contracts'
 import { useOfflineDatabase, type VmshOfflineDatabase } from '@vmsh/offline'
 import { Badge, Button } from '@vmsh/ui'
+import { WorksheetMaterials } from '@vmsh/product'
 
 import { StudentCollapseAction } from './student-collapse-action'
 import { StudentPublishedContentPage } from './content-page'
@@ -60,7 +63,7 @@ export function StudentTaskMaterials({
     throw new Error('Student material reveal requires a Student principal')
   }
   const database = useOfflineDatabase()
-  const cacheIdentity = `${principal.accountId}:${groupLessonId}:${problem.problemId}`
+  const cacheIdentity = `${principal.accountId}:${groupLessonId}:${problem.problemId}:${problem.materials.hint.publicationId ?? 'legacy'}:${problem.materials.solution.publicationId ?? 'legacy'}`
   const client = useMemo(
     () =>
       createContentApiClient(authentication.client.runtime, {
@@ -101,7 +104,21 @@ export function StudentTaskMaterials({
         : Promise.resolve(null),
     ]).then(
       ([hint, solution]) => {
-        if (active) setCachedMaterials({ identity: cacheIdentity, ready: true, hint, solution })
+        if (active)
+          setCachedMaterials({
+            identity: cacheIdentity,
+            ready: true,
+            hint:
+              problem.materials.hint.publicationId &&
+              hint?.publicationId !== problem.materials.hint.publicationId
+                ? null
+                : hint,
+            solution:
+              problem.materials.solution.publicationId &&
+              solution?.publicationId !== problem.materials.solution.publicationId
+                ? null
+                : solution,
+          })
       },
       () => {
         if (active)
@@ -116,6 +133,8 @@ export function StudentTaskMaterials({
     database,
     groupLessonId,
     principal.accountId,
+    problem.materials.hint.publicationId,
+    problem.materials.solution.publicationId,
     problem.materials.hint.status,
     problem.materials.solution.status,
     problem.problemId,
@@ -249,120 +268,48 @@ function StudentTaskMaterialsReady({
   problem: StudentProblemSummary
   compact: boolean
 }) {
-  const [hint, setHint] = useState<StudentProblemReveal | null>(initialHint)
-  const [solution, setSolution] = useState<StudentProblemReveal | null>(initialSolution)
-  const [openKind, setOpenKind] = useState<StudentRevealKind | null>(null)
-  const [loadingKind, setLoadingKind] = useState<StudentRevealKind | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const reveal = async (kind: StudentRevealKind) => {
-    const existing = kind === 'hint' ? hint : solution
+  const queryClient = useQueryClient()
+  const load = async (kind: StudentRevealKind) => {
     const response =
-      existing ??
+      (kind === 'hint' ? initialHint : initialSolution) ??
       (await revealStudentProblemMaterialWithOfflineCache(
         client,
         database,
         ownerId,
-        {
-          groupLessonId,
-          problemId: problem.problemId,
-          kind,
-        },
+        { groupLessonId, problemId: problem.problemId, kind },
         problem.materials[kind].status === 'revealed',
       ))
     if (
       response.groupLessonId !== groupLessonId ||
       response.problemId !== problem.problemId ||
-      response.kind !== kind
+      response.kind !== kind ||
+      (problem.materials[kind].publicationId != null &&
+        response.publicationId !== problem.materials[kind].publicationId)
     ) {
       throw new Error('Reveal response does not match the requested task')
     }
-    if (kind === 'hint') setHint(response)
-    else setSolution(response)
+    void queryClient.invalidateQueries({
+      queryKey: courseQueryKeys.all({ audience: 'student', accountId: ownerId }),
+    })
+    return (
+      <SemanticMathDocument document={response.document} hideProblemHeadings imageLoading="eager" />
+    )
   }
-
-  const toggle = async (kind: StudentRevealKind) => {
-    if (openKind === kind) {
-      setOpenKind(null)
-      return
-    }
-    setError(null)
-    setOpenKind(kind)
-    if ((kind === 'hint' ? hint : solution) !== null) return
-    setLoadingKind(kind)
-    try {
-      await reveal(kind)
-    } catch {
-      setError('Не удалось открыть материал. Проверьте соединение и повторите попытку.')
-    } finally {
-      setLoadingKind(null)
-    }
-  }
-
-  if (
-    problem.materials.hint.status === 'unavailable' &&
-    problem.materials.solution.status === 'unavailable'
-  ) {
-    return null
-  }
-
   return (
-    <section
-      aria-label="Подсказка и решение"
-      className={compact ? 'contents font-sans' : 'mt-4 font-sans'}
-    >
-      <div className={compact ? 'contents' : 'flex flex-wrap gap-1.5'}>
-        {problem.materials.hint.status === 'unavailable' ? null : (
-          <Button onClick={() => void toggle('hint')} size="sm" variant="ghost">
-            <Lightbulb aria-hidden="true" className="size-4" />
-            Подсказка
-            {openKind === 'hint' ? (
-              <ChevronUp aria-hidden="true" />
-            ) : (
-              <ChevronDown aria-hidden="true" />
-            )}
-          </Button>
-        )}
-        {problem.materials.solution.status === 'unavailable' ? null : (
-          <Button onClick={() => void toggle('solution')} size="sm" variant="ghost">
-            <KeyRound aria-hidden="true" className="size-4" />
-            Решение
-            {openKind === 'solution' ? (
-              <ChevronUp aria-hidden="true" />
-            ) : (
-              <ChevronDown aria-hidden="true" />
-            )}
-          </Button>
-        )}
-      </div>
-      {error ? (
-        <p data-print-hide className="order-3 mt-2 w-full basis-full text-small text-danger">
-          {error}
-        </p>
-      ) : null}
-      {loadingKind !== null && loadingKind === openKind ? (
-        <p
-          data-print-hide
-          className="order-3 mt-2 w-full basis-full text-small text-muted-foreground"
-        >
-          Загружаем…
-        </p>
-      ) : null}
-      {openKind === 'hint' && hint ? (
-        <div className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3">
-          <span className="vmsh-print-material-label">Подсказка</span>
-          <SemanticMathDocument document={hint.document} imageLoading="eager" />
-          <StudentCollapseAction label="Скрыть подсказку" onClick={() => setOpenKind(null)} />
-        </div>
-      ) : null}
-      {openKind === 'solution' && solution ? (
-        <div className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3">
-          <span className="vmsh-print-material-label">Решение</span>
-          <SemanticMathDocument document={solution.document} imageLoading="eager" />
-          <StudentCollapseAction label="Скрыть решение" onClick={() => setOpenKind(null)} />
-        </div>
-      ) : null}
-    </section>
+    <WorksheetMaterials
+      compact={compact}
+      hint={{
+        available: problem.materials.hint.status !== 'unavailable',
+        confirmationRequired:
+          problem.materials.hint.confirmationRequired ??
+          problem.materials.hint.status !== 'revealed',
+        load: () => load('hint'),
+      }}
+      solution={{
+        available: problem.materials.solution.status !== 'unavailable',
+        load: () => load('solution'),
+      }}
+    />
   )
 }
 

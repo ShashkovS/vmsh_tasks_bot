@@ -45,7 +45,15 @@ describe('browser math content renderer', () => {
     expect(
       screen.getByRole('heading', { name: 'Задача 1н.11. «Никто никого не бьёт»' }),
     ).not.toBeNull()
-    expect(screen.getByText('Задача 1н.11а.', { exact: false })).not.toBeNull()
+    expect(screen.getByText('1н.11а.', { exact: false })).not.toBeNull()
+  })
+
+  it('omits headings and task references in inline materials while preserving content', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    render(<SemanticMathDocument document={document} hideProblemHeadings />)
+    expect(screen.queryByRole('heading')).toBeNull()
+    expect(screen.queryByText('Загаданное число')).toBeNull()
+    expect(screen.getByRole('table')).not.toBeNull()
   })
 
   it('renders a runtime-validated semantic document with KaTeX and a responsive table', async () => {

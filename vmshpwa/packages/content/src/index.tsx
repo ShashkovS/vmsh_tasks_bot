@@ -154,3 +154,5 @@ export interface ContentArtifact {
   assetIds: string[]
   generatedAt: string
 }
+
+export { WorksheetDocument } from './worksheet-document'
