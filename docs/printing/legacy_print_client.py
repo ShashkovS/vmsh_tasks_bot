@@ -111,7 +111,7 @@ def download_portal_conduit(event_id, lesson, filename=DEFAULT_SNAPSHOT, token=N
 def download_portal_lesson_results(
     event_id, lesson, filename=DEFAULT_AFTER_LESSON_SNAPSHOT, token=None
 ):
-    """Download the current lesson matrix used by a22 and a23."""
+    """Download the completed lesson matrix used by a22 and a23."""
     snapshot, headers = _get(
         "/events/%s/lesson-results?lesson=%d" % (quote(event_id, safe=""), lesson),
         token,
@@ -200,7 +200,7 @@ def refresh_portal_lesson_results(
     token=None,
     event_id=None,
 ):
-    """Refresh the post-lesson snapshot once before generating artifacts."""
+    """Use this lesson's event to refresh one completed-lesson snapshot."""
     event_id = event_id or resolve_portal_print_event(lesson, token)
     download_portal_lesson_results(event_id, lesson, filename, token)
     return load_portal_lesson_results(lesson, filename)

@@ -217,7 +217,9 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
         history_url, headers=headers(**{"If-Match": history_etag})
     )
     assert same_history.status == 200
-    lesson_results_url = url.replace("/pupils", "/lesson-results")
+    lesson_results_url = url.replace(
+        "/pupils?lesson=41", "/lesson-results?lesson=40"
+    )
     lesson_results_response = await client.get(
         lesson_results_url, headers=headers()
     )
@@ -225,7 +227,7 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
     assert await lesson_results_response.json() == {
         "schemaVersion": 1,
         "courseId": "c-1",
-        "lesson": 41,
+        "lesson": 40,
         "pupils": [
             {
                 "id": 1,
@@ -238,8 +240,8 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
         ],
         "problems": [
             {
-                "id": 9005,
-                "lesson": 41,
+                "id": 9001,
+                "lesson": 40,
                 "group_id": "assignment-n",
                 "level": "н",
                 "prob": 1,
@@ -247,25 +249,25 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
                 "prob_type": 2,
             },
             {
-                "id": 9006,
-                "lesson": 41,
+                "id": 9003,
+                "lesson": 40,
                 "group_id": "assignment-n",
                 "level": "н",
                 "prob": 2,
                 "item": "",
-                "prob_type": 1,
+                "prob_type": 2,
             },
         ],
         "results": [
             {
                 "student_id": 1,
-                "problem_id": 9005,
-                "max_verdict": 1.0,
-                "score": 1.0,
+                "problem_id": 9001,
+                "max_verdict": 0.7,
+                "score": 0.7,
             },
             {
                 "student_id": 1,
-                "problem_id": 9006,
+                "problem_id": 9003,
                 "max_verdict": None,
                 "score": 0.0,
             },

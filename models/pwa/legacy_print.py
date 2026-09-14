@@ -161,9 +161,7 @@ def export_print_lesson_results(
         if event["status"] == "cancelled":
             raise LegacyPrintConflict("event_cancelled")
         groups = data["groups"]
-        if not groups or {int(group["lesson_number"]) for group in groups} != {
-            lesson
-        }:
+        if not groups:
             raise LegacyPrintConflict("lesson_mismatch")
         course_ids = {int(group["course_id"]) for group in groups}
         if len(course_ids) != 1:
@@ -177,7 +175,11 @@ def export_print_lesson_results(
         course_id = course_ids.pop()
         course_public_id = str(groups[0]["course_public_id"])
         group_ids = tuple(sorted(str(group["group_id"]) for group in groups))
-        pupils = list_print_course_pupils(connection, course_id)
+        pupils = [
+            pupil
+            for pupil in list_print_course_pupils(connection, course_id)
+            if str(pupil["group_id"]) in group_ids
+        ]
         seen_logins: set[str] = set()
         for pupil in pupils:
             login = pupil["login"]

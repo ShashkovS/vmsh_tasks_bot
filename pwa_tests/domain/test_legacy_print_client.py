@@ -172,7 +172,7 @@ def test_after_lesson_snapshot_adapts_mail_and_site_statistics(tmp_path, monkeyp
     payload = {
         "schemaVersion": 1,
         "courseId": "c-1",
-        "lesson": 4,
+        "lesson": 3,
         "pupils": [
             {
                 "id": 42,
@@ -186,7 +186,7 @@ def test_after_lesson_snapshot_adapts_mail_and_site_statistics(tmp_path, monkeyp
         "problems": [
             {
                 "id": 91,
-                "lesson": 4,
+                "lesson": 3,
                 "group_id": "group-n",
                 "level": "н",
                 "prob": 1,
@@ -195,7 +195,7 @@ def test_after_lesson_snapshot_adapts_mail_and_site_statistics(tmp_path, monkeyp
             },
             {
                 "id": 92,
-                "lesson": 4,
+                "lesson": 3,
                 "group_id": "group-n",
                 "level": "н",
                 "prob": 2,
@@ -221,12 +221,12 @@ def test_after_lesson_snapshot_adapts_mail_and_site_statistics(tmp_path, monkeyp
     }
 
     def fake_get(path, token=None):
-        assert path == "/events/event-one/lesson-results?lesson=4"
         assert token == "test-token"
+        assert path == "/events/event-one/lesson-results?lesson=3"
         return payload, {
             "ETag": '"lesson-digest"',
             "X-Print-Event": "event-one",
-            "X-Print-Lesson": "4",
+            "X-Print-Lesson": "3",
             "X-Print-Plan": "plan-one",
             "X-Print-Plan-Version": "2",
         }
@@ -234,13 +234,13 @@ def test_after_lesson_snapshot_adapts_mail_and_site_statistics(tmp_path, monkeyp
     monkeypatch.setattr(client, "_get", fake_get)
     filename = tmp_path / "portal-after-lesson.json"
     snapshot = client.refresh_portal_lesson_results(
-        4,
+        3,
         filename,
         token="test-token",
         event_id="event-one",
     )
     assert snapshot["eventId"] == "event-one"
-    assert client.get_portal_mail_pupils(4, filename) == {
+    assert client.get_portal_mail_pupils(3, filename) == {
         42: {
             "id": 42,
             "token": "student.login",
@@ -250,14 +250,14 @@ def test_after_lesson_snapshot_adapts_mail_and_site_statistics(tmp_path, monkeyp
             "key": "student.login\tИванов\tИван\tн",
         }
     }
-    assert client.get_portal_mail_problems(4, "н", filename)[91]["formatted"] == (
-        "04н.01а"
+    assert client.get_portal_mail_problems(3, "н", filename)[91]["formatted"] == (
+        "03н.01а"
     )
-    assert client.get_portal_mail_results(4, "н", filename) == {(42, 91): 0.7}
-    assert client.get_portal_recent_student_ids(4, filename) == {42}
-    assert client.get_portal_problem_statistics(4, filename) == {
-        "4н.1а": (1, 1),
-        "4н.2": (0, 1),
+    assert client.get_portal_mail_results(3, "н", filename) == {(42, 91): 0.7}
+    assert client.get_portal_recent_student_ids(3, filename) == {42}
+    assert client.get_portal_problem_statistics(3, filename) == {
+        "3н.1а": (1, 1),
+        "3н.2": (0, 1),
     }
 
 
