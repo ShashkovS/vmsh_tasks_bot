@@ -535,3 +535,10 @@ SemanticMathDocument и browser proof: условия и открытые уче
 
 Проверка завершена: три browser E2E, фактический PDF, Storybook, unit/runtime
 тесты и сборки прошли. [Отчёт](../../../pwa_tests/reports/worksheet-print/README.md).
+
+### Векторные шахматные фигуры, 14 сентября 2026
+
+[Контракт ChessBoard/ChessPiece](../../docs/tikz-chess.md) реализован общим
+TikZ extraction для условий, подсказок и решений: 12 нативных фигур, без PNG.
+99 тестов прошли, в том числе реальная компиляция и проверка масштаба.
+[Отчёт с SVG и снимками](../tikz-chess-report.md).

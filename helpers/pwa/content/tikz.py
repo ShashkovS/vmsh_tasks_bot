@@ -11,6 +11,8 @@ from __future__ import annotations
 import bisect
 import re
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 
 from .scanner import (
     CommandToken,
@@ -63,12 +65,16 @@ _CHESS_BOARD_CONTEXT = r"""
 }
 """.strip()
 
-_CHESS_PIECE_CONTEXT = r"""
-\newcommand{\ChessPiece}[3]{%
-  \draw (#2+0.5,#3+0.5) node
-    {\includegraphics[width=7mm,height=7mm,keepaspectratio]{#1}};
-}
-""".strip()
+
+@lru_cache(maxsize=1)
+def _chess_piece_context() -> str:
+    # Native vector contours, no fonts or raster dependencies; docs/tikz-chess.md.
+    return (
+        (Path(__file__).with_name("resources") / "chess-pieces.tex")
+        .read_text(encoding="utf-8")
+        .strip()
+    )
+
 
 _LEGACY_PART_CONTEXT = r"""
 \newcounter{vmshpart}
@@ -411,7 +417,7 @@ def _compose_source(
     if "\\ChessBoard" in raw_source and "\\newcommand{\\ChessBoard}" not in combined:
         compat.append(_CHESS_BOARD_CONTEXT)
     if "\\ChessPiece" in raw_source and "\\newcommand{\\ChessPiece}" not in combined:
-        compat.append(_CHESS_PIECE_CONTEXT)
+        compat.append(_chess_piece_context())
     # pdfLaTeX cannot reliably tokenize a UTF-8 Cyrillic control-sequence
     # name in the isolated document.  Preserve the legacy semantics while
     # compiling a portable ASCII command.  This transformation belongs only
