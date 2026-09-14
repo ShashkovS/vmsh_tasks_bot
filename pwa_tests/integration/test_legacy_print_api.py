@@ -59,7 +59,9 @@ async def print_api(tmp_path, aiohttp_client):
             "INSERT INTO problems "
             "(id, group_id, lesson, prob, item, title, prob_text, prob_type, synonyms) "
             "VALUES (9003, 'assignment-n', 40, 2, '', 'Без синонимов', '', 2, ''), "
-            "(9004, 'assignment-n', 39, 2, '', 'Другая задача без синонимов', '', 2, '')"
+            "(9004, 'assignment-n', 39, 2, '', 'Другая задача без синонимов', '', 2, ''), "
+            "(9005, 'assignment-n', 41, 1, '', 'Текущая задача', '', 2, ''), "
+            "(9006, 'assignment-n', 41, 2, '', 'Нерешённая задача', '', 1, '')"
         )
         connection.execute(
             "INSERT INTO results "
@@ -67,8 +69,9 @@ async def print_api(tmp_path, aiohttp_client):
             "VALUES (1, 9001, 'assignment-n', 40, 2, ?, 15, 2), "
             "(1, 9002, 'assignment-n', 39, 2, ?, 17, 2), "
             "(1, 9004, 'assignment-n', 39, 2, ?, 17, 2), "
+            "(1, 9005, 'assignment-n', 41, 2, ?, 17, 2), "
             "(98, 9001, 'assignment-n', 40, 2, ?, 17, 2)",
-            (NOW, NOW, NOW, NOW),
+            (NOW, NOW, NOW, NOW, NOW),
         )
         connection.execute(
             "INSERT INTO auth_accounts (audience, username, username_normalized, "
@@ -214,6 +217,61 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
         history_url, headers=headers(**{"If-Match": history_etag})
     )
     assert same_history.status == 200
+    lesson_results_url = url.replace("/pupils", "/lesson-results")
+    lesson_results_response = await client.get(
+        lesson_results_url, headers=headers()
+    )
+    assert lesson_results_response.status == 200, await lesson_results_response.text()
+    assert await lesson_results_response.json() == {
+        "schemaVersion": 1,
+        "courseId": "c-1",
+        "lesson": 41,
+        "pupils": [
+            {
+                "id": 1,
+                "login": "ivanov.ivan",
+                "surname": "Иванов",
+                "name": "Иван",
+                "group_id": "assignment-n",
+                "level": "н",
+            }
+        ],
+        "problems": [
+            {
+                "id": 9005,
+                "lesson": 41,
+                "group_id": "assignment-n",
+                "level": "н",
+                "prob": 1,
+                "item": "",
+                "prob_type": 2,
+            },
+            {
+                "id": 9006,
+                "lesson": 41,
+                "group_id": "assignment-n",
+                "level": "н",
+                "prob": 2,
+                "item": "",
+                "prob_type": 1,
+            },
+        ],
+        "results": [
+            {
+                "student_id": 1,
+                "problem_id": 9005,
+                "max_verdict": 1.0,
+                "score": 1.0,
+            },
+            {
+                "student_id": 1,
+                "problem_id": 9006,
+                "max_verdict": None,
+                "score": 0.0,
+            },
+        ],
+        "recentStudentIds": [1],
+    }
     listing = await client.get(PREFIX + "/events", headers=headers())
     assert listing.status == 200
     listed_events = (await listing.json())["events"]

@@ -1,14 +1,26 @@
 """Excel-shaped export of confirmed plans; docs/printing/legacy-api.md."""
 
+from collections import defaultdict
 import sqlite3
 
 from db_methods.pwa.classroom_assignments import list_eligible_students
+from db_methods.pwa.classroom_assignments import find_plan
+from db_methods.pwa.course_analytics import (
+    list_course_group_access_rows,
+    list_course_result_rows,
+)
 from db_methods.pwa.legacy_print import (
+    list_print_course_pupils,
     list_print_identities,
+    list_print_lesson_problems,
     list_print_previous_problems,
     list_print_previous_results,
 )
 from models.pwa.classroom_assignments import read_assignment_plan
+from models.pwa.course_analytics import (
+    _best_problem_scores,
+    calculate_course_lesson_metrics,
+)
 
 
 class LegacyPrintConflict(Exception):
@@ -131,6 +143,145 @@ def export_print_previous_results(
                 "lesson": previous_lesson,
                 "problems": problems,
                 "results": results,
+            },
+        )
+    finally:
+        connection.execute("ROLLBACK")
+
+
+def export_print_lesson_results(
+    connection: sqlite3.Connection, event_id: str, lesson: int
+):
+    """Export the post-lesson mail matrix and legacy-site statistics facts."""
+
+    connection.execute("BEGIN")
+    try:
+        data = read_assignment_plan(connection, event_id)
+        event = data["event"]
+        if event["status"] == "cancelled":
+            raise LegacyPrintConflict("event_cancelled")
+        groups = data["groups"]
+        if not groups or {int(group["lesson_number"]) for group in groups} != {
+            lesson
+        }:
+            raise LegacyPrintConflict("lesson_mismatch")
+        course_ids = {int(group["course_id"]) for group in groups}
+        if len(course_ids) != 1:
+            raise LegacyPrintConflict("multiple_courses")
+        if any(group["short_code"] not in {"н", "п", "э"} for group in groups):
+            raise LegacyPrintConflict("unsupported_level")
+        plan = find_plan(connection, int(event["id"]), ("confirmed",))
+        if plan is None:
+            raise LegacyPrintConflict("plan_not_confirmed")
+
+        course_id = course_ids.pop()
+        course_public_id = str(groups[0]["course_public_id"])
+        group_ids = tuple(sorted(str(group["group_id"]) for group in groups))
+        pupils = list_print_course_pupils(connection, course_id)
+        seen_logins: set[str] = set()
+        for pupil in pupils:
+            login = pupil["login"]
+            if (
+                not isinstance(login, str)
+                or not login.strip()
+                or login in seen_logins
+                or not str(pupil["surname"] or "").strip()
+                or not str(pupil["name"] or "").strip()
+            ):
+                raise LegacyPrintConflict("missing_or_duplicate_login")
+            seen_logins.add(login)
+
+        problems = list_print_lesson_problems(
+            connection, course_id=course_id, group_ids=group_ids, lesson=lesson
+        )
+        if not problems:
+            raise LegacyPrintConflict("lesson_has_no_problems")
+        target_keys = {str(problem["logical_problem_key"]) for problem in problems}
+        all_results = list_course_result_rows(connection, course_id=course_id)
+        current_results = [
+            row
+            for row in all_results
+            if int(row["lesson_number"]) == lesson
+            and str(row["logical_problem_key"]) in target_keys
+        ]
+        access = list_course_group_access_rows(connection, course_id=course_id)
+        metrics = calculate_course_lesson_metrics(problems, current_results, access)
+        active_pupil_ids = {int(pupil["id"]) for pupil in pupils}
+        selected_groups = {
+            int(metric["student_user_id"]): str(metric["group_id"])
+            for metric in metrics
+            if int(metric["lesson_number"]) == lesson
+            and int(metric["student_user_id"]) in active_pupil_ids
+            and str(metric["group_id"]) in group_ids
+        }
+
+        raw_weights: dict[tuple[int, int, str], float] = defaultdict(float)
+        for row in current_results:
+            key = (
+                int(row["student_user_id"]),
+                lesson,
+                str(row["logical_problem_key"]),
+            )
+            raw_weights[key] = max(raw_weights[key], float(row["verdict_weight"]))
+        scores, _ = _best_problem_scores(current_results)
+        problems_by_group: dict[str, list[dict]] = defaultdict(list)
+        for problem in problems:
+            problems_by_group[str(problem["group_id"])].append(problem)
+
+        result_matrix = []
+        for student_id, group_id in sorted(selected_groups.items()):
+            for problem in problems_by_group[group_id]:
+                key = (student_id, lesson, str(problem["logical_problem_key"]))
+                result_matrix.append(
+                    {
+                        "student_id": student_id,
+                        "problem_id": int(problem["problem_id"]),
+                        "max_verdict": raw_weights.get(key),
+                        "score": float(scores.get(key, 0.0)),
+                    }
+                )
+
+        recent_from = max(1, lesson - 3)
+        recent_student_ids = sorted(
+            {
+                int(row["student_user_id"])
+                for row in all_results
+                if recent_from <= int(row["lesson_number"]) <= lesson
+                and int(row["student_user_id"]) in active_pupil_ids
+            }
+        )
+        return (
+            event,
+            plan,
+            {
+                "schemaVersion": 1,
+                "courseId": course_public_id,
+                "lesson": lesson,
+                "pupils": [
+                    {
+                        "id": int(pupil["id"]),
+                        "login": pupil["login"],
+                        "surname": pupil["surname"],
+                        "name": pupil["name"],
+                        "group_id": pupil["group_id"],
+                        "level": pupil["level"],
+                    }
+                    for pupil in pupils
+                ],
+                "problems": [
+                    {
+                        "id": int(problem["problem_id"]),
+                        "lesson": int(problem["lesson_number"]),
+                        "group_id": problem["group_id"],
+                        "level": problem["level"],
+                        "prob": problem["prob"],
+                        "item": problem["item"],
+                        "prob_type": int(problem["problem_type"]),
+                    }
+                    for problem in problems
+                ],
+                "results": result_matrix,
+                "recentStudentIds": recent_student_ids,
             },
         )
     finally:

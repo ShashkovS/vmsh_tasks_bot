@@ -15,6 +15,7 @@ from models.pwa.auth import AuthAudience
 from models.pwa.classroom_assignments import ClassroomAssignmentNotFound
 from models.pwa.legacy_print import (
     LegacyPrintConflict,
+    export_print_lesson_results,
     export_print_previous_results,
     export_print_pupils,
 )
@@ -32,6 +33,7 @@ _MESSAGES = {
     "missing_or_duplicate_login": "У ученика нет уникального логина портала",
     "mixed_room": "В одной аудитории оказались разные группы",
     "missing_name": "Для печати нужны фамилия и имя каждого ученика",
+    "lesson_has_no_problems": "Для занятия не найдены задачи",
 }
 
 
@@ -162,3 +164,18 @@ async def previous_results(request):
         payload,
         extra_headers={"X-Print-Previous-Lesson": str(payload["lesson"])},
     )
+
+
+@routes.get(PREFIX + "/events/{event_id}/lesson-results")
+async def lesson_results(request):
+    factory = _authorize(request)
+    lesson = _lesson(request)
+    try:
+        event, plan, payload = await factory.run_read_async(
+            lambda connection: export_print_lesson_results(
+                connection, request.match_info["event_id"], int(lesson)
+            )
+        )
+    except (ClassroomAssignmentNotFound, LegacyPrintConflict) as error:
+        raise _export_error(error) from None
+    return _export_response(request, event, plan, lesson, payload)

@@ -42,6 +42,7 @@ Cookie входа в Staff не заменяет токен; этот токен
 GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events
 GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events/EVENT_ID/pupils?lesson=4
 GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events/EVENT_ID/previous-results?lesson=4
+GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events/EVENT_ID/lesson-results?lesson=4
 ```
 
 Первый endpoint возвращает до 100 последних неотменённых событий активного сезона:
@@ -157,6 +158,36 @@ PORTAL_PRINT_API_TOKEN = 'тот же отдельный секрет, что н
 относятся к одной версии плана, прежде чем заменить прежний снимок.
 Все последующие шаги печати читают **один и тот же снимок**, поэтому сборка не
 меняется посередине. Не добавлять этот файл и токен в git.
+
+После занятия `lesson-results` создаёт отдельный согласованный срез для `a22` и
+`a23`. Он не зависит от локальной копии SQLite и содержит активных учеников
+курса, задачи текущего занятия, активность за последние занятия и полную матрицу
+выбранного уровня. В каждой ячейке есть `max_verdict` для текста письма и `score`
+для групповой статистики; у нерешённой задачи `max_verdict` равен `null`, а
+`score` — нулю. Уровень ученика выбирается тем же алгоритмом, что текущая
+аналитика курса, с учётом разрешённых групп и настоящих групп синонимов.
+
+Копируемый `z_portal_print.py` сохраняет ответ атомарно в
+`portal-after-lesson.json` с правами `0600`. `a22` обновляет его один раз перед
+созданием почтовых workbook; `a23` обновляет перед FTP read-modify-write. Оба
+скрипта берут `cur_les` из `a00_dates.py`, а не из собственного старого
+присваивания. Адаптеры клиента заменяют прежние SQL-функции:
+
+```python
+from z_portal_print import (
+    get_portal_mail_problems,
+    get_portal_mail_pupils,
+    get_portal_mail_results,
+    get_portal_problem_statistics,
+    get_portal_recent_student_ids,
+    refresh_portal_lesson_results,
+)
+```
+
+`a22` продолжает читать адреса и ФИО получателей из приватного workbook
+`Заявки и пароли 2026-2027.xlsx`; API передаёт логин портала в старое поле
+`token` только как ключ сопоставления. Email и пароль в API не передаются.
+`a23` по-прежнему отвечает только за разметку и FTP-публикацию старого сайта.
 
 ### a11_spis_from_xls.py
 

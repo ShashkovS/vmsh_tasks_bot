@@ -168,6 +168,101 @@ def test_event_selection_requires_unique_match_and_allows_override(
     assert json.loads(filename.read_text())["eventId"] == "event-two"
 
 
+def test_after_lesson_snapshot_adapts_mail_and_site_statistics(tmp_path, monkeypatch):
+    payload = {
+        "schemaVersion": 1,
+        "courseId": "c-1",
+        "lesson": 4,
+        "pupils": [
+            {
+                "id": 42,
+                "login": "student.login",
+                "surname": "Иванов",
+                "name": "Иван",
+                "group_id": "group-n",
+                "level": "н",
+            }
+        ],
+        "problems": [
+            {
+                "id": 91,
+                "lesson": 4,
+                "group_id": "group-n",
+                "level": "н",
+                "prob": 1,
+                "item": "а",
+                "prob_type": 2,
+            },
+            {
+                "id": 92,
+                "lesson": 4,
+                "group_id": "group-n",
+                "level": "н",
+                "prob": 2,
+                "item": "",
+                "prob_type": 1,
+            },
+        ],
+        "results": [
+            {
+                "student_id": 42,
+                "problem_id": 91,
+                "max_verdict": 0.7,
+                "score": 0.7,
+            },
+            {
+                "student_id": 42,
+                "problem_id": 92,
+                "max_verdict": None,
+                "score": 0.0,
+            },
+        ],
+        "recentStudentIds": [42],
+    }
+
+    def fake_get(path, token=None):
+        assert path == "/events/event-one/lesson-results?lesson=4"
+        assert token == "test-token"
+        return payload, {
+            "ETag": '"lesson-digest"',
+            "X-Print-Event": "event-one",
+            "X-Print-Lesson": "4",
+            "X-Print-Plan": "plan-one",
+            "X-Print-Plan-Version": "2",
+        }
+
+    monkeypatch.setattr(client, "_get", fake_get)
+    filename = tmp_path / "portal-after-lesson.json"
+    snapshot = client.refresh_portal_lesson_results(
+        4,
+        filename,
+        token="test-token",
+        event_id="event-one",
+    )
+    assert snapshot["eventId"] == "event-one"
+    assert client.get_portal_mail_pupils(4, filename) == {
+        42: {
+            "id": 42,
+            "token": "student.login",
+            "surname": "Иванов",
+            "name": "Иван",
+            "group_id": "н",
+            "key": "student.login\tИванов\tИван\tн",
+        }
+    }
+    assert client.get_portal_mail_problems(4, "н", filename)[91]["formatted"] == (
+        "04н.01а"
+    )
+    assert client.get_portal_mail_results(4, "н", filename) == {(42, 91): 0.7}
+    assert client.get_portal_recent_student_ids(4, filename) == {42}
+    assert client.get_portal_problem_statistics(4, filename) == {
+        "4н.1а": (1, 1),
+        "4н.2": (0, 1),
+    }
+
+
 def test_absent_snapshot_is_not_a_silent_excel_fallback(tmp_path):
     with pytest.raises(RuntimeError, match="сначала запустите a11"):
         client.load_portal_conduit(4, tmp_path / "missing.json")
+    with pytest.raises(RuntimeError, match="portal-after-lesson"):
+        client.load_portal_lesson_results(4, tmp_path / "missing-after.json")

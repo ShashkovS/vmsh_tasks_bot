@@ -53,6 +53,90 @@ def list_print_identities(connection: sqlite3.Connection, plan_id: int) -> list[
     ]
 
 
+def list_print_course_pupils(
+    connection: sqlite3.Connection, course_id: int
+) -> list[dict]:
+    """Return the active course roster with the legacy mail identity fields."""
+
+    return [
+        dict(row)
+        for row in connection.execute(
+            """
+        SELECT student.id, account.username AS login, student.surname, student.name,
+               enrollment.active_group_id AS group_id,
+               group_record.short_code AS level
+        FROM course_enrollments AS enrollment
+        JOIN users AS student
+          ON student.id = enrollment.student_user_id
+         AND student.type = 1
+        JOIN groups AS group_record
+          ON group_record.course_id = enrollment.course_id
+         AND group_record.group_id = enrollment.active_group_id
+        LEFT JOIN auth_accounts AS account
+          ON account.linked_user_id = student.id
+         AND account.audience = 'student'
+        WHERE enrollment.course_id = ?
+          AND enrollment.status = 'active'
+        ORDER BY student.surname, student.name, student.id
+        """,
+            (course_id,),
+        ).fetchall()
+    ]
+
+
+def list_print_lesson_problems(
+    connection: sqlite3.Connection,
+    *,
+    course_id: int,
+    group_ids: tuple[str, ...],
+    lesson: int,
+) -> list[dict]:
+    """Return current lesson columns and their analytics logical keys."""
+
+    if not group_ids:
+        return []
+    placeholders = ", ".join("?" for _ in group_ids)
+    rows = connection.execute(
+        f"""
+        SELECT problem.id AS problem_id,
+               problem.lesson AS lesson_number,
+               problem.group_id,
+               group_record.short_code AS level,
+               group_record.sort_order AS group_sort_order,
+               problem.prob,
+               problem.item,
+               problem.prob_type AS problem_type,
+               CASE
+                   WHEN synonym_group.id IS NOT NULL
+                   THEN 'synonym:' || synonym_group.id
+                   WHEN trim(problem.synonyms) <> ''
+                   THEN 'legacy:' || problem.synonyms
+                   ELSE 'problem:' || problem.id
+               END AS logical_problem_key,
+               coalesce(complexity.for_weak, 0.5) AS for_weak,
+               coalesce(complexity.for_strong, 0.5) AS for_strong
+        FROM problems AS problem
+        JOIN groups AS group_record
+          ON group_record.group_id = problem.group_id
+         AND group_record.course_id = ?
+        LEFT JOIN problem_synonym_members AS synonym_member
+          ON synonym_member.problem_id = problem.id
+         AND synonym_member.removed_at IS NULL
+        LEFT JOIN problem_synonym_groups AS synonym_group
+          ON synonym_group.id = synonym_member.synonym_group_id
+         AND synonym_group.status = 'active'
+        LEFT JOIN problem_complexity AS complexity
+          ON complexity.synonyms = problem.synonyms
+        WHERE problem.lesson = ?
+          AND problem.group_id IN ({placeholders})
+          AND problem.prob > 0
+        ORDER BY group_record.sort_order, problem.prob, problem.item, problem.id
+        """,
+        (course_id, lesson, *group_ids),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def list_print_previous_problems(
     connection: sqlite3.Connection,
     *,
@@ -166,8 +250,10 @@ def list_print_previous_results(
 
 
 __all__ = [
+    "list_print_course_pupils",
     "list_print_events",
     "list_print_identities",
+    "list_print_lesson_problems",
     "list_print_previous_problems",
     "list_print_previous_results",
 ]

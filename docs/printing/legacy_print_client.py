@@ -17,6 +17,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 DEFAULT_SNAPSHOT = Path(__file__).resolve().with_name("portal-print.json")
+DEFAULT_AFTER_LESSON_SNAPSHOT = Path(__file__).resolve().with_name(
+    "portal-after-lesson.json"
+)
 API_BASE = "https://vmsh.shashkovs.ru/staff/api/legacy-print/v1"
 
 
@@ -105,6 +108,47 @@ def download_portal_conduit(event_id, lesson, filename=DEFAULT_SNAPSHOT, token=N
     return len(pupils)
 
 
+def download_portal_lesson_results(
+    event_id, lesson, filename=DEFAULT_AFTER_LESSON_SNAPSHOT, token=None
+):
+    """Download the current lesson matrix used by a22 and a23."""
+    snapshot, headers = _get(
+        "/events/%s/lesson-results?lesson=%d" % (quote(event_id, safe=""), lesson),
+        token,
+    )
+    metadata = {key.lower(): value for key, value in headers.items()}
+    if (
+        not isinstance(snapshot, dict)
+        or snapshot.get("schemaVersion") != 1
+        or snapshot.get("lesson") != lesson
+        or not isinstance(snapshot.get("pupils"), list)
+        or not isinstance(snapshot.get("problems"), list)
+        or not isinstance(snapshot.get("results"), list)
+        or not isinstance(snapshot.get("recentStudentIds"), list)
+        or metadata.get("x-print-event") != event_id
+        or metadata.get("x-print-lesson") != str(lesson)
+    ):
+        raise RuntimeError("Некорректный ответ API результатов занятия")
+    snapshot = {
+        **snapshot,
+        "eventId": event_id,
+        "etag": metadata["etag"],
+        "planId": metadata["x-print-plan"],
+        "planVersion": metadata["x-print-plan-version"],
+    }
+    destination = Path(filename)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    try:
+        temporary.write_text(
+            json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        temporary.chmod(0o600)
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return len(snapshot["pupils"])
+
+
 def resolve_portal_print_event(lesson, token=None):
     """Find the one confirmed event made entirely from this lesson number."""
     payload, _ = _get("/events", token)
@@ -150,6 +194,18 @@ def refresh_portal_conduit(
     return load_portal_conduit(lesson, filename)
 
 
+def refresh_portal_lesson_results(
+    lesson,
+    filename=DEFAULT_AFTER_LESSON_SNAPSHOT,
+    token=None,
+    event_id=None,
+):
+    """Refresh the post-lesson snapshot once before generating artifacts."""
+    event_id = event_id or resolve_portal_print_event(lesson, token)
+    download_portal_lesson_results(event_id, lesson, filename, token)
+    return load_portal_lesson_results(lesson, filename)
+
+
 def load_portal_conduit(lesson, filename=DEFAULT_SNAPSHOT):
     """Same mutable row shape as parse_xls_conduit; all scripts use one snapshot."""
     try:
@@ -161,6 +217,119 @@ def load_portal_conduit(lesson, filename=DEFAULT_SNAPSHOT):
     if snapshot["lesson"] != lesson:
         raise RuntimeError("Снимок распределения относится к другому занятию")
     return copy.deepcopy(snapshot["pupils"])
+
+
+def load_portal_lesson_results(
+    lesson, filename=DEFAULT_AFTER_LESSON_SNAPSHOT
+):
+    try:
+        snapshot = json.loads(Path(filename).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Снимок portal-after-lesson.json не найден; сначала обновите его через API"
+        ) from None
+    if snapshot.get("schemaVersion") != 1 or snapshot.get("lesson") != lesson:
+        raise RuntimeError("Снимок результатов относится к другому занятию")
+    return snapshot
+
+
+def get_portal_mail_pupils(lesson, filename=DEFAULT_AFTER_LESSON_SNAPSHOT):
+    """Return the dict shape formerly produced from the legacy users table."""
+    snapshot = load_portal_lesson_results(lesson, filename)
+    pupils = {}
+    for source in snapshot["pupils"]:
+        pupil = {
+            "id": int(source["id"]),
+            "token": source["login"],
+            "surname": source["surname"],
+            "name": source["name"],
+            "group_id": source["level"],
+        }
+        pupil["key"] = "%s\t%s\t%s\t%s" % (
+            pupil["token"],
+            pupil["surname"],
+            pupil["name"],
+            pupil["group_id"],
+        )
+        pupils[pupil["id"]] = pupil
+    return pupils
+
+
+def get_portal_mail_problems(
+    lesson, level, filename=DEFAULT_AFTER_LESSON_SNAPSHOT
+):
+    """Return current lesson columns for one human level code."""
+    snapshot = load_portal_lesson_results(lesson, filename)
+    problems = {}
+    for source in snapshot["problems"]:
+        if source.get("level") != level:
+            continue
+        problem = copy.deepcopy(source)
+        problem["key"] = "%s%s.%s%s" % (
+            problem["lesson"],
+            level,
+            problem["prob"],
+            problem["item"],
+        )
+        problem["formatted"] = "%02d%s.%02d%s" % (
+            int(problem["lesson"]),
+            level,
+            int(problem["prob"]),
+            problem["item"],
+        )
+        problems[int(problem["id"])] = problem
+    return problems
+
+
+def get_portal_mail_results(
+    lesson, level, filename=DEFAULT_AFTER_LESSON_SNAPSHOT
+):
+    """Return attempted verdicts; missing matrix cells stay absent."""
+    snapshot = load_portal_lesson_results(lesson, filename)
+    problem_ids = {
+        int(problem["id"])
+        for problem in snapshot["problems"]
+        if problem.get("level") == level
+    }
+    return {
+        (int(row["student_id"]), int(row["problem_id"])): float(
+            row["max_verdict"]
+        )
+        for row in snapshot["results"]
+        if int(row["problem_id"]) in problem_ids
+        and row.get("max_verdict") is not None
+    }
+
+
+def get_portal_recent_student_ids(
+    lesson, filename=DEFAULT_AFTER_LESSON_SNAPSHOT
+):
+    snapshot = load_portal_lesson_results(lesson, filename)
+    return {int(student_id) for student_id in snapshot["recentStudentIds"]}
+
+
+def get_portal_problem_statistics(
+    lesson, filename=DEFAULT_AFTER_LESSON_SNAPSHOT
+):
+    """Aggregate the scored participant matrix for the legacy site markers."""
+    snapshot = load_portal_lesson_results(lesson, filename)
+    problems = {int(problem["id"]): problem for problem in snapshot["problems"]}
+    totals = {}
+    for row in snapshot["results"]:
+        problem_id = int(row["problem_id"])
+        solved, count = totals.get(problem_id, (0.0, 0))
+        totals[problem_id] = (solved + float(row["score"]), count + 1)
+    statistics = {}
+    for problem_id, (solved, count) in totals.items():
+        problem = problems[problem_id]
+        key = "%s%s.%s%s" % (
+            problem["lesson"],
+            problem["level"],
+            problem["prob"],
+            problem["item"],
+        )
+        statistics[key] = (int(solved + 0.5), count)
+    return statistics
 
 
 def _load_portal_history(lesson, filename=DEFAULT_SNAPSHOT):
