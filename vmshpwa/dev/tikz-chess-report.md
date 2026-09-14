@@ -22,3 +22,19 @@
 ![Ладьи](assets/tikz-chess/rooks.png)
 
 [Векторный SVG](assets/tikz-chess/rooks.svg).
+
+## Исправление прямых includegraphics — 14 сентября 2026
+
+Ошибка gl-4 была вызвана прямыми `includegraphics{QueenWhite}`: такие вставки
+не используют ChessPiece и раньше пытались прочитать отсутствующий PNG.
+Теперь известные имена заменяются в производном исходнике на векторную
+команду с параметрами размера; остальные изображения и комментарии сохраняются.
+
+[Исходный пример](assets/tikz-chess/legacy-queen.tex) успешно прошёл настоящий
+pdfLaTeX → pdf2svg. [SVG](assets/tikz-chess/legacy-queen.svg) просмотрен:
+два ферзя, слон и конь расположены согласно исходнику, растра нет.
+
+![Исправленный пример](assets/tikz-chess/legacy-queen.png)
+
+Проверки: 103 passed (четыре набора из основного отчёта); Ruff и diff-check прошли.
+Production не изменялся.

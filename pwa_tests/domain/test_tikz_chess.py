@@ -28,3 +28,26 @@ def test_explicit_author_piece_definition_is_preserved():
     source = scan_tikz_sources(text).sources[0].source
     assert "vmsh chess RookWhite" not in source
     assert r"\draw (#2,#3)" in source
+
+
+def test_legacy_chess_graphics_are_replaced_selectively():
+    raw = r"""\begin{tikzpicture}
+% \includegraphics{QueenWhite}
+\node {\includegraphics[width=10mm]{QueenWhite}};
+\node {\includegraphics[height=8mm]{pictures/BishopWhite.png}};
+\node {\includegraphics{other.png}};
+\end{tikzpicture}"""
+    source = scan_tikz_sources(raw).sources[0].source
+    assert r"\vmshChessGraphic[width=10mm]{QueenWhite}" in source
+    assert r"\vmshChessGraphic[height=8mm]{BishopWhite}" in source
+    assert r"\includegraphics{other.png}" in source
+    assert r"% \includegraphics{QueenWhite}" in source
+    assert "vmsh chess QueenWhite/.pic=" in source
+
+
+def test_mixed_chess_commands_share_one_vector_definition():
+    raw = r"\begin{tikzpicture}\ChessPiece{RookWhite}{1}{1}\node {\includegraphics{QueenWhite}};\end{tikzpicture}"
+    source = scan_tikz_sources(raw).sources[0].source
+    assert source.count("vmsh chess QueenWhite/.pic=") == 1
+    assert r"\newcommand{\ChessPiece}" in source
+    assert r"\vmshChessGraphic{QueenWhite}" in source

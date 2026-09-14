@@ -76,6 +76,60 @@ def _chess_piece_context() -> str:
     )
 
 
+@lru_cache(maxsize=1)
+def _chess_graphics_context() -> str:
+    return (
+        (Path(__file__).with_name("resources") / "chess-graphics.tex")
+        .read_text(encoding="utf-8")
+        .strip()
+    )
+
+
+def _replace_chess_graphics(source: str) -> tuple[str, bool]:
+    """Adapt only known literal chess filenames; docs/tikz-chess.md."""
+    replacements: list[tuple[int, int, str]] = []
+    limits = ParserLimits()
+    # Unlike top-level declaration scanning, descend into node text groups.
+    position = 0
+    while position < len(source):
+        if source[position] == "%" and not is_escaped(source, position):
+            position = skip_comment(source, position, len(source))
+            continue
+        command = read_command(source, position, len(source))
+        position = command.end if command else position + 1
+        if command is None or command.name != "includegraphics":
+            continue
+        cursor = skip_space_and_comments(source, command.end, len(source))
+        options = read_optional_group(
+            source, cursor, len(source), max_depth=limits.max_group_depth
+        )
+        if options is not None:
+            cursor = skip_space_and_comments(source, options.end, len(source))
+        group = read_group(
+            source, cursor, len(source), max_depth=limits.max_group_depth
+        )
+        if group is None:
+            continue
+        filename = source[group.content_start : group.content_end].strip()
+        match = re.fullmatch(
+            r"(?:\./)?(?:pictures/)?((?:King|Queen|Rook|Bishop|Knight|Pawn)(?:White|Black))(?:\.png)?",
+            filename,
+        )
+        if match is None:
+            continue
+        option_text = source[options.start : options.end] if options else ""
+        replacements.append(
+            (
+                command.start,
+                group.end,
+                r"\vmshChessGraphic" + option_text + "{" + match[1] + "}",
+            )
+        )
+    for start, end, replacement in reversed(replacements):
+        source = source[:start] + replacement + source[end:]
+    return source, bool(replacements)
+
+
 _LEGACY_PART_CONTEXT = r"""
 \newcounter{vmshpart}
 \newcommand{\vmshPartLabel}{%
@@ -413,11 +467,16 @@ def _compose_source(
         kinds.append(declaration.kind)
         seen.add(normalized)
     combined = "\n".join((*pieces, raw_source.strip()))
+    combined, chess_graphics = _replace_chess_graphics(combined)
     compat: list[str] = []
     if "\\ChessBoard" in raw_source and "\\newcommand{\\ChessBoard}" not in combined:
         compat.append(_CHESS_BOARD_CONTEXT)
     if "\\ChessPiece" in raw_source and "\\newcommand{\\ChessPiece}" not in combined:
         compat.append(_chess_piece_context())
+    elif chess_graphics:
+        compat.append(_chess_piece_context().split(r"\newcommand{\ChessPiece}", 1)[0])
+    if chess_graphics:
+        compat.append(_chess_graphics_context())
     # pdfLaTeX cannot reliably tokenize a UTF-8 Cyrillic control-sequence
     # name in the isolated document.  Preserve the legacy semantics while
     # compiling a portable ASCII command.  This transformation belongs only
