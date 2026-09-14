@@ -40,7 +40,7 @@ function Harness({
   few = false,
 }: {
   zoom?: boolean
-  status?: 'queued' | 'conflict'
+  status?: 'draft' | 'queued' | 'sending' | 'failed' | 'conflict'
   large?: boolean
   few?: boolean
 }) {
@@ -67,7 +67,7 @@ function Harness({
         ? { ...board, problems: board.problems.slice(0, 1) }
         : board,
     display: (s: string, p: string) => ({
-      symbol: ['', '+', '−'][marks[`${s}:${p}`] ?? 0]!,
+      symbol: ['', '+', '−'][marks[`${s}:${p}`] ?? (status ? 1 : 0)]!,
       mine: !!marks[`${s}:${p}`],
       changed: !!marks[`${s}:${p}`],
       pending: status,
@@ -132,6 +132,9 @@ export const Zoom: Story = {
     await expect(canvas.getByRole('button', { name: /^Задача 21б:/ })).toHaveAccessibleName(/пусто/)
   },
 }
+export const Saving: Story = { args: { status: 'sending' } }
+export const Draft: Story = { args: { status: 'draft' } }
+export const Failed: Story = { args: { status: 'failed' } }
 export const Offline: Story = { args: { status: 'queued' } }
 export const Conflict: Story = { args: { status: 'conflict' } }
 

@@ -338,3 +338,11 @@ Chromium/WebKit/Firefox. 320/390 px, desktop, light/dark, 200%, клавиату
 [Отчёт и снимки](../../../pwa_tests/reports/student-results/README.md).
 Миграций нет. Владелец разрешил commit и push 10 сентября 2026.
 Развёртывание не выполнялось; визуальное принятие владельцем остаётся открытым.
+
+
+### 2026-09-14 — вид неподтверждённых оценок
+
+`LiveMarkButton` отличает локальное намерение от серверного receipt: часы,
+затем «…» при задержке/ошибке. Существующие idempotent outbox и WebSocket
+проверены без изменения протокола. [Требования](../../docs/live-marking.md),
+[35 unit / 3 E2E и снимки](../live-marking-confirmation-report.md).

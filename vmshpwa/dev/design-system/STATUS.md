@@ -1423,3 +1423,13 @@ TypeScript, ESLint, Prettier и Ruff — без ошибок.
 Браузерный сценарий прошёл в Chromium, WebKit и Firefox (обе темы, 320–390px,
 desktop, фокус и CSS zoom 200%). Финальные снимки сохранены и просмотрены. [Требования](../../docs/lesson-statistics.md),
 [отчёт](../statistics-recalculation-report.md).
+
+
+## Неподтверждённые очные оценки — реализовано, 2026-09-14
+
+LiveMarkButton показывает часы вместо неподтверждённого плюса/минуса,
+через секунду отправки — «…». Ошибки/конфликты не выглядят сохранённой оценкой.
+35 unit-тестов и 3 E2E в Chromium/WebKit/Firefox прошли: две сессии, получение
+чужой оценки через WS, reconnect с пропущенным изменением, сохранность после
+reload. Снимки desktop/light и mobile/dark просмотрены. Приёмка владельцем
+ожидается. [Отчёт](../live-marking-confirmation-report.md).

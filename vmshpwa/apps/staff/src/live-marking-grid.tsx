@@ -1,8 +1,8 @@
-import { memo, useRef, useLayoutEffect, useCallback } from 'react'
+import { memo, useRef, useLayoutEffect, useCallback, useState, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { LiveBoard } from '@vmsh/contracts'
 import { cn } from '@vmsh/ui'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Clock3 } from 'lucide-react'
 
 // live-marking.md: dense touch table, fixed names/header, independent authorship
 // and pending/change indicators. Both routes use the same cell interaction.
@@ -27,34 +27,66 @@ export const LiveMarkButton = memo(
     problemId: string
     onMark: (studentId: string, problemId: string) => void
   }) {
+    // docs/live-marking.md: an unacknowledged mark never looks committed.
+    const [slow, setSlow] = useState(false)
+    useEffect(() => {
+      if (display.pending !== 'sending') return
+      const timer = setTimeout(() => setSlow(true), 1000)
+      return () => {
+        clearTimeout(timer)
+        setSlow(false)
+      }
+    }, [display.pending])
+    const delayed = display.pending === 'sending' && slow
+    const uncertain =
+      delayed ||
+      display.pending === 'queued' ||
+      display.pending === 'failed' ||
+      display.pending === 'conflict'
     const status =
       display.pending === 'conflict'
-        ? 'Конфликт'
+        ? 'Конфликт: оценка не сохранена'
         : display.pending === 'failed'
-          ? 'Ошибка'
-          : display.pending
-            ? 'Не отправлено'
-            : 'Сохранено'
+          ? 'Ошибка: сохранение не подтверждено'
+          : delayed
+            ? 'Сохранение не подтверждено: ждём ответ сервера'
+            : display.pending === 'sending'
+              ? 'Сохраняем'
+              : display.pending === 'queued'
+                ? 'Сохранение не подтверждено: в очереди отправки'
+                : display.pending === 'draft'
+                  ? 'Ожидает отправки'
+                  : 'Сохранено'
     return (
       <button
         type="button"
         onClick={() => onMark(studentId, problemId)}
         disabled={display.disabled}
-        aria-label={`${label}: ${display.symbol || 'пусто'}${display.mine ? ', моя оценка' : ''}, ${status}`}
-        title={`${display.mine ? 'Моя оценка. ' : ''}${display.changed ? 'Изменено в этом приёме. ' : ''}${status}`}
+        aria-label={`${label}: ${display.pending ? `выбрано ${display.symbol === '+' ? 'плюс' : 'минус'}` : display.symbol || 'пусто'}${display.mine ? ', моя оценка' : ''}, ${status}`}
+        aria-busy={display.pending === 'sending'}
+        title={`${display.pending ? `Выбрано ${display.symbol === '+' ? 'плюс' : 'минус'}. ` : ''}${display.mine ? 'Моя оценка. ' : ''}${display.changed ? 'Изменено в этом приёме. ' : ''}${status}`}
         className={cn(
           'relative flex h-full min-h-11 w-full min-w-11 items-center justify-center border border-transparent text-2xl font-medium tabular-nums outline-none transition-colors hover:bg-accent focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait',
           display.mine && 'bg-primary/10 font-bold text-primary',
           display.changed && 'border-primary',
           display.pending && 'border-dashed border-status-warning',
+          uncertain && 'bg-status-warning/15 text-status-warning',
           (display.pending === 'conflict' || display.pending === 'failed') &&
             'bg-destructive/10 text-destructive',
         )}
       >
-        {display.symbol || (
-          <span className="text-muted-foreground/40" aria-hidden="true">
-            ·
-          </span>
+        {display.pending ? (
+          uncertain ? (
+            <span aria-hidden="true">…</span>
+          ) : (
+            <Clock3 className="size-5" aria-hidden="true" />
+          )
+        ) : (
+          display.symbol || (
+            <span className="text-muted-foreground/40" aria-hidden="true">
+              ·
+            </span>
+          )
         )}
         {display.mine ? (
           <span className="absolute bottom-0.5 left-1 text-[8px] leading-none" aria-hidden="true">
