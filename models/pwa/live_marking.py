@@ -231,9 +231,13 @@ def board(connection, principal, spec):
         problems=[
             dict(
                 problemId=p["public_id"],
-                label=(p["display_number"] if p["display_number"].startswith(
-                    f"{p['lesson']}{p['short_code']}."
-                ) else f"{p['lesson']}{p['short_code']}.{p['display_number']}"),
+                label=(
+                    p["display_number"]
+                    if p["display_number"].startswith(
+                        f"{p['lesson']}{p['short_code']}."
+                    )
+                    else f"{p['lesson']}{p['short_code']}.{p['display_number']}"
+                ),
                 title=p["title"],
                 oral=p["problem_type"] in (3, 4),
                 number=p["prob"],
@@ -388,6 +392,12 @@ def operation_history(connection, principal, spec):
                 createdAt=o["created_at"],
                 undone=o["undone_at"] is not None,
                 state=json.loads(o["after_json"]),
+                beforeVersion=json.loads(o["before_json"]).get("version")
+                if o["kind"] == "mark"
+                else None,
+                beforeSymbol=VERDICT_DECODER.get(
+                    json.loads(o["before_json"]).get("verdict"), ""
+                ),
             )
             for o in db.history(connection, principal.linked_user_id, spec["contextId"])
         ]
@@ -578,17 +588,37 @@ def execute(connection, principal, command, now):
             )
             before = db.cell(connection, student_id, problem["id"])
             require(before["version"] == command["expectedVersion"], "conflict")
-            verdict = 18 if command["value"] == "plus" else -1
-            db.append_result(
-                connection,
-                student_id=student_id,
-                problem=problem,
-                lesson=lesson,
-                teacher_id=teacher_id,
-                verdict=verdict,
-                conversation_id=None if v is None else v["conversation_id"],
-                now=now,
-            )
+            if command["value"] == "clear":
+                # docs/live-marking.md: restore only this teacher's contiguous
+                # edits in this reception; never cross another writer/result.
+                baseline = before
+                expected = before["version"]
+                for op in db.history(connection, teacher_id, spec["contextId"]):
+                    if op["kind"] != "mark" or op["undone_at"] is not None:
+                        continue
+                    state = json.loads(op["after_json"])
+                    if state.get("objectKey") != f"mark:{student_id}:{problem['id']}":
+                        continue
+                    if state["version"] != expected:
+                        break
+                    baseline = json.loads(op["before_json"])
+                    expected = state["previousVersion"]
+                require(baseline is not before, "conflict")
+                db.restore_cell(
+                    connection, student_id, problem["id"], baseline["result_id"]
+                )
+            else:
+                verdict = 18 if command["value"] == "plus" else -1
+                db.append_result(
+                    connection,
+                    student_id=student_id,
+                    problem=problem,
+                    lesson=lesson,
+                    teacher_id=teacher_id,
+                    verdict=verdict,
+                    conversation_id=None if v is None else v["conversation_id"],
+                    now=now,
+                )
             current = db.cell(connection, student_id, problem["id"])
             after.update(
                 cell_payload(current, s["student_public_id"], problem["public_id"])
@@ -596,6 +626,7 @@ def execute(connection, principal, command, now):
             after.update(
                 objectKey=f"mark:{student_id}:{problem['id']}",
                 previousVersion=before["version"],
+                value=command["value"],
             )
         else:
             require(v is not None, "invalid")

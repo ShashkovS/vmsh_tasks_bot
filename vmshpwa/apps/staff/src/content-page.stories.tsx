@@ -448,6 +448,29 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+export const OralWindowsNavigation: Story = {
+  name: 'Окна устного приёма выбранного занятия',
+  render: () => (
+    <StaffContentWorkspace
+      canManageOralWindows
+      client={storyClient()}
+      draftNamespace={storyDraftNamespace}
+      groupLessonId={groupLessonId}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const link = await canvas.findByRole('link', { name: 'Окна устного приёма' })
+    await expect(link).toBeVisible()
+    await expect(link).toHaveAttribute(
+      'href',
+      `/staff/oral?groupLesson=${groupLessonId}&tab=windows`,
+    )
+    await userEvent.tab()
+    await expect(link).toHaveFocus()
+  },
+}
+
 export const UploadPreviewPublish: Story = {
   name: 'Upload → diagnostics → two previews → publish',
   render: () => (

@@ -346,3 +346,22 @@ Chromium/WebKit/Firefox. 320/390 px, desktop, light/dark, 200%, клавиату
 затем «…» при задержке/ошибке. Существующие idempotent outbox и WebSocket
 проверены без изменения протокола. [Требования](../../docs/live-marking.md),
 [35 unit / 3 E2E и снимки](../live-marking-confirmation-report.md).
+
+### 2026-09-14 — явные переходы и локальный сброс оценок
+
+Уточнение отображения оценок: часы заменены переходом «было → станет»,
+неподтверждённые ячейки красные. Добавлен локальный сброс своих оценок и
+надёжный undo, включая ожидание receipt. Смысл «не сдавал» — отсутствие
+собственных правок в этом приёме, не стирание других способов сдачи.
+[Контракт, реализация, проверки](../../docs/live-marking.md#явные-переходы-и-локальный-сброс--2026-09-14).
+Проверено: 23 backend/runner, 28 frontend unit, 10 browser stories,
+12 E2E в Chromium/WebKit/Firefox и сборки всех приложений.
+[Отчёт](../../../pwa_tests/reports/live-marking-toggle.md). Изменения локальные.
+
+### 2026-09-14 — доступ к настройкам окон
+
+Кнопка «Окна устного приёма» доступна admin с oral.manage под карточкой
+занятия в StaffLessonsPage и в шапке StaffContentWorkspace. Обе передают
+groupLesson и tab=windows в существующий /staff/oral. Контракт и путь оператора:
+[runbook](../../docs/classroom-and-oral-workflow.md); браузерная проверка:
+`content-page.stories.tsx`, OralWindowsNavigation.

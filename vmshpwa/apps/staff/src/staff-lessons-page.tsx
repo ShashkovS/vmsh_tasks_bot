@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { BookOpenCheck, Plus } from 'lucide-react'
+import { BookOpenCheck, Mic, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
@@ -24,6 +24,7 @@ import {
   AlertTitle,
   Badge,
   Button,
+  buttonVariants,
   Card,
   CardContent,
   CardHeader,
@@ -400,44 +401,56 @@ export function StaffLessonsPage() {
       ) : (
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {result.data.lessons.map((lesson) => (
-            <a
-              className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              href={`/staff/lessons/${encodeURIComponent(lesson.groupLessonId)}`}
-              key={lesson.groupLessonId}
-            >
-              <Card className="h-full transition-colors hover:border-strong">
-                <CardHeader className="space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Badge variant="neutral">{lesson.course.name}</Badge>
-                    <Badge variant={lesson.phase === 'draft' ? 'warning' : 'neutral'}>
-                      {phaseLabels[lesson.phase]}
-                    </Badge>
-                  </div>
-                  <CardTitle>
-                    {lesson.group.name} · занятие {lesson.lessonNumber}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-small">
-                    <dt className="text-muted-foreground">Условие</dt>
-                    <dd>
-                      <PublicationState state={lesson.publications.condition.state} />
-                    </dd>
-                    <dt className="text-muted-foreground">Подсказка</dt>
-                    <dd>
-                      <PublicationState state={lesson.publications.hint.state} />
-                    </dd>
-                    <dt className="text-muted-foreground">Решение</dt>
-                    <dd>
-                      <PublicationState state={lesson.publications.solution.state} />
-                    </dd>
-                  </dl>
-                  <p className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-caption text-muted-foreground">
-                    <BookOpenCheck aria-hidden="true" className="size-4" /> Открыть занятие
-                  </p>
-                </CardContent>
-              </Card>
-            </a>
+            <div className="flex flex-col gap-2" key={lesson.groupLessonId}>
+              <a
+                className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                href={`/staff/lessons/${encodeURIComponent(lesson.groupLessonId)}`}
+              >
+                <Card className="h-full transition-colors hover:border-strong">
+                  <CardHeader className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Badge variant="neutral">{lesson.course.name}</Badge>
+                      <Badge variant={lesson.phase === 'draft' ? 'warning' : 'neutral'}>
+                        {phaseLabels[lesson.phase]}
+                      </Badge>
+                    </div>
+                    <CardTitle>
+                      {lesson.group.name} · занятие {lesson.lessonNumber}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-small">
+                      <dt className="text-muted-foreground">Условие</dt>
+                      <dd>
+                        <PublicationState state={lesson.publications.condition.state} />
+                      </dd>
+                      <dt className="text-muted-foreground">Подсказка</dt>
+                      <dd>
+                        <PublicationState state={lesson.publications.hint.state} />
+                      </dd>
+                      <dt className="text-muted-foreground">Решение</dt>
+                      <dd>
+                        <PublicationState state={lesson.publications.solution.state} />
+                      </dd>
+                    </dl>
+                    <p className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-caption text-muted-foreground">
+                      <BookOpenCheck aria-hidden="true" className="size-4" /> Открыть занятие
+                    </p>
+                  </CardContent>
+                </Card>
+              </a>
+              {principal.audience === 'staff' &&
+              principal.role === 'admin' &&
+              principal.capabilities.includes('oral.manage') ? (
+                <a
+                  className={buttonVariants({ size: 'sm', variant: 'outline' })}
+                  href={`/staff/oral?groupLesson=${encodeURIComponent(lesson.groupLessonId)}&tab=windows`}
+                  aria-label={`Окна устного приёма: ${lesson.course.name}, ${lesson.group.name}, занятие ${lesson.lessonNumber}`}
+                >
+                  <Mic aria-hidden="true" /> Окна устного приёма
+                </a>
+              ) : null}
+            </div>
           ))}
         </div>
       )}

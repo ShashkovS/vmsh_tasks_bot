@@ -89,7 +89,7 @@ def _command(payload):
             _integer(payload[key])
     if kind in ("mark", "reaction", "praise"):
         _id(payload["context"].get("lessonId"))
-    if kind == "mark" and payload["value"] not in ("plus", "minus"):
+    if kind == "mark" and payload["value"] not in ("plus", "minus", "clear"):
         raise domain.LiveMarkingError("invalid")
     if kind == "attendance" and payload["value"] not in (
         "unmarked",

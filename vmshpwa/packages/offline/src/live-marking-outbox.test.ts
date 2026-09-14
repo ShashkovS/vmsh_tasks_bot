@@ -182,3 +182,117 @@ it('undoes the second attendance click to the first pending state', async () => 
   await queue.flush()
   expect(send).toHaveBeenCalledExactlyOnceWith(input)
 })
+
+it('undo restores the minus after a complete local cycle, then plus, then original', async () => {
+  const { queue, send } = await create()
+  const input = command()
+  queue.cycle(input, 'unmarked', '*')
+  queue.cycle(input)
+  queue.cycle(input)
+  expect(queue.getSnapshot().entries).toHaveLength(0)
+  expect(queue.canUndoLocal('session-1')).toBe(true)
+  queue.undoLocal('session-1')
+  expect(queue.getSnapshot().entries[0]?.command).toMatchObject({ value: 'minus' })
+  expect(queue.getSnapshot().entries[0]?.beforeSymbol).toBe('*')
+  queue.undoLocal('session-1')
+  expect(queue.getSnapshot().entries[0]?.command).toMatchObject({ value: 'plus' })
+  queue.undoLocal('session-1')
+  await queue.flush()
+  expect(send).not.toHaveBeenCalled()
+})
+
+it('does not discard an uncertain committed request as a local undo', async () => {
+  const send = vi
+    .fn()
+    .mockRejectedValueOnce(new TypeError('lost receipt'))
+    .mockResolvedValue(receipt)
+  const { queue } = await create(send)
+  const input = command()
+  queue.cycle(input)
+  await queue.flush()
+  expect(queue.undoLocal('session-1')).toBe(false)
+  queue.cycle(input)
+  expect(queue.getSnapshot().entries[0]?.command).toEqual(input)
+  await queue.flush()
+  expect(send).toHaveBeenNthCalledWith(2, input)
+})
+
+it('waits for the current send before server undo may proceed', async () => {
+  let complete!: (value: LiveReceipt) => void
+  const { queue, send } = await create(
+    vi.fn(
+      () =>
+        new Promise<LiveReceipt>((resolve) => {
+          complete = resolve
+        }),
+    ),
+  )
+  queue.cycle(command())
+  const first = queue.flush()
+  await vi.waitFor(() => expect(send).toHaveBeenCalledOnce())
+  expect(queue.undoLocal('session-1')).toBe(false)
+  let settled = false
+  const second = queue.flush().then(() => {
+    settled = true
+  })
+  await Promise.resolve()
+  expect(settled).toBe(false)
+  complete(receipt)
+  await Promise.all([first, second])
+  expect(queue.getSnapshot().entries).toHaveLength(0)
+})
+
+it('can undo an explicit reset before sending', async () => {
+  const { queue, send } = await create()
+  queue.clearMark(command(), '−', '*')
+  expect(queue.getSnapshot().entries[0]).toMatchObject({
+    beforeSymbol: '−',
+    targetSymbol: '*',
+    command: { value: 'clear' },
+  })
+  queue.undoLocal('session-1')
+  await queue.flush()
+  expect(send).not.toHaveBeenCalled()
+})
+
+it('persists the same server undo after a lost response', async () => {
+  const send = vi.fn().mockRejectedValueOnce(new TypeError('lost')).mockResolvedValue(receipt)
+  const { queue } = await create(send)
+  const undo = {
+    kind: 'undo' as const,
+    context,
+    operationId: 'undo-1',
+    targetOperationId: 'original-1',
+  }
+  queue.enqueueUndo(undo, {
+    studentId: 'u-1',
+    problemId: 'p-1',
+    beforeSymbol: '+',
+    targetSymbol: '',
+  })
+  await queue.flush()
+  expect(queue.getSnapshot().entries[0]).toMatchObject({
+    key: 'zoom:session-1:u-1:p-1',
+    attempted: true,
+    targetSymbol: '',
+  })
+  expect(queue.undoLocal('session-1')).toBe(false)
+  await queue.flush()
+  expect(send).toHaveBeenNthCalledWith(1, undo)
+  expect(send).toHaveBeenNthCalledWith(2, undo)
+})
+
+it('marks a due offline draft as queued so its cell is visibly unconfirmed', async () => {
+  const { queue, send } = await create()
+  vi.useFakeTimers({ toFake: ['Date'] })
+  const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+  try {
+    queue.cycle(command())
+    vi.setSystemTime(Date.now() + 2100)
+    await queue.flush(false)
+    expect(queue.getSnapshot().entries[0]?.status).toBe('queued')
+    expect(send).not.toHaveBeenCalled()
+  } finally {
+    online.mockRestore()
+  }
+})

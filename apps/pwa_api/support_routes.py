@@ -611,6 +611,7 @@ async def append_staff_question_entry(request: web.Request) -> web.Response:
                 client_created_at=_client_created_at(payload["clientCreatedAt"]),
                 idempotency_key=_idempotency_key(payload["idempotencyKey"]),
                 scope=scope,
+                photo_ids=_photo_ids(payload),
             )
         )
     except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
@@ -644,11 +645,18 @@ def _photo_ids(payload):
 
 
 @support_routes.post("/student/api/v1/questions/photos")
+@support_routes.post("/staff/api/v1/questions/photos")
 async def upload_photo(request):
     from apps.pwa_app import PWA_CONTENT_ASSET_CONVERTER
     from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
 
-    student_id = _student_user_id(request)
+    # Both participants upload their own material; binding enforces thread scope.
+    # See vmshpwa/docs/question-photos.md and test_support_photos.py.
+    uploader_id = (
+        _staff_context(request, write=True)[0]
+        if request.path.startswith("/staff/")
+        else _student_user_id(request)
+    )
     if request.content_type not in ("image/jpeg", "image/png", "image/webp"):
         raise PwaApiError(
             status=422, code="validation_error", message="Выберите JPEG, PNG или WebP"
@@ -691,7 +699,7 @@ async def upload_photo(request):
     await storage.put(key, converted.data, "image/webp")
     try:
         photo = await _repository(request).store_photo(
-            student_user_id=student_id,
+            student_user_id=uploader_id,
             object_key=key,
             sha256=hashlib.sha256(converted.data).hexdigest(),
             byte_size=len(converted.data),

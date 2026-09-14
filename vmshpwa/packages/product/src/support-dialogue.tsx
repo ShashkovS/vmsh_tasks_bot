@@ -10,6 +10,7 @@ import { Alert, AlertContent, AlertDescription, Button, Textarea, cn } from '@vm
  */
 export interface SupportComposerProps {
   attachments?: ReactNode | ((action: ReactNode) => ReactNode)
+  hasAttachments?: boolean
   value: string
   onValueChange: (value: string) => void
   onSubmit: () => void
@@ -24,6 +25,7 @@ export interface SupportComposerProps {
 
 export function SupportComposer({
   attachments,
+  hasAttachments = false,
   value,
   onValueChange,
   onSubmit,
@@ -37,18 +39,18 @@ export function SupportComposer({
 }: SupportComposerProps) {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!busy && !disabled && value.trim()) onSubmit()
+    if (!busy && !disabled && (value.trim() || hasAttachments)) onSubmit()
   }
   const submitFromKeyboard = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault()
-      if (!busy && !disabled && value.trim()) onSubmit()
+      if (!busy && !disabled && (value.trim() || hasAttachments)) onSubmit()
     }
   }
 
   const action = (
     <Button
-      disabled={disabled || busy || !value.trim()}
+      disabled={disabled || busy || (!value.trim() && !hasAttachments)}
       size="sm"
       className="min-w-0 max-w-full"
       aria-label={busy ? 'Отправляем…' : submitLabel}

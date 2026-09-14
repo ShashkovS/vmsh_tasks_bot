@@ -25,7 +25,7 @@ export const liveCommandSchema = z.discriminatedUnion('kind', [
       studentId: id,
       problemId: id,
       expectedVersion: version,
-      value: z.enum(['plus', 'minus']),
+      value: z.enum(['plus', 'minus', 'clear']),
     })
     .strict(),
   z
@@ -212,6 +212,8 @@ export const liveHistorySchema = z.object({
       createdAt: z.string(),
       undone: z.boolean(),
       state: liveStateSchema,
+      beforeVersion: z.number().int().nullable().optional(),
+      beforeSymbol: z.string().optional(),
     }),
   ),
 })

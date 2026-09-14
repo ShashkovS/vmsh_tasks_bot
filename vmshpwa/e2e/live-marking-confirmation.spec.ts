@@ -49,10 +49,10 @@ test('Classroom marks wait for receipts and follow other teachers through reconn
   })
   try {
     await mine.click()
-    await expect(mine).not.toHaveText(/\+/)
+    await expect(mine).toContainText('→ +')
     await expect(mine).toHaveAccessibleName(/Ожидает отправки/)
     await expect(mine).toHaveAccessibleName(/Сохранение не подтверждено/, { timeout: 7000 })
-    await expect(mine).toContainText('…')
+    await expect(mine).toHaveClass(/bg-destructive/)
     await page.screenshot({ path: info.outputPath('unconfirmed-desktop.png') })
     await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
     await page.setViewportSize({ width: 390, height: 844 })

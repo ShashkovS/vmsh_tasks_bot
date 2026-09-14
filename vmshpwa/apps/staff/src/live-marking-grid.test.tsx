@@ -18,18 +18,19 @@ function button(display: MarkDisplay) {
     />
   )
 }
-it('never displays a pending plus; escalates one second after sending and clears on receipt', () => {
+it('keeps the exact transition visible while saving and after a slow response', () => {
   vi.useFakeTimers()
-  const { rerender } = render(button({ ...saved, pending: 'draft' }))
+  const { rerender } = render(button({ ...saved, beforeSymbol: '*', pending: 'draft' }))
   const cell = screen.getByRole('button')
-  expect(cell.textContent).not.toContain('+')
+  expect(cell.textContent).toContain('* → +')
   expect(cell.getAttribute('aria-label')).toContain('Ожидает отправки')
   void act(() => vi.advanceTimersByTime(2000))
-  rerender(button({ ...saved, pending: 'sending' }))
+  rerender(button({ ...saved, beforeSymbol: '*', pending: 'sending' }))
   void act(() => vi.advanceTimersByTime(999))
   expect(cell.textContent).not.toContain('…')
   void act(() => vi.advanceTimersByTime(1))
-  expect(cell.textContent).toContain('…')
+  expect(cell.textContent).toContain('* → +')
+  expect(cell.className).toContain('bg-destructive/10')
   expect(cell.getAttribute('aria-label')).toContain('Сохранение не подтверждено')
   rerender(button(saved))
   expect(cell.textContent).toContain('+')
@@ -40,8 +41,8 @@ it.each(['queued', 'failed', 'conflict'] as const)(
   'keeps %s distinct from a saved mark',
   (pending) => {
     render(button({ ...saved, pending }))
-    expect(screen.getByRole('button').textContent).not.toContain('+')
-    expect(screen.getByRole('button').textContent).toContain('…')
+    expect(screen.getByRole('button').textContent).toContain('∅ → +')
+    expect(screen.getByRole('button').className).toContain('bg-destructive/10')
   },
 )
 it('does not retain slow state for another send', () => {

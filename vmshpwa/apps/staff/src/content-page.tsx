@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, CheckCircle2, FileCode2, RefreshCw, Send, Upload } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FileCode2, Mic, RefreshCw, Send, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
@@ -48,6 +48,7 @@ import {
   AlertTitle,
   Badge,
   Button,
+  buttonVariants,
   Card,
   CardContent,
   CardHeader,
@@ -1698,11 +1699,13 @@ function LessonWindowEditor({
 }
 
 export function StaffContentWorkspace({
+  canManageOralWindows = false,
   client,
   draftNamespace,
   familyDigest,
   groupLessonId,
 }: {
+  canManageOralWindows?: boolean
   client: ContentApiClient
   draftNamespace: string
   familyDigest?: {
@@ -1756,6 +1759,16 @@ export function StaffContentWorkspace({
 
   return (
     <PageLayout
+      actions={
+        canManageOralWindows ? (
+          <a
+            className={buttonVariants({ variant: 'outline' })}
+            href={`/staff/oral?groupLesson=${encodeURIComponent(groupLessonId)}&tab=windows`}
+          >
+            <Mic aria-hidden="true" /> Окна устного приёма
+          </a>
+        ) : undefined
+      }
       description="Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации."
       eyebrow={`Групповое занятие ${groupLessonId}`}
       title="LaTeX и публикации"
@@ -1842,6 +1855,11 @@ export function StaffLessonContentPage({ lessonId }: { lessonId: string }) {
     principal.capabilities.includes('broadcast.manage')
   return (
     <StaffContentWorkspace
+      canManageOralWindows={
+        principal.audience === 'staff' &&
+        principal.role === 'admin' &&
+        principal.capabilities.includes('oral.manage')
+      }
       client={client}
       draftNamespace={`${authentication.client.runtime.instance}:${principal.accountId}`}
       {...(canSendFamilyDigest

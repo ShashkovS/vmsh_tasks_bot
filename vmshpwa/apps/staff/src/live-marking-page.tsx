@@ -253,6 +253,9 @@ export function LiveMarkingPage({
     ),
     queryFn: () => client.history(spec!),
     enabled: !!spec,
+    // An explicit undo must fail visibly offline, not pause with the grid locked.
+    networkMode: 'always',
+    retry: false,
     meta: { realtimeResources: spec ? [`live-history/${spec.contextId}`] : [] },
   })
   const visits = useQuery({
@@ -264,7 +267,7 @@ export function LiveMarkingPage({
   const received = useCallback(
     (receipt: LiveReceipt, command: LiveCommand) => {
       const parsed = liveCellSchema.safeParse(receipt.state)
-      if (parsed.success && command.kind === 'mark')
+      if (parsed.success && (command.kind === 'mark' || command.kind === 'undo'))
         queryClient.setQueryData<LiveCells>(key('live-cells', command.context), (old) =>
           old ? mergeLiveCells({ ...old, cells: [parsed.data] }, old) : old,
         )
@@ -333,26 +336,79 @@ export function LiveMarkingPage({
   }
   const historyOps = useMemo(() => history.data?.operations ?? [], [history.data])
   const undoTarget = historyOps.find((o) => !o.undone && !skippedUndo.includes(o.operationId))
+  const undoLock = useRef(false)
+  const queuedUndos = useRef(0)
   const undo = () => {
-    if (!spec || busy) return
+    if (!spec || board.data?.readOnly) return
+    if (busy || undoLock.current) {
+      if (undoLock.current) queuedUndos.current++
+      return
+    }
     if (queue.undoLocal(spec.contextId)) return
-    if (!undoTarget) return
+    undoLock.current = true
     void action(async () => {
-      await execute({
-        kind: 'undo',
-        operationId: crypto.randomUUID(),
-        context: spec,
-        targetOperationId: undoTarget.operationId,
-      })
+      try {
+        await queue.flush()
+        if (
+          queue
+            .getSnapshot()
+            .entries.some((entry) => entry.command.context.contextId === spec.contextId)
+        )
+          throw new Error(
+            'Сохранение ещё не подтверждено. Повторите отмену после восстановления связи; предыдущая оценка не отменена.',
+          )
+        const latest = await history.refetch()
+        if (latest.error) throw latest.error
+        const target = latest.data?.operations.find(
+          (op) => !op.undone && !skippedUndo.includes(op.operationId),
+        )
+        if (!target) return
+        queue.enqueueUndo(
+          {
+            kind: 'undo',
+            operationId: crypto.randomUUID(),
+            context: spec,
+            targetOperationId: target.operationId,
+          },
+          target.kind === 'mark' && target.state.problemId
+            ? {
+                studentId: target.state.studentId,
+                problemId: target.state.problemId,
+                beforeSymbol: target.state.symbol ?? '',
+                targetSymbol: target.beforeSymbol ?? '',
+              }
+            : undefined,
+        )
+        await queue.flush()
+        if (
+          queue
+            .getSnapshot()
+            .entries.some((entry) => entry.command.context.contextId === spec.contextId)
+        )
+          throw new Error(
+            'Отмена ещё не подтверждена сервером. Запрос сохранён и будет повторён безопасно.',
+          )
+        // received() already invalidates history. Its background refresh must not
+        // keep the grid locked if the network disappears after the undo receipt.
+      } finally {
+        undoLock.current = false
+      }
     })
   }
+  // Keep rapid Ctrl/Cmd+Z presses: a receipt can render before its history refresh.
+  useEffect(() => {
+    if (!busy && !undoLock.current && queuedUndos.current > 0) {
+      queuedUndos.current--
+      undo()
+    }
+  })
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
       if (
         (e.metaKey || e.ctrlKey) &&
         !e.shiftKey &&
-        e.key.toLowerCase() === 'z' &&
+        (e.code === 'KeyZ' || e.key.toLowerCase() === 'z') &&
         !target?.closest('input,textarea,[contenteditable="true"]')
       ) {
         e.preventDefault()
@@ -371,6 +427,32 @@ export function LiveMarkingPage({
     [queueState.entries],
   )
   const selectedLessonId = lesson?.lessonId
+  const resetTargets = useMemo(() => {
+    const targets = new Map<string, string>()
+    const versions = new Map<string, number | string>()
+    const blocked = new Set<string>()
+    for (const op of historyOps) {
+      if (op.undone || op.kind !== 'mark' || !op.state.problemId) continue
+      const id = liveCellKey(op.state.studentId, op.state.problemId)
+      if (blocked.has(id)) continue
+      if (!versions.has(id) && op.state.value === 'clear') {
+        blocked.add(id)
+        continue
+      }
+      const version = versions.get(id) ?? cellMap.get(id)?.version ?? 0
+      if (
+        op.state.version !== version ||
+        op.beforeVersion == null ||
+        op.beforeSymbol === undefined
+      ) {
+        blocked.add(id)
+        continue
+      }
+      targets.set(id, op.beforeSymbol)
+      versions.set(id, op.beforeVersion)
+    }
+    return targets
+  }, [cellMap, historyOps])
   const changed = new Set(
     historyOps
       .filter((o) => !o.undone && o.kind === 'mark' && o.state.lessonId === selectedLessonId)
@@ -397,19 +479,42 @@ export function LiveMarkingPage({
         pending?.command.kind === 'mark'
           ? pending.command.value === 'plus'
             ? '+'
-            : '−'
-          : cell.symbol,
+            : pending.command.value === 'minus'
+              ? '−'
+              : (pending.targetSymbol ?? '')
+          : pending?.command.kind === 'undo'
+            ? (pending.targetSymbol ?? '')
+            : cell.symbol,
+      beforeSymbol: pending?.beforeSymbol ?? cell.symbol,
+      canClear: !pending && resetTarget(studentId, problemId) !== undefined,
       mine: pending?.command.kind === 'mark' || cell.teacherId === principal.userId,
       changed: changed.has(liveCellKey(studentId, problemId)),
       pending: pending?.status,
+      unconfirmed: !!pending?.error,
       disabled:
         !!board.data?.readOnly ||
+        busy ||
         !queueState.ready ||
+        !!pending?.attempted ||
         ['sending', 'conflict', 'failed'].includes(pending?.status ?? ''),
     }
   }
-  const mark = (studentId: string, problemId: string) => {
-    if (spec) queue.cycle(markCommand(studentId, problemId))
+  function resetTarget(studentId: string, problemId: string) {
+    return resetTargets.get(liveCellKey(studentId, problemId))
+  }
+  const mark = (studentId: string, problemId: string, clear = false) => {
+    if (!spec) return
+    const before = cellMap.get(liveCellKey(studentId, problemId))?.symbol ?? ''
+    if (clear) {
+      const target = resetTarget(studentId, problemId)
+      if (
+        target !== undefined &&
+        window.confirm(
+          `${before || 'Не сдавал'} → ${target || 'Не сдавал'}. Снять мои оценки этой ячейки в текущем приёме? Другие способы сдачи и история сохранятся.`,
+        )
+      )
+        queue.clearMark(markCommand(studentId, problemId), before, target)
+    } else queue.cycle(markCommand(studentId, problemId), 'unmarked', before)
   }
   const attendance = (studentId: string) => {
     const s = board.data?.students.find((s) => s.studentId === studentId)
@@ -646,14 +751,19 @@ export function LiveMarkingPage({
           </Button>
         ) : null}
         <Button
-          size="icon"
+          size="sm"
           variant="ghost"
           aria-label="Отменить последнее действие"
           title="Отменить · Ctrl/Cmd+Z"
-          disabled={busy || (!undoTarget && !scopedPending.length) || !!board.data?.readOnly}
+          disabled={
+            busy ||
+            (!undoTarget && !scopedPending.length && !queue.canUndoLocal(spec?.contextId ?? '')) ||
+            !!board.data?.readOnly
+          }
           onClick={undo}
         >
           <Undo2 />
+          Отменить
         </Button>
         {mode === 'school' && room ? (
           <Button
@@ -684,6 +794,10 @@ export function LiveMarkingPage({
           )}
         </span>
       </div>
+      <p className="border-b px-2 py-1 text-xs text-muted-foreground">
+        Нажатия на оценку: было → + → − → не трогать. ∅ — не сдавал. ↶ — снять свои оценки этой
+        ячейки. Красное — сохранение не подтверждено. Отменить: Ctrl/Cmd+Z.
+      </p>
       {error || queueState.storageError || board.error || cells.error ? (
         <div
           className="flex flex-wrap items-center gap-2 border-b bg-destructive/10 p-2 text-sm text-destructive"
@@ -729,7 +843,12 @@ export function LiveMarkingPage({
                 Сейчас:{' '}
                 {cellMap.get(liveCellKey(entry.command.studentId, entry.command.problemId))
                   ?.symbol || 'пусто'}{' '}
-                · Ваше: {entry.command.value === 'plus' ? '+' : '−'}
+                · Ваше:{' '}
+                {entry.command.value === 'plus'
+                  ? '+'
+                  : entry.command.value === 'minus'
+                    ? '−'
+                    : `снять мои оценки (${entry.targetSymbol || '∅'})`}
               </span>
             ) : null}
             <Button size="sm" variant="outline" onClick={() => queue.discard(entry.id)}>

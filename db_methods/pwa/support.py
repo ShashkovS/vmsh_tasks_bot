@@ -125,11 +125,14 @@ class AppendStaffSupportEntryCommand:
     client_created_at: datetime
     idempotency_key: str
     scope: SupportStaffScope
+    photo_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _validate_user_id(self.staff_user_id)
         _validate_public_id(self.thread_public_id, "support thread")
         _validate_text(self.text)
+        if len(self.photo_ids) > 10 or len(set(self.photo_ids)) != len(self.photo_ids):
+            raise ValueError("invalid photo count")
         _validate_client_time(self.client_created_at)
         _validate_idempotency_key(self.idempotency_key)
 
@@ -370,7 +373,8 @@ class PwaSupportThreadRepository:
     async def read_photo(self, *, public_id, student_user_id=None, scope=None):
         def read(connection):
             photo = connection.execute(
-                "SELECT photo.*, thread.public_id thread_public_id FROM support_photos photo "
+                "SELECT photo.*, thread.public_id thread_public_id, "
+                "thread.student_user_id thread_student_user_id FROM support_photos photo "
                 "LEFT JOIN support_entries entry ON entry.id = photo.entry_id "
                 "LEFT JOIN support_threads thread ON thread.id = entry.thread_id "
                 "WHERE photo.public_id = ?",
@@ -380,7 +384,10 @@ class PwaSupportThreadRepository:
                 raise SupportNotFound("photo not found")
             if (
                 student_user_id is not None
-                and photo["uploader_user_id"] == student_user_id
+                and (
+                    photo["uploader_user_id"] == student_user_id
+                    or photo["thread_student_user_id"] == student_user_id
+                )
             ):
                 return photo
             if photo["thread_public_id"] is not None and scope is not None:
@@ -515,6 +522,7 @@ class PwaSupportThreadRepository:
             client_created_at=command.client_created_at,
             idempotency_key=command.idempotency_key,
             scope=command.scope,
+            photo_ids=command.photo_ids,
         )
 
     async def get_student_thread(

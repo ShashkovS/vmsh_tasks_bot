@@ -325,6 +325,10 @@ pwa-production-build:
 pwa-e2e:
 	cd $(PWA_DIR) && CI=true pnpm e2e
 
+.PHONY: pwa-e2e-live-marking
+pwa-e2e-live-marking:
+	cd $(PWA_DIR) && CI=true pnpm e2e --mode live-marking
+
 pwa-e2e-auth:
 	cd $(PWA_DIR) && CI=true pnpm e2e:auth
 

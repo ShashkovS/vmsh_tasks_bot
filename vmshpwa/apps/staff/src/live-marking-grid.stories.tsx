@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import type { LiveBoard } from '@vmsh/contracts'
 import { studentNameMatchesSearch } from './student-directory-search'
-import { LiveSchoolGrid, LiveZoomGrid } from './live-marking-grid'
+import { LiveMarkButton, LiveSchoolGrid, LiveZoomGrid } from './live-marking-grid'
 
 const board: LiveBoard = {
   schemaVersion: 1,
@@ -68,6 +68,7 @@ function Harness({
         : board,
     display: (s: string, p: string) => ({
       symbol: ['', '+', '−'][marks[`${s}:${p}`] ?? (status ? 1 : 0)]!,
+      beforeSymbol: '*',
       mine: !!marks[`${s}:${p}`],
       changed: !!marks[`${s}:${p}`],
       pending: status,
@@ -129,7 +130,9 @@ export const Zoom: Story = {
     await expect(marks[0]!.getBoundingClientRect().top).toBe(marks[1]!.getBoundingClientRect().top)
     await userEvent.click(canvas.getByRole('button', { name: 'Показать условие задачи 21б' }))
     await expect(canvas.getByLabelText('Открыто условие')).toHaveTextContent('21б')
-    await expect(canvas.getByRole('button', { name: /^Задача 21б:/ })).toHaveAccessibleName(/пусто/)
+    await expect(canvas.getByRole('button', { name: /^Задача 21б:/ })).toHaveAccessibleName(
+      /не сдавал/,
+    )
   },
 }
 export const Saving: Story = { args: { status: 'sending' } }
@@ -137,6 +140,53 @@ export const Draft: Story = { args: { status: 'draft' } }
 export const Failed: Story = { args: { status: 'failed' } }
 export const Offline: Story = { args: { status: 'queued' } }
 export const Conflict: Story = { args: { status: 'conflict' } }
+
+export const ExplicitTransitions: Story = {
+  render: function Example() {
+    const [reset, setReset] = useState(false)
+    return (
+      <div className="space-y-3 p-4">
+        {['*', '+', '−', ''].map((before, index) => (
+          <div className="h-11 w-28 border" key={index}>
+            <LiveMarkButton
+              label={`Переход ${index}`}
+              studentId="u-1"
+              problemId={`p-${index}`}
+              onMark={() => {}}
+              display={{
+                symbol: index === 1 ? '−' : '+',
+                beforeSymbol: before,
+                mine: true,
+                changed: true,
+                pending: index === 2 ? 'failed' : 'draft',
+                disabled: false,
+              }}
+            />
+          </div>
+        ))}
+        <div className="h-11 w-28 border">
+          <LiveMarkButton
+            label="Мой минус"
+            studentId="u-1"
+            problemId="p-5"
+            onMark={(_s, _p, clear) => setReset(!!clear)}
+            display={{ symbol: '−', mine: true, changed: true, canClear: true, disabled: false }}
+          />
+        </div>
+        <output>{reset ? 'Снимаем только мои оценки' : ''}</output>
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const text of ['* → +', '+ → −', '− → +', '∅ → +'])
+      await expect(canvas.getByText(text)).toBeVisible()
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Снять мои оценки в этом приёме: Мой минус' }),
+    )
+    await expect(canvas.getByText('Снимаем только мои оценки')).toBeVisible()
+  },
+}
 
 export const LargeClassroom: Story = {
   args: { large: true },
@@ -155,7 +205,7 @@ export const LargeClassroom: Story = {
         cell.click()
       })
       await waitFor(() =>
-        expect(cell).toHaveAccessibleName(new RegExp(['\\+', '−', 'пусто'][i % 3]!)),
+        expect(cell).toHaveAccessibleName(new RegExp(['\\+', '−', 'не сдавал'][i % 3]!)),
       )
       samples.push(latency)
     }

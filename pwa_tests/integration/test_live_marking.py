@@ -637,3 +637,79 @@ async def test_live_condition_published_scope_and_read_only(content_http):
     )
     response, _ = await call(f, "get", path)
     assert response.status == 404
+
+
+async def test_clear_local_marks_preserves_ledger_and_is_undoable(content_http):
+    f = content_http
+    problem_id, spec = await setup(f)
+    _, plus, _ = await operation(f, spec, problem_id, 0)
+    _, minus, _ = await operation(
+        f, spec, problem_id, plus["state"]["version"], "minus"
+    )
+    response, cleared, payload = await operation(
+        f, spec, problem_id, minus["state"]["version"], "clear"
+    )
+    assert response.status == 200, cleared
+    assert cleared["state"]["verdict"] is None
+    assert cleared["state"]["symbol"] == ""
+    response, replay = await call(f, "post", "operations", payload)
+    assert response.status == 200 and replay["replayed"]
+    counts = f.factory.run_read(
+        lambda db: (
+            db.execute(
+                "SELECT count(*) n FROM results WHERE student_id=?",
+                (support.STUDENT_USER_ID,),
+            ).fetchone()["n"],
+            db.execute(
+                "SELECT count(*) n FROM effective_results WHERE student_id=?",
+                (support.STUDENT_USER_ID,),
+            ).fetchone()["n"],
+        )
+    )
+    assert counts == (2, 0)
+    response, restored = await call(
+        f,
+        "post",
+        "operations",
+        dict(
+            kind="undo",
+            operationId=uuid4().hex,
+            context=spec,
+            targetOperationId=cleared["operationId"],
+        ),
+    )
+    assert response.status == 200, restored
+    assert restored["state"]["symbol"] == "−"
+    response, _, _ = await operation(
+        f, spec, problem_id, minus["state"]["version"], "clear"
+    )
+    assert response.status == 409
+
+
+async def test_clear_restores_prior_written_result_and_rejects_external_changes(
+    content_http,
+):
+    f = content_http
+    problem_id, spec = await setup(f)
+
+    def written(db):
+        db.execute(
+            "INSERT INTO results(student_id,problem_id,lesson,group_id,teacher_id,ts,verdict,res_type) "
+            "SELECT ?,id,lesson,group_id,?,'2026-09-01',18,2 FROM problems WHERE public_id=?",
+            (support.STUDENT_USER_ID, support.ADMIN_USER_ID, problem_id),
+        )
+
+    f.factory.run_write(written)
+    _, minus, _ = await operation(f, spec, problem_id, 1, "minus")
+    response, reset, _ = await operation(
+        f, spec, problem_id, minus["state"]["version"], "clear"
+    )
+    assert response.status == 200, reset
+    assert reset["state"]["verdict"] == 18
+    assert reset["state"]["teacherId"] == f"u-{support.ADMIN_USER_ID}"
+    # Even a refreshed version cannot turn someone else's later result into ours.
+    f.factory.run_write(written)
+    response, _, _ = await operation(
+        f, spec, problem_id, reset["state"]["version"] + 1, "clear"
+    )
+    assert response.status == 409

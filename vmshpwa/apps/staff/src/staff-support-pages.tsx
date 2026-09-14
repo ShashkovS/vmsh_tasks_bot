@@ -5,6 +5,7 @@ import { SemanticMathDocument } from '@vmsh/content'
 
 import {
   PageLayout,
+  PhotoSupportComposer,
   PageStatePanel,
   SupportNetworkError,
   createSupportClient,
@@ -21,7 +22,7 @@ import {
   type SupportThreadSummary,
 } from '@vmsh/contracts'
 import { useSupportDraftEditor, type SupportDraftDescriptor } from '@vmsh/offline'
-import { FeedbackThread, SupportComposer, type ThreadMessageView } from '@vmsh/product'
+import { FeedbackThread, type ThreadMessageView } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, buttonVariants } from '@vmsh/ui'
 
 type StaffInboxFilters = Omit<StaffSupportListQuery, 'cursor'>
@@ -213,18 +214,22 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
   }
 
   const thread = query.data.thread
-  const submit = async () => {
+  const submit = async (photoIds: string[], clearPhotos: () => Promise<void>) => {
     mutation.reset()
     try {
       await mutation.mutateAsync({
         schemaVersion: 1,
         idempotencyKey: editor.delivery.idempotencyKey,
-        text: editor.text,
+        // Existing support entries require a caption; docs/question-photos.md.
+        text: editor.text.trim() ? editor.text : 'Фотография',
+        photoIds,
         clientCreatedAt: editor.delivery.clientCreatedAt,
       })
+      await clearPhotos()
       editor.clearAfterConfirmedSend()
     } catch (error) {
       authentication.handleApiError(error)
+      throw error
     }
   }
 
@@ -262,11 +267,15 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
         />
         <Card className="h-fit lg:sticky lg:top-4">
           <CardContent className="pt-4">
-            <SupportComposer
+            <PhotoSupportComposer
+              key={threadId}
+              client={client}
+              photoDraftKey={`thread:${threadId}`}
+              allowPhotoOnly
               busy={mutation.isPending}
               density="compact"
               error={mutation.error ? describeSupportError(mutation.error) : null}
-              onSubmit={() => void submit()}
+              onSubmit={submit}
               onValueChange={(value) => {
                 mutation.reset()
                 editor.setText(value)

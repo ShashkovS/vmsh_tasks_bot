@@ -2,12 +2,15 @@ import { memo, useRef, useLayoutEffect, useCallback, useState, useEffect } from 
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { LiveBoard } from '@vmsh/contracts'
 import { cn } from '@vmsh/ui'
-import { BookOpen, Clock3 } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 
 // live-marking.md: dense touch table, fixed names/header, independent authorship
 // and pending/change indicators. Both routes use the same cell interaction.
 export interface MarkDisplay {
   symbol: string
+  beforeSymbol?: string
+  canClear?: boolean
+  unconfirmed?: boolean
   mine: boolean
   changed: boolean
   pending?: 'draft' | 'queued' | 'sending' | 'conflict' | 'failed' | undefined
@@ -25,7 +28,7 @@ export const LiveMarkButton = memo(
     display: MarkDisplay
     studentId: string
     problemId: string
-    onMark: (studentId: string, problemId: string) => void
+    onMark: (studentId: string, problemId: string, clear?: boolean) => void
   }) {
     // docs/live-marking.md: an unacknowledged mark never looks committed.
     const [slow, setSlow] = useState(false)
@@ -39,6 +42,7 @@ export const LiveMarkButton = memo(
     }, [display.pending])
     const delayed = display.pending === 'sending' && slow
     const uncertain =
+      display.unconfirmed ||
       delayed ||
       display.pending === 'queued' ||
       display.pending === 'failed' ||
@@ -58,47 +62,59 @@ export const LiveMarkButton = memo(
                   ? 'Ожидает отправки'
                   : 'Сохранено'
     return (
-      <button
-        type="button"
-        onClick={() => onMark(studentId, problemId)}
-        disabled={display.disabled}
-        aria-label={`${label}: ${display.pending ? `выбрано ${display.symbol === '+' ? 'плюс' : 'минус'}` : display.symbol || 'пусто'}${display.mine ? ', моя оценка' : ''}, ${status}`}
-        aria-busy={display.pending === 'sending'}
-        title={`${display.pending ? `Выбрано ${display.symbol === '+' ? 'плюс' : 'минус'}. ` : ''}${display.mine ? 'Моя оценка. ' : ''}${display.changed ? 'Изменено в этом приёме. ' : ''}${status}`}
-        className={cn(
-          'relative flex h-full min-h-11 w-full min-w-11 items-center justify-center border border-transparent text-2xl font-medium tabular-nums outline-none transition-colors hover:bg-accent focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait',
-          display.mine && 'bg-primary/10 font-bold text-primary',
-          display.changed && 'border-primary',
-          display.pending && 'border-dashed border-status-warning',
-          uncertain && 'bg-status-warning/15 text-status-warning',
-          (display.pending === 'conflict' || display.pending === 'failed') &&
-            'bg-destructive/10 text-destructive',
-        )}
-      >
-        {display.pending ? (
-          uncertain ? (
-            <span aria-hidden="true">…</span>
-          ) : (
-            <Clock3 className="size-5" aria-hidden="true" />
-          )
-        ) : (
-          display.symbol || (
-            <span className="text-muted-foreground/40" aria-hidden="true">
-              ·
+      <div className="relative flex h-full">
+        <button
+          type="button"
+          onClick={() => onMark(studentId, problemId)}
+          disabled={display.disabled}
+          aria-label={`${label}: ${display.pending ? `${display.beforeSymbol || 'не сдавал'} → ${display.symbol || 'не сдавал'}` : display.symbol || 'не сдавал'}${display.mine ? ', моя оценка' : ''}, ${status}`}
+          aria-busy={display.pending === 'sending'}
+          title={`${display.pending ? `${display.beforeSymbol || 'Не сдавал'} → ${display.symbol || 'Не сдавал'}. ` : ''}${status}. Нажатия: плюс → минус → не трогать.`}
+          className={cn(
+            'relative flex h-full min-h-11 w-full min-w-11 items-center justify-center border border-transparent text-2xl font-medium tabular-nums outline-none transition-colors hover:bg-accent focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait',
+            display.mine && 'bg-primary/10 font-bold text-primary',
+            display.changed && 'border-primary',
+            display.pending && 'border-dashed border-status-warning',
+            uncertain && 'border-destructive bg-destructive/10 text-destructive',
+            (display.pending === 'conflict' || display.pending === 'failed') &&
+              'bg-destructive/10 text-destructive',
+          )}
+        >
+          {display.pending ? (
+            <span className="whitespace-nowrap text-base" aria-hidden="true">
+              {display.beforeSymbol || '∅'} → {display.symbol || '∅'}
             </span>
-          )
-        )}
-        {display.mine ? (
-          <span className="absolute bottom-0.5 left-1 text-[8px] leading-none" aria-hidden="true">
-            я
-          </span>
+          ) : (
+            display.symbol || (
+              <span className="text-muted-foreground/40" aria-hidden="true">
+                ·
+              </span>
+            )
+          )}
+          {display.mine ? (
+            <span className="absolute bottom-0.5 left-1 text-[8px] leading-none" aria-hidden="true">
+              я
+            </span>
+          ) : null}
+          {display.pending ? (
+            <span className="absolute right-1 top-0.5 text-[10px] leading-none" aria-hidden="true">
+              {display.pending === 'conflict' ? '!' : '○'}
+            </span>
+          ) : null}
+        </button>
+        {display.canClear ? (
+          <button
+            type="button"
+            disabled={display.disabled}
+            className="min-h-11 w-6 shrink-0 border-l text-xs text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={`Снять мои оценки в этом приёме: ${label}`}
+            title="Снять мои оценки в этом приёме (другие способы сдачи сохранятся)"
+            onClick={() => onMark(studentId, problemId, true)}
+          >
+            ↶
+          </button>
         ) : null}
-        {display.pending ? (
-          <span className="absolute right-1 top-0.5 text-[10px] leading-none" aria-hidden="true">
-            {display.pending === 'conflict' ? '!' : '○'}
-          </span>
-        ) : null}
-      </button>
+      </div>
     )
   },
   (a, b) =>
@@ -107,6 +123,9 @@ export const LiveMarkButton = memo(
     a.problemId === b.problemId &&
     a.onMark === b.onMark &&
     a.display.symbol === b.display.symbol &&
+    a.display.beforeSymbol === b.display.beforeSymbol &&
+    a.display.canClear === b.display.canClear &&
+    a.display.unconfirmed === b.display.unconfirmed &&
     a.display.mine === b.display.mine &&
     a.display.changed === b.display.changed &&
     a.display.pending === b.display.pending &&
@@ -121,7 +140,8 @@ function useMarkAction(action: LiveSchoolGridProps['onMark']) {
     current.current = action
   }, [action])
   return useCallback(
-    (studentId: string, problemId: string) => current.current(studentId, problemId),
+    (studentId: string, problemId: string, clear?: boolean) =>
+      current.current(studentId, problemId, clear),
     [],
   )
 }
@@ -132,7 +152,7 @@ export interface LiveSchoolGridProps {
   expanded: string | null
   onExpand: (id: string) => void
   display: (studentId: string, problemId: string) => MarkDisplay
-  onMark: (studentId: string, problemId: string) => void
+  onMark: (studentId: string, problemId: string, clear?: boolean) => void
   onAttendance: (studentId: string) => void
   attendance: (studentId: string) => {
     value: 'unmarked' | 'present' | 'absent'

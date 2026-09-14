@@ -63,7 +63,7 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   await page.getByRole('searchbox', { name: 'Поиск школьника' }).fill('Тестовый-Онлайн Алексей')
   await page.getByRole('button', { name: /Тестовый-Онлайн Алексей/ }).click()
   await page.getByRole('combobox', { name: 'Занятие', exact: true }).selectOption(`gl-${lesson}`)
-  const cell = page.getByRole('button', { name: /^Задача 1:/ })
+  const cell = page.getByRole('button', { name: new RegExp(`^Задача ${lesson}н\\.1:`) })
   await expect(cell).toBeVisible()
   let writes = 0
   page.on('request', (request) => {
@@ -75,14 +75,15 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   const lastBox = await marks.last().boundingBox()
   // docs/task-titles.md: six compact rows now include visible, wrapped names.
   expect(lastBox!.y - firstBox!.y).toBeLessThan(560)
-  expect(lastBox!.y + lastBox!.height).toBeLessThan(740)
+  // The always-visible transition/undo legend occupies space above the grid.
+  expect(lastBox!.y + lastBox!.height).toBeLessThan(page.viewportSize()!.height)
   await expect(page.getByText('Расскажите решение', { exact: true }).first()).toBeVisible()
   await page.screenshot({
     path: info.outputPath('live-zoom-titles-mobile.png'),
     animations: 'disabled',
   })
   const conditionButton = page.getByRole('button', {
-    name: 'Показать условие задачи 1',
+    name: `Показать условие задачи ${lesson}н.1`,
     exact: true,
   })
   await conditionButton.click()
@@ -94,7 +95,7 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   })
   await page.getByRole('button', { name: 'К оценкам' }).click()
   await expect(conditionButton).toBeFocused()
-  await expect(cell).toHaveAccessibleName(/пусто/)
+  await expect(cell).toHaveAccessibleName(/не сдавал/)
   expect(writes).toBe(0)
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.screenshot({
@@ -113,8 +114,21 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   expect(writes).toBe(1)
   await page.reload()
   await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: /Снять мои оценки в этом приёме/ })
+    .first()
+    .click()
+  await expect(cell).toContainText('→ ∅')
+  await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
   await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
-  await expect(cell).toHaveAccessibleName(/пусто, Сохранено/)
+  await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.keyboard.press('Control+z')
+  await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
+  await cell.click()
+  await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
+  await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
   await context.setOffline(true)
   await cell.click()
   await expect(page.getByRole('status')).toContainText('не отправлено')
@@ -155,11 +169,12 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   )
-  expect(writes).toBe(6)
+  // Clear, undo clear, undo the original plus, then another plus add four writes.
+  expect(writes).toBe(10)
   await page.keyboard.press('Escape')
   const resumed = await context.newPage()
   await resumed.goto(page.url())
-  const resumedCell = resumed.getByRole('button', { name: /^Задача 1:/ })
+  const resumedCell = resumed.getByRole('button', { name: new RegExp(`^Задача ${lesson}н\\.1:`) })
   await expect(resumedCell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
   await page.getByRole('button', { name: /За сессию/ }).click()
   await page.getByRole('button', { name: 'Завершить сессию' }).click()
@@ -187,8 +202,12 @@ test('Live classroom: teacher transfer, attendance and another teacher sees the 
   ).toHaveAttribute('aria-expanded', 'true')
   const colleague = await secondaryContext.newPage()
   await loginThroughUi(colleague, AUTH_PERSONAS.teacher, path)
-  const mine = page.getByRole('button', { name: new RegExp(`^${student}, задача 1:`) })
-  const theirs = colleague.getByRole('button', { name: new RegExp(`^${student}, задача 1:`) })
+  const mine = page.getByRole('button', {
+    name: new RegExp(`^${student}, задача ${numbers[project]}н\\.1:`),
+  })
+  const theirs = colleague.getByRole('button', {
+    name: new RegExp(`^${student}, задача ${numbers[project]}н\\.1:`),
+  })
   await expect(theirs).toBeVisible()
   await mine.click()
   await expect(mine).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
@@ -198,7 +217,7 @@ test('Live classroom: teacher transfer, attendance and another teacher sees the 
   await expect(theirs).toHaveAccessibleName(/−, моя оценка, Сохранено/)
   await expect(mine).toHaveAccessibleName(/−, Сохранено/)
   await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
-  await expect(page.getByRole('alert')).toContainText('Данные уже изменились')
+  await expect(page.getByRole('alert').filter({ hasText: 'Ячейка уже изменена.' })).toBeVisible()
   await page.getByRole('button', { name: `${student}: Пришёл` }).click()
   await expect(page.getByRole('button', { name: `${student}: Отсутствует` })).toBeVisible()
   await page.getByRole('button', { name: 'Все', exact: true }).click()

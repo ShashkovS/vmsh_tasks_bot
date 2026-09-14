@@ -35,6 +35,7 @@ export function createLiveMarkingClient(runtime: RuntimeConfig, refresh?: () => 
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         keepalive: body !== undefined,
+        signal: AbortSignal.timeout(15_000),
       })
     let response = await send()
     if (response.status === 401 && refresh) {

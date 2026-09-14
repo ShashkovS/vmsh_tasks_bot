@@ -21,6 +21,9 @@ const entrySchema = z.object({
   createdAt: z.number(),
   dueAt: z.number(),
   error: z.string().optional(),
+  attempted: z.boolean().optional(),
+  beforeSymbol: z.string().optional(),
+  targetSymbol: z.string().optional(),
 })
 export type LivePendingEntry = z.infer<typeof entrySchema>
 export class LiveMarkingDatabase extends Dexie {
@@ -48,6 +51,8 @@ export class LiveMarkingQueue {
   private persistence: Promise<unknown> = Promise.resolve()
   private timer: ReturnType<typeof setTimeout> | undefined
   private running = false
+  private waiters: (() => void)[] = []
+  private localUndo: { contextId: string; id: string; before?: LivePendingEntry | undefined }[] = []
   private stopped = false
   private hydration: Promise<void> | undefined
   constructor(
@@ -93,6 +98,7 @@ export class LiveMarkingQueue {
         .map((entry): LivePendingEntry => ({
           ...entry,
           status: entry.status === 'sending' ? 'queued' : entry.status,
+          attempted: entry.attempted ?? ['sending', 'queued'].includes(entry.status),
         }))
       this.snapshot = { entries, ready: true, storageError: null }
       this.emit()
@@ -133,11 +139,17 @@ export class LiveMarkingQueue {
   cycle(
     command: Extract<LiveCommand, { kind: 'mark' | 'attendance' }>,
     initialAttendance = 'unmarked',
+    beforeSymbol?: string,
   ) {
     const key = liveCommandKey(command)
     const old = this.snapshot.entries.find((e) => e.key === key)
-    if (old && ['sending', 'conflict', 'failed'].includes(old.status)) return
+    if (old && (old.attempted || ['sending', 'conflict', 'failed'].includes(old.status))) return
     this.flushOther(key)
+    this.localUndo.push({
+      contextId: command.context.contextId,
+      id: old?.id ?? command.operationId,
+      before: old,
+    })
     const phase = ((old?.phase ?? 0) + 1) % 3
     if (phase === 0) {
       if (old) {
@@ -165,8 +177,34 @@ export class LiveMarkingQueue {
       phase,
       createdAt: old?.createdAt ?? Date.now(),
       dueAt: Date.now() + 2000,
+      beforeSymbol: old?.beforeSymbol ?? beforeSymbol,
     }
     this.emit([...this.snapshot.entries.filter((e) => e.id !== entry.id), entry])
+    this.persist(entry, entry.id)
+    this.schedule()
+  }
+  clearMark(
+    command: Extract<LiveCommand, { kind: 'mark' }>,
+    beforeSymbol: string,
+    targetSymbol = '',
+  ) {
+    const key = liveCommandKey(command)
+    if (this.snapshot.entries.some((entry) => entry.key === key)) return
+    this.flushOther(key)
+    const entry: LivePendingEntry = {
+      id: command.operationId,
+      key,
+      command: { ...command, value: 'clear' },
+      phase: 3,
+      steps: [0],
+      createdAt: Date.now(),
+      dueAt: Date.now() + 2000,
+      status: 'draft',
+      beforeSymbol,
+      targetSymbol,
+    }
+    this.localUndo.push({ contextId: command.context.contextId, id: entry.id })
+    this.emit([...this.snapshot.entries, entry])
     this.persist(entry, entry.id)
     this.schedule()
   }
@@ -176,11 +214,33 @@ export class LiveMarkingQueue {
         this.replace({ ...entry, status: 'queued' })
     void this.flush(false)
   }
+  enqueueUndo(
+    command: Extract<LiveCommand, { kind: 'undo' }>,
+    preview?: { studentId: string; problemId: string; beforeSymbol: string; targetSymbol: string },
+  ) {
+    const entry: LivePendingEntry = {
+      id: command.operationId,
+      command,
+      key: preview
+        ? `${command.context.mode}:${command.context.contextId}:${preview.studentId}:${preview.problemId}`
+        : liveCommandKey(command),
+      status: 'queued',
+      phase: 1,
+      steps: [],
+      createdAt: Date.now(),
+      dueAt: Date.now(),
+      beforeSymbol: preview?.beforeSymbol,
+      targetSymbol: preview?.targetSymbol,
+    }
+    this.emit([...this.snapshot.entries, entry])
+    this.persist(entry, entry.id)
+  }
   private replace(entry: LivePendingEntry) {
     this.emit(this.snapshot.entries.map((e) => (e.id === entry.id ? entry : e)))
     this.persist(entry, entry.id)
   }
-  discard(id: string) {
+  discard(id: string, keepUndo = false) {
+    if (!keepUndo) this.localUndo = this.localUndo.filter((step) => step.id !== id)
     this.emit(this.snapshot.entries.filter((e) => e.id !== id))
     this.persist(undefined, id)
   }
@@ -203,11 +263,36 @@ export class LiveMarkingQueue {
     void this.flush(false)
   }
   undoLocal(contextId: string): boolean {
+    const reverseIndex = [...this.localUndo]
+      .reverse()
+      .findIndex((step) => step.contextId === contextId)
+    const index = reverseIndex === -1 ? -1 : this.localUndo.length - 1 - reverseIndex
+    if (index !== -1) {
+      const step = this.localUndo[index]!
+      const current = this.snapshot.entries.find((entry) => entry.id === step.id)
+      // A lost response may already have committed. Resolve the original ID first.
+      if (current?.attempted || current?.status === 'sending') return false
+      this.localUndo.splice(index, 1)
+      this.discard(step.id, true)
+      if (step.before) {
+        const restored = { ...step.before, status: 'draft' as const, dueAt: Date.now() + 2000 }
+        this.emit([...this.snapshot.entries, restored])
+        this.persist(restored, restored.id)
+      }
+      this.schedule()
+      return true
+    }
     const entry = [...this.snapshot.entries]
-      .filter((e) => e.command.context.contextId === contextId && e.status !== 'sending')
+      .filter((e) => e.command.context.contextId === contextId)
       .sort((a, b) => b.dueAt - a.dueAt)[0]
     if (!entry) return false
-    if (entry.status === 'conflict' || entry.status === 'failed' || entry.phase === 1) {
+    if (entry.attempted || entry.status === 'sending') return false
+    if (
+      entry.status === 'conflict' ||
+      entry.status === 'failed' ||
+      entry.phase === 1 ||
+      entry.phase === 3
+    ) {
       this.discard(entry.id)
       return true
     }
@@ -237,15 +322,25 @@ export class LiveMarkingQueue {
     this.schedule()
     return true
   }
+  canUndoLocal(contextId: string): boolean {
+    return this.localUndo.some((step) => step.contextId === contextId)
+  }
   async flush(force = true) {
     if (force)
       for (const entry of this.snapshot.entries)
         if (entry.status === 'draft') this.replace({ ...entry, status: 'queued' })
-    if (this.running || this.stopped || !this.snapshot.ready) return
+    if (this.running) {
+      await new Promise<void>((resolve) => this.waiters.push(resolve))
+      return
+    }
+    if (this.stopped || !this.snapshot.ready) return
     this.running = true
     let retryDelay = 0
     try {
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        for (const entry of this.snapshot.entries)
+          if (entry.status === 'draft' && entry.dueAt <= Date.now())
+            this.replace({ ...entry, status: 'queued' })
         retryDelay = 1000
         return
       }
@@ -259,7 +354,7 @@ export class LiveMarkingQueue {
           (entry.status === 'draft' && entry.dueAt > Date.now())
         )
           continue
-        this.replace({ ...entry, status: 'sending' })
+        this.replace({ ...entry, status: 'sending', attempted: true })
         await this.persistence
         if (this.snapshot.storageError) {
           this.replace({ ...entry, status: 'failed', error: this.snapshot.storageError })
@@ -268,12 +363,14 @@ export class LiveMarkingQueue {
         try {
           const receipt = await this.send(entry.command)
           this.received(receipt, entry.command)
+          this.localUndo = this.localUndo.filter((step) => step.id !== entry.id)
           this.discard(entry.id)
           await this.persistence
         } catch (error) {
           const status = error instanceof ApiResponseError ? error.status : 0
           this.replace({
             ...entry,
+            attempted: !status || status >= 500,
             status:
               status === 409 ? 'conflict' : status >= 400 && status < 500 ? 'failed' : 'queued',
             error: error instanceof Error ? error.message : 'Не отправлено',
@@ -286,6 +383,7 @@ export class LiveMarkingQueue {
       }
     } finally {
       this.running = false
+      for (const resolve of this.waiters.splice(0)) resolve()
       if (this.snapshot.entries.length) this.schedule(retryDelay)
     }
   }
