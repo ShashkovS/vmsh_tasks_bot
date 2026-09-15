@@ -127,10 +127,13 @@ export function WorksheetMaterials({
         </div>
       ) : null}
       {opened && contents[opened] != null ? (
-        <div className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3">
-          <p className="vmsh-material-label text-small font-medium">
-            {opened === 'hint' ? 'Подсказка' : 'Решение'}
-          </p>
+        <div
+          data-material-kind={opened}
+          className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3"
+        >
+          {opened === 'hint' ? (
+            <p className="vmsh-material-label text-small font-medium">Подсказка</p>
+          ) : null}
           {contents[opened]}
           <div className="mt-2 font-sans" data-print-hide>
             <Button size="sm" variant="ghost" onClick={() => setOpened(null)}>

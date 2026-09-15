@@ -52,3 +52,7 @@ Zod `courses.ts` принимает необязательное поле (ст�
   [desktop, Chromium](worksheet-materials/chromium-1280-light.png).
 - [Пример печати открытого решения](worksheet-materials/print-solution.pdf).
 - Остальные снимки обеих тем и трёх браузеров — в каталоге `worksheet-materials`.
+
+15 сентября: в раскрытом решении убрана служебная подпись «Решение» и верхний
+отступ первого заголовка. Внутренние разделы «Ответ»/«Решение» сохраняются.
+Изменение общее для Student и Staff: `WorksheetMaterials`, `content.css`.
