@@ -1,0 +1,244 @@
+import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
+import { expect, test } from './fixtures'
+
+// Owner acceptance: vmshpwa/docs/live-marking.md. Real API + websocket + IndexedDB.
+const numbers: Record<string, number> = { chromium: 931, webkit: 932, firefox: 933 }
+function persona(project: string): AuthPersona {
+  return {
+    ...AUTH_PERSONAS.teacher,
+    username: `live-${project}`,
+    accountPublicId: `a-${19000 + numbers[project]!}`,
+  }
+}
+test.setTimeout(120_000)
+
+test('Live student search ignores patronymics and can match only surnames', async ({
+  page,
+}, info) => {
+  const project = info.project.name
+  const fixture = 19000 + numbers[project]!
+  const classroomStudentName = `Тестов ${project} Ученик`
+  const patronymicOnlyStudentName = `БезАккаунта ${project} Новый`
+
+  await loginThroughUi(page, persona(project), '/staff/oral?course=c-1')
+  let search = page.getByRole('searchbox', { name: 'Поиск школьника' })
+  let surnameOnly = page.getByRole('switch', { name: 'Искать только по фамилии' })
+  let classroomStudent = page.getByRole('button', {
+    name: new RegExp(classroomStudentName),
+  })
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+  await expect(page.getByText(patronymicOnlyStudentName, { exact: true })).toHaveCount(0)
+  await surnameOnly.click()
+  await expect(surnameOnly).toHaveAttribute('aria-checked', 'true')
+  await search.fill('Ученик')
+  await expect(classroomStudent).toHaveCount(0)
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+
+  await page.goto(`/staff/in-person?event=ipe-${fixture}&room=room-${fixture}`)
+  await page.getByRole('button', { name: 'Добавить в группу школьника' }).click()
+  search = page.getByRole('searchbox', { name: 'Поиск школьника' })
+  surnameOnly = page.getByRole('switch', { name: 'Искать только по фамилии' })
+  classroomStudent = page.getByRole('button', { name: new RegExp(classroomStudentName) })
+  await expect(surnameOnly).toHaveAttribute('aria-checked', 'false')
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+  await expect(page.getByText(patronymicOnlyStudentName, { exact: true })).toHaveCount(0)
+  await surnameOnly.click()
+  await expect(surnameOnly).toHaveAttribute('aria-checked', 'true')
+  await search.fill('Ученик')
+  await expect(classroomStudent).toHaveCount(0)
+  await search.fill(`Тестов ${project}`)
+  await expect(classroomStudent).toBeVisible()
+})
+
+test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions', async ({
+  page,
+  context,
+}, info) => {
+  const lesson = numbers[info.project.name]!
+  await page.setViewportSize({ width: 390, height: 844 })
+  await loginThroughUi(page, persona(info.project.name), '/staff/oral?course=c-1')
+  await page.getByRole('searchbox', { name: 'Поиск школьника' }).fill('Тестовый-Онлайн Алексей')
+  await page.getByRole('button', { name: /Тестовый-Онлайн Алексей/ }).click()
+  await page.getByRole('combobox', { name: 'Занятие', exact: true }).selectOption(`gl-${lesson}`)
+  const cell = page.getByRole('button', { name: new RegExp(`^Задача ${lesson}н\\.1:`) })
+  await expect(cell).toBeVisible()
+  let writes = 0
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().endsWith('/live-marking/operations')) writes++
+  })
+  const marks = page.getByRole('button', { name: /^Задача / })
+  await expect(marks).toHaveCount(24)
+  const firstBox = await marks.first().boundingBox()
+  const lastBox = await marks.last().boundingBox()
+  // docs/task-titles.md: six compact rows now include visible, wrapped names.
+  expect(lastBox!.y - firstBox!.y).toBeLessThan(560)
+  // The always-visible transition/undo legend occupies space above the grid.
+  expect(lastBox!.y + lastBox!.height).toBeLessThan(page.viewportSize()!.height)
+  await expect(page.getByText('Расскажите решение', { exact: true }).first()).toBeVisible()
+  await page.screenshot({
+    path: info.outputPath('live-zoom-titles-mobile.png'),
+    animations: 'disabled',
+  })
+  const conditionButton = page.getByRole('button', {
+    name: `Показать условие задачи ${lesson}н.1`,
+    exact: true,
+  })
+  await conditionButton.click()
+  await expect(page.getByRole('dialog')).toContainText('Расскажите решение преподавателю')
+  await page.screenshot({
+    path: info.outputPath('live-condition-mobile.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'К оценкам' }).click()
+  await expect(conditionButton).toBeFocused()
+  await expect(cell).toHaveAccessibleName(/не сдавал/)
+  expect(writes).toBe(0)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.screenshot({
+    path: info.outputPath('live-zoom-desktop.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await cell.click()
+  await cell.click()
+  await cell.click()
+  await page.waitForTimeout(2200) // Proves a complete cycle never crosses the debounce boundary.
+  expect(writes).toBe(0)
+  await cell.click()
+  await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  expect(writes).toBe(1)
+  await page.reload()
+  await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: /Снять мои оценки в этом приёме/ })
+    .first()
+    .click()
+  await expect(cell).toContainText('→ ∅')
+  await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
+  await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
+  await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.keyboard.press('Control+z')
+  await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
+  await cell.click()
+  await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
+  await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
+  await context.setOffline(true)
+  await cell.click()
+  await expect(page.getByRole('status')).toContainText('не отправлено')
+  await context.setOffline(false)
+  await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.getByRole('button', { name: '👍 Круто', exact: true }).click()
+  await expect(page.getByRole('button', { name: '👍 Круто', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await page.getByRole('button', { name: '🤖 ИИ', exact: true }).click()
+  await expect(page.getByRole('button', { name: '🤖 ИИ', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await page.getByRole('button', { name: 'Похвалить ученика' }).click()
+  await expect(page.getByRole('button', { name: 'Похвала отправлена' })).toBeVisible()
+  await page.screenshot({
+    path: info.outputPath('live-zoom-mobile.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
+  await page.screenshot({
+    path: info.outputPath('live-zoom-mobile-dark.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'Переключить на светлую тему' }).click()
+  await page.setViewportSize({ width: 320, height: 640 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  expect((await cell.boundingBox())!.width).toBeGreaterThanOrEqual(44)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: /За сессию/ }).click()
+  await expect(page.getByRole('dialog')).toContainText('Тестовый-Онлайн Алексей')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  // Clear, undo clear, undo the original plus, then another plus add four writes.
+  expect(writes).toBe(10)
+  await page.keyboard.press('Escape')
+  const resumed = await context.newPage()
+  await resumed.goto(page.url())
+  const resumedCell = resumed.getByRole('button', { name: new RegExp(`^Задача ${lesson}н\\.1:`) })
+  await expect(resumedCell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.getByRole('button', { name: /За сессию/ }).click()
+  await page.getByRole('button', { name: 'Завершить сессию' }).click()
+  await expect(resumedCell).toBeDisabled()
+  await resumed.close()
+})
+
+test('Live classroom: teacher transfer, attendance and another teacher sees the saved mark', async ({
+  page,
+  secondaryContext,
+}, info) => {
+  const project = info.project.name
+  const fixture = 19000 + numbers[project]!
+  const path = `/staff/in-person?event=ipe-${fixture}&room=room-${fixture}`
+  await loginThroughUi(page, persona(project), path)
+  await page.getByRole('button', { name: 'Добавить в группу школьника' }).click()
+  await page.getByRole('searchbox', { name: 'Поиск школьника' }).fill(`Тестов ${project}`)
+  await page.getByRole('button', { name: new RegExp(`Тестов ${project} Ученик`) }).click()
+  await page.getByRole('button', { name: `Перенести в 101 live-${project}` }).click()
+  const student = `Тестов ${project} Ученик`
+  await expect(page.getByRole('button', { name: `${student}: Пришёл` })).toBeVisible()
+  await page.getByRole('button', { name: student, exact: true }).click()
+  await expect(
+    page.getByRole('button', { name: new RegExp(`^${student}`) }).filter({ hasText: '7 кл.' }),
+  ).toHaveAttribute('aria-expanded', 'true')
+  const colleague = await secondaryContext.newPage()
+  await loginThroughUi(colleague, AUTH_PERSONAS.teacher, path)
+  const mine = page.getByRole('button', {
+    name: new RegExp(`^${student}, задача ${numbers[project]}н\\.1:`),
+  })
+  const theirs = colleague.getByRole('button', {
+    name: new RegExp(`^${student}, задача ${numbers[project]}н\\.1:`),
+  })
+  await expect(theirs).toBeVisible()
+  await mine.click()
+  await expect(mine).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await expect(theirs).toHaveAccessibleName(/\+, Сохранено/)
+  await theirs.click()
+  await theirs.click()
+  await expect(theirs).toHaveAccessibleName(/−, моя оценка, Сохранено/)
+  await expect(mine).toHaveAccessibleName(/−, Сохранено/)
+  await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
+  await expect(page.getByRole('alert').filter({ hasText: 'Ячейка уже изменена.' })).toBeVisible()
+  await page.getByRole('button', { name: `${student}: Пришёл` }).click()
+  await expect(page.getByRole('button', { name: `${student}: Отсутствует` })).toBeVisible()
+  await page.getByRole('button', { name: 'Все', exact: true }).click()
+  await expect(page.getByRole('button', { name: `${student}: Отсутствует` })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Пришли', exact: true }).click()
+  await page.setViewportSize({ width: 390, height: 844 })
+  const settings = page.getByRole('button', { name: 'Настройки занятия' })
+  const settingsBox = await settings.boundingBox()
+  const filterBox = await page.getByRole('button', { name: 'Все', exact: true }).boundingBox()
+  expect(Math.abs(settingsBox!.y - filterBox!.y)).toBeLessThan(5)
+  const nameBox = await page.getByRole('rowheader').filter({ hasText: student }).boundingBox()
+  expect(nameBox!.width).toBeLessThanOrEqual(114)
+  await settings.click()
+  await expect(
+    page.getByRole('dialog').getByRole('combobox', { name: 'Аудитория', exact: true }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Готово', exact: true }).click()
+  await expect(settings).toBeFocused()
+  await page.screenshot({
+    path: info.outputPath('live-classroom-mobile.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+})

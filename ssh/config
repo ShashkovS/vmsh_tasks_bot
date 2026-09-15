@@ -1,0 +1,8 @@
+Host vmshbegetagent
+    User vmshbegetagent
+    HostName 217.114.6.190
+    Port 22179
+    IdentitiesOnly yes
+    IdentityFile /Users/sergeyshashkov/repos/vmsh_tasks_bot/ssh/id_ed25519_codex
+    UseKeychain yes
+    AddKeysToAgent yes

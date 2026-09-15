@@ -1,10 +1,46 @@
 # Для работы по виндой нужны PYTHONUTF8=1
 from unittest import TestCase
+from unittest.mock import patch
 
-from models.spreadsheets import FromGoogleSpreadsheet
+from models import spreadsheets
+from models.spreadsheets import FromGoogleSpreadsheet, GoogleBulkUpdateDisabled
 
 
 class SpreadsheetGroupsTest(TestCase):
+    def test_update_all_is_blocked_before_google_read_after_partial_cutover(self):
+        with (
+            patch.object(spreadsheets.config, "allow_google_update_all", False),
+            patch.object(
+                spreadsheets.google_spreadsheet_loader,
+                "get_all_from_spreadsheet",
+            ) as get_all,
+        ):
+            with self.assertRaises(GoogleBulkUpdateDisabled):
+                FromGoogleSpreadsheet.update_all()
+
+        get_all.assert_not_called()
+
+    def test_individual_update_remains_available_as_explicit_recovery(self):
+        problems = [{"group_id": "n", "lesson": 1}]
+        with (
+            patch.object(spreadsheets.config, "allow_google_update_all", False),
+            patch.object(
+                spreadsheets.google_spreadsheet_loader,
+                "get_problems",
+                return_value=problems,
+            ) as get_problems,
+            patch.object(
+                FromGoogleSpreadsheet,
+                "problems_to_db",
+                return_value=["reviewed warning"],
+            ) as problems_to_db,
+        ):
+            errors = FromGoogleSpreadsheet.update_problems()
+
+        self.assertEqual(errors, ["reviewed warning"])
+        get_problems.assert_called_once_with()
+        problems_to_db.assert_called_once_with(problems)
+
     def test_normalize_groups_ok(self):
         groups = [
             {

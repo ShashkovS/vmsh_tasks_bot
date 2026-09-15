@@ -1,0 +1,639 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Self-hosted OFL faces (Cyrillic subset ships via unicode-range; the browser
+ * downloads only the slices it renders). Phase 1 accepted direction B:
+ * IBM Plex Sans (UI) + Source Serif 4 (reading). */
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource-variable/source-serif-4/wght.css';
+@import '@fontsource-variable/source-serif-4/wght-italic.css';
+
+@source '../../../../apps/**/*.{ts,tsx}';
+@source '../../../app-shell/src/**/*.{ts,tsx}';
+@source '../../../content/src/**/*.{ts,tsx}';
+@source '../../../product/src/**/*.{ts,tsx}';
+@source '../**/*.{ts,tsx}';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * ВМШ 179 — token system (Phase 2, art direction B).
+ *
+ * Layers: primitive → semantic → component.
+ *   - primitives (`--p-*`): raw OKLCH palette, theme-agnostic, internal only;
+ *   - semantics (`--background`, `--verdict-*`, …): role tokens, remapped per theme;
+ *   - components consume ONLY semantic aliases through Tailwind utilities.
+ *
+ * Independence rules (see docs/product-ux-decisions-2026-07.md):
+ *   - level ≠ status ≠ verdict. Level colours are CATEGORICAL muted hues (teal /
+ *     violet / rose / ochre), never a weak→strong gradient and never traffic-light,
+ *     so a level never reads as a grade. Verdict shares the green=good / red=bad
+ *     direction with status because a verdict IS a grade; that is intentional.
+ *   - colour never carries meaning alone: symbol + label always accompany it.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ---- primitives: neutral backbone (hue 240) ---- */
+  --p-white: oklch(1 0 0);
+  --p-n-25: oklch(0.985 0.002 240);
+  --p-n-50: oklch(0.972 0.003 240);
+  --p-n-100: oklch(0.943 0.003 240);
+  --p-n-150: oklch(0.922 0.004 240);
+  --p-n-200: oklch(0.885 0.005 240);
+  --p-n-300: oklch(0.82 0.007 240);
+  --p-n-400: oklch(0.7 0.01 240);
+  --p-n-500: oklch(0.606 0.013 240);
+  --p-n-600: oklch(0.497 0.013 240);
+  --p-n-650: oklch(0.455 0.013 240);
+  --p-n-750: oklch(0.325 0.01 240);
+  --p-n-800: oklch(0.238 0.009 240);
+  --p-n-850: oklch(0.213 0.009 240);
+  --p-n-900: oklch(0.168 0.008 240);
+  --p-n-950: oklch(0.148 0.008 240);
+  --p-ink: oklch(0.215 0.011 240);
+  --p-ink-inverse: oklch(0.945 0.004 240);
+
+  /* ---- semantic: surfaces & text ---- */
+  --background: var(--p-n-100);
+  --foreground: var(--p-ink);
+  --surface: var(--p-white);
+  --surface-subtle: var(--p-n-50);
+  --surface-raised: var(--p-white);
+  --surface-sunken: var(--p-n-150);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--foreground);
+  --muted: var(--p-n-50);
+  --muted-foreground: var(--p-n-650);
+  --foreground-subtle: var(--p-n-600);
+  /* placeholder must clear 4.5:1 on surface (axe treats it as text) */
+  --placeholder: var(--p-n-600);
+  --disabled: var(--p-n-400);
+
+  /* reading surface — the "paper" of a problem sheet */
+  --paper: var(--p-white);
+  --paper-edge: var(--p-n-200);
+
+  /* ---- semantic: borders & separators ---- */
+  --border: var(--p-n-200);
+  --border-strong: var(--p-n-500);
+  --border-interactive: oklch(0.53 0.14 226);
+  --input: var(--p-n-200);
+  --separator: var(--p-n-150);
+
+  /* ---- semantic: brand / interactive (hue 226) ---- */
+  --primary: oklch(0.45 0.1 226);
+  --primary-foreground: oklch(0.99 0.003 226);
+  --primary-soft: oklch(0.942 0.03 226);
+  --secondary: oklch(0.93 0.012 240);
+  --secondary-foreground: oklch(0.31 0.02 240);
+  --accent: var(--primary-soft);
+  --accent-foreground: oklch(0.31 0.06 226);
+  --ring: oklch(0.53 0.14 226);
+  --focus-ring: oklch(0.53 0.14 226);
+  --selection: oklch(0.9 0.05 226);
+  --link: oklch(0.45 0.11 250);
+  --link-visited: oklch(0.44 0.1 300);
+  --overlay: oklch(0.215 0.011 240 / 0.45);
+  --scrim: oklch(0.215 0.011 240 / 0.6);
+
+  /* destructive = danger for the shadcn button contract */
+  --destructive: oklch(0.47 0.175 25);
+  --destructive-foreground: oklch(0.99 0.003 25);
+
+  /* ---- semantic: status (success 155 / warning 75 / danger 25 / info 250) ---- */
+  --status-success: oklch(0.44 0.11 155);
+  --status-success-foreground: oklch(0.99 0.02 155);
+  --status-success-surface: oklch(0.952 0.032 155);
+  --status-success-border: oklch(0.6 0.08 155);
+  --status-warning: oklch(0.47 0.09 75);
+  --status-warning-foreground: oklch(0.99 0.02 75);
+  --status-warning-surface: oklch(0.953 0.045 80);
+  --status-warning-border: oklch(0.62 0.08 75);
+  --status-danger: oklch(0.47 0.175 25);
+  --status-danger-foreground: oklch(0.99 0.02 25);
+  --status-danger-surface: oklch(0.956 0.03 25);
+  --status-danger-border: oklch(0.62 0.13 25);
+  --status-info: oklch(0.44 0.1 250);
+  --status-info-foreground: oklch(0.99 0.02 250);
+  --status-info-surface: oklch(0.951 0.028 250);
+  --status-info-border: oklch(0.6 0.08 250);
+
+  /* ---- semantic: learning levels — CATEGORICAL muted hues, not a scale ---- */
+  /* teal (н) */
+  --level-1: oklch(0.47 0.062 200);
+  --level-1-surface: oklch(0.955 0.024 200);
+  --level-1-border: oklch(0.59 0.062 200);
+  /* violet (п) */
+  --level-2: oklch(0.46 0.07 296);
+  --level-2-surface: oklch(0.955 0.026 296);
+  --level-2-border: oklch(0.59 0.07 296);
+  /* rose (х) */
+  --level-3: oklch(0.48 0.078 352);
+  --level-3-surface: oklch(0.957 0.026 352);
+  --level-3-border: oklch(0.6 0.078 352);
+  /* ochre (reserved 4th) */
+  --level-4: oklch(0.48 0.05 78);
+  --level-4-surface: oklch(0.955 0.03 78);
+  --level-4-border: oklch(0.59 0.055 78);
+  /* neutral fallback / system group */
+  --level-0: oklch(0.46 0.006 240);
+  --level-0-surface: oklch(0.945 0.003 240);
+  --level-0-border: oklch(0.6 0.008 240);
+
+  /* ---- semantic: verdict scale (registry-driven; green=good, red=bad) ---- */
+  --verdict-none: oklch(0.5 0.008 240);
+  --verdict-none-surface: var(--p-n-50);
+  --verdict-negative: oklch(0.5 0.17 25);
+  --verdict-negative-surface: oklch(0.957 0.03 25);
+  --verdict-partial-low: oklch(0.53 0.13 45);
+  --verdict-partial-low-surface: oklch(0.958 0.035 50);
+  --verdict-partial-mid: oklch(0.52 0.1 80);
+  --verdict-partial-mid-surface: oklch(0.96 0.045 82);
+  --verdict-partial-high: oklch(0.48 0.1 128);
+  --verdict-partial-high-surface: oklch(0.955 0.04 128);
+  --verdict-positive: oklch(0.44 0.11 152);
+  --verdict-positive-surface: oklch(0.952 0.034 152);
+
+  /* ---- semantic: feedback provenance ---- */
+  --provenance-human: var(--foreground);
+  --provenance-human-surface: var(--surface-subtle);
+  --provenance-ai: oklch(0.48 0.09 285);
+  --provenance-ai-surface: oklch(0.955 0.028 285);
+  --provenance-ai-border: oklch(0.6 0.08 285);
+
+  /* ---- semantic: attention / unread ---- */
+  --unread: oklch(0.55 0.16 250);
+  --unread-foreground: oklch(0.99 0.01 250);
+
+  /* ---- semantic: connection & sync ---- */
+  --connection-online: var(--status-success);
+  --connection-reconnecting: var(--status-warning);
+  --connection-offline: var(--p-n-500);
+  --connection-syncing: var(--status-info);
+  --connection-conflict: var(--status-danger);
+
+  /* ---- semantic: chart series (categorical) ---- */
+  --chart-1: oklch(0.55 0.12 226);
+  --chart-2: oklch(0.56 0.12 152);
+  --chart-3: oklch(0.6 0.15 55);
+  --chart-4: oklch(0.55 0.14 300);
+  --chart-5: oklch(0.58 0.13 25);
+  --chart-6: oklch(0.56 0.1 200);
+  --chart-7: oklch(0.58 0.12 350);
+  --chart-8: oklch(0.55 0.09 128);
+  --chart-grid: var(--p-n-150);
+  --chart-axis: var(--p-n-400);
+  --chart-reference: oklch(0.6 0.05 226);
+
+  /* ---- semantic: annotation overlay (drawn over immutable evidence) ---- */
+  --annotation-pen: oklch(0.55 0.2 25);
+  --annotation-highlight: oklch(0.85 0.15 95);
+  --annotation-comment: oklch(0.5 0.12 250);
+  --annotation-selection: oklch(0.53 0.14 226);
+
+  /* ---- component tokens ---- */
+  --radius: 0.5rem;
+  --radius-control: 0.375rem;
+  --radius-panel: 0.5rem;
+  --radius-pill: 999px;
+  --border-width: 1px;
+
+  --elevation-1: 0 1px 2px oklch(0.215 0.011 240 / 0.06);
+  --elevation-2: 0 2px 6px -1px oklch(0.215 0.011 240 / 0.1);
+  --elevation-3: 0 8px 20px -6px oklch(0.215 0.011 240 / 0.16);
+  --elevation-4: 0 16px 40px -16px oklch(0.215 0.011 240 / 0.28);
+
+  /* fonts */
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-reading: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
+  --font-math: 'KaTeX_Main', 'Source Serif 4 Variable', 'Cambria Math', 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'SF Mono', 'IBM Plex Mono', Menlo, monospace;
+
+  /* spacing aliases (scale is Tailwind's 0.25rem unit) */
+  --page-gutter: 1rem;
+  --section-gap: 1.5rem;
+  --control-gap: 0.5rem;
+  --reading-indent: 1.25rem;
+  --reading-measure: 38rem;
+  --bottom-nav-height: 3.5rem;
+  --header-height: 3.5rem;
+
+  /* z-index */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-navigation: 40;
+  --z-popover: 60;
+  --z-modal: 80;
+  --z-toast: 100;
+
+  /* motion */
+  --duration-instant: 1ms;
+  --duration-fast: 120ms;
+  --duration-normal: 190ms;
+  --duration-slow: 280ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0.15, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* density — touch target & row height, overridden per audience below */
+  --touch-target: 44px;
+  --touch-target-primary: 48px;
+  --control-height: 2.5rem;
+  --row-height: 2.75rem;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: var(--p-n-900);
+  --foreground: var(--p-ink-inverse);
+  --surface: var(--p-n-850);
+  --surface-subtle: var(--p-n-800);
+  --surface-raised: oklch(0.245 0.01 240);
+  --surface-sunken: var(--p-n-950);
+  --muted: var(--p-n-800);
+  --muted-foreground: oklch(0.755 0.008 240);
+  --foreground-subtle: oklch(0.655 0.008 240);
+  --placeholder: oklch(0.655 0.008 240);
+  --disabled: oklch(0.45 0.008 240);
+
+  --paper: var(--p-n-850);
+  --paper-edge: oklch(0.32 0.011 240);
+
+  --border: oklch(0.325 0.01 240);
+  --border-strong: oklch(0.578 0.015 240);
+  --border-interactive: oklch(0.78 0.13 226);
+  --input: oklch(0.325 0.01 240);
+  --separator: oklch(0.29 0.009 240);
+
+  --primary: oklch(0.77 0.1 226);
+  --primary-foreground: oklch(0.175 0.015 226);
+  --primary-soft: oklch(0.28 0.045 226);
+  --secondary: oklch(0.3 0.02 240);
+  --secondary-foreground: oklch(0.92 0.012 240);
+  --accent: var(--primary-soft);
+  --accent-foreground: oklch(0.9 0.03 226);
+  --ring: oklch(0.78 0.13 226);
+  --focus-ring: oklch(0.78 0.13 226);
+  --selection: oklch(0.4 0.08 226);
+  --link: oklch(0.79 0.1 250);
+  --link-visited: oklch(0.78 0.09 300);
+  --overlay: oklch(0 0 0 / 0.55);
+  --scrim: oklch(0 0 0 / 0.7);
+
+  --destructive: oklch(0.7 0.16 25);
+  --destructive-foreground: oklch(0.18 0.02 25);
+
+  --status-success: oklch(0.8 0.13 155);
+  --status-success-foreground: oklch(0.2 0.03 155);
+  --status-success-surface: oklch(0.28 0.05 155);
+  --status-success-border: oklch(0.55 0.09 155);
+  --status-warning: oklch(0.84 0.12 80);
+  --status-warning-foreground: oklch(0.22 0.04 80);
+  --status-warning-surface: oklch(0.3 0.05 75);
+  --status-warning-border: oklch(0.6 0.1 78);
+  --status-danger: oklch(0.75 0.16 25);
+  --status-danger-foreground: oklch(0.18 0.03 25);
+  --status-danger-surface: oklch(0.3 0.06 25);
+  --status-danger-border: oklch(0.58 0.14 25);
+  --status-info: oklch(0.79 0.1 250);
+  --status-info-foreground: oklch(0.2 0.03 250);
+  --status-info-surface: oklch(0.28 0.05 250);
+  --status-info-border: oklch(0.55 0.09 250);
+
+  --level-1: oklch(0.8 0.07 200);
+  --level-1-surface: oklch(0.29 0.035 200);
+  --level-1-border: oklch(0.58 0.055 200);
+  --level-2: oklch(0.79 0.08 296);
+  --level-2-surface: oklch(0.3 0.04 296);
+  --level-2-border: oklch(0.58 0.06 296);
+  --level-3: oklch(0.8 0.085 352);
+  --level-3-surface: oklch(0.3 0.04 352);
+  --level-3-border: oklch(0.59 0.065 352);
+  --level-4: oklch(0.81 0.06 78);
+  --level-4-surface: oklch(0.3 0.035 78);
+  --level-4-border: oklch(0.58 0.055 78);
+  --level-0: oklch(0.77 0.006 240);
+  --level-0-surface: oklch(0.29 0.005 240);
+  --level-0-border: oklch(0.57 0.006 240);
+
+  --verdict-none: oklch(0.68 0.008 240);
+  --verdict-none-surface: var(--p-n-800);
+  --verdict-negative: oklch(0.76 0.15 25);
+  --verdict-negative-surface: oklch(0.3 0.06 25);
+  --verdict-partial-low: oklch(0.79 0.13 50);
+  --verdict-partial-low-surface: oklch(0.31 0.055 50);
+  --verdict-partial-mid: oklch(0.84 0.12 82);
+  --verdict-partial-mid-surface: oklch(0.31 0.05 80);
+  --verdict-partial-high: oklch(0.82 0.14 128);
+  --verdict-partial-high-surface: oklch(0.3 0.05 128);
+  --verdict-positive: oklch(0.8 0.13 152);
+  --verdict-positive-surface: oklch(0.28 0.05 152);
+
+  --provenance-human: var(--foreground);
+  --provenance-human-surface: var(--surface-subtle);
+  --provenance-ai: oklch(0.8 0.08 285);
+  --provenance-ai-surface: oklch(0.3 0.045 285);
+  --provenance-ai-border: oklch(0.55 0.07 285);
+
+  --unread: oklch(0.78 0.12 250);
+  --unread-foreground: oklch(0.18 0.03 250);
+
+  --connection-online: var(--status-success);
+  --connection-reconnecting: var(--status-warning);
+  --connection-offline: oklch(0.6 0.008 240);
+  --connection-syncing: var(--status-info);
+  --connection-conflict: var(--status-danger);
+
+  --chart-1: oklch(0.72 0.12 226);
+  --chart-2: oklch(0.74 0.13 152);
+  --chart-3: oklch(0.78 0.14 60);
+  --chart-4: oklch(0.72 0.13 300);
+  --chart-5: oklch(0.72 0.14 25);
+  --chart-6: oklch(0.74 0.1 200);
+  --chart-7: oklch(0.74 0.12 350);
+  --chart-8: oklch(0.74 0.1 128);
+  --chart-grid: oklch(0.3 0.008 240);
+  --chart-axis: oklch(0.5 0.01 240);
+  --chart-reference: oklch(0.7 0.05 226);
+
+  --annotation-pen: oklch(0.7 0.19 25);
+  --annotation-highlight: oklch(0.8 0.16 95);
+  --annotation-comment: oklch(0.72 0.12 250);
+  --annotation-selection: oklch(0.78 0.13 226);
+
+  --elevation-1: 0 1px 2px oklch(0 0 0 / 0.4);
+  --elevation-2: 0 2px 6px -1px oklch(0 0 0 / 0.5);
+  --elevation-3: 0 8px 20px -6px oklch(0 0 0 / 0.6);
+  --elevation-4: 0 16px 40px -16px oklch(0 0 0 / 0.65);
+}
+
+/* Density is audience-driven, not a global scale (spec 02). It applies on any
+ * container, so a Staff panel can be dense inside a roomier page. */
+[data-density='student'] {
+  --touch-target: 44px;
+  --touch-target-primary: 48px;
+  --control-height: 2.5rem;
+  --row-height: 2.75rem;
+  --page-gutter: 1rem;
+}
+
+[data-density='family'] {
+  --touch-target: 44px;
+  --touch-target-primary: 46px;
+  --control-height: 2.375rem;
+  --row-height: 2.5rem;
+  --page-gutter: 0.875rem;
+}
+
+[data-density='staff'] {
+  --touch-target: 32px;
+  --touch-target-primary: 34px;
+  --control-height: 2rem;
+  --row-height: 1.875rem;
+  --page-gutter: 0.75rem;
+  --section-gap: 1rem;
+}
+
+@theme inline {
+  /* surfaces & text */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-placeholder: var(--placeholder);
+  --color-disabled: var(--disabled);
+  --color-paper: var(--paper);
+  --color-paper-edge: var(--paper-edge);
+
+  /* borders */
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-interactive: var(--border-interactive);
+  --color-input: var(--input);
+  --color-separator: var(--separator);
+
+  /* brand & interactive */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-focus-ring: var(--focus-ring);
+  --color-selection: var(--selection);
+  --color-link: var(--link);
+  --color-link-visited: var(--link-visited);
+  --color-overlay: var(--overlay);
+  --color-scrim: var(--scrim);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* status */
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-success-surface: var(--status-success-surface);
+  --color-status-success-border: var(--status-success-border);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-warning-surface: var(--status-warning-surface);
+  --color-status-warning-border: var(--status-warning-border);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-foreground: var(--status-danger-foreground);
+  --color-status-danger-surface: var(--status-danger-surface);
+  --color-status-danger-border: var(--status-danger-border);
+  --color-status-info: var(--status-info);
+  --color-status-info-foreground: var(--status-info-foreground);
+  --color-status-info-surface: var(--status-info-surface);
+  --color-status-info-border: var(--status-info-border);
+
+  /* levels */
+  --color-level-1: var(--level-1);
+  --color-level-1-surface: var(--level-1-surface);
+  --color-level-1-border: var(--level-1-border);
+  --color-level-2: var(--level-2);
+  --color-level-2-surface: var(--level-2-surface);
+  --color-level-2-border: var(--level-2-border);
+  --color-level-3: var(--level-3);
+  --color-level-3-surface: var(--level-3-surface);
+  --color-level-3-border: var(--level-3-border);
+  --color-level-4: var(--level-4);
+  --color-level-4-surface: var(--level-4-surface);
+  --color-level-4-border: var(--level-4-border);
+  --color-level-0: var(--level-0);
+  --color-level-0-surface: var(--level-0-surface);
+  --color-level-0-border: var(--level-0-border);
+
+  /* verdict */
+  --color-verdict-none: var(--verdict-none);
+  --color-verdict-none-surface: var(--verdict-none-surface);
+  --color-verdict-negative: var(--verdict-negative);
+  --color-verdict-negative-surface: var(--verdict-negative-surface);
+  --color-verdict-partial-low: var(--verdict-partial-low);
+  --color-verdict-partial-low-surface: var(--verdict-partial-low-surface);
+  --color-verdict-partial-mid: var(--verdict-partial-mid);
+  --color-verdict-partial-mid-surface: var(--verdict-partial-mid-surface);
+  --color-verdict-partial-high: var(--verdict-partial-high);
+  --color-verdict-partial-high-surface: var(--verdict-partial-high-surface);
+  --color-verdict-positive: var(--verdict-positive);
+  --color-verdict-positive-surface: var(--verdict-positive-surface);
+
+  /* provenance, unread, connection */
+  --color-provenance-human: var(--provenance-human);
+  --color-provenance-human-surface: var(--provenance-human-surface);
+  --color-provenance-ai: var(--provenance-ai);
+  --color-provenance-ai-surface: var(--provenance-ai-surface);
+  --color-provenance-ai-border: var(--provenance-ai-border);
+  --color-unread: var(--unread);
+  --color-unread-foreground: var(--unread-foreground);
+  --color-connection-online: var(--connection-online);
+  --color-connection-reconnecting: var(--connection-reconnecting);
+  --color-connection-offline: var(--connection-offline);
+  --color-connection-syncing: var(--connection-syncing);
+  --color-connection-conflict: var(--connection-conflict);
+
+  /* charts & annotation */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+  --color-chart-reference: var(--chart-reference);
+  --color-annotation-pen: var(--annotation-pen);
+  --color-annotation-highlight: var(--annotation-highlight);
+  --color-annotation-comment: var(--annotation-comment);
+  --color-annotation-selection: var(--annotation-selection);
+
+  /* legacy aliases kept until placeholder pages are rebuilt */
+  --color-level-novice: var(--level-1);
+  --color-level-continuing: var(--level-2);
+  --color-level-expert: var(--level-3);
+
+  /* fonts */
+  --font-sans: var(--font-sans);
+  --font-reading: var(--font-reading);
+  --font-math: var(--font-math);
+  --font-mono: var(--font-mono);
+
+  /* type scale (size / line-height) */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.35;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.45;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-reading: 1.125rem;
+  --text-reading--line-height: 1.62;
+  --text-section: 1.125rem;
+  --text-section--line-height: 1.3;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.25;
+  --text-display: 2rem;
+  --text-display--line-height: 1.15;
+
+  /* radius */
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-panel);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+  --radius-pill: var(--radius-pill);
+
+  /* elevation */
+  --shadow-e1: var(--elevation-1);
+  --shadow-e2: var(--elevation-2);
+  --shadow-e3: var(--elevation-3);
+  --shadow-e4: var(--elevation-4);
+
+  /* container widths */
+  --container-reading: 42rem;
+  --container-form: 32rem;
+  --container-app: 72rem;
+  --container-wide: 96rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv05' 1;
+  }
+
+  body {
+    @apply min-h-svh bg-background text-foreground;
+  }
+
+  /* Tabular numerals for times, stats and tables. */
+  .tabular-nums,
+  .font-num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: var(--selection);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Forced colors (Windows high contrast). Strategy: meaning never depends on
+ * colour alone — every status/verdict/level carries a symbol and a label — so
+ * the OS palette override cannot remove meaning. We only guarantee that focus
+ * stays visible with a system colour; brand marks inherit currentColor and
+ * follow the system text colour automatically.
+ */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

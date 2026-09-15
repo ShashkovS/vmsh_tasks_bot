@@ -1,0 +1,312 @@
+{
+  "fixtureVersion": 1,
+  "corpusId": "lesson-39-n-condition",
+  "lessonNumber": 39,
+  "groupCode": "n",
+  "source": {
+    "path": "_vmsh_examples/usl-39-n.tex",
+    "sha256": "2f25890bf428b46fb156e4bf2d2a723899c285642a3201e324db7fb47d6f1115"
+  },
+  "referencePdf": {
+    "path": "_vmsh_examples/usl-39-n.pdf",
+    "sha256": "78e05053206f416fc4a938891b57243af807fe07d8707ff46ec18b3a530cb287"
+  },
+  "webDocument": {
+    "contractVersion": 1,
+    "introduction": [
+      {
+        "children": [
+          {
+            "type": "text",
+            "value": "«Тест»-задачи"
+          }
+        ],
+        "level": 2,
+        "type": "heading"
+      }
+    ],
+    "materialKind": "condition",
+    "problems": [
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nКакую цифру надо поставить вместо звёздочки, чтобы число "
+              },
+              {
+                "latex": "47*2",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": " делилось на 9?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 1,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nДелится ли число "
+              },
+              {
+                "latex": "31\\,457\\,624",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": " на 4? А на 8?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 2,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nНайдите наименьшее натуральное число, которое делится на 12 и оканчивается цифрами 24.\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 3,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nСколько натуральных чисел от 1 до 300 делятся на 6, но не делятся на 9?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 4,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nОбязательно ли произведение пяти последовательных натуральных чисел делится на 10?\n"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": "«Письменные» задачи"
+              }
+            ],
+            "level": 2,
+            "type": "heading"
+          }
+        ],
+        "ordinal": 5,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nДокажите, что произведение любых трёх последовательных целых чисел делится на 6.\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 6,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nДокажите, что любое четырёхзначное число вида "
+              },
+              {
+                "latex": "\\overline{abba}",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": " делится на 11.\n"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": "«Устные» задачи"
+              }
+            ],
+            "level": 2,
+            "type": "heading"
+          }
+        ],
+        "ordinal": 7,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nУ числа сумма цифр равна 37, причём среди его цифр есть единица. Делится ли оно на 9? Будет ли оно делиться на 9, если эту единицу заменить девяткой?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 8,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nПрямоугольник "
+              },
+              {
+                "latex": "18\\times30",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": " клеток хотят разрезать на одинаковые квадраты с целыми сторонами без остатка. Какие размеры квадрата возможны?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 9,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nОдин автобус приходит каждые 14 минут, другой — каждые 20 минут. Они встретились на остановке в 9:00. Когда они впервые снова придут одновременно?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 10,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nМожно ли выбрать три различных делителя числа 60 так, чтобы их сумма была нечётной?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 11,
+        "sourceItem": null,
+        "title": null
+      }
+    ],
+    "revisionId": "revision:golden-39-n-condition",
+    "sourceSha256": "2f25890bf428b46fb156e4bf2d2a723899c285642a3201e324db7fb47d6f1115",
+    "title": "Занятие 39 · Начинающие"
+  },
+  "telegram": {
+    "rendererVersion": "vmsh-telegram-rich/1;telegram-bot-api=10.2",
+    "sha256": "c31292b2888cedce856b390652e47d94607957e9c549c468684d3d17b0ff3751",
+    "html": "<h2>«Тест»-задачи</h2><h3>Задача 1</h3><p>  Какую цифру надо поставить вместо звёздочки, чтобы число <tg-math>47*2</tg-math> делилось на 9? </p><h3>Задача 2</h3><p>  Делится ли число <tg-math>31\\,457\\,624</tg-math> на 4? А на 8? </p><h3>Задача 3</h3><p>  Найдите наименьшее натуральное число, которое делится на 12 и оканчивается цифрами 24. </p><h3>Задача 4</h3><p>  Сколько натуральных чисел от 1 до 300 делятся на 6, но не делятся на 9? </p><h3>Задача 5</h3><p>  Обязательно ли произведение пяти последовательных натуральных чисел делится на 10? </p><h2>«Письменные» задачи</h2><h3>Задача 6</h3><p>  Докажите, что произведение любых трёх последовательных целых чисел делится на 6. </p><h3>Задача 7</h3><p>  Докажите, что любое четырёхзначное число вида <tg-math>\\overline{abba}</tg-math> делится на 11. </p><h2>«Устные» задачи</h2><h3>Задача 8</h3><p>  У числа сумма цифр равна 37, причём среди его цифр есть единица. Делится ли оно на 9? Будет ли оно делиться на 9, если эту единицу заменить девяткой? </p><h3>Задача 9</h3><p>  Прямоугольник <tg-math>18\\times30</tg-math> клеток хотят разрезать на одинаковые квадраты с целыми сторонами без остатка. Какие размеры квадрата возможны? </p><h3>Задача 10</h3><p>  Один автобус приходит каждые 14 минут, другой — каждые 20 минут. Они встретились на остановке в 9:00. Когда они впервые снова придут одновременно? </p><h3>Задача 11</h3><p>  Можно ли выбрать три различных делителя числа 60 так, чтобы их сумма была нечётной? </p>"
+  }
+}

@@ -3,7 +3,7 @@ name = "vmsh-tasks-bot"
 version = "0.1.0"
 description = "Asynchronous Telegram assistant for managing math circle tasks, dashboards, and game updates."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = { file = "LICENCE" }
 authors = [
     { name = "Sergey Shashkov" },
@@ -11,16 +11,25 @@ authors = [
 keywords = ["telegram", "aiogram", "aiohttp", "sqlite", "google-sheets"]
 dependencies = [
     "aioboto3>=15.5.0",
-    "aiogram>=3.24.0",
-    "aiohttp>=3.13.3",
+    "aiogram>=3.30.0",
+    "aiohttp>=3.14.1",
+    "argon2-cffi>=25.1.0",
     "google-api-python-client>=2.187.0",
     "gspread>=6.2.1",
     "gunicorn>=23.0.0",
+    "itsdangerous>=2.2.0",
     "levenshtein>=0.27.3",
     "mathsolvers",
     "nats-py>=2.12.0",
+    "nh3>=0.3.3",
+    "numpy>=2.5.2",
     "oauth2client>=4.1.3",
+    "openpyxl>=3.1.5",
+    "openrouter>=1.1.71",
     "orjson>=3.11.5",
+    "prometheus-client==0.25.0",
+    "pydantic>=2.12.5",
+    "pywebpush>=2.3.0,<3",
     "sentry-sdk>=2.49.0",
     "uvloop>=0.22.1",
     "yoyo-migrations>=9.0.0",
@@ -32,18 +41,14 @@ dev = [
     "aiohttp-devtools>=1.1.2",
     "aresponses>=3.0.0",
     "coverage>=7.13.1",
-    "importlib>=1.0.4",
     "ipython>=9.10.0",
-    "paramiko>=4.0.0",
-    "py7zr>=1.1.0",
-    "pytest>=9.0.2",
+    "pytest>=9.0.3",
     "pytest-aiohttp>=1.1.0",
     "pytest-asyncio>=1.3.0",
     "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
     "ruff>=0.14.11",
-    "scp>=0.15.0",
-    "setuptools>=80.9.0",
+    "setuptools>=83.0.0",
     "twine>=6.2.0",
     "wheel>=0.45.1",
 ]
@@ -54,4 +59,5 @@ mathsolvers = { git = "https://github.com/ShashkovS/mathsolvers.git" }
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
-addopts = "-n5"
+addopts = "-n8"
+testpaths = ["tests"]

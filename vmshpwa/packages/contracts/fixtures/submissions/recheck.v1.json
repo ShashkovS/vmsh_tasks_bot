@@ -1,0 +1,36 @@
+{
+  "fixtureVersion": 1,
+  "request": {
+    "schemaVersion": 1,
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-repaired",
+      "configVersion": 2
+    }
+  },
+  "preview": {
+    "schemaVersion": 1,
+    "problemId": "problem-fixture-test",
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-repaired",
+      "configVersion": 2
+    },
+    "pendingAttempts": 3,
+    "requestId": "request-fixture-recheck-preview"
+  },
+  "response": {
+    "schemaVersion": 1,
+    "problemId": "problem-fixture-test",
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-repaired",
+      "configVersion": 2
+    },
+    "pendingBefore": 3,
+    "checked": 2,
+    "correct": 1,
+    "wrong": 1,
+    "stillPending": 1,
+    "skippedConcurrent": 0,
+    "threadInvalidationKey": "problems/problem-fixture-test/test-attempts",
+    "requestId": "request-fixture-recheck"
+  }
+}
