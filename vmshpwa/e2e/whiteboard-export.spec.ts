@@ -16,10 +16,26 @@ test('downloads complete PNG archive from published worksheet', async ({ page },
   await expect(page.getByRole('combobox', { name: 'Занятие', exact: true })).toHaveValue(String(id))
   let downloadCount = 0
   page.on('download', () => downloadCount++)
-  await page.getByRole('button', { name: 'Скачать ZIP' }).click()
-  await page.getByRole('button', { name: 'Отмена', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Скачать ZIP' })).toBeEnabled()
-  expect(downloadCount).toBe(0)
+  // Hold real image requests so fast WebKit exports cannot finish before
+  // the cancellation click. This exercises cancellation during generation.
+  let releaseImages!: () => void
+  const imagesReleased = new Promise<void>((resolve) => {
+    releaseImages = resolve
+  })
+  await page.route('**/whiteboard-export/*/assets/*', async (route) => {
+    await imagesReleased
+    await route.continue()
+  })
+  try {
+    await page.getByRole('button', { name: 'Скачать ZIP' }).click()
+    await page.getByRole('button', { name: 'Отмена', exact: true }).click()
+    releaseImages()
+    await expect(page.getByRole('button', { name: 'Скачать ZIP' })).toBeEnabled()
+    expect(downloadCount).toBe(0)
+  } finally {
+    releaseImages()
+    await page.unroute('**/whiteboard-export/*/assets/*')
+  }
   // Real backend remains in use: inject a transport failure only for photographs.
   await page.route('**/whiteboard-export/*/assets/*', (route) => route.abort())
   await page.getByRole('button', { name: 'Скачать ZIP' }).click()

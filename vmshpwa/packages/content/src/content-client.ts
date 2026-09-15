@@ -2,6 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 
 import {
   ApiResponseError,
+  figureLayoutSchema,
+  figureLayoutMutationSchema,
+  type FigureLayout,
+  type FigureLayoutEntry,
   apiErrorSchema,
   contentEtagSchema,
   contentIfMatchSchema,
@@ -170,6 +174,7 @@ export interface ContentApiClient {
     groupLessonId: string,
     options?: ContentRequestOptions,
   ): Promise<StaffContentUploadTargets>
+  reprocessRevision?(revisionId: string, etag: ContentEtag): Promise<VersionedContentResource<StaffContentRevision>>
   compileRevision(
     revisionId: string,
     etag: ContentEtag,
@@ -213,6 +218,12 @@ export interface ContentApiClient {
     input: UploadContentRevisionAssetInput,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<StaffContentAssetUpload>>
+  figureLayout?(revisionId: string): Promise<FigureLayout>
+  saveFigureLayout?(
+    revisionId: string,
+    version: number,
+    entries: FigureLayoutEntry[],
+  ): Promise<FigureLayout>
   updateFigureScale?(
     input: UpdateContentFigureScaleInput,
     options?: ContentRequestOptions,
@@ -404,6 +415,12 @@ class BrowserContentApiClient implements ContentApiClient {
     )
   }
 
+  async reprocessRevision(revisionId: string, etag: ContentEtag): Promise<VersionedContentResource<StaffContentRevision>> {
+    this.#requireStaff()
+    return this.#versionedJson(`/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/reprocess`,
+      {method: 'POST', ifMatch: contentEtagSchema.parse(etag)}, staffContentRevisionSchema)
+  }
+
   async compileRevision(
     revisionId: string,
     etag: ContentEtag,
@@ -584,6 +601,32 @@ class BrowserContentApiClient implements ContentApiClient {
       `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/previews/${kind}`,
       { method: 'GET', ...options },
       staffContentPreviewSchema,
+    )
+  }
+
+  async figureLayout(revisionId: string): Promise<FigureLayout> {
+    this.#requireStaff()
+    return this.#json(
+      `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/figure-layout`,
+      { method: 'GET' },
+      figureLayoutSchema,
+    )
+  }
+
+  async saveFigureLayout(
+    revisionId: string,
+    version: number,
+    entries: FigureLayoutEntry[],
+  ): Promise<FigureLayout> {
+    this.#requireStaff()
+    return this.#json(
+      `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/figure-layout`,
+      {
+        method: 'PUT',
+        contentType: 'application/json',
+        body: JSON.stringify(figureLayoutMutationSchema.parse({ version, entries })),
+      },
+      figureLayoutSchema,
     )
   }
 

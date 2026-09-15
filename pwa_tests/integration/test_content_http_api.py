@@ -5606,3 +5606,135 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
     )
     assert later.status == 200, await later.text()
     assert len(generator.requests) == 2
+
+
+async def test_figure_layout_api_checks_csrf_scope_and_conflicts(content_http):
+    fixture = content_http
+    compiled, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="layout.tex",
+        source=r"\задача Условие.\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}\кзадача",
+    )
+    route = f"/staff/api/v1/content/revisions/{compiled['revisionId']}/figure-layout"
+    response = await fixture.client.get(
+        route, cookies=_cookie(fixture, "admin"), headers=_headers()
+    )
+    assert response.status == 200, await response.text()
+    data = await response.json()
+    assert len(data["figures"]) == 1
+    entry = dict(
+        occurrenceId=data["figures"][0]["occurrenceId"],
+        targetOrdinal=1,
+        targetPart=None,
+        section="common",
+        order=0,
+        side="right",
+        hidden=True,
+    )
+    payload = dict(version=0, entries=[entry])
+    denied = await fixture.client.put(
+        route, json=payload, cookies=_cookie(fixture, "admin"), headers=_headers()
+    )
+    assert denied.status == 403
+    student = await fixture.client.get(
+        route, cookies=_cookie(fixture, "student"), headers=_headers()
+    )
+    assert student.status in {401, 403}
+    saved = await fixture.client.put(
+        route,
+        json=payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert saved.status == 200, await saved.text()
+    result = await saved.json()
+    assert result["version"] == 1 and result["entries"] == [entry]
+    conflict = await fixture.client.put(
+        route,
+        json=payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert conflict.status == 409, await conflict.text()
+    reloaded = await fixture.client.get(
+        route, cookies=_cookie(fixture, "admin"), headers=_headers()
+    )
+    assert await reloaded.json() == result
+
+
+async def test_reprocessing_preserves_layout_and_published_material(content_http):
+    fixture = content_http
+    compiled, etag = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="reprocess.tex",
+        source=r"\задача Условие.\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}\кзадача",
+    )
+    revision_id = compiled["revisionId"]
+    base = f"/staff/api/v1/content/revisions/{revision_id}"
+    published = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision_id,
+    )
+    assert published.status == 201, await published.text()
+    before = await (
+        await _student_read(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+        )
+    ).json()
+    layout = await (
+        await fixture.client.get(
+            base + "/figure-layout",
+            cookies=_cookie(fixture, "admin"),
+            headers=_headers(),
+        )
+    ).json()
+    entry = dict(
+        occurrenceId=layout["figures"][0]["occurrenceId"],
+        targetOrdinal=1,
+        targetPart=None,
+        section="common",
+        order=0,
+        side="right",
+        hidden=True,
+    )
+    saved = await fixture.client.put(
+        base + "/figure-layout",
+        json=dict(version=0, entries=[entry]),
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert saved.status == 200
+    for persona, unsafe, expected in [
+        ("admin", False, 403),
+        ("student", True, 401),
+        ("teacher", True, 403),
+        ("admin", True, 200),
+    ]:
+        response = await fixture.client.post(
+            base + "/reprocess",
+            cookies=_cookie(fixture, persona),
+            headers=_headers(unsafe=unsafe, if_match=etag),
+        )
+        assert response.status == expected, await response.text()
+    after_layout = await (
+        await fixture.client.get(
+            base + "/figure-layout",
+            cookies=_cookie(fixture, "admin"),
+            headers=_headers(),
+        )
+    ).json()
+    assert after_layout["entries"] == [entry]
+    assert after_layout["version"] == 1
+    assert len(after_layout["figures"]) == 1
+    after = await (
+        await _student_read(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+        )
+    ).json()
+    assert after == before

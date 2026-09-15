@@ -153,6 +153,7 @@ export type WebContentBlock =
       type: 'figure'
       alt: string
       caption?: WebInlineNode[] | undefined
+      occurrenceId?: string | undefined
       floatHint?: 'left' | 'right' | undefined
       widthHint?: string | undefined
       scale?: number | undefined
@@ -246,6 +247,10 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
         type: z.literal('figure'),
         alt: nonEmptyTextSchema,
         caption: z.array(webInlineNodeSchema).max(1_000).optional(),
+        occurrenceId: z
+          .string()
+          .regex(/^figure-[a-f0-9]{24}$/)
+          .optional(),
         floatHint: z.enum(['left', 'right']).optional(),
         widthHint: z
           .string()
@@ -282,6 +287,7 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
 export const webContentProblemSchema = z
   .object({
     ordinal: z.number().int().positive(),
+    partLabels: z.array(z.string().max(2000)).optional(),
     sourceItem: z.string().trim().min(1).max(80).nullable(),
     taskReference: z.string().trim().min(1).max(80).optional(),
     title: z.string().trim().min(1).max(500).nullable(),
@@ -503,3 +509,41 @@ export const goldenContentComparisonFixtureSchema = z
     }
   })
 export type GoldenContentComparisonFixture = z.infer<typeof goldenContentComparisonFixtureSchema>
+
+/** Draft figure occurrence placement; docs/figure-layout.md. */
+export const figureLayoutEntrySchema = z
+  .object({
+    occurrenceId: z.string().regex(/^figure-[a-f0-9]{24}$/),
+    targetOrdinal: z.number().int().positive(),
+    targetPart: z.string().max(2000).nullable(),
+    section: z.enum(['common', 'answer', 'solution']),
+    order: z.number().int().min(0).max(2000),
+    side: z.enum(['left', 'right']),
+    hidden: z.boolean(),
+  })
+  .strict()
+export const figureLayoutMutationSchema = z
+  .object({
+    version: z.number().int().nonnegative(),
+    entries: z.array(figureLayoutEntrySchema).max(2000),
+  })
+  .strict()
+export const figureLayoutSchema = z.object({
+  revisionId: publicIdSchema,
+  version: z.number().int().nonnegative(),
+  entries: z.array(figureLayoutEntrySchema).max(2000),
+  figures: z
+    .array(
+      z.object({
+        occurrenceId: z.string(),
+        sourceOrdinal: z.number().int().nonnegative(),
+        sourcePart: z.string().nullable(),
+        sourceSection: z.enum(['common', 'answer', 'solution']),
+        figure: webContentBlockSchema,
+      }),
+    )
+    .max(2000),
+  document: webContentDocumentSchema,
+})
+export type FigureLayout = z.infer<typeof figureLayoutSchema>
+export type FigureLayoutEntry = z.infer<typeof figureLayoutEntrySchema>

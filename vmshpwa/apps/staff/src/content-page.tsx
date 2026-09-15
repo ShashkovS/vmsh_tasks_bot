@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { FigureLayoutEditor } from './figure-layout-editor'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, FileCode2, Mic, RefreshCw, Send, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -341,6 +342,7 @@ function MaterialWorkflowCard({
   businessTimezone: BusinessTimezone
   onConflict: () => Promise<unknown>
 }) {
+  const queryClient = useQueryClient()
   const [state, setState] = useState<MaterialWorkflowState>(() => initialMaterialState(history))
   const previewWindow = useQuery({
     queryKey: contentQueryKeys.lessonWindow(groupLessonId),
@@ -501,7 +503,11 @@ function MaterialWorkflowCard({
         inspected,
       ].sort((left, right) => left.data.revisionNumber - right.data.revisionNumber),
       selectedRevisionId: inspected.data.revisionId,
-      reviewReadyRevisionId: undefined,
+      // A figure-only refresh preserves the already reviewed metadata.
+      reviewReadyRevisionId:
+        current.selectedRevisionId === inspected.data.revisionId
+          ? current.reviewReadyRevisionId
+          : undefined,
       webDocument: webPreview.document,
       conditionDocument: conditionWeb?.kind === 'web' ? conditionWeb.document : undefined,
       telegramHtml:
@@ -1135,6 +1141,32 @@ function MaterialWorkflowCard({
           </Alert>
         ) : null}
 
+        {selectedRevision && client.reprocessRevision ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={state.previewLoading}
+            onClick={() => {
+              patchState({ previewLoading: true, errorMessage: undefined })
+              void client.reprocessRevision!(
+                selectedRevision.data.revisionId,
+                selectedRevision.etag,
+              )
+                .then(async () => {
+                  await queryClient.invalidateQueries({
+                    queryKey: ['staff-figure-layout', selectedRevision.data.revisionId],
+                  })
+                  await inspectCompiledRevision(selectedRevision.data.revisionId)
+                })
+                .catch((error) =>
+                  patchState({ previewLoading: false, errorMessage: errorMessage(error) }),
+                )
+            }}
+          >
+            Повторно обработать исходник
+          </Button>
+        ) : null}
+
         {selectedRevision &&
         (state.previewRevisionId !== selectedRevision.data.revisionId ||
           !state.webDocument ||
@@ -1172,7 +1204,22 @@ function MaterialWorkflowCard({
                       : kind === 'solution'
                   }
                 />
-                {kind === 'condition' && client.updateFigureScale ? (
+                {client.figureLayout && client.saveFigureLayout && selectedRevision ? (
+                  <FigureLayoutEditor
+                    client={client}
+                    revisionId={selectedRevision.data.revisionId}
+                    onPreview={(document) => {
+                      patchState({ webDocument: document, pdfPreview: undefined })
+                      void inspectCompiledRevision(selectedRevision.data.revisionId).catch(() => {
+                        patchState({
+                          errorMessage:
+                            'Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала.',
+                        })
+                      })
+                    }}
+                  />
+                ) : null}
+                {client.updateFigureScale ? (
                   <FigureScaleTools document={state.webDocument} onScale={updateFigureScale} />
                 ) : null}
               </TabsContent>
@@ -1186,7 +1233,7 @@ function MaterialWorkflowCard({
                   {state.pdfPreview && state.pdfCheckedRevisionId === state.previewRevisionId ? (
                     <>
                       <p className="text-muted-foreground">
-                        Сохранённая производная ·{' '}
+                        PDF исходного файла, без правок расположения ·{' '}
                         <span className="font-num">
                           {Math.ceil(state.pdfPreview.byteSize / 1024)} КБ
                         </span>

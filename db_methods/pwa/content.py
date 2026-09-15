@@ -1524,10 +1524,10 @@ _STUDENT_LESSON_SELECT = (
     " AND EXISTS (SELECT 1 FROM content_derivatives AS condition_derivative "
     "             WHERE condition_derivative.revision_id = condition_publication.revision_id "
     "               AND condition_derivative.kind = 'web_ast' "
-    "               AND condition_derivative.invalidated_at IS NULL) "
+    "               AND (condition_derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = condition_publication.id AND frozen.document_json IS NOT NULL))) "
     "JOIN content_revisions AS condition_revision "
     "  ON condition_revision.id = condition_publication.revision_id "
-    " AND condition_revision.status = 'ready' "
+    " AND (condition_revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = condition_publication.id AND frozen.document_json IS NOT NULL)) "
     "LEFT JOIN lesson_windows AS lesson_window "
     "  ON lesson_window.group_lesson_id = group_lesson.id "
     "LEFT JOIN lesson_publications AS hint_publication "
@@ -1536,10 +1536,10 @@ _STUDENT_LESSON_SELECT = (
     " AND EXISTS (SELECT 1 FROM content_derivatives AS hint_derivative "
     "             WHERE hint_derivative.revision_id = hint_publication.revision_id "
     "               AND hint_derivative.kind = 'web_ast' "
-    "               AND hint_derivative.invalidated_at IS NULL) "
+    "               AND (hint_derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = hint_publication.id AND frozen.document_json IS NOT NULL))) "
     "LEFT JOIN content_revisions AS hint_revision "
     "  ON hint_revision.id = hint_publication.revision_id "
-    " AND hint_revision.status = 'ready' "
+    " AND (hint_revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = hint_publication.id AND frozen.document_json IS NOT NULL)) "
     "LEFT JOIN lesson_publications AS solution_publication "
     "  ON solution_publication.group_lesson_id = group_lesson.id "
     " AND solution_publication.kind = 'solution' "
@@ -1547,10 +1547,10 @@ _STUDENT_LESSON_SELECT = (
     " AND EXISTS (SELECT 1 FROM content_derivatives AS solution_derivative "
     "             WHERE solution_derivative.revision_id = solution_publication.revision_id "
     "               AND solution_derivative.kind = 'web_ast' "
-    "               AND solution_derivative.invalidated_at IS NULL) "
+    "               AND (solution_derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = solution_publication.id AND frozen.document_json IS NOT NULL))) "
     "LEFT JOIN content_revisions AS solution_revision "
     "  ON solution_revision.id = solution_publication.revision_id "
-    " AND solution_revision.status = 'ready' "
+    " AND (solution_revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = solution_publication.id AND frozen.document_json IS NOT NULL)) "
 )
 
 
@@ -1578,7 +1578,7 @@ WITH published_scope AS (
      AND condition_publication.state = 'published'
     JOIN content_revisions AS condition_revision
       ON condition_revision.id = condition_publication.revision_id
-     AND condition_revision.status = 'ready'
+     AND (condition_revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = condition_publication.id AND frozen.document_json IS NOT NULL))
     WHERE course.public_id = :course_public_id
       AND group_record.public_id = :group_public_id
       AND group_lesson.public_id = :group_lesson_public_id
@@ -1588,7 +1588,7 @@ WITH published_scope AS (
           FROM content_derivatives AS derivative
           WHERE derivative.revision_id = condition_revision.id
             AND derivative.kind = 'web_ast'
-            AND derivative.invalidated_at IS NULL
+            AND (derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = condition_publication.id AND frozen.document_json IS NOT NULL))
       )
 ),
 visible_problem AS (
@@ -1630,7 +1630,7 @@ hint_state AS (
      AND publication.state = 'published'
     JOIN content_revisions AS revision
       ON revision.id = publication.revision_id
-     AND revision.status = 'ready'
+     AND (revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL))
     JOIN content_problem_matches AS problem_match
       ON problem_match.content_revision_id = revision.id
      AND problem_match.problem_id = visible.problem_id
@@ -1639,7 +1639,7 @@ hint_state AS (
     JOIN content_derivatives AS derivative
       ON derivative.revision_id = revision.id
      AND derivative.kind = 'web_ast'
-     AND derivative.invalidated_at IS NULL
+     AND (derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL))
     LEFT JOIN hint_reveals AS reveal
       ON reveal.student_user_id = :student_user_id
      AND reveal.problem_id = visible.problem_id
@@ -1658,7 +1658,7 @@ solution_state AS (
      AND publication.state = 'published'
     JOIN content_revisions AS revision
       ON revision.id = publication.revision_id
-     AND revision.status = 'ready'
+     AND (revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL))
     JOIN content_problem_matches AS problem_match
       ON problem_match.content_revision_id = revision.id
      AND problem_match.problem_id = visible.problem_id
@@ -1667,7 +1667,7 @@ solution_state AS (
     JOIN content_derivatives AS derivative
       ON derivative.revision_id = revision.id
      AND derivative.kind = 'web_ast'
-     AND derivative.invalidated_at IS NULL
+     AND (derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL))
     LEFT JOIN solution_reveals AS reveal
       ON reveal.student_user_id = :student_user_id
      AND reveal.problem_id = visible.problem_id
@@ -1904,6 +1904,108 @@ def _overlay_problem_titles(
             title = titles.get((ordinal, problem.get("sourceItem") or str(ordinal)))
             if title:
                 problem["title"] = title
+
+
+def _snapshot_figure_layout(
+    connection, publication_id: int, revision_id: int, *, rollback: bool = False
+) -> None:
+    # Freeze derivative + draft in the publication transaction. Recompilation
+    # cannot mutate this snapshot; see vmshpwa/docs/figure-layout.md.
+    from helpers.pwa.content.figure_layout import (
+        apply_figure_layout,
+        render_layout_telegram,
+    )
+
+    if rollback:
+        previous = connection.execute(
+            "SELECT layout.* FROM publication_figure_layouts AS layout "
+            "JOIN lesson_publications AS publication ON publication.id = layout.publication_id "
+            "WHERE publication.revision_id = ? AND publication.id != ? AND publication.published_at IS NOT NULL "
+            "ORDER BY publication.id DESC LIMIT 1",
+            (revision_id, publication_id),
+        ).fetchone()
+        if previous:
+            connection.execute(
+                "INSERT INTO publication_figure_layouts (publication_id, layout_version, entries_json, document_json, telegram_html, telegram_sha256) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    publication_id,
+                    previous["layout_version"],
+                    previous["entries_json"],
+                    previous["document_json"],
+                    previous["telegram_html"],
+                    previous["telegram_sha256"],
+                ),
+            )
+            return
+    row = connection.execute(
+        "SELECT version, entries_json FROM content_figure_layouts WHERE revision_id = ?",
+        (revision_id,),
+    ).fetchone()
+    entries_json = row["entries_json"] if row else "[]"
+    derivative = connection.execute(
+        "SELECT content_text FROM content_derivatives WHERE revision_id = ? AND kind = 'web_ast' AND invalidated_at IS NULL ORDER BY id DESC LIMIT 1",
+        (revision_id,),
+    ).fetchone()
+    document_json = None
+    telegram_html = None
+    telegram_sha256 = None
+    if derivative:
+        document = json.loads(derivative["content_text"])
+        scales = connection.execute(
+            "SELECT asset_id, scale FROM content_figure_scales WHERE revision_id = ?",
+            (revision_id,),
+        ).fetchall()
+        _overlay_figure_scales(
+            document, {str(r["asset_id"]): float(r["scale"]) for r in scales}
+        )
+        _overlay_problem_titles(connection, document, revision_id)
+        composed = apply_figure_layout(document, json.loads(entries_json))
+        document_json = json.dumps(composed, ensure_ascii=False)
+        telegram_html = render_layout_telegram(composed)
+        telegram_sha256 = hashlib.sha256(telegram_html.encode()).hexdigest()
+    connection.execute(
+        "INSERT INTO publication_figure_layouts (publication_id, layout_version, entries_json, document_json, telegram_html, telegram_sha256) VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            publication_id,
+            int(row["version"]) if row else 0,
+            entries_json,
+            document_json,
+            telegram_html,
+            telegram_sha256,
+        ),
+    )
+
+
+def _copy_publication_layout(connection, source_id: int, target_id: int) -> None:
+    connection.execute(
+        "INSERT INTO publication_figure_layouts (publication_id, layout_version, entries_json, document_json, telegram_html, telegram_sha256) "
+        "SELECT ?, layout_version, entries_json, document_json, telegram_html, telegram_sha256 FROM publication_figure_layouts WHERE publication_id = ?",
+        (target_id, source_id),
+    )
+
+
+def _published_figure_layout(connection, document: dict, publication_id: int) -> dict:
+    row = connection.execute(
+        "SELECT layout.document_json, layout.layout_version, publication.revision_id "
+        "FROM publication_figure_layouts layout "
+        "JOIN lesson_publications publication ON publication.id = layout.publication_id "
+        "WHERE publication_id = ?",
+        (publication_id,),
+    ).fetchone()
+    if not row or not row["document_json"]:
+        return document
+    frozen = json.loads(row["document_json"])
+    if row["layout_version"] < 0:
+        # Backfilled publications keep their prior overlay behaviour.
+        _overlay_problem_titles(connection, frozen, int(row["revision_id"]))
+        scales = connection.execute(
+            "SELECT asset_id, scale FROM content_figure_scales WHERE revision_id = ?",
+            (row["revision_id"],),
+        ).fetchall()
+        _overlay_figure_scales(
+            frozen, {str(r["asset_id"]): float(r["scale"]) for r in scales}
+        )
+    return frozen
 
 
 def _overlay_figure_scales(document: dict[str, object], scales: Mapping[str, float]) -> None:
@@ -3677,6 +3779,7 @@ class PwaContentRepository:
                 ).fetchone()
             except sqlite3.IntegrityError as error:
                 raise _translate_integrity(error, action="publication") from error
+            _snapshot_figure_layout(connection, int(row["id"]), revision_id)
             return _publication(row)
 
         return await self._factory.run_write_async(write)
@@ -3696,6 +3799,7 @@ class PwaContentRepository:
         cancel_scheduled: bool = False,
         expected_scheduled_public_id: str | None = None,
         expected_scheduled_version: int | None = None,
+        rollback: bool = False,
     ) -> PublicationRecord:
         """Atomically supersede the current slot and append its replacement.
 
@@ -3835,6 +3939,7 @@ class PwaContentRepository:
                 raise _translate_integrity(
                     error, action="publication replacement"
                 ) from error
+            _snapshot_figure_layout(connection, int(row["id"]), revision_id, rollback=rollback)
             return _publication(row)
 
         return await self._factory.run_write_async(write)
@@ -3977,6 +4082,7 @@ class PwaContentRepository:
                 raise _translate_integrity(
                     error, action="scheduled publication activation"
                 ) from error
+            _copy_publication_layout(connection, int(scheduled["id"]), int(row["id"]))
             return _publication(row)
 
         return await self._factory.run_write_async(write)
@@ -4057,6 +4163,7 @@ class PwaContentRepository:
                 raise _translate_integrity(
                     error, action="due publication activation"
                 ) from error
+            _copy_publication_layout(connection, int(scheduled["id"]), int(row["id"]))
             publication = _publication(row)
             revision_row = connection.execute(
                 "SELECT public_id FROM content_revisions WHERE id = ?",
@@ -4152,18 +4259,18 @@ class PwaContentRepository:
         def read(connection):
             row = connection.execute(
                 "SELECT publication.*, revision.public_id AS revision_public_id, "
-                "derivative.content_text AS web_document "
+                "COALESCE((SELECT document_json FROM publication_figure_layouts WHERE publication_id = publication.id), derivative.content_text) AS web_document "
                 "FROM group_lessons AS group_lesson "
                 "JOIN lesson_publications AS publication "
                 "  ON publication.group_lesson_id = group_lesson.id "
                 " AND publication.kind = ? AND publication.state = 'published' "
                 "JOIN content_revisions AS revision "
                 "  ON revision.id = publication.revision_id "
-                " AND revision.status = 'ready' "
+                " AND (revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL)) "
                 "JOIN content_derivatives AS derivative "
                 "  ON derivative.revision_id = revision.id "
                 " AND derivative.kind = 'web_ast' "
-                " AND derivative.invalidated_at IS NULL "
+                " AND (derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL)) "
                 "WHERE group_lesson.public_id = ? "
                 "ORDER BY derivative.created_at DESC, derivative.id DESC LIMIT 1",
                 (kind.value, group_lesson_public_id),
@@ -4196,6 +4303,7 @@ class PwaContentRepository:
                 {str(scale_row["asset_id"]): float(scale_row["scale"]) for scale_row in scale_rows},
             )
             _overlay_problem_titles(connection, document, int(row["revision_id"]))
+            document = _published_figure_layout(connection, document, int(row["id"]))
             return PublishedContentRecord(
                 publication=_publication(row),
                 revision_public_id=revision_public_id,
@@ -4206,6 +4314,34 @@ class PwaContentRepository:
             )
 
         return await self._factory.run_read_async(read)
+
+    async def get_published_telegram(
+        self, *, group_lesson_public_id: str, kind: ContentKind
+    ) -> tuple[str, str]:
+        publication = await self.get_published_content(
+            group_lesson_public_id=group_lesson_public_id, kind=kind
+        )
+
+        def read(connection):
+            row = connection.execute(
+                "SELECT layout.telegram_html, layout.telegram_sha256 FROM lesson_publications publication "
+                "LEFT JOIN publication_figure_layouts layout ON publication.id = layout.publication_id "
+                "WHERE publication.id = ? AND publication.state = 'published'",
+                (publication.publication.id,),
+            ).fetchone()
+            if row is None:
+                raise ContentNotFound("publication is no longer current")
+            if row["telegram_html"] is not None:
+                return str(row["telegram_html"]), str(row["telegram_sha256"])
+            # Existing publications predate the layout snapshot. Use their
+            # frozen web document, never the latest unpublished compilation.
+            from helpers.pwa.content.figure_layout import render_layout_telegram
+
+            html = render_layout_telegram(publication.document)
+            return html, hashlib.sha256(html.encode()).hexdigest()
+
+        return await self._factory.run_read_async(read)
+
 
     async def reveal_student_problem_material(
         self,
@@ -4241,8 +4377,9 @@ class PwaContentRepository:
             row = connection.execute(
                 "SELECT publication.*, "
                 "material_revision.public_id AS revision_public_id, "
-                "derivative.content_text AS web_document, "
+                "COALESCE((SELECT document_json FROM publication_figure_layouts WHERE publication_id = publication.id), derivative.content_text) AS web_document, "
                 "material_problem.source_ordinal AS material_source_ordinal, "
+                "condition_problem.source_item AS selected_source_item, "
                 "problem.id AS selected_problem_id "
                 "FROM group_lessons AS group_lesson "
                 "JOIN lesson_publications AS condition_publication "
@@ -4264,7 +4401,7 @@ class PwaContentRepository:
                 " AND publication.kind = ? AND publication.state = 'published' "
                 "JOIN content_revisions AS material_revision "
                 "  ON material_revision.id = publication.revision_id "
-                " AND material_revision.status = 'ready' "
+                " AND (material_revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL)) "
                 "JOIN content_problem_matches AS material_problem "
                 "  ON material_problem.content_revision_id = material_revision.id "
                 " AND material_problem.problem_id = problem.id "
@@ -4273,7 +4410,7 @@ class PwaContentRepository:
                 "JOIN content_derivatives AS derivative "
                 "  ON derivative.revision_id = material_revision.id "
                 " AND derivative.kind = 'web_ast' "
-                " AND derivative.invalidated_at IS NULL "
+                " AND (derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL)) "
                 "WHERE group_lesson.public_id = ? AND problem.public_id = ? "
                 "ORDER BY derivative.created_at DESC, derivative.id DESC LIMIT 1",
                 (kind.value, group_lesson_public_id, problem_public_id),
@@ -4308,6 +4445,7 @@ class PwaContentRepository:
                 {str(scale_row["asset_id"]): float(scale_row["scale"]) for scale_row in scale_rows},
             )
             _overlay_problem_titles(connection, document, int(row["revision_id"]))
+            document = _published_figure_layout(connection, document, int(row["id"]))
             source_ordinal = int(row["material_source_ordinal"])
             selected = [
                 problem
@@ -4319,7 +4457,9 @@ class PwaContentRepository:
                 raise ContentRepositoryError("published problem material is ambiguous")
             selected_document = dict(document)
             selected_document["introduction"] = []
-            selected_document["problems"] = selected
+            from helpers.pwa.content.figure_layout import select_material_part
+
+            selected_document["problems"] = [select_material_part(selected[0], str(row["selected_source_item"]))]
 
             publication = _publication(row)
             cursor = connection.execute(
@@ -5155,6 +5295,120 @@ class PwaContentRepository:
             )
 
         return await self._factory.run_read_async(read)
+
+    async def save_reprocessed_derivatives(
+        self,
+        *,
+        revision_id: int,
+        expected_derivative_id: int,
+        derivatives: Sequence[TextDerivativeDraft],
+    ) -> None:
+        """Replace presentation atomically, preserving source, matches and draft placement."""
+        from helpers.pwa.content.figure_layout import apply_figure_layout
+
+        timestamp = self._timestamp()
+        if {d.kind for d in derivatives} != {"web_ast", "web_html", "telegram_html"} or len(
+            derivatives
+        ) != 3:
+            raise ContentInvariantError("incomplete reprocessing")
+        document = json.loads(
+            next(d.content_text for d in derivatives if d.kind == "web_ast")
+        )
+
+        def write(connection):
+            revision = connection.execute(
+                "SELECT status FROM content_revisions WHERE id = ?", (revision_id,)
+            ).fetchone()
+            if revision is None or revision["status"] != "ready":
+                raise ContentConflict("revision is not ready")
+            active = connection.execute(
+                "SELECT id FROM content_derivatives WHERE revision_id = ? AND kind='web_ast' AND invalidated_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 1",
+                (revision_id,),
+            ).fetchone()
+            if active is None or int(active["id"]) != expected_derivative_id:
+                raise ContentVersionConflict("revision was reprocessed by another editor")
+            layout = connection.execute(
+                "SELECT entries_json FROM content_figure_layouts WHERE revision_id = ?",
+                (revision_id,),
+            ).fetchone()
+            apply_figure_layout(
+                document, json.loads(layout["entries_json"]) if layout else []
+            )
+            for derivative in derivatives:
+                connection.execute(
+                    "INSERT INTO content_derivatives (revision_id, kind, renderer_version, content_text, sha256, diagnostics_json, provenance_json, created_at) VALUES (?, ?, ?, ?, ?, '[]', ?, ?)",
+                    (
+                        revision_id,
+                        derivative.kind,
+                        derivative.renderer_version
+                        + ";reprocess="
+                        + str(expected_derivative_id),
+                        derivative.content_text,
+                        hashlib.sha256(derivative.content_text.encode()).hexdigest(),
+                        _canonical_json_object(derivative.provenance, label="provenance"),
+                        timestamp,
+                    ),
+                )
+
+        await self._factory.run_write_async(write)
+
+
+    async def get_figure_layout(self, *, revision_id: int) -> dict:
+        def read(connection):
+            row = connection.execute(
+                "SELECT version, entries_json FROM content_figure_layouts WHERE revision_id = ?",
+                (revision_id,),
+            ).fetchone()
+            return (
+                {"version": int(row["version"]), "entries": json.loads(row["entries_json"])}
+                if row
+                else {"version": 0, "entries": []}
+            )
+
+        return await self._factory.run_read_async(read)
+
+
+    async def set_figure_layout(
+        self, *, revision_id: int, expected_version: int, entries: list, actor_user_id: int
+    ) -> dict:
+        from helpers.pwa.content.figure_layout import apply_figure_layout
+
+        timestamp = self._timestamp()
+
+        def write(connection):
+            revision = connection.execute(
+                "SELECT status FROM content_revisions WHERE id = ?", (revision_id,)
+            ).fetchone()
+            if revision is None or revision["status"] != "ready":
+                raise ContentConflict("revision_not_ready")
+            current = connection.execute(
+                "SELECT version FROM content_figure_layouts WHERE revision_id = ?",
+                (revision_id,),
+            ).fetchone()
+            version = int(current["version"]) if current else 0
+            if version != expected_version:
+                raise ContentVersionConflict("figure layout changed")
+            derivative = connection.execute(
+                "SELECT content_text FROM content_derivatives WHERE revision_id = ? AND kind = 'web_ast' AND invalidated_at IS NULL ORDER BY id DESC LIMIT 1",
+                (revision_id,),
+            ).fetchone()
+            if derivative is None:
+                raise ContentConflict("recompile_required")
+            apply_figure_layout(json.loads(derivative["content_text"]), entries)
+            connection.execute(
+                "INSERT INTO content_figure_layouts (revision_id, version, entries_json, updated_by_user_id, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(revision_id) DO UPDATE SET version=excluded.version, entries_json=excluded.entries_json, updated_by_user_id=excluded.updated_by_user_id, updated_at=excluded.updated_at",
+                (
+                    revision_id,
+                    version + 1,
+                    json.dumps(entries, ensure_ascii=False),
+                    actor_user_id,
+                    timestamp,
+                ),
+            )
+            return {"version": version + 1, "entries": entries}
+
+        return await self._factory.run_write_async(write)
+
 
     async def get_figure_scales(self, *, revision_id: int) -> dict[str, float]:
         """Return the current Staff-selected scale for each Web figure."""

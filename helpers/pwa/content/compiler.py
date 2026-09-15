@@ -11,6 +11,8 @@ from .model import (
     ContentDerivative,
     ContentRole,
     Diagnostic,
+    DiagnosticSeverity,
+    SubpartNode,
     ast_sha256,
     canonical_json,
     sha256_text,
@@ -42,7 +44,7 @@ from .web_document import (
 )
 
 
-COMPILER_VERSION = "vmsh-latex-compiler/5"
+COMPILER_VERSION = "vmsh-latex-compiler/6"
 _MAX_KNOWN_ASSETS = 20_000
 _FORBIDDEN_TEX_COMMANDS = {
     "catcode",
@@ -206,6 +208,20 @@ def compile_latex(
     )
     document = parser.parse()
     diagnostics = list(parser.diagnostics)
+    # Independent material parts must agree with the condition's labels.
+    # See vmshpwa/docs/figure-layout.md, per-part reveal contract.
+    if role in {ContentRole.HINT, ContentRole.SOLUTION}:
+        for problem in document.problems:
+            expected = [node.label for node in problem.statement if isinstance(node, SubpartNode)]
+            sections = (problem.hint,) if role is ContentRole.HINT else (problem.answer, problem.solution)
+            for section in sections:
+                actual = [node.label for node in section if isinstance(node, SubpartNode)]
+                if actual and actual != expected:
+                    diagnostics.append(Diagnostic(
+                        code="material.parts_mismatch", severity=DiagnosticSeverity.ERROR,
+                        message=f"Задача {problem.ordinal}: пункты материала не совпадают с условием.",
+                        span=problem.span, recovery="Исправьте разметку пунктов перед публикацией.",
+                    ))
     diagnostics.extend(_forbidden_command_diagnostics(source.text, parser.source_map))
     for logical_name, _url in rejected_urls:
         diagnostics.append(

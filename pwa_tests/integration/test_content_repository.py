@@ -2667,3 +2667,225 @@ async def test_publication_replace_binds_and_cancels_exact_scheduled_slot(
     assert all(row["terminal_by_user_id"] == fixture.actor_user_id for row in after[:2])
     assert all(row["terminal_at"] == format_utc_timestamp(NOW) for row in after[:2])
     assert replacement.state is PublicationState.PUBLISHED
+
+
+async def test_figure_layout_conflict_and_immutable_publication(content_fixture):
+    """Draft edits/recompilation cannot alter the published composition."""
+    import json
+    from helpers.pwa.content import compile_latex, ContentRole
+    from helpers.pwa.content.figure_layout import figure_catalog, FigureLayoutError
+    from db_methods.pwa.content import _published_figure_layout
+
+    fixture = content_fixture
+    _, lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="course-lesson-layout",
+        course_id=fixture.course_id,
+        lesson_number=45,
+        group_id="content-a",
+        group_lesson_public_id="group-lesson-layout",
+    )
+    _, revision = await _create_source_revision(
+        fixture, group_lesson_id=lesson.id, suffix="layout"
+    )
+    # Use UTF-8 source without any external storage or credentials.
+    compiled = compile_latex(
+        r"\begin{document}\задача text\includegraphics{picture.png}\кзадача\end{document}".encode(),
+        source_name="layout.tex",
+        role=ContentRole.CONDITION,
+        revision_id=revision.public_id,
+    )
+    doc = json.loads(compiled.web_document.content)
+    await fixture.repository.add_derivative(
+        revision_id=revision.id,
+        kind="web_ast",
+        renderer_version="test",
+        provenance={},
+        sha256=compiled.web_document.sha256,
+        content_text=compiled.web_document.content,
+    )
+    figure = figure_catalog(doc)[0]
+    entry = dict(
+        occurrenceId=figure["occurrenceId"],
+        targetOrdinal=1,
+        targetPart=None,
+        section="common",
+        order=0,
+        side="right",
+        hidden=True,
+    )
+    layout = await fixture.repository.set_figure_layout(
+        revision_id=revision.id,
+        expected_version=0,
+        entries=[entry],
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert layout["version"] == 1
+    with pytest.raises(ContentVersionConflict):
+        await fixture.repository.set_figure_layout(
+            revision_id=revision.id,
+            expected_version=0,
+            entries=[],
+            actor_user_id=fixture.actor_user_id,
+        )
+    with pytest.raises(FigureLayoutError):
+        await fixture.repository.set_figure_layout(
+            revision_id=revision.id,
+            expected_version=1,
+            entries=[{**entry, "targetOrdinal": 999}],
+            actor_user_id=fixture.actor_user_id,
+        )
+    assert (
+        await fixture.repository.get_figure_layout(revision_id=revision.id)
+    ) == layout
+    publication = await fixture.repository.create_publication(
+        public_id="publication-layout",
+        group_lesson_id=lesson.id,
+        kind=ContentKind.CONDITION,
+        revision_id=revision.id,
+        state=PublicationState.PUBLISHED,
+        actor_user_id=fixture.actor_user_id,
+    )
+    await fixture.repository.set_figure_layout(
+        revision_id=revision.id,
+        expected_version=1,
+        entries=[],
+        actor_user_id=fixture.actor_user_id,
+    )
+    frozen = await fixture.factory.run_read_async(
+        lambda connection: _published_figure_layout(connection, doc, publication.id)
+    )
+    assert figure_catalog(frozen) == []
+    assert len(figure_catalog(doc)) == 1
+    # The Telegram adapter reads the same immutable publication, not the draft.
+    import hashlib
+
+    telegram, digest = await fixture.repository.get_published_telegram(
+        group_lesson_public_id=lesson.public_id, kind=ContentKind.CONDITION
+    )
+    assert "<img" not in telegram
+    assert digest == hashlib.sha256(telegram.encode()).hexdigest()
+    active = await fixture.repository.get_active_derivative(
+        revision_id=revision.id, kind="web_ast"
+    )
+    from db_methods.pwa.content import TextDerivativeDraft
+
+    derivatives = tuple(
+        TextDerivativeDraft(
+            kind=kind,
+            renderer_version=value.renderer_version,
+            provenance={},
+            content_text=value.content,
+        )
+        for kind, value in (
+            ("web_ast", compiled.web_document),
+            ("web_html", compiled.web),
+            ("telegram_html", compiled.telegram),
+        )
+    )
+    await fixture.repository.save_reprocessed_derivatives(
+        revision_id=revision.id,
+        expected_derivative_id=active.id,
+        derivatives=derivatives,
+    )
+    with pytest.raises(ContentVersionConflict):
+        await fixture.repository.save_reprocessed_derivatives(
+            revision_id=revision.id,
+            expected_derivative_id=active.id,
+            derivatives=derivatives,
+        )
+    assert await fixture.repository.get_published_telegram(
+        group_lesson_public_id=lesson.public_id, kind=ContentKind.CONDITION
+    ) == (telegram, digest)
+    current = await fixture.repository.get_active_derivative(
+        revision_id=revision.id, kind="web_ast"
+    )
+    # A malformed placement cannot create a partially reprocessed revision.
+    await fixture.repository.set_figure_layout(
+        revision_id=revision.id,
+        expected_version=2,
+        entries=[entry],
+        actor_user_id=fixture.actor_user_id,
+    )
+    bad = {**doc, "problems": []}
+    invalid = tuple(
+        replace(d, content_text=json.dumps(bad)) if d.kind == "web_ast" else d
+        for d in derivatives
+    )
+    with pytest.raises(FigureLayoutError):
+        await fixture.repository.save_reprocessed_derivatives(
+            revision_id=revision.id,
+            expected_derivative_id=current.id,
+            derivatives=invalid,
+        )
+    assert (
+        await fixture.repository.get_active_derivative(
+            revision_id=revision.id, kind="web_ast"
+        )
+    ).id == current.id
+    second = await _append_ready_revision(
+        fixture,
+        source_id=revision.source_id,
+        suffix="layout-second",
+        expected_previous_revision_number=1,
+    )
+    replacement = await fixture.repository.replace_publication(
+        public_id="layout-replacement",
+        group_lesson_id=lesson.id,
+        kind=ContentKind.CONDITION,
+        revision_id=second.id,
+        state=PublicationState.PUBLISHED,
+        expected_current_public_id=publication.public_id,
+        expected_current_version=publication.version,
+        actor_user_id=fixture.actor_user_id,
+        cancel_scheduled=True,
+    )
+    await fixture.repository.set_figure_layout(
+        revision_id=revision.id,
+        expected_version=3,
+        entries=[],
+        actor_user_id=fixture.actor_user_id,
+    )
+    rollback = await fixture.repository.replace_publication(
+        public_id="layout-rollback",
+        group_lesson_id=lesson.id,
+        kind=ContentKind.CONDITION,
+        revision_id=revision.id,
+        state=PublicationState.PUBLISHED,
+        expected_current_public_id=replacement.public_id,
+        expected_current_version=replacement.version,
+        actor_user_id=fixture.actor_user_id,
+        cancel_scheduled=True,
+        rollback=True,
+    )
+    rolled_back = await fixture.factory.run_read_async(
+        lambda c: _published_figure_layout(c, doc, rollback.id)
+    )
+    assert figure_catalog(rolled_back) == []  # original snapshot, despite visible draft
+    scheduled = await fixture.repository.create_publication(
+        public_id="layout-scheduled",
+        group_lesson_id=lesson.id,
+        kind=ContentKind.CONDITION,
+        revision_id=revision.id,
+        state=PublicationState.SCHEDULED,
+        scheduled_at=NOW,
+        actor_user_id=fixture.actor_user_id,
+    )
+    await fixture.repository.set_figure_layout(
+        revision_id=revision.id,
+        expected_version=4,
+        entries=[entry],
+        actor_user_id=fixture.actor_user_id,
+    )
+    activated = await fixture.repository.activate_scheduled_publication(
+        scheduled_public_id=scheduled.public_id,
+        expected_version=scheduled.version,
+        published_public_id="layout-activated",
+        actor_user_id=fixture.actor_user_id,
+    )
+    visible = await fixture.factory.run_read_async(
+        lambda c: _published_figure_layout(c, doc, activated.id)
+    )
+    assert (
+        len(figure_catalog(visible)) == 1
+    )  # the scheduled snapshot, not the newer draft

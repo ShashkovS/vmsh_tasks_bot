@@ -56,6 +56,8 @@ from helpers.pwa.content import (
     compile_latex,
 )
 from helpers.pwa.content.model import canonical_json
+from helpers.pwa.content.figure_layout import FigureLayoutError
+from helpers.pwa.content.telegram import TelegramMarkupError
 from helpers.pwa.content.metadata_generation import (
     MetadataGenerationError,
     MetadataGenerationRequest,
@@ -451,6 +453,9 @@ def _translate_content_errors(
                 code="content_compile_invalid",
                 message="LaTeX-файл не удалось разобрать",
             ) from error
+        except (FigureLayoutError, TelegramMarkupError) as error:
+            raise PwaApiError(status=422, code="content_layout_invalid",
+                              message="Расположение не удалось подготовить для публикации. Проверьте рисунки и объём материала.") from error
         except ContentRepositoryError as error:
             raise PwaApiError(
                 status=500,
@@ -1334,7 +1339,7 @@ def _asset_reference_projection(value: DocumentAst, role: ContentRole) -> object
         if role is ContentRole.CONDITION:
             blocks = problem.statement + problem.trailing
         elif role is ContentRole.HINT:
-            blocks = problem.hint
+            blocks = problem.statement + problem.trailing + problem.hint
         elif role is ContentRole.SOLUTION:
             blocks = (
                 problem.statement + problem.trailing + problem.answer + problem.solution
@@ -2347,6 +2352,75 @@ async def put_metadata_grid(request: web.Request) -> web.Response:
     return response
 
 
+@content_routes.post("/staff/api/v1/content/revisions/{revision_id}/reprocess")
+@_translate_content_errors
+async def reprocess_content_revision(request: web.Request) -> web.Response:
+    """Explicit new projections of immutable source; published snapshots remain intact."""
+    repository = _repository(request)
+    context = await repository.get_revision_context(request.match_info["revision_id"])
+    _staff_actor(request, context.scope)
+    _require_if_match(
+        request, _etag(context.revision.public_id, context.revision.version)
+    )
+    if context.revision.status is not RevisionStatus.READY:
+        raise ContentConflict("revision_not_ready")
+    active = await repository.get_active_derivative(
+        revision_id=context.revision.id, kind="web_ast"
+    )
+    _, references, known_assets = await _inspect_revision_assets(repository, context)
+    if set(references) - set(known_assets):
+        raise PwaApiError(
+            status=422,
+            code="content_assets_missing",
+            message="В старой версии не хватает рисунков. Загрузите исходный файл заново вместе с рисунками.",
+        )
+    result = await asyncio.to_thread(
+        partial(
+            compile_latex,
+            _reconstruct_source_bytes(context),
+            source_name=context.source.logical_filename,
+            role=_content_role(context.source.kind),
+            known_assets=known_assets,
+            revision_id=context.revision.public_id,
+        )
+    )
+    if result.has_errors or result.web_document is None:
+        raise PwaApiError(
+            status=422,
+            code="content_compile_invalid",
+            message="Повторная обработка выявила ошибки. Исправьте исходный файл перед публикацией.",
+            details={"diagnostics": _diagnostics(result.diagnostics)},
+        )
+    provenance = {
+        "compilerVersion": COMPILER_VERSION,
+        "sourceSha256": context.revision.source_sha256,
+        "astSha256": result.ast_sha256,
+    }
+    derivatives = tuple(
+        TextDerivativeDraft(
+            kind=kind,
+            renderer_version=derivative.renderer_version,
+            provenance=provenance,
+            content_text=derivative.content,
+        )
+        for kind, derivative in (
+            ("web_ast", result.web_document),
+            ("web_html", result.web),
+            ("telegram_html", result.telegram),
+        )
+    )
+    await repository.save_reprocessed_derivatives(
+        revision_id=context.revision.id,
+        expected_derivative_id=active.id,
+        derivatives=derivatives,
+    )
+    response = web.json_response(_revision_payload(context))
+    response.headers["ETag"] = _etag(
+        context.revision.public_id, context.revision.version
+    )
+    return response
+
+
 @content_routes.get(
     "/staff/api/v1/content/revisions/{revision_id}/previews/{preview:web|telegram|pdf}"
 )
@@ -2378,7 +2452,7 @@ async def content_preview(request: web.Request) -> web.Response:
         )
     derivative = await repository.get_active_derivative(
         revision_id=context.revision.id,
-        kind="web_ast" if preview == "web" else "telegram_html",
+        kind="web_ast",
     )
     if preview == "web":
         document = _web_document(
@@ -2393,21 +2467,89 @@ async def content_preview(request: web.Request) -> web.Response:
         await repository.apply_problem_titles(
             document=document, revision_id=context.revision.id
         )
+        from helpers.pwa.content.figure_layout import apply_figure_layout
+        layout = await repository.get_figure_layout(revision_id=context.revision.id)
+        document = apply_figure_layout(document, layout["entries"])
         payload: dict[str, object] = {
             "revisionId": context.revision.public_id,
             "kind": "web",
             "document": document,
         }
     else:
-        if derivative.content_text is None:
-            raise ContentRepositoryError("stored Telegram derivative is invalid")
-        payload = {
-            "revisionId": context.revision.public_id,
-            "kind": "telegram",
-            "html": derivative.content_text,
-        }
+        from helpers.pwa.content.figure_layout import apply_figure_layout, render_layout_telegram
+        document = _web_document(derivative, revision_public_id=context.revision.public_id, kind=context.source.kind)
+        _apply_figure_scales(document, await repository.get_figure_scales(revision_id=context.revision.id))
+        await repository.apply_problem_titles(document=document, revision_id=context.revision.id)
+        layout = await repository.get_figure_layout(revision_id=context.revision.id)
+        payload = {"revisionId": context.revision.public_id, "kind": "telegram",
+                   "html": render_layout_telegram(apply_figure_layout(document, layout["entries"]))}
     return web.json_response(payload)
 
+
+
+@content_routes.get("/staff/api/v1/content/revisions/{revision_id}/figure-layout")
+@content_routes.put("/staff/api/v1/content/revisions/{revision_id}/figure-layout")
+@_translate_content_errors
+async def content_figure_layout(request: web.Request) -> web.Response:
+    """Draft placement only; publishing snapshots it. docs/figure-layout.md."""
+    from helpers.pwa.content.figure_layout import (
+        FigureLayoutError,
+        apply_figure_layout,
+        figure_catalog,
+    )
+
+    repository = _repository(request)
+    context = await repository.get_revision_context(request.match_info["revision_id"])
+    _, actor_user_id = _staff_actor(request, context.scope)
+    derivative = await repository.get_active_derivative(
+        revision_id=context.revision.id, kind="web_ast"
+    )
+    document = _web_document(
+        derivative,
+        revision_public_id=context.revision.public_id,
+        kind=context.source.kind,
+    )
+    _apply_figure_scales(
+        document, await repository.get_figure_scales(revision_id=context.revision.id)
+    )
+    await repository.apply_problem_titles(
+        document=document, revision_id=context.revision.id
+    )
+    try:
+        catalog = figure_catalog(document)
+        if request.method == "PUT":
+            payload = await _json_object(
+                request,
+                allowed_fields=frozenset({"version", "entries"}),
+                max_bytes=CONTENT_JSON_BODY_LIMIT_BYTES,
+            )
+            if type(payload.get("version")) is not int or not isinstance(
+                payload.get("entries"), list
+            ):
+                raise FigureLayoutError("invalid_request")
+            layout = await repository.set_figure_layout(
+                revision_id=context.revision.id,
+                expected_version=payload["version"],
+                entries=payload["entries"],
+                actor_user_id=actor_user_id,
+            )
+        else:
+            layout = await repository.get_figure_layout(revision_id=context.revision.id)
+        preview = apply_figure_layout(document, layout["entries"])
+    except FigureLayoutError as error:
+        raise PwaApiError(
+            status=422,
+            code=str(error),
+            message="Расположение рисунков недоступно: повторите обработку материала или проверьте выбранные пункты.",
+        ) from error
+    return web.json_response(
+        {
+            "revisionId": context.revision.public_id,
+            **layout,
+            "figures": catalog,
+            "document": preview,
+        }
+    )
 
 @content_routes.put("/staff/api/v1/content/revisions/{revision_id}/figure-scale")
 @_translate_content_errors
@@ -3158,6 +3300,7 @@ async def rollback_publication(request: web.Request) -> web.Response:
         )
     publication = await repository.replace_publication(
         public_id=_public_id("publication-rollback"),
+        rollback=True,
         group_lesson_id=current_context.scope.group_lesson_id,
         kind=current_context.publication.kind,
         revision_id=target.revision.id,

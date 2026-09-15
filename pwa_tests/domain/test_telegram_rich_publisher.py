@@ -188,3 +188,54 @@ async def test_aiogram_adapter_redacts_remote_exception_text():
 
     assert "123456:SECRET" not in str(captured.value)
     assert "full message" not in str(captured.value)
+
+
+@pytest.mark.asyncio
+async def test_published_layout_transport_resolves_assets_and_checks_snapshot_hash():
+    import hashlib
+    from types import SimpleNamespace
+    from db_methods.pwa.content import ContentKind
+
+    markup = '<h3>Задача 1</h3><figure><img src="/pwa-content-assets/ma-7" alt="Рисунок"/><figcaption>Подпись</figcaption></figure>'
+
+    class Repository:
+        corrupt = False
+
+        async def get_published_telegram(self, **kwargs):
+            assert kwargs == dict(
+                group_lesson_public_id="gl-1", kind=ContentKind.SOLUTION
+            )
+            return markup, "broken" if self.corrupt else hashlib.sha256(
+                markup.encode()
+            ).hexdigest()
+
+        async def get_media_asset(self, public_id):
+            assert public_id == "ma-7"
+            return SimpleNamespace(public_url="https://assets.example.test/figure.svg")
+
+    repository = Repository()
+    bot = RecordingBot()
+    publisher = TelegramRichPublisher(bot)
+    receipt = await publisher.send_published(
+        TelegramRichDestination(chat_id=bot.chat_id),
+        repository=repository,
+        group_lesson_public_id="gl-1",
+        kind=ContentKind.SOLUTION,
+    )
+    assert receipt.message_id in bot.rich_messages
+    expected = markup.replace(
+        "/pwa-content-assets/ma-7", "https://assets.example.test/figure.svg"
+    )
+    from helpers.pwa.content.telegram import validate_telegram_rich_html
+
+    normalized, _ = validate_telegram_rich_html(expected, limits=TelegramRichLimits())
+    assert receipt.derivative_sha256 == hashlib.sha256(normalized.encode()).hexdigest()
+    repository.corrupt = True
+    with pytest.raises(TelegramRichPublishError, match="derivative changed"):
+        await publisher.send_published(
+            TelegramRichDestination(chat_id=bot.chat_id),
+            repository=repository,
+            group_lesson_public_id="gl-1",
+            kind=ContentKind.SOLUTION,
+        )
+    assert len(bot.rich_messages) == 1

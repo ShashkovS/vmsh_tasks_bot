@@ -180,3 +180,10 @@ stored/openable generated PDF, bulk upload, production-build content E2E и
 owner visual approval. Актуальные proofs:
 [`phase2-content-api.md`](../../pwa_tests/reports/phase2-content-api.md) и
 [`phase2-content-frontend.md`](../../pwa_tests/reports/phase2-content-frontend.md).
+
+## Рисунки в материалах и публикация расположения, 15 сентября 2026
+
+Разделение ответов/решений по пунктам и редактор вхождений описаны в [контракте](figure-layout.md).
+Черновик публикуется снимком; повторная обработка старой revision не изменяет
+действующий листок. Генерация PDF исключена из этого изменения. Реализация: миграция
+0093, `figure_layout.py`, revision API и Staff `FigureLayoutEditor`.

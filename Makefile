@@ -396,3 +396,7 @@ pwa-systemd-check:
 .PHONY: pwa-e2e-organizers
 pwa-e2e-organizers:
 	cd $(PWA_DIR) && CI=true pnpm e2e:organizers
+
+.PHONY: pwa-e2e-figure-layout
+pwa-e2e-figure-layout:
+	cd $(PWA_DIR) && CI=true pnpm e2e --mode figure-layout

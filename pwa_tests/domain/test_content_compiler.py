@@ -152,7 +152,8 @@ def test_each_material_role_projects_only_its_approved_branch() -> None:
     )
     assert "ПОДСКАЗКА" in hint.web.content
     assert not any(word in hint.web.content for word in ("УСЛОВИЕ", "ОТВЕТ", "РЕШЕНИЕ"))
-    assert all(word in solution.web.content for word in ("УСЛОВИЕ", "ОТВЕТ", "РЕШЕНИЕ"))
+    assert "УСЛОВИЕ" not in solution.web.content
+    assert all(word in solution.web.content for word in ("ОТВЕТ", "РЕШЕНИЕ"))
     assert "ПОДСКАЗКА" not in solution.web.content
     assert condition.web_document is not None
     document = json.loads(condition.web_document.content)
@@ -162,6 +163,7 @@ def test_each_material_role_projects_only_its_approved_branch() -> None:
         "sourceItem",
         "title",
         "blocks",
+        "partLabels",
     }
     assert "answer" not in condition.web_document.content
     assert "solution" not in condition.web_document.content
@@ -1273,7 +1275,14 @@ $$x^2+y^2=z^2$$
     fixture = json.loads(PYTHON_COMPILER_FIXTURE.read_text(encoding="utf-8"))
 
     assert result.web_document is not None
-    assert json.loads(result.web_document.content) == fixture["document"]
+    # Additive occurrence metadata is intentionally absent from the old fixture.
+    from helpers.pwa.content.figure_layout import walk_figures
+    actual = json.loads(result.web_document.content)
+    for problem in actual["problems"]:
+        problem.pop("partLabels", None)
+        for figure in walk_figures(problem["blocks"]):
+            figure.pop("occurrenceId", None)
+    assert actual == fixture["document"]
     assert all(
         forbidden not in result.web_document.content
         for forbidden in ('"answer"', '"hint"', '"solution"')

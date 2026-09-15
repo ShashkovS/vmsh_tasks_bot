@@ -43,12 +43,37 @@ export function StaffWorksheetPreview({
       </Button>
     </span>
   )
-  const workspace = (problem: WebContentProblem) => {
+  const workspace = (problem: WebContentProblem, selectedPart?: string) => {
+    const selectBlocks = (blocks: WebContentBlock[]): WebContentBlock[] =>
+      blocks
+        .flatMap((block): WebContentBlock[] => {
+          if (block.type === 'subpart')
+            return selectedPart === undefined
+              ? [block]
+              : block.label === selectedPart
+                ? selectBlocks(block.blocks)
+                : []
+          if (block.type === 'callout') return [{ ...block, blocks: selectBlocks(block.blocks) }]
+          if (block.type === 'list') return [{ ...block, items: block.items.map(selectBlocks) }]
+          return [block]
+        })
+        .filter(
+          (block, index, selected) =>
+            !(
+              block.type === 'heading' &&
+              (index + 1 === selected.length || selected[index + 1]?.type === 'heading')
+            ),
+        )
     const material = (source: WebContentDocument | undefined) => {
       const matching = source?.problems.find((item) => item.ordinal === problem.ordinal)
       return source && matching ? (
         <SemanticMathDocument
-          document={{ ...source, title: null, introduction: [], problems: [matching] }}
+          document={{
+            ...source,
+            title: null,
+            introduction: [],
+            problems: [{ ...matching, blocks: selectBlocks(matching.blocks) }],
+          }}
           hideProblemHeadings
           imageLoading="eager"
         />
@@ -96,7 +121,10 @@ export function StaffWorksheetPreview({
         Предпросмотр школьника. Отправка ответов, вопросы и переход к задаче отключены; просмотры не
         записываются.
       </p>
-      <div data-density="student" className="mx-auto w-full max-w-5xl overflow-hidden rounded-lg border border-border bg-surface">
+      <div
+        data-density="student"
+        className="mx-auto w-full max-w-5xl overflow-hidden rounded-lg border border-border bg-surface"
+      >
         <WorksheetDocument
           document={paper}
           renderProblemActions={(problem) => (hasSubpart(problem.blocks) ? null : actions())}

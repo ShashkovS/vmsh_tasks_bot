@@ -2,7 +2,7 @@
 
 import json
 
-from db_methods.pwa.content import _overlay_problem_titles
+from db_methods.pwa.content import _overlay_problem_titles, _published_figure_layout
 
 
 def published_sheets(connection):
@@ -17,12 +17,19 @@ def published_sheets(connection):
         "JOIN course_lessons lesson ON lesson.id = gl.course_lesson_id "
         "JOIN courses c ON c.id = gl.course_id "
         "JOIN groups g ON g.course_id = gl.course_id AND g.group_id = gl.group_id "
-        "WHERE pub.kind = 'condition' AND pub.state = 'published' AND revision.status = 'ready' "
+        "WHERE pub.kind = 'condition' AND pub.state = 'published' AND (revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = pub.id AND frozen.document_json IS NOT NULL)) "
         "ORDER BY c.sort_order, c.id, lesson.lesson_number DESC, g.sort_order, g.id"
     ).fetchall()
 
 
 def sheet_document(connection, sheet):
+    frozen = connection.execute(
+        "SELECT pub.id, layout.document_json FROM publication_figure_layouts layout "
+        "JOIN lesson_publications pub ON pub.id = layout.publication_id WHERE pub.public_id = ?",
+        (sheet["publicationId"],),
+    ).fetchone()
+    if frozen and frozen["document_json"]:
+        return _published_figure_layout(connection, {}, int(frozen["id"])), {}
     row = connection.execute(
         "SELECT content_text FROM content_derivatives WHERE revision_id = ? "
         "AND kind = 'web_ast' AND invalidated_at IS NULL ORDER BY id DESC LIMIT 1",

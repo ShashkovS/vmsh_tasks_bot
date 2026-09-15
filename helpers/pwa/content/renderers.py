@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from dataclasses import replace
 import re
 from collections.abc import Mapping, Sequence
 from urllib.parse import urlsplit
@@ -28,6 +29,7 @@ from .model import (
     TableNode,
     TextNode,
 )
+from .figure_layout import material_figures
 from .telegram import TELEGRAM_BOT_API_DIALECT, sanitize_telegram_rich_html
 
 
@@ -246,10 +248,10 @@ def _selected_problem_parts(
     if role is ContentRole.CONDITION:
         return (("statement", problem.statement + problem.trailing),)
     if role is ContentRole.HINT:
-        return (("hint", problem.hint),)
+        return (("statement", problem.statement), ("hint", problem.hint))
     if role is ContentRole.SOLUTION:
         return (
-            ("statement", problem.statement + problem.trailing),
+            ("statement", problem.statement),
             ("answer", problem.answer),
             ("solution", problem.solution),
         )
@@ -300,6 +302,12 @@ def render_web_html(
     role: ContentRole,
     asset_urls: Mapping[str, str] | None = None,
 ) -> str:
+    if role in {ContentRole.HINT, ContentRole.SOLUTION}:
+        detached = material_figures(document)
+        document = replace(document, introduction=(), problems=tuple(
+            replace(problem, statement=detached[problem.ordinal], trailing=())
+            for problem in document.problems
+        ))
     urls = asset_urls or {}
     return (
         '<article data-content-source="latex">'
@@ -318,6 +326,12 @@ def render_telegram_rich_html(
     role: ContentRole,
     asset_urls: Mapping[str, str] | None = None,
 ) -> str:
+    if role in {ContentRole.HINT, ContentRole.SOLUTION}:
+        detached = material_figures(document)
+        document = replace(document, introduction=(), problems=tuple(
+            replace(problem, statement=detached[problem.ordinal], trailing=())
+            for problem in document.problems
+        ))
     urls = asset_urls or {}
     generated = _blocks(document.introduction, target="telegram", asset_urls=urls)
     generated += "".join(

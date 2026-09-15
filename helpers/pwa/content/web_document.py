@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
+from .figure_layout import material_figures, occurrence_id
+
 from .model import (
     AnnouncementKind,
     AnnouncementNode,
@@ -311,7 +313,12 @@ def _blocks(
                     ),
                 }
             )
-            figure: dict[str, Any] = {"type": "figure", "alt": alt, "asset": asset}
+            figure: dict[str, Any] = {
+                "type": "figure",
+                "alt": alt,
+                "asset": asset,
+                "occurrenceId": occurrence_id(node),
+            }
             if node.float_hint in {"left", "right"}:
                 figure["floatHint"] = node.float_hint
             width_hint = _web_width_hint(node.width_hint)
@@ -441,8 +448,15 @@ def render_web_document(
     mapping = assets or {}
     problems = []
     pending_condition_blocks: list[dict[str, Any]] = []
+    detached = (
+        material_figures(document)
+        if role in {ContentRole.HINT, ContentRole.SOLUTION}
+        else {}
+    )
     for problem in document.problems:
         blocks = _problem_blocks(problem, role, assets=mapping)
+        if problem.ordinal in detached:
+            blocks = _blocks(detached[problem.ordinal], assets=mapping) + blocks
         preamble_blocks: list[dict[str, Any]] = []
         # A section, explanation or figure placed between two ``\задача``
         # environments introduces the next task.  Keeping it on the previous
@@ -465,6 +479,7 @@ def render_web_document(
             blocks = [{"type": "paragraph", "children": []}]
         rendered_problem: dict[str, Any] = {
             "ordinal": problem.ordinal,
+            "partLabels": [node.label for node in problem.statement if isinstance(node, SubpartNode)],
             "sourceItem": _bounded(
                 problem.source_item or "", 80, "problem sourceItem", required=False
             ),
@@ -490,6 +505,8 @@ def render_web_document(
         "sourceSha256": document.source_sha256,
         "materialKind": role.value,
         "title": _bounded(title or "", 500, "document title", required=False),
-        "introduction": _blocks(document.introduction, assets=mapping),
+        "introduction": _blocks(document.introduction, assets=mapping)
+        if role is ContentRole.CONDITION
+        else [],
         "problems": problems,
     }

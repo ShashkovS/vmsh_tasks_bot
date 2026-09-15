@@ -8,6 +8,9 @@ Callers must supply one explicit destination and a transport implementation.
 from __future__ import annotations
 
 import hashlib
+import html
+import re
+from urllib.parse import urlsplit
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Mapping, Protocol
@@ -192,6 +195,86 @@ class TelegramRichPublisher:
             raise TelegramRichPublishError(
                 "telegram.send_failed",
                 "Telegram Rich send failed",
+            ) from error
+        return TelegramRichReceipt(
+            chat_id=destination.chat_id,
+            message_id=_message_id(response),
+            derivative_sha256=derivative.sha256,
+            metrics=derivative.metrics,
+        )
+
+    async def send_published(
+        self,
+        destination: TelegramRichDestination,
+        *,
+        repository,
+        group_lesson_public_id: str,
+        kind,
+    ) -> TelegramRichReceipt:
+        """Send only the frozen published composition, never an editor draft.
+
+        The caller owns audience/destination authorization, just as for send().
+        Media may use the existing public object URL, not a student's cookie.
+        See vmshpwa/docs/figure-layout.md.
+        """
+        markup, digest = await repository.get_published_telegram(
+            group_lesson_public_id=group_lesson_public_id,
+            kind=kind,
+        )
+        if hashlib.sha256(markup.encode()).hexdigest() != digest:
+            raise TelegramRichPublishError(
+                "telegram.derivative_hash_mismatch",
+                "Published Telegram derivative changed",
+            )
+        for encoded in set(re.findall(r'<img[^>]* src="([^"<>]+)"', markup)):
+            url = html.unescape(encoded)
+            local = re.fullmatch(r"/pwa-content-assets/(ma-[0-9]+)", url)
+            if local:
+                asset = await repository.get_media_asset(local.group(1))
+                if not asset.public_url:
+                    raise TelegramRichPublishError(
+                        "telegram.media_not_public",
+                        "Published image has no public object URL",
+                    )
+                replacement = asset.public_url
+                parsed = urlsplit(replacement)
+                if (
+                    parsed.scheme != "https"
+                    or not parsed.netloc
+                    or parsed.username
+                    or parsed.password
+                ):
+                    raise TelegramRichPublishError(
+                        "telegram.media_not_public",
+                        "Published image URL is not public HTTPS",
+                    )
+                markup = markup.replace(
+                    f'src="{encoded}"', f'src="{html.escape(replacement, quote=True)}"'
+                )
+            elif not url.startswith("https://"):
+                raise TelegramRichPublishError(
+                    "telegram.media_not_public",
+                    "Published image URL is not public HTTPS",
+                )
+        normalized, metrics = validate_telegram_rich_html(
+            markup, limits=TelegramRichLimits()
+        )
+        derivative = ValidatedTelegramRichDerivative(
+            html=normalized,
+            sha256=hashlib.sha256(normalized.encode()).hexdigest(),
+            metrics=metrics,
+            dialect=TELEGRAM_BOT_API_DIALECT,
+            renderer_version=TELEGRAM_RENDERER_VERSION,
+        )
+        try:
+            response = await self.transport.send_rich_message(
+                chat_id=destination.chat_id,
+                rich_message=_input_rich_message(derivative),
+                message_thread_id=destination.message_thread_id,
+            )
+        except Exception as error:
+            raise TelegramRichPublishError(
+                "telegram.send_failed", "Telegram Rich send failed"
             ) from error
         return TelegramRichReceipt(
             chat_id=destination.chat_id,
