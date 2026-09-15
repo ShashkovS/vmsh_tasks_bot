@@ -1,28 +1,11 @@
-import { Clock3, ExternalLink, Mic2 } from 'lucide-react'
+import { ExternalLink, Mic2 } from 'lucide-react'
 
 import type { OralWindowJoin, StudentOralWindow } from '@vmsh/contracts'
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  Button,
-  Card,
-  CardContent,
-  buttonVariants,
-  cn,
-} from '@vmsh/ui'
+import { Button, buttonVariants, cn } from '@vmsh/ui'
 
-const stateLabel = {
-  upcoming: 'Скоро',
-  open: 'Открыто',
-  closed: 'Завершено',
-  cancelled: 'Отменено',
-} as const
-
-function timeLabel(value: string): string {
+function timeLabel(value: string, date = true): string {
   return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    month: 'short',
+    ...(date ? { day: 'numeric' as const, month: 'short' as const } : {}),
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
@@ -37,7 +20,7 @@ export interface OralAdmissionProps {
   className?: string
 }
 
-/** Student-facing oral windows. Join secrets appear only after an explicit request. */
+/** classroom-and-oral-workflow.md: compact optional supplement to written submission. */
 export function OralAdmission({
   windows,
   revealedJoin,
@@ -46,88 +29,60 @@ export function OralAdmission({
   onRevealJoin,
   className,
 }: OralAdmissionProps) {
+  const visible = windows.filter((window) => window.state === 'open' || window.state === 'upcoming')
+  if (!visible.length) return null
   return (
-    <section aria-labelledby="oral-admission-title" className={cn('space-y-3', className)}>
-      <div className="space-y-0.5">
-        <h2
-          className="flex items-center gap-2 text-title-sm font-semibold"
-          id="oral-admission-title"
-        >
-          <Mic2 aria-hidden="true" className="size-4 text-primary" />
-          Устный приём
-        </h2>
-        <p className="text-small text-muted-foreground">
-          Задачу также можно отправить письменно ниже.
-        </p>
-      </div>
-
-      {windows.length === 0 ? (
-        <Alert tone="info">
-          <Clock3 aria-hidden="true" />
-          <AlertContent>
-            <AlertDescription>
-              Для этого занятия окна устного приёма пока не назначены.
-            </AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : (
-        <div className="grid gap-2">
-          {windows.map((window) => {
-            const join = revealedJoin?.windowId === window.windowId ? revealedJoin : null
-            return (
-              <Card key={window.windowId}>
-                <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">Окно {window.sequenceNumber}</span>
-                      <span
-                        className={cn(
-                          'rounded-md border px-1.5 py-0.5 text-caption font-medium',
-                          window.state === 'open'
-                            ? 'border-status-success-border bg-status-success-surface text-status-success'
-                            : 'border-border text-muted-foreground',
-                        )}
-                      >
-                        {stateLabel[window.state]}
-                      </span>
-                    </div>
-                    <p className="mt-1 font-num text-small text-muted-foreground">
-                      {timeLabel(window.opensAt)} — {timeLabel(window.closesAt)}
-                    </p>
-                    {join?.joinCode ? (
-                      <p className="mt-1 text-small">
-                        Код: <code className="font-num">{join.joinCode}</code>
-                      </p>
-                    ) : null}
-                  </div>
-
-                  {join ? (
-                    <a
-                      className={buttonVariants()}
-                      href={join.joinUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {join.joinLabel}
-                      <ExternalLink aria-hidden="true" />
-                    </a>
-                  ) : window.joinAvailable ? (
-                    <Button
-                      disabled={joiningWindowId === window.windowId}
-                      onClick={() => onRevealJoin?.(window.windowId)}
-                    >
-                      {joiningWindowId === window.windowId ? 'Получаем ссылку…' : window.joinLabel}
-                    </Button>
-                  ) : null}
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-
+    <section aria-label="Устный приём" className={cn('space-y-1 text-small', className)}>
+      {visible.map((window) => {
+        const open = window.state === 'open'
+        const join = open && revealedJoin?.windowId === window.windowId ? revealedJoin : null
+        const sameDay =
+          new Date(window.opensAt).toDateString() === new Date(window.closesAt).toDateString()
+        return (
+          <div key={window.windowId} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="inline-flex items-center gap-1.5">
+              <Mic2 aria-hidden="true" className="size-4 shrink-0 text-primary" />
+              <span className={cn(open ? 'font-medium text-foreground' : 'text-muted-foreground')}>
+                {open ? 'Устный приём сейчас' : 'Устный приём'}
+              </span>
+            </span>
+            <span className="font-num text-muted-foreground">
+              {open
+                ? `до ${timeLabel(window.closesAt, !sameDay)}`
+                : `${timeLabel(window.opensAt)} — ${timeLabel(window.closesAt, !sameDay)}`}
+            </span>
+            {join ? (
+              <>
+                <a
+                  className={buttonVariants({ size: 'sm', variant: 'outline' })}
+                  href={join.joinUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {join.joinLabel}
+                  <ExternalLink aria-hidden="true" />
+                </a>
+                {join.joinCode ? (
+                  <span>
+                    Код: <code className="font-num">{join.joinCode}</code>
+                  </span>
+                ) : null}
+              </>
+            ) : open && window.joinAvailable ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={joiningWindowId === window.windowId}
+                onClick={() => onRevealJoin?.(window.windowId)}
+              >
+                {joiningWindowId === window.windowId ? 'Получаем ссылку…' : window.joinLabel}
+              </Button>
+            ) : null}
+          </div>
+        )
+      })}
       {errorMessage ? (
-        <p className="text-small text-destructive" role="alert">
+        <p className="text-destructive" role="alert">
           {errorMessage}
         </p>
       ) : null}

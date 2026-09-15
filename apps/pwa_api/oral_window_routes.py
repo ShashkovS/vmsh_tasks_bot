@@ -10,7 +10,7 @@ from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
-from db_methods.pwa.oral_windows import group_lesson_scope, list_windows
+from db_methods.pwa.oral_windows import group_lesson_scope, list_windows, window_lessons
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
@@ -24,6 +24,8 @@ from models.pwa.oral_windows import (
     student_join_details,
     student_windows,
     update_window,
+    create_window_batch,
+    plan_windows,
 )
 
 
@@ -142,6 +144,10 @@ async def _json(request: web.Request) -> dict[str, object]:
             code="validation_error",
             message="Тело запроса должно быть корректным JSON-объектом",
         ) from error
+    return _validate_payload(payload)
+
+
+def _validate_payload(payload):
     if (
         not isinstance(payload, dict)
         or set(payload) != _FIELDS
@@ -185,6 +191,7 @@ def _admin_payload(item: dict[str, object], now: datetime) -> dict[str, object]:
         "joinUrl": item["join_url"],
         "joinCode": item["join_code"],
         "status": item["status"],
+        "groups": item.get("groups", []),
     }
 
 
@@ -291,10 +298,13 @@ async def list_staff_oral_windows(request: web.Request) -> web.Response:
         raise _translate(OralWindowNotFound)
     now = _now()
     items = await _factory(request).run_read_async(
-        lambda connection: list_windows(
-            connection,
-            group_lesson_id=int(scope["group_lesson_id"]),
-        )
+        lambda connection: [
+            dict(item, groups=window_lessons(connection, item["public_id"]))
+            for item in list_windows(
+                connection,
+                group_lesson_id=int(scope["group_lesson_id"]),
+            )
+        ]
     )
     return web.json_response(
         {
@@ -387,6 +397,110 @@ async def update_staff_oral_window(request: web.Request) -> web.Response:
             "window": _admin_payload(item, now),
             "requestId": request["request_id"],
         },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@oral_window_routes.get(
+    "/staff/api/v1/group-lessons/{group_lesson_public_id}/oral-windows/planning"
+)
+async def oral_window_planning(request):
+    _admin_user_id(request)
+    try:
+        plan = await _factory(request).run_read_async(
+            lambda connection: plan_windows(
+                connection, _public_id(request, "group_lesson_public_id")
+            )
+        )
+    except OralWindowNotFound as error:
+        raise _translate(error) from error
+    return web.json_response(
+        dict(
+            schemaVersion=1,
+            requestId=request["request_id"],
+            courseName=plan["courseName"],
+            lessonNumber=plan["lessonNumber"],
+            groups=plan["groups"],
+            previous=[
+                dict(
+                    window=_admin_payload(w, _now()),
+                    groupLessonIds=w["targetGroupLessonIds"],
+                )
+                for w in plan["previous"]
+            ],
+        ),
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@oral_window_routes.post(
+    "/staff/api/v1/group-lessons/{group_lesson_public_id}/oral-windows/batch"
+)
+async def save_oral_window_batch(request):
+    actor = _admin_user_id(request)
+    try:
+        if request.content_type != "application/json":
+            raise ValueError
+        payload = await request.json()
+        if (
+            not isinstance(payload, dict)
+            or set(payload) != {"schemaVersion", "idempotencyKey", "entries"}
+            or type(payload["schemaVersion"]) is not int
+            or payload["schemaVersion"] != 1
+            or not isinstance(payload["idempotencyKey"], str)
+            or not _PUBLIC_ID.fullmatch(payload["idempotencyKey"])
+            or not isinstance(payload["entries"], list)
+            or not 1 <= len(payload["entries"]) <= 20
+        ):
+            raise ValueError
+        for entry in payload["entries"]:
+            if not isinstance(entry, dict) or set(entry) != {
+                "groupLessonIds",
+                "window",
+            }:
+                raise ValueError
+            groups = entry["groupLessonIds"]
+            if (
+                not isinstance(groups, list)
+                or not 1 <= len(groups) <= 20
+                or any(
+                    not isinstance(g, str) or not _PUBLIC_ID.fullmatch(g)
+                    for g in groups
+                )
+                or len(set(groups)) != len(groups)
+            ):
+                raise ValueError
+            w = _validate_payload(entry["window"])
+            _timestamp(w["opensAt"], "opensAt")
+            _timestamp(w["closesAt"], "closesAt")
+            if w["status"] != "active":
+                raise ValueError
+    except (ValueError, TypeError, KeyError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте черновик окон приёма",
+        ) from error
+    try:
+        items = await _factory(request).run_write_async(
+            lambda connection: create_window_batch(
+                connection,
+                group_lesson_public_id=_public_id(request, "group_lesson_public_id"),
+                actor_user_id=actor,
+                request_key=payload["idempotencyKey"],
+                entries=payload["entries"],
+                now=_now(),
+            )
+        )
+    except (OralWindowInvalid, OralWindowConflict, OralWindowNotFound) as error:
+        raise _translate(error) from error
+    return web.json_response(
+        dict(
+            schemaVersion=1,
+            requestId=request["request_id"],
+            items=[_admin_payload(w, _now()) for w in items],
+        ),
+        status=201,
         headers={"Cache-Control": "no-store"},
     )
 

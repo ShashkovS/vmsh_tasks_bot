@@ -326,6 +326,10 @@ pwa-e2e:
 	cd $(PWA_DIR) && CI=true pnpm e2e
 
 .PHONY: pwa-e2e-live-marking
+.PHONY: pwa-e2e-oral-windows
+pwa-e2e-oral-windows:
+	cd $(PWA_DIR) && CI=true pnpm e2e --mode oral-windows
+
 pwa-e2e-live-marking:
 	cd $(PWA_DIR) && CI=true pnpm e2e --mode live-marking
 

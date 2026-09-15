@@ -11,7 +11,8 @@ def group_lesson_scope(
     group_lesson_public_id: str,
 ) -> dict[str, object] | None:
     row = connection.execute(
-        "SELECT lesson.id AS group_lesson_id, lesson.public_id, "
+        "SELECT lesson.id AS group_lesson_id, lesson.public_id, lesson.course_lesson_id, "
+        "lesson.group_id, course.name AS course_name, "
         "course.public_id AS course_public_id, "
         "group_record.public_id AS group_public_id "
         "FROM group_lessons AS lesson "
@@ -33,7 +34,7 @@ def list_windows(
     rows = connection.execute(
         "SELECT public_id, sequence_number, opens_at, closes_at, join_label, "
         "join_url, join_code, status, created_at, updated_at, version "
-        "FROM oral_windows WHERE group_lesson_id = ? "
+        "FROM oral_windows WHERE id IN (SELECT window_id FROM oral_window_lessons WHERE group_lesson_id = ?) "
         "ORDER BY opens_at, sequence_number, id",
         (group_lesson_id,),
     ).fetchall()
@@ -63,7 +64,8 @@ def due_notification_windows(
         "lesson.group_id, course.public_id AS course_public_id, "
         "group_record.public_id AS group_public_id, course_lesson.lesson_number "
         "FROM oral_windows AS window "
-        "JOIN group_lessons AS lesson ON lesson.id = window.group_lesson_id "
+        "JOIN oral_window_lessons AS membership ON membership.window_id = window.id "
+        "JOIN group_lessons AS lesson ON lesson.id = membership.group_lesson_id "
         "JOIN course_lessons AS course_lesson "
         "ON course_lesson.id = lesson.course_lesson_id "
         "JOIN courses AS course ON course.id = lesson.course_id "
@@ -131,7 +133,9 @@ def window_by_public_id(
         "WHERE window.public_id = ? LIMIT 1",
         (public_id,),
     ).fetchone()
-    return None if row is None else dict(row)
+    return (
+        None if row is None else dict(row, groups=window_lessons(connection, public_id))
+    )
 
 
 def update_window_row(
@@ -226,10 +230,65 @@ def student_join_window(
     row = connection.execute(
         "SELECT public_id, sequence_number, opens_at, closes_at, join_label, "
         "join_url, join_code, status, version FROM oral_windows "
-        "WHERE group_lesson_id = ? AND public_id = ? LIMIT 1",
+        "WHERE id IN (SELECT window_id FROM oral_window_lessons WHERE group_lesson_id = ?) "
+        "AND public_id = ? LIMIT 1",
         (scope["group_lesson_id"], window_public_id),
     ).fetchone()
     return None if row is None else dict(row)
+
+
+def window_lessons(connection, public_id):
+    return [
+        dict(row)
+        for row in connection.execute(
+            "SELECT lesson.public_id AS groupLessonId, groups.public_name AS groupName, lesson.group_id "
+            "FROM oral_window_lessons link JOIN oral_windows window ON window.id = link.window_id "
+            "JOIN group_lessons lesson ON lesson.id = link.group_lesson_id "
+            "JOIN groups ON groups.course_id = lesson.course_id AND groups.group_id = lesson.group_id "
+            "WHERE window.public_id = ? ORDER BY lesson.id",
+            (public_id,),
+        )
+    ]
+
+
+def planning_lessons(connection, public_id):
+    return [
+        dict(row)
+        for row in connection.execute(
+            "SELECT lesson.public_id AS groupLessonId, groups.public_name AS groupName, lesson.group_id, "
+            "course_lesson.lesson_number AS lessonNumber, lesson.course_lesson_id "
+            "FROM group_lessons source JOIN course_lessons source_number ON source_number.id = source.course_lesson_id "
+            "JOIN course_lessons course_lesson ON course_lesson.course_id = source.course_id "
+            "AND (course_lesson.id = source.course_lesson_id OR course_lesson.lesson_number = source_number.lesson_number - 1) "
+            "JOIN group_lessons lesson ON lesson.course_lesson_id = course_lesson.id "
+            "JOIN groups ON groups.course_id = lesson.course_id AND groups.group_id = lesson.group_id "
+            "WHERE source.public_id = ? ORDER BY course_lesson.lesson_number DESC, lesson.id",
+            (public_id,),
+        )
+    ]
+
+
+def link_window(connection, public_id, lesson_ids):
+    connection.executemany(
+        "INSERT OR IGNORE INTO oral_window_lessons(window_id, group_lesson_id) "
+        "SELECT id, ? FROM oral_windows WHERE public_id = ?",
+        [(lesson, public_id) for lesson in lesson_ids],
+    )
+
+
+def batch_receipt(connection, actor, key):
+    row = connection.execute(
+        "SELECT * FROM oral_window_batches WHERE actor_user_id = ? AND request_key = ?",
+        (actor, key),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def save_batch_receipt(connection, actor, key, fingerprint, ids_json, now):
+    connection.execute(
+        "INSERT INTO oral_window_batches VALUES (?, ?, ?, ?, ?)",
+        (actor, key, fingerprint, ids_json, now),
+    )
 
 
 __all__ = [

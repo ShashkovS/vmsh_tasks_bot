@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { OralWeeklyDraft } from './oral-weekly-draft'
 
 import {
   PageLayout,
@@ -127,7 +128,9 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
   const storageKey = `vmshpwa:staff:${principal.accountId}:oral-window-draft:${groupLessonId}`
   const [draft, setDraft] = useState<OralWindowDraft>(() => readDraft(storageKey))
   const [editing, setEditing] = useState<{ windowId: string; version: number } | null>(null)
+  const [clone, setClone] = useState<{ key: string; window: StaffOralWindow } | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [weeklyLocked, setWeeklyLocked] = useState(false)
   const client = useMemo(
     () =>
       createStaffOralWindowClient(authentication.client.runtime, {
@@ -219,120 +222,134 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
 
   return (
     <PageLayout
-      description="Несколько независимых окон для одного группового занятия. Ссылка показывается школьнику только во время открытого окна."
+      description="Общее окно связано со всеми выбранными группами. Изменения времени, ссылки и отмена применяются ко всем этим группам."
       eyebrow={`Групповое занятие ${groupLessonId}`}
       title="Устный приём"
       width="wide"
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(28rem,1.2fr)]">
-        <Card>
-          <CardContent className="pt-4">
-            <form className="space-y-3" onSubmit={save}>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-semibold">{editing ? 'Изменить окно' : 'Новое окно'}</h2>
-                {editing ? (
-                  <Button
-                    onClick={() => {
-                      setEditing(null)
-                      setDraft(newDraft())
-                    }}
-                    size="xs"
-                    type="button"
-                    variant="ghost"
-                  >
-                    Отмена
-                  </Button>
+        {!editing ? (
+          <OralWeeklyDraft
+            key={clone?.key ?? 'new'}
+            client={client}
+            accountId={principal.accountId}
+            groupLessonId={groupLessonId}
+            clone={clone?.window}
+            onLockedChange={setWeeklyLocked}
+            onSaved={() => {
+              void queryClient.invalidateQueries({ queryKey: ['oral-windows'] })
+            }}
+          />
+        ) : (
+          <Card>
+            <CardContent className="pt-4">
+              <form className="space-y-3" onSubmit={save}>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="font-semibold">{editing ? 'Изменить окно' : 'Новое окно'}</h2>
+                  {editing ? (
+                    <Button
+                      onClick={() => {
+                        setEditing(null)
+                        setDraft(newDraft())
+                      }}
+                      size="xs"
+                      type="button"
+                      variant="ghost"
+                    >
+                      Отмена
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="oral-sequence">Номер</Label>
+                    <Input
+                      id="oral-sequence"
+                      min="1"
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, sequenceNumber: event.target.value }))
+                      }
+                      type="number"
+                      value={draft.sequenceNumber}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="oral-opens">Открывается</Label>
+                    <Input
+                      id="oral-opens"
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, opensAt: event.target.value }))
+                      }
+                      type="datetime-local"
+                      value={draft.opensAt}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="oral-closes">Закрывается</Label>
+                    <Input
+                      id="oral-closes"
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, closesAt: event.target.value }))
+                      }
+                      type="datetime-local"
+                      value={draft.closesAt}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="oral-label">Подпись кнопки</Label>
+                  <Input
+                    id="oral-label"
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, joinLabel: event.target.value }))
+                    }
+                    value={draft.joinLabel}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="oral-url">HTTPS-ссылка</Label>
+                  <Input
+                    id="oral-url"
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, joinUrl: event.target.value }))
+                    }
+                    placeholder="https://zoom.us/j/…"
+                    type="url"
+                    value={draft.joinUrl}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="oral-code">Код, если нужен</Label>
+                  <Input
+                    id="oral-code"
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, joinCode: event.target.value }))
+                    }
+                    value={draft.joinCode}
+                  />
+                </div>
+                <p className="text-caption text-muted-foreground">
+                  Черновик формы сохраняется на этом устройстве автоматически.
+                </p>
+                {validationError ? (
+                  <p className="text-small text-destructive" role="alert">
+                    {validationError}
+                  </p>
                 ) : null}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1">
-                  <Label htmlFor="oral-sequence">Номер</Label>
-                  <Input
-                    id="oral-sequence"
-                    min="1"
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, sequenceNumber: event.target.value }))
-                    }
-                    type="number"
-                    value={draft.sequenceNumber}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="oral-opens">Открывается</Label>
-                  <Input
-                    id="oral-opens"
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, opensAt: event.target.value }))
-                    }
-                    type="datetime-local"
-                    value={draft.opensAt}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="oral-closes">Закрывается</Label>
-                  <Input
-                    id="oral-closes"
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, closesAt: event.target.value }))
-                    }
-                    type="datetime-local"
-                    value={draft.closesAt}
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="oral-label">Подпись кнопки</Label>
-                <Input
-                  id="oral-label"
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, joinLabel: event.target.value }))
-                  }
-                  value={draft.joinLabel}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="oral-url">HTTPS-ссылка</Label>
-                <Input
-                  id="oral-url"
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, joinUrl: event.target.value }))
-                  }
-                  placeholder="https://zoom.us/j/…"
-                  type="url"
-                  value={draft.joinUrl}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="oral-code">Код, если нужен</Label>
-                <Input
-                  id="oral-code"
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, joinCode: event.target.value }))
-                  }
-                  value={draft.joinCode}
-                />
-              </div>
-              <p className="text-caption text-muted-foreground">
-                Черновик формы сохраняется на этом устройстве автоматически.
-              </p>
-              {validationError ? (
-                <p className="text-small text-destructive" role="alert">
-                  {validationError}
-                </p>
-              ) : null}
-              {mutation.error ? (
-                <p className="text-small text-destructive" role="alert">
-                  {mutation.error instanceof ApiResponseError
-                    ? mutation.error.message
-                    : 'Не удалось сохранить окно.'}
-                </p>
-              ) : null}
-              <Button disabled={mutation.isPending} type="submit">
-                {mutation.isPending ? 'Сохраняем…' : editing ? 'Сохранить' : 'Добавить окно'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                {mutation.error ? (
+                  <p className="text-small text-destructive" role="alert">
+                    {mutation.error instanceof ApiResponseError
+                      ? mutation.error.message
+                      : 'Не удалось сохранить окно.'}
+                  </p>
+                ) : null}
+                <Button disabled={mutation.isPending} type="submit">
+                  {mutation.isPending ? 'Сохраняем…' : editing ? 'Сохранить' : 'Добавить окно'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         <section aria-label="Настроенные окна" className="space-y-2">
           {query.isPending ? <PageStatePanel state="loading" /> : null}
@@ -350,14 +367,43 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                 <div>
                   <p className="font-medium">
                     Окно {window.sequenceNumber} ·{' '}
-                    {window.state === 'open' ? 'открыто' : window.state}
+                    {
+                      {
+                        open: 'открыто',
+                        upcoming: 'скоро',
+                        closed: 'завершено',
+                        cancelled: 'отменено',
+                      }[window.state]
+                    }
                   </p>
                   <p className="font-num text-small text-muted-foreground">
                     {dateLabel(window.opensAt)} — {dateLabel(window.closesAt)}
                   </p>
                   <p className="mt-1 truncate text-small">{window.joinUrl}</p>
+                  <p className="text-small text-muted-foreground">
+                    {window.groups?.map((group) => group.groupName).join(', ')}
+                  </p>
                 </div>
-                <div className="flex gap-2">
+                <fieldset
+                  disabled={weeklyLocked || mutation.isPending}
+                  className="flex flex-wrap gap-2"
+                >
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (
+                        !globalThis.confirm(
+                          'Открыть копию окна на следующий день? Текущий черновик создания будет заменён.',
+                        )
+                      )
+                        return
+                      setEditing(null)
+                      setClone({ key: crypto.randomUUID(), window })
+                    }}
+                  >
+                    Клонировать
+                  </Button>
                   <Button
                     onClick={() => {
                       setEditing({ windowId: window.windowId, version: window.version })
@@ -370,14 +416,21 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                   </Button>
                   {window.status === 'active' ? (
                     <Button
-                      onClick={() => mutation.mutate({ kind: 'cancel', window })}
+                      onClick={() => {
+                        if (
+                          globalThis.confirm(
+                            `Отменить окно для всех его групп: ${window.groups?.map((group) => group.groupName).join(', ') || 'текущая группа'}?`,
+                          )
+                        )
+                          mutation.mutate({ kind: 'cancel', window })
+                      }}
                       size="sm"
                       variant="ghost"
                     >
                       Отменить
                     </Button>
                   ) : null}
-                </div>
+                </fieldset>
               </CardContent>
             </Card>
           ))}

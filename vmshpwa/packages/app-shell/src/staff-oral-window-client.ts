@@ -9,6 +9,9 @@ import {
   saveOralWindowRequestSchema,
   staffOralWindowListResponseSchema,
   staffOralWindowResponseSchema,
+  oralWindowBatchSchema,
+  oralWindowPlanningSchema,
+  type OralWindowBatch,
   type PrincipalQueryScope,
   type RuntimeConfig,
   type SaveOralWindowRequest,
@@ -51,6 +54,22 @@ export function createStaffOralWindowClient(
   }
 
   return {
+    async planning(groupLessonId: string) {
+      return oralWindowPlanningSchema.parse(
+        await request(
+          `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/oral-windows/planning`,
+          { method: 'GET' },
+        ),
+      )
+    },
+    async saveBatch(groupLessonId: string, input: OralWindowBatch) {
+      return staffOralWindowListResponseSchema.parse(
+        await request(
+          `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/oral-windows/batch`,
+          { method: 'POST', body: JSON.stringify(oralWindowBatchSchema.parse(input)) },
+        ),
+      )
+    },
     async list(groupLessonId: string, signal?: AbortSignal): Promise<StaffOralWindowListResponse> {
       const lessonId = publicIdSchema.parse(groupLessonId)
       return staffOralWindowListResponseSchema.parse(

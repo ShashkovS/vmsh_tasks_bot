@@ -48,10 +48,14 @@ export const oralWindowJoinResponseSchema = z
   .strip()
 export type OralWindowJoinResponse = z.infer<typeof oralWindowJoinResponseSchema>
 
+export const oralWindowGroupSchema = z
+  .object({ groupLessonId: publicIdSchema, groupName: z.string() })
+  .strip()
 export const staffOralWindowSchema = studentOralWindowSchema.extend({
   joinUrl: z.url().refine((value) => new URL(value).protocol === 'https:'),
   joinCode: z.string().trim().min(1).nullable(),
   status: z.enum(['active', 'cancelled']),
+  groups: z.array(oralWindowGroupSchema).optional(),
 })
 export type StaffOralWindow = z.infer<typeof staffOralWindowSchema>
 
@@ -95,6 +99,41 @@ export const saveOralWindowRequestSchema = z
     }
   })
 export type SaveOralWindowRequest = z.infer<typeof saveOralWindowRequestSchema>
+
+export const oralWindowBatchSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    idempotencyKey: publicIdSchema,
+    entries: z
+      .array(
+        z
+          .object({
+            groupLessonIds: z
+              .array(publicIdSchema)
+              .min(1)
+              .max(20)
+              .refine((ids) => new Set(ids).size === ids.length),
+            window: saveOralWindowRequestSchema,
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(20),
+  })
+  .strict()
+export type OralWindowBatch = z.infer<typeof oralWindowBatchSchema>
+export const oralWindowPlanningSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    requestId: z.string(),
+    courseName: z.string(),
+    lessonNumber: z.number().int(),
+    groups: z.array(oralWindowGroupSchema),
+    previous: z.array(
+      z.object({ window: staffOralWindowSchema, groupLessonIds: z.array(publicIdSchema) }),
+    ),
+  })
+  .strip()
 
 export const oralWindowQueryKeys = {
   student: (principal: PrincipalQueryScope, courseId: string, groupLessonId: string) =>

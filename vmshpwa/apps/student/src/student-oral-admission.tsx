@@ -46,7 +46,7 @@ export function StudentOralAdmission({
   if (query.error instanceof ApiResponseError && query.error.status === 404) return null
 
   if (query.isPending) {
-    return <p className="mt-5 text-small text-muted-foreground">Загружаем окна устного приёма…</p>
+    return null
   }
 
   if (query.error) {
@@ -77,7 +77,7 @@ export function StudentOralAdmission({
 
   return (
     <OralAdmission
-      className="mt-5"
+      className="my-2"
       errorMessage={joinError}
       joiningWindowId={joiningWindowId}
       onRevealJoin={(windowId) => void reveal(windowId)}

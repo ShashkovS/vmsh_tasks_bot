@@ -75,3 +75,12 @@ export const RevealJoinDetails: Story = {
 }
 
 export const NoWindows: Story = { args: { windows: [] } }
+
+export const PastWindows: Story = {
+  args: { windows: [{ ...windows[0]!, state: 'closed', joinAvailable: false }] },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).queryByRole('region', { name: 'Устный приём' }),
+    ).not.toBeInTheDocument()
+  },
+}

@@ -29,7 +29,7 @@ def test_oral_window_migration_up_down_up_is_exact(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0069.pwa_course_notification_preferences"
     }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
+    _apply(database_path, {name for name in migrations if name < MIGRATION_ID})
     with sqlite3.connect(database_path) as connection:
         assert (
             connection.execute(

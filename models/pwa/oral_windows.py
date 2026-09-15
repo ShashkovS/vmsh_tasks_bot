@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sqlite3
 from datetime import UTC, datetime
 from urllib.parse import urlencode, urlparse
@@ -12,6 +13,11 @@ from db_methods.pwa.notifications import (
     insert_event,
 )
 from db_methods.pwa.oral_windows import (
+    batch_receipt,
+    save_batch_receipt,
+    link_window,
+    window_lessons,
+    planning_lessons,
     due_notification_windows,
     group_lesson_scope,
     insert_window,
@@ -181,6 +187,11 @@ def create_window(
     )
     if scope is None:
         raise OralWindowNotFound
+    if any(
+        w["sequence_number"] == sequence_number
+        for w in list_windows(connection, group_lesson_id=scope["group_lesson_id"])
+    ):
+        raise OralWindowConflict
     values = _values(
         sequence_number=sequence_number,
         opens_at=opens_at,
@@ -223,6 +234,16 @@ def update_window(
 ) -> dict[str, object]:
     if window_by_public_id(connection, public_id=public_id) is None:
         raise OralWindowNotFound
+    # Shared window updates retain one version; reject collisions in every group.
+    for member in window_lessons(connection, public_id):
+        scope = group_lesson_scope(
+            connection, group_lesson_public_id=member["groupLessonId"]
+        )
+        if any(
+            w["sequence_number"] == sequence_number and w["public_id"] != public_id
+            for w in list_windows(connection, group_lesson_id=scope["group_lesson_id"])
+        ):
+            raise OralWindowConflict
     values = _values(
         sequence_number=sequence_number,
         opens_at=opens_at,
@@ -305,6 +326,125 @@ def student_join_details(
         "join_code": window["join_code"],
         "closes_at": window["closes_at"],
     }
+
+
+def plan_windows(connection, group_lesson_public_id):
+    scope = group_lesson_scope(
+        connection, group_lesson_public_id=group_lesson_public_id
+    )
+    if scope is None:
+        raise OralWindowNotFound
+    lessons = planning_lessons(connection, group_lesson_public_id)
+    targets = [
+        lesson
+        for lesson in lessons
+        if lesson["course_lesson_id"] == scope["course_lesson_id"]
+    ]
+    previous = next(
+        (
+            lesson
+            for lesson in lessons
+            if lesson["course_lesson_id"] != scope["course_lesson_id"]
+            and lesson["group_id"] == scope["group_id"]
+        ),
+        None,
+    )
+    templates = []
+    if previous:
+        prev_scope = group_lesson_scope(
+            connection, group_lesson_public_id=previous["groupLessonId"]
+        )
+        for item in list_windows(
+            connection, group_lesson_id=prev_scope["group_lesson_id"]
+        ):
+            if item["status"] != "active":
+                continue
+            groups = {
+                m["group_id"] for m in window_lessons(connection, item["public_id"])
+            }
+            templates.append(
+                dict(
+                    item,
+                    targetGroupLessonIds=[
+                        t["groupLessonId"] for t in targets if t["group_id"] in groups
+                    ],
+                )
+            )
+    return dict(
+        courseName=scope["course_name"],
+        lessonNumber=targets[0]["lessonNumber"],
+        groups=targets,
+        previous=templates,
+    )
+
+
+def create_window_batch(
+    connection, *, group_lesson_public_id, actor_user_id, request_key, entries, now
+):
+    """Atomic weekly draft receipt, not a recurrence rule. See oral-window-weekly-drafts.md."""
+    fingerprint = hashlib.sha256(
+        json.dumps([group_lesson_public_id, entries], sort_keys=True).encode()
+    ).hexdigest()
+    receipt = batch_receipt(connection, actor_user_id, request_key)
+    if receipt:
+        if receipt["fingerprint"] != fingerprint:
+            raise OralWindowConflict
+        return [
+            window_by_public_id(connection, public_id=i)
+            for i in json.loads(receipt["window_ids_json"])
+        ]
+    anchor = group_lesson_scope(
+        connection, group_lesson_public_id=group_lesson_public_id
+    )
+    if anchor is None:
+        raise OralWindowNotFound
+    ids = []
+    for entry in entries:
+        scopes = [
+            group_lesson_scope(connection, group_lesson_public_id=i)
+            for i in entry["groupLessonIds"]
+        ]
+        if not scopes or any(
+            s is None or s["course_lesson_id"] != anchor["course_lesson_id"]
+            for s in scopes
+        ):
+            raise OralWindowInvalid
+        # Automatic numbering avoids overwriting any existing per-group window.
+        sequence = 1 + max(
+            (
+                w["sequence_number"]
+                for s in scopes
+                for w in list_windows(connection, group_lesson_id=s["group_lesson_id"])
+            ),
+            default=0,
+        )
+        item = entry["window"]
+        created = create_window(
+            connection,
+            group_lesson_public_id=scopes[0]["public_id"],
+            actor_user_id=actor_user_id,
+            now=now,
+            sequence_number=sequence,
+            opens_at=datetime.fromisoformat(item["opensAt"].replace("Z", "+00:00")),
+            closes_at=datetime.fromisoformat(item["closesAt"].replace("Z", "+00:00")),
+            join_label=item["joinLabel"],
+            join_url=item["joinUrl"],
+            join_code=item["joinCode"],
+            status="active",
+        )
+        link_window(
+            connection, created["public_id"], [s["group_lesson_id"] for s in scopes]
+        )
+        ids.append(created["public_id"])
+    save_batch_receipt(
+        connection,
+        actor_user_id,
+        request_key,
+        fingerprint,
+        json.dumps(ids),
+        _timestamp(now),
+    )
+    return [window_by_public_id(connection, public_id=i) for i in ids]
 
 
 __all__ = [
