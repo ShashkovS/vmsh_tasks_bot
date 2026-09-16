@@ -66,3 +66,36 @@ def test_old_lazy_chunks_survive_and_collisions_fail_closed(tmp_path):
     with pytest.raises(ValueError, match="collision"):
         retain_release_assets(tmp_path / "new", tmp_path)
     assert (assets / "task-abc123.js").read_text() == "old chunk"
+
+
+@pytest.mark.parametrize("audience", ["student", "family", "staff", "metrics", "public"])
+def test_health_probe_uses_trusted_socket_only_for_private_runtime(tmp_path, audience):
+    import json
+    import os
+
+    source = (ROOT / "docs/deploy/deploy-vmsh-tasks-bot.sh").read_text()
+    function = source[source.index("check_http_200()") : source.index("check_public_media_csp()")]
+    # Exercise shell argument construction, not a text-only assertion.
+    fake = tmp_path / "curl"
+    fake.write_text("#!/usr/bin/env python3\nimport json,os,sys\n"
+                    "open(os.environ['CAPTURE'], 'w').write(json.dumps(sys.argv[1:]))\n"
+                    "print('200', end='')\n")
+    fake.chmod(0o755)
+    output = tmp_path / "arguments.json"
+    url = ("https://vmsh.shashkovs.ru/student/" if audience == "public" else
+           "http://127.0.0.1:8000/metrics" if audience == "metrics" else
+           f"http://127.0.0.1:8000/{audience}/api/v1/runtime")
+    script = function.replace("/usr/bin/curl", '"$FAKE_CURL"') + '\ncheck_http_200 test "$URL"\n'
+    subprocess.run(["bash", "-eu", "-c", script], check=True, env={
+        **os.environ, "FAKE_CURL": str(fake), "CAPTURE": str(output), "URL": url,
+        "DEPLOY_DIR": str(tmp_path), "RELEASE_ROOT": "/release",
+    }, capture_output=True)
+    args = json.loads(output.read_text())
+    if audience in {"student", "family", "staff"}:
+        assert args[args.index("--unix-socket") + 1] == "/release/runtime/vmshpwa.sock"
+        assert 'Forwarded: for="127.0.0.1";proto=https;host="vmsh.shashkovs.ru"' in args
+        assert args[-1] == f"http://vmsh.shashkovs.ru/{audience}/api/v1/runtime"
+    else:
+        assert "--unix-socket" not in args
+        assert not any("Forwarded:" in arg for arg in args)
+        assert args[-1] == url

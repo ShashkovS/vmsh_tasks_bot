@@ -42,8 +42,7 @@
 собирает и упаковывает frontend до паузы. Перед остановкой включает флаг;
 при миграции останавливает analytics timer/service, PWA и Telegram writers.
 Прежнее active/inactive состояние таймера сохраняется отдельно и переживает
-сбой deploy. Снятие флага — только после миграций, запуска, прямых localhost
-runtime checks всех audiences и активации frontend. ERR trap оставляет флаг,
+сбой deploy. Снятие флага — только после миграций, запуска, runtime checks всех audiences через доверенный Unix-сокет и активации frontend. ERR trap оставляет флаг,
 состояние таймера и прежнее уведомление администратору.
 
 [`static_release.py`](../scripts/static_release.py) сохраняет public `assets/`
@@ -84,8 +83,10 @@ Nginx берёт их из `@@STATIC_ROOT@@/../immutable-assets`; STATIC_ROOT о
 Повтор той же уже записанной revision может завершиться как no-op; это не recovery proof.
 
 Перед ручным снятием проверить оба сервиса, все три runtime напрямую на
-`http://127.0.0.1:8000/{student,family,staff}/api/v1/runtime` с
-`Host: vmsh.shashkovs.ru`, выбранный frontend release и его assets.
+Unix-сокет `/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock` с
+`Forwarded: for="127.0.0.1";proto=https;host="vmsh.shashkovs.ru"`,
+выбранный frontend release и его assets. TCP runtime-check на `127.0.0.1:8000`
+не проходит production trust policy; `/metrics` остаётся обычным TCP-запросом.
 Если файл `/web/vmsh_tasks_bot/deploy/runtime/deploy/analytics-timer-before-maintenance`
 содержит `active`, запустить `vmsh-analytics.timer`; если `inactive`, не включать.
 Только после подтверждения удалить этот файл и точный maintenance marker,
@@ -117,3 +118,13 @@ submission/live-marking regression passed. Три Storybook/axe состояни
 Tailwind (не изменение исходных зависимостей). TypeScript приложений/shared/tools,
 целевые ESLint/Ruff и production builds прошли. Browser gate: **15 passed** в
 Chromium/WebKit/Firefox, включая реальные 20 и 60+ секунд ожидания.
+
+## Исправление deploy health-check — 16 сентября 2026
+
+Проверка runtime в установленном скрипте использовала TCP без доверенной цепочки,
+получала 403 и оставляла maintenance включённым. `check_http_200` теперь только
+для трёх точных локальных runtime URL выбирает доверенный Unix-сокет и Forwarded.
+Для metrics и публичного HTTPS заголовки не меняются. Проверены 8 тестов
+`pwa_tests/test_smooth_redeploy.py`, включая фактическую сборку argv curl
+для всех пяти вариантов. Скрипт требует установки от root по разделу выше;
+push исходника не заменяет установленную копию.

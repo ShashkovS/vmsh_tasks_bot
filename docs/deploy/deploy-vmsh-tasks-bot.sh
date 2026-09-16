@@ -94,8 +94,18 @@ check_http_200() {
   local body_file="$DEPLOY_DIR/runtime/deploy/health-${name}.body"
   local code=""
   local attempt
+  local -a proxy_args=()
+  # smooth-redeploy.md: runtime requires the same trusted socket as nginx.
+  # Keep metrics/public checks unchanged; never send forwarding headers externally.
+  case "$url" in
+    http://127.0.0.1:8000/student/api/v1/runtime|http://127.0.0.1:8000/family/api/v1/runtime|http://127.0.0.1:8000/staff/api/v1/runtime)
+      url="http://vmsh.shashkovs.ru${url#http://127.0.0.1:8000}"
+      proxy_args=(--unix-socket "$RELEASE_ROOT/runtime/vmshpwa.sock"
+        -H 'Forwarded: for="127.0.0.1";proto=https;host="vmsh.shashkovs.ru"')
+      ;;
+  esac
   for attempt in 1 2 3 4 5; do
-    code="$(/usr/bin/curl -sS --max-time 15 -H 'Host: vmsh.shashkovs.ru' -o "$body_file" -w '%{http_code}' "$url" || true)"
+    code="$(/usr/bin/curl -sS --max-time 15 "${proxy_args[@]}" -H 'Host: vmsh.shashkovs.ru' -o "$body_file" -w '%{http_code}' "$url" || true)"
     if [[ "$code" == 200 ]]; then
       echo "Health check passed: ${name}"
       return 0
