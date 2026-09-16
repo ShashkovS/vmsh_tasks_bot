@@ -5,6 +5,7 @@ import {
   staffSupportListQuerySchema,
   supportQueryKeys,
   supportThreadPageSchema,
+  supportThreadSummarySchema,
   supportThreadResponseSchema,
 } from './support'
 
@@ -50,6 +51,15 @@ const response = {
 }
 
 describe('support contracts', () => {
+  it('limits excerpts by Unicode code points, matching SQLite substr', () => {
+    const schema = supportThreadSummarySchema.shape.latestEntry.shape.textExcerpt
+    for (const value of ['а'.repeat(280), '👍'.repeat(280), 'а'.repeat(279) + '👍', null]) {
+      expect(schema.parse(value)).toBe(value)
+    }
+    expect(schema.safeParse('а'.repeat(281)).success).toBe(false)
+    expect(schema.safeParse('👍'.repeat(281)).success).toBe(false)
+  })
+
   it('accepts one complete chronological private thread', () => {
     expect(supportThreadResponseSchema.parse(response)).toEqual(response)
   })

@@ -197,7 +197,14 @@ export const supportThreadSummarySchema = z
     latestEntry: z
       .object({
         authorKind: supportAuthorKindSchema,
-        textExcerpt: z.string().max(280).nullable(),
+        // docs/support-unicode-excerpts.md: match SQLite substr's code-point limit.
+        textExcerpt: z
+          .string()
+          .refine(
+            (value) => Array.from(value).length <= 280,
+            'Excerpt exceeds 280 Unicode characters',
+          )
+          .nullable(),
         receivedAt: z.iso.datetime(),
       })
       .strip(),

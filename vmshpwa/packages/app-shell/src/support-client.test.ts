@@ -85,6 +85,39 @@ function jsonResponse(payload: unknown, status = 200): Response {
 }
 
 describe('support client', () => {
+  it.each(['all', 'awaiting_student'] as const)(
+    'loads %s with a 280-code-point admin excerpt containing emoji',
+    async (state) => {
+      const textExcerpt = 'а'.repeat(279) + '👍'
+      const payload = {
+        ...pageResponse,
+        items: [
+          {
+            ...pageResponse.items[0],
+            latestEntry: {
+              ...pageResponse.items[0]!.latestEntry,
+              authorKind: 'admin',
+              textExcerpt,
+            },
+            replyState: 'awaiting_student',
+          },
+        ],
+        nextCursor: 'sup-168',
+      }
+      const fetchImplementation = vi
+        .fn<typeof globalThis.fetch>()
+        .mockResolvedValueOnce(jsonResponse(payload))
+        .mockResolvedValueOnce(jsonResponse({ ...payload, items: [], nextCursor: null }))
+      const client = createSupportClient(staffRuntime, { fetchImplementation })
+      const page = await client.listStaff({ state })
+      expect(page.items[0]?.latestEntry.textExcerpt).toBe(textExcerpt)
+      expect(await client.listStaff({ state, cursor: page.nextCursor! })).toMatchObject({
+        items: [],
+        nextCursor: null,
+      })
+    },
+  )
+
   it('uses audience API base and serializes strict create/append payloads', async () => {
     const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(jsonResponse(response)),
