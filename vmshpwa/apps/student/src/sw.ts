@@ -19,6 +19,8 @@ declare let self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision?: string }>
 }
 
+// docs/media-csp.md: worker fetch requires the media origin in connect-src,
+// even for image requests whose document CSP already permits img-src.
 const publicMediaOrigin = import.meta.env.VITE_PUBLIC_MEDIA_ORIGIN
 const twoWeeksInSeconds = 14 * 24 * 60 * 60
 const legacyUnscopedPrecacheName = 'vmsh-179-student-precache-v1'

@@ -1,5 +1,15 @@
 # Design-system status
 
+## CSP рисунков — 16 сентября 2026, готово к применению
+
+S3 добавлен в connect-src nginx, проверка конфига ловит повторение ошибки.
+27 тестов прошли. Production-копия подготовлена; нужны root nginx -t/reload
+и обновление SW штатным frontend-выпуском. [Диагностика](../../docs/media-csp.md).
+
+## Проверка production-выпуска
+
+16 сентября 2026, 15:25 UTC: production-деплой `8e3afe6fc2ff-20260916152355` завершён успешно. Frontend и backend обновлены, миграций нет; все runtime — HTTP 200, service-status — ready.
+
 ## Deploy health-check — 16 сентября 2026, подготовлен к установке
 
 Runtime probes переведены на доверенный Unix-сокет; TCP metrics и публичные

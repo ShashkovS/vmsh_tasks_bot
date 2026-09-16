@@ -180,6 +180,8 @@ def test_csp_and_security_headers_are_strict_with_explicit_render_markers():
         "connect-src 'self' wss://@@PUBLIC_HOST@@",
     ):
         assert directive in source
+    # docs/media-csp.md: Workbox fetch is governed by connect-src on sw.js.
+    assert "connect-src 'self' wss://@@PUBLIC_HOST@@ @@CSP_SENTRY_ORIGIN@@ @@CSP_MEDIA_ORIGIN@@;" in source
     assert "unsafe-eval" not in source
     assert 'add_header X-Content-Type-Options "nosniff" always;' in source
     assert 'add_header X-Frame-Options "DENY" always;' in source
@@ -472,3 +474,16 @@ def test_syntax_check_rejects_public_host_mismatch(
 
     assert result == 2
     assert expected in capsys.readouterr().out
+
+
+def test_image_origin_must_be_connectable_by_service_workers():
+    from vmshpwa.scripts.nginx_config_check import _validate_rendered_site
+
+    media = "https://images.example.org"
+    source = _rendered_site().replace(
+        "connect-src 'self' wss://pwa.example.org",
+        f"img-src 'self' {media}; connect-src 'self' wss://pwa.example.org",
+    )
+    assert "connect-src" in _validate_rendered_site(source, "pwa.example.org")
+    fixed = source.replace("connect-src 'self' wss://pwa.example.org", f"connect-src 'self' wss://pwa.example.org {media}")
+    assert _validate_rendered_site(fixed, "pwa.example.org") is None
