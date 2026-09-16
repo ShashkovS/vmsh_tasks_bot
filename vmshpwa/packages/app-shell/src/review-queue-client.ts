@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   reviewSeriesHistorySchema,
@@ -224,7 +225,7 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
 
   constructor(runtime: RuntimeConfig, options: ReviewQueueClientOptions) {
     this.runtime = parseRuntimeConfigForAudience('staff', runtime)
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
   }

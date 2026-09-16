@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
@@ -73,7 +74,7 @@ class BrowserTestAttemptRecheckClient implements TestAttemptRecheckClient {
 
   constructor(runtime: RuntimeConfig, options: TestAttemptRecheckClientOptions) {
     this.runtime = parseRuntimeConfigForAudience('staff', runtime)
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
   }

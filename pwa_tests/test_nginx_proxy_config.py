@@ -154,7 +154,8 @@ def test_login_limit_is_exact_per_ip_and_returns_retry_semantics():
     assert "rate=6r/m;" in source
     assert "limit_req zone=vmshpwa_login_per_ip burst=4 nodelay;" in source
     assert "limit_req_status 429;" in source
-    assert "REJECTED 60;" in source
+    assert "~:REJECTED$ 60;" in source
+    assert "~^updating: 2;" in source
     assert "add_header Retry-After $vmshpwa_retry_after always;" in source
 
 

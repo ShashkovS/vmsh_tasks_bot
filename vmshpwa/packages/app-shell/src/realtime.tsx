@@ -3,6 +3,8 @@ import {
   authQueryKeys,
   parseRuntimeConfigForAudience,
   realtimeEventSchema,
+  serviceAvailabilitySnapshot,
+  subscribeServiceAvailability,
   type Audience,
   type RealtimeEvent,
   type RuntimeConfig,
@@ -211,6 +213,13 @@ export class RealtimeConnection {
     this.#unsubscribeAvailability = null
     this.#clearAllTimers()
     this.#detachAndCloseSocket(CLOSE_NORMAL, 'Realtime provider stopped')
+  }
+
+  resumeAfterServiceRecovery(): void {
+    // docs/smooth-redeploy.md: skip remaining backoff, never reset auth policy.
+    if (!this.#running) return
+    this.#cancelRetry()
+    this.#availabilityChanged()
   }
 
   #availabilityChanged(): void {
@@ -714,7 +723,16 @@ export function RealtimeProvider({
       ...(timing ? { timing } : {}),
     })
     connection.start()
-    return () => connection.stop()
+    let previous = serviceAvailabilitySnapshot().state
+    const unsubscribe = subscribeServiceAvailability(() => {
+      const next = serviceAvailabilitySnapshot().state
+      if (previous !== 'ready' && next === 'ready') connection.resumeAfterServiceRecovery()
+      previous = next
+    })
+    return () => {
+      unsubscribe()
+      connection.stop()
+    }
   }, [audience, environment, queryClient, runtime, sessionId, socketFactory, timing])
 
   const value = useMemo<RealtimeConnectionValue>(

@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 
 import {
@@ -35,7 +36,7 @@ export function createNewsClient(
   } = {},
 ): NewsClient {
   const configured = parseRuntimeConfigForAudience(audience, runtime)
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   async function request(path: string, signal?: AbortSignal): Promise<unknown> {
     const send = () =>

@@ -72,6 +72,43 @@ def _set_public_permissions(root: Path) -> None:
     root.chmod(0o755)
 
 
+def retain_release_assets(release: Path, release_root: Path) -> None:
+    """Keep lazy chunks usable in open tabs; docs/smooth-redeploy.md.
+
+    Only public build assets, never HTML/SW/runtime. A name collision with
+    different bytes fails packaging rather than corrupting an older tab.
+    """
+    store = release_root / "immutable-assets"
+    if store.is_symlink():
+        raise ValueError("Immutable asset store must not be a symlink")
+    for audience in REQUIRED_FILES:
+        source = release / audience / "assets"
+        if not source.is_dir():
+            continue
+        for asset in source.rglob("*"):
+            if asset.is_symlink():
+                raise ValueError("Release assets must not contain symlinks")
+            if not asset.is_file():
+                continue
+            destination = store / audience / "assets" / asset.relative_to(source)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.exists():
+                if destination.read_bytes() != asset.read_bytes():
+                    raise ValueError("Immutable asset filename collision")
+                continue
+            # copy into a sibling temp file, then publish the complete bytes.
+            descriptor, temporary = tempfile.mkstemp(dir=destination.parent)
+            os.close(descriptor)
+            try:
+                shutil.copyfile(asset, temporary)
+                os.chmod(temporary, 0o644)
+                os.replace(temporary, destination)
+            finally:
+                Path(temporary).unlink(missing_ok=True)
+    if store.exists():
+        _set_public_permissions(store)
+
+
 def _exact_https_origin(value: object, *, field: str) -> str:
     if not isinstance(value, str):
         raise ValueError(f"Build provenance {field} must be an HTTPS origin")
@@ -170,6 +207,17 @@ def package_release(
 
     selected_release_root = RELEASE_ROOT if release_root is None else release_root
     selected_release_root.mkdir(parents=True, exist_ok=True)
+    current = selected_release_root / "current"
+    if current.is_symlink():
+        previous = current.resolve()
+        if previous.parent != selected_release_root.resolve():
+            raise ValueError("Current release escapes release root")
+        retain_release_assets(previous, selected_release_root)
+    # Backfill the currently open release before publishing the new one.
+    for app_name, source in source_directories.items():
+        # Source roots are distinct; the staging release is handled below.
+        if source.is_symlink():
+            raise ValueError(f"Release source must not be a symlink: {app_name}")
     destination = selected_release_root / release_id
     if destination.exists():
         raise ValueError("Release directory already exists")
@@ -183,6 +231,7 @@ def package_release(
             app_destination = staging / app_name
             shutil.copytree(source, app_destination)
             applications[app_name] = _tree_summary(app_destination)
+        retain_release_assets(staging, selected_release_root)
 
         manifest = {
             "schemaVersion": 1,

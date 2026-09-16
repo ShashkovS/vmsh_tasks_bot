@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -17,7 +18,7 @@ export function createOrganizerClient(runtime: RuntimeConfig, refresh: () => Pro
   const base = `${runtime.apiBase}/organizer-questions`
   async function request(path: string, body?: unknown, photo?: Blob) {
     const send = () =>
-      fetch(`${base}${path}`, {
+      pwaFetch(`${base}${path}`, {
         credentials: 'include',
         cache: 'no-store',
         redirect: 'error',

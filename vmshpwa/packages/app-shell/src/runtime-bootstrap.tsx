@@ -10,6 +10,8 @@ import {
   type RuntimeConfig,
 } from '@vmsh/contracts'
 import { Button, Card, CardContent } from '@vmsh/ui'
+import { RequestDeadlineExceededError, withRequestDeadline } from './request-deadline'
+import { useServiceAvailability, serviceWaitingText } from './service-availability'
 
 const RuntimeConfigContext = createContext<RuntimeConfig | null>(null)
 export const DEFAULT_RUNTIME_BOOTSTRAP_TIMEOUT_MS = 10_000
@@ -40,7 +42,9 @@ function cachedRuntime(audience: Audience): RuntimeConfig | null {
 
 function isRuntimeNetworkFailure(error: unknown): boolean {
   return (
-    error instanceof TypeError || (error instanceof DOMException && error.name === 'AbortError')
+    error instanceof TypeError ||
+    error instanceof RequestDeadlineExceededError ||
+    (error instanceof DOMException && error.name === 'AbortError')
   )
 }
 
@@ -90,23 +94,27 @@ function RuntimeBootstrapRequest({
   timeoutMilliseconds,
 }: RuntimeBootstrapProps & { onRetry: () => void }) {
   const [state, setState] = useState<RuntimeBootstrapState>({ status: 'loading' })
+  const availability = useServiceAvailability()
 
   useEffect(() => {
     const abortController = new AbortController()
     let active = true
-    const timeout = window.setTimeout(() => abortController.abort(), timeoutMilliseconds)
-
-    void fetchRuntime(audience, {
-      ...(fetchImplementation ? { fetchImplementation } : {}),
-      signal: abortController.signal,
-    }).then(
+    void withRequestDeadline(
+      (signal) =>
+        fetchRuntime(audience, {
+          ...(fetchImplementation ? { fetchImplementation } : {}),
+          signal,
+        }),
+      {
+        signal: abortController.signal,
+        timeoutMilliseconds: timeoutMilliseconds ?? DEFAULT_RUNTIME_BOOTSTRAP_TIMEOUT_MS,
+      },
+    ).then(
       (runtime) => {
-        window.clearTimeout(timeout)
         persistRuntime(audience, runtime)
         if (active) setState({ status: 'ready', runtime })
       },
       (error: unknown) => {
-        window.clearTimeout(timeout)
         if (!active) return
         const offlineRuntime = isRuntimeNetworkFailure(error) ? cachedRuntime(audience) : null
         if (offlineRuntime) {
@@ -122,7 +130,6 @@ function RuntimeBootstrapRequest({
 
     return () => {
       active = false
-      window.clearTimeout(timeout)
       abortController.abort()
     }
   }, [audience, fetchImplementation, timeoutMilliseconds])
@@ -130,9 +137,19 @@ function RuntimeBootstrapRequest({
   if (state.status === 'loading') {
     return (
       <AppStartupScreen
-        description="Подключаем личный кабинет к серверу ВМШ 179."
+        description={
+          availability.state === 'ready'
+            ? 'Подключаем личный кабинет к серверу ВМШ 179.'
+            : serviceWaitingText(availability)
+        }
         state="loading"
-        title="Проверяем подключение"
+        title={
+          availability.state === 'ready'
+            ? 'Проверяем подключение'
+            : availability.state === 'updating'
+              ? 'Обновляем сервис'
+              : 'Восстанавливаем соединение'
+        }
       />
     )
   }

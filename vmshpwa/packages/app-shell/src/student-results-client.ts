@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import {
   ApiResponseError,
   apiErrorSchema,
@@ -18,7 +19,7 @@ export function createStudentResultsClient(
   const enc = encodeURIComponent
   async function request(path: string): Promise<unknown> {
     const send = () =>
-      fetch(`${base}${path}`, {
+      pwaFetch(`${base}${path}`, {
         credentials: 'include',
         cache: 'no-store',
         redirect: 'error',

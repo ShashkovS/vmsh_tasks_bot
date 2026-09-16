@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
@@ -52,7 +53,7 @@ export function createFamilyCourseClient(
   options: FamilyCourseClientOptions = {},
 ): FamilyCourseClient {
   const familyRuntime = parseRuntimeConfigForAudience('family', runtime)
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   async function request<T>(
     studentId: string,

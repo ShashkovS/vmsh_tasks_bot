@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -174,7 +175,10 @@ export interface ContentApiClient {
     groupLessonId: string,
     options?: ContentRequestOptions,
   ): Promise<StaffContentUploadTargets>
-  reprocessRevision?(revisionId: string, etag: ContentEtag): Promise<VersionedContentResource<StaffContentRevision>>
+  reprocessRevision?(
+    revisionId: string,
+    etag: ContentEtag,
+  ): Promise<VersionedContentResource<StaffContentRevision>>
   compileRevision(
     revisionId: string,
     etag: ContentEtag,
@@ -378,7 +382,7 @@ class BrowserContentApiClient implements ContentApiClient {
     const parsedRuntime = parseRuntimeConfigForAudience(runtime.audience, runtime)
     this.audience = parsedRuntime.audience
     this.#apiBase = parsedRuntime.apiBase
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     if (options.refreshSession) this.#refreshSession = options.refreshSession
   }
@@ -415,10 +419,16 @@ class BrowserContentApiClient implements ContentApiClient {
     )
   }
 
-  async reprocessRevision(revisionId: string, etag: ContentEtag): Promise<VersionedContentResource<StaffContentRevision>> {
+  async reprocessRevision(
+    revisionId: string,
+    etag: ContentEtag,
+  ): Promise<VersionedContentResource<StaffContentRevision>> {
     this.#requireStaff()
-    return this.#versionedJson(`/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/reprocess`,
-      {method: 'POST', ifMatch: contentEtagSchema.parse(etag)}, staffContentRevisionSchema)
+    return this.#versionedJson(
+      `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/reprocess`,
+      { method: 'POST', ifMatch: contentEtagSchema.parse(etag) },
+      staffContentRevisionSchema,
+    )
   }
 
   async compileRevision(

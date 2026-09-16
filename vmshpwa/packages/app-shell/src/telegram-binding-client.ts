@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -42,7 +43,7 @@ export function createTelegramBindingClient(
   } = {},
 ): TelegramBindingClient {
   const configured = parseRuntimeConfigForAudience('staff', runtime)
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   async function request(path: string, init: RequestInit): Promise<unknown> {
     const send = () =>

@@ -206,7 +206,58 @@ def _upstream_url(request: web.Request) -> str:
 
 
 async def _proxy_http(request: web.Request) -> web.StreamResponse:
-    return await _proxy_upstream(request, force_no_store=True)
+    mode = request.cookies.get("vmsh-e2e-service-mode")
+    if mode == "updating":
+        return web.json_response(
+            {
+                "error": {
+                    "code": "service_updating",
+                    "message": "Обновляем сервис",
+                    "requestId": "e2e-deploy",
+                }
+            },
+            status=503,
+            headers={
+                "X-VMSH-Service-State": "updating",
+                "Retry-After": "2",
+                "Cache-Control": "no-store",
+            },
+        )
+    if mode == "bad-gateway":
+        return web.Response(
+            text="<html>Bad gateway</html>", status=502, content_type="text/html"
+        )
+    return await _proxy_upstream(
+        request, force_no_store=True, lose_receipt=mode == "lose-receipt"
+    )
+
+
+async def _service_status(request: web.Request) -> web.Response:
+    return web.json_response(
+        {
+            "state": "updating"
+            if request.cookies.get("vmsh-e2e-service-mode") == "updating"
+            else "ready"
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+async def _set_service_mode(request: web.Request) -> web.Response:
+    """Test-only, per browser; never installed by the production app."""
+    if not _is_local_request(request) or not hmac.compare_digest(
+        request.headers.get("X-VMSH-E2E-Control", ""), request.app[CONTROL_TOKEN]
+    ):
+        raise web.HTTPForbidden(text="E2E control capability required")
+    payload = await request.json()
+    mode = payload.get("mode") if isinstance(payload, dict) else None
+    if mode not in {"ready", "updating", "bad-gateway", "lose-receipt"}:
+        raise web.HTTPBadRequest(text="Invalid service mode")
+    response = web.json_response({"ok": True})
+    response.set_cookie(
+        "vmsh-e2e-service-mode", mode, path="/", httponly=True, samesite="Strict"
+    )
+    return response
 
 
 async def _proxy_content_asset(request: web.Request) -> web.StreamResponse:
@@ -214,7 +265,7 @@ async def _proxy_content_asset(request: web.Request) -> web.StreamResponse:
 
 
 async def _proxy_upstream(
-    request: web.Request, *, force_no_store: bool
+    request: web.Request, *, force_no_store: bool, lose_receipt: bool = False
 ) -> web.StreamResponse:
     override = _runtime_override(request)
     if override is not None:
@@ -235,6 +286,27 @@ async def _proxy_upstream(
         raise web.HTTPBadGateway(text="Isolated PWA API is unavailable") from exc
 
     try:
+        # Test-only fault after the real server has committed its receipt.
+        if (
+            lose_receipt
+            and request.method == "POST"
+            and request.path.endswith(("/live-marking/operations", "/test-attempts"))
+            and 200 <= upstream.status < 300
+        ):
+            await upstream.read()
+            lost = web.Response(
+                text="<html>Gateway lost upstream response</html>",
+                status=502,
+                content_type="text/html",
+            )
+            lost.set_cookie(
+                "vmsh-e2e-service-mode",
+                "ready",
+                path="/",
+                httponly=True,
+                samesite="Strict",
+            )
+            return lost
         response = web.StreamResponse(
             status=upstream.status,
             reason=upstream.reason,
@@ -598,6 +670,8 @@ def create_gateway(
     app.cleanup_ctx.append(_client_session_context)
 
     app.router.add_get("/__e2e__/health", _gateway_health)
+    app.router.add_get("/service-status", _service_status)
+    app.router.add_post("/__e2e__/service-mode", _set_service_mode)
     app.router.add_post(
         "/__e2e__/service-worker-generation/{audience:student|family}",
         _set_service_worker_generation,

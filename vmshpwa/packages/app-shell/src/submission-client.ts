@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
@@ -99,7 +100,7 @@ class BrowserTestSubmissionClient implements TestSubmissionClient {
 
   constructor(runtime: RuntimeConfig, options: TestSubmissionClientOptions) {
     this.runtime = parseRuntimeConfigForAudience('student', runtime)
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
     this.#requestTimeoutMilliseconds =

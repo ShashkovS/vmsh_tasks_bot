@@ -7,6 +7,7 @@ import {
   submissionFailureMessage,
   reportHandledError,
   useAuthentication,
+  useServiceAvailability,
   useWrittenStudentReactionMutation,
   useWrittenThreadQuery,
 } from '@vmsh/app-shell'
@@ -361,6 +362,7 @@ export function StudentWrittenSubmission({
   const inputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const deliveryActive = useRef(false)
+  const availability = useServiceAvailability()
   const [isDelivering, setIsDelivering] = useState(false)
   const [deliveryDelayed, setDeliveryDelayed] = useState(false)
   const photoProcessing = useRef(new Map<string, AbortController>())
@@ -989,14 +991,16 @@ export function StudentWrittenSubmission({
             <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
           ) : null}
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
-            {deliveryPending
-              ? deliveryDelayed
-                ? 'Отправка занимает больше времени, чем обычно. Ждём подтверждения…'
-                : 'Отправляем…'
-              : (sendError ??
-                (!online
-                  ? 'Отправим, когда появится сеть.'
-                  : submissionFailureMessage(undefined, queueItem?.lastError)))}
+            {availability.state === 'updating'
+              ? 'Обновляем сервис. Отправим после обновления.'
+              : deliveryPending
+                ? deliveryDelayed
+                  ? 'Отправка занимает больше времени, чем обычно. Ждём подтверждения…'
+                  : 'Отправляем…'
+                : (sendError ??
+                  (!online
+                    ? 'Отправим, когда появится сеть.'
+                    : submissionFailureMessage(undefined, queueItem?.lastError)))}
           </p>
           {online && !isDelivering && (queueItem?.status === 'retrying' || sendError) ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">

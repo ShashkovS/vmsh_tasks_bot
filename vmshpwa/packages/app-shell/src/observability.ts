@@ -1,6 +1,10 @@
 import * as Sentry from '@sentry/react'
 import type { Breadcrumb, Event } from '@sentry/react'
-import { ApiResponseError } from '@vmsh/contracts'
+import {
+  ApiResponseError,
+  setServiceEpisodeReporter,
+  serviceAvailabilitySnapshot,
+} from '@vmsh/contracts'
 
 export interface FrontendObservabilityOptions {
   audience: 'student' | 'family' | 'staff'
@@ -91,6 +95,11 @@ export function initFrontendObservability(options: FrontendObservabilityOptions)
     },
   })
   initialized = true
+  setServiceEpisodeReporter((event) => {
+    Sentry.addBreadcrumb({ category: 'service.recovery', level: 'info', data: event })
+    if (event.prolonged || event.state === 'reconnecting')
+      Sentry.captureMessage('PWA service recovery', { level: 'warning', extra: event })
+  })
 }
 
 export function setObservabilityUser(accountId: string | null) {
@@ -115,6 +124,7 @@ export function reportHandledError(
     reportedErrors.add(error)
   }
   const api = error instanceof ApiResponseError ? error : null
+  if (api?.code === 'service_updating' || api?.code === 'request_not_confirmed') return
   // Do not forward original messages, causes, details or mutation variables: these can contain answers.
   try {
     Sentry.captureException(
@@ -154,6 +164,10 @@ export function isSubmissionDeadlineFailure(error?: unknown, storedLabel?: strin
 export function submissionFailureMessage(error?: unknown, storedLabel?: string): string {
   const api = error instanceof ApiResponseError ? error : null
   const domainCode = submissionFailureDomainCode(error, storedLabel)
+  if (domainCode === 'request_not_confirmed')
+    return 'Сервер не подтвердил отправку. Ответ сохранён; проверьте результат перед повтором.'
+  if (domainCode === 'service_updating' || serviceAvailabilitySnapshot().state === 'updating')
+    return 'Обновляем сервис. Отправим после обновления.'
   if (domainCode === 'submission_deadline_passed') return SUBMISSION_DEADLINE_MESSAGE
   if (domainCode === 'test_attempt_hour_limit')
     return 'На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем.'

@@ -325,6 +325,19 @@ describe('RealtimeConnection', () => {
     expect(sockets).toHaveLength(2)
   })
 
+  it('resumes transport backoff immediately after service recovery without duplicate sockets', () => {
+    const { connection, environment, sockets } = harness()
+    connection.start()
+    sockets[0]!.serverClose(1006)
+    connection.resumeAfterServiceRecovery()
+    expect(sockets).toHaveLength(2)
+    environment.advance(DEFAULT_REALTIME_TIMING.reconnectBaseMilliseconds)
+    expect(sockets).toHaveLength(2)
+    connection.stop()
+    connection.resumeAfterServiceRecovery()
+    expect(sockets).toHaveLength(2)
+  })
+
   it('checks HTTP authority once after policy close and never enters a reconnect loop', async () => {
     const { connection, environment, querySpies, sockets, states } = harness()
     connection.start()

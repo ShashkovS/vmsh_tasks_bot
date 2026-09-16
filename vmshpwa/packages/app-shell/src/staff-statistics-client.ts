@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -33,7 +34,7 @@ export function createStaffStatisticsClient(
   } = {},
 ): StaffStatisticsClient {
   const configured = parseRuntimeConfigForAudience('staff', runtime)
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   return {
     async get(filter, signal) {
@@ -92,7 +93,7 @@ export function createStatisticsRecalculationClient(
       ? statisticsRecalculationRequestSchema.parse({ courseId, idempotencyKey })
       : undefined
     const request = () =>
-      fetch(
+      pwaFetch(
         `${configured.apiBase}/statistics/recalculate${body ? '' : `?courseId=${encodeURIComponent(publicIdSchema.parse(courseId))}`}`,
         {
           method: body ? 'POST' : 'GET',

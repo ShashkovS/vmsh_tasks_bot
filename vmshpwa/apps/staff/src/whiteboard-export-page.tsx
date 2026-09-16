@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthentication, useAuthenticatedPrincipal, PageLayout } from '@vmsh/app-shell'
@@ -23,7 +24,7 @@ export function WhiteboardExportPage() {
   useEffect(() => () => abort.current?.abort(), [])
   async function get(path: string, signal?: AbortSignal) {
     const request = () =>
-      fetch(`${auth.client.runtime.apiBase}/whiteboard-export${path}`, {
+      pwaFetch(`${auth.client.runtime.apiBase}/whiteboard-export${path}`, {
         credentials: 'include',
         cache: 'no-store',
         redirect: 'error',

@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import {
   ApiResponseError,
   apiErrorSchema,
@@ -20,7 +21,7 @@ export function createStaffRichMediaClient(
   } = {},
 ): StaffRichMediaClient {
   const configured = parseRuntimeConfigForAudience('staff', runtime)
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   return {
     async uploadImage(image) {

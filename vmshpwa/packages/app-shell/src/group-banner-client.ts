@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -34,7 +35,7 @@ function refreshableFetch(
     refreshSession?: () => Promise<unknown>
   },
 ) {
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
   return async (path: string, init: RequestInit): Promise<unknown> => {
     const send = () =>
       fetchImplementation(`${base}${path}`, {

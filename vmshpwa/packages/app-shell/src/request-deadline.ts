@@ -1,3 +1,5 @@
+import { serviceAvailabilitySnapshot, subscribeServiceAvailability } from '@vmsh/contracts'
+
 export const DEFAULT_SUBMISSION_REQUEST_TIMEOUT_MS = 30_000
 
 export class RequestDeadlineExceededError extends Error {
@@ -45,7 +47,15 @@ export async function withRequestDeadline<T>(
   else callerSignal?.addEventListener('abort', abortFromCaller, { once: true })
 
   const deadlineError = new RequestDeadlineExceededError(timeoutMilliseconds)
-  const timeout = setTimeout(() => controller.abort(deadlineError), timeoutMilliseconds)
+  // smooth-redeploy.md: planned waiting is not time spent sending to Python.
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  const arm = () => {
+    clearTimeout(timeout)
+    if (serviceAvailabilitySnapshot().state === 'ready')
+      timeout = setTimeout(() => controller.abort(deadlineError), timeoutMilliseconds)
+  }
+  const unsubscribe = subscribeServiceAvailability(arm)
+  arm()
   const aborted = new Promise<never>((_resolve, reject) => {
     if (controller.signal.aborted) {
       reject(cancellationReason(controller.signal))
@@ -62,6 +72,7 @@ export async function withRequestDeadline<T>(
     return await Promise.race([operation(controller.signal), aborted])
   } finally {
     clearTimeout(timeout)
+    unsubscribe()
     callerSignal?.removeEventListener('abort', abortFromCaller)
   }
 }

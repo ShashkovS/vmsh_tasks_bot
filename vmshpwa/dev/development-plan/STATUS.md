@@ -1,5 +1,18 @@
 # Статус плана разработки
 
+## Спокойный редеплой — 15 сентября 2026, реализовано локально
+
+Общий транспорт, bootstrap/auth, плашка, восстановление queries/WS, режим nginx
+и защищённый deploy реализованы; через 60 секунд ожидание продолжается.
+Старые assets сохраняются; неоднозначные unsafe writes не повторяются.
+[Решение, код и runbook](../../docs/smooth-redeploy.md).
+Проверено: 844 frontend unit, 57 deploy/static/runner, 21 gateway HTTP,
+71 lifecycle/submission/live regression и 3 Storybook/axe состояния.
+15 браузерных сценариев в трёх движках прошли, включая ожидание более минуты,
+фотографию и потерянный после записи ответ на оценку учителя.
+TypeScript, целевые линтеры и сборки прошли. Root-конфиги не устанавливались:
+нужны client-first выпуск, nginx -t и контрольный production redeploy.
+
 ## Недельные черновики окон приёма — 15 сентября 2026, реализовано локально
 
 Массовое создание для групп, клонирование и перенос расписания прошлого занятия
@@ -175,13 +188,22 @@ Ruff, ESLint, Staff TypeScript и сборки всех PWA прошли.
 - 11 unit-тестов прошли, включая 2000 записей и опечатки.
 - [Контракт](../../docs/lesson-statistics.md), компонент `statistics-student-search.tsx`.
 
-## Статистика занятий и a53 — готово к выпуску, 7 сентября 2026
+## Статистика занятий и a53 — серверный запуск подтверждён, 10 сентября 2026
 
 - Реализованы независимые live-агрегаты баллов/отправок, один шаг a53,
   атомарная публикация состояния и личные графики Student/Family/Staff.
 - Проверки: 29 backend, 9 frontend unit, 10 browser Storybook; workspace
-  typecheck, ESLint/Ruff, сборки Staff/Student/Family. Миграция 0084 и
-  systemd timer требуют обычного серверного выпуска; локально prod не менялся.
+  typecheck, ESLint/Ruff, сборки Staff/Student/Family (локальная проверка 7 сентября).
+- По переданному владельцем журналу `vmshbeget` от 10 сентября: два ручных
+  запуска `vmsh-analytics.service` завершились успешно (`Result=success`,
+  `ExecMainStatus=0`), каждый опубликовал `c-1: 340 lesson points`.
+  `vmsh-analytics.timer` установлен, `enabled` и `active`; следующий запуск
+  показан на 09:00 UTC (12:00 Москвы). Прямую проверку сервера агент не выполнял.
+- Осталось подтвердить отображение оценок/графиков в интерфейсе. Для будущих
+  schema deploy нужно добавить остановку analytics timer/service в
+  `docs/deploy/deploy-vmsh-tasks-bot.sh`: сейчас он останавливает только PWA
+  и Telegram. Расписание задаёт `vmshpwa/deploy/systemd/vmsh-analytics.timer`,
+  расчёт выполняет `vmshpwa/scripts/course_analytics.py`.
 - [Контракт, реализация и выпуск](../../docs/lesson-statistics.md).
 
 ## Analytics validation hotfix — 7 сентября 2026
@@ -2657,6 +2679,7 @@ Ruff прошли. Снимки mobile/desktop/light/dark просмотрены
 Визуальное принятие владельцем остаётся открытым.
 10 сентября владелец разрешил commit и push этого изменения в `vmshpwa`.
 
+
 ## Результаты школьника — 10 сентября 2026, реализовано локально
 
 Выполнен принятый [план](../../docs/student-results.md): admin-only PWA/Telegram
@@ -2763,7 +2786,6 @@ Aligned Help links using flex-wrap, explicit gaps and icons; removed forced line
 - Готово: весь прямоугольник фотографии доступен для новых пометок; старые пометки сохраняют прежнюю геометрию без миграции.
 - [Требование и регрессии](../../docs/review-annotation-geometry.md): общий renderer, признак координат отдельной пометки, браузерное сравнение со старым SVG и сохранение через API.
 - Проверено: Chromium 5 stories; Firefox/WebKit — совместимость в 32 комбинациях; 17 backend и 12 контрактных тестов. Typecheck, ESLint, Prettier и diff-check прошли. Снимок в документе проверен визуально. База и старые записи не мигрируют.
-
 
 
 ## Активация уведомлений — 2026-09-12
@@ -2966,7 +2988,6 @@ LiveMarkButton показывает часы вместо неподтвержд
 чужой оценки через WS, reconnect с пропущенным изменением, сохранность после
 reload. Снимки desktop/light и mobile/dark просмотрены. Приёмка владельцем
 ожидается. [Отчёт](../live-marking-confirmation-report.md).
-
 
 
 ## Векторные шахматные фигуры TikZ — реализовано, 2026-09-14

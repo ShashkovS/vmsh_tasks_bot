@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -27,7 +28,7 @@ export function createStaffOralWindowClient(
   } = {},
 ) {
   const base = parseRuntimeConfigForAudience('staff', runtime).apiBase
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   const request = async (path: string, init: RequestInit): Promise<unknown> => {
     const send = () =>

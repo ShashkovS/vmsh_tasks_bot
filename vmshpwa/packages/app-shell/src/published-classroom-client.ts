@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -51,7 +52,7 @@ function createClient(
   options: PublishedClassroomClientOptions,
 ): PublishedClassroomClient {
   const configured = parseRuntimeConfigForAudience(audience, runtime)
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   async function send(signal?: AbortSignal): Promise<Response> {
     try {

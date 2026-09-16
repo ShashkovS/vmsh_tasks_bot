@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
+  pwaFetch,
   ApiResponseError,
   apiErrorSchema,
   productAnalyticsEventsSchema,
@@ -19,8 +20,10 @@ export interface ProductAnalyticsFilter {
 
 export function createProductAnalyticsClient(runtime: RuntimeConfig) {
   const get = async <T>(path: string, schema: { parse(value: unknown): T }): Promise<T> => {
-    const response = await fetch(`${runtime.apiBase}${path}`, {
-      credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' },
+    const response = await pwaFetch(`${runtime.apiBase}${path}`, {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
     })
     const payload: unknown = await response.json()
     if (!response.ok) throw new ApiResponseError(response.status, apiErrorSchema.parse(payload))
@@ -42,13 +45,21 @@ export function createProductAnalyticsClient(runtime: RuntimeConfig) {
 }
 
 export function useProductAnalyticsSummary(
-  client: ReturnType<typeof createProductAnalyticsClient>, filter: ProductAnalyticsFilter,
+  client: ReturnType<typeof createProductAnalyticsClient>,
+  filter: ProductAnalyticsFilter,
 ) {
-  return useQuery({ queryKey: ['product-analytics', 'summary', filter], queryFn: () => client.summary(filter) })
+  return useQuery({
+    queryKey: ['product-analytics', 'summary', filter],
+    queryFn: () => client.summary(filter),
+  })
 }
 
 export function useProductAnalyticsEvents(
-  client: ReturnType<typeof createProductAnalyticsClient>, filter: ProductAnalyticsFilter,
+  client: ReturnType<typeof createProductAnalyticsClient>,
+  filter: ProductAnalyticsFilter,
 ) {
-  return useQuery({ queryKey: ['product-analytics', 'events', filter], queryFn: () => client.events(filter) })
+  return useQuery({
+    queryKey: ['product-analytics', 'events', filter],
+    queryFn: () => client.events(filter),
+  })
 }

@@ -201,9 +201,7 @@ async def test_gateway_proxies_exact_content_asset_and_preserves_immutable_cache
 
     assert response.status == 200
     assert response.headers["Cache-Control"] == "public, max-age=86400"
-    assert (await response.json())["path"] == (
-        "/pwa-content-assets/asset-content-41"
-    )
+    assert (await response.json())["path"] == ("/pwa-content-assets/asset-content-41")
     malformed = await gateway_client.get(
         "/pwa-content-assets/asset-content-41/extra",
         headers={"Accept": "text/html"},
@@ -448,6 +446,44 @@ async def test_gateway_health_is_small_and_non_cacheable(gateway_client):
     assert response.status == 200
     assert response.headers["Cache-Control"] == "no-store"
     assert await response.json() == {"ok": True, "apps": list(AUDIENCES)}
+
+
+async def test_service_maintenance_is_capability_gated_and_does_not_hide_static(
+    gateway_client,
+):
+    denied = await gateway_client.post(
+        "/__e2e__/service-mode", json={"mode": "updating"}
+    )
+    assert denied.status == 403
+    changed = await gateway_client.post(
+        "/__e2e__/service-mode",
+        json={"mode": "updating"},
+        headers={"X-VMSH-E2E-Control": "unit-test-capability"},
+    )
+    assert changed.status == 200
+    headers = {"Cookie": changed.headers["Set-Cookie"].split(";", 1)[0]}
+    status = await gateway_client.get("/service-status", headers=headers)
+    assert await status.json() == {"state": "updating"}
+    assert status.headers["Cache-Control"] == "no-store"
+    blocked = await gateway_client.post("/staff/api/v1/save", headers=headers)
+    assert blocked.status == 503
+    assert (await blocked.json())["error"]["code"] == "service_updating"
+    assert blocked.headers["Retry-After"] == "2"
+    static = await gateway_client.get("/student/", headers=headers)
+    assert static.status == 200
+
+
+async def test_gateway_can_lose_receipt_only_after_real_upstream_response(
+    gateway_client,
+):
+    headers = {"Cookie": "vmsh-e2e-service-mode=lose-receipt"}
+    response = await gateway_client.post(
+        "/staff/api/v1/live-marking/operations", headers=headers
+    )
+    assert response.status == 502
+    assert "vmsh-e2e-service-mode=ready" in response.headers["Set-Cookie"]
+    unaffected = await gateway_client.get("/staff/api/v1/runtime", headers=headers)
+    assert unaffected.status == 200
 
 
 def test_static_resolver_rejects_traversal_and_escaping_symlinks(tmp_path):

@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -55,7 +56,7 @@ class BrowserFamilyWrittenThreadClient implements FamilyWrittenThreadClient {
 
   constructor(runtime: RuntimeConfig, options: FamilyWrittenThreadClientOptions) {
     this.runtime = parseRuntimeConfigForAudience('family', runtime)
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
   }

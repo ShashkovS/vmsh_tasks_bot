@@ -6,6 +6,7 @@ import { Button, Card, CardContent } from '@vmsh/ui'
 
 import { authenticationStatePrincipal, useAuthentication } from './auth-context'
 import { AppStartupScreen } from './runtime-bootstrap'
+import { useServiceAvailability, serviceWaitingText } from './service-availability'
 
 export interface AuthenticationBoundaryProps {
   children: ReactNode
@@ -24,6 +25,7 @@ export function AuthenticationBoundary({
   errorFallback,
 }: AuthenticationBoundaryProps) {
   const authentication = useAuthentication()
+  const availability = useServiceAvailability()
   const { state } = authentication
   const retry = () => authentication.retry()
 
@@ -32,9 +34,19 @@ export function AuthenticationBoundary({
     return (
       checkingFallback ?? (
         <AppStartupScreen
-          description="Проверяем действующую сессию на этом устройстве."
+          description={
+            availability.state === 'ready'
+              ? 'Проверяем действующую сессию на этом устройстве.'
+              : serviceWaitingText(availability)
+          }
           state="loading"
-          title="Проверяем вход"
+          title={
+            availability.state === 'ready'
+              ? 'Проверяем вход'
+              : availability.state === 'updating'
+                ? 'Обновляем сервис'
+                : 'Восстанавливаем соединение'
+          }
         />
       )
     )

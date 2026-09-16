@@ -7,9 +7,15 @@ map $uri $vmshpwa_login_limit_key {
     ~^/(student|family|staff)/api/v1/auth/login$ $binary_remote_addr;
 }
 
-map $limit_req_status $vmshpwa_retry_after {
+map "$vmshpwa_service_state:$limit_req_status" $vmshpwa_retry_after {
     default "";
-    REJECTED 60;
+    ~^updating: 2;
+    ~:REJECTED$ 60;
+}
+
+map "$vmshpwa_service_state:$uri" $vmshpwa_maintenance_cache_control {
+    default "";
+    ~^updating:/(student|family|staff)/(api|ws) no-store;
 }
 
 # Stable release entrypoints must not hide a switched revision. URI maps live
@@ -18,6 +24,7 @@ map $limit_req_status $vmshpwa_retry_after {
 # versions before add_header_inherit merge.
 map $uri $vmshpwa_release_cache_control {
     default "";
+    /service-status "no-store";
     /student/sw.js "no-store";
     /family/sw.js "no-store";
     /student/index.html "no-cache";
@@ -26,6 +33,7 @@ map $uri $vmshpwa_release_cache_control {
     / "no-cache";
     /landing/index.html "no-cache";
     ~^/landing/assets/ "public, max-age=31536000, immutable";
+    ~^/(student|family|staff)/assets/ "public, max-age=31536000, immutable";
 }
 
 map $uri $vmshpwa_service_worker_scope {
@@ -55,6 +63,12 @@ server {
     include @@TLS_CONFIG_FILE@@;
 
     root @@STATIC_ROOT@@;
+    # smooth-redeploy.md: independent of Python, enabled only during cutover.
+    set $vmshpwa_service_state ready;
+    if (-f /web/vmsh_tasks_bot/vmshpwa/runtime/service-updating) {
+        set $vmshpwa_service_state updating;
+    }
+    error_page 503 =503 @vmshpwa_updating;
     server_tokens off;
     client_header_timeout 15s;
     client_body_timeout 120s;
@@ -76,6 +90,8 @@ server {
     add_header Permissions-Policy "camera=(self), geolocation=(), microphone=(), payment=(), usb=()" always;
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header Retry-After $vmshpwa_retry_after always;
+    add_header X-VMSH-Service-State $vmshpwa_service_state always;
+    add_header Cache-Control $vmshpwa_maintenance_cache_control always;
     add_header Cache-Control $vmshpwa_release_cache_control always;
     add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
 
@@ -83,9 +99,37 @@ server {
     location = /family { return 308 /family/; }
     location = /staff { return 308 /staff/; }
 
+    location = /service-status {
+        default_type application/json;
+        return 200 '{"state":"$vmshpwa_service_state"}';
+    }
+
+    location @vmshpwa_updating {
+        default_type application/json;
+        return 503 '{"error":{"code":"service_updating","message":"Обновляем сервис. Подключимся автоматически.","requestId":"service-update"}}';
+    }
+
     location = /metrics {
         access_log off;
         return 404;
+    }
+
+    # Append-only hashed assets survive current-symlink switches in open tabs.
+    location ^~ /student/assets/ {
+        root @@STATIC_ROOT@@/../immutable-assets;
+        try_files $uri =404;
+    }
+    location ^~ /family/assets/ {
+        root @@STATIC_ROOT@@/../immutable-assets;
+        try_files $uri =404;
+    }
+    location ^~ /staff/assets/ {
+        root @@STATIC_ROOT@@/../immutable-assets;
+        try_files $uri =404;
+    }
+    location ^~ /landing/assets/ {
+        root @@STATIC_ROOT@@/../immutable-assets;
+        try_files $uri =404;
     }
 
     # Public entry page. It has no API or session state and deliberately does
@@ -101,18 +145,21 @@ server {
     # API locations are deliberately outside SPA fallback. The backend keeps
     # stricter endpoint-specific limits (for example the 16 KiB auth JSON cap).
     location ^~ /student/api/ {
+        if ($vmshpwa_service_state = updating) { return 503; }
         client_max_body_size 64m;
         include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
         proxy_set_header Connection "";
         proxy_pass http://vmshpwa_backend;
     }
     location ^~ /family/api/ {
+        if ($vmshpwa_service_state = updating) { return 503; }
         client_max_body_size 64m;
         include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
         proxy_set_header Connection "";
         proxy_pass http://vmshpwa_backend;
     }
     location ^~ /staff/api/ {
+        if ($vmshpwa_service_state = updating) { return 503; }
         client_max_body_size 64m;
         include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
         proxy_set_header Connection "";
@@ -137,6 +184,7 @@ server {
     # aiohttp sends a heartbeat every 25 seconds. A 75-second upstream read
     # window tolerates one delayed heartbeat without leaving dead tunnels open.
     location = /student/ws {
+        if ($vmshpwa_service_state = updating) { return 503; }
         client_max_body_size 64k;
         include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
         proxy_set_header Upgrade $http_upgrade;
@@ -147,6 +195,7 @@ server {
         proxy_pass http://vmshpwa_backend;
     }
     location = /family/ws {
+        if ($vmshpwa_service_state = updating) { return 503; }
         client_max_body_size 64k;
         include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
         proxy_set_header Upgrade $http_upgrade;
@@ -157,6 +206,7 @@ server {
         proxy_pass http://vmshpwa_backend;
     }
     location = /staff/ws {
+        if ($vmshpwa_service_state = updating) { return 503; }
         client_max_body_size 64k;
         include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
         proxy_set_header Upgrade $http_upgrade;

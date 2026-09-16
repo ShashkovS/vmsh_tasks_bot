@@ -1,4 +1,5 @@
 import {
+  pwaFetch,
   ApiResponseError,
   apiErrorSchema,
   parseRuntimeConfigForAudience,
@@ -18,25 +19,30 @@ import {
   type LiveCommand,
   type LiveCells,
 } from '@vmsh/contracts'
+import { withRequestDeadline } from './request-deadline'
 
 // live-marking.md: HTTP writes with idempotency; existing WS invalidates scoped reads.
 export function createLiveMarkingClient(runtime: RuntimeConfig, refresh?: () => Promise<unknown>) {
   const base = `${parseRuntimeConfigForAudience('staff', runtime).apiBase}/live-marking`
   async function request(path: string, body?: unknown): Promise<unknown> {
     const send = () =>
-      fetch(`${base}${path}`, {
-        method: body === undefined ? 'GET' : 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-        redirect: 'error',
-        headers: {
-          Accept: 'application/json',
-          ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-        },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        keepalive: body !== undefined,
-        signal: AbortSignal.timeout(15_000),
-      })
+      withRequestDeadline(
+        (signal) =>
+          pwaFetch(`${base}${path}`, {
+            method: body === undefined ? 'GET' : 'POST',
+            credentials: 'include',
+            cache: 'no-store',
+            redirect: 'error',
+            headers: {
+              Accept: 'application/json',
+              ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+            },
+            ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+            keepalive: body !== undefined,
+            signal,
+          }),
+        { timeoutMilliseconds: 15_000 },
+      )
     let response = await send()
     if (response.status === 401 && refresh) {
       await response.body?.cancel()

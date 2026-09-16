@@ -13,6 +13,8 @@ CONFIG_PATH=/web/vmsh_tasks_bot/vmsh_tasks_bot/creds_prod/vmsh_bot_config_prod.j
 REVISION_FILE=/web/vmsh_tasks_bot/deploy/runtime/deploy/vmsh-tasks-bot.revision
 LOCK_FILE=/web/vmsh_tasks_bot/deploy/runtime/deploy/vmsh-tasks-bot.lock
 RUN_LOG=/web/vmsh_tasks_bot/deploy/logs/runs/vmsh-tasks-bot.log
+MAINTENANCE_FILE=/web/vmsh_tasks_bot/vmshpwa/runtime/service-updating
+ANALYTICS_TIMER_STATE=/web/vmsh_tasks_bot/deploy/runtime/deploy/analytics-timer-before-maintenance
 PUBLIC_MEDIA_ORIGIN=https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud
 
 export HOME=/home/vmsh_tasks_bot
@@ -93,7 +95,7 @@ check_http_200() {
   local code=""
   local attempt
   for attempt in 1 2 3 4 5; do
-    code="$(/usr/bin/curl -sS --max-time 15 -o "$body_file" -w '%{http_code}' "$url" || true)"
+    code="$(/usr/bin/curl -sS --max-time 15 -H 'Host: vmsh.shashkovs.ru' -o "$body_file" -w '%{http_code}' "$url" || true)"
     if [[ "$code" == 200 ]]; then
       echo "Health check passed: ${name}"
       return 0
@@ -250,6 +252,30 @@ if [[ "$MIGRATIONS_CHANGED" == true ]]; then
   CURRENT_STEP="creating pre-deploy SQLite backup"
   make_db_backup before-deploy
 
+fi
+
+if [[ "$BACKEND_CHANGED" == true || "$MIGRATIONS_CHANGED" == true ]]; then
+  CURRENT_STEP="enabling service maintenance"
+  touch "$MAINTENANCE_FILE"
+fi
+
+if [[ "$MIGRATIONS_CHANGED" == true ]]; then
+  CURRENT_STEP="stopping analytics writer"
+  # Keep the pre-maintenance state across failed deploys / manual recovery.
+  if [[ ! -f "$ANALYTICS_TIMER_STATE" ]]; then
+    if /usr/bin/systemctl is-active --quiet vmsh-analytics.timer; then
+      printf 'active\n' > "$ANALYTICS_TIMER_STATE"
+    else
+      printf 'inactive\n' > "$ANALYTICS_TIMER_STATE"
+    fi
+  fi
+  if /usr/bin/systemctl cat vmsh-analytics.timer >/dev/null 2>&1; then
+    sudo /usr/bin/systemctl stop vmsh-analytics.timer
+  fi
+  if /usr/bin/systemctl cat vmsh-analytics.service >/dev/null 2>&1; then
+    sudo /usr/bin/systemctl stop vmsh-analytics.service
+  fi
+
   CURRENT_STEP="stopping SQLite writers"
   sudo /usr/bin/systemctl stop vmshpwa.service
   sudo /usr/bin/systemctl stop gunicorn.vmsh_tasks_bot.service
@@ -281,9 +307,9 @@ if [[ "$BACKEND_CHANGED" == true ]]; then
   /usr/bin/systemctl is-active --quiet gunicorn.vmsh_tasks_bot.service
   /usr/bin/systemctl is-active --quiet vmshpwa.service
   check_http_200 aiohttp-metrics http://127.0.0.1:8000/metrics
-  check_http_200 student-runtime https://vmsh.shashkovs.ru/student/api/v1/runtime
-  check_http_200 family-runtime https://vmsh.shashkovs.ru/family/api/v1/runtime
-  check_http_200 staff-runtime https://vmsh.shashkovs.ru/staff/api/v1/runtime
+  check_http_200 student-runtime http://127.0.0.1:8000/student/api/v1/runtime
+  check_http_200 family-runtime http://127.0.0.1:8000/family/api/v1/runtime
+  check_http_200 staff-runtime http://127.0.0.1:8000/staff/api/v1/runtime
 else
   echo "Backend unchanged."
 fi
@@ -306,6 +332,23 @@ if [[ "$FRONTEND_CHANGED" == true ]]; then
   check_http_200 family https://vmsh.shashkovs.ru/family/
   check_http_200 staff https://vmsh.shashkovs.ru/staff/
   check_public_media_csp
+fi
+
+if [[ -f "$MAINTENANCE_FILE" ]]; then
+  CURRENT_STEP="confirming service recovery"
+  # Also required when recovering a failed deploy with unchanged git inputs.
+  /usr/bin/systemctl is-active --quiet vmshpwa.service
+  /usr/bin/systemctl is-active --quiet gunicorn.vmsh_tasks_bot.service
+  check_http_200 student-runtime-ready http://127.0.0.1:8000/student/api/v1/runtime
+  check_http_200 family-runtime-ready http://127.0.0.1:8000/family/api/v1/runtime
+  check_http_200 staff-runtime-ready http://127.0.0.1:8000/staff/api/v1/runtime
+  if [[ -f "$ANALYTICS_TIMER_STATE" ]]; then
+    if [[ "$(<"$ANALYTICS_TIMER_STATE")" == active ]]; then
+      sudo /usr/bin/systemctl start vmsh-analytics.timer
+    fi
+    rm -- "$ANALYTICS_TIMER_STATE"
+  fi
+  rm -- "$MAINTENANCE_FILE"
 fi
 
 if [[ "$MIGRATIONS_CHANGED" == true ]]; then

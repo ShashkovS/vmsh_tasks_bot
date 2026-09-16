@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query'
 import { reportHandledError } from './observability'
+import { ServiceAvailabilityBanner } from './service-availability'
 import { Moon, Sun } from 'lucide-react'
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
@@ -59,6 +60,7 @@ export function AppProviders({
     <StorageNamespaceContext value={storageNamespace}>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <ServiceAvailabilityBanner />
           {children}
           <Toaster />
         </TooltipProvider>

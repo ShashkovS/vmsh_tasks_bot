@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { pwaFetch } from './service-availability'
+export * from './service-availability'
 
 // Response objects strip additive fields; request envelopes stay strict.
 // See docs/api-response-compatibility.md and response-compatibility.test.ts.
@@ -265,7 +267,7 @@ export async function fetchRuntime(
 ): Promise<RuntimeConfig> {
   const expectedAudience = audienceSchema.parse(audience)
   const boundary = runtimeBoundaryByAudience[expectedAudience]
-  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+  const fetchImplementation = options.fetchImplementation ?? pwaFetch
   const response = await fetchImplementation(`${boundary.apiBase}/runtime`, {
     credentials: 'include',
     headers: { Accept: 'application/json' },

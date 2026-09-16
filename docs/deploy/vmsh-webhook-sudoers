@@ -4,6 +4,9 @@ Cmnd_Alias VMSH_WEBHOOK_DEPLOY = /web/vmsh_tasks_bot/deploy/bin/deploy-vmsh-task
 vmsh_webhook ALL=(vmsh_tasks_bot) NOPASSWD: VMSH_WEBHOOK_DEPLOY
 
 Cmnd_Alias VMSH_DEPLOY_SERVICES = \
+    /usr/bin/systemctl stop vmsh-analytics.timer, \
+    /usr/bin/systemctl start vmsh-analytics.timer, \
+    /usr/bin/systemctl stop vmsh-analytics.service, \
     /usr/bin/systemctl stop vmshpwa.service, \
     /usr/bin/systemctl start vmshpwa.service, \
     /usr/bin/systemctl restart vmshpwa.service, \

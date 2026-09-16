@@ -1,5 +1,10 @@
 # Фаза 5. Страницы и потоки
 
+Инкремент 15 сентября: [спокойный редеплой](../../docs/smooth-redeploy.md)
+реализован в `packages/app-shell/src/service-availability.tsx` и runtime/auth
+boundaries. Ожидание не размонтирует страницу; Storybook `App shell/Service recovery`
+и `e2e/smooth-redeploy.spec.ts` фиксируют состояния и восстановление.
+
 Связь принятых page compositions с вертикальными backend/frontend-этапами, конкретными компонентами и открываемыми story IDs ведётся в [`development-plan/18-design-implementation-map.md`](../development-plan/18-design-implementation-map.md).
 
 ## Общие требования

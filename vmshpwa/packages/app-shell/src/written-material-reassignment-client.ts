@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useMutation } from '@tanstack/react-query'
 import {
   ApiResponseError,
@@ -78,7 +79,7 @@ class BrowserWrittenMaterialReassignmentClient implements WrittenMaterialReassig
 
   constructor(runtime: RuntimeConfig, options: WrittenMaterialReassignmentClientOptions) {
     this.runtime = parseRuntimeConfigForAudience('staff', runtime)
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
   }

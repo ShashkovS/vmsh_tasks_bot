@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import {
   ApiResponseError,
   apiErrorSchema,
@@ -198,7 +199,7 @@ class BrowserClassroomClient implements ClassroomClient {
 
   constructor(runtime: RuntimeConfig, options: ClassroomClientOptions) {
     this.#apiBase = parseRuntimeConfigForAudience('staff', runtime).apiBase
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
   }

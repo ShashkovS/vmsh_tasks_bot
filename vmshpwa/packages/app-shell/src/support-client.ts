@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   supportPhotoUploadResponseSchema,
@@ -85,7 +86,7 @@ class BrowserSupportClient implements SupportClient {
       throw new TypeError('Family does not participate in private support threads')
     }
     this.runtime = parseRuntimeConfigForAudience(parsed.audience, parsed)
-    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
   }

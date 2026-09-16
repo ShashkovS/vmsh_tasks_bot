@@ -90,7 +90,9 @@ it('shows failed entry without navigating and allows retry', async () => {
   )
   mount('news')
   fireEvent.click(await screen.findByRole('button', { name: 'Читать новости как школьник' }))
-  expect((await screen.findByRole('alert')).textContent).toContain('Нет соединения с сервером')
+  expect((await screen.findByRole('alert')).textContent).toContain(
+    'Проверьте результат перед повтором',
+  )
   expect(assign).not.toHaveBeenCalled()
   expect(
     screen.getByRole('button', { name: 'Читать новости как школьник' }).hasAttribute('disabled'),

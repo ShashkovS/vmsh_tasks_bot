@@ -7,6 +7,7 @@ import {
   submissionFailureMessage,
   reportHandledError,
   useAuthentication,
+  useServiceAvailability,
   useTestAnswerInputQuery,
   useTestAttemptHistoryQuery,
 } from '@vmsh/app-shell'
@@ -165,6 +166,7 @@ export function StudentTestAnswer({
   )
   const spec = useMemo(() => (input ? testAnswerSpec(input) : null), [input])
   const [hydratedIdentity, setHydratedIdentity] = useState<string | null>(null)
+  const availability = useServiceAvailability()
   const [answer, setAnswer] = useState('')
   const [incompatibleDraft, setIncompatibleDraft] = useState<TestAnswerDraft | null>(null)
   const [storageError, setStorageError] = useState<unknown>(draftStore.error)
@@ -515,9 +517,11 @@ export function StudentTestAnswer({
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
-            {pendingItem?.status === 'sending'
-              ? 'Отправляем…'
-              : (sendError ?? submissionFailureMessage(undefined, pendingItem?.lastError))}
+            {availability.state === 'updating'
+              ? 'Обновляем сервис. Отправим после обновления.'
+              : pendingItem?.status === 'sending'
+                ? 'Отправляем…'
+                : (sendError ?? submissionFailureMessage(undefined, pendingItem?.lastError))}
           </p>
           {pendingItem?.status !== 'sending' ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">

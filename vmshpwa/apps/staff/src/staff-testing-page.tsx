@@ -1,3 +1,4 @@
+import { pwaFetch } from '@vmsh/contracts'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { PageLayout, useAuthenticatedPrincipal, useAuthentication } from '@vmsh/app-shell'
@@ -10,7 +11,7 @@ export function StaffTestingPage({ view = 'tasks' }: { view?: 'tasks' | 'news' |
   const principal = useAuthenticatedPrincipal()
   async function request(path: string, method = 'GET') {
     const send = () =>
-      fetch(`${authentication.client.runtime.apiBase}/testing/${path}`, {
+      pwaFetch(`${authentication.client.runtime.apiBase}/testing/${path}`, {
         method,
         credentials: 'include',
         cache: 'no-store',
