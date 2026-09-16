@@ -40,7 +40,13 @@ import {
   DialogDescription,
 } from '@vmsh/ui'
 import { studentNameMatchesSearch } from './student-directory-search'
-import { liveCellKey, emptyLiveCell, mergeLiveCells, type LiveSearch } from './live-marking-state'
+import {
+  liveCellKey,
+  emptyLiveCell,
+  mergeLiveCells,
+  zoomLessonSelection,
+  type LiveSearch,
+} from './live-marking-state'
 import { LiveSchoolGrid, LiveZoomGrid, type MarkDisplay } from './live-marking-grid'
 import { LiveConditionDialog } from './live-marking-condition'
 
@@ -199,14 +205,17 @@ export function LiveMarkingPage({
   const session =
     course?.sessions.find((s) => s.sessionId === search.session) ??
     course?.sessions.find((s) => !s.finishedAt)
+  const zoomSelection = zoomLessonSelection(course?.lessons ?? [], student?.groupId, search.lesson)
   const lessons =
-    course?.lessons.filter(
-      (l) => l.groupId === (mode === 'school' ? room?.groupId : student?.groupId),
-    ) ?? []
+    mode === 'zoom'
+      ? zoomSelection.lessons
+      : (course?.lessons.filter((l) => l.groupId === room?.groupId) ?? [])
   const lesson =
-    lessons.find((l) => l.lessonId === search.lesson) ??
-    lessons.find((l) => mode === 'school' && l.lessonId === room?.lessonId) ??
-    lessons[0]
+    mode === 'zoom'
+      ? zoomSelection.lesson
+      : (lessons.find((l) => l.lessonId === search.lesson) ??
+        lessons.find((l) => l.lessonId === room?.lessonId) ??
+        lessons[0])
   const spec: LiveContext | null =
     mode === 'school'
       ? event && room
@@ -546,26 +555,23 @@ export function LiveMarkingPage({
   }
   const openStudent = (s: LiveDirectoryStudent) => {
     void action(async () => {
-      await queue.flush()
+      void queue.flush()
       const targetSession = session ?? (await client.start(course!.courseId))
       const targetLesson = course?.lessons.find((l) => l.groupId === s.groupId)
-      if (!targetLesson) {
-        setError('У этой группы пока нет опубликованных занятий.')
-        return
-      }
       const next = {
         ...search,
         course: course!.courseId,
         session: targetSession.sessionId,
         student: s.studentId,
-        lesson: targetLesson.lessonId,
+        lesson: targetLesson?.lessonId,
       }
-      await client.visit({
-        mode: 'zoom',
-        contextId: targetSession.sessionId,
-        studentId: s.studentId,
-        lessonId: targetLesson.lessonId,
-      })
+      if (targetLesson)
+        await client.visit({
+          mode: 'zoom',
+          contextId: targetSession.sessionId,
+          studentId: s.studentId,
+          lessonId: targetLesson.lessonId,
+        })
       await queryClient.invalidateQueries({ queryKey: key('live-catalog') })
       setFindOpen(false)
       navigate(next)
@@ -728,26 +734,60 @@ export function LiveMarkingPage({
             ) : null}
           </>
         )}
-        {mode === 'zoom' ? lessonPicker : null}
-        {boardEnabled ? (
+        {mode === 'zoom' ? (
+          <>
+            {lessonPicker}
+            {student ? (
+              <div
+                role="group"
+                aria-label="Уровень задач"
+                className="flex flex-wrap items-center gap-1"
+              >
+                <span className="text-xs text-muted-foreground">Уровень задач</span>
+                {zoomSelection.groups.map((group) => (
+                  <span
+                    key={group.id}
+                    title={!group.target ? 'Для этого занятия нет опубликованных задач' : undefined}
+                  >
+                    <Button
+                      size="sm"
+                      className="min-h-11"
+                      variant={group.id === zoomSelection.groupId ? 'secondary' : 'outline'}
+                      aria-pressed={group.id === zoomSelection.groupId}
+                      aria-label={
+                        !group.target
+                          ? `${group.name}: Для этого занятия нет опубликованных задач`
+                          : group.name
+                      }
+                      disabled={!group.target}
+                      onClick={() => navigate({ ...search, lesson: group.target!.lessonId })}
+                    >
+                      {group.name}
+                    </Button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <div role="group" aria-label="Тип задач" className="flex gap-1">
+              {[true, false].map((oralOnly) => (
+                <Button
+                  key={String(oralOnly)}
+                  variant={(search.oralOnly !== false) === oralOnly ? 'secondary' : 'outline'}
+                  aria-pressed={(search.oralOnly !== false) === oralOnly}
+                  onClick={() => navigate({ ...search, oralOnly })}
+                >
+                  {oralOnly ? 'Устные' : 'Все'}
+                </Button>
+              ))}
+            </div>
+          </>
+        ) : boardEnabled ? (
           <Button
             variant="secondary"
-            aria-pressed={mode === 'school' ? !!search.presentOnly : search.oralOnly !== false}
-            onClick={() =>
-              navigate(
-                mode === 'school'
-                  ? { ...search, presentOnly: !search.presentOnly }
-                  : { ...search, oralOnly: search.oralOnly === false },
-              )
-            }
+            aria-pressed={!!search.presentOnly}
+            onClick={() => navigate({ ...search, presentOnly: !search.presentOnly })}
           >
-            {mode === 'school'
-              ? search.presentOnly
-                ? 'Пришли'
-                : 'Все'
-              : search.oralOnly === false
-                ? 'Все задачи'
-                : 'Устные'}
+            {search.presentOnly ? 'Пришли' : 'Все'}
           </Button>
         ) : null}
         <Button
@@ -841,8 +881,10 @@ export function LiveMarkingPage({
             {entry.command.kind === 'mark' ? (
               <span>
                 Сейчас:{' '}
-                {cellMap.get(liveCellKey(entry.command.studentId, entry.command.problemId))
-                  ?.symbol || 'пусто'}{' '}
+                {entry.command.context.lessonId !== lesson?.lessonId
+                  ? 'другой листок'
+                  : cellMap.get(liveCellKey(entry.command.studentId, entry.command.problemId))
+                      ?.symbol || 'пусто'}{' '}
                 · Ваше:{' '}
                 {entry.command.value === 'plus'
                   ? '+'
@@ -857,17 +899,25 @@ export function LiveMarkingPage({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                const command = entry.command
-                const currentVersion =
-                  command.kind === 'mark'
-                    ? (cellMap.get(liveCellKey(command.studentId, command.problemId))?.version ?? 0)
-                    : command.kind === 'attendance'
-                      ? board.data?.students.find((s) => s.studentId === command.studentId)
-                          ?.attendanceVersion
-                      : undefined
-                queue.retry(entry.id, currentVersion)
-              }}
+              disabled={busy}
+              onClick={() =>
+                void action(async () => {
+                  const command = entry.command
+                  // live-marking.md: retry a hidden level using its own cell version.
+                  const currentVersion =
+                    command.kind === 'mark'
+                      ? ((await client.cells(command.context)).cells.find(
+                          (cell) =>
+                            cell.studentId === command.studentId &&
+                            cell.problemId === command.problemId,
+                        )?.version ?? 0)
+                      : command.kind === 'attendance'
+                        ? board.data?.students.find((s) => s.studentId === command.studentId)
+                            ?.attendanceVersion
+                        : undefined
+                  queue.retry(entry.id, currentVersion)
+                })
+              }
             >
               Применить моё
             </Button>
@@ -904,6 +954,11 @@ export function LiveMarkingPage({
             onSurnameOnlyChange={setSurnameOnly}
           />
         </div>
+      ) : null}
+      {mode === 'zoom' && student && !lesson ? (
+        <p className="p-3">
+          У этой группы пока нет опубликованных занятий. Выберите другой уровень задач.
+        </p>
       ) : null}
       {boardEnabled && (board.isPending || cells.isPending) ? (
         <PageStatePanel state="loading" />
@@ -1144,7 +1199,17 @@ export function LiveMarkingPage({
                   setVisitsOpen(false)
                 }}
               >
-                <span>{v.displayName}</span>
+                <span>
+                  {v.displayName}
+                  <span className="block text-xs text-muted-foreground">
+                    {(() => {
+                      const visited = course?.lessons.find((item) => item.lessonId === v.lessonId)
+                      return visited
+                        ? `Занятие ${visited.number} · ${visited.groupName}`
+                        : v.lessonId
+                    })()}
+                  </span>
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {v.changedCount} оценок ·{' '}
                   {new Date(v.updatedAt).toLocaleTimeString('ru-RU', {

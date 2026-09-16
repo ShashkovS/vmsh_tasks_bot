@@ -374,3 +374,10 @@ Chromium/WebKit/Firefox. 320/390 px, desktop, light/dark, 200%, клавиату
 groupLesson и tab=windows в существующий /staff/oral. Контракт и путь оператора:
 [runbook](../../docs/classroom-and-oral-workflow.md); браузерная проверка:
 `content-page.stories.tsx`, OralWindowsNavigation.
+
+## Дополнение: уровни задач устного приёма, 16 сентября 2026
+
+В одной личной сессии можно принимать опубликованные задачи разных уровней,
+не меняя группу школьника. URL хранит конкретный листок; «Устные / Все» сохраняется
+при переходах. Реализация: `live-marking-page.tsx`, `live-marking-state.ts`.
+[Требования](../../docs/live-marking.md), [проверки и снимки](../oral-levels-report.md).

@@ -69,6 +69,16 @@ def seed(config):
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
         _seed(c, TARGETS)
+        # live-marking.md: published second level, same lesson number/session.
+        _seed(c, tuple((f"{project}-levels", number + 10) for project, number in TARGETS))
+        other_group = c.execute(
+            "SELECT group_id FROM groups WHERE course_id=1 AND id<>1 ORDER BY sort_order,id LIMIT 1"
+        ).fetchone()["group_id"]
+        for _, number in TARGETS:
+            c.execute("UPDATE group_lessons SET group_id=?,course_lesson_id=? WHERE id=?",
+                      (other_group, number, number + 10))
+            c.execute("UPDATE problems SET group_id=?,lesson=? WHERE id=?",
+                      (other_group, number, number + 10))
         for project, lesson_id in TARGETS:
             _dense_problems(c, lesson_id)
             fixture_id = 19000 + lesson_id

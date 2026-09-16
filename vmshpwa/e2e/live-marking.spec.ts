@@ -1,3 +1,4 @@
+import { liveDirectorySchema } from '../packages/contracts/src/live-marking'
 import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
 import { expect, test } from './fixtures'
 
@@ -75,8 +76,10 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   const lastBox = await marks.last().boundingBox()
   // docs/task-titles.md: six compact rows now include visible, wrapped names.
   expect(lastBox!.y - firstBox!.y).toBeLessThan(560)
-  // The always-visible transition/undo legend occupies space above the grid.
-  expect(lastBox!.y + lastBox!.height).toBeLessThan(page.viewportSize()!.height)
+  // Level controls take one extra row; all tasks remain reachable in the grid.
+  await marks.last().scrollIntoViewIfNeeded()
+  await expect(marks.last()).toBeInViewport({ ratio: 1 })
+  await marks.first().scrollIntoViewIfNeeded()
   await expect(page.getByText('Расскажите решение', { exact: true }).first()).toBeVisible()
   await page.screenshot({
     path: info.outputPath('live-zoom-titles-mobile.png'),
@@ -131,7 +134,7 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
   await context.setOffline(true)
   await cell.click()
-  await expect(page.getByRole('status')).toContainText('не отправлено')
+  await expect(page.getByRole('status').filter({ hasText: 'не отправлено' })).toBeVisible()
   await context.setOffline(false)
   await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
   await page.getByRole('button', { name: '👍 Круто', exact: true }).click()
@@ -241,4 +244,96 @@ test('Live classroom: teacher transfer, attendance and another teacher sees the 
     fullPage: true,
     animations: 'disabled',
   })
+})
+
+// docs/live-marking.md: marks keep their original worksheet during navigation.
+test('Live Zoom: two levels share one session without changing enrollment', async ({
+  page,
+}, info) => {
+  const number = numbers[info.project.name]!
+  await loginThroughUi(page, persona(info.project.name), '/staff/oral?course=c-1')
+  await page.getByRole('searchbox', { name: 'Поиск школьника' }).fill('Тестовый-Онлайн Алексей')
+  await page.getByRole('button', { name: /Тестовый-Онлайн Алексей/ }).click()
+  await page.getByRole('combobox', { name: 'Занятие', exact: true }).selectOption(`gl-${number}`)
+  const originalUrl = page.url()
+  const session = new URL(originalUrl).searchParams.get('session')
+  const levels = page.getByRole('group', { name: 'Уровень задач', exact: true })
+  const own = levels.getByRole('button', { pressed: true })
+  const ownName = await own.innerText()
+  const other = levels.getByRole('button', { pressed: false }).filter({ hasText: 'Продолжающие' })
+  await expect(other).toBeEnabled()
+  const first = page.getByRole('button', { name: new RegExp(`^Задача ${number}н\\.2:`) })
+  const second = page.getByRole('button', { name: new RegExp(`^Задача ${number}н\\.3:`) })
+  await expect(first).toHaveAccessibleName(/не сдавал/)
+  let release!: () => void
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route('**/live-marking/operations', async (route) => {
+    await held
+    await route.continue()
+  })
+  await first.click()
+  await second.click()
+  await other.click()
+  await expect(page.getByRole('combobox', { name: 'Занятие', exact: true })).toHaveValue(
+    `gl-${number + 10}`,
+  )
+  await expect(page.getByRole('status').filter({ hasText: 'не отправлено' })).toBeVisible()
+  const third = page.getByRole('button', { name: new RegExp(`^Задача ${number}п\\.1:`) })
+  await third.click()
+  release()
+  await expect(third).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.unroute('**/live-marking/operations')
+  expect(new URL(page.url()).searchParams.get('session')).toBe(session)
+  await page
+    .getByRole('group', { name: 'Тип задач', exact: true })
+    .getByRole('button', { name: 'Все', exact: true })
+    .click()
+  await page.reload()
+  await expect(third).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await expect(
+    page
+      .getByRole('group', { name: 'Тип задач', exact: true })
+      .getByRole('button', { name: 'Все', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await levels.getByRole('button', { name: ownName, exact: true }).click()
+  await expect(first).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await expect(second).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.goBack()
+  await expect(third).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.getByRole('button', { name: /За сессию · 1/ }).click()
+  const visit = page
+    .getByRole('dialog')
+    .getByRole('button', { name: new RegExp(`Занятие ${number} · ${ownName}`) })
+  await visit.click()
+  await expect(first).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  const directory = await page.request.get('/staff/api/v1/live-marking/directory?courseId=c-1')
+  const pupil = liveDirectorySchema
+    .parse(await directory.json())
+    .students.find(
+      (item: { displayName: string }) => item.displayName === 'Тестовый-Онлайн Алексей',
+    )
+  expect(pupil?.groupName).toBe(ownName)
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({ path: info.outputPath(`oral-levels-${width}.png`), fullPage: true })
+  }
+  await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
+  await page.screenshot({ path: info.outputPath('oral-levels-dark.png'), fullPage: true })
+  // Keyboard navigation and an offline change remain scoped to the second level.
+  await other.focus()
+  await page.keyboard.press('Enter')
+  await expect(third).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
+  await page.context().setOffline(true)
+  await third.click()
+  await third.click()
+  await levels.getByRole('button', { name: ownName, exact: true }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'не отправлено' })).toBeVisible()
+  await page.context().setOffline(false)
+  await other.click()
+  await expect(third).toHaveAccessibleName(/−, моя оценка, Сохранено/)
+  await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
+  await expect(third).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
 })

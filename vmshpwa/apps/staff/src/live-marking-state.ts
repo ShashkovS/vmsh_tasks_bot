@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { publicIdSchema, type LiveCell, type LiveCells } from '@vmsh/contracts'
+import { publicIdSchema, type LiveCell, type LiveCells, type LiveCatalog } from '@vmsh/contracts'
 
 export const liveSearchSchema = z.object({
   course: publicIdSchema.optional(),
@@ -37,4 +37,23 @@ export function mergeLiveCells(current: LiveCells, latest?: LiveCells): LiveCell
     if (!update || update.version < cell.version) updates.set(id, cell)
   }
   return { ...current, cells: [...updates.values()] }
+}
+
+// docs/live-marking.md: an explicit worksheet is independent of enrollment in Zoom.
+type Lesson = LiveCatalog['courses'][number]['lessons'][number]
+export function zoomLessonSelection(catalog: Lesson[], studentGroup?: string, lessonId?: string) {
+  const lesson =
+    catalog.find((item) => item.lessonId === lessonId) ??
+    catalog.find((item) => item.groupId === studentGroup)
+  const groupId = lesson?.groupId ?? studentGroup
+  const groups = [...new Map(catalog.map((item) => [item.groupId, item.groupName])).entries()].map(
+    ([id, name]) => ({
+      id,
+      name,
+      target: catalog.find(
+        (item) => item.groupId === id && (!lesson || item.number === lesson.number),
+      ),
+    }),
+  )
+  return { lesson, groupId, groups, lessons: catalog.filter((item) => item.groupId === groupId) }
 }
