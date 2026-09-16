@@ -30,7 +30,7 @@ from helpers.pwa.test_checkers import (
 
 
 NORMALIZED_ANSWER_SCHEMA_VERSION = 1
-CHECKER_POLICY_VERSION = "pwa-test-checker-v1"
+CHECKER_POLICY_VERSION = "pwa-test-checker-v2"
 SELECT_ONE_COMPATIBILITY_LIMIT = 24
 
 

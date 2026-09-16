@@ -881,7 +881,7 @@ async def test_pending_attempt_recheck_uses_previewed_current_configuration(
     assert receipt.owner_account_public_ids == ("a-1",)
     assert attempt["problem_revision_id"] == original_problem_revision_id
     assert attempt["check_status"] == "checked"
-    assert attempt["checker_version"].startswith("pwa-test-checker-v1:")
+    assert attempt["checker_version"].startswith("pwa-test-checker-v2:")
     assert attempt["verdict"] == int(VERDICT.SOLVED)
     matching_result = next(row for row in results if row["answer"] == "179")
     assert attempt["result_id"] == matching_result["id"]

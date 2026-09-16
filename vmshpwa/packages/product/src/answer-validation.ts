@@ -38,7 +38,9 @@ export function validateAnswerFormat(spec: AnswerSpec, raw: string): boolean {
     try {
       return new RegExp(`^(?:${override})$`).test(value)
     } catch {
-      return false
+      // docs/answer-pattern-compatibility.md: Python patterns may be unsupported
+      // by this JS engine. Let the authoritative server validate the answer.
+      return true
     }
   }
   const pattern = formatPatterns[spec.type]

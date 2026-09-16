@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { answerTypeFromLegacyId } from './answer-spec'
 import { parseLegacyAnswerItems, validateAnswerFormat } from './answer-validation'
@@ -39,5 +39,42 @@ describe('legacy answer format mirror', () => {
 
   it('previews the values parsed from a valid integer sequence', () => {
     expect(parseLegacyAnswerItems('int-seq', '1; -7, +9')).toEqual(['1', '-7', '+9'])
+  })
+})
+
+describe('Python answer patterns in older Safari', () => {
+  it.each(['ми', 'МИ', ' Ми ', 'соль'])(
+    'does not block the note %s when the engine rejects scoped modifiers',
+    (answer) => {
+      const constructor = vi.spyOn(globalThis, 'RegExp').mockImplementationOnce(function () {
+        throw new SyntaxError('Invalid regular expression: invalid group specifier name')
+      })
+      try {
+        expect(
+          validateAnswerFormat(
+            { type: 'string', validationPattern: '^(?i:до|ре|ми|фа|соль|ля|си)$' },
+            answer,
+          ),
+        ).toBe(true)
+      } finally {
+        constructor.mockRestore()
+      }
+    },
+  )
+  it('delegates Python-only syntax to the server instead of marking every answer invalid', () => {
+    expect(
+      validateAnswerFormat(
+        { type: 'string', validationPattern: '(?i)^(до|ре|ми|фа|соль|ля|си)$' },
+        'ми',
+      ),
+    ).toBe(true)
+  })
+  it('keeps enforcing supported patterns', () => {
+    expect(
+      validateAnswerFormat(
+        { type: 'string', validationPattern: '(до|ре|ми|фа|соль|ля|си)' },
+        'абракадабра',
+      ),
+    ).toBe(false)
   })
 })

@@ -164,3 +164,24 @@ export const Gallery: Story = {
     </div>
   ),
 }
+
+export const PythonPattern: Story = {
+  name: 'Python-шаблон · проверка на сервере',
+  render: () => (
+    <Harness
+      spec={{
+        type: 'string',
+        validationPattern: '(?i)^(до|ре|ми|фа|соль|ля|си)$',
+        validationError: 'Введите название ноты',
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.type(canvas.getByLabelText('Ответ'), 'ми')
+    await userEvent.tab()
+    await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
+    await expect(canvas.getByLabelText('Ответ')).not.toHaveAttribute('aria-invalid', 'true')
+    await expect(canvas.getByTestId('answer')).toHaveTextContent('ми')
+  },
+}

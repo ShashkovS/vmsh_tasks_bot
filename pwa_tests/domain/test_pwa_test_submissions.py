@@ -438,3 +438,27 @@ def test_attempt_policy_preserves_legacy_defaults_and_explicit_unlimited_mode():
 def test_attempt_policy_rejects_ambiguous_or_invalid_metadata(payload):
     with pytest.raises(SubmissionConfigurationError):
         AttemptPolicy.from_revision(payload)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("ми", AnswerOutcome.CORRECT), ("МИ", AnswerOutcome.CORRECT),
+     (" Ми ", AnswerOutcome.CORRECT), ("фа", AnswerOutcome.WRONG),
+     ("абракадабра", AnswerOutcome.INVALID_FORMAT)],
+)
+def test_python_note_pattern_remains_authoritative(value, expected):
+    # vmshpwa/docs/answer-pattern-compatibility.md: JS fallback cannot accept answers.
+    config = answer_config(
+        ANS_TYPE.STRING, correct="ми", validation=r"^(?i:до|ре|ми|фа|соль|ля|си)$"
+    )
+    assert evaluate_test_answer(config, value).outcome is expected
+
+
+@pytest.mark.parametrize("value", ["СОК", "сок", "СоК", "COK", "cok", "МИ", "ми", "Ми"])
+def test_case_insensitive_strings_preserve_legacy_lookalikes(value):
+    from helpers.checkers import str_eq
+
+    expected = "ми" if value.lower() == "ми" else "сок"
+    assert str_eq(value, expected)
+    assert str_eq(expected, value)
+    assert not str_eq(value, "фа")
