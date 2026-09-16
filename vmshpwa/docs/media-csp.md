@@ -34,3 +34,13 @@ production build с новым releaseId изменяет precache manifest/ба
 После root reload: проверить CSP HTML и обоих sw.js, service-status и три runtime.
 После frontend release: проверить новые worker bytes и загрузку рисунков после
 обычного обновления PWA. Фактический результат фиксируется при завершении выпуска.
+
+### Фактический результат
+
+Root reload подтверждён пользователем. Публичные Student/Family HTML и sw.js
+разрешают точный S3 origin в connect-src. Выпуск `4f273aac29c9-20260916153458`
+активирован; service-status ready, три runtime отвечают HTTP 200.
+Публичный Student SW SHA256 изменился с `b2d95452…` на `90bf80c1…`,
+Family — с `6e1cfc85…` на `15eaa201…`.
+27 nginx-тестов повторно прошли. Визуальная проверка рисунков в авторизованном
+браузере пользователя остаётся после штатного обновления PWA.
