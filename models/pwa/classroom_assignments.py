@@ -15,6 +15,7 @@ from db_methods.pwa.classroom_assignments import (
     insert_plan,
     insert_group_change_event,
     insert_legacy_group_change,
+    list_classroom_preferences,
     list_eligible_students,
     list_assignment_history,
     list_plan_assignments,
@@ -26,6 +27,7 @@ from db_methods.pwa.classroom_assignments import (
     update_assignment_room,
     update_enrollment_group,
     update_legacy_group_if_current,
+    upsert_classroom_preference,
 )
 from db_methods.pwa.classroom_layouts import (
     find_event_layout,
@@ -167,6 +169,10 @@ def recalculate_assignment_plan(
         plan_id = int(working["id"])
 
     students = list_eligible_students(connection, event_id)
+    preferences = list_classroom_preferences(
+        connection,
+        tuple(int(student["enrollment_id"]) for student in students),
+    )
     layout_rooms = list_layout_rooms(connection, int(layout["id"]))
     decisions = distribute_students(
         [
@@ -175,6 +181,9 @@ def recalculate_assignment_plan(
                 group_lesson_id=int(student["group_lesson_id"]),
                 surname=str(student["surname"]),
                 name=str(student["name"]),
+                preferred_classroom_id=preferences.get(
+                    int(student["enrollment_id"])
+                ),
                 previous_classroom_id=find_previous_classroom(
                     connection,
                     enrollment_id=int(student["enrollment_id"]),
@@ -341,6 +350,13 @@ def update_assignment_plan(
                 classroom_id=int(room["classroom_id"]),
                 now=now,
             )
+            upsert_classroom_preference(
+                connection,
+                enrollment_id=int(assignment["course_enrollment_id"]),
+                classroom_id=int(room["classroom_id"]),
+                actor_user_id=actor_user_id,
+                now=now,
+            )
             continue
         if not confirm_group_change:
             raise InvalidClassroomAssignment("group change requires confirmation")
@@ -396,6 +412,13 @@ def update_assignment_plan(
             group_lesson_id=int(room["group_lesson_id"]),
             group_id=new_group_id,
             classroom_id=int(room["classroom_id"]),
+            now=now,
+        )
+        upsert_classroom_preference(
+            connection,
+            enrollment_id=enrollment_id,
+            classroom_id=int(room["classroom_id"]),
+            actor_user_id=actor_user_id,
             now=now,
         )
     if not touch_plan(

@@ -1,6 +1,6 @@
 # Phase 7C — распределение школьников по аудиториям
 
-Дата актуальной проверки: 2026-07-29.
+Дата актуальной проверки: 2026-09-17.
 
 ## Проверяемый результат
 
@@ -8,9 +8,11 @@
 школьников участвующих групп, пересчитывает и правит draft, подтверждает полный
 план и читает неизменяемую историю прежних подтверждённых назначений.
 
-Распределение сначала сохраняет прежнюю допустимую аудиторию той же группы,
-затем использует наименее заполненную комнату с natural-sort tie-break. Без
-доступной комнаты школьник остаётся `reassigning`, и подтверждение невозможно.
+Распределение сначала сохраняет последнюю вручную выбранную допустимую
+аудиторию, затем прежнюю допустимую аудиторию той же группы, после чего
+использует наименее заполненную комнату с natural-sort tie-break. Ручное
+предпочтение хранится независимо от пересчитываемого плана. Без доступной
+комнаты школьник остаётся `reassigning`, и подтверждение невозможно.
 Комната другой группы того же курса требует явного подтверждения смены группы;
 комната другого курса запрещена.
 
@@ -22,7 +24,8 @@ Staff хранит незавершённые select/bulk-правки в event/
 
 ## Реализация
 
-- migration: `0059.pwa_classroom_assignments`;
+- migrations: `0059.pwa_classroom_assignments`,
+  `0097.pwa_classroom_assignment_preferences`;
 - SQLite operations: `db_methods/pwa/classroom_assignments.py`;
 - domain: `helpers/pwa/classroom_assignment.py`,
   `models/pwa/classroom_assignments.py`;
@@ -42,6 +45,10 @@ Staff хранит незавершённые select/bulk-правки в event/
 - `31e83e3`, `19446bd` — history API/UI;
 - `486474a`, `70ad902` — stale/reassigning после смены layout/archive;
 - `e0246e1` — одноразовый Excel dry-run/import.
+- 2026-09-17 — завершён инкремент durable manual-room preference для порядка
+  `manual → previous-room → least-loaded`: добавлены миграция с backfill,
+  серверное применение предпочтения, сохранение browser-draft перед пересчётом
+  и регрессионные проверки.
 
 ## Проверки
 
@@ -52,6 +59,10 @@ Staff хранит незавершённые select/bulk-правки в event/
 - полный Python PWA suite после Excel-import: **1324 PASS, 3 SKIP**;
 - ESLint/Stylelint, TypeScript и production builds трёх apps: **PASS**;
 - snapshots не обновлялись.
+- manual-preference domain/migration/model tests: **16 PASS**;
+- migration lifecycle и canonical schema inventory: **7 PASS**;
+- group-change HTTP regression: **1 PASS**;
+- Ruff, ESLint, Product/Staff TypeScript и Staff production build: **PASS**.
 
 ## Открытые границы
 

@@ -116,7 +116,7 @@ Main flow:
 As an admin, I want to preview, adjust, recalculate, and confirm classroom assignments for an in-person lesson, so that every in-person student has a valid room before the circle starts.
 
 Main flow:
-- The system keeps a student's previous eligible room where possible, otherwise assigns the least-loaded room of the student's current group; ties use natural room-name order.
+- The system first keeps the latest room explicitly selected by Staff whenever it is eligible for the student's current group, then keeps the student's latest eligible room for that group, and finally assigns the remaining students to the least-loaded room; ties use natural room-name order. The preference is persisted by `migrations/0097.pwa_classroom_assignment_preferences.sql` and applied by `models/pwa/classroom_assignments.py`.
 - Admin reviews students by group and room, moves a student with a select control, resolves `reassigning`/unassigned incidents, and confirms a versioned plan.
 - A group or attendance-mode change triggers the same assignment rule immediately. A student who switches online loses the room assignment.
 - Changing the room layout makes the current plan stale and requires preview, recalculation, and a new confirmation.

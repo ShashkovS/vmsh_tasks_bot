@@ -1047,8 +1047,8 @@ export function ClassroomStudentPlanner({
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
         <p className="text-caption text-muted-foreground">
-          Пересчёт сначала сохраняет прежнюю допустимую аудиторию, затем использует фактическое
-          число школьников.
+          Пересчёт сначала сохраняет выбранную вручную аудиторию, затем прежнюю допустимую и
+          дораспределяет остальных по фактической загрузке.
         </p>
         <div className="flex gap-2">
           <Button disabled={pending} onClick={onRecalculate} size="sm" variant="outline">
@@ -1167,14 +1167,14 @@ export function ClassroomAssignmentStatus({
         <UsersRound aria-hidden="true" />
         <AlertContent>
           {audience === 'student' ? (
-            <AlertDescription>
-              Сейчас у вас онлайн-режим. {onlineModeAction}
-            </AlertDescription>
+            <AlertDescription>Сейчас у вас онлайн-режим. {onlineModeAction}</AlertDescription>
           ) : (
             <>
               <AlertTitle>Очная аудитория не требуется</AlertTitle>
               <AlertDescription>
-                {studentName ? `${studentName}: сейчас онлайн-режим.` : 'Сейчас у ребёнка онлайн-режим.'}
+                {studentName
+                  ? `${studentName}: сейчас онлайн-режим.`
+                  : 'Сейчас у ребёнка онлайн-режим.'}
               </AlertDescription>
             </>
           )}

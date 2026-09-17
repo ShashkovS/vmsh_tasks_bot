@@ -69,7 +69,7 @@
 - Classroom names must be trimmed at the edges, remain non-empty, preserve internal whitespace, and be unique after Unicode NFKC plus case-insensitive normalization.
 - Classrooms are archived/restored rather than hard-deleted. Renames are global corrections and retain audit history.
 - Each classroom may belong to at most one group in a layout; one group may use any number of classrooms. Capacity and weighting are not part of the model.
-- The assignment preview must keep a previous eligible room where possible and otherwise choose the least-loaded room in natural name order. Manual movement uses explicit select/move controls rather than drag-and-drop.
+- The assignment preview must first keep the latest room explicitly selected by Staff whenever it is eligible for the student's current level, then keep the student's latest eligible room for that level, and finally assign the remaining students to the least-loaded eligible rooms in natural name order. The durable manual preference is implemented by `migrations/0097.pwa_classroom_assignment_preferences.sql`, `models/pwa/classroom_assignments.py`, and `helpers/pwa/classroom_assignment.py`. Manual movement uses explicit select/move controls rather than drag-and-drop.
 - A changed layout makes an existing plan stale. Confirmation must be blocked while an in-person student is unassigned, a student is assigned outside the current group, or one room mixes groups.
 - Hiding an in-use room must immediately move affected current assignments to a visible reassigning state without changing historical lessons.
 - Student and Family may read the published room assignment. Student receives PWA notifications for assignment, withdrawal, and reassignment; Family receives no classroom push.

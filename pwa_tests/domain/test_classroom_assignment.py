@@ -13,6 +13,7 @@ def student(
     enrollment_id: int,
     *,
     group_lesson_id: int = 10,
+    preferred_classroom_id: int | None = None,
     previous_classroom_id: int | None = None,
 ) -> StudentToAssign:
     return StudentToAssign(
@@ -20,6 +21,7 @@ def student(
         group_lesson_id=group_lesson_id,
         surname=f"Фамилия {enrollment_id:03}",
         name=f"Имя {enrollment_id:03}",
+        preferred_classroom_id=preferred_classroom_id,
         previous_classroom_id=previous_classroom_id,
     )
 
@@ -36,6 +38,43 @@ def test_previous_room_is_kept_and_other_students_are_balanced():
     assert decisions[0].classroom_id == 2
     assert decisions[0].source == "previous-room"
     assert [decision.classroom_id for decision in decisions[1:]] == [1, 2, 1]
+
+
+def test_manual_preference_wins_and_is_counted_before_previous_and_balancing():
+    decisions = distribute_students(
+        [
+            student(1, preferred_classroom_id=2, previous_classroom_id=1),
+            student(2, previous_classroom_id=2),
+            student(3),
+            student(4),
+        ],
+        [
+            AssignmentRoom(classroom_id=1, group_lesson_id=10, name="201"),
+            AssignmentRoom(classroom_id=2, group_lesson_id=10, name="202"),
+        ],
+    )
+
+    assert [decision.classroom_id for decision in decisions] == [2, 2, 1, 1]
+    assert [decision.source for decision in decisions] == [
+        "manual",
+        "previous-room",
+        "least-loaded",
+        "least-loaded",
+    ]
+
+
+def test_unavailable_manual_preference_falls_back_to_previous_room():
+    decisions = distribute_students(
+        [student(1, preferred_classroom_id=3, previous_classroom_id=2)],
+        [
+            AssignmentRoom(classroom_id=1, group_lesson_id=10, name="201"),
+            AssignmentRoom(classroom_id=2, group_lesson_id=10, name="202"),
+            AssignmentRoom(classroom_id=3, group_lesson_id=20, name="301"),
+        ],
+    )
+
+    assert decisions[0].classroom_id == 2
+    assert decisions[0].source == "previous-room"
 
 
 def test_students_without_a_room_are_explicitly_unassigned():

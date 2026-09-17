@@ -9,7 +9,7 @@ from datetime import date
 from typing import Literal
 
 
-AssignmentSource = Literal["previous-room", "least-loaded"]
+AssignmentSource = Literal["manual", "previous-room", "least-loaded"]
 
 
 @dataclass(frozen=True)
@@ -18,6 +18,7 @@ class StudentToAssign:
     group_lesson_id: int
     surname: str
     name: str
+    preferred_classroom_id: int | None = None
     previous_classroom_id: int | None = None
 
 
@@ -47,7 +48,7 @@ def _natural_name(value: str) -> tuple[tuple[int, object], ...]:
 def distribute_students(
     students: list[StudentToAssign], rooms: list[AssignmentRoom]
 ) -> list[AssignmentDecision]:
-    """Keep valid previous rooms, then balance the remaining students."""
+    """Apply the priority order in docs/requirements/04_admin_requirements.md."""
 
     rooms_by_group: dict[int, list[AssignmentRoom]] = {}
     for room in rooms:
@@ -66,11 +67,27 @@ def distribute_students(
     loads = {room.classroom_id: 0 for room in rooms}
     decisions: dict[int, AssignmentDecision] = {}
 
+    valid_room_ids_by_group = {
+        group_lesson_id: {room.classroom_id for room in group_rooms}
+        for group_lesson_id, group_rooms in rooms_by_group.items()
+    }
+
     for student in ordered_students:
-        valid_room_ids = {
-            room.classroom_id
-            for room in rooms_by_group.get(student.group_lesson_id, [])
-        }
+        valid_room_ids = valid_room_ids_by_group.get(student.group_lesson_id, set())
+        if student.preferred_classroom_id in valid_room_ids:
+            classroom_id = student.preferred_classroom_id
+            assert classroom_id is not None
+            loads[classroom_id] += 1
+            decisions[student.enrollment_id] = AssignmentDecision(
+                enrollment_id=student.enrollment_id,
+                classroom_id=classroom_id,
+                source="manual",
+            )
+
+    for student in ordered_students:
+        if student.enrollment_id in decisions:
+            continue
+        valid_room_ids = valid_room_ids_by_group.get(student.group_lesson_id, set())
         if student.previous_classroom_id in valid_room_ids:
             classroom_id = student.previous_classroom_id
             assert classroom_id is not None

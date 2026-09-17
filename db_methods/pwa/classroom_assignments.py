@@ -172,6 +172,47 @@ def find_previous_classroom(
     return None if row is None else int(row["classroom_id"])
 
 
+def list_classroom_preferences(
+    connection: sqlite3.Connection, enrollment_ids: tuple[int, ...]
+) -> dict[int, int]:
+    """Return durable Staff-selected rooms for the requested enrollments."""
+
+    if not enrollment_ids:
+        return {}
+    placeholders = ", ".join("?" for _enrollment_id in enrollment_ids)
+    rows = connection.execute(
+        "SELECT course_enrollment_id, classroom_id "
+        "FROM classroom_assignment_preferences "
+        f"WHERE course_enrollment_id IN ({placeholders})",
+        enrollment_ids,
+    ).fetchall()
+    return {
+        int(row["course_enrollment_id"]): int(row["classroom_id"]) for row in rows
+    }
+
+
+def upsert_classroom_preference(
+    connection: sqlite3.Connection,
+    *,
+    enrollment_id: int,
+    classroom_id: int,
+    actor_user_id: int,
+    now: str,
+) -> None:
+    """Remember the latest room explicitly selected by Staff."""
+
+    connection.execute(
+        "INSERT INTO classroom_assignment_preferences "
+        "(course_enrollment_id, classroom_id, set_by_user_id, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?) "
+        "ON CONFLICT(course_enrollment_id) DO UPDATE SET "
+        "classroom_id = excluded.classroom_id, "
+        "set_by_user_id = excluded.set_by_user_id, "
+        "updated_at = excluded.updated_at, version = version + 1",
+        (enrollment_id, classroom_id, actor_user_id, now, now),
+    )
+
+
 def insert_plan(
     connection: sqlite3.Connection,
     *,

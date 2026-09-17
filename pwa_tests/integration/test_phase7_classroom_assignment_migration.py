@@ -15,12 +15,14 @@ from models.pwa.classroom_assignments import (
     InvalidClassroomAssignment,
     confirm_assignment_plan,
     recalculate_assignment_plan,
+    update_assignment_plan,
 )
 from models.pwa.classroom_layouts import confirm_layout, materialize_layout
 from models.pwa.classroom_public import read_student_classroom_assignments
 
 
 MIGRATION_ID = "0059.pwa_classroom_assignments"
+PREFERENCE_MIGRATION_ID = "0097.pwa_classroom_assignment_preferences"
 NOW = "2026-07-29T13:00:00Z"
 
 
@@ -47,7 +49,9 @@ def _assignment_objects(database_path: Path) -> set[str]:
         return {
             str(row[0])
             for row in connection.execute(
-                "SELECT name FROM sqlite_schema WHERE name LIKE 'classroom_assignment%' "
+                "SELECT name FROM sqlite_schema WHERE "
+                "(name LIKE 'classroom_assignment_plans%' "
+                "OR name LIKE 'classroom_assignments%') "
                 "AND name NOT LIKE 'classroom_assignment_delivery%' "
                 "AND name NOT LIKE 'sqlite_%'"
             )
@@ -60,7 +64,11 @@ def test_classroom_assignment_migration_up_down_up_is_exact(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0058.pwa_classroom_layouts"
     }
-    preceding = {item.id for item in migrations.values() if item.id != MIGRATION_ID}
+    preceding = {
+        item.id
+        for item in migrations.values()
+        if item.id not in {MIGRATION_ID, PREFERENCE_MIGRATION_ID}
+    }
     _apply(database_path, preceding)
     assert _assignment_objects(database_path) == set()
 
@@ -225,6 +233,35 @@ def test_confirmed_assignment_rows_are_immutable_and_status_matches_room(tmp_pat
             )
 
 
+def test_manual_preference_migration_backfills_existing_staff_move(tmp_path):
+    database_path = tmp_path / "phase7-assignment-preference-backfill.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
+        _insert_parents(connection)
+        connection.execute(
+            "UPDATE classroom_assignments SET source = 'manual', updated_at = ?",
+            ("2026-07-29T13:05:00Z",),
+        )
+
+    _rollback(database_path, {PREFERENCE_MIGRATION_ID})
+    _apply(database_path, {PREFERENCE_MIGRATION_ID})
+
+    with sqlite3.connect(database_path) as connection:
+        preference = connection.execute(
+            "SELECT course_enrollment_id, classroom_id, set_by_user_id, "
+            "created_at, updated_at, version FROM classroom_assignment_preferences"
+        ).fetchone()
+        assert preference == (
+            1,
+            1,
+            2,
+            "2026-07-29T13:05:00Z",
+            "2026-07-29T13:05:00Z",
+            1,
+        )
+
+
 def test_assignment_plan_recalculates_and_confirms(tmp_path):
     database_path = tmp_path / "phase7-assignment-plan.sqlite3"
     _apply(database_path, {item.id for item in _migrations()})
@@ -272,6 +309,90 @@ def test_assignment_plan_recalculates_and_confirms(tmp_path):
 
         assert confirmed["plan"]["state"] == "confirmed"
         assert confirmed["plan"]["version"] == 2
+
+
+def test_manual_room_preference_survives_recalculation(tmp_path):
+    database_path = tmp_path / "phase7-manual-room-preference.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _insert_parents(connection)
+        connection.execute("DELETE FROM classroom_assignments")
+        connection.execute("DELETE FROM classroom_assignment_plans")
+        layout_id = connection.execute(
+            "SELECT id FROM classroom_layout_versions WHERE state = 'confirmed'"
+        ).fetchone()[0]
+        group_lesson_id = connection.execute(
+            "SELECT id FROM group_lessons WHERE group_id = 'assignment-n'"
+        ).fetchone()[0]
+        room_id = connection.execute(
+            "INSERT INTO classrooms "
+            "(name, normalized_name, status, created_by_user_id, "
+            "updated_by_user_id, created_at, updated_at) VALUES "
+            "('202', '202', 'active', 2, 2, ?, ?) RETURNING id",
+            (NOW, NOW),
+        ).fetchone()[0]
+        connection.execute(
+            "UPDATE classroom_layout_versions SET state = 'draft', "
+            "confirmed_by_user_id = NULL, confirmed_at = NULL WHERE id = ?",
+            (layout_id,),
+        )
+        connection.execute(
+            "INSERT INTO classroom_layout_rooms "
+            "(layout_version_id, classroom_id, group_lesson_id, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (layout_id, room_id, group_lesson_id, NOW, NOW),
+        )
+        connection.execute(
+            "UPDATE classroom_layout_versions SET state = 'confirmed', "
+            "confirmed_by_user_id = 2, confirmed_at = ? WHERE id = ?",
+            (NOW, layout_id),
+        )
+
+        initial = recalculate_assignment_plan(
+            connection,
+            event_public_id="ipe-1",
+            plan_public_id=None,
+            expected_version=None,
+            actor_user_id=2,
+            now=NOW,
+        )
+        enrollment_public_id = str(initial["students"][0]["enrollment_public_id"])
+        classroom_public_id = str(
+            connection.execute(
+                "SELECT public_id FROM classrooms WHERE id = ?", (room_id,)
+            ).fetchone()[0]
+        )
+        moved = update_assignment_plan(
+            connection,
+            event_public_id="ipe-1",
+            plan_public_id=str(initial["plan"]["public_id"]),
+            expected_version=int(initial["plan"]["version"]),
+            assignments=((enrollment_public_id, classroom_public_id, False),),
+            actor_user_id=2,
+            request_id="manual-room-preference",
+            now="2026-07-29T13:01:00Z",
+        )
+        assert moved["students"][0]["classroom_name"] == "202"
+        assert moved["students"][0]["source"] == "manual"
+
+        recalculated = recalculate_assignment_plan(
+            connection,
+            event_public_id="ipe-1",
+            plan_public_id=str(moved["plan"]["public_id"]),
+            expected_version=int(moved["plan"]["version"]),
+            actor_user_id=2,
+            now="2026-07-29T13:02:00Z",
+        )
+
+        assert recalculated["students"][0]["classroom_name"] == "202"
+        assert recalculated["students"][0]["source"] == "manual"
+        preference = connection.execute(
+            "SELECT classroom_id, set_by_user_id, version "
+            "FROM classroom_assignment_preferences WHERE course_enrollment_id = 1"
+        ).fetchone()
+        assert tuple(preference) == (room_id, 2, 1)
 
 
 def test_student_projection_uses_only_current_confirmed_assignment(tmp_path):

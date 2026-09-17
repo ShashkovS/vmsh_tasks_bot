@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: ec702cc015de05d08f9b37ad1bb19cc115e634529a829f99cc3b2a58c29bfc34
+-- Product schema SHA-256: 6df15c67c7caf75b517b75c7c1400bc63b33ed6cc32d43b90843417f3c5dba97
 
 CREATE TABLE achievement_definitions
 (
@@ -307,6 +307,17 @@ CREATE TABLE classroom_assignment_plans
             and confirmed_at is not null
             and superseded_at is not null)
     )
+);
+
+CREATE TABLE classroom_assignment_preferences
+(
+    course_enrollment_id integer primary key references course_enrollments (id),
+    classroom_id         integer not null references classrooms (id),
+    set_by_user_id       integer not null references users (id),
+    created_at           text    not null,
+    updated_at           text    not null,
+    version              integer not null default 1 check (version > 0),
+    check (updated_at >= created_at)
 );
 
 CREATE TABLE classroom_assignments
@@ -2873,6 +2884,9 @@ CREATE UNIQUE INDEX classroom_assignment_plans_one_confirmed_uq
 CREATE UNIQUE INDEX classroom_assignment_plans_one_working_uq
     on classroom_assignment_plans (in_person_event_id)
     where state in ('draft', 'stale');
+
+CREATE INDEX classroom_assignment_preferences_room_idx
+    on classroom_assignment_preferences (classroom_id, course_enrollment_id);
 
 CREATE INDEX classroom_assignments_enrollment_history_idx
     on classroom_assignments (course_enrollment_id, plan_id);

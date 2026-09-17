@@ -222,33 +222,75 @@ function AssignmentEditor({
     }
   })
   const currentPlan = plan.plan
+  const changedAssignments = (basePlan: ClassroomAssignmentPlan) =>
+    basePlan.students.flatMap((student) => {
+      const classroomPublicId = assignments[student.enrollmentPublicId]
+      return classroomPublicId === undefined || classroomPublicId === student.classroomPublicId
+        ? []
+        : [
+            {
+              enrollmentPublicId: student.enrollmentPublicId,
+              classroomPublicId,
+              confirmGroupChange: groupChanges.has(student.enrollmentPublicId),
+            },
+          ]
+    })
 
   const mutation = useMutation({
     mutationFn: async (kind: 'recalculate' | 'confirm') => {
       if (kind === 'recalculate') {
+        let workingPlan = plan
+        let initialRecalculation: Awaited<
+          ReturnType<typeof client.recalculateAssignmentPlan>
+        > | null = null
+
+        // docs/requirements/04_admin_requirements.md: persist manual choices
+        // before the final calculation. Confirmed/stale plans need a draft first.
+        if (currentPlan === null || currentPlan.state !== 'draft') {
+          initialRecalculation = await client.recalculateAssignmentPlan(
+            eventPublicId,
+            currentPlan === null || currentPlan.state === 'confirmed'
+              ? null
+              : { publicId: currentPlan.publicId, version: currentPlan.version },
+            { schemaVersion: 1 },
+          )
+          workingPlan = initialRecalculation.assignmentPlan
+        }
+
+        const workingMetadata = workingPlan.plan
+        if (workingMetadata === null || workingMetadata.state !== 'draft') {
+          throw new Error('Recalculation did not produce a draft assignment plan')
+        }
+        const changed = changedAssignments(workingPlan)
+        if (changed.length > 0) {
+          const saved = await client.updateAssignmentPlan(
+            eventPublicId,
+            { publicId: workingMetadata.publicId, version: workingMetadata.version },
+            { schemaVersion: 1, assignments: changed },
+          )
+          if (saved.assignmentPlan.plan === null) {
+            throw new Error('Server did not return the saved plan')
+          }
+          return client.recalculateAssignmentPlan(
+            eventPublicId,
+            {
+              publicId: saved.assignmentPlan.plan.publicId,
+              version: saved.assignmentPlan.plan.version,
+            },
+            { schemaVersion: 1 },
+          )
+        }
+        if (initialRecalculation !== null) return initialRecalculation
         return client.recalculateAssignmentPlan(
           eventPublicId,
-          currentPlan === null || currentPlan.state === 'confirmed'
-            ? null
-            : { publicId: currentPlan.publicId, version: currentPlan.version },
+          { publicId: workingMetadata.publicId, version: workingMetadata.version },
           { schemaVersion: 1 },
         )
       }
       if (currentPlan === null || currentPlan.state !== 'draft') {
         throw new Error('Only a draft assignment plan can be confirmed')
       }
-      const changed = plan.students.flatMap((student) => {
-        const classroomPublicId = assignments[student.enrollmentPublicId]
-        return classroomPublicId === undefined || classroomPublicId === student.classroomPublicId
-          ? []
-          : [
-              {
-                enrollmentPublicId: student.enrollmentPublicId,
-                classroomPublicId,
-                confirmGroupChange: groupChanges.has(student.enrollmentPublicId),
-              },
-            ]
-      })
+      const changed = changedAssignments(plan)
       const savedPlan =
         changed.length === 0
           ? plan
