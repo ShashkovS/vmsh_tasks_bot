@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import sqlite3
 
+import pytest
+
+from db_methods.pwa.performance_guard import (
+    DatabasePerformanceGuardError,
+    check_database_performance,
+)
 from pwa_tests.integration.test_phase8_notification_core import (
     _apply,
     _migrations,
@@ -96,6 +102,11 @@ def test_current_attempt_result_lookup_is_indexed(tmp_path):
             )
         ]
         assert not any("test_attempts_result_idx" in row for row in before_plan)
+    with pytest.raises(
+        DatabasePerformanceGuardError,
+        match="effective_results.*correlated full scan",
+    ):
+        check_database_performance(database_path)
 
     _apply(database_path, {LOOKUP_MIGRATION_ID})
     with sqlite3.connect(database_path) as connection:
@@ -107,6 +118,9 @@ def test_current_attempt_result_lookup_is_indexed(tmp_path):
         ]
         assert any("test_attempts_result_idx" in row for row in after_plan)
         assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    report = check_database_performance(database_path)
+    assert report["viewsChecked"] == 3
+    assert report["probes"][0]["name"] == "effective-results-current-test-attempt"
 
     _rollback(database_path, {LOOKUP_MIGRATION_ID})
     with sqlite3.connect(database_path) as connection:

@@ -45,7 +45,9 @@ not replaced or started by this unit. Google credentials are not loaded by the
 The unit creates `/run/vmsh-prometheus`, removes stale worker files before each
 start and exports `PROMETHEUS_MULTIPROC_DIR` before Gunicorn imports the
 application. `gunicorn.conf.py` marks dead worker processes in its
-`child_exit` hook. Do not set the multiprocess directory from application code.
+`child_exit` hook. The shared legacy Gunicorn service does not export that
+variable; the hook is intentionally a no-op there. Do not set the multiprocess
+directory from application code.
 
 S3 settings are read from the allowlisted fields of
 `creds_prod/vmsh_bot_config_prod.json`; they are not duplicated in this env

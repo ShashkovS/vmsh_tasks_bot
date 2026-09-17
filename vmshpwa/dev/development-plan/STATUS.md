@@ -3101,4 +3101,17 @@ Production trace за 19:35–20:35 МСК показал до 1596 одновр
 актуального `test_attempts.result_id` без индекса: `/staff/api/v1/statistics`
 держал read slot до 48 секунд и блокировал Student/Family. Миграция
 `0096.pwa_test_attempt_result_lookup` добавляет индекс; regression проверяет
-план `effective_results`, round-trip миграции и схему. Выпуск ожидается.
+план `effective_results`, round-trip миграции и схему. Хотфикс `d86072fe`
+выпущен: production-план использует индекс, полный read выполняется за 0,05 с,
+очередь после deploy равна нулю.
+
+Следом реализована fail-closed защита повторения инцидента. При migrations
+deploy до maintenance мигрирует snapshot production SQLite и запускает общий
+performance guard; после production migration тот же guard повторяется до
+старта сервисов. Он автоматически запрещает коррелированные full scan всех
+view, требует индекс для `effective_results` и обрывает критический read после
+двух секунд. Без 0096 guard воспроизводимо падает уже на пустой fixture.
+Исправлен и отдельный шумный shutdown: общий `gunicorn.conf.py` больше не
+вызывает Prometheus multiprocess cleanup для legacy service без соответствующей
+переменной. 81 migration/schema/concurrency/performance/deploy regression test,
+Ruff, `bash -n` и `git diff --check` прошли.

@@ -143,8 +143,19 @@ verify`; реальный `systemctl restart`, socket ownership и health чер
 Unit создаёт `/run/vmsh-prometheus`, очищает stale multiprocess-файлы до старта
 Gunicorn и задаёт `PROMETHEUS_MULTIPROC_DIR` до импорта приложения. Hook
 [`gunicorn.conf.py`](../../gunicorn.conf.py) вызывает
-`multiprocess.mark_process_dead` после выхода worker. После успешного старта
+`multiprocess.mark_process_dead` после выхода PWA worker. Общий config также
+использует legacy Gunicorn без multiprocess-метрик; при отсутствии переменной
+hook намеренно ничего не делает, поэтому штатный SIGTERM не превращается в
+ошибку systemd. После успешного старта
 deploy создаёт exact file-discovery target `/etc/prometheus/targets/aiohttp.json`.
+
+При изменении migrations deploy сначала применяет их к согласованной временной
+копии production SQLite и запускает
+[`database_performance_guard.py`](../scripts/database_performance_guard.py).
+Guard запрещает коррелированные full scans во view и проверяет план и
+ограниченное время общих fan-out запросов. Эта rehearsal выполняется до
+maintenance. После миграции production-БД guard повторяется до запуска
+Gunicorn; при ошибке трафик на неподтверждённую схему не возвращается.
 
 Не следует применять `git reset --hard` или `git clean` в общей рабочей копии разработчика. Такие команды допустимы только внутри специально созданного deployment checkout, который не содержит пользовательских данных и незакоммиченной работы.
 

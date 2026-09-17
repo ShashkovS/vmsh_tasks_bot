@@ -33,6 +33,10 @@ privacy-safe report.
       WebKit; launcher failure не записывается как pass.
 - [ ] Изолированная migration rehearsal выполнена командой
       `make pwa-phase11-course-rehearsal`; source `db/vmsh.db` не изменён.
+- [ ] Автоматическая rehearsal целевой migration head на согласованной копии
+      production SQLite прошла `database_performance_guard`: нет correlated
+      full scans, обязательные индексы видны в плане, bounded reads уложились
+      в deadline.
 - [ ] Изолированный restore rehearsal выполнен командой
       `make pwa-phase11-restore-rehearsal`; integrity/read-model checks зелёные,
       измеренные RPO/RTO записаны без содержимого данных.
@@ -66,6 +70,8 @@ privacy-safe report.
       отдельно от согласованной backup-операции.
 - [ ] Yoyo migrations применены отдельной командой; runtime startup их не
       запускает. Итоговая schema version совпала с release manifest.
+- [ ] Тот же database performance guard прошёл на production SQLite до запуска
+      workers; traffic не возвращён на непроверенную схему.
 - [ ] `make pwa-phase11-release-activate` атомарно переключил проверенный
       frontend release; nginx `@@STATIC_ROOT@@` указывает на
       `<PWA_RELEASE_ROOT>/current`.

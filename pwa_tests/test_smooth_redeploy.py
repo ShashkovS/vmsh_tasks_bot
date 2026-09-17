@@ -16,17 +16,33 @@ def test_cutover_order_and_no_unsafe_proxy_replay():
     assert source.index('touch "$MAINTENANCE_FILE"') < source.index(
         "systemctl stop vmshpwa.service"
     )
-    assert source.index("systemctl stop vmsh-analytics.timer") < source.index(
-        "python -m vmshpwa.scripts.migrate_runtime"
+    rehearsal = source.index(
+        'CURRENT_STEP="rehearsing database migrations and query performance"'
     )
-    assert source.index("systemctl stop vmsh-analytics.service") < source.index(
-        "python -m vmshpwa.scripts.migrate_runtime"
+    maintenance = source.index('CURRENT_STEP="enabling service maintenance"')
+    assert rehearsal < maintenance
+    assert source.index(
+        "python -m vmshpwa.scripts.database_performance_guard", rehearsal
+    ) < maintenance
+    production_migration = source.index(
+        "python -m vmshpwa.scripts.migrate_runtime", maintenance
+    )
+    assert source.index("systemctl stop vmsh-analytics.timer") < production_migration
+    assert source.index("systemctl stop vmsh-analytics.service") < production_migration
+    production_guard = source.index(
+        'CURRENT_STEP="checking production database query performance"'
+    )
+    assert production_migration < production_guard
+    assert production_guard < source.index(
+        'CURRENT_STEP="starting backend services"'
     )
     assert source.index('CURRENT_STEP="activating frontend release"') < source.index(
         'rm -- "$MAINTENANCE_FILE"'
     )
     assert "http://127.0.0.1:8000/student/api/v1/runtime" in source
     on_error = source[source.index("on_error()") : source.index("trap on_error ERR")]
+    assert "cleanup_migration_rehearsal" in on_error
+    assert "trap cleanup_migration_rehearsal EXIT" in source
     assert 'rm -- "$MAINTENANCE_FILE"' not in on_error
     assert 'rm -- "$ANALYTICS_TIMER_STATE"' not in on_error
     subprocess.run(

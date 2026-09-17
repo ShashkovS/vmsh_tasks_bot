@@ -44,6 +44,23 @@ FRONTEND_ACTIVATED=false
 PREVIOUS_RELEASE_ID=""
 SERVICES_STOPPED=false
 MIGRATION_FINISHED=false
+MIGRATION_REHEARSAL_DIR=""
+
+cleanup_migration_rehearsal() {
+  local directory="$MIGRATION_REHEARSAL_DIR"
+  [[ -n "$directory" ]] || return 0
+  case "$directory" in
+    "$DEPLOY_DIR"/runtime/deploy/migration-rehearsal.*)
+      rm -rf -- "$directory"
+      MIGRATION_REHEARSAL_DIR=""
+      ;;
+    *)
+      echo "Refusing to remove unexpected rehearsal directory: $directory"
+      return 1
+      ;;
+  esac
+}
+trap cleanup_migration_rehearsal EXIT
 
 notify_telegram() {
   local text=$1
@@ -70,6 +87,7 @@ on_error() {
   trap - ERR
   set +e
 
+  cleanup_migration_rehearsal
   echo "Deploy failed: step=${CURRENT_STEP} line=${line} exit=${rc}"
   if [[ "$FRONTEND_ACTIVATED" == true && -n "$PREVIOUS_RELEASE_ID" ]]; then
     echo "Rolling frontend back to ${PREVIOUS_RELEASE_ID}"
@@ -262,6 +280,22 @@ if [[ "$MIGRATIONS_CHANGED" == true ]]; then
   CURRENT_STEP="creating pre-deploy SQLite backup"
   make_db_backup before-deploy
 
+  CURRENT_STEP="rehearsing database migrations and query performance"
+  MIGRATION_REHEARSAL_DIR="$(mktemp -d "$DEPLOY_DIR/runtime/deploy/migration-rehearsal.XXXXXX")"
+  MIGRATION_REHEARSAL_DB="$MIGRATION_REHEARSAL_DIR/database.sqlite3"
+  sqlite3 "$DB_PATH" ".backup '${MIGRATION_REHEARSAL_DB}'"
+  VMSH_RUNTIME_PROFILE=pwa-production \
+  VMSH_PWA_PROTOTYPE=false \
+  VMSH_INSTANCE=migration-rehearsal \
+  VMSH_DB_FILENAME="$MIGRATION_REHEARSAL_DB" \
+    uv run --no-sync python -m vmshpwa.scripts.migrate_runtime
+  sqlite3 "$MIGRATION_REHEARSAL_DB" 'PRAGMA quick_check;' | grep -Fxq ok
+  VMSH_RUNTIME_PROFILE=pwa-production \
+  VMSH_PWA_PROTOTYPE=false \
+  VMSH_INSTANCE=migration-rehearsal \
+  VMSH_DB_FILENAME="$MIGRATION_REHEARSAL_DB" \
+    uv run --no-sync python -m vmshpwa.scripts.database_performance_guard
+  cleanup_migration_rehearsal
 fi
 
 if [[ "$BACKEND_CHANGED" == true || "$MIGRATIONS_CHANGED" == true ]]; then
@@ -297,6 +331,10 @@ if [[ "$MIGRATIONS_CHANGED" == true ]]; then
   VMSH_PWA_PROTOTYPE=false \
     uv run --no-sync python -m vmshpwa.scripts.migrate_runtime
   sqlite3 "$DB_PATH" 'PRAGMA quick_check;' | grep -Fxq ok
+  CURRENT_STEP="checking production database query performance"
+  VMSH_RUNTIME_PROFILE=pwa-production \
+  VMSH_PWA_PROTOTYPE=false \
+    uv run --no-sync python -m vmshpwa.scripts.database_performance_guard
   MIGRATION_FINISHED=true
 fi
 

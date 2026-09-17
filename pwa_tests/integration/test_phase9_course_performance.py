@@ -106,6 +106,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             max_complex_strength REAL NOT NULL,
             solved_items INTEGER NOT NULL,
             total_items INTEGER NOT NULL,
+            simple_smooth REAL,
+            complex_smooth REAL,
             PRIMARY KEY (run_id, student_user_id, lesson_number)
         );
         CREATE INDEX student_lesson_metrics_student_run_idx

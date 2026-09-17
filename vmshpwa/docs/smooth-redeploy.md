@@ -41,6 +41,9 @@
 [`deploy-vmsh-tasks-bot.sh`](../../docs/deploy/deploy-vmsh-tasks-bot.sh)
 собирает и упаковывает frontend до паузы. Перед остановкой включает флаг;
 при миграции останавливает analytics timer/service, PWA и Telegram writers.
+До включения флага миграции автоматически репетируются на согласованной копии
+production SQLite и проходят query-plan/latency guard. Guard повторяется на
+production-БД после migration и до запуска сервисов.
 Прежнее active/inactive состояние таймера сохраняется отдельно и переживает
 сбой deploy. Снятие флага — только после миграций, запуска, runtime checks всех audiences через доверенный Unix-сокет и активации frontend. ERR trap оставляет флаг,
 состояние таймера и прежнее уведомление администратору.
@@ -103,7 +106,8 @@ Unix-сокет `/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock` с
   письменная отправка с фото и потерянный после записи ответ на оценку учителя. Управление
   fault mode существует только в E2E gateway с local/token guard.
 - `pwa_tests/test_smooth_redeploy.py`, nginx/static-release/runner tests:
-  порядок deploy, сохранение флага на ERR, narrow sudoers, сохранение assets.
+  порядок deploy, pre-maintenance migration rehearsal, двукратный DB performance
+  guard, сохранение флага на ERR, narrow sudoers, сохранение assets.
   Это структурная проверка shell, не реальная неудачная production-миграция.
 - Production root-конфиги в этой работе не устанавливались. Реальный `nginx -t`,
   fault rehearsal миграции и контрольный production redeploy остаются release

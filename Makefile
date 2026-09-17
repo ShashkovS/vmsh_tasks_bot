@@ -67,7 +67,7 @@ pwa-agent-staff:
 pwa-agent-storybook:
 	cd $(PWA_DIR) && CI=true STORYBOOK_PORT=6106 pnpm storybook
 
-.PHONY: pwa-migrate pwa-agent-migrate pwa-e2e-migrate pwa-seed pwa-agent-seed pwa-analytics pwa-agent-analytics pwa-toolchain-check pwa-agent-toolchain-check pwa-toolchain-smoke pwa-agent-toolchain-smoke pwa-media-inventory pwa-agent-media-inventory
+.PHONY: pwa-migrate pwa-agent-migrate pwa-e2e-migrate pwa-performance-guard pwa-agent-performance-guard pwa-seed pwa-agent-seed pwa-analytics pwa-agent-analytics pwa-toolchain-check pwa-agent-toolchain-check pwa-toolchain-smoke pwa-agent-toolchain-smoke pwa-media-inventory pwa-agent-media-inventory
 pwa-migrate:
 	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.migrate_runtime
 
@@ -76,6 +76,12 @@ pwa-agent-migrate:
 
 pwa-e2e-migrate:
 	$(PWA_UV_ENV) $(PWA_E2E_ENV) uv run python -m vmshpwa.scripts.migrate_runtime
+
+pwa-performance-guard:
+	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.database_performance_guard
+
+pwa-agent-performance-guard:
+	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.database_performance_guard
 
 pwa-seed:
 	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.seed_runtime
