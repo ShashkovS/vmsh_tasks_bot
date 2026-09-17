@@ -3093,3 +3093,12 @@ PDF исключён из объёма по указанию пользоват�
 заголовка в общем спойлере Student/Staff. Внутренние разделы сохранены.
 [Контракт](../../docs/worksheet-materials.md).
 Проверено: 4 существующих теста спойлеров, Stylelint и diff-check прошли.
+
+## Блокировка SQLite чтением Staff-статистики — исправлено, 2026-09-17
+
+Production trace за 19:35–20:35 МСК показал до 1596 одновременных запросов и
+ожидание `db.admission_queue` до 882 секунд. Причина — добавленный в 0095 поиск
+актуального `test_attempts.result_id` без индекса: `/staff/api/v1/statistics`
+держал read slot до 48 секунд и блокировал Student/Family. Миграция
+`0096.pwa_test_attempt_result_lookup` добавляет индекс; regression проверяет
+план `effective_results`, round-trip миграции и схему. Выпуск ожидается.

@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 57799ddca4ba64aaac827f43c53d0ce9347907bb27437e5066aaa6f23d0abc95
+-- Product schema SHA-256: ec702cc015de05d08f9b37ad1bb19cc115e634529a829f99cc3b2a58c29bfc34
 
 CREATE TABLE achievement_definitions
 (
@@ -3281,6 +3281,8 @@ CREATE INDEX test_attempts_pending_configuration_idx
 
 CREATE INDEX test_attempts_problem_evaluation_idx
     on test_attempts (problem_id, evaluation_version, server_received_at, id);
+
+CREATE INDEX test_attempts_result_idx on test_attempts (result_id);
 
 CREATE INDEX test_attempts_student_problem_counted_idx
     on test_attempts (student_user_id, problem_id, server_received_at, id)

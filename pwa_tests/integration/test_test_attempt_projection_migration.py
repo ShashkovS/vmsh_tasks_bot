@@ -12,6 +12,7 @@ from pwa_tests.integration.test_phase8_notification_core import (
 
 
 MIGRATION_ID = "0095.pwa_test_attempt_projection"
+LOOKUP_MIGRATION_ID = "0096.pwa_test_attempt_result_lookup"
 
 
 def _attempt_columns(connection: sqlite3.Connection) -> set[str]:
@@ -74,3 +75,42 @@ def test_test_attempt_projection_migration_roundtrip(tmp_path):
     with sqlite3.connect(database_path) as connection:
         assert "evaluation_version" in _attempt_columns(connection)
         assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+
+def test_current_attempt_result_lookup_is_indexed(tmp_path):
+    database_path = tmp_path / "test-attempt-result-lookup.sqlite3"
+    migrations = {migration.id: migration for migration in _migrations()}
+    assert {item.id for item in migrations[LOOKUP_MIGRATION_ID].depends} == {
+        MIGRATION_ID
+    }
+
+    preceding = {
+        item.id for item in migrations.values() if item.id < LOOKUP_MIGRATION_ID
+    }
+    _apply(database_path, preceding)
+    with sqlite3.connect(database_path) as connection:
+        before_plan = [
+            str(row[3])
+            for row in connection.execute(
+                "EXPLAIN QUERY PLAN SELECT count(*) FROM effective_results"
+            )
+        ]
+        assert not any("test_attempts_result_idx" in row for row in before_plan)
+
+    _apply(database_path, {LOOKUP_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        after_plan = [
+            str(row[3])
+            for row in connection.execute(
+                "EXPLAIN QUERY PLAN SELECT count(*) FROM effective_results"
+            )
+        ]
+        assert any("test_attempts_result_idx" in row for row in after_plan)
+        assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+    _rollback(database_path, {LOOKUP_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute(
+            "SELECT 1 FROM sqlite_schema WHERE type='index' "
+            "AND name='test_attempts_result_idx'"
+        ).fetchone() is None

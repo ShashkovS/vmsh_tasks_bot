@@ -75,6 +75,16 @@ skipped denominator counts, not answers. Failures retain the previous published
 model. To stop scheduling: `sudo systemctl disable --now vmsh-analytics.timer`.
 No production units or databases were modified by local verification.
 
+## Current-result lookup performance
+
+Migration `0096.pwa_test_attempt_result_lookup` indexes
+`test_attempts.result_id`. The `effective_results` projection resolves the
+current result of every PWA attempt; without this lookup, a Staff statistics
+read scanned all attempts once per historical result and could hold every
+SQLite read slot for tens of seconds. The migration test asserts that
+`EXPLAIN QUERY PLAN SELECT count(*) FROM effective_results` uses the explicit
+index and that rollback removes it.
+
 ## Verification
 
 - Domain: `pwa_tests/domain/test_lesson_statistics.py` extracts only the pure

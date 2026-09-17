@@ -313,6 +313,10 @@
       {
         "id": "0095.pwa_test_attempt_projection",
         "sha256": "8479fcea2dfef856dd5eb9b9ce65b2f6b2ead0a5c2cafe904ceee0ab9950be14"
+      },
+      {
+        "id": "0096.pwa_test_attempt_result_lookup",
+        "sha256": "bc5e644d2df05dd5e4dabd4913e44e41f36edbc4ee93a9880b63272bb95e394a"
       }
     ],
     "repository_head_status": {
@@ -323,7 +327,7 @@
     }
   },
   "product": {
-    "object_count": 476,
+    "object_count": 477,
     "objects": [
       {
         "columns": [
@@ -26135,6 +26139,30 @@
           {
             "columns": [
               {
+                "cid": 18,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "result_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "test_attempts_result_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
                 "cid": 2,
                 "collation": "BINARY",
                 "descending": false,
@@ -28989,6 +29017,13 @@
         "type": "index"
       },
       {
+        "name": "test_attempts_result_idx",
+        "object_sha256": "2cf73d76c4d5577d13b42e04105b6ed2784cf3e9797a10126d8e7b7de357e4c1",
+        "sql": "CREATE INDEX test_attempts_result_idx on test_attempts (result_id);",
+        "table_name": "test_attempts",
+        "type": "index"
+      },
+      {
         "name": "test_attempts_student_problem_counted_idx",
         "object_sha256": "c3141b356b7f95c01674cb85619d601e5d673750c42b52ff416c5628be47cd97",
         "sql": "CREATE INDEX test_attempts_student_problem_counted_idx\n    on test_attempts (student_user_id, problem_id, server_received_at, id)\n    where counts_as_attempt = 1;",
@@ -30270,8 +30305,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "aa3f3bb5fa078b5585113969a1e815003947e5bb7b8e7de907a4f28bd645c15b",
-    "sha256": "57799ddca4ba64aaac827f43c53d0ce9347907bb27437e5066aaa6f23d0abc95"
+    "pragma_structure_sha256": "150a1d38a54c5e803f3855dfec786ef669d4fa91481b256c1bc450a7eea7d338",
+    "sha256": "ec702cc015de05d08f9b37ad1bb19cc115e634529a829f99cc3b2a58c29bfc34"
   },
   "source_kind": "repository-migration-head"
 }
