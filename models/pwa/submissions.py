@@ -212,6 +212,36 @@ def checker_version(config: TestProblemAnswerConfig) -> str:
     return f"{CHECKER_POLICY_VERSION}:{digest}"
 
 
+def evaluation_version(config: TestProblemAnswerConfig) -> str:
+    """Fingerprint every setting that affects the current attempt projection.
+
+    ``checker_version`` deliberately remains the compatibility fingerprint for
+    the checking algorithm.  A full recheck also has to notice copy-only
+    changes, so its projection version includes all three student-facing
+    messages as well.  See ``08-phase-4-test-submissions.md``.
+    """
+
+    material = {
+        "policy": CHECKER_POLICY_VERSION,
+        "answerType": int(config.answer_type),
+        "answerValidation": config.answer_validation,
+        "validationError": config.validation_error,
+        "correctAnswer": config.correct_answer,
+        "correctAnswerChecker": config.correct_answer_checker,
+        "wrongAnswer": config.wrong_answer,
+        "congratulation": config.congratulation,
+    }
+    digest = hashlib.sha256(
+        json.dumps(
+            material,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return f"{CHECKER_POLICY_VERSION}:projection:{digest}"
+
+
 def _invalid_format(
     config: TestProblemAnswerConfig, display_answer: str
 ) -> TestAnswerEvaluation:
@@ -456,6 +486,7 @@ __all__ = [
     "TestProblemAnswerConfig",
     "assess_submission_clock",
     "checker_version",
+    "evaluation_version",
     "evaluate_test_answer",
     "normalized_answer_payload",
 ]

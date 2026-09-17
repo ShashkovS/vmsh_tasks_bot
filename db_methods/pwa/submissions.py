@@ -28,7 +28,7 @@ from models.pwa.submissions import (
     TestAttemptPolicy,
     TestProblemAnswerConfig,
     assess_submission_clock,
-    checker_version,
+    evaluation_version,
     evaluate_test_answer,
 )
 
@@ -329,7 +329,7 @@ class TestAnswerInputRecord:
 
 @dataclass(frozen=True, slots=True)
 class TestAttemptRecheckPreview:
-    """Current published checker revision and its unresolved attempt count."""
+    """Read-only impact preview for a full current-configuration recheck."""
 
     problem_public_id: str
     condition_revision_public_id: str
@@ -337,11 +337,24 @@ class TestAttemptRecheckPreview:
     course_public_id: str
     group_public_id: str
     pending_attempts: int
+    display_number: str
+    title: str
+    correct_answer: str | None
+    student_count: int
+    updates_required: int
+    verdict_changes: int
+    became_correct: int
+    became_wrong: int
+    format_changes: int
+    invalid_format: int
+    pending_configuration: int
+    checker_failed: int
+    message_changes: int
 
 
 @dataclass(frozen=True, slots=True)
 class TestAttemptRecheckReceipt:
-    """Monotonic result of applying the current checker to pending attempts."""
+    """Result of atomically replacing derived attempt projections."""
 
     problem_public_id: str
     condition_revision_public_id: str
@@ -353,6 +366,18 @@ class TestAttemptRecheckReceipt:
     still_pending: int
     skipped_concurrent: int
     owner_account_public_ids: tuple[str, ...] = field(repr=False)
+    family_account_public_ids: tuple[str, ...] = field(default=(), repr=False)
+    scanned_attempts: int = 0
+    updated_attempts: int = 0
+    unchanged_attempts: int = 0
+    verdict_changes: int = 0
+    became_correct: int = 0
+    became_wrong: int = 0
+    format_changes: int = 0
+    invalid_format: int = 0
+    pending_configuration: int = 0
+    checker_failed: int = 0
+    message_changes: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -383,14 +408,26 @@ class _RecheckContext:
     group_public_id: str
     group_id: str
     lesson_number: int
+    display_number: str
+    title: str
     answer_config: TestProblemAnswerConfig
 
 
 @dataclass(frozen=True, slots=True)
-class _PendingAttempt:
+class _StoredAttempt:
     id: int
     student_user_id: int
     display_answer: str
+    normalized_answer_json: str | None
+    parse_status: str
+    counts_as_attempt: bool
+    check_status: str
+    checker_version: str | None
+    evaluation_version: str | None
+    verdict: int | None
+    result_id: int | None
+    feedback: str | None
+    checker_message: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -529,8 +566,11 @@ SELECT problem.id AS problem_id,
        problem_revision.config_version,
        course.public_id AS course_public_id,
        group_record.public_id AS group_public_id,
+       group_record.short_code AS group_short_code,
        group_lesson.group_id,
        course_lesson.lesson_number,
+       problem_revision.display_number,
+       problem_revision.title,
        problem_revision.answer_type,
        problem_revision.answer_config_json
 FROM problems AS problem
@@ -619,6 +659,10 @@ def _recheck_context_from_row(row: Mapping[str, object]) -> _RecheckContext:
         raise SubmissionConfigurationError(
             "stored recheck configuration must be an object"
         )
+    display_number = str(row["display_number"])
+    display_prefix = f"{row['lesson_number']}{row['group_short_code']}."
+    if not display_number.startswith(display_prefix):
+        display_number = f"{display_prefix}{display_number}"
     return _RecheckContext(
         problem_id=int(row["problem_id"]),
         problem_public_id=str(row["problem_public_id"]),
@@ -629,6 +673,8 @@ def _recheck_context_from_row(row: Mapping[str, object]) -> _RecheckContext:
         group_public_id=str(row["group_public_id"]),
         group_id=str(row["group_id"]),
         lesson_number=int(row["lesson_number"]),
+        display_number=display_number,
+        title=str(row["title"]),
         answer_config=TestProblemAnswerConfig.from_revision(
             answer_type=int(row["answer_type"]),
             answer_config=answer_config_raw,
@@ -652,21 +698,33 @@ def _resolve_recheck_context(
     return _recheck_context_from_row(rows[0])
 
 
-def _recheckable_attempts(
+def _stored_attempts(
     connection: sqlite3.Connection,
     *,
     problem_id: int,
-    current_checker_version: str,
-) -> tuple[_PendingAttempt, ...]:
+) -> tuple[_StoredAttempt, ...]:
     rows = connection.execute(
-        "SELECT id, student_user_id, answer_payload_json "
-        "FROM test_attempts WHERE problem_id = ? AND ("
-        "check_status = 'pending_configuration' "
-        "OR (check_status = 'checked' AND checker_version <> ?)) "
-        "ORDER BY server_received_at, id",
-        (problem_id, current_checker_version),
+        "SELECT attempt.id, attempt.public_id, attempt.student_user_id, "
+        "attempt.answer_payload_json, "
+        "normalized_answer_json, parse_status, counts_as_attempt, "
+        "check_status, checker_version, evaluation_version, verdict, "
+        "result_id, feedback, checker_message, "
+        "(SELECT idempotency.response_json "
+        " FROM idempotency_records AS idempotency "
+        " JOIN auth_accounts AS attempt_account "
+        "   ON attempt_account.id = idempotency.account_id "
+        "  AND attempt_account.audience = 'student' "
+        "  AND attempt_account.linked_user_id = attempt.student_user_id "
+        " WHERE idempotency.operation = ? "
+        "   AND idempotency.idempotency_key = attempt.idempotency_key "
+        "   AND idempotency.payload_sha256 = attempt.payload_sha256 "
+        "   AND idempotency.state = 'completed' "
+        " ORDER BY idempotency.id DESC LIMIT 1) AS response_json "
+        "FROM test_attempts AS attempt WHERE attempt.problem_id = ? "
+        "ORDER BY attempt.server_received_at, attempt.id",
+        (IDEMPOTENCY_OPERATION, problem_id),
     ).fetchall()
-    attempts: list[_PendingAttempt] = []
+    attempts: list[_StoredAttempt] = []
     for row in rows:
         try:
             answer_payload = json.loads(str(row["answer_payload_json"]))
@@ -680,11 +738,48 @@ def _recheckable_attempts(
             raise TestSubmissionRepositoryError(
                 "stored test attempt display answer is invalid"
             )
+        verdict = None if row["verdict"] is None else int(row["verdict"])
+        feedback = None if row["feedback"] is None else str(row["feedback"])
+        checker_message = (
+            None
+            if row["checker_message"] is None
+            else str(row["checker_message"])
+        )
+        if feedback is None and checker_message is None:
+            feedback, checker_message = _stored_attempt_messages(
+                row["response_json"],
+                attempt_public_id=str(row["public_id"]),
+                current_outcome=_history_outcome(
+                    parse_status=str(row["parse_status"]),
+                    check_status=str(row["check_status"]),
+                    verdict=verdict,
+                ),
+            )
         attempts.append(
-            _PendingAttempt(
+            _StoredAttempt(
                 id=int(row["id"]),
                 student_user_id=int(row["student_user_id"]),
                 display_answer=str(answer_payload["displayAnswer"]),
+                normalized_answer_json=(
+                    None
+                    if row["normalized_answer_json"] is None
+                    else str(row["normalized_answer_json"])
+                ),
+                parse_status=str(row["parse_status"]),
+                counts_as_attempt=bool(row["counts_as_attempt"]),
+                check_status=str(row["check_status"]),
+                checker_version=(
+                    None if row["checker_version"] is None else str(row["checker_version"])
+                ),
+                evaluation_version=(
+                    None
+                    if row["evaluation_version"] is None
+                    else str(row["evaluation_version"])
+                ),
+                verdict=verdict,
+                result_id=None if row["result_id"] is None else int(row["result_id"]),
+                feedback=feedback,
+                checker_message=checker_message,
             )
         )
     return tuple(attempts)
@@ -891,6 +986,104 @@ def _history_outcome(
     raise TestSubmissionRepositoryError("stored attempt check status is invalid")
 
 
+@dataclass(frozen=True, slots=True)
+class _RecheckImpact:
+    updates_required: int
+    verdict_changes: int
+    became_correct: int
+    became_wrong: int
+    format_changes: int
+    invalid_format: int
+    pending_configuration: int
+    checker_failed: int
+    message_changes: int
+
+
+def _normalized_json(evaluation: TestAnswerEvaluation) -> str | None:
+    return (
+        None
+        if evaluation.normalized_answer is None
+        else _canonical_json(evaluation.normalized_answer)
+    )
+
+
+def _projection_changed(
+    attempt: _StoredAttempt,
+    evaluation: TestAnswerEvaluation,
+    *,
+    current_evaluation_version: str,
+) -> bool:
+    return (
+        attempt.normalized_answer_json != _normalized_json(evaluation)
+        or attempt.parse_status != evaluation.parse_status.value
+        or attempt.counts_as_attempt != evaluation.counts_as_attempt
+        or attempt.check_status != evaluation.check_status.value
+        or attempt.checker_version != evaluation.checker_version
+        or attempt.evaluation_version != current_evaluation_version
+        or attempt.verdict
+        != (None if evaluation.verdict is None else int(evaluation.verdict))
+        or attempt.feedback != evaluation.feedback
+        or attempt.checker_message != evaluation.checker_message
+    )
+
+
+def _recheck_impact(
+    evaluations: tuple[tuple[_StoredAttempt, TestAnswerEvaluation], ...],
+    *,
+    current_evaluation_version: str,
+) -> _RecheckImpact:
+    updates_required = verdict_changes = became_correct = became_wrong = 0
+    format_changes = invalid_format = pending_configuration = checker_failed = 0
+    message_changes = 0
+    for attempt, evaluation in evaluations:
+        previous_outcome = _history_outcome(
+            parse_status=attempt.parse_status,
+            check_status=attempt.check_status,
+            verdict=attempt.verdict,
+        )
+        next_outcome = evaluation.outcome.value
+        if _projection_changed(
+            attempt,
+            evaluation,
+            current_evaluation_version=current_evaluation_version,
+        ):
+            updates_required += 1
+        if attempt.verdict != (
+            None if evaluation.verdict is None else int(evaluation.verdict)
+        ):
+            verdict_changes += 1
+        if previous_outcome == "wrong" and next_outcome == "correct":
+            became_correct += 1
+        if previous_outcome == "correct" and next_outcome == "wrong":
+            became_wrong += 1
+        if (previous_outcome == "invalid_format") != (
+            next_outcome == "invalid_format"
+        ):
+            format_changes += 1
+        if next_outcome == "invalid_format":
+            invalid_format += 1
+        elif next_outcome == "pending_configuration":
+            pending_configuration += 1
+        elif next_outcome == "checker_failed":
+            checker_failed += 1
+        if (
+            attempt.feedback != evaluation.feedback
+            or attempt.checker_message != evaluation.checker_message
+        ):
+            message_changes += 1
+    return _RecheckImpact(
+        updates_required=updates_required,
+        verdict_changes=verdict_changes,
+        became_correct=became_correct,
+        became_wrong=became_wrong,
+        format_changes=format_changes,
+        invalid_format=invalid_format,
+        pending_configuration=pending_configuration,
+        checker_failed=checker_failed,
+        message_changes=message_changes,
+    )
+
+
 def _stored_attempt_messages(
     response_json: object,
     *,
@@ -939,11 +1132,16 @@ def _history_record(row: Mapping[str, object]) -> TestAttemptHistoryRecord:
         verdict=verdict,
     )
     attempt_public_id = str(row["attempt_public_id"])
-    feedback, checker_message = _stored_attempt_messages(
-        row["response_json"],
-        attempt_public_id=attempt_public_id,
-        current_outcome=outcome,
+    feedback = None if row["feedback"] is None else str(row["feedback"])
+    checker_message = (
+        None if row["checker_message"] is None else str(row["checker_message"])
     )
+    if feedback is None and checker_message is None:
+        feedback, checker_message = _stored_attempt_messages(
+            row["response_json"],
+            attempt_public_id=attempt_public_id,
+            current_outcome=outcome,
+        )
     return TestAttemptHistoryRecord(
         attempt_public_id=attempt_public_id,
         problem_public_id=str(row["problem_public_id"]),
@@ -1036,7 +1234,7 @@ def _list_test_attempt_history(
         "problem_revision.config_version, attempt.answer_payload_json, "
         "attempt.parse_status, attempt.check_status, attempt.client_created_at, "
         "attempt.server_received_at, attempt.clock_suspicious, attempt.verdict, "
-        "attempt.result_id, "
+        "attempt.result_id, attempt.feedback, attempt.checker_message, "
         "(SELECT idempotency.response_json "
         " FROM idempotency_records AS idempotency "
         " JOIN auth_accounts AS attempt_account "
@@ -1230,30 +1428,61 @@ class PwaTestSubmissionRepository:
     async def get_test_attempt_recheck_preview(
         self, *, problem_public_id: str
     ) -> TestAttemptRecheckPreview:
-        """Return the current published checker revision and all saved attempts."""
+        """Compute the exact impact of a full recheck without writing."""
 
         if not _PUBLIC_ID.fullmatch(problem_public_id):
             raise ValueError("problem public ID is invalid")
 
-        def read(connection: sqlite3.Connection) -> TestAttemptRecheckPreview:
+        def read(
+            connection: sqlite3.Connection,
+        ) -> tuple[_RecheckContext, tuple[_StoredAttempt, ...]]:
             context = _resolve_recheck_context(
                 connection, problem_public_id=problem_public_id
             )
-            attempts = connection.execute(
-                "SELECT count(*) AS n FROM test_attempts "
-                "WHERE problem_id = ?",
-                (context.problem_id,),
-            ).fetchone()
-            return TestAttemptRecheckPreview(
-                problem_public_id=context.problem_public_id,
-                condition_revision_public_id=(context.condition_revision_public_id),
-                config_version=context.config_version,
-                course_public_id=context.course_public_id,
-                group_public_id=context.group_public_id,
-                pending_attempts=int(attempts["n"]),
+            return context, _stored_attempts(
+                connection, problem_id=context.problem_id
             )
 
-        return await self._factory.run_read_async(read)
+        context, attempts = await self._factory.run_read_async(read)
+        evaluations = await asyncio.to_thread(
+            lambda: tuple(
+                (
+                    attempt,
+                    evaluate_test_answer(
+                        context.answer_config,
+                        attempt.display_answer,
+                        trusted_executor=self._trusted_checker_executor,
+                    ),
+                )
+                for attempt in attempts
+            )
+        )
+        current_evaluation_version = evaluation_version(context.answer_config)
+        impact = _recheck_impact(
+            evaluations,
+            current_evaluation_version=current_evaluation_version,
+        )
+        return TestAttemptRecheckPreview(
+            problem_public_id=context.problem_public_id,
+            condition_revision_public_id=context.condition_revision_public_id,
+            config_version=context.config_version,
+            course_public_id=context.course_public_id,
+            group_public_id=context.group_public_id,
+            pending_attempts=len(attempts),
+            display_number=context.display_number,
+            title=context.title,
+            correct_answer=context.answer_config.correct_answer,
+            student_count=len({attempt.student_user_id for attempt in attempts}),
+            updates_required=impact.updates_required,
+            verdict_changes=impact.verdict_changes,
+            became_correct=impact.became_correct,
+            became_wrong=impact.became_wrong,
+            format_changes=impact.format_changes,
+            invalid_format=impact.invalid_format,
+            pending_configuration=impact.pending_configuration,
+            checker_failed=impact.checker_failed,
+            message_changes=impact.message_changes,
+        )
 
     async def recheck_pending_test_attempts(
         self,
@@ -1280,14 +1509,12 @@ class PwaTestSubmissionRepository:
 
         def read_recheck(
             connection: sqlite3.Connection,
-        ) -> tuple[_RecheckContext, tuple[_PendingAttempt, ...]]:
+        ) -> tuple[_RecheckContext, tuple[_StoredAttempt, ...]]:
             current = _resolve_recheck_context(
                 connection, problem_public_id=problem_public_id
             )
-            return current, _recheckable_attempts(
-                connection,
-                problem_id=current.problem_id,
-                current_checker_version=checker_version(current.answer_config),
+            return current, _stored_attempts(
+                connection, problem_id=current.problem_id
             )
 
         context, pending_attempts = await self._factory.run_read_async(read_recheck)
@@ -1339,7 +1566,7 @@ class PwaTestSubmissionRepository:
         expected_config_version: int,
         actor_user_id: int,
         checked_at: datetime,
-        evaluations: tuple[tuple[_PendingAttempt, TestAnswerEvaluation], ...],
+        evaluations: tuple[tuple[_StoredAttempt, TestAnswerEvaluation], ...],
     ) -> TestAttemptRecheckReceipt:
         context = _resolve_recheck_context(
             connection,
@@ -1358,75 +1585,137 @@ class PwaTestSubmissionRepository:
             )
 
         checked_timestamp = _timestamp(checked_at)
-        checked = correct = wrong = skipped_concurrent = 0
+        current_evaluation_version = evaluation_version(context.answer_config)
+        checked = correct = wrong = skipped_concurrent = updated = 0
+        verdict_changes = became_correct = became_wrong = format_changes = 0
+        invalid_format = pending_configuration = checker_failed = message_changes = 0
         affected_student_user_ids: set[int] = set()
+        current_by_id = {
+            item.id: item
+            for item in _stored_attempts(
+                connection, problem_id=context.problem_id
+            )
+        }
         for attempt, evaluation in evaluations:
-            if evaluation.outcome not in {
-                TestAnswerOutcome.CORRECT,
-                TestAnswerOutcome.WRONG,
-            }:
+            current = current_by_id.get(attempt.id)
+            if current != attempt:
+                if current is None or _projection_changed(
+                    current,
+                    evaluation,
+                    current_evaluation_version=current_evaluation_version,
+                ):
+                    skipped_concurrent += 1
                 continue
-            current = connection.execute(
-                "SELECT id FROM test_attempts WHERE id = ? AND problem_id = ? AND ("
-                "check_status = 'pending_configuration' "
-                "OR (check_status = 'checked' AND checker_version <> ?))",
-                (
-                    attempt.id,
-                    context.problem_id,
-                    evaluation.checker_version,
-                ),
-            ).fetchone()
-            if current is None:
-                skipped_concurrent += 1
+            if not _projection_changed(
+                attempt,
+                evaluation,
+                current_evaluation_version=current_evaluation_version,
+            ):
                 continue
-            if evaluation.verdict is None or evaluation.checker_version is None:
-                raise TestSubmissionRepositoryError(
-                    "checked re-evaluation has no verdict or checker version"
-                )
-            result_id = int(
-                connection.execute(
-                    "INSERT INTO results "
-                    "(student_id, problem_id, group_id, lesson, teacher_id, ts, "
-                    "verdict, answer, res_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                    "RETURNING id",
-                    (
-                        attempt.student_user_id,
-                        context.problem_id,
-                        context.group_id,
-                        context.lesson_number,
-                        actor_user_id,
-                        checked_timestamp,
-                        int(evaluation.verdict),
-                        attempt.display_answer,
-                        int(RES_TYPE.TEST),
-                    ),
-                ).fetchone()["id"]
+            next_verdict = (
+                None if evaluation.verdict is None else int(evaluation.verdict)
+            )
+            previous_outcome = _history_outcome(
+                parse_status=attempt.parse_status,
+                check_status=attempt.check_status,
+                verdict=attempt.verdict,
+            )
+            next_outcome = evaluation.outcome.value
+            if next_verdict != attempt.verdict:
+                verdict_changes += 1
+            if previous_outcome == "wrong" and next_outcome == "correct":
+                became_correct += 1
+            if previous_outcome == "correct" and next_outcome == "wrong":
+                became_wrong += 1
+            if (previous_outcome == "invalid_format") != (
+                next_outcome == "invalid_format"
+            ):
+                format_changes += 1
+            if (
+                attempt.feedback != evaluation.feedback
+                or attempt.checker_message != evaluation.checker_message
+            ):
+                message_changes += 1
+            result_id = attempt.result_id
+            if next_verdict != attempt.verdict:
+                if next_verdict is None:
+                    result_id = None
+                else:
+                    result_id = int(
+                        connection.execute(
+                            "INSERT INTO results "
+                            "(student_id, problem_id, group_id, lesson, teacher_id, "
+                            "ts, verdict, answer, res_type) VALUES "
+                            "(?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                            (
+                                attempt.student_user_id,
+                                context.problem_id,
+                                context.group_id,
+                                context.lesson_number,
+                                actor_user_id,
+                                checked_timestamp,
+                                next_verdict,
+                                attempt.display_answer,
+                                int(RES_TYPE.TEST),
+                            ),
+                        ).fetchone()["id"]
+                    )
+                    connection.execute(
+                        "INSERT INTO test_attempt_result_events "
+                        "(attempt_id, result_id, created_at) VALUES (?, ?, ?)",
+                        (attempt.id, result_id, checked_timestamp),
+                    )
+            next_checked_at = (
+                None
+                if evaluation.check_status.value
+                in {"pending_configuration", "pending"}
+                else checked_timestamp
             )
             connection.execute(
-                "UPDATE test_attempts SET check_status = 'checked', "
-                "checker_version = ?, verdict = ?, result_id = ?, checked_at = ? "
+                "UPDATE test_attempts SET normalized_answer_json = ?, "
+                "parse_status = ?, counts_as_attempt = ?, check_status = ?, "
+                "checker_version = ?, evaluation_version = ?, verdict = ?, "
+                "result_id = ?, checked_at = ?, feedback = ?, checker_message = ? "
                 "WHERE id = ?",
                 (
+                    _normalized_json(evaluation),
+                    evaluation.parse_status.value,
+                    int(evaluation.counts_as_attempt),
+                    evaluation.check_status.value,
                     evaluation.checker_version,
-                    int(evaluation.verdict),
+                    current_evaluation_version,
+                    next_verdict,
                     result_id,
-                    checked_timestamp,
+                    next_checked_at,
+                    evaluation.feedback,
+                    evaluation.checker_message,
                     attempt.id,
                 ),
             )
-            checked += 1
+            updated += 1
+            affected_student_user_ids.add(attempt.student_user_id)
             if evaluation.outcome is TestAnswerOutcome.CORRECT:
                 correct += 1
-            else:
+                checked += 1
+            elif evaluation.outcome is TestAnswerOutcome.WRONG:
                 wrong += 1
-            affected_student_user_ids.add(attempt.student_user_id)
+                checked += 1
+
+        for _attempt, evaluation in evaluations:
+            if evaluation.outcome is TestAnswerOutcome.INVALID_FORMAT:
+                invalid_format += 1
+            elif evaluation.outcome is TestAnswerOutcome.PENDING_CONFIGURATION:
+                pending_configuration += 1
+            elif evaluation.outcome is TestAnswerOutcome.CHECKER_FAILED:
+                checker_failed += 1
 
         pending = connection.execute(
             "SELECT count(*) AS n FROM test_attempts WHERE problem_id = ? "
-            "AND check_status = 'pending_configuration'",
+            "AND check_status IN ('pending_configuration', 'failed')",
             (context.problem_id,),
         ).fetchone()
         account_public_ids: tuple[str, ...] = ()
+        family_account_public_ids: tuple[str, ...] = ()
         if affected_student_user_ids:
             placeholders = ",".join("?" for _ in affected_student_user_ids)
             rows = connection.execute(
@@ -1435,6 +1724,18 @@ class PwaTestSubmissionRepository:
                 tuple(sorted(affected_student_user_ids)),
             ).fetchall()
             account_public_ids = tuple(str(row["public_id"]) for row in rows)
+            family_rows = connection.execute(
+                "SELECT DISTINCT account.public_id "
+                "FROM family_student_links AS link "
+                "JOIN auth_accounts AS account ON account.id = link.family_account_id "
+                "WHERE link.student_user_id IN (" + placeholders + ") "
+                "AND link.revoked_at IS NULL AND account.audience = 'family' "
+                "AND account.status = 'active' ORDER BY account.public_id",
+                tuple(sorted(affected_student_user_ids)),
+            ).fetchall()
+            family_account_public_ids = tuple(
+                str(row["public_id"]) for row in family_rows
+            )
         return TestAttemptRecheckReceipt(
             problem_public_id=context.problem_public_id,
             condition_revision_public_id=context.condition_revision_public_id,
@@ -1446,6 +1747,18 @@ class PwaTestSubmissionRepository:
             still_pending=int(pending["n"]),
             skipped_concurrent=skipped_concurrent,
             owner_account_public_ids=account_public_ids,
+            family_account_public_ids=family_account_public_ids,
+            scanned_attempts=len(evaluations),
+            updated_attempts=updated,
+            unchanged_attempts=len(evaluations) - updated - skipped_concurrent,
+            verdict_changes=verdict_changes,
+            became_correct=became_correct,
+            became_wrong=became_wrong,
+            format_changes=format_changes,
+            invalid_format=invalid_format,
+            pending_configuration=pending_configuration,
+            checker_failed=checker_failed,
+            message_changes=message_changes,
         )
 
     def _write_submission(
@@ -1563,9 +1876,11 @@ class PwaTestSubmissionRepository:
                 "counts_as_attempt, check_status, client_created_at, "
                 "server_received_at, clock_skew_seconds, clock_suspicious, "
                 "idempotency_key, payload_sha256, checker_version, verdict, "
-                "result_id, created_at, checked_at) VALUES "
-                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                "RETURNING public_id",
+                "result_id, created_at, checked_at, evaluation_version, "
+                "feedback, checker_message) VALUES "
+                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                "?, ?, ?) "
+                "RETURNING id, public_id",
                 (
                     context.student_user_id,
                     context.problem_id,
@@ -1590,9 +1905,18 @@ class PwaTestSubmissionRepository:
                     result_id,
                     created_at,
                     checked_at,
+                    evaluation_version(context.answer_config),
+                    evaluation.feedback,
+                    evaluation.checker_message,
                 ),
             ).fetchone()
             attempt_public_id = str(row["public_id"])
+            if result_id is not None:
+                connection.execute(
+                    "INSERT INTO test_attempt_result_events "
+                    "(attempt_id, result_id, created_at) VALUES (?, ?, ?)",
+                    (int(row["id"]), result_id, created_at),
+                )
             if evaluation.counts_as_attempt:
                 if evaluation.verdict == VERDICT.WRONG_ANSWER:
                     hour_count += 1

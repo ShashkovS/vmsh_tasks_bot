@@ -924,20 +924,27 @@ async def publish_content_invalidation(
 async def publish_test_submission_invalidation(
     app: web.Application,
     *,
-    account_public_id: str,
+    account_public_id: str | None,
     problem_public_id: str,
     reason: str,
+    audience: str = AuthAudience.STUDENT.value,
+    include_live_results: bool = False,
 ) -> None:
     """Publish one owner-scoped refetch hint after an attempt commit."""
 
+    resources = [f"problems/{problem_public_id}/test-attempts"]
+    if include_live_results:
+        resources.append("live-results")
+    payload: dict[str, object] = {
+        "resources": resources,
+        "reason": reason,
+        "audience": audience,
+    }
+    if account_public_id is not None:
+        payload["accountId"] = account_public_id
     await app[PWA_BROKER].publish(
         NATS_PWA_INVALIDATE,
-        {
-            "resources": [f"problems/{problem_public_id}/test-attempts"],
-            "reason": reason,
-            "audience": AuthAudience.STUDENT.value,
-            "accountId": account_public_id,
-        },
+        payload,
     )
 
 
@@ -1903,15 +1910,20 @@ def configure(
                 app[PWA_TEST_SUBMISSION_REPOSITORY] = test_submission_repository
 
             async def invalidate_test_submission(
-                account_public_id: str,
+                account_public_id: str | None,
                 problem_public_id: str,
                 reason: str,
+                *,
+                audience: str = AuthAudience.STUDENT.value,
+                include_live_results: bool = False,
             ) -> None:
                 await publish_test_submission_invalidation(
                     app,
                     account_public_id=account_public_id,
                     problem_public_id=problem_public_id,
                     reason=reason,
+                    audience=audience,
+                    include_live_results=include_live_results,
                 )
 
             app[PWA_TEST_SUBMISSION_INVALIDATOR] = invalidate_test_submission

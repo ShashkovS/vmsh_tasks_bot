@@ -42,6 +42,13 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
 
   const apply = async () => {
     if (!preview.data || recheck.isPending) return
+    if (
+      !window.confirm(
+        `Перепроверить все ${preview.data.pendingAttempts} ответов задачи ${preview.data.problem.displayNumber}? Исходные ответы и время отправки сохранятся.`,
+      )
+    ) {
+      return
+    }
     recheck.reset()
     try {
       await recheck.mutateAsync({
@@ -60,7 +67,11 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
     <PageLayout
       description="Исправление конфигурации не меняет исходные ответы: их текущий вердикт пересчитывается по новой настройке."
       eyebrow="Администрирование тестовой задачи"
-      title={`Задача ${problemId}`}
+      title={
+        preview.data
+          ? `Задача ${preview.data.problem.displayNumber}. ${preview.data.problem.title}`
+          : `Задача ${problemId}`
+      }
       width="wide"
     >
       {preview.isPending ? (
@@ -88,6 +99,17 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
             void preview.refetch()
           }}
           pendingAttempts={preview.data.pendingAttempts}
+          studentCount={preview.data.students}
+          updatesRequired={preview.data.updatesRequired}
+          verdictChanges={preview.data.verdictChanges}
+          becameCorrect={preview.data.becameCorrect}
+          becameWrong={preview.data.becameWrong}
+          formatChanges={preview.data.formatChanges}
+          invalidFormat={preview.data.invalidFormat}
+          pendingConfiguration={preview.data.pendingConfiguration}
+          checkerFailed={preview.data.checkerFailed}
+          messageChanges={preview.data.messageChanges}
+          problem={preview.data.problem}
           problemRevision={preview.data.problemRevision}
           {...(recheck.error ? { error: describeRecheckError(recheck.error) } : {})}
           {...(recheck.data ? { result: recheck.data } : {})}

@@ -3,6 +3,10 @@
 Дополнение 2026-09-09: [диагностика ошибок отправки](../../docs/submission-error-diagnostics.md)
 в Student и общем app-shell; повторяемые HTTP-ошибки больше не называются потерей сети.
 
+Дополнение 2026-09-17: [полная перепроверка сохранённых PWA-ответов](../../docs/test-attempt-recheck.md)
+заменяет текущую производную проекцию попытки по исправленным metadata, не меняя
+исходный ответ, автора и время отправки.
+
 ## Результат
 
 Школьник вводит ответ любого исторического `ANS_TYPE`, заранее видит подсказку формата, но не получает преждевременную ошибку во время набора составного ответа. Ошибка формата появляется после выхода из control или попытки отправки. День недели выбирается кнопками `пн–вс`. Ответ отправляется online или через offline outbox и получает inline verdict либо ясный статус «принято, ожидает настройки проверки». Все введённые ответы сохраняются; повтор запроса не создаёт дубль.
@@ -31,7 +35,9 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - `validation_error` отвечает за понятный формат и контекст задачи; `wrong_ans` — за валидный, но неверный ответ; `congrat` — за верный. Первый текст по возможности называет искомую величину/порядок и даёт пример, чтобы отличить ошибку формата от промаха по задаче.
 - Offline `clientCreatedAt` до `submission_closes_at` считается своевременным даже при поздней доставке. Clock skew больше часа маркируется для диагностики.
 - Same idempotency key + same payload возвращает записанный response. Same key + different payload → `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
-- Checker version/hash сохраняется с attempt. Если checker ещё не настроен, attempt получает `pending_configuration`; admin запускает совместимую `problem_recheck` после настройки.
+- Checker version/hash и полная `evaluation_version` сохраняются с attempt. Полная версия включает validation, правильный ответ/checker и `validation_error`/`wrong_ans`/`congrat`. Если checker ещё не настроен, attempt получает `pending_configuration`; admin запускает full recheck после настройки.
+- Full recheck читает все попытки конкретной задачи и вычисляет их вне write-транзакции. Короткая атомарная запись может заменить только производные поля: нормализованный ответ, расходование попытки, parse/check status, текущий verdict/result и обе пользовательские реплики. Исходный payload, student/problem identity и timestamps неизменяемы.
+- Новый `results` добавляется только при смене вердикта. Исторические rows и idempotency receipts остаются аудитом, а `effective_results` допускает в текущие read-models только `result_id` актуальной attempt-проекции; активная более поздняя ручная оценка сохраняет приоритет.
 - Trusted `cor_ans_checker` исполняется только в выбранном контролируемом path; UI не создаёт новый arbitrary execution surface для teacher. Observable legacy contract закреплён в [`handlers/student_handlers.py`](../../../handlers/student_handlers.py): `is_py_func`, `GLOBALS_FOR_TEST_FUNCTION_CREATION` и `run_py_func_checker`. Это compatibility boundary доверенного admin-кода, не security sandbox.
 - Ответ содержит attempts used/remaining/unlimited, verdict и canonical display answer.
 

@@ -22,6 +22,8 @@ from models.pwa.submissions import (
     TestAttemptParseStatus as AttemptParseStatus,
     TestProblemAnswerConfig as ProblemAnswerConfig,
     assess_submission_clock,
+    checker_version,
+    evaluation_version,
     evaluate_test_answer,
 )
 
@@ -409,6 +411,14 @@ def test_checker_version_changes_with_material_configuration():
     assert first.checker_version is not None
     assert second.checker_version is not None
     assert first.checker_version != second.checker_version
+
+
+def test_evaluation_version_includes_student_facing_messages():
+    base = answer_config(ANS_TYPE.INTEGER, correct="7")
+    copy_changed = replace(base, congratulation="Отлично!")
+
+    assert checker_version(base) == checker_version(copy_changed)
+    assert evaluation_version(base) != evaluation_version(copy_changed)
 
 
 def test_attempt_policy_preserves_legacy_defaults_and_explicit_unlimited_mode():

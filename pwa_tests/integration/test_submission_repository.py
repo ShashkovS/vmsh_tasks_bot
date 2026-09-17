@@ -346,7 +346,7 @@ def build_submission_fixture(tmp_path) -> SubmissionFixture:
             (
                 pending_problem_id,
                 revision_id,
-                int(ANS_TYPE.INTEGER),
+                int(json.loads(pending_answer_config)["answerType"]),
                 pending_answer_config,
                 now,
             ),
@@ -590,7 +590,7 @@ def publish_pending_problem_configuration(
                 (
                     old_publication["source_id"],
                     int(old_publication["revision_number"]) + 1,
-                    "c" * 64,
+                    f"{config_version:x}"[-1] * 64,
                     now,
                 ),
             ).fetchone()["id"]
@@ -600,7 +600,7 @@ def publish_pending_problem_configuration(
             "(revision_id, kind, renderer_version, content_text, sha256, "
             "diagnostics_json, provenance_json, created_at) VALUES "
             "(?, 'web_ast', 'test-v1', '{}', ?, '[]', '{}', ?)",
-            (revision_id, "d" * 64, now),
+            (revision_id, f"{config_version + 8:x}"[-1] * 64, now),
         )
         connection.execute(
             "INSERT INTO content_problem_matches "
@@ -620,7 +620,7 @@ def publish_pending_problem_configuration(
             (
                 problem["id"],
                 revision_id,
-                int(ANS_TYPE.INTEGER),
+                int(json.loads(answer_config_json)["answerType"]),
                 answer_config_json,
                 config_version,
                 now,
@@ -888,7 +888,7 @@ async def test_pending_attempt_recheck_uses_previewed_current_configuration(
     assert {row["teacher_id"] for row in results} == {ADMIN_USER_ID}
     assert {row["answer"] for row in results} == {"179", "180"}
     assert {record.outcome for record in history.attempts} == {"correct", "wrong"}
-    assert all(record.feedback is None for record in history.attempts)
+    assert {record.feedback for record in history.attempts} == {"Да.", "Нет."}
 
     repeated = await fixture.repository.recheck_pending_test_attempts(
         problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
@@ -896,7 +896,10 @@ async def test_pending_attempt_recheck_uses_previewed_current_configuration(
         expected_config_version=preview.config_version,
         actor_user_id=ADMIN_USER_ID,
     )
-    assert repeated.pending_before == repeated.checked == 0
+    assert repeated.pending_before == 2
+    assert repeated.checked == 0
+    assert repeated.updated_attempts == 0
+    assert repeated.unchanged_attempts == 2
     assert (
         fixture.factory.run_read(
             lambda connection: connection.execute(
@@ -905,6 +908,268 @@ async def test_pending_attempt_recheck_uses_previewed_current_configuration(
         )
         == 2
     )
+
+
+async def test_full_recheck_reverses_all_current_verdicts_and_messages(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    initial_config = json.dumps(
+        {
+            "schemaVersion": 1,
+            "answerType": int(ANS_TYPE.INTEGER),
+            "answerValidation": None,
+            "validationError": "Введите целое число.",
+            "correctAnswer": "30",
+            "correctAnswerChecker": None,
+            "wrongAnswer": "Неправильно",
+            "congratulation": "Ура, правильно!",
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    publish_pending_problem_configuration(
+        fixture, answer_config_json=initial_config, config_version=2
+    )
+    for index, answer in enumerate(("29", "29", "30"), start=1):
+        await fixture.repository.submit_test_answer(
+            command(
+                fixture,
+                problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+                answer=answer,
+                key=f"full-recheck-{index}",
+            )
+        )
+    # A genuine legacy/Telegram result has no attempt-result ledger entry and
+    # must not be hidden when PWA attempts of the same task are rechecked.
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, "
+            "answer, res_type) VALUES (?, ?, 'submission-a', 41, NULL, ?, ?, "
+            "'legacy', ?)",
+            (
+                STUDENT_USER_ID,
+                fixture.problem_id + 1,
+                timestamp(NOW - timedelta(days=1)),
+                int(VERDICT.VERDICT_PLUS_DIV_2),
+                int(RES_TYPE.TEST),
+            ),
+        )
+    )
+
+    corrected_config = json.dumps(
+        {
+            "schemaVersion": 1,
+            "answerType": int(ANS_TYPE.INTEGER),
+            "answerValidation": None,
+            "validationError": "Введите целое число.",
+            "correctAnswer": "29",
+            "correctAnswerChecker": None,
+            "wrongAnswer": "Теперь неверно",
+            "congratulation": "Теперь верно!",
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    publish_pending_problem_configuration(
+        fixture, answer_config_json=corrected_config, config_version=3
+    )
+    preview = await fixture.repository.get_test_attempt_recheck_preview(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID
+    )
+
+    assert preview.pending_attempts == 3
+    assert preview.student_count == 1
+    assert preview.updates_required == 3
+    assert preview.became_correct == 2
+    assert preview.became_wrong == 1
+    assert preview.message_changes == 3
+
+    receipt = await fixture.repository.recheck_pending_test_attempts(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+        expected_condition_revision_public_id=preview.condition_revision_public_id,
+        expected_config_version=preview.config_version,
+        actor_user_id=ADMIN_USER_ID,
+    )
+    history = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+    )
+    current_weights = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT verdict.val FROM effective_results AS result "
+            "JOIN verdicts AS verdict ON verdict.id = result.verdict "
+            "WHERE result.student_id = ? AND result.problem_id = ?",
+            (STUDENT_USER_ID, fixture.problem_id + 1),
+        ).fetchall()
+    )
+
+    assert receipt.updated_attempts == 3
+    assert receipt.verdict_changes == 3
+    assert [item.outcome for item in history.attempts] == ["wrong", "correct", "correct"]
+    assert [item.feedback for item in history.attempts] == [
+        "Теперь неверно",
+        "Теперь верно!",
+        "Теперь верно!",
+    ]
+    assert {row["val"] for row in current_weights} == {0.0, 0.5, 1.0}
+
+
+async def test_full_recheck_updates_copy_without_new_result(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    first_config = json.dumps(
+        {
+            "schemaVersion": 1,
+            "answerType": int(ANS_TYPE.INTEGER),
+            "answerValidation": None,
+            "validationError": "Введите целое число.",
+            "correctAnswer": "179",
+            "correctAnswerChecker": None,
+            "wrongAnswer": "Нет.",
+            "congratulation": "Да.",
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    publish_pending_problem_configuration(
+        fixture, answer_config_json=first_config, config_version=2
+    )
+    await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            answer="179",
+            key="copy-only-recheck",
+        )
+    )
+    second_config = json.dumps(
+        {**json.loads(first_config), "congratulation": "Совсем верно!"},
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    publish_pending_problem_configuration(
+        fixture, answer_config_json=second_config, config_version=3
+    )
+    preview = await fixture.repository.get_test_attempt_recheck_preview(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID
+    )
+    before = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(*) AS n FROM results"
+        ).fetchone()["n"]
+    )
+    receipt = await fixture.repository.recheck_pending_test_attempts(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+        expected_condition_revision_public_id=preview.condition_revision_public_id,
+        expected_config_version=preview.config_version,
+        actor_user_id=ADMIN_USER_ID,
+    )
+    history = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+    )
+
+    assert preview.verdict_changes == 0
+    assert preview.message_changes == 1
+    assert receipt.verdict_changes == 0
+    assert receipt.message_changes == 1
+    assert history.attempts[0].feedback == "Совсем верно!"
+    assert fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(*) AS n FROM results"
+        ).fetchone()["n"]
+    ) == before
+
+
+async def test_full_recheck_moves_invalid_format_to_correct_and_back(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+
+    def config(answer_type: ANS_TYPE, correct: str) -> str:
+        return json.dumps(
+            {
+                "schemaVersion": 1,
+                "answerType": int(answer_type),
+                "answerValidation": None,
+                "validationError": "Формат неверен",
+                "correctAnswer": correct,
+                "correctAnswerChecker": None,
+                "wrongAnswer": "Нет",
+                "congratulation": "Да",
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+
+    publish_pending_problem_configuration(
+        fixture,
+        answer_config_json=config(ANS_TYPE.INTEGER, "29"),
+        config_version=2,
+    )
+    submitted = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            answer="abc",
+            key="format-recheck",
+        )
+    )
+    assert submitted.outcome == "invalid_format"
+
+    publish_pending_problem_configuration(
+        fixture,
+        answer_config_json=config(ANS_TYPE.STRING, "abc"),
+        config_version=3,
+    )
+    preview = await fixture.repository.get_test_attempt_recheck_preview(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID
+    )
+    assert preview.format_changes == 1
+    assert preview.became_correct == 0
+    await fixture.repository.recheck_pending_test_attempts(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+        expected_condition_revision_public_id=preview.condition_revision_public_id,
+        expected_config_version=preview.config_version,
+        actor_user_id=ADMIN_USER_ID,
+    )
+
+    publish_pending_problem_configuration(
+        fixture,
+        answer_config_json=config(ANS_TYPE.INTEGER, "29"),
+        config_version=4,
+    )
+    preview_back = await fixture.repository.get_test_attempt_recheck_preview(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID
+    )
+    assert preview_back.format_changes == 1
+    receipt = await fixture.repository.recheck_pending_test_attempts(
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+        expected_condition_revision_public_id=(
+            preview_back.condition_revision_public_id
+        ),
+        expected_config_version=preview_back.config_version,
+        actor_user_id=ADMIN_USER_ID,
+    )
+    attempt, result_count = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT parse_status, verdict, result_id FROM test_attempts "
+                "WHERE public_id = ?",
+                (submitted.attempt_public_id,),
+            ).fetchone(),
+            connection.execute("SELECT count(*) AS n FROM results").fetchone()["n"],
+        )
+    )
+
+    assert receipt.invalid_format == 1
+    assert attempt["parse_status"] == "invalid_format"
+    assert attempt["verdict"] is None
+    assert attempt["result_id"] is None
+    assert result_count == 1
 
 
 async def test_recheck_keeps_attempt_pending_when_checker_is_still_broken(
@@ -1496,7 +1761,8 @@ async def test_history_does_not_expose_stale_receipt_copy_after_recheck(
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE test_attempts SET check_status = 'failed', "
-            "checker_version = 'synthetic-recheck-v1', checked_at = ? "
+            "checker_version = 'synthetic-recheck-v1', checked_at = ?, "
+            "feedback = NULL, evaluation_version = 'synthetic-projection-v1' "
             "WHERE public_id = ?",
             (timestamp(NOW), pending.attempt_public_id),
         )

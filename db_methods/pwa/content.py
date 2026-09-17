@@ -50,6 +50,7 @@ from models.pwa.content_asset_names import (
     figure_lookup_names,
     normalize_content_asset_name,
 )
+from models.pwa.submissions import TestProblemAnswerConfig, evaluation_version
 
 from .connection import PwaConnectionFactory
 
@@ -466,6 +467,7 @@ class CanonicalProblemRecord:
 @dataclass(frozen=True, slots=True)
 class LegacyProblemRecord:
     problem_id: int
+    problem_public_id: str
     problem_number: int
     item: str
     title: str
@@ -509,6 +511,8 @@ class ProblemMetadataRecord:
     source: CanonicalProblemRecord
     problem: LegacyProblemRecord
     reviewed: bool
+    test_attempt_count: int = 0
+    test_attempts_need_recheck: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -870,6 +874,7 @@ def _canonical_problem_records(value: object) -> tuple[CanonicalProblemRecord, .
 def _legacy_problem(row: Mapping[str, object]) -> LegacyProblemRecord:
     return LegacyProblemRecord(
         problem_id=int(row["id"]),
+        problem_public_id=str(row["public_id"]),
         problem_number=int(row["prob"]),
         item=str(row["item"]),
         title=str(row["title"]),
@@ -1056,6 +1061,7 @@ def _reviewed_problem(
 
     return LegacyProblemRecord(
         problem_id=legacy.problem_id,
+        problem_public_id=legacy.problem_public_id,
         problem_number=legacy.problem_number,
         item=legacy.item,
         title=str(row["title"]),
@@ -1115,6 +1121,23 @@ def _problem_metadata_grid_from_connection(
             (review.revision_id,),
         ).fetchall()
     }
+    attempt_projection_counts: dict[int, dict[str | None, int]] = {}
+    for attempt_state in connection.execute(
+        "SELECT attempt.problem_id, attempt.evaluation_version, count(*) AS n "
+        "FROM test_attempts AS attempt "
+        "WHERE EXISTS (SELECT 1 FROM content_problem_matches AS match "
+        "WHERE match.problem_id = attempt.problem_id "
+        "AND match.content_revision_id = ? AND match.decision <> 'omit') "
+        "GROUP BY attempt.problem_id, attempt.evaluation_version",
+        (review.revision_id,),
+    ).fetchall():
+        attempt_projection_counts.setdefault(
+            int(attempt_state["problem_id"]), {}
+        )[
+            None
+            if attempt_state["evaluation_version"] is None
+            else str(attempt_state["evaluation_version"])
+        ] = int(attempt_state["n"])
     rows: list[ProblemMetadataRecord] = []
     seen: set[tuple[int, str]] = set()
     for match in match_rows:
@@ -1132,15 +1155,39 @@ def _problem_metadata_grid_from_connection(
                 "matched legacy problem is outside lesson scope"
             )
         revision_row = revision_rows.get((*identity, problem_id))
+        resolved_problem = (
+            legacy if revision_row is None else _reviewed_problem(legacy, revision_row)
+        )
+        current_evaluation_version: str | None = None
+        if (
+            resolved_problem.problem_type == 1
+            and resolved_problem.answer_type is not None
+        ):
+            current_evaluation_version = evaluation_version(
+                TestProblemAnswerConfig.from_revision(
+                    answer_type=resolved_problem.answer_type,
+                    answer_config={
+                        "answerValidation": resolved_problem.answer_validation,
+                        "validationError": resolved_problem.validation_error,
+                        "correctAnswer": resolved_problem.correct_answer,
+                        "correctAnswerChecker": resolved_problem.correct_answer_checker,
+                        "wrongAnswer": resolved_problem.wrong_answer,
+                        "congratulation": resolved_problem.congratulation,
+                    },
+                )
+            )
+        projection_counts = attempt_projection_counts.get(problem_id, {})
+        attempt_count = sum(projection_counts.values())
         rows.append(
             ProblemMetadataRecord(
                 source=source,
-                problem=(
-                    legacy
-                    if revision_row is None
-                    else _reviewed_problem(legacy, revision_row)
-                ),
+                problem=resolved_problem,
                 reviewed=revision_row is not None,
+                test_attempt_count=attempt_count,
+                test_attempts_need_recheck=any(
+                    version != current_evaluation_version
+                    for version in projection_counts
+                ),
             )
         )
     if seen != set(source_by_identity):
@@ -1735,7 +1782,13 @@ ranked_result AS (
            verdict.val AS verdict_weight,
            row_number() OVER (
                PARTITION BY logical_member.visible_problem_id
-               ORDER BY (manual.result_id IS NOT NULL) DESC, result.ts DESC, result.id DESC
+               ORDER BY (manual.result_id IS NOT NULL) DESC,
+                        CASE WHEN EXISTS (
+                            SELECT 1 FROM test_attempts AS current_attempt
+                            WHERE current_attempt.student_user_id = result.student_id
+                              AND current_attempt.problem_id = result.problem_id
+                        ) THEN verdict.val END DESC,
+                        result.ts DESC, result.id DESC
            ) AS result_rank
     FROM logical_member
     JOIN effective_results AS result

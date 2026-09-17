@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 6fbeba50f207d03deb0b0be172fc604bfc63b6d226ec530b141ce0c4b1f8c266
+-- Product schema SHA-256: 57799ddca4ba64aaac827f43c53d0ce9347907bb27437e5066aaa6f23d0abc95
 
 CREATE TABLE achievement_definitions
 (
@@ -474,6 +474,14 @@ CREATE TABLE content_derivatives
     unique (revision_id, kind, renderer_version),
     check ((content_text is null) <> (asset_id is null)),
     check (invalidated_at is null or invalidated_at >= created_at)
+);
+
+CREATE TABLE content_figure_layouts (
+ revision_id INTEGER PRIMARY KEY REFERENCES content_revisions(id),
+ version INTEGER NOT NULL CHECK(version > 0),
+ entries_json TEXT NOT NULL,
+ updated_by_user_id INTEGER REFERENCES users(id),
+ updated_at TEXT NOT NULL
 );
 
 CREATE TABLE content_figure_scales
@@ -1621,6 +1629,21 @@ CREATE TABLE notification_preferences
     check (length(trim(timezone)) > 0)
 );
 
+CREATE TABLE oral_window_batches (
+ actor_user_id INTEGER NOT NULL REFERENCES users(id),
+ request_key TEXT NOT NULL,
+ fingerprint TEXT NOT NULL,
+ window_ids_json TEXT NOT NULL,
+ created_at TEXT NOT NULL,
+ PRIMARY KEY(actor_user_id, request_key)
+);
+
+CREATE TABLE oral_window_lessons (
+ window_id INTEGER NOT NULL REFERENCES oral_windows(id) ON DELETE CASCADE,
+ group_lesson_id INTEGER NOT NULL REFERENCES group_lessons(id),
+ PRIMARY KEY(window_id, group_lesson_id)
+);
+
 CREATE TABLE oral_windows
 (
     id                 integer primary key,
@@ -1794,6 +1817,15 @@ CREATE TABLE "problems"
     synonyms         text default '' not null, public_id text
     generated always as ('p-' || id) virtual,
     unique (group_id, lesson, prob, item)
+);
+
+CREATE TABLE publication_figure_layouts (
+ publication_id INTEGER PRIMARY KEY REFERENCES lesson_publications(id),
+ layout_version INTEGER NOT NULL,
+ document_json TEXT,
+ telegram_html TEXT,
+ telegram_sha256 TEXT,
+ entries_json TEXT NOT NULL
 );
 
 CREATE TABLE push_subscriptions
@@ -2492,6 +2524,13 @@ CREATE TABLE telegram_bindings
     )
 );
 
+CREATE TABLE test_attempt_result_events (
+    attempt_id integer not null references test_attempts(id),
+    result_id integer not null unique references results(id),
+    created_at text not null,
+    primary key (attempt_id, result_id)
+);
+
 CREATE TABLE test_attempts
 (
     id                     integer primary key,
@@ -2536,7 +2575,8 @@ CREATE TABLE test_attempts
     verdict                integer,
     result_id              integer,
     created_at             text    not null,
-    checked_at             text,
+    checked_at             text, evaluation_version text
+    check (evaluation_version is null or length(trim(evaluation_version)) > 0), feedback text, checker_message text,
     unique (student_user_id, idempotency_key),
     foreign key (problem_revision_id, problem_id)
         references problem_revisions (id, problem_id),
@@ -3048,6 +3088,8 @@ CREATE INDEX notification_deliveries_due_idx
 CREATE INDEX notification_events_account_unread_idx
     on notification_events (account_id, read_at, occurred_at desc, id desc);
 
+CREATE INDEX oral_window_lessons_lesson_idx ON oral_window_lessons(group_lesson_id, window_id);
+
 CREATE INDEX oral_windows_group_time_idx
     on oral_windows (group_lesson_id, opens_at, sequence_number);
 
@@ -3237,6 +3279,9 @@ CREATE INDEX test_attempts_pending_configuration_idx
     on test_attempts (problem_id, server_received_at, id)
     where check_status = 'pending_configuration';
 
+CREATE INDEX test_attempts_problem_evaluation_idx
+    on test_attempts (problem_id, evaluation_version, server_received_at, id);
+
 CREATE INDEX test_attempts_student_problem_counted_idx
     on test_attempts (student_user_id, problem_id, server_received_at, id)
     where counts_as_attempt = 1;
@@ -3274,12 +3319,19 @@ CREATE UNIQUE INDEX zoom_conversation_pwa_idempotency_uq
 CREATE INDEX zoom_queue_by_ts
     on zoom_queue (enter_ts);
 
-CREATE VIEW effective_results AS
-    SELECT r.* FROM results r
-    LEFT JOIN live_mark_cells c ON c.student_id=r.student_id AND c.problem_id=r.problem_id
-    WHERE (c.result_id IS NOT NULL AND r.id=c.result_id)
-       OR (c.result_id IS NULL AND NOT EXISTS (
-           SELECT 1 FROM live_mark_results m WHERE m.result_id=r.id));
+CREATE VIEW effective_results as
+    select r.* from results r
+    left join live_mark_cells c
+      on c.student_id=r.student_id and c.problem_id=r.problem_id
+    where ((c.result_id is not null and r.id=c.result_id)
+       or (c.result_id is null and not exists (
+           select 1 from live_mark_results m where m.result_id=r.id)))
+      and (r.res_type<>1 or not exists (
+           select 1 from test_attempt_result_events e
+           where e.result_id=r.id)
+       or exists (
+           select 1 from test_attempts a
+           where a.result_id=r.id));
 
 CREATE VIEW reaction_enum_view AS
 SELECT *
@@ -4174,6 +4226,10 @@ begin
     select raise(abort, 'reviewed submission media asset is immutable');
 end;
 
+CREATE TRIGGER oral_window_primary_lesson AFTER INSERT ON oral_windows BEGIN
+ INSERT INTO oral_window_lessons VALUES (NEW.id, NEW.group_lesson_id);
+END;
+
 CREATE TRIGGER organizer_entry_immutable BEFORE UPDATE ON organizer_question_entries
 BEGIN SELECT RAISE(ABORT,'organizer entry is immutable'); END;
 
@@ -4255,6 +4311,16 @@ when not exists (
 begin
     select raise(abort, 'synonym member is outside its course/group lesson');
 end;
+
+CREATE TRIGGER publication_figure_layouts_immutable_delete
+BEFORE DELETE ON publication_figure_layouts BEGIN
+ SELECT RAISE(ABORT, 'published figure layout is immutable');
+END;
+
+CREATE TRIGGER publication_figure_layouts_immutable_update
+BEFORE UPDATE ON publication_figure_layouts BEGIN
+ SELECT RAISE(ABORT, 'published figure layout is immutable');
+END;
 
 CREATE TRIGGER solution_reveals_delete_forbidden
 before delete on solution_reveals
@@ -5231,6 +5297,18 @@ begin
     select raise(abort, 'support thread update requires next version and monotonic time');
 end;
 
+CREATE TRIGGER test_attempt_result_events_delete_forbidden
+before delete on test_attempt_result_events
+begin
+    select raise(abort, 'test attempt result event cannot be deleted');
+end;
+
+CREATE TRIGGER test_attempt_result_events_update_forbidden
+before update on test_attempt_result_events
+begin
+    select raise(abort, 'test attempt result event is immutable');
+end;
+
 CREATE TRIGGER test_attempts_check_transition_guard
 before update on test_attempts
 for each row
@@ -5242,6 +5320,8 @@ when not (
     and new.check_status in ('checked', 'failed')
 ) and not (
     old.check_status = 'checked' and new.check_status = 'checked'
+) and not (
+    new.evaluation_version is not old.evaluation_version
 )
 begin
     select raise(abort, 'invalid test attempt check transition');
@@ -5262,9 +5342,6 @@ when new.public_id is not old.public_id
     or new.problem_id is not old.problem_id
     or new.problem_revision_id is not old.problem_revision_id
     or new.answer_payload_json is not old.answer_payload_json
-    or new.normalized_answer_json is not old.normalized_answer_json
-    or new.parse_status is not old.parse_status
-    or new.counts_as_attempt is not old.counts_as_attempt
     or new.client_created_at is not old.client_created_at
     or new.server_received_at is not old.server_received_at
     or new.clock_skew_seconds is not old.clock_skew_seconds

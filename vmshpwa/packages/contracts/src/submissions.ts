@@ -258,6 +258,23 @@ export const testAttemptRecheckPreviewResponseSchema = z
     problemId: publicIdSchema,
     problemRevision: testProblemRevisionSchema,
     pendingAttempts: z.number().int().nonnegative(),
+    problem: z
+      .object({
+        displayNumber: z.string().trim().min(1).max(80),
+        title: z.string().max(500),
+        correctAnswer: z.string().max(4_000).nullable(),
+      })
+      .strip(),
+    students: z.number().int().nonnegative(),
+    updatesRequired: z.number().int().nonnegative(),
+    verdictChanges: z.number().int().nonnegative(),
+    becameCorrect: z.number().int().nonnegative(),
+    becameWrong: z.number().int().nonnegative(),
+    formatChanges: z.number().int().nonnegative(),
+    invalidFormat: z.number().int().nonnegative(),
+    pendingConfiguration: z.number().int().nonnegative(),
+    checkerFailed: z.number().int().nonnegative(),
+    messageChanges: z.number().int().nonnegative(),
     requestId: z.string().trim().min(1).max(200),
   })
   .strip()
@@ -276,6 +293,17 @@ export const testAttemptRecheckResponseSchema = z
     wrong: z.number().int().nonnegative(),
     stillPending: z.number().int().nonnegative(),
     skippedConcurrent: z.number().int().nonnegative(),
+    scannedAttempts: z.number().int().nonnegative(),
+    updatedAttempts: z.number().int().nonnegative(),
+    unchangedAttempts: z.number().int().nonnegative(),
+    verdictChanges: z.number().int().nonnegative(),
+    becameCorrect: z.number().int().nonnegative(),
+    becameWrong: z.number().int().nonnegative(),
+    formatChanges: z.number().int().nonnegative(),
+    invalidFormat: z.number().int().nonnegative(),
+    pendingConfiguration: z.number().int().nonnegative(),
+    checkerFailed: z.number().int().nonnegative(),
+    messageChanges: z.number().int().nonnegative(),
     threadInvalidationKey: z.string().min(1).max(256),
     requestId: z.string().trim().min(1).max(200),
   })
@@ -293,6 +321,16 @@ export const testAttemptRecheckResponseSchema = z
         code: 'custom',
         message: 'Recheck cannot resolve more previewed attempts than it read',
         path: ['pendingBefore'],
+      })
+    }
+    if (
+      receipt.updatedAttempts + receipt.unchangedAttempts + receipt.skippedConcurrent !==
+      receipt.scannedAttempts
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Scanned count must be partitioned into updated, unchanged and skipped attempts',
+        path: ['scannedAttempts'],
       })
     }
     if (receipt.threadInvalidationKey !== `problems/${receipt.problemId}/test-attempts`) {

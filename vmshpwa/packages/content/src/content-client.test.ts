@@ -101,6 +101,7 @@ const metadataGrid = {
       reviewed: false,
     },
   ],
+  testRechecks: [],
   requestId: 'metadata-grid-test',
 } as const
 

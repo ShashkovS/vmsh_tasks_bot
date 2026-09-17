@@ -2626,7 +2626,18 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
         headers=_headers(),
     )
     assert grid_response.status == 200, await grid_response.text()
-    corrected_row = (await grid_response.json())["rows"][0]
+    grid_payload = await grid_response.json()
+    assert grid_payload["testRechecks"] == [
+        {
+            "problemId": grid_payload["rows"][0]["problemId"],
+            "problemPublicId": problem_public_id,
+            "displayNumber": grid_payload["rows"][0]["displayNumber"],
+            "title": grid_payload["rows"][0]["title"],
+            "attemptCount": 1,
+            "needsRecheck": False,
+        }
+    ]
+    corrected_row = grid_payload["rows"][0]
     corrected_row.update(
         {
             "correctAnswer": "180",
@@ -2641,7 +2652,9 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
         headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
     )
     assert corrected.status == 200, await corrected.text()
-    assert (await corrected.json())["version"] == 4
+    corrected_payload = await corrected.json()
+    assert corrected_payload["version"] == 4
+    assert corrected_payload["testRechecks"][0]["needsRecheck"] is True
 
     preview_response = await fixture.client.get(
         route,
@@ -2655,6 +2668,12 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
         "configVersion": 2,
     }
     assert preview["pendingAttempts"] == 1
+    assert preview["students"] == 1
+    assert preview["updatesRequired"] == 1
+    assert preview["verdictChanges"] == 1
+    assert preview["becameWrong"] == 1
+    assert preview["messageChanges"] == 1
+    assert preview["problem"]["correctAnswer"] == "180"
 
     missing_origin = await fixture.client.post(
         route,
@@ -2700,12 +2719,25 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
         "wrong": 1,
         "stillPending": 0,
         "skippedConcurrent": 0,
+        "scannedAttempts": 1,
+        "updatedAttempts": 1,
+        "unchangedAttempts": 0,
+        "verdictChanges": 1,
+        "becameCorrect": 0,
+        "becameWrong": 1,
+        "formatChanges": 0,
+        "invalidFormat": 0,
+        "pendingConfiguration": 0,
+        "checkerFailed": 0,
+        "messageChanges": 1,
         "threadInvalidationKey": f"problems/{problem_public_id}/test-attempts",
         "requestId": "content.http.test",
     }
     assert fixture.client.app[pwa_app.PWA_STATE]["cursors"] == {
         **cursors_before,
         "student": cursors_before["student"] + 1,
+        "family": cursors_before["family"] + 1,
+        "staff": cursors_before["staff"] + 1,
     }
 
     history_response = await fixture.client.get(
@@ -2720,7 +2752,7 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
         "conditionRevisionId": original_revision_id,
         "configVersion": 2,
     }
-    assert history["attempts"][0]["feedback"] is None
+    assert history["attempts"][0]["feedback"] == "Нет, это другое число."
     stored = fixture.factory.run_read(
         lambda connection: (
             connection.execute("SELECT count(*) AS n FROM results").fetchone()["n"],
@@ -2730,6 +2762,15 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
         )
     )
     assert stored == (2, ADMIN_USER_ID)
+
+    refreshed_grid = await fixture.client.get(
+        grid_url,
+        params={"revisionId": original_revision_id},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert refreshed_grid.status == 200
+    assert (await refreshed_grid.json())["testRechecks"][0]["needsRecheck"] is False
 
     repeated = await fixture.client.post(
         route,
@@ -2742,7 +2783,9 @@ async def test_staff_rechecks_all_attempts_after_published_metadata_correction(
     )
     assert repeated.status == 200
     repeated_payload = await repeated.json()
-    assert repeated_payload["pendingBefore"] == repeated_payload["checked"] == 0
+    assert repeated_payload["pendingBefore"] == 1
+    assert repeated_payload["checked"] == 0
+    assert repeated_payload["updatedAttempts"] == 0
 
 
 async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(

@@ -36,6 +36,17 @@ function PendingHarness() {
               wrong: 1,
               stillPending: 0,
               skippedConcurrent: 0,
+              scannedAttempts: 4,
+              updatedAttempts: 4,
+              unchangedAttempts: 0,
+              verdictChanges: 4,
+              becameCorrect: 3,
+              becameWrong: 1,
+              formatChanges: 0,
+              invalidFormat: 0,
+              pendingConfiguration: 0,
+              checkerFailed: 0,
+              messageChanges: 4,
             },
           }
         : {})}
@@ -48,9 +59,9 @@ export const RecheckPending: Story = {
   render: () => <PendingHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Перепроверить 4 ответа' }))
-    await expect(canvas.getByText('Проверено 4 из 4')).toBeInTheDocument()
-    await expect(canvas.getByText('Нет ответов, ожидающих настройки')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Перепроверить все 4 ответа' }))
+    await expect(canvas.getByText('Проверено 4, обновлено 4')).toBeInTheDocument()
+    await expect(canvas.getByText('Нет сохранённых ответов')).toBeInTheDocument()
   },
 }
 
@@ -66,6 +77,17 @@ export const RecheckStillPending: Story = {
       wrong: 0,
       stillPending: 2,
       skippedConcurrent: 0,
+      scannedAttempts: 3,
+      updatedAttempts: 1,
+      unchangedAttempts: 2,
+      verdictChanges: 1,
+      becameCorrect: 1,
+      becameWrong: 0,
+      formatChanges: 0,
+      invalidFormat: 0,
+      pendingConfiguration: 2,
+      checkerFailed: 0,
+      messageChanges: 1,
     },
     onApply: () => undefined,
   },

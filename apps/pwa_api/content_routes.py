@@ -1032,6 +1032,18 @@ def _metadata_grid_payload(
             }
             for row in grid.rows
         ],
+        "testRechecks": [
+            {
+                "problemId": row.problem.problem_id,
+                "problemPublicId": row.problem.problem_public_id,
+                "displayNumber": row.source.display_number,
+                "title": row.problem.title,
+                "attemptCount": row.test_attempt_count,
+                "needsRecheck": row.test_attempts_need_recheck,
+            }
+            for row in grid.rows
+            if row.problem.problem_type == 1 and row.test_attempt_count > 0
+        ],
         "requestId": request_id,
     }
 

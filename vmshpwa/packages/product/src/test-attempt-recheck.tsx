@@ -20,10 +20,32 @@ export interface TestAttemptRecheckResultView {
   wrong: number
   stillPending: number
   skippedConcurrent: number
+  scannedAttempts: number
+  updatedAttempts: number
+  unchangedAttempts: number
+  verdictChanges: number
+  becameCorrect: number
+  becameWrong: number
+  formatChanges: number
+  invalidFormat: number
+  pendingConfiguration: number
+  checkerFailed: number
+  messageChanges: number
 }
 
 export interface TestAttemptRecheckPanelProps {
   pendingAttempts?: number
+  studentCount?: number
+  updatesRequired?: number
+  verdictChanges?: number
+  becameCorrect?: number
+  becameWrong?: number
+  formatChanges?: number
+  invalidFormat?: number
+  pendingConfiguration?: number
+  checkerFailed?: number
+  messageChanges?: number
+  problem?: { displayNumber: string; title: string; correctAnswer: string | null }
   problemRevision?: {
     conditionRevisionId: string
     configVersion: number
@@ -44,6 +66,17 @@ export interface TestAttemptRecheckPanelProps {
  */
 export function TestAttemptRecheckPanel({
   pendingAttempts = 0,
+  studentCount = 0,
+  updatesRequired = 0,
+  verdictChanges = 0,
+  becameCorrect = 0,
+  becameWrong = 0,
+  formatChanges = 0,
+  invalidFormat = 0,
+  pendingConfiguration = 0,
+  checkerFailed = 0,
+  messageChanges = 0,
+  problem,
   problemRevision,
   result,
   loading = false,
@@ -84,6 +117,32 @@ export function TestAttemptRecheckPanel({
           </Badge>
         </div>
 
+        {problem ? (
+          <div className="rounded-md border border-border bg-surface-sunken p-3 text-small">
+            <p className="font-semibold">
+              Задача {problem.displayNumber}. {problem.title ? `«${problem.title}»` : ''}
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              Текущий правильный ответ: {problem.correctAnswer ?? 'не настроен'}
+            </p>
+          </div>
+        ) : null}
+
+        {pendingAttempts > 0 ? (
+          <dl className="grid gap-2 text-small sm:grid-cols-2 lg:grid-cols-3">
+            <Impact label="Школьников" value={studentCount} />
+            <Impact label="Будет обновлено" value={updatesRequired} />
+            <Impact label="Вердиктов изменится" value={verdictChanges} />
+            <Impact label="− → +" value={becameCorrect} />
+            <Impact label="+ → −" value={becameWrong} />
+            <Impact label="Переходов формата" value={formatChanges} />
+            <Impact label="Ошибок формата после проверки" value={invalidFormat} />
+            <Impact label="Ожидают настройки" value={pendingConfiguration} />
+            <Impact label="Ошибок checker-а" value={checkerFailed} />
+            <Impact label="Реплик изменится" value={messageChanges} />
+          </dl>
+        ) : null}
+
         {problemRevision ? (
           <p className="font-num text-caption text-muted-foreground">
             Текущая опубликованная версия: v{problemRevision.configVersion} ·{' '}
@@ -110,7 +169,9 @@ export function TestAttemptRecheckPanel({
                 aria-hidden="true"
                 className={applying ? 'animate-spin motion-reduce:animate-none' : undefined}
               />
-              {applying ? 'Перепроверяем…' : `Перепроверить ${formatAttemptCount(pendingAttempts)}`}
+              {applying
+                ? 'Перепроверяем…'
+                : `Перепроверить все ${formatAttemptCount(pendingAttempts)}`}
             </Button>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-small text-status-success">
@@ -136,17 +197,33 @@ function RecheckResult({ result }: { result: TestAttemptRecheckResultView }) {
       <Alert tone={hasUnresolved ? 'warning' : 'success'}>
         <AlertContent>
           <AlertTitle>
-            Перепроверено {result.checked} из {result.pendingBefore}
+            Проверено {result.scannedAttempts}, обновлено {result.updatedAttempts}
           </AlertTitle>
           <AlertDescription>
-            Верных: {result.correct} · неверных: {result.wrong}
-            {result.stillPending > 0 ? ` · требуется настройка: ${result.stillPending}` : ''}
+            Без изменений: {result.unchangedAttempts} · верных: {result.correct} · неверных:{' '}
+            {result.wrong} · вердиктов изменено: {result.verdictChanges} · реплик изменено:{' '}
+            {result.messageChanges} · − → +: {result.becameCorrect} · + → −: {result.becameWrong}
+            {result.formatChanges > 0 ? ` · переходов формата: ${result.formatChanges}` : ''}
+            {result.invalidFormat > 0 ? ` · ошибок формата: ${result.invalidFormat}` : ''}
+            {result.pendingConfiguration > 0
+              ? ` · ожидают настройки: ${result.pendingConfiguration}`
+              : ''}
+            {result.checkerFailed > 0 ? ` · ошибок checker-а: ${result.checkerFailed}` : ''}
             {result.skippedConcurrent > 0
               ? ` · уже обработаны параллельно: ${result.skippedConcurrent}`
               : ''}
           </AlertDescription>
         </AlertContent>
       </Alert>
+    </div>
+  )
+}
+
+function Impact({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 rounded-md border border-border px-3 py-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-num font-semibold">{value}</dd>
     </div>
   )
 }

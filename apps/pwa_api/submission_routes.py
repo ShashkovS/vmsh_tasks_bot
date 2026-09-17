@@ -60,7 +60,7 @@ _RECHECK_REQUEST_FIELDS = frozenset({"schemaVersion", "problemRevision"})
 PWA_TEST_SUBMISSION_REPOSITORY = web.AppKey(
     "pwa_test_submission_repository", PwaTestSubmissionRepository
 )
-TestSubmissionInvalidator = Callable[[str, str, str], Awaitable[None]]
+TestSubmissionInvalidator = Callable[..., Awaitable[None]]
 PWA_TEST_SUBMISSION_INVALIDATOR = web.AppKey(
     "pwa_test_submission_invalidator", TestSubmissionInvalidator
 )
@@ -363,6 +363,21 @@ def _recheck_preview_payload(
             "configVersion": preview.config_version,
         },
         "pendingAttempts": preview.pending_attempts,
+        "problem": {
+            "displayNumber": preview.display_number,
+            "title": preview.title,
+            "correctAnswer": preview.correct_answer,
+        },
+        "students": preview.student_count,
+        "updatesRequired": preview.updates_required,
+        "verdictChanges": preview.verdict_changes,
+        "becameCorrect": preview.became_correct,
+        "becameWrong": preview.became_wrong,
+        "formatChanges": preview.format_changes,
+        "invalidFormat": preview.invalid_format,
+        "pendingConfiguration": preview.pending_configuration,
+        "checkerFailed": preview.checker_failed,
+        "messageChanges": preview.message_changes,
         "requestId": request_id,
     }
 
@@ -383,6 +398,17 @@ def _recheck_receipt_payload(
         "wrong": receipt.wrong,
         "stillPending": receipt.still_pending,
         "skippedConcurrent": receipt.skipped_concurrent,
+        "scannedAttempts": receipt.scanned_attempts,
+        "updatedAttempts": receipt.updated_attempts,
+        "unchangedAttempts": receipt.unchanged_attempts,
+        "verdictChanges": receipt.verdict_changes,
+        "becameCorrect": receipt.became_correct,
+        "becameWrong": receipt.became_wrong,
+        "formatChanges": receipt.format_changes,
+        "invalidFormat": receipt.invalid_format,
+        "pendingConfiguration": receipt.pending_configuration,
+        "checkerFailed": receipt.checker_failed,
+        "messageChanges": receipt.message_changes,
         "threadInvalidationKey": (
             f"problems/{receipt.problem_public_id}/test-attempts"
         ),
@@ -421,9 +447,11 @@ def _translate_submission_errors(handler):
 async def _invalidate_after_commit(
     request: web.Request,
     *,
-    account_public_id: str,
+    account_public_id: str | None,
     problem_public_id: str,
     reason: str = "test-attempt-created",
+    audience: str = "student",
+    include_live_results: bool = False,
 ) -> None:
     invalidator = request.app.get(PWA_TEST_SUBMISSION_INVALIDATOR)
     if invalidator is None:
@@ -433,6 +461,8 @@ async def _invalidate_after_commit(
             account_public_id,
             problem_public_id,
             reason,
+            audience=audience,
+            include_live_results=include_live_results,
         )
     except Exception:
         # SQLite is authoritative; reconnect performs a full refetch. A NATS
@@ -450,17 +480,34 @@ async def _invalidate_rechecked_owners(
 ) -> None:
     semaphore = asyncio.Semaphore(16)
 
-    async def invalidate(account_public_id: str) -> None:
+    async def invalidate(account_public_id: str, audience: str) -> None:
         async with semaphore:
             await _invalidate_after_commit(
                 request,
                 account_public_id=account_public_id,
                 problem_public_id=receipt.problem_public_id,
                 reason="test-attempt-rechecked",
+                audience=audience,
+                include_live_results=True,
             )
 
     await asyncio.gather(
-        *(invalidate(account_id) for account_id in receipt.owner_account_public_ids)
+        *(
+            invalidate(account_id, "student")
+            for account_id in receipt.owner_account_public_ids
+        ),
+        *(
+            invalidate(account_id, "family")
+            for account_id in receipt.family_account_public_ids
+        ),
+        _invalidate_after_commit(
+            request,
+            account_public_id=None,
+            problem_public_id=receipt.problem_public_id,
+            reason="test-attempt-rechecked",
+            audience="staff",
+            include_live_results=True,
+        ),
     )
 
 

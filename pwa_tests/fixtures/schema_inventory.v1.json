@@ -301,6 +301,18 @@
       {
         "id": "0092.pwa_statistics_recalculation",
         "sha256": "aad44b34b87bb122039da5353e8ae2128626aa1790c73acd04966562fdc96f00"
+      },
+      {
+        "id": "0093.pwa_figure_layout",
+        "sha256": "ec1e5b3bb07a8800abe8cd57a1070dfdd4d6bd9f05acd03ec3aafb56cb7c1194"
+      },
+      {
+        "id": "0094.pwa_shared_oral_windows",
+        "sha256": "cdfb97ae3a7d1bfe298135ef83dad02e9581b5c87e5f972e5f238f25e9630580"
+      },
+      {
+        "id": "0095.pwa_test_attempt_projection",
+        "sha256": "8479fcea2dfef856dd5eb9b9ce65b2f6b2ead0a5c2cafe904ceee0ab9950be14"
       }
     ],
     "repository_head_status": {
@@ -311,7 +323,7 @@
     }
   },
   "product": {
-    "object_count": 464,
+    "object_count": 476,
     "objects": [
       {
         "columns": [
@@ -4700,6 +4712,87 @@
         "object_sha256": "ce2b6362af436a2279b478a7b03fcc5484d6c772c9bb8c5d67d74931cb28cec0",
         "sql": "CREATE TABLE content_derivatives\n(\n    id                 integer primary key,\n    revision_id        integer not null references content_revisions (id),\n    kind               text    not null\n        check (kind in ('web_ast', 'web_html', 'telegram_html', 'pdf', 'thumbnail')),\n    renderer_version   text    not null check (length(trim(renderer_version)) > 0),\n    content_text       text,\n    asset_id           integer references media_assets (id),\n    sha256             text    not null\n        check (length(sha256) = 64 and sha256 not glob '*[^0-9a-f]*'),\n    diagnostics_json   text    not null default '[]'\n        check (json_valid(diagnostics_json) = 1 and json_type(diagnostics_json) = 'array'),\n    provenance_json    text    not null\n        check (json_valid(provenance_json) = 1 and json_type(provenance_json) = 'object'),\n    created_at         text    not null,\n    invalidated_at     text,\n    unique (revision_id, kind, renderer_version),\n    check ((content_text is null) <> (asset_id is null)),\n    check (invalidated_at is null or invalidated_at >= created_at)\n);",
         "table_name": "content_derivatives",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revision_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entries_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "content_revisions"
+          },
+          {
+            "from_columns": [
+              "updated_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "content_figure_layouts",
+        "object_sha256": "93ca79cd9d93c50da702b0a42cee6e1e1fe11af6390c8b3ac86331fc0c1b67b3",
+        "sql": "CREATE TABLE content_figure_layouts (\n revision_id INTEGER PRIMARY KEY REFERENCES content_revisions(id),\n version INTEGER NOT NULL CHECK(version > 0),\n entries_json TEXT NOT NULL,\n updated_by_user_id INTEGER REFERENCES users(id),\n updated_at TEXT NOT NULL\n);",
+        "table_name": "content_figure_layouts",
         "type": "table"
       },
       {
@@ -15763,6 +15856,227 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_key",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "fingerprint",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "window_ids_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "actor_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "request_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_oral_window_batches_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "oral_window_batches",
+        "object_sha256": "294e15112892d1c66046c27703b7602ee46022f03a441d8179eec35183101163",
+        "sql": "CREATE TABLE oral_window_batches (\n actor_user_id INTEGER NOT NULL REFERENCES users(id),\n request_key TEXT NOT NULL,\n fingerprint TEXT NOT NULL,\n window_ids_json TEXT NOT NULL,\n created_at TEXT NOT NULL,\n PRIMARY KEY(actor_user_id, request_key)\n);",
+        "table_name": "oral_window_batches",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "window_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_lesson_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_lesson_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "group_lessons"
+          },
+          {
+            "from_columns": [
+              "window_id"
+            ],
+            "match": "NONE",
+            "on_delete": "CASCADE",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "oral_windows"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_lesson_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "window_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "oral_window_lessons_lesson_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "window_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_lesson_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_oral_window_lessons_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "oral_window_lessons",
+        "object_sha256": "993f24bf02bbfe27553ffd4e53bb3d2a83bedfa61a0e6b37c2f876a55ee16ad0",
+        "sql": "CREATE TABLE oral_window_lessons (\n window_id INTEGER NOT NULL REFERENCES oral_windows(id) ON DELETE CASCADE,\n group_lesson_id INTEGER NOT NULL REFERENCES group_lessons(id),\n PRIMARY KEY(window_id, group_lesson_id)\n);",
+        "table_name": "oral_window_lessons",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "id",
             "not_null": false,
             "primary_key_ordinal": 1
@@ -17932,6 +18246,84 @@
         "object_sha256": "93c4bf9dbfb06a27c15e778e22d80275fb34ad41e0cbdc4955e4a81942bf8c3b",
         "sql": "CREATE TABLE \"problems\"\n(\n    id               INTEGER\n        primary key,\n    group_id         text\n        references groups (group_id),\n    lesson           INTEGER         not null,\n    prob             INTEGER         not null,\n    item             TEXT            not null,\n    title            text            not null,\n    prob_text        text            not null,\n    prob_type        integer         not null,\n    ans_type         integer,\n    ans_validation   text,\n    validation_error text,\n    cor_ans          text,\n    cor_ans_checker  text,\n    wrong_ans        text,\n    congrat          text,\n    synonyms         text default '' not null, public_id text\n    generated always as ('p-' || id) virtual,\n    unique (group_id, lesson, prob, item)\n);",
         "table_name": "problems",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "publication_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "layout_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "document_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "telegram_html",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "telegram_sha256",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entries_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "publication_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "lesson_publications"
+          }
+        ],
+        "indexes": [],
+        "name": "publication_figure_layouts",
+        "object_sha256": "2ef841e8a9b9703248793faa43eeddabaa22eeac4201dae36a16c43e309fbed6",
+        "sql": "CREATE TABLE publication_figure_layouts (\n publication_id INTEGER PRIMARY KEY REFERENCES lesson_publications(id),\n layout_version INTEGER NOT NULL,\n document_json TEXT,\n telegram_html TEXT,\n telegram_sha256 TEXT,\n entries_json TEXT NOT NULL\n);",
+        "table_name": "publication_figure_layouts",
         "type": "table"
       },
       {
@@ -25231,6 +25623,126 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "attempt_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "attempt_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "test_attempts"
+          },
+          {
+            "from_columns": [
+              "result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "result_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_test_attempt_result_events_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attempt_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "result_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_test_attempt_result_events_2",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "test_attempt_result_events",
+        "object_sha256": "bad9c32376044bc825b81f8e7fd3032586c7c4688af150fdea6dfea5791a2c41",
+        "sql": "CREATE TABLE test_attempt_result_events (\n    attempt_id integer not null references test_attempts(id),\n    result_id integer not null unique references results(id),\n    created_at text not null,\n    primary key (attempt_id, result_id)\n);",
+        "table_name": "test_attempt_result_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "id",
             "not_null": false,
             "primary_key_ordinal": 1
@@ -25414,6 +25926,33 @@
             "name": "checked_at",
             "not_null": false,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 21,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "evaluation_version",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 22,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "feedback",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 23,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "checker_message",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -25548,6 +26087,54 @@
           {
             "columns": [
               {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 0
+              },
+              {
+                "cid": 21,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "evaluation_version",
+                "seqno": 1
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "server_received_at",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "test_attempts_problem_evaluation_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
                 "cid": 2,
                 "collation": "BINARY",
                 "descending": false,
@@ -25643,8 +26230,8 @@
           }
         ],
         "name": "test_attempts",
-        "object_sha256": "5c074b56e8e6403842feb1ca10557883823f2b58c491a8da59e9c062b565a7d6",
-        "sql": "CREATE TABLE test_attempts\n(\n    id                     integer primary key,\n    public_id text generated always as ('ta-' || id) virtual,\n    student_user_id        integer not null references users (id),\n    problem_id             integer not null references problems (id),\n    problem_revision_id    integer not null,\n    answer_payload_json    text    not null\n        check (\n            json_valid(answer_payload_json) = 1\n            and json_type(answer_payload_json) = 'object'\n            and json_type(answer_payload_json, '$.displayAnswer') = 'text'\n        ),\n    normalized_answer_json text\n        check (\n            normalized_answer_json is null\n            or json_valid(normalized_answer_json) = 1\n        ),\n    parse_status           text    not null\n        check (parse_status in ('valid', 'invalid_format')),\n    counts_as_attempt      integer not null\n        check (counts_as_attempt in (0, 1)),\n    check_status           text    not null\n        check (check_status in ('pending_configuration', 'pending', 'checked', 'failed')),\n    client_created_at      text    not null,\n    server_received_at     text    not null,\n    clock_skew_seconds     integer,\n    clock_suspicious       integer not null default 0\n        check (clock_suspicious in (0, 1)),\n    idempotency_key        text    not null\n        check (\n            length(idempotency_key) between 1 and 200\n            and idempotency_key = trim(idempotency_key)\n        ),\n    payload_sha256         text    not null\n        check (\n            length(payload_sha256) = 64\n            and payload_sha256 not glob '*[^0-9a-f]*'\n        ),\n    checker_version        text\n        check (checker_version is null or length(trim(checker_version)) > 0),\n    verdict                integer,\n    result_id              integer,\n    created_at             text    not null,\n    checked_at             text,\n    unique (student_user_id, idempotency_key),\n    foreign key (problem_revision_id, problem_id)\n        references problem_revisions (id, problem_id),\n    foreign key (result_id, student_user_id, problem_id)\n        references results (id, student_id, problem_id),\n    check (server_received_at >= created_at),\n    check (\n        (clock_suspicious = 0 and (clock_skew_seconds is null or abs(clock_skew_seconds) <= 3600))\n        or (clock_suspicious = 1 and clock_skew_seconds is not null and abs(clock_skew_seconds) > 3600)\n    ),\n    check ((verdict is null) = (result_id is null)),\n    check (\n        (\n            parse_status = 'invalid_format'\n            and counts_as_attempt = 0\n            and normalized_answer_json is null\n            and check_status = 'checked'\n            and checker_version is null\n            and verdict is null\n            and result_id is null\n            and checked_at is not null\n        )\n        or (\n            parse_status = 'valid'\n            and counts_as_attempt = 1\n            and normalized_answer_json is not null\n            and (\n                (\n                    check_status = 'pending_configuration'\n                    and checker_version is null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is null\n                )\n                or (\n                    check_status = 'pending'\n                    and checker_version is not null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is null\n                )\n                or (\n                    check_status = 'checked'\n                    and checker_version is not null\n                    and verdict is not null\n                    and result_id is not null\n                    and checked_at is not null\n                )\n                or (\n                    check_status = 'failed'\n                    and checker_version is not null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is not null\n                )\n            )\n        )\n    )\n);",
+        "object_sha256": "e3b67d1fee6f94496b109005519aef4f11bce174f910db2be1309e349194ccc3",
+        "sql": "CREATE TABLE test_attempts\n(\n    id                     integer primary key,\n    public_id text generated always as ('ta-' || id) virtual,\n    student_user_id        integer not null references users (id),\n    problem_id             integer not null references problems (id),\n    problem_revision_id    integer not null,\n    answer_payload_json    text    not null\n        check (\n            json_valid(answer_payload_json) = 1\n            and json_type(answer_payload_json) = 'object'\n            and json_type(answer_payload_json, '$.displayAnswer') = 'text'\n        ),\n    normalized_answer_json text\n        check (\n            normalized_answer_json is null\n            or json_valid(normalized_answer_json) = 1\n        ),\n    parse_status           text    not null\n        check (parse_status in ('valid', 'invalid_format')),\n    counts_as_attempt      integer not null\n        check (counts_as_attempt in (0, 1)),\n    check_status           text    not null\n        check (check_status in ('pending_configuration', 'pending', 'checked', 'failed')),\n    client_created_at      text    not null,\n    server_received_at     text    not null,\n    clock_skew_seconds     integer,\n    clock_suspicious       integer not null default 0\n        check (clock_suspicious in (0, 1)),\n    idempotency_key        text    not null\n        check (\n            length(idempotency_key) between 1 and 200\n            and idempotency_key = trim(idempotency_key)\n        ),\n    payload_sha256         text    not null\n        check (\n            length(payload_sha256) = 64\n            and payload_sha256 not glob '*[^0-9a-f]*'\n        ),\n    checker_version        text\n        check (checker_version is null or length(trim(checker_version)) > 0),\n    verdict                integer,\n    result_id              integer,\n    created_at             text    not null,\n    checked_at             text, evaluation_version text\n    check (evaluation_version is null or length(trim(evaluation_version)) > 0), feedback text, checker_message text,\n    unique (student_user_id, idempotency_key),\n    foreign key (problem_revision_id, problem_id)\n        references problem_revisions (id, problem_id),\n    foreign key (result_id, student_user_id, problem_id)\n        references results (id, student_id, problem_id),\n    check (server_received_at >= created_at),\n    check (\n        (clock_suspicious = 0 and (clock_skew_seconds is null or abs(clock_skew_seconds) <= 3600))\n        or (clock_suspicious = 1 and clock_skew_seconds is not null and abs(clock_skew_seconds) > 3600)\n    ),\n    check ((verdict is null) = (result_id is null)),\n    check (\n        (\n            parse_status = 'invalid_format'\n            and counts_as_attempt = 0\n            and normalized_answer_json is null\n            and check_status = 'checked'\n            and checker_version is null\n            and verdict is null\n            and result_id is null\n            and checked_at is not null\n        )\n        or (\n            parse_status = 'valid'\n            and counts_as_attempt = 1\n            and normalized_answer_json is not null\n            and (\n                (\n                    check_status = 'pending_configuration'\n                    and checker_version is null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is null\n                )\n                or (\n                    check_status = 'pending'\n                    and checker_version is not null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is null\n                )\n                or (\n                    check_status = 'checked'\n                    and checker_version is not null\n                    and verdict is not null\n                    and result_id is not null\n                    and checked_at is not null\n                )\n                or (\n                    check_status = 'failed'\n                    and checker_version is not null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is not null\n                )\n            )\n        )\n    )\n);",
         "table_name": "test_attempts",
         "type": "table"
       },
@@ -27982,6 +28569,13 @@
         "type": "index"
       },
       {
+        "name": "oral_window_lessons_lesson_idx",
+        "object_sha256": "200ba4d312d2c7cdb8795950e147bd48a2225efdbebffd01b0a3bc6ce473dd3e",
+        "sql": "CREATE INDEX oral_window_lessons_lesson_idx ON oral_window_lessons(group_lesson_id, window_id);",
+        "table_name": "oral_window_lessons",
+        "type": "index"
+      },
+      {
         "name": "oral_windows_group_time_idx",
         "object_sha256": "61a9389f42cf35ff37aaa6571fc275ada535c775fe9bd7f611b18495ff87bc3e",
         "sql": "CREATE INDEX oral_windows_group_time_idx\n    on oral_windows (group_lesson_id, opens_at, sequence_number);",
@@ -28388,6 +28982,13 @@
         "type": "index"
       },
       {
+        "name": "test_attempts_problem_evaluation_idx",
+        "object_sha256": "cb8684f8760d9a37dd0698918aa1887303cf526a145998cbd4577f1b09c94498",
+        "sql": "CREATE INDEX test_attempts_problem_evaluation_idx\n    on test_attempts (problem_id, evaluation_version, server_received_at, id);",
+        "table_name": "test_attempts",
+        "type": "index"
+      },
+      {
         "name": "test_attempts_student_problem_counted_idx",
         "object_sha256": "c3141b356b7f95c01674cb85619d601e5d673750c42b52ff416c5628be47cd97",
         "sql": "CREATE INDEX test_attempts_student_problem_counted_idx\n    on test_attempts (student_user_id, problem_id, server_received_at, id)\n    where counts_as_attempt = 1;",
@@ -28466,8 +29067,8 @@
       },
       {
         "name": "effective_results",
-        "object_sha256": "231921c0349bf4b0e2ea4d2dcaf03e29e50345e534c982fec0a85389e30c7e3f",
-        "sql": "CREATE VIEW effective_results AS\n    SELECT r.* FROM results r\n    LEFT JOIN live_mark_cells c ON c.student_id=r.student_id AND c.problem_id=r.problem_id\n    WHERE (c.result_id IS NOT NULL AND r.id=c.result_id)\n       OR (c.result_id IS NULL AND NOT EXISTS (\n           SELECT 1 FROM live_mark_results m WHERE m.result_id=r.id));",
+        "object_sha256": "d7e30dd256efd44068b9e978d55e9cdd475b65f9175f66aba5b923e7fceb80db",
+        "sql": "CREATE VIEW effective_results as\n    select r.* from results r\n    left join live_mark_cells c\n      on c.student_id=r.student_id and c.problem_id=r.problem_id\n    where ((c.result_id is not null and r.id=c.result_id)\n       or (c.result_id is null and not exists (\n           select 1 from live_mark_results m where m.result_id=r.id)))\n      and (r.res_type<>1 or not exists (\n           select 1 from test_attempt_result_events e\n           where e.result_id=r.id)\n       or exists (\n           select 1 from test_attempts a\n           where a.result_id=r.id));",
         "table_name": "effective_results",
         "type": "view"
       },
@@ -28983,6 +29584,13 @@
         "type": "trigger"
       },
       {
+        "name": "oral_window_primary_lesson",
+        "object_sha256": "00ff029f4539ec4fb7eb44c628820b325a63f841e15eac13de973ba1b2074b06",
+        "sql": "CREATE TRIGGER oral_window_primary_lesson AFTER INSERT ON oral_windows BEGIN\n INSERT INTO oral_window_lessons VALUES (NEW.id, NEW.group_lesson_id);\nEND;",
+        "table_name": "oral_windows",
+        "type": "trigger"
+      },
+      {
         "name": "organizer_entry_immutable",
         "object_sha256": "3b3add8553e098c504adfd58cd9019595c56dbfada4cba63e82783b3520f2629",
         "sql": "CREATE TRIGGER organizer_entry_immutable BEFORE UPDATE ON organizer_question_entries\nBEGIN SELECT RAISE(ABORT,'organizer entry is immutable'); END;",
@@ -29036,6 +29644,20 @@
         "object_sha256": "fb3889f86df7185c432cd1bd1a1d7dba37a795fdf1ce2768e8d1b6c5ead90c7c",
         "sql": "CREATE TRIGGER problem_synonym_members_scope_insert\nbefore insert on problem_synonym_members\nfor each row\nwhen not exists (\n    select 1\n    from problem_synonym_groups as synonym_group\n    join group_lessons as group_lesson\n      on group_lesson.id = new.group_lesson_id\n     and group_lesson.course_lesson_id = synonym_group.course_lesson_id\n    where synonym_group.id = new.synonym_group_id\n      and exists (\n          select 1\n          from problem_revisions as problem_revision\n          join content_revisions as revision\n            on revision.id = problem_revision.content_revision_id\n          join content_sources as source\n            on source.id = revision.source_id\n          where problem_revision.problem_id = new.problem_id\n            and source.group_lesson_id = new.group_lesson_id\n      )\n)\nbegin\n    select raise(abort, 'synonym member is outside its course/group lesson');\nend;",
         "table_name": "problem_synonym_members",
+        "type": "trigger"
+      },
+      {
+        "name": "publication_figure_layouts_immutable_delete",
+        "object_sha256": "c5449ae1488c181489d5f978a3018f79f342a0ed960f2a08fa3b98a736bd47aa",
+        "sql": "CREATE TRIGGER publication_figure_layouts_immutable_delete\nBEFORE DELETE ON publication_figure_layouts BEGIN\n SELECT RAISE(ABORT, 'published figure layout is immutable');\nEND;",
+        "table_name": "publication_figure_layouts",
+        "type": "trigger"
+      },
+      {
+        "name": "publication_figure_layouts_immutable_update",
+        "object_sha256": "c3e916296605a51200fcbe771871db15bf6ff711ba50e7c9ea0e8886b044d5b6",
+        "sql": "CREATE TRIGGER publication_figure_layouts_immutable_update\nBEFORE UPDATE ON publication_figure_layouts BEGIN\n SELECT RAISE(ABORT, 'published figure layout is immutable');\nEND;",
+        "table_name": "publication_figure_layouts",
         "type": "trigger"
       },
       {
@@ -29599,9 +30221,23 @@
         "type": "trigger"
       },
       {
+        "name": "test_attempt_result_events_delete_forbidden",
+        "object_sha256": "a25b4e1bb98fc0afeb7ce099a6d68c5b0a7f862638236e828925281195666751",
+        "sql": "CREATE TRIGGER test_attempt_result_events_delete_forbidden\nbefore delete on test_attempt_result_events\nbegin\n    select raise(abort, 'test attempt result event cannot be deleted');\nend;",
+        "table_name": "test_attempt_result_events",
+        "type": "trigger"
+      },
+      {
+        "name": "test_attempt_result_events_update_forbidden",
+        "object_sha256": "48e48405cae9b6c0a5ac188de1069d53271bf49a8355e5e08c387634f8df9b1a",
+        "sql": "CREATE TRIGGER test_attempt_result_events_update_forbidden\nbefore update on test_attempt_result_events\nbegin\n    select raise(abort, 'test attempt result event is immutable');\nend;",
+        "table_name": "test_attempt_result_events",
+        "type": "trigger"
+      },
+      {
         "name": "test_attempts_check_transition_guard",
-        "object_sha256": "3b57b79d9a13398e8269c449b8ac0aa74a4f4c08e96b08ef2fe6f168a28634c5",
-        "sql": "CREATE TRIGGER test_attempts_check_transition_guard\nbefore update on test_attempts\nfor each row\nwhen not (\n    old.check_status = 'pending_configuration'\n    and new.check_status in ('pending', 'checked', 'failed')\n) and not (\n    old.check_status = 'pending'\n    and new.check_status in ('checked', 'failed')\n) and not (\n    old.check_status = 'checked' and new.check_status = 'checked'\n)\nbegin\n    select raise(abort, 'invalid test attempt check transition');\nend;",
+        "object_sha256": "f11a19bf4c182544aa384d29d0b806144a4c35aa68040400ad633f3ce4189486",
+        "sql": "CREATE TRIGGER test_attempts_check_transition_guard\nbefore update on test_attempts\nfor each row\nwhen not (\n    old.check_status = 'pending_configuration'\n    and new.check_status in ('pending', 'checked', 'failed')\n) and not (\n    old.check_status = 'pending'\n    and new.check_status in ('checked', 'failed')\n) and not (\n    old.check_status = 'checked' and new.check_status = 'checked'\n) and not (\n    new.evaluation_version is not old.evaluation_version\n)\nbegin\n    select raise(abort, 'invalid test attempt check transition');\nend;",
         "table_name": "test_attempts",
         "type": "trigger"
       },
@@ -29614,8 +30250,8 @@
       },
       {
         "name": "test_attempts_payload_immutable",
-        "object_sha256": "14729654a42cf4993e08423ad5130cc510c12dcb02f168dddb141b799f92249b",
-        "sql": "CREATE TRIGGER test_attempts_payload_immutable\nbefore update on test_attempts\nfor each row\nwhen new.public_id is not old.public_id\n    or new.student_user_id is not old.student_user_id\n    or new.problem_id is not old.problem_id\n    or new.problem_revision_id is not old.problem_revision_id\n    or new.answer_payload_json is not old.answer_payload_json\n    or new.normalized_answer_json is not old.normalized_answer_json\n    or new.parse_status is not old.parse_status\n    or new.counts_as_attempt is not old.counts_as_attempt\n    or new.client_created_at is not old.client_created_at\n    or new.server_received_at is not old.server_received_at\n    or new.clock_skew_seconds is not old.clock_skew_seconds\n    or new.clock_suspicious is not old.clock_suspicious\n    or new.idempotency_key is not old.idempotency_key\n    or new.payload_sha256 is not old.payload_sha256\n    or new.created_at is not old.created_at\nbegin\n    select raise(abort, 'test attempt payload is immutable');\nend;",
+        "object_sha256": "7ed68a00e60dc7a2caff74d69ab3b5adf102a195c4e4d7b154ab622bb908eb3a",
+        "sql": "CREATE TRIGGER test_attempts_payload_immutable\nbefore update on test_attempts\nfor each row\nwhen new.public_id is not old.public_id\n    or new.student_user_id is not old.student_user_id\n    or new.problem_id is not old.problem_id\n    or new.problem_revision_id is not old.problem_revision_id\n    or new.answer_payload_json is not old.answer_payload_json\n    or new.client_created_at is not old.client_created_at\n    or new.server_received_at is not old.server_received_at\n    or new.clock_skew_seconds is not old.clock_skew_seconds\n    or new.clock_suspicious is not old.clock_suspicious\n    or new.idempotency_key is not old.idempotency_key\n    or new.payload_sha256 is not old.payload_sha256\n    or new.created_at is not old.created_at\nbegin\n    select raise(abort, 'test attempt payload is immutable');\nend;",
         "table_name": "test_attempts",
         "type": "trigger"
       },
@@ -29634,8 +30270,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "582e73976efcdb61ad4d21023bc012c17363eb9072ce83076e082dae13bc9cf5",
-    "sha256": "6fbeba50f207d03deb0b0be172fc604bfc63b6d226ec530b141ce0c4b1f8c266"
+    "pragma_structure_sha256": "aa3f3bb5fa078b5585113969a1e815003947e5bb7b8e7de907a4f28bd645c15b",
+    "sha256": "57799ddca4ba64aaac827f43c53d0ce9347907bb27437e5066aaa6f23d0abc95"
   },
   "source_kind": "repository-migration-head"
 }

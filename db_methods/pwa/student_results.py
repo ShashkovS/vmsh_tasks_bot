@@ -147,7 +147,8 @@ def event_index(c, student_id, problem_id):
         AND NOT EXISTS(SELECT 1 FROM submission_entries e WHERE e.legacy_discussion_id=d.id)
       UNION ALL SELECT 'result',cast(r.id AS TEXT),r.ts FROM results r,s
         WHERE r.student_id=s.sid AND r.problem_id=s.pid
-        AND NOT EXISTS(SELECT 1 FROM test_attempts a WHERE a.result_id=r.id)
+        AND NOT EXISTS(SELECT 1 FROM test_attempt_result_events e
+          WHERE e.result_id=r.id)
         AND NOT EXISTS(SELECT 1 FROM submission_reviews v WHERE v.result_id=r.id)
       UNION ALL SELECT 'reaction',cast(e.id AS TEXT),e.created_at FROM submission_review_internal_reaction_events e
         JOIN submission_reviews r ON r.id=e.review_id JOIN submission_threads t ON t.id=r.thread_id,s

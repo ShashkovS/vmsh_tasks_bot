@@ -356,9 +356,10 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
       new URL(response.url()).pathname ===
         `/staff/api/v1/problems/${problemId}/recheck-test-attempts`,
   )
-  await page.getByRole('button', { name: 'Перепроверить 1 ответ' }).click()
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Перепроверить все 1 ответ' }).click()
   expect((await recheckResponse).status()).toBe(200)
-  await expect(page.getByText('Проверено 1 из 1')).toBeVisible()
+  await expect(page.getByText('Проверено 1, обновлено 1')).toBeVisible()
 
   await page.goto(taskUrl)
   await expect(

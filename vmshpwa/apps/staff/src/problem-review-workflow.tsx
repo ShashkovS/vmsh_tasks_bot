@@ -793,22 +793,55 @@ export function ProblemReviewWorkflow({
   }
 
   return (
-    <section className="flex flex-wrap items-center gap-2" role="status">
-      <p className="inline-flex items-center gap-1 text-small text-status-success">
-        <CheckCircle2 aria-hidden="true" className="size-4" />
-        {kind === 'condition'
-          ? 'Сопоставление и метаданные подтверждены.'
-          : 'Сопоставление задач подтверждено; метаданные берутся из условия.'}
-      </p>
-      {kind === 'condition' ? (
-        <>
-          <Button onClick={() => void editMatches()} size="xs" variant="outline">
-            <Pencil aria-hidden="true" /> Изменить состав задач
-          </Button>
-          <Button onClick={() => void editMetadata()} size="xs" variant="outline">
-            <Pencil aria-hidden="true" /> Изменить метаданные
-          </Button>
-        </>
+    <section className="space-y-3" role="status">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="inline-flex items-center gap-1 text-small text-status-success">
+          <CheckCircle2 aria-hidden="true" className="size-4" />
+          {kind === 'condition'
+            ? 'Сопоставление и метаданные подтверждены.'
+            : 'Сопоставление задач подтверждено; метаданные берутся из условия.'}
+        </p>
+        {kind === 'condition' ? (
+          <>
+            <Button onClick={() => void editMatches()} size="xs" variant="outline">
+              <Pencil aria-hidden="true" /> Изменить состав задач
+            </Button>
+            <Button onClick={() => void editMetadata()} size="xs" variant="outline">
+              <Pencil aria-hidden="true" /> Изменить метаданные
+            </Button>
+          </>
+        ) : null}
+      </div>
+      {kind === 'condition' && metadataResource ? (
+        <div className="grid gap-2">
+          {metadataResource.data.testRechecks.map((row) => (
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-small"
+              key={row.problemPublicId}
+            >
+              <span>
+                {row.displayNumber}. {row.title} · ответов: {row.attemptCount}
+                {row.needsRecheck ? (
+                  <strong className="ml-2 text-status-warning">Требуется перепроверка</strong>
+                ) : (
+                  <span className="ml-2 text-muted-foreground">Актуально</span>
+                )}
+              </span>
+              <Button
+                render={
+                  <a
+                    aria-label={`Перепроверить все ответы задачи ${row.displayNumber}`}
+                    href={`/staff/problems/${row.problemPublicId}`}
+                  />
+                }
+                size="xs"
+                variant="outline"
+              >
+                Перепроверить все ответы
+              </Button>
+            </div>
+          ))}
+        </div>
       ) : null}
     </section>
   )

@@ -933,6 +933,20 @@ export const problemMetadataGridSchema = z
     canGenerateMetadata: z.boolean().optional(),
     metadataGenerationRequiresConfirmation: z.boolean().optional(),
     rows: z.array(problemMetadataGridRowSchema).max(2_000),
+    testRechecks: z
+      .array(
+        z
+          .object({
+            problemId: legacyProblemIdSchema,
+            problemPublicId: publicIdSchema,
+            displayNumber: displayNumberSchema,
+            title: z.string().max(500),
+            attemptCount: z.number().int().positive(),
+            needsRecheck: z.boolean(),
+          })
+          .strip(),
+      )
+      .max(2_000),
     requestId: z.string().trim().min(1).max(200),
   })
   .strip()
