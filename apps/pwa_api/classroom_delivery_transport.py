@@ -4,13 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 
-from aiogram.exceptions import (
-    TelegramAPIError,
-    TelegramBadRequest,
-    TelegramForbiddenError,
-    TelegramNetworkError,
-)
-
 from db_methods.pwa.classroom_delivery import (
     claim_next_telegram_recipient,
     finish_telegram_batch,
@@ -24,13 +17,23 @@ TelegramClassroomSender = Callable[[int, str], Awaitable[int]]
 
 
 def _error_code(error: Exception) -> str:
-    if isinstance(error, TelegramForbiddenError):
+    # Keep the PWA-only process independent from aiogram at import time.  On
+    # Python 3.14 aiogram's eager Pydantic model rebuild can exceed the
+    # recursion limit when it is imported late in the already-composed PWA
+    # application.  The stable aiogram exception class names preserve the
+    # existing classification without importing Telegram internals here.
+    error_types = {
+        base.__name__
+        for base in type(error).__mro__
+        if base.__module__.startswith("aiogram.exceptions")
+    }
+    if "TelegramForbiddenError" in error_types:
         return "telegram_forbidden"
-    if isinstance(error, TelegramBadRequest):
+    if "TelegramBadRequest" in error_types:
         return "telegram_bad_request"
-    if isinstance(error, TelegramNetworkError | TimeoutError):
+    if "TelegramNetworkError" in error_types or isinstance(error, TimeoutError):
         return "telegram_temporary"
-    if isinstance(error, TelegramAPIError):
+    if "TelegramAPIError" in error_types:
         return "telegram_api_error"
     return "telegram_unexpected"
 

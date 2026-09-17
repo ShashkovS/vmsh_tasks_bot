@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
-from aiogram import Bot
-from aiogram.exceptions import TelegramAPIError
+import sys
+from typing import Any
+
+
+# Tests can replace this factory without importing aiogram.  Production loads
+# it only when an administrator explicitly verifies a Telegram destination;
+# the PWA startup path must stay independent from Telegram's Pydantic models.
+# See vmshpwa/docs/runtime-isolation.md.
+Bot: Any | None = None
 
 
 class TelegramBindingVerificationError(RuntimeError):
@@ -17,6 +24,34 @@ def _value(value: object) -> str:
     return str(getattr(value, "value", value)).casefold()
 
 
+def _bot_factory():
+    global Bot
+    if Bot is not None:
+        return Bot
+
+    # aiogram's recursive Telegram model graph needs more than Python 3.14's
+    # default import-time recursion budget.  Legacy startup imports it near the
+    # root stack; this on-demand PWA integration can be reached much deeper.
+    previous_limit = sys.getrecursionlimit()
+    if previous_limit < 3000:
+        sys.setrecursionlimit(3000)
+    try:
+        from aiogram import Bot as AiogramBot
+    finally:
+        if previous_limit < 3000:
+            sys.setrecursionlimit(previous_limit)
+    Bot = AiogramBot
+    return Bot
+
+
+def _is_telegram_api_error(error: Exception) -> bool:
+    return any(
+        base.__name__ == "TelegramAPIError"
+        and base.__module__.startswith("aiogram.exceptions")
+        for base in type(error).__mro__
+    )
+
+
 async def verify_telegram_binding(
     *,
     token: str,
@@ -26,7 +61,7 @@ async def verify_telegram_binding(
 ) -> dict[str, object]:
     if not token:
         raise TelegramBindingVerificationError("telegram_not_configured")
-    bot = Bot(token)
+    bot = _bot_factory()(token)
     try:
         identity = await bot.get_me()
         chat = await bot.get_chat(chat_id)
@@ -57,10 +92,16 @@ async def verify_telegram_binding(
         return {"chat_id": canonical_chat_id, "title": title[:200]}
     except TelegramBindingVerificationError:
         raise
-    except (TelegramAPIError, OSError, TimeoutError) as error:
+    except (OSError, TimeoutError) as error:
         raise TelegramBindingVerificationError(
             "telegram_unavailable", retryable=True
         ) from error
+    except Exception as error:
+        if _is_telegram_api_error(error):
+            raise TelegramBindingVerificationError(
+                "telegram_unavailable", retryable=True
+            ) from error
+        raise
     finally:
         await bot.session.close()
 
