@@ -1,5 +1,5 @@
 # ide и кеш
-.idea/
+B.idea/
 __pycache__/
 .pytest_cache/
 tests/.pytest_cache
@@ -58,3 +58,7 @@ db/.*.vmshpwa-lifecycle.lock
 /ssh/id_ed25519_codex
 /.runtime
 /vmsh_openrouter_tools_fixed_v2
+
+**/.DS_Store
+**/.idea
+
