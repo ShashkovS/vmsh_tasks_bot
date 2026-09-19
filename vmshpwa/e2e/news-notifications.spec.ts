@@ -228,14 +228,14 @@ test('Phase 8: Admin explicitly sends one lesson digest and Family sees it', asy
   // The actual Staff page and aiohttp endpoint are used; a queue becoming empty
   // never sends this digest automatically.
   await loginThroughUi(page, AUTH_PERSONAS.admin, `/staff/lessons/${target.groupLessonPublicId}`)
-  await expect(page.getByText('Итоги для семей', { exact: true })).toBeVisible()
+  await expect(page.getByText('Итоги для родителей', { exact: true })).toBeVisible()
 
   const sendButton = page.getByRole('button', { name: 'Разослать итог' })
   const sentNotice = page.getByText('Итог уже разослан')
   await expect(sendButton.or(sentNotice)).toBeVisible()
   if (await sendButton.isVisible()) {
     await sendButton.click()
-    await expect(page.getByRole('alertdialog')).toContainText(/Отправить итог \d+ семьям\?/)
+    await expect(page.getByRole('alertdialog')).toContainText(/Отправить итог \d+ родителям\?/)
     const sendResponse = page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' && new URL(response.url()).pathname === endpoint,
@@ -389,8 +389,7 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
             }
           })
           return response.items.find(
-            (item) =>
-              item.eventId === newsEventId(testInfo.project.name, 'student'),
+            (item) => item.eventId === newsEventId(testInfo.project.name, 'student'),
           )?.readAt
         },
         { timeout: 15_000 },
@@ -403,9 +402,7 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
     return (await response.json()) as { items: Array<{ eventId: string }> }
   })
   expect(
-    unreadNews.items.some(
-      (item) => item.eventId === newsEventId(testInfo.project.name, 'student'),
-    ),
+    unreadNews.items.some((item) => item.eventId === newsEventId(testInfo.project.name, 'student')),
   ).toBe(false)
 
   const pushCapability = await page.evaluate(() => ({

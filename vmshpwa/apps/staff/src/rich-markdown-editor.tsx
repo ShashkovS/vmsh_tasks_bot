@@ -236,7 +236,7 @@ function Editor({
 
 function imageAlt(filename: string): string {
   const withoutExtension = filename.replace(/\.[^.]+$/u, '')
-  return withoutExtension.replace(/[\[\]]/gu, '').trim() || 'Картинка'
+  return withoutExtension.replaceAll('[', '').replaceAll(']', '').trim() || 'Картинка'
 }
 
 export function RichMarkdownEditor({
@@ -364,7 +364,9 @@ export function RichMarkdownEditor({
               <ImagePlus aria-hidden="true" />
               {isUploadingImage ? 'Готовим картинку…' : 'Загрузить картинку'}
             </Button>
-            <span className="text-caption text-muted-foreground">PNG, JPEG или WebP · до 10 МиБ</span>
+            <span className="text-caption text-muted-foreground">
+              PNG, JPEG или WebP · до 10 МиБ
+            </span>
           </div>
         ) : null}
         {imageError ? (

@@ -96,7 +96,7 @@ export function FamilyAccountManager({
     setCreateDraft(createFallback)
     setPassword('')
     setMode(null)
-    setSavedMessage('Семейный аккаунт создан и привязан.')
+    setSavedMessage('Аккаунт родителя создан и привязан.')
   }
 
   async function submitLink(event: FormEvent<HTMLFormElement>) {
@@ -115,20 +115,20 @@ export function FamilyAccountManager({
     clearFamilyAccountDraft(globalThis.localStorage, linkKey)
     setLinkDraft(linkFallback)
     setMode(null)
-    setSavedMessage('Существующий семейный аккаунт привязан.')
+    setSavedMessage('Существующий аккаунт родителя привязан.')
   }
 
   async function unlink(accountId: string) {
     await onChange({ kind: 'unlink', studentId, accountId })
     setConfirmUnlink(null)
-    setSavedMessage('Связь со школьником удалена. Сам семейный аккаунт сохранён.')
+    setSavedMessage('Связь со школьником удалена. Учётная запись родителя сохранена.')
   }
 
   return (
-    <section aria-label="Семейные аккаунты" className="space-y-3">
+    <section aria-label="Аккаунты родителей" className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-small font-medium">Семейные аккаунты</p>
+          <p className="text-small font-medium">Аккаунты родителей</p>
           <p className="text-caption text-muted-foreground">
             Один аккаунт можно связать с несколькими детьми.
           </p>
@@ -157,7 +157,7 @@ export function FamilyAccountManager({
 
       {accounts.length === 0 ? (
         <p className="rounded-md border border-dashed border-border p-3 text-small text-muted-foreground">
-          Семейных аккаунтов пока нет.
+          Аккаунтов родителей пока нет.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -221,7 +221,7 @@ export function FamilyAccountManager({
           className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-2"
           onSubmit={(event) => void submitCreate(event).catch(() => undefined)}
         >
-          <p className="text-small font-medium md:col-span-2">Новый аккаунт семьи</p>
+          <p className="text-small font-medium md:col-span-2">Новый аккаунт родителя</p>
           <Label className="grid gap-1 text-small">
             Логин
             <Input
@@ -239,7 +239,7 @@ export function FamilyAccountManager({
               disabled={pending}
               maxLength={200}
               onChange={(event) => persist({ ...createDraft, displayName: event.target.value })}
-              placeholder="Например, семья Ивановых"
+              placeholder="Например, Анна Иванова"
               required
               value={createDraft.displayName}
             />
@@ -274,9 +274,9 @@ export function FamilyAccountManager({
           className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-2"
           onSubmit={(event) => void submitLink(event).catch(() => undefined)}
         >
-          <p className="text-small font-medium md:col-span-2">Существующий аккаунт семьи</p>
+          <p className="text-small font-medium md:col-span-2">Существующий аккаунт родителя</p>
           <Label className="grid gap-1 text-small">
-            Семейный логин
+            Логин родителя
             <Input
               autoComplete="off"
               disabled={pending}
@@ -339,7 +339,7 @@ function RelationshipFields({
           disabled={disabled}
           onCheckedChange={(checked) => onChange({ ...draft, isPrimary: checked === true })}
         />
-        Основной семейный контакт
+        Основной родительский контакт
       </Label>
     </>
   )

@@ -137,7 +137,7 @@ export function FamilyNotificationSettingsView({
       </PageSection>
       <PageSection title="На этом устройстве">{pushControls}</PageSection>
       <PageSection
-        description="Отдельные push о каждой проверенной задаче ребёнка семье не отправляются."
+        description="Отдельные push о каждой проверенной задаче ребёнка родителю не отправляются."
         title="Категории"
       >
         {loading ? <PageStatePanel state="loading" /> : null}

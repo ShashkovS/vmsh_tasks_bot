@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { supportProblemLabel } from './staff-support-pages'
+import { supportProblemLabel } from './staff-support-utils'
 
 describe('question problem heading', () => {
   const context = {

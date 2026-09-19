@@ -34,11 +34,11 @@ WebSocket уже был подключён. POST после записи пуб�
   сохраняет минус; при reconnect первая получает минус, сохраняющийся при reload.
 - TypeScript Staff, ESLint, сборки всех приложений. Миграции не нужны.
 
-| Движок | Desktop, светлая | 390 px, тёмная |
-|---|---|---|
+| Движок   | Desktop, светлая                                                            | 390 px, тёмная                                                                  |
+| -------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Chromium | [Снимок](assets/live-marking-confirmation/chromium-unconfirmed-desktop.png) | [Снимок](assets/live-marking-confirmation/chromium-unconfirmed-mobile-dark.png) |
-| WebKit | [Снимок](assets/live-marking-confirmation/webkit-unconfirmed-desktop.png) | [Снимок](assets/live-marking-confirmation/webkit-unconfirmed-mobile-dark.png) |
-| Firefox | [Снимок](assets/live-marking-confirmation/firefox-unconfirmed-desktop.png) | [Снимок](assets/live-marking-confirmation/firefox-unconfirmed-mobile-dark.png) |
+| WebKit   | [Снимок](assets/live-marking-confirmation/webkit-unconfirmed-desktop.png)   | [Снимок](assets/live-marking-confirmation/webkit-unconfirmed-mobile-dark.png)   |
+| Firefox  | [Снимок](assets/live-marking-confirmation/firefox-unconfirmed-desktop.png)  | [Снимок](assets/live-marking-confirmation/firefox-unconfirmed-mobile-dark.png)  |
 
 Снимки просмотрены. Production не менялся: тест доказывает работу маршрута и
 подписки на изолированном backend, а не состояние production NATS в данный момент.

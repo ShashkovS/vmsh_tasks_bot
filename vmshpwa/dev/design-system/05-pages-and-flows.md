@@ -149,7 +149,6 @@ Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`
 
 Принимаются flow coherence, URL/history, responsive layouts, reading comfort, density, states и role permissions. Не принимать красивые happy-path pages без error/offline/empty/locked variants.
 
-
 ### Компактный live-приём — 10 сентября 2026
 
 Замечания владельца и контракт: [live-marking.md](../../docs/live-marking.md).
@@ -163,7 +162,6 @@ Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`
 [отчёт](../../../pwa_tests/reports/live-marking-compact.md).
 Визуальное принятие владельцем остаётся открытым.
 
-
 ## Результаты школьника (admin-only)
 
 [StudentResultsPage](../../apps/staff/src/student-results-page.tsx) и
@@ -174,7 +172,6 @@ Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`
 проверку. URL сохраняет школьника, курс и номер занятия. Мобильная адаптация,
 клавиатура и обе темы проверены в трёх браузерах;
 [отчёт](../../../pwa_tests/reports/student-results/README.md).
-
 
 ## Вопросы организаторам (Student/Family/Staff)
 

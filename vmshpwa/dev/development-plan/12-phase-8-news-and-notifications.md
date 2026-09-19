@@ -284,7 +284,6 @@ worker идемпотентными. Event не содержит Zoom URL/code, 
 остаётся только refetch hint после durable SQLite commit. Proof:
 [`phase8-oral-window-notifications-2026-08-03.md`](../../../pwa_tests/reports/phase8-oral-window-notifications-2026-08-03.md).
 
-
 ## Активация уведомлений — 2026-09-12
 
 Реализованы приглашение Student/Family, явное разрешение браузера, повтор подключения,
@@ -292,14 +291,12 @@ worker идемпотентными. Event не содержит Zoom URL/code, 
 См. [решение](../../docs/notification-activation.md). Проверено: 16 frontend-тестов, 20 backend-тестов, 6 Chromium Storybook-состояний,
 production build. Реальная доставка на устройстве после выпуска остаётся отдельной проверкой.
 
-
 ## Доступ к настройкам уведомлений — 2026-09-12
 
 В StudentProfilePage и FamilyProfilePage добавлен отдельный блок со ссылкой на
 настройки категорий и устройства. PushDeviceControls объясняет восстановление
 разрешения в Chrome/Edge, Firefox, Safari и iOS. Typecheck Student/Family/Product
 и 6 браузерных Storybook-проверок Chromium прошли.
-
 
 ## Открытие push на Android — 2026-09-12
 

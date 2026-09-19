@@ -449,7 +449,7 @@ export function StudentDirectoryView({
                       <p>{selectedStudent.webAccount?.username ?? '—'}</p>
                     </div>
                     <div className="sm:col-span-2 xl:col-span-4">
-                      <p className="text-caption text-muted-foreground">Семейные аккаунты</p>
+                      <p className="text-caption text-muted-foreground">Аккаунты родителей</p>
                       <p>
                         {selectedStudent.familyAccounts.length === 0
                           ? '—'

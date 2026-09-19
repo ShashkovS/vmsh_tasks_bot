@@ -304,7 +304,6 @@ Proof:
 
 Implemented [full references and worksheet interaction corrections](../../docs/task-interaction-polish.md); [verification and screenshots](../../../pwa_tests/reports/task-interaction-polish/README.md) cover delayed sending, mobile input, closed answers and worksheet return. Existing task identities, drafts and print behavior are preserved.
 
-
 ## Единый листок и просмотры — 2026-09-13, реализовано локально
 
 См. [решение](../../docs/worksheet-materials.md). Общие бумага/спойлеры, подтверждение

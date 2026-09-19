@@ -114,7 +114,7 @@ export function StaffLocalNewsComposer({
           >
             <option value="both">Всем</option>
             <option value="student">Только школьнику</option>
-            <option value="family">Только семье</option>
+            <option value="family">Только родителям</option>
           </select>
         </Label>
         <Label className="grid gap-1.5" htmlFor="local-news-attendance">

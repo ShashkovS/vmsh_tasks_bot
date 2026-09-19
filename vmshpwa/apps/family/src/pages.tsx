@@ -349,7 +349,7 @@ export function FamilyTaskPage({
           <Alert tone="neutral">
             <Users aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Режим просмотра семьи</AlertTitle>
+              <AlertTitle>Режим просмотра родителя</AlertTitle>
               <AlertDescription>
                 Здесь нельзя отвечать за ребёнка или влиять на его статистику.
               </AlertDescription>
@@ -380,7 +380,7 @@ export function FamilyNewsPage({ state = 'ready' }: { state?: PageDisplayState }
     <StatefulPage state={state} title="Новости">
       <PageLayout
         actions={<ChildSwitcher />}
-        description="Telegram-публикации и объявления для семей."
+        description="Telegram-публикации и объявления для родителей."
         title="Новости"
       >
         <div className="space-y-3">
@@ -511,9 +511,9 @@ export function FamilyLoginPage({
   return (
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <PageLayout
-        description="Семейный аккаунт не связан с Telegram и не использует пароль ребёнка."
+        description="Аккаунт родителя не связан с Telegram и не использует пароль ребёнка."
         eyebrow="ВМШ 179"
-        title="Семейный кабинет"
+        title="Кабинет родителя"
         width="reading"
       >
         <Card className="mx-auto max-w-md">

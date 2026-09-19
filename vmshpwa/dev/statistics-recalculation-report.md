@@ -56,11 +56,11 @@
 
 Финальный прогон: **6/6 passed** (по два сценария на движок).
 
-| Движок | Desktop, светлая | 320 px, тёмная | CSS zoom 200% |
-|---|---|---|---|
+| Движок   | Desktop, светлая                                                             | 320 px, тёмная                                                             | CSS zoom 200%                                                                 |
+| -------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Chromium | [снимок](assets/statistics-recalculation/chromium-statistics-light-1280.png) | [снимок](assets/statistics-recalculation/chromium-statistics-dark-320.png) | [снимок](assets/statistics-recalculation/chromium-statistics-200-percent.png) |
-| WebKit | [снимок](assets/statistics-recalculation/webkit-statistics-light-1280.png) | [снимок](assets/statistics-recalculation/webkit-statistics-dark-320.png) | [снимок](assets/statistics-recalculation/webkit-statistics-200-percent.png) |
-| Firefox | [снимок](assets/statistics-recalculation/firefox-statistics-light-1280.png) | [снимок](assets/statistics-recalculation/firefox-statistics-dark-320.png) | [снимок](assets/statistics-recalculation/firefox-statistics-200-percent.png) |
+| WebKit   | [снимок](assets/statistics-recalculation/webkit-statistics-light-1280.png)   | [снимок](assets/statistics-recalculation/webkit-statistics-dark-320.png)   | [снимок](assets/statistics-recalculation/webkit-statistics-200-percent.png)   |
+| Firefox  | [снимок](assets/statistics-recalculation/firefox-statistics-light-1280.png)  | [снимок](assets/statistics-recalculation/firefox-statistics-dark-320.png)  | [снимок](assets/statistics-recalculation/firefox-statistics-200-percent.png)  |
 
 ## Выпуск
 

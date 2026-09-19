@@ -106,7 +106,7 @@ export function FamilyHomePage() {
           </label>
         ) : undefined
       }
-      eyebrow={selectedChild?.displayName ?? 'Семейный кабинет'}
+      eyebrow={selectedChild?.displayName ?? 'Кабинет родителя'}
       title="Текущие занятия"
     >
       {/* docs/organizer-questions.md: a visible home action without another navigation item. */}

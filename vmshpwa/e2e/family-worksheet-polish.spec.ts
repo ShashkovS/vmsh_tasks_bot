@@ -29,7 +29,7 @@ test('family reads earlier worksheets, switches viewing groups and has usable ch
     page.getByRole('link', { name: 'Алексей Тестовый-Онлайн', exact: true }),
   ).toHaveAttribute('href', '/family/children/u-101')
   await expect(page.getByRole('link', { name: 'Мария Тестовая-Очно', exact: true })).toBeVisible()
-  await expect(page.getByText('Отдельный семейный аккаунт без привязки к Telegram.')).toHaveCount(0)
+  await expect(page.getByText('Отдельный аккаунт родителя без привязки к Telegram.')).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('profile.png'), fullPage: true })
   const lesson = { chromium: 32101, webkit: 32102, firefox: 32103 }[testInfo.project.name]!
   const path = `/family/tasks/math-5-7/${encodeURIComponent('н')}/${lesson}`

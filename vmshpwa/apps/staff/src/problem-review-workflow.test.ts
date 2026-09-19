@@ -132,13 +132,7 @@ describe('automatic problem matching', () => {
 
   it('requires an explicit choice when a named source task is renamed', () => {
     expect(
-      automaticProblemMatchPlan(
-        review(
-          [[1, 'новая-метка']],
-          [[101, 1, 'старая-метка']],
-        ),
-        true,
-      ),
+      automaticProblemMatchPlan(review([[1, 'новая-метка']], [[101, 1, 'старая-метка']]), true),
     ).toBeUndefined()
   })
 })

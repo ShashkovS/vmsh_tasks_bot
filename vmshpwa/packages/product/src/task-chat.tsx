@@ -75,7 +75,8 @@ function withDateDividers(
   const items: { message: ChatMessageView; divider: string | null }[] = []
   let currentDate: string | undefined
   for (const message of messages) {
-    const divider = message.dateLabel && message.dateLabel !== currentDate ? message.dateLabel : null
+    const divider =
+      message.dateLabel && message.dateLabel !== currentDate ? message.dateLabel : null
     if (message.dateLabel) currentDate = message.dateLabel
     items.push({ message, divider })
   }

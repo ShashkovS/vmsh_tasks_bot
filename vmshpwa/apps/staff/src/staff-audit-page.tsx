@@ -26,7 +26,7 @@ import {
 const objectLabels: Record<AuditObjectType, string> = {
   all: 'Все объекты',
   account: 'Аккаунты',
-  family_link: 'Связи с семьёй',
+  family_link: 'Связи с родителями',
   course_enrollment: 'Участники курсов',
   problem_import: 'Импорт задач',
   course: 'Курсы',
@@ -39,9 +39,9 @@ const objectLabels: Record<AuditObjectType, string> = {
 
 const actionLabels: Record<string, string> = {
   'student.account_created': 'Создан вход школьника',
-  'family.account_created': 'Создан семейный вход',
-  'family.student_linked': 'Добавлена связь с семьёй',
-  'family.student_unlinked': 'Удалена связь с семьёй',
+  'family.account_created': 'Создан вход родителя',
+  'family.student_linked': 'Добавлена связь с родителем',
+  'family.student_unlinked': 'Удалена связь с родителем',
   'account.status_changed': 'Изменён статус аккаунта',
   'account.credential_changed': 'Заменены данные для входа',
   'course_enrollment.updated': 'Изменено участие в курсе',
@@ -90,7 +90,7 @@ const fieldLabels: Record<string, string> = {
   reason: 'Причина',
   reconciliationReason: 'Причина сверки',
   removedCount: 'Удалено задач',
-  relationshipLabel: 'Роль в семье',
+  relationshipLabel: 'Роль родителя',
   rows: 'Строк обработано',
   scoreWeight: 'Вес результатов',
   scopeCount: 'Областей доступа',

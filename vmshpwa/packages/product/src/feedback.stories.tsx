@@ -337,7 +337,7 @@ export const ReviewedStudentReaction: Story = {
 }
 
 export const FamilyStudentReaction: Story = {
-  name: 'Реакция ребёнка для семьи',
+  name: 'Реакция ребёнка для родителя',
   render: () => (
     <div className="max-w-xl">
       <WrittenReviewHistory

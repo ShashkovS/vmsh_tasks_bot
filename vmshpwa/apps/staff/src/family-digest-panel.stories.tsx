@@ -57,9 +57,9 @@ export const ReadyToSend: Story = {
   render: () => <InteractiveDigest initial={ready} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Без активного семейного аккаунта: 2')).toBeVisible()
+    await expect(canvas.getByText('Без активного аккаунта родителя: 2')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Разослать итог' }))
-    await expect(canvas.getByRole('alertdialog')).toHaveTextContent('Отправить итог 26 семьям?')
+    await expect(canvas.getByRole('alertdialog')).toHaveTextContent('Отправить итог 26 родителям?')
     await userEvent.click(canvas.getByRole('button', { name: 'Отправить' }))
     await expect(canvas.getByText('Итог уже разослан')).toBeVisible()
   },
@@ -98,7 +98,7 @@ export const NoRecipients: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Нет семейных аккаунтов для рассылки')).toBeVisible()
+    await expect(canvas.getByText('Нет аккаунтов родителей для рассылки')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: 'Разослать итог' })).not.toBeInTheDocument()
     await expect(canvas.queryByText('Итог уже разослан')).not.toBeInTheDocument()
   },

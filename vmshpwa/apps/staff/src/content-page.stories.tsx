@@ -133,6 +133,20 @@ function storyClient(overrides: Partial<ContentApiClient> = {}): ContentApiClien
         etag: contentEtagSchema.parse(`"${targetRevisionId}:v2"`),
       })
     },
+    resolveRevisionAssets(targetRevisionId) {
+      return Promise.resolve({
+        data: {
+          revisionId: targetRevisionId,
+          status: 'uploaded',
+          version: 2,
+          missingAssets: [],
+          assets: [],
+          reusedCount: 0,
+          requestId: 'storybook-assets-resolved',
+        },
+        etag: contentEtagSchema.parse(`"${targetRevisionId}:v2"`),
+      })
+    },
     uploadRevisionAsset() {
       return Promise.reject(new Error('В этом Storybook-сценарии нет недостающих ресурсов'))
     },
@@ -495,7 +509,6 @@ export const UploadPreviewPublish: Story = {
     await expect(uploadButton).toBeEnabled()
     await userEvent.click(uploadButton)
 
-    await expect(await canvas.findByText('Занятие 41 · Начинающие')).toBeVisible()
     await expect(canvas.getByText(/3:1 · Команда вертикального отступа/)).toBeVisible()
     await expect(canvas.getByRole('tab', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
@@ -563,9 +576,9 @@ export const FamilyDigestAfterReview: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Итоги для семей')).toBeVisible()
+    await expect(await canvas.findByText('Итоги для родителей')).toBeVisible()
     await userEvent.click(await canvas.findByRole('button', { name: 'Разослать итог' }))
-    await expect(canvas.getByRole('alertdialog')).toHaveTextContent('Отправить итог 26 семьям?')
+    await expect(canvas.getByRole('alertdialog')).toHaveTextContent('Отправить итог 26 родителям?')
     await userEvent.click(canvas.getByRole('button', { name: 'Отправить' }))
     await expect(await canvas.findByText('Итог уже разослан')).toBeVisible()
   },
@@ -639,7 +652,9 @@ export const BulkUploadExplicitMapping: Story = {
     await expect(await canvas.findByText('Готово: 1 · требуют внимания: 1')).toBeVisible()
     await expect(canvas.getByText('Не найден рисунок diagrams/angle.svg')).toBeVisible()
     await expect(canvas.getByText(/Загрузка ничего не публикует/)).toBeVisible()
-    await expect(canvas.getByRole('link', { name: 'Открыть недостающие рисунки' })).toBeVisible()
+    await expect(
+      canvas.getByRole('link', { name: 'Открыть исправление 41 · Продолжающие' }),
+    ).toBeVisible()
   },
 }
 
@@ -1077,7 +1092,7 @@ export const MatchThenReviewMetadata: Story = {
     )
     const title = await canvas.findByLabelText('Название, строка 1')
     await userEvent.type(title, 'Орехи и клетки')
-    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить метаданные' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить метаданные' }))
     await expect(await canvas.findByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
     await expect(storage?.getItem(matchingKey)).toBeNull()
     await expect(storage?.getItem(metadataKey)).toBeNull()
@@ -1554,7 +1569,7 @@ export const MetadataConflictKeepsDraft: Story = {
     storage?.removeItem(key)
 
     await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Не потерять')
-    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить метаданные' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить метаданные' }))
     await expect(await canvas.findByText('Серверная версия изменилась')).toBeVisible()
     await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
     await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))

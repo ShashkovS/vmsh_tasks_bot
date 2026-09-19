@@ -48,7 +48,16 @@ def test_support_thread_migration_up_down_up_is_exact(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0055.pwa_submission_review_student_reactions"
     }
-    preceding = {item.id for item in migrations.values() if item.id != MIGRATION_ID}
+    preceding: set[str] = set()
+
+    def collect_dependencies(migration_id: str) -> None:
+        for dependency in migrations[migration_id].depends:
+            if dependency.id in preceding:
+                continue
+            preceding.add(dependency.id)
+            collect_dependencies(dependency.id)
+
+    collect_dependencies(MIGRATION_ID)
     _apply(database_path, preceding)
     assert _objects(database_path) == set()
 

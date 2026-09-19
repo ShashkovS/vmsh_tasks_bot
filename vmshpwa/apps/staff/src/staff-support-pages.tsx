@@ -25,6 +25,8 @@ import { useSupportDraftEditor, type SupportDraftDescriptor } from '@vmsh/offlin
 import { FeedbackThread, type ThreadMessageView } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, buttonVariants } from '@vmsh/ui'
 
+import { supportProblemLabel } from './staff-support-utils'
+
 type StaffInboxFilters = Omit<StaffSupportListQuery, 'cursor'>
 
 /** Dense live Staff questions inbox; see Phase 6 Questions/SOS. */
@@ -288,13 +290,6 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
         </Card>
       </div>
     </PageLayout>
-  )
-}
-
-export function supportProblemLabel(context: SupportThreadSummary['context']) {
-  return (
-    [context.problemNumber, context.problemTitle].filter(Boolean).join(' · ') ||
-    'Общий вопрос по занятию'
   )
 }
 

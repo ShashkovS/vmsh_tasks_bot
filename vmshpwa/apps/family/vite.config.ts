@@ -39,9 +39,9 @@ export default defineConfig(({ command, mode }) => {
         includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
         manifest: {
           id: '/family/',
-          name: 'ВМШ 179 — семья',
-          short_name: 'ВМШ Семья',
-          description: 'Расписание, прогресс и новости ВМШ 179 для семьи',
+          name: 'ВМШ 179 — кабинет родителя',
+          short_name: 'ВМШ Родитель',
+          description: 'Расписание, прогресс и новости ВМШ 179 для родителя',
           lang: 'ru',
           start_url: '/family/',
           scope: '/family/',

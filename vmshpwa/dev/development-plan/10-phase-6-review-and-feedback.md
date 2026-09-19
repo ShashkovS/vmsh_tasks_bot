@@ -204,6 +204,7 @@ tie-break. Client time в выборе target не участвует. Посл�
 ветки восстанавливают собственные статусы.
 
 Дополнительный proof: concurrency объединённого case, immutable snapshot, target-last assertion, split status и stories `Product/Review--synonym-combined-case`, `Product/Feedback--synonym-merged-timeline`.
+
 # Дополнение: серийная проверка, 7 сентября 2026
 
 См. [serial-review.md](../../docs/serial-review.md): Staff `review-series-page.tsx`
@@ -219,6 +220,7 @@ tie-break. Client time в выборе target не участвует. Посл�
 редактируются; текущий результат меняется добавлением новой проверки.
 Реализация: `review_history.py`, `review_corrections.py`, `review-history-page.tsx`.
 Доказательства: 73 backend, 23 frontend и браузерный сценарий в трёх движках.
+
 # Дополнение: контекст задачи в вопросах
 
 Полный номер и название, раскрываемое опубликованное условие в Staff:
@@ -232,18 +234,15 @@ tie-break. Client time в выборе target не участвует. Посл�
 без повторов в Chromium/WebKit/Firefox. [Отчёт](../../../pwa_tests/reports/organizer-questions/README.md).
 Нужна миграция при выпуске; Telegram SOS и учебные вопросы сохраняют свой контур.
 
-
 ## Геометрия аннотаций — 2026-09-12
 
 Новые пометки покрывают всю фотографию; старые сохраняют прежнее положение без пересчёта записей. [Контракт координат и регрессии](../../docs/review-annotation-geometry.md) реализуют `ReviewAnnotationSurface`, `ReviewAnnotationEditor`, `ReviewAnnotationMark` и parser в `review_routes.py`.
-
 
 ## Фото в вопросах — 2026-09-13
 
 Учебные вопросы поддерживают вложения к тексту и защищённое чтение Student/Staff.
 Общие пиктограммы галереи/камеры используются также в обращениях организаторам.
 Реализация, миграция 0090, проверки и снимки: [отчёт](../../docs/question-photos.md).
-
 
 ### Компактная строка действий — 2026-09-13
 

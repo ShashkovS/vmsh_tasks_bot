@@ -117,7 +117,7 @@ def test_preferences_use_product_defaults_and_store_one_override(tmp_path):
         account_id, _session_id = _seed_account(connection)
 
         defaults = read_preferences(connection, account_id)
-        assert len(defaults) == 9
+        assert len(defaults) == 10
         assert (
             next(item for item in defaults if item["category"] == "oral_window")[
                 "push_enabled"

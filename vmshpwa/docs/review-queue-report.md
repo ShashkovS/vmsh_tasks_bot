@@ -20,10 +20,10 @@
 
 Синтетические работы; даты в сценарии ожидания зафиксированы для проверки минутного обновления.
 
-| Браузер | Desktop | 320 px, тёмная тема | 390 px, светлая тема | 200% |
-| --- | --- | --- | --- | --- |
+| Браузер  | Desktop                                            | 320 px, тёмная тема                            | 390 px, светлая тема                           | 200%                                            |
+| -------- | -------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------- | ----------------------------------------------- |
 | Chromium | [снимок](assets/review-queue/chromium-desktop.png) | [снимок](assets/review-queue/chromium-320.png) | [снимок](assets/review-queue/chromium-390.png) | [снимок](assets/review-queue/chromium-zoom.png) |
-| WebKit | [снимок](assets/review-queue/webkit-desktop.png) | [снимок](assets/review-queue/webkit-320.png) | [снимок](assets/review-queue/webkit-390.png) | [снимок](assets/review-queue/webkit-zoom.png) |
-| Firefox | [снимок](assets/review-queue/firefox-desktop.png) | [снимок](assets/review-queue/firefox-320.png) | [снимок](assets/review-queue/firefox-390.png) | [снимок](assets/review-queue/firefox-zoom.png) |
+| WebKit   | [снимок](assets/review-queue/webkit-desktop.png)   | [снимок](assets/review-queue/webkit-320.png)   | [снимок](assets/review-queue/webkit-390.png)   | [снимок](assets/review-queue/webkit-zoom.png)   |
+| Firefox  | [снимок](assets/review-queue/firefox-desktop.png)  | [снимок](assets/review-queue/firefox-320.png)  | [снимок](assets/review-queue/firefox-390.png)  | [снимок](assets/review-queue/firefox-zoom.png)  |
 
 На визуальном просмотре исправлены контраст отключённой кнопки-ссылки и минимальная высота нативных селекторов WebKit. Финальный прогон: **3 passed** в Chromium/WebKit/Firefox. Проверены размер controls (не менее 32 CSS px), обе темы, клавиатура, 320/390 px, отсутствие горизонтального переполнения страницы и CSS zoom 200%. Снимки просмотрены; подписи и действия помещаются. CSS zoom проверяет масштабирование содержимого, а не системный диалог браузера. Повторный Staff typecheck, ESLint, Prettier и diff-check прошли. Миграций и изменений API нет; выпуск на production не выполнялся.

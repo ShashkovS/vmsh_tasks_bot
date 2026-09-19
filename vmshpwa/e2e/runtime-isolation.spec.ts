@@ -127,9 +127,9 @@ const manifests = {
   },
   family: {
     id: '/family/',
-    name: 'ВМШ 179 — семья',
-    short_name: 'ВМШ Семья',
-    description: 'Расписание, прогресс и новости ВМШ 179 для семьи',
+    name: 'ВМШ 179 — кабинет родителя',
+    short_name: 'ВМШ Родитель',
+    description: 'Расписание, прогресс и новости ВМШ 179 для родителя',
     lang: 'ru',
     start_url: '/family/',
     scope: '/family/',

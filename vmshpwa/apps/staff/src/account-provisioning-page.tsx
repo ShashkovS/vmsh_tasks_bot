@@ -666,7 +666,7 @@ export function AccountProvisioningView({
 }) {
   return (
     <PageLayout
-      description="Сначала создайте школьников, затем семейные аккаунты. Зачисление на курс выполняется отдельным действием."
+      description="Сначала создайте школьников, затем аккаунты родителей. Зачисление на курс выполняется отдельным действием."
       eyebrow="Admin"
       title="Пакетное создание аккаунтов"
       width="wide"
@@ -696,7 +696,7 @@ export function AccountProvisioningView({
           applyRequest={applyFamilies}
           audience="family"
           columns="Имя · Логин · Пароль · Email через запятую · Логины детей через запятую"
-          description="Семейный пакет запускайте после создания школьников. Один аккаунт может быть связан с несколькими детьми."
+          description="Родительский пакет запускайте после создания школьников. Один аккаунт может быть связан с несколькими детьми."
           draftKey={provisioningDraftKey(storageNamespace, accountId, 'family')}
           parse={parseFamilyProvisioningTsv}
           previewRequest={previewFamilies}

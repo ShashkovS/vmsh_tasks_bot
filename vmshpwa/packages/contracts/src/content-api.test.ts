@@ -603,6 +603,7 @@ describe('Phase-2 content HTTP contracts', () => {
           reviewed: false,
         },
       ],
+      testRechecks: [],
       requestId: 'metadata-contract-test',
     })
 

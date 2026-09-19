@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import type { AdminCourse } from '@vmsh/contracts'
 
@@ -67,7 +67,11 @@ export const Scheduled: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByDisplayValue('Начинающие')).toBeInTheDocument()
-    await expect(canvas.getByDisplayValue(/Разбор задач/)).toBeInTheDocument()
+    const editor = await canvas.findByLabelText('Markdown публикации')
+    await expect(editor).toHaveTextContent(/Разбор задач/u)
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Запланировать публикацию' })).toBeEnabled(),
+    )
     await userEvent.click(canvas.getByRole('button', { name: 'Запланировать публикацию' }))
     await expect(args.onSubmit).toHaveBeenCalledOnce()
   },
@@ -79,8 +83,10 @@ export const EditingScheduled: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
+    await canvas.findByLabelText('Markdown публикации')
     await expect(canvas.getByLabelText('Группа')).toBeEnabled()
     await expect(canvas.getByLabelText('Очность')).toBeEnabled()
+    await expect(canvas.getByRole('button', { name: 'Сохранить изменения' })).toBeEnabled()
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
     await expect(args.onSubmit).toHaveBeenCalledOnce()
   },
@@ -97,7 +103,9 @@ export const EditingPublished: Story = {
     await expect(canvas.getByLabelText('Группа')).toBeDisabled()
     await expect(canvas.getByLabelText('Очность')).toBeDisabled()
     await expect(canvas.getByLabelText('Опубликовано по московскому времени')).toBeDisabled()
-    await userEvent.type(canvas.getByLabelText('Текст публикации'), ' Уточнение.')
+    const editor = await canvas.findByLabelText('Markdown публикации')
+    await userEvent.type(editor, ' Уточнение.')
+    await expect(canvas.getByRole('button', { name: 'Сохранить исправление' })).toBeEnabled()
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить исправление' }))
     await expect(args.onSubmit).toHaveBeenCalledOnce()
   },

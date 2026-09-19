@@ -73,9 +73,7 @@ function environment(): Omit<ProductEvent, 'eventType' | 'routeId' | 'entityType
 export function canonicalProductRoute(pathname: string): string {
   const segments = (pathname.split(/[?#]/, 1)[0] ?? '').split('/').filter(Boolean)
   if (segments.length === 0) return '/'
-  return `/${segments
-    .map((segment) => (/^[a-z]+$/.test(segment) ? segment : ':id'))
-    .join('/')}`
+  return `/${segments.map((segment) => (/^[a-z]+$/.test(segment) ? segment : ':id')).join('/')}`
 }
 
 export class ProductAnalyticsTracker {
@@ -131,7 +129,12 @@ export function ProductPageView({ audience, pathname }: { audience: Audience; pa
   }, [pathname, tracker])
   useEffect(() => {
     const onAction = (event: Event) => {
-      const detail = (event as CustomEvent<{ eventType: Exclude<ProductEventType, 'page.view'>; entity?: { type: string; id: string } }>).detail
+      const detail = (
+        event as CustomEvent<{
+          eventType: Exclude<ProductEventType, 'page.view'>
+          entity?: { type: string; id: string }
+        }>
+      ).detail
       if (detail) tracker.track(detail.eventType, window.location.pathname, detail.entity)
     }
     window.addEventListener(PRODUCT_ACTION_EVENT, onAction)

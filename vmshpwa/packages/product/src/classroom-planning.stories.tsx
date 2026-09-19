@@ -643,7 +643,7 @@ export const PublicAssignmentStates: Story = {
         <ClassroomAssignmentStatus audience="student" status="not_applicable" />
       </div>
       <div className="space-y-2" data-density="family">
-        <p className="text-label font-medium text-foreground">Семья</p>
+        <p className="text-label font-medium text-foreground">Родитель</p>
         <ClassroomAssignmentStatus
           audience="family"
           classroomName="201"

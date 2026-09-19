@@ -58,10 +58,10 @@ export function NewsModerationList({
                     </span>
                     <Badge variant="outline">
                       {item.audience === 'both'
-                        ? 'Школьник и семья'
+                        ? 'Школьник и родитель'
                         : item.audience === 'student'
                           ? 'Только школьник'
-                          : 'Только семья'}
+                          : 'Только родитель'}
                     </Badge>
                     <Badge variant="outline">
                       {item.attendanceMode === 'all'

@@ -18,16 +18,16 @@ URLs, optimistic-lock ETags, and contract field names.
 
 The initial compact prefixes are:
 
-| Records | Prefix |
-| --- | --- |
-| users, accounts, seasons, courses, groups | `u`, `a`, `s`, `c`, `g` |
-| enrollments, enrollment events, staff scopes | `en`, `ene`, `ss` |
-| course/group lessons, schedules, lesson windows, publications | `cl`, `gl`, `sr`, `so`, `lw`, `lp` |
-| content source/revision, media asset, problem/synonym | `cs`, `cr`, `ma`, `p`, `ps` |
-| attempts, submission thread/entry/attachment/reassignment | `ta`, `st`, `se`, `sa`, `sra` |
-| review, annotation and review events | `r`, `ra`, `re` |
+| Records                                                        | Prefix                                   |
+| -------------------------------------------------------------- | ---------------------------------------- |
+| users, accounts, seasons, courses, groups                      | `u`, `a`, `s`, `c`, `g`                  |
+| enrollments, enrollment events, staff scopes                   | `en`, `ene`, `ss`                        |
+| course/group lessons, schedules, lesson windows, publications  | `cl`, `gl`, `sr`, `so`, `lw`, `lp`       |
+| content source/revision, media asset, problem/synonym          | `cs`, `cr`, `ma`, `p`, `ps`              |
+| attempts, submission thread/entry/attachment/reassignment      | `ta`, `st`, `se`, `sa`, `sra`            |
+| review, annotation and review events                           | `r`, `ra`, `re`                          |
 | classroom catalog event, in-person event, layout/plan/delivery | `room`, `ce`, `ipe`, `clv`, `cap`, `cdb` |
-| support, notification, Telegram binding, news, audit | `sup`, `sue`, `n`, `tb`, `news`, `ae` |
+| support, notification, Telegram binding, news, audit           | `sup`, `sue`, `n`, `tb`, `news`, `ae`    |
 
 Random values remain where unpredictability is a security or deduplication
 property rather than a record identity: auth session and refresh secrets,

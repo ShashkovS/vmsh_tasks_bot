@@ -98,7 +98,6 @@ index and that rollback removes it.
   `lesson-statistics`, `staff-statistics-page`, `course-progress`, `progress`.
   Existing StrengthTrend renders the same persisted smoothing in Student/Family.
 
-
 ## Dense Staff statistics and manual recalculation (2026-09-13)
 
 Staff distributions use 260px height, including one participant, with a common

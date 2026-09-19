@@ -123,7 +123,9 @@ export const StudentPreviewAndApply: Story = {
     await userEvent.click(canvas.getAllByRole('button', { name: 'Проверить таблицу' })[0]!)
     await expect(canvas.getByText('ivanov-17 · изменён')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Создать готовые · 1' }))
-    await expect(canvas.getByText('Создано: 1. Пропущено: 0.')).toBeVisible()
+    await expect(
+      await canvas.findByText(/Создано: 1\. Дубликатов проигнорировано: 0\./u),
+    ).toBeVisible()
     await expect(input).toHaveValue('')
   },
 }

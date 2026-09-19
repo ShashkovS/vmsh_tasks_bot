@@ -69,10 +69,7 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
       }
     ).enrollments[0]!
   }, secondChildId)
-  const targetGroup =
-    initialEnrollment.activeGroupId === 'g-1'
-      ? 'g-2'
-      : 'g-1'
+  const targetGroup = initialEnrollment.activeGroupId === 'g-1' ? 'g-2' : 'g-1'
   const targetMode = initialEnrollment.attendanceMode === 'online' ? 'in_person' : 'online'
 
   await page

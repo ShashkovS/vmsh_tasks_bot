@@ -202,12 +202,7 @@ describe('Phase-1 authentication contracts', () => {
     const otherStudent = { ...student, accountId: 'account-student-other' }
     const family = authContextSchema.parse(familyFixture.authContext).principal
 
-    expect(authQueryKeys.sessions(student)).toEqual([
-      'principal',
-      'student',
-      'a-1001',
-      'sessions',
-    ])
+    expect(authQueryKeys.sessions(student)).toEqual(['principal', 'student', 'a-1001', 'sessions'])
     expect(authQueryKeys.sessions(student)).not.toEqual(authQueryKeys.sessions(otherStudent))
     expect(authQueryKeys.sessions(student)).not.toEqual(authQueryKeys.sessions(family))
   })

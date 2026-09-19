@@ -195,11 +195,7 @@ test('Admin searches the real immutable audit timeline', async ({ page }) => {
 })
 
 test('Teacher reads only the scoped anonymous course statistics', async ({ page }) => {
-  await loginThroughUi(
-    page,
-    AUTH_PERSONAS.teacher,
-    '/staff/statistics?course=c-1&lesson=41',
-  )
+  await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/statistics?course=c-1&lesson=41')
   await expect(page.getByRole('heading', { name: 'Статистика курса', level: 1 })).toBeVisible()
   await expect(page.getByLabel('Группа')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Занятие 41' })).toHaveAttribute(
@@ -604,7 +600,7 @@ test('Teacher sees only scoped students and cannot edit admin enrollment fields'
   await expect(page.getByRole('heading', { name: 'Участники и группы', level: 1 })).toBeVisible()
   await expect(page.getByText('Показаны только ваши группы')).toBeVisible()
   await expect(page.getByRole('button', { name: /Тестовый-Онлайн Алексей/ })).toBeVisible()
-  await expect(page.getByText('Семейные аккаунты')).toHaveCount(0)
+  await expect(page.getByText('Аккаунты родителей')).toHaveCount(0)
   await expect(page.getByLabel('Формат занятий')).toBeDisabled()
   await expect(page.getByLabel('Состояние записи')).toBeDisabled()
   await expect(page.getByRole('tab', { name: 'Преподаватели' })).toHaveCount(0)
@@ -690,8 +686,7 @@ test('Admin saves a course enrollment through the real API', async ({ page }, te
   const changed = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' &&
-      new URL(response.url()).pathname ===
-        '/staff/api/v1/course-enrollments/en-10301',
+      new URL(response.url()).pathname === '/staff/api/v1/course-enrollments/en-10301',
   )
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   expect((await changed).status()).toBe(200)
@@ -703,8 +698,7 @@ test('Admin saves a course enrollment through the real API', async ({ page }, te
   const restored = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' &&
-      new URL(response.url()).pathname ===
-        '/staff/api/v1/course-enrollments/en-10301',
+      new URL(response.url()).pathname === '/staff/api/v1/course-enrollments/en-10301',
   )
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   expect((await restored).status()).toBe(200)

@@ -976,7 +976,7 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     )
     assert preferences.status == 200
     preference_items = (await preferences.json())["items"]
-    assert len(preference_items) == 9
+    assert len(preference_items) == 10
     assert (
         next(item for item in preference_items if item["category"] == "oral_window")[
             "pushEnabled"

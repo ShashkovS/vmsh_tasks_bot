@@ -1,4 +1,3 @@
-
 ### Кнопка обновления — 11 сентября 2026
 
 `usePwaUpdateActivation` в `packages/app-shell/src/pwa-update-activation.ts`

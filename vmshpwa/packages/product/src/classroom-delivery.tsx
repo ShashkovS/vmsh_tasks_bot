@@ -249,7 +249,7 @@ export function ClassroomDeliveryPanel({
               <span>
                 <span className="block text-small font-medium text-foreground">PWA</span>
                 <span className="block text-caption text-muted-foreground">
-                  Объявление в кабинете школьника. Семье уведомление не отправляется.
+                  Объявление в кабинете школьника. Родителю уведомление не отправляется.
                 </span>
               </span>
             </Label>

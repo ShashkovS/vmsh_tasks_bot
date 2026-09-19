@@ -290,7 +290,6 @@ Classroom layout/assignment plan принадлежит `in_person_event`, ко�
 
 Дополнительный proof: composition/inheritance API, неучаствующие группы не копируются, номера занятий могут различаться, course collisions дают warning, story `Product/Classrooms--multi-course-inherited-event` и `Pages/Staff--multi-course-classroom-event`.
 
-
 ## Live marking — 9 сентября 2026
 
 Реализованы Staff `/in-person` и новый `/oral`: общий редактор, durable undo,
@@ -307,7 +306,6 @@ Gates: 45 focused Python, 21 legacy, 9 production E2E (три браузера),
 на прежний общий файл описано в `pwa_tests/reports/live-marking.md` вместе с
 логами, ограничениями и мобильными снимками.
 10 сентября 2026 владелец разрешил commit и push в текущую ветку `vmshpwa`.
-
 
 ## Компактный live-приём — 10 сентября 2026, проверено
 
@@ -326,7 +324,6 @@ Ruff прошли. Снимки mobile/desktop/light/dark просмотрены
 Визуальное принятие владельцем остаётся открытым.
 10 сентября владелец разрешил commit и push этого изменения в `vmshpwa`.
 
-
 ## Результаты школьника — 10 сентября 2026, реализовано локально
 
 Выполнен принятый [план](../../docs/student-results.md): admin-only PWA/Telegram
@@ -338,7 +335,6 @@ Chromium/WebKit/Firefox. 320/390 px, desktop, light/dark, 200%, клавиату
 [Отчёт и снимки](../../../pwa_tests/reports/student-results/README.md).
 Миграций нет. Владелец разрешил commit и push 10 сентября 2026.
 Развёртывание не выполнялось; визуальное принятие владельцем остаётся открытым.
-
 
 ### 2026-09-14 — вид неподтверждённых оценок
 

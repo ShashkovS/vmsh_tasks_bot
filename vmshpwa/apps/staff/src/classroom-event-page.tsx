@@ -304,7 +304,7 @@ function EventEditor({
         <Alert tone="info">
           <CalendarClock aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Дата и время будут показаны школьникам и семьям</AlertTitle>
+            <AlertTitle>Дата и время будут показаны школьникам и родителям</AlertTitle>
             <AlertDescription>
               Номер аудитории берётся только из подтверждённого плана. Уведомления отправляются
               отдельной рассылкой.

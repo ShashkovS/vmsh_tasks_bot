@@ -92,7 +92,7 @@ async def test_task_titles_in_published_documents_and_staff_preview(
         assert problem["taskReference"] == "41a.1"
         assert "correctAnswer" not in problem and "answerConfig" not in problem
 
-    # Omitted mappings are not a second source of visible metadata.
+    # Published metadata stays authoritative when a later matching decision is omitted.
     fixture.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE content_problem_matches SET decision='omit', problem_id=NULL WHERE content_revision_id="
@@ -103,6 +103,4 @@ async def test_task_titles_in_published_documents_and_staff_preview(
     response = await _student_read(
         fixture, group_lesson=fixture.group_lesson_a, kind="condition"
     )
-    assert (await response.json())["document"]["problems"][0]["title"] == (
-        "Старое название" if source_title else None
-    )
+    assert (await response.json())["document"]["problems"][0]["title"] == row["title"]

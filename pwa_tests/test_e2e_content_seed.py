@@ -90,7 +90,7 @@ def test_fixture_insert_is_atomic_and_idempotent(tmp_path):
             connection.execute("SELECT count(*) FROM group_lessons").fetchone()[0] == 6
         )
         assert (
-            connection.execute("SELECT count(*) FROM lesson_windows").fetchone()[0] == 3
+            connection.execute("SELECT count(*) FROM lesson_windows").fetchone()[0] == 6
         )
         assert (
             connection.execute(

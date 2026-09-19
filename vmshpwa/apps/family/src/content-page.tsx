@@ -105,7 +105,7 @@ export function FamilyPublishedContentPage({
         <PageStatePanel
           description={
             !studentPublicId
-              ? 'У семейного аккаунта нет доступного профиля ребёнка.'
+              ? 'У аккаунта родителя нет доступного профиля ребёнка.'
               : 'Откройте задачу из опубликованного листка ребёнка.'
           }
           state="empty"

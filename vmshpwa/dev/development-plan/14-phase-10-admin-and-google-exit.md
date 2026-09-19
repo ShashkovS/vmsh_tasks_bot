@@ -244,7 +244,6 @@ Staff получает полный каталог CRUD/archive курсов и 
 
 Дополнительный proof: optimistic conflicts, duplicate codes only within course, teacher `403`, import dry-run/rollback и stories `Product/Staff-admin--course-and-group-catalog`, `--independent-schedules`, `--telegram-bindings`.
 
-
 ## PNG для разбора — 2026-09-13, реализовано
 
 Staff `/whiteboard-export`: опубликованные условия доступных преподавателю
@@ -254,7 +253,6 @@ Backend: 3 теста прошли; PNG/ZIP и регрессия печати �
 Firefox и WebKit. Typecheck, ESLint, Stylelint и Ruff прошли. Миграций нет.
 Требования: `vmshpwa/docs/whiteboard-export.md`; отчёт и снимки:
 `vmshpwa/docs/whiteboard-export-report.md`. Финальная ручная приёмка — импорт PNG в Zoom.
-
 
 ### 2026-09-13 — плотная статистика и ручной шаг a53
 

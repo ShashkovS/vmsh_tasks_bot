@@ -66,7 +66,7 @@ export function StudentAccountControls({
     setCredential('')
   }
 
-  const title = audience === 'student' ? 'Аккаунт школьника' : 'Аккаунт семьи'
+  const title = audience === 'student' ? 'Аккаунт школьника' : 'Аккаунт родителя'
   const credentialLabel = audience === 'student' ? 'Новый Telegram-токен' : 'Новый пароль'
 
   return (

@@ -1,5 +1,28 @@
 # Статус плана разработки
 
+## Общие PWA quality gates — 19 сентября 2026, реализовано локально
+
+Исправлены независимые от терминологии родителя ESLint-нарушения, устаревшие
+контрактные fixtures и Storybook play-проверки. Актуализированы
+characterization-отчёт content compiler, миграционный тест и seed-ожидания.
+Пройдены `pwa-format`, `pwa-lint`, `pwa-typecheck`, `pwa-i18n-check`, все PWA
+builds, `pwa-test` (872 frontend и 2053 Python-теста, 6 skipped) и
+`pwa-storybook-test` (63 файла, 313 проверок). PWA-протоколы и `/family` не
+затрагиваются. Browser-истории выполняются последовательно: это сохраняет
+измерение 50-мс interaction budget live-marking независимым от нагрузки других
+Storybook-вкладок.
+
+## Терминология родителя — 19 сентября 2026, реализовано локально
+
+В видимом интерфейсе Family PWA, лендинга, Staff и общих компонентов роль
+`family` переименована в «родителя»: «Кабинет родителя», «аккаунт родителя» и
+нужные падежи в рассылках. PWA manifest и HTML-метаданные обновлены. Маршрут
+`/family`, API/audience/cache-ключи и пользовательские имена аккаунтов не
+изменялись. Пройдены `pwa-i18n-extract`, `pwa-i18n-check`, typecheck, все PWA
+builds и 75 runtime E2E в Chromium/WebKit/Firefox. Несвязанные с copy общие
+lint/unit/Storybook gates исправлены в записи выше; news E2E остановлен после
+таймаута первого, не затрагивающего рассылку сценария.
+
 ## Интернационализация, P0 — 18 сентября 2026, реализовано локально
 
 Инфраструктура RU → EN без видимых изменений: Lingui 6 (русский текст в
@@ -2696,6 +2719,7 @@ $lessonNumber` без `?task=` рендерит ту же ленту (`StudentLe
   ФИО подставляется при чтении из основной БД, а не дублируется в telemetry.
 - Проверены: Ruff, focused SQLite tests (**2 PASS**), contracts/app-shell/
   Student/Family/Staff strict TypeScript и production build Staff — **PASS**.
+
 # Серийная проверка — 7 сентября 2026
 
 Реализация [серийного режима](../../docs/serial-review.md): задачи по старейшей
@@ -2706,7 +2730,6 @@ $lessonNumber` без `?task=` рендерит ту же ленту (`StudentLe
 сценариев, Staff TypeScript и production build. ESLint изменённых компонентов
 проходит. Следующий компонент сохраняет DOM при переходе; отдельный тест
 подтверждает освобождение запоздалого захвата после ухода со страницы.
-
 
 ## Live marking — 9 сентября 2026
 
@@ -2725,7 +2748,6 @@ Gates: 45 focused Python, 21 legacy, 9 production E2E (три браузера),
 логами, ограничениями и мобильными снимками.
 10 сентября 2026 владелец разрешил commit и push в текущую ветку `vmshpwa`.
 
-
 ## Компактный live-приём — 10 сентября 2026, проверено
 
 По замечаниям владельца перерабатывается плотность Zoom и мобильного очного
@@ -2742,7 +2764,6 @@ Ruff прошли. Снимки mobile/desktop/light/dark просмотрены
 [отчёт и доказательства](../../../pwa_tests/reports/live-marking-compact.md).
 Визуальное принятие владельцем остаётся открытым.
 10 сентября владелец разрешил commit и push этого изменения в `vmshpwa`.
-
 
 ## Результаты школьника — 10 сентября 2026, реализовано локально
 
@@ -2837,20 +2858,17 @@ The child course chart now requires at least two analytics lessons (unique X val
 
 Aligned Help links using flex-wrap, explicit gaps and icons; removed forced line break. Implemented in `apps/student/src/student-profile-page.tsx` and story composition `pages.tsx`; see [organizer questions](../../docs/organizer-questions.md). Student typecheck, targeted ESLint and formatting passed. Owner authorized commit and push.
 
-
 ## 2026-09-12 — Обратная совместимость дополнительных полей API
 
 - Готово: общие модели ответов Student/Family/Staff удаляют неизвестные поля, включая вложенные документы и историю проверок. Валидация известных данных сохраняется.
 - Требование и реализация: [api-response-compatibility.md](../../docs/api-response-compatibility.md); контракты `packages/contracts/src`, регрессия `response-compatibility.test.ts` и `review-queue-client.test.ts`.
 - Проверка: 36 целевых тестов, все workspace typecheck, ESLint, Prettier и diff-check пройдены. В расширенном наборе 445/448 тестов прошли; 3 прежних падения auth/notification fixtures воспроизведены на исходном HEAD, см. отчёт в документе. Внешний вид не меняется.
 
-
 ## 2026-09-12 — Геометрия разметки и сохранность старых пометок
 
 - Готово: весь прямоугольник фотографии доступен для новых пометок; старые пометки сохраняют прежнюю геометрию без миграции.
 - [Требование и регрессии](../../docs/review-annotation-geometry.md): общий renderer, признак координат отдельной пометки, браузерное сравнение со старым SVG и сохранение через API.
 - Проверено: Chromium 5 stories; Firefox/WebKit — совместимость в 32 комбинациях; 17 backend и 12 контрактных тестов. Typecheck, ESLint, Prettier и diff-check прошли. Снимок в документе проверен визуально. База и старые записи не мигрируют.
-
 
 ## Активация уведомлений — 2026-09-12
 
@@ -2859,14 +2877,12 @@ Aligned Help links using flex-wrap, explicit gaps and icons; removed forced line
 См. [решение](../../docs/notification-activation.md). Проверено: 16 frontend-тестов, 20 backend-тестов, 6 Chromium Storybook-состояний,
 production build. Реальная доставка на устройстве после выпуска остаётся отдельной проверкой.
 
-
 ## Доступ к настройкам уведомлений — 2026-09-12
 
 В StudentProfilePage и FamilyProfilePage добавлен отдельный блок со ссылкой на
 настройки категорий и устройства. PushDeviceControls объясняет восстановление
 разрешения в Chrome/Edge, Firefox, Safari и iOS. Typecheck Student/Family/Product
 и 6 браузерных Storybook-проверок Chromium прошли.
-
 
 ## Открытие push на Android — 2026-09-12
 
@@ -2906,7 +2922,6 @@ targeted ESLint и Prettier, production build Student, `git diff --check`.
 сборки всех PWA, schema inventory, Ruff и целевые ESLint/Prettier. Заодно исправлен
 устаревший эталон teacher capabilities, поэтому полный unit-набор снова зелёный.
 
-
 ## Единый листок и просмотры — 2026-09-13, реализовано локально
 
 См. [решение](../../docs/worksheet-materials.md). Общие бумага/спойлеры, подтверждение
@@ -2914,7 +2929,6 @@ targeted ESLint и Prettier, production build Student, `git diff --check`.
 Проверено: 36 unit, 4 backend, 15 browser и 6 E2E в Chromium/Firefox/WebKit;
 320/390/1280 px, обе темы, печать, typecheck, production build. Снимки и известные
 baseline-падения старых Staff-тестов описаны в отчёте. Миграций нет.
-
 
 ## Фото в вопросах — 2026-09-13, реализовано локально
 
@@ -2924,14 +2938,12 @@ baseline-падения старых Staff-тестов описаны в отч
 Проверено: 45 backend/schema, 11 unit, 3 browser, 12 E2E в трёх браузерах;
 сборки, typecheck, Ruff и целевой ESLint. Снимки — в отчёте `question-photos.md`.
 
-
 ### Компактная строка действий — 2026-09-13
 
 `QuestionPhotoPicker.action` размещает отправку справа от галереи и камеры.
 `SupportComposer` и `OrganizerCompose` используют одну строку; миниатюры и статус
 сохранения вынесены отдельно. Геометрия 320/390/800 px: проверки прошли
 в Chromium, Firefox и WebKit; typecheck, ESLint и diff-check тоже прошли.
-
 
 ## PNG для разбора — 2026-09-13, реализовано
 
@@ -3043,7 +3055,6 @@ Production-smoke для `cur_les = 1`, `event_id = "ipe-1"` вернул 1266 у
 5515 полных результатов. Адаптеры a22/a23 прочитали снимок; генерация почтовых
 workbook и FTP-публикация при проверке не запускались.
 
-
 ## Неподтверждённые очные оценки — реализовано, 2026-09-14
 
 LiveMarkButton показывает часы вместо неподтверждённого плюса/минуса,
@@ -3052,7 +3063,6 @@ LiveMarkButton показывает часы вместо неподтвержд
 чужой оценки через WS, reconnect с пропущенным изменением, сохранность после
 reload. Снимки desktop/light и mobile/dark просмотрены. Приёмка владельцем
 ожидается. [Отчёт](../live-marking-confirmation-report.md).
-
 
 ## Векторные шахматные фигуры TikZ — реализовано, 2026-09-14
 
@@ -3074,7 +3084,6 @@ story OralWindowsNavigation прошла в Chromium: адрес занятия,
 клавиатурный фокус. Целевой ESLint остальных изменённых файлов и diff-check
 прошли. Изменение пока локальное, миграций и серверных настроек не требует.
 
-
 ## Старые вставки шахматных фигур — исправлено, 2026-09-14
 
 Прямые `includegraphics{QueenWhite}` и остальные известные шахматные имена
@@ -3082,7 +3091,6 @@ story OralWindowsNavigation прошла в Chromium: адрес занятия,
 не меняются. Реальная компиляция примера gl-4 прошла; SVG просмотрен.
 103 теста прошли, Ruff и diff-check — без ошибок.
 [Контракт](../../docs/tikz-chess.md).
-
 
 ## Редактор расположения рисунков — реализовано и проверено, 2026-09-15
 

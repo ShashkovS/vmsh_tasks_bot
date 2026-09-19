@@ -362,21 +362,17 @@ export const MissingAsset: Story = {
 }
 
 export const ZoomCanvas: Story = {
-  name: 'Zoom canvas: scroll-backed keyboard zoom',
+  name: 'Figure canvas: click and keyboard scale',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const viewport = canvas.getByRole('region', { name: /Просмотр рисунка/u })
-    const transformedCanvas = canvas.getByTestId('figure-canvas')
-    const zoom = canvas.getByTestId('figure-zoom')
+    const figure = canvas.getByTestId('asset-figure')
+    const figureCanvas = canvas.getByTestId('figure-canvas')
 
-    await userEvent.click(viewport)
-    await userEvent.keyboard('+')
-    await expect(zoom).toHaveTextContent('150%')
-    await expect(transformedCanvas.style.width).toContain('150%')
+    await userEvent.click(figureCanvas)
+    await expect(figure.style.getPropertyValue('--vmsh-figure-scale')).toBe('1.25')
 
-    await userEvent.keyboard('0')
-    await expect(zoom).toHaveTextContent('100%')
-    await expect(transformedCanvas.style.width).toContain('100%')
+    await userEvent.keyboard(' ')
+    await expect(figure.style.getPropertyValue('--vmsh-figure-scale')).toBe('1.5')
   },
 }
 

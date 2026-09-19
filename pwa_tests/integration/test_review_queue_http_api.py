@@ -899,7 +899,7 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
     assert len(notifications) == 1
     assert notifications[0]["account_public_id"] == STUDENT_ACCOUNT_PUBLIC_ID
     assert notifications[0]["category"] == "review_completed"
-    assert notifications[0]["route"] == "/student/notifications"
+    assert notifications[0]["route"] == "/student/profile/notifications"
     assert notifications[0]["deliver_after"] == _timestamp(NOW + timedelta(minutes=30))
     assert json.loads(notifications[0]["payload_json"]) == {
         "count": 1,

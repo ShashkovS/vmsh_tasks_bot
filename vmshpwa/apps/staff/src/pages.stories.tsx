@@ -332,7 +332,7 @@ export const ClassroomDelivery: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Разослать аудитории' })).toBeEnabled()
-    await expect(canvas.getByText(/Семье уведомление не отправляется/)).toBeInTheDocument()
+    await expect(canvas.getByText(/Родителю уведомление не отправляется/)).toBeInTheDocument()
   },
 }
 export const BroadcastPhaseTwo: Story = { render: () => <BroadcastComposerPage /> }
@@ -455,7 +455,7 @@ function StudentDirectoryStory() {
       ) : null}
       {familySaved ? (
         <p className="mt-3 text-small" role="status">
-          Семейное действие подготовлено: {familySaved}.
+          Действие с аккаунтом родителя подготовлено: {familySaved}.
         </p>
       ) : null}
     </div>
@@ -469,10 +469,7 @@ export const StudentCourseAccess: Story = {
     const canvas = within(canvasElement)
     await userEvent.type(canvas.getByLabelText('Поиск по имени'), 'алексеи')
     await expect(canvas.getAllByText('Тестовый-Онлайн Алексей Петрович')).toHaveLength(2)
-    await userEvent.selectOptions(
-      canvas.getByLabelText('Активная группа'),
-      'group-fixture-continuing',
-    )
+    await userEvent.selectOptions(canvas.getByLabelText('Активная группа'), 'g-2')
     await expect(canvas.getByText(/Несохранённые изменения хранятся/)).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
     await expect(canvas.getByText('Изменение подготовлено к отправке.')).toBeInTheDocument()
@@ -491,7 +488,7 @@ export const StudentAccountLifecycle: Story = {
 }
 
 export const FamilyAccountManagement: Story = {
-  name: 'Участники · семейные аккаунты',
+  name: 'Участники · аккаунты родителей',
   render: () => <StudentDirectoryStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -506,8 +503,10 @@ export const FamilyAccountManagement: Story = {
     await userEvent.type(displayName, 'Семья Новых')
     await userEvent.type(canvas.getByLabelText('Первый пароль'), 'family-password')
     await userEvent.click(canvas.getByRole('button', { name: 'Создать и привязать' }))
-    await expect(canvas.getByText('Семейный аккаунт создан и привязан.')).toBeVisible()
-    await expect(canvas.getByText('Семейное действие подготовлено: create.')).toBeVisible()
+    await expect(canvas.getByText('Аккаунт родителя создан и привязан.')).toBeVisible()
+    await expect(
+      canvas.getByText('Действие с аккаунтом родителя подготовлено: create.'),
+    ).toBeVisible()
 
     const createdAccount = canvas
       .getByText('family-new · родитель · основной контакт')
@@ -519,8 +518,10 @@ export const FamilyAccountManagement: Story = {
     await userEvent.click(
       within(createdAccount).getByRole('button', { name: 'Подтвердить отвязку' }),
     )
-    await expect(canvas.getByText(/Сам семейный аккаунт сохранён/)).toBeVisible()
-    await expect(canvas.getByText('Семейное действие подготовлено: unlink.')).toBeVisible()
+    await expect(canvas.getByText(/Учётная запись родителя сохранена/)).toBeVisible()
+    await expect(
+      canvas.getByText('Действие с аккаунтом родителя подготовлено: unlink.'),
+    ).toBeVisible()
     await expect(
       canvas.queryByText('family-new · родитель · основной контакт'),
     ).not.toBeInTheDocument()
@@ -633,12 +634,9 @@ export const TeacherScopedStudentAccess: Story = {
   render: () => <TeacherStudentDirectoryStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.queryByText('Семейные аккаунты')).not.toBeInTheDocument()
+    await expect(canvas.queryByText('Аккаунты родителей')).not.toBeInTheDocument()
     await expect(canvas.getByLabelText('Формат занятий')).toBeDisabled()
-    await userEvent.selectOptions(
-      canvas.getByLabelText('Активная группа'),
-      'group-fixture-continuing',
-    )
+    await userEvent.selectOptions(canvas.getByLabelText('Активная группа'), 'g-2')
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
     await expect(canvas.getByText('Новая активная группа подготовлена к отправке.')).toBeVisible()
   },

@@ -67,7 +67,9 @@ describe('RichMarkdownEditor', () => {
 
     await waitFor(() =>
       expect(onChange).toHaveBeenLastCalledWith(
-        expect.stringContaining('![квадрат](https://cdn.example.test/rich-media/sha256/aa/picture.webp)'),
+        expect.stringContaining(
+          '![квадрат](https://cdn.example.test/rich-media/sha256/aa/picture.webp)',
+        ),
       ),
     )
   })

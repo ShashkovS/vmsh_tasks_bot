@@ -290,7 +290,7 @@ export function StaffGroupBannersPage() {
                     >
                       <option value="both">Всем</option>
                       <option value="student">Только школьнику</option>
-                      <option value="family">Только семье</option>
+                      <option value="family">Только родителям</option>
                     </select>
                   </Label>
                   <Label className="grid gap-1">
@@ -438,10 +438,10 @@ export function StaffGroupBannersPage() {
                 <GroupBanner banner={banner} />
                 <p className="text-caption text-muted-foreground">
                   {banner.audience === 'both'
-                    ? 'Школьник и семья'
+                    ? 'Школьник и родитель'
                     : banner.audience === 'student'
                       ? 'Только школьник'
-                      : 'Только семья'}
+                      : 'Только родитель'}
                   {' · '}
                   {banner.attendanceMode === 'all'
                     ? 'Очно и онлайн'

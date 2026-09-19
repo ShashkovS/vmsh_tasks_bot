@@ -249,7 +249,7 @@ function errorMessage(error: unknown): string {
     error instanceof ApiResponseError &&
     (error.code === 'asset_conversion_failed' || error.code === 'content_assets_unavailable')
   ) {
-    const details = error.details as Record<string, unknown> | undefined
+    const details = error.details
     const logicalAsset =
       typeof details?.logicalAsset === 'string' ? details.logicalAsset : undefined
     const capability = typeof details?.capability === 'string' ? details.capability : undefined
@@ -267,11 +267,11 @@ function errorMessage(error: unknown): string {
 
 function tikzConversionDebug(error: unknown): TikzConversionDebug | undefined {
   if (!(error instanceof ApiResponseError)) return undefined
-  const details = error.details as Record<string, unknown> | undefined
+  const details = error.details
   const debug = details?.debug
   if (!debug || typeof debug !== 'object') return undefined
-  const generatedTex = (debug as Record<string, unknown>).generatedTex
-  const toolOutput = (debug as Record<string, unknown>).toolOutput
+  const generatedTex = 'generatedTex' in debug ? debug.generatedTex : undefined
+  const toolOutput = 'toolOutput' in debug ? debug.toolOutput : undefined
   const stage = typeof details?.capability === 'string' ? details.capability : undefined
   if (typeof generatedTex !== 'string' || typeof toolOutput !== 'string' || !stage) return undefined
   return { stage, generatedTex, toolOutput }
@@ -1114,7 +1114,7 @@ function MaterialWorkflowCard({
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
               <AlertTitle>Действие не выполнено</AlertTitle>
-              <AlertDescription className="space-y-3">
+              <div className="mt-0.5 space-y-3 text-muted-foreground">
                 <p>{state.errorMessage}</p>
                 {state.conversionDebug ? (
                   <details className="rounded-md border border-status-error/30 bg-surface p-3" open>
@@ -1136,7 +1136,7 @@ function MaterialWorkflowCard({
                     </pre>
                   </details>
                 ) : null}
-              </AlertDescription>
+              </div>
             </AlertContent>
           </Alert>
         ) : null}
@@ -1374,7 +1374,7 @@ function MaterialWorkflowCard({
                       ? `Запланировать версию ${selectedRevision?.data.revisionNumber} на ${state.scheduleAt.replace('T', ' ')} (${businessTimezone})?`
                       : confirmation === 'rollback'
                         ? `Вернуть опубликованный материал к версии ${rollbackRevision?.data.revisionNumber}?`
-                        : `Скрыть опубликованное ${materialLabels[kind].toLocaleLowerCase('ru-RU')} у школьников и семей?`}
+                        : `Скрыть опубликованное ${materialLabels[kind].toLocaleLowerCase('ru-RU')} у школьников и родителей?`}
                 </p>
                 <p className="text-caption text-muted-foreground">
                   {confirmation === 'hide'
@@ -1458,14 +1458,12 @@ function LessonTitlePanelEnabled({
 }) {
   const query = useStaffLessonTitleQuery(client, groupLessonId)
   const resource = query.data
-  const [title, setTitle] = useState('')
+  const [titleDraft, setTitleDraft] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
-  useEffect(() => {
-    if (resource) setTitle(resource.data.title ?? '')
-  }, [resource])
+  const title = titleDraft ?? resource?.data.title ?? ''
 
   async function saveTitle() {
     if (!resource) return
@@ -1477,6 +1475,7 @@ function LessonTitlePanelEnabled({
         title: title.trim() || null,
       })
       await query.refetch()
+      setTitleDraft(null)
       setSaved(true)
     } catch (caught) {
       setError(caught instanceof ApiResponseError ? caught.message : 'Название не сохранено')
@@ -1522,7 +1521,7 @@ function LessonTitlePanelEnabled({
                 disabled={saving}
                 maxLength={200}
                 onChange={(event) => {
-                  setTitle(event.target.value)
+                  setTitleDraft(event.target.value)
                   setSaved(false)
                 }}
                 value={title}

@@ -412,7 +412,10 @@ export function MissingAssetsFlow({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <Alert role="status" tone={unresolvedCount === 0 ? 'success' : tikzProcessing ? 'info' : 'danger'}>
+      <Alert
+        role="status"
+        tone={unresolvedCount === 0 ? 'success' : tikzProcessing ? 'info' : 'danger'}
+      >
         {unresolvedCount === 0 ? (
           <CheckCircle2 aria-hidden="true" />
         ) : tikzProcessing ? (
@@ -426,14 +429,14 @@ export function MissingAssetsFlow({
               ? 'Все ресурсы прикреплены'
               : tikzProcessing
                 ? 'Готовим рисунки из TikZ'
-              : `Не хватает ресурсов: ${unresolvedCount}`}
+                : `Не хватает ресурсов: ${unresolvedCount}`}
           </AlertTitle>
           <AlertDescription>
             {unresolvedCount === 0
               ? 'Можно повторить сборку материала.'
               : tikzProcessing
                 ? 'Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически.'
-              : 'Публикация недоступна, пока все ссылки не разрешены.'}
+                : 'Публикация недоступна, пока все ссылки не разрешены.'}
           </AlertDescription>
         </AlertContent>
       </Alert>

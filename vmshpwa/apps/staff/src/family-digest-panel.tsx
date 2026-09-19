@@ -53,7 +53,7 @@ export function FamilyDigestPanelView({
     <Card>
       <CardHeader className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
         <div className="space-y-1">
-          <CardTitle>Итоги для семей</CardTitle>
+          <CardTitle>Итоги для родителей</CardTitle>
           <p className="text-small text-muted-foreground">
             Один общий итог после завершения всей проверки занятия. Исправления результатов не
             отправляют повторный push автоматически.
@@ -99,7 +99,7 @@ export function FamilyDigestPanelView({
                 <dd className="font-num font-medium">{digest.studentCount}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Семей</dt>
+                <dt className="text-muted-foreground">Родителей</dt>
                 <dd className="font-num font-medium">{digest.familyCount}</dd>
               </div>
             </dl>
@@ -108,7 +108,7 @@ export function FamilyDigestPanelView({
                 <AlertTriangle aria-hidden="true" />
                 <AlertContent>
                   <AlertTitle>
-                    Без активного семейного аккаунта: {digest.unlinkedStudents.length}
+                    Без активного аккаунта родителя: {digest.unlinkedStudents.length}
                   </AlertTitle>
                   <AlertDescription>
                     {digest.unlinkedStudents.map((student) => student.displayName).join(', ')}
@@ -120,9 +120,9 @@ export function FamilyDigestPanelView({
               <Alert tone="warning">
                 <AlertTriangle aria-hidden="true" />
                 <AlertContent>
-                  <AlertTitle>Нет семейных аккаунтов для рассылки</AlertTitle>
+                  <AlertTitle>Нет аккаунтов родителей для рассылки</AlertTitle>
                   <AlertDescription>
-                    Сначала свяжите хотя бы один активный семейный аккаунт со школьником этой
+                    Сначала свяжите хотя бы один активный аккаунт родителя со школьником этой
                     группы.
                   </AlertDescription>
                 </AlertContent>
@@ -133,7 +133,8 @@ export function FamilyDigestPanelView({
                 <AlertContent>
                   <AlertTitle>Итог уже разослан</AlertTitle>
                   <AlertDescription>
-                    Уведомлены {digest.alreadySentFamilyCount} семей. Повторных событий не создано.
+                    Родителей уведомлено: {digest.alreadySentFamilyCount}. Повторных событий не
+                    создано.
                   </AlertDescription>
                 </AlertContent>
               </Alert>
@@ -144,7 +145,7 @@ export function FamilyDigestPanelView({
                 role="alertdialog"
               >
                 <p className="font-medium" id="family-digest-confirmation-title">
-                  Отправить итог {digest.pendingFamilyCount} семьям?
+                  Отправить итог {digest.pendingFamilyCount} родителям?
                 </p>
                 <p className="mt-1 text-small text-muted-foreground">
                   В PWA появится одно событие; при разрешённых push оно будет доставлено на

@@ -58,7 +58,7 @@ function FamilyProtectedShell({
     <AuthenticationRedirectBoundary onAuthenticationRequired={redirectToLogin}>
       <AppShell
         product="family"
-        title="Семья"
+        title="Родитель"
         displayName={principal?.displayName}
         navigation={navigation}
         mobileNavigation

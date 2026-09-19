@@ -73,7 +73,7 @@ export const Ready: Story = {
   render: () => <ReadyView />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByRole('switch')).toHaveLength(6)
+    await expect(canvas.getAllByRole('switch')).toHaveLength(8)
     await expect(canvas.getByText('Итоги занятия готовы')).toBeVisible()
     await expect(canvas.getByLabelText('Push: Итоги занятия')).toBeVisible()
     await expect(canvas.queryByLabelText(/Назначена аудитория/)).not.toBeInTheDocument()

@@ -18,7 +18,7 @@ const destinations = [
   },
   {
     href: '/family/',
-    title: 'Кабинет семьи',
+    title: 'Кабинет родителя',
     description: 'Активность ребёнка, результаты занятий и опубликованные новости.',
   },
 ] as const

@@ -42,12 +42,12 @@ function BrandSheet() {
       <section className="space-y-3">
         <h2 className="text-section font-semibold">Продуктовые иконки</h2>
         <p className="text-label text-muted-foreground">
-          Семья со знаком, но не заменяют подпись роли.
+          Родительский знак не заменяет подпись роли.
         </p>
         <div className="flex flex-wrap gap-6">
           {[
             { Icon: IconStudent, label: 'Школьник' },
-            { Icon: IconFamily, label: 'Семья' },
+            { Icon: IconFamily, label: 'Родитель' },
             { Icon: IconStaff, label: 'Учитель' },
           ].map(({ Icon, label }) => (
             <span

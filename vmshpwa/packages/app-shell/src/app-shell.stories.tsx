@@ -82,7 +82,7 @@ function createShellRouter(
 }
 
 const studentRouter = createShellRouter('student', 'Школьник', true)
-const familyRouter = createShellRouter('family', 'Семья', true)
+const familyRouter = createShellRouter('family', 'Родитель', true)
 const staffRouter = createShellRouter('staff', 'Учитель и администратор', false)
 
 function ShellPreview({ audience }: { audience: 'student' | 'family' | 'staff' }) {
