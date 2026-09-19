@@ -1,0 +1,181 @@
+# Этап 11. Production hardening, deployment и параллельный запуск
+
+## Performance follow-up — 9 сентября 2026
+
+На изолированной полной схеме воспроизведена деградация при конкурентном
+открытии SQLite-соединений. В `db_methods/pwa/connection.py` runtime теперь
+держит два постоянных соединения (reader/writer), каждое в своём потоке;
+результаты не кешируются. `main.py` закрывает их до снятия lifecycle flock.
+Замеры, воспроизводимый benchmark, контракт отмены и критерии production
+сравнения: [sqlite-admission-performance.md](../../docs/sqlite-admission-performance.md).
+Локальные регрессии не заменяют production latency gate: нужны свежие
+`pwa_slow_request` и сопоставимые метрики после выпуска.
+
+## Результат
+
+Student/Family/Staff разворачиваются на одном явно утверждённом production FQDN
+под своими base paths рядом с работающим Telegram-ботом. Hostname ещё не выбран;
+optional staging получает отдельный утверждённый FQDN. После acceptance
+возможности включаются сразу для всех трёх уровней, без продуктового rollout по
+отдельным группам.
+
+Дизайн-контракт этапа: [all-audience failure/update states, production E2E/visual baselines и Storybook release stories](18-design-implementation-map.md#phase-11-design).
+
+## Production topology
+
+- Nginx routes `/student`, `/family`, `/staff`, matching API and WS paths.
+- aiohttp/gunicorn: минимум два workers; shared SQLite/domain/storage, NATS fan-out.
+- Каждый worker владеет соединениями/serialized executor согласно принятому DB concurrency ADR; общий module-level `sqlite3.Connection` не обслуживает конкурентные coroutine. `busy_timeout`, bounded retry и transaction wait попадают в metrics.
+- Telegram webhook/polling adapter запускается отдельно от PWA app factory, но использует общую domain DB.
+- Hetzner S3-compatible bucket через configured `s3_url`/region; bucket/access/secret приходят из production credential file. CORS только для необходимых public reads; browser writes only through aiohttp и не получает S3 credentials.
+- Converter binaries (`pdflatex`, `pdf2svg`, `cwebp`, `magick` по умолчанию) разрешаются через `PATH` реального service profile либо explicit config override; интерактивный shell и hardcoded developer paths не считаются production configuration.
+- Static assets content-hashed; HTML no-cache/revalidate; SW update strategy explicitly tested.
+- CSP, HSTS, MIME sniffing protection, frame/permissions/referrer policies.
+
+## Deployment
+
+Адаптировать server webhook/script к pnpm monorepo:
+
+- change detection учитывает `pnpm-lock.yaml`, workspace packages и каждое app;
+- deterministic `pnpm install --frozen-lockfile` when manifests change;
+- build all affected apps before switching served release;
+- Python `uv sync --no-dev` only when lock/project changes; on the production
+  host run it inside `sudo su vmsh_tasks_bot -s /usr/bin/bash` (never through
+  `sudo -H -u vmsh_tasks_bot uv`, because uv is installed in that user's
+  environment);
+- pre-deploy SQLite backup completes before migration/restart;
+- migrations under explicit lock with version report;
+- runtime `DB_CONNECTION.setup()`/эквивалент не вызывает yoyo apply: migration command завершён до старта workers, а schema mismatch делает health/startup красным;
+- toolchain preflight запускается под тем же service user/environment, что workers, проверяет required capabilities/versions и делает readiness красным при missing/non-executable tool;
+- storage preflight под тем же service profile проверяет полный production `s3_*` config и выполняет безопасный capability probe без печати credential values;
+- health checks API + static manifest + WS handshake;
+- atomic static release symlink/directory and previous-release rollback;
+- post-deploy backup detached only after health success;
+- Telegram notification reports redacted revision/status.
+
+Нельзя использовать `git clean -f`/hard reset without protecting runtime/media/DB and untracked operational files; exact server layout must be documented.
+
+## Observability and privacy
+
+- Sentry frontend/backend releases share revision; environment and audience tags.
+- Error sampling/redaction removes cookies, tokens, answers/photos/comments and push secrets.
+- Structured logs: request ID, route template, status, latency, principal type/pseudonymous ID, DB busy/retry, WS count, outbox lag.
+- Metrics/alerts: login failures, HTTP 5xx, SQLite busy, queue claim conflicts, media failures, delivery backlog, WS reconnect, SW release adoption.
+- Audit covers writes from data model, not every read.
+
+## Backup/restore and retention
+
+- Текущий baseline: внешний cron job несколько раз в день создаёт SQLite backup и пересылает его на другой физический сервер; копии фактически хранятся долго. Точная команда, количественная retention policy и измеренные RPO/RTO пока не зафиксированы.
+- Запуск из таких копий проверялся только на Telegram-модуле, который обрабатывает новые сообщения. Это полезный operational signal, но не доказательство полного восстановления PWA, historical reads, outbox/media references или согласованной тройки SQLite/WAL/SHM. Phase 11 отдельно вводит documented runbook, согласованный full-stack restore, измеренные RPO/RTO и расписание периодического полного rehearsal.
+- Полный отдельный backup S3 не требуется. Student images не versioned; teacher-authored отправленные artifacts защищаются application immutability или отдельной policy.
+- Document what «manual bucket cleanup» may safely delete; preferably manifest-driven orphan report before any deletion.
+- По закрытому `RETENTION-01` retention остаётся бессрочным без автоматической review/cleanup даты. Решение о ручной очистке принимает admin; операция обязана быть manifest-driven, иметь preview/audit и согласованно обновлять SQLite/S3. Growth/orphan reports остаются обязательной эксплуатационной диагностикой.
+
+## Rollout strategy
+
+1. Полный rehearsal на staging либо изолированной временной production copy. Локальный источник `db/vmsh.db` никогда не меняется; до test derivation имена и фамилии в копии заменяются Faker-значениями, копия не коммитится.
+2. Внутренние admin/teacher accounts и test bot/channel.
+3. Acceptance занятий 39–41 во всех трёх уровнях.
+4. Одновременное включение Student/Family/Staff для всех уровней с Telegram fallback.
+5. Google/external cutovers затем выполняются по одному процессу.
+
+Технические kill switches остаются server-authoritative и не могут включать mock auth/MSW, но продуктовый выпуск не делится на отдельные group cohorts.
+
+## Test/release gates
+
+- Full Make quality gates + historical Telegram tests.
+- Production-build E2E 3 browsers on seeded SQLite.
+- Real local Beget test-bucket smoke и staging Hetzner smoke с pinned target identity/disposable prefix: put/get/public-get/delete, retry и cleanup; production key никогда не используется в test runtime.
+- Real staging toolchain smoke: LaTeX/TikZ → PDF → SVG и HEIC/raster → WebP с redacted executable/version report, timeout и cleanup assertions.
+- Two-worker/NATS/WS/SQLite load and failure tests выполняются против численного workload profile этапа 0: concurrency, submit/photo sizes, write latency, queue/outbox depth и допустимые busy/error thresholds. Неопределённый «load test прошёл» gate не принимается.
+- Security review: auth, IDOR, CSRF/origin, CSP, upload, checker execution, public media URLs, push payload.
+- Documented coordinated SQLite/WAL/SHM, media и outbox restore с objective RPO/RTO; прежняя успешная загрузка Telegram new-message module не считается полным restore proof. После первого gate фиксируется периодический full-rehearsal schedule.
+- Полный physical-device smoke на доступных Android; iPhone — по возможности. Chromium/WebKit/Firefox E2E остаются обязательными.
+- Rollback test from new frontend and migration-compatible backend to previous release.
+
+## Критерии приёмки
+
+- Production deploy/rollback не требует Telegram/Google credentials for PWA build.
+- Telegram operation continues during PWA rollout and shared writes reconcile.
+- Одновременные PWA/Telegram writers не смешивают транзакции, не блокируют event loop и при исчерпании bounded `SQLITE_BUSY` retry возвращают наблюдаемую повторяемую ошибку без half-write.
+- Failed deployment leaves previous static/API release usable.
+- Backup restored to isolated runtime passes integrity and selected end-to-end scenarios.
+- Security headers/CSP do not break KaTeX, SVG, WebSocket, Sentry or PWA updates.
+- Content/media workflows не принимают shell fragments в converter config и до пользовательского задания показывают operator-visible ошибку отсутствующей capability.
+- S3 secrets отсутствуют в config `repr`, logs, Sentry, health, deploy report и browser contracts; partial/missing production tuple делает readiness красным до переключения revision.
+- On-call owner can identify failed request/delivery without reading private content.
+- Product owner explicitly accepts remaining legacy paths and retention risk; серьёзные alerts приходят в служебную Telegram-группу.
+
+## Пруфы завершения этапа
+
+Операторская последовательность и формат evidence bundle зафиксированы в
+[`production-rollout-checklist.md`](../../docs/production-rollout-checklist.md).
+Она связывает уже реализованные Make-команды, но не закрывает server/device/
+owner gates без фактического выполнения.
+
+- [ ] Release revision/config/migrations: `<sha/manifest/paths>`.
+- [ ] Service-profile toolchain probe и converter versions/capabilities: `<redacted report/result>`.
+- [ ] Redacted production S3 config/capability probe и test-bucket disposable-prefix smoke: `<reports/results>`.
+- [ ] Deploy and atomic rollback rehearsal: `<runbook/result>`.
+- [ ] SQLite backup/restore RPO/RTO evidence: cron identity/schedule, retention inventory и full-stack restore из изолированной копии; отдельно указать, что прежний Telegram-only startup не покрывает полный gate. S3 immutability/retrieval checks без отдельного S3 backup в v1: `<path/result>`.
+- [ ] Full tests, historical Telegram, 3-browser E2E, physical-device smoke: `<results>`.
+- [ ] Two-worker/NATS/WS/load/failure report: `<path>`.
+- [ ] Security review/headers/CSP/upload/checker/public-media findings: `<path/issues>`.
+- [ ] Sentry/log/metrics redaction and alert screenshots: `<paths>`.
+- [ ] All-groups launch/reconciliation/rollback report: `<path>`.
+- [ ] Final docs/runbooks/data policy/known limitations:
+      [`deployment.md`](../../docs/deployment.md),
+      [`production-rollout-checklist.md`](../../docs/production-rollout-checklist.md),
+      [`testing-strategy.md`](../../docs/testing-strategy.md); production copy
+      чек-листа и реальные результаты остаются rollout evidence.
+- [ ] Product and operational acceptance: `<names/date>`.
+
+## Многокурсовый инкремент Phase 11
+
+Production-size rehearsal создаёт курс «Математика 5–7», backfill-ит enrollments/access/course/group lessons и сравнивает legacy/new read models, statistics, Telegram paths и classroom inheritance. Он выполняется только над изолированной временной копией `db/vmsh.db` после Faker-замены имён/фамилий и никогда не пишет в source DB. Последовательные одинаковые legacy `G`/`O` строки схлопываются в отчёте до реальных enrollment transitions. Legacy `written_tasks_discussions` переносится единым хронологическим thread без выдуманных message→review-round links. Cutover сохраняет legacy IDs и допускает rollback без физического разъединения submission history.
+
+Дополнительный proof: migration parity/repeat/rollback report, synonym identity reconciliation, multi-course load/permission test, historical Telegram regression и явно подписанное решение о включении новых reads/writes.
+
+## Инкремент growth/orphan inventory — 3 августа 2026
+
+Добавлена read-only maintenance-команда, которая сравнивает фактический
+filesystem/S3 prefix с `media_assets.object_key` и `news_media.storage_key`.
+Она различает missing active objects, size mismatch, логически удалённые
+фотографии бессрочной retention, незавершённые news uploads и объекты без
+SQLite-ссылки. Exact keys пишутся только в owner-local mode-0600 manifest;
+stdout и committed proof содержат агрегаты. Delete отсутствует: будущая ручная
+очистка остаётся отдельным preview/confirm/audit процессом.
+
+Software path и agent-profile smoke доказаны в
+[`phase11-media-inventory-2026-08-03.md`](../../../pwa_tests/reports/phase11-media-inventory-2026-08-03.md).
+Production service-account inventory Hetzner остаётся rollout gate.
+
+## Инкремент public HTTP smoke — 3 августа 2026
+
+После atomic release switch оператор запускает credential-free read-only
+команду `make pwa-production-http-smoke` с двумя явными значениями: точный
+HTTPS FQDN и ожидаемый runtime instance. Команда проверяет health/runtime всех
+audience, отсутствие prototype/Google, готовность NATS, API-vs-SPA routing,
+security headers, `no-cache` HTML shells, Student/Family manifests/icons и
+`no-store` service workers. Redirect, HTTP/IP target и ответ больше 4 MiB
+считаются ошибкой; retry намеренно отсутствует.
+
+Software contract и local aiohttp tests зафиксированы в
+[`phase11-production-http-smoke-2026-08-03.md`](../../../pwa_tests/reports/phase11-production-http-smoke-2026-08-03.md).
+Реальный запуск по owner-approved FQDN, authenticated WebSocket/login limit и
+physical-device install остаются отдельными production gates.
+
+## Инкремент production systemd profile — 3 августа 2026
+
+Добавлен отдельный PWA-only unit template и owner-only environment template.
+Unit фиксирует `pwa-production`, отключённый prototype, два Gunicorn worker,
+Unix socket и минимальное hardening; Telegram/Google adapters не запускаются и
+остаются в legacy service. Rolling reload отсутствует, чтобы schema maintenance
+не пересекалась с продолжающими запись worker.
+
+`make pwa-systemd-check` fail-closed проверяет exact mode `0600`, обязательную
+environment tuple, HTTPS origins, один trusted Unix socket, unresolved markers,
+worker class/count и hardening. На production host обязателен
+`systemd-analyze verify`; локальная structural проверка не объявляется реальным
+restart proof. Software evidence:
+[`phase11-systemd-service-profile-2026-08-03.md`](../../../pwa_tests/reports/phase11-systemd-service-profile-2026-08-03.md).

@@ -1,0 +1,24 @@
+[Unit]
+Description=VMSH GitHub webhook FastCGI boundary
+After=network.target
+Requires=vmsh-webhook.socket
+
+[Service]
+Type=simple
+User=vmsh_webhook
+Group=vmsh_webhook
+WorkingDirectory=/web/vmsh_tasks_bot/deploy
+UMask=0007
+ExecStart=/usr/sbin/fcgiwrap -f
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=10
+KillMode=process
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=full
+ProtectHome=read-only
+RestrictSUIDSGID=false
+
+[Install]
+WantedBy=multi-user.target

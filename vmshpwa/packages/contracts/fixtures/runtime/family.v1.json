@@ -1,0 +1,25 @@
+{
+  "fixtureVersion": 1,
+  "request": {
+    "method": "GET",
+    "audience": "family",
+    "path": "/family/api/v1/runtime"
+  },
+  "response": {
+    "contractVersion": 1,
+    "audience": "family",
+    "appBase": "/family",
+    "apiBase": "/family/api/v1",
+    "websocketPath": "/family/ws",
+    "instance": "agent",
+    "serverTime": "2026-07-27T12:00:00Z",
+    "requestId": "fixture-runtime-family-v1",
+    "features": {
+      "telegram": false,
+      "google": false,
+      "nats": true,
+      "prototype": true
+    }
+  },
+  "browserStorageNamespace": "vmsh-179:v1:family:agent"
+}

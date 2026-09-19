@@ -1,0 +1,153 @@
+{
+  "fixtureVersion": 1,
+  "cases": [
+    {
+      "name": "noncanonical_course_id",
+      "target": "course",
+      "payload": {
+        "courseId": "Course-Fixture-Alpha",
+        "code": "synthetic-alpha",
+        "name": "Synthetic course",
+        "subjectCode": "synthetic-subject",
+        "status": "active",
+        "sortOrder": 1,
+        "accentKey": "accent_1",
+        "version": 1
+      }
+    },
+    {
+      "name": "group_without_course",
+      "target": "group",
+      "payload": {
+        "groupId": "group-fixture-alpha-one",
+        "code": "alpha-one",
+        "name": "Synthetic group",
+        "status": "active",
+        "sortOrder": 1,
+        "colorKey": "group_1",
+        "version": 1
+      }
+    },
+    {
+      "name": "unknown_group_status",
+      "target": "group",
+      "payload": {
+        "groupId": "group-fixture-alpha-one",
+        "courseId": "course-fixture-alpha",
+        "code": "alpha-one",
+        "name": "Synthetic group",
+        "status": "enabled",
+        "sortOrder": 1,
+        "colorKey": "group_1",
+        "version": 1
+      }
+    },
+    {
+      "name": "active_group_not_allowed",
+      "target": "enrollment",
+      "payload": {
+        "enrollmentId": "enrollment-fixture-alpha",
+        "studentId": "user-student-fixture",
+        "course": {
+          "courseId": "course-fixture-alpha",
+          "code": "synthetic-alpha",
+          "name": "Synthetic course",
+          "subjectCode": "synthetic-subject",
+          "status": "active",
+          "sortOrder": 1,
+          "accentKey": "accent_1",
+          "version": 1
+        },
+        "activeGroupId": "group-fixture-alpha-missing",
+        "allowedGroups": [
+          {
+            "groupId": "group-fixture-alpha-one",
+            "courseId": "course-fixture-alpha",
+            "code": "alpha-one",
+            "name": "Synthetic group",
+            "status": "active",
+            "sortOrder": 1,
+            "colorKey": "group_1",
+            "version": 1
+          }
+        ],
+        "attendanceMode": "online",
+        "status": "active",
+        "version": 1
+      }
+    },
+    {
+      "name": "hyphenated_attendance_mode",
+      "target": "enrollment",
+      "payload": {
+        "enrollmentId": "enrollment-fixture-alpha",
+        "studentId": "user-student-fixture",
+        "course": {
+          "courseId": "course-fixture-alpha",
+          "code": "synthetic-alpha",
+          "name": "Synthetic course",
+          "subjectCode": "synthetic-subject",
+          "status": "active",
+          "sortOrder": 1,
+          "accentKey": "accent_1",
+          "version": 1
+        },
+        "activeGroupId": "group-fixture-alpha-one",
+        "allowedGroups": [
+          {
+            "groupId": "group-fixture-alpha-one",
+            "courseId": "course-fixture-alpha",
+            "code": "alpha-one",
+            "name": "Synthetic group",
+            "status": "active",
+            "sortOrder": 1,
+            "colorKey": "group_1",
+            "version": 1
+          }
+        ],
+        "attendanceMode": "in-person",
+        "status": "active",
+        "version": 1
+      }
+    },
+    {
+      "name": "response_student_mismatch",
+      "target": "student_course_access_response",
+      "payload": {
+        "studentId": "user-student-fixture",
+        "enrollments": [
+          {
+            "enrollmentId": "enrollment-fixture-alpha",
+            "studentId": "user-other-fixture",
+            "course": {
+              "courseId": "course-fixture-alpha",
+              "code": "synthetic-alpha",
+              "name": "Synthetic course",
+              "subjectCode": "synthetic-subject",
+              "status": "active",
+              "sortOrder": 1,
+              "accentKey": "accent_1",
+              "version": 1
+            },
+            "activeGroupId": "group-fixture-alpha-one",
+            "allowedGroups": [
+              {
+                "groupId": "group-fixture-alpha-one",
+                "courseId": "course-fixture-alpha",
+                "code": "alpha-one",
+                "name": "Synthetic group",
+                "status": "active",
+                "sortOrder": 1,
+                "colorKey": "group_1",
+                "version": 1
+              }
+            ],
+            "attendanceMode": "online",
+            "status": "active",
+            "version": 1
+          }
+        ]
+      }
+    }
+  ]
+}

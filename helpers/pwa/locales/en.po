@@ -1,0 +1,2244 @@
+# PWA backend messages. The Russian msgid is the source text and the key
+# (helpers/pwa/i18n.py). Regenerate with `make pwa-i18n-extract`; edit only msgstr.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=utf-8\n"
+"Language: en\n"
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "API печати не настроен"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "LaTeX-файл должен быть в UTF-8 или Windows-1251"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "LaTeX-файл не удалось разобрать"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "LaTeX-файл пуст"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "LaTeX-файл содержит ошибки и не может быть опубликован"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Preview доступно только после успешной компиляции"
+msgstr ""
+
+#: apps/pwa_api/push_subscription_routes.py
+msgid "Push-уведомления временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/push_subscription_routes.py
+msgid "Push-уведомления пока не настроены"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Revision относится к другому групповому занятию"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Revision относится к другому занятию или виду материала"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Telegram вернул другой канал или некорректное название"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Telegram не настроен для этого запуска"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Telegram-токен изменился. Повторите создание входа."
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Web-вход уже создан или такой логин занят"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Администратор имеет доступ ко всем курсам"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Аккаунт не найден"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Аккаунт уже изменился. Обновите список."
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Активная группа должна входить в список доступных"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Аналитика временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Архивную группу нельзя сделать активной"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Аудитория не найдена"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Аудитория с таким названием уже есть"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Аудитория уже изменилась. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "База печати временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Блокировка проверки завершилась. Обновите очередь."
+msgstr ""
+
+#: apps/pwa_api/push_subscription_routes.py
+msgid "Браузер вернул некорректную push-подписку"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "В проверяемой ветви нет посылок"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "В старой версии не хватает рисунков. Загрузите исходный файл заново вместе с рисунками."
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "В этом курсе уже есть группа с таким кодом или названием"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "В этом сезоне уже есть курс с таким кодом"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Введите логин школьника"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Введите название аудитории"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Введите новые данные для входа"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Введите текст вопроса"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Версия формата ответа не поддерживается"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Версия формата перепроверки не поддерживается"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Версия формата письменной сдачи не поддерживается"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Вид рисунка не совпадает с исходным LaTeX"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Внесение устных результатов временно недоступно"
+msgstr ""
+
+#: apps/pwa_app.py
+msgid "Внутренняя ошибка сервера"
+msgstr "Internal server error"
+
+#: apps/pwa_api/review_routes.py
+msgid "Внутренняя пометка не найдена"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Внутренняя пометка уже изменилась. Обновите проверку."
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Вопрос или его контекст не найден"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Вопрос не найден"
+msgstr ""
+
+#: apps/pwa_api/staff_dashboard_routes.py
+#: apps/pwa_api/support_routes.py
+msgid "Вопросы временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Время изменения внутренней пометки закончилось"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Время изменения реакции закончилось"
+msgstr ""
+
+#: apps/pwa_api/middleware.py
+msgid "Вход временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+#: apps/pwa_api/support_routes.py
+msgid "Выберите JPEG, PNG или WebP"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Выберите группу синонимов"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Выберите действие"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Выберите допустимое состояние аккаунта"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Выберите доступную внутреннюю пометку"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Выберите доступную реакцию"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Выберите задачи без повторов"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Выберите корректный вердикт"
+msgstr ""
+
+#: apps/pwa_api/statistics_recalculation_routes.py
+msgid "Выберите курс"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Выберите курс и XLSX-файл"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Выберите от одного до ста сообщений или фотографий"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Выберите период не более года"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Выберите файл XLSX"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Выбран недопустимый масштаб рисунка"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Генерация metadata временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Группа не найдена"
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Группа недоступна ребёнку"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Группа недоступна этому школьнику"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Группа уже изменилась. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+msgid "Данные изменились. Обновите предпросмотр."
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Данные курсов временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Данные печати изменились после предыдущего экспорта"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/middleware.py
+#: apps/pwa_api/submission_routes.py
+msgid "Для продолжения войдите в кабинет."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Для расписания текущая и отложенная версии должны совпадать"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Для этого режима время не задаётся"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Для этой группы занятие с таким номером уже создано"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Для этой работы ещё не подготовлена полная история PWA"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "До публикации или планирования решения задайте дедлайн сдачи."
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Доступы преподавателей временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Доступы уже изменились. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/audit_routes.py
+msgid "Журнал изменений временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/audit_routes.py
+msgid "Журнал изменений доступен только администратору"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Загрузите ровно один файл в поле image"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/problem_import_routes.py
+msgid "Загрузка должна использовать multipart/form-data"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Загрузка должна содержать одну картинку не больше 10 МиБ"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Загрузка картинок временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Загрузка рисунка должна использовать multipart/form-data"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Загрузка фотографии должна использовать multipart/form-data"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+#: apps/pwa_api/support_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Загрузка фотографий временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+#: apps/pwa_api/notification_routes.py
+msgid "Занятие не найдено"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Занятие недоступно этому школьнику"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Запись на курс не найдена"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/admin_schedule_routes.py
+#: apps/pwa_api/student_results_routes.py
+msgid "Запись не найдена"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Запись уже изменилась. Обновите список."
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Запись уже изменилась. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Заполните все поля загрузки"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Заполните все поля фотографии"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Заполните поля логического имени и вида рисунка"
+msgstr ""
+
+#: apps/pwa_api/middleware.py
+msgid "Запрос отклонён политикой безопасности."
+msgstr ""
+
+#: apps/pwa_api/auth_routes.py
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/review_routes.py
+msgid "Запрос слишком большой"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Идентификатор курса должен быть текстом"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Изменение конфликтует с текущим состоянием материала"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Импорт задач временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Импорт не найден"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Импортировать задачи может только администратор"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Имя LaTeX-файла должно быть безопасным относительным путём .tex"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Имя загружаемого файла недопустимо"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Имя фотографии недопустимо"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Итог можно отправить только для действующего занятия"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Картинка должна быть PNG, JPEG или WebP и успешно преобразовываться"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Картинка не должна быть больше 10 МиБ"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Каталог аудиторий временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Каталог курсов временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/statistics_recalculation_routes.py
+msgid "Ключ запроса уже использован для другого курса"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Курс или группа изменились. Обновите страницу и повторите загрузку"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Курс или группа не найдены"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/admin_schedule_routes.py
+#: apps/pwa_api/notification_routes.py
+#: apps/pwa_api/problem_import_routes.py
+#: apps/pwa_api/statistics_recalculation_routes.py
+msgid "Курс не найден"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Курс недоступен этому школьнику"
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Курс ребёнка недоступен"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Курс уже изменился. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Курсор истории ответов некорректен"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Курсор списка занятий некорректен"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Курсор списка реакций устарел"
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Листок пока недоступен"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Логическое имя рисунка должно точно совпадать с LaTeX"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Материал не найден"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Материал не найден или недоступен"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Материал не прошёл проверку"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Материал уже изменился. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/whiteboard_export_routes.py
+msgid "Материалы временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Материалы занятий временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Метаданные задач редактируются для файла условий"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Название занятия должно содержать не более 200 символов"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Настраивать устный приём может только администратор"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Настройки курса временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Настройки курса доступны только школьнику"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/course_routes.py
+#: apps/pwa_api/family_course_routes.py
+msgid "Настройки уже изменились. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Начало приёма должно быть раньше дедлайна"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Не найдено"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Не удалось безопасно прочитать материал"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Не удалось безопасно сохранить фотографию"
+msgstr ""
+
+#: apps/pwa_api/middleware.py
+msgid "Не удалось войти. Проверьте логин и данные для входа."
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Не удалось применить изменение. Обновите список."
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Не удалось прочитать XLSX-файл"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+#: apps/pwa_api/support_routes.py
+msgid "Не удалось прочитать фотографию"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/problem_import_routes.py
+msgid "Не удалось разобрать форму загрузки"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Не удалось разобрать форму загрузки картинки"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Не удалось разобрать форму рисунка"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Не удалось разобрать форму фотографии"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Не удалось сохранить рисунок. Повторите попытку."
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Не удалось сохранить фотографию. Повторите попытку."
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Неверная аудитория аналитики"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Неверная страница аналитики"
+msgstr ""
+
+#: apps/pwa_api/whiteboard_export_routes.py
+msgid "Неверные параметры экспорта"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Неверный номер занятия"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Неверный период аналитики"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Неверный фильтр аналитики"
+msgstr ""
+
+#: apps/pwa_api/auth_routes.py
+#: apps/pwa_api/group_banner_routes.py
+msgid "Недостаточно прав"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Недостаточно прав для внесения устных результатов"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Недостаточно прав для исходной или целевой задачи"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Недостаточно прав для переноса материала"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Недостаточно прав для перепроверки задачи"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Недостаточно прав для проверки работы"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Недостаточно прав для просмотра аудиторий"
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Недостаточно прав для просмотра данных ребёнка"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Недостаточно прав для просмотра курсов"
+msgstr ""
+
+#: apps/pwa_api/news_routes.py
+msgid "Недостаточно прав для просмотра новостей"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Недостаточно прав для просмотра очереди проверки"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Недостаточно прав для просмотра решения"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Недостаточно прав для просмотра статистики"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Недостаточно прав для просмотра устного приёма"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Недостаточно прав для просмотра этого ученика"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Недостаточно прав для работы с вопросами школьников"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Недостаточно прав для работы с этим вопросом"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Недостаточно прав для работы со списком участников"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Недостаточно прав для реакции на эту проверку"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Недостаточно прав для сдачи задачи"
+msgstr ""
+
+#: apps/pwa_api/push_subscription_routes.py
+msgid "Недостаточно прав для управления push-уведомлениями"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Недостаточно прав для управления уведомлениями"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Недостаточно прав для этого действия"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Неизвестное поле расписания"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Неизвестное решение сопоставления"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Неизвестный вид материала"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Неизвестный вид рисунка"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Неизвестный параметр аналитики"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Неизвестный параметр статистики"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Неизвестный порядок очереди"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Неизвестный режим публикации"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Неизвестный статус аудитории"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Неизвестный тип реакции"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+msgid "Неизвестный фильтр"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+msgid "Некорректная страница"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Некорректное аналитическое событие"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+msgid "Некорректный запрос"
+msgstr ""
+
+#: apps/pwa_api/statistics_recalculation_routes.py
+msgid "Некорректный запрос пересчёта"
+msgstr ""
+
+#: apps/pwa_api/student_results_routes.py
+msgid "Некорректный идентификатор"
+msgstr ""
+
+#: apps/pwa_api/auth_routes.py
+msgid "Некорректный идентификатор сеанса"
+msgstr ""
+
+#: apps/pwa_api/student_results_routes.py
+msgid "Некорректный номер занятия"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Немедленная публикация не принимает местное время или часовой пояс"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+#: apps/pwa_api/support_routes.py
+msgid "Неподдерживаемая версия запроса"
+msgstr ""
+
+#: apps/pwa_api/statistics_recalculation_routes.py
+msgid "Нет доступа к курсу"
+msgstr ""
+
+#: apps/pwa_api/whiteboard_export_routes.py
+msgid "Нет доступа к материалам для разбора"
+msgstr ""
+
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Нет доступа к продуктовой аналитике"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Нет доступа к статистике школьника"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Нет доступа к статистике этого курса"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Нет доступа к статистике этой группы"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Нет доступа к этой группе"
+msgstr ""
+
+#: apps/pwa_api/whiteboard_export_routes.py
+msgid "Нет доступа к этому уровню"
+msgstr ""
+
+#: apps/pwa_api/auth_routes.py
+msgid "Нет доступных групп для тестирования"
+msgstr ""
+
+#: apps/pwa_api/news_routes.py
+msgid "Новости временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Нужен токен API печати"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Обновите данные перед подтверждением"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Обновите данные перед сверкой"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/classroom_routes.py
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+#: apps/pwa_api/oral_window_routes.py
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Обновите данные перед сохранением"
+msgstr ""
+
+#: apps/pwa_api/audit_routes.py
+msgid "Обновите журнал и повторите поиск"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Обновите настройки перед сохранением"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Обновите план перед сохранением"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Обновите список перед сохранением"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Обновите схему перед сохранением"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Обработка рисунков временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+msgid "Обращение недоступно"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Объединять и разделять задачи может только администратор"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+msgid "Объявление не найдено"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+msgid "Объявление уже изменилось. Обновите список."
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+msgid "Объявление, курс или группа не найдены"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+msgid "Объявления временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Один из логинов преподавателей уже используется"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Один материал нельзя выбрать дважды"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Одна из выбранных групп не относится к этому курсу"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Одна область доступа указана несколько раз"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Одно из выбранных занятий группы недоступно"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+msgid "Ожидается JSON"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Окно устного приёма не найдено"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Окно устного приёма уже изменилось"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Окончание занятия должно быть позже начала"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Опубликованное занятие не найдено"
+msgstr ""
+
+#: apps/pwa_api/whiteboard_export_routes.py
+msgid "Опубликованные условия не найдены"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Опубликованный список задач не найден"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Ответ слишком большой"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Откат возможен только на готовую revision"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Отложенная публикация уже изменилась. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Отправить итог семье может только администратор"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+#: apps/pwa_api/staff_dashboard_routes.py
+msgid "Очередь проверки временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Очное занятие не найдено"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Очное занятие уже изменилось. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Очное событие не найдено"
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+msgid "Пакетные операции временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+msgid "Пакетные операции может выполнять только администратор"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Параметры истории ответов некорректны"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Параметры не поддерживаются"
+msgstr ""
+
+#: apps/pwa_api/staff_dashboard_routes.py
+msgid "Параметры рабочей сводки некорректны"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Параметры списка занятий некорректны"
+msgstr ""
+
+#: apps/pwa_api/statistics_recalculation_routes.py
+msgid "Пересчёт доступен только администратору"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Письменная сдача временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Письменное решение не найдено."
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "План изменился. Обновите предпросмотр рассылки."
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "План или рассылка аудиторий не найдены"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "План распределения не найден"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "План уже изменился. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Повторная обработка выявила ошибки. Исправьте исходный файл перед публикацией."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Подтвердите дедлайн сдачи отдельным действием."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Подтвердите изменение дедлайна отдельным действием."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Подтвердите открытие материала в задаче"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Подтвердите отправку вердикта без комментария"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Подтвердите полную перегенерацию metadata для этой версии условия"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Подтверждение перезаписи metadata должно быть булевым значением"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Поисковый запрос слишком длинный"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Поля формы должны быть в UTF-8"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Посылка или её блокировка изменились. Обновите предпросмотр перед переносом."
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Преподаватель может менять только активную группу в своём доступе"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Привязка Telegram не найдена"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Привязка уже изменилась. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Привязки Telegram временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверка временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверка не найдена"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверка не найдена или недоступна"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Проверьте Markdown и внешние картинки"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте аннотации к работе"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Проверьте введённые данные"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Проверьте введённый ответ"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Проверьте версию импорта"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте версию письменного решения"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте версию проверки"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте версию условия задачи"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте ветви проверяемой работы"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Проверьте время и смещение"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Проверьте время и часовой пояс"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Проверьте время создания вопроса"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Проверьте время создания ответа"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте время создания решения"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Проверьте время устного приёма"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+#: apps/pwa_api/family_course_routes.py
+msgid "Проверьте выбранную группу и режим"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте выбранную переписку и задачу"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Проверьте выбранные задачи"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Проверьте выбранные курсы и группы"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте выбранные сообщения и фотографии"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Проверьте выбранный курс"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Проверьте выбранный курс и группу"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте границу проверяемой работы"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Проверьте группы и режим школьника"
+msgstr ""
+
+#: apps/pwa_api/push_subscription_routes.py
+msgid "Проверьте данные push-подписки"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте данные внутренней пометки"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте данные завершения проверки"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте данные занятия"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Проверьте данные преподавателя"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте данные проверки"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Проверьте данные семейного аккаунта"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Проверьте данные семейной связи"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Проверьте данные устной сдачи"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Проверьте данные формы"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте дату занятия"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Проверьте дату и время очного занятия"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте даты сезона"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Проверьте задачу, к которой относится вопрос"
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Проверьте занятие и группу"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Проверьте запрос"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Проверьте запрос отправки"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте исходную версию решения"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+#: apps/pwa_api/support_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте ключ отправки"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте комментарий"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Проверьте контекст вопроса"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Проверьте курс"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Проверьте логин и роль семейного аккаунта"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Проверьте логин, имя, роль и пароль семейного аккаунта"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте настройки курса"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Проверьте настройки уведомлений"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Проверьте настройки устного приёма"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Проверьте настройку курса"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Проверьте новую роль сотрудника"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Проверьте отметки устных задач"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте оценку по шкале курса, подтверждение комментария и пометки на исходных фотографиях"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+#: apps/pwa_api/news_routes.py
+#: apps/pwa_api/notification_routes.py
+msgid "Проверьте параметр limit"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте параметры"
+msgstr ""
+
+#: apps/pwa_api/audit_routes.py
+msgid "Проверьте параметры журнала"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Проверьте параметры запроса"
+msgstr ""
+
+#: apps/pwa_api/news_routes.py
+msgid "Проверьте параметры ленты новостей"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте параметры очереди"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте параметры переноса"
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "Проверьте параметры повтора рассылки"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Проверьте параметры поиска"
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "Проверьте параметры предпросмотра"
+msgstr ""
+
+#: apps/pwa_api/news_routes.py
+msgid "Проверьте параметры публикации"
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "Проверьте параметры рассылки"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Проверьте параметры списка"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Проверьте параметры списка вопросов"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте параметры списка реакций"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Проверьте параметры списка уведомлений"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Проверьте подтверждение импорта"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте подтверждение отправки"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Проверьте поля аудитории"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Проверьте поля вопроса"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте поля группы"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте поля запроса"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Проверьте поля изменения"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте поля курса"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте поля курса или группы"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+msgid "Проверьте поля объявления"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Проверьте поля ответа"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Проверьте поля очного занятия"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте поля письменного решения"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Проверьте поля плана распределения"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Проверьте поля привязки Telegram"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Проверьте поля публикации"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Проверьте поля сверки"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Проверьте поля строки"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Проверьте поля схемы аудиторий"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Проверьте поля устного приёма"
+msgstr ""
+
+#: apps/pwa_api/auth_routes.py
+#: apps/pwa_api/content_routes.py
+msgid "Проверьте поля формы"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте поля фотографии"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте посылки в границе работы"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте посылку"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте причину переноса"
+msgstr ""
+
+#: apps/pwa_api/audit_routes.py
+msgid "Проверьте размер страницы"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте разметку фотографии"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Проверьте расписание"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте расписание занятия"
+msgstr ""
+
+#: apps/pwa_api/staff_dashboard_routes.py
+msgid "Проверьте расписание текущих занятий"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Проверьте распределение аудиторий по группам"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Проверьте распределение школьников по аудиториям"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Проверьте режим расписания"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте сведения о вставке текста"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте сезон"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Проверьте список аудиторий"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте список фотографий"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Проверьте список школьников"
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+msgid "Проверьте таблицу"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Проверьте таблицу преподавателей и выбранные доступы"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Проверьте текст и время публикации"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте текст решения"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Проверьте текстовое поле строки"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Проверьте тип вопроса"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте токен блокировки"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте фильтр реакции"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте фильтры"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте фильтры списка реакций"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте формат аннотации"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Проверьте фотографии"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Проверьте черновик окон приёма"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Проверьте числовое поле строки"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Проверьте числовые поля фотографии"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Проверьте школьника, задачи и отметки"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте элемент разметки"
+msgstr ""
+
+#: apps/pwa_api/course_routes.py
+msgid "Прогресс временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Профиль ребёнка недоступен"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+#: apps/pwa_api/news_routes.py
+msgid "Публикация не найдена"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Публикация уже изменилась. Обновите список."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Публикация уже изменилась. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Публиковать можно только успешно скомпилированную revision"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Работа в очереди не найдена"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Работа изменилась. Обновите её перед проверкой."
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Работа находится вне доступных групп"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Работа с материалами временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/staff_dashboard_routes.py
+msgid "Рабочая сводка временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/staff_dashboard_routes.py
+msgid "Рабочая сводка доступна только преподавателям"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Размер рисунка можно менять после успешной компиляции"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Расписание временно недоступно"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Расписание изменилось. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Расположение не удалось подготовить для публикации. Проверьте рисунки и объём материала."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Расположение рисунков недоступно: повторите обработку материала или проверьте выбранные пункты."
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Распределение школьников временно недоступно"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Распределять школьников может только администратор"
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "Рассылать аудитории может только администратор"
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "Рассылка аудиторий временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "Рассылка аудиторий не найдена"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Реакции учеников и преподавателей доступны только администратору"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Реакция уже изменилась. Обновите проверку."
+msgstr ""
+
+#: apps/pwa_api/student_results_routes.py
+msgid "Результаты доступны только администратору"
+msgstr ""
+
+#: apps/pwa_api/whiteboard_export_routes.py
+msgid "Рисунок не найден"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Рисунок слишком большой"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Связь семейного аккаунта со школьником не найдена"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Сдача тестовых задач временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/middleware.py
+msgid "Сеанс завершён. Войдите снова."
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Сезон не найден"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Сезон с таким кодом уже существует"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Сейчас это окно устного приёма закрыто"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Семейный аккаунт не найден"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Синонимы задач временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Слишком много аудиторий"
+msgstr ""
+
+#: apps/pwa_api/middleware.py
+msgid "Слишком много попыток. Попробуйте позже."
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+msgid "Слишком много школьников"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Сначала загрузите все рисунки из LaTeX-файла"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Сначала задайте данные для входа"
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Сначала обновите предпросмотр"
+msgstr ""
+
+#: apps/pwa_api/classroom_delivery_routes.py
+msgid "Сначала подтвердите корректное распределение аудиторий"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Сначала подтвердите это поле в расписании курса"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Сначала сопоставьте хотя бы одну задачу для генерации metadata"
+msgstr ""
+
+#: apps/pwa_app.py
+msgid "Сообщение WebSocket должно быть корректным JSON"
+msgstr "A WebSocket message must be valid JSON"
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Состав групп уже используется в плане аудиторий"
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+msgid "Состав курса или групп изменился. Обновите предпросмотр."
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Состояние источника уже изменилось или недоступно для этого поста"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Сотрудник не найден"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Список сопоставлений имеет неверный формат"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+msgid "Список участников временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/staff_statistics_routes.py
+msgid "Статистика временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Схема аудиторий временно недоступна"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Схема аудиторий не найдена"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Схема уже изменилась. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+msgid "Таблица изменилась. Обновите предпросмотр."
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Таблица метаданных имеет неверный формат"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Такая привязка Telegram уже существует"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Такого рисунка нет в этой revision"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Такой код или название группы уже используется в курсе"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Такой код курса уже используется"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Такой логин преподавателя уже используется"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Такой логин школьника уже используется"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Такой семейный логин уже используется"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Текст вопроса слишком большой"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Текст решения слишком большой"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Текстовое поле формы не должно быть файлом"
+msgstr ""
+
+#: apps/pwa_api/account_batch_routes.py
+#: apps/pwa_api/admin_account_routes.py
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/admin_enrollment_routes.py
+#: apps/pwa_api/admin_schedule_routes.py
+#: apps/pwa_api/classroom_assignment_routes.py
+#: apps/pwa_api/classroom_delivery_routes.py
+#: apps/pwa_api/classroom_layout_routes.py
+#: apps/pwa_api/classroom_routes.py
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/news_moderation_routes.py
+#: apps/pwa_api/notification_routes.py
+#: apps/pwa_api/oral_result_routes.py
+#: apps/pwa_api/oral_window_routes.py
+#: apps/pwa_api/problem_synonym_routes.py
+#: apps/pwa_api/push_subscription_routes.py
+#: apps/pwa_api/review_routes.py
+#: apps/pwa_api/staff_access_routes.py
+#: apps/pwa_api/submission_routes.py
+#: apps/pwa_api/support_routes.py
+#: apps/pwa_api/telegram_binding_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Тело запроса должно быть JSON"
+msgstr ""
+
+#: apps/pwa_api/auth_routes.py
+msgid "Тело запроса должно быть корректным JSON"
+msgstr ""
+
+#: apps/pwa_api/classroom_assignment_routes.py
+#: apps/pwa_api/classroom_delivery_routes.py
+#: apps/pwa_api/classroom_layout_routes.py
+#: apps/pwa_api/classroom_routes.py
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/notification_routes.py
+#: apps/pwa_api/oral_result_routes.py
+#: apps/pwa_api/oral_window_routes.py
+#: apps/pwa_api/push_subscription_routes.py
+#: apps/pwa_api/review_routes.py
+#: apps/pwa_api/submission_routes.py
+#: apps/pwa_api/support_routes.py
+#: apps/pwa_api/telegram_binding_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Тело запроса должно быть корректным JSON-объектом"
+msgstr ""
+
+#: apps/pwa_api/auth_routes.py
+msgid "Тело запроса должно быть пустым JSON-объектом"
+msgstr ""
+
+#: apps/pwa_api/submission_routes.py
+msgid "Тестовая задача недоступна."
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "У работы уже есть более новая проверка. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "У уже опубликованной новости можно исправить текст, но не время"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "У уже опубликованной новости нельзя менять получателей"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "У фотографии отсутствует имя файла"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "У этого запроса нет параметров"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Уведомление не найдено"
+msgstr ""
+
+#: apps/pwa_api/notification_routes.py
+msgid "Уведомления временно недоступны"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Укажите revision для генерации metadata"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Укажите revision для таблицы метаданных"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Укажите краткую причину"
+msgstr ""
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Укажите номер занятия в параметре lesson"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Укажите одну revision для таблицы метаданных"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Укажите причину разделения"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Укажите рисунок для изменения размера"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Укажите ровно один groupLesson"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Укажите существующее однозначное местное время занятия с точностью до минуты"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Укажите часовой пояс времени"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Управление аккаунтами временно недоступно"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Управление новостями временно недоступно"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Управлять аккаунтами может только администратор"
+msgstr ""
+
+#: apps/pwa_api/classroom_routes.py
+msgid "Управлять аудиториями может только администратор"
+msgstr ""
+
+#: apps/pwa_api/staff_access_routes.py
+msgid "Управлять доступами преподавателей может только администратор"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Управлять курсами и группами может только администратор"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Управлять новостями может только администратор"
+msgstr ""
+
+#: apps/pwa_api/group_banner_routes.py
+msgid "Управлять объявлениями может только администратор"
+msgstr ""
+
+#: apps/pwa_api/telegram_binding_routes.py
+msgid "Управлять привязками Telegram может только администратор"
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Управлять расписанием может только администратор"
+msgstr ""
+
+#: apps/pwa_api/classroom_layout_routes.py
+msgid "Управлять схемой аудиторий может только администратор"
+msgstr ""
+
+#: apps/pwa_api/family_course_routes.py
+msgid "Условие этого занятия ещё не опубликовано"
+msgstr ""
+
+#: apps/pwa_api/oral_window_routes.py
+msgid "Устный приём временно недоступен"
+msgstr ""
+
+#: apps/pwa_api/student_results_routes.py
+msgid "Файл не сохранился"
+msgstr ""
+
+#: apps/pwa_api/student_results_routes.py
+msgid "Файл повреждён или недоступен"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+#: apps/pwa_api/problem_import_routes.py
+msgid "Файл слишком большой"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Форма загрузки содержит неизвестное или повторное поле"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Форма рисунка содержит неизвестное или повторное поле"
+msgstr ""
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Форма содержит неизвестное или повторное поле"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Форма фотографии содержит неизвестное или повторное поле"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+#: apps/pwa_api/support_routes.py
+msgid "Фотография больше 25 МиБ"
+msgstr ""
+
+#: apps/pwa_api/organizer_question_routes.py
+#: apps/pwa_api/support_routes.py
+msgid "Фотография недоступна"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Фотография недоступна из-за ошибки хранилища"
+msgstr ""
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Фотография слишком большая"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Хранилище PDF временно недоступно"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Часовой пояс занятия изменился. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/admin_schedule_routes.py
+msgid "Черновик уже изменился. Обновите страницу."
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Школьник или аккаунт не найдены"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Школьник или занятие не найдены"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Школьник не найден"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Эта revision уже опубликована"
+msgstr ""
+
+#: apps/pwa_api/oral_result_routes.py
+msgid "Эта операция уже использована с другими данными"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Эта отложенная публикация уже изменилась"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Эта публикация уже изменена"
+msgstr ""
+
+#: apps/pwa_api/admin_account_routes.py
+msgid "Эти данные для входа уже используются"
+msgstr ""
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Эти задачи уже изменились"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+#: apps/pwa_api/support_routes.py
+msgid "Это действие уже было отправлено с другими данными"
+msgstr ""
+
+#: apps/pwa_api/news_moderation_routes.py
+msgid "Это состояние публикации нельзя изменить вручную"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Этот вид материала нельзя публиковать"
+msgstr ""
+
+#: apps/pwa_api/support_routes.py
+msgid "Этот вопрос находится вне доступного контекста"
+msgstr ""
+
+#: apps/pwa_api/admin_course_routes.py
+#: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/problem_import_routes.py
+#: apps/pwa_api/staff_access_routes.py
+msgid "Этот запрос без параметров"
+msgstr ""
+
+#: apps/pwa_api/admin_enrollment_routes.py
+#: apps/pwa_api/course_routes.py
+#: apps/pwa_api/family_course_routes.py
+#: apps/pwa_api/notification_routes.py
+#: apps/pwa_api/submission_routes.py
+#: apps/pwa_api/written_submission_routes.py
+msgid "Этот запрос не принимает параметры"
+msgstr ""
+
+#: apps/pwa_api/content_routes.py
+msgid "Этот рисунок не найден в текущей версии материала"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Эту проверку нельзя исправить с текущими правами"
+msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Эту работу уже проверяет другой преподаватель"
+msgstr ""

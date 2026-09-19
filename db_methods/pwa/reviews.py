@@ -1,0 +1,2846 @@
+"""Lease-safe written review queue primitives for the Staff adapter."""
+
+from __future__ import annotations
+
+import sqlite3
+import uuid
+import hashlib
+import json
+import math
+import re
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Mapping
+
+from helpers.consts import RES_TYPE, USER_TYPE, VERDICT, VERDICTS_SOLVED, WRITTEN_STATUS
+
+from .connection import PwaConnectionFactory
+
+
+REVIEW_LEASE_DURATION = timedelta(minutes=30)
+REVIEW_INTERNAL_REACTION_EDIT_WINDOW = timedelta(hours=1)
+REVIEW_STUDENT_REACTION_EDIT_WINDOW = timedelta(hours=1)
+_PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
+_WRITTEN_REVIEW_VERDICTS = frozenset(range(11, 18))
+_WRITTEN_STUDENT_REACTION_IDS = frozenset({0, 1, 2})
+_WRITTEN_TEACHER_REACTION_IDS = frozenset({100, 101, 102, 103})
+_ANNOTATION_KINDS = frozenset(
+    {"pencil", "eraser", "text", "arrow", "rectangle", "highlight"}
+)
+_ANNOTATION_COLORS = frozenset({"red", "blue", "graphite", "amber"})
+_ANNOTATION_ROTATIONS = frozenset({0, 90, 180, 270})
+_MAX_ANNOTATION_POINTS = 20_000
+_MAX_ANNOTATION_MANIFEST_BYTES = 1_000_000
+
+
+class ReviewQueueError(RuntimeError):
+    """Base class for safe Staff queue failures."""
+
+
+class ReviewQueueNotFound(ReviewQueueError):
+    """The opaque queue identity no longer resolves."""
+
+
+class ReviewQueueForbidden(ReviewQueueError):
+    """The requested logical case is outside the Staff group scope."""
+
+
+class ReviewLeaseConflict(ReviewQueueError):
+    """Another Staff/legacy client currently owns part of the logical case."""
+
+
+class ReviewLeaseLost(ReviewQueueError):
+    """A heartbeat or release no longer owns any current queue rows."""
+
+
+class ReviewThreadChanged(ReviewQueueError):
+    """The reviewed thread/evidence boundary changed after Staff loaded it."""
+
+
+class ReviewEvidenceUnavailable(ReviewQueueError):
+    """A legacy queue branch has no complete modern submission evidence."""
+
+
+class ReviewIdempotencyConflict(ReviewQueueError):
+    """The completion key was reused for a different review payload."""
+
+
+class ReviewCompletionInvalid(ReviewQueueError):
+    """The completion payload violates the written-review policy."""
+
+
+class ReviewInternalReactionInvalid(ReviewQueueError):
+    """The selected reaction is not a written Teacher reaction."""
+
+
+class ReviewInternalReactionNotFound(ReviewQueueError):
+    """The review or its current internal reaction does not exist."""
+
+
+class ReviewInternalReactionConflict(ReviewQueueError):
+    """The expected internal-reaction version is stale."""
+
+
+class ReviewInternalReactionWindowClosed(ReviewQueueError):
+    """The one-hour internal-reaction edit window has closed."""
+
+
+class ReviewStudentReactionInvalid(ReviewQueueError):
+    """The selected reaction is not a written Student reaction."""
+
+
+class ReviewStudentReactionNotFound(ReviewQueueError):
+    """The review is not visible to this Student or has no reaction state."""
+
+
+class ReviewStudentReactionConflict(ReviewQueueError):
+    """The expected Student-reaction version is stale."""
+
+
+class ReviewStudentReactionWindowClosed(ReviewQueueError):
+    """The one-hour Student-reaction edit window has closed."""
+
+
+def _annotation_number(
+    value: object,
+    *,
+    label: str,
+    minimum: float = 0.0,
+    maximum: float = 1.0,
+) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ReviewCompletionInvalid(f"annotation {label} must be a number")
+    normalized = float(value)
+    if not math.isfinite(normalized) or not minimum <= normalized <= maximum:
+        raise ReviewCompletionInvalid(
+            f"annotation {label} must be between {minimum} and {maximum}"
+        )
+    return normalized
+
+
+def _annotation_exact_keys(
+    value: object, *, expected: frozenset[str], label: str
+) -> Mapping[str, object]:
+    if not isinstance(value, Mapping) or set(value) != expected:
+        raise ReviewCompletionInvalid(f"annotation {label} has invalid fields")
+    return value
+
+
+def _annotation_point(value: object, *, label: str) -> dict[str, float]:
+    point = _annotation_exact_keys(value, expected=frozenset({"x", "y"}), label=label)
+    return {
+        "x": _annotation_number(point["x"], label=f"{label}.x"),
+        "y": _annotation_number(point["y"], label=f"{label}.y"),
+    }
+
+
+def _annotation_color(value: object) -> str:
+    if not isinstance(value, str) or value not in _ANNOTATION_COLORS:
+        raise ReviewCompletionInvalid("annotation color is not supported")
+    return value
+
+
+def _annotation_box(data: Mapping[str, object], *, label: str) -> dict[str, float]:
+    x = _annotation_number(data["x"], label=f"{label}.x")
+    y = _annotation_number(data["y"], label=f"{label}.y")
+    width = _annotation_number(data["width"], label=f"{label}.width", minimum=0.001)
+    height = _annotation_number(data["height"], label=f"{label}.height", minimum=0.001)
+    if x + width > 1.0 or y + height > 1.0:
+        raise ReviewCompletionInvalid(f"annotation {label} leaves the image bounds")
+    return {"x": x, "y": y, "width": width, "height": height}
+
+
+def _normalize_annotation_data(
+    *, kind: str, value: object
+) -> tuple[dict[str, object], int]:
+    if kind in {"pencil", "eraser"}:
+        expected = (
+            frozenset({"points", "width", "color"})
+            if kind == "pencil"
+            else frozenset({"points", "width"})
+        )
+        data = _annotation_exact_keys(value, expected=expected, label=kind)
+        points_value = data["points"]
+        if (
+            not isinstance(points_value, (list, tuple))
+            or not 2 <= len(points_value) <= 4096
+        ):
+            raise ReviewCompletionInvalid(
+                f"annotation {kind} requires between 2 and 4096 points"
+            )
+        normalized: dict[str, object] = {
+            "points": [
+                _annotation_point(point, label=f"{kind}.points[{index}]")
+                for index, point in enumerate(points_value)
+            ],
+            "width": _annotation_number(
+                data["width"], label=f"{kind}.width", minimum=0.001, maximum=0.1
+            ),
+        }
+        if kind == "pencil":
+            normalized["color"] = _annotation_color(data["color"])
+        return normalized, len(points_value)
+
+    if kind == "text":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"x", "y", "text", "size", "color"}),
+            label=kind,
+        )
+        text = data["text"]
+        if not isinstance(text, str) or not text.strip() or len(text) > 500:
+            raise ReviewCompletionInvalid(
+                "annotation text must contain between 1 and 500 characters"
+            )
+        return (
+            {
+                "x": _annotation_number(data["x"], label="text.x"),
+                "y": _annotation_number(data["y"], label="text.y"),
+                "text": text,
+                "size": _annotation_number(
+                    data["size"], label="text.size", minimum=0.01, maximum=0.2
+                ),
+                "color": _annotation_color(data["color"]),
+            },
+            0,
+        )
+
+    if kind == "arrow":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"start", "end", "width", "color"}),
+            label=kind,
+        )
+        start = _annotation_point(data["start"], label="arrow.start")
+        end = _annotation_point(data["end"], label="arrow.end")
+        if start == end:
+            raise ReviewCompletionInvalid("annotation arrow must have a direction")
+        return (
+            {
+                "start": start,
+                "end": end,
+                "width": _annotation_number(
+                    data["width"], label="arrow.width", minimum=0.001, maximum=0.1
+                ),
+                "color": _annotation_color(data["color"]),
+            },
+            0,
+        )
+
+    if kind == "rectangle":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"x", "y", "width", "height", "strokeWidth", "color"}),
+            label=kind,
+        )
+        return (
+            {
+                **_annotation_box(data, label="rectangle"),
+                "strokeWidth": _annotation_number(
+                    data["strokeWidth"],
+                    label="rectangle.strokeWidth",
+                    minimum=0.001,
+                    maximum=0.1,
+                ),
+                "color": _annotation_color(data["color"]),
+            },
+            0,
+        )
+
+    if kind == "highlight":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"x", "y", "width", "height"}),
+            label=kind,
+        )
+        return _annotation_box(data, label="highlight"), 0
+
+    raise ReviewCompletionInvalid("annotation kind is not supported")
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewAnnotationMark:
+    mark_public_id: str
+    kind: str
+    data_json: str
+    point_count: int
+    coordinate_space: str | None = None
+
+    def __post_init__(self) -> None:
+        # See vmshpwa/docs/review-annotation-geometry.md: absent means legacy.
+        if self.coordinate_space not in (None, "image"):
+            raise ReviewCompletionInvalid("annotation coordinate space is invalid")
+        if not _PUBLIC_ID.fullmatch(self.mark_public_id):
+            raise ReviewCompletionInvalid("annotation mark ID is invalid")
+        if self.kind not in _ANNOTATION_KINDS:
+            raise ReviewCompletionInvalid("annotation kind is not supported")
+        try:
+            raw_data = json.loads(self.data_json)
+        except (TypeError, json.JSONDecodeError) as error:
+            raise ReviewCompletionInvalid("annotation mark data is invalid") from error
+        normalized, point_count = _normalize_annotation_data(
+            kind=self.kind, value=raw_data
+        )
+        if self.data_json != _canonical_json(normalized):
+            raise ReviewCompletionInvalid("annotation mark data is not canonical")
+        if self.point_count != point_count:
+            raise ReviewCompletionInvalid("annotation mark point count is invalid")
+
+    @classmethod
+    def from_payload(
+        cls,
+        *,
+        mark_public_id: str,
+        kind: str,
+        data: object,
+        coordinate_space: str | None = None,
+    ) -> ReviewAnnotationMark:
+        if not _PUBLIC_ID.fullmatch(mark_public_id):
+            raise ReviewCompletionInvalid("annotation mark ID is invalid")
+        if kind not in _ANNOTATION_KINDS:
+            raise ReviewCompletionInvalid("annotation kind is not supported")
+        normalized, point_count = _normalize_annotation_data(kind=kind, value=data)
+        return cls(
+            mark_public_id=mark_public_id,
+            kind=kind,
+            data_json=_canonical_json(normalized),
+            point_count=point_count,
+            coordinate_space=coordinate_space,
+        )
+
+    def payload(self) -> dict[str, object]:
+        return {
+            **(
+                {"coordinateSpace": self.coordinate_space}
+                if self.coordinate_space else {}
+            ),
+            "markId": self.mark_public_id,
+            "kind": self.kind,
+            "data": json.loads(self.data_json),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewAnnotationManifest:
+    attachment_public_id: str
+    schema_version: int
+    rotation: int
+    marks: tuple[ReviewAnnotationMark, ...]
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.attachment_public_id):
+            raise ReviewCompletionInvalid("annotation attachment ID is invalid")
+        if type(self.schema_version) is not int or self.schema_version != 1:
+            raise ReviewCompletionInvalid("annotation schema version is not supported")
+        if type(self.rotation) is not int or self.rotation not in _ANNOTATION_ROTATIONS:
+            raise ReviewCompletionInvalid("annotation rotation is not supported")
+        if not 1 <= len(self.marks) <= 250:
+            raise ReviewCompletionInvalid(
+                "annotation manifest requires between 1 and 250 marks"
+            )
+        if any(not isinstance(mark, ReviewAnnotationMark) for mark in self.marks):
+            raise ReviewCompletionInvalid(
+                "annotation manifest contains an invalid mark"
+            )
+        if len({mark.mark_public_id for mark in self.marks}) != len(self.marks):
+            raise ReviewCompletionInvalid("annotation mark IDs must be unique")
+        if sum(mark.point_count for mark in self.marks) > _MAX_ANNOTATION_POINTS:
+            raise ReviewCompletionInvalid("annotation manifest has too many points")
+        if len(_canonical_json(self.marks_payload()).encode("utf-8")) > (
+            _MAX_ANNOTATION_MANIFEST_BYTES
+        ):
+            raise ReviewCompletionInvalid("annotation manifest is too large")
+
+    def marks_payload(self) -> list[dict[str, object]]:
+        return [mark.payload() for mark in self.marks]
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "attachmentId": self.attachment_public_id,
+            "schemaVersion": self.schema_version,
+            "rotation": self.rotation,
+            "marks": self.marks_payload(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewStaffScope:
+    """Server-authoritative Staff collection scope expressed in public IDs."""
+
+    global_access: bool = False
+    course_public_ids: frozenset[str] = frozenset()
+    group_public_ids: frozenset[str] = frozenset()
+
+    def allows(self, row: dict[str, object]) -> bool:
+        if self.global_access:
+            return True
+        course_public_id = row.get("course_public_id")
+        group_public_id = row.get("group_public_id")
+        return (
+            isinstance(course_public_id, str)
+            and course_public_id in self.course_public_ids
+        ) or (
+            isinstance(group_public_id, str)
+            and group_public_id in self.group_public_ids
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewLeaseItem:
+    queue_public_id: str
+    queue_id: int
+    student_user_id: int
+    student_public_id: str | None
+    student_name: str
+    problem_id: int
+    problem_public_id: str
+    problem_number: str
+    problem_title: str
+    group_id: str
+    group_public_id: str | None
+    group_name: str
+    group_short_code: str
+    group_color_key: str | None
+    course_public_id: str | None
+    course_name: str | None
+    submitted_at: datetime
+    lease_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceAttachment:
+    attachment_public_id: str
+    ordinal: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceEntry:
+    entry_public_id: str
+    entry_version: int
+    entry_kind: str
+    text: str | None
+    server_received_at: datetime
+    attachments: tuple[ReviewEvidenceAttachment, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewTimelineEntry:
+    entry_public_id: str
+    author_kind: str
+    entry_kind: str
+    text: str | None
+    server_received_at: datetime
+    attachments: tuple[ReviewEvidenceAttachment, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceBranch:
+    queue_public_id: str
+    thread_public_id: str | None
+    thread_version: int | None
+    entries: tuple[ReviewEvidenceEntry, ...]
+    timeline_entries: tuple[ReviewTimelineEntry, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewLease:
+    claim_token: str
+    teacher_user_id: int
+    claimed_at: datetime
+    expires_at: datetime
+    logical_case_public_id: str
+    items: tuple[ReviewLeaseItem, ...]
+    evidence_branches: tuple[ReviewEvidenceBranch, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceEntryExpectation:
+    entry_public_id: str
+    entry_version: int
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.entry_public_id):
+            raise ValueError("review evidence entry public ID is invalid")
+        if type(self.entry_version) is not int or self.entry_version < 1:
+            raise ValueError("review evidence entry version must be positive")
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceBranchExpectation:
+    queue_public_id: str
+    lease_version: int
+    thread_public_id: str
+    thread_version: int
+    entries: tuple[ReviewEvidenceEntryExpectation, ...]
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.queue_public_id) or not _PUBLIC_ID.fullmatch(
+            self.thread_public_id
+        ):
+            raise ValueError("review branch public ID is invalid")
+        if type(self.lease_version) is not int or self.lease_version < 1:
+            raise ValueError("review lease version must be positive")
+        if type(self.thread_version) is not int or self.thread_version < 1:
+            raise ValueError("review thread version must be positive")
+        if not self.entries:
+            raise ValueError("review branch must contain evidence")
+        if len({entry.entry_public_id for entry in self.entries}) != len(self.entries):
+            raise ValueError("review evidence entry IDs must be unique per branch")
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteReviewCommand:
+    queue_public_id: str
+    claim_token: str
+    teacher_user_id: int
+    scope: ReviewStaffScope
+    idempotency_key: str
+    verdict: int
+    comment: str | None
+    confirm_without_comment: bool
+    branches: tuple[ReviewEvidenceBranchExpectation, ...]
+    annotations: tuple[ReviewAnnotationManifest, ...] = ()
+    internal_reaction_id: int | None = None
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.queue_public_id):
+            raise ValueError("review queue public ID is invalid")
+        if not _PUBLIC_ID.fullmatch(self.claim_token):
+            raise ValueError("review claim token is invalid")
+        if self.teacher_user_id == 0:
+            raise ValueError("reviewer user ID must not be zero")
+        if not 1 <= len(self.idempotency_key) <= 200 or (
+            self.idempotency_key != self.idempotency_key.strip()
+        ):
+            raise ValueError("review idempotency key must be canonical")
+        if self.verdict not in _WRITTEN_REVIEW_VERDICTS:
+            raise ValueError("written review verdict is not supported")
+        if self.comment is not None and len(self.comment) > 100_000:
+            raise ValueError("review comment is too long")
+        if VERDICT(self.verdict) not in VERDICTS_SOLVED and not (
+            (self.comment is not None and self.comment.strip())
+            or self.confirm_without_comment
+        ):
+            raise ReviewCompletionInvalid(
+                "a non-accepted verdict without a comment requires confirmation"
+            )
+        if self.internal_reaction_id is not None and (
+            type(self.internal_reaction_id) is not int or self.internal_reaction_id < 1
+        ):
+            raise ReviewInternalReactionInvalid(
+                "internal reaction ID must be a positive integer"
+            )
+        if not self.branches:
+            raise ValueError("review completion must contain branches")
+        if len({branch.queue_public_id for branch in self.branches}) != len(
+            self.branches
+        ):
+            raise ValueError("review branch queue IDs must be unique")
+        if len({item.attachment_public_id for item in self.annotations}) != len(
+            self.annotations
+        ):
+            raise ReviewCompletionInvalid(
+                "review annotation attachment IDs must be unique"
+            )
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "queueId": self.queue_public_id,
+            "claimToken": self.claim_token,
+            "verdict": self.verdict,
+            "comment": self.comment,
+            "confirmWithoutComment": self.confirm_without_comment,
+            "branches": [
+                {
+                    "queueId": branch.queue_public_id,
+                    "leaseVersion": branch.lease_version,
+                    "threadId": branch.thread_public_id,
+                    "threadVersion": branch.thread_version,
+                    "evidence": [
+                        {
+                            "entryId": entry.entry_public_id,
+                            "entryVersion": entry.entry_version,
+                        }
+                        for entry in branch.entries
+                    ],
+                }
+                for branch in self.branches
+            ],
+            "annotations": [annotation.payload() for annotation in self.annotations],
+            "internalReactionId": self.internal_reaction_id,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewAnnotationReceipt:
+    annotation_public_id: str
+    attachment_public_id: str
+    schema_version: int
+    rotation: int
+    mark_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewInternalReactionState:
+    review_public_id: str
+    reaction_id: int | None
+    version: int
+    editable_until: datetime
+    updated_at: datetime
+
+    @property
+    def deleted(self) -> bool:
+        return self.reaction_id is None
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewStudentReactionState:
+    review_public_id: str
+    reaction_id: int | None
+    version: int
+    editable_until: datetime
+    updated_at: datetime
+
+    @property
+    def deleted(self) -> bool:
+        return self.reaction_id is None
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewStudentReactionReceipt:
+    state: ReviewStudentReactionState
+    owner_account_public_ids: tuple[str, ...]
+    family_account_public_ids: tuple[str, ...]
+    admin_account_public_ids: tuple[str, ...]
+    evidence_problem_public_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteReviewReceipt:
+    review_public_id: str
+    target_thread_public_id: str
+    target_problem_public_id: str
+    target_thread_status: str
+    verdict: int
+    comment_entry_public_id: str | None
+    evidence_entry_public_ids: tuple[str, ...]
+    evidence_problem_public_ids: tuple[str, ...]
+    owner_account_public_ids: tuple[str, ...]
+    family_account_public_ids: tuple[str, ...]
+    annotations: tuple[ReviewAnnotationReceipt, ...]
+    internal_reaction: ReviewInternalReactionState | None
+    completed_at: datetime
+    replayed: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewQueueLock:
+    kind: str
+    teacher_user_id: int
+    teacher_public_id: str | None
+    teacher_name: str
+    expires_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewQueueCase:
+    queue_public_id: str
+    logical_case_public_id: str
+    student_public_id: str | None
+    student_name: str
+    submitted_at: datetime
+    items: tuple[ReviewLeaseItem, ...]
+    lock: ReviewQueueLock | None
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewQueuePage:
+    items: tuple[ReviewQueueCase, ...]
+    next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewReactionInboxItem:
+    item_public_id: str
+    review_public_id: str
+    kind: str
+    reaction_id: int
+    reaction_label: str
+    reaction_version: int
+    updated_at: datetime
+    editable_until: datetime
+    student_public_id: str | None
+    student_name: str
+    reviewer_public_id: str | None
+    reviewer_name: str
+    target_problem_public_id: str
+    problem_number: str
+    problem_title: str
+    group_public_id: str | None
+    group_name: str
+    group_short_code: str
+    group_color_key: str | None
+    course_public_id: str | None
+    course_name: str | None
+    verdict: int
+    comment: str | None
+    completed_at: datetime
+    is_latest_review: bool
+    evidence_entries: tuple[ReviewEvidenceEntry, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewReactionInboxPage:
+    items: tuple[ReviewReactionInboxItem, ...]
+    next_cursor: str | None
+
+
+def _utc_now() -> datetime:
+    return datetime.now(tz=UTC)
+
+
+def _normalize_time(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        raise ValueError("review queue timestamps must be timezone-aware")
+    return value.astimezone(UTC)
+
+
+def _timestamp(value: datetime) -> str:
+    return (
+        _normalize_time(value).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    )
+
+
+def _review_recipient_account_public_ids(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Resolve current Student owners and linked Family readers in one snapshot."""
+
+    student_accounts = connection.execute(
+        "SELECT public_id FROM auth_accounts WHERE linked_user_id = ? "
+        "AND audience = 'student' AND status = 'active' ORDER BY id",
+        (student_user_id,),
+    ).fetchall()
+    family_accounts = connection.execute(
+        "SELECT account.public_id FROM family_student_links AS link "
+        "JOIN auth_accounts AS account ON account.id = link.family_account_id "
+        "WHERE link.student_user_id = ? AND link.revoked_at IS NULL "
+        "AND account.audience = 'family' AND account.status = 'active' "
+        "ORDER BY account.id",
+        (student_user_id,),
+    ).fetchall()
+    return (
+        tuple(str(account["public_id"]) for account in student_accounts),
+        tuple(str(account["public_id"]) for account in family_accounts),
+    )
+
+
+def _review_admin_account_public_ids(
+    connection: sqlite3.Connection,
+) -> tuple[str, ...]:
+    """Resolve active global-admin Staff accounts for hidden reaction oversight."""
+
+    accounts = connection.execute(
+        "SELECT account.public_id FROM auth_accounts AS account "
+        "JOIN users AS user ON user.id = account.linked_user_id "
+        "WHERE account.audience = 'staff' AND account.status = 'active' "
+        "AND user.type = ? ORDER BY account.id",
+        (int(USER_TYPE.ADMIN),),
+    ).fetchall()
+    return tuple(str(account["public_id"]) for account in accounts)
+
+
+def _review_reaction_item_public_id(*, review_public_id: str, kind: str) -> str:
+    digest = hashlib.sha256(f"{review_public_id}:{kind}".encode()).hexdigest()[:32]
+    return f"review-reaction-{digest}"
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _payload_hash(value: Mapping[str, object]) -> str:
+    return hashlib.sha256(_canonical_json(value).encode()).hexdigest()
+
+
+def _parse_timestamp(value: object, *, label: str) -> datetime:
+    if not isinstance(value, str) or not value.strip():
+        raise ReviewQueueError(f"{label} is missing")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ReviewQueueError(f"{label} is invalid") from error
+    return _normalize_time(parsed)
+
+
+def _display_name(row: dict[str, object]) -> str:
+    parts = [str(row.get("surname") or "").strip(), str(row.get("name") or "").strip()]
+    return " ".join(part for part in parts if part) or "Без имени"
+
+
+def _problem_number(row: dict[str, object]) -> str:
+    """Build the compact legacy-compatible task label shown in Staff review."""
+
+    lesson = str(row["lesson"])
+    group_short_code = str(row.get("group_short_code") or row["group_id"])
+    problem = str(row["prob"])
+    item = str(row.get("item") or "")
+    return f"{lesson}{group_short_code}.{problem}{item}"
+
+
+def _teacher_display_name(row: dict[str, object]) -> str:
+    parts = [
+        str(row.get("teacher_surname") or "").strip(),
+        str(row.get("teacher_name") or "").strip(),
+    ]
+    return " ".join(part for part in parts if part) or "Преподаватель"
+
+
+def _internal_reaction_review(
+    connection: sqlite3.Connection,
+    *,
+    review_public_id: str,
+    actor_user_id: int,
+    scope: ReviewStaffScope,
+) -> dict[str, object]:
+    review = connection.execute(
+        "SELECT review.id, review.public_id, review.reviewer_user_id, review.created_at "
+        "FROM submission_reviews AS review WHERE review.public_id = ?",
+        (review_public_id,),
+    ).fetchone()
+    if review is None:
+        raise ReviewInternalReactionNotFound("review does not exist")
+    if int(review["reviewer_user_id"]) != actor_user_id:
+        raise ReviewQueueForbidden(
+            "only the original reviewer may change the internal reaction"
+        )
+    evidence_scopes = connection.execute(
+        "SELECT groups.public_id AS group_public_id, "
+        "course.public_id AS course_public_id "
+        "FROM submission_review_evidence_entries AS evidence "
+        "JOIN problems AS problem ON problem.id = evidence.problem_id "
+        "LEFT JOIN groups ON groups.group_id = problem.group_id "
+        "LEFT JOIN courses AS course ON course.id = groups.course_id "
+        "WHERE evidence.review_id = ?",
+        (review["id"],),
+    ).fetchall()
+    if not evidence_scopes or any(not scope.allows(row) for row in evidence_scopes):
+        raise ReviewQueueForbidden("review is outside current Staff scope")
+    return review
+
+
+def _internal_reaction_state(
+    *, review_public_id: str, row: dict[str, object]
+) -> ReviewInternalReactionState:
+    return ReviewInternalReactionState(
+        review_public_id=review_public_id,
+        reaction_id=(None if row["reaction_id"] is None else int(row["reaction_id"])),
+        version=int(row["version"]),
+        editable_until=_parse_timestamp(
+            row["editable_until"], label="internal reaction edit window"
+        ),
+        updated_at=_parse_timestamp(
+            row["updated_at"], label="internal reaction update time"
+        ),
+    )
+
+
+def _student_reaction_review(
+    connection: sqlite3.Connection,
+    *,
+    review_public_id: str,
+    student_user_id: int,
+) -> dict[str, object]:
+    """Resolve one completed review without revealing foreign review IDs."""
+
+    review = connection.execute(
+        "SELECT review.id, review.public_id, review.created_at, "
+        "thread.student_user_id "
+        "FROM submission_reviews AS review "
+        "JOIN submission_threads AS thread ON thread.id = review.thread_id "
+        "WHERE review.public_id = ? AND thread.student_user_id = ?",
+        (review_public_id, student_user_id),
+    ).fetchone()
+    if review is None:
+        raise ReviewStudentReactionNotFound("review does not exist for this Student")
+    return review
+
+
+def _student_reaction_state(
+    *, review_public_id: str, row: dict[str, object]
+) -> ReviewStudentReactionState:
+    return ReviewStudentReactionState(
+        review_public_id=review_public_id,
+        reaction_id=(None if row["reaction_id"] is None else int(row["reaction_id"])),
+        version=int(row["version"]),
+        editable_until=_parse_timestamp(
+            row["editable_until"], label="Student reaction edit window"
+        ),
+        updated_at=_parse_timestamp(
+            row["updated_at"], label="Student reaction update time"
+        ),
+    )
+
+
+def _student_reaction_receipt(
+    connection: sqlite3.Connection,
+    *,
+    review: dict[str, object],
+    state: ReviewStudentReactionState,
+) -> ReviewStudentReactionReceipt:
+    student_user_id = int(review["student_user_id"])
+    owner_accounts, family_accounts = _review_recipient_account_public_ids(
+        connection,
+        student_user_id=student_user_id,
+    )
+    problem_rows = connection.execute(
+        "SELECT problem.public_id FROM submission_review_evidence_entries AS evidence "
+        "JOIN problems AS problem ON problem.id = evidence.problem_id "
+        "WHERE evidence.review_id = ? "
+        "ORDER BY evidence.server_received_at, evidence.entry_id",
+        (review["id"],),
+    ).fetchall()
+    return ReviewStudentReactionReceipt(
+        state=state,
+        owner_account_public_ids=owner_accounts,
+        family_account_public_ids=family_accounts,
+        admin_account_public_ids=_review_admin_account_public_ids(connection),
+        evidence_problem_public_ids=tuple(
+            dict.fromkeys(str(row["public_id"]) for row in problem_rows)
+        ),
+    )
+
+
+def _active_pwa_claim(row: dict[str, object], *, now: datetime) -> bool:
+    return (
+        int(row["cur_status"]) == int(WRITTEN_STATUS.BEING_CHECKED)
+        and row["claim_token"] is not None
+        and row["lease_expires_at"] is not None
+        and _parse_timestamp(row["lease_expires_at"], label="lease expiry") > now
+    )
+
+
+def _active_legacy_claim(row: dict[str, object], *, now: datetime) -> bool:
+    if (
+        int(row["cur_status"]) != int(WRITTEN_STATUS.BEING_CHECKED)
+        or row["claim_token"] is not None
+        or row["teacher_id"] is None
+        or row["teacher_ts"] is None
+    ):
+        return False
+    claimed_at = _parse_timestamp(row["teacher_ts"], label="legacy claim time")
+    return claimed_at + REVIEW_LEASE_DURATION > now
+
+
+def _case_rows(
+    connection: sqlite3.Connection, *, queue_public_id: str
+) -> tuple[str, list[dict[str, object]]]:
+    chosen = connection.execute(
+        "SELECT queue.id, queue.student_id, problem.public_id AS problem_public_id, "
+        "synonym.id AS synonym_group_id, synonym.public_id AS synonym_public_id "
+        "FROM written_tasks_queue AS queue "
+        "JOIN problems AS problem ON problem.id = queue.problem_id "
+        "LEFT JOIN problem_synonym_members AS member "
+        "ON member.problem_id = problem.id AND member.removed_at IS NULL "
+        "LEFT JOIN problem_synonym_groups AS synonym "
+        "ON synonym.id = member.synonym_group_id AND synonym.status = 'active' "
+        "WHERE queue.public_id = ? AND queue.problem_id > 0",
+        (queue_public_id,),
+    ).fetchone()
+    if chosen is None:
+        raise ReviewQueueNotFound("review queue item was not found")
+
+    base_sql = (
+        "SELECT queue.*, problem.public_id AS problem_public_id, "
+        "problem.title AS problem_title, problem.group_id, problem.lesson, "
+        "problem.prob, problem.item, "
+        "student.public_id AS student_public_id, student.name, student.surname, "
+        "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+        "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+        "course.public_id AS course_public_id, course.name AS course_name "
+        "FROM written_tasks_queue AS queue "
+        "JOIN problems AS problem ON problem.id = queue.problem_id "
+        "JOIN users AS student ON student.id = queue.student_id "
+        "LEFT JOIN groups ON groups.group_id = problem.group_id "
+        "LEFT JOIN courses AS course ON course.id = groups.course_id "
+    )
+    synonym_group_id = chosen["synonym_group_id"]
+    if synonym_group_id is None:
+        rows = connection.execute(
+            base_sql + "WHERE queue.id = ? ORDER BY queue.ts, queue.id",
+            (chosen["id"],),
+        ).fetchall()
+        logical_case_public_id = str(chosen["problem_public_id"])
+    else:
+        rows = connection.execute(
+            base_sql + "JOIN problem_synonym_members AS peer "
+            "ON peer.problem_id = problem.id AND peer.removed_at IS NULL "
+            "WHERE queue.student_id = ? AND peer.synonym_group_id = ? "
+            "AND queue.problem_id > 0 ORDER BY queue.ts, queue.id",
+            (chosen["student_id"], synonym_group_id),
+        ).fetchall()
+        logical_case_public_id = str(chosen["synonym_public_id"])
+    if not rows:  # pragma: no cover - chosen row is part of its own case
+        raise ReviewQueueNotFound("review logical case became empty")
+    return logical_case_public_id, list(rows)
+
+
+_QUEUE_ROW_SELECT = (
+    "SELECT queue.*, problem.public_id AS problem_public_id, "
+    "problem.title AS problem_title, problem.group_id, problem.lesson, "
+    "problem.prob, problem.item, "
+    "student.public_id AS student_public_id, student.name, student.surname, "
+    "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+    "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+    "course.public_id AS course_public_id, course.name AS course_name, "
+    "synonym.id AS synonym_group_id, synonym.public_id AS synonym_public_id, "
+    "teacher.public_id AS teacher_public_id, teacher.name AS teacher_name, "
+    "teacher.surname AS teacher_surname "
+    "FROM written_tasks_queue AS queue "
+    "JOIN problems AS problem ON problem.id = queue.problem_id "
+    "JOIN users AS student ON student.id = queue.student_id "
+    "LEFT JOIN groups ON groups.group_id = problem.group_id "
+    "LEFT JOIN courses AS course ON course.id = groups.course_id "
+    "LEFT JOIN problem_synonym_members AS member "
+    "ON member.problem_id = problem.id AND member.removed_at IS NULL "
+    "LEFT JOIN problem_synonym_groups AS synonym "
+    "ON synonym.id = member.synonym_group_id AND synonym.status = 'active' "
+    "LEFT JOIN users AS teacher ON teacher.id = queue.teacher_id "
+    "WHERE queue.problem_id > 0 ORDER BY queue.ts, queue.id"
+)
+
+
+def _logical_case_key(row: dict[str, object]) -> tuple[int, str, int]:
+    synonym_group_id = row["synonym_group_id"]
+    return (
+        int(row["student_id"]),
+        "synonym" if synonym_group_id is not None else "problem",
+        int(synonym_group_id if synonym_group_id is not None else row["problem_id"]),
+    )
+
+
+def _queue_lock(
+    rows: list[dict[str, object]], *, now: datetime
+) -> ReviewQueueLock | None:
+    active_pwa = [row for row in rows if _active_pwa_claim(row, now=now)]
+    active_legacy = [row for row in rows if _active_legacy_claim(row, now=now)]
+    active = active_pwa or active_legacy
+    if not active:
+        return None
+    first = active[0]
+    teacher_id = int(first["teacher_id"])
+    if any(int(row["teacher_id"]) != teacher_id for row in active):
+        raise ReviewLeaseConflict("logical case has inconsistent active owners")
+    if active_pwa:
+        tokens = {str(row["claim_token"]) for row in active_pwa}
+        if len(tokens) != 1:
+            raise ReviewLeaseConflict("logical case has inconsistent active leases")
+        expires_at = min(
+            _parse_timestamp(row["lease_expires_at"], label="lease expiry")
+            for row in active_pwa
+        )
+        kind = "pwa"
+    else:
+        expires_at = min(
+            _parse_timestamp(row["teacher_ts"], label="legacy claim time")
+            + REVIEW_LEASE_DURATION
+            for row in active_legacy
+        )
+        kind = "legacy"
+    return ReviewQueueLock(
+        kind=kind,
+        teacher_user_id=teacher_id,
+        teacher_public_id=(
+            None
+            if first["teacher_public_id"] is None
+            else str(first["teacher_public_id"])
+        ),
+        teacher_name=_teacher_display_name(first),
+        expires_at=expires_at,
+    )
+
+
+def _evidence_branches(
+    connection: sqlite3.Connection, rows: list[dict[str, object]]
+) -> tuple[ReviewEvidenceBranch, ...]:
+    branches: list[ReviewEvidenceBranch] = []
+    for queue_row in rows:
+        thread = connection.execute(
+            "SELECT id, public_id, version FROM submission_threads "
+            "WHERE student_user_id = ? AND problem_id = ? AND status <> 'closed' "
+            "ORDER BY id DESC LIMIT 1",
+            (queue_row["student_id"], queue_row["problem_id"]),
+        ).fetchone()
+        if thread is None:
+            branches.append(
+                ReviewEvidenceBranch(
+                    queue_public_id=str(queue_row["public_id"]),
+                    thread_public_id=None,
+                    thread_version=None,
+                    entries=(),
+                    timeline_entries=(),
+                )
+            )
+            continue
+        timeline_rows = connection.execute(
+            "SELECT entry.id, entry.public_id, entry.author_kind, entry.entry_kind, "
+            "entry.text, entry.server_received_at FROM submission_entries AS entry "
+            "WHERE entry.thread_id = ? AND entry.state IN ('submitted', 'locked') "
+            "ORDER BY entry.server_received_at, entry.id",
+            (thread["id"],),
+        ).fetchall()
+        attachments_by_entry_id: dict[int, tuple[ReviewEvidenceAttachment, ...]] = {}
+        for timeline_entry in timeline_rows:
+            attachment_rows = connection.execute(
+                "SELECT public_id, ordinal FROM submission_attachments "
+                "WHERE entry_id = ? AND upload_status IN ('stored', 'locked') "
+                "ORDER BY ordinal, id",
+                (timeline_entry["id"],),
+            ).fetchall()
+            attachments_by_entry_id[int(timeline_entry["id"])] = tuple(
+                ReviewEvidenceAttachment(
+                    attachment_public_id=str(attachment["public_id"]),
+                    ordinal=int(attachment["ordinal"]),
+                )
+                for attachment in attachment_rows
+            )
+        entry_rows = connection.execute(
+            "SELECT entry.id, entry.public_id, entry.version, entry.entry_kind, "
+            "entry.text, entry.server_received_at FROM submission_entries AS entry "
+            "WHERE entry.thread_id = ? AND entry.author_kind = 'student' "
+            "AND entry.state = 'submitted' AND NOT EXISTS ("
+            "SELECT 1 FROM submission_review_evidence_entries AS evidence "
+            "WHERE evidence.entry_id = entry.id"
+            ") ORDER BY entry.server_received_at, entry.id",
+            (thread["id"],),
+        ).fetchall()
+        entries: list[ReviewEvidenceEntry] = []
+        for entry in entry_rows:
+            entries.append(
+                ReviewEvidenceEntry(
+                    entry_public_id=str(entry["public_id"]),
+                    entry_version=int(entry["version"]),
+                    entry_kind=str(entry["entry_kind"]),
+                    text=None if entry["text"] is None else str(entry["text"]),
+                    server_received_at=_parse_timestamp(
+                        entry["server_received_at"], label="evidence receive time"
+                    ),
+                    attachments=attachments_by_entry_id.get(int(entry["id"]), ()),
+                )
+            )
+        branches.append(
+            ReviewEvidenceBranch(
+                queue_public_id=str(queue_row["public_id"]),
+                thread_public_id=str(thread["public_id"]),
+                thread_version=int(thread["version"]),
+                entries=tuple(entries),
+                timeline_entries=tuple(
+                    ReviewTimelineEntry(
+                        entry_public_id=str(entry["public_id"]),
+                        author_kind=str(entry["author_kind"]),
+                        entry_kind=str(entry["entry_kind"]),
+                        text=None if entry["text"] is None else str(entry["text"]),
+                        server_received_at=_parse_timestamp(
+                            entry["server_received_at"], label="timeline entry time"
+                        ),
+                        attachments=attachments_by_entry_id.get(int(entry["id"]), ()),
+                    )
+                    for entry in timeline_rows
+                ),
+            )
+        )
+    return tuple(branches)
+
+
+def _lease_from_rows(
+    connection: sqlite3.Connection,
+    rows: list[dict[str, object]],
+    *,
+    logical_case_public_id: str,
+) -> ReviewLease:
+    first = rows[0]
+    claim_token = str(first["claim_token"])
+    teacher_user_id = int(first["teacher_id"])
+    claimed_at = min(
+        _parse_timestamp(row["claimed_at"], label="claim time") for row in rows
+    )
+    expires_at = min(
+        _parse_timestamp(row["lease_expires_at"], label="lease expiry") for row in rows
+    )
+    if any(
+        row["claim_token"] != claim_token or int(row["teacher_id"]) != teacher_user_id
+        for row in rows
+    ):
+        raise ReviewLeaseConflict("logical case has inconsistent active leases")
+    items = tuple(
+        ReviewLeaseItem(
+            queue_public_id=str(row["public_id"]),
+            queue_id=int(row["id"]),
+            student_user_id=int(row["student_id"]),
+            student_public_id=(
+                None
+                if row["student_public_id"] is None
+                else str(row["student_public_id"])
+            ),
+            student_name=_display_name(row),
+            problem_id=int(row["problem_id"]),
+            problem_public_id=str(row["problem_public_id"]),
+            problem_number=_problem_number(row),
+            problem_title=str(row["problem_title"]),
+            group_id=str(row["group_id"]),
+            group_public_id=(
+                None if row["group_public_id"] is None else str(row["group_public_id"])
+            ),
+            group_name=str(row["group_name"] or row["group_id"]),
+            group_short_code=str(row["group_short_code"] or row["group_id"]),
+            group_color_key=(
+                None if row["group_color_key"] is None else str(row["group_color_key"])
+            ),
+            course_public_id=(
+                None
+                if row["course_public_id"] is None
+                else str(row["course_public_id"])
+            ),
+            course_name=(
+                None if row["course_name"] is None else str(row["course_name"])
+            ),
+            submitted_at=_parse_timestamp(row["ts"], label="submission time"),
+            lease_version=int(row["lease_version"]),
+        )
+        for row in rows
+    )
+    return ReviewLease(
+        claim_token=claim_token,
+        teacher_user_id=teacher_user_id,
+        claimed_at=claimed_at,
+        expires_at=expires_at,
+        logical_case_public_id=logical_case_public_id,
+        items=items,
+        evidence_branches=_evidence_branches(connection, rows),
+    )
+
+
+class PwaWrittenReviewQueueRepository:
+    """Claim/heartbeat/release one Student + synonym-group logical case."""
+
+    def __init__(
+        self,
+        connection_factory: PwaConnectionFactory,
+        *,
+        clock: Callable[[], datetime] = _utc_now,
+        claim_token_factory: Callable[[], str] = lambda: f"review-claim-{uuid.uuid4()}",
+        completion_checkpoint: Callable[[str], None] | None = None,
+    ) -> None:
+        self._factory = connection_factory
+        self._clock = clock
+        self._claim_token_factory = claim_token_factory
+        # A no-op in production. Tests inject a raising observer to prove that
+        # every authoritative completion write remains inside one transaction.
+        self._completion_checkpoint = completion_checkpoint or (lambda _name: None)
+
+    async def claim(
+        self,
+        *,
+        queue_public_id: str,
+        teacher_user_id: int,
+        scope: ReviewStaffScope,
+    ) -> ReviewLease:
+        if not queue_public_id.strip():
+            raise ValueError("queue_public_id must not be empty")
+        if teacher_user_id == 0:
+            raise ValueError("teacher_user_id must not be zero")
+        now = _normalize_time(self._clock())
+        expires_at = now + REVIEW_LEASE_DURATION
+
+        def operation(connection: sqlite3.Connection) -> ReviewLease:
+            logical_case_public_id, rows = _case_rows(
+                connection, queue_public_id=queue_public_id
+            )
+            if any(not scope.allows(row) for row in rows):
+                raise ReviewQueueForbidden("review case is outside Staff scope")
+            active_legacy_rows = [
+                row for row in rows if _active_legacy_claim(row, now=now)
+            ]
+            if any(
+                int(row["teacher_id"]) != teacher_user_id
+                for row in active_legacy_rows
+            ):
+                raise ReviewLeaseConflict("review case is active in legacy Telegram")
+            active_rows = [row for row in rows if _active_pwa_claim(row, now=now)]
+            if any(int(row["teacher_id"]) != teacher_user_id for row in active_rows):
+                raise ReviewLeaseConflict("review case is already claimed")
+            active_tokens = {str(row["claim_token"]) for row in active_rows}
+            if len(active_tokens) > 1:
+                raise ReviewLeaseConflict(
+                    "review case has multiple active claim tokens"
+                )
+
+            claim_token = (
+                next(iter(active_tokens))
+                if active_tokens
+                else self._claim_token_factory().strip()
+            )
+            if not claim_token:
+                raise ValueError("claim token factory returned an empty token")
+            now_text = _timestamp(now)
+            expiry_text = _timestamp(expires_at)
+            row_ids = [int(row["id"]) for row in rows]
+            placeholders = ",".join("?" for _ in row_ids)
+            connection.execute(
+                "UPDATE written_tasks_queue SET cur_status = ?, teacher_ts = ?, "
+                "teacher_id = ?, claim_token = ?, "
+                "claimed_at = CASE WHEN claim_token = ? AND claimed_at IS NOT NULL "
+                "THEN claimed_at ELSE ? END, lease_expires_at = ?, "
+                "lease_version = lease_version + 1, updated_at = ? "
+                f"WHERE id IN ({placeholders})",
+                (
+                    int(WRITTEN_STATUS.BEING_CHECKED),
+                    now_text,
+                    teacher_user_id,
+                    claim_token,
+                    claim_token,
+                    now_text,
+                    expiry_text,
+                    now_text,
+                    *row_ids,
+                ),
+            )
+            refreshed = connection.execute(
+                "SELECT queue.*, problem.public_id AS problem_public_id, "
+                "problem.title AS problem_title, problem.group_id, problem.lesson, "
+                "problem.prob, problem.item, "
+                "student.public_id AS student_public_id, student.name, student.surname, "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name "
+                "FROM written_tasks_queue AS queue "
+                "JOIN problems AS problem ON problem.id = queue.problem_id "
+                "JOIN users AS student ON student.id = queue.student_id "
+                "LEFT JOIN groups ON groups.group_id = problem.group_id "
+                "LEFT JOIN courses AS course ON course.id = groups.course_id "
+                f"WHERE queue.id IN ({placeholders}) ORDER BY queue.ts, queue.id",
+                row_ids,
+            ).fetchall()
+            return _lease_from_rows(
+                connection,
+                list(refreshed),
+                logical_case_public_id=logical_case_public_id,
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def list_cases(
+        self,
+        *,
+        scope: ReviewStaffScope,
+        problem_group_public_id: str | None = None,
+        cursor: str | None = None,
+        newest_first: bool = False,
+        page_size: int = 50,
+    ) -> ReviewQueuePage:
+        """Return complete logical cases only; never leak an out-of-scope branch."""
+
+        if not 1 <= page_size <= 100:
+            raise ValueError("page_size must be between 1 and 100")
+        now = _normalize_time(self._clock())
+
+        def operation(connection: sqlite3.Connection) -> ReviewQueuePage:
+            grouped: dict[tuple[int, str, int], list[dict[str, object]]] = {}
+            for row in connection.execute(_QUEUE_ROW_SELECT).fetchall():
+                grouped.setdefault(_logical_case_key(row), []).append(row)
+
+            cases: list[ReviewQueueCase] = []
+            for rows in grouped.values():
+                if any(not scope.allows(row) for row in rows):
+                    continue
+                logical_case_public_id = str(
+                    rows[0]["synonym_public_id"] or rows[0]["problem_public_id"]
+                )
+                if (
+                    problem_group_public_id is not None
+                    and logical_case_public_id != problem_group_public_id
+                ):
+                    continue
+                lease_items = tuple(
+                    ReviewLeaseItem(
+                        queue_public_id=str(row["public_id"]),
+                        queue_id=int(row["id"]),
+                        student_user_id=int(row["student_id"]),
+                        student_public_id=(
+                            None
+                            if row["student_public_id"] is None
+                            else str(row["student_public_id"])
+                        ),
+                        student_name=_display_name(row),
+                        problem_id=int(row["problem_id"]),
+                        problem_public_id=str(row["problem_public_id"]),
+                        problem_number=_problem_number(row),
+                        problem_title=str(row["problem_title"]),
+                        group_id=str(row["group_id"]),
+                        group_public_id=(
+                            None
+                            if row["group_public_id"] is None
+                            else str(row["group_public_id"])
+                        ),
+                        group_name=str(row["group_name"] or row["group_id"]),
+                        group_short_code=str(
+                            row["group_short_code"] or row["group_id"]
+                        ),
+                        group_color_key=(
+                            None
+                            if row["group_color_key"] is None
+                            else str(row["group_color_key"])
+                        ),
+                        course_public_id=(
+                            None
+                            if row["course_public_id"] is None
+                            else str(row["course_public_id"])
+                        ),
+                        course_name=(
+                            None
+                            if row["course_name"] is None
+                            else str(row["course_name"])
+                        ),
+                        submitted_at=_parse_timestamp(
+                            row["ts"], label="submission time"
+                        ),
+                        lease_version=int(row["lease_version"]),
+                    )
+                    for row in rows
+                )
+                cases.append(
+                    ReviewQueueCase(
+                        queue_public_id=lease_items[0].queue_public_id,
+                        logical_case_public_id=logical_case_public_id,
+                        student_public_id=lease_items[0].student_public_id,
+                        student_name=lease_items[0].student_name,
+                        submitted_at=lease_items[0].submitted_at,
+                        items=lease_items,
+                        lock=_queue_lock(rows, now=now),
+                    )
+                )
+            cases.sort(
+                key=lambda case: (case.submitted_at, case.queue_public_id),
+                reverse=newest_first,
+            )
+            if cursor is not None:
+                for index, case in enumerate(cases):
+                    if case.queue_public_id == cursor:
+                        cases = cases[index + 1 :]
+                        break
+                else:
+                    raise ReviewQueueNotFound("review queue cursor was not found")
+            page = cases[: page_size + 1]
+            next_cursor = (
+                page[page_size - 1].queue_public_id if len(page) > page_size else None
+            )
+            return ReviewQueuePage(
+                items=tuple(page[:page_size]), next_cursor=next_cursor
+            )
+
+        return await self._factory.run_read_async(operation)
+
+    async def list_reaction_inbox(
+        self,
+        *,
+        kind: str = "all",
+        reaction_id: int | None = None,
+        cursor: str | None = None,
+        page_size: int = 50,
+    ) -> ReviewReactionInboxPage:
+        """Return current written-review reactions for the global-admin inbox."""
+
+        if kind not in {"all", "student", "teacher"}:
+            raise ValueError("reaction inbox kind is invalid")
+        if reaction_id is not None:
+            if type(reaction_id) is not int:
+                raise ValueError("reaction inbox reaction ID must be an integer")
+            allowed_ids = (
+                _WRITTEN_STUDENT_REACTION_IDS
+                if kind == "student"
+                else _WRITTEN_TEACHER_REACTION_IDS
+                if kind == "teacher"
+                else _WRITTEN_STUDENT_REACTION_IDS | _WRITTEN_TEACHER_REACTION_IDS
+            )
+            if reaction_id not in allowed_ids:
+                raise ValueError(
+                    "reaction inbox reaction ID is outside the selected kind"
+                )
+        if cursor is not None and not _PUBLIC_ID.fullmatch(cursor):
+            raise ValueError("reaction inbox cursor is invalid")
+        if not 1 <= page_size <= 100:
+            raise ValueError("page_size must be between 1 and 100")
+
+        def operation(connection: sqlite3.Connection) -> ReviewReactionInboxPage:
+            rows = connection.execute(
+                "SELECT state.kind, state.reaction_id, state.version, "
+                "state.updated_at, state.editable_until, reaction.reaction AS reaction_label, "
+                "review.id AS review_id, review.public_id AS review_public_id, "
+                "review.verdict, review.created_at, "
+                "NOT EXISTS (SELECT 1 FROM submission_reviews AS newer "
+                "WHERE newer.thread_id = review.thread_id AND "
+                "(newer.created_at > review.created_at OR "
+                "(newer.created_at = review.created_at AND newer.id > review.id))) "
+                "AS is_latest_review, "
+                "student.public_id AS student_public_id, student.name, student.surname, "
+                "reviewer.public_id AS teacher_public_id, "
+                "reviewer.name AS teacher_name, reviewer.surname AS teacher_surname, "
+                "problem.public_id AS problem_public_id, problem.title AS problem_title, "
+                "problem.lesson, problem.prob, problem.item, problem.group_id, "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name, "
+                "comment.text AS comment "
+                "FROM ("
+                "SELECT review_id, 'student' AS kind, reaction_id, version, "
+                "updated_at, editable_until FROM submission_review_student_reactions "
+                "WHERE reaction_id IS NOT NULL "
+                "UNION ALL "
+                "SELECT review_id, 'teacher' AS kind, reaction_id, version, "
+                "updated_at, editable_until FROM submission_review_internal_reactions "
+                "WHERE reaction_id IS NOT NULL"
+                ") AS state "
+                "JOIN submission_reviews AS review ON review.id = state.review_id "
+                "JOIN submission_threads AS thread ON thread.id = review.thread_id "
+                "JOIN users AS student ON student.id = thread.student_user_id "
+                "JOIN users AS reviewer ON reviewer.id = review.reviewer_user_id "
+                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "JOIN reaction_enum AS reaction ON reaction.reaction_id = state.reaction_id "
+                "LEFT JOIN groups ON groups.group_id = problem.group_id "
+                "LEFT JOIN courses AS course ON course.id = groups.course_id "
+                "LEFT JOIN submission_entries AS comment ON comment.id = review.comment_entry_id"
+            ).fetchall()
+            items: list[ReviewReactionInboxItem] = []
+            for row in rows:
+                row_kind = str(row["kind"])
+                row_reaction_id = int(row["reaction_id"])
+                if kind != "all" and row_kind != kind:
+                    continue
+                if reaction_id is not None and row_reaction_id != reaction_id:
+                    continue
+                review_public_id = str(row["review_public_id"])
+                evidence_entries = []
+                for evidence in connection.execute(
+                    "SELECT entry.id, entry.public_id, entry.version, entry.entry_kind, "
+                    "entry.text, entry.server_received_at "
+                    "FROM submission_review_evidence_entries AS snapshot "
+                    "JOIN submission_entries AS entry ON entry.id = snapshot.entry_id "
+                    "WHERE snapshot.review_id = ? "
+                    "ORDER BY snapshot.server_received_at, snapshot.entry_id",
+                    (row["review_id"],),
+                ).fetchall():
+                    attachments = connection.execute(
+                        "SELECT attachment.public_id, attachment.ordinal "
+                        "FROM submission_review_evidence_attachments AS snapshot "
+                        "JOIN submission_attachments AS attachment "
+                        "ON attachment.id = snapshot.attachment_id "
+                        "WHERE snapshot.review_id = ? AND snapshot.entry_id = ? "
+                        "ORDER BY snapshot.ordinal, snapshot.attachment_id",
+                        (row["review_id"], evidence["id"]),
+                    ).fetchall()
+                    evidence_entries.append(
+                        ReviewEvidenceEntry(
+                            entry_public_id=str(evidence["public_id"]),
+                            entry_version=int(evidence["version"]),
+                            entry_kind=str(evidence["entry_kind"]),
+                            text=(
+                                None
+                                if evidence["text"] is None
+                                else str(evidence["text"])
+                            ),
+                            server_received_at=_parse_timestamp(
+                                evidence["server_received_at"],
+                                label="evidence submission time",
+                            ),
+                            attachments=tuple(
+                                ReviewEvidenceAttachment(
+                                    attachment_public_id=str(item["public_id"]),
+                                    ordinal=int(item["ordinal"]),
+                                )
+                                for item in attachments
+                            ),
+                        )
+                    )
+                items.append(
+                    ReviewReactionInboxItem(
+                        item_public_id=_review_reaction_item_public_id(
+                            review_public_id=review_public_id,
+                            kind=row_kind,
+                        ),
+                        review_public_id=review_public_id,
+                        kind=row_kind,
+                        reaction_id=row_reaction_id,
+                        reaction_label=str(row["reaction_label"]),
+                        reaction_version=int(row["version"]),
+                        updated_at=_parse_timestamp(
+                            row["updated_at"], label="reaction update time"
+                        ),
+                        editable_until=_parse_timestamp(
+                            row["editable_until"], label="reaction edit window"
+                        ),
+                        student_public_id=(
+                            None
+                            if row["student_public_id"] is None
+                            else str(row["student_public_id"])
+                        ),
+                        student_name=_display_name(row),
+                        reviewer_public_id=(
+                            None
+                            if row["teacher_public_id"] is None
+                            else str(row["teacher_public_id"])
+                        ),
+                        reviewer_name=_teacher_display_name(row),
+                        target_problem_public_id=str(row["problem_public_id"]),
+                        problem_number=_problem_number(row),
+                        problem_title=str(row["problem_title"]),
+                        group_public_id=(
+                            None
+                            if row["group_public_id"] is None
+                            else str(row["group_public_id"])
+                        ),
+                        group_name=str(row["group_name"] or row["group_id"]),
+                        group_short_code=str(
+                            row["group_short_code"] or row["group_id"]
+                        ),
+                        group_color_key=(
+                            None
+                            if row["group_color_key"] is None
+                            else str(row["group_color_key"])
+                        ),
+                        course_public_id=(
+                            None
+                            if row["course_public_id"] is None
+                            else str(row["course_public_id"])
+                        ),
+                        course_name=(
+                            None
+                            if row["course_name"] is None
+                            else str(row["course_name"])
+                        ),
+                        verdict=int(row["verdict"]),
+                        comment=(
+                            None if row["comment"] is None else str(row["comment"])
+                        ),
+                        completed_at=_parse_timestamp(
+                            row["created_at"], label="review completion time"
+                        ),
+                        is_latest_review=bool(row["is_latest_review"]),
+                        evidence_entries=tuple(evidence_entries),
+                    )
+                )
+            items.sort(
+                key=lambda item: (item.updated_at, item.item_public_id), reverse=True
+            )
+            if cursor is not None:
+                for index, item in enumerate(items):
+                    if item.item_public_id == cursor:
+                        items = items[index + 1 :]
+                        break
+                else:
+                    raise ReviewQueueNotFound("reaction inbox cursor was not found")
+            page = items[: page_size + 1]
+            return ReviewReactionInboxPage(
+                items=tuple(page[:page_size]),
+                next_cursor=(
+                    page[page_size - 1].item_public_id
+                    if len(page) > page_size
+                    else None
+                ),
+            )
+
+        return await self._factory.run_read_async(operation)
+
+    async def active_admin_account_public_ids(self) -> tuple[str, ...]:
+        """Resolve the current admin recipients of hidden review oversight."""
+
+        return await self._factory.run_read_async(_review_admin_account_public_ids)
+
+    async def heartbeat(
+        self,
+        *,
+        queue_public_id: str,
+        claim_token: str,
+        teacher_user_id: int,
+        scope: ReviewStaffScope,
+    ) -> ReviewLease:
+        token = claim_token.strip()
+        if not token:
+            raise ValueError("claim_token must not be empty")
+        now = _normalize_time(self._clock())
+        expires_at = now + REVIEW_LEASE_DURATION
+
+        def operation(connection: sqlite3.Connection) -> ReviewLease:
+            rows = connection.execute(
+                "SELECT queue.*, problem.public_id AS problem_public_id, "
+                "problem.title AS problem_title, problem.group_id, problem.lesson, "
+                "problem.prob, problem.item, "
+                "student.public_id AS student_public_id, student.name, student.surname, "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name, "
+                "synonym.public_id AS synonym_public_id "
+                "FROM written_tasks_queue AS queue "
+                "JOIN problems AS problem ON problem.id = queue.problem_id "
+                "JOIN users AS student ON student.id = queue.student_id "
+                "LEFT JOIN groups ON groups.group_id = problem.group_id "
+                "LEFT JOIN courses AS course ON course.id = groups.course_id "
+                "LEFT JOIN problem_synonym_members AS member "
+                "ON member.problem_id = problem.id AND member.removed_at IS NULL "
+                "LEFT JOIN problem_synonym_groups AS synonym "
+                "ON synonym.id = member.synonym_group_id AND synonym.status = 'active' "
+                "WHERE queue.claim_token = ? AND queue.teacher_id = ? "
+                "AND queue.cur_status = ? ORDER BY queue.ts, queue.id",
+                (token, teacher_user_id, int(WRITTEN_STATUS.BEING_CHECKED)),
+            ).fetchall()
+            if not rows or any(not _active_pwa_claim(row, now=now) for row in rows):
+                raise ReviewLeaseLost("review lease expired or was released")
+            if not any(str(row["public_id"]) == queue_public_id for row in rows):
+                raise ReviewLeaseLost("review lease does not own this queue item")
+            if any(not scope.allows(row) for row in rows):
+                raise ReviewQueueForbidden("review case is outside Staff scope")
+            now_text = _timestamp(now)
+            connection.execute(
+                "UPDATE written_tasks_queue SET teacher_ts = ?, lease_expires_at = ?, "
+                "lease_version = lease_version + 1, updated_at = ? "
+                "WHERE claim_token = ? AND teacher_id = ? AND cur_status = ?",
+                (
+                    now_text,
+                    _timestamp(expires_at),
+                    now_text,
+                    token,
+                    teacher_user_id,
+                    int(WRITTEN_STATUS.BEING_CHECKED),
+                ),
+            )
+            refreshed = connection.execute(
+                "SELECT queue.*, problem.public_id AS problem_public_id, "
+                "problem.title AS problem_title, problem.group_id, problem.lesson, "
+                "problem.prob, problem.item, "
+                "student.public_id AS student_public_id, student.name, student.surname, "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name, "
+                "synonym.public_id AS synonym_public_id "
+                "FROM written_tasks_queue AS queue "
+                "JOIN problems AS problem ON problem.id = queue.problem_id "
+                "JOIN users AS student ON student.id = queue.student_id "
+                "LEFT JOIN groups ON groups.group_id = problem.group_id "
+                "LEFT JOIN courses AS course ON course.id = groups.course_id "
+                "LEFT JOIN problem_synonym_members AS member "
+                "ON member.problem_id = problem.id AND member.removed_at IS NULL "
+                "LEFT JOIN problem_synonym_groups AS synonym "
+                "ON synonym.id = member.synonym_group_id AND synonym.status = 'active' "
+                "WHERE queue.claim_token = ? AND queue.teacher_id = ? "
+                "ORDER BY queue.ts, queue.id",
+                (token, teacher_user_id),
+            ).fetchall()
+            logical_case_public_id = str(
+                refreshed[0]["synonym_public_id"] or refreshed[0]["problem_public_id"]
+            )
+            return _lease_from_rows(
+                connection,
+                list(refreshed),
+                logical_case_public_id=logical_case_public_id,
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def complete(self, command: CompleteReviewCommand) -> CompleteReviewReceipt:
+        """Atomically persist one review and freeze every current case entry."""
+
+        now = _normalize_time(self._clock())
+        completed_at = _timestamp(now)
+        payload_sha256 = _payload_hash(command.payload())
+
+        def receipt_from_row(
+            connection: sqlite3.Connection,
+            row: dict[str, object],
+            *,
+            replayed: bool,
+        ) -> CompleteReviewReceipt:
+            evidence = connection.execute(
+                "SELECT entry.public_id, problem.public_id AS problem_public_id "
+                "FROM submission_review_evidence_entries AS evidence "
+                "JOIN submission_entries AS entry ON entry.id = evidence.entry_id "
+                "JOIN problems AS problem ON problem.id = evidence.problem_id "
+                "WHERE evidence.review_id = ? "
+                "ORDER BY evidence.server_received_at, evidence.entry_id",
+                (row["id"],),
+            ).fetchall()
+            student_user_id = int(
+                connection.execute(
+                    "SELECT student_user_id FROM submission_threads WHERE id = ?",
+                    (row["thread_id"],),
+                ).fetchone()["student_user_id"]
+            )
+            owner_account_public_ids, family_account_public_ids = (
+                _review_recipient_account_public_ids(
+                    connection,
+                    student_user_id=student_user_id,
+                )
+            )
+            annotations = connection.execute(
+                "SELECT annotation.public_id, attachment.public_id AS attachment_public_id, "
+                "annotation.schema_version, annotation.rotation, "
+                "json_array_length(annotation.marks_json) AS mark_count "
+                "FROM submission_review_annotations AS annotation "
+                "JOIN submission_attachments AS attachment "
+                "ON attachment.id = annotation.attachment_id "
+                "WHERE annotation.review_id = ? ORDER BY attachment.ordinal, annotation.id",
+                (row["id"],),
+            ).fetchall()
+            reaction = connection.execute(
+                "SELECT reaction_id, version, editable_until, updated_at "
+                "FROM submission_review_internal_reactions WHERE review_id = ?",
+                (row["id"],),
+            ).fetchone()
+            return CompleteReviewReceipt(
+                review_public_id=str(row["public_id"]),
+                target_thread_public_id=str(row["thread_public_id"]),
+                target_problem_public_id=str(row["problem_public_id"]),
+                target_thread_status=(
+                    "accepted"
+                    if VERDICT(int(row["verdict"])) in VERDICTS_SOLVED
+                    else "needs_work"
+                ),
+                verdict=int(row["verdict"]),
+                comment_entry_public_id=(
+                    None
+                    if row["comment_public_id"] is None
+                    else str(row["comment_public_id"])
+                ),
+                evidence_entry_public_ids=tuple(
+                    str(item["public_id"]) for item in evidence
+                ),
+                evidence_problem_public_ids=tuple(
+                    dict.fromkeys(str(item["problem_public_id"]) for item in evidence)
+                ),
+                owner_account_public_ids=owner_account_public_ids,
+                family_account_public_ids=family_account_public_ids,
+                annotations=tuple(
+                    ReviewAnnotationReceipt(
+                        annotation_public_id=str(item["public_id"]),
+                        attachment_public_id=str(item["attachment_public_id"]),
+                        schema_version=int(item["schema_version"]),
+                        rotation=int(item["rotation"]),
+                        mark_count=int(item["mark_count"]),
+                    )
+                    for item in annotations
+                ),
+                internal_reaction=(
+                    None
+                    if reaction is None
+                    else ReviewInternalReactionState(
+                        review_public_id=str(row["public_id"]),
+                        reaction_id=(
+                            None
+                            if reaction["reaction_id"] is None
+                            else int(reaction["reaction_id"])
+                        ),
+                        version=int(reaction["version"]),
+                        editable_until=_parse_timestamp(
+                            reaction["editable_until"],
+                            label="internal reaction edit window",
+                        ),
+                        updated_at=_parse_timestamp(
+                            reaction["updated_at"],
+                            label="internal reaction update time",
+                        ),
+                    )
+                ),
+                completed_at=_parse_timestamp(row["created_at"], label="review time"),
+                replayed=replayed,
+            )
+
+        def operation(connection: sqlite3.Connection) -> CompleteReviewReceipt:
+            replay = connection.execute(
+                "SELECT review.*, thread.public_id AS thread_public_id, "
+                "problem.public_id AS problem_public_id, "
+                "comment.public_id AS comment_public_id "
+                "FROM submission_reviews AS review "
+                "JOIN submission_threads AS thread ON thread.id = review.thread_id "
+                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "LEFT JOIN submission_entries AS comment "
+                "ON comment.id = review.comment_entry_id "
+                "WHERE review.reviewer_user_id = ? AND review.idempotency_key = ?",
+                (command.teacher_user_id, command.idempotency_key),
+            ).fetchone()
+            if replay is not None:
+                if replay["payload_sha256"] != payload_sha256:
+                    raise ReviewIdempotencyConflict(
+                        "review completion key was reused with another payload"
+                    )
+                replay_scopes = connection.execute(
+                    "SELECT groups.public_id AS group_public_id, "
+                    "course.public_id AS course_public_id "
+                    "FROM submission_review_evidence_entries AS evidence "
+                    "JOIN problems AS problem ON problem.id = evidence.problem_id "
+                    "LEFT JOIN groups ON groups.group_id = problem.group_id "
+                    "LEFT JOIN courses AS course ON course.id = groups.course_id "
+                    "WHERE evidence.review_id = ?",
+                    (replay["id"],),
+                ).fetchall()
+                if any(not command.scope.allows(row) for row in replay_scopes):
+                    raise ReviewQueueForbidden("review is outside current Staff scope")
+                return receipt_from_row(connection, replay, replayed=True)
+
+            _logical_case_public_id, queue_rows = _case_rows(
+                connection, queue_public_id=command.queue_public_id
+            )
+            if any(not command.scope.allows(row) for row in queue_rows):
+                raise ReviewQueueForbidden("review case is outside Staff scope")
+            if any(
+                not _active_pwa_claim(row, now=now)
+                or row["claim_token"] != command.claim_token
+                or int(row["teacher_id"]) != command.teacher_user_id
+                for row in queue_rows
+            ):
+                raise ReviewLeaseLost("review lease expired or changed owner")
+
+            actual_branches = _evidence_branches(connection, queue_rows)
+            if any(
+                branch.thread_public_id is None or not branch.entries
+                for branch in actual_branches
+            ):
+                raise ReviewEvidenceUnavailable(
+                    "review case contains a branch without modern evidence"
+                )
+            expected_by_queue = {
+                branch.queue_public_id: branch for branch in command.branches
+            }
+            if set(expected_by_queue) != {str(row["public_id"]) for row in queue_rows}:
+                raise ReviewThreadChanged("review queue branches changed")
+            actual_by_queue = {
+                branch.queue_public_id: branch for branch in actual_branches
+            }
+            actual_attachment_ids = {
+                attachment.attachment_public_id
+                for branch in actual_branches
+                for entry in branch.entries
+                for attachment in entry.attachments
+            }
+            requested_attachment_ids = {
+                annotation.attachment_public_id for annotation in command.annotations
+            }
+            if not requested_attachment_ids <= actual_attachment_ids:
+                raise ReviewCompletionInvalid(
+                    "review annotation references an attachment outside current evidence"
+                )
+            for queue_public_id, expected in expected_by_queue.items():
+                actual = actual_by_queue[queue_public_id]
+                actual_entries = tuple(
+                    (entry.entry_public_id, entry.entry_version)
+                    for entry in actual.entries
+                )
+                expected_entries = tuple(
+                    (entry.entry_public_id, entry.entry_version)
+                    for entry in expected.entries
+                )
+                if (
+                    expected.thread_public_id != actual.thread_public_id
+                    or expected.thread_version != actual.thread_version
+                    or expected_entries != actual_entries
+                ):
+                    raise ReviewThreadChanged("review evidence changed")
+
+            evidence_rows: list[dict[str, object]] = []
+            thread_rows: dict[int, dict[str, object]] = {}
+            for branch in actual_branches:
+                thread = connection.execute(
+                    "SELECT * FROM submission_threads WHERE public_id = ?",
+                    (branch.thread_public_id,),
+                ).fetchone()
+                if thread is None or thread["status"] != "awaiting_review":
+                    raise ReviewThreadChanged("review thread is no longer waiting")
+                thread_rows[int(thread["id"])] = thread
+                for entry in branch.entries:
+                    stored = connection.execute(
+                        "SELECT entry.*, thread.problem_id, problem.public_id AS problem_public_id "
+                        "FROM submission_entries AS entry "
+                        "JOIN submission_threads AS thread ON thread.id = entry.thread_id "
+                        "JOIN problems AS problem ON problem.id = thread.problem_id "
+                        "WHERE entry.public_id = ? AND entry.thread_id = ? "
+                        "AND entry.state = 'submitted'",
+                        (entry.entry_public_id, thread["id"]),
+                    ).fetchone()
+                    if stored is None:
+                        raise ReviewThreadChanged("review evidence disappeared")
+                    evidence_rows.append(stored)
+
+            target_entry = max(
+                evidence_rows,
+                key=lambda row: (
+                    _parse_timestamp(row["server_received_at"], label="evidence time"),
+                    int(row["id"]),
+                ),
+            )
+            target_thread = thread_rows[int(target_entry["thread_id"])]
+            target_problem = connection.execute(
+                "SELECT id, public_id, lesson, group_id FROM problems WHERE id = ?",
+                (target_entry["problem_id"],),
+            ).fetchone()
+            if target_problem is None:  # pragma: no cover - protected by FK
+                raise ReviewEvidenceUnavailable("target problem disappeared")
+
+            teacher = connection.execute(
+                "SELECT type FROM users WHERE id = ?", (command.teacher_user_id,)
+            ).fetchone()
+            if teacher is None:
+                raise ReviewQueueForbidden("reviewer user no longer exists")
+            if command.internal_reaction_id is not None:
+                reaction = connection.execute(
+                    "SELECT reaction_id FROM reaction_enum "
+                    "WHERE reaction_id = ? AND reaction_type_id = 100",
+                    (command.internal_reaction_id,),
+                ).fetchone()
+                if reaction is None:
+                    raise ReviewInternalReactionInvalid(
+                        "reaction is not a written Teacher reaction"
+                    )
+            author_kind = (
+                "admin" if int(teacher["type"]) & int(USER_TYPE.ADMIN) else "teacher"
+            )
+            comment_text = (
+                None
+                if command.comment is None or not command.comment.strip()
+                else command.comment.strip()
+            )
+
+            if VERDICT(command.verdict) not in VERDICTS_SOLVED:
+                connection.execute(
+                    "UPDATE results SET verdict = ? WHERE student_id = ? "
+                    "AND problem_id = ? AND res_type = ? AND verdict > 0",
+                    (
+                        int(VERDICT.REJECTED_ANSWER),
+                        target_thread["student_user_id"],
+                        target_problem["id"],
+                        int(RES_TYPE.WRITTEN),
+                    ),
+                )
+            result_id = int(
+                connection.execute(
+                    "INSERT INTO results "
+                    "(student_id, problem_id, group_id, lesson, teacher_id, ts, "
+                    "verdict, answer, res_type) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?) "
+                    "RETURNING id",
+                    (
+                        target_thread["student_user_id"],
+                        target_problem["id"],
+                        target_problem["group_id"],
+                        target_problem["lesson"],
+                        command.teacher_user_id,
+                        completed_at,
+                        command.verdict,
+                        int(RES_TYPE.WRITTEN),
+                    ),
+                ).fetchone()["id"]
+            )
+            self._completion_checkpoint("result")
+
+            comment_entry_id: int | None = None
+            comment_public_id: str | None = None
+            if comment_text is not None:
+                inserted_comment = connection.execute(
+                        "INSERT INTO submission_entries "
+                        "(thread_id, author_kind, author_user_id, channel, "
+                        "entry_kind, state, text, server_received_at, version, locked_at) "
+                        "VALUES (?, ?, ?, 'staff', 'teacher_comment', 'locked', ?, ?, 1, ?) "
+                        "RETURNING id, public_id",
+                        (
+                            target_thread["id"],
+                            author_kind,
+                            command.teacher_user_id,
+                            comment_text,
+                            completed_at,
+                            completed_at,
+                        ),
+                    ).fetchone()
+                comment_entry_id = int(inserted_comment["id"])
+                comment_public_id = str(inserted_comment["public_id"])
+            self._completion_checkpoint("comment")
+
+            anchor_queue = next(
+                row
+                for row in queue_rows
+                if str(row["public_id"]) == command.queue_public_id
+            )
+            inserted_review = connection.execute(
+                    "INSERT INTO submission_reviews "
+                    "(thread_id, queue_id, reviewer_user_id, "
+                    "evidence_through_entry_id, expected_thread_version, verdict, "
+                    "comment_entry_id, result_id, source, idempotency_key, payload_sha256, "
+                    "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
+                    "RETURNING id, public_id",
+                    (
+                        target_thread["id"],
+                        anchor_queue["id"],
+                        command.teacher_user_id,
+                        target_entry["id"],
+                        target_thread["version"],
+                        command.verdict,
+                        comment_entry_id,
+                        result_id,
+                        command.idempotency_key,
+                        payload_sha256,
+                        completed_at,
+                    ),
+                ).fetchone()
+            review_id = int(inserted_review["id"])
+            review_public_id = str(inserted_review["public_id"])
+            self._completion_checkpoint("review")
+
+            internal_reaction_state: ReviewInternalReactionState | None = None
+            if command.internal_reaction_id is not None:
+                editable_until = now + REVIEW_INTERNAL_REACTION_EDIT_WINDOW
+                connection.execute(
+                    "INSERT INTO submission_review_internal_reactions "
+                    "(review_id, actor_user_id, reaction_id, created_at, editable_until, "
+                    "updated_at, deleted_at, version) VALUES (?, ?, ?, ?, ?, ?, NULL, 1)",
+                    (
+                        review_id,
+                        command.teacher_user_id,
+                        command.internal_reaction_id,
+                        completed_at,
+                        _timestamp(editable_until),
+                        completed_at,
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO submission_review_internal_reaction_events "
+                    "(review_id, actor_user_id, event_kind, reaction_id, "
+                    "state_version, created_at) VALUES (?, ?, 'selected', ?, 1, ?)",
+                    (
+                        review_id,
+                        command.teacher_user_id,
+                        command.internal_reaction_id,
+                        completed_at,
+                    ),
+                )
+                internal_reaction_state = ReviewInternalReactionState(
+                    review_public_id=review_public_id,
+                    reaction_id=command.internal_reaction_id,
+                    version=1,
+                    editable_until=editable_until,
+                    updated_at=now,
+                )
+            self._completion_checkpoint("internal-reaction")
+
+            evidence_public_ids: list[str] = []
+            evidence_attachments_by_public_id: dict[str, int] = {}
+            for entry in sorted(
+                evidence_rows,
+                key=lambda row: (str(row["server_received_at"]), int(row["id"])),
+            ):
+                connection.execute(
+                    "INSERT INTO submission_review_evidence_entries "
+                    "(review_id, entry_id, thread_id, problem_id, entry_version, "
+                    "server_received_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        review_id,
+                        entry["id"],
+                        entry["thread_id"],
+                        entry["problem_id"],
+                        entry["version"],
+                        entry["server_received_at"],
+                    ),
+                )
+                evidence_public_ids.append(str(entry["public_id"]))
+                attachments = connection.execute(
+                    "SELECT id, public_id, entry_id, asset_id, ordinal "
+                    "FROM submission_attachments "
+                    "WHERE entry_id = ? AND upload_status = 'stored' "
+                    "ORDER BY ordinal, id",
+                    (entry["id"],),
+                ).fetchall()
+                for attachment in attachments:
+                    connection.execute(
+                        "INSERT INTO submission_review_evidence_attachments "
+                        "(review_id, attachment_id, entry_id, asset_id, ordinal) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (
+                            review_id,
+                            attachment["id"],
+                            attachment["entry_id"],
+                            attachment["asset_id"],
+                            attachment["ordinal"],
+                        ),
+                    )
+                    evidence_attachments_by_public_id[str(attachment["public_id"])] = (
+                        int(attachment["id"])
+                    )
+            self._completion_checkpoint("evidence")
+
+            annotation_receipts: list[ReviewAnnotationReceipt] = []
+            for annotation in command.annotations:
+                marks_json = _canonical_json(annotation.marks_payload())
+                inserted_annotation = connection.execute(
+                    "INSERT INTO submission_review_annotations "
+                    "(review_id, attachment_id, schema_version, rotation, "
+                    "marks_json, payload_sha256, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
+                    (
+                        review_id,
+                        evidence_attachments_by_public_id[
+                            annotation.attachment_public_id
+                        ],
+                        annotation.schema_version,
+                        annotation.rotation,
+                        marks_json,
+                        _payload_hash(annotation.payload()),
+                        completed_at,
+                    ),
+                ).fetchone()
+                annotation_public_id = str(inserted_annotation["public_id"])
+                annotation_receipts.append(
+                    ReviewAnnotationReceipt(
+                        annotation_public_id=annotation_public_id,
+                        attachment_public_id=annotation.attachment_public_id,
+                        schema_version=annotation.schema_version,
+                        rotation=annotation.rotation,
+                        mark_count=len(annotation.marks),
+                    )
+                )
+            self._completion_checkpoint("annotations")
+
+            target_status = (
+                "accepted"
+                if VERDICT(command.verdict) in VERDICTS_SOLVED
+                else "needs_work"
+            )
+            for thread_id, thread in thread_rows.items():
+                is_target = thread_id == int(target_thread["id"])
+                connection.execute(
+                    "UPDATE submission_threads SET status = ?, latest_result_id = ?, "
+                    "latest_entry_at = ?, updated_at = ?, version = ? WHERE id = ?",
+                    (
+                        target_status if is_target else "closed",
+                        result_id if is_target else None,
+                        completed_at
+                        if is_target and comment_entry_id is not None
+                        else thread["latest_entry_at"],
+                        completed_at,
+                        int(thread["version"]) + 1,
+                        thread_id,
+                    ),
+                )
+            self._completion_checkpoint("threads")
+
+            queue_ids = [int(row["id"]) for row in queue_rows]
+            placeholders = ",".join("?" for _ in queue_ids)
+            connection.execute(
+                f"DELETE FROM written_tasks_queue WHERE id IN ({placeholders})",
+                queue_ids,
+            )
+            self._completion_checkpoint("queue")
+            connection.execute(
+                "INSERT INTO submission_review_events "
+                "(review_id, event_kind, payload_json, created_at) "
+                "VALUES (?, 'completed', ?, ?)",
+                (
+                    review_id,
+                    _canonical_json(
+                        {
+                            "reviewPublicId": review_public_id,
+                            "studentUserId": target_thread["student_user_id"],
+                            "targetProblemId": target_problem["id"],
+                            "evidenceEntryIds": evidence_public_ids,
+                            "annotationIds": [
+                                annotation.annotation_public_id
+                                for annotation in annotation_receipts
+                            ],
+                            "internalReactionId": command.internal_reaction_id,
+                        }
+                    ),
+                    completed_at,
+                ),
+            )
+            self._completion_checkpoint("event")
+            owner_account_public_ids, family_account_public_ids = (
+                _review_recipient_account_public_ids(
+                    connection,
+                    student_user_id=int(target_thread["student_user_id"]),
+                )
+            )
+            return CompleteReviewReceipt(
+                review_public_id=review_public_id,
+                target_thread_public_id=str(target_thread["public_id"]),
+                target_problem_public_id=str(target_problem["public_id"]),
+                target_thread_status=target_status,
+                verdict=command.verdict,
+                comment_entry_public_id=comment_public_id,
+                evidence_entry_public_ids=tuple(evidence_public_ids),
+                evidence_problem_public_ids=tuple(
+                    dict.fromkeys(
+                        str(row["problem_public_id"]) for row in evidence_rows
+                    )
+                ),
+                owner_account_public_ids=owner_account_public_ids,
+                family_account_public_ids=family_account_public_ids,
+                annotations=tuple(annotation_receipts),
+                internal_reaction=internal_reaction_state,
+                completed_at=now,
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def set_internal_reaction(
+        self,
+        *,
+        review_public_id: str,
+        reaction_id: int,
+        expected_version: int,
+        teacher_user_id: int,
+        scope: ReviewStaffScope,
+    ) -> ReviewInternalReactionState:
+        """Select or replace the reviewer's hidden reaction within one hour."""
+
+        if not _PUBLIC_ID.fullmatch(review_public_id):
+            raise ValueError("review public ID is invalid")
+        if type(reaction_id) is not int or reaction_id < 1:
+            raise ReviewInternalReactionInvalid(
+                "internal reaction ID must be a positive integer"
+            )
+        if type(expected_version) is not int or expected_version < 0:
+            raise ValueError("expected reaction version must not be negative")
+        if teacher_user_id == 0:
+            raise ValueError("reviewer user ID must not be zero")
+        now = _normalize_time(self._clock())
+
+        def operation(connection: sqlite3.Connection) -> ReviewInternalReactionState:
+            review = _internal_reaction_review(
+                connection,
+                review_public_id=review_public_id,
+                actor_user_id=teacher_user_id,
+                scope=scope,
+            )
+            allowed = connection.execute(
+                "SELECT reaction_id FROM reaction_enum "
+                "WHERE reaction_id = ? AND reaction_type_id = 100",
+                (reaction_id,),
+            ).fetchone()
+            if allowed is None:
+                raise ReviewInternalReactionInvalid(
+                    "reaction is not a written Teacher reaction"
+                )
+            state = connection.execute(
+                "SELECT * FROM submission_review_internal_reactions "
+                "WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            editable_until = (
+                _parse_timestamp(review["created_at"], label="review time")
+                + REVIEW_INTERNAL_REACTION_EDIT_WINDOW
+                if state is None
+                else _parse_timestamp(
+                    state["editable_until"], label="internal reaction edit window"
+                )
+            )
+            if now > editable_until:
+                raise ReviewInternalReactionWindowClosed(
+                    "internal reaction edit window has closed"
+                )
+            current_version = 0 if state is None else int(state["version"])
+            if expected_version != current_version:
+                raise ReviewInternalReactionConflict(
+                    "internal reaction version has changed"
+                )
+            if state is not None and state["reaction_id"] == reaction_id:
+                return _internal_reaction_state(
+                    review_public_id=review_public_id, row=state
+                )
+
+            if state is None:
+                updated_at = now
+                next_version = 1
+                event_kind = "selected"
+                connection.execute(
+                    "INSERT INTO submission_review_internal_reactions "
+                    "(review_id, actor_user_id, reaction_id, created_at, editable_until, "
+                    "updated_at, deleted_at, version) VALUES (?, ?, ?, ?, ?, ?, NULL, 1)",
+                    (
+                        review["id"],
+                        teacher_user_id,
+                        reaction_id,
+                        _timestamp(now),
+                        _timestamp(editable_until),
+                        _timestamp(now),
+                    ),
+                )
+            else:
+                previous_updated_at = _parse_timestamp(
+                    state["updated_at"], label="internal reaction update time"
+                )
+                updated_at = max(now, previous_updated_at + timedelta(microseconds=1))
+                if updated_at > editable_until:
+                    raise ReviewInternalReactionWindowClosed(
+                        "internal reaction edit window has closed"
+                    )
+                next_version = current_version + 1
+                event_kind = "selected" if state["reaction_id"] is None else "changed"
+                cursor = connection.execute(
+                    "UPDATE submission_review_internal_reactions "
+                    "SET reaction_id = ?, updated_at = ?, deleted_at = NULL, "
+                    "version = version + 1 WHERE review_id = ? AND version = ?",
+                    (
+                        reaction_id,
+                        _timestamp(updated_at),
+                        review["id"],
+                        expected_version,
+                    ),
+                )
+                if cursor.rowcount != 1:  # pragma: no cover - transaction serialized
+                    raise ReviewInternalReactionConflict(
+                        "internal reaction version has changed"
+                    )
+            connection.execute(
+                "INSERT INTO submission_review_internal_reaction_events "
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    review["id"],
+                    teacher_user_id,
+                    event_kind,
+                    reaction_id,
+                    next_version,
+                    _timestamp(updated_at),
+                ),
+            )
+            stored = connection.execute(
+                "SELECT * FROM submission_review_internal_reactions "
+                "WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            return _internal_reaction_state(
+                review_public_id=review_public_id, row=stored
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def delete_internal_reaction(
+        self,
+        *,
+        review_public_id: str,
+        expected_version: int,
+        teacher_user_id: int,
+        scope: ReviewStaffScope,
+    ) -> ReviewInternalReactionState:
+        """Remove the current hidden reaction while retaining its audit history."""
+
+        if not _PUBLIC_ID.fullmatch(review_public_id):
+            raise ValueError("review public ID is invalid")
+        if type(expected_version) is not int or expected_version < 1:
+            raise ValueError("expected reaction version must be positive")
+        if teacher_user_id == 0:
+            raise ValueError("reviewer user ID must not be zero")
+        now = _normalize_time(self._clock())
+
+        def operation(connection: sqlite3.Connection) -> ReviewInternalReactionState:
+            review = _internal_reaction_review(
+                connection,
+                review_public_id=review_public_id,
+                actor_user_id=teacher_user_id,
+                scope=scope,
+            )
+            state = connection.execute(
+                "SELECT * FROM submission_review_internal_reactions "
+                "WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            if state is None:
+                raise ReviewInternalReactionNotFound("review has no internal reaction")
+            if expected_version != int(state["version"]):
+                raise ReviewInternalReactionConflict(
+                    "internal reaction version has changed"
+                )
+            editable_until = _parse_timestamp(
+                state["editable_until"], label="internal reaction edit window"
+            )
+            if now > editable_until:
+                raise ReviewInternalReactionWindowClosed(
+                    "internal reaction edit window has closed"
+                )
+            if state["reaction_id"] is None:
+                return _internal_reaction_state(
+                    review_public_id=review_public_id, row=state
+                )
+            previous_updated_at = _parse_timestamp(
+                state["updated_at"], label="internal reaction update time"
+            )
+            updated_at = max(now, previous_updated_at + timedelta(microseconds=1))
+            if updated_at > editable_until:
+                raise ReviewInternalReactionWindowClosed(
+                    "internal reaction edit window has closed"
+                )
+            next_version = int(state["version"]) + 1
+            cursor = connection.execute(
+                "UPDATE submission_review_internal_reactions "
+                "SET reaction_id = NULL, updated_at = ?, deleted_at = ?, "
+                "version = version + 1 WHERE review_id = ? AND version = ?",
+                (
+                    _timestamp(updated_at),
+                    _timestamp(updated_at),
+                    review["id"],
+                    expected_version,
+                ),
+            )
+            if cursor.rowcount != 1:  # pragma: no cover - transaction serialized
+                raise ReviewInternalReactionConflict(
+                    "internal reaction version has changed"
+                )
+            connection.execute(
+                "INSERT INTO submission_review_internal_reaction_events "
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, 'deleted', NULL, ?, ?)",
+                (
+                    review["id"],
+                    teacher_user_id,
+                    next_version,
+                    _timestamp(updated_at),
+                ),
+            )
+            stored = connection.execute(
+                "SELECT * FROM submission_review_internal_reactions "
+                "WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            return _internal_reaction_state(
+                review_public_id=review_public_id, row=stored
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def set_student_reaction(
+        self,
+        *,
+        review_public_id: str,
+        reaction_id: int,
+        expected_version: int,
+        student_user_id: int,
+    ) -> ReviewStudentReactionReceipt:
+        """Select or replace the reviewed Student's reaction within one hour."""
+
+        if not _PUBLIC_ID.fullmatch(review_public_id):
+            raise ValueError("review public ID is invalid")
+        if type(reaction_id) is not int or reaction_id < 0:
+            raise ReviewStudentReactionInvalid(
+                "Student reaction ID must not be negative"
+            )
+        if type(expected_version) is not int or expected_version < 0:
+            raise ValueError("expected reaction version must not be negative")
+        if student_user_id == 0:
+            raise ValueError("Student user ID must not be zero")
+        now = _normalize_time(self._clock())
+
+        def operation(connection: sqlite3.Connection) -> ReviewStudentReactionReceipt:
+            review = _student_reaction_review(
+                connection,
+                review_public_id=review_public_id,
+                student_user_id=student_user_id,
+            )
+            allowed = connection.execute(
+                "SELECT reaction_id FROM reaction_enum "
+                "WHERE reaction_id = ? AND reaction_type_id = 0",
+                (reaction_id,),
+            ).fetchone()
+            if allowed is None:
+                raise ReviewStudentReactionInvalid(
+                    "reaction is not a written Student reaction"
+                )
+            state = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            editable_until = (
+                _parse_timestamp(review["created_at"], label="review time")
+                + REVIEW_STUDENT_REACTION_EDIT_WINDOW
+                if state is None
+                else _parse_timestamp(
+                    state["editable_until"], label="Student reaction edit window"
+                )
+            )
+            if now > editable_until:
+                raise ReviewStudentReactionWindowClosed(
+                    "Student reaction edit window has closed"
+                )
+            current_version = 0 if state is None else int(state["version"])
+            if expected_version != current_version:
+                raise ReviewStudentReactionConflict(
+                    "Student reaction version has changed"
+                )
+            if state is not None and state["reaction_id"] == reaction_id:
+                return _student_reaction_receipt(
+                    connection,
+                    review=review,
+                    state=_student_reaction_state(
+                        review_public_id=review_public_id,
+                        row=state,
+                    ),
+                )
+
+            if state is None:
+                updated_at = now
+                next_version = 1
+                event_kind = "selected"
+                connection.execute(
+                    "INSERT INTO submission_review_student_reactions "
+                    "(review_id, actor_user_id, reaction_id, created_at, editable_until, "
+                    "updated_at, deleted_at, version) VALUES (?, ?, ?, ?, ?, ?, NULL, 1)",
+                    (
+                        review["id"],
+                        student_user_id,
+                        reaction_id,
+                        _timestamp(now),
+                        _timestamp(editable_until),
+                        _timestamp(now),
+                    ),
+                )
+            else:
+                previous_updated_at = _parse_timestamp(
+                    state["updated_at"], label="Student reaction update time"
+                )
+                updated_at = max(now, previous_updated_at + timedelta(microseconds=1))
+                if updated_at > editable_until:
+                    raise ReviewStudentReactionWindowClosed(
+                        "Student reaction edit window has closed"
+                    )
+                next_version = current_version + 1
+                event_kind = "selected" if state["reaction_id"] is None else "changed"
+                cursor = connection.execute(
+                    "UPDATE submission_review_student_reactions "
+                    "SET reaction_id = ?, updated_at = ?, deleted_at = NULL, "
+                    "version = version + 1 WHERE review_id = ? AND version = ?",
+                    (
+                        reaction_id,
+                        _timestamp(updated_at),
+                        review["id"],
+                        expected_version,
+                    ),
+                )
+                if cursor.rowcount != 1:  # pragma: no cover - transaction serialized
+                    raise ReviewStudentReactionConflict(
+                        "Student reaction version has changed"
+                    )
+            connection.execute(
+                "INSERT INTO submission_review_student_reaction_events "
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    review["id"],
+                    student_user_id,
+                    event_kind,
+                    reaction_id,
+                    next_version,
+                    _timestamp(updated_at),
+                ),
+            )
+            stored = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            return _student_reaction_receipt(
+                connection,
+                review=review,
+                state=_student_reaction_state(
+                    review_public_id=review_public_id,
+                    row=stored,
+                ),
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def delete_student_reaction(
+        self,
+        *,
+        review_public_id: str,
+        expected_version: int,
+        student_user_id: int,
+    ) -> ReviewStudentReactionReceipt:
+        """Clear the Student reaction while retaining its immutable history."""
+
+        if not _PUBLIC_ID.fullmatch(review_public_id):
+            raise ValueError("review public ID is invalid")
+        if type(expected_version) is not int or expected_version < 1:
+            raise ValueError("expected reaction version must be positive")
+        if student_user_id == 0:
+            raise ValueError("Student user ID must not be zero")
+        now = _normalize_time(self._clock())
+
+        def operation(connection: sqlite3.Connection) -> ReviewStudentReactionReceipt:
+            review = _student_reaction_review(
+                connection,
+                review_public_id=review_public_id,
+                student_user_id=student_user_id,
+            )
+            state = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            if state is None:
+                raise ReviewStudentReactionNotFound("review has no Student reaction")
+            if expected_version != int(state["version"]):
+                raise ReviewStudentReactionConflict(
+                    "Student reaction version has changed"
+                )
+            editable_until = _parse_timestamp(
+                state["editable_until"], label="Student reaction edit window"
+            )
+            if now > editable_until:
+                raise ReviewStudentReactionWindowClosed(
+                    "Student reaction edit window has closed"
+                )
+            if state["reaction_id"] is None:
+                return _student_reaction_receipt(
+                    connection,
+                    review=review,
+                    state=_student_reaction_state(
+                        review_public_id=review_public_id,
+                        row=state,
+                    ),
+                )
+            previous_updated_at = _parse_timestamp(
+                state["updated_at"], label="Student reaction update time"
+            )
+            updated_at = max(now, previous_updated_at + timedelta(microseconds=1))
+            if updated_at > editable_until:
+                raise ReviewStudentReactionWindowClosed(
+                    "Student reaction edit window has closed"
+                )
+            next_version = int(state["version"]) + 1
+            cursor = connection.execute(
+                "UPDATE submission_review_student_reactions "
+                "SET reaction_id = NULL, updated_at = ?, deleted_at = ?, "
+                "version = version + 1 WHERE review_id = ? AND version = ?",
+                (
+                    _timestamp(updated_at),
+                    _timestamp(updated_at),
+                    review["id"],
+                    expected_version,
+                ),
+            )
+            if cursor.rowcount != 1:  # pragma: no cover - transaction serialized
+                raise ReviewStudentReactionConflict(
+                    "Student reaction version has changed"
+                )
+            connection.execute(
+                "INSERT INTO submission_review_student_reaction_events "
+                "(review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, 'deleted', NULL, ?, ?)",
+                (
+                    review["id"],
+                    student_user_id,
+                    next_version,
+                    _timestamp(updated_at),
+                ),
+            )
+            stored = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            return _student_reaction_receipt(
+                connection,
+                review=review,
+                state=_student_reaction_state(
+                    review_public_id=review_public_id,
+                    row=stored,
+                ),
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def release(
+        self,
+        *,
+        queue_public_id: str,
+        claim_token: str,
+        teacher_user_id: int,
+        scope: ReviewStaffScope,
+    ) -> int:
+        token = claim_token.strip()
+        if not token:
+            raise ValueError("claim_token must not be empty")
+        now_text = _timestamp(_normalize_time(self._clock()))
+
+        def operation(connection: sqlite3.Connection) -> int:
+            _logical_case_public_id, rows = _case_rows(
+                connection, queue_public_id=queue_public_id
+            )
+            owned_rows = [
+                row
+                for row in rows
+                if row["claim_token"] == token
+                and row["teacher_id"] == teacher_user_id
+                and int(row["cur_status"]) == int(WRITTEN_STATUS.BEING_CHECKED)
+            ]
+            if not owned_rows or len(owned_rows) != len(rows):
+                raise ReviewLeaseLost("review lease was already released")
+            if any(not scope.allows(row) for row in rows):
+                raise ReviewQueueForbidden("review case is outside Staff scope")
+            cursor = connection.execute(
+                "UPDATE written_tasks_queue SET cur_status = ?, teacher_ts = NULL, "
+                "teacher_id = NULL, claim_token = NULL, claimed_at = NULL, "
+                "lease_expires_at = NULL, lease_version = lease_version + 1, "
+                "updated_at = ? WHERE claim_token = ? AND teacher_id = ? "
+                "AND cur_status = ?",
+                (
+                    int(WRITTEN_STATUS.NEW),
+                    now_text,
+                    token,
+                    teacher_user_id,
+                    int(WRITTEN_STATUS.BEING_CHECKED),
+                ),
+            )
+            if cursor.rowcount == 0:
+                raise ReviewLeaseLost("review lease was already released")
+            return int(cursor.rowcount)
+
+        return await self._factory.run_write_async(operation)
+
+
+__all__ = [
+    "CompleteReviewCommand",
+    "CompleteReviewReceipt",
+    "PwaWrittenReviewQueueRepository",
+    "REVIEW_INTERNAL_REACTION_EDIT_WINDOW",
+    "REVIEW_LEASE_DURATION",
+    "REVIEW_STUDENT_REACTION_EDIT_WINDOW",
+    "ReviewLease",
+    "ReviewLeaseConflict",
+    "ReviewLeaseItem",
+    "ReviewLeaseLost",
+    "ReviewCompletionInvalid",
+    "ReviewAnnotationManifest",
+    "ReviewAnnotationMark",
+    "ReviewAnnotationReceipt",
+    "ReviewEvidenceAttachment",
+    "ReviewEvidenceBranch",
+    "ReviewEvidenceBranchExpectation",
+    "ReviewEvidenceEntry",
+    "ReviewEvidenceEntryExpectation",
+    "ReviewTimelineEntry",
+    "ReviewEvidenceUnavailable",
+    "ReviewIdempotencyConflict",
+    "ReviewInternalReactionConflict",
+    "ReviewInternalReactionInvalid",
+    "ReviewInternalReactionNotFound",
+    "ReviewInternalReactionState",
+    "ReviewInternalReactionWindowClosed",
+    "ReviewStudentReactionConflict",
+    "ReviewStudentReactionInvalid",
+    "ReviewStudentReactionNotFound",
+    "ReviewStudentReactionReceipt",
+    "ReviewStudentReactionState",
+    "ReviewStudentReactionWindowClosed",
+    "ReviewQueueCase",
+    "ReviewQueueError",
+    "ReviewQueueForbidden",
+    "ReviewQueueLock",
+    "ReviewQueueNotFound",
+    "ReviewQueuePage",
+    "ReviewReactionInboxItem",
+    "ReviewReactionInboxPage",
+    "ReviewStaffScope",
+    "ReviewThreadChanged",
+]
