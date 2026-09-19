@@ -88,6 +88,8 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         playwright.append("e2e/content-publication.spec.ts")
     elif mode == "family":
         playwright.append("e2e/family-context.spec.ts")
+    elif mode == "i18n":
+        playwright.append("e2e/i18n.spec.ts")
     elif mode == "submissions":
         playwright.append("e2e/test-submission.spec.ts")
     elif mode == "review":
@@ -199,6 +201,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "content",
             "figure-layout",
             "family",
+            "i18n",
             "nonvisual",
             "news",
             "oral",

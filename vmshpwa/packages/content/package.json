@@ -9,15 +9,19 @@
   "exports": {
     ".": "./src/index.tsx",
     "./styles.css": "./src/content.css",
-    "./worksheet-paper.css": "./src/worksheet-paper.css"
+    "./worksheet-paper.css": "./src/worksheet-paper.css",
+    "./locales/*": "./src/locales/*"
   },
   "sideEffects": [
     "./src/content.css",
     "./src/worksheet-paper.css"
   ],
   "dependencies": {
+    "@lingui/core": "catalog:",
+    "@lingui/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@vmsh/contracts": "workspace:*",
+    "@vmsh/i18n": "workspace:*",
     "dompurify": "catalog:",
     "katex": "catalog:",
     "react": "catalog:"

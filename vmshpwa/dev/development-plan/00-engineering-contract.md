@@ -82,7 +82,7 @@
 
 ### Качество и эксплуатация
 
-- `pwa-format`, `pwa-lint`, `pwa-typecheck`, `pwa-test`, `pwa-storybook-test`, `pwa-build`, `pwa-e2e` зелёные в нужном профиле.
+- `pwa-format`, `pwa-lint`, `pwa-typecheck`, `pwa-test`, `pwa-storybook-test`, `pwa-i18n-check`, `pwa-build`, `pwa-e2e` зелёные в нужном профиле.
 - В логи не попадают токены, cookie, тексты приватных работ и полные S3 URL, если они не нужны для диагностики.
 - Sentry events имеют release, audience, route и correlation ID, но не содержат PII по умолчанию.
 - Для фоновых задач описаны повтор, дедупликация, lease и поведение после падения процесса.

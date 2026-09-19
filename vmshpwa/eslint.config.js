@@ -1,9 +1,12 @@
 import eslint from '@eslint/js'
 import globals from 'globals'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
+import pluginLingui from 'eslint-plugin-lingui'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+
+import i18nScopes from './i18n-scopes.json' with { type: 'json' }
 
 export default tseslint.config(
   {
@@ -41,6 +44,27 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
+    },
+  },
+  {
+    // Lingui macro hygiene everywhere; see docs/i18n.md.
+    files: ['**/*.{ts,tsx}'],
+    plugins: { lingui: pluginLingui },
+    rules: {
+      'lingui/t-call-in-function': 'error',
+      'lingui/no-single-tag-to-translate': 'error',
+      'lingui/no-single-variables-to-translate': 'error',
+      'lingui/no-trans-inside-trans': 'error',
+      'lingui/no-expression-in-message': 'error',
+    },
+  },
+  {
+    // Translated scopes (i18n-scopes.json) must not contain unwrapped Russian
+    // copy. Strings without Cyrillic are technical and stay allowed.
+    files: i18nScopes.frontend,
+    ignores: ['**/*.test.{ts,tsx}', '**/*.stories.{ts,tsx}'],
+    rules: {
+      'lingui/no-unlocalized-strings': ['error', { ignore: ['^[^А-Яа-яЁё]*$'] }],
     },
   },
   {

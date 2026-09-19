@@ -163,6 +163,7 @@ from helpers.pwa.content.metadata_generation import (
     MetadataGenerator,
     OpenRouterMetadataGenerator,
 )
+from helpers.pwa.i18n import _, current_locale, locale_from_cookies, translate
 from helpers.pwa.push_delivery import PushSender, deliver_web_push_once
 from helpers.pwa.live_news import ingest_live_news
 from helpers.pwa.storage_config import load_storage_config
@@ -313,6 +314,16 @@ async def pwa_error_middleware(request: web.Request, handler):
     if not _is_pwa_transport_path(request.path):
         return await handler(request)
 
+    # The device language applies to every message built while this request
+    # (or its WebSocket session) is handled. See helpers/pwa/i18n.py.
+    locale_token = current_locale.set(locale_from_cookies(request.cookies))
+    try:
+        return await _pwa_error_response(request, handler)
+    finally:
+        current_locale.reset(locale_token)
+
+
+async def _pwa_error_response(request: web.Request, handler):
     incoming_request_id = request.headers.get("X-Request-ID", "")
     request_id = (
         incoming_request_id
@@ -333,7 +344,7 @@ async def pwa_error_middleware(request: web.Request, handler):
             response = web.json_response(
                 build_api_error_payload(
                     code=exc.code,
-                    message=exc.message,
+                    message=translate(current_locale.get(), exc.message, exc.params),
                     request_id=request_id,
                     details=exc.details,
                 ),
@@ -355,7 +366,7 @@ async def pwa_error_middleware(request: web.Request, handler):
             response = web.json_response(
                 build_api_error_payload(
                     code="internal_error",
-                    message="Внутренняя ошибка сервера",
+                    message=_("Внутренняя ошибка сервера"),
                     request_id=request_id,
                 ),
                 status=500,
@@ -573,7 +584,9 @@ async def realtime(request: web.Request):
                             cursor=state["cursors"][audience],
                             server_time=_now(),
                             code="invalid_json",
-                            message="Сообщение WebSocket должно быть корректным JSON",
+                            message=_(
+                                "Сообщение WebSocket должно быть корректным JSON"
+                            ),
                             request_id=_request_id(request),
                         )
                     ):

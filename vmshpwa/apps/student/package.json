@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lingui/core": "catalog:",
+    "@lingui/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@visx/responsive": "catalog:",
@@ -19,6 +21,7 @@
     "@vmsh/app-shell": "workspace:*",
     "@vmsh/content": "workspace:*",
     "@vmsh/contracts": "workspace:*",
+    "@vmsh/i18n": "workspace:*",
     "@vmsh/offline": "workspace:*",
     "@vmsh/product": "workspace:*",
     "@vmsh/ui": "workspace:*",

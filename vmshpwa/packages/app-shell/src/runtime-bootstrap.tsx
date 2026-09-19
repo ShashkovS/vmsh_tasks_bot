@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { LoaderCircle, TriangleAlert } from 'lucide-react'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
@@ -93,6 +94,7 @@ function RuntimeBootstrapRequest({
   onRetry,
   timeoutMilliseconds,
 }: RuntimeBootstrapProps & { onRetry: () => void }) {
+  const { t } = useLingui()
   const [state, setState] = useState<RuntimeBootstrapState>({ status: 'loading' })
   const availability = useServiceAvailability()
 
@@ -145,7 +147,7 @@ function RuntimeBootstrapRequest({
         state="loading"
         title={
           availability.state === 'ready'
-            ? 'Проверяем подключение'
+            ? t`Проверяем подключение`
             : availability.state === 'updating'
               ? 'Обновляем сервис'
               : 'Восстанавливаем соединение'

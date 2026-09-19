@@ -7,7 +7,7 @@ These rules apply to Student, Family and Staff applications.
 - Fetch through audience-relative API endpoints with credentials included and validate payloads through `@vmsh/contracts`.
 - Handle loading, empty, error, forbidden and offline states deliberately. Never show protected prototype content as a production authentication fallback.
 - Student and Family are mobile-first and touch-safe. Staff remains information-dense and keyboard-efficient while adapting at its supported minimum viewport.
-- User-facing copy is Russian and addresses the user as «вы». Avoid sales, urgency and ranking language.
+- User-facing copy is written in Russian, the source language, and addresses the user as «вы». Wrap it in Lingui macros; English lives in the `.po` catalogs and follows `docs/i18n-glossary.md`. Avoid sales, urgency and ranking language.
 - Keep screen readers, keyboard order, visible focus, 200% zoom and reduced motion working with every UI change.
 - Staff is not exempt from the baseline a11y gate. Avoiding a complex DnD dependency means providing simpler buttons/select/move controls, not disabling semantic, keyboard, focus or axe checks.
 - Use only semantic tokens and shared primitives. Add app-level tokens only when the concept is truly audience-specific and document them.

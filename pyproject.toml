@@ -14,6 +14,7 @@ dependencies = [
     "aiogram>=3.30.0",
     "aiohttp>=3.14.1",
     "argon2-cffi>=25.1.0",
+    "babel>=2.17.0",
     "google-api-python-client>=2.187.0",
     "gspread>=6.2.1",
     "gunicorn>=23.0.0",

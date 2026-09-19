@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+import { i18nPlugins } from '../../vite-i18n'
 import { assertSafeProductionBuild, buildProvenancePlugin } from '../../vite-production-guard'
 
 export default defineConfig(({ command, mode }) => {
@@ -9,6 +10,11 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base: '/landing/',
-    plugins: [react(), tailwindcss(), buildProvenancePlugin('landing', provenance)],
+    plugins: [
+      react(),
+      ...i18nPlugins(),
+      tailwindcss(),
+      buildProvenancePlugin('landing', provenance),
+    ],
   }
 })

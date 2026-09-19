@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import { i18nPlugins } from '../../vite-i18n'
 import { assertSafeProductionBuild, buildProvenancePlugin } from '../../vite-production-guard'
 
 const apiOrigin = process.env.VMSH_API_ORIGIN ?? 'http://127.0.0.1:8180'
@@ -16,6 +17,7 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       tanstackRouter({ target: 'react', autoCodeSplitting: true }),
       react(),
+      ...i18nPlugins(),
       tailwindcss(),
       buildProvenancePlugin('student', provenance),
       VitePWA({

@@ -7,11 +7,17 @@
     "typecheck": "tsc --noEmit"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./i18n": "./src/i18n.tsx"
   },
   "dependencies": {
+    "@lingui/core": "catalog:",
+    "@lingui/react": "catalog:",
+    "@testing-library/react": "^16.0.0",
     "@vmsh/contracts": "workspace:*",
+    "@vmsh/i18n": "workspace:*",
     "msw": "catalog:",
+    "react": "catalog:",
     "zod": "catalog:"
   }
 }

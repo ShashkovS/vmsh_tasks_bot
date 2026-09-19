@@ -11,6 +11,7 @@ import {
   initFrontendObservability,
 } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace, type RuntimeConfig } from '@vmsh/contracts'
+import { LocaleProvider, bootstrapLocale, renderCatalogFailure } from '@vmsh/i18n'
 import {
   OfflineDatabaseProvider,
   createOfflineAuthenticationStore,
@@ -20,6 +21,7 @@ import '@vmsh/ui/styles.css'
 import '@vmsh/content/styles.css'
 import './student-worksheet-print.css'
 
+import { catalogLoaders } from './i18n/catalogs'
 import { routeTree } from './routeTree.gen'
 import { PwaUpdateController } from './pwa-update'
 
@@ -89,13 +91,22 @@ export function StudentAuthenticatedApplication({ runtime }: { runtime: RuntimeC
   )
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
-    <PwaUpdateController router={router} />
-    {/* Phase 0: no protected Student route mounts before strict runtime validation. */}
-    <RuntimeBootstrap audience="student">
-      {(runtime) => studentApplication(runtime)}
-    </RuntimeBootstrap>
-  </StrictMode>,
+// The catalog is activated before the first render: startup, update and
+// offline fallback screens are translated too. See `docs/i18n.md`.
+void bootstrapLocale(catalogLoaders).then(
+  () => {
+    createRoot(rootElement).render(
+      <StrictMode>
+        <LocaleProvider loaders={catalogLoaders}>
+          {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
+          <PwaUpdateController router={router} />
+          {/* Phase 0: no protected Student route mounts before strict runtime validation. */}
+          <RuntimeBootstrap audience="student">
+            {(runtime) => studentApplication(runtime)}
+          </RuntimeBootstrap>
+        </LocaleProvider>
+      </StrictMode>,
+    )
+  },
+  () => renderCatalogFailure(rootElement),
 )

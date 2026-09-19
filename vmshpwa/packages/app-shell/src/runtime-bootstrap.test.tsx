@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createBrowserStorageNamespace } from '@vmsh/contracts'
 import studentRuntimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.json'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 import { AppProviders, ThemeToggle, themeStorageKey } from './providers'
 import { RuntimeBootstrap, runtimeCacheStorageKey, useRuntimeConfig } from './runtime-bootstrap'

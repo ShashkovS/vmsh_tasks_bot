@@ -7,12 +7,16 @@
     "typecheck": "tsc --noEmit"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./locales/*": "./src/locales/*"
   },
   "dependencies": {
+    "@lingui/core": "catalog:",
+    "@lingui/react": "catalog:",
     "@puregram/rich": "catalog:",
     "@visx/scale": "catalog:",
     "@vmsh/contracts": "workspace:*",
+    "@vmsh/i18n": "workspace:*",
     "@vmsh/ui": "workspace:*",
     "katex": "catalog:",
     "lucide-react": "catalog:",

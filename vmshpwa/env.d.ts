@@ -8,3 +8,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** `.po` catalogs compiled at build time by `@lingui/vite-plugin` (see `vite-i18n.ts`). */
+declare module '*.po' {
+  import type { Messages } from '@lingui/core'
+  export const messages: Messages
+}

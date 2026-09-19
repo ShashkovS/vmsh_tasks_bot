@@ -2,7 +2,10 @@ import type { Decorator, Preview } from '@storybook/react-vite'
 import { initialize, mswLoader } from 'msw-storybook-addon'
 
 import { AppProviders } from '@vmsh/app-shell'
+import { DEFAULT_LOCALE, LocaleProvider, activateLocale, isLocale } from '@vmsh/i18n'
 import '@vmsh/ui/styles.css'
+
+import { allCatalogLoaders } from '../dev/test-support/i18n-catalogs'
 
 initialize({
   onUnhandledRequest(request, print) {
@@ -12,7 +15,17 @@ initialize({
   },
 })
 
-type Globals = { theme?: unknown; density?: unknown; motion?: unknown }
+type Globals = { theme?: unknown; density?: unknown; motion?: unknown; locale?: unknown }
+
+// Stories render in Russian by default so play functions keep asserting the
+// source copy; the toolbar switches the whole canvas to English for review.
+async function withLocale({ globals }: { globals: Globals }) {
+  await activateLocale(
+    isLocale(globals.locale) ? globals.locale : DEFAULT_LOCALE,
+    allCatalogLoaders,
+  )
+  return {}
+}
 
 const withTheme: Decorator = (Story, context) => {
   const globals = context.globals as Globals
@@ -31,18 +44,31 @@ const withTheme: Decorator = (Story, context) => {
   const padded = (context.parameters as { canvasPadding?: boolean }).canvasPadding !== false
 
   return (
-    <AppProviders>
-      <div className={padded ? 'min-h-svh bg-background p-6 text-foreground' : 'min-h-svh'}>
-        <Story />
-      </div>
-    </AppProviders>
+    <LocaleProvider loaders={allCatalogLoaders}>
+      <AppProviders>
+        <div className={padded ? 'min-h-svh bg-background p-6 text-foreground' : 'min-h-svh'}>
+          <Story />
+        </div>
+      </AppProviders>
+    </LocaleProvider>
   )
 }
 
 const preview: Preview = {
   decorators: [withTheme],
-  loaders: [mswLoader],
+  loaders: [mswLoader, withLocale],
   globalTypes: {
+    locale: {
+      description: 'Язык интерфейса',
+      defaultValue: DEFAULT_LOCALE,
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'ru', title: 'Русский' },
+          { value: 'en', title: 'English' },
+        ],
+      },
+    },
     theme: {
       description: 'Цветовая тема',
       defaultValue: 'light',

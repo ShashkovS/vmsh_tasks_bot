@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { OrganizerLink } from '@vmsh/app-shell'
 import { useMemo, useState } from 'react'
 import { Mail, MessageCircleQuestion } from 'lucide-react'
@@ -39,6 +40,7 @@ export function StudentEnrollmentSettings({
   saving: boolean
   onSave: (input: FamilyEnrollmentUpdateRequest) => Promise<unknown>
 }) {
+  const { t } = useLingui()
   const [groupId, setGroupId] = useState(enrollment.activeGroupId)
   const [mode, setMode] = useState<AttendanceMode>(enrollment.attendanceMode)
   const [reviewing, setReviewing] = useState(false)
@@ -48,7 +50,9 @@ export function StudentEnrollmentSettings({
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-small font-medium">
-          <span>Активная группа</span>
+          <span>
+            <Trans>Активная группа</Trans>
+          </span>
           <select
             className="min-h-10 w-full rounded-md border border-input bg-surface px-3"
             disabled={saving}
@@ -108,7 +112,7 @@ export function StudentEnrollmentSettings({
         size="sm"
         variant={reviewing ? 'default' : 'outline'}
       >
-        {saving ? 'Сохраняем…' : reviewing ? 'Подтвердить изменения' : 'Изменить'}
+        {saving ? t`Сохраняем…` : reviewing ? 'Подтвердить изменения' : 'Изменить'}
       </Button>
     </div>
   )

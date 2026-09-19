@@ -1,6 +1,6 @@
 # Storybook and visual testing instructions
 
-- Stories are deterministic, use Russian realistic fixtures and never call production services.
+- Stories are deterministic, use Russian realistic fixtures and never call production services. They render Russian by default; the «Язык интерфейса» toolbar global must keep switching the canvas to English.
 - Use MSW handlers from test utilities for network states; an unhandled application request is a test failure.
 - Keep global light/dark and density controls functional. A dark example inside a light document is not an adequate dark-theme test.
 - Shared component changes add/update stories and interaction tests in the same change.

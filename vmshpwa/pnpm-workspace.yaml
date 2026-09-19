@@ -49,6 +49,19 @@ catalog:
   '@codemirror/lang-markdown': ^6.5.2
   html-to-image: ^1.11.13
   fflate: ^0.8.3
+  # i18n toolchain: all Lingui packages must stay on one version.
+  # See adr/0004-pwa-internationalization.md.
+  '@lingui/core': ^6.7.0
+  '@lingui/react': ^6.7.0
+  '@lingui/cli': ^6.7.0
+  '@lingui/conf': ^6.7.0
+  '@lingui/format-po': ^6.7.0
+  '@lingui/message-utils': ^6.7.0
+  '@lingui/vite-plugin': ^6.7.0
+  '@lingui/babel-plugin-lingui-macro': ^6.7.0
+  '@rolldown/plugin-babel': ^0.2.4
+  '@babel/core': ^7.29.0
+  eslint-plugin-lingui: ^0.16.0
 
 allowBuilds:
   esbuild: true

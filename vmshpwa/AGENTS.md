@@ -2,7 +2,7 @@
 
 ## Scope
 
-This workspace contains frontend adapters and test tooling. The existing Python project remains the only backend. Put domain behavior in existing `models/` or a small domain service, keep `db_methods/` limited to focused SQLite reads/writes, and expose the result through the aiohttp PWA adapter. Localized product text belongs at the HTTP/Telegram/UI boundary. Do not create a second Python service, database schema manager, speculative repository/factory stack, or duplicate source of truth here.
+This workspace contains frontend adapters and test tooling. The existing Python project remains the only backend. Put domain behavior in existing `models/` or a small domain service, keep `db_methods/` limited to focused SQLite reads/writes, and expose the result through the aiohttp PWA adapter. Localized product text belongs at the HTTP/Telegram/UI boundary: PWA copy is Russian source text wrapped in Lingui macros on the frontend and in `PwaApiError`/`N_()` on the backend, with English in `.po` catalogs (`docs/i18n.md`). Do not create a second Python service, database schema manager, speculative repository/factory stack, or duplicate source of truth here.
 
 ## Commands and isolation
 
@@ -18,6 +18,7 @@ This workspace contains frontend adapters and test tooling. The existing Python 
 - `packages/ui` is domain-neutral. `packages/contracts` owns Zod runtime contracts. `packages/offline` owns Dexie/outbox mechanisms. `packages/test-utils` must not enter production bundles.
 - All shareable URL state uses TanStack Router search params with runtime validation.
 - Server data uses TanStack Query. Do not mirror it into ad-hoc global state.
+- User-facing copy goes through Lingui and `@vmsh/i18n`; dates and numbers use its cached formatters. Run `make pwa-i18n-extract` after changing copy and keep `make pwa-i18n-check` green.
 - Heavy optional features use dynamic imports. CPU-heavy image/content processing uses Vite workers.
 - Student and Family PWA code must respect their distinct service-worker scopes and storage namespaces. Staff stays a normal SPA.
 

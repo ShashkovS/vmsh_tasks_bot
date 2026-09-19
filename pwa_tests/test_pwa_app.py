@@ -316,6 +316,28 @@ async def test_websocket_invalid_json_uses_recoverable_wire_error(client):
 
 
 @pytest.mark.asyncio
+async def test_websocket_wire_error_uses_the_device_language(client):
+    # The locale cookie is read once at the handshake (helpers/pwa/i18n.py).
+    policy = COOKIE_POLICY[AuthAudience.STUDENT]
+    websocket = await client.ws_connect(
+        "/student/ws",
+        origin=PWA_E2E_ORIGIN,
+        headers={
+            "Cookie": f"{policy.access_name}=synthetic-student-access; vmsh-locale=en",
+            "X-Request-ID": "ws.invalid-json-en",
+        },
+    )
+    assert (await websocket.receive_json())["type"] == "connected"
+
+    await websocket.send_str("not-json")
+    event = await websocket.receive_json()
+
+    assert event["code"] == "invalid_json"
+    assert event["message"] == "A WebSocket message must be valid JSON"
+    await websocket.close()
+
+
+@pytest.mark.asyncio
 async def test_websocket_decoder_recursion_failure_is_recoverable(client, monkeypatch):
     websocket = await _ws_connect(
         client,

@@ -11,6 +11,7 @@ import {
   initFrontendObservability,
 } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace, type RuntimeConfig } from '@vmsh/contracts'
+import { LocaleProvider, bootstrapLocale, renderCatalogFailure } from '@vmsh/i18n'
 import {
   OfflineDatabaseProvider,
   createOfflineAuthenticationStore,
@@ -19,6 +20,7 @@ import {
 import '@vmsh/ui/styles.css'
 import '@vmsh/content/styles.css'
 
+import { catalogLoaders } from './i18n/catalogs'
 import { routeTree } from './routeTree.gen'
 import { PwaUpdateController } from './pwa-update'
 
@@ -88,11 +90,22 @@ export function FamilyAuthenticatedApplication({ runtime }: { runtime: RuntimeCo
   )
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
-    <PwaUpdateController router={router} />
-    {/* Phase 0: no protected Family route mounts before strict runtime validation. */}
-    <RuntimeBootstrap audience="family">{(runtime) => familyApplication(runtime)}</RuntimeBootstrap>
-  </StrictMode>,
+// The catalog is activated before the first render: startup, update and
+// offline fallback screens are translated too. See `docs/i18n.md`.
+void bootstrapLocale(catalogLoaders).then(
+  () => {
+    createRoot(rootElement).render(
+      <StrictMode>
+        <LocaleProvider loaders={catalogLoaders}>
+          {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
+          <PwaUpdateController router={router} />
+          {/* Phase 0: no protected Family route mounts before strict runtime validation. */}
+          <RuntimeBootstrap audience="family">
+            {(runtime) => familyApplication(runtime)}
+          </RuntimeBootstrap>
+        </LocaleProvider>
+      </StrictMode>,
+    )
+  },
+  () => renderCatalogFailure(rootElement),
 )

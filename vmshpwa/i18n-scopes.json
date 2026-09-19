@@ -1,0 +1,5 @@
+{
+  "$comment": "Translated scopes. Frontend globs (relative to vmshpwa/) ban unwrapped Cyrillic via ESLint and require English for every catalog message they own; backend globs (relative to the repository root) require English for every backend message they own. Each i18n phase adds its areas. See dev/development-plan/24-i18n.md.",
+  "frontend": ["packages/i18n/src/**/*.{ts,tsx}"],
+  "backend": ["apps/pwa_app.py", "helpers/pwa/i18n.py"]
+}

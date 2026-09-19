@@ -17,7 +17,7 @@
 - Create migrations: `yoyo new --sql -m "short-description" migrations`.
 - (Optional) Fetch prod DB snapshot: `make dbl` (uses `scp` to `db/`; requires access).
 - Human PWA runtime: `make pwa-dev`; agent runtime: `make pwa-agent-dev`. Agents must only use `pwa-agent-*` for long-running servers.
-- PWA checks: `make pwa-format pwa-lint pwa-typecheck pwa-test pwa-build`; E2E: `make pwa-e2e`.
+- PWA checks: `make pwa-format pwa-lint pwa-typecheck pwa-test pwa-i18n-check pwa-build`; E2E: `make pwa-e2e`. After changing user-facing copy run `make pwa-i18n-extract` (see `vmshpwa/docs/i18n.md`).
 
 ## Coding Style & Naming
 - Follow PEP 8/257; 4‑space indentation; prefer explicit names over abbreviations.
