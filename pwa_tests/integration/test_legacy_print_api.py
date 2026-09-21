@@ -327,17 +327,15 @@ async def test_unconfigured_token_fails_closed(print_api, token):
 @pytest.mark.parametrize(
     "mutation,code",
     [
-        ("UPDATE course_enrollments SET attendance_mode='online'", "roster_changed"),
         (
             "DELETE FROM auth_accounts WHERE audience='student'",
             "missing_or_duplicate_login",
         ),
-        ("UPDATE classrooms SET status='archived'", "roster_changed"),
         ("UPDATE groups SET short_code='other'", "unsupported_level"),
         ("UPDATE users SET name='' WHERE id=1", "missing_name"),
     ],
 )
-async def test_inconsistent_state_does_not_silently_drop_pupils(
+async def test_unprintable_confirmed_plan_data_is_not_silently_ignored(
     print_api, mutation, code
 ):
     client, factory, _, url = print_api
@@ -345,6 +343,37 @@ async def test_inconsistent_state_does_not_silently_drop_pupils(
     response = await client.get(url, headers=headers())
     assert response.status == 409, await response.text()
     assert (await response.json())["error"]["code"] == "legacy_print_" + code
+
+
+async def test_confirmed_plan_is_reused_when_live_roster_or_room_changes(print_api):
+    client, factory, _, url = print_api
+    factory.run_write(
+        lambda c: c.execute("UPDATE course_enrollments SET attendance_mode='online'")
+    )
+    factory.run_write(lambda c: c.execute("UPDATE classrooms SET status='archived'"))
+
+    response = await client.get(url, headers=headers())
+
+    assert response.status == 200, await response.text()
+    assert await response.json() == [
+        {
+            "Фамилия": "Иванов",
+            "Имя": "Иван",
+            "ID": "ivanov.ivan",
+            "IDd": "ivanov.ivan",
+            "Клс": "7",
+            "Скрыть": None,
+            "Уровень": "н",
+            "Аудитория": "201",
+            "Посещаемость": None,
+            "Ср3": "",
+            "ФИО": "Иванов Иван",
+            "ФИ.": "Иванов И.",
+            "UserID": 1,
+            "GroupID": "assignment-n",
+            "Строчка": 5,
+        }
+    ]
 
 
 async def test_lesson_event_validation_and_browser_auth_stays_private(print_api):
@@ -364,7 +393,7 @@ async def test_lesson_event_validation_and_browser_auth_stays_private(print_api)
     assert write.status == 405
 
 
-async def test_working_draft_blocks_export(print_api):
+async def test_working_draft_does_not_replace_confirmed_print_plan(print_api):
     from models.pwa.classroom_assignments import recalculate_assignment_plan
 
     client, factory, _, url = print_api
@@ -380,8 +409,8 @@ async def test_working_draft_blocks_export(print_api):
         )
     )
     response = await client.get(url, headers=headers())
-    assert response.status == 409
-    assert (await response.json())["error"]["code"] == "legacy_print_plan_not_confirmed"
+    assert response.status == 200, await response.text()
+    assert (await response.json())[0]["Аудитория"] == "201"
 
 
 async def test_real_admin_cookie_does_not_replace_print_token(print_api):
@@ -404,7 +433,7 @@ async def test_real_admin_cookie_does_not_replace_print_token(print_api):
     assert response.status == 401
 
 
-async def test_new_enrollment_requires_new_plan_and_sorts_yo_like_e(print_api):
+async def test_new_enrollment_appears_only_after_a_new_plan_is_confirmed(print_api):
     from models.pwa.classroom_assignments import recalculate_assignment_plan
 
     client, factory, _, url = print_api
@@ -430,7 +459,8 @@ async def test_new_enrollment_requires_new_plan_and_sorts_yo_like_e(print_api):
 
     factory.run_write(add_student)
     response = await client.get(url, headers=headers())
-    assert response.status == 409
+    assert response.status == 200, await response.text()
+    assert [row["ФИО"] for row in await response.json()] == ["Иванов Иван"]
 
     def reconfirm(connection):
         data = recalculate_assignment_plan(

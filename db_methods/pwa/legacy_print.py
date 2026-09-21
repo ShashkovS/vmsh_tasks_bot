@@ -53,6 +53,49 @@ def list_print_identities(connection: sqlite3.Connection, plan_id: int) -> list[
     ]
 
 
+def list_confirmed_plan_print_assignments(
+    connection: sqlite3.Connection, plan_id: int
+) -> list[dict]:
+    """Return the immutable assignment choices of one confirmed print plan.
+
+    Deliberately do not filter this through the live in-person roster or active
+    rooms.  The plan is the print-time source of truth; those live values may
+    legitimately change after Staff have confirmed and announced a plan.
+    """
+
+    return [
+        dict(row)
+        for row in connection.execute(
+            """
+            SELECT assignment.course_enrollment_id, assignment.group_lesson_id,
+                   assignment.group_id, assignment.classroom_id,
+                   assignment.status,
+                   enrollment.student_user_id,
+                   student.surname, student.name, student.grade,
+                   lesson.course_id AS plan_course_id,
+                   lesson.group_id AS plan_group_id,
+                   course_lesson.lesson_number AS plan_lesson_number,
+                   group_record.short_code AS plan_short_code,
+                   room.name AS classroom_name
+            FROM classroom_assignments assignment
+            JOIN course_enrollments enrollment
+              ON enrollment.id = assignment.course_enrollment_id
+            JOIN users student ON student.id = enrollment.student_user_id
+            JOIN group_lessons lesson ON lesson.id = assignment.group_lesson_id
+            JOIN course_lessons course_lesson
+              ON course_lesson.id = lesson.course_lesson_id
+            JOIN groups group_record
+              ON group_record.course_id = lesson.course_id
+             AND group_record.group_id = lesson.group_id
+            LEFT JOIN classrooms room ON room.id = assignment.classroom_id
+            WHERE assignment.plan_id = ?
+            ORDER BY student.surname, student.name, enrollment.id
+            """,
+            (plan_id,),
+        ).fetchall()
+    ]
+
+
 def list_print_course_pupils(
     connection: sqlite3.Connection, course_id: int
 ) -> list[dict]:

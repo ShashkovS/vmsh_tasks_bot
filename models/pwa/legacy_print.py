@@ -3,20 +3,24 @@
 from collections import defaultdict
 import sqlite3
 
-from db_methods.pwa.classroom_assignments import list_eligible_students
 from db_methods.pwa.classroom_assignments import find_plan
 from db_methods.pwa.course_analytics import (
     list_course_group_access_rows,
     list_course_result_rows,
 )
 from db_methods.pwa.legacy_print import (
+    list_confirmed_plan_print_assignments,
     list_print_course_pupils,
     list_print_identities,
     list_print_lesson_problems,
     list_print_previous_problems,
     list_print_previous_results,
 )
-from models.pwa.classroom_assignments import read_assignment_plan
+from db_methods.pwa.classroom_layouts import get_in_person_event
+from models.pwa.classroom_assignments import (
+    ClassroomAssignmentNotFound,
+    read_assignment_plan,
+)
 from models.pwa.course_analytics import (
     _best_problem_scores,
     calculate_course_lesson_metrics,
@@ -28,48 +32,54 @@ class LegacyPrintConflict(Exception):
 
 
 def _validated_print_pupils(connection: sqlite3.Connection, event_id: str, lesson: int):
-    data = read_assignment_plan(connection, event_id)
-    plan = data["plan"]
-    if data["event"]["status"] == "cancelled":
+    event = get_in_person_event(connection, event_id)
+    if event is None:
+        raise ClassroomAssignmentNotFound
+    if event["status"] == "cancelled":
         raise LegacyPrintConflict("event_cancelled")
+    # Printing must reproduce the last confirmed plan, rather than the live
+    # eligibility/room state or a newer unconfirmed draft.  See
+    # docs/printing/legacy-api.md, "Сервер".
+    plan = find_plan(connection, int(event["id"]), ("confirmed",))
     if plan is None or plan["state"] != "confirmed":
         raise LegacyPrintConflict("plan_not_confirmed")
-    groups = {int(row["group_lesson_id"]): row for row in data["groups"]}
-    if not groups or {int(g["lesson_number"]) for g in groups.values()} != {lesson}:
-        raise LegacyPrintConflict("lesson_mismatch")
-    if len({g["course_id"] for g in groups.values()}) != 1:
-        raise LegacyPrintConflict("multiple_courses")
-    if any(g["short_code"] not in {"н", "п", "э"} for g in groups.values()):
-        raise LegacyPrintConflict("unsupported_level")
-    eligible = {
-        int(row["enrollment_id"]): row
-        for row in list_eligible_students(connection, int(data["event"]["id"]))
-    }
-    students = data["students"]
-    if not students or {int(s["course_enrollment_id"]) for s in students} != set(
-        eligible
-    ):
+    students = list_confirmed_plan_print_assignments(connection, int(plan["id"]))
+    if not students:
         raise LegacyPrintConflict("roster_changed")
+    groups = {
+        int(row["group_lesson_id"]): {
+            "course_id": int(row["plan_course_id"]),
+            "group_id": str(row["plan_group_id"]),
+            "lesson_number": int(row["plan_lesson_number"]),
+            "short_code": row["plan_short_code"],
+        }
+        for row in students
+    }
+    if {group["lesson_number"] for group in groups.values()} != {lesson}:
+        raise LegacyPrintConflict("lesson_mismatch")
+    if len({group["course_id"] for group in groups.values()}) != 1:
+        raise LegacyPrintConflict("multiple_courses")
+    if any(
+        group["short_code"] not in {"н", "п", "э"}
+        for group in groups.values()
+    ):
+        raise LegacyPrintConflict("unsupported_level")
     identities = {
         int(row["enrollment_id"]): row["username"]
         for row in list_print_identities(connection, int(plan["id"]))
-    }
-    valid_rooms = {
-        (int(room["classroom_id"]), int(room["group_lesson_id"]))
-        for room in data["rooms"]
-        if room["classroom_status"] == "active"
     }
     pupils, seen_logins, room_groups = [], set(), {}
     for student in students:
         enrollment_id = int(student["course_enrollment_id"])
         group_lesson_id = int(student["group_lesson_id"])
         room_id = student["classroom_id"]
+        group = groups[group_lesson_id]
         if (
             student["status"] != "assigned"
             or room_id is None
-            or (int(room_id), group_lesson_id) not in valid_rooms
-            or group_lesson_id != int(eligible[enrollment_id]["group_lesson_id"])
-            or student["group_id"] != eligible[enrollment_id]["group_id"]
+            or not isinstance(student["classroom_name"], str)
+            or not student["classroom_name"].strip()
+            or str(student["group_id"]) != group["group_id"]
         ):
             raise LegacyPrintConflict("roster_changed")
         login = identities.get(enrollment_id)
@@ -92,7 +102,7 @@ def _validated_print_pupils(connection: sqlite3.Connection, event_id: str, lesso
                 "IDd": login,
                 "Клс": str(student["grade"]) if student["grade"] is not None else "",
                 "Скрыть": None,
-                "Уровень": groups[group_lesson_id]["short_code"],
+                "Уровень": group["short_code"],
                 "Аудитория": room,
                 "Посещаемость": None,
                 "Ср3": "",
@@ -105,11 +115,11 @@ def _validated_print_pupils(connection: sqlite3.Connection, event_id: str, lesso
     pupils.sort(key=lambda row: (row["ФИО"].casefold().replace("ё", "е"), row["ID"]))
     for index, pupil in enumerate(pupils, start=5):
         pupil["Строчка"] = index
-    return data["event"], plan, pupils
+    return event, plan, pupils
 
 
 def export_print_pupils(connection: sqlite3.Connection, event_id: str, lesson: int):
-    # One SQLite read snapshot includes plan, eligibility and mutable names.
+    # One SQLite read snapshot includes the confirmed plan and mutable names.
     connection.execute("BEGIN")
     try:
         return _validated_print_pupils(connection, event_id, lesson)
