@@ -220,7 +220,7 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
         difficulty, _ = read_state(connection, int(selected_course["id"]))
         return run, rows, facts, difficulty
 
-    run, metric_rows, facts, difficulty = await _factory(request).run_read_async(
+    run, metric_rows, facts, difficulty = await _factory(request).run_analytics_async(
         read_run
     )
     allowed_group_ids = (

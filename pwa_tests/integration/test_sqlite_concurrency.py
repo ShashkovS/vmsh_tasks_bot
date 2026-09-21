@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+import sqlite3
 
 import pytest
 import pytest_asyncio
@@ -149,7 +150,7 @@ async def test_trace_records_database_stages_without_sql(database_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", ["read", "write"])
+@pytest.mark.parametrize("kind", ["read", "write", "analytics"])
 async def test_admission_bounds_workers_and_releases_after_failure(async_factory, kind):
     factory = async_factory
     run = getattr(factory, f"run_{kind}_async")
@@ -177,10 +178,12 @@ async def test_admission_bounds_workers_and_releases_after_failure(async_factory
 
 
 @pytest.mark.asyncio
-async def test_cancelled_worker_keeps_permit_until_connection_closes(async_factory):
+@pytest.mark.parametrize("kind", ["read", "analytics"])
+async def test_cancelled_worker_keeps_permit_until_connection_closes(async_factory, kind):
     factory = async_factory
-    active_before = _db_gauge("vmsh_db_active", "read")
-    waiting_before = _db_gauge("vmsh_db_waiting", "read")
+    run = getattr(factory, f"run_{kind}_async")
+    active_before = _db_gauge("vmsh_db_active", kind)
+    waiting_before = _db_gauge("vmsh_db_waiting", kind)
     started = threading.Event()
     release = threading.Event()
     second_started = threading.Event()
@@ -190,27 +193,27 @@ async def test_cancelled_worker_keeps_permit_until_connection_closes(async_facto
         assert release.wait(5)
         raise ValueError("failure after cancellation")
 
-    task = asyncio.create_task(factory.run_read_async(first))
+    task = asyncio.create_task(run(first))
     assert await asyncio.to_thread(started.wait, 5)
     task.cancel()
     await asyncio.sleep(0)
     task.cancel()
     second = asyncio.create_task(
-        factory.run_read_async(lambda _connection: second_started.set())
+        run(lambda _connection: second_started.set())
     )
     try:
         await asyncio.sleep(0.03)
         assert not task.done()
         assert not second_started.is_set()
-        assert _db_gauge("vmsh_db_active", "read") == active_before + 1
-        assert _db_gauge("vmsh_db_waiting", "read") == waiting_before + 1
+        assert _db_gauge("vmsh_db_active", kind) == active_before + 1
+        assert _db_gauge("vmsh_db_waiting", kind) == waiting_before + 1
     finally:
         release.set()
     with pytest.raises(asyncio.CancelledError):
         await task
     await second
-    assert _db_gauge("vmsh_db_active", "read") == active_before
-    assert _db_gauge("vmsh_db_waiting", "read") == waiting_before
+    assert _db_gauge("vmsh_db_active", kind) == active_before
+    assert _db_gauge("vmsh_db_waiting", kind) == waiting_before
 
 
 @pytest.mark.asyncio
@@ -287,7 +290,8 @@ async def test_persistent_connections_reuse_owner_threads_and_fresh_results(data
 
 
 @pytest.mark.asyncio
-async def test_cancelled_shutdown_drains_and_closes_on_owner_thread(database_path):
+@pytest.mark.parametrize("kind", ["read", "analytics"])
+async def test_cancelled_shutdown_drains_and_closes_on_owner_thread(database_path, kind):
     factory = PwaConnectionFactory(database_path)
     factory.start_async_workers()
     started = threading.Event()
@@ -301,7 +305,7 @@ async def test_cancelled_shutdown_drains_and_closes_on_owner_thread(database_pat
         assert release.wait(5)
         return c.execute("SELECT 1").fetchone()
 
-    operation = asyncio.create_task(factory.run_read_async(blocking))
+    operation = asyncio.create_task(getattr(factory, f"run_{kind}_async")(blocking))
     assert await asyncio.to_thread(started.wait, 5)
     close = asyncio.create_task(factory.aclose())
     try:
@@ -315,3 +319,38 @@ async def test_cancelled_shutdown_drains_and_closes_on_owner_thread(database_pat
     with pytest.raises(asyncio.CancelledError):
         await close
     assert worker_thread is not None and not worker_thread.is_alive()
+
+
+@pytest.mark.asyncio
+async def test_analytics_snapshot_does_not_block_interactive_work(async_factory):
+    factory = async_factory
+    started = threading.Event()
+    release = threading.Event()
+
+    def report(c):
+        c.execute("BEGIN")
+        before = c.execute("SELECT value FROM kv WHERE key='analytics-test'").fetchone()
+        started.set()
+        assert release.wait(5)
+        after = c.execute("SELECT value FROM kv WHERE key='analytics-test'").fetchone()
+        # Deliberately leave the snapshot open: factory cleanup must roll back.
+        return before, after
+
+    pending = asyncio.create_task(factory.run_analytics_async(report))
+    assert await asyncio.to_thread(started.wait, 5)
+    try:
+        await asyncio.wait_for(factory.run_write_async(lambda c: c.execute(
+            "INSERT INTO kv (key,value) VALUES ('analytics-test','new')"
+        ).rowcount), 2)
+        assert await asyncio.wait_for(factory.run_read_async(lambda c: c.execute(
+            "SELECT value FROM kv WHERE key='analytics-test'"
+        ).fetchone()), 2) == {"value": "new"}
+    finally:
+        release.set()
+    assert await pending == (None, None)
+    assert await factory.run_analytics_async(lambda c: c.execute(
+        "SELECT value FROM kv WHERE key='analytics-test'"
+    ).fetchone()) == {"value": "new"}
+    with pytest.raises(sqlite3.OperationalError, match="readonly"):
+        await factory.run_analytics_async(lambda c: c.execute("DELETE FROM kv"))
+    assert await factory.run_analytics_async(lambda c: c.in_transaction) is False

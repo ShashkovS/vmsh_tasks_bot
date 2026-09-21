@@ -1,4 +1,4 @@
-"""SQLite units of work and two thread-owned runtime connections (ADR 0002)."""
+"""SQLite units of work with thread-owned runtime connections (ADR 0002)."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ class SqliteConcurrencyPolicy:
 class PwaConnectionFactory:
     """Run complete synchronous units of work without sharing transactions.
 
-    Runtime opts into one persistent reader and writer, each confined to its
+    Runtime opts into interactive/analytics readers and one writer, each confined to its
     own thread. Standalone sync/maintenance calls keep fresh connections. See
     ``adr/0002-pwa-sqlite-concurrency-and-migrations.md`` and the fault tests in
     ``pwa_tests/integration/test_sqlite_concurrency.py``.
@@ -81,19 +81,20 @@ class PwaConnectionFactory:
         self._local = threading.local()
         self._executors: dict[str, ThreadPoolExecutor] = {}
         self._closed = False
-        self._queue_depth = {"read": 0, "write": 0}
+        self._analytics_slots = asyncio.Semaphore(1)
+        self._queue_depth = {"read": 0, "write": 0, "analytics": 0}
         self._close_task: asyncio.Task | None = None
         if verify_schema:
             require_current_schema(self.database_path)
             self._require_wal_mode()
 
     def start_async_workers(self) -> None:
-        """Enable two lazy connections after runtime has acquired its flock."""
+        """Enable three lazy connections after runtime has acquired its flock."""
         if self._closed or self._executors:
             raise RuntimeError("SQLite workers already started or closed")
         self._read_slots = asyncio.Semaphore(1)
         self._write_slots = asyncio.Semaphore(1)
-        for role in ("read", "write"):
+        for role in ("read", "write", "analytics"):
             self._executors[role] = ThreadPoolExecutor(
                 max_workers=1, thread_name_prefix=f"pwa-db-{role}"
             )
@@ -116,7 +117,7 @@ class PwaConnectionFactory:
     async def aclose(self) -> None:
         """Drain dispatched operations and close on owner threads before unlock."""
         async def close():
-            async with self._read_slots, self._write_slots:
+            async with self._read_slots, self._write_slots, self._analytics_slots:
                 await asyncio.to_thread(self._close_workers)
 
         if self._close_task is None:
@@ -256,6 +257,32 @@ class PwaConnectionFactory:
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
         return await self._run_admitted("write", self._write_slots, self.run_write, operation)
+
+    async def run_analytics_async(
+        self, operation: Callable[[sqlite3.Connection], ResultT]
+    ) -> ResultT:
+        """Isolate reports from interactive reads; see sqlite-admission-performance.md.
+
+        The dedicated owner thread retains the same snapshot and cancellation
+        semantics as normal reads. Analytics callbacks cannot write to the DB.
+        """
+        return await self._run_admitted(
+            "analytics", self._analytics_slots, self._run_analytics, operation
+        )
+
+    def _run_analytics(self, operation):
+        with self.read_connection() as connection:
+            connection.execute("PRAGMA query_only = ON")
+            try:
+                with trace_stage("db.read"):
+                    result = operation(connection)
+                if inspect.isawaitable(result):
+                    if inspect.iscoroutine(result):
+                        result.close()
+                    raise TypeError("Database unit of work callbacks must be synchronous")
+                return result
+            finally:
+                connection.execute("PRAGMA query_only = OFF")
 
     async def _run_admitted(
         self,

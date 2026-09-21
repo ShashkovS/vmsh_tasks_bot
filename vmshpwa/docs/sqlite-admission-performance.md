@@ -1,5 +1,24 @@
 # SQLite: ограничение параллельной работы
 
+## Изоляция Staff statistics — 22 сентября 2026
+
+`PwaConnectionFactory.run_analytics_async` выполняет отчёт на отдельном
+постоянном соединении и однопоточном executor с собственным admission gate.
+`staff_statistics_routes.get_staff_statistics` использует его для `read_run`;
+авторизация и каталог остаются на обычном reader. `BEGIN` внутри отчёта
+сохраняет согласованный снимок. `query_only` запрещает случайную запись,
+cleanup откатывает оставшийся snapshot, cancellation удерживает слот до
+завершения callback. Shutdown закрывает все три соединения на owner threads.
+
+В двух production workers теперь до шести соединений основной БД: два
+interactive reader, два analytics reader и два writer. SQLite по-прежнему
+допускает только одного writer на БД. Метрики/логи и существующие Grafana
+панели автоматически показывают роль `analytics`.
+Это изоляция очередей, не CPU/IO: долгий отчёт всё ещё конкурирует за ресурсы
+и может задерживать checkpoint. SQL-deadline и оптимизация самого отчёта
+не входят в это изменение. Проверки конкурентного snapshot/read/write,
+query_only, cancellation и shutdown: `test_sqlite_concurrency.py`.
+
 ## Диагностика владельцев слотов — 21 сентября 2026
 
 `helpers/pwa/db_observability.py` инструментирует admission в

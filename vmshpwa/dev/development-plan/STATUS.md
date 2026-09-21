@@ -1,5 +1,19 @@
 # Статус плана разработки
 
+## Отдельный analytics reader — 22 сентября 2026, реализовано локально
+
+Staff statistics выполняет тяжёлый read_run через отдельную очередь, executor
+и постоянное соединение `PwaConnectionFactory.run_analytics_async`.
+Один analytics slot на процесс, query_only, прежняя snapshot-согласованность;
+auth и короткие чтения больше не ждут завершения отчёта на общем read gate.
+Lifecycle закрывает три соединения; метрики показывают роль analytics.
+Контракт: [sqlite-admission-performance.md](../../docs/sqlite-admission-performance.md),
+[ADR 0002](../../../adr/0002-pwa-sqlite-concurrency-and-migrations.md).
+Миграций, изменений HTTP API и кеширования нет. 33 integration-теста прошли:
+SQLite concurrency, Staff statistics HTTP и runtime lifecycle lock; дополнительно
+4 сценария отмены (read/analytics, fresh/persistent) прошли. Ruff/diff-check
+прошли. Выпуск этого изменения и сравнение под нагрузкой ещё не выполнялись.
+
 ## Диагностика SQLite admission — 21 сентября 2026, реализовано локально
 
 Admission сохраняет прежнюю параллельность; измеряет очередь/занятые слоты

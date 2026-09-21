@@ -32,20 +32,24 @@ Primary references checked on 27 July 2026:
    with a diagnostic when migrations are missing, changed or newer than the
    checkout. Legacy startup retains its old auto-apply behavior until its
    separate cutover.
-2. New PWA repositories use `PwaConnectionFactory`. Runtime enables two lazy,
-   persistent connections after acquiring its lifecycle lock: one reader and
-   one writer, each confined to its own single-thread executor. Connections
+2. New PWA repositories use `PwaConnectionFactory`. Runtime enables three lazy,
+   persistent connections after acquiring its lifecycle lock: interactive reader,
+   analytics reader and writer, each confined to its own single-thread executor. Connections
    are reused between complete units of work, never concurrently or across
    threads. Standalone synchronous maintenance retains connection-per-operation.
 3. Async callers move the entire operation to a worker thread; callbacks are
    synchronous. No `await`, network access or media conversion occurs inside a
    transaction.
    Performance amendment (9 September 2026): runtime admits at most one
-   async read and one async write to the executors at a time. Separate gates
+   interactive read and one async write to the executors at a time. The
+   22 September amendment adds one separately admitted analytics read per process
+   (`run_analytics_async`), with `query_only` enabled during the callback.
+   Staff statistics uses this lane; auth/catalog reads retain the interactive lane.
+   Separate gates
    preserve WAL read progress while a writer waits. Waiting happens on the
    event loop, not in executor threads; cancellation of a queued caller opens
    no connection, cancellation after dispatch drains the callback before
-   releasing its permit. Cleanup drains the units of work and closes both
+   releasing its permit. Cleanup drains the units of work and closes all
    connections on their owner threads before releasing the lifecycle lock;
    this also holds if the cleanup caller is cancelled. No transaction may
    remain open after a callback; exceptional writes roll back. Measurements and
