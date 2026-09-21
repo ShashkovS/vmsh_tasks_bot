@@ -137,8 +137,9 @@ def test_proxy_header_snippet_replaces_client_forwarding_evidence():
 def test_common_proxy_timeouts_are_inherited_from_the_server_boundary():
     source = TEMPLATE.read_text(encoding="utf-8")
 
-    assert "send_timeout 60s;\n    proxy_send_timeout 120s;" in source
-    assert "proxy_read_timeout 120s;" in source
+    assert "send_timeout 60s;" in source
+    assert "proxy_send_timeout 660s;" in source
+    assert "proxy_read_timeout 660s;" in source
     assert "proxy_buffering off;" in source
     for audience in ("student", "family", "staff"):
         websocket = _location(source, f"= /{audience}/ws")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -13,6 +14,23 @@ _SENSITIVE_KEY = re.compile(
     r"photo|refresh|solution|telegram|text|token",
     re.IGNORECASE,
 )
+
+
+def sample_sentry_trace(sampling_context: Mapping[str, Any]) -> float:
+    """Keep HTTP latency traces separate from long-lived WebSocket sessions.
+
+    AioHttpIntegration supplies the request before it starts its transaction.
+    An Upgrade request is a WebSocket session rather than one HTTP operation;
+    its connection count is recorded by ``vmsh_websocket_connections`` instead.
+    Error events remain independently reportable through LoggingIntegration.
+    """
+
+    request = sampling_context.get("aiohttp_request")
+    headers = getattr(request, "headers", None)
+    upgrade = headers.get("Upgrade", "") if headers is not None else ""
+    if isinstance(upgrade, str) and upgrade.casefold() == "websocket":
+        return 0.0
+    return 1.0
 
 
 def _safe_string(value: str) -> str:
@@ -87,4 +105,8 @@ def sanitize_sentry_event(
     return sanitized
 
 
-__all__ = ["sanitize_sentry_breadcrumb", "sanitize_sentry_event"]
+__all__ = [
+    "sample_sentry_trace",
+    "sanitize_sentry_breadcrumb",
+    "sanitize_sentry_event",
+]

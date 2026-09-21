@@ -1,5 +1,19 @@
 # Статус плана разработки
 
+## Диагностика SQLite admission — 21 сентября 2026, реализовано локально
+
+Admission сохраняет прежнюю параллельность; измеряет очередь/занятые слоты
+read/write по PID, histogram ожидания и полного владения слотом. Структурированные
+логи от 200 мс содержат callback, request ID и canonical route; раз в секунду
+показывается текущий долгий владелец. Cancellation drain сохраняет активный слот,
+таймер снимается при освобождении. Старые request aggregates сохранены.
+В обоих Grafana installer добавлены панели очередей, wait/hold p95 и throughput.
+30 targeted тестов прошли; Ruff, bash syntax и JSON обоих dashboards проверены.
+Контракт и порядок анализа: [sqlite-admission-performance.md](../../docs/sqlite-admission-performance.md).
+Production deploy и сбор нагруженного интервала ещё не выполнялись; выбор
+SQL-оптимизации или сравнение одного/двух readers остаются следующим этапом
+после измерений. Миграций и изменений HTTP API нет.
+
 ## Общие PWA quality gates — 19 сентября 2026, реализовано локально
 
 Исправлены независимые от терминологии родителя ESLint-нарушения, устаревшие
@@ -3132,3 +3146,26 @@ view, требует индекс для `effective_results` и обрывает
 вызывает Prometheus multiprocess cleanup для legacy service без соответствующей
 переменной. 81 migration/schema/concurrency/performance/deploy regression test,
 Ruff, `bash -n` и `git diff --check` прошли.
+
+## Долгая генерация metadata-grid — 2026-09-21
+
+Production-журналы показали, что 105-секундные `502` приходили от локального
+`asyncio.timeout`, а не от ответа OpenRouter. Полный контракт генерации и
+проверки теперь ограничен 600 секундами в
+[`metadata_generation.py`](../../../helpers/pwa/content/metadata_generation.py).
+Nginx и PWA Gunicorn получают 660 секунд, чтобы структурированная ошибка успела
+дойти до Staff; маршрут записывает неудачи как `ERROR`, поэтому они попадают в
+Sentry. Staff UI предупреждает, что большое условие может выполняться до 10
+минут и страницу закрывать не следует. Контракты закреплены в Python-тестах
+генератора, nginx и systemd.
+
+## WebSocket и HTTP latency в Sentry — 2026-09-21
+
+`AioHttpIntegration` раньше начинал Sentry transaction для каждого WebSocket
+upgrade и измерял всю жизнь соединения как HTTP trace. `sample_sentry_trace` в
+[`helpers/pwa/sentry_safety.py`](../../../helpers/pwa/sentry_safety.py) теперь
+отбрасывает только request с `Upgrade: websocket`; обычные HTTP traces и error
+events остаются. Число открытых соединений по-прежнему измеряется отдельным
+Prometheus `vmsh_websocket_connections`, а HTTP p95 уже строится из отдельной
+`vmsh_http_request_duration_seconds` histogram. Контракт закреплён в
+[`pwa_tests/test_sentry_safety.py`](../../../pwa_tests/test_sentry_safety.py).

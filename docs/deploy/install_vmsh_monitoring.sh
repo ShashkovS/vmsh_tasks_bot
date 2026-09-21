@@ -1624,6 +1624,39 @@ cat > /var/lib/grafana/dashboards/vmsh-overview.json <<'JSON'
       ],
       "title": "WebSocket connections — after deployment",
       "type": "timeseries"
+    },
+    {
+      "id": 16,
+      "title": "SQLite queue and active slots by worker",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 45},
+      "targets": [
+        {"refId": "A", "expr": "vmsh_db_waiting{job=\"aiohttp\"}", "legendFormat": "waiting {{role}} pid={{pid}} {{instance}}"},
+        {"refId": "B", "expr": "vmsh_db_active{job=\"aiohttp\"}", "legendFormat": "active {{role}} pid={{pid}} {{instance}}"}
+      ]
+    },
+    {
+      "id": 17,
+      "title": "SQLite admission wait and slot hold p95",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 45},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "targets": [
+        {"refId": "A", "expr": "histogram_quantile(0.95, sum by (le, role) (rate(vmsh_db_admission_wait_seconds_bucket{job=\"aiohttp\"}[$__rate_interval])))", "legendFormat": "wait {{role}}"},
+        {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le, role) (rate(vmsh_db_slot_hold_seconds_bucket{job=\"aiohttp\"}[$__rate_interval])))", "legendFormat": "hold {{role}}"}
+      ]
+    },
+    {
+      "id": 18,
+      "title": "SQLite operations per second",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 53},
+      "targets": [
+        {"refId": "A", "expr": "sum by (role) (rate(vmsh_db_slot_hold_seconds_count{job=\"aiohttp\"}[$__rate_interval]))", "legendFormat": "{{role}}"}
+      ]
     }
   ],
   "refresh": "30s",

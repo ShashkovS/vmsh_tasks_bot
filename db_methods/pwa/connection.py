@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import TypeVar
 
 from helpers.pwa.request_trace import trace_stage, submit_traced_thread
+from helpers.pwa.db_observability import observed_admission
 
 from .migrations import require_current_schema
 
@@ -80,6 +81,7 @@ class PwaConnectionFactory:
         self._local = threading.local()
         self._executors: dict[str, ThreadPoolExecutor] = {}
         self._closed = False
+        self._queue_depth = {"read": 0, "write": 0}
         self._close_task: asyncio.Task | None = None
         if verify_schema:
             require_current_schema(self.database_path)
@@ -262,9 +264,7 @@ class PwaConnectionFactory:
         runner: Callable[[Callable[[sqlite3.Connection], ResultT]], ResultT],
         operation: Callable[[sqlite3.Connection], ResultT],
     ) -> ResultT:
-        with trace_stage("db.admission_queue"):
-            await slots.acquire()
-        try:
+        async with observed_admission(role, slots, operation, self._queue_depth):
             if self._closed:
                 raise RuntimeError("SQLite workers are closed")
             executor = self._executors.get(role)
@@ -275,8 +275,6 @@ class PwaConnectionFactory:
 
             worker = submit_traced_thread(run, executor=executor)
             return await self._drain_on_cancel(worker)
-        finally:
-            slots.release()
 
     @staticmethod
     async def _drain_on_cancel(worker):

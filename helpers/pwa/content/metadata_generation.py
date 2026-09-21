@@ -27,7 +27,10 @@ DEFAULT_MODEL = "openai/gpt-5.6-luna"
 MAX_LATEX_CHARS = 500_000
 GENERATION_REASONING_EFFORT = "medium"
 GENERATION_MAX_OUTPUT_TOKENS = 12_000
-GENERATION_TIMEOUT_SECONDS = 105
+# This bounds the entire OpenRouter generation + verification contract, rather
+# than an individual upstream attempt.  The proxy and Gunicorn boundaries keep
+# an additional minute of headroom so Staff receives this structured failure.
+GENERATION_TIMEOUT_SECONDS = 10 * 60
 
 _REFERENCE_TO_PWA_PROBLEM_TYPE = {
     "Тест": 1,
@@ -234,7 +237,7 @@ class OpenRouterMetadataGenerator:
         api_key: str | None = None,
         proxy: str | None = None,
         model: str = DEFAULT_MODEL,
-        timeout_ms: int = 120_000,
+        timeout_ms: int = GENERATION_TIMEOUT_SECONDS * 1_000,
     ) -> None:
         self._api_key = api_key
         self._proxy = (proxy or "").strip()
@@ -283,6 +286,15 @@ class OpenRouterMetadataGenerator:
                 )
         except MetadataGenerationError:
             raise
+        except TimeoutError as error:
+            raise MetadataGenerationError(
+                "OpenRouter metadata generation exceeded the local request deadline "
+                f"of {timeout_seconds:g} seconds",
+                public_message=(
+                    "OpenRouter не ответил за отведённое время. Черновик не был "
+                    "сохранён; повторите генерацию позже."
+                ),
+            ) from error
         except Exception as error:
             raise _upstream_generation_error(error) from error
         try:

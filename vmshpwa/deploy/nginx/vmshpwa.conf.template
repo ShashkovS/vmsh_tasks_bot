@@ -73,8 +73,10 @@ server {
     client_header_timeout 15s;
     client_body_timeout 120s;
     send_timeout 60s;
-    proxy_send_timeout 120s;
-    proxy_read_timeout 120s;
+    # Metadata generation has a 10-minute application deadline.  Keep one
+    # minute of proxy headroom so its structured error reaches Staff.
+    proxy_send_timeout 660s;
+    proxy_read_timeout 660s;
     proxy_buffering off;
 
     limit_req zone=vmshpwa_login_per_ip burst=4 nodelay;

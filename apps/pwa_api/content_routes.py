@@ -2301,7 +2301,7 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
             message=error.public_message,
         ) from error
     except MetadataGenerationError as error:
-        logger.warning(
+        logger.error(
             "Metadata generation failed for revision %s: %s",
             revision_public_id,
             error,

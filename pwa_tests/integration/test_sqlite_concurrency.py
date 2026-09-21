@@ -5,6 +5,7 @@ import threading
 
 import pytest
 import pytest_asyncio
+from prometheus_client import CollectorRegistry, multiprocess
 
 from helpers.pwa.request_trace import RequestTrace, current_trace
 
@@ -14,6 +15,13 @@ from db_methods.pwa import (
     SqliteConcurrencyPolicy,
     apply_schema_migrations,
 )
+
+
+def _db_gauge(name, role):
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+    return sum(s.value for metric in registry.collect() for s in metric.samples
+               if s.name == name and s.labels.get("role") == role)
 
 
 @pytest.fixture()
@@ -127,6 +135,8 @@ async def test_trace_records_database_stages_without_sql(database_path):
         current_trace.reset(token)
     assert set(trace.stages) == {
         "db.admission_queue",
+        "db.admission_queue.read",
+        "db.admission_queue.write",
         "db.thread_queue",
         "db.connect",
         "db.write_lock",
@@ -169,6 +179,8 @@ async def test_admission_bounds_workers_and_releases_after_failure(async_factory
 @pytest.mark.asyncio
 async def test_cancelled_worker_keeps_permit_until_connection_closes(async_factory):
     factory = async_factory
+    active_before = _db_gauge("vmsh_db_active", "read")
+    waiting_before = _db_gauge("vmsh_db_waiting", "read")
     started = threading.Event()
     release = threading.Event()
     second_started = threading.Event()
@@ -190,11 +202,15 @@ async def test_cancelled_worker_keeps_permit_until_connection_closes(async_facto
         await asyncio.sleep(0.03)
         assert not task.done()
         assert not second_started.is_set()
+        assert _db_gauge("vmsh_db_active", "read") == active_before + 1
+        assert _db_gauge("vmsh_db_waiting", "read") == waiting_before + 1
     finally:
         release.set()
     with pytest.raises(asyncio.CancelledError):
         await task
     await second
+    assert _db_gauge("vmsh_db_active", "read") == active_before
+    assert _db_gauge("vmsh_db_waiting", "read") == waiting_before
 
 
 @pytest.mark.asyncio

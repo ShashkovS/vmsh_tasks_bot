@@ -45,6 +45,7 @@ def test_profile_uses_required_prometheus_multiprocess_boundary(tmp_path: Path) 
     assert "--config /web/vmsh_tasks_bot/vmsh_tasks_bot/gunicorn.conf.py" in source
     assert "--bind unix:/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock" in source
     assert "--bind 127.0.0.1:8000" in source
+    assert "--timeout 660" in source
 
 
 @pytest.mark.parametrize(

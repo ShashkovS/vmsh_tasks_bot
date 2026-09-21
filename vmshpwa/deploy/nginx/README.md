@@ -39,6 +39,11 @@ permissions; it is never generally writable.
 Gunicorn additionally binds `127.0.0.1:8000` for local Prometheus scrapes; nginx
 does not use that listener and the backend must never bind it publicly.
 
+Metadata-grid generation is a long-running Staff API call: the application
+deadline is 600 seconds and the nginx/Gunicorn limits are 660 seconds. Keep
+that headroom on a rollout so an upstream OpenRouter timeout reaches Staff as a
+structured API error rather than a proxy or worker timeout.
+
 The proxy replaces `Forwarded` from `$remote_addr`, fixed HTTPS and `$host`, and
 suppresses all incoming `X-Forwarded-*`. It never appends client input. The
 application then requires one exact hop, validates the immediate TCP/Unix

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from helpers.pwa.content import metadata_generation as metadata_generation_module
 from helpers.pwa.content.metadata_generation import (
+    GENERATION_TIMEOUT_SECONDS,
     GeneratedMetadata,
     MetadataGenerationError,
     MetadataGenerationRequest,
@@ -182,7 +185,30 @@ async def test_metadata_generation_uses_an_async_client_for_configured_proxy(
     assert len(result.rows) == 1
     assert calls[0]["kwargs"]["proxy"] == "http://127.0.0.1:1080"
     assert calls[0]["kwargs"]["reasoning_effort"] == "medium"
+    assert calls[0]["kwargs"]["timeout_seconds"] == GENERATION_TIMEOUT_SECONDS
     assert calls[0]["kwargs"]["prompt_cache"] is True
+
+
+@pytest.mark.asyncio
+async def test_metadata_generation_reports_its_local_deadline(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    async def stalled_generate_lesson_json(*_args, **_kwargs):
+        await asyncio.sleep(0.05)
+
+    monkeypatch.setattr(
+        metadata_generation_module, "generate_lesson_json", stalled_generate_lesson_json
+    )
+
+    with pytest.raises(MetadataGenerationError, match="local request deadline") as raised:
+        await OpenRouterMetadataGenerator(
+            api_key="sk-or-v1-live-key", timeout_ms=1
+        ).generate(_request())
+
+    assert raised.value.public_message == (
+        "OpenRouter не ответил за отведённое время. Черновик не был сохранён; "
+        "повторите генерацию позже."
+    )
 
 
 def test_metadata_generation_maps_verified_choice_contract_to_pwa_fields():

@@ -21,6 +21,8 @@ logger.setLevel(logging.INFO)
 
 @dataclass
 class RequestTrace:
+    request_id: str | None = None
+    route: str | None = None
     stages: dict = field(default_factory=dict)
     lock: Lock = field(default_factory=Lock)
     closed: bool = False
@@ -76,7 +78,7 @@ async def request_trace_middleware(request, handler):
         or request.headers.get("Upgrade", "").lower() == "websocket"
     ):
         return await handler(request)
-    trace = RequestTrace()
+    trace = RequestTrace(request_id=request.get("request_id"), route=route)
     token = current_trace.set(trace)
     started = time.perf_counter()
     status = 500

@@ -691,7 +691,7 @@ export function ProblemReviewWorkflow({
                   <p>
                     Генерируем и перепроверяем metadata. Обычно это занимает 30–60 секунд
                     {metadataGenerationElapsedSeconds >= metadataGenerationExpectedSeconds
-                      ? '; запрос всё ещё выполняется.'
+                      ? '; запрос всё ещё выполняется: для большого условия это может занять до 10 минут. Не закрывайте страницу.'
                       : '.'}
                   </p>
                   <Progress

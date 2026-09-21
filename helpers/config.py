@@ -352,6 +352,7 @@ def _init_sentry(dsn: str, environment: str, release: str = ""):
             from sentry_sdk.integrations.logging import LoggingIntegration
 
             from helpers.pwa.sentry_safety import (
+                sample_sentry_trace,
                 sanitize_sentry_breadcrumb,
                 sanitize_sentry_event,
             )
@@ -367,7 +368,7 @@ def _init_sentry(dsn: str, environment: str, release: str = ""):
                     AsyncioIntegration(),
                     logging_integration,
                 ],
-                traces_sample_rate=1.0,
+                traces_sampler=sample_sentry_trace,
                 environment=environment,
                 release=release or None,
                 send_default_pii=False,

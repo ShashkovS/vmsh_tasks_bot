@@ -21,7 +21,9 @@ ExecStartPre=/usr/bin/find /run/vmsh-prometheus -mindepth 1 -maxdepth 1 -type f 
 # EnvironmentFile takes precedence over Environment= in systemd. Put the two
 # security boundary values on the actual command line so the secret file cannot
 # accidentally select a local profile or prototype auth.
-ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/gunicorn --config /web/vmsh_tasks_bot/vmsh_tasks_bot/gunicorn.conf.py --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock --bind 127.0.0.1:8000 --no-control-socket --umask 007 --timeout 120 --graceful-timeout 30 --error-logfile - --capture-output main:app
+# The application gives OpenRouter metadata generation 600 seconds; leave a
+# minute for it to return its structured failure instead of killing the worker.
+ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/gunicorn --config /web/vmsh_tasks_bot/vmsh_tasks_bot/gunicorn.conf.py --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock --bind 127.0.0.1:8000 --no-control-socket --umask 007 --timeout 660 --graceful-timeout 30 --error-logfile - --capture-output main:app
 Restart=on-failure
 RestartSec=3
 KillSignal=SIGTERM

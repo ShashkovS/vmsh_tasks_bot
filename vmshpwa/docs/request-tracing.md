@@ -45,8 +45,11 @@ sudo journalctl -u vmshpwa.service --since "30 minutes ago" --no-pager -o cat | 
 db.read/write — исследовать callback и планы SQL; commit/connect — проверить
 диск/WAL; большой остаток — точечно инструментировать handler/внешние вызовы.
 Трейсы только медленных запросов не годятся для общего p95: использовать
-Prometheus вместе с числом запросов. Причина текущих production-задержек пока
-не установлена полностью; первая воспроизводимая локальная проблема и
+Prometheus вместе с числом запросов. Долгоживущие WebSocket-upgrade не
+отправляются как Sentry performance traces; их число наблюдается отдельно через
+`vmsh_websocket_connections`, поэтому они не искажают HTTP latency/p95.
+Причина текущих production-задержек пока не установлена полностью; первая
+воспроизводимая локальная проблема и
 ограничение параллелизма описаны в [sqlite-admission-performance.md](sqlite-admission-performance.md).
 
 Проверки: `pwa_tests/domain/test_request_trace.py` и существующие SQLite fault

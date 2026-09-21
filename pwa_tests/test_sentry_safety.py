@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import sys
 from types import ModuleType
+from types import SimpleNamespace
 
 from helpers import config as config_module
 from helpers.pwa.sentry_safety import (
+    sample_sentry_trace,
     sanitize_sentry_breadcrumb,
     sanitize_sentry_event,
 )
@@ -68,6 +70,15 @@ def test_backend_sentry_breadcrumb_hides_log_text_and_query() -> None:
     }
 
 
+def test_backend_sentry_trace_sampler_excludes_only_websocket_upgrades() -> None:
+    websocket_request = SimpleNamespace(headers={"Upgrade": "WebSocket"})
+    http_request = SimpleNamespace(headers={"Upgrade": ""})
+
+    assert sample_sentry_trace({"aiohttp_request": websocket_request}) == 0.0
+    assert sample_sentry_trace({"aiohttp_request": http_request}) == 1.0
+    assert sample_sentry_trace({}) == 1.0
+
+
 def test_sentry_initialization_uses_privacy_hooks(monkeypatch) -> None:
     captured: dict[str, object] = {}
     fake_sdk = ModuleType("sentry_sdk")
@@ -89,6 +100,8 @@ def test_sentry_initialization_uses_privacy_hooks(monkeypatch) -> None:
     assert captured["before_send"] is sanitize_sentry_event
     assert captured["before_send_transaction"] is sanitize_sentry_event
     assert captured["before_breadcrumb"] is sanitize_sentry_breadcrumb
+    assert captured["traces_sampler"] is sample_sentry_trace
+    assert "traces_sample_rate" not in captured
     assert captured["release"] == "rev-17"
 
 

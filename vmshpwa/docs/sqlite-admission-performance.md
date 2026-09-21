@@ -1,5 +1,38 @@
 # SQLite: ограничение параллельной работы
 
+## Диагностика владельцев слотов — 21 сентября 2026
+
+`helpers/pwa/db_observability.py` инструментирует admission в
+`db_methods/pwa/connection.py`, сохраняя один runtime reader и writer на процесс.
+`vmsh_db_waiting` и `vmsh_db_active` — multiprocess liveall gauges по role;
+автоматический PID позволяет видеть неравномерность workers. Гистограммы
+`vmsh_db_admission_wait_seconds` и `vmsh_db_slot_hold_seconds` имеют только role.
+Первая включает отменённые ожидания, вторая — полный срок допуска, включая
+executor, connect, callback, commit и drain после отмены. Rate её count —
+число завершённых допущенных операций, а не HTTP RPS.
+
+INFO `pwa_db_operation` содержит PID, role, request_id, canonical route,
+callback, duration_ms и текущую локальную queue_depth. События admitted /
+wait_cancelled и released пишутся от 200 мс; holding — раз в секунду после
+секунды владения. Для фоновой работы request_id/route равны null. SQL, параметры
+и repr callback не записываются. Старый db.admission_queue сохранён, добавлены
+db.admission_queue.read/write; эти стадии вложенные, суммировать их нельзя.
+
+В обоих monitoring installer добавлены панели очередей по worker, p95 wait/hold
+и числа операций. Для существующей Grafana обновить только provisioned dashboard
+JSON, не перезапускать весь installer. Backend требует обычного выпуска;
+схема БД и HTTP API не меняются.
+
+После выпуска собрать нагруженный интервал journald с маркерами
+`pwa_db_operation|pwa_slow_request|pwa_event_loop_lag`. Группировать по PID/role,
+сопоставлять holding/released с очередью и числом операций. Долгий владелец
+называет callback для SQL EXPLAIN и анализа Python; при коротких владельцах
+искать избыток обращений/перезапросов. Сравнение 1/2 постоянных readers на
+изолированной копии с репрезентативной нагрузкой и конкретная оптимизация —
+следующий этап после данных. Критерий: меньшие HTTP p95 и admission wait при
+сопоставимом трафике без роста ошибок, write-lock ожидания и CPU pressure.
+Причинность по одной очереди не устанавливается.
+
 9 сентября 2026. Реализация: `db_methods/pwa/connection.py`, решение:
 `adr/0002-pwa-sqlite-concurrency-and-migrations.md`, регрессии:
 `pwa_tests/integration/test_sqlite_concurrency.py`.
