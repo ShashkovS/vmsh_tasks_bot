@@ -35,6 +35,27 @@ def test_trace_info_reaches_root_handler_when_root_level_is_warning():
 
 
 @pytest.mark.asyncio
+async def test_request_id_assigned_inside_error_boundary_reaches_db_trace(monkeypatch):
+    from apps.pwa_app import pwa_error_middleware
+
+    monkeypatch.setattr(
+        "helpers.pwa.request_trace.canonical_route",
+        lambda _: "/student/api/v1/health",
+    )
+    request = make_mocked_request("GET", "/student/api/v1/health")
+
+    async def endpoint(request):
+        assert current_trace.get().request_id == request["request_id"]
+        assert current_trace.get().request_id
+        return web.Response()
+
+    async def boundary(request):
+        return await pwa_error_middleware(request, endpoint)
+
+    await request_trace_middleware(request, boundary)
+
+
+@pytest.mark.asyncio
 async def test_thread_context_and_failure_timings():
     trace = RequestTrace()
     token = current_trace.set(trace)

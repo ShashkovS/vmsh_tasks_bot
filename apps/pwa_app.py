@@ -331,6 +331,11 @@ async def _pwa_error_response(request: web.Request, handler):
         else uuid.uuid4().hex
     )
     request["request_id"] = request_id
+    from helpers.pwa.request_trace import current_trace
+
+    trace = current_trace.get()
+    if trace is not None:
+        trace.request_id = request_id
     try:
         response = await handler(request)
     except Exception as exc:

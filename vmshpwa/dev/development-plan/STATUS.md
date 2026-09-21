@@ -10,9 +10,14 @@ read/write по PID, histogram ожидания и полного владени
 В обоих Grafana installer добавлены панели очередей, wait/hold p95 и throughput.
 30 targeted тестов прошли; Ruff, bash syntax и JSON обоих dashboards проверены.
 Контракт и порядок анализа: [sqlite-admission-performance.md](../../docs/sqlite-admission-performance.md).
-Production deploy и сбор нагруженного интервала ещё не выполнялись; выбор
-SQL-оптимизации или сравнение одного/двух readers остаются следующим этапом
-после измерений. Миграций и изменений HTTP API нет.
+Production 883b5bb1 выпущен 21 сентября: health-checks прошли, Prometheus
+собирает новые метрики обоих workers; nginx/systemd используют 660 секунд,
+Grafana dashboard обновлён с резервной копией. Smoke обнаружил позднее
+назначение request ID: связь с trace исправлена в PWA error middleware,
+6 request-trace тестов и Ruff прошли. Сбор нагруженного интервала и выбор
+SQL-оптимизации/числа readers — следующий этап; выраженный пик по наблюдению
+владельца — понедельник 16–19 (часовой пояс графика уточнить при сравнении).
+Миграций и изменений HTTP API нет.
 
 ## Общие PWA quality gates — 19 сентября 2026, реализовано локально
 
