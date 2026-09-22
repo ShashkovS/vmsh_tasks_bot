@@ -82,28 +82,54 @@ const answerTypeOptions = [
 const metadataGenerationExpectedSeconds = 70
 
 const metadataColumns: MetadataColumn[] = [
-  { id: 'displayNumber', header: 'Номер', editorClassName: 'w-16 min-w-16' },
-  { id: 'title', header: 'Название', editorClassName: 'min-w-56' },
+  { id: 'displayNumber', header: 'Номер', width: 80, minWidth: 64 },
+  { id: 'title', header: 'Название', width: 240, minWidth: 160 },
   {
     id: 'problemType',
     header: 'Тип задачи',
     editor: 'select',
-    editorClassName: 'min-w-36',
+    width: 150,
+    minWidth: 120,
     options: problemTypeOptions,
   },
   {
     id: 'answerType',
     header: 'Тип ответа',
     editor: 'select',
-    editorClassName: 'min-w-44 max-w-52',
+    width: 210,
+    minWidth: 160,
     options: answerTypeOptions,
   },
-  { id: 'answerValidation', header: 'Своя валидация', editor: 'textarea' },
-  { id: 'validationError', header: 'Ошибка формата', editor: 'textarea' },
-  { id: 'correctAnswer', header: 'Правильный ответ', editor: 'textarea' },
-  { id: 'correctAnswerChecker', header: 'Проверяльщик', editor: 'textarea' },
-  { id: 'wrongAnswer', header: 'Неверный ответ', editor: 'textarea' },
-  { id: 'congratulation', header: 'Верный ответ', editor: 'textarea' },
+  {
+    id: 'correctAnswer',
+    header: 'Правильный ответ',
+    editor: 'textarea',
+    width: 180,
+    minWidth: 120,
+  },
+  {
+    id: 'answerValidation',
+    header: 'Своя валидация',
+    editor: 'textarea',
+    width: 240,
+    minWidth: 160,
+  },
+  {
+    id: 'validationError',
+    header: 'Ошибка формата',
+    editor: 'textarea',
+    width: 260,
+    minWidth: 160,
+  },
+  {
+    id: 'correctAnswerChecker',
+    header: 'Проверяльщик',
+    editor: 'textarea',
+    width: 240,
+    minWidth: 160,
+  },
+  { id: 'wrongAnswer', header: 'Неверный ответ', editor: 'textarea', width: 240, minWidth: 160 },
+  { id: 'congratulation', header: 'Верный ответ', editor: 'textarea', width: 240, minWidth: 160 },
 ]
 
 const typeLabels: Record<number, string> = {
@@ -352,6 +378,7 @@ export function ProblemReviewWorkflow({
   const [message, setMessage] = useState<string>()
   const [staleDraft, setStaleDraft] = useState(false)
   const [generatedRows, setGeneratedRows] = useState<MetadataRow[]>()
+  const [metadataDirty, setMetadataDirty] = useState(false)
   const [generationWarnings, setGenerationWarnings] = useState<string[]>([])
   const [metadataGridEpoch, setMetadataGridEpoch] = useState(0)
   const [metadataGenerationStartedAt, setMetadataGenerationStartedAt] = useState<number>()
@@ -386,6 +413,7 @@ export function ProblemReviewWorkflow({
     (resource: MetadataResource) => {
       setMetadataResource(resource)
       setGeneratedRows(undefined)
+      setMetadataDirty(false)
       setGenerationWarnings([])
       if (resource.data.rows.every((row) => row.reviewed)) {
         clearStoredObject(metadataDraftKey)
@@ -563,7 +591,8 @@ export function ProblemReviewWorkflow({
 
   const generateMetadata = async () => {
     if (!metadataResource || !client.generateMetadata) return
-    const confirmedOverwrite = metadataResource.data.metadataGenerationRequiresConfirmation === true
+    const confirmedOverwrite =
+      metadataResource.data.metadataGenerationRequiresConfirmation === true || metadataDirty
     if (
       confirmedOverwrite &&
       !globalThis.confirm(
@@ -747,6 +776,7 @@ export function ProblemReviewWorkflow({
           allowPristineCommit
           columns={metadataColumns}
           commitLabel="Сохранить метаданные"
+          disabled={pending}
           {...(draft ? { initialDraftRows: draft.rows } : {})}
           initialRows={baseline}
           key={`${metadataResource.etag}-${metadataGridEpoch}`}
@@ -777,8 +807,10 @@ export function ProblemReviewWorkflow({
             clearStoredObject(metadataDraftKey)
             setGeneratedRows(undefined)
             setGenerationWarnings([])
+            setMetadataDirty(false)
             setMetadataGridEpoch((epoch) => epoch + 1)
           }}
+          onDirtyChange={setMetadataDirty}
           onRowsChange={(rows) =>
             writeStoredObject(metadataDraftKey, {
               schemaVersion: 1,

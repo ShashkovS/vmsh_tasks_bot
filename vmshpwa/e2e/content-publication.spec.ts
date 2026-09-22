@@ -1,4 +1,5 @@
 import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
+import type { Locator } from '@playwright/test'
 
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test, type Page } from './fixtures'
@@ -45,6 +46,13 @@ ${problemStatement}
 ${trailingMaterial}
 \end{document}
 `
+}
+
+async function setMetadataCell(page: Page, workflow: Locator, header: string, value: string) {
+  await workflow.getByRole('gridcell', { name: `${header}, строка 1`, exact: true }).dblclick()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('textbox', { name: header, exact: true }).fill(value)
+  await dialog.getByRole('button', { name: 'Применить' }).click()
 }
 
 async function uploadReviewAndPublish({
@@ -104,12 +112,13 @@ async function uploadReviewAndPublish({
   if (kind === 'condition') {
     if (!metadataTitle) throw new Error('Condition publication requires a task title')
     await expect(workflow.getByRole('heading', { name: 'Метаданные задач' })).toBeVisible()
-    const title = workflow.getByLabel('Название, строка 1')
-    await title.fill(metadataTitle)
+    await setMetadataCell(page, workflow, 'Название', metadataTitle)
     // Phase 10 no-loss boundary: the real Staff route must restore the exact
     // account/revision-scoped grid before any server mutation is attempted.
     await page.reload()
-    await expect(workflow.getByLabel('Название, строка 1')).toHaveValue(metadataTitle)
+    await expect(workflow.getByRole('gridcell', { name: 'Название, строка 1' })).toHaveText(
+      metadataTitle,
+    )
     const metadataResponsePromise = page.waitForResponse(
       (response) =>
         response.request().method() === 'PUT' &&

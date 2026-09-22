@@ -1,5 +1,6 @@
 /** docs/figure-layout.md: real API, publication boundary, keyboard and exports. */
 import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
+import type { Locator } from '@playwright/test'
 import { readFile, writeFile } from 'node:fs/promises'
 import { unzipSync } from 'fflate'
 import { figureLayoutSchema } from '../packages/contracts/src/content'
@@ -16,6 +17,13 @@ const source = String.raw`\begin{document}
 \задача Вторая задача. \includegraphics{diagram.svg}\кзадача
 \end{document}`
 const headers = { Origin: 'http://127.0.0.1:5380', 'Sec-Fetch-Site': 'same-origin' }
+
+async function setMetadataTitle(page: Page, workflow: Locator, row: number, value: string) {
+  await workflow.getByRole('gridcell', { name: `Название, строка ${row}`, exact: true }).dblclick()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('textbox', { name: 'Название', exact: true }).fill(value)
+  await dialog.getByRole('button', { name: 'Применить' }).click()
+}
 
 async function publish(page: Page) {
   const workflow = page.getByTestId('content-workflow-condition')
@@ -62,8 +70,7 @@ test('figure placement survives reload and publishes only after confirmation', a
   expect(compiled.status()).toBe(200)
   await page.reload()
   const workflow = page.getByTestId('content-workflow-condition')
-  for (let i = 1; i <= 3; i++)
-    await workflow.getByLabel(`Название, строка ${i}`, { exact: true }).fill(`Фигуры ${i}`)
+  for (let i = 1; i <= 3; i++) await setMetadataTitle(page, workflow, i, `Фигуры ${i}`)
   await workflow.getByRole('button', { name: 'Сохранить метаданные', exact: true }).click()
   await expect(workflow.getByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
   await publish(page)

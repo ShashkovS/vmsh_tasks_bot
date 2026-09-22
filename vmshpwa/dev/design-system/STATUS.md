@@ -1166,6 +1166,19 @@ sent|No recipients|Loading|Error` документирует ручной previe
   общий раздел. Проверка порядка DOM и отсутствие вложения межзадачного
   заголовка в `.vmsh-problem` покрыты unit-тестом; snapshots не обновлялись.
 
+## Ручная таблица metadata — 22 сентября 2026, реализовано локально
+
+У Staff появляется spreadsheet-представление metadata: все поля доступны
+одновременно, первая строка и номер закреплены, длинное поле раскрывается в
+отдельном редакторе, а режим «На весь экран» удерживает редактор в том же
+состоянии. Табличный буфер совместим с TSV из Excel и Google Sheets. Реализация
+и проверки: `packages/product/src/metadata-grid*.ts*`; flow:
+`apps/staff/src/problem-review-workflow.tsx`; требование:
+`development-plan/06-phase-2-content.md#metadata-04`. Прошли targeted unit,
+ESLint, typecheck и Staff production build; browser E2E остаётся отдельным
+release gate и сейчас блокирован до запуска проверкой подписи pnpm
+(`ERR_PNPM_PNPM_ENGINE_IDENTITY_UNVERIFIABLE`).
+
 ## Pilot follow-up: понятная загрузка и компактный preview — 15 августа 2026
 
 - Bulk upload больше не предлагает повторно отправлять уже готовый набор;

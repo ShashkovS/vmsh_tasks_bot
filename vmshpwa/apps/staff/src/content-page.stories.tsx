@@ -25,6 +25,20 @@ import { RevisionAssetsRecovery } from './revision-assets-recovery'
 const revisionId = fixture.document.revisionId
 const groupLessonId = 'group-lesson-41-n'
 const storyDraftNamespace = 'storybook:staff-content'
+
+async function setMetadataTitle(canvasElement: HTMLElement, value: string) {
+  const canvas = within(canvasElement)
+  await userEvent.dblClick(await canvas.findByRole('gridcell', { name: 'Название, строка 1' }))
+  const dialog = within(canvasElement.ownerDocument.body)
+  const input = await dialog.findByRole('textbox', { name: 'Название' })
+  await userEvent.clear(input)
+  await userEvent.type(input, value)
+  await userEvent.click(dialog.getByRole('button', { name: 'Применить' }))
+}
+
+async function metadataTitle(canvasElement: HTMLElement): Promise<HTMLElement> {
+  return within(canvasElement).findByRole('gridcell', { name: 'Название, строка 1' })
+}
 const webDocument = webContentDocumentSchema.parse(
   JSON.parse(
     JSON.stringify(fixture.document).replace(
@@ -1090,8 +1104,7 @@ export const MatchThenReviewMetadata: Story = {
       groupLessonId,
       revisionId,
     )
-    const title = await canvas.findByLabelText('Название, строка 1')
-    await userEvent.type(title, 'Орехи и клетки')
+    await setMetadataTitle(canvasElement, 'Орехи и клетки')
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить метаданные' }))
     await expect(await canvas.findByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
     await expect(storage?.getItem(matchingKey)).toBeNull()
@@ -1347,17 +1360,16 @@ export const MetadataDraftSurvivesReload: Story = {
       'revision-metadata-draft-recovery',
     )
     canvasElement.ownerDocument.defaultView?.localStorage.removeItem(key)
-    const title = await canvas.findByLabelText('Название, строка 1')
-    await userEvent.type(title, 'Сохранённый локально заголовок')
+    await setMetadataTitle(canvasElement, 'Сохранённый локально заголовок')
     await expect(canvasElement.ownerDocument.defaultView?.localStorage.getItem(key)).toContain(
       'Сохранённый локально заголовок',
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
-    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue(
+    await expect(await metadataTitle(canvasElement)).toHaveTextContent(
       'Сохранённый локально заголовок',
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Отменить правки' }))
-    await expect(canvas.getByLabelText('Название, строка 1')).toHaveValue('')
+    await expect(await metadataTitle(canvasElement)).toHaveTextContent('')
     await expect(canvasElement.ownerDocument.defaultView?.localStorage.getItem(key)).toBeNull()
   },
 }
@@ -1499,12 +1511,12 @@ export const MetadataDraftIsAccountScoped: Story = {
     storage?.removeItem(keyA)
     storage?.removeItem(keyB)
 
-    await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Черновик А')
+    await setMetadataTitle(canvasElement, 'Черновик А')
     await userEvent.click(canvas.getByRole('button', { name: 'Переключить аккаунт' }))
-    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('')
-    await userEvent.type(canvas.getByLabelText('Название, строка 1'), 'Черновик Б')
+    await expect(await metadataTitle(canvasElement)).toHaveTextContent('')
+    await setMetadataTitle(canvasElement, 'Черновик Б')
     await userEvent.click(canvas.getByRole('button', { name: 'Переключить аккаунт' }))
-    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Черновик А')
+    await expect(await metadataTitle(canvasElement)).toHaveTextContent('Черновик А')
     await expect(storage?.getItem(keyB)).toContain('Черновик Б')
 
     storage?.removeItem(keyA)
@@ -1568,12 +1580,12 @@ export const MetadataConflictKeepsDraft: Story = {
     const storage = canvasElement.ownerDocument.defaultView?.localStorage
     storage?.removeItem(key)
 
-    await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Не потерять')
+    await setMetadataTitle(canvasElement, 'Не потерять')
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить метаданные' }))
     await expect(await canvas.findByText('Серверная версия изменилась')).toBeVisible()
-    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
+    await expect(await metadataTitle(canvasElement)).toHaveTextContent('Не потерять')
     await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
-    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
+    await expect(await metadataTitle(canvasElement)).toHaveTextContent('Не потерять')
     await expect(storage?.getItem(key)).toContain('Не потерять')
 
     storage?.removeItem(key)

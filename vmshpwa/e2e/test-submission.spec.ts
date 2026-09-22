@@ -1,5 +1,6 @@
 import { writtenThreadResponseSchema } from '../packages/contracts/src/written-submissions'
 import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
+import type { Locator } from '@playwright/test'
 
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test, type Page } from './fixtures'
@@ -7,6 +8,21 @@ import { expect, test, type Page } from './fixtures'
 test.setTimeout(90_000)
 
 type SubmissionTarget = (typeof contentFixture.submissionTargets)[number]
+
+async function setMetadataCell(
+  page: Page,
+  workflow: Locator,
+  header: string,
+  value: string,
+  select = false,
+) {
+  await workflow.getByRole('gridcell', { name: `${header}, строка 1`, exact: true }).dblclick()
+  const dialog = page.getByRole('dialog')
+  const control = dialog.getByRole(select ? 'combobox' : 'textbox', { name: header, exact: true })
+  if (select) await control.selectOption(value)
+  else await control.fill(value)
+  await dialog.getByRole('button', { name: 'Применить' }).click()
+}
 
 function targetForProject(projectName: string): SubmissionTarget {
   const target = contentFixture.submissionTargets.find(
@@ -82,17 +98,17 @@ async function publishTestProblem(
     await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
   }
 
-  await workflow.getByLabel('Название, строка 1').fill(title)
+  await setMetadataCell(page, workflow, 'Название', title)
   const problemType = options.problemType ?? '1'
-  await workflow.getByLabel('Тип задачи, строка 1').selectOption(problemType)
+  await setMetadataCell(page, workflow, 'Тип задачи', problemType, true)
   if (problemType === '1') {
-    await workflow.getByLabel('Тип ответа, строка 1').selectOption('3')
-    await workflow.getByLabel('Ошибка формата, строка 1').fill('Введите целое число, например -7')
+    await setMetadataCell(page, workflow, 'Тип ответа', '3', true)
+    await setMetadataCell(page, workflow, 'Ошибка формата', 'Введите целое число, например -7')
     if (options.correctAnswer !== null) {
-      await workflow.getByLabel('Правильный ответ, строка 1').fill(options.correctAnswer ?? '7')
+      await setMetadataCell(page, workflow, 'Правильный ответ', options.correctAnswer ?? '7')
     }
-    await workflow.getByLabel('Неверный ответ, строка 1').fill('Нет, это другое число.')
-    await workflow.getByLabel('Верный ответ, строка 1', { exact: true }).fill('Да, всё верно!')
+    await setMetadataCell(page, workflow, 'Неверный ответ', 'Нет, это другое число.')
+    await setMetadataCell(page, workflow, 'Верный ответ', 'Да, всё верно!')
   }
 
   const metadataResponse = page.waitForResponse(
@@ -167,7 +183,7 @@ async function publishRepairedTestProblem(
     await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
   }
 
-  await workflow.getByLabel('Правильный ответ, строка 1').fill('7')
+  await setMetadataCell(page, workflow, 'Правильный ответ', '7')
   const metadataResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' &&

@@ -113,6 +113,13 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   non-streaming structured output; ключ остаётся в profile JSON. Черновик
   никогда не публикуется автоматически: после проверки только обычное ручное
   сохранение атомарно заменяет полный текущий metadata grid.
+- **METADATA-04.** Ручное заполнение не зависит от AI: `MetadataGrid` даёт
+  табличное выделение, TSV-обмен с Excel/Google Sheets, undo/redo, закреплённые
+  номер и заголовок, изменение ширины колонок и редактор длинной ячейки.
+  Полноэкранный Staff-режим сохраняет строки, историю и выделение. Реализация:
+  `packages/product/src/metadata-grid*.ts*`; composition и ETag/local-draft
+  boundary: `apps/staff/src/problem-review-workflow.tsx`; доказательства:
+  `metadata-grid*.test.*` и `e2e/content-publication.spec.ts`.
 - До появления `problems.public_id` в Phase 3 Staff-only reconciliation wire
   использует legacy integer `problemId` только как candidate/mutation token.
   Он не попадает в Student/Family URL или payload; Phase 3 заменяет эту

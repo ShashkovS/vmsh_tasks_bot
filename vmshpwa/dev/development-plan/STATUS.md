@@ -1,5 +1,18 @@
 # Статус плана разработки
 
+## Ручный редактор metadata, P1 — 22 сентября 2026, реализовано локально
+
+Staff metadata-grid получает табличное выделение, TSV-обмен, undo/redo,
+полноэкранный режим, закреплённые заголовок/номер, ширину колонок и отдельный
+редактор длинного поля. HTTP API, скрытые canonical identity и ETag/local-draft
+граница не меняются. Требование: [Phase 2 METADATA-04](06-phase-2-content.md);
+компонент: `packages/product/src/metadata-grid.tsx`; Staff composition:
+`apps/staff/src/problem-review-workflow.tsx`. Прошли 10 целевых unit-тестов,
+targeted ESLint, typecheck Staff/product, Prettier-check и production build
+Staff. Полный isolated content E2E остаётся отдельным quality gate: запуск
+`make pwa-e2e-content` остановлен до тестов package-manager verification
+(`ERR_PNPM_PNPM_ENGINE_IDENTITY_UNVERIFIABLE` при проверке подписи pnpm).
+
 ## Интернационализация, P1 — 22 сентября 2026, реализовано локально
 
 Язык хранится в аккаунте (миграция 0098, `PUT auth/locale`), выбирается в

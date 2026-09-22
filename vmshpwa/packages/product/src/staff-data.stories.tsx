@@ -169,13 +169,19 @@ export const Metadata: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    const nameCell = canvas.getByLabelText('Название, строка 1')
-    await userEvent.clear(nameCell)
+    const nameCell = canvas.getByRole('gridcell', { name: 'Название, строка 1' })
+    await userEvent.dblClick(nameCell)
+    const dialog = within(canvasElement.ownerDocument.body)
+    const nameEditor = dialog.getByRole('textbox', { name: 'Название' })
+    await userEvent.clear(nameEditor)
+    await userEvent.click(dialog.getByRole('button', { name: 'Применить' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Проверить таблицу' }))
     await expect(canvas.getByRole('alert')).toHaveTextContent('Заполните название')
 
     // Правка убирает ошибку.
-    await userEvent.type(nameCell, 'Вагоны')
+    await userEvent.dblClick(nameCell)
+    await userEvent.type(dialog.getByRole('textbox', { name: 'Название' }), 'Вагоны')
+    await userEvent.click(dialog.getByRole('button', { name: 'Применить' }))
     await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
   },
 }
