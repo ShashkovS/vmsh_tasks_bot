@@ -1,4 +1,5 @@
 'use client'
+import { t } from '@lingui/core/macro'
 
 import { Toast as ToastPrimitive } from '@base-ui/react/toast'
 import {
@@ -90,7 +91,7 @@ function ToastList() {
       </ToastPrimitive.Content>
       <ToastPrimitive.Close
         className="absolute top-2.5 right-2.5 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-        aria-label="Закрыть уведомление"
+        aria-label={t`Закрыть уведомление`}
       >
         <XIcon className="size-4" aria-hidden="true" />
       </ToastPrimitive.Close>

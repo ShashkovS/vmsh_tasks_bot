@@ -8,6 +8,14 @@ import { z } from 'zod'
  */
 
 export const audienceSchema = z.enum(['student', 'family', 'staff'])
+
+/**
+ * Account interface language (migration 0098, adr/0004-pwa-internationalization.md).
+ * Optional in the principal so an older backend still validates.
+ */
+export const interfaceLocaleSchema = z.enum(['ru', 'en'])
+export type InterfaceLocale = z.infer<typeof interfaceLocaleSchema>
+export const authLocaleUpdateResponseSchema = z.object({ locale: interfaceLocaleSchema }).strip()
 export type Audience = z.infer<typeof audienceSchema>
 
 export const publicIdSchema = z
@@ -124,6 +132,7 @@ const principalCommonShape = {
   displayName: displayNameSchema,
   sessionVersion: versionSchema,
   credentialVersion: versionSchema,
+  locale: interfaceLocaleSchema.optional(),
 }
 
 export const studentPrincipalSchema = z

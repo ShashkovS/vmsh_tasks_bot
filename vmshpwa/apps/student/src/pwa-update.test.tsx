@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import type { AnyRouter } from '@tanstack/react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { PwaUpdateController } from './pwa-update'
 import { safePwaUpdateEvent } from './pwa-update-events'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 vi.mock('virtual:pwa-register/react', () => ({
   useRegisterSW: () => ({

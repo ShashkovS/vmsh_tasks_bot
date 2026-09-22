@@ -21,6 +21,7 @@ from apps.pwa_api.middleware import (
 from apps.pwa_api.realtime_control import realtime_session_controller
 from db_methods.pwa.auth import AuthSessionRecord
 from helpers.pwa.auth_config import COOKIE_POLICY, AudienceCookiePolicy
+from helpers.pwa.i18n import normalize_locale
 from models.pwa.auth import AuthAudience
 
 
@@ -75,6 +76,7 @@ def _principal_payload(authenticated: AuthenticatedSession) -> dict[str, object]
         "displayName": current.display_name,
         "sessionVersion": principal.session_version,
         "credentialVersion": principal.credential_version,
+        "locale": current.locale,
     }
     if principal.audience is AuthAudience.STUDENT:
         if (
@@ -477,6 +479,29 @@ async def me(request: web.Request) -> web.Response:
             access_expires_at=authenticated.access_expires_at,
         )
     )
+
+
+@auth_routes.put("/{audience:student|family|staff}/api/v1/auth/locale")
+async def update_locale(request: web.Request) -> web.Response:
+    """Save the account interface language (adr/0004-pwa-internationalization.md)."""
+
+    payload = await _json_object(request)
+    locale = normalize_locale(payload.get("locale"))
+    if locale is None or set(payload) != {"locale"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Выберите язык интерфейса",
+            details={"field": "locale"},
+        )
+    authenticated = authenticated_session(request)
+    if not await auth_service(request).update_locale(authenticated, locale=locale):
+        raise PwaApiError(
+            status=409,
+            code="account_unavailable",
+            message="Не удалось сохранить язык интерфейса",
+        )
+    return web.json_response({"locale": locale})
 
 
 @auth_routes.get("/{audience:student|family|staff}/api/v1/auth/sessions")

@@ -1,8 +1,9 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
 
 import type { StudentOralWindow } from '@vmsh/contracts'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 import { OralAdmission } from './oral-admission'
 
 const window: StudentOralWindow = {

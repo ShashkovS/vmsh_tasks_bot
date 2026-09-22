@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { act, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -7,6 +7,7 @@ import staffAuthFixture from '@vmsh/contracts/fixtures/auth/staff.v1.json'
 import staffRuntimeFixture from '@vmsh/contracts/fixtures/runtime/staff.v1.json'
 import studentAuthFixture from '@vmsh/contracts/fixtures/auth/student.v1.json'
 import studentRuntimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.json'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 import {
   ApiResponseError,
   apiErrorSchema,

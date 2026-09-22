@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo, useState } from 'react'
 import { Bell } from 'lucide-react'
 import { Button } from '@vmsh/ui'
@@ -92,32 +94,32 @@ export function PushInvitation({
   const enabling = push.state === 'enabling'
   return (
     <section
-      aria-label="Уведомления"
+      aria-label={t`Уведомления`}
       className="m-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3 text-small print:hidden"
     >
       <Bell aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1 basis-48">
         <p className="font-medium">
-          {installing ? 'Уведомления на iPhone и iPad' : 'Включить уведомления?'}
+          {installing ? t`Уведомления на iPhone и iPad` : t`Включить уведомления?`}
         </p>
         <p className="text-muted-foreground">
           {installing
-            ? 'Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося значка.'
+            ? t`Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося значка.`
             : push.state === 'error'
-              ? 'Не удалось подключить устройство. Проверьте интернет и попробуйте ещё раз.'
+              ? t`Не удалось подключить устройство. Проверьте интернет и попробуйте ещё раз.`
               : audience === 'student'
-                ? 'Результаты проверки, ответы преподавателей и новые материалы.'
-                : 'Ответы организаторов, новости и новые материалы.'}
+                ? t`Результаты проверки, ответы преподавателей и новые материалы.`
+                : t`Ответы организаторов, новости и новые материалы.`}
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
         {!installing ? (
           <Button disabled={enabling} onClick={() => void push.enable()} size="sm">
-            {enabling ? 'Включаем…' : 'Включить уведомления'}
+            {enabling ? t`Включаем…` : t`Включить уведомления`}
           </Button>
         ) : null}
         <Button disabled={enabling} onClick={dismiss} size="sm" variant="ghost">
-          Не сейчас
+          <Trans>Не сейчас</Trans>
         </Button>
       </div>
     </section>

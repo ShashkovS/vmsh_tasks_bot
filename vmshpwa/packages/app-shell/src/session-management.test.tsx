@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import familyAuthFixture from '@vmsh/contracts/fixtures/auth/family.v1.json'
 import studentAuthFixture from '@vmsh/contracts/fixtures/auth/student.v1.json'
 import studentRuntimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.json'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 import {
   authSessionsResponseSchema,
   parseRuntimeConfigForAudience,

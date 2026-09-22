@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { StaffTestingPage } from './staff-testing-page'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 vi.mock('@vmsh/app-shell', async (original) => ({
   ...(await original<object>()),

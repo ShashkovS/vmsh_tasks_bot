@@ -1,7 +1,8 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { RichMarkdownEditor } from './rich-markdown-editor'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(() => {
   cleanup()

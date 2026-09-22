@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useRef, useState } from 'react'
 import { useAuthenticatedPrincipal, useAuthentication } from './auth-context'
 import type { SupportClient } from './support-client'
@@ -42,7 +43,7 @@ export function PhotoSupportComposer({
       await onSubmit(ids, editor.clear)
     } catch {
       setError(
-        'Не удалось отправить сообщение. Текст и фотографии сохранены в форме. Повторите отправку.',
+        t`Не удалось отправить сообщение. Текст и фотографии сохранены в форме. Повторите отправку.`,
       )
     } finally {
       locked.current = false

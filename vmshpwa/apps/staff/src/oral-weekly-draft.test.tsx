@@ -1,9 +1,10 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { OralWeeklyDraft } from './oral-weekly-draft'
 import type { createStaffOralWindowClient } from '@vmsh/app-shell'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 const window = {
   windowId: 'ow-1',

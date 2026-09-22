@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import type { AnyRouter } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
@@ -46,11 +48,11 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
       data-testid="pwa-update-state"
     >
       <p className="text-sm font-medium">
-        {showUpdateNotice ? 'Доступно обновление.' : 'Приложение готово к работе без сети'}
+        {showUpdateNotice ? t`Доступно обновление.` : t`Приложение готово к работе без сети`}
       </p>
       {error ? (
         <p role="alert" className="mt-2 text-sm text-destructive">
-          Не удалось применить обновление. Попробуйте ещё раз.
+          <Trans>Не удалось применить обновление. Попробуйте ещё раз.</Trans>
         </p>
       ) : null}
       <div className="mt-3 flex gap-2">
@@ -62,7 +64,7 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
               void applyUpdate()
             }}
           >
-            {applying ? 'Обновляем…' : 'Обновить сейчас'}
+            {applying ? t`Обновляем…` : t`Обновить сейчас`}
           </Button>
         ) : null}
         <Button
@@ -73,7 +75,7 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
             else setOfflineReady(false)
           }}
         >
-          {showUpdateNotice ? 'Скрыть' : 'Закрыть'}
+          {showUpdateNotice ? t`Скрыть` : t`Закрыть`}
         </Button>
       </div>
     </div>

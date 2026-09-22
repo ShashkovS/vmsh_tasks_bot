@@ -1,4 +1,5 @@
-import { useLingui } from '@lingui/react/macro'
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { LoaderCircle, TriangleAlert } from 'lucide-react'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
@@ -94,7 +95,6 @@ function RuntimeBootstrapRequest({
   onRetry,
   timeoutMilliseconds,
 }: RuntimeBootstrapProps & { onRetry: () => void }) {
-  const { t } = useLingui()
   const [state, setState] = useState<RuntimeBootstrapState>({ status: 'loading' })
   const availability = useServiceAvailability()
 
@@ -141,7 +141,7 @@ function RuntimeBootstrapRequest({
       <AppStartupScreen
         description={
           availability.state === 'ready'
-            ? 'Подключаем личный кабинет к серверу ВМШ 179.'
+            ? t`Подключаем личный кабинет к серверу ВМШ 179.`
             : serviceWaitingText(availability)
         }
         state="loading"
@@ -149,8 +149,8 @@ function RuntimeBootstrapRequest({
           availability.state === 'ready'
             ? t`Проверяем подключение`
             : availability.state === 'updating'
-              ? 'Обновляем сервис'
-              : 'Восстанавливаем соединение'
+              ? t`Обновляем сервис`
+              : t`Восстанавливаем соединение`
         }
       />
     )
@@ -159,10 +159,10 @@ function RuntimeBootstrapRequest({
   if (state.status === 'error') {
     return (
       <AppStartupScreen
-        description="Сервер не подтвердил настройки этого раздела. Проверьте подключение и повторите попытку."
+        description={t`Сервер не подтвердил настройки этого раздела. Проверьте подключение и повторите попытку.`}
         onRetry={onRetry}
         state="error"
-        title="Не удалось безопасно открыть кабинет"
+        title={t`Не удалось безопасно открыть кабинет`}
         {...(state.requestId ? { requestId: state.requestId } : {})}
       />
     )
@@ -219,12 +219,12 @@ export function AppStartupScreen(props: AppStartupScreenProps) {
             <p className="mt-1 text-sm leading-6 text-muted-foreground">{props.description}</p>
             {isError && props.requestId ? (
               <p className="mt-2 break-all text-xs text-muted-foreground">
-                Код обращения: {props.requestId}
+                <Trans>Код обращения: {props.requestId}</Trans>
               </p>
             ) : null}
             {isError ? (
               <Button className="mt-4" onClick={props.onRetry} size="sm" type="button">
-                Повторить
+                <Trans>Повторить</Trans>
               </Button>
             ) : null}
           </div>

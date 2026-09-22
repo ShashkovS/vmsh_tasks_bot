@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { House, Newspaper, UserRound, UsersRound } from 'lucide-react'
 import { useCallback } from 'react'
@@ -14,17 +16,43 @@ import {
 } from '@vmsh/app-shell'
 
 const navigation = [
-  { label: 'Сейчас', to: '/', icon: <House className="size-5" aria-hidden="true" /> },
-  { label: 'Дети', to: '/children', icon: <UsersRound className="size-5" aria-hidden="true" /> },
-  { label: 'Новости', to: '/news', icon: <Newspaper className="size-5" aria-hidden="true" /> },
-  { label: 'Профиль', to: '/profile', icon: <UserRound className="size-5" aria-hidden="true" /> },
+  {
+    get label() {
+      return t`Сейчас`
+    },
+    to: '/',
+    icon: <House className="size-5" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Дети`
+    },
+    to: '/children',
+    icon: <UsersRound className="size-5" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Новости`
+    },
+    to: '/news',
+    icon: <Newspaper className="size-5" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Профиль`
+    },
+    to: '/profile',
+    icon: <UserRound className="size-5" aria-hidden="true" />,
+  },
 ]
 
 export const Route = createRootRoute({
   component: FamilyRootLayout,
   notFoundComponent: () => (
     <div className="p-8">
-      <h1 className="text-xl font-semibold">Страница не найдена</h1>
+      <h1 className="text-xl font-semibold">
+        <Trans>Страница не найдена</Trans>
+      </h1>
     </div>
   ),
 })
@@ -58,7 +86,7 @@ function FamilyProtectedShell({
     <AuthenticationRedirectBoundary onAuthenticationRequired={redirectToLogin}>
       <AppShell
         product="family"
-        title="Родитель"
+        title={t`Родитель`}
         displayName={principal?.displayName}
         navigation={navigation}
         mobileNavigation

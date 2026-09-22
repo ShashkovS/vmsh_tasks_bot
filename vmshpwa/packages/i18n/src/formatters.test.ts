@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { dateTimeFormat, formattersFor, numberFormat } from './formatters'
+import {
+  dateTimeFormat,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  formatTime,
+  formattersFor,
+  numberFormat,
+} from './formatters'
 
 // Cached Intl formatters: see docs/i18n.md («Даты, числа, время»).
 describe('locale formatters', () => {
@@ -35,5 +43,27 @@ describe('locale formatters', () => {
     expect(english.formatNumber(1234.5)).toBe('1,234.5')
     expect(english.formatRelativeTime(-2, 'day', { numeric: 'auto' })).toBe('2 days ago')
     expect(english.formatList(['a', 'b', 'c'])).toBe('a, b, and c')
+  })
+})
+
+describe('toLocale*String replacements', () => {
+  const moment = new Date('2026-09-18T09:05:07Z')
+  const moscow = { timeZone: 'Europe/Moscow' } as const
+
+  it('keep the default fields of the replaced Date methods', () => {
+    expect(formatDateTime(moment, moscow)).toBe(moment.toLocaleString('ru-RU', moscow))
+    expect(formatDate(moment, moscow)).toBe(moment.toLocaleDateString('ru-RU', moscow))
+    expect(formatTime(moment, moscow)).toBe(moment.toLocaleTimeString('ru-RU', moscow))
+    const dayOnly = { ...moscow, day: 'numeric', month: 'long' } as const
+    expect(formatDateTime(moment, dayOnly)).toBe(moment.toLocaleString('ru-RU', dayOnly))
+    expect(formatDateTime(moment.toISOString(), { ...moscow, dateStyle: 'medium' })).toBe(
+      moment.toLocaleString('ru-RU', { ...moscow, dateStyle: 'medium' }),
+    )
+  })
+
+  it('formats numbers like Number#toLocaleString', () => {
+    expect(formatNumber(1234.56, { maximumFractionDigits: 1 })).toBe(
+      (1234.56).toLocaleString('ru-RU', { maximumFractionDigits: 1 }),
+    )
   })
 })

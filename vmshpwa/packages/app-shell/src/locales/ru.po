@@ -13,6 +13,585 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: packages/app-shell/src/observability.ts
+msgid " Код: {code}."
+msgstr " Код: {code}."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "{count, plural, one {В локальной очереди # неотправленное действие. После выхода они могут быть удалены.} few {В локальной очереди # неотправленных действия. После выхода они могут быть удалены.} many {В локальной очереди # неотправленных действий. После выхода они могут быть удалены.} other {В локальной очереди # неотправленного действия. После выхода они могут быть удалены.}}"
+msgstr "{count, plural, one {В локальной очереди # неотправленное действие. После выхода они могут быть удалены.} few {В локальной очереди # неотправленных действия. После выхода они могут быть удалены.} many {В локальной очереди # неотправленных действий. После выхода они могут быть удалены.} other {В локальной очереди # неотправленного действия. После выхода они могут быть удалены.}}"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "{integrityIssue} Действия временно отключены."
+msgstr "{integrityIssue} Действия временно отключены."
+
+#. placeholder {0}: api.status
+#. placeholder {1}: api.code
+#. placeholder {2}: api.requestId
+#: packages/app-shell/src/observability.ts
+msgid "HTTP {0}, {1}; запрос {2}"
+msgstr "HTTP {0}, {1}; запрос {2}"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Активные сессии"
+msgstr "Активные сессии"
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Без связи сервер не может подтвердить сессию. Защищённые данные пока не открыты."
+msgstr "Без связи сервер не может подтвердить сессию. Защищённые данные пока не открыты."
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Ваши локальные изменения сохранены. Попробуйте ещё раз."
+msgstr "Ваши локальные изменения сохранены. Попробуйте ещё раз."
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Включаем…"
+msgstr "Включаем…"
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Включить уведомления"
+msgstr "Включить уведомления"
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Включить уведомления?"
+msgstr "Включить уведомления?"
+
+#: packages/app-shell/src/app-shell.tsx
+msgid "ВМШ 179"
+msgstr "ВМШ 179"
+
+#: packages/app-shell/src/app-shell.tsx
+msgid "ВМШ 179 ·"
+msgstr "ВМШ 179 ·"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Вопросы организаторам"
+msgstr "Вопросы организаторам"
+
+#: packages/app-shell/src/auth-boundary.tsx
+#: packages/app-shell/src/runtime-bootstrap.tsx
+msgid "Восстанавливаем соединение"
+msgstr "Восстанавливаем соединение"
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Восстанавливаем соединение. "
+msgstr "Восстанавливаем соединение. "
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Все"
+msgstr "Все"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Все обращения"
+msgstr "Все обращения"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Все устройства"
+msgstr "Все устройства"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Вход будет завершён на всех ваших устройствах. Чтобы продолжить работу, потребуется войти снова."
+msgstr "Вход будет завершён на всех ваших устройствах. Чтобы продолжить работу, потребуется войти снова."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Выйти"
+msgstr "Выйти"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Выйти на всех устройствах"
+msgstr "Выйти на всех устройствах"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Выйти на всех устройствах?"
+msgstr "Выйти на всех устройствах?"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Выйти на этом устройстве"
+msgstr "Выйти на этом устройстве"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Выйти на этом устройстве?"
+msgstr "Выйти на этом устройстве?"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Действия с сессиями отключены. Обновите данные перед повторной попыткой."
+msgstr "Действия с сессиями отключены. Обновите данные перед повторной попыткой."
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося значка."
+msgstr "Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося значка."
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Доступно всё, что уже сохранено на этом устройстве."
+msgstr "Доступно всё, что уже сохранено на этом устройстве."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Есть неотправленная работа. После выхода локальная очередь может быть удалена."
+msgstr "Есть неотправленная работа. После выхода локальная очередь может быть удалена."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Завершаем…"
+msgstr "Завершаем…"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Завершить"
+msgstr "Завершить"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Завершить сессию на устройстве {deviceName}"
+msgstr "Завершить сессию на устройстве {deviceName}"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Завершить сессию?"
+msgstr "Завершить сессию?"
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Загружаем данные"
+msgstr "Загружаем данные"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Загружаем…"
+msgstr "Загружаем…"
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Загрузка"
+msgstr "Загрузка"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Загрузка списка устройств"
+msgstr "Загрузка списка устройств"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Задать вопрос"
+msgstr "Задать вопрос"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Задать вопрос организаторам"
+msgstr "Задать вопрос организаторам"
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Здесь пока ничего нет"
+msgstr "Здесь пока ничего нет"
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Кабинет продолжит работу автоматически. Отправим после обновления."
+msgstr "Кабинет продолжит работу автоматически. Отправим после обновления."
+
+#. placeholder {0}: props.requestId
+#: packages/app-shell/src/runtime-bootstrap.tsx
+msgid "Код обращения: {0}"
+msgstr "Код обращения: {0}"
+
+#. placeholder {0}: prepared.deviceName
+#: packages/app-shell/src/session-management.tsx
+msgid "На устройстве «{0}» потребуется войти снова."
+msgstr "На устройстве «{0}» потребуется войти снова."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "На этом устройстве потребуется войти снова."
+msgstr "На этом устройстве потребуется войти снова."
+
+#: packages/app-shell/src/observability.ts
+msgid "На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра. Ответ не отправлен; автоматически отправлять его не будем."
+msgstr "На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра. Ответ не отправлен; автоматически отправлять его не будем."
+
+#: packages/app-shell/src/observability.ts
+msgid "На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем."
+msgstr "На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Напишите ваш вопрос…"
+msgstr "Напишите ваш вопрос…"
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Не сейчас"
+msgstr "Не сейчас"
+
+#: packages/app-shell/src/auth-boundary.tsx
+#: packages/app-shell/src/runtime-bootstrap.tsx
+msgid "Не удалось безопасно открыть кабинет"
+msgstr "Не удалось безопасно открыть кабинет"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Не удалось безопасно открыть список сессий"
+msgstr "Не удалось безопасно открыть список сессий"
+
+#: packages/app-shell/src/observability.ts
+msgid "Не удалось дождаться ответа сервера. Причиной может быть связь или недоступность сервера. Повторите отправку."
+msgstr "Не удалось дождаться ответа сервера. Причиной может быть связь или недоступность сервера. Повторите отправку."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Не удалось завершить сессию. Ничего не изменено; повторите попытку."
+msgstr "Не удалось завершить сессию. Ничего не изменено; повторите попытку."
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Не удалось загрузить данные"
+msgstr "Не удалось загрузить данные"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Не удалось загрузить переписку. Проверьте подключение и нажмите «Обновить»."
+msgstr "Не удалось загрузить переписку. Проверьте подключение и нажмите «Обновить»."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Не удалось загрузить устройства"
+msgstr "Не удалось загрузить устройства"
+
+#: packages/app-shell/src/photo-support-composer.tsx
+msgid "Не удалось отправить сообщение. Текст и фотографии сохранены в форме. Повторите отправку."
+msgstr "Не удалось отправить сообщение. Текст и фотографии сохранены в форме. Повторите отправку."
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Не удалось подключить устройство. Проверьте интернет и попробуйте ещё раз."
+msgstr "Не удалось подключить устройство. Проверьте интернет и попробуйте ещё раз."
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Не удалось проверить вход"
+msgstr "Не удалось проверить вход"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Не удалось проверить локальную очередь. Выход не выполнен; повторите попытку."
+msgstr "Не удалось проверить локальную очередь. Выход не выполнен; повторите попытку."
+
+#: packages/app-shell/src/interface-language.tsx
+msgid "Не удалось сохранить язык. Проверьте подключение и попробуйте ещё раз."
+msgstr "Не удалось сохранить язык. Проверьте подключение и попробуйте ещё раз."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Неизвестное устройство"
+msgstr "Неизвестное устройство"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Непрочитанных"
+msgstr "Непрочитанных"
+
+#: packages/app-shell/src/auth-boundary.tsx
+#: packages/app-shell/src/page-layout.tsx
+msgid "Нет доступа"
+msgstr "Нет доступа"
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Нет сети"
+msgstr "Нет сети"
+
+#: packages/app-shell/src/page-layout.tsx
+msgid "Новые материалы появятся здесь автоматически."
+msgstr "Новые материалы появятся здесь автоматически."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Нужен ответ"
+msgstr "Нужен ответ"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "О ком вопрос"
+msgstr "О ком вопрос"
+
+#: packages/app-shell/src/organizer-pages.tsx
+#: packages/app-shell/src/session-management.tsx
+msgid "Обновить"
+msgstr "Обновить"
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Обновление занимает больше времени. Мы продолжаем подключаться."
+msgstr "Обновление занимает больше времени. Мы продолжаем подключаться."
+
+#: packages/app-shell/src/auth-boundary.tsx
+#: packages/app-shell/src/runtime-bootstrap.tsx
+msgid "Обновляем сервис"
+msgstr "Обновляем сервис"
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Обновляем сервис. "
+msgstr "Обновляем сервис. "
+
+#: packages/app-shell/src/observability.ts
+msgid "Обновляем сервис. Отправим после обновления."
+msgstr "Обновляем сервис. Отправим после обновления."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Обращений пока нет."
+msgstr "Обращений пока нет."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Обращения доступны только администраторам."
+msgstr "Обращения доступны только администраторам."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Общий вопрос"
+msgstr "Общий вопрос"
+
+#: packages/app-shell/src/app-shell.tsx
+msgid "Основная навигация"
+msgstr "Основная навигация"
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Ответ сервера не прошёл безопасную проверку. Защищённые данные не открыты."
+msgstr "Ответ сервера не прошёл безопасную проверку. Защищённые данные не открыты."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Ответили"
+msgstr "Ответили"
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Ответы организаторов, новости и новые материалы."
+msgstr "Ответы организаторов, новости и новые материалы."
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Открываем страницу входа и сохраним адрес этого раздела."
+msgstr "Открываем страницу входа и сохраним адрес этого раздела."
+
+#: packages/app-shell/src/app-shell.tsx
+msgid "Открыть меню"
+msgstr "Открыть меню"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Отмена"
+msgstr "Отмена"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Отправить"
+msgstr "Отправить"
+
+#: packages/app-shell/src/observability.ts
+msgid "Отправка ещё не подтверждена. Нажмите «Повторить»."
+msgstr "Отправка ещё не подтверждена. Нажмите «Повторить»."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Отправляем…"
+msgstr "Отправляем…"
+
+#: packages/app-shell/src/observability.ts
+msgid "Ошибка приложения при отправке. Повторите попытку; если ошибка остаётся, сообщите преподавателю."
+msgstr "Ошибка приложения при отправке. Повторите попытку; если ошибка остаётся, сообщите преподавателю."
+
+#: packages/app-shell/src/observability.ts
+msgid "Ошибка сервера. Это не проблема вашего интернета. Повторите отправку позже."
+msgstr "Ошибка сервера. Это не проблема вашего интернета. Повторите отправку позже."
+
+#. placeholder {0}: nextTheme === 'dark' ? t`тёмную` : t`светлую`
+#: packages/app-shell/src/providers.tsx
+msgid "Переключить на {0} тему"
+msgstr "Переключить на {0} тему"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Переписку видят только автор обращения и администраторы."
+msgstr "Переписку видят только автор обращения и администраторы."
+
+#: packages/app-shell/src/auth-boundary.tsx
+#: packages/app-shell/src/runtime-bootstrap.tsx
+#: packages/app-shell/src/session-management.tsx
+msgid "Повторить"
+msgstr "Повторить"
+
+#: packages/app-shell/src/runtime-bootstrap.tsx
+msgid "Подключаем личный кабинет к серверу ВМШ 179."
+msgstr "Подключаем личный кабинет к серверу ВМШ 179."
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Подключение занимает больше времени. Мы продолжаем пробовать."
+msgstr "Подключение занимает больше времени. Мы продолжаем пробовать."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Подтвердить"
+msgstr "Подтвердить"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Показать ещё"
+msgstr "Показать ещё"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Показать ещё сообщения"
+msgstr "Показать ещё сообщения"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Последняя активность:"
+msgstr "Последняя активность:"
+
+#: packages/app-shell/src/observability.ts
+msgid "Предыдущая отправка прервалась до подтверждения. Ответ сохранён — нажмите «Повторить»."
+msgstr "Предыдущая отправка прервалась до подтверждения. Ответ сохранён — нажмите «Повторить»."
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Пробуем подключиться автоматически. Можно продолжать работу с черновиком."
+msgstr "Пробуем подключиться автоматически. Можно продолжать работу с черновиком."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Проверьте соединение и повторите попытку."
+msgstr "Проверьте соединение и повторите попытку."
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Проверяем вход"
+msgstr "Проверяем вход"
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Проверяем действующую сессию на этом устройстве."
+msgstr "Проверяем действующую сессию на этом устройстве."
+
 #: packages/app-shell/src/runtime-bootstrap.tsx
 msgid "Проверяем подключение"
 msgstr "Проверяем подключение"
+
+#: packages/app-shell/src/app-shell.tsx
+msgid "Разделы рабочего кабинета"
+msgstr "Разделы рабочего кабинета"
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Результаты проверки, ответы преподавателей и новые материалы."
+msgstr "Результаты проверки, ответы преподавателей и новые материалы."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Родитель"
+msgstr "Родитель"
+
+#: packages/app-shell/src/providers.tsx
+msgid "светлую"
+msgstr "светлую"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Сервер вернул повторяющиеся сессии."
+msgstr "Сервер вернул повторяющиеся сессии."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Сервер вернул противоречивый список сессий."
+msgstr "Сервер вернул противоречивый список сессий."
+
+#: packages/app-shell/src/observability.ts
+msgid "Сервер запретил отправку. Проверьте доступ к задаче или обратитесь к преподавателю."
+msgstr "Сервер запретил отправку. Проверьте доступ к задаче или обратитесь к преподавателю."
+
+#: packages/app-shell/src/observability.ts
+msgid "Сервер не ответил за 30 секунд. Ответ сохранён — повторите отправку. Это не означает, что на устройстве нет интернета."
+msgstr "Сервер не ответил за 30 секунд. Ответ сохранён — повторите отправку. Это не означает, что на устройстве нет интернета."
+
+#: packages/app-shell/src/runtime-bootstrap.tsx
+msgid "Сервер не подтвердил настройки этого раздела. Проверьте подключение и повторите попытку."
+msgstr "Сервер не подтвердил настройки этого раздела. Проверьте подключение и повторите попытку."
+
+#: packages/app-shell/src/observability.ts
+msgid "Сервер не подтвердил отправку. Ответ сохранён; проверьте результат перед повтором."
+msgstr "Сервер не подтвердил отправку. Ответ сохранён; проверьте результат перед повтором."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Сервер не подтвердил текущую сессию."
+msgstr "Сервер не подтвердил текущую сессию."
+
+#: packages/app-shell/src/observability.ts
+msgid "Сервер отклонил отправку. Обновите задачу и проверьте условия приёма."
+msgstr "Сервер отклонил отправку. Обновите задачу и проверьте условия приёма."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Сервер смешал сессии разных кабинетов."
+msgstr "Сервер смешал сессии разных кабинетов."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Сессия завершена, но локальные данные не удалось очистить. Закройте приложение на общем устройстве."
+msgstr "Сессия завершена, но локальные данные не удалось очистить. Закройте приложение на общем устройстве."
+
+#: packages/app-shell/src/observability.ts
+msgid "Сессия истекла. Войдите снова, затем повторите отправку."
+msgstr "Сессия истекла. Войдите снова, затем повторите отправку."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Сессия не изменена"
+msgstr "Сессия не изменена"
+
+#: packages/app-shell/src/app-shell.tsx
+msgid "синхронизировано"
+msgstr "синхронизировано"
+
+#: packages/app-shell/src/observability.ts
+msgid "Слишком много запросов. Подождите немного и повторите отправку."
+msgstr "Слишком много запросов. Подождите немного и повторите отправку."
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Сначала проверьте очередь"
+msgstr "Сначала проверьте очередь"
+
+#. placeholder {0}: failure.message
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Сообщение не отправлено. {0}"
+msgstr "Сообщение не отправлено. {0}"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Сообщение не отправлено. Текст и фотографии остаются в форме. Проверьте подключение и повторите отправку."
+msgstr "Сообщение не отправлено. Текст и фотографии остаются в форме. Проверьте подключение и повторите отправку."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Сообщение организаторам"
+msgstr "Сообщение организаторам"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Состояние обращения"
+msgstr "Состояние обращения"
+
+#: packages/app-shell/src/interface-language.tsx
+msgid "Сохраняем…"
+msgstr "Сохраняем…"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Список сессий не подтверждён"
+msgstr "Список сессий не подтверждён"
+
+#: packages/app-shell/src/observability.ts
+msgid "Срок сдачи закончился, поэтому ответ не отправлен. Черновик сохранён на этом устройстве."
+msgstr "Срок сдачи закончился, поэтому ответ не отправлен. Черновик сохранён на этом устройстве."
+
+#: packages/app-shell/src/providers.tsx
+msgid "тёмную"
+msgstr "тёмную"
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Требуется вход"
+msgstr "Требуется вход"
+
+#: packages/app-shell/src/auth-boundary.tsx
+#: packages/app-shell/src/page-layout.tsx
+msgid "У вашей учётной записи нет права открывать этот раздел."
+msgstr "У вашей учётной записи нет права открывать этот раздел."
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Уведомления"
+msgstr "Уведомления"
+
+#: packages/app-shell/src/push-onboarding.tsx
+msgid "Уведомления на iPhone и iPad"
+msgstr "Уведомления на iPhone и iPad"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Устройства и сессии"
+msgstr "Устройства и сессии"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Фотография"
+msgstr "Фотография"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Фотография в обращении"
+msgstr "Фотография в обращении"
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Черновик не сохраняется. Не закрывайте страницу."
+msgstr "Черновик не сохраняется. Не закрывайте страницу."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Черновик сохранён на устройстве."
+msgstr "Черновик сохранён на устройстве."
+
+#: packages/app-shell/src/auth-boundary.tsx
+msgid "Чтобы открыть этот раздел, войдите в свой кабинет."
+msgstr "Чтобы открыть этот раздел, войдите в свой кабинет."
+
+#: packages/app-shell/src/organizer-pages.tsx
+msgid "Школьник"
+msgstr "Школьник"
+
+#: packages/app-shell/src/session-management.tsx
+msgid "Это устройство"
+msgstr "Это устройство"
+
+#: packages/app-shell/src/interface-language.tsx
+msgid "Язык интерфейса"
+msgstr "Язык интерфейса"
+
+#: packages/app-shell/src/interface-language.tsx
+msgid "Язык сохраняется в учётной записи и применяется на всех ваших устройствах. Условия задач и новости остаются на языке оригинала."
+msgstr "Язык сохраняется в учётной записи и применяется на всех ваших устройствах. Условия задач и новости остаются на языке оригинала."

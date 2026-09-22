@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { ActivityCalendar } from './activity-calendar'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(() => cleanup())
 

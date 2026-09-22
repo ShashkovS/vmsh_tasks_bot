@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -43,6 +44,7 @@ if (!rootElement) throw new Error('Root element is missing')
 // screen is translated too. See `docs/i18n.md`.
 void bootstrapLocale(catalogLoaders).then(
   () => {
+    document.title = t`ВМШ 179 — учитель и администратор`
     createRoot(rootElement).render(
       <StrictMode>
         <LocaleProvider loaders={catalogLoaders}>

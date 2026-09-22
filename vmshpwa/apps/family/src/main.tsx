@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -54,17 +55,17 @@ function familyApplication(runtime: RuntimeConfig) {
       <OfflineDatabaseProvider
         errorFallback={({ retry }) => (
           <AppStartupScreen
-            description="Локальное хранилище сейчас недоступно. Чтобы не потерять сохранённые материалы, кабинет не открыт."
+            description={t`Локальное хранилище сейчас недоступно. Чтобы не потерять сохранённые материалы, кабинет не открыт.`}
             onRetry={retry}
             state="error"
-            title="Не удалось подготовить работу без сети"
+            title={t`Не удалось подготовить работу без сети`}
           />
         )}
         loadingFallback={
           <AppStartupScreen
-            description="Проверяем сохранённые материалы на этом устройстве."
+            description={t`Проверяем сохранённые материалы на этом устройстве.`}
             state="loading"
-            title="Готовим работу без сети"
+            title={t`Готовим работу без сети`}
           />
         }
         runtime={{ audience: 'family', instance: runtime.instance }}
@@ -94,6 +95,7 @@ export function FamilyAuthenticatedApplication({ runtime }: { runtime: RuntimeCo
 // offline fallback screens are translated too. See `docs/i18n.md`.
 void bootstrapLocale(catalogLoaders).then(
   () => {
+    document.title = t`ВМШ 179 — кабинет родителя`
     createRoot(rootElement).render(
       <StrictMode>
         <LocaleProvider loaders={catalogLoaders}>

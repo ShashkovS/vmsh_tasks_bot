@@ -1,10 +1,11 @@
-import { cleanup, render, waitFor } from '@testing-library/react'
+import { cleanup, waitFor } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import studentAuthFixture from '@vmsh/contracts/fixtures/auth/student.v1.json'
 import studentRuntimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.json'
 import { parseRuntimeConfigForAudience, type RuntimeConfig } from '@vmsh/contracts'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 import { AuthenticationProvider } from './auth-context'
 import { AppProviders, createAppQueryClient } from './providers'

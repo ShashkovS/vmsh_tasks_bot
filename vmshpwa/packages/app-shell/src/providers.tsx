@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query'
 import { reportHandledError } from './observability'
 import { ServiceAvailabilityBanner } from './service-availability'
@@ -94,7 +95,7 @@ export function ThemeToggle() {
 
   return (
     <Button
-      aria-label={`Переключить на ${nextTheme === 'dark' ? 'тёмную' : 'светлую'} тему`}
+      aria-label={t`Переключить на ${nextTheme === 'dark' ? t`тёмную` : t`светлую`} тему`}
       size="icon-sm"
       variant="ghost"
       onClick={() => setTheme(nextTheme)}

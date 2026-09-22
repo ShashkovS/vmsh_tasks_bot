@@ -1,6 +1,7 @@
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { LiveMarkButton, type MarkDisplay } from './live-marking-grid'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(() => {
   cleanup()

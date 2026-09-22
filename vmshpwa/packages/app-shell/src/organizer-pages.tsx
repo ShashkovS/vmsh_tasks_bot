@@ -1,3 +1,6 @@
+import { formatDateTime } from '@vmsh/i18n'
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { QuestionPhotoPicker } from '@vmsh/product'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -18,8 +21,8 @@ export function OrganizerLink({ create = false }: { create?: boolean }) {
       className={buttonVariants({ variant: 'outline', size: 'sm' })}
       href={`${href}${create ? '/new' : ''}`}
     >
-      {create ? 'Задать вопрос организаторам' : 'Вопросы организаторам'}
-      {!create && count.data ? <span aria-label="Непрочитанных"> · {count.data}</span> : null}
+      {create ? t`Задать вопрос организаторам` : t`Вопросы организаторам`}
+      {!create && count.data ? <span aria-label={t`Непрочитанных`}> · {count.data}</span> : null}
     </a>
   )
 }
@@ -37,7 +40,11 @@ export function OrganizerPage({
 }) {
   const p = useAuthenticatedPrincipal()
   if (p.audience === 'staff' && p.role !== 'admin')
-    return <p role="alert">Обращения доступны только администраторам.</p>
+    return (
+      <p role="alert">
+        <Trans>Обращения доступны только администраторам.</Trans>
+      </p>
+    )
   return (
     <OrganizerPageContent
       key={`${p.audience}:${p.accountId}:${threadId ?? (isNew ? 'new' : 'list')}`}
@@ -115,21 +122,21 @@ function OrganizerPageContent({
       kind: entry.author.audience === 'staff' ? 'admin' : entry.author.audience,
       name: entry.author.name,
     },
-    at: new Date(entry.createdAt).toLocaleString('ru-RU'),
+    at: formatDateTime(new Date(entry.createdAt)),
     channel: entry.author.audience === 'staff' ? 'staff' : 'pwa',
     own: staff === (entry.author.audience === 'staff'),
     body: (
       <div className="min-w-0 space-y-2">
         <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{entry.text}</p>
         {entry.photos.map((photo) => (
-          <ZoomableFigure key={photo.photoId} alt="Фотография в обращении">
+          <ZoomableFigure key={photo.photoId} alt={t`Фотография в обращении`}>
             <img
               loading="lazy"
               src={photo.url}
               width={photo.width}
               height={photo.height}
               className="h-auto max-w-full"
-              alt="Фотография в обращении"
+              alt={t`Фотография в обращении`}
             />
           </ZoomableFigure>
         ))}
@@ -146,34 +153,34 @@ function OrganizerPageContent({
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <h1 className="text-title font-semibold tracking-tight">
-          {isNew ? 'Задать вопрос организаторам' : 'Вопросы организаторам'}
+          {isNew ? t`Задать вопрос организаторам` : t`Вопросы организаторам`}
         </h1>
         <div className="flex flex-wrap gap-2">
           {threadId || isNew ? (
             <Button variant="ghost" size="sm" onClick={() => onNavigate()}>
-              Все обращения
+              <Trans>Все обращения</Trans>
             </Button>
           ) : !staff ? (
             <Button size="sm" onClick={() => onNavigate(undefined, true)}>
-              Задать вопрос
+              <Trans>Задать вопрос</Trans>
             </Button>
           ) : null}
           {!isNew ? (
             <Button variant="outline" size="sm" onClick={() => void query.refetch()}>
-              Обновить
+              <Trans>Обновить</Trans>
             </Button>
           ) : null}
         </div>
       </div>
       <p className="text-small text-muted-foreground">
-        Переписку видят только автор обращения и администраторы.
+        <Trans>Переписку видят только автор обращения и администраторы.</Trans>
       </p>
       {staff && !threadId ? (
-        <nav className="flex flex-wrap gap-1" aria-label="Состояние обращения">
+        <nav className="flex flex-wrap gap-1" aria-label={t`Состояние обращения`}>
           {[
-            ['awaiting_staff', 'Нужен ответ'],
-            ['answered', 'Ответили'],
-            ['all', 'Все'],
+            ['awaiting_staff', t`Нужен ответ`],
+            ['answered', t`Ответили`],
+            ['all', t`Все`],
           ].map(([value, label]) => (
             <Button
               key={value}
@@ -186,10 +193,14 @@ function OrganizerPageContent({
           ))}
         </nav>
       ) : null}
-      {loading ? <p role="status">Загружаем…</p> : null}
+      {loading ? (
+        <p role="status">
+          <Trans>Загружаем…</Trans>
+        </p>
+      ) : null}
       {error ? (
         <div role="alert">
-          Не удалось загрузить переписку. Проверьте подключение и нажмите «Обновить».
+          <Trans>Не удалось загрузить переписку. Проверьте подключение и нажмите «Обновить».</Trans>
         </div>
       ) : null}
       {!loading && !error && !threadId && !isNew ? (
@@ -205,29 +216,33 @@ function OrganizerPageContent({
                   {staff ? (
                     <span className="block text-small">
                       {item.owner.name} ·{' '}
-                      {item.owner.audience === 'family' ? 'Родитель' : 'Школьник'}
+                      {item.owner.audience === 'family' ? t`Родитель` : t`Школьник`}
                       {item.child ? ` · ${item.child.name}` : ''}
                     </span>
                   ) : null}
                   <span className="block line-clamp-2 break-words text-small text-muted-foreground">
-                    {item.latestText || 'Фотография'}
+                    {item.latestText || t`Фотография`}
                   </span>
                   <span className="text-caption text-muted-foreground">
-                    {item.state === 'awaiting_staff' ? 'Нужен ответ' : 'Ответили'} ·{' '}
-                    {new Date(item.latestAt).toLocaleString('ru-RU')}
+                    {item.state === 'awaiting_staff' ? t`Нужен ответ` : t`Ответили`} ·{' '}
+                    {formatDateTime(new Date(item.latestAt))}
                   </span>
                 </button>
               </li>
             ))}
           </ol>
-          {!items.length ? <p>Обращений пока нет.</p> : null}
+          {!items.length ? (
+            <p>
+              <Trans>Обращений пока нет.</Trans>
+            </p>
+          ) : null}
           {list.hasNextPage ? (
             <Button
               variant="outline"
               disabled={list.isFetchingNextPage}
               onClick={() => void list.fetchNextPage()}
             >
-              Показать ещё
+              <Trans>Показать ещё</Trans>
             </Button>
           ) : null}
         </>
@@ -246,7 +261,7 @@ function OrganizerPageContent({
               disabled={thread.isFetchingNextPage}
               onClick={() => void thread.fetchNextPage()}
             >
-              Показать ещё сообщения
+              <Trans>Показать ещё сообщения</Trans>
             </Button>
           ) : null}
         </>
@@ -302,8 +317,8 @@ function OrganizerCompose({
     onError: (failure) =>
       setError(
         failure instanceof ApiResponseError
-          ? `Сообщение не отправлено. ${failure.message}`
-          : 'Сообщение не отправлено. Текст и фотографии остаются в форме. Проверьте подключение и повторите отправку.',
+          ? t`Сообщение не отправлено. ${failure.message}`
+          : t`Сообщение не отправлено. Текст и фотографии остаются в форме. Проверьте подключение и повторите отправку.`,
       ),
   })
   const submit = () => {
@@ -324,7 +339,7 @@ function OrganizerCompose({
         >
           {!threadId && p.audience === 'family' ? (
             <label className="block text-small">
-              О ком вопрос
+              <Trans>О ком вопрос</Trans>
               <select
                 disabled={mutation.isPending || !editor.ready}
                 className="mt-1 block min-h-10 w-full rounded border border-input bg-surface p-2"
@@ -333,7 +348,9 @@ function OrganizerCompose({
                   editor.update({ ...draft, childId: event.target.value || null })
                 }
               >
-                <option value="">Общий вопрос</option>
+                <option value="">
+                  <Trans>Общий вопрос</Trans>
+                </option>
                 {p.linkedChildren.map((child) => (
                   <option key={child.studentId} value={child.studentId}>
                     {child.displayName}
@@ -343,8 +360,8 @@ function OrganizerCompose({
             </label>
           ) : null}
           <Textarea
-            aria-label="Сообщение организаторам"
-            placeholder="Напишите ваш вопрос…"
+            aria-label={t`Сообщение организаторам`}
+            placeholder={t`Напишите ваш вопрос…`}
             maxLength={100000}
             rows={4}
             disabled={mutation.isPending || !editor.ready}
@@ -368,7 +385,7 @@ function OrganizerCompose({
                   (!draft.text.trim() && !draft.photos.length)
                 }
               >
-                {mutation.isPending ? 'Отправляем…' : 'Отправить'}
+                {mutation.isPending ? t`Отправляем…` : t`Отправить`}
               </Button>
             }
             photos={draft.photos}
@@ -387,9 +404,9 @@ function OrganizerCompose({
           <div>
             <p role="status" className="text-caption text-muted-foreground">
               {editor.unavailable
-                ? 'Черновик не сохраняется. Не закрывайте страницу.'
+                ? t`Черновик не сохраняется. Не закрывайте страницу.`
                 : editor.saved
-                  ? 'Черновик сохранён на устройстве.'
+                  ? t`Черновик сохранён на устройстве.`
                   : ''}
             </p>
           </div>

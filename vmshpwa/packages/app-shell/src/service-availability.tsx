@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -16,11 +17,11 @@ export function useServiceAvailability() {
 export function serviceWaitingText(state: ServiceAvailability) {
   if (state.prolonged)
     return state.state === 'updating'
-      ? 'Обновление занимает больше времени. Мы продолжаем подключаться.'
-      : 'Подключение занимает больше времени. Мы продолжаем пробовать.'
+      ? t`Обновление занимает больше времени. Мы продолжаем подключаться.`
+      : t`Подключение занимает больше времени. Мы продолжаем пробовать.`
   return state.state === 'updating'
-    ? 'Кабинет продолжит работу автоматически. Отправим после обновления.'
-    : 'Пробуем подключиться автоматически. Можно продолжать работу с черновиком.'
+    ? t`Кабинет продолжит работу автоматически. Отправим после обновления.`
+    : t`Пробуем подключиться автоматически. Можно продолжать работу с черновиком.`
 }
 
 /** docs/smooth-redeploy.md: never replace mounted editors with a startup gate. */
@@ -45,7 +46,7 @@ export function ServiceAvailabilityBannerView({ state }: { state: ServiceAvailab
       className="border-b bg-surface-subtle px-4 py-2 text-small text-foreground"
     >
       <span className="font-medium">
-        {state.state === 'updating' ? 'Обновляем сервис. ' : 'Восстанавливаем соединение. '}
+        {state.state === 'updating' ? t`Обновляем сервис. ` : t`Восстанавливаем соединение. `}
       </span>
       {serviceWaitingText(state)}
     </div>

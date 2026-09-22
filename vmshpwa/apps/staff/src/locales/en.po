@@ -12,3 +12,159 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Zoom-приём"
+msgstr "Zoom session"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Аналитика"
+msgstr "Analytics"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Аудит"
+msgstr "Audit"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Аудитории"
+msgstr "Rooms"
+
+#: apps/staff/src/login-page.tsx
+msgid "ВМШ 179"
+msgstr "VMSh 179"
+
+#: apps/staff/src/main.tsx
+msgid "ВМШ 179 — учитель и администратор"
+msgstr "VMSh 179 — teacher and administrator"
+
+#: apps/staff/src/login-page.tsx
+msgid "Войти"
+msgstr "Sign in"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Вопросы"
+msgstr "Questions"
+
+#: apps/staff/src/login-page.tsx
+msgid "Вход для преподавателя"
+msgstr "Teacher sign-in"
+
+#: apps/staff/src/login-page.tsx
+msgid "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
+msgstr "Sign-in for this account is unavailable right now. Please contact the administrators."
+
+#: apps/staff/src/login-page.tsx
+msgid "Входим…"
+msgstr "Signing in…"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Выйти"
+msgstr "Sign out"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Выйти из кабинета"
+msgstr "Sign out"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Курсы"
+msgstr "Courses"
+
+#: apps/staff/src/login-page.tsx
+msgid "Логин"
+msgstr "Login"
+
+#: apps/staff/src/login-page.tsx
+msgid "Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз."
+msgstr "The login or password is incorrect. Check the keyboard layout and try again."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Материалы для разбора"
+msgstr "Materials for discussion"
+
+#: apps/staff/src/login-page.tsx
+msgid "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
+msgstr "Forgot your access details? Write to <0>vmsh@179.ru</0>."
+
+#: apps/staff/src/login-page.tsx
+msgid "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
+msgstr "Could not complete sign-in securely. Try again or contact the administrators."
+
+#: apps/staff/src/login-page.tsx
+msgid "Не удалось войти"
+msgstr "Could not sign in"
+
+#: apps/staff/src/login-page.tsx
+msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
+msgstr "Could not reach the server. Check the internet connection and try again."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Новости"
+msgstr "News"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Очное занятие"
+msgstr "In-person class"
+
+#: apps/staff/src/login-page.tsx
+msgid "Пароль"
+msgstr "Password"
+
+#: apps/staff/src/login-page.tsx
+msgid "Показать пароль"
+msgstr "Show password"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Проверка"
+msgstr "Review"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Рассылки"
+msgstr "Mailings"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Реакции"
+msgstr "Reactions"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Результаты школьника"
+msgstr "Student results"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Сводка"
+msgstr "Overview"
+
+#: apps/staff/src/login-page.tsx
+msgid "Скрыть пароль"
+msgstr "Hide password"
+
+#: apps/staff/src/login-page.tsx
+msgid "Слишком много попыток. Подождите немного и попробуйте ещё раз."
+msgstr "Too many attempts. Wait a little and try again."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Статистика"
+msgstr "Statistics"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Страница не найдена"
+msgstr "Page not found"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Тестирование"
+msgstr "Testing"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Уроки"
+msgstr "Lessons"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Участники"
+msgstr "People"
+
+#: apps/staff/src/login-page.tsx
+msgid "Учитель видит разрешённые группы; admin — административные разделы."
+msgstr "A teacher sees the permitted groups; an admin also sees the administration sections."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Учитель и администратор"
+msgstr "Teacher and administrator"

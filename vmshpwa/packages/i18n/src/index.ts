@@ -16,6 +16,7 @@ export {
   activateLocale,
   bootstrapLocale,
   currentLocale,
+  enableDevelopmentCompiler,
   loadCatalog,
   type CatalogLoaders,
   type CatalogModule,
@@ -23,6 +24,10 @@ export {
 export { LocaleProvider, useLocale, type LocaleContextValue } from './locale-provider'
 export {
   dateTimeFormat,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  formatTime,
   formattersFor,
   listFormat,
   numberFormat,

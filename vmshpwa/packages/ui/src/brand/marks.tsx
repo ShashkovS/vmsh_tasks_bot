@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 /**
  * ВМШ 179 brand marks (art direction B, accepted 2026-07-23).
  *
@@ -50,7 +52,7 @@ export function Sign179({ size = 32, title, ...props }: MarkProps) {
 }
 
 /** Horizontal wordmark «ВМШ 179». */
-export function Wordmark({ size = 22, title = 'ВМШ 179', ...props }: MarkProps) {
+export function Wordmark({ size = 22, title = t`ВМШ 179`, ...props }: MarkProps) {
   return (
     <svg
       height={size}
@@ -69,7 +71,7 @@ export function Wordmark({ size = 22, title = 'ВМШ 179', ...props }: MarkProp
         x="0"
         y="18"
       >
-        ВМШ
+        <Trans>ВМШ</Trans>
       </text>
       <text
         fill="currentColor"

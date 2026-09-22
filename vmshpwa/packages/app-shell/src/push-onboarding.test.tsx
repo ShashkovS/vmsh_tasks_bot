@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { NotificationClient } from './notification-client'
 import { PushInvitation } from './push-onboarding'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 const push = vi.hoisted(() => ({
   state: 'available',

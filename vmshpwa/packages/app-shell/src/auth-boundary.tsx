@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { LockKeyhole, TriangleAlert, WifiOff } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 
@@ -36,16 +37,16 @@ export function AuthenticationBoundary({
         <AppStartupScreen
           description={
             availability.state === 'ready'
-              ? 'Проверяем действующую сессию на этом устройстве.'
+              ? t`Проверяем действующую сессию на этом устройстве.`
               : serviceWaitingText(availability)
           }
           state="loading"
           title={
             availability.state === 'ready'
-              ? 'Проверяем вход'
+              ? t`Проверяем вход`
               : availability.state === 'updating'
-                ? 'Обновляем сервис'
-                : 'Восстанавливаем соединение'
+                ? t`Обновляем сервис`
+                : t`Восстанавливаем соединение`
           }
         />
       )
@@ -55,9 +56,9 @@ export function AuthenticationBoundary({
     return (
       unauthenticatedFallback ?? (
         <AuthBoundaryPanel
-          description="Чтобы открыть этот раздел, войдите в свой кабинет."
+          description={t`Чтобы открыть этот раздел, войдите в свой кабинет.`}
           icon={<LockKeyhole aria-hidden="true" />}
-          title="Требуется вход"
+          title={t`Требуется вход`}
         />
       )
     )
@@ -68,11 +69,11 @@ export function AuthenticationBoundary({
       ? offlineFallback(retry)
       : (offlineFallback ?? (
           <AuthBoundaryPanel
-            actionLabel="Повторить"
-            description="Без связи сервер не может подтвердить сессию. Защищённые данные пока не открыты."
+            actionLabel={t`Повторить`}
+            description={t`Без связи сервер не может подтвердить сессию. Защищённые данные пока не открыты.`}
             icon={<WifiOff aria-hidden="true" />}
             onAction={() => void retry()}
-            title="Не удалось проверить вход"
+            title={t`Не удалось проверить вход`}
           />
         ))
   }
@@ -80,11 +81,11 @@ export function AuthenticationBoundary({
     ? errorFallback(state.error, retry)
     : (errorFallback ?? (
         <AuthBoundaryPanel
-          actionLabel="Повторить"
-          description="Ответ сервера не прошёл безопасную проверку. Защищённые данные не открыты."
+          actionLabel={t`Повторить`}
+          description={t`Ответ сервера не прошёл безопасную проверку. Защищённые данные не открыты.`}
           icon={<TriangleAlert aria-hidden="true" />}
           onAction={() => void retry()}
-          title="Не удалось безопасно открыть кабинет"
+          title={t`Не удалось безопасно открыть кабинет`}
           tone="danger"
         />
       ))
@@ -114,9 +115,9 @@ export function AuthenticationRedirectBoundary({
     <AuthenticationBoundary
       unauthenticatedFallback={
         <AppStartupScreen
-          description="Открываем страницу входа и сохраним адрес этого раздела."
+          description={t`Открываем страницу входа и сохраним адрес этого раздела.`}
           state="loading"
-          title="Требуется вход"
+          title={t`Требуется вход`}
         />
       }
     >
@@ -150,9 +151,9 @@ export function StaffCapabilityBoundary({
   return (
     forbiddenFallback ?? (
       <AuthBoundaryPanel
-        description="У вашей учётной записи нет права открывать этот раздел."
+        description={t`У вашей учётной записи нет права открывать этот раздел.`}
         icon={<LockKeyhole aria-hidden="true" />}
-        title="Нет доступа"
+        title={t`Нет доступа`}
       />
     )
   )

@@ -3,6 +3,7 @@ import {
   ApiResponseError,
   apiErrorSchema,
   authContextSchema,
+  authLocaleUpdateResponseSchema,
   authSessionsResponseSchema,
   familyLoginRequestSchema,
   parseRuntimeConfigForAudience,
@@ -13,6 +14,7 @@ import {
   type AuthContext,
   type AuthSessionsResponse,
   type FamilyLoginRequest,
+  type InterfaceLocale,
   type RuntimeConfig,
   type SessionPublicId,
   type StaffLoginRequest,
@@ -103,13 +105,14 @@ export interface AuthClient<A extends Audience = Audience> {
   revokeSession(sessionId: SessionPublicId, options?: AuthRequestOptions): Promise<void>
   logout(options?: AuthRequestOptions): Promise<void>
   logoutAll(options?: AuthRequestOptions): Promise<void>
+  updateLocale(locale: InterfaceLocale, options?: AuthRequestOptions): Promise<InterfaceLocale>
 }
 
 interface ResponseParser<T> {
   parse(payload: unknown): T
 }
 
-type HttpMethod = 'GET' | 'POST' | 'DELETE'
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
@@ -184,6 +187,19 @@ class BrowserAuthClient<A extends Audience> implements AuthClient<A> {
 
   async logoutAll(options: AuthRequestOptions = {}): Promise<void> {
     await this.#requestNoContent('/logout-all', { method: 'POST', body: '{}', ...options }, true)
+  }
+
+  async updateLocale(
+    locale: InterfaceLocale,
+    options: AuthRequestOptions = {},
+  ): Promise<InterfaceLocale> {
+    const response = await this.#requestJson(
+      '/locale',
+      { method: 'PUT', body: JSON.stringify({ locale }), ...options },
+      authLocaleUpdateResponseSchema,
+      true,
+    )
+    return response.locale
   }
 
   #parseLoginRequest(request: AuthLoginRequest<A>): AuthLoginRequest {

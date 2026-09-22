@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { SupportClient } from './support-client'
 import { PhotoSupportComposer } from './photo-support-composer'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 const state = vi.hoisted(() => ({
   clear: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),

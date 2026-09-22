@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { staffStatisticsResponseSchema } from '@vmsh/contracts'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 import { LessonStatistics } from './lesson-statistics'
 
 afterEach(cleanup)

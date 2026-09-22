@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup, fireEvent } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { reactionsForScope } from './reaction'
 import { ReactionPicker } from './reaction-picker'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(() => cleanup())
 

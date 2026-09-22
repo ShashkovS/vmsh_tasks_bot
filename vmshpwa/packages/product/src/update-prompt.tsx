@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { RefreshCw } from 'lucide-react'
 
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh/ui'
@@ -17,16 +18,18 @@ export function UpdatePrompt({ onUpdate, onDismiss, className }: UpdatePromptPro
     <Alert className={className} tone="info">
       <RefreshCw aria-hidden="true" />
       <AlertContent>
-        <AlertTitle>Доступно обновление</AlertTitle>
+        <AlertTitle>
+          <Trans>Доступно обновление</Trans>
+        </AlertTitle>
         <AlertDescription>
-          Обновимся за секунду. Черновик и несохранённый текст останутся на месте.
+          <Trans>Обновимся за секунду. Черновик и несохранённый текст останутся на месте.</Trans>
         </AlertDescription>
         <div className="mt-2 flex gap-2">
           <Button onClick={onUpdate} size="sm">
-            Обновить
+            <Trans>Обновить</Trans>
           </Button>
           <Button onClick={onDismiss} size="sm" variant="ghost">
-            Позже
+            <Trans>Позже</Trans>
           </Button>
         </div>
       </AlertContent>

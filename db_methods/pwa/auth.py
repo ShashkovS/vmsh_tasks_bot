@@ -162,6 +162,8 @@ class CurrentAuthSession:
     linked_user_id: int | None
     linked_user_public_id: str | None
     linked_user_type: int | None
+    # Interface language (migration 0098, adr/0004-pwa-internationalization.md).
+    locale: str = "ru"
 
 
 @dataclass(frozen=True, slots=True)
@@ -817,6 +819,7 @@ class PwaAuthRepository:
                 "SELECT s.*, a.public_id AS account_public_id, "
                 "a.status AS account_status, a.display_name, a.linked_user_id, "
                 "a.credential_version AS account_credential_version, "
+                "a.locale AS account_locale, "
                 "u.public_id AS linked_user_public_id, "
                 "u.type AS linked_user_type, u.name AS linked_user_name, "
                 "u.surname AS linked_user_surname "
@@ -895,6 +898,7 @@ class PwaAuthRepository:
                 linked_user_id=linked_user_id,
                 linked_user_public_id=linked_user_public_id,
                 linked_user_type=linked_user_type,
+                locale=str(row["account_locale"]),
             )
 
         return await self._factory.run_read_async(read)
@@ -919,6 +923,21 @@ class PwaAuthRepository:
             return tuple(_session_from_row(row) for row in rows)
 
         return await self._factory.run_read_async(read)
+
+    async def update_account_locale(self, *, account_id: int, locale: str) -> bool:
+        """Store the interface language; the schema CHECK admits only ru/en."""
+
+        timestamp = _format_timestamp(self._now())
+
+        def write(connection):
+            updated = connection.execute(
+                "UPDATE auth_accounts SET locale = ?, updated_at = ? "
+                "WHERE id = ? AND status = 'active'",
+                (locale, timestamp, account_id),
+            )
+            return updated.rowcount == 1
+
+        return await self._factory.run_write_async(write)
 
     async def revoke_session(
         self,

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { OrganizerLink, useAuthenticatedPrincipal } from '@vmsh/app-shell'
+import { InterfaceLanguageCard, OrganizerLink, useAuthenticatedPrincipal } from '@vmsh/app-shell'
 import { FamilyProfilePage } from '../pages'
 
 function Profile() {
@@ -7,6 +7,7 @@ function Profile() {
   if (principal.audience !== 'family') throw new Error('Family principal required')
   return (
     <FamilyProfilePage
+      languageSettings={<InterfaceLanguageCard />}
       organizerLink={<OrganizerLink />}
       displayName={principal.displayName}
       childrenLinks={

@@ -1,4 +1,5 @@
 'use client'
+import { Trans } from '@lingui/react/macro'
 
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer'
 import { XIcon } from 'lucide-react'
@@ -85,7 +86,9 @@ function DrawerContent({
               render={<Button variant="ghost" className="absolute top-3 right-3" size="icon-sm" />}
             >
               <XIcon aria-hidden="true" />
-              <span className="sr-only">Закрыть панель</span>
+              <span className="sr-only">
+                <Trans>Закрыть панель</Trans>
+              </span>
             </DrawerPrimitive.Close>
           ) : null}
         </DrawerPrimitive.Popup>

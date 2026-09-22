@@ -1,5 +1,22 @@
 {
   "$comment": "Translated scopes. Frontend globs (relative to vmshpwa/) ban unwrapped Cyrillic via ESLint and require English for every catalog message they own; backend globs (relative to the repository root) require English for every backend message they own. Each i18n phase adds its areas. See dev/development-plan/24-i18n.md.",
-  "frontend": ["packages/i18n/src/**/*.{ts,tsx}"],
-  "backend": ["apps/pwa_app.py", "helpers/pwa/i18n.py"]
+  "frontend": [
+    "packages/i18n/src/**/*.{ts,tsx}",
+    "packages/app-shell/src/**/*.{ts,tsx}",
+    "packages/ui/src/**/*.{ts,tsx}",
+    "apps/*/src/routes/__root.tsx",
+    "apps/*/src/login-page.tsx",
+    "apps/*/src/main.tsx",
+    "apps/*/src/pwa-update.tsx",
+    "packages/product/src/update-prompt.tsx",
+    "packages/product/src/connection-banner.tsx",
+    "packages/product/src/sync-indicator.tsx"
+  ],
+  "backend": [
+    "apps/pwa_app.py",
+    "apps/pwa_api/middleware.py",
+    "apps/pwa_api/auth_routes.py",
+    "apps/pwa_api/auth_service.py",
+    "helpers/pwa/i18n.py"
+  ]
 }

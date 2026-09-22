@@ -6,6 +6,7 @@ import { Mail, MessageCircleQuestion } from 'lucide-react'
 import {
   AccountSessionManager,
   CourseNetworkError,
+  InterfaceLanguageCard,
   PageLayout,
   PageStatePanel,
   createStudentCourseClient,
@@ -207,6 +208,7 @@ export function StudentProfilePage() {
             </a>
           </CardContent>
         </Card>
+        <InterfaceLanguageCard />
         <AccountSessionManager title="Устройства и сеансы" />
         <Card>
           <CardHeader>

@@ -57,6 +57,11 @@ without a service worker.
   `fetch` call sites need no header. It is a convenience, not user data.
 - Russian is the default for every account and device; the browser language is
   not consulted.
+- Choosing a language saves it to the account (`PUT /{audience}/api/v1/auth/locale`),
+  writes the cookie and reloads the page (P1 amendment, 2026-09-22): code uses
+  the global `t` macro, so a reload guarantees no stale text in module
+  constants, cached formatters or helpers. Sign-in and `/auth/me` sync the
+  cookie with the account; another device's change applies on the next load.
 
 ### Backend: Russian literals as keys
 

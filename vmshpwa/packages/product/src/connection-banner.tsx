@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { AlertTriangle, RefreshCw, Wifi, WifiOff } from 'lucide-react'
 
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button, cn } from '@vmsh/ui'
@@ -51,12 +53,12 @@ export function ConnectionBanner({
               aria-hidden="true"
               className="size-3.5 animate-spin motion-reduce:animate-none"
             />
-            Синхронизация…
+            <Trans>Синхронизация…</Trans>
           </>
         ) : (
           <>
             <Wifi aria-hidden="true" className="size-3.5" />
-            На связи
+            <Trans>На связи</Trans>
           </>
         )}
       </p>
@@ -68,15 +70,17 @@ export function ConnectionBanner({
       <Alert className={className} role="alert" tone="danger">
         <AlertTriangle aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>Работа изменилась</AlertTitle>
+          <AlertTitle>
+            <Trans>Работа изменилась</Trans>
+          </AlertTitle>
           <AlertDescription>
             {actionImpact ??
-              'Кто-то обновил эту работу. Сравните версии, чтобы ничего не потерять.'}
+              t`Кто-то обновил эту работу. Сравните версии, чтобы ничего не потерять.`}
           </AlertDescription>
           {onResolve ? (
             <div className="mt-2">
               <Button onClick={onResolve} size="sm" variant="outline">
-                Разобраться
+                <Trans>Разобраться</Trans>
               </Button>
             </div>
           ) : null}
@@ -94,12 +98,12 @@ export function ConnectionBanner({
         <WifiOff aria-hidden="true" />
       )}
       <AlertContent>
-        <AlertTitle>{reconnecting ? 'Восстанавливаем связь…' : 'Нет сети'}</AlertTitle>
+        <AlertTitle>{reconnecting ? t`Восстанавливаем связь…` : t`Нет сети`}</AlertTitle>
         {actionImpact ? <AlertDescription>{actionImpact}</AlertDescription> : null}
         {queuedCount && queuedCount > 0 ? (
           <div className="mt-2">
             <Button onClick={onOpenOutbox} size="sm" variant="outline">
-              В очереди: {queuedCount} — показать
+              <Trans>В очереди: {queuedCount} — показать</Trans>
             </Button>
           </div>
         ) : null}

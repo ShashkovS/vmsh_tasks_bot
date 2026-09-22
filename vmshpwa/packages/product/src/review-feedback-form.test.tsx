@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ReviewFeedbackForm } from './review-feedback-form'
 import { ternaryVerdictScale } from './verdict-registry'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(cleanup)
 describe('review keyboard submission', () => {

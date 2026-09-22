@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { syncDeviceLocale } from './device-locale'
 import { setObservabilityUser } from './observability'
 import {
   ApiResponseError,
@@ -156,6 +157,10 @@ export function AuthenticationProvider({
 
   const persistContext = useCallback(
     async (context: AuthSessionContext) => {
+      // The account language is authoritative: keep the device cookie in step
+      // before a post-login reload and after a change on another device.
+      // The current page keeps its language until the next load (docs/i18n.md).
+      syncDeviceLocale(context.principal.locale)
       if (!offlineStore) return
       const snapshot = await offlineStore.save(context)
       setOfflineSnapshotState({ status: 'ready', snapshot })

@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
   "schemaVersion": 3,
-  "expectedCanonicalDigest": "78eed7566c37bc1a0b98bab0e4718f662cf6386a1c5ba1c4def6b1dbb1aa5b7a",
+  "expectedCanonicalDigest": "ad259428e5faf4b1caac1970fb76c756ee734c8754cf0bce01c5fb38be75b6d8",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",

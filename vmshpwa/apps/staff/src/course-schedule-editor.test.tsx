@@ -1,8 +1,9 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CourseScheduleEditor } from './course-schedule-editor'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 const values = new Map<string, string>()
 const storage: Storage = {

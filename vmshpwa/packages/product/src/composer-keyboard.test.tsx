@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ChatComposer } from './chat-composer'
 import { SubmissionComposer } from './submission-composer'
 import { SupportComposer } from './support-dialogue'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(() => cleanup())
 

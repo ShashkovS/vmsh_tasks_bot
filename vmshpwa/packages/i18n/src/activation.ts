@@ -47,6 +47,7 @@ export async function activateLocale(locale: Locale, loaders: CatalogLoaders): P
  * rejects, and the caller shows the static reload screen.
  */
 export async function bootstrapLocale(loaders: CatalogLoaders): Promise<Locale> {
+  await enableDevelopmentCompiler()
   const preferred = readLocaleCookie() ?? DEFAULT_LOCALE
   try {
     await activateLocale(preferred, loaders)
@@ -56,6 +57,17 @@ export async function bootstrapLocale(loaders: CatalogLoaders): Promise<Locale> 
     await activateLocale(DEFAULT_LOCALE, loaders)
     return DEFAULT_LOCALE
   }
+}
+
+/**
+ * Development only: messages added to code but not yet extracted still render
+ * with their placeholders. Production builds drop this branch entirely and
+ * rely on compiled catalogs (checked by the build guard in vite-i18n.ts).
+ */
+export async function enableDevelopmentCompiler(): Promise<void> {
+  if (!import.meta.env.DEV) return
+  const { compileMessage } = await import('@lingui/message-utils/compileMessage')
+  i18n.setMessagesCompiler(compileMessage)
 }
 
 /** The active interface language for code outside React components. */

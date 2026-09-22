@@ -12,3 +12,7 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#: apps/landing/src/main.tsx
+msgid "ВМШ 179 — математический кружок"
+msgstr "ВМШ 179 — математический кружок"

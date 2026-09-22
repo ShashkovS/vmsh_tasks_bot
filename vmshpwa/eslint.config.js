@@ -55,7 +55,8 @@ export default tseslint.config(
       'lingui/no-single-tag-to-translate': 'error',
       'lingui/no-single-variables-to-translate': 'error',
       'lingui/no-trans-inside-trans': 'error',
-      'lingui/no-expression-in-message': 'error',
+      // Positional placeholders ({0}) are fine: PO comments name their source.
+      'lingui/no-expression-in-message': 'off',
     },
   },
   {

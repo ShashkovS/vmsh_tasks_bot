@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import {
   BarChart3,
@@ -19,6 +21,7 @@ import { useCallback, useState, type ReactNode } from 'react'
 
 import {
   AppShell,
+  InterfaceLanguageMenu,
   AuthenticationRedirectBoundary,
   StaffCapabilityBoundary,
   createRouterAuthReturnTo,
@@ -38,83 +41,139 @@ interface StaffNavigationItem {
 }
 
 const navigation: StaffNavigationItem[] = [
-  { label: 'Сводка', to: '/', icon: <House className="size-4" aria-hidden="true" /> },
   {
-    label: 'Проверка',
+    get label() {
+      return t`Сводка`
+    },
+    to: '/',
+    icon: <House className="size-4" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Проверка`
+    },
     to: '/review',
     icon: <ClipboardCheck className="size-4" aria-hidden="true" />,
     capability: 'review.write',
   },
   {
-    label: 'Реакции',
+    get label() {
+      return t`Реакции`
+    },
     to: '/reactions',
     icon: <MessageSquareWarning className="size-4" aria-hidden="true" />,
     capability: 'audit.read',
   },
   {
-    label: 'Вопросы',
+    get label() {
+      return t`Вопросы`
+    },
     to: '/questions',
     icon: <MessageCircleQuestion className="size-4" aria-hidden="true" />,
   },
   {
-    label: 'Тестирование',
+    get label() {
+      return t`Тестирование`
+    },
     to: '/testing',
     icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
     capability: 'content.manage',
   },
   {
-    label: 'Очное занятие',
+    get label() {
+      return t`Очное занятие`
+    },
     to: '/in-person',
     icon: <Building2 className="size-4" aria-hidden="true" />,
     capability: 'oral.manage',
   },
   {
-    label: 'Zoom-приём',
+    get label() {
+      return t`Zoom-приём`
+    },
     to: '/oral',
     icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
     capability: 'oral.manage',
   },
-  { label: 'Уроки', to: '/lessons', icon: <BookOpenCheck className="size-4" aria-hidden="true" /> },
   {
-    label: 'Материалы для разбора',
+    get label() {
+      return t`Уроки`
+    },
+    to: '/lessons',
+    icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Материалы для разбора`
+    },
     to: '/whiteboard-export',
     icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
     capability: 'course.read',
   },
-  { label: 'Курсы', to: '/courses', icon: <Boxes className="size-4" aria-hidden="true" /> },
-  { label: 'Новости', to: '/news', icon: <Newspaper className="size-4" aria-hidden="true" /> },
   {
-    label: 'Результаты школьника',
+    get label() {
+      return t`Курсы`
+    },
+    to: '/courses',
+    icon: <Boxes className="size-4" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Новости`
+    },
+    to: '/news',
+    icon: <Newspaper className="size-4" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Результаты школьника`
+    },
     to: '/student-results',
     icon: <ClipboardCheck className="size-4" aria-hidden="true" />,
     capability: 'audit.read',
   },
-  { label: 'Участники', to: '/users', icon: <Users className="size-4" aria-hidden="true" /> },
   {
-    label: 'Аудитории',
+    get label() {
+      return t`Участники`
+    },
+    to: '/users',
+    icon: <Users className="size-4" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Аудитории`
+    },
     to: '/classrooms',
     icon: <Building2 className="size-4" aria-hidden="true" />,
     capability: 'classroom.manage',
   },
   {
-    label: 'Рассылки',
+    get label() {
+      return t`Рассылки`
+    },
     to: '/broadcasts',
     icon: <Mail className="size-4" aria-hidden="true" />,
     capability: 'broadcast.manage',
   },
   {
-    label: 'Статистика',
+    get label() {
+      return t`Статистика`
+    },
     to: '/statistics',
     icon: <BarChart3 className="size-4" aria-hidden="true" />,
   },
   {
-    label: 'Аналитика',
+    get label() {
+      return t`Аналитика`
+    },
     to: '/analytics',
     icon: <ChartNoAxesCombined className="size-4" aria-hidden="true" />,
     capability: 'product-analytics.read',
   },
   {
-    label: 'Аудит',
+    get label() {
+      return t`Аудит`
+    },
     to: '/audit',
     icon: <ScrollText className="size-4" aria-hidden="true" />,
     capability: 'audit.read',
@@ -125,7 +184,9 @@ export const Route = createRootRoute({
   component: StaffRootLayout,
   notFoundComponent: () => (
     <div className="p-8">
-      <h1 className="text-xl font-semibold">Страница не найдена</h1>
+      <h1 className="text-xl font-semibold">
+        <Trans>Страница не найдена</Trans>
+      </h1>
     </div>
   ),
 })
@@ -178,23 +239,26 @@ function AuthenticatedStaffShell({ pathname }: { pathname: string }) {
     <AppShell
       product="staff"
       compactHeader={localPathname.startsWith('/in-person') || localPathname.startsWith('/oral')}
-      title="Учитель и администратор"
+      title={t`Учитель и администратор`}
       displayName={principal.displayName}
       navigation={permittedNavigation}
       headerActions={
-        <Button
-          aria-label="Выйти из кабинета"
-          disabled={loggingOut}
-          onClick={() => {
-            setLoggingOut(true)
-            void authentication.logout().finally(() => setLoggingOut(false))
-          }}
-          size="icon-sm"
-          title="Выйти"
-          variant="ghost"
-        >
-          <LogOut aria-hidden="true" />
-        </Button>
+        <>
+          <InterfaceLanguageMenu />
+          <Button
+            aria-label={t`Выйти из кабинета`}
+            disabled={loggingOut}
+            onClick={() => {
+              setLoggingOut(true)
+              void authentication.logout().finally(() => setLoggingOut(false))
+            }}
+            size="icon-sm"
+            title={t`Выйти`}
+            variant="ghost"
+          >
+            <LogOut aria-hidden="true" />
+          </Button>
+        </>
       }
     >
       <ProductPageView audience="staff" pathname={pathname} />

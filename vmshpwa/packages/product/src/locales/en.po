@@ -12,3 +12,60 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#: packages/product/src/sync-indicator.tsx
+msgid "В очереди: {queuedCount}"
+msgstr "Queued: {queuedCount}"
+
+#: packages/product/src/connection-banner.tsx
+msgid "В очереди: {queuedCount} — показать"
+msgstr "Queued: {queuedCount} — show"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Восстанавливаем связь…"
+msgstr "Reconnecting…"
+
+#: packages/product/src/sync-indicator.tsx
+msgid "Всё отправлено"
+msgstr "Everything is sent"
+
+#: packages/product/src/update-prompt.tsx
+msgid "Доступно обновление"
+msgstr "Update available"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Кто-то обновил эту работу. Сравните версии, чтобы ничего не потерять."
+msgstr "Someone updated this work. Compare the versions so nothing is lost."
+
+#: packages/product/src/connection-banner.tsx
+msgid "На связи"
+msgstr "Online"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Нет сети"
+msgstr "Offline"
+
+#: packages/product/src/update-prompt.tsx
+msgid "Обновимся за секунду. Черновик и несохранённый текст останутся на месте."
+msgstr "The update takes a second. Your draft and unsaved text will stay in place."
+
+#: packages/product/src/update-prompt.tsx
+msgid "Обновить"
+msgstr "Refresh"
+
+#: packages/product/src/update-prompt.tsx
+msgid "Позже"
+msgstr "Later"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Работа изменилась"
+msgstr "The work has changed"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Разобраться"
+msgstr "Review"
+
+#: packages/product/src/connection-banner.tsx
+#: packages/product/src/sync-indicator.tsx
+msgid "Синхронизация…"
+msgstr "Syncing…"

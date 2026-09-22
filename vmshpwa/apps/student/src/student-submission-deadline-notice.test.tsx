@@ -1,7 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { StudentSubmissionDeadlineNotice } from './student-submission-deadline-notice'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(() => cleanup())
 

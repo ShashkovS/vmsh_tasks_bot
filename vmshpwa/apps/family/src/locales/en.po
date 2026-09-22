@@ -12,3 +12,139 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#: apps/family/src/login-page.tsx
+msgid "Аккаунт родителя не связан с Telegram и не использует пароль ребёнка."
+msgstr "The parent account is not linked to Telegram and does not use the child's password."
+
+#: apps/family/src/login-page.tsx
+msgid "ВМШ 179"
+msgstr "VMSh 179"
+
+#: apps/family/src/main.tsx
+msgid "ВМШ 179 — кабинет родителя"
+msgstr "VMSh 179 — parent account"
+
+#: apps/family/src/login-page.tsx
+msgid "Войти"
+msgstr "Sign in"
+
+#: apps/family/src/login-page.tsx
+msgid "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
+msgstr "Sign-in for this account is unavailable right now. Please contact the administrators."
+
+#: apps/family/src/login-page.tsx
+msgid "Входим…"
+msgstr "Signing in…"
+
+#: apps/family/src/main.tsx
+msgid "Готовим работу без сети"
+msgstr "Preparing offline mode"
+
+#: apps/family/src/routes/__root.tsx
+msgid "Дети"
+msgstr "Children"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Доступно обновление."
+msgstr "An update is available."
+
+#: apps/family/src/pwa-update.tsx
+msgid "Закрыть"
+msgstr "Close"
+
+#: apps/family/src/login-page.tsx
+msgid "Кабинет родителя"
+msgstr "Parent account"
+
+#: apps/family/src/login-page.tsx
+msgid "Логин"
+msgstr "Login"
+
+#: apps/family/src/login-page.tsx
+msgid "Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз."
+msgstr "The login or password is incorrect. Check the keyboard layout and try again."
+
+#: apps/family/src/main.tsx
+msgid "Локальное хранилище сейчас недоступно. Чтобы не потерять сохранённые материалы, кабинет не открыт."
+msgstr "Local storage is unavailable right now. To avoid losing saved materials, your account is not opened."
+
+#: apps/family/src/login-page.tsx
+msgid "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
+msgstr "Could not complete sign-in securely. Try again or contact the administrators."
+
+#: apps/family/src/login-page.tsx
+msgid "Не удалось войти"
+msgstr "Could not sign in"
+
+#: apps/family/src/main.tsx
+msgid "Не удалось подготовить работу без сети"
+msgstr "Could not prepare offline mode"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Не удалось применить обновление. Попробуйте ещё раз."
+msgstr "Could not apply the update. Please try again."
+
+#: apps/family/src/login-page.tsx
+msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
+msgstr "Could not reach the server. Check the internet connection and try again."
+
+#: apps/family/src/routes/__root.tsx
+msgid "Новости"
+msgstr "News"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Обновить сейчас"
+msgstr "Update now"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Обновляем…"
+msgstr "Updating…"
+
+#: apps/family/src/login-page.tsx
+msgid "Пароль"
+msgstr "Password"
+
+#: apps/family/src/login-page.tsx
+msgid "Показать пароль"
+msgstr "Show password"
+
+#: apps/family/src/login-page.tsx
+msgid "Помощь: <0>vmsh@179.ru</0>"
+msgstr "Help: <0>vmsh@179.ru</0>"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Приложение готово к работе без сети"
+msgstr "The app is ready to work offline"
+
+#: apps/family/src/main.tsx
+msgid "Проверяем сохранённые материалы на этом устройстве."
+msgstr "Checking saved materials on this device."
+
+#: apps/family/src/routes/__root.tsx
+msgid "Профиль"
+msgstr "Profile"
+
+#: apps/family/src/routes/__root.tsx
+msgid "Родитель"
+msgstr "Parent"
+
+#: apps/family/src/routes/__root.tsx
+msgid "Сейчас"
+msgstr "Now"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Скрыть"
+msgstr "Hide"
+
+#: apps/family/src/login-page.tsx
+msgid "Скрыть пароль"
+msgstr "Hide password"
+
+#: apps/family/src/login-page.tsx
+msgid "Слишком много попыток. Подождите немного и попробуйте ещё раз."
+msgstr "Too many attempts. Wait a little and try again."
+
+#: apps/family/src/routes/__root.tsx
+msgid "Страница не найдена"
+msgstr "Page not found"

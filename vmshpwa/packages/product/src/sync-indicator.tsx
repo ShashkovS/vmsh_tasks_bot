@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { Check, CloudUpload, RefreshCw } from 'lucide-react'
 
 import { Button, cn } from '@vmsh/ui'
@@ -32,7 +33,7 @@ export function SyncIndicator({
           aria-hidden="true"
           className="size-3.5 animate-spin motion-reduce:animate-none"
         />
-        Синхронизация…
+        <Trans>Синхронизация…</Trans>
       </span>
     )
   }
@@ -47,14 +48,15 @@ export function SyncIndicator({
         role="status"
       >
         <Check aria-hidden="true" className="size-3.5 text-status-success" />
-        Всё отправлено
+        <Trans>Всё отправлено</Trans>
       </span>
     )
   }
 
   return (
     <Button className={className} onClick={onOpenOutbox} size="sm" variant="outline">
-      <CloudUpload aria-hidden="true" />В очереди: {queuedCount}
+      <CloudUpload aria-hidden="true" />
+      <Trans>В очереди: {queuedCount}</Trans>
     </Button>
   )
 }

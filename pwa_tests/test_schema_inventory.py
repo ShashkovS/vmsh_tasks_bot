@@ -342,6 +342,8 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
                 # course columns introduced by the omitted auth/course branch.
                 "0089.pwa_communication_targeting",
                 "0090.pwa_support_photos",
+                # The account interface language alters auth_accounts.
+                "0098.pwa_account_locale",
             }
         )
     )
@@ -365,6 +367,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
         "0076.pwa_account_provisioning_batches",
         "0089.pwa_communication_targeting",
         "0090.pwa_support_photos",
+        "0098.pwa_account_locale",
     ]
     assert {item["name"] for item in report["missing_product_objects"]} >= {
         "auth_accounts",

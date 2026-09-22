@@ -50,3 +50,5 @@ export * from './organizer-pages'
 export { usePwaUpdateActivation } from './pwa-update-activation'
 
 export { PushOnboarding } from './push-onboarding'
+export * from './interface-language'
+export { syncDeviceLocale } from './device-locale'

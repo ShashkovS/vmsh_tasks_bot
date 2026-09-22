@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 
 import type {
@@ -7,6 +7,7 @@ import type {
 } from '@vmsh/contracts'
 
 import { AccountProvisioningView } from './account-provisioning-page'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(cleanup)
 

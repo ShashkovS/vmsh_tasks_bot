@@ -1,3 +1,6 @@
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
+import { plural, t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   authQueryKeys,
@@ -91,7 +94,7 @@ interface PreparedSessionEnd {
 }
 
 function sessionDeviceName(session: AuthSessionSummary): string {
-  return session.deviceLabel ?? session.userAgentFamily ?? 'Неизвестное устройство'
+  return session.deviceLabel ?? session.userAgentFamily ?? t`Неизвестное устройство`
 }
 
 function sessionBrowserLabel(session: AuthSessionSummary): string | null {
@@ -100,7 +103,7 @@ function sessionBrowserLabel(session: AuthSessionSummary): string | null {
 }
 
 function formatSessionTime(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
@@ -110,14 +113,14 @@ function formatSessionTime(value: string): string {
 }
 
 function sessionListIntegrityIssue(sessions: readonly AuthSessionSummary[]): string | null {
-  if (sessions.length === 0) return 'Сервер не подтвердил текущую сессию.'
+  if (sessions.length === 0) return t`Сервер не подтвердил текущую сессию.`
   if (sessions.filter((session) => session.isCurrent).length !== 1) {
-    return 'Сервер вернул противоречивый список сессий.'
+    return t`Сервер вернул противоречивый список сессий.`
   }
   const audiences = new Set(sessions.map((session) => session.audience))
-  if (audiences.size !== 1) return 'Сервер смешал сессии разных кабинетов.'
+  if (audiences.size !== 1) return t`Сервер смешал сессии разных кабинетов.`
   const identifiers = new Set(sessions.map((session) => session.sessionId))
-  if (identifiers.size !== sessions.length) return 'Сервер вернул повторяющиеся сессии.'
+  if (identifiers.size !== sessions.length) return t`Сервер вернул повторяющиеся сессии.`
   return null
 }
 
@@ -132,36 +135,33 @@ function isLocalEndIntent(
 }
 
 function confirmationTitle(intent: SessionEndIntent): string {
-  if (intent.kind === 'all') return 'Выйти на всех устройствах?'
-  if (intent.kind === 'current') return 'Выйти на этом устройстве?'
-  return 'Завершить сессию?'
+  if (intent.kind === 'all') return t`Выйти на всех устройствах?`
+  if (intent.kind === 'current') return t`Выйти на этом устройстве?`
+  return t`Завершить сессию?`
 }
 
 function confirmationDescription(prepared: PreparedSessionEnd): string {
   if (prepared.intent.kind === 'all') {
-    return 'Вход будет завершён на всех ваших устройствах. Чтобы продолжить работу, потребуется войти снова.'
+    return t`Вход будет завершён на всех ваших устройствах. Чтобы продолжить работу, потребуется войти снова.`
   }
   if (prepared.intent.kind === 'current') {
-    return 'На этом устройстве потребуется войти снова.'
+    return t`На этом устройстве потребуется войти снова.`
   }
-  return `На устройстве «${prepared.deviceName}» потребуется войти снова.`
+  return t`На устройстве «${prepared.deviceName}» потребуется войти снова.`
 }
 
 function offlineWorkWarning(inspection: OfflineWorkInspection): string | null {
   if (inspection.status !== 'pending') return null
   if (inspection.queuedCount === undefined) {
-    return 'Есть неотправленная работа. После выхода локальная очередь может быть удалена.'
+    return t`Есть неотправленная работа. После выхода локальная очередь может быть удалена.`
   }
   const count = Math.max(0, Math.trunc(inspection.queuedCount))
-  const mod100 = count % 100
-  const mod10 = count % 10
-  const suffix =
-    mod10 === 1 && mod100 !== 11
-      ? 'неотправленное действие'
-      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
-        ? 'неотправленных действия'
-        : 'неотправленных действий'
-  return `В локальной очереди ${count} ${suffix}. После выхода они могут быть удалены.`
+  return plural(count, {
+    one: 'В локальной очереди # неотправленное действие. После выхода они могут быть удалены.',
+    few: 'В локальной очереди # неотправленных действия. После выхода они могут быть удалены.',
+    many: 'В локальной очереди # неотправленных действий. После выхода они могут быть удалены.',
+    other: 'В локальной очереди # неотправленного действия. После выхода они могут быть удалены.',
+  })
 }
 
 function SessionRow({
@@ -190,7 +190,11 @@ function SessionRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-foreground">{deviceName}</span>
-          {session.isCurrent ? <Badge variant="info">Это устройство</Badge> : null}
+          {session.isCurrent ? (
+            <Badge variant="info">
+              <Trans>Это устройство</Trans>
+            </Badge>
+          ) : null}
         </div>
         {sessionBrowserLabel(session) ? (
           <p className="mt-0.5 text-caption text-muted-foreground">
@@ -198,14 +202,14 @@ function SessionRow({
           </p>
         ) : null}
         <p className="mt-1 text-caption text-muted-foreground">
-          Последняя активность: {formatSessionTime(session.lastSeenAt)}
+          <Trans>Последняя активность:</Trans> {formatSessionTime(session.lastSeenAt)}
         </p>
       </div>
       <Button
         aria-label={
           session.isCurrent
-            ? 'Выйти на этом устройстве'
-            : `Завершить сессию на устройстве ${deviceName}`
+            ? t`Выйти на этом устройстве`
+            : t`Завершить сессию на устройстве ${deviceName}`
         }
         disabled={actionPending}
         onClick={() => onRequestEnd(intent, deviceName)}
@@ -213,7 +217,7 @@ function SessionRow({
         variant={session.isCurrent ? 'outline' : 'ghost'}
       >
         {actionPending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
-        {session.isCurrent ? 'Выйти' : 'Завершить'}
+        {session.isCurrent ? t`Выйти` : t`Завершить`}
       </Button>
     </li>
   )
@@ -224,7 +228,7 @@ export function SessionManagementView({
   onEndSession,
   onRetry,
   offlineWorkGuard,
-  title = 'Устройства и сессии',
+  title = t`Устройства и сессии`,
 }: SessionManagementViewProps) {
   const [preparedEnd, setPreparedEnd] = useState<PreparedSessionEnd | null>(null)
   const [preparingKey, setPreparingKey] = useState<string | null>(null)
@@ -247,7 +251,7 @@ export function SessionManagementView({
         setPreparedEnd({ intent, deviceName, offlineWork })
       } catch {
         setActionError(
-          'Не удалось проверить локальную очередь. Выход не выполнен; повторите попытку.',
+          t`Не удалось проверить локальную очередь. Выход не выполнен; повторите попытку.`,
         )
       } finally {
         setPreparingKey(null)
@@ -265,7 +269,7 @@ export function SessionManagementView({
       await onEndSession(preparedEnd.intent)
     } catch {
       setPreparedEnd(null)
-      setActionError('Не удалось завершить сессию. Ничего не изменено; повторите попытку.')
+      setActionError(t`Не удалось завершить сессию. Ничего не изменено; повторите попытку.`)
       setEndingKey(null)
       return
     }
@@ -281,7 +285,7 @@ export function SessionManagementView({
       }
     } catch {
       setActionError(
-        'Сессия завершена, но локальные данные не удалось очистить. Закройте приложение на общем устройстве.',
+        t`Сессия завершена, но локальные данные не удалось очистить. Закройте приложение на общем устройстве.`,
       )
     }
     setPreparedEnd(null)
@@ -300,7 +304,7 @@ export function SessionManagementView({
       </CardHeader>
       <CardContent>
         {state.status === 'loading' ? (
-          <div aria-label="Загрузка списка устройств" className="space-y-3" role="status">
+          <div aria-label={t`Загрузка списка устройств`} className="space-y-3" role="status">
             {[0, 1].map((item) => (
               <div className="flex items-center gap-3" key={item}>
                 <Skeleton className="size-9 shrink-0" />
@@ -319,17 +323,17 @@ export function SessionManagementView({
             <AlertContent>
               <AlertTitle>
                 {state.kind === 'network'
-                  ? 'Не удалось загрузить устройства'
-                  : 'Не удалось безопасно открыть список сессий'}
+                  ? t`Не удалось загрузить устройства`
+                  : t`Не удалось безопасно открыть список сессий`}
               </AlertTitle>
               <AlertDescription>
                 {state.kind === 'network'
-                  ? 'Проверьте соединение и повторите попытку.'
-                  : 'Действия с сессиями отключены. Обновите данные перед повторной попыткой.'}
+                  ? t`Проверьте соединение и повторите попытку.`
+                  : t`Действия с сессиями отключены. Обновите данные перед повторной попыткой.`}
               </AlertDescription>
               {onRetry ? (
                 <Button className="mt-2" onClick={() => void onRetry()} size="sm" variant="outline">
-                  <RefreshCw aria-hidden="true" /> Повторить
+                  <RefreshCw aria-hidden="true" /> <Trans>Повторить</Trans>
                 </Button>
               ) : null}
             </AlertContent>
@@ -340,11 +344,15 @@ export function SessionManagementView({
           <Alert role="alert" tone="danger">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Список сессий не подтверждён</AlertTitle>
-              <AlertDescription>{integrityIssue} Действия временно отключены.</AlertDescription>
+              <AlertTitle>
+                <Trans>Список сессий не подтверждён</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>{integrityIssue} Действия временно отключены.</Trans>
+              </AlertDescription>
               {onRetry ? (
                 <Button className="mt-2" onClick={() => void onRetry()} size="sm" variant="outline">
-                  <RefreshCw aria-hidden="true" /> Обновить
+                  <RefreshCw aria-hidden="true" /> <Trans>Обновить</Trans>
                 </Button>
               ) : null}
             </AlertContent>
@@ -353,7 +361,7 @@ export function SessionManagementView({
 
         {canManage && state.status === 'ready' ? (
           <>
-            <ul className="divide-y divide-border" aria-label="Активные сессии">
+            <ul className="divide-y divide-border" aria-label={t`Активные сессии`}>
               {state.sessions.map((session) => (
                 <SessionRow
                   actionPending={
@@ -373,11 +381,11 @@ export function SessionManagementView({
             <div className="mt-3 border-t border-border pt-3">
               <Button
                 disabled={pendingKey !== null}
-                onClick={() => void requestEnd({ kind: 'all' }, 'Все устройства')}
+                onClick={() => void requestEnd({ kind: 'all' }, t`Все устройства`)}
                 size="sm"
                 variant="destructive"
               >
-                <LogOut aria-hidden="true" /> Выйти на всех устройствах
+                <LogOut aria-hidden="true" /> <Trans>Выйти на всех устройствах</Trans>
               </Button>
             </div>
           </>
@@ -387,7 +395,9 @@ export function SessionManagementView({
           <Alert className="mt-3" role="alert" tone="danger">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Сессия не изменена</AlertTitle>
+              <AlertTitle>
+                <Trans>Сессия не изменена</Trans>
+              </AlertTitle>
               <AlertDescription>{actionError}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -411,7 +421,9 @@ export function SessionManagementView({
                 <Alert role="alert" tone="warning">
                   <AlertTriangle aria-hidden="true" />
                   <AlertContent>
-                    <AlertTitle>Сначала проверьте очередь</AlertTitle>
+                    <AlertTitle>
+                      <Trans>Сначала проверьте очередь</Trans>
+                    </AlertTitle>
                     <AlertDescription>
                       {offlineWorkWarning(preparedEnd.offlineWork)}
                     </AlertDescription>
@@ -424,7 +436,7 @@ export function SessionManagementView({
                   onClick={() => setPreparedEnd(null)}
                   variant="outline"
                 >
-                  Отмена
+                  <Trans>Отмена</Trans>
                 </Button>
                 <Button
                   disabled={endingKey !== null}
@@ -432,7 +444,7 @@ export function SessionManagementView({
                   variant="destructive"
                 >
                   {endingKey ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
-                  {endingKey ? 'Завершаем…' : 'Подтвердить'}
+                  {endingKey ? t`Завершаем…` : t`Подтвердить`}
                 </Button>
               </DialogFooter>
             </>

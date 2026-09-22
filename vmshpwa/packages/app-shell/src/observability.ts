@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import * as Sentry from '@sentry/react'
 import type { Breadcrumb, Event } from '@sentry/react'
 import {
@@ -154,8 +155,9 @@ function submissionFailureDomainCode(error?: unknown, storedLabel?: string): str
   return api?.code ?? storedLabel?.split(':')[2]
 }
 
-export const SUBMISSION_DEADLINE_MESSAGE =
-  'Срок сдачи закончился, поэтому ответ не отправлен. Черновик сохранён на этом устройстве.'
+export function submissionDeadlineMessage(): string {
+  return t`Срок сдачи закончился, поэтому ответ не отправлен. Черновик сохранён на этом устройстве.`
+}
 
 export function isSubmissionDeadlineFailure(error?: unknown, storedLabel?: string): boolean {
   return submissionFailureDomainCode(error, storedLabel) === 'submission_deadline_passed'
@@ -165,44 +167,41 @@ export function submissionFailureMessage(error?: unknown, storedLabel?: string):
   const api = error instanceof ApiResponseError ? error : null
   const domainCode = submissionFailureDomainCode(error, storedLabel)
   if (domainCode === 'request_not_confirmed')
-    return 'Сервер не подтвердил отправку. Ответ сохранён; проверьте результат перед повтором.'
+    return t`Сервер не подтвердил отправку. Ответ сохранён; проверьте результат перед повтором.`
   if (domainCode === 'service_updating' || serviceAvailabilitySnapshot().state === 'updating')
-    return 'Обновляем сервис. Отправим после обновления.'
-  if (domainCode === 'submission_deadline_passed') return SUBMISSION_DEADLINE_MESSAGE
+    return t`Обновляем сервис. Отправим после обновления.`
+  if (domainCode === 'submission_deadline_passed') return submissionDeadlineMessage()
   if (domainCode === 'test_attempt_hour_limit')
-    return 'На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем.'
+    return t`На эту задачу закончились попытки на текущий час. Вернитесь к ней позже. Ответ не отправлен; автоматически отправлять его не будем.`
   if (domainCode === 'test_attempt_day_limit')
-    return 'На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра. Ответ не отправлен; автоматически отправлять его не будем.'
+    return t`На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра. Ответ не отправлен; автоматически отправлять его не будем.`
   if (storedLabel === 'client:stale-sending-lease')
-    return 'Предыдущая отправка прервалась до подтверждения. Ответ сохранён — нажмите «Повторить».'
+    return t`Предыдущая отправка прервалась до подтверждения. Ответ сохранён — нажмите «Повторить».`
   const status = api?.status ?? Number(storedLabel?.split(':')[1])
   let message: string
-  if (status === 401) message = 'Сессия истекла. Войдите снова, затем повторите отправку.'
+  if (status === 401) message = t`Сессия истекла. Войдите снова, затем повторите отправку.`
   else if (status === 403)
-    message = 'Сервер запретил отправку. Проверьте доступ к задаче или обратитесь к преподавателю.'
+    message = t`Сервер запретил отправку. Проверьте доступ к задаче или обратитесь к преподавателю.`
   else if (status === 429)
-    message = 'Слишком много запросов. Подождите немного и повторите отправку.'
+    message = t`Слишком много запросов. Подождите немного и повторите отправку.`
   else if (status >= 500)
-    message = 'Ошибка сервера. Это не проблема вашего интернета. Повторите отправку позже.'
+    message = t`Ошибка сервера. Это не проблема вашего интернета. Повторите отправку позже.`
   else if (api) message = api.message
   else if (status >= 400)
-    message = 'Сервер отклонил отправку. Обновите задачу и проверьте условия приёма.'
+    message = t`Сервер отклонил отправку. Обновите задачу и проверьте условия приёма.`
   else if (
     (error instanceof Error && /TimeoutError/.test(error.name)) ||
     /TimeoutError/.test(storedLabel ?? '')
   )
-    message =
-      'Сервер не ответил за 30 секунд. Ответ сохранён — повторите отправку. Это не означает, что на устройстве нет интернета.'
+    message = t`Сервер не ответил за 30 секунд. Ответ сохранён — повторите отправку. Это не означает, что на устройстве нет интернета.`
   else if (
     (error instanceof Error && /NetworkError|AbortError/.test(error.name)) ||
     /NetworkError|AbortError/.test(storedLabel ?? '')
   )
-    message =
-      'Не удалось дождаться ответа сервера. Причиной может быть связь или недоступность сервера. Повторите отправку.'
+    message = t`Не удалось дождаться ответа сервера. Причиной может быть связь или недоступность сервера. Повторите отправку.`
   else if (error || storedLabel)
-    message =
-      'Ошибка приложения при отправке. Повторите попытку; если ошибка остаётся, сообщите преподавателю.'
-  else message = 'Отправка ещё не подтверждена. Нажмите «Повторить».'
-  const code = api ? `HTTP ${api.status}, ${api.code}; запрос ${api.requestId}` : storedLabel
-  return `${message}${code ? ` Код: ${code}.` : ''}`
+    message = t`Ошибка приложения при отправке. Повторите попытку; если ошибка остаётся, сообщите преподавателю.`
+  else message = t`Отправка ещё не подтверждена. Нажмите «Повторить».`
+  const code = api ? t`HTTP ${api.status}, ${api.code}; запрос ${api.requestId}` : storedLabel
+  return `${message}${code ? t` Код: ${code}.` : ''}`
 }

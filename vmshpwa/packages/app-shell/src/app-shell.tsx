@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
 import { Menu, Wifi } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -50,7 +52,7 @@ export function AppShell({
         >
           <div className="flex min-w-0 items-baseline gap-2">
             <Link className="shrink-0 font-semibold tracking-tight" to="/">
-              ВМШ 179
+              <Trans>ВМШ 179</Trans>
             </Link>
             {displayName || !compactHeader ? (
               <span
@@ -68,7 +70,7 @@ export function AppShell({
           <div className="ml-auto flex shrink-0 items-center gap-1">
             {!compactHeader ? (
               <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
-                <Wifi className="size-3.5" aria-hidden="true" /> синхронизировано
+                <Wifi className="size-3.5" aria-hidden="true" /> <Trans>синхронизировано</Trans>
               </span>
             ) : null}
             <ThemeToggle />
@@ -79,7 +81,7 @@ export function AppShell({
                 onClick={() => setMenuOpen(true)}
                 size="icon-sm"
                 variant="ghost"
-                aria-label="Открыть меню"
+                aria-label={t`Открыть меню`}
               >
                 <Menu aria-hidden="true" />
               </Button>
@@ -104,7 +106,7 @@ export function AppShell({
 
       {mobileNavigation ? (
         <nav
-          aria-label="Основная навигация"
+          aria-label={t`Основная навигация`}
           className="fixed inset-x-0 bottom-0 z-40 grid border-t bg-background/98 px-1 pb-[env(safe-area-inset-bottom)] md:hidden"
           style={{ gridTemplateColumns: `repeat(${navigation.length}, minmax(0, 1fr))` }}
         >
@@ -126,8 +128,12 @@ export function AppShell({
         <Drawer onOpenChange={setMenuOpen} open={menuOpen} side="left">
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle>ВМШ 179 · {displayName ?? title}</DrawerTitle>
-              <DrawerDescription>Разделы рабочего кабинета</DrawerDescription>
+              <DrawerTitle>
+                <Trans>ВМШ 179 ·</Trans> {displayName ?? title}
+              </DrawerTitle>
+              <DrawerDescription>
+                <Trans>Разделы рабочего кабинета</Trans>
+              </DrawerDescription>
             </DrawerHeader>
             <div className="min-h-0 flex-1 overflow-y-auto p-3 pt-0">
               <ShellNavigation navigation={navigation} onNavigate={() => setMenuOpen(false)} />
@@ -149,7 +155,7 @@ function ShellNavigation({
   onNavigate?: () => void
 }) {
   return (
-    <nav aria-label="Основная навигация" className="space-y-1">
+    <nav aria-label={t`Основная навигация`} className="space-y-1">
       {navigation.map((item) => (
         <Link
           activeProps={{ className: 'bg-accent text-accent-foreground' }}

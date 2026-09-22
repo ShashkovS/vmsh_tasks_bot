@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import webDocumentFixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
 import { webContentContractFixtureSchema, webContentDocumentSchema } from '@vmsh/contracts'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 import {
   katexRenderLimits,

@@ -1,9 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import type { LiveDirectoryStudent } from '@vmsh/contracts'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 import { StudentSearch } from './live-marking-page'
 

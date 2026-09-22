@@ -196,7 +196,7 @@ msgstr ""
 
 #: apps/pwa_api/middleware.py
 msgid "Вход временно недоступен"
-msgstr ""
+msgstr "Sign-in is temporarily unavailable"
 
 #: apps/pwa_api/organizer_question_routes.py
 #: apps/pwa_api/support_routes.py
@@ -251,6 +251,10 @@ msgstr ""
 msgid "Выберите файл XLSX"
 msgstr ""
 
+#: apps/pwa_api/auth_routes.py
+msgid "Выберите язык интерфейса"
+msgstr "Choose the interface language"
+
 #: apps/pwa_api/content_routes.py
 msgid "Выбран недопустимый масштаб рисунка"
 msgstr ""
@@ -292,7 +296,7 @@ msgstr ""
 #: apps/pwa_api/middleware.py
 #: apps/pwa_api/submission_routes.py
 msgid "Для продолжения войдите в кабинет."
-msgstr ""
+msgstr "Sign in to your account to continue."
 
 #: apps/pwa_api/content_routes.py
 msgid "Для расписания текущая и отложенная версии должны совпадать"
@@ -403,13 +407,13 @@ msgstr ""
 
 #: apps/pwa_api/middleware.py
 msgid "Запрос отклонён политикой безопасности."
-msgstr ""
+msgstr "The request was rejected by the security policy."
 
 #: apps/pwa_api/auth_routes.py
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/review_routes.py
 msgid "Запрос слишком большой"
-msgstr ""
+msgstr "The request is too large"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Идентификатор курса должен быть текстом"
@@ -586,7 +590,7 @@ msgstr ""
 
 #: apps/pwa_api/middleware.py
 msgid "Не удалось войти. Проверьте логин и данные для входа."
-msgstr ""
+msgstr "Could not sign in. Check your login and credentials."
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Не удалось применить изменение. Обновите список."
@@ -626,6 +630,10 @@ msgstr ""
 msgid "Не удалось сохранить фотографию. Повторите попытку."
 msgstr ""
 
+#: apps/pwa_api/auth_routes.py
+msgid "Не удалось сохранить язык интерфейса"
+msgstr "Could not save the interface language"
+
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Неверная аудитория аналитики"
 msgstr ""
@@ -653,7 +661,7 @@ msgstr ""
 #: apps/pwa_api/auth_routes.py
 #: apps/pwa_api/group_banner_routes.py
 msgid "Недостаточно прав"
-msgstr ""
+msgstr "Insufficient permissions"
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Недостаточно прав для внесения устных результатов"
@@ -812,7 +820,7 @@ msgstr ""
 
 #: apps/pwa_api/auth_routes.py
 msgid "Некорректный идентификатор сеанса"
-msgstr ""
+msgstr "Invalid session identifier"
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Некорректный номер занятия"
@@ -861,7 +869,7 @@ msgstr ""
 
 #: apps/pwa_api/auth_routes.py
 msgid "Нет доступных групп для тестирования"
-msgstr ""
+msgstr "No groups are available for testing"
 
 #: apps/pwa_api/news_routes.py
 msgid "Новости временно недоступны"
@@ -1519,7 +1527,7 @@ msgstr ""
 #: apps/pwa_api/auth_routes.py
 #: apps/pwa_api/content_routes.py
 msgid "Проверьте поля формы"
-msgstr ""
+msgstr "Check the form fields"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте поля фотографии"
@@ -1776,7 +1784,7 @@ msgstr ""
 
 #: apps/pwa_api/middleware.py
 msgid "Сеанс завершён. Войдите снова."
-msgstr ""
+msgstr "The session has ended. Please sign in again."
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "Сезон не найден"
@@ -1804,7 +1812,7 @@ msgstr ""
 
 #: apps/pwa_api/middleware.py
 msgid "Слишком много попыток. Попробуйте позже."
-msgstr ""
+msgstr "Too many attempts. Try again later."
 
 #: apps/pwa_api/classroom_assignment_routes.py
 msgid "Слишком много школьников"
@@ -1956,7 +1964,7 @@ msgstr ""
 
 #: apps/pwa_api/auth_routes.py
 msgid "Тело запроса должно быть корректным JSON"
-msgstr ""
+msgstr "The request body must be valid JSON"
 
 #: apps/pwa_api/classroom_assignment_routes.py
 #: apps/pwa_api/classroom_delivery_routes.py
@@ -1977,7 +1985,7 @@ msgstr ""
 
 #: apps/pwa_api/auth_routes.py
 msgid "Тело запроса должно быть пустым JSON-объектом"
-msgstr ""
+msgstr "The request body must be an empty JSON object"
 
 #: apps/pwa_api/submission_routes.py
 msgid "Тестовая задача недоступна."

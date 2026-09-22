@@ -1,8 +1,9 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import assignmentFixture from '@vmsh/contracts/fixtures/classrooms/assignment-plan.v1.json'
 import { classroomAssignmentPlanResponseSchema } from '@vmsh/contracts'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 import { ClassroomAssignmentStats } from './classroom-event-page'
 

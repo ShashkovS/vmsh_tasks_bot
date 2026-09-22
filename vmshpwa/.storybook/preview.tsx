@@ -2,7 +2,13 @@ import type { Decorator, Preview } from '@storybook/react-vite'
 import { initialize, mswLoader } from 'msw-storybook-addon'
 
 import { AppProviders } from '@vmsh/app-shell'
-import { DEFAULT_LOCALE, LocaleProvider, activateLocale, isLocale } from '@vmsh/i18n'
+import {
+  DEFAULT_LOCALE,
+  LocaleProvider,
+  activateLocale,
+  enableDevelopmentCompiler,
+  isLocale,
+} from '@vmsh/i18n'
 import '@vmsh/ui/styles.css'
 
 import { allCatalogLoaders } from '../dev/test-support/i18n-catalogs'
@@ -20,6 +26,7 @@ type Globals = { theme?: unknown; density?: unknown; motion?: unknown; locale?: 
 // Stories render in Russian by default so play functions keep asserting the
 // source copy; the toolbar switches the whole canvas to English for review.
 async function withLocale({ globals }: { globals: Globals }) {
+  await enableDevelopmentCompiler()
   await activateLocale(
     isLocale(globals.locale) ? globals.locale : DEFAULT_LOCALE,
     allCatalogLoaders,
@@ -44,7 +51,10 @@ const withTheme: Decorator = (Story, context) => {
   const padded = (context.parameters as { canvasPadding?: boolean }).canvasPadding !== false
 
   return (
-    <LocaleProvider loaders={allCatalogLoaders}>
+    <LocaleProvider
+      key={isLocale(globals.locale) ? globals.locale : DEFAULT_LOCALE}
+      loaders={allCatalogLoaders}
+    >
       <AppProviders>
         <div className={padded ? 'min-h-svh bg-background p-6 text-foreground' : 'min-h-svh'}>
           <Story />

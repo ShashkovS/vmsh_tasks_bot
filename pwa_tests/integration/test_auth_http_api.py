@@ -867,3 +867,64 @@ async def test_refresh_verified_logout_closes_socket_but_wrong_secret_cannot(
     await second_socket.send_json({"type": "ping"})
     assert (await second_socket.receive_json())["type"] == "pong"
     await second_socket.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("audience", list(AuthAudience))
+async def test_account_locale_defaults_to_russian_and_is_saved(
+    auth_http_client,
+    audience: AuthAudience,
+):
+    # adr/0004-pwa-internationalization.md: the account language is authoritative.
+    login = await auth_http_client.post(
+        f"/{audience.value}/api/v1/auth/login",
+        json=_login_body(audience),
+        headers=_headers(unsafe=True),
+    )
+    assert login.status == 200, await login.text()
+    assert (await login.json())["principal"]["locale"] == "ru"
+
+    saved = await auth_http_client.put(
+        f"/{audience.value}/api/v1/auth/locale",
+        json={"locale": "en"},
+        headers=_headers(unsafe=True),
+    )
+    assert saved.status == 200, await saved.text()
+    assert await saved.json() == {"locale": "en"}
+
+    me = await auth_http_client.get(
+        f"/{audience.value}/api/v1/auth/me", headers=_headers()
+    )
+    assert (await me.json())["principal"]["locale"] == "en"
+
+    for invalid in ({"locale": "de"}, {"locale": "EN"}, {}, {"locale": "en", "x": 1}):
+        rejected = await auth_http_client.put(
+            f"/{audience.value}/api/v1/auth/locale",
+            json=invalid,
+            headers=_headers(unsafe=True),
+        )
+        assert rejected.status == 422
+        error = (await rejected.json())["error"]
+        assert error["code"] == "validation_error"
+        assert error["details"] == {"field": "locale"}
+
+
+@pytest.mark.asyncio
+async def test_account_locale_requires_an_authenticated_same_origin_request(
+    auth_http_client,
+):
+    anonymous = await auth_http_client.put(
+        "/student/api/v1/auth/locale",
+        json={"locale": "en"},
+        headers=_headers(unsafe=True),
+    )
+    assert anonymous.status == 401
+
+    login = await _student_login(auth_http_client)
+    assert login.status == 200
+    cross_site = await auth_http_client.put(
+        "/student/api/v1/auth/locale",
+        json={"locale": "en"},
+        headers=_headers(),
+    )
+    assert cross_site.status == 403

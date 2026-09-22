@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { CircleAlert, Inbox, LockKeyhole, RefreshCw, WifiOff } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -113,12 +115,14 @@ export function PageStatePanel({
 }) {
   if (state === 'loading') {
     return (
-      <Card aria-label="Загрузка" role="status">
+      <Card aria-label={t`Загрузка`} role="status">
         <CardContent className="space-y-3 pt-5">
           <Skeleton className="h-5 w-2/5" />
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
-          <span className="sr-only">Загружаем данные</span>
+          <span className="sr-only">
+            <Trans>Загружаем данные</Trans>
+          </span>
         </CardContent>
       </Card>
     )
@@ -126,13 +130,13 @@ export function PageStatePanel({
 
   const Icon = stateIcon[state]
   const defaults = {
-    empty: ['Здесь пока ничего нет', 'Новые материалы появятся здесь автоматически.'],
+    empty: [t`Здесь пока ничего нет`, t`Новые материалы появятся здесь автоматически.`],
     error: [
-      'Не удалось загрузить данные',
-      'Ваши локальные изменения сохранены. Попробуйте ещё раз.',
+      t`Не удалось загрузить данные`,
+      t`Ваши локальные изменения сохранены. Попробуйте ещё раз.`,
     ],
-    offline: ['Нет сети', 'Доступно всё, что уже сохранено на этом устройстве.'],
-    forbidden: ['Нет доступа', 'У вашей учётной записи нет права открывать этот раздел.'],
+    offline: [t`Нет сети`, t`Доступно всё, что уже сохранено на этом устройстве.`],
+    forbidden: [t`Нет доступа`, t`У вашей учётной записи нет права открывать этот раздел.`],
   } as const
 
   return (

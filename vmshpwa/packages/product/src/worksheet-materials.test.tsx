@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { WorksheetMaterials } from './worksheet-materials'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 afterEach(cleanup)
 const unavailable = { available: false, load: () => Promise.resolve(null) }
 it('does not load before confirmation or after cancellation, then reopens without a request', async () => {

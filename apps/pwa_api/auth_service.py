@@ -509,6 +509,14 @@ class PwaAuthService:
             ip_prefix=coarse_ip_prefix(client_address),
         )
 
+    async def update_locale(
+        self, authenticated: AuthenticatedSession, *, locale: str
+    ) -> bool:
+        return await self.repository.update_account_locale(
+            account_id=authenticated.current.session.account_id,
+            locale=locale,
+        )
+
     async def logout_all(
         self,
         authenticated: AuthenticatedSession,

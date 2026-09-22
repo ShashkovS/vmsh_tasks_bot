@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ReviewLease } from '@vmsh/contracts'
 import type * as AppShell from '@vmsh/app-shell'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 const mocks = vi.hoisted(() => {
   const client = {

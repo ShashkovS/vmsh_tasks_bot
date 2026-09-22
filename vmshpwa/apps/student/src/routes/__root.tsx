@@ -1,3 +1,6 @@
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { BookOpenText, House, Newspaper, TrendingUp, UserRound } from 'lucide-react'
 import { useCallback } from 'react'
@@ -17,23 +20,53 @@ import { ConnectionBanner } from '@vmsh/product'
 import { useStudentOfflineReadStatus } from '../offline-student-data'
 
 const navigation = [
-  { label: 'Сейчас', to: '/', icon: <House className="size-5" aria-hidden="true" /> },
-  { label: 'Задачи', to: '/tasks', icon: <BookOpenText className="size-5" aria-hidden="true" /> },
-  { label: 'Новости', to: '/news', icon: <Newspaper className="size-5" aria-hidden="true" /> },
   {
-    label: 'Прогресс',
+    get label() {
+      return t`Сейчас`
+    },
+    to: '/',
+    icon: <House className="size-5" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Задачи`
+    },
+    to: '/tasks',
+    icon: <BookOpenText className="size-5" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Новости`
+    },
+    to: '/news',
+    icon: <Newspaper className="size-5" aria-hidden="true" />,
+  },
+  {
+    get label() {
+      return t`Прогресс`
+    },
     to: '/progress',
     icon: <TrendingUp className="size-5" aria-hidden="true" />,
   },
-  { label: 'Профиль', to: '/profile', icon: <UserRound className="size-5" aria-hidden="true" /> },
+  {
+    get label() {
+      return t`Профиль`
+    },
+    to: '/profile',
+    icon: <UserRound className="size-5" aria-hidden="true" />,
+  },
 ]
 
 export const Route = createRootRoute({
   component: StudentRootLayout,
   notFoundComponent: () => (
     <div className="p-8">
-      <h1 className="text-xl font-semibold">Страница не найдена</h1>
-      <p className="mt-2 text-muted-foreground">Проверьте адрес или вернитесь на текущую неделю.</p>
+      <h1 className="text-xl font-semibold">
+        <Trans>Страница не найдена</Trans>
+      </h1>
+      <p className="mt-2 text-muted-foreground">
+        <Trans>Проверьте адрес или вернитесь на текущую неделю.</Trans>
+      </p>
     </div>
   ),
 })
@@ -68,7 +101,7 @@ function StudentProtectedShell({
       <AppShell
         compactHeader={location.pathname.startsWith('/tasks')}
         product="student"
-        title="Школьник"
+        title={t`Школьник`}
         displayName={principal?.displayName}
         navigation={navigation}
         mobileNavigation
@@ -79,10 +112,12 @@ function StudentProtectedShell({
             role="status"
             className="mb-4 rounded-lg border border-border bg-muted p-3 text-small"
           >
-            Тестирование учителем. Отправки не входят в общую статистику.{' '}
-            <a href="/staff/" className="underline">
-              Вернуться в Staff
-            </a>
+            <Trans>
+              Тестирование учителем. Отправки не входят в общую статистику.{' '}
+              <a href="/staff/" className="underline">
+                Вернуться в Staff
+              </a>
+            </Trans>
           </div>
         ) : null}
         <StudentOfflineSessionNotice />
@@ -106,7 +141,7 @@ function StudentOfflineSessionNotice() {
   if (authentication.state.status !== 'offline-unverified' && scopedOfflineRead === null)
     return null
   const savedAt = scopedOfflineRead
-    ? new Intl.DateTimeFormat('ru-RU', {
+    ? dateTimeFormat(currentLocale(), {
         dateStyle: 'medium',
         timeStyle: 'short',
       }).format(new Date(scopedOfflineRead.fetchedAt))
@@ -115,8 +150,8 @@ function StudentOfflineSessionNotice() {
     <ConnectionBanner
       actionImpact={
         savedAt
-          ? `Показана последняя сохранённая копия от ${savedAt}.${scopedOfflineRead?.stale ? ' Срок свежести копии истёк.' : ''} Новые публикации и изменения появятся после восстановления связи.`
-          : 'Показана последняя сохранённая копия. Новые публикации и изменения появятся после восстановления связи.'
+          ? t`Показана последняя сохранённая копия от ${savedAt}.${scopedOfflineRead?.stale ? t` Срок свежести копии истёк.` : ''} Новые публикации и изменения появятся после восстановления связи.`
+          : t`Показана последняя сохранённая копия. Новые публикации и изменения появятся после восстановления связи.`
       }
       className="mb-4"
       state="offline"

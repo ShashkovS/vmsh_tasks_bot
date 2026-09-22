@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 6df15c67c7caf75b517b75c7c1400bc63b33ed6cc32d43b90843417f3c5dba97
+-- Product schema SHA-256: 326192fee2fe499ec3ae0fae26519ab44159f2a7f6a26aee2d57b1a064b6ff03
 
 CREATE TABLE achievement_definitions
 (
@@ -86,7 +86,8 @@ CREATE TABLE auth_accounts
     check (
         provisioning_password_plaintext is null
         or length(provisioning_password_plaintext) between 1 and 512
-    ),
+    ), locale text not null default 'ru'
+        check (locale in ('ru', 'en')),
     unique (audience, username_normalized),
     check (credential_hash is null or length(trim(credential_hash)) > 0),
     check (status <> 'active' or credential_hash is not null),
