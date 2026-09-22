@@ -333,6 +333,7 @@ def seed_room(f):
             event_id=event["id"],
             layout_id=layout,
             base_plan_id=None,
+            base_plan_version=None,
             actor_user_id=teacher,
             now=now,
         )
@@ -441,6 +442,7 @@ async def test_transfer_undo_restores_online_group_and_preserves_admin_draft(
             event_id=p["in_person_event_id"],
             layout_id=p["layout_version_id"],
             base_plan_id=p["id"],
+            base_plan_version=p["version"],
             actor_user_id=support.ADMIN_USER_ID,
             now="2026-08-01T12:00:00Z",
         )[0]

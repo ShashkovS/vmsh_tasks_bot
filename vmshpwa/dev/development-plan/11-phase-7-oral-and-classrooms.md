@@ -32,7 +32,7 @@
 - `oral_windows` с несколькими sequence numbers (текущий процесс использует три), adapter/view над `zoom_conversation`, `zoom_events`, `zoom_queue`.
 - `classrooms` — глобальный каталог с Unicode-normalized unique name, archive/restore, audit и optimistic `version`.
 - `classroom_layout_versions` + `classroom_layout_rooms` — event-scoped draft/confirmed/superseded схемы с provenance последних confirmed mappings выбранных групп. Аудитория относится максимум к одной группе; группа может иметь любое число аудиторий.
-- `classroom_assignment_plans` + `classroom_assignments` — event-scoped draft/confirmed/stale/superseded планы и snapshot `course_enrollment/group_lesson/group`. `assigned` требует комнату, `reassigning` её не содержит.
+- `classroom_assignment_plans` + `classroom_assignments` — на событие хранится один обновляемый confirmed-план и максимум один draft/stale со snapshot `course_enrollment/group_lesson/group`. Старые superseded-заголовки остаются только при ссылке рассылки/импорта и не содержат assignments. `assigned` требует комнату, `reassigning` её не содержит.
 - `classroom_assignment_delivery_batches` + recipients — immutable confirmed-plan snapshot для explicit PWA/personal-Telegram send только Student.
 - `users.grade`, `users.birthday` и существующая `student_strength` используются как nullable read sources. Расчёт силы остаётся совместимым с `_external_pipelines/a53_calc_rating_new.py`, выполняется versioned analytics job раз в несколько часов, публикует только полный successful run и не получает ручного Staff editor. Этап 7 может читать latest projection; исторические lesson metrics и графики подключаются в этапе 9.
 - `group_banners` может создаваться здесь или в этапе 8, но oral-window card остаётся отдельным типом UI.
@@ -66,7 +66,7 @@
 - Manual select/move меняет только draft и фиксирует `source=manual`; explicit full recalculation не перезаписывает confirmed history.
 - UI не отправляет mutation после каждого select. Изменения накапливаются в account/event/base-version-scoped local draft, переживают reload и отправляются одним batch-save/confirm.
 - Выбор комнаты другой группы того же курса требует отдельного подтверждения смены active group. Backend применяет `course_enrollment_events`, legacy mirror в `user_changes_log` на период миграции и assignment атомарно; отмена локального draft ничего не меняет на сервере. Комнаты групп другого курса не являются вариантами этой строки.
-- Школьники внутри комнаты всегда сортируются по фамилии и имени. Confirmed plans служат неизменяемой историей аудиторий, доступной из строки школьника.
+- Школьники внутри комнаты всегда сортируются по фамилии и имени. История из строки школьника читает итоговый confirmed-план каждого события; технические пересчёты и промежуточные перемещения не создают исторических строк.
 - Возраст вычисляется на сегодня с точностью до десятой года; класс и сила nullable. Room averages возраста, класса и силы независимо исключают отсутствующие значения и округляются до одного знака. Сила лежит в диапазоне 0–10 и вычисляется автоматически.
 - Поиск нормализует case, `ё/е`, пробелы и порядок слов, затем использует ограниченное редакционное расстояние по уже загруженным строкам. Совпадение подсвечивается, к нему можно перейти.
 - Confirm запрещён при смешении групп в комнате, mismatch snapshot/current group/layout или любом очном школьнике без комнаты. Active unused room разрешена.
@@ -142,7 +142,7 @@ vmshpwa/e2e/classrooms.spec.ts
 - Stale catalog/layout/plan version получает `409`; повтор confirm идемпотентен либо возвращает актуальный receipt.
 - Confirm incomplete/mixed/mismatched plan запрещён; unused room допустима.
 - Batch move применяет все строки атомарно; переход в другую группу того же курса без confirmation отклоняется и не меняет ни группу, ни аудиторию, а переход между курсами невалиден. История возвращает только confirmed plans.
-- Прошлые confirmed layouts/plans не меняют membership/assignment после archive/recalculation текущего урока. Глобальный rename исправляет отображаемое имя и в истории, а прежнее имя остаётся в audit.
+- Confirmed-планы прошлых событий сохраняют их итоговое membership/assignment. Пересчёт текущего события меняет только draft, а подтверждение атомарно обновляет его единственный confirmed-план. Глобальный rename исправляет отображаемое имя и в истории, а прежнее имя остаётся в audit.
 - Join secret исключён из caches, Sentry, WS и list payload.
 - Mapping oral results к `results`, duplicate import и legacy Zoom history сохраняются.
 - One-time Excel dry-run/import проверяется на synthetic committed fixtures с `IDd`, `Уровень`, `Аудитория` и сравнительным report по `a11`. Production-size локальный rehearsal может исходить только из временной копии `db/vmsh.db`, в которой до derivation имена и фамилии заменены Faker-значениями; source DB никогда не меняется, а копия не коммитится.

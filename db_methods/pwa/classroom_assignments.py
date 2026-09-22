@@ -94,6 +94,7 @@ def find_plan(
     placeholders = ", ".join("?" for _state in states)
     row = connection.execute(
         "SELECT id, public_id, in_person_event_id, layout_version_id, base_plan_id, "
+        "base_plan_version, "
         "state, stale_reason, created_at, updated_at, confirmed_at, version "
         f"FROM classroom_assignment_plans WHERE in_person_event_id = ? "
         f"AND state IN ({placeholders}) ORDER BY id DESC LIMIT 1",
@@ -107,6 +108,7 @@ def find_plan_by_public_id(
 ) -> dict[str, object] | None:
     row = connection.execute(
         "SELECT id, public_id, in_person_event_id, layout_version_id, base_plan_id, "
+        "base_plan_version, "
         "state, stale_reason, created_at, updated_at, confirmed_at, version "
         "FROM classroom_assignment_plans WHERE public_id = ?",
         (public_id,),
@@ -219,17 +221,122 @@ def insert_plan(
     event_id: int,
     layout_id: int,
     base_plan_id: int | None,
+    base_plan_version: int | None,
     actor_user_id: int,
     now: str,
 ) -> tuple[int, str]:
+    reserved = connection.execute(
+        "UPDATE classroom_assignment_plan_sequence "
+        "SET next_id = next_id + 1 WHERE singleton = 1 "
+        "RETURNING next_id - 1 AS plan_id"
+    ).fetchone()
+    if reserved is None:
+        raise RuntimeError("classroom assignment plan sequence is unavailable")
+    plan_id = int(reserved["plan_id"])
     row = connection.execute(
         "INSERT INTO classroom_assignment_plans "
-        "(in_person_event_id, layout_version_id, base_plan_id, state, "
+        "(id, in_person_event_id, layout_version_id, base_plan_id, "
+        "base_plan_version, state, "
         "created_by_user_id, created_at, updated_at) "
-        "VALUES (?, ?, ?, 'draft', ?, ?, ?) RETURNING id, public_id",
-        (event_id, layout_id, base_plan_id, actor_user_id, now, now),
+        "VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?) RETURNING id, public_id",
+        (
+            plan_id,
+            event_id,
+            layout_id,
+            base_plan_id,
+            base_plan_version,
+            actor_user_id,
+            now,
+            now,
+        ),
     ).fetchone()
     return int(row["id"]), str(row["public_id"])
+
+
+def discard_working_plan(
+    connection: sqlite3.Connection, *, plan_id: int, expected_version: int
+) -> bool:
+    current = connection.execute(
+        "SELECT 1 FROM classroom_assignment_plans "
+        "WHERE id = ? AND state IN ('draft', 'stale') AND version = ?",
+        (plan_id, expected_version),
+    ).fetchone()
+    if current is None:
+        return False
+    connection.execute("DELETE FROM classroom_assignments WHERE plan_id = ?", (plan_id,))
+    return (
+        connection.execute(
+            "DELETE FROM classroom_assignment_plans "
+            "WHERE id = ? AND state IN ('draft', 'stale') AND version = ?",
+            (plan_id, expected_version),
+        ).rowcount
+        == 1
+    )
+
+
+def apply_working_plan_to_confirmed(
+    connection: sqlite3.Connection,
+    *,
+    working_plan_id: int,
+    working_version: int,
+    confirmed_plan_id: int,
+    confirmed_version: int,
+    actor_user_id: int,
+    now: str,
+) -> bool:
+    working = connection.execute(
+        "SELECT layout_version_id FROM classroom_assignment_plans "
+        "WHERE id = ? AND state = 'draft' AND version = ? "
+        "AND base_plan_id = ? AND base_plan_version = ?",
+        (
+            working_plan_id,
+            working_version,
+            confirmed_plan_id,
+            confirmed_version,
+        ),
+    ).fetchone()
+    if working is None:
+        return False
+    updated = connection.execute(
+        "UPDATE classroom_assignment_plans "
+        "SET layout_version_id = ?, confirmed_by_user_id = ?, confirmed_at = ?, "
+        "updated_at = ?, version = version + 1, base_plan_id = NULL, "
+        "base_plan_version = NULL "
+        "WHERE id = ? AND state = 'confirmed' AND version = ?",
+        (
+            working["layout_version_id"],
+            actor_user_id,
+            now,
+            now,
+            confirmed_plan_id,
+            confirmed_version,
+        ),
+    )
+    if updated.rowcount != 1:
+        return False
+    connection.execute(
+        "DELETE FROM classroom_assignments WHERE plan_id = ?", (confirmed_plan_id,)
+    )
+    connection.execute(
+        "INSERT INTO classroom_assignments "
+        "(plan_id, course_enrollment_id, group_lesson_id, group_id, classroom_id, "
+        "status, source, created_at, updated_at) "
+        "SELECT ?, course_enrollment_id, group_lesson_id, group_id, classroom_id, "
+        "status, source, created_at, updated_at FROM classroom_assignments "
+        "WHERE plan_id = ?",
+        (confirmed_plan_id, working_plan_id),
+    )
+    connection.execute(
+        "DELETE FROM classroom_assignments WHERE plan_id = ?", (working_plan_id,)
+    )
+    return (
+        connection.execute(
+            "DELETE FROM classroom_assignment_plans "
+            "WHERE id = ? AND state = 'draft' AND version = ?",
+            (working_plan_id, working_version),
+        ).rowcount
+        == 1
+    )
 
 
 def replace_assignments(
@@ -299,36 +406,25 @@ def list_assignment_history(
 ) -> list[dict[str, object]]:
     rows = connection.execute(
         """
-        WITH confirmed_assignment_revisions AS (
-            SELECT assignment.plan_id, assignment.group_lesson_id,
-                   assignment.classroom_id, plan.in_person_event_id,
-                   plan.public_id AS plan_public_id, plan.confirmed_at,
-                   ROW_NUMBER() OVER (
-                       PARTITION BY plan.in_person_event_id
-                       ORDER BY plan.confirmed_at DESC, plan.id DESC
-                   ) AS event_revision_rank
-            FROM classroom_assignments assignment
-            JOIN classroom_assignment_plans plan ON plan.id = assignment.plan_id
-            WHERE assignment.course_enrollment_id = ?
-              AND assignment.status = 'assigned'
-              AND plan.state IN ('confirmed', 'superseded')
-        )
         SELECT event.public_id AS event_public_id, event.name AS event_name,
-               event.starts_at, revision.plan_public_id,
-               revision.confirmed_at, room.public_id AS classroom_public_id,
+               event.starts_at, plan.public_id AS plan_public_id,
+               plan.confirmed_at, room.public_id AS classroom_public_id,
                room.name AS classroom_name, course.public_id AS course_public_id,
                course.name AS course_name, groups.public_id AS group_public_id,
                groups.public_name AS group_name,
                lesson.public_id AS group_lesson_public_id
-        FROM confirmed_assignment_revisions revision
-        JOIN in_person_events event ON event.id = revision.in_person_event_id
-        JOIN classrooms room ON room.id = revision.classroom_id
-        JOIN group_lessons lesson ON lesson.id = revision.group_lesson_id
+        FROM classroom_assignments assignment
+        JOIN classroom_assignment_plans plan ON plan.id = assignment.plan_id
+        JOIN in_person_events event ON event.id = plan.in_person_event_id
+        JOIN classrooms room ON room.id = assignment.classroom_id
+        JOIN group_lessons lesson ON lesson.id = assignment.group_lesson_id
         JOIN courses course ON course.id = lesson.course_id
         JOIN groups ON groups.course_id = lesson.course_id
                    AND groups.group_id = lesson.group_id
-        WHERE revision.event_revision_rank = 1
-        ORDER BY event.starts_at DESC, revision.confirmed_at DESC, revision.plan_id DESC
+        WHERE assignment.course_enrollment_id = ?
+          AND assignment.status = 'assigned'
+          AND plan.state = 'confirmed'
+        ORDER BY event.starts_at DESC, plan.confirmed_at DESC, plan.id DESC
         """,
         (enrollment_id,),
     ).fetchall()
@@ -340,13 +436,16 @@ def touch_plan(
     *,
     plan_id: int,
     expected_version: int,
+    base_plan_id: int | None,
+    base_plan_version: int | None,
     now: str,
 ) -> bool:
     cursor = connection.execute(
         "UPDATE classroom_assignment_plans "
-        "SET state = 'draft', stale_reason = NULL, updated_at = ?, version = version + 1 "
+        "SET state = 'draft', stale_reason = NULL, base_plan_id = ?, "
+        "base_plan_version = ?, updated_at = ?, version = version + 1 "
         "WHERE id = ? AND state IN ('draft', 'stale') AND version = ?",
-        (now, plan_id, expected_version),
+        (base_plan_id, base_plan_version, now, plan_id, expected_version),
     )
     return cursor.rowcount == 1
 
@@ -357,16 +456,66 @@ def rebase_working_plan_layout(
     plan_id: int,
     layout_id: int,
     expected_version: int,
+    base_plan_id: int | None,
+    base_plan_version: int | None,
     now: str,
 ) -> bool:
     cursor = connection.execute(
         "UPDATE classroom_assignment_plans SET layout_version_id = ?, "
-        "state = 'draft', stale_reason = NULL, updated_at = ?, "
+        "state = 'draft', stale_reason = NULL, base_plan_id = ?, "
+        "base_plan_version = ?, updated_at = ?, "
         "version = version + 1 WHERE id = ? AND state IN ('draft', 'stale') "
         "AND version = ?",
-        (layout_id, now, plan_id, expected_version),
+        (
+            layout_id,
+            base_plan_id,
+            base_plan_version,
+            now,
+            plan_id,
+            expected_version,
+        ),
     )
     return cursor.rowcount == 1
+
+
+def replace_confirmed_assignments(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: int,
+    expected_version: int,
+    rows: Iterable[tuple[int, int, str, int | None, str, str]],
+    actor_user_id: int,
+    now: str,
+) -> bool:
+    updated = connection.execute(
+        "UPDATE classroom_assignment_plans "
+        "SET confirmed_by_user_id = ?, confirmed_at = ?, updated_at = ?, "
+        "version = version + 1 WHERE id = ? AND state = 'confirmed' AND version = ?",
+        (actor_user_id, now, now, plan_id, expected_version),
+    )
+    if updated.rowcount != 1:
+        return False
+    connection.execute("DELETE FROM classroom_assignments WHERE plan_id = ?", (plan_id,))
+    connection.executemany(
+        "INSERT INTO classroom_assignments "
+        "(plan_id, course_enrollment_id, group_lesson_id, group_id, classroom_id, "
+        "status, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            (
+                plan_id,
+                enrollment_id,
+                group_lesson_id,
+                group_id,
+                room_id,
+                status,
+                source,
+                now,
+                now,
+            )
+            for enrollment_id, group_lesson_id, group_id, room_id, status, source in rows
+        ),
+    )
+    return True
 
 
 def mark_event_working_plan_stale(
@@ -549,17 +698,6 @@ def insert_legacy_group_change(
     )
 
 
-def supersede_confirmed_plan(
-    connection: sqlite3.Connection, *, event_id: int, now: str
-) -> None:
-    connection.execute(
-        "UPDATE classroom_assignment_plans "
-        "SET state = 'superseded', superseded_at = ?, updated_at = ? "
-        "WHERE in_person_event_id = ? AND state = 'confirmed'",
-        (now, now, event_id),
-    )
-
-
 def confirm_plan(
     connection: sqlite3.Connection,
     *,
@@ -571,7 +709,8 @@ def confirm_plan(
     cursor = connection.execute(
         "UPDATE classroom_assignment_plans "
         "SET state = 'confirmed', confirmed_by_user_id = ?, confirmed_at = ?, "
-        "updated_at = ?, version = version + 1 "
+        "updated_at = ?, version = version + 1, base_plan_id = NULL, "
+        "base_plan_version = NULL "
         "WHERE id = ? AND state = 'draft' AND version = ?",
         (actor_user_id, now, now, plan_id, expected_version),
     )
@@ -580,6 +719,8 @@ def confirm_plan(
 
 __all__ = [
     "confirm_plan",
+    "apply_working_plan_to_confirmed",
+    "discard_working_plan",
     "find_plan",
     "find_plan_by_public_id",
     "find_previous_classroom",
@@ -593,8 +734,8 @@ __all__ = [
     "mark_event_working_plan_stale",
     "mark_working_plans_using_classroom_stale",
     "rebase_working_plan_layout",
+    "replace_confirmed_assignments",
     "replace_assignments",
-    "supersede_confirmed_plan",
     "touch_plan",
     "update_assignment_group_and_room",
     "update_assignment_room",

@@ -1,10 +1,34 @@
 # Статус плана разработки
 
+## Компактизация распределений аудиторий, P1 — 22 сентября 2026, реализовано локально
+
+Migration `0099.pwa_classroom_assignment_compaction` переводит распределения на
+один confirmed-план и максимум один draft/stale на очное событие. Повторный
+confirm атомарно заменяет assignments при постоянном ID confirmed-плана,
+проверяет ID/version основы и удаляет draft; no-op не меняет version/date.
+Монотонный allocator не переиспользует ID удалённых черновиков. Миграция удаляет
+assignment-копии superseded-планов, оставляет без assignments только заголовки,
+на которые ссылаются рассылки или import receipts. Delivery остаётся привязан к
+точной паре plan ID/version и собственному immutable recipient snapshot.
+
+Реализация: `models/pwa/classroom_assignments.py`,
+`db_methods/pwa/classroom_assignments.py`, Excel import и live-marking transfer.
+Миграционный fixture проверяет компактизацию, ссылки и foreign keys; связанный
+набор из 71 Python-теста покрывает 50 no-op циклов, добавление/выбытие
+школьника, конфликт версии, import, delivery, live-marking и HTTP. Ruff,
+py_compile, schema inventory check, targeted ESLint и TypeScript прошли.
+Browser E2E закрывает history dialog перед продолжением и проверяет повторное
+открытие из React Query cache; его запуск остановлен внешней проверкой pnpm
+`ERR_PNPM_PNPM_ENGINE_IDENTITY_UNVERIFIABLE`. Production gate: резервная копия и dry-run
+`0099` на изолированной копии актуальной БД с counts до/после обязательны до
+применения миграции; удалённые промежуточные snapshots восстанавливаются только
+из этой копии.
+
 ## История аудиторий, P1 — 22 сентября 2026, реализовано локально
 
 История открывается в доступном диалоге, поэтому не теряется над текущей
 позицией длинного списка. React Query кеширует историю по школьнику до изменения
-плана. Сервер возвращает одну, последнюю confirmed/superseded ревизию на каждое
+плана. Сервер возвращает итоговый confirmed-план каждого
 очное занятие, а не все технические пересчёты: присланный production-ответ из
 71 строки для двух занятий сокращается до двух meaningful записей. Изменены
 `apps/staff/src/classroom-assignment-page.tsx` и

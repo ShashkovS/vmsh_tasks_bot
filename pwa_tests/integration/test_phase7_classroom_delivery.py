@@ -74,7 +74,12 @@ def test_delivery_migration_up_down_up_is_exact(tmp_path):
     }
     _apply(
         database_path,
-        {item.id for item in migrations.values()} - {MIGRATION_ID, RETRY_MIGRATION_ID},
+        {item.id for item in migrations.values()}
+        - {
+            MIGRATION_ID,
+            RETRY_MIGRATION_ID,
+            "0099.pwa_classroom_assignment_compaction",
+        },
     )
     assert _objects(database_path) == set()
 

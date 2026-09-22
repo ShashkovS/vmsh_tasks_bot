@@ -134,7 +134,11 @@ def test_classroom_import_receipt_migration_up_down_up(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0059.pwa_classroom_assignments"
     }
-    preceding = {item.id for item in migrations.values() if item.id != MIGRATION_ID}
+    preceding = {
+        item.id
+        for item in migrations.values()
+        if item.id not in {MIGRATION_ID, "0099.pwa_classroom_assignment_compaction"}
+    }
     _apply(database_path, preceding)
 
     _apply(database_path, {MIGRATION_ID})

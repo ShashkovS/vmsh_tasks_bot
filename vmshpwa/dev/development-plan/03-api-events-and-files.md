@@ -262,7 +262,7 @@ course enrollment — третий batch: `login, course, allowed_groups`, previ
 
 Teacher получает `403` на content/checker, broadcasts, Staff classroom catalog/layout/plan routes и audit. Он может менять активную группу доступного ученика внутри разрешённого курса, исправлять/перепроверять работу и читать разрешённую статистику. Остальные capabilities проверяются по course/group scopes, а не предполагаются по видимости navigation.
 
-Все classroom mutations используют `If-Match`/`version`; stale version возвращает `409 VERSION_CONFLICT`. Нормализация имени выполняется сервером, duplicate возвращает `409 CLASSROOM_NAME_CONFLICT` вместе с существующим `publicId`. Layout confirm возвращает `409 CLASSROOM_LAYOUT_STALE`, если base больше не effective. Assignment confirm возвращает `409 CLASSROOM_ASSIGNMENTS_STALE` для устаревшего layout и `422` с отдельными кодами `CLASSROOM_STUDENT_UNASSIGNED`, `CLASSROOM_GROUP_MISMATCH` или `CLASSROOM_MIXED_GROUPS` для нарушенного плана.
+Все classroom mutations используют `If-Match`/`version`; stale version возвращает `409 VERSION_CONFLICT`. Нормализация имени выполняется сервером, duplicate возвращает `409 CLASSROOM_NAME_CONFLICT` вместе с существующим `publicId`. Layout confirm возвращает `409 CLASSROOM_LAYOUT_STALE`, если base больше не effective. Assignment draft фиксирует `base plan ID + version`; confirm возвращает `409 CLASSROOM_ASSIGNMENTS_STALE`, если confirmed plan или layout изменился, и `422` с отдельными кодами `CLASSROOM_STUDENT_UNASSIGNED`, `CLASSROOM_GROUP_MISMATCH` или `CLASSROOM_MIXED_GROUPS` для нарушенного плана. Первое подтверждение повышает draft до confirmed. Следующие подтверждения атомарно заменяют состав единственного confirmed-плана, сохраняют его `publicId` и возвращают новый `version`; no-op удаляет draft без изменения confirmed version/date.
 
 Owner-confirmed delivery report допускает partial success и раскрываемые списки.
 Delivery-batch response показывает `selected`, `eligible`, `suppressed`,
@@ -300,7 +300,7 @@ Server events:
 - `server-update`: новая frontend release/service-worker hint.
 - `resync-required`: protocol/schema mismatch или обнаруженный gap.
 - `classroom.assignment.changed`: owner-scoped invalidation с `audience`, `ownerAccountId`, `studentUserId`, `eventPublicId`, исходными `courseId/groupId`, новым публичным `status` и query keys. После confirm/change отдельные Student и Family sockets только refetch-ят read model; событие не создаёт push/in-app delivery.
-- `classroom.assignment.announced`: создаётся только явным admin delivery batch для Student account. PWA-канал создаёт персональные in-app/push deliveries, Telegram-канал отправляет личное сообщение через существующего бота. Family event/delivery отсутствует. Payload ссылается на immutable plan/batch version и не содержит токен или chat ID.
+- `classroom.assignment.announced`: создаётся только явным admin delivery batch для Student account. PWA-канал создаёт персональные in-app/push deliveries, Telegram-канал отправляет личное сообщение через существующего бота. Family event/delivery отсутствует. Payload ссылается на точную пару plan ID/version и immutable batch, не содержит токен или chat ID.
 - `submission.material.reassigned`: owner-scoped invalidation целевого Student и
   связанных Family accounts с source/target thread query keys, но без чужих
   материалов в event payload; Staff получает отдельную scope-filtered

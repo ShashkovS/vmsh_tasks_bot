@@ -251,6 +251,10 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   await expect(page.getByText('Подтверждено')).toBeVisible()
   await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom.value)
 
+  let historyRequests = 0
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.endsWith('/history')) historyRequests += 1
+  })
   const historyResponse = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith('/history'),
   )
@@ -258,6 +262,13 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   expect((await historyResponse).status()).toBe(200)
   const history = page.getByRole('dialog').filter({ hasText: `История аудиторий: ${studentName}` })
   await expect(history).toContainText(targetRoom.label)
+  await page.keyboard.press('Escape')
+  await expect(history).toBeHidden()
+  await page.getByRole('button', { name: `История аудиторий: ${studentName}` }).click()
+  await expect(history).toContainText(targetRoom.label)
+  expect(historyRequests).toBe(1)
+  await page.keyboard.press('Escape')
+  await expect(history).toBeHidden()
 
   // Phase 7 requires a separate explicit action after confirmation. The E2E
   // harness has no Telegram adapter, so this browser proof deliberately sends

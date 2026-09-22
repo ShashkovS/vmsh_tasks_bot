@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 326192fee2fe499ec3ae0fae26519ab44159f2a7f6a26aee2d57b1a064b6ff03
+-- Product schema SHA-256: 981700ab07b0298a673945fc069252d09579f5bdc3e01a4d8f8a49985c6eb845
 
 CREATE TABLE achievement_definitions
 (
@@ -273,6 +273,12 @@ CREATE TABLE classroom_assignment_delivery_retries
     unique (requested_by_user_id, idempotency_key)
 );
 
+CREATE TABLE classroom_assignment_plan_sequence
+(
+    singleton integer primary key check (singleton = 1),
+    next_id   integer not null check (next_id > 0)
+);
+
 CREATE TABLE classroom_assignment_plans
 (
     id                   integer primary key,
@@ -289,7 +295,8 @@ CREATE TABLE classroom_assignment_plans
     updated_at           text    not null,
     confirmed_at         text,
     superseded_at        text,
-    version              integer not null default 1 check (version > 0),
+    version              integer not null default 1 check (version > 0), base_plan_version integer
+        check (base_plan_version is null or base_plan_version > 0),
     unique (id, in_person_event_id),
     foreign key (layout_version_id, in_person_event_id)
         references classroom_layout_versions (id, in_person_event_id),
@@ -3436,31 +3443,73 @@ begin
     select raise(abort, 'auth session audience does not match account');
 end;
 
-CREATE TRIGGER classroom_assignments_delete_working_only
+CREATE TRIGGER classroom_assignment_plan_sequence_advance
+after insert on classroom_assignment_plans
+for each row
+begin
+    update classroom_assignment_plan_sequence
+    set next_id = new.id + 1
+    where singleton = 1 and next_id <= new.id;
+end;
+
+CREATE TRIGGER classroom_assignment_plans_base_insert_valid
+before insert on classroom_assignment_plans
+for each row
+when (new.base_plan_id is null) <> (new.base_plan_version is null)
+  or (new.state in ('confirmed', 'superseded') and new.base_plan_id is not null)
+  or (new.base_plan_id is not null and not exists (
+      select 1 from classroom_assignment_plans base
+      where base.id = new.base_plan_id
+        and base.in_person_event_id = new.in_person_event_id
+        and base.state = 'confirmed'
+        and (new.state = 'stale' or base.version = new.base_plan_version)
+  ))
+begin
+    select raise(abort, 'invalid classroom assignment base plan');
+end;
+
+CREATE TRIGGER classroom_assignment_plans_base_update_valid
+before update of base_plan_id, base_plan_version, state, in_person_event_id
+on classroom_assignment_plans
+for each row
+when (new.base_plan_id is null) <> (new.base_plan_version is null)
+  or (new.state in ('confirmed', 'superseded') and new.base_plan_id is not null)
+  or (new.base_plan_id is not null and not exists (
+      select 1 from classroom_assignment_plans base
+      where base.id = new.base_plan_id
+        and base.in_person_event_id = new.in_person_event_id
+        and base.state = 'confirmed'
+        and (new.state = 'stale' or base.version = new.base_plan_version)
+  ))
+begin
+    select raise(abort, 'invalid classroom assignment base plan');
+end;
+
+CREATE TRIGGER classroom_assignments_delete_current_only
 before delete on classroom_assignments
 for each row
 when (select state from classroom_assignment_plans where id = old.plan_id)
-    not in ('draft', 'stale')
+    not in ('draft', 'stale', 'confirmed')
 begin
-    select raise(abort, 'only a working classroom assignment plan can be edited');
+    select raise(abort, 'archived classroom assignments cannot be edited');
 end;
 
-CREATE TRIGGER classroom_assignments_insert_working_only
+CREATE TRIGGER classroom_assignments_insert_current_only
 before insert on classroom_assignments
 for each row
 when (select state from classroom_assignment_plans where id = new.plan_id)
-    not in ('draft', 'stale')
+    not in ('draft', 'stale', 'confirmed')
 begin
-    select raise(abort, 'only a working classroom assignment plan can be edited');
+    select raise(abort, 'archived classroom assignments cannot be edited');
 end;
 
-CREATE TRIGGER classroom_assignments_update_working_only
+CREATE TRIGGER classroom_assignments_update_current_only
 before update on classroom_assignments
 for each row
 when (select state from classroom_assignment_plans where id = old.plan_id)
-    not in ('draft', 'stale')
+    not in ('draft', 'stale', 'confirmed')
 begin
-    select raise(abort, 'only a working classroom assignment plan can be edited');
+    select raise(abort, 'archived classroom assignments cannot be edited');
 end;
 
 CREATE TRIGGER classroom_events_delete_forbidden

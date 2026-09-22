@@ -151,6 +151,7 @@ def seed(config):
                 event_id=fixture_id,
                 layout_id=layout,
                 base_plan_id=None,
+                base_plan_version=None,
                 actor_user_id=301,
                 now=TIMESTAMP,
             )

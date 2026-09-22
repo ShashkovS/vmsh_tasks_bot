@@ -7,7 +7,9 @@ from collections.abc import Sequence
 from datetime import date
 
 from db_methods.pwa.classroom_assignments import (
+    apply_working_plan_to_confirmed,
     confirm_plan,
+    discard_working_plan,
     find_plan,
     find_plan_by_public_id,
     find_previous_classroom,
@@ -21,7 +23,6 @@ from db_methods.pwa.classroom_assignments import (
     list_plan_assignments,
     rebase_working_plan_layout,
     replace_assignments,
-    supersede_confirmed_plan,
     touch_plan,
     update_assignment_group_and_room,
     update_assignment_room,
@@ -142,15 +143,18 @@ def recalculate_assignment_plan(
         raise InvalidClassroomAssignment("confirmed layout is required")
 
     working = find_plan(connection, event_id, ("draft", "stale"))
+    confirmed = find_plan(connection, event_id, ("confirmed",))
     if working is None:
         if expected_version is not None:
             raise ClassroomAssignmentConflict
-        confirmed = find_plan(connection, event_id, ("confirmed",))
         plan_id, _plan_public_id = insert_plan(
             connection,
             event_id=event_id,
             layout_id=int(layout["id"]),
             base_plan_id=None if confirmed is None else int(confirmed["id"]),
+            base_plan_version=(
+                None if confirmed is None else int(confirmed["version"])
+            ),
             actor_user_id=actor_user_id,
             now=now,
         )
@@ -163,6 +167,10 @@ def recalculate_assignment_plan(
             plan_id=int(working["id"]),
             layout_id=int(layout["id"]),
             expected_version=int(working["version"]),
+            base_plan_id=None if confirmed is None else int(confirmed["id"]),
+            base_plan_version=(
+                None if confirmed is None else int(confirmed["version"])
+            ),
             now=now,
         ):
             raise ClassroomAssignmentConflict
@@ -233,6 +241,10 @@ def recalculate_assignment_plan(
             connection,
             plan_id=plan_id,
             expected_version=int(working["version"]),
+            base_plan_id=None if confirmed is None else int(confirmed["id"]),
+            base_plan_version=(
+                None if confirmed is None else int(confirmed["version"])
+            ),
             now=now,
         ):
             raise ClassroomAssignmentConflict
@@ -285,11 +297,58 @@ def confirm_assignment_plan(
                 "student assignment is incomplete or stale"
             )
 
-    supersede_confirmed_plan(connection, event_id=event_id, now=now)
-    if not confirm_plan(
+    confirmed = find_plan(connection, event_id, ("confirmed",))
+    if confirmed is None:
+        if plan["base_plan_id"] is not None or plan["base_plan_version"] is not None:
+            raise ClassroomAssignmentConflict
+        if not confirm_plan(
+            connection,
+            plan_id=int(plan["id"]),
+            expected_version=expected_version,
+            actor_user_id=actor_user_id,
+            now=now,
+        ):
+            raise ClassroomAssignmentConflict
+        return read_assignment_plan(connection, event_public_id, today=today)
+
+    if (
+        plan["base_plan_id"] != confirmed["id"]
+        or plan["base_plan_version"] != confirmed["version"]
+    ):
+        raise ClassroomAssignmentConflict
+    confirmed_assignments = list_plan_assignments(connection, int(confirmed["id"]))
+
+    def assignment_state(rows: list[dict[str, object]]) -> tuple[tuple[object, ...], ...]:
+        return tuple(
+            sorted(
+                (
+                    row["course_enrollment_id"],
+                    row["group_lesson_id"],
+                    row["group_id"],
+                    row["classroom_id"],
+                    row["status"],
+                )
+                for row in rows
+            )
+        )
+
+    unchanged = (
+        plan["layout_version_id"] == confirmed["layout_version_id"]
+        and assignment_state(assignments) == assignment_state(confirmed_assignments)
+    )
+    if unchanged:
+        if not discard_working_plan(
+            connection,
+            plan_id=int(plan["id"]),
+            expected_version=expected_version,
+        ):
+            raise ClassroomAssignmentConflict
+    elif not apply_working_plan_to_confirmed(
         connection,
-        plan_id=int(plan["id"]),
-        expected_version=expected_version,
+        working_plan_id=int(plan["id"]),
+        working_version=expected_version,
+        confirmed_plan_id=int(confirmed["id"]),
+        confirmed_version=int(confirmed["version"]),
         actor_user_id=actor_user_id,
         now=now,
     ):
@@ -314,6 +373,15 @@ def update_assignment_plan(
     if plan is None or int(plan["in_person_event_id"]) != int(event["id"]):
         raise ClassroomAssignmentNotFound
     if plan["state"] != "draft" or int(plan["version"]) != expected_version:
+        raise ClassroomAssignmentConflict
+    confirmed = find_plan(connection, int(event["id"]), ("confirmed",))
+    if confirmed is None:
+        if plan["base_plan_id"] is not None or plan["base_plan_version"] is not None:
+            raise ClassroomAssignmentConflict
+    elif (
+        plan["base_plan_id"] != confirmed["id"]
+        or plan["base_plan_version"] != confirmed["version"]
+    ):
         raise ClassroomAssignmentConflict
     layout = find_event_layout(connection, int(event["id"]), "confirmed")
     if layout is None or int(plan["layout_version_id"]) != int(layout["id"]):
@@ -425,6 +493,14 @@ def update_assignment_plan(
         connection,
         plan_id=int(plan["id"]),
         expected_version=expected_version,
+        base_plan_id=(
+            None if plan["base_plan_id"] is None else int(plan["base_plan_id"])
+        ),
+        base_plan_version=(
+            None
+            if plan["base_plan_version"] is None
+            else int(plan["base_plan_version"])
+        ),
         now=now,
     ):
         raise ClassroomAssignmentConflict

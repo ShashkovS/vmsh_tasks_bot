@@ -148,7 +148,7 @@ def room_history(connection, course_id):
         JOIN in_person_events ev ON ev.id=p.in_person_event_id
         JOIN course_enrollments e ON e.id=a.course_enrollment_id
         LEFT JOIN classrooms r ON r.id=a.classroom_id
-        WHERE e.course_id=? AND p.state IN ('confirmed','superseded')
+        WHERE e.course_id=? AND p.state='confirmed'
         ORDER BY ev.starts_at DESC,p.id DESC
     """,
         (course_id,),
@@ -516,45 +516,30 @@ def insert_transfer_plan(
     connection, event_record, base_plan, assignment_rows, teacher_id, now
 ):
     # An unrelated admin draft must never be implicitly published or discarded.
-    # Reserve the working slot inside this transaction, then restore the admin
-    # draft as stale. No intermediate snapshot is visible to another connection.
+    # The confirmed plan is updated in place and the draft remains stale against
+    # its previous base version until Staff explicitly recalculates it.
     working = one(
         connection,
         "SELECT * FROM classroom_assignment_plans WHERE in_person_event_id=? AND state IN ('draft','stale')",
         (event_record["id"],),
     )
-    if working:
-        connection.execute(
-            "UPDATE classroom_assignment_plans SET state='superseded', confirmed_by_user_id=?, confirmed_at=?, superseded_at=?,updated_at=? WHERE id=?",
-            (teacher_id, now, now, now, working["id"]),
-        )
     from db_methods.pwa.classroom_assignments import (
-        insert_plan,
-        replace_assignments,
-        supersede_confirmed_plan,
-        confirm_plan,
+        replace_confirmed_assignments,
     )
 
-    plan_id, _ = insert_plan(
+    if not replace_confirmed_assignments(
         connection,
-        event_id=event_record["id"],
-        layout_id=base_plan["layout_version_id"],
-        base_plan_id=base_plan["id"],
+        plan_id=base_plan["id"],
+        expected_version=base_plan["version"],
+        rows=assignment_rows,
         actor_user_id=teacher_id,
         now=now,
-    )
-    replace_assignments(connection, plan_id=plan_id, rows=assignment_rows, now=now)
-    supersede_confirmed_plan(connection, event_id=event_record["id"], now=now)
-    confirm_plan(
-        connection,
-        plan_id=plan_id,
-        expected_version=1,
-        actor_user_id=teacher_id,
-        now=now,
-    )
+    ):
+        raise RuntimeError("confirmed classroom assignment changed during transfer")
     if working:
         connection.execute(
-            "UPDATE classroom_assignment_plans SET state='stale',stale_reason='live_transfer',confirmed_by_user_id=NULL,confirmed_at=NULL,superseded_at=NULL,version=version+1,updated_at=? WHERE id=?",
+            "UPDATE classroom_assignment_plans SET state='stale',"
+            "stale_reason='live_transfer',version=version+1,updated_at=? WHERE id=?",
             (now, working["id"]),
         )
     return plan(connection, event_record["id"])

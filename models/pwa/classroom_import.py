@@ -340,11 +340,18 @@ def apply_classroom_import(
     layout = find_event_layout(connection, event_id, "confirmed")
     assert layout is not None
 
+    confirmed_plan = find_plan(connection, event_id, ("confirmed",))
+
     plan_id, plan_public_id = insert_plan(
         connection,
         event_id=event_id,
         layout_id=int(layout["id"]),
-        base_plan_id=None,
+        base_plan_id=(
+            None if confirmed_plan is None else int(confirmed_plan["id"])
+        ),
+        base_plan_version=(
+            None if confirmed_plan is None else int(confirmed_plan["version"])
+        ),
         actor_user_id=actor_user_id,
         now=now,
     )
@@ -364,7 +371,7 @@ def apply_classroom_import(
         ),
         now=now,
     )
-    confirmed_plan = confirm_assignment_plan(
+    confirmed_payload = confirm_assignment_plan(
         connection,
         event_public_id=event_public_id,
         plan_public_id=plan_public_id,
@@ -391,7 +398,7 @@ def apply_classroom_import(
     )
     receipt = find_import_receipt(connection, event_id)
     assert receipt is not None
-    return {**receipt, "replayed": False, "planState": confirmed_plan["plan"]["state"]}
+    return {**receipt, "replayed": False, "planState": confirmed_payload["plan"]["state"]}
 
 
 __all__ = [
