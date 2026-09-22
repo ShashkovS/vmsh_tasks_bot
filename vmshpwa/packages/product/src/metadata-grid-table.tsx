@@ -9,6 +9,7 @@ import {
 
 import { cn } from '@vmsh/ui'
 
+import { displayMetadataValue } from './metadata-grid-clipboard'
 import { cellRange, selectionContains } from './metadata-grid-model'
 import type {
   CellAddress,
@@ -262,7 +263,7 @@ export function MetadataGridTable({
                     tabIndex={active ? 0 : -1}
                   >
                     <span className="line-clamp-2 block whitespace-pre-wrap break-words text-left">
-                      {row[column.id] ?? ''}
+                      {displayMetadataValue(row[column.id] ?? '', column)}
                     </span>
                     {error ? (
                       <span className="sr-only" id={`metadata-error-${rowIndex}-${column.id}`}>

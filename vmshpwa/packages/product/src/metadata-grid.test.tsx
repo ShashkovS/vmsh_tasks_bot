@@ -84,6 +84,26 @@ describe('metadata grid confirmation', () => {
     expect(onRowsChange).toHaveBeenLastCalledWith([{ title: 'Площадь', kind: '1' }])
   })
 
+  it('shows the label of a select value while retaining its stable code', () => {
+    render(
+      <MetadataGrid
+        columns={[
+          {
+            id: 'kind',
+            header: 'Тип задачи',
+            editor: 'select',
+            options: [{ value: '1', label: 'Тестовая' }],
+          },
+        ]}
+        initialRows={[{ kind: '1' }]}
+      />,
+    )
+
+    expect(screen.getByRole('gridcell', { name: 'Тип задачи, строка 1' }).textContent).toContain(
+      'Тестовая',
+    )
+  })
+
   it('keeps the edit history when the table is opened full-screen', () => {
     const onRowsChange = vi.fn()
     render(

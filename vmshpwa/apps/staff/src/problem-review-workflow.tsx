@@ -1,5 +1,5 @@
 import { CheckCircle2, LoaderCircle, Pencil, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { type ContentApiClient, type VersionedContentResource } from '@vmsh/content'
 import { recordProductAction } from '@vmsh/app-shell'
@@ -485,10 +485,19 @@ export function ProblemReviewWorkflow({
     }
   }, [advanceAfterMatching, client, revisionId])
 
+  // Parent queries may refresh their client object while Staff is editing a
+  // grid. Reloading from that render cycle remounts the keyed grid and loses
+  // the open editor/fullscreen state. A revision is loaded only once here;
+  // every explicit reload remains user initiated.
+  const reloadRef = useRef(reload)
   useEffect(() => {
-    const task = globalThis.setTimeout(() => void reload(), 0)
-    return () => globalThis.clearTimeout(task)
+    reloadRef.current = reload
   }, [reload])
+
+  useEffect(() => {
+    const task = globalThis.setTimeout(() => void reloadRef.current(), 0)
+    return () => globalThis.clearTimeout(task)
+  }, [revisionId])
 
   useEffect(() => {
     onReadyChange(revisionId, phase === 'ready')

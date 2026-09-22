@@ -77,6 +77,11 @@ export function clipboardValue(value: string, column: MetadataColumn): string {
   return option?.clipboardLabel ?? option?.label ?? value
 }
 
+/** Human-readable table value. Stored rows retain the stable option code. */
+export function displayMetadataValue(value: string, column: MetadataColumn): string {
+  return column.options?.find((candidate) => candidate.value === value)?.label ?? value
+}
+
 export function normalizeClipboardValue(value: string, column: MetadataColumn): string {
   if (!column.options) return value
   const normalized = value.trim().toLocaleLowerCase('ru')
