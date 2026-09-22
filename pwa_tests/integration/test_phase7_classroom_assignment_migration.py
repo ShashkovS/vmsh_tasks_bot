@@ -15,6 +15,7 @@ from models.pwa.classroom_assignments import (
     InvalidClassroomAssignment,
     confirm_assignment_plan,
     recalculate_assignment_plan,
+    read_assignment_history,
     update_assignment_plan,
 )
 from models.pwa.classroom_layouts import confirm_layout, materialize_layout
@@ -309,6 +310,75 @@ def test_assignment_plan_recalculates_and_confirms(tmp_path):
 
         assert confirmed["plan"]["state"] == "confirmed"
         assert confirmed["plan"]["version"] == 2
+
+
+def test_assignment_history_uses_the_latest_confirmed_plan_per_event(tmp_path):
+    database_path = tmp_path / "phase7-assignment-history.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _insert_parents(connection)
+        first_plan_id = connection.execute(
+            "SELECT id FROM classroom_assignment_plans"
+        ).fetchone()[0]
+        connection.execute(
+            "UPDATE classroom_assignment_plans SET state = 'confirmed', "
+            "confirmed_by_user_id = 2, confirmed_at = ?, updated_at = ? WHERE id = ?",
+            ("2026-07-29T13:01:00Z", "2026-07-29T13:01:00Z", first_plan_id),
+        )
+        second_plan_id = connection.execute(
+            "INSERT INTO classroom_assignment_plans "
+            "(in_person_event_id, layout_version_id, base_plan_id, state, "
+            "created_by_user_id, created_at, updated_at) "
+            "SELECT in_person_event_id, layout_version_id, id, 'draft', 2, ?, ? "
+            "FROM classroom_assignment_plans WHERE id = ? RETURNING id",
+            ("2026-07-29T13:02:00Z", "2026-07-29T13:02:00Z", first_plan_id),
+        ).fetchone()[0]
+        connection.execute(
+            "INSERT INTO classroom_assignments "
+            "(plan_id, course_enrollment_id, group_lesson_id, group_id, classroom_id, "
+            "status, source, created_at, updated_at) "
+            "SELECT ?, course_enrollment_id, group_lesson_id, group_id, classroom_id, "
+            "status, source, ?, ? FROM classroom_assignments WHERE plan_id = ?",
+            (
+                second_plan_id,
+                "2026-07-29T13:02:00Z",
+                "2026-07-29T13:02:00Z",
+                first_plan_id,
+            ),
+        )
+        connection.execute(
+            "UPDATE classroom_assignment_plans SET state = 'superseded', "
+            "superseded_at = ?, updated_at = ? WHERE id = ?",
+            ("2026-07-29T13:02:00Z", "2026-07-29T13:02:00Z", first_plan_id),
+        )
+        connection.execute(
+            "UPDATE classroom_assignment_plans SET state = 'confirmed', "
+            "confirmed_by_user_id = 2, confirmed_at = ?, updated_at = ? WHERE id = ?",
+            ("2026-07-29T13:03:00Z", "2026-07-29T13:03:00Z", second_plan_id),
+        )
+        second_plan_public_id = str(
+            connection.execute(
+                "SELECT public_id FROM classroom_assignment_plans WHERE id = ?",
+                (second_plan_id,),
+            ).fetchone()[0]
+        )
+        enrollment_public_id = str(
+            connection.execute(
+                "SELECT public_id FROM course_enrollments WHERE id = 1"
+            ).fetchone()[0]
+        )
+
+        history = read_assignment_history(
+            connection,
+            event_public_id="ipe-1",
+            plan_public_id=second_plan_public_id,
+            enrollment_public_id=enrollment_public_id,
+        )
+
+        assert len(history) == 1
+        assert history[0]["plan_public_id"] == second_plan_public_id
 
 
 def test_manual_room_preference_survives_recalculation(tmp_path):

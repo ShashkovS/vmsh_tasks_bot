@@ -21,7 +21,18 @@ import {
   type ClassroomPlanRoom,
   type ClassroomPlanStudent,
 } from '@vmsh/product'
-import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh/ui'
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@vmsh/ui'
 
 function colorIndex(colorKey: string | null): 0 | 1 | 2 | 3 | 4 {
   const match = /^level-([1-4])$/.exec(colorKey ?? '')
@@ -166,6 +177,8 @@ function AssignmentEditor({
   onChanged: () => Promise<void>
 }) {
   const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  const queryClient = useQueryClient()
   const saved = useMemo(() => savedAssignments(storageKey), [storageKey])
   const [assignments, setAssignments] = useState(saved?.assignments ?? serverAssignments(plan))
   const [groupChanges, setGroupChanges] = useState<ReadonlySet<string>>(
@@ -177,7 +190,7 @@ function AssignmentEditor({
     groupId: string
     classroomId: string
   } | null>(null)
-  const [historyStudentName, setHistoryStudentName] = useState<string | null>(null)
+  const [historyStudent, setHistoryStudent] = useState<ClassroomPlanStudent | null>(null)
 
   const groups: ClassroomGroupOption[] = plan.groups.map((group) => ({
     id: group.groupLessonPublicId,
@@ -222,6 +235,26 @@ function AssignmentEditor({
     }
   })
   const currentPlan = plan.plan
+  const historyQueryRoot = [
+    ...classroomQueryKeys.assignmentPlan(principal, eventPublicId),
+    'history',
+  ] as const
+  const historyQuery = useQuery({
+    queryKey:
+      historyStudent === null
+        ? [...historyQueryRoot, 'closed']
+        : classroomQueryKeys.assignmentHistory(principal, eventPublicId, historyStudent.id),
+    queryFn: ({ signal }) => {
+      if (historyStudent === null || currentPlan === null) {
+        throw new Error('Assignment plan is not available')
+      }
+      return client.getAssignmentHistory(eventPublicId, currentPlan.publicId, historyStudent.id, {
+        signal,
+      })
+    },
+    enabled: historyStudent !== null && currentPlan !== null,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
   const changedAssignments = (basePlan: ClassroomAssignmentPlan) =>
     basePlan.students.flatMap((student) => {
       const classroomPublicId = assignments[student.enrollmentPublicId]
@@ -316,6 +349,7 @@ function AssignmentEditor({
           setStorageFailed(true)
         }
       }
+      await queryClient.invalidateQueries({ queryKey: historyQueryRoot })
       await onChanged()
     },
     onError: async (error) => {
@@ -323,14 +357,6 @@ function AssignmentEditor({
       await onChanged()
     },
   })
-  const historyMutation = useMutation({
-    mutationFn: (enrollmentPublicId: string) => {
-      if (currentPlan === null) throw new Error('Assignment plan is not available')
-      return client.getAssignmentHistory(eventPublicId, currentPlan.publicId, enrollmentPublicId)
-    },
-    onError: (error) => authentication.handleApiError(error),
-  })
-
   const saveDraft = (next: Record<string, string>, nextGroupChanges: ReadonlySet<string>) => {
     try {
       globalThis.localStorage.setItem(
@@ -430,41 +456,31 @@ function AssignmentEditor({
           </AlertContent>
         </Alert>
       ) : null}
-      {historyStudentName ? (
-        <section className="space-y-2 rounded-md border border-border bg-surface p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 className="text-label font-semibold text-foreground">
-                История аудиторий: {historyStudentName}
-              </h3>
-              <p className="text-caption text-muted-foreground">
-                Только подтверждённые планы прошлых и текущего очных занятий.
-              </p>
-            </div>
-            <Button
-              onClick={() => {
-                setHistoryStudentName(null)
-                historyMutation.reset()
-              }}
-              size="xs"
-              type="button"
-              variant="ghost"
-            >
-              Закрыть
-            </Button>
-          </div>
-          {historyMutation.isPending ? (
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open) setHistoryStudent(null)
+        }}
+        open={historyStudent !== null}
+      >
+        <DialogContent className="max-h-[85svh] overflow-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>История аудиторий: {historyStudent?.name}</DialogTitle>
+            <DialogDescription>
+              Последнее подтверждённое распределение каждого очного занятия.
+            </DialogDescription>
+          </DialogHeader>
+          {historyQuery.isPending ? (
             <p className="text-small text-muted-foreground">Загружаем историю…</p>
-          ) : historyMutation.error ? (
+          ) : historyQuery.error ? (
             <p className="text-small text-status-danger-foreground">
-              {describeError(historyMutation.error)}
+              {describeError(historyQuery.error)}
             </p>
-          ) : historyMutation.data?.items.length ? (
+          ) : historyQuery.data?.items.length ? (
             <ul className="divide-y divide-border">
-              {historyMutation.data.items.map((item) => (
+              {historyQuery.data.items.map((item) => (
                 <li
                   className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-1.5 text-small"
-                  key={item.planPublicId}
+                  key={item.eventPublicId}
                 >
                   <span className="font-medium text-foreground">
                     {item.eventName} · {item.classroomName}
@@ -479,8 +495,8 @@ function AssignmentEditor({
           ) : (
             <p className="text-small text-muted-foreground">Подтверждённых назначений пока нет.</p>
           )}
-        </section>
-      ) : null}
+        </DialogContent>
+      </Dialog>
       <ClassroomStudentPlanner
         groups={groups}
         incidents={incidents}
@@ -494,8 +510,7 @@ function AssignmentEditor({
         onShowHistory={(studentId) => {
           const student = students.find((item) => item.id === studentId)
           if (student === undefined || currentPlan === null) return
-          setHistoryStudentName(student.name)
-          historyMutation.mutate(studentId)
+          setHistoryStudent(student)
         }}
         pending={mutation.isPending}
         rooms={rooms}

@@ -299,25 +299,36 @@ def list_assignment_history(
 ) -> list[dict[str, object]]:
     rows = connection.execute(
         """
+        WITH confirmed_assignment_revisions AS (
+            SELECT assignment.plan_id, assignment.group_lesson_id,
+                   assignment.classroom_id, plan.in_person_event_id,
+                   plan.public_id AS plan_public_id, plan.confirmed_at,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY plan.in_person_event_id
+                       ORDER BY plan.confirmed_at DESC, plan.id DESC
+                   ) AS event_revision_rank
+            FROM classroom_assignments assignment
+            JOIN classroom_assignment_plans plan ON plan.id = assignment.plan_id
+            WHERE assignment.course_enrollment_id = ?
+              AND assignment.status = 'assigned'
+              AND plan.state IN ('confirmed', 'superseded')
+        )
         SELECT event.public_id AS event_public_id, event.name AS event_name,
-               event.starts_at, plan.public_id AS plan_public_id,
-               plan.confirmed_at, room.public_id AS classroom_public_id,
+               event.starts_at, revision.plan_public_id,
+               revision.confirmed_at, room.public_id AS classroom_public_id,
                room.name AS classroom_name, course.public_id AS course_public_id,
                course.name AS course_name, groups.public_id AS group_public_id,
                groups.public_name AS group_name,
                lesson.public_id AS group_lesson_public_id
-        FROM classroom_assignments assignment
-        JOIN classroom_assignment_plans plan ON plan.id = assignment.plan_id
-        JOIN in_person_events event ON event.id = plan.in_person_event_id
-        JOIN classrooms room ON room.id = assignment.classroom_id
-        JOIN group_lessons lesson ON lesson.id = assignment.group_lesson_id
+        FROM confirmed_assignment_revisions revision
+        JOIN in_person_events event ON event.id = revision.in_person_event_id
+        JOIN classrooms room ON room.id = revision.classroom_id
+        JOIN group_lessons lesson ON lesson.id = revision.group_lesson_id
         JOIN courses course ON course.id = lesson.course_id
         JOIN groups ON groups.course_id = lesson.course_id
                    AND groups.group_id = lesson.group_id
-        WHERE assignment.course_enrollment_id = ?
-          AND assignment.status = 'assigned'
-          AND plan.state IN ('confirmed', 'superseded')
-        ORDER BY event.starts_at DESC, plan.confirmed_at DESC, plan.id DESC
+        WHERE revision.event_revision_rank = 1
+        ORDER BY event.starts_at DESC, revision.confirmed_at DESC, revision.plan_id DESC
         """,
         (enrollment_id,),
     ).fetchall()

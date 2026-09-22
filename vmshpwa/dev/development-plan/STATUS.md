@@ -1,5 +1,19 @@
 # Статус плана разработки
 
+## История аудиторий, P1 — 22 сентября 2026, реализовано локально
+
+История открывается в доступном диалоге, поэтому не теряется над текущей
+позицией длинного списка. React Query кеширует историю по школьнику до изменения
+плана. Сервер возвращает одну, последнюю confirmed/superseded ревизию на каждое
+очное занятие, а не все технические пересчёты: присланный production-ответ из
+71 строки для двух занятий сокращается до двух meaningful записей. Изменены
+`apps/staff/src/classroom-assignment-page.tsx` и
+`db_methods/pwa/classroom_assignments.py`; contract уточнён в
+`03-api-events-and-files.md`. Добавлена database-regression проверка; прошли
+targeted pytest, Ruff, targeted ESLint, typecheck и production build Staff.
+Полный browser E2E остаётся заблокированным до восстановления проверки подписи
+локального pnpm (`ERR_PNPM_PNPM_ENGINE_IDENTITY_UNVERIFIABLE`).
+
 ## Ручный редактор metadata, P1 — 22 сентября 2026, реализовано локально
 
 Staff metadata-grid получает табличное выделение, TSV-обмен, undo/redo,

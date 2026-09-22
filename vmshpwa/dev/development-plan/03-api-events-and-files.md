@@ -249,7 +249,7 @@ course enrollment — третий batch: `login, course, allowed_groups`, previ
 - `GET /staff/api/v1/classroom-assignment-plans?event=` — confirmed/draft/stale plan, preview incidents, course/group `inPersonCount/assignedCount/color`, room aggregates и компактные student rows
 - `POST /staff/api/v1/classroom-assignment-plans/recalculate`
 - `PATCH /staff/api/v1/classroom-assignment-plans/{planPublicId}/assignments` — явный batch-save локально накопленных select/move; принимает одну или несколько строк и confirmation для cross-group changes
-- `GET /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}/history` — подтверждённые прошлые аудитории школьника
+- `GET /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}/history` — последняя подтверждённая аудитория школьника для каждого очного занятия; технические ревизии одного занятия не дублируются
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/delivery-preview` — только confirmed current version; возвращает число получателей, изменения после предыдущей рассылки, недоступные Telegram destinations и безопасный recipient preview
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/delivery-batches` — admin явно выбирает `pwa` и/или `telegram`, передаёт expected plan version, preview hash и idempotency key; draft/stale/изменившийся после preview plan получает conflict

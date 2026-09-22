@@ -256,9 +256,7 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   )
   await page.getByRole('button', { name: `История аудиторий: ${studentName}` }).click()
   expect((await historyResponse).status()).toBe(200)
-  const history = page
-    .getByRole('heading', { name: `История аудиторий: ${studentName}` })
-    .locator('xpath=ancestor::section[1]')
+  const history = page.getByRole('dialog').filter({ hasText: `История аудиторий: ${studentName}` })
   await expect(history).toContainText(targetRoom.label)
 
   // Phase 7 requires a separate explicit action after confirmation. The E2E
