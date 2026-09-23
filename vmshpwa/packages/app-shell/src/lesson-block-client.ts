@@ -126,7 +126,7 @@ export function createLessonBlockClient(
       !('url' in imageValue) ||
       typeof imageValue.url !== 'string'
     ) {
-      throw new Error(t`The server returned an invalid image address`)
+      throw new Error(t`Сервер вернул некорректный адрес изображения`)
     }
     return { url: imageValue.url }
   }

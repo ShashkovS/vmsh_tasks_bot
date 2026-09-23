@@ -446,6 +446,10 @@ msgstr "Parent"
 msgid "светлую"
 msgstr "light"
 
+#: packages/app-shell/src/lesson-block-client.ts
+msgid "Сервер вернул некорректный адрес изображения"
+msgstr "The server returned an invalid image address"
+
 #: packages/app-shell/src/session-management.tsx
 msgid "Сервер вернул повторяющиеся сессии."
 msgstr "The server returned duplicate sessions."

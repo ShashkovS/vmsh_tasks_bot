@@ -446,6 +446,10 @@ msgstr "Родитель"
 msgid "светлую"
 msgstr "светлую"
 
+#: packages/app-shell/src/lesson-block-client.ts
+msgid "Сервер вернул некорректный адрес изображения"
+msgstr "Сервер вернул некорректный адрес изображения"
+
 #: packages/app-shell/src/session-management.tsx
 msgid "Сервер вернул повторяющиеся сессии."
 msgstr "Сервер вернул повторяющиеся сессии."
