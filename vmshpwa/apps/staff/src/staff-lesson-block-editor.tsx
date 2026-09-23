@@ -176,7 +176,7 @@ export function StaffLessonBlockEditor({
                   : t`Не добавлен`}
           </span>
         </summary>
-        <CardContent className="space-y-3 border-t border-border pt-4">
+        <CardContent className="space-y-3 border-t border-border py-4">
           <p className="text-small text-muted-foreground">
             Опубликованная версия:{' '}
             {block?.published
