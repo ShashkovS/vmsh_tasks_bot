@@ -97,3 +97,8 @@ Family activity и Student strength/progress/streak/achievements считают�
 ## Family worksheet polish
 
 Implemented [read-only worksheets and child/profile corrections](../../docs/family-worksheet-polish.md). The worksheet API reuses the Student lesson/mark projection within the authenticated child and allowed group; old and non-active-group lessons can be read. [Verification](../../../pwa_tests/reports/family-worksheet-polish/README.md) covers authorization, matching marks, child separation and all three browsers.
+# Lesson blocks addendum
+
+Family worksheet responses carry the same published before/after blocks as the
+Student response. Their task document and task statuses are nullable only while
+conditions remain unpublished. See [lesson-blocks.md](../../docs/lesson-blocks.md).

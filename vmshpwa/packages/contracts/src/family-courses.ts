@@ -136,15 +136,16 @@ export const familyWorksheetResponseSchema = z
   .object({
     studentId: publicIdSchema,
     lesson: studentLessonSummarySchema,
-    problems: studentProblemListResponseSchema,
-    document: webContentDocumentSchema,
+    problems: studentProblemListResponseSchema.nullable(),
+    document: webContentDocumentSchema.nullable(),
   })
   .strip()
   .superRefine((value, context) => {
     if (
-      value.lesson.groupLessonId !== value.problems.groupLessonId ||
-      value.lesson.courseId !== value.problems.courseId ||
-      value.lesson.groupId !== value.problems.groupId
+      value.problems !== null &&
+      (value.lesson.groupLessonId !== value.problems.groupLessonId ||
+        value.lesson.courseId !== value.problems.courseId ||
+        value.lesson.groupId !== value.problems.groupId)
     ) {
       context.addIssue({ code: 'custom', message: 'Worksheet context must match its marks' })
     }

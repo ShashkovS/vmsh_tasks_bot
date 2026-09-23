@@ -36,7 +36,7 @@ import {
   type WebContentProblem,
 } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
-import { CourseContext, CourseGroupSwitcher } from '@vmsh/product'
+import { CourseContext, CourseGroupSwitcher, LessonBlocksLayout } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
 import { formatCalendarDate, problemCountLabel, toCourseEnrollmentView } from './student-home-view'
@@ -120,12 +120,13 @@ export function StudentLessonFeedItem({
     enrollment.course.courseId,
     groupId,
     lesson.groupLessonId,
+    lesson.materials.condition.status === 'published',
   )
   const contentQuery = usePublishedContentQuery(
     contentClient,
     principal,
     { groupLessonId: lesson.groupLessonId, kind: 'condition' },
-    { enabled: true },
+    { enabled: lesson.materials.condition.status === 'published' },
   )
   const group = enrollment.allowedGroups.find((candidate) => candidate.groupId === groupId)
   const worksheetKey = `${principal.accountId}:${lesson.groupLessonId}`
@@ -136,6 +137,23 @@ export function StudentLessonFeedItem({
     worksheetExpandedProblems.set(worksheetKey, expandedProblemIds)
   }, [worksheetKey, expandedProblemIds])
   const [openedAt] = useState(() => Date.now())
+
+  if (!group) return <PageStatePanel state="forbidden" />
+  if (lesson.materials.condition.status !== 'published') {
+    return (
+      <Card className="overflow-hidden" data-print-lesson>
+        <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
+          <p className="text-caption text-muted-foreground">Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}</p>
+          <CardTitle>{lessonHeading(lesson)}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <LessonBlocksLayout after={lesson.blocks.after?.document ?? null} before={lesson.blocks.before?.document ?? null} idPrefix={`student-${lesson.groupLessonId}`}>
+            <p className="px-4 py-5 text-muted-foreground sm:px-7">Задачи ещё не опубликованы.</p>
+          </LessonBlocksLayout>
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (problemsQuery.isPending || contentQuery.isPending) return <PageStatePanel state="loading" />
   if (problemsQuery.error || contentQuery.error) {
@@ -156,10 +174,6 @@ export function StudentLessonFeedItem({
       />
     )
   }
-  if (!group) {
-    return <PageStatePanel state="forbidden" />
-  }
-
   const openProblem = (displayNumber: string, problemId: string) => {
     rememberWorksheet(problemId)
     void navigate({
@@ -266,6 +280,7 @@ export function StudentLessonFeedItem({
         </p>
       </CardHeader>
       <CardContent className="p-0">
+        <LessonBlocksLayout after={lesson.blocks.after?.document ?? null} before={lesson.blocks.before?.document ?? null} idPrefix={`student-${lesson.groupLessonId}`}>
         <WorksheetDocument
           document={contentQuery.data.document}
           renderAfterSubpart={(documentProblem, label) => {
@@ -294,6 +309,7 @@ export function StudentLessonFeedItem({
             return problem ? problemActions(problem) : null
           }}
         />
+        </LessonBlocksLayout>
       </CardContent>
     </Card>
   )

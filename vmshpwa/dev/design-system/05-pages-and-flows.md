@@ -194,3 +194,9 @@ Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`
 браузера: [требования и компоненты](../../docs/worksheet-print.md). Печатаются
 уже показанные занятия и только раскрытые учебные материалы. Ответы ученика,
 фотографии работ, проверки и переписка исключены; экранное состояние сохраняется.
+# Lesson blocks addendum
+
+Full lesson presentations place author-controlled blocks below the heading and
+below the task body. `LessonBlocksLayout` omits empty positions and leaves the
+existing worksheet task surface intact; video begins only after an explicit
+reader action. See [lesson-blocks.md](../../docs/lesson-blocks.md).

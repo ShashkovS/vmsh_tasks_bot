@@ -24,7 +24,7 @@ import {
   type CourseEnrollment,
   type WebContentBlock,
 } from '@vmsh/contracts'
-import { ContentUpdateMarker } from '@vmsh/product'
+import { ContentUpdateMarker, LessonBlocksLayout } from '@vmsh/product'
 import { Badge } from '@vmsh/ui'
 
 function hasSubparts(blocks: WebContentBlock[]): boolean {
@@ -374,26 +374,25 @@ function FamilyWorksheet({
           onAction={() => void query.refetch()}
         />
       ) : (
-        <SemanticMathDocument
-          imageLoading="eager"
-          className="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 sm:px-7 sm:py-6"
-          document={query.data.document}
-          renderProblemActions={(problem) =>
-            mark(
-              query.data.problems.problems.find(
-                (item) => item.sourceOrdinal === problem.ordinal && !hasSubparts(problem.blocks),
-              ),
-            )
-          }
-          renderSubpartActions={(problem, label) =>
-            mark(
-              query.data.problems.problems.find(
-                (item) =>
-                  item.sourceOrdinal === problem.ordinal && item.displayNumber.endsWith(label),
-              ),
-            )
-          }
-        />
+        <LessonBlocksLayout
+          after={query.data.lesson.blocks.after?.document ?? null}
+          before={query.data.lesson.blocks.before?.document ?? null}
+          idPrefix={`family-${query.data.lesson.groupLessonId}`}
+        >
+          {query.data.document && query.data.problems ? (
+            <SemanticMathDocument
+              imageLoading="eager"
+              className="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 sm:px-7 sm:py-6"
+              document={query.data.document}
+              renderProblemActions={(problem) =>
+                mark(query.data.problems?.problems.find((item) => item.sourceOrdinal === problem.ordinal && !hasSubparts(problem.blocks)))
+              }
+              renderSubpartActions={(problem, label) =>
+                mark(query.data.problems?.problems.find((item) => item.sourceOrdinal === problem.ordinal && item.displayNumber.endsWith(label)))
+              }
+            />
+          ) : <p className="py-4 text-muted-foreground">Задачи ещё не опубликованы.</p>}
+        </LessonBlocksLayout>
       )}
     </PageLayout>
   )

@@ -5193,6 +5193,7 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
             "hint": {"status": "unavailable"},
             "solution": {"status": "unavailable"},
         },
+        "blocks": {"before": None, "after": None},
     }
     detailed = await fixture.client.get(
         f"{list_url}/{fixture.group_lesson_a}",

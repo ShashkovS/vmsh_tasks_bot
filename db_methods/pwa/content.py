@@ -15,7 +15,7 @@ import json
 import re
 import sqlite3
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, time, timedelta
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -37,6 +37,7 @@ from models.pwa.content import (
     ScheduleOverrideMode,
     ScheduleRuleValue,
     SourceRevisionPayload,
+    StudentLessonPhase,
     WindowSource,
     find_problem_synonym_candidates,
     format_utc_timestamp,
@@ -51,6 +52,11 @@ from models.pwa.content_asset_names import (
     normalize_content_asset_name,
 )
 from models.pwa.submissions import TestProblemAnswerConfig, evaluation_version
+from .lesson_blocks import (
+    activate_waiting_lesson_blocks,
+    condition_is_published,
+    list_published_lesson_blocks_for_lessons,
+)
 
 from .connection import PwaConnectionFactory
 
@@ -75,6 +81,26 @@ class ContentConflict(ContentRepositoryError):
 
 class ContentVersionConflict(ContentConflict):
     """A mutable record changed after the caller read its version."""
+
+
+def _activate_waiting_blocks_for_condition(
+    connection: sqlite3.Connection,
+    *,
+    group_lesson_id: int,
+    kind: ContentKind,
+    state: PublicationState,
+    timestamp: str,
+) -> None:
+    """Keep with-lesson blocks in the same SQLite publication transaction."""
+
+    if (
+        kind is ContentKind.CONDITION
+        and state is PublicationState.PUBLISHED
+        and condition_is_published(connection, group_lesson_id=group_lesson_id)
+    ):
+        activate_waiting_lesson_blocks(
+            connection, group_lesson_id=group_lesson_id, timestamp=timestamp
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -341,6 +367,18 @@ class StudentLessonMaterialRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentLessonBlockRecord:
+    """One reader-safe Rich Markdown block positioned around lesson tasks."""
+
+    block_public_id: str
+    revision_public_id: str
+    position: str
+    version: int
+    published_at: datetime
+    document: Mapping[str, object]
+
+
+@dataclass(frozen=True, slots=True)
 class StudentLessonSummaryRecord:
     """Bounded course/group lesson projection for Student navigation.
 
@@ -351,6 +389,9 @@ class StudentLessonSummaryRecord:
     """
 
     group_lesson_public_id: str
+    # Reader projection needs the private key only while batch-loading the
+    # two public block slots; it is never serialized into API payloads.
+    internal_group_lesson_id: int
     course_lesson_public_id: str
     course_public_id: str
     group_public_id: str
@@ -360,10 +401,11 @@ class StudentLessonSummaryRecord:
     business_timezone: str
     version: int
     window: LessonWindowRecord | None
-    condition: StudentLessonMaterialRecord
+    condition: StudentLessonMaterialRecord | None
     hint: StudentLessonMaterialRecord | None
     solution: StudentLessonMaterialRecord | None
     problem_count: int
+    blocks: tuple[StudentLessonBlockRecord, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -1384,8 +1426,6 @@ def _student_lesson_summary(
     row: Mapping[str, object],
 ) -> StudentLessonSummaryRecord:
     condition = _student_lesson_material(row, "condition")
-    if condition is None:  # pragma: no cover - inner-join invariant
-        raise ContentRepositoryError("student lesson has no published condition")
     window = None
     if row["window_public_id"] is not None:
         window = LessonWindowRecord(
@@ -1406,6 +1446,7 @@ def _student_lesson_summary(
         )
     return StudentLessonSummaryRecord(
         group_lesson_public_id=str(row["group_lesson_public_id"]),
+        internal_group_lesson_id=int(row["group_lesson_id"]),
         course_lesson_public_id=str(row["course_lesson_public_id"]),
         course_public_id=str(row["course_public_id"]),
         group_public_id=str(row["group_public_id"]),
@@ -1416,9 +1457,43 @@ def _student_lesson_summary(
         version=int(row["group_lesson_version"]),
         window=window,
         condition=condition,
-        hint=_student_lesson_material(row, "hint"),
-        solution=_student_lesson_material(row, "solution"),
+        # A block can be readable ahead of the task sheet. Do not reveal
+        # task-adjacent materials until a browser-readable condition exists.
+        hint=_student_lesson_material(row, "hint") if condition is not None else None,
+        solution=(
+            _student_lesson_material(row, "solution")
+            if condition is not None
+            else None
+        ),
         problem_count=int(row["problem_count"]),
+    )
+
+
+def _with_student_lesson_blocks(
+    lessons: tuple[StudentLessonSummaryRecord, ...], connection: sqlite3.Connection
+) -> tuple[StudentLessonSummaryRecord, ...]:
+    """Attach reader-safe blocks in one additional bounded query."""
+
+    records = list_published_lesson_blocks_for_lessons(
+        connection,
+        group_lesson_ids=tuple(item.internal_group_lesson_id for item in lessons),
+    )
+    return tuple(
+        replace(
+            lesson,
+            blocks=tuple(
+                StudentLessonBlockRecord(
+                    block_public_id=item.block.public_id,
+                    revision_public_id=item.revision.public_id,
+                    position=item.block.position,
+                    version=item.block.version,
+                    published_at=item.block.published_at,
+                    document=item.revision.document or {},
+                )
+                for item in records.get(lesson.internal_group_lesson_id, ())
+            ),
+        )
+        for lesson in lessons
     )
 
 
@@ -1554,9 +1629,10 @@ _STUDENT_LESSON_SELECT = (
     "solution_revision.public_id AS solution_revision_public_id, "
     "solution_publication.published_at AS solution_published_at, "
     "solution_publication.version AS solution_publication_version, "
-    "(SELECT count(*) FROM problem_revisions AS problem_revision "
-    " WHERE problem_revision.content_revision_id = condition_publication.revision_id) "
-    "AS problem_count "
+    "CASE WHEN condition_revision.id IS NULL THEN 0 ELSE ("
+    " SELECT count(*) FROM problem_revisions AS problem_revision "
+    " WHERE problem_revision.content_revision_id = condition_publication.revision_id"
+    ") END AS problem_count "
     "FROM group_lessons AS group_lesson "
     "JOIN course_lessons AS course_lesson "
     "  ON course_lesson.id = group_lesson.course_lesson_id "
@@ -1564,7 +1640,7 @@ _STUDENT_LESSON_SELECT = (
     "JOIN groups AS group_record "
     "  ON group_record.course_id = group_lesson.course_id "
     " AND group_record.group_id = group_lesson.group_id "
-    "JOIN lesson_publications AS condition_publication "
+    "LEFT JOIN lesson_publications AS condition_publication "
     "  ON condition_publication.group_lesson_id = group_lesson.id "
     " AND condition_publication.kind = 'condition' "
     " AND condition_publication.state = 'published' "
@@ -1572,7 +1648,7 @@ _STUDENT_LESSON_SELECT = (
     "             WHERE condition_derivative.revision_id = condition_publication.revision_id "
     "               AND condition_derivative.kind = 'web_ast' "
     "               AND (condition_derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = condition_publication.id AND frozen.document_json IS NOT NULL))) "
-    "JOIN content_revisions AS condition_revision "
+    "LEFT JOIN content_revisions AS condition_revision "
     "  ON condition_revision.id = condition_publication.revision_id "
     " AND (condition_revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = condition_publication.id AND frozen.document_json IS NOT NULL)) "
     "LEFT JOIN lesson_windows AS lesson_window "
@@ -1598,6 +1674,13 @@ _STUDENT_LESSON_SELECT = (
     "LEFT JOIN content_revisions AS solution_revision "
     "  ON solution_revision.id = solution_publication.revision_id "
     " AND (solution_revision.status = 'ready' OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = solution_publication.id AND frozen.document_json IS NOT NULL)) "
+)
+
+_STUDENT_LESSON_VISIBLE = (
+    "(condition_revision.id IS NOT NULL OR EXISTS ("
+    "SELECT 1 FROM lesson_blocks AS lesson_block "
+    "WHERE lesson_block.group_lesson_id = group_lesson.id "
+    "AND lesson_block.published_revision_id IS NOT NULL)) "
 )
 
 
@@ -2221,10 +2304,8 @@ class PwaContentRepository:
     ) -> tuple[StudentLessonSummaryRecord, ...]:
         """Return one bounded, query-complete Student lesson page.
 
-        The condition publication is an inner join, so drafts, scheduled-only
-        conditions, hidden conditions and broken browser derivatives never
-        reveal a lesson. All optional material/window state is projected by the
-        same SQL statement; callers do not need per-lesson reads.
+        A readable condition or an independently published lesson block reveals
+        a lesson. Drafts, schedules and broken condition derivatives do not.
         """
 
         _require_public_id(course_public_id)
@@ -2237,7 +2318,7 @@ class PwaContentRepository:
         def read(connection):
             where = (
                 "WHERE course.public_id = ? AND group_record.public_id = ? "
-                "AND group_lesson.status = 'active' "
+                "AND group_lesson.status = 'active' AND " + _STUDENT_LESSON_VISIBLE
             )
             parameters: list[object] = [course_public_id, group_public_id]
             if before_lesson_number is not None:
@@ -2251,7 +2332,9 @@ class PwaContentRepository:
                 + "LIMIT ?",
                 parameters,
             ).fetchall()
-            return tuple(_student_lesson_summary(row) for row in rows)
+            return _with_student_lesson_blocks(
+                tuple(_student_lesson_summary(row) for row in rows), connection
+            )
 
         return await self._factory.run_read_async(read)
 
@@ -2296,24 +2379,30 @@ class PwaContentRepository:
             rows = connection.execute(
                 "SELECT * FROM ("
                 + _STUDENT_LESSON_SELECT
-                + "WHERE group_lesson.status = 'active' AND ("
+                + "WHERE group_lesson.status = 'active' AND "
+                + _STUDENT_LESSON_VISIBLE
+                + "AND ("
                 + predicates
                 + ")) AS visible_lessons WHERE scope_rank = 1 "
                 + "ORDER BY course_public_id, group_public_id",
                 parameters,
             ).fetchall()
+            summaries = _with_student_lesson_blocks(
+                tuple(_student_lesson_summary(row) for row in rows), connection
+            )
             records: list[StudentHomeLessonRecord] = []
-            for row in rows:
-                lesson = _student_lesson_summary(row)
+            for lesson in summaries:
                 window = lesson.window
-                phase = resolve_student_lesson_phase(
-                    now=generated_at,
-                    opens_at=None if window is None else window.opens_at,
-                    submission_closes_at=(
-                        None if window is None else window.submission_closes_at
-                    ),
-                    hint_published=lesson.hint is not None,
-                    solution_published=lesson.solution is not None,
+                phase = (
+                    StudentLessonPhase.MATERIALS_ONLY
+                    if lesson.condition is None
+                    else resolve_student_lesson_phase(
+                        now=generated_at,
+                        opens_at=None if window is None else window.opens_at,
+                        submission_closes_at=(None if window is None else window.submission_closes_at),
+                        hint_published=lesson.hint is not None,
+                        solution_published=lesson.solution is not None,
+                    )
                 )
                 records.append(
                     StudentHomeLessonRecord(lesson=lesson, phase=phase.value)
@@ -2341,12 +2430,14 @@ class PwaContentRepository:
                 _STUDENT_LESSON_SELECT
                 + "WHERE course.public_id = ? AND group_record.public_id = ? "
                 + "AND group_lesson.public_id = ? "
-                + "AND group_lesson.status = 'active' LIMIT 1",
+                + "AND group_lesson.status = 'active' AND "
+                + _STUDENT_LESSON_VISIBLE
+                + "LIMIT 1",
                 (course_public_id, group_public_id, group_lesson_public_id),
             ).fetchone()
             if row is None:
                 raise ContentNotFound("published student lesson does not exist")
-            return _student_lesson_summary(row)
+            return _with_student_lesson_blocks((_student_lesson_summary(row),), connection)[0]
 
         return await self._factory.run_read_async(read)
 
@@ -3833,6 +3924,9 @@ class PwaContentRepository:
             except sqlite3.IntegrityError as error:
                 raise _translate_integrity(error, action="publication") from error
             _snapshot_figure_layout(connection, int(row["id"]), revision_id)
+            _activate_waiting_blocks_for_condition(
+                connection, group_lesson_id=group_lesson_id, kind=kind, state=state, timestamp=now
+            )
             return _publication(row)
 
         return await self._factory.run_write_async(write)
@@ -3993,6 +4087,9 @@ class PwaContentRepository:
                     error, action="publication replacement"
                 ) from error
             _snapshot_figure_layout(connection, int(row["id"]), revision_id, rollback=rollback)
+            _activate_waiting_blocks_for_condition(
+                connection, group_lesson_id=group_lesson_id, kind=kind, state=state, timestamp=timestamp
+            )
             return _publication(row)
 
         return await self._factory.run_write_async(write)
@@ -4136,6 +4233,13 @@ class PwaContentRepository:
                     error, action="scheduled publication activation"
                 ) from error
             _copy_publication_layout(connection, int(scheduled["id"]), int(row["id"]))
+            _activate_waiting_blocks_for_condition(
+                connection,
+                group_lesson_id=int(scheduled["group_lesson_id"]),
+                kind=ContentKind(str(scheduled["kind"])),
+                state=PublicationState.PUBLISHED,
+                timestamp=timestamp,
+            )
             return _publication(row)
 
         return await self._factory.run_write_async(write)
@@ -4218,6 +4322,13 @@ class PwaContentRepository:
                 ) from error
             _copy_publication_layout(connection, int(scheduled["id"]), int(row["id"]))
             publication = _publication(row)
+            _activate_waiting_blocks_for_condition(
+                connection,
+                group_lesson_id=publication.group_lesson_id,
+                kind=publication.kind,
+                state=publication.state,
+                timestamp=timestamp,
+            )
             revision_row = connection.execute(
                 "SELECT public_id FROM content_revisions WHERE id = ?",
                 (publication.revision_id,),

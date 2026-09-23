@@ -6,6 +6,7 @@ import {
   publicIdSchema,
   type PrincipalQueryScope,
 } from './auth'
+import { publishedLessonBlocksSchema } from './lesson-blocks'
 
 /**
  * Phase-1 course enrollment/access contracts. The server remains authoritative
@@ -196,14 +197,19 @@ export const studentLessonSummarySchema = z
         solution: studentLessonMaterialSchema,
       })
       .strip(),
+    blocks: publishedLessonBlocksSchema.optional().default({ before: null, after: null }),
   })
   .strip()
   .superRefine((lesson, context) => {
-    if (lesson.materials.condition.status !== 'published') {
+    if (
+      lesson.materials.condition.status !== 'published' &&
+      lesson.blocks.before === null &&
+      lesson.blocks.after === null
+    ) {
       context.addIssue({
         code: 'custom',
-        message: 'A Student-visible lesson must have a published condition',
-        path: ['materials', 'condition'],
+        message: 'A Student-visible lesson must have a published condition or block',
+        path: ['blocks'],
       })
     }
     if (lesson.window !== null && lesson.window.timezone !== lesson.businessTimezone) {
@@ -379,6 +385,7 @@ export type StudentLessonListResponse = z.infer<typeof studentLessonListResponse
 
 export const studentLessonPhaseSchema = z.enum([
   'no_lesson',
+  'materials_only',
   'published',
   'solving',
   'hints',
@@ -402,7 +409,7 @@ export const studentHomeCourseSchema = z
     z
       .object({
         ...studentHomeCourseShape,
-        phase: z.enum(['published', 'solving', 'hints', 'checking', 'solutions']),
+        phase: z.enum(['materials_only', 'published', 'solving', 'hints', 'checking', 'solutions']),
         currentLesson: studentLessonSummarySchema,
       })
       .strip(),

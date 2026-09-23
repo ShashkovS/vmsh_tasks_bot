@@ -311,3 +311,9 @@ Implemented [full references and worksheet interaction corrections](../../docs/t
 Проверено: 36 unit, 4 backend, 15 browser и 6 E2E в Chromium/Firefox/WebKit;
 320/390/1280 px, обе темы, печать, typecheck, production build. Снимки и известные
 baseline-падения старых Staff-тестов описаны в отчёте. Миграций нет.
+# Lesson blocks addendum
+
+Student lesson discovery accepts a published condition or a published lesson
+block. `materials_only` keeps task metadata and submission controls absent until
+conditions are browser-readable. The concrete query and renderer integration is
+cross-referenced in [lesson-blocks.md](../../docs/lesson-blocks.md).

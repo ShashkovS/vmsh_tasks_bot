@@ -51,7 +51,7 @@ server {{ server_name {public_host}; return 308 https://{public_host}$request_ur
 upstream vmshpwa_backend {{ server unix:/run/vmshpwa.sock fail_timeout=0; }}
 server {{
     server_name {public_host};
-    add_header Content-Security-Policy "default-src 'none'; connect-src 'self' wss://{public_host}";
+    add_header Content-Security-Policy "default-src 'none'; frame-src https://www.youtube.com https://vkvideo.ru; connect-src 'self' wss://{public_host}";
     add_header Cache-Control $vmshpwa_release_cache_control always;
     add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
     location = /metrics {{ access_log off; return 404; }}
@@ -178,6 +178,7 @@ def test_csp_and_security_headers_are_strict_with_explicit_render_markers():
         "object-src 'none'",
         "frame-ancestors 'none'",
         "script-src 'self'",
+        "frame-src https://www.youtube.com https://vkvideo.ru",
         "connect-src 'self' wss://@@PUBLIC_HOST@@",
     ):
         assert directive in source
@@ -269,7 +270,7 @@ def test_syntax_check_refuses_installed_site_without_worker_cache_boundary(
 server { server_name pwa.example.org; return 308 https://pwa.example.org$request_uri; }
 server {
     server_name pwa.example.org;
-    add_header Content-Security-Policy "default-src 'none'; connect-src 'self' wss://pwa.example.org";
+    add_header Content-Security-Policy "default-src 'none'; frame-src https://www.youtube.com https://vkvideo.ru; connect-src 'self' wss://pwa.example.org";
 }
 """,
         encoding="utf-8",

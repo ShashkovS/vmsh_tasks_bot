@@ -562,3 +562,9 @@ TikZ extraction для условий, подсказок и решений: 12 
 Черновик публикуется снимком; повторная обработка старой revision не изменяет
 действующий листок. Генерация PDF исключена из этого изменения. Реализация: миграция
 0093, `figure_layout.py`, revision API и Staff `FigureLayoutEditor`.
+# Lesson blocks addendum
+
+The separate `LessonBlockService` composes with condition publication inside the
+same SQLite transaction for the `with_lesson` mode. It does not alter existing
+condition, hint, solution, news, or Telegram publication semantics. The
+implementation is documented in [lesson-blocks.md](../../docs/lesson-blocks.md).

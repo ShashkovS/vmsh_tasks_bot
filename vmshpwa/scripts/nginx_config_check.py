@@ -41,12 +41,18 @@ def _validate_rendered_site(source: str, public_host: str) -> str | None:
         return "site config HTTPS redirect does not match the exact public host"
     if f"connect-src 'self' wss://{public_host}" not in uncommented:
         return "site config CSP WebSocket origin does not match the exact public host"
-    # docs/media-csp.md: inspect each literal policy, including policies in maps.
-    for policy in re.findall(r'"([^"\n]*img-src[^"\n]*)"', uncommented):
+    if "frame-src https://www.youtube.com https://vkvideo.ru" not in uncommented:
+        return "site config CSP must allow the canonical YouTube and VK Video frame origins"
+    # docs/media-csp.md and docs/lesson-blocks.md: inspect literal policies,
+    # including policies in maps, without permitting arbitrary frame origins.
+    for policy in re.findall(r'"([^"\n]*(?:img-src|frame-src)[^"\n]*)"', uncommented):
         directives = {parts[0]: parts[1:] for item in policy.split(";") if (parts := item.split())}
         media_origins = {value for value in directives.get("img-src", []) if value.startswith("https://")}
         if not media_origins.issubset(set(directives.get("connect-src", []))):
             return "site config CSP image origins must also be allowed in connect-src for service workers"
+        frame_origins = set(directives.get("frame-src", []))
+        if frame_origins and frame_origins != {"https://www.youtube.com", "https://vkvideo.ru"}:
+            return "site config CSP frame-src must allow only canonical YouTube and VK Video origins"
     worker_boundary = (
         "map $uri $vmshpwa_release_cache_control",
         '/student/sw.js "no-store";',

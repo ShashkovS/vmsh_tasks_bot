@@ -375,27 +375,30 @@ async def get_family_worksheet(request: web.Request) -> web.Response:
             message="Условие этого занятия ещё не опубликовано",
         )
     lesson = lessons[0]
-    try:
-        problems = await repository.list_student_problems(
-            student_user_id=child.student_user_id,
-            course_public_id=enrollment.course_public_id,
-            group_public_id=group.group_public_id,
-            group_lesson_public_id=lesson.group_lesson_public_id,
-        )
-        content = await repository.get_published_content(
-            group_lesson_public_id=lesson.group_lesson_public_id,
-            kind=ContentKind.CONDITION,
-        )
-    except ContentNotFound as error:
-        raise PwaApiError(
-            status=404, code="not_found", message="Листок пока недоступен"
-        ) from error
+    problems = None
+    content = None
+    if lesson.condition is not None:
+        try:
+            problems = await repository.list_student_problems(
+                student_user_id=child.student_user_id,
+                course_public_id=enrollment.course_public_id,
+                group_public_id=group.group_public_id,
+                group_lesson_public_id=lesson.group_lesson_public_id,
+            )
+            content = await repository.get_published_content(
+                group_lesson_public_id=lesson.group_lesson_public_id,
+                kind=ContentKind.CONDITION,
+            )
+        except ContentNotFound as error:
+            raise PwaApiError(
+                status=404, code="not_found", message="Листок пока недоступен"
+            ) from error
     return web.json_response(
         {
             "studentId": child.student_public_id,
             "lesson": _student_lesson_payload(lesson),
-            "problems": _student_problem_list_payload(problems),
-            "document": content.document,
+            "problems": None if problems is None else _student_problem_list_payload(problems),
+            "document": None if content is None else content.document,
         },
         headers={"Cache-Control": "no-store"},
     )

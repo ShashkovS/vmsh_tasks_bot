@@ -1,0 +1,36 @@
+.vmsh-lesson-block {
+  margin-block: 1rem;
+}
+.vmsh-lesson-video {
+  margin: 1rem 0;
+}
+.vmsh-lesson-video iframe {
+  aspect-ratio: 16 / 9;
+  border: 0;
+  display: block;
+  width: 100%;
+}
+.vmsh-lesson-video-placeholder {
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.vmsh-lesson-video-print {
+  display: none;
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+@media print {
+  .vmsh-lesson-video iframe,
+  .vmsh-lesson-video-placeholder {
+    display: none !important;
+  }
+  .vmsh-lesson-video-print {
+    display: block;
+  }
+}

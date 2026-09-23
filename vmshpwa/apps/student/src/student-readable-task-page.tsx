@@ -178,6 +178,13 @@ function ReadableLesson({
       </div>
     )
   }
+  if (lesson.materials.condition.status !== 'published') {
+    return (
+      <PageLayout title="Задача" width="content">
+        <PageStatePanel state="empty" title="Задачи ещё не опубликованы" />
+      </PageLayout>
+    )
+  }
   return (
     <ReadableProblem
       client={client}

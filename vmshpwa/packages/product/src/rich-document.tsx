@@ -24,7 +24,7 @@ function MathFormula({ block = false, latex }: { block?: boolean; latex: string 
   return <span className={cn(block && 'block overflow-x-auto py-2 text-center')} ref={element} />
 }
 
-function Inline({ nodes }: { nodes: RichInline[] }) {
+function Inline({ nodes, idPrefix }: { nodes: RichInline[]; idPrefix: string }) {
   const [revealed, setRevealed] = useState<ReadonlySet<number>>(() => new Set())
   const render = (node: RichInline, path: string): ReactNode => {
     if (node.type === 'text') return <Fragment key={path}>{node.text}</Fragment>
@@ -38,7 +38,7 @@ function Inline({ nodes }: { nodes: RichInline[] }) {
     if (node.type === 'footnoteRef')
       return (
         <sup key={path}>
-          <a className="text-link underline" href={`#footnote-${node.id}`}>
+          <a className="text-link underline" href={`#${idPrefix}-footnote-${node.id}`}>
             [{node.id}]
           </a>
         </sup>
@@ -52,11 +52,11 @@ function Inline({ nodes }: { nodes: RichInline[] }) {
           rel="noopener noreferrer"
           target="_blank"
         >
-          <Inline nodes={node.children} />
+          <Inline idPrefix={idPrefix} nodes={node.children} />
         </a>
       )
     }
-    const children = <Inline nodes={node.children} />
+    const children = <Inline idPrefix={idPrefix} nodes={node.children} />
     if (node.type === 'bold') return <strong key={path}>{children}</strong>
     if (node.type === 'italic') return <em key={path}>{children}</em>
     if (node.type === 'underline') return <u key={path}>{children}</u>
@@ -91,9 +91,11 @@ function Inline({ nodes }: { nodes: RichInline[] }) {
 function ImageBlock({
   block,
   document,
+  imageLoading,
 }: {
   block: Extract<RichBlock, { type: 'image' }>
   document: RichDocument
+  imageLoading: 'eager' | 'lazy'
 }) {
   const media = document.media.find((item) => item.mediaId === block.mediaId)
   if (!media?.url) {
@@ -112,18 +114,18 @@ function ImageBlock({
       alt={block.alt || media.alt}
       className="max-h-[32rem] rounded-md border border-border object-contain"
       height={media.height}
-      loading="lazy"
+      loading={imageLoading}
       src={media.url}
       width={media.width}
     />
   )
 }
 
-function Block({ block, document }: { block: RichBlock; document: RichDocument }): ReactNode {
+function Block({ block, document, idPrefix, imageLoading }: { block: RichBlock; document: RichDocument; idPrefix: string; imageLoading: 'eager' | 'lazy' }): ReactNode {
   if (block.type === 'paragraph')
     return (
       <p className="whitespace-pre-wrap">
-        <Inline nodes={block.children} />
+        <Inline idPrefix={idPrefix} nodes={block.children} />
       </p>
     )
   if (block.type === 'heading') {
@@ -133,7 +135,7 @@ function Block({ block, document }: { block: RichBlock; document: RichDocument }
     ]
     return (
       <Heading className={cn('font-semibold text-foreground', size)}>
-        <Inline nodes={block.children} />
+        <Inline idPrefix={idPrefix} nodes={block.children} />
       </Heading>
     )
   }
@@ -142,7 +144,7 @@ function Block({ block, document }: { block: RichBlock; document: RichDocument }
       <blockquote className="space-y-2 border-l-2 border-border-strong pl-3 text-muted-foreground">
         {block.blocks.map((item, index) => (
           <Fragment key={index}>
-            <Block block={item} document={document} />
+            <Block block={item} document={document} idPrefix={idPrefix} imageLoading={imageLoading} />
           </Fragment>
         ))}
       </blockquote>
@@ -164,7 +166,7 @@ function Block({ block, document }: { block: RichBlock; document: RichDocument }
       >
         {block.items.map((item, index) => (
           <li key={index}>
-            <Inline nodes={item} />
+            <Inline idPrefix={idPrefix} nodes={item} />
           </li>
         ))}
       </List>
@@ -182,7 +184,7 @@ function Block({ block, document }: { block: RichBlock; document: RichDocument }
             >
               {item.checked ? '☑' : '☐'}
             </span>
-            <Inline nodes={item.children} />
+            <Inline idPrefix={idPrefix} nodes={item.children} />
           </li>
         ))}
       </ul>
@@ -191,12 +193,12 @@ function Block({ block, document }: { block: RichBlock; document: RichDocument }
     return (
       <details className="rounded-md border border-border bg-surface-subtle p-2" open={block.open}>
         <summary className="cursor-pointer font-medium">
-          <Inline nodes={block.summary} />
+          <Inline idPrefix={idPrefix} nodes={block.summary} />
         </summary>
         <div className="mt-2 space-y-2">
           {block.blocks.map((item, index) => (
             <Fragment key={index}>
-              <Block block={item} document={document} />
+              <Block block={item} document={document} idPrefix={idPrefix} imageLoading={imageLoading} />
             </Fragment>
           ))}
         </div>
@@ -204,25 +206,29 @@ function Block({ block, document }: { block: RichBlock; document: RichDocument }
     )
   if (block.type === 'footnote')
     return (
-      <p className="text-caption text-muted-foreground" id={`footnote-${block.id}`}>
-        <sup>[{block.id}]</sup> <Inline nodes={block.children} />
+      <p className="text-caption text-muted-foreground" id={`${idPrefix}-footnote-${block.id}`}>
+        <sup>[{block.id}]</sup> <Inline idPrefix={idPrefix} nodes={block.children} />
       </p>
     )
-  return <ImageBlock block={block} document={document} />
+  return <ImageBlock block={block} document={document} imageLoading={imageLoading} />
 }
 
 export function RichDocumentView({
   className,
   document,
+  idPrefix = 'rich',
+  imageLoading = 'lazy',
 }: {
   className?: string
   document: RichDocument
+  idPrefix?: string
+  imageLoading?: 'eager' | 'lazy'
 }) {
   return (
     <article className={cn('space-y-3', className)}>
       {document.blocks.map((block, index) => (
         <Fragment key={index}>
-          <Block block={block} document={document} />
+          <Block block={block} document={document} idPrefix={idPrefix} imageLoading={imageLoading} />
         </Fragment>
       ))}
     </article>

@@ -56,6 +56,10 @@ allowance because current product components use style attributes; `unsafe-eval`
 is forbidden. Tightening this after an inline-style inventory does not block the
 Phase-1 proxy boundary.
 
+Lesson blocks may embed normalized YouTube and VK Video players. The template
+allows only `https://www.youtube.com` and `https://vkvideo.ru` in `frame-src`;
+do not widen this to arbitrary video or HTTPS origins.
+
 The public `/` entry point is served from `landing/index.html`; its hashed
 assets live under `/landing/assets/`. The landing page links only to the
 Student and Family cabinets. Other paths continue through their explicit

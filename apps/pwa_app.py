@@ -74,6 +74,7 @@ from apps.pwa_api.content_routes import (
 )
 from apps.pwa_api.course_routes import course_routes
 from apps.pwa_api.family_course_routes import family_course_routes
+from apps.pwa_api.lesson_block_routes import lesson_block_routes
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import (
     PWA_AUTH_STATE,
@@ -173,6 +174,7 @@ from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience, CredentialHasher
 from models.pwa.content_notifications import create_content_publication_notifications
 from models.pwa.content import ContentKind
+from models.pwa.lesson_blocks import LessonBlockService
 from models.pwa.oral_windows import create_due_window_notifications
 from models.pwa.support_notifications import create_staff_reply_notifications
 
@@ -899,6 +901,17 @@ async def publish_content_invalidation(
     """Best-effort realtime fan-out after an authoritative content commit."""
 
     resources = [f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}"]
+    # A condition transition can atomically activate a block armed "with the
+    # lesson".  Readers must refetch that projection even though this helper
+    # deliberately keeps block changes out of notification production.
+    if kind is ContentKind.CONDITION:
+        resources.extend(
+            (
+                f"group-lessons/{scope.group_lesson_public_id}/blocks",
+                "student-course-lessons",
+                "family-worksheets",
+            )
+        )
     if reason in {"content-published", "content-schedule-activated"}:
         database = app.get(PWA_DATABASE)
         if database is not None and database.factory is not None:
@@ -1404,6 +1417,51 @@ async def activate_due_content_publications(
     return activated
 
 
+async def publish_lesson_block_invalidation(
+    app: web.Application, *, group_lesson_public_id: str, reason: str
+) -> None:
+    """Fan out block changes without using content-notification side effects."""
+
+    try:
+        await app[PWA_BROKER].publish(
+            NATS_PWA_INVALIDATE,
+            {
+                "resources": [
+                    f"group-lessons/{group_lesson_public_id}/blocks",
+                    f"group-lessons/{group_lesson_public_id}/blocks/staff",
+                    "student-course-lessons",
+                    "family-worksheets",
+                ],
+                "reason": reason,
+            },
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        logger.warning("Lesson block invalidation failed", exc_info=True)
+
+
+async def activate_due_lesson_blocks(
+    app: web.Application, *, batch_size: int = CONTENT_SCHEDULER_BATCH_SIZE
+) -> int:
+    """Activate due block revisions in the established content scheduler."""
+
+    database = app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        return 0
+    activated = await LessonBlockService(database.factory).activate_due_blocks(batch_size)
+    for item in activated:
+        scope = await app[PWA_CONTENT_REPOSITORY].get_group_lesson_scope(
+            item.block.group_lesson_id
+        )
+        await publish_lesson_block_invalidation(
+            app,
+            group_lesson_public_id=scope.group_lesson_public_id,
+            reason="lesson-block-schedule-activated",
+        )
+    return len(activated)
+
+
 async def invalidate_due_local_news(
     app: web.Application, *, after: str, through: str
 ) -> bool:
@@ -1479,8 +1537,20 @@ async def _content_scheduler_loop(app: web.Application) -> None:
     while not stop.is_set():
         news_scan_through = _now()
         oral_scan_through = news_scan_through
+        activated = 0
         try:
-            activated = await activate_due_content_publications(app)
+            activated += await activate_due_content_publications(app)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("PWA condition scheduler iteration failed")
+        try:
+            activated += await activate_due_lesson_blocks(app)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("PWA lesson-block scheduler iteration failed")
+        try:
             await invalidate_due_local_news(
                 app,
                 after=news_scan_after,
@@ -1846,6 +1916,7 @@ def configure(
         app.add_routes(problem_synonym_routes)
         app.add_routes(course_routes)
         app.add_routes(family_course_routes)
+        app.add_routes(lesson_block_routes)
         app.add_routes(classroom_routes)
         app.add_routes(classroom_layout_routes)
         app.add_routes(classroom_assignment_routes)

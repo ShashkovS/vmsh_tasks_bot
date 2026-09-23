@@ -57,6 +57,8 @@ export function studentPhaseLabel(course: StudentHomeCourse): string {
       )
     : null
   switch (course.phase) {
+    case 'materials_only':
+      return 'Материалы занятия уже опубликованы'
     case 'published':
       return 'Условие опубликовано · время сдачи уточняется'
     case 'solving':

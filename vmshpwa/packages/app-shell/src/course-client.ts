@@ -421,9 +421,11 @@ export function useStudentProblemsQuery(
   courseId: string,
   groupId: string,
   groupLessonId: string,
+  enabled = true,
 ) {
   return useQuery({
     queryKey: courseQueryKeys.problems(principal, courseId, groupId, groupLessonId),
     queryFn: ({ signal }) => client.problems(courseId, groupLessonId, { signal }),
+    enabled,
   })
 }

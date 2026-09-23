@@ -107,3 +107,20 @@
   height: auto;
   object-fit: contain;
 }
+
+/* Lesson blocks are part of the same printable lesson boundary. Video players
+ * stay inert while the canonical, author-visible link is printed instead. */
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-block {
+  break-inside: auto;
+  margin-block: 3mm;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-video iframe,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-video-placeholder {
+  display: none !important;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-video-print {
+  display: block;
+  overflow-wrap: anywhere;
+}

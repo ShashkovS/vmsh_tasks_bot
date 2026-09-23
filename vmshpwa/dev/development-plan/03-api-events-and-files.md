@@ -435,3 +435,9 @@ Student/Family получают course list, enrollment, active-group switch, at
 URL state использует validated `course`, `group`, `lesson`/`event`, `tab`. Query keys и draft keys включают course/group context. Owner-scoped invalidations допускают `audience`, `courseId`, `groupId`, `studentUserId`; отсутствие scope означает общий ресурс. События: `course.enrollment.changed`, `course.group-access.changed`, `group-lesson.publication.changed`, `problem-synonyms.changed`, `review.case.changed`, `course.progress.invalidated`, `notification.preference.changed`, `in-person-event.changed`, `classroom.assignment.changed`, `classroom.assignment.announced`.
 
 Concrete endpoints and payload invariants: [`docs/courses-groups-and-lessons.md`](../../docs/courses-groups-and-lessons.md). Planned frontend files: `packages/product/src/{course-context,course-admin,synonym-context,in-person-event}.tsx`; route compositions — `apps/{student,family,staff}/src/pages.tsx`; contracts migrate to `packages/contracts` only in their vertical phase.
+# Lesson blocks addendum
+
+`apps/pwa_api/lesson_block_routes.py` provides the scoped Staff draft,
+publication, cancellation, hiding, reader projection, and image-upload routes.
+`apps/pwa_app.py` emits invalidations only; it does not create publication
+notifications for block changes. See [lesson-blocks.md](../../docs/lesson-blocks.md).

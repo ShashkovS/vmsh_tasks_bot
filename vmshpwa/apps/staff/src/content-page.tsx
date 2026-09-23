@@ -71,6 +71,7 @@ import { RevisionAssetsRecovery } from './revision-assets-recovery'
 import { ProblemReviewWorkflow } from './problem-review-workflow'
 import { FamilyDigestPanel } from './family-digest-panel'
 import { stableBrowserFile } from './stable-browser-file'
+import { StaffLessonBlocksEditor } from './staff-lesson-block-editor'
 
 const materialOrder: ContentMaterialKind[] = ['condition', 'hint', 'solution']
 const materialLabels: Record<ContentMaterialKind, string> = {
@@ -1837,6 +1838,7 @@ export function StaffContentWorkspace({
           draftNamespace={draftNamespace}
           groupLessonId={groupLessonId}
         />
+        <StaffLessonBlocksEditor groupLessonId={groupLessonId} />
         {materialOrder.map((kind) => (
           <MaterialWorkflowCard
             client={client}

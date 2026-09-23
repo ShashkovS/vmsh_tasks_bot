@@ -60,6 +60,7 @@ class ScheduleOverrideMode(StrEnum):
 
 
 class StudentLessonPhase(StrEnum):
+    MATERIALS_ONLY = "materials_only"
     PUBLISHED = "published"
     SOLVING = "solving"
     HINTS = "hints"

@@ -250,6 +250,38 @@ def _student_lesson_payload(
             "hint": _material_payload(lesson.hint),
             "solution": _material_payload(lesson.solution),
         },
+        "blocks": {
+            "before": next(
+                (
+                    {
+                        "blockId": block.block_public_id,
+                        "revisionId": block.revision_public_id,
+                        "position": block.position,
+                        "version": block.version,
+                        "publishedAt": _iso(block.published_at),
+                        "document": block.document,
+                    }
+                    for block in lesson.blocks
+                    if block.position == "before"
+                ),
+                None,
+            ),
+            "after": next(
+                (
+                    {
+                        "blockId": block.block_public_id,
+                        "revisionId": block.revision_public_id,
+                        "position": block.position,
+                        "version": block.version,
+                        "publishedAt": _iso(block.published_at),
+                        "document": block.document,
+                    }
+                    for block in lesson.blocks
+                    if block.position == "after"
+                ),
+                None,
+            ),
+        },
     }
 
 

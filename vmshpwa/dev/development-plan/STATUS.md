@@ -3224,6 +3224,17 @@ view, требует индекс для `effective_results` и обрывает
 переменной. 81 migration/schema/concurrency/performance/deploy regression test,
 Ruff, `bash -n` и `git diff --check` прошли.
 
+## Блоки занятия до и после задач — основная реализация, 2026-09-23
+
+Добавлены additive migration `0100.pwa_lesson_blocks`, immutable Rich Markdown
+revisions, Staff API с ETag, scheduler activation и Student/Family reader
+projection. YouTube/VK iframe input нормализуется в безопасный AST и ограничен
+узким `frame-src`. Прошли 38 доменных/migration/CSP/visibility/API проверок, 24
+reader HTTP-проверки и parser unit-тесты; contracts/product/app-shell/Student/
+Family/Staff typecheck также прошёл. Полные PWA-команды через `pnpm` в этой среде не запускаются из-за
+проверки подписи package manager; production-provider smoke и расширенные
+visual/E2E остаются выпускной проверкой. Контракт: `docs/lesson-blocks.md`.
+
 ## Долгая генерация metadata-grid — 2026-09-21
 
 Production-журналы показали, что 105-секундные `502` приходили от локального
