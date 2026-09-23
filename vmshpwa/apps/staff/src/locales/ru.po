@@ -65,6 +65,14 @@ msgstr "Выйти"
 msgid "Выйти из кабинета"
 msgstr "Выйти из кабинета"
 
+#: apps/staff/src/lesson-video-dialog.tsx
+msgid "Добавить видео"
+msgstr "Добавить видео"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Есть изменения"
+msgstr "Есть изменения"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Курсы"
 msgstr "Курсы"
@@ -80,6 +88,10 @@ msgstr "Логин или пароль не подошли. Проверьте �
 #: apps/staff/src/routes/__root.tsx
 msgid "Материалы для разбора"
 msgstr "Материалы для разбора"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Не добавлен"
+msgstr "Не добавлен"
 
 #: apps/staff/src/login-page.tsx
 msgid "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
@@ -100,6 +112,10 @@ msgstr "Не удалось связаться с сервером. Провер
 #: apps/staff/src/routes/__root.tsx
 msgid "Новости"
 msgstr "Новости"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Опубликован"
+msgstr "Опубликован"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Очное занятие"
@@ -168,3 +184,7 @@ msgstr "Учитель видит разрешённые группы; admin —
 #: apps/staff/src/routes/__root.tsx
 msgid "Учитель и администратор"
 msgstr "Учитель и администратор"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Черновик"
+msgstr "Черновик"

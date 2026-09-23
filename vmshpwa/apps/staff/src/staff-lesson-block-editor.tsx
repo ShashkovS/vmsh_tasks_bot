@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useMemo, useState } from 'react'
 
 import {
@@ -8,7 +9,7 @@ import {
 } from '@vmsh/app-shell'
 import type { LessonBlockPosition, StaffLessonBlock } from '@vmsh/contracts'
 import { LessonRichDocumentView, parseLessonRichMarkdown } from '@vmsh/product'
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label } from '@vmsh/ui'
+import { Button, Card, CardContent, Input, Label } from '@vmsh/ui'
 
 import { LessonVideoDialog } from './lesson-video-dialog'
 
@@ -161,151 +162,162 @@ export function StaffLessonBlockEditor({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-small text-muted-foreground">
-          Опубликованная версия:{' '}
-          {block?.published
-            ? `№${block.published.revisionNumber}, ${formatPublishedAt(block.publishedAt)}`
-            : 'нет'}
-          {block?.pending
-            ? ` · ожидает версия №${block.pending.revisionNumber}${
-                block.pendingMode === 'scheduled' && block.scheduledAt
-                  ? `: ${formatPublishedAt(block.scheduledAt)}`
-                  : ' вместе с занятием'
-              }`
-            : ''}
-        </p>
-        <textarea
-          aria-label={`${title}: Markdown`}
-          className="min-h-56 w-full rounded-md border border-input bg-surface p-3 font-mono text-small"
-          onChange={(event) => setMarkdown(event.target.value)}
-          value={value}
-        />
-        {hasUnsavedChanges ? (
-          <p className="text-small text-status-warning" role="status">
-            Есть несохранённые изменения.
+    <Card className="gap-0 py-0">
+      <details>
+        <summary className="cursor-pointer px-4 py-3 text-small font-medium">
+          {title}
+          <span className="ml-3 font-normal text-muted-foreground">
+            {hasUnsavedChanges
+              ? t`Есть изменения`
+              : block?.published
+                ? t`Опубликован`
+                : block?.draft
+                  ? t`Черновик`
+                  : t`Не добавлен`}
+          </span>
+        </summary>
+        <CardContent className="space-y-3 border-t border-border pt-4">
+          <p className="text-small text-muted-foreground">
+            Опубликованная версия:{' '}
+            {block?.published
+              ? `№${block.published.revisionNumber}, ${formatPublishedAt(block.publishedAt)}`
+              : 'нет'}
+            {block?.pending
+              ? ` · ожидает версия №${block.pending.revisionNumber}${
+                  block.pendingMode === 'scheduled' && block.scheduledAt
+                    ? `: ${formatPublishedAt(block.scheduledAt)}`
+                    : ' вместе с занятием'
+                }`
+              : ''}
           </p>
-        ) : null}
-        <div className="flex flex-wrap gap-2">
-          <Label className="cursor-pointer rounded-md border border-input px-3 py-2 text-small">
-            {isUploadingImage ? 'Готовим картинку…' : 'Загрузить картинку'}
-            <input
-              accept="image/png,image/jpeg,image/webp"
-              className="sr-only"
-              disabled={isUploadingImage || isMutating}
-              onChange={(event) => {
-                const image = event.target.files?.[0]
-                event.target.value = ''
-                if (image) void uploadImage(image)
-              }}
-              type="file"
-            />
-          </Label>
-          <LessonVideoDialog onInsert={insert} />
-        </div>
-        {parsed.error ? (
-          <p className="text-small text-status-error" role="alert">
-            {parsed.error}
-          </p>
-        ) : parsed.document ? (
-          <section aria-label="Предпросмотр черновика" className="space-y-2">
-            <p className="text-small font-medium">Предпросмотр черновика</p>
-            <LessonRichDocumentView
-              document={parsed.document}
-              idPrefix={`staff-draft-${groupLessonId}-${position}`}
-            />
-          </section>
-        ) : null}
-        {block?.published?.document ? (
-          <details className="rounded-md border border-border p-3">
-            <summary className="cursor-pointer text-small font-medium">
-              Предпросмотр опубликованной версии
-            </summary>
-            <LessonRichDocumentView
-              document={block.published.document}
-              idPrefix={`staff-published-${groupLessonId}-${position}`}
-            />
-          </details>
-        ) : null}
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Label>
-            Публикация
-            <select
-              className="min-h-10 rounded-md border border-input bg-surface px-3"
-              onChange={(event) => setMode(event.target.value as typeof mode)}
-              value={mode}
-            >
-              <option value="now">Сейчас</option>
-              <option value="with_lesson">Вместе с занятием</option>
-              <option value="scheduled">По расписанию</option>
-            </select>
-          </Label>
-          {mode === 'scheduled' ? (
-            <Label>
-              Время ({businessTimezone})
-              <Input
-                onChange={(event) => setScheduledAt(event.target.value)}
-                type="datetime-local"
-                value={scheduledAt}
+          <textarea
+            aria-label={`${title}: Markdown`}
+            className="min-h-32 w-full rounded-md border border-input bg-surface p-3 font-mono text-small"
+            onChange={(event) => setMarkdown(event.target.value)}
+            value={value}
+          />
+          {hasUnsavedChanges ? (
+            <p className="text-small text-status-warning" role="status">
+              Есть несохранённые изменения.
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-start gap-2">
+            <Label className="cursor-pointer rounded-md border border-input px-3 py-2 text-small">
+              {isUploadingImage ? 'Готовим картинку…' : 'Загрузить картинку'}
+              <input
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                disabled={isUploadingImage || isMutating}
+                onChange={(event) => {
+                  const image = event.target.files?.[0]
+                  event.target.value = ''
+                  if (image) void uploadImage(image)
+                }}
+                type="file"
               />
             </Label>
+            <LessonVideoDialog onInsert={insert} />
+          </div>
+          {parsed.error ? (
+            <p className="text-small text-status-error" role="alert">
+              {parsed.error}
+            </p>
+          ) : parsed.document ? (
+            <section aria-label="Предпросмотр черновика" className="space-y-2">
+              <p className="text-small font-medium">Предпросмотр черновика</p>
+              <LessonRichDocumentView
+                document={parsed.document}
+                idPrefix={`staff-draft-${groupLessonId}-${position}`}
+              />
+            </section>
           ) : null}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={isMutating || Boolean(parsed.error)} onClick={save} size="sm">
-            Сохранить черновик
-          </Button>
-          <Button
-            disabled={isMutating || !block?.draft || hasUnsavedChanges}
-            onClick={publish}
-            size="sm"
-            variant="outline"
-          >
-            Применить публикацию
-          </Button>
-          {block?.pending ? (
+          {block?.published?.document ? (
+            <details className="rounded-md border border-border p-3">
+              <summary className="cursor-pointer text-small font-medium">
+                Предпросмотр опубликованной версии
+              </summary>
+              <LessonRichDocumentView
+                document={block.published.document}
+                idPrefix={`staff-published-${groupLessonId}-${position}`}
+              />
+            </details>
+          ) : null}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Label className="flex-col items-start leading-normal">
+              Публикация
+              <select
+                className="min-h-10 rounded-md border border-input bg-surface px-3"
+                onChange={(event) => setMode(event.target.value as typeof mode)}
+                value={mode}
+              >
+                <option value="now">Сейчас</option>
+                <option value="with_lesson">Вместе с занятием</option>
+                <option value="scheduled">По расписанию</option>
+              </select>
+            </Label>
+            {mode === 'scheduled' ? (
+              <Label className="flex-col items-start leading-normal">
+                Время ({businessTimezone})
+                <Input
+                  onChange={(event) => setScheduledAt(event.target.value)}
+                  type="datetime-local"
+                  value={scheduledAt}
+                />
+              </Label>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-start gap-2">
+            <Button disabled={isMutating || Boolean(parsed.error)} onClick={save} size="sm">
+              Сохранить черновик
+            </Button>
             <Button
-              disabled={isMutating}
-              onClick={() =>
-                void run(async () => {
-                  await client.cancel(groupLessonId, position, etag)
-                  setMessage('Отложенная публикация отменена.')
-                  await refetch()
-                })
-              }
+              disabled={isMutating || !block?.draft || hasUnsavedChanges}
+              onClick={publish}
               size="sm"
               variant="outline"
             >
-              Отменить отложенную публикацию
+              Применить публикацию
             </Button>
+            {block?.pending ? (
+              <Button
+                disabled={isMutating}
+                onClick={() =>
+                  void run(async () => {
+                    await client.cancel(groupLessonId, position, etag)
+                    setMessage('Отложенная публикация отменена.')
+                    await refetch()
+                  })
+                }
+                size="sm"
+                variant="outline"
+              >
+                Отменить отложенную публикацию
+              </Button>
+            ) : null}
+            {block?.published ? (
+              <Button
+                disabled={isMutating}
+                onClick={() =>
+                  void run(async () => {
+                    await client.hide(groupLessonId, position, etag)
+                    setMessage('Опубликованная версия скрыта.')
+                    await refetch()
+                  })
+                }
+                size="sm"
+                variant="outline"
+              >
+                Скрыть
+              </Button>
+            ) : null}
+          </div>
+          {message ? (
+            <p className="text-small text-muted-foreground" role="status">
+              {message}
+            </p>
           ) : null}
-          {block?.published ? (
-            <Button
-              disabled={isMutating}
-              onClick={() =>
-                void run(async () => {
-                  await client.hide(groupLessonId, position, etag)
-                  setMessage('Опубликованная версия скрыта.')
-                  await refetch()
-                })
-              }
-              size="sm"
-              variant="outline"
-            >
-              Скрыть
-            </Button>
-          ) : null}
-        </div>
-        {message ? (
-          <p className="text-small text-muted-foreground" role="status">
-            {message}
-          </p>
-        ) : null}
-      </CardContent>
+        </CardContent>
+      </details>
     </Card>
   )
 }

@@ -39,6 +39,16 @@ describe('lesson rich Markdown', () => {
     ])
   })
 
+  it.each(['\n', '\n\n', '\r\n'])(
+    'accepts an empty-title directive with trailing whitespace %j',
+    (ending) => {
+      expect(
+        parseLessonRichMarkdown('Текст\n\n::video[](https://youtu.be/4ke2IJirSds)' + ending)
+          .blocks[1],
+      ).toMatchObject({ type: 'video', provider: 'youtube' })
+    },
+  )
+
   it('rejects a video nested in a quote or list', () => {
     expect(() => parseLessonRichMarkdown('> ::video[](https://youtu.be/FTXGKbAk9To)')).toThrow(
       'корневым блоком',

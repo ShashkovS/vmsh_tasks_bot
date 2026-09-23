@@ -65,6 +65,14 @@ msgstr "Sign out"
 msgid "Выйти из кабинета"
 msgstr "Sign out"
 
+#: apps/staff/src/lesson-video-dialog.tsx
+msgid "Добавить видео"
+msgstr "Add video"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Есть изменения"
+msgstr "Unsaved changes"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Курсы"
 msgstr "Courses"
@@ -80,6 +88,10 @@ msgstr "The login or password is incorrect. Check the keyboard layout and try ag
 #: apps/staff/src/routes/__root.tsx
 msgid "Материалы для разбора"
 msgstr "Materials for discussion"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Не добавлен"
+msgstr "Not added"
 
 #: apps/staff/src/login-page.tsx
 msgid "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
@@ -100,6 +112,10 @@ msgstr "Could not reach the server. Check the internet connection and try again.
 #: apps/staff/src/routes/__root.tsx
 msgid "Новости"
 msgstr "News"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Опубликован"
+msgstr "Published"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Очное занятие"
@@ -168,3 +184,7 @@ msgstr "A teacher sees the permitted groups; an admin also sees the administrati
 #: apps/staff/src/routes/__root.tsx
 msgid "Учитель и администратор"
 msgstr "Teacher and administrator"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Черновик"
+msgstr "Draft"

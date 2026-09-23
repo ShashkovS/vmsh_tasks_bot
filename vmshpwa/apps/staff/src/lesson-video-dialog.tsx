@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { useState } from 'react'
 
 import { normalizeLessonVideoUrl } from '@vmsh/product'
@@ -30,24 +31,28 @@ export function LessonVideoDialog({ onInsert }: { onInsert: (markdown: string) =
     }
   }
   return (
-    <div className="grid gap-2 rounded-md border border-border p-3">
-      <p className="text-label font-medium">Видео</p>
-      <Label>
-        Ссылка YouTube/VK или iframe
-        <Input onChange={(event) => setSource(event.target.value)} value={source} />
-      </Label>
-      <Label>
-        Название (необязательно)
-        <Input onChange={(event) => setTitle(event.target.value)} value={title} />
-      </Label>
-      <Button onClick={insert} size="sm" type="button" variant="outline">
-        Вставить видео
-      </Button>
-      {error ? (
-        <p className="text-caption text-status-danger" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+    <details className="min-w-0 rounded-md border border-border p-2">
+      <summary className="cursor-pointer text-small font-medium">
+        <Trans>Добавить видео</Trans>
+      </summary>
+      <div className="mt-3 grid w-full gap-3 sm:w-96">
+        <Label className="flex-col items-start leading-normal">
+          Ссылка YouTube/VK или iframe
+          <Input onChange={(event) => setSource(event.target.value)} value={source} />
+        </Label>
+        <Label className="flex-col items-start leading-normal">
+          Название (необязательно)
+          <Input onChange={(event) => setTitle(event.target.value)} value={title} />
+        </Label>
+        <Button onClick={insert} size="sm" type="button" variant="outline">
+          Вставить видео
+        </Button>
+        {error ? (
+          <p className="text-caption text-status-danger" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </details>
   )
 }

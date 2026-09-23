@@ -58,3 +58,17 @@ canonical video link while hiding the live iframe.
 
 The feature’s persistence migration is
 [`migrations/0100.pwa_lesson_blocks.sql`](../../migrations/0100.pwa_lesson_blocks.sql).
+
+
+## Исправление вставки видео и компоновки — 23 сентября 2026
+
+Кнопка вставки добавляла завершающий перенос строки, который не принимался
+парсером видеодиректив. `parseLessonRichMarkdown` теперь нормализует завершающие
+пробелы перед разбором; UI regression проверяет ссылки и iframe обоих провайдеров.
+`StaffLessonBlockEditor` свёрнут по умолчанию, форма видео раскрывается отдельно.
+`StudentLessonFeedItem` помещает материалы в отдельные paper-карточки вне задач;
+общий `lesson-blocks.css` задаёт адаптивные поля и компактные заглушки.
+Проверены 14 unit-тестов, Staff/Student typecheck, ESLint и Stylelint;
+Storybook просмотрен в браузере, вставка ссылки из пользовательского скриншота
+проверена через реальную кнопку. HTTP 200 провайдера не подтверждает playback;
+предыдущий вывод о необходимости VK Login не доказан проверкой внутри iframe.

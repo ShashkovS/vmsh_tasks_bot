@@ -79,7 +79,7 @@ function extractVideos(markdown: string): { source: string; videos: LessonVideoB
 
 /** Lesson-only Markdown parser; ordinary Rich Markdown remains unchanged. */
 export function parseLessonRichMarkdown(markdown: string): LessonRichDocument {
-  const extracted = extractVideos(markdown)
+  const extracted = extractVideos(markdown.trimEnd())
   const ordinary = parseRichMarkdown(extracted.source)
   const blocks = ordinary.blocks.map((block): RichBlock | LessonVideoBlock => {
     if (

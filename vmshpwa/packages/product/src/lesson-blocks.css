@@ -1,18 +1,31 @@
 .vmsh-lesson-block {
   margin-block: 1rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+  line-height: 1.65;
 }
+
 .vmsh-lesson-video {
   margin: 1rem 0;
+  max-width: 52rem;
 }
+
 .vmsh-lesson-video iframe {
   aspect-ratio: 16 / 9;
   border: 0;
   display: block;
   width: 100%;
 }
+
 .vmsh-lesson-video-placeholder {
   align-items: center;
-  aspect-ratio: 16 / 9;
+  min-height: 10rem;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   display: flex;
@@ -20,16 +33,26 @@
   justify-content: center;
   gap: 0.75rem;
 }
+
 .vmsh-lesson-video-print {
   display: none;
   font-size: 0.85em;
   overflow-wrap: anywhere;
 }
+
 @media print {
+  .vmsh-lesson-block {
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+  }
+
   .vmsh-lesson-video iframe,
   .vmsh-lesson-video-placeholder {
     display: none !important;
   }
+
   .vmsh-lesson-video-print {
     display: block;
   }

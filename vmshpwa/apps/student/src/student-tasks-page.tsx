@@ -141,17 +141,25 @@ export function StudentLessonFeedItem({
   if (!group) return <PageStatePanel state="forbidden" />
   if (lesson.materials.condition.status !== 'published') {
     return (
-      <Card className="overflow-hidden" data-print-lesson>
-        <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
-          <p className="text-caption text-muted-foreground">Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}</p>
-          <CardTitle>{lessonHeading(lesson)}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <LessonBlocksLayout after={lesson.blocks.after?.document ?? null} before={lesson.blocks.before?.document ?? null} idPrefix={`student-${lesson.groupLessonId}`}>
+      <section className="space-y-4" data-print-lesson>
+        <Card className="overflow-hidden gap-0 py-0">
+          <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
+            <p className="text-caption text-muted-foreground">
+              Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}
+            </p>
+            <CardTitle>{lessonHeading(lesson)}</CardTitle>
+          </CardHeader>
+        </Card>
+        <div>
+          <LessonBlocksLayout
+            after={lesson.blocks.after?.document ?? null}
+            before={lesson.blocks.before?.document ?? null}
+            idPrefix={`student-${lesson.groupLessonId}`}
+          >
             <p className="px-4 py-5 text-muted-foreground sm:px-7">Задачи ещё не опубликованы.</p>
           </LessonBlocksLayout>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     )
   }
 
@@ -239,79 +247,87 @@ export function StudentLessonFeedItem({
     answerableProblems.every((problem) => expandedProblemIds.has(problem.problemId))
 
   return (
-    <Card className="overflow-hidden" data-print-lesson>
-      <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-caption text-muted-foreground">
-              Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}
-            </p>
-            <CardTitle>{lessonHeading(lesson)}</CardTitle>
+    <section className="space-y-4" data-print-lesson>
+      <Card className="overflow-hidden gap-0 py-0">
+        <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-caption text-muted-foreground">
+                Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}
+              </p>
+              <CardTitle>{lessonHeading(lesson)}</CardTitle>
+            </div>
+            <div className="flex flex-wrap items-center gap-2" data-print-hide>
+              <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
+              {answerableProblems.length > 0 ? (
+                <Button
+                  onClick={() =>
+                    setExpandedProblemIds(
+                      allExpanded
+                        ? new Set()
+                        : new Set(answerableProblems.map((problem) => problem.problemId)),
+                    )
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  {allExpanded
+                    ? 'Свернуть всё'
+                    : submissionClosed
+                      ? 'Показать все ответы'
+                      : 'Ответить на все задачи'}
+                </Button>
+              ) : null}
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2" data-print-hide>
-            <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
-            {answerableProblems.length > 0 ? (
-              <Button
-                onClick={() =>
-                  setExpandedProblemIds(
-                    allExpanded
-                      ? new Set()
-                      : new Set(answerableProblems.map((problem) => problem.problemId)),
-                  )
-                }
-                size="sm"
-                variant="outline"
-              >
-                {allExpanded
-                  ? 'Свернуть всё'
-                  : submissionClosed
-                    ? 'Показать все ответы'
-                    : 'Ответить на все задачи'}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-        <p
-          className="inline-flex items-center gap-2 text-small text-muted-foreground"
-          data-print-hide
+          <p
+            className="inline-flex items-center gap-2 text-small text-muted-foreground"
+            data-print-hide
+          >
+            <BookOpen aria-hidden="true" className="size-4" />
+            {problemCountLabel(lesson.problemCount)}
+          </p>
+        </CardHeader>
+      </Card>
+      <div>
+        <LessonBlocksLayout
+          after={lesson.blocks.after?.document ?? null}
+          before={lesson.blocks.before?.document ?? null}
+          idPrefix={`student-${lesson.groupLessonId}`}
         >
-          <BookOpen aria-hidden="true" className="size-4" />
-          {problemCountLabel(lesson.problemCount)}
-        </p>
-      </CardHeader>
-      <CardContent className="p-0">
-        <LessonBlocksLayout after={lesson.blocks.after?.document ?? null} before={lesson.blocks.before?.document ?? null} idPrefix={`student-${lesson.groupLessonId}`}>
-        <WorksheetDocument
-          document={contentQuery.data.document}
-          renderAfterSubpart={(documentProblem, label) => {
-            const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
-            return problem ? <div className="mb-4">{problemWorkspace(problem)}</div> : null
-          }}
-          renderAfterProblem={(documentProblem) => {
-            if (containsSubpart(documentProblem.blocks)) return null
-            const problems = problemsFor(documentProblem)
-            if (problems.length === 0) return null
-            return (
-              <div className="mb-4 space-y-2">
-                {problems.map((problem) => (
-                  <div key={problem.problemId}>{problemWorkspace(problem)}</div>
-                ))}
-              </div>
-            )
-          }}
-          renderProblemActions={(documentProblem) => {
-            if (containsSubpart(documentProblem.blocks)) return null
-            const problems = problemsFor(documentProblem)
-            return problems.length === 1 && problems[0] ? problemActions(problems[0]) : null
-          }}
-          renderSubpartActions={(documentProblem, label) => {
-            const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
-            return problem ? problemActions(problem) : null
-          }}
-        />
+          <Card className="overflow-hidden py-0">
+            <WorksheetDocument
+              document={contentQuery.data.document}
+              renderAfterSubpart={(documentProblem, label) => {
+                const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
+                return problem ? <div className="mb-4">{problemWorkspace(problem)}</div> : null
+              }}
+              renderAfterProblem={(documentProblem) => {
+                if (containsSubpart(documentProblem.blocks)) return null
+                const problems = problemsFor(documentProblem)
+                if (problems.length === 0) return null
+                return (
+                  <div className="mb-4 space-y-2">
+                    {problems.map((problem) => (
+                      <div key={problem.problemId}>{problemWorkspace(problem)}</div>
+                    ))}
+                  </div>
+                )
+              }}
+              renderProblemActions={(documentProblem) => {
+                if (containsSubpart(documentProblem.blocks)) return null
+                const problems = problemsFor(documentProblem)
+                return problems.length === 1 && problems[0] ? problemActions(problems[0]) : null
+              }}
+              renderSubpartActions={(documentProblem, label) => {
+                const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
+                return problem ? problemActions(problem) : null
+              }}
+            />
+          </Card>
         </LessonBlocksLayout>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
 
