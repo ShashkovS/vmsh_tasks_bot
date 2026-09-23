@@ -3232,8 +3232,17 @@ projection. YouTube/VK iframe input нормализуется в безопас
 узким `frame-src`. Прошли 38 доменных/migration/CSP/visibility/API проверок, 24
 reader HTTP-проверки и parser unit-тесты; contracts/product/app-shell/Student/
 Family/Staff typecheck также прошёл. Полные PWA-команды через `pnpm` в этой среде не запускаются из-за
-проверки подписи package manager; production-provider smoke и расширенные
-visual/E2E остаются выпускной проверкой. Контракт: `docs/lesson-blocks.md`.
+проверки подписи package manager.
+
+Production rollout 23 сентября выполнил штатную migration rehearsal, backup,
+`0100` и переключение release `b956cb1a2006`; после него оба backend-сервиса
+active, maintenance снят, а публичный CSP содержит точный
+`frame-src https://www.youtube.com https://vkvideo.ru`. YouTube embed с
+production Referer ответил `200`. У supplied VK iframe анонимный provider smoke
+получил redirect в VK Login — это текущая доступность конкретной записи у VK,
+не расширение CSP или parser. Авторский smoke (сохранение/publishing и reader
+view одного тестового занятия) ждёт Staff-сессию и указанное безопасное тестовое
+занятие. Контракт: `docs/lesson-blocks.md`.
 
 ## Долгая генерация metadata-grid — 2026-09-21
 
