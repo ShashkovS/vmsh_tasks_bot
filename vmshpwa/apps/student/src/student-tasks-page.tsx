@@ -248,54 +248,52 @@ export function StudentLessonFeedItem({
 
   return (
     <section className="space-y-4" data-print-lesson>
-      <Card className="overflow-hidden gap-0 py-0">
-        <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-caption text-muted-foreground">
-                Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}
-              </p>
-              <CardTitle>{lessonHeading(lesson)}</CardTitle>
-            </div>
-            <div className="flex flex-wrap items-center gap-2" data-print-hide>
-              <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
-              {answerableProblems.length > 0 ? (
-                <Button
-                  onClick={() =>
-                    setExpandedProblemIds(
-                      allExpanded
-                        ? new Set()
-                        : new Set(answerableProblems.map((problem) => problem.problemId)),
-                    )
-                  }
-                  size="sm"
-                  variant="outline"
-                >
-                  {allExpanded
-                    ? 'Свернуть всё'
-                    : submissionClosed
-                      ? 'Показать все ответы'
-                      : 'Ответить на все задачи'}
-                </Button>
-              ) : null}
-            </div>
-          </div>
-          <p
-            className="inline-flex items-center gap-2 text-small text-muted-foreground"
-            data-print-hide
-          >
-            <BookOpen aria-hidden="true" className="size-4" />
-            {problemCountLabel(lesson.problemCount)}
-          </p>
-        </CardHeader>
-      </Card>
       <div>
         <LessonBlocksLayout
           after={lesson.blocks.after?.document ?? null}
           before={lesson.blocks.before?.document ?? null}
           idPrefix={`student-${lesson.groupLessonId}`}
         >
-          <Card className="overflow-hidden py-0">
+          <Card className="overflow-hidden gap-0 py-0">
+            <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-caption text-muted-foreground">
+                    Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}
+                  </p>
+                  <CardTitle>{lessonHeading(lesson)}</CardTitle>
+                </div>
+                <div className="flex flex-wrap items-center gap-2" data-print-hide>
+                  <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
+                  {answerableProblems.length > 0 ? (
+                    <Button
+                      onClick={() =>
+                        setExpandedProblemIds(
+                          allExpanded
+                            ? new Set()
+                            : new Set(answerableProblems.map((problem) => problem.problemId)),
+                        )
+                      }
+                      size="sm"
+                      variant="outline"
+                    >
+                      {allExpanded
+                        ? 'Свернуть всё'
+                        : submissionClosed
+                          ? 'Показать все ответы'
+                          : 'Ответить на все задачи'}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+              <p
+                className="inline-flex items-center gap-2 text-small text-muted-foreground"
+                data-print-hide
+              >
+                <BookOpen aria-hidden="true" className="size-4" />
+                {problemCountLabel(lesson.problemCount)}
+              </p>
+            </CardHeader>
             <WorksheetDocument
               document={contentQuery.data.document}
               renderAfterSubpart={(documentProblem, label) => {

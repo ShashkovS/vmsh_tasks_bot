@@ -1,6 +1,12 @@
+.vmsh-lesson-rich-document {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .vmsh-lesson-block {
   margin-block: 1rem;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
+  padding: clamp(1rem, 2.5vw, 1.75rem);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   background: var(--surface);
@@ -9,9 +15,22 @@
   line-height: 1.65;
 }
 
+.vmsh-lesson-video-title {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.vmsh-lesson-rich-document > :first-child {
+  margin-top: 0;
+}
+
+.vmsh-lesson-rich-document > :last-child {
+  margin-bottom: 0;
+}
+
 .vmsh-lesson-video {
-  margin: 1rem 0;
-  max-width: 52rem;
+  margin: 0;
 }
 
 .vmsh-lesson-video iframe {
@@ -23,14 +42,14 @@
 
 .vmsh-lesson-video-placeholder {
   align-items: center;
-  min-height: 10rem;
-  padding: 1.5rem;
+  min-height: 4.5rem;
+  padding: 1rem;
   border-radius: 0.5rem;
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 0.75rem;
 }
 

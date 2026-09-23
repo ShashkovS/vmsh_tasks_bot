@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { Play } from 'lucide-react'
 
 import type { LessonRichDocument, LessonVideoBlock, RichBlock } from '@vmsh/contracts'
 import { Button, cn } from '@vmsh/ui'
@@ -10,7 +11,8 @@ import './lesson-blocks.css'
 
 export function LessonVideo({ video }: { video: LessonVideoBlock }) {
   const [loaded, setLoaded] = useState(false)
-  const label = video.title ?? (video.provider === 'youtube' ? 'Видео YouTube' : 'Видео VK')
+  const provider = video.provider === 'youtube' ? 'YouTube' : 'VK Видео'
+  const label = video.title && video.title !== 'YouTube video player' ? video.title : provider
   const url = lessonVideoPrintUrl(video)
   return (
     <figure className="vmsh-lesson-video" data-print-video>
@@ -24,8 +26,9 @@ export function LessonVideo({ video }: { video: LessonVideoBlock }) {
         />
       ) : (
         <div className="vmsh-lesson-video-placeholder" data-print-hide>
-          <p>{label}</p>
+          <p className="vmsh-lesson-video-title">{label}</p>
           <Button onClick={() => setLoaded(true)} type="button" variant="outline">
+            <Play aria-hidden="true" className="size-4" />
             Загрузить видео
           </Button>
         </div>
@@ -62,7 +65,7 @@ export function LessonRichDocumentView({
   })
   flush()
   return (
-    <article className={cn('vmsh-lesson-rich-document space-y-3', className)}>
+    <article className={cn('vmsh-lesson-rich-document', className)}>
       {sequence.map((item, index) =>
         item.kind === 'video' ? (
           <LessonVideo key={`${idPrefix}-video-${index}`} video={item.video} />
