@@ -1,0 +1,277 @@
+{
+  "fixtureVersion": 1,
+  "createRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "6108b0e3-8c47-45fc-b791-169c8970c2fa",
+    "problemRevision": {
+      "conditionRevisionId": "revision-condition-41-v3",
+      "configVersion": 2
+    },
+    "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+    "pasteEvidence": {
+      "pasteCount": 1,
+      "pastedCharacterCount": 18,
+      "lastPastedAt": "2026-09-20T13:03:55.000000Z"
+    },
+    "clientCreatedAt": "2026-09-20T13:04:05.000000Z"
+  },
+  "createResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "open",
+    "threadVersion": 1,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "draft",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 1,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": []
+    },
+    "requestId": "request-written-create-fixture"
+  },
+  "attachmentMetadata": {
+    "schemaVersion": 1,
+    "idempotencyKey": "50da3298-f2c7-4200-af71-2f8c353e6004",
+    "expectedEntryVersion": 1,
+    "expectedThreadVersion": 1,
+    "ordinal": 0
+  },
+  "attachmentResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "open",
+    "threadVersion": 2,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "draft",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 2,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-1",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-1",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
+          "mediaType": "image/webp",
+          "width": 1440,
+          "height": 1920
+        }
+      ]
+    },
+    "requestId": "request-written-attachment-fixture"
+  },
+  "submitRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "103b144f-4d02-4f3a-a936-88d91f65be87",
+    "expectedEntryVersion": 2,
+    "expectedThreadVersion": 2,
+    "attachmentIds": ["written-attachment-fixture-1"]
+  },
+  "submitResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "awaiting_review",
+    "threadVersion": 3,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "submitted",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 3,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-1",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-1",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
+          "mediaType": "image/webp",
+          "width": 1440,
+          "height": 1920
+        }
+      ]
+    },
+    "clockSuspicious": false,
+    "requestId": "request-written-submit-fixture"
+  },
+  "replaceRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "8dcfef6e-b1a2-4d81-8f80-26039e7efab5",
+    "replacedEntryId": "written-entry-fixture-1",
+    "expectedEntryVersion": 2,
+    "expectedReplacedEntryVersion": 3,
+    "expectedThreadVersion": 5,
+    "attachmentIds": ["written-attachment-fixture-2"]
+  },
+  "replaceResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "awaiting_review",
+    "threadVersion": 6,
+    "entry": {
+      "entryId": "written-entry-fixture-2",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "submitted",
+      "text": "Исправленное решение.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 3,
+      "clientCreatedAt": "2026-09-20T13:10:00.000000Z",
+      "serverReceivedAt": "2026-09-20T13:10:02.000000Z",
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-2",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-2",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/replacement.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-2/attachments/written-attachment-fixture-2/media",
+          "mediaType": "image/webp",
+          "width": 1200,
+          "height": 1600
+        }
+      ]
+    },
+    "replacedEntryId": "written-entry-fixture-1",
+    "replacementEventId": "written-replacement-fixture-1",
+    "clockSuspicious": false,
+    "requestId": "request-written-replace-fixture"
+  },
+  "reorderRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "253de35e-3890-4374-8153-c564b13db3da",
+    "expectedEntryVersion": 3,
+    "expectedThreadVersion": 3,
+    "attachmentIds": ["written-attachment-fixture-1"]
+  },
+  "reorderResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "awaiting_review",
+    "threadVersion": 3,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "submitted",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 3,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-1",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-1",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
+          "mediaType": "image/webp",
+          "width": 1440,
+          "height": 1920
+        }
+      ]
+    },
+    "changed": false,
+    "requestId": "request-written-reorder-fixture"
+  },
+  "deleteRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "49c16725-86f1-4dc9-b896-f74164020730",
+    "expectedEntryVersion": 3,
+    "expectedThreadVersion": 3
+  },
+  "deleteResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "awaiting_review",
+    "threadVersion": 4,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "submitted",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 4,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": []
+    },
+    "changed": true,
+    "requestId": "request-written-delete-fixture"
+  },
+  "threadResponse": {
+    "schemaVersion": 1,
+    "problemId": "problem-written-fixture",
+    "thread": {
+      "threadId": "written-thread-fixture-1",
+      "problemId": "problem-written-fixture",
+      "status": "awaiting_review",
+      "conditionRevisionId": "revision-condition-41-v3",
+      "version": 4,
+      "latestEntryAt": "2026-09-20T13:06:00.000000Z",
+      "entries": [
+        {
+          "entryId": "written-entry-fixture-1",
+          "authorKind": "student",
+          "entryKind": "submission",
+          "state": "submitted",
+          "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+          "problemRevision": {
+            "conditionRevisionId": "revision-condition-41-v3",
+            "configVersion": 2
+          },
+          "version": 4,
+          "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+          "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+          "attachments": []
+        }
+      ],
+      "reviews": []
+    },
+    "requestId": "request-written-thread-fixture"
+  }
+}

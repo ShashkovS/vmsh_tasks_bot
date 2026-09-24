@@ -1,0 +1,20 @@
+-- depends: 0055.pwa_submission_review_student_reactions
+
+drop trigger support_entries_delete_forbidden;
+drop trigger support_entries_identity_immutable;
+drop trigger support_entries_asset_scope_insert;
+drop trigger support_entries_author_scope_insert;
+drop index support_entries_legacy_question_idx;
+drop index support_entries_thread_timeline_idx;
+drop index support_entries_author_idempotency_uq;
+drop table support_entries;
+
+drop trigger support_threads_delete_forbidden;
+drop trigger support_threads_version_guard;
+drop trigger support_threads_identity_immutable;
+drop trigger support_threads_problem_scope_insert;
+drop index support_threads_staff_timeline_idx;
+drop index support_threads_student_timeline_idx;
+drop index support_threads_general_question_uq;
+drop index support_threads_problem_question_uq;
+drop table support_threads;

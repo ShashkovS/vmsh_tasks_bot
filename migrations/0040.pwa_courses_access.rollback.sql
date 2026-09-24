@@ -1,0 +1,15 @@
+drop table staff_scopes;
+drop table course_enrollment_events;
+drop table course_group_access;
+drop table course_enrollments;
+drop index groups_course_public_name_uq;
+drop index groups_course_short_code_uq;
+drop index groups_course_group_uq;
+alter table groups drop column version;
+alter table groups drop column updated_at;
+alter table groups drop column created_at;
+alter table groups drop column color_key;
+alter table groups drop column status;
+alter table groups drop column course_id;
+alter table groups drop column public_id;
+drop table courses;

@@ -1,0 +1,11 @@
+drop trigger lesson_blocks_revision_scope_update;
+drop trigger lesson_blocks_revision_scope_insert;
+drop trigger lesson_block_revisions_delete_forbidden;
+drop trigger lesson_block_revisions_immutable;
+drop index lesson_block_events_block_idx;
+drop index lesson_block_revisions_block_idx;
+drop index lesson_blocks_waiting_lesson_idx;
+drop index lesson_blocks_due_idx;
+drop table lesson_block_events;
+drop table lesson_block_revisions;
+drop table lesson_blocks;

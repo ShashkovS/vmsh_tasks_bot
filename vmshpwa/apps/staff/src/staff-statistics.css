@@ -1,0 +1,15 @@
+/* Page-local density; docs/lesson-statistics.md. */
+.staff-statistics :is(th, td) {
+  height: auto;
+  padding: 4px 8px;
+  line-height: 20px;
+}
+
+.staff-statistics .lesson-statistics-table td:nth-child(n + 3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.staff-statistics .lesson-statistics-table td:nth-child(2) {
+  white-space: normal;
+}

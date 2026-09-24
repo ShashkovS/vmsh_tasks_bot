@@ -1,0 +1,1158 @@
+{
+  "schemaVersion": 1,
+  "compilerVersion": "vmsh-latex-compiler/6",
+  "goldenManifest": {
+    "path": "vmshpwa/fixtures/content/golden-manifest.json",
+    "sha256": "ea05ba31c0d425819088d50998d85ba35fc5b4deb233dc5ef553fb57c391bf82",
+    "entryCount": 54,
+    "texEntryCount": 30
+  },
+  "summary": {
+    "compiledSourceCount": 30,
+    "activeProblemCount": 334,
+    "roles": {
+      "condition": 15,
+      "solution": 15
+    },
+    "encodings": {
+      "windows-1251": 30
+    },
+    "nodeCounts": {
+      "CodeNode": 20,
+      "DocumentAst": 30,
+      "EmphasisNode": 2,
+      "FigureNode": 69,
+      "HeadingNode": 90,
+      "ListItemNode": 16,
+      "ListNode": 2,
+      "MathNode": 658,
+      "ParagraphNode": 1405,
+      "ProblemNode": 334,
+      "SourcePosition": 12798,
+      "SourceSpan": 6399,
+      "StrongNode": 10,
+      "SubpartNode": 169,
+      "TableCellNode": 251,
+      "TableNode": 9,
+      "TableRowNode": 69,
+      "TextNode": 3295
+    },
+    "diagnostics": {
+      "warning:latex.layout_crosses_semantic_boundary": 1
+    },
+    "signalFailureCount": 0,
+    "recordSetSha256": "792a378c77ff1188a3f1a153800c4c213f36a385d91fc4ffba0ff428373d71b2"
+  },
+  "signalFailures": [],
+  "records": [
+    {
+      "path": "_vmsh_examples/usl-21-n-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "0ecf255852b7e6d8281139b106cb2ca938eb0bc1d764960c8c197980e98bc122",
+      "astSha256": "0bd8a4d0a0f6400eebc86f9a49a094ea0e71105137263f8da4e180e5913b82b8",
+      "webDocumentSha256": "8605ee5e3ca1711d6a5a4afbd18c21d2291f8675d66804fb832c0aedb21cb228",
+      "webPreviewSha256": "0e3c5439961eb99f02177f7e01dbe6ed0585cbf0ea3deb63d77e0a7148e9be0f",
+      "telegramRichSha256": "e6fb27eb5715240452262c946d501ba734ff4ac9130412293e26da54c02aba22",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 15,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "FigureNode": 7,
+        "HeadingNode": 3,
+        "MathNode": 5,
+        "ParagraphNode": 77,
+        "ProblemNode": 11,
+        "SourcePosition": 586,
+        "SourceSpan": 293,
+        "StrongNode": 2,
+        "SubpartNode": 13,
+        "TextNode": 175
+      },
+      "figureKinds": {
+        "tikz": 7
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 21,
+        "tikzpicture": 8
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-n.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "2ad17a26cfa557ee67e411364faa07430986ff74261627f213c72a2fd97e9b07",
+      "astSha256": "3dc2aeeef7f4da8c5334953839f78656d607f065a350843ae1acea6507d7afdf",
+      "webDocumentSha256": "bef262aa049073162565e7d7b552f6e4ed9e4a9cfa2042f34563ee7148de6a0c",
+      "webPreviewSha256": "e1ec31a31e03e8d70bad08538be60b20c8737e0c07ffd823f6c8cd5e468fb062",
+      "telegramRichSha256": "78e5ffe31136ded6a172813a23895727384a51f55117803e5f135d2f21ea2fbc",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 13,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "FigureNode": 4,
+        "HeadingNode": 3,
+        "MathNode": 1,
+        "ParagraphNode": 28,
+        "ProblemNode": 11,
+        "SourcePosition": 226,
+        "SourceSpan": 113,
+        "StrongNode": 2,
+        "SubpartNode": 9,
+        "TextNode": 55
+      },
+      "figureKinds": {
+        "tikz": 4
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 2,
+        "tikzpicture": 4
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-p-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "7ad835b6d307d15dba775dab64859f8d235a3bd94d05cb397063340a638cb24b",
+      "astSha256": "c4d2b434bc85a36696b3b3ba7f5a9df6d305dd4e8f23f67ae1d8ac15186d6d5f",
+      "webDocumentSha256": "b1ccace2daa0ce27c32506ece650b7ede426f6120497d3f4e68f3075687c3715",
+      "webPreviewSha256": "8204605c5bd0ebf6da96d83c509b00573f93a5a1ca74d0e035105bf21adeb8bf",
+      "telegramRichSha256": "ba8cbf8e8ecd531ac062a9ec6085704e8bc2fae3a8465a857ec78c21c1671d26",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 14,
+      "nodeCounts": {
+        "CodeNode": 5,
+        "DocumentAst": 1,
+        "FigureNode": 7,
+        "HeadingNode": 3,
+        "MathNode": 49,
+        "ParagraphNode": 93,
+        "ProblemNode": 11,
+        "SourcePosition": 772,
+        "SourceSpan": 386,
+        "StrongNode": 1,
+        "SubpartNode": 27,
+        "TextNode": 190
+      },
+      "figureKinds": {
+        "asset": 1,
+        "tikz": 6
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 3,
+        "tikzpicture": 6
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-p.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "20fd482416b505e41161c00765d9d6af086017a9ceee080e3591faba5ff86a68",
+      "astSha256": "21f761adf89a64c525dc03b2a3d966d96bcec2cedde3d9846f071298d0d91924",
+      "webDocumentSha256": "f6bc5569dcf310bdd5433fe59ada278d496b6a140a5f9d509ae96ed6ec00f12c",
+      "webPreviewSha256": "40638f18ecedfae280840ce6b668539d9215fd2c68ca48a58f71227ccc5c83e3",
+      "telegramRichSha256": "b9321cb52d3227302aebaf9481399834a30d6ad5c6fb9e0f34a30f627fa2e484",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 14,
+      "nodeCounts": {
+        "CodeNode": 5,
+        "DocumentAst": 1,
+        "FigureNode": 2,
+        "HeadingNode": 3,
+        "MathNode": 32,
+        "ParagraphNode": 76,
+        "ProblemNode": 11,
+        "SourcePosition": 590,
+        "SourceSpan": 295,
+        "StrongNode": 1,
+        "SubpartNode": 24,
+        "TextNode": 141
+      },
+      "figureKinds": {
+        "tikz": 2
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 2
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-x-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "72257e2d5b27054302110cd58b66fc737f4a36eb5236a668ee909021ae3dbb33",
+      "astSha256": "67e90982e38d9dcbffd3332fb7d0a60a3ef1fdf5edfeab8443d45ec026ff834d",
+      "webDocumentSha256": "e498b60b530fd35b1ab77585a1b72108d6fbfdc579b5884f50fd1b687622741f",
+      "webPreviewSha256": "ff2850b48ba9ba8be25c816d5a6f011a1bebf90bb6711300c5dc6ff1ed264eff",
+      "telegramRichSha256": "77c08baf7c4e9189fc1fc98aeb1cdaeb4f0c8af1d06ee7958586d400e44ae7b2",
+      "activeProblemCount": 12,
+      "lexicalProblemMarkerCount": 13,
+      "nodeCounts": {
+        "CodeNode": 5,
+        "DocumentAst": 1,
+        "FigureNode": 6,
+        "HeadingNode": 3,
+        "MathNode": 44,
+        "ParagraphNode": 84,
+        "ProblemNode": 12,
+        "SourcePosition": 778,
+        "SourceSpan": 389,
+        "SubpartNode": 16,
+        "TableCellNode": 31,
+        "TableNode": 1,
+        "TableRowNode": 3,
+        "TextNode": 184
+      },
+      "figureKinds": {
+        "asset": 1,
+        "tikz": 5
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 4,
+        "tikzpicture": 5
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-x.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "6745f6943fecdf8cd91675bf377c6045f623ed2eccc355fe0b486c4f2a386b28",
+      "astSha256": "bd8953970aa2ef9c9efb03563c2de71a4c9da964ee3bedd1ec37ca57ac0465b8",
+      "webDocumentSha256": "cd2fe3117a377924c7f6d4478a3f6b6bcb94dba5b2cd8bf32391761b64e49280",
+      "webPreviewSha256": "c957edc027d7d82799939537453cabe890d539cd52904e5f6373531a76ead23c",
+      "telegramRichSha256": "6a850a3d609fbbb74210fe660e7a1432c97364ce8c615360b024c8e0affb341d",
+      "activeProblemCount": 12,
+      "lexicalProblemMarkerCount": 13,
+      "nodeCounts": {
+        "CodeNode": 5,
+        "DocumentAst": 1,
+        "FigureNode": 2,
+        "HeadingNode": 3,
+        "MathNode": 27,
+        "ParagraphNode": 56,
+        "ProblemNode": 12,
+        "SourcePosition": 574,
+        "SourceSpan": 287,
+        "SubpartNode": 9,
+        "TableCellNode": 31,
+        "TableNode": 1,
+        "TableRowNode": 3,
+        "TextNode": 138
+      },
+      "figureKinds": {
+        "asset": 1,
+        "tikz": 1
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 4,
+        "tikzpicture": 1
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-n-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "823a5a44ec1d3bd1a445489aacc1a10804742b60658b174f7827d5a782f0cdab",
+      "astSha256": "2dfec45f803066bb9d435e69967089ccf5583c563c399a8ce04dbfb0ef3754dd",
+      "webDocumentSha256": "2999d8cb6803f38ff4eab05c7adf2e55678dfe05a09493e6289bb6485b45e5db",
+      "webPreviewSha256": "f88023eed080f59264d931ea75e5790ba147a26b3ce69e9e14364220f91fc914",
+      "telegramRichSha256": "d8e8669b7ebdb17eda0d1426aee13ea2fb9343167e3d5ace247a5be3c3bc4b72",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 12,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "FigureNode": 4,
+        "HeadingNode": 3,
+        "MathNode": 17,
+        "ParagraphNode": 84,
+        "ProblemNode": 11,
+        "SourcePosition": 614,
+        "SourceSpan": 307,
+        "SubpartNode": 23,
+        "TextNode": 165
+      },
+      "figureKinds": {
+        "asset": 1,
+        "tikz": 3
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 2,
+        "tikzpicture": 3
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-n.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "23c017d1715fc4e8882c065a413685500e0197860c454e820e5945279487bb88",
+      "astSha256": "83c875dc943a359a677d074976d24b9ec89fcf6973cbaa370e84a52d7aa55d16",
+      "webDocumentSha256": "f549394d109d4062d530864c7b824255ea7a79df4ce5a69b66bd2354f095901f",
+      "webPreviewSha256": "ddf97982ee64d7763def0aec131d58b038db67e9635615a35ef61f17ccf36dc0",
+      "telegramRichSha256": "08a5a7cdd156ac32c331a2731f1732c3ae2f10dd8f8926ddebcd111a056b092d",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 14,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "FigureNode": 4,
+        "HeadingNode": 3,
+        "ParagraphNode": 28,
+        "ProblemNode": 11,
+        "SourcePosition": 212,
+        "SourceSpan": 106,
+        "SubpartNode": 8,
+        "TextNode": 52
+      },
+      "figureKinds": {
+        "asset": 1,
+        "tikz": 3
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 4
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-p-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "f3ec8c9f6493b065a84619e22652d94e75144c464fb697ce9f451ca30f291bf8",
+      "astSha256": "a7db5187ec7eae94d292736087db8c62dba63f09837dae5511a59a7194e5e372",
+      "webDocumentSha256": "7dae321ad4d015acb2297b5dc5dfd40a1573d7710205fe7af0832a78b60487cb",
+      "webPreviewSha256": "7657bec453b2aabc38d91c488d970a1aee214cef725eb38f3a5f9d6b0f893b59",
+      "telegramRichSha256": "3498f9e4a952eb6119a4d9c7372b3db464fef1e9aa5e0d6630ae874a1e9f31bd",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "FigureNode": 13,
+        "HeadingNode": 3,
+        "MathNode": 24,
+        "ParagraphNode": 91,
+        "ProblemNode": 11,
+        "SourcePosition": 950,
+        "SourceSpan": 475,
+        "SubpartNode": 24,
+        "TableCellNode": 46,
+        "TableNode": 1,
+        "TableRowNode": 16,
+        "TextNode": 246
+      },
+      "figureKinds": {
+        "asset": 1,
+        "tikz": 12
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 12
+      },
+      "diagnostics": {
+        "warning:latex.layout_crosses_semantic_boundary": 1
+      },
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-p.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "487e0f582be01a3f505556cb39ed888314cf3937b1654efd2d686208007bb718",
+      "astSha256": "1c9c0564460f963109fbdc1b979fe904858dcb007a99bc5cea083e814158a2b4",
+      "webDocumentSha256": "dfaecf2f1f4172f1317ea4fdb8381de3db055f8db9d40e08e8e75c1611e0818f",
+      "webPreviewSha256": "ca0520952db77c9c33eeb39469474d360fa5e6cdbb06e223af4156037fabf5d1",
+      "telegramRichSha256": "58591a88ed6935b2124e373ea31f698773992f15a6be931c3c729bb7bb772a27",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "FigureNode": 5,
+        "HeadingNode": 3,
+        "MathNode": 3,
+        "ParagraphNode": 29,
+        "ProblemNode": 11,
+        "SourcePosition": 214,
+        "SourceSpan": 107,
+        "SubpartNode": 8,
+        "TextNode": 48
+      },
+      "figureKinds": {
+        "tikz": 5
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 5
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-x-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "061e1296816bd7d42360c9aa0ee6aa21a252f13b10a66003872cbc340b20f25a",
+      "astSha256": "a36948028adb33825cf3c199d6ecd7bccdcba17372e9ef53fee515377e3ff488",
+      "webDocumentSha256": "f55cd3e1821ca50e7052d607e6fd236b451348d4a6f4ee7027093582eda5605d",
+      "webPreviewSha256": "2b9c09f13ee494b7ca8dd5d15ea52279d71351746b86b78cc10c377ec1edf24b",
+      "telegramRichSha256": "8e7ec847dc87506271fbfb4befaca17d71a12dc5b8383eade3a22ba82602bf3b",
+      "activeProblemCount": 12,
+      "lexicalProblemMarkerCount": 12,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "EmphasisNode": 1,
+        "FigureNode": 9,
+        "HeadingNode": 3,
+        "MathNode": 165,
+        "ParagraphNode": 77,
+        "ProblemNode": 12,
+        "SourcePosition": 2066,
+        "SourceSpan": 1033,
+        "StrongNode": 4,
+        "SubpartNode": 4,
+        "TableCellNode": 134,
+        "TableNode": 5,
+        "TableRowNode": 44,
+        "TextNode": 575
+      },
+      "figureKinds": {
+        "asset": 6,
+        "tikz": 3
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 4,
+        "tikzpicture": 6
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-x.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "934591ffdaa7ac998d21706a10866631be521fdf7b9e603f576e2b570cebc038",
+      "astSha256": "67c36389fbf81d197c89dd4941d9b81602aac92267e945768ebee979be62a571",
+      "webDocumentSha256": "b946de909334c3f88385c2804716c13142b58a6eca18e4c0917b7539f095680f",
+      "webPreviewSha256": "d7dfde105aca43deec201c17712ad5ded5d0278c1549606988159d7b42722c63",
+      "telegramRichSha256": "2221de00f92fb38a77e661dd88214e91f53a4ee6cb275020850a1252f150e6f1",
+      "activeProblemCount": 12,
+      "lexicalProblemMarkerCount": 12,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "EmphasisNode": 1,
+        "FigureNode": 6,
+        "HeadingNode": 3,
+        "ListItemNode": 16,
+        "ListNode": 2,
+        "MathNode": 37,
+        "ParagraphNode": 70,
+        "ProblemNode": 12,
+        "SourcePosition": 624,
+        "SourceSpan": 312,
+        "SubpartNode": 4,
+        "TableCellNode": 9,
+        "TableNode": 1,
+        "TableRowNode": 3,
+        "TextNode": 148
+      },
+      "figureKinds": {
+        "asset": 6
+      },
+      "lexicalFigureMarkers": {
+        "includegraphics": 5,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-n-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "54802651088b3e3f050a2b36c00c3caedd5e1d29356170f129d7de04633cbf0f",
+      "astSha256": "38d6a4db51d517743a90c7bd464e34a03e408a1e4f54ec348bbe5a7f377e3331",
+      "webDocumentSha256": "1f7b9ad90cc862dfdc432d2558bf02c6232305de26616ca67e666082c3e8a99f",
+      "webPreviewSha256": "bb5b0112a2b7d1536f1af4404cbf7be292c3c924482869bf6f7df7cde082c481",
+      "telegramRichSha256": "0ff0e1a68934413ca93ada1cc1b735df64d40f1af789fd27e1a398ba88afadf8",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 22,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 374,
+        "SourceSpan": 187,
+        "TextNode": 95
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-n.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "2f25890bf428b46fb156e4bf2d2a723899c285642a3201e324db7fb47d6f1115",
+      "astSha256": "67a1ff2ef47714bf9299add45a8165e5e7665571aa48cbb97d69cf5b986325d9",
+      "webDocumentSha256": "3b26407d2cf9631790f7d45c35e8de67221833c1ac7c15a60f2154fe77ee95fd",
+      "webPreviewSha256": "73d90c837b3999ad72b15dc5776fa567714becd4376f62f1f343c138876f4c80",
+      "telegramRichSha256": "c31292b2888cedce856b390652e47d94607957e9c549c468684d3d17b0ff3751",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 4,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 126,
+        "SourceSpan": 63,
+        "TextNode": 33
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-p-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "693a42b75946e96eff57af80ed799879a3bb9ad9e9de8aa096f08d37b6bf110c",
+      "astSha256": "55602bd0d1b24664098e22444fb4a5d42ce5435fe81f65260a86f90b8e6e05c1",
+      "webDocumentSha256": "52ccd962a77e10e4c4902a54db18ed0cffbc99a2d343cdfa12e27406cd534e36",
+      "webPreviewSha256": "68fae76a0f0ba0b0f2bc5cdc41fa6bc266ce1a329b0ccb803bbfea0f3470681c",
+      "telegramRichSha256": "9207a46c8c8d0e6f356d31f0cea298a879239d3453ccf175372fb2753294cf49",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 31,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 410,
+        "SourceSpan": 205,
+        "TextNode": 104
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-p.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "baf41f4d77862b02c36b152cf12191a4546fb6d8a141a176a043685772b4b7d1",
+      "astSha256": "965359976b096a4e9472cf741a078be901b3beb246a41e0e941105f11c148393",
+      "webDocumentSha256": "070e0b89e618597ceffc03ea6d6234fbc4637cdf28974ad0ccb883f7af2e874c",
+      "webPreviewSha256": "7dd71e05b743e14c4ad3a608531a11b43916b046a514eb9f61024a500f5e516f",
+      "telegramRichSha256": "42cc74424424830e547e93338c19ac485eeaddeb840ccdf0baa93352a063ec12",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 12,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 158,
+        "SourceSpan": 79,
+        "TextNode": 41
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-x-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "174d8437221aac31dc56560f8765bd2d80110742e1d00e12ea45b78562cbc502",
+      "astSha256": "c194ff0184b0d9424838ee962a07fd36a1768829eaea2e28406a1fc0e6570f6e",
+      "webDocumentSha256": "085b49c9d5d41ba694de3206eaaba9681de474addde1b34d1beb0036e6209b96",
+      "webPreviewSha256": "3d5d5370a0da8b8f1e1e563439e3a657600c48f0797a758e6993cff6dd68ddc2",
+      "telegramRichSha256": "5af9ae7c25c9911fb56f7669d02cab9b557237c82aca9114a56bbb0d55a62479",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 18,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 358,
+        "SourceSpan": 179,
+        "TextNode": 91
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-x.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "919e7da90491325786ef3e8cc6ecb6c1f6c64bda561ecd698015f101e6c999b5",
+      "astSha256": "41d9de98facbf50aed16f3f1520cb7350a27c7d5a980710288447e470f0f1527",
+      "webDocumentSha256": "588f4b1d01fb6df6d629af0ad808a7cd3694fb0eb071b2e390faed63ec745b21",
+      "webPreviewSha256": "4931de14075923c27cf6a0b6df9baeb656549781c506231988b88b8249356d26",
+      "telegramRichSha256": "4aa8c151ee77dff8207d510e742a374320f642c122692fa9773f660e4dbc4770",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 5,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 130,
+        "SourceSpan": 65,
+        "TextNode": 34
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-n-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "8f034701a6d145843f11bcf48f413d2e5b21068844fc993f5e8289ee53d54b99",
+      "astSha256": "e64af46f5bcf7292710db4290028dbf0853d19b94a22d260fe8149fa78c6c7f6",
+      "webDocumentSha256": "f7d2a7f1ddcebfce9a23e042f529204afdcc687e7fba0ad8636073044c63c0ab",
+      "webPreviewSha256": "3ecf0c36029abc38a8d2e0825e795c9d3172b98dbddc35a27233b4cfe1db3df6",
+      "telegramRichSha256": "c0811438300b8b9fef3ac71b1ae231feaa17b86f9b2db210f85fac96f792ffda",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 23,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 378,
+        "SourceSpan": 189,
+        "TextNode": 96
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-n.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "2d25df743bdef95fd937053f6ee4cb791b8569517ffdd22ab9e2fff522970f63",
+      "astSha256": "a7d05358ae2f47403155026b6ed52ce0dc8034f82e5e18ebf048aa2aa93609b8",
+      "webDocumentSha256": "51d71c47ed742a7183f7d19c7537488c45152195f7d1beacea9cfbdb1c61805e",
+      "webPreviewSha256": "16f9fa1a5f362acce3669a236ae43335bb31270e115865806a59c919421ed44b",
+      "telegramRichSha256": "00ab1e6e83d044731241fa3d41bb26e91b03fa98cbaae55b10ba10b9cdbbb7d4",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 5,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 130,
+        "SourceSpan": 65,
+        "TextNode": 34
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-p-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "dd9ce8b0660bd9cd38873dbc0143627e3784da7e06de627571c42db3345d25b7",
+      "astSha256": "f9056152a572213bd63602952b03946a01d15054aa0c58eda0a1ecf9e1ef1ceb",
+      "webDocumentSha256": "6066b0a3c9c139a4503fc46d26421fc8f5b253549ea36c1a73dd7be61df148ff",
+      "webPreviewSha256": "2cd3274f0985e46a6fa7d55b88285d49541e1ac832707772612c4edefa578da1",
+      "telegramRichSha256": "e694f10621bb97d5ccf843b4bce2228d4636ddbe1b729ad7fc3ffab776208fe4",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 22,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 374,
+        "SourceSpan": 187,
+        "TextNode": 95
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-p.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "e70e8a94b5c4539c1b9c5fcd61bfff3ac6fd5b8ca584ef3473ac6673d0110a45",
+      "astSha256": "db9a847746f8dc26b6521759106f18de219192b660855a1fb0ef981ce3791f93",
+      "webDocumentSha256": "0543048ff557e030d3430321f8847548be7bbe917fb3d1bb795cce3ccb24e440",
+      "webPreviewSha256": "43ad4fb85a7d2d44ceb923908bf2fec4b8d81ab5fe494895ce175f4db1e5daff",
+      "telegramRichSha256": "8b8910e7108bde382ced79cce524ca67dd636b5945b53e09c02b9338382e469a",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 12,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 158,
+        "SourceSpan": 79,
+        "TextNode": 41
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-x-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "04b51cc56a45f3654fe40fa6075cba439083dca107f346d4dbd410c24b7fac3e",
+      "astSha256": "34ee9874736efdaab6d133b7434f1a2dad9f6826d0c4dd7df9306a02e4244b7e",
+      "webDocumentSha256": "9d43fec254fd26d81d22a7886e96f81492093908f25507025d129c5bcd8912f4",
+      "webPreviewSha256": "459a612b4359fe0e064c14960df6500eebc97669b18f882a02c32869638af0e2",
+      "telegramRichSha256": "1f8598440fe8d29a46ae868b29a34a8e3cf7773a82804ccaffce8d19d4437bf6",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 8,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 318,
+        "SourceSpan": 159,
+        "TextNode": 81
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-x.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "5487423b833ade103585ab7c4ee901b10e46bc257a0643d999ba05d6e8ecad81",
+      "astSha256": "e12b24b49956f1e3ce56d2d828f2d0934c0d56acd9b89baea39f7ec9c4c1b750",
+      "webDocumentSha256": "216fa9bfe1f524ce21a8a5af6d8deb451639d31ba6bd8de0e7ead7e575b554f6",
+      "webPreviewSha256": "b7e460f933033710569e5f55a2ad933e84ea2da2ca2aa6a323f24613b8e8f9e3",
+      "telegramRichSha256": "2ee410e7e202d4a08c9fbdcc1c0457b03ce45516bc63e89b24afc6a24303aae6",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 110,
+        "SourceSpan": 55,
+        "TextNode": 29
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-n-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "784491187eb827e74f1655a4c37929a156154267052c463310fef95cb00357db",
+      "astSha256": "d5b54556b2ba33ba7962384dbd0d7123713bf78b7fda3a3a431e98926f6cf22f",
+      "webDocumentSha256": "ef1b98297184a8d372b3a3b31694c6363477bfff56b47d9a9c37c45a053a7348",
+      "webPreviewSha256": "6be31ce3077de943a1f4c6947055b6cfe3d7499dd35dec995df3b08e2e3cf1c2",
+      "telegramRichSha256": "201ec57cd21dda3321b5a836b464fab112a812c87992bb31ad4f03a97b063a30",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 16,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 358,
+        "SourceSpan": 179,
+        "TextNode": 93
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-n.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "33f1639504047da3df1562ac85a292f0759d306777d7cd0db0f5585649787e8c",
+      "astSha256": "19dccf2f6f533da7ce4a3ca5de5f342b9019573a0470728ca90d6778fff2f9cc",
+      "webDocumentSha256": "90e32e08f29cbde81ea611cf81df11d5fa75b60d2ecfc376debcf2ec544ad2dc",
+      "webPreviewSha256": "81f7d41c06e759a51c805511aa942d118fb1af8caf47ff38d617d785eebac6e5",
+      "telegramRichSha256": "5ad770d8012b2bb1e1797f60b7490b73a924283fd943d1376ae02b6534fa2b0b",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 5,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 130,
+        "SourceSpan": 65,
+        "TextNode": 34
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-p-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "c6c78be4f53d8aa12c29e0fbf3b2ff408617e5825f8564b3ea57defb85327c28",
+      "astSha256": "6c52862faefd5a45ba05aaa93ad944f096afceb0d7637b1716cace8f06b96118",
+      "webDocumentSha256": "1109c91c3fa4ea0e1b16a38cfb9a9c4cce31240b3a8ea64c9b3d56bba6f169be",
+      "webPreviewSha256": "d345b55cb73da774ad28189bc8ea2af480efd8421e2ce191166c44d64fe29c26",
+      "telegramRichSha256": "76e127d613d051dbecd861f2e82eec4197effeb65685f8fec9e22ecdad343ef4",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 19,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 362,
+        "SourceSpan": 181,
+        "TextNode": 92
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-p.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "ccedc477920992c079c379b0ffd38946d78bba90afc98a93bfb19a8b4b3dae46",
+      "astSha256": "c19f33ac60c1feb9313239280eb9b7da0de1f6a7908ed9feaf06058af34b308c",
+      "webDocumentSha256": "4dbdd8cc37013b8d03a3b9507a311831274357035c53b5340ca63037fdb3ffea",
+      "webPreviewSha256": "681adec272ab91a4f2693a2232510b2a61094e71de59505bda8e1ce47eed725a",
+      "telegramRichSha256": "50954905bda11c08a5be82db36f4e47c308504e6a072b2e43bea4ee15b398b6a",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 9,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 146,
+        "SourceSpan": 73,
+        "TextNode": 38
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-x-sol.tex",
+      "role": "solution",
+      "encoding": "windows-1251",
+      "rawSha256": "13dbb68610c5dbed531a6ca738487400243249ad10a3c62d8ceac44ceec1208c",
+      "astSha256": "743b898c31162a70d0b18e25cc025ee36246a3ddb94b1cdd7ecd07d44218d7c0",
+      "webDocumentSha256": "7bbdb9cebca64521eb14bd010b4fa28f87527716f011fdab8492e947c75edf56",
+      "webPreviewSha256": "87ca509901beb3a68a775d2a81b5b9ad4ac08992a2ed5ec93b04d452ecce1496",
+      "telegramRichSha256": "c25b84a49876ade14e9a2688d2e9da9606b43aaf067039bff4b6cc06b238d277",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 40,
+        "ParagraphNode": 56,
+        "ProblemNode": 11,
+        "SourcePosition": 450,
+        "SourceSpan": 225,
+        "TextNode": 115
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-x.tex",
+      "role": "condition",
+      "encoding": "windows-1251",
+      "rawSha256": "d916bf4d976b550a7fba39e5de71bf976c0bf9ed9e7bdfeee7c8135c3c2862eb",
+      "astSha256": "f8aadc85e3ade278ddf308ec61ea75115c07709e937165e0e8abf40340b55e6a",
+      "webDocumentSha256": "f2afa95b201309b611c055b0c2dcfa81a2c13e3e8d00cca14296422b65cba017",
+      "webPreviewSha256": "db6551a085426ef7eebea96abcca602e6b3d193e39538dfae449dfb8ea80d092",
+      "telegramRichSha256": "01c9cbceff30c5c8d0590f74f3e85c982a595e004ced4b56379b1f8f12daee66",
+      "activeProblemCount": 11,
+      "lexicalProblemMarkerCount": 11,
+      "nodeCounts": {
+        "DocumentAst": 1,
+        "HeadingNode": 3,
+        "MathNode": 3,
+        "ParagraphNode": 12,
+        "ProblemNode": 11,
+        "SourcePosition": 122,
+        "SourceSpan": 61,
+        "TextNode": 32
+      },
+      "figureKinds": {},
+      "lexicalFigureMarkers": {
+        "includegraphics": 0,
+        "tikzpicture": 0
+      },
+      "diagnostics": {},
+      "signals": {
+        "rawHashMatchesManifest": true,
+        "encodingMatchesManifest": true,
+        "hasActiveProblems": true,
+        "webDocumentProduced": true
+      }
+    }
+  ],
+  "privacy": {
+    "containsSourceText": false,
+    "containsRenderedContent": false,
+    "containsTitles": false,
+    "containsAssetUrls": false
+  }
+}

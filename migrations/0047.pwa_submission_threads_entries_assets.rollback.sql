@@ -1,0 +1,57 @@
+-- depends: 0046.pwa_test_attempts_idempotency
+
+drop trigger submission_material_reassignment_items_delete_forbidden;
+drop trigger submission_material_reassignment_items_immutable_update;
+drop trigger submission_material_reassignment_items_scope_insert;
+drop index submission_material_reassignment_items_projection_idx;
+drop table submission_material_reassignment_items;
+
+drop trigger submission_material_reassignments_delete_forbidden;
+drop trigger submission_material_reassignments_immutable_update;
+drop index submission_material_reassignments_student_history_idx;
+drop table submission_material_reassignments;
+
+drop trigger media_assets_locked_submission_immutable;
+
+drop trigger submission_attachments_delete_guard;
+drop trigger submission_attachments_locked_immutable;
+drop trigger submission_attachments_lock_result_scope_update;
+drop trigger submission_attachments_state_transition_guard;
+drop trigger submission_attachments_entry_mutable_update;
+drop trigger submission_attachments_identity_immutable;
+drop trigger submission_attachments_asset_contract_insert;
+drop trigger submission_attachments_entry_mutable_insert;
+drop trigger submission_attachments_max_ten_insert;
+drop index submission_attachments_asset_idx;
+drop index submission_attachments_entry_order_idx;
+drop index submission_attachments_id_entry_uq;
+drop table submission_attachments;
+
+drop trigger submission_entries_delete_forbidden;
+drop trigger submission_entries_lock_requires_attachments_locked;
+drop trigger submission_entries_state_transition_guard;
+drop trigger submission_entries_terminal_immutable;
+drop trigger submission_entries_version_guard;
+drop trigger submission_entries_identity_immutable;
+drop trigger submission_entries_nonempty_update;
+drop trigger submission_entries_nonempty_insert;
+drop trigger submission_entries_author_scope_update;
+drop trigger submission_entries_author_scope_insert;
+drop index submission_entries_legacy_group_idx;
+drop index submission_entries_thread_history_idx;
+drop index submission_entries_author_idempotency_uq;
+drop index submission_entries_id_thread_uq;
+drop table submission_entries;
+
+drop trigger submission_threads_delete_forbidden;
+drop trigger submission_threads_state_transition_guard;
+drop trigger submission_threads_version_guard;
+drop trigger submission_threads_identity_immutable;
+drop trigger submission_threads_result_kind_update;
+drop trigger submission_threads_result_kind_insert;
+drop trigger submission_threads_problem_revision_scope_insert;
+drop index submission_threads_review_queue_idx;
+drop index submission_threads_student_updated_idx;
+drop index submission_threads_one_active_uq;
+drop index submission_threads_id_owner_problem_uq;
+drop table submission_threads;

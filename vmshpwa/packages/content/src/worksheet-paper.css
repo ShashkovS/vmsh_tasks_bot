@@ -1,0 +1,126 @@
+/* Shared paper typography: docs/whiteboard-export.md and worksheet-print.md. */
+:is([data-print-lesson], .vmsh-export-paper) [data-print-hide],
+:is([data-print-lesson], .vmsh-export-paper) button,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-problem-actions-row,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-material-reveal .vmsh-problem-header {
+  display: none !important;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) [data-slot='card-header'],
+:is([data-print-lesson], .vmsh-export-paper) [data-slot='card-content'],
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-math-content,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-material-reveal,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-figure-canvas {
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-math-body,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-document-title {
+  max-inline-size: none;
+  margin-inline: 0;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-math-content {
+  container-type: normal;
+  font-size: 11pt;
+  line-height: 1.35;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-problem-workspace {
+  display: block;
+  margin: 0;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-material-reveal {
+  margin-block: 2mm;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-material-label {
+  display: block;
+  margin-block: 2mm 1mm;
+  font-size: 11pt;
+  font-weight: bold;
+  break-after: avoid;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) h1,
+:is([data-print-lesson], .vmsh-export-paper) h2,
+:is([data-print-lesson], .vmsh-export-paper) h3,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-problem-header,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-subpart-header,
+:is([data-print-lesson], .vmsh-export-paper) [data-slot='card-header'] {
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) p {
+  orphans: 3;
+  widows: 3;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-problem {
+  margin-block: 4mm 2mm;
+  break-inside: auto;
+}
+
+/* Keep the equation and its optional number together in the page flow. */
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-eq {
+  display: block;
+  break-inside: avoid;
+}
+
+/* The inline KaTeX output host contains a block display. Making the host a
+   * block prevents Chromium's anonymous inline fragments adding blank pages
+   * after long subparts; worksheet-print.spec.ts checks the actual PDF count. */
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-math-expression-display > span:first-child {
+  display: block;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-eqno {
+  display: block;
+  text-align: right;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-scroll-x,
+:is([data-print-lesson], .vmsh-export-paper) .katex-display,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-math-expression-display {
+  overflow: visible;
+  break-inside: avoid;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-asset-figure {
+  display: block;
+  float: none;
+  width: min(100%, calc(var(--vmsh-source-width, 100%) * var(--vmsh-print-figure-scale, 1)));
+  max-width: 100%;
+  margin: 2mm 0;
+  break-inside: avoid;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Lesson blocks are part of the same printable lesson boundary. Video players
+ * stay inert while the canonical, author-visible link is printed instead. */
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-block {
+  break-inside: auto;
+  margin-block: 3mm;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-video iframe,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-video-placeholder {
+  display: none !important;
+}
+
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-lesson-video-print {
+  display: block;
+  overflow-wrap: anywhere;
+}

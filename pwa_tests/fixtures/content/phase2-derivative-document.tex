@@ -1,0 +1,43 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{tikz}
+
+\newcommand{\problem}{\par\noindent\textbf{Задача.} }
+\newcommand{\eproblem}{\par}
+
+\begin{document}
+\problem
+Рассмотрим целочисленные решения уравнения
+\[
+  x^2 + y^2 = 179.
+\]
+
+\begin{enumerate}
+  \item Объясните, почему одно из чисел нечётно.
+  \item Заполните таблицу примеров.
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+$x$ & $y$ \\
+\hline
+2 & 5 \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+  \draw[->] (-0.2,0) -- (2.2,0);
+  \draw[->] (0,-0.2) -- (0,2.2);
+  \draw (0,0) -- (2,0) -- (0,2) -- cycle;
+  \node at (0.75,0.75) {$179$};
+\end{tikzpicture}
+\end{center}
+\eproblem
+\end{document}

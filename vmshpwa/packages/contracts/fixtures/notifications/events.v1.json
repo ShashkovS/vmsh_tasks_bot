@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "eventId": "notification.classroom-41",
+      "category": "classroom_assignment",
+      "route": "/student/",
+      "payload": {
+        "eventPublicId": "event-41",
+        "eventName": "Очное занятие",
+        "coursePublicId": "course-math",
+        "courseName": "Математика",
+        "groupPublicId": "group-beginner",
+        "groupName": "Начинающие",
+        "classroomPublicId": "classroom-202",
+        "classroomName": "202"
+      },
+      "occurredAt": "2026-10-05T12:00:00Z",
+      "deliverAfter": "2026-10-05T12:00:00Z",
+      "readAt": null
+    }
+  ],
+  "requestId": "request-notifications-1"
+}

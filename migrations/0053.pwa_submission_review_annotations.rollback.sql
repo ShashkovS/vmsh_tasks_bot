@@ -1,0 +1,7 @@
+-- depends: 0052.pwa_submission_reviews_evidence
+
+drop trigger submission_review_annotations_delete_forbidden;
+drop trigger submission_review_annotations_immutable_update;
+drop trigger submission_review_annotations_scope_insert;
+drop index submission_review_annotations_attachment_idx;
+drop table submission_review_annotations;

@@ -1,0 +1,81 @@
+
+ RUN  v4.1.10 /private/tmp/vmsh-live-baseline.iAtIdP/vmshpwa
+
+ ❯ |unit| packages/contracts/src/auth.test.ts (11 tests | 1 failed) 11ms
+     × discriminates principals and exposes only public family/staff scope summaries 3ms
+ ❯ |unit| packages/app-shell/src/notification-client.test.ts (6 tests | 2 failed) 10ms
+     × uses the audience API and validates list responses 6ms
+     × loads, overrides and restores one course category 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| packages/app-shell/src/notification-client.test.ts > notification client > uses the audience API and validates list responses
+AssertionError: expected [ { …(8) }, { …(8) }, { …(8) }, …(7) ] to have a length of 9 but got 10
+
+- Expected
++ Received
+
+- 9
++ 10
+
+ ❯ packages/app-shell/src/notification-client.test.ts:25:48
+     23|       'classroom_assignment',
+     24|     )
+     25|     expect((await client.preferences()).items).toHaveLength(9)
+       |                                                ^
+     26|     expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+     27|       '/student/api/v1/notification-events?limit=50&unreadOnly=true',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  |unit| packages/app-shell/src/notification-client.test.ts > notification client > loads, overrides and restores one course category
+AssertionError: expected [ { …(4) }, { …(4) }, { …(4) }, …(7) ] to have a length of 9 but got 10
+
+- Expected
++ Received
+
+- 9
++ 10
+
+ ❯ packages/app-shell/src/notification-client.test.ts:97:67
+     95|     const client = createNotificationClient(runtime, 'student', { fetc…
+     96|
+     97|     expect((await client.coursePreferences('course.math')).items).toHa…
+       |                                                                   ^
+     98|     await client.updateCoursePreference('course.math', {
+     99|       schemaVersion: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  |unit| packages/contracts/src/auth.test.ts > Phase-1 authentication contracts > discriminates principals and exposes only public family/staff scope summaries
+AssertionError: expected [ 'account.sessions.manage', …(9) ] to deeply equal [ 'account.sessions.manage', …(10) ]
+
+- Expected
++ Received
+
+@@ -5,9 +5,8 @@
+    "oral.manage",
+    "review.read",
+    "review.write",
+    "self.read",
+    "statistics.read",
+-   "product-analytics.read",
+    "student.active-group.write",
+    "student.read",
+  ]
+
+ ❯ packages/contracts/src/auth.test.ts:132:49
+    130|     if (staffContext.principal.audience !== 'staff') throw new Error('…
+    131|     expect(staffContext.principal.role).toBe('teacher')
+    132|     expect(staffContext.principal.capabilities).toEqual(backendTeacher…
+       |                                                 ^
+    133|     expect(staffContext.principal.scopes).toEqual(
+    134|       expect.arrayContaining([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 14 passed (17)
+   Start at  23:41:35
+   Duration  610ms (transform 159ms, setup 0ms, import 322ms, tests 20ms, environment 558ms)

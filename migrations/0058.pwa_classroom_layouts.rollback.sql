@@ -1,0 +1,18 @@
+-- depends: 0057.pwa_classroom_catalog
+
+drop trigger classroom_layout_rooms_delete_draft_only;
+drop trigger classroom_layout_rooms_update_draft_only;
+drop trigger classroom_layout_rooms_insert_draft_only;
+drop index classroom_layout_rooms_group_idx;
+drop table classroom_layout_rooms;
+
+drop index classroom_layout_versions_event_timeline_idx;
+drop index classroom_layout_versions_one_confirmed_uq;
+drop index classroom_layout_versions_one_draft_uq;
+drop table classroom_layout_versions;
+
+drop index in_person_event_group_lessons_lesson_idx;
+drop table in_person_event_group_lessons;
+
+drop index in_person_events_season_time_idx;
+drop table in_person_events;

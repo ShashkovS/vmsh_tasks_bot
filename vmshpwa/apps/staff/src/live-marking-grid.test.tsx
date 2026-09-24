@@ -1,0 +1,56 @@
+import { act, cleanup, screen } from '@testing-library/react'
+import { afterEach, expect, it, vi } from 'vitest'
+import { LiveMarkButton, type MarkDisplay } from './live-marking-grid'
+import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
+const saved: MarkDisplay = { symbol: '+', mine: true, changed: false, disabled: false }
+function button(display: MarkDisplay) {
+  return (
+    <LiveMarkButton
+      label="Ученик, задача 1н.1"
+      display={display}
+      studentId="u-1"
+      problemId="p-1"
+      onMark={() => {}}
+    />
+  )
+}
+it('keeps the exact transition visible while saving and after a slow response', () => {
+  vi.useFakeTimers()
+  const { rerender } = render(button({ ...saved, beforeSymbol: '*', pending: 'draft' }))
+  const cell = screen.getByRole('button')
+  expect(cell.textContent).toContain('* → +')
+  expect(cell.getAttribute('aria-label')).toContain('Ожидает отправки')
+  void act(() => vi.advanceTimersByTime(2000))
+  rerender(button({ ...saved, beforeSymbol: '*', pending: 'sending' }))
+  void act(() => vi.advanceTimersByTime(999))
+  expect(cell.textContent).not.toContain('…')
+  void act(() => vi.advanceTimersByTime(1))
+  expect(cell.textContent).toContain('* → +')
+  expect(cell.className).toContain('bg-destructive/10')
+  expect(cell.getAttribute('aria-label')).toContain('Сохранение не подтверждено')
+  rerender(button(saved))
+  expect(cell.textContent).toContain('+')
+  expect(cell.textContent).not.toContain('…')
+  expect(cell.getAttribute('aria-label')).toContain('Сохранено')
+})
+it.each(['queued', 'failed', 'conflict'] as const)(
+  'keeps %s distinct from a saved mark',
+  (pending) => {
+    render(button({ ...saved, pending }))
+    expect(screen.getByRole('button').textContent).toContain('∅ → +')
+    expect(screen.getByRole('button').className).toContain('bg-destructive/10')
+  },
+)
+it('does not retain slow state for another send', () => {
+  vi.useFakeTimers()
+  const { rerender } = render(button({ ...saved, pending: 'sending' }))
+  void act(() => vi.advanceTimersByTime(1000))
+  rerender(button(saved))
+  rerender(button({ ...saved, pending: 'sending' }))
+  expect(screen.getByRole('button').textContent).not.toContain('…')
+})

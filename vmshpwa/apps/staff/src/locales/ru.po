@@ -1,0 +1,190 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-18 22:22+0300\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ru\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Zoom-приём"
+msgstr "Zoom-приём"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Аналитика"
+msgstr "Аналитика"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Аудит"
+msgstr "Аудит"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Аудитории"
+msgstr "Аудитории"
+
+#: apps/staff/src/login-page.tsx
+msgid "ВМШ 179"
+msgstr "ВМШ 179"
+
+#: apps/staff/src/main.tsx
+msgid "ВМШ 179 — учитель и администратор"
+msgstr "ВМШ 179 — учитель и администратор"
+
+#: apps/staff/src/login-page.tsx
+msgid "Войти"
+msgstr "Войти"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Вопросы"
+msgstr "Вопросы"
+
+#: apps/staff/src/login-page.tsx
+msgid "Вход для преподавателя"
+msgstr "Вход для преподавателя"
+
+#: apps/staff/src/login-page.tsx
+msgid "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
+msgstr "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
+
+#: apps/staff/src/login-page.tsx
+msgid "Входим…"
+msgstr "Входим…"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Выйти"
+msgstr "Выйти"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Выйти из кабинета"
+msgstr "Выйти из кабинета"
+
+#: apps/staff/src/lesson-video-dialog.tsx
+msgid "Добавить видео"
+msgstr "Добавить видео"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Есть изменения"
+msgstr "Есть изменения"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Курсы"
+msgstr "Курсы"
+
+#: apps/staff/src/login-page.tsx
+msgid "Логин"
+msgstr "Логин"
+
+#: apps/staff/src/login-page.tsx
+msgid "Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз."
+msgstr "Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Материалы для разбора"
+msgstr "Материалы для разбора"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Не добавлен"
+msgstr "Не добавлен"
+
+#: apps/staff/src/login-page.tsx
+msgid "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
+msgstr "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
+
+#: apps/staff/src/login-page.tsx
+msgid "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
+msgstr "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
+
+#: apps/staff/src/login-page.tsx
+msgid "Не удалось войти"
+msgstr "Не удалось войти"
+
+#: apps/staff/src/login-page.tsx
+msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
+msgstr "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Новости"
+msgstr "Новости"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Опубликован"
+msgstr "Опубликован"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Очное занятие"
+msgstr "Очное занятие"
+
+#: apps/staff/src/login-page.tsx
+msgid "Пароль"
+msgstr "Пароль"
+
+#: apps/staff/src/login-page.tsx
+msgid "Показать пароль"
+msgstr "Показать пароль"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Проверка"
+msgstr "Проверка"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Рассылки"
+msgstr "Рассылки"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Реакции"
+msgstr "Реакции"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Результаты школьника"
+msgstr "Результаты школьника"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Сводка"
+msgstr "Сводка"
+
+#: apps/staff/src/login-page.tsx
+msgid "Скрыть пароль"
+msgstr "Скрыть пароль"
+
+#: apps/staff/src/login-page.tsx
+msgid "Слишком много попыток. Подождите немного и попробуйте ещё раз."
+msgstr "Слишком много попыток. Подождите немного и попробуйте ещё раз."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Статистика"
+msgstr "Статистика"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Страница не найдена"
+msgstr "Страница не найдена"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Тестирование"
+msgstr "Тестирование"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Уроки"
+msgstr "Уроки"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Участники"
+msgstr "Участники"
+
+#: apps/staff/src/login-page.tsx
+msgid "Учитель видит разрешённые группы; admin — административные разделы."
+msgstr "Учитель видит разрешённые группы; admin — административные разделы."
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Учитель и администратор"
+msgstr "Учитель и администратор"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Черновик"
+msgstr "Черновик"
