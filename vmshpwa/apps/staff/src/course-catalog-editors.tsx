@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type FormEvent } from 'react'
 
 import type {
@@ -70,16 +72,22 @@ function statusSelect(
 ) {
   return (
     <Label className="grid gap-1">
-      Состояние
+      <Trans>Состояние</Trans>
       <select
         className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
         disabled={disabled}
         onChange={(event) => setValue(event.target.value as CatalogStatus)}
         value={value}
       >
-        <option value="draft">Черновик</option>
-        <option value="active">Активен</option>
-        <option value="archived">В архиве</option>
+        <option value="draft">
+          <Trans>Черновик</Trans>
+        </option>
+        <option value="active">
+          <Trans>Активен</Trans>
+        </option>
+        <option value="archived">
+          <Trans>В архиве</Trans>
+        </option>
       </select>
     </Label>
   )
@@ -144,14 +152,16 @@ export function CourseCatalogEditor({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{course ? 'Настройки курса' : 'Новый курс'}</DialogTitle>
+          <DialogTitle>{course ? t`Настройки курса` : t`Новый курс`}</DialogTitle>
           <DialogDescription>
-            Курс объединяет группы одного предмета и хранит общий контекст статистики.
+            <Trans>
+              Курс объединяет группы одного предмета и хранит общий контекст статистики.
+            </Trans>
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-3 sm:grid-cols-2" onSubmit={submit}>
           <Label className="grid gap-1">
-            Код
+            <Trans>Код</Trans>
             <Input
               disabled={saving}
               onChange={(event) => updateDraft({ code: event.target.value })}
@@ -160,7 +170,7 @@ export function CourseCatalogEditor({
             />
           </Label>
           <Label className="grid gap-1">
-            Предмет
+            <Trans>Предмет</Trans>
             <Input
               disabled={saving}
               onChange={(event) => updateDraft({ subjectCode: event.target.value })}
@@ -169,7 +179,7 @@ export function CourseCatalogEditor({
             />
           </Label>
           <Label className="grid gap-1 sm:col-span-2">
-            Название
+            <Trans>Название</Trans>
             <Input
               disabled={saving}
               onChange={(event) => updateDraft({ name: event.target.value })}
@@ -179,7 +189,7 @@ export function CourseCatalogEditor({
           </Label>
           {statusSelect(draft.status, (status) => updateDraft({ status }), saving)}
           <Label className="grid gap-1">
-            Цветовой ключ
+            <Trans>Цветовой ключ</Trans>
             <Input
               disabled={saving}
               onChange={(event) => updateDraft({ accentKey: event.target.value })}
@@ -188,7 +198,7 @@ export function CourseCatalogEditor({
             />
           </Label>
           <Label className="grid gap-1">
-            Порядок
+            <Trans>Порядок</Trans>
             <Input
               disabled={saving}
               inputMode="numeric"
@@ -200,12 +210,14 @@ export function CourseCatalogEditor({
           </Label>
           {!storageAvailable ? (
             <p className="text-small text-status-error sm:col-span-2" role="alert">
-              Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+              <Trans>
+                Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+              </Trans>
             </p>
           ) : null}
           <DialogFooter className="sm:col-span-2">
             <Button disabled={saving} type="submit">
-              {saving ? 'Сохраняем…' : 'Сохранить'}
+              {saving ? t`Сохраняем…` : t`Сохранить`}
             </Button>
           </DialogFooter>
         </form>
@@ -275,14 +287,14 @@ export function GroupCatalogEditor({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{group ? 'Настройки группы' : 'Новая группа'}</DialogTitle>
+          <DialogTitle>{group ? t`Настройки группы` : t`Новая группа`}</DialogTitle>
           <DialogDescription>
-            Название и короткий код должны быть уникальны внутри выбранного курса.
+            <Trans>Название и короткий код должны быть уникальны внутри выбранного курса.</Trans>
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-3 sm:grid-cols-2" onSubmit={submit}>
           <Label className="grid gap-1">
-            Короткий код
+            <Trans>Короткий код</Trans>
             <Input
               disabled={saving}
               onChange={(event) => updateDraft({ shortCode: event.target.value })}
@@ -291,7 +303,7 @@ export function GroupCatalogEditor({
             />
           </Label>
           <Label className="grid gap-1">
-            Цветовой ключ
+            <Trans>Цветовой ключ</Trans>
             <Input
               disabled={saving}
               onChange={(event) => updateDraft({ colorKey: event.target.value })}
@@ -300,7 +312,7 @@ export function GroupCatalogEditor({
             />
           </Label>
           <Label className="grid gap-1 sm:col-span-2">
-            Название
+            <Trans>Название</Trans>
             <Input
               disabled={saving}
               onChange={(event) => updateDraft({ name: event.target.value })}
@@ -310,7 +322,7 @@ export function GroupCatalogEditor({
           </Label>
           {statusSelect(draft.status, (status) => updateDraft({ status }), saving)}
           <Label className="grid gap-1">
-            Порядок
+            <Trans>Порядок</Trans>
             <Input
               disabled={saving}
               inputMode="numeric"
@@ -321,7 +333,7 @@ export function GroupCatalogEditor({
             />
           </Label>
           <Label className="grid gap-1">
-            Вес в статистике
+            <Trans>Вес в статистике</Trans>
             <Input
               disabled={saving}
               inputMode="decimal"
@@ -341,16 +353,18 @@ export function GroupCatalogEditor({
               onChange={(event) => updateDraft({ allowSelfSwitch: event.target.checked })}
               type="checkbox"
             />
-            Разрешить самостоятельный переход
+            <Trans>Разрешить самостоятельный переход</Trans>
           </label>
           {!storageAvailable ? (
             <p className="text-small text-status-error sm:col-span-2" role="alert">
-              Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+              <Trans>
+                Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+              </Trans>
             </p>
           ) : null}
           <DialogFooter className="sm:col-span-2">
             <Button disabled={saving} type="submit">
-              {saving ? 'Сохраняем…' : 'Сохранить'}
+              {saving ? t`Сохраняем…` : t`Сохранить`}
             </Button>
           </DialogFooter>
         </form>

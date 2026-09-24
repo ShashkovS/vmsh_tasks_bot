@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type FormEvent } from 'react'
 
 import type {
@@ -115,23 +117,31 @@ export function CourseScheduleEditor({
         <DialogHeader>
           <DialogTitle>{scheduleFieldLabels[field]}</DialogTitle>
           <DialogDescription>
-            Время задаётся относительно даты начала цикла и сохраняется в часовом поясе курса.
+            <Trans>
+              Время задаётся относительно даты начала цикла и сохраняется в часовом поясе курса.
+            </Trans>
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-3" onSubmit={submit}>
           {groupOverride ? (
             <Label className="grid gap-1">
-              Режим
+              <Trans>Режим</Trans>
               <select
                 className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                 disabled={saving}
                 onChange={(event) => update({ mode: event.target.value as ScheduleOverrideMode })}
                 value={draft.mode}
               >
-                <option value="inherit">Как в курсе</option>
-                <option value="override">Своё время</option>
+                <option value="inherit">
+                  <Trans>Как в курсе</Trans>
+                </option>
+                <option value="override">
+                  <Trans>Своё время</Trans>
+                </option>
                 {field === 'submission_closes_at' ? null : (
-                  <option value="disabled">Не использовать</option>
+                  <option value="disabled">
+                    <Trans>Не использовать</Trans>
+                  </option>
                 )}
               </select>
             </Label>
@@ -139,7 +149,7 @@ export function CourseScheduleEditor({
           {!groupOverride || draft.mode === 'override' ? (
             <>
               <Label className="grid gap-1">
-                Смещение в днях
+                <Trans>Смещение в днях</Trans>
                 <Input
                   disabled={saving}
                   max={30}
@@ -151,7 +161,7 @@ export function CourseScheduleEditor({
                 />
               </Label>
               <Label className="grid gap-1">
-                Время
+                <Trans>Время</Trans>
                 <Input
                   disabled={saving}
                   onChange={(event) => update({ localTime: event.target.value })}
@@ -161,7 +171,7 @@ export function CourseScheduleEditor({
                 />
               </Label>
               <Label className="grid gap-1">
-                Часовой пояс
+                <Trans>Часовой пояс</Trans>
                 <Input
                   disabled={saving}
                   onChange={(event) => update({ timezone: event.target.value })}
@@ -173,12 +183,14 @@ export function CourseScheduleEditor({
           ) : null}
           {!storageAvailable ? (
             <p className="text-small text-status-error" role="alert">
-              Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+              <Trans>
+                Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+              </Trans>
             </p>
           ) : null}
           <DialogFooter>
             <Button disabled={saving} type="submit">
-              {saving ? 'Сохраняем…' : 'Показать изменения'}
+              {saving ? t`Сохраняем…` : t`Показать изменения`}
             </Button>
           </DialogFooter>
         </form>

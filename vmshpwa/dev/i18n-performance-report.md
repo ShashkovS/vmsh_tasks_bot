@@ -137,3 +137,36 @@ copy вне hot cell loop; catalog по-прежнему preloaded вместе 
 
 Максимальное ухудшение — +12 ms cold FCP, меньше лимита +30 ms. P4 укладывается
 в performance budget.
+
+## P5 — 24 сентября 2026
+
+P5 сравнивается с точным P4 commit `237cf3a9` в отдельном temporary worktree
+на той же машине, Node 26.9.0 и pnpm 11.15.1. Для обоих состояний выполнены
+production build, brotli quality 11 и девятипрогонный Chromium FCP benchmark
+с 40 ms RTT / 12 Мбит/с. Это исключает из сравнения уже зафиксированные P4
+изменения и фоновые изменения рабочего дерева.
+
+### Бандлы (brotli)
+
+| App     | Initial JS, P4 | Initial JS, P5 | Δ       | Total JS, P4 | Total JS, P5 | Каталог ru / en, P5 |
+| ------- | -------------: | -------------: | ------- | -----------: | -----------: | ------------------- |
+| student |       385.1 KB |       388.8 KB | +3.7 KB |     432.5 KB |     439.6 KB | 18.4 / 15.5 KB      |
+| family  |       355.5 KB |       359.2 KB | +3.7 KB |     385.7 KB |     392.6 KB | 16.3 / 13.6 KB      |
+| staff   |       447.2 KB |       452.7 KB | +5.5 KB |     772.1 KB |     780.7 KB | 24.2 / 20.6 KB      |
+| landing |        64.1 KB |        64.1 KB | +0.0 KB |      64.2 KB |      64.2 KB | 0.2 / 0.1 KB        |
+
+Максимальный прирост initial JS — +5.5 KB Staff, меньше лимита +10 KB.
+Рост каталогов соответствует P5 Staff/Product интерфейсу; они остаются
+preloaded вместе с entry и не добавляют последовательный запрос после старта.
+
+### Старт (FCP, медиана, 9 прогонов)
+
+| App     | Cold, P4 | Cold, P5 | Δ      | Warm, P4 | Warm, P5 | Δ      |
+| ------- | -------: | -------: | ------ | -------: | -------: | ------ |
+| student |   508 ms |   488 ms | -20 ms |   120 ms |   120 ms | 0 ms   |
+| family  |   508 ms |   476 ms | -32 ms |   136 ms |   120 ms | -16 ms |
+| staff   |   652 ms |   632 ms | -20 ms |   152 ms |   136 ms | -16 ms |
+| landing |   196 ms |   196 ms | 0 ms   |   140 ms |   140 ms | 0 ms   |
+
+Cold и warm FCP не ухудшились ни для одного приложения; P5 укладывается в
+performance budget.

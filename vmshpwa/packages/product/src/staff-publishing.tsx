@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -61,19 +63,37 @@ export interface PublicationControlProps {
 }
 
 const artifactLabels: Record<PublicationArtifact, string> = {
-  task: 'условие',
-  hint: 'подсказку',
-  solution: 'решение',
+  get task() {
+    return t`условие`
+  },
+  get hint() {
+    return t`подсказку`
+  },
+  get solution() {
+    return t`решение`
+  },
 }
 
 function StateChip({ state }: { state: PublishState }) {
   switch (state) {
     case 'published':
-      return <Badge variant="success">Опубликовано</Badge>
+      return (
+        <Badge variant="success">
+          <Trans>Опубликовано</Trans>
+        </Badge>
+      )
     case 'scheduled':
-      return <Badge variant="info">По расписанию</Badge>
+      return (
+        <Badge variant="info">
+          <Trans>По расписанию</Trans>
+        </Badge>
+      )
     case 'draft':
-      return <Badge variant="neutral">Черновик</Badge>
+      return (
+        <Badge variant="neutral">
+          <Trans>Черновик</Trans>
+        </Badge>
+      )
     case 'none':
       return <span className="text-muted-foreground">—</span>
   }
@@ -117,7 +137,7 @@ export function PublicationControl({
         {isScheduling ? (
           <div className="min-w-0 space-y-1.5">
             <input
-              aria-label={`Когда опубликовать ${label}, ${row.level.name}`}
+              aria-label={t`Когда опубликовать ${label}, ${row.level.name}`}
               className="block h-8 w-full min-w-0 max-w-full rounded-md border border-input bg-surface px-2 font-num text-caption text-foreground"
               onChange={(event) => setScheduling({ ...scheduling, at: event.target.value })}
               type="datetime-local"
@@ -132,17 +152,17 @@ export function PublicationControl({
                 }}
                 size="xs"
               >
-                Запланировать
+                <Trans>Запланировать</Trans>
               </Button>
               <Button onClick={() => setScheduling(null)} size="xs" variant="ghost">
-                Отмена
+                <Trans>Отмена</Trans>
               </Button>
             </div>
           </div>
         ) : isConfirming ? (
           <div className="space-y-1 text-caption text-foreground">
             <p>
-              {confirming.kind === 'publish' ? 'Опубликовать' : 'Откатить'} {label}?
+              {confirming.kind === 'publish' ? t`Опубликовать` : t`Откатить`} {label}?
             </p>
             <span className="inline-flex gap-1">
               <Button
@@ -153,10 +173,10 @@ export function PublicationControl({
                 }}
                 size="xs"
               >
-                Подтвердить
+                <Trans>Подтвердить</Trans>
               </Button>
               <Button onClick={() => setConfirming(null)} size="xs" variant="ghost">
-                Отмена
+                <Trans>Отмена</Trans>
               </Button>
             </span>
           </div>
@@ -164,26 +184,26 @@ export function PublicationControl({
           <div className="flex flex-wrap gap-1">
             {state === 'published' || state === 'scheduled' ? (
               <Button
-                aria-label={`${state === 'scheduled' ? 'Отменить расписание' : 'Откатить'}: ${label}, ${row.level.name}`}
+                aria-label={`${state === 'scheduled' ? t`Отменить расписание` : t`Откатить`}: ${label}, ${row.level.name}`}
                 onClick={() => setConfirming({ code: row.level.code, artifact, kind: 'rollback' })}
                 size="xs"
                 variant="ghost"
               >
-                {state === 'scheduled' ? 'Отменить' : 'Откатить'}
+                {state === 'scheduled' ? t`Отменить` : t`Откатить`}
               </Button>
             ) : (
               <Button
-                aria-label={`Опубликовать сейчас: ${label}, ${row.level.name}`}
+                aria-label={t`Опубликовать сейчас: ${label}, ${row.level.name}`}
                 onClick={() => setConfirming({ code: row.level.code, artifact, kind: 'publish' })}
                 size="xs"
                 variant="outline"
               >
-                Сейчас
+                <Trans>Сейчас</Trans>
               </Button>
             )}
             {state !== 'published' ? (
               <Button
-                aria-label={`Опубликовать по расписанию: ${label}, ${row.level.name}`}
+                aria-label={t`Опубликовать по расписанию: ${label}, ${row.level.name}`}
                 onClick={() =>
                   setScheduling({
                     code: row.level.code,
@@ -194,7 +214,7 @@ export function PublicationControl({
                 size="xs"
                 variant="ghost"
               >
-                По расписанию
+                <Trans>По расписанию</Trans>
               </Button>
             ) : null}
           </div>
@@ -211,10 +231,18 @@ export function PublicationControl({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Уровень</TableHead>
-            <TableHead>Условие</TableHead>
-            <TableHead>Подсказка</TableHead>
-            <TableHead>Решение</TableHead>
+            <TableHead>
+              <Trans>Уровень</Trans>
+            </TableHead>
+            <TableHead>
+              <Trans>Условие</Trans>
+            </TableHead>
+            <TableHead>
+              <Trans>Подсказка</Trans>
+            </TableHead>
+            <TableHead>
+              <Trans>Решение</Trans>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -260,7 +288,7 @@ export function LatexUpload({
   files,
   sourcePreview,
   onRetry,
-  retryLabel = 'Повторить',
+  retryLabel = t`Повторить`,
   className,
 }: LatexUploadProps) {
   return (
@@ -277,15 +305,15 @@ export function LatexUpload({
               ) : (
                 <span className="shrink-0 text-caption text-muted-foreground">
                   {file.status === 'done'
-                    ? 'готово'
+                    ? t`готово`
                     : file.status === 'queued'
-                      ? 'в очереди'
-                      : 'обработка'}
+                      ? t`в очереди`
+                      : t`обработка`}
                 </span>
               )}
             </div>
             {file.status === 'processing' ? (
-              <Progress aria-label={`Обработка ${file.name}`} value={file.progress ?? null} />
+              <Progress aria-label={t`Обработка ${file.name}`} value={file.progress ?? null} />
             ) : null}
             {file.diagnostics && file.diagnostics.length > 0 ? (
               <ul className="space-y-0.5 text-caption text-status-danger">
@@ -302,7 +330,9 @@ export function LatexUpload({
       </ul>
       {sourcePreview ? (
         <div className="space-y-1">
-          <p className="text-label font-medium text-foreground">Исходник</p>
+          <p className="text-label font-medium text-foreground">
+            <Trans>Исходник</Trans>
+          </p>
           <pre className="overflow-x-auto rounded-md border border-border bg-surface-sunken p-3 font-mono text-caption text-foreground">
             {sourcePreview}
           </pre>
@@ -340,7 +370,7 @@ const assetFileAccept =
  * missing-assets flow in dev/development-plan/06-phase-2-content.md. */
 function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: string } }) {
   const [previewFailed, setPreviewFailed] = useState(false)
-  const imageAlt = `Прикреплённый ресурс ${asset.ref}`
+  const imageAlt = t`Прикреплённый ресурс ${asset.ref}`
 
   if (previewFailed) {
     return (
@@ -350,7 +380,7 @@ function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: st
         rel="noreferrer"
         target="_blank"
       >
-        Открыть изображение
+        <Trans>Открыть изображение</Trans>
       </a>
     )
   }
@@ -360,7 +390,7 @@ function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: st
       <DialogTrigger
         render={
           <button
-            aria-label={`Увеличить ресурс ${asset.ref}`}
+            aria-label={t`Увеличить ресурс ${asset.ref}`}
             className="group relative grid h-28 w-44 max-w-full place-items-center overflow-hidden rounded-md border border-border bg-surface-sunken p-1 outline-none transition-colors hover:border-border-strong focus-visible:ring-3 focus-visible:ring-ring/50"
             type="button"
           >
@@ -373,7 +403,7 @@ function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: st
               src={asset.assetHref}
             />
             <span className="absolute right-1 bottom-1 inline-flex items-center gap-1 rounded-sm bg-surface/90 px-1.5 py-0.5 text-caption text-muted-foreground shadow-sm group-hover:text-foreground">
-              <Expand aria-hidden="true" className="size-3" /> Увеличить
+              <Expand aria-hidden="true" className="size-3" /> <Trans>Увеличить</Trans>
             </span>
           </button>
         }
@@ -381,7 +411,9 @@ function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: st
       <DialogContent className="max-h-[calc(100svh-2rem)] overflow-hidden sm:max-w-[min(92vw,72rem)]">
         <DialogHeader>
           <DialogTitle>{asset.ref}</DialogTitle>
-          <DialogDescription>Оригинальный прикреплённый ресурс</DialogDescription>
+          <DialogDescription>
+            <Trans>Оригинальный прикреплённый ресурс</Trans>
+          </DialogDescription>
         </DialogHeader>
         <div className="grid min-h-0 place-items-center overflow-auto rounded-md bg-surface-sunken p-2">
           <img
@@ -426,17 +458,17 @@ export function MissingAssetsFlow({
         <AlertContent>
           <AlertTitle>
             {unresolvedCount === 0
-              ? 'Все ресурсы прикреплены'
+              ? t`Все ресурсы прикреплены`
               : tikzProcessing
-                ? 'Готовим рисунки из TikZ'
-                : `Не хватает ресурсов: ${unresolvedCount}`}
+                ? t`Готовим рисунки из TikZ`
+                : t`Не хватает ресурсов: ${unresolvedCount}`}
           </AlertTitle>
           <AlertDescription>
             {unresolvedCount === 0
-              ? 'Можно повторить сборку материала.'
+              ? t`Можно повторить сборку материала.`
               : tikzProcessing
-                ? 'Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически.'
-                : 'Публикация недоступна, пока все ссылки не разрешены.'}
+                ? t`Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически.`
+                : t`Публикация недоступна, пока все ссылки не разрешены.`}
           </AlertDescription>
         </AlertContent>
       </Alert>
@@ -451,22 +483,30 @@ export function MissingAssetsFlow({
                 <div className="min-w-0">
                   <p className="break-all font-mono text-small text-foreground">{asset.ref}</p>
                   <p className="text-caption text-muted-foreground">
-                    {asset.sourceKind === 'tikz' ? 'TikZ-фрагмент' : 'Рисунок из LaTeX'}
+                    {asset.sourceKind === 'tikz' ? t`TikZ-фрагмент` : t`Рисунок из LaTeX`}
                   </p>
                 </div>
                 {asset.status === 'uploading' ? (
                   <Badge variant="info">
                     <LoaderCircle aria-hidden="true" className="animate-spin" />{' '}
-                    {asset.sourceKind === 'tikz' ? 'Конвертируем TikZ' : 'Обрабатываем'}
+                    {asset.sourceKind === 'tikz' ? t`Конвертируем TikZ` : t`Обрабатываем`}
                   </Badge>
                 ) : asset.status === 'reused' ? (
-                  <Badge variant="success">Переиспользован</Badge>
+                  <Badge variant="success">
+                    <Trans>Переиспользован</Trans>
+                  </Badge>
                 ) : asset.status === 'attached' ? (
-                  <Badge variant="success">Прикреплён</Badge>
+                  <Badge variant="success">
+                    <Trans>Прикреплён</Trans>
+                  </Badge>
                 ) : asset.status === 'error' ? (
-                  <Badge variant="danger">Ошибка</Badge>
+                  <Badge variant="danger">
+                    <Trans>Ошибка</Trans>
+                  </Badge>
                 ) : (
-                  <Badge variant="warning">Нужен ресурс</Badge>
+                  <Badge variant="warning">
+                    <Trans>Нужен ресурс</Trans>
+                  </Badge>
                 )}
               </div>
 
@@ -478,7 +518,9 @@ export function MissingAssetsFlow({
                 <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto] sm:items-end">
                   {needsFile ? (
                     <div className="min-w-0 space-y-1">
-                      <Label htmlFor={inputId}>Изображение</Label>
+                      <Label htmlFor={inputId}>
+                        <Trans>Изображение</Trans>
+                      </Label>
                       <Input
                         accept={assetFileAccept}
                         disabled={disabled || asset.status === 'uploading'}
@@ -488,7 +530,7 @@ export function MissingAssetsFlow({
                       />
                       {asset.fileName ? (
                         <p className="truncate text-caption text-muted-foreground">
-                          Выбран: {asset.fileName}
+                          <Trans>Выбран: {asset.fileName}</Trans>
                         </p>
                       ) : null}
                     </div>
@@ -509,10 +551,10 @@ export function MissingAssetsFlow({
                       <Upload aria-hidden="true" />
                     )}
                     {asset.status === 'error'
-                      ? 'Повторить'
+                      ? t`Повторить`
                       : asset.sourceKind === 'tikz'
-                        ? 'Подготовить SVG'
-                        : 'Загрузить'}
+                        ? t`Подготовить SVG`
+                        : t`Загрузить`}
                   </Button>
                 </div>
               )}

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
@@ -87,15 +89,15 @@ function valueLabel(value?: {
   if (!value || value.dayOffset === null || value.localTime === null) return '—'
   const day =
     value.dayOffset === 0
-      ? 'в день цикла'
-      : `${value.dayOffset > 0 ? '+' : ''}${value.dayOffset} д.`
+      ? t`в день цикла`
+      : t`${value.dayOffset > 0 ? '+' : ''}${value.dayOffset} д.`
   return `${day} · ${value.localTime.slice(0, 5)}`
 }
 
 function errorMessage(error: Error): string {
   return error instanceof ApiResponseError
     ? error.message
-    : 'Проверьте соединение и повторите попытку.'
+    : t`Проверьте соединение и повторите попытку.`
 }
 
 export function StaffCourseSchedulePage({
@@ -184,7 +186,7 @@ export function StaffCourseSchedulePage({
     (selectedGroup && selectedGroupSchedule.isPending)
   ) {
     return (
-      <PageLayout title="Расписание" width="wide">
+      <PageLayout title={t`Расписание`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -192,7 +194,7 @@ export function StaffCourseSchedulePage({
   if (catalog.error || courseSchedule.error || selectedGroupSchedule.error) {
     const error = catalog.error ?? courseSchedule.error ?? selectedGroupSchedule.error
     return (
-      <PageLayout title="Расписание" width="wide">
+      <PageLayout title={t`Расписание`} width="wide">
         <PageStatePanel
           state={error instanceof ApiResponseError && error.status === 403 ? 'forbidden' : 'error'}
         />
@@ -201,7 +203,7 @@ export function StaffCourseSchedulePage({
   }
   if (!selectedCourse || !courseSchedule.data) {
     return (
-      <PageLayout title="Расписание" width="wide">
+      <PageLayout title={t`Расписание`} width="wide">
         <PageStatePanel state="empty" />
       </PageLayout>
     )
@@ -236,15 +238,15 @@ export function StaffCourseSchedulePage({
 
   return (
     <PageLayout
-      description="Шаблон курса и переопределения групп. Уже созданные занятия не сдвигаются автоматически."
+      description={t`Шаблон курса и переопределения групп. Уже созданные занятия не сдвигаются автоматически.`}
       eyebrow={catalog.data.season.title}
-      title="Расписание"
+      title={t`Расписание`}
       width="wide"
     >
       <div className="space-y-5">
         <div className="grid gap-3 sm:grid-cols-2">
           <Label className="grid gap-1">
-            Курс
+            <Trans>Курс</Trans>
             <select
               className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
               onChange={(event) => onCourseChange(event.target.value)}
@@ -258,7 +260,7 @@ export function StaffCourseSchedulePage({
             </select>
           </Label>
           <Label className="grid gap-1">
-            Группа для переопределений
+            <Trans>Группа для переопределений</Trans>
             <select
               className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
               disabled={selectedCourse.groups.length === 0}
@@ -277,7 +279,9 @@ export function StaffCourseSchedulePage({
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Расписание не изменено</AlertTitle>
+              <AlertTitle>
+                <Trans>Расписание не изменено</Trans>
+              </AlertTitle>
               <AlertDescription>{errorMessage(mutation.error)}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -285,7 +289,9 @@ export function StaffCourseSchedulePage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Шаблон курса</CardTitle>
+            <CardTitle>
+              <Trans>Шаблон курса</Trans>
+            </CardTitle>
           </CardHeader>
           <CardContent className="divide-y divide-border p-0">
             {fields.map((field) => {
@@ -303,8 +309,9 @@ export function StaffCourseSchedulePage({
                     </p>
                     {draft ? (
                       <p className="mt-1 text-caption text-status-warning">
-                        Черновик: {valueLabel(draft)} · затронет {impact?.groupLessons ?? '—'}{' '}
-                        занятий, готовых окон: {impact?.materializedWindows ?? '—'}
+                        <Trans>Черновик:</Trans> {valueLabel(draft)} <Trans>· затронет</Trans>{' '}
+                        {impact?.groupLessons ?? '—'}
+                        <Trans> занятий, готовых окон:</Trans> {impact?.materializedWindows ?? '—'}
                       </p>
                     ) : null}
                   </div>
@@ -314,7 +321,7 @@ export function StaffCourseSchedulePage({
                       onClick={() => mutation.mutate({ kind: 'confirm-course', rule: draft })}
                       size="sm"
                     >
-                      Подтвердить
+                      <Trans>Подтвердить</Trans>
                     </Button>
                   ) : (
                     <Button
@@ -322,7 +329,7 @@ export function StaffCourseSchedulePage({
                       size="sm"
                       variant="outline"
                     >
-                      Изменить
+                      <Trans>Изменить</Trans>
                     </Button>
                   )}
                 </div>
@@ -354,10 +361,10 @@ export function StaffCourseSchedulePage({
                         <p className="text-small font-medium">{scheduleFieldLabels[field]}</p>
                         <Badge variant={active ? 'info' : 'neutral'}>
                           {active?.mode === 'override'
-                            ? 'Своё время'
+                            ? t`Своё время`
                             : active?.mode === 'disabled'
-                              ? 'Отключено'
-                              : 'Как в курсе'}
+                              ? t`Отключено`
+                              : t`Как в курсе`}
                         </Badge>
                       </div>
                       <p className="font-num text-caption text-muted-foreground">
@@ -365,12 +372,12 @@ export function StaffCourseSchedulePage({
                       </p>
                       {draft ? (
                         <p className="mt-1 text-caption text-status-warning">
-                          Черновик:{' '}
+                          <Trans>Черновик: </Trans>
                           {draft.mode === 'override'
                             ? valueLabel(draft)
                             : draft.mode === 'inherit'
-                              ? 'как в курсе'
-                              : 'отключено'}
+                              ? t`как в курсе`
+                              : t`отключено`}
                         </p>
                       ) : null}
                     </div>
@@ -380,7 +387,7 @@ export function StaffCourseSchedulePage({
                         onClick={() => mutation.mutate({ kind: 'confirm-group', override: draft })}
                         size="sm"
                       >
-                        Подтвердить
+                        <Trans>Подтвердить</Trans>
                       </Button>
                     ) : (
                       <Button
@@ -388,7 +395,7 @@ export function StaffCourseSchedulePage({
                         size="sm"
                         variant="outline"
                       >
-                        Изменить
+                        <Trans>Изменить</Trans>
                       </Button>
                     )}
                   </div>

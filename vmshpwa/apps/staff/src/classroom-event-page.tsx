@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarClock, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
@@ -65,7 +67,7 @@ function initialDraft(event: InPersonEvent | undefined): EventDraft {
   start.setUTCHours(7, 0, 0, 0)
   const end = new Date(start.getTime() + 3 * 60 * 60 * 1000)
   return {
-    name: 'Очное занятие',
+    name: t`Очное занятие`,
     startsLocal: toMoscowLocal(start.toISOString()),
     endsLocal: toMoscowLocal(end.toISOString()),
     status: 'draft',
@@ -96,8 +98,8 @@ function readDraft(key: string, fallback: EventDraft): EventDraft {
 
 function describeError(error: Error): string {
   if (error instanceof ApiResponseError) return error.message
-  if (error instanceof ClassroomNetworkError) return 'Проверьте соединение и повторите попытку.'
-  return 'Обновите страницу и повторите попытку.'
+  if (error instanceof ClassroomNetworkError) return t`Проверьте соединение и повторите попытку.`
+  return t`Обновите страницу и повторите попытку.`
 }
 
 export function ClassroomAssignmentStats({ plan }: { plan: ClassroomAssignmentPlan }) {
@@ -112,27 +114,29 @@ export function ClassroomAssignmentStats({ plan }: { plan: ClassroomAssignmentPl
     <section className="grid gap-3 border-t border-border pt-4" aria-labelledby="room-stats-title">
       <div>
         <h3 className="text-label font-semibold" id="room-stats-title">
-          Распределение по аудиториям
+          <Trans>Распределение по аудиториям</Trans>
         </h3>
         <p className="text-caption text-muted-foreground">
-          Текущий план выбранного очного занятия.
+          <Trans>Текущий план выбранного очного занятия.</Trans>
         </p>
       </div>
       {plan.rooms.length === 0 ? (
-        <p className="text-small text-muted-foreground">Аудитории пока не выбраны.</p>
+        <p className="text-small text-muted-foreground">
+          <Trans>Аудитории пока не выбраны.</Trans>
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-md border border-border">
           <table className="w-full min-w-md text-left text-small">
             <thead className="bg-muted/50 text-caption text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 font-medium" scope="col">
-                  Аудитория
+                  <Trans>Аудитория</Trans>
                 </th>
                 <th className="px-3 py-2 font-medium" scope="col">
-                  Уровень
+                  <Trans>Уровень</Trans>
                 </th>
                 <th className="px-3 py-2 text-right font-medium" scope="col">
-                  Школьников
+                  <Trans>Школьников</Trans>
                 </th>
               </tr>
             </thead>
@@ -148,7 +152,9 @@ export function ClassroomAssignmentStats({ plan }: { plan: ClassroomAssignmentPl
                           {group.shortCode} · {group.groupName}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground">Не выбран</span>
+                        <span className="text-muted-foreground">
+                          <Trans>Не выбран</Trans>
+                        </span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">
@@ -213,7 +219,7 @@ function EventEditor({
     <form className="grid gap-4" onSubmit={submit}>
       <div className="grid gap-3 md:grid-cols-4">
         <Label className="grid gap-1 md:col-span-2">
-          Название
+          <Trans>Название</Trans>
           <Input
             maxLength={200}
             onChange={(changeEvent) => updateDraft({ ...draft, name: changeEvent.target.value })}
@@ -222,7 +228,7 @@ function EventEditor({
           />
         </Label>
         <Label className="grid gap-1">
-          Начало · Москва
+          <Trans>Начало · Москва</Trans>
           <Input
             onChange={(changeEvent) =>
               updateDraft({ ...draft, startsLocal: changeEvent.target.value })
@@ -233,7 +239,7 @@ function EventEditor({
           />
         </Label>
         <Label className="grid gap-1">
-          Окончание · Москва
+          <Trans>Окончание · Москва</Trans>
           <Input
             onChange={(changeEvent) =>
               updateDraft({ ...draft, endsLocal: changeEvent.target.value })
@@ -245,7 +251,7 @@ function EventEditor({
         </Label>
       </div>
       <Label className="grid max-w-xs gap-1">
-        Состояние
+        <Trans>Состояние</Trans>
         <select
           className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
           onChange={(changeEvent) =>
@@ -256,14 +262,24 @@ function EventEditor({
           }
           value={draft.status}
         >
-          <option value="draft">Черновик</option>
-          <option value="scheduled">Объявлено</option>
-          <option value="completed">Завершено</option>
-          <option value="cancelled">Отменено</option>
+          <option value="draft">
+            <Trans>Черновик</Trans>
+          </option>
+          <option value="scheduled">
+            <Trans>Объявлено</Trans>
+          </option>
+          <option value="completed">
+            <Trans>Завершено</Trans>
+          </option>
+          <option value="cancelled">
+            <Trans>Отменено</Trans>
+          </option>
         </select>
       </Label>
       <fieldset className="grid gap-2">
-        <legend className="text-label font-medium">Какие группы участвуют</legend>
+        <legend className="text-label font-medium">
+          <Trans>Какие группы участвуют</Trans>
+        </legend>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {candidates.map((candidate) => {
             const checked = draft.groupLessonPublicIds.includes(candidate.groupLessonPublicId)
@@ -287,13 +303,15 @@ function EventEditor({
                   }
                 />
                 <span className="min-w-0 flex-1 text-small">
-                  <span className="block font-medium">
-                    {candidate.shortCode} · {candidate.groupName}
-                  </span>
-                  <span className="block text-caption text-muted-foreground">
-                    {candidate.courseName} · занятие {candidate.lessonNumber} · очно{' '}
-                    {candidate.inPersonCount}
-                  </span>
+                  <Trans>
+                    <span className="block font-medium">
+                      {candidate.shortCode} · {candidate.groupName}
+                    </span>
+                    <span className="block text-caption text-muted-foreground">
+                      {candidate.courseName} · занятие {candidate.lessonNumber} · очно{' '}
+                      {candidate.inPersonCount}
+                    </span>
+                  </Trans>
                 </span>
               </Label>
             )
@@ -304,10 +322,14 @@ function EventEditor({
         <Alert tone="info">
           <CalendarClock aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Дата и время будут показаны школьникам и родителям</AlertTitle>
+            <AlertTitle>
+              <Trans>Дата и время будут показаны школьникам и родителям</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Номер аудитории берётся только из подтверждённого плана. Уведомления отправляются
-              отдельной рассылкой.
+              <Trans>
+                Номер аудитории берётся только из подтверждённого плана. Уведомления отправляются
+                отдельной рассылкой.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -315,7 +337,9 @@ function EventEditor({
       {storageFailed ? (
         <Alert tone="danger">
           <AlertContent>
-            <AlertTitle>Черновик не сохранился на устройстве</AlertTitle>
+            <AlertTitle>
+              <Trans>Черновик не сохранился на устройстве</Trans>
+            </AlertTitle>
           </AlertContent>
         </Alert>
       ) : null}
@@ -329,7 +353,7 @@ function EventEditor({
           }
           type="submit"
         >
-          {event ? 'Сохранить очное занятие' : 'Создать очное занятие'}
+          {event ? t`Сохранить очное занятие` : t`Создать очное занятие`}
         </Button>
       </div>
     </form>
@@ -403,7 +427,9 @@ export function StaffClassroomEventManager({
     return (
       <Alert role="alert" tone="danger">
         <AlertContent>
-          <AlertTitle>Не удалось загрузить очные занятия</AlertTitle>
+          <AlertTitle>
+            <Trans>Не удалось загрузить очные занятия</Trans>
+          </AlertTitle>
           <AlertDescription>{describeError(catalog.error)}</AlertDescription>
         </AlertContent>
       </Alert>
@@ -414,9 +440,11 @@ export function StaffClassroomEventManager({
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-3">
         <div>
-          <CardTitle>Очное занятие</CardTitle>
+          <CardTitle>
+            <Trans>Очное занятие</Trans>
+          </CardTitle>
           <p className="mt-1 text-caption text-muted-foreground">
-            Выберите дату, время и конкретные занятия участвующих групп.
+            <Trans>Выберите дату, время и конкретные занятия участвующих групп.</Trans>
           </p>
         </div>
         <Button
@@ -428,13 +456,13 @@ export function StaffClassroomEventManager({
           type="button"
           variant="outline"
         >
-          <Plus aria-hidden="true" /> Новое
+          <Plus aria-hidden="true" /> <Trans>Новое</Trans>
         </Button>
       </CardHeader>
       <CardContent className="grid gap-4">
         {catalog.data.events.length > 0 && !creating ? (
           <Label className="grid max-w-xl gap-1">
-            Событие
+            <Trans>Событие</Trans>
             <select
               className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
               onChange={(changeEvent) => onEventChange(changeEvent.target.value)}
@@ -448,7 +476,11 @@ export function StaffClassroomEventManager({
             </select>
           </Label>
         ) : null}
-        {selected ? <Badge variant="neutral">Версия {selected.version}</Badge> : null}
+        {selected ? (
+          <Badge variant="neutral">
+            <Trans>Версия {selected.version}</Trans>
+          </Badge>
+        ) : null}
         <EventEditor
           candidates={catalog.data.candidates}
           event={selected}
@@ -459,20 +491,24 @@ export function StaffClassroomEventManager({
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Очное занятие не сохранено</AlertTitle>
+              <AlertTitle>
+                <Trans>Очное занятие не сохранено</Trans>
+              </AlertTitle>
               <AlertDescription>{describeError(mutation.error)}</AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
         {selected && assignmentPlan.isPending ? (
           <p className="border-t border-border pt-4 text-small text-muted-foreground">
-            Загружаем распределение по аудиториям…
+            <Trans>Загружаем распределение по аудиториям…</Trans>
           </p>
         ) : null}
         {selected && assignmentPlan.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Не удалось загрузить распределение по аудиториям</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось загрузить распределение по аудиториям</Trans>
+              </AlertTitle>
               <AlertDescription>{describeError(assignmentPlan.error)}</AlertDescription>
             </AlertContent>
           </Alert>

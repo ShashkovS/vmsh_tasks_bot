@@ -1,5 +1,17 @@
 # Design-system status
 
+## Интернационализация, P5 — 24 сентября 2026, реализовано локально
+
+Course/schedule, rooms, weekly oral windows, news и banners Staff chrome
+переведён через Lingui; live route аудиторий получил отдельный shell, поэтому
+его heading, tabs и empty state также доступны на English. Авторские тексты,
+имена и интеграционные значения сохранены данными. Frontend/backend P5 scopes
+и каталоги complete: 121 backend translation, i18n gate, unit 903/903 и
+focused Python 81/81 прошли. English i18n E2E 24/24, classrooms 9/9 и oral
+windows 3/3 прошли в Chromium, WebKit и Firefox. P4 → P5 initial JS максимум
++5.5 KB, cold/warm FCP не ухудшился; детали —
+[i18n-performance-report.md](../i18n-performance-report.md).
+
 ## Интернационализация, P4 — 24 сентября 2026, реализовано локально
 
 Review, history/reactions, live marking, results, oral results, statistics и

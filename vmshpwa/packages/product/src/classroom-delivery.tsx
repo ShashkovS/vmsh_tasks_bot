@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { BellRing, CheckCircle2, CircleAlert, MessageCircle, RefreshCw, Send } from 'lucide-react'
 import { useId, useState } from 'react'
 
@@ -34,13 +36,27 @@ export interface ClassroomDeliveryPanelProps {
 }
 
 const deliveryCounterLabels = {
-  selected: 'выбрано',
-  eligible: 'доступно',
-  suppressed: 'исключено',
-  queued: 'в очереди',
-  attempted: 'начато',
-  succeeded: 'успешно',
-  failed: 'ошибок',
+  get selected() {
+    return t`выбрано`
+  },
+  get eligible() {
+    return t`доступно`
+  },
+  get suppressed() {
+    return t`исключено`
+  },
+  get queued() {
+    return t`в очереди`
+  },
+  get attempted() {
+    return t`начато`
+  },
+  get succeeded() {
+    return t`успешно`
+  },
+  get failed() {
+    return t`ошибок`
+  },
 } as const
 
 function isPartialRecipient(
@@ -58,11 +74,11 @@ function channelResultLabel(
 ) {
   const name = channel === 'pwa' ? 'PWA' : 'Telegram'
   const stateLabel = {
-    not_requested: 'не выбран',
-    queued: 'в очереди',
-    sent: 'доставлено',
-    suppressed: 'недоступно',
-    failed: 'ошибка',
+    not_requested: t`не выбран`,
+    queued: t`в очереди`,
+    sent: t`доставлено`,
+    suppressed: t`недоступно`,
+    failed: t`ошибка`,
   }[state]
   return `${name}: ${stateLabel}`
 }
@@ -78,20 +94,28 @@ function DeliveryReport({ batch }: { batch: ClassroomDeliveryBatch }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant={batch.state === 'completed_with_errors' ? 'danger' : 'success'}>
           {batch.state === 'queued'
-            ? 'Рассылка выполняется'
+            ? t`Рассылка выполняется`
             : batch.state === 'completed_with_errors'
-              ? 'Завершено с ошибками'
-              : 'Рассылка завершена'}
+              ? t`Завершено с ошибками`
+              : t`Рассылка завершена`}
         </Badge>
         <span className="text-caption text-muted-foreground">
-          План v{batch.planVersion} · {batch.recipientCount} получателей
+          <Trans>
+            План v{batch.planVersion} · {batch.recipientCount} получателей
+          </Trans>
         </span>
       </div>
-      <div className="flex flex-wrap gap-1.5" aria-label="Общий результат доставки">
-        <Badge variant="success">Получили хотя бы одно: {batch.deliveryReport.deliveredAny}</Badge>
-        <Badge variant="outline">Получили всё: {batch.deliveryReport.deliveredAll}</Badge>
+      <div className="flex flex-wrap gap-1.5" aria-label={t`Общий результат доставки`}>
+        <Badge variant="success">
+          <Trans>Получили хотя бы одно: {batch.deliveryReport.deliveredAny}</Trans>
+        </Badge>
+        <Badge variant="outline">
+          <Trans>Получили всё: {batch.deliveryReport.deliveredAll}</Trans>
+        </Badge>
         {batch.deliveryReport.partial ? (
-          <Badge variant="warning">Частично: {batch.deliveryReport.partial}</Badge>
+          <Badge variant="warning">
+            <Trans>Частично: {batch.deliveryReport.partial}</Trans>
+          </Badge>
         ) : null}
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
@@ -124,15 +148,17 @@ function DeliveryReport({ batch }: { batch: ClassroomDeliveryBatch }) {
       {partialRecipients.length ? (
         <details className="rounded-md border border-border bg-surface-subtle p-2.5">
           <summary className="cursor-pointer text-small font-medium text-foreground">
-            Частично доставлено ({partialRecipients.length})
+            <Trans>Частично доставлено ({partialRecipients.length})</Trans>
           </summary>
           <ul className="mt-2 divide-y divide-border" data-testid="partial-recipient-list">
             {partialRecipients.map((recipient) => (
               <li className="space-y-0.5 py-1.5 text-caption" key={recipient.studentPublicId}>
                 <p className="font-medium text-foreground">{recipient.studentName}</p>
                 <p className="text-muted-foreground">
-                  {recipient.courseName} · {recipient.groupName} · аудитория{' '}
-                  {recipient.classroomName}
+                  <Trans>
+                    {recipient.courseName} · {recipient.groupName} · аудитория{' '}
+                    {recipient.classroomName}
+                  </Trans>
                 </p>
                 <p className="text-muted-foreground">
                   {batch.channels
@@ -148,10 +174,14 @@ function DeliveryReport({ batch }: { batch: ClassroomDeliveryBatch }) {
         <Alert role="alert" tone="danger">
           <CircleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Не всем удалось отправить</AlertTitle>
+            <AlertTitle>
+              <Trans>Не всем удалось отправить</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Повтор затронет только неуспешные пары «школьник — канал» и не продублирует уже
-              доставленные сообщения.
+              <Trans>
+                Повтор затронет только неуспешные пары «школьник — канал» и не продублирует уже
+                доставленные сообщения.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -190,23 +220,35 @@ export function ClassroomDeliveryPanel({
     >
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-label font-semibold text-foreground">Разослать аудитории</h3>
+          <h3 className="text-label font-semibold text-foreground">
+            <Trans>Разослать аудитории</Trans>
+          </h3>
           <p className="text-caption text-muted-foreground">
-            Отдельное действие после подтверждения плана. Черновые перестановки никому не
-            отправляются.
+            <Trans>
+              Отдельное действие после подтверждения плана. Черновые перестановки никому не
+              отправляются.
+            </Trans>
           </p>
         </div>
-        {batch ? <Badge variant="outline">Последняя версия: v{batch.planVersion}</Badge> : null}
+        {batch ? (
+          <Badge variant="outline">
+            <Trans>Последняя версия: v{batch.planVersion}</Trans>
+          </Badge>
+        ) : null}
       </header>
 
       {changedAfterSend ? (
         <Alert role="status" tone="warning">
           <CircleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>После рассылки назначения изменились</AlertTitle>
+            <AlertTitle>
+              <Trans>После рассылки назначения изменились</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Новые аудитории ещё не отправлены. Подготовьте новый предпросмотр и запустите рассылку
-              явно.
+              <Trans>
+                Новые аудитории ещё не отправлены. Подготовьте новый предпросмотр и запустите
+                рассылку явно.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -214,7 +256,9 @@ export function ClassroomDeliveryPanel({
       {error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Рассылка не выполнена</AlertTitle>
+            <AlertTitle>
+              <Trans>Рассылка не выполнена</Trans>
+            </AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </AlertContent>
         </Alert>
@@ -225,18 +269,24 @@ export function ClassroomDeliveryPanel({
       {preview ? (
         <div className="space-y-3">
           <Separator />
-          <div className="flex flex-wrap gap-1.5" aria-label="Сводка предпросмотра">
-            <Badge variant="neutral">Получателей: {preview.recipientCount}</Badge>
+          <div className="flex flex-wrap gap-1.5" aria-label={t`Сводка предпросмотра`}>
+            <Badge variant="neutral">
+              <Trans>Получателей: {preview.recipientCount}</Trans>
+            </Badge>
             <Badge variant={preview.changedCount ? 'warning' : 'outline'}>
-              Изменились: {preview.changedCount}
+              <Trans>Изменились: {preview.changedCount}</Trans>
             </Badge>
             {preview.telegramUnavailableCount ? (
-              <Badge variant="danger">Без Telegram: {preview.telegramUnavailableCount}</Badge>
+              <Badge variant="danger">
+                <Trans>Без Telegram: {preview.telegramUnavailableCount}</Trans>
+              </Badge>
             ) : null}
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-small font-medium text-foreground">Куда отправить</legend>
+            <legend className="text-small font-medium text-foreground">
+              <Trans>Куда отправить</Trans>
+            </legend>
             <Label
               className="flex items-start gap-2 rounded-md border border-border p-2.5"
               htmlFor={pwaId}
@@ -247,10 +297,12 @@ export function ClassroomDeliveryPanel({
                 onCheckedChange={(checked) => setPwa(checked === true)}
               />
               <span>
-                <span className="block text-small font-medium text-foreground">PWA</span>
-                <span className="block text-caption text-muted-foreground">
-                  Объявление в кабинете школьника. Родителю уведомление не отправляется.
-                </span>
+                <Trans>
+                  <span className="block text-small font-medium text-foreground">PWA</span>
+                  <span className="block text-caption text-muted-foreground">
+                    Объявление в кабинете школьника. Родителю уведомление не отправляется.
+                  </span>
+                </Trans>
               </span>
             </Label>
             <Label
@@ -263,17 +315,19 @@ export function ClassroomDeliveryPanel({
                 onCheckedChange={(checked) => setTelegram(checked === true)}
               />
               <span>
-                <span className="block text-small font-medium text-foreground">Telegram</span>
-                <span className="block text-caption text-muted-foreground">
-                  Личное сообщение школьнику от существующего бота.
-                </span>
+                <Trans>
+                  <span className="block text-small font-medium text-foreground">Telegram</span>
+                  <span className="block text-caption text-muted-foreground">
+                    Личное сообщение школьнику от существующего бота.
+                  </span>
+                </Trans>
               </span>
             </Label>
           </fieldset>
 
           <details className="rounded-md border border-border bg-surface-subtle p-2.5">
             <summary className="cursor-pointer text-small font-medium text-foreground">
-              Проверить получателей ({preview.recipientCount})
+              <Trans>Проверить получателей ({preview.recipientCount})</Trans>
             </summary>
             <ul className="mt-2 divide-y divide-border">
               {preview.recipients.map((recipient) => (
@@ -284,7 +338,7 @@ export function ClassroomDeliveryPanel({
                   <span className="font-medium text-foreground">{recipient.studentName}</span>
                   <span className="text-muted-foreground">
                     {recipient.courseName} · {recipient.groupName} · {recipient.classroomName}
-                    {recipient.changed ? ' · изменено' : ''}
+                    {recipient.changed ? t` · изменено` : ''}
                   </span>
                 </li>
               ))}
@@ -298,7 +352,7 @@ export function ClassroomDeliveryPanel({
             type="button"
           >
             <Send aria-hidden="true" />
-            {pending ? 'Запускаем…' : 'Разослать аудитории'}
+            {pending ? t`Запускаем…` : t`Разослать аудитории`}
           </Button>
         </div>
       ) : (
@@ -311,7 +365,7 @@ export function ClassroomDeliveryPanel({
             ) : (
               <Send aria-hidden="true" />
             )}
-            {pending ? 'Готовим…' : 'Подготовить предпросмотр'}
+            {pending ? t`Готовим…` : t`Подготовить предпросмотр`}
           </Button>
         </div>
       )}
@@ -325,7 +379,7 @@ export function ClassroomDeliveryPanel({
           variant="outline"
         >
           <RefreshCw aria-hidden="true" />
-          Повторить только ошибки
+          <Trans>Повторить только ошибки</Trans>
         </Button>
       ) : null}
     </section>

@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { OralWeeklyDraft } from './oral-weekly-draft'
@@ -49,7 +52,7 @@ function newDraft(): OralWindowDraft {
     sequenceNumber: '1',
     opensAt: localInputTime(opensAt),
     closesAt: localInputTime(new Date(opensAt.getTime() + 2 * 60 * 60_000)),
-    joinLabel: 'Подключиться к Zoom',
+    joinLabel: t`Подключиться к Zoom`,
     joinUrl: '',
     joinCode: '',
   }
@@ -114,7 +117,7 @@ function draftFromWindow(window: StaffOralWindow): OralWindowDraft {
 }
 
 function dateLabel(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -196,7 +199,7 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
 
   if (!allowed) {
     return (
-      <PageLayout title="Устный приём" width="wide">
+      <PageLayout title={t`Устный приём`} width="wide">
         <PageStatePanel state="forbidden" />
       </PageLayout>
     )
@@ -216,15 +219,15 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
       setValidationError(null)
       mutation.mutate({ kind: 'save', input })
     } catch {
-      setValidationError('Проверьте номер, время, подпись и HTTPS-ссылку.')
+      setValidationError(t`Проверьте номер, время, подпись и HTTPS-ссылку.`)
     }
   }
 
   return (
     <PageLayout
-      description="Общее окно связано со всеми выбранными группами. Изменения времени, ссылки и отмена применяются ко всем этим группам."
-      eyebrow={`Групповое занятие ${groupLessonId}`}
-      title="Устный приём"
+      description={t`Общее окно связано со всеми выбранными группами. Изменения времени, ссылки и отмена применяются ко всем этим группам.`}
+      eyebrow={t`Групповое занятие ${groupLessonId}`}
+      title={t`Устный приём`}
       width="wide"
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(28rem,1.2fr)]">
@@ -245,7 +248,7 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
             <CardContent className="pt-4">
               <form className="space-y-3" onSubmit={save}>
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="font-semibold">{editing ? 'Изменить окно' : 'Новое окно'}</h2>
+                  <h2 className="font-semibold">{editing ? t`Изменить окно` : t`Новое окно`}</h2>
                   {editing ? (
                     <Button
                       onClick={() => {
@@ -256,13 +259,15 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                       type="button"
                       variant="ghost"
                     >
-                      Отмена
+                      <Trans>Отмена</Trans>
                     </Button>
                   ) : null}
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-1">
-                    <Label htmlFor="oral-sequence">Номер</Label>
+                    <Label htmlFor="oral-sequence">
+                      <Trans>Номер</Trans>
+                    </Label>
                     <Input
                       id="oral-sequence"
                       min="1"
@@ -274,7 +279,9 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="oral-opens">Открывается</Label>
+                    <Label htmlFor="oral-opens">
+                      <Trans>Открывается</Trans>
+                    </Label>
                     <Input
                       id="oral-opens"
                       onChange={(event) =>
@@ -285,7 +292,9 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="oral-closes">Закрывается</Label>
+                    <Label htmlFor="oral-closes">
+                      <Trans>Закрывается</Trans>
+                    </Label>
                     <Input
                       id="oral-closes"
                       onChange={(event) =>
@@ -297,7 +306,9 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="oral-label">Подпись кнопки</Label>
+                  <Label htmlFor="oral-label">
+                    <Trans>Подпись кнопки</Trans>
+                  </Label>
                   <Input
                     id="oral-label"
                     onChange={(event) =>
@@ -307,7 +318,9 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="oral-url">HTTPS-ссылка</Label>
+                  <Label htmlFor="oral-url">
+                    <Trans>HTTPS-ссылка</Trans>
+                  </Label>
                   <Input
                     id="oral-url"
                     onChange={(event) =>
@@ -319,7 +332,9 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="oral-code">Код, если нужен</Label>
+                  <Label htmlFor="oral-code">
+                    <Trans>Код, если нужен</Trans>
+                  </Label>
                   <Input
                     id="oral-code"
                     onChange={(event) =>
@@ -329,7 +344,7 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                   />
                 </div>
                 <p className="text-caption text-muted-foreground">
-                  Черновик формы сохраняется на этом устройстве автоматически.
+                  <Trans>Черновик формы сохраняется на этом устройстве автоматически.</Trans>
                 </p>
                 {validationError ? (
                   <p className="text-small text-destructive" role="alert">
@@ -340,24 +355,26 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                   <p className="text-small text-destructive" role="alert">
                     {mutation.error instanceof ApiResponseError
                       ? mutation.error.message
-                      : 'Не удалось сохранить окно.'}
+                      : t`Не удалось сохранить окно.`}
                   </p>
                 ) : null}
                 <Button disabled={mutation.isPending} type="submit">
-                  {mutation.isPending ? 'Сохраняем…' : editing ? 'Сохранить' : 'Добавить окно'}
+                  {mutation.isPending ? t`Сохраняем…` : editing ? t`Сохранить` : t`Добавить окно`}
                 </Button>
               </form>
             </CardContent>
           </Card>
         )}
 
-        <section aria-label="Настроенные окна" className="space-y-2">
+        <section aria-label={t`Настроенные окна`} className="space-y-2">
           {query.isPending ? <PageStatePanel state="loading" /> : null}
           {query.error ? <PageStatePanel state="error" /> : null}
           {query.data?.items.length === 0 ? (
             <Alert tone="info">
               <AlertContent>
-                <AlertDescription>Для занятия ещё нет окон устного приёма.</AlertDescription>
+                <AlertDescription>
+                  <Trans>Для занятия ещё нет окон устного приёма.</Trans>
+                </AlertDescription>
               </AlertContent>
             </Alert>
           ) : null}
@@ -366,13 +383,13 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
               <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium">
-                    Окно {window.sequenceNumber} ·{' '}
+                    <Trans>Окно {window.sequenceNumber} · </Trans>
                     {
                       {
-                        open: 'открыто',
-                        upcoming: 'скоро',
-                        closed: 'завершено',
-                        cancelled: 'отменено',
+                        open: t`открыто`,
+                        upcoming: t`скоро`,
+                        closed: t`завершено`,
+                        cancelled: t`отменено`,
                       }[window.state]
                     }
                   </p>
@@ -394,7 +411,7 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                     onClick={() => {
                       if (
                         !globalThis.confirm(
-                          'Открыть копию окна на следующий день? Текущий черновик создания будет заменён.',
+                          t`Открыть копию окна на следующий день? Текущий черновик создания будет заменён.`,
                         )
                       )
                         return
@@ -402,7 +419,7 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                       setClone({ key: crypto.randomUUID(), window })
                     }}
                   >
-                    Клонировать
+                    <Trans>Клонировать</Trans>
                   </Button>
                   <Button
                     onClick={() => {
@@ -412,14 +429,14 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                     size="sm"
                     variant="outline"
                   >
-                    Изменить
+                    <Trans>Изменить</Trans>
                   </Button>
                   {window.status === 'active' ? (
                     <Button
                       onClick={() => {
                         if (
                           globalThis.confirm(
-                            `Отменить окно для всех его групп: ${window.groups?.map((group) => group.groupName).join(', ') || 'текущая группа'}?`,
+                            t`Отменить окно для всех его групп: ${window.groups?.map((group) => group.groupName).join(', ') || t`текущая группа`}?`,
                           )
                         )
                           mutation.mutate({ kind: 'cancel', window })
@@ -427,7 +444,7 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                       size="sm"
                       variant="ghost"
                     >
-                      Отменить
+                      <Trans>Отменить</Trans>
                     </Button>
                   ) : null}
                 </fieldset>

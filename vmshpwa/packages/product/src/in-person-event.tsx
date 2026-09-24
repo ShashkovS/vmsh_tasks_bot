@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { CalendarDays, CopyCheck, MapPin, Users } from 'lucide-react'
 
 import {
@@ -77,12 +79,14 @@ export function InPersonEventComposer({
             {title}
           </h2>
           <p className="text-small text-muted-foreground">
-            Выберите конкретные занятия групп. Номера в одном событии могут различаться.
+            <Trans>
+              Выберите конкретные занятия групп. Номера в одном событии могут различаться.
+            </Trans>
           </p>
         </div>
         <Badge variant="info">
           {selected.length}{' '}
-          {plural(selected.length, 'группа участвует', 'группы участвуют', 'групп участвуют')}
+          {plural(selected.length, t`группа участвует`, t`группы участвуют`, t`групп участвуют`)}
         </Badge>
       </div>
 
@@ -92,13 +96,15 @@ export function InPersonEventComposer({
             <CardHeader className="gap-2">
               <div className="flex items-start gap-2">
                 <Checkbox
-                  aria-label={`Включить ${groupLesson.course.name}, ${groupLesson.group.name}`}
+                  aria-label={t`Включить ${groupLesson.course.name}, ${groupLesson.group.name}`}
                   checked={groupLesson.selected}
                   onCheckedChange={(checked) => onToggle?.(groupLesson.id, checked === true)}
                 />
                 <div className="min-w-0">
                   <p className="text-caption text-muted-foreground">
-                    {groupLesson.course.name} · занятие {groupLesson.lessonNumber}
+                    <Trans>
+                      {groupLesson.course.name} · занятие {groupLesson.lessonNumber}
+                    </Trans>
                   </p>
                   <CardTitle>
                     <LevelChip level={groupLesson.group} />
@@ -109,12 +115,14 @@ export function InPersonEventComposer({
             <CardContent className="grid gap-2 text-small text-muted-foreground sm:grid-cols-3">
               <p className="inline-flex items-center gap-1.5">
                 <Users aria-hidden="true" className="size-4" />
-                {groupLesson.inPersonCount} очно
+                <Trans>{groupLesson.inPersonCount} очно</Trans>
               </p>
-              <p>{groupLesson.assignedCount} уже назначены</p>
+              <p>
+                <Trans>{groupLesson.assignedCount} уже назначены</Trans>
+              </p>
               <p className="inline-flex items-center gap-1.5">
                 <MapPin aria-hidden="true" className="size-4" />
-                {groupLesson.inheritedRooms.join(', ') || 'нет комнат'}
+                {groupLesson.inheritedRooms.join(', ') || t`нет комнат`}
               </p>
             </CardContent>
           </Card>
@@ -125,24 +133,28 @@ export function InPersonEventComposer({
         <CopyCheck aria-hidden="true" />
         <AlertContent>
           <AlertTitle>
-            Будет перенесено {inheritedRooms.size}{' '}
-            {plural(inheritedRooms.size, 'аудитория', 'аудитории', 'аудиторий')} и{' '}
-            {inheritedStudents}{' '}
-            {plural(inheritedStudents, 'назначение', 'назначения', 'назначений')}
+            <Trans>Будет перенесено {inheritedRooms.size} </Trans>
+            {plural(inheritedRooms.size, t`аудитория`, t`аудитории`, t`аудиторий`)}{' '}
+            <Trans>и {inheritedStudents} </Trans>
+            {plural(inheritedStudents, t`назначение`, t`назначения`, t`назначений`)}
           </AlertTitle>
           <AlertDescription>
-            Новый черновик полностью повторит последний подтверждённый план выбранных групп.
-            Администратор скорректирует только изменения состава, режима или комнат.
+            <Trans>
+              Новый черновик полностью повторит последний подтверждённый план выбранных групп.
+              Администратор скорректирует только изменения состава, режима или комнат.
+            </Trans>
           </AlertDescription>
         </AlertContent>
       </Alert>
 
       <div className="flex flex-wrap gap-2">
         <Button disabled={selected.length === 0} onClick={onContinue}>
-          Подготовить план аудиторий
+          <Trans>Подготовить план аудиторий</Trans>
         </Button>
         <p className="self-center text-caption text-muted-foreground">
-          Пересечение курсов показывает предупреждение, но не создаёт отдельный процесс.
+          <Trans>
+            Пересечение курсов показывает предупреждение, но не создаёт отдельный процесс.
+          </Trans>
         </p>
       </div>
     </section>

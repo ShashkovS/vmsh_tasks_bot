@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -176,7 +178,7 @@ export function StaffNewsPage({
   } else if (query.error) {
     content = (
       <PageStatePanel
-        actionLabel="Повторить"
+        actionLabel={t`Повторить`}
         onAction={() => void query.refetch()}
         state={
           query.error instanceof ApiResponseError && query.error.status === 403
@@ -248,47 +250,61 @@ export function StaffNewsPage({
       actions={
         <div className="flex flex-wrap items-end gap-2">
           <Label className="grid gap-1 text-caption">
-            Состояние
+            <Trans>Состояние</Trans>
             <select
               className="min-h-9 rounded-md border border-input bg-surface px-3 text-small"
               onChange={(event) => onStateChange(event.target.value as StaffNewsVisibilityFilter)}
               value={state}
             >
-              <option value="all">Все</option>
-              <option value="visible">В ленте</option>
-              <option value="manual_hidden">Скрыты в PWA</option>
-              <option value="source_deleted">Удалены в Telegram</option>
+              <option value="all">
+                <Trans>Все</Trans>
+              </option>
+              <option value="visible">
+                <Trans>В ленте</Trans>
+              </option>
+              <option value="manual_hidden">
+                <Trans>Скрыты в PWA</Trans>
+              </option>
+              <option value="source_deleted">
+                <Trans>Удалены в Telegram</Trans>
+              </option>
             </select>
           </Label>
         </div>
       }
-      description="Локальные копии Telegram-постов. Скрытие влияет только на PWA и не меняет сообщение в Telegram."
-      title="Новости"
+      description={t`Локальные копии Telegram-постов. Скрытие влияет только на PWA и не меняет сообщение в Telegram.`}
+      title={t`Новости`}
       width="wide"
     >
       <div className="space-y-6">
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Изменение не сохранено</AlertTitle>
+              <AlertTitle>
+                <Trans>Изменение не сохранено</Trans>
+              </AlertTitle>
               <AlertDescription>
                 {mutation.error instanceof ApiResponseError
                   ? mutation.error.message
-                  : 'Проверьте соединение и повторите попытку.'}
+                  : t`Проверьте соединение и повторите попытку.`}
               </AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
         <PageSection
-          description="Публикация появится в ленте выбранного курса или группы в указанное время. Telegram не изменяется."
-          title="Новая публикация в PWA"
+          description={t`Публикация появится в ленте выбранного курса или группы в указанное время. Telegram не изменяется.`}
+          title={t`Новая публикация в PWA`}
         >
           {catalog.isPending ? <PageStatePanel state="loading" /> : null}
           {catalog.error ? (
             <Alert role="alert" tone="danger">
               <AlertContent>
-                <AlertTitle>Не удалось загрузить курсы</AlertTitle>
-                <AlertDescription>Обновите страницу и повторите попытку.</AlertDescription>
+                <AlertTitle>
+                  <Trans>Не удалось загрузить курсы</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>Обновите страницу и повторите попытку.</Trans>
+                </AlertDescription>
               </AlertContent>
             </Alert>
           ) : null}
@@ -323,7 +339,7 @@ export function StaffNewsPage({
             </Card>
           ) : null}
         </PageSection>
-        <PageSection title="Новости">{content}</PageSection>
+        <PageSection title={t`Новости`}>{content}</PageSection>
         <Dialog
           onOpenChange={(open) => {
             if (!open && !mutation.isPending) setEditingItem(null)
@@ -334,21 +350,21 @@ export function StaffNewsPage({
             <DialogHeader>
               <DialogTitle>
                 {editingItem?.isScheduled
-                  ? 'Изменить запланированную публикацию'
-                  : 'Исправить опубликованную новость'}
+                  ? t`Изменить запланированную публикацию`
+                  : t`Исправить опубликованную новость`}
               </DialogTitle>
               <DialogDescription>
                 {editingItem?.isScheduled
-                  ? 'Текст и время можно изменить, пока публикация ещё не появилась в ленте. Получатели и Telegram не меняются.'
-                  : 'Исправление появится в ленте с пометкой «Обновлено». Повторное уведомление не отправится; время и получатели не меняются.'}
+                  ? t`Текст и время можно изменить, пока публикация ещё не появилась в ленте. Получатели и Telegram не меняются.`
+                  : t`Исправление появится в ленте с пометкой «Обновлено». Повторное уведомление не отправится; время и получатели не меняются.`}
               </DialogDescription>
             </DialogHeader>
             {catalog.isPending ? <PageStatePanel state="loading" /> : null}
             {catalog.isError ? (
               <PageStatePanel
-                description="Обновите данные и попробуйте открыть редактор ещё раз."
+                description={t`Обновите данные и попробуйте открыть редактор ещё раз.`}
                 state="error"
-                title="Не удалось загрузить список получателей"
+                title={t`Не удалось загрузить список получателей`}
               />
             ) : null}
             {catalog.data && editingItem ? (
@@ -385,7 +401,7 @@ export function StaffNewsPage({
                 }}
                 pending={mutation.isPending && mutation.variables.kind === 'edit-local'}
                 publishedAtDisabled={!editingItem.isScheduled}
-                submitLabel="Сохранить изменения"
+                submitLabel={t`Сохранить изменения`}
                 targetDisabled={!editingItem.isScheduled}
               />
             ) : null}
@@ -404,12 +420,14 @@ export function StaffNewsPage({
             <DialogHeader>
               <DialogTitle>
                 {sourceCommand?.state === 'deleted'
-                  ? 'Пост удалён в Telegram?'
-                  : 'Пост снова доступен?'}
+                  ? t`Пост удалён в Telegram?`
+                  : t`Пост снова доступен?`}
               </DialogTitle>
               <DialogDescription>
-                Эта ручная сверка меняет PWA-ленту и сохраняется в журнале. Само сообщение в
-                Telegram не изменяется.
+                <Trans>
+                  Эта ручная сверка меняет PWA-ленту и сохраняется в журнале. Само сообщение в
+                  Telegram не изменяется.
+                </Trans>
               </DialogDescription>
             </DialogHeader>
             <form
@@ -426,12 +444,12 @@ export function StaffNewsPage({
               }}
             >
               <Label className="grid gap-1.5" htmlFor="news-source-reason">
-                Краткая причина
+                <Trans>Краткая причина</Trans>
                 <Textarea
                   id="news-source-reason"
                   maxLength={500}
                   onChange={(event) => setSourceReason(event.target.value)}
-                  placeholder="Например: проверено в канале, пост отсутствует"
+                  placeholder={t`Например: проверено в канале, пост отсутствует`}
                   rows={3}
                   value={sourceReason}
                 />
@@ -446,10 +464,10 @@ export function StaffNewsPage({
                   type="button"
                   variant="outline"
                 >
-                  Отмена
+                  <Trans>Отмена</Trans>
                 </Button>
                 <Button disabled={mutation.isPending || sourceReason.trim() === ''} type="submit">
-                  Сохранить сверку
+                  <Trans>Сохранить сверку</Trans>
                 </Button>
               </DialogFooter>
             </form>

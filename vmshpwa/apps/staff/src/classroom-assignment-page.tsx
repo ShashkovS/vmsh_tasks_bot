@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDate, formatDateTime } from '@vmsh/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
@@ -119,8 +122,8 @@ function AssignmentDelivery({
 
 function describeError(error: Error): string {
   if (error instanceof ApiResponseError) return error.message
-  if (error instanceof ClassroomNetworkError) return 'Проверьте соединение и повторите попытку.'
-  return 'Обновите страницу и повторите попытку.'
+  if (error instanceof ClassroomNetworkError) return t`Проверьте соединение и повторите попытку.`
+  return t`Обновите страницу и повторите попытку.`
 }
 
 interface SavedAssignmentDraft {
@@ -395,8 +398,8 @@ function AssignmentEditor({
       ? [
           {
             id: 'not-calculated',
-            title: 'План ещё не рассчитан',
-            description: 'Сначала создайте предпросмотр распределения школьников.',
+            title: t`План ещё не рассчитан`,
+            description: t`Сначала создайте предпросмотр распределения школьников.`,
             blocking: true,
           },
         ]
@@ -406,8 +409,8 @@ function AssignmentEditor({
       ? [
           {
             id: 'confirmed-room-unavailable',
-            title: 'Подтверждённая аудитория больше недоступна',
-            description: 'Пересчитайте план и подтвердите новое распределение.',
+            title: t`Подтверждённая аудитория больше недоступна`,
+            description: t`Пересчитайте план и подтвердите новое распределение.`,
             blocking: true,
           },
         ]
@@ -419,22 +422,30 @@ function AssignmentEditor({
       {storageFailed ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Локальный черновик не сохранён</AlertTitle>
-            <AlertDescription>Не закрывайте страницу до подтверждения плана.</AlertDescription>
+            <AlertTitle>
+              <Trans>Локальный черновик не сохранён</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>Не закрывайте страницу до подтверждения плана.</Trans>
+            </AlertDescription>
           </AlertContent>
         </Alert>
       ) : null}
       {groupChangeRequested ? (
         <Alert role="status" tone="warning">
           <AlertContent>
-            <AlertTitle>Сменить учебную группу школьника?</AlertTitle>
+            <AlertTitle>
+              <Trans>Сменить учебную группу школьника?</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Вместе с аудиторией изменится активная группа в этом курсе. Изменение попадёт в
-              историю после подтверждения всего плана.
+              <Trans>
+                Вместе с аудиторией изменится активная группа в этом курсе. Изменение попадёт в
+                историю после подтверждения всего плана.
+              </Trans>
             </AlertDescription>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button onClick={confirmGroupChange} size="sm" type="button" variant="outline">
-                Сменить группу и аудиторию
+                <Trans>Сменить группу и аудиторию</Trans>
               </Button>
               <Button
                 onClick={() => setGroupChangeRequested(null)}
@@ -442,7 +453,7 @@ function AssignmentEditor({
                 type="button"
                 variant="ghost"
               >
-                Отмена
+                <Trans>Отмена</Trans>
               </Button>
             </div>
           </AlertContent>
@@ -451,7 +462,9 @@ function AssignmentEditor({
       {mutation.error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>План не сохранён</AlertTitle>
+            <AlertTitle>
+              <Trans>План не сохранён</Trans>
+            </AlertTitle>
             <AlertDescription>{describeError(mutation.error)}</AlertDescription>
           </AlertContent>
         </Alert>
@@ -464,13 +477,17 @@ function AssignmentEditor({
       >
         <DialogContent className="max-h-[85svh] overflow-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>История аудиторий: {historyStudent?.name}</DialogTitle>
+            <DialogTitle>
+              <Trans>История аудиторий: {historyStudent?.name}</Trans>
+            </DialogTitle>
             <DialogDescription>
-              Последнее подтверждённое распределение каждого очного занятия.
+              <Trans>Последнее подтверждённое распределение каждого очного занятия.</Trans>
             </DialogDescription>
           </DialogHeader>
           {historyQuery.isPending ? (
-            <p className="text-small text-muted-foreground">Загружаем историю…</p>
+            <p className="text-small text-muted-foreground">
+              <Trans>Загружаем историю…</Trans>
+            </p>
           ) : historyQuery.error ? (
             <p className="text-small text-status-danger-foreground">
               {describeError(historyQuery.error)}
@@ -486,21 +503,22 @@ function AssignmentEditor({
                     {item.eventName} · {item.classroomName}
                   </span>
                   <span className="text-muted-foreground">
-                    {item.courseName} · {item.groupName} ·{' '}
-                    {new Date(item.startsAt).toLocaleDateString('ru-RU')}
+                    {item.courseName} · {item.groupName} · {formatDate(new Date(item.startsAt))}
                   </span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-small text-muted-foreground">Подтверждённых назначений пока нет.</p>
+            <p className="text-small text-muted-foreground">
+              <Trans>Подтверждённых назначений пока нет.</Trans>
+            </p>
           )}
         </DialogContent>
       </Dialog>
       <ClassroomStudentPlanner
         groups={groups}
         incidents={incidents}
-        lessonLabel={`${plan.event.name} · ${new Date(plan.event.startsAt).toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'short' })}`}
+        lessonLabel={`${plan.event.name} · ${formatDateTime(new Date(plan.event.startsAt), { dateStyle: 'medium', timeStyle: 'short' })}`}
         onConfirm={() => mutation.mutate('confirm')}
         onMove={move}
         onRecalculate={() => mutation.mutate('recalculate')}
@@ -554,8 +572,8 @@ export function StaffClassroomAssignments({ eventPublicId }: { eventPublicId: st
         <AlertContent>
           <AlertTitle>
             {query.error instanceof ApiResponseError && query.error.status === 403
-              ? 'Недостаточно прав'
-              : 'Не удалось загрузить план'}
+              ? t`Недостаточно прав`
+              : t`Не удалось загрузить план`}
           </AlertTitle>
           <AlertDescription>{describeError(query.error)}</AlertDescription>
         </AlertContent>

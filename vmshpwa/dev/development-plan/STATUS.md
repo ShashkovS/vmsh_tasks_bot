@@ -1,5 +1,26 @@
 # Статус плана разработки
 
+## Интернационализация, P5 — 24 сентября 2026, реализовано локально
+
+Staff catalog/schedule, rooms and assignments, weekly oral windows, news,
+local publications и group banners доступны на английском. Новый production
+shell [`staff-classrooms-page.tsx`](../../apps/staff/src/staff-classrooms-page.tsx)
+покрывает заголовок, вкладки и empty state live-маршрута; Storybook fixture
+`pages.tsx` намеренно остаётся вне P5. Course/group/room names, codes, XLSX
+headers, assignment versions/IDs, Telegram bodies и authored publication text
+сохранены как данные. Добавлены P5 frontend/backend scopes, переведены 121
+backend message и новые Staff/Product PO entries.
+
+Прошли frontend unit 903/903, focused Python 81/81, lint, typecheck, build,
+frontend/backend i18n checks и diff check. English i18n E2E 24/24, classrooms
+9/9 и weekly oral windows 3/3 прошли в трёх браузерах. `news-notifications`
+после обновления двух stale UI expectations останавливается в несвязанном P8
+Student offline-cache fallback; P5 Staff news English smoke прошёл. P4 → P5:
+максимум +5.5 KB initial JS, cold/warm FCP не ухудшился. Global Python (7) и
+format (31) сохраняют известные pre-existing failures вне P5. [План и P6](24-i18n.md),
+[англоязычная процедура](24-i18n-execution-plan.md),
+[замеры](../i18n-performance-report.md).
+
 ## Интернационализация, P4 — 24 сентября 2026, реализовано локально
 
 Staff review queue/workspace, history/series/reactions, live marking, student

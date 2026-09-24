@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
@@ -29,8 +31,8 @@ type CatalogMutation =
 
 function describeClassroomError(error: Error): string {
   if (error instanceof ApiResponseError) return error.message
-  if (error instanceof ClassroomNetworkError) return 'Проверьте соединение и повторите попытку.'
-  return 'Обновите страницу и повторите попытку.'
+  if (error instanceof ClassroomNetworkError) return t`Проверьте соединение и повторите попытку.`
+  return t`Обновите страницу и повторите попытку.`
 }
 
 /** Real catalog tab for Phase 7; the other classroom tabs remain prototypes. */
@@ -109,10 +111,10 @@ export function StaffClassroomCatalog({
         <AlertContent>
           <AlertTitle>
             {catalog.error instanceof ApiResponseError && catalog.error.status === 403
-              ? 'Недостаточно прав'
+              ? t`Недостаточно прав`
               : catalog.error instanceof ClassroomNetworkError
-                ? 'Нет соединения'
-                : 'Не удалось загрузить каталог'}
+                ? t`Нет соединения`
+                : t`Не удалось загрузить каталог`}
           </AlertTitle>
           <AlertDescription>{describeClassroomError(catalog.error)}</AlertDescription>
         </AlertContent>
@@ -141,7 +143,9 @@ export function StaffClassroomCatalog({
       {mutation.error && !conflict ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Изменение не сохранено</AlertTitle>
+            <AlertTitle>
+              <Trans>Изменение не сохранено</Trans>
+            </AlertTitle>
             <AlertDescription>{describeClassroomError(mutation.error)}</AlertDescription>
           </AlertContent>
         </Alert>

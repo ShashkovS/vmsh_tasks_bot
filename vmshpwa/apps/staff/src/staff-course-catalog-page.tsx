@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState, type FormEvent } from 'react'
 
@@ -72,7 +74,7 @@ type Command =
 function errorMessage(error: Error): string {
   return error instanceof ApiResponseError
     ? error.message
-    : 'Проверьте соединение и повторите попытку.'
+    : t`Проверьте соединение и повторите попытку.`
 }
 
 function colorIndex(sortOrder: number, system: boolean): 0 | 1 | 2 | 3 | 4 {
@@ -99,7 +101,7 @@ function courseView(courses: AdminCourse[]): ManagedCourse[] {
       colorIndex: colorIndex(group.sortOrder, group.isSystem),
       status: group.status,
       activeStudents: group.activeStudents,
-      scheduleLabel: 'расписание группы',
+      scheduleLabel: t`расписание группы`,
     })),
   }))
 }
@@ -142,13 +144,15 @@ function SeasonEditor({
       onSubmit={submit}
     >
       <div className="sm:col-span-2">
-        <h2 className="font-medium">Новый сезон</h2>
+        <h2 className="font-medium">
+          <Trans>Новый сезон</Trans>
+        </h2>
         <p className="text-small text-muted-foreground">
-          Сезон станет активным сразу после создания.
+          <Trans>Сезон станет активным сразу после создания.</Trans>
         </p>
       </div>
       <Label className="grid gap-1">
-        Код
+        <Trans>Код</Trans>
         <Input
           disabled={saving}
           onChange={(event) => setDraft({ ...draft, code: event.target.value })}
@@ -157,7 +161,7 @@ function SeasonEditor({
         />
       </Label>
       <Label className="grid gap-1">
-        Название
+        <Trans>Название</Trans>
         <Input
           disabled={saving}
           onChange={(event) => setDraft({ ...draft, title: event.target.value })}
@@ -166,7 +170,7 @@ function SeasonEditor({
         />
       </Label>
       <Label className="grid gap-1">
-        Начало
+        <Trans>Начало</Trans>
         <Input
           disabled={saving}
           onChange={(event) => setDraft({ ...draft, startsOn: event.target.value })}
@@ -176,7 +180,7 @@ function SeasonEditor({
         />
       </Label>
       <Label className="grid gap-1">
-        Конец занятий
+        <Trans>Конец занятий</Trans>
         <Input
           disabled={saving}
           onChange={(event) => setDraft({ ...draft, endsOn: event.target.value })}
@@ -186,7 +190,7 @@ function SeasonEditor({
         />
       </Label>
       <Label className="grid gap-1">
-        Сессии действуют до
+        <Trans>Сессии действуют до</Trans>
         <Input
           disabled={saving}
           onChange={(event) => setDraft({ ...draft, sessionExpiresOn: event.target.value })}
@@ -200,11 +204,11 @@ function SeasonEditor({
       ) : null}
       <div className="flex gap-2 sm:col-span-2">
         <Button disabled={saving} type="submit">
-          {saving ? 'Создаём…' : 'Создать сезон'}
+          {saving ? t`Создаём…` : t`Создать сезон`}
         </Button>
         {onCancel ? (
           <Button disabled={saving} onClick={onCancel} type="button" variant="outline">
-            Отмена
+            <Trans>Отмена</Trans>
           </Button>
         ) : null}
       </div>
@@ -226,7 +230,7 @@ function CourseVerdictSettings({
   const [selected, setSelected] = useState<CourseVerdictMode | null>(null)
   const mutation = useMutation({
     mutationFn: (mode: CourseVerdictMode) => {
-      if (!query.data) throw new Error('Настройки курса ещё не загружены')
+      if (!query.data) throw new Error(t`Настройки курса ещё не загружены`)
       return client.updateCourseRuntimeSettings(course.courseId, query.data.settings.version, {
         schemaVersion: 1,
         values: { ...query.data.settings.values, verdictMode: mode },
@@ -244,20 +248,28 @@ function CourseVerdictSettings({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-body">{course.name}: вердикты письменных задач</CardTitle>
+        <CardTitle className="text-body">
+          <Trans>{course.name}: вердикты письменных задач</Trans>
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-wrap items-end gap-2 pt-0">
         <Label className="grid min-w-64 flex-1 gap-1 text-small">
-          Набор вердиктов
+          <Trans>Набор вердиктов</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={query.isPending || mutation.isPending}
             onChange={(event) => setSelected(event.target.value as CourseVerdictMode)}
             value={current ?? 'verdict_plus_minus_half'}
           >
-            <option value="verdict_plus_minus">+ и −</option>
-            <option value="verdict_plus_minus_half">+, +/2 и −</option>
-            <option value="verdict_plus_steps">Полная шкала: +, +., ±, +/2, ∓, −., −</option>
+            <option value="verdict_plus_minus">
+              <Trans>+ и −</Trans>
+            </option>
+            <option value="verdict_plus_minus_half">
+              <Trans>+, +/2 и −</Trans>
+            </option>
+            <option value="verdict_plus_steps">
+              <Trans>Полная шкала: +, +., ±, +/2, ∓, −., −</Trans>
+            </option>
           </select>
         </Label>
         <Button
@@ -267,10 +279,13 @@ function CourseVerdictSettings({
           onClick={() => selected && mutation.mutate(selected)}
           size="sm"
         >
-          {mutation.isPending ? 'Сохраняем…' : 'Сохранить шкалу'}
+          {mutation.isPending ? t`Сохраняем…` : t`Сохранить шкалу`}
         </Button>
         <p className="basis-full text-caption text-muted-foreground">
-          Нулевой результат означает, что школьник ничего не сдавал, и преподавателем не выбирается.
+          <Trans>
+            Нулевой результат означает, что школьник ничего не сдавал, и преподавателем не
+            выбирается.
+          </Trans>
         </p>
         {query.error || mutation.error ? (
           <p className="basis-full text-small text-status-error" role="alert">
@@ -350,7 +365,7 @@ export function StaffCourseCatalogPage() {
 
   if (catalog.isPending) {
     return (
-      <PageLayout title="Курсы и группы" width="wide">
+      <PageLayout title={t`Курсы и группы`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -361,8 +376,8 @@ export function StaffCourseCatalogPage() {
     if (seasonMissing) {
       return (
         <PageLayout
-          description="Сначала создайте учебный сезон, затем добавьте в него курсы и группы."
-          title="Курсы и группы"
+          description={t`Сначала создайте учебный сезон, затем добавьте в него курсы и группы.`}
+          title={t`Курсы и группы`}
           width="wide"
         >
           <SeasonEditor
@@ -374,9 +389,9 @@ export function StaffCourseCatalogPage() {
       )
     }
     return (
-      <PageLayout title="Курсы и группы" width="wide">
+      <PageLayout title={t`Курсы и группы`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void catalog.refetch()}
           state={
             catalog.error instanceof ApiResponseError && catalog.error.status === 403
@@ -403,15 +418,15 @@ export function StaffCourseCatalogPage() {
 
   return (
     <PageLayout
-      description="Курс задаёт общий учебный контекст. Группы внутри него могут иметь собственные расписания и публикации."
+      description={t`Курс задаёт общий учебный контекст. Группы внутри него могут иметь собственные расписания и публикации.`}
       eyebrow={catalog.data.season.title}
-      title="Курсы и группы"
+      title={t`Курсы и группы`}
       width="wide"
     >
       <div className="space-y-4">
         <div className="flex justify-end">
           <Button onClick={() => setSeasonEditorOpen(true)} size="sm" variant="outline">
-            Добавить сезон
+            <Trans>Добавить сезон</Trans>
           </Button>
         </div>
         {seasonEditorOpen ? (
@@ -425,7 +440,9 @@ export function StaffCourseCatalogPage() {
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Изменение не сохранено</AlertTitle>
+              <AlertTitle>
+                <Trans>Изменение не сохранено</Trans>
+              </AlertTitle>
               <AlertDescription>{errorMessage(mutation.error)}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -437,8 +454,8 @@ export function StaffCourseCatalogPage() {
           onArchiveCourse={(courseId) => {
             const course = findCourse(courseId)
             if (!course || mutation.isPending) return
-            const action = course.status === 'archived' ? 'восстановить' : 'перенести в архив'
-            if (globalThis.confirm(`Вы уверены, что хотите ${action} курс «${course.name}»?`)) {
+            const action = course.status === 'archived' ? t`восстановить` : t`перенести в архив`
+            if (globalThis.confirm(t`Вы уверены, что хотите ${action} курс «${course.name}»?`)) {
               mutation.mutate({ kind: 'toggle-course', course })
             }
           }}

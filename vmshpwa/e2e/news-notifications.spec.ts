@@ -69,7 +69,7 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
     .getByRole('button', { name: 'Запланировать публикацию' })
     .locator('xpath=ancestor::form[1]')
   await expect(page.getByRole('dialog', { name: 'Новая публикация в PWA' })).toHaveCount(0)
-  await createForm.getByLabel('Кому показать').selectOption({ index: 1 })
+  await createForm.getByLabel('Показывать').selectOption({ index: 1 })
   await createForm.getByLabel('Markdown публикации').fill(originalText)
   await createForm.getByRole('button', { name: 'Сейчас' }).click()
   await expect(createForm.getByLabel('Опубликовать по московскому времени')).not.toHaveValue('')
@@ -126,7 +126,7 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
     .getByRole('button', { name: 'Запланировать публикацию' })
     .locator('xpath=ancestor::form[1]')
   await expect(page.getByRole('dialog', { name: 'Новая публикация в PWA' })).toHaveCount(0)
-  await createForm.getByLabel('Кому показать').selectOption({ index: 1 })
+  await createForm.getByLabel('Показывать').selectOption({ index: 1 })
   await createForm.getByLabel('Markdown публикации').fill(originalText)
   await createForm.getByLabel('Опубликовать по московскому времени').fill('2020-08-04T17:00')
   const createResponse = page.waitForResponse(
@@ -183,7 +183,7 @@ test('Phase 8: Family changes real notification preferences without individual r
     '/family/profile/notifications',
   )
   await expect(page.getByRole('heading', { name: 'Уведомления' })).toBeVisible()
-  await expect(page.getByRole('switch')).toHaveCount(6)
+  await expect(page.getByRole('switch')).toHaveCount(8)
   await expect(page.getByRole('switch', { name: 'Push: Итоги занятия' })).toBeVisible()
   await expect(page.getByText(/Отдельные push о каждой проверенной задаче/)).toBeVisible()
   await expect(page.getByRole('switch', { name: /Проверка/ })).toHaveCount(0)

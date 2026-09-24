@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { CircleHelp } from 'lucide-react'
 import { useId, useState } from 'react'
 
@@ -33,8 +35,8 @@ export interface BroadcastComposerProps {
 export function BroadcastComposer({
   audiencePresets,
   categories = [
-    { id: 'important', label: 'Важное' },
-    { id: 'news', label: 'Новости' },
+    { id: 'important', label: t`Важное` },
+    { id: 'news', label: t`Новости` },
   ],
   onDryRun,
   onSend,
@@ -63,7 +65,7 @@ export function BroadcastComposer({
     <div className={cn('max-w-lg space-y-4', className)}>
       <div className="space-y-1.5">
         <label className="block text-label font-medium text-foreground" htmlFor={audienceId}>
-          Кому
+          <Trans>Кому</Trans>
         </label>
         <select
           className={selectClass}
@@ -78,13 +80,15 @@ export function BroadcastComposer({
           ))}
         </select>
         <p className="text-caption text-muted-foreground" role="status">
-          Получат: <span className="font-num font-medium text-foreground">{count}</span>
+          <Trans>
+            Получат: <span className="font-num font-medium text-foreground">{count}</span>
+          </Trans>
         </p>
       </div>
 
       <div className="space-y-1.5">
         <label className="block text-label font-medium text-foreground" htmlFor={textId}>
-          Сообщение
+          <Trans>Сообщение</Trans>
         </label>
         <Textarea
           className="min-h-24"
@@ -98,7 +102,9 @@ export function BroadcastComposer({
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-label font-medium text-foreground">Куда доставить</legend>
+        <legend className="text-label font-medium text-foreground">
+          <Trans>Куда доставить</Trans>
+        </legend>
         <div className="flex flex-wrap gap-4">
           <span className="inline-flex items-center gap-2">
             <Checkbox
@@ -106,7 +112,9 @@ export function BroadcastComposer({
               id={pwaId}
               onCheckedChange={(value) => setPwa(Boolean(value))}
             />
-            <Label htmlFor={pwaId}>В приложении</Label>
+            <Label htmlFor={pwaId}>
+              <Trans>В приложении</Trans>
+            </Label>
           </span>
           <span className="inline-flex items-center gap-2">
             <Checkbox
@@ -121,7 +129,7 @@ export function BroadcastComposer({
 
       <div className="space-y-1.5">
         <label className="block text-label font-medium text-foreground" htmlFor={categoryId}>
-          Категория
+          <Trans>Категория</Trans>
         </label>
         <select
           className={selectClass}
@@ -143,12 +151,16 @@ export function BroadcastComposer({
           id={quietId}
           onCheckedChange={(value) => setQuiet(Boolean(value))}
         />
-        <Label htmlFor={quietId}>Уважать тихие часы</Label>
+        <Label htmlFor={quietId}>
+          <Trans>Уважать тихие часы</Trans>
+        </Label>
       </span>
 
       {confirming ? (
         <div className="space-y-2 rounded-md border border-border bg-surface-subtle p-3 text-small">
-          <p className="text-foreground">Отправить {count} получателям?</p>
+          <p className="text-foreground">
+            <Trans>Отправить {count} получателям?</Trans>
+          </p>
           <div className="flex gap-2">
             <Button
               onClick={() => {
@@ -157,20 +169,20 @@ export function BroadcastComposer({
               }}
               size="sm"
             >
-              Отправить
+              <Trans>Отправить</Trans>
             </Button>
             <Button onClick={() => setConfirming(false)} size="sm" variant="ghost">
-              Отмена
+              <Trans>Отмена</Trans>
             </Button>
           </div>
         </div>
       ) : (
         <div className="flex gap-2">
           <Button onClick={() => onDryRun?.(payload)} size="sm" variant="outline">
-            Пробный прогон
+            <Trans>Пробный прогон</Trans>
           </Button>
           <Button disabled={!canSend} onClick={() => setConfirming(true)} size="sm">
-            Отправить…
+            <Trans>Отправить…</Trans>
           </Button>
         </div>
       )}
@@ -221,7 +233,7 @@ export function SosQueue({ items, onOpen, className }: SosQueueProps) {
             <p className="line-clamp-2 text-small text-muted-foreground">{item.question}</p>
           </div>
           <Button onClick={() => onOpen?.(item.id)} size="xs" variant="outline">
-            {item.status === 'open' ? 'Ответить' : 'Открыть'}
+            {item.status === 'open' ? t`Ответить` : t`Открыть`}
           </Button>
         </li>
       ))}

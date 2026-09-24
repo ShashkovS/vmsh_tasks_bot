@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import type { AdminCourse, RichDocument } from '@vmsh/contracts'
 import { lazy, Suspense, useState } from 'react'
 
@@ -30,7 +32,7 @@ export function StaffLocalNewsComposer({
   pending = false,
   targetDisabled = false,
   publishedAtDisabled = false,
-  submitLabel = 'Запланировать публикацию',
+  submitLabel = t`Запланировать публикацию`,
   onChange,
   onImageUpload,
   onSubmit,
@@ -63,7 +65,7 @@ export function StaffLocalNewsComposer({
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Label className="grid gap-1.5" htmlFor="local-news-course">
-          Курс
+          <Trans>Курс</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={targetDisabled}
@@ -80,7 +82,7 @@ export function StaffLocalNewsComposer({
           </select>
         </Label>
         <Label className="grid gap-1.5" htmlFor="local-news-group">
-          Группа
+          <Trans>Группа</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={targetDisabled}
@@ -88,7 +90,9 @@ export function StaffLocalNewsComposer({
             onChange={(event) => onChange({ ...draft, groupId: event.target.value })}
             value={draft.groupId}
           >
-            <option value="">Все</option>
+            <option value="">
+              <Trans>Все</Trans>
+            </option>
             {selectedCourse?.groups
               .filter((group) => group.status === 'active')
               .map((group) => (
@@ -99,7 +103,7 @@ export function StaffLocalNewsComposer({
           </select>
         </Label>
         <Label className="grid gap-1.5" htmlFor="local-news-audience">
-          Показывать
+          <Trans>Показывать</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={targetDisabled}
@@ -112,13 +116,19 @@ export function StaffLocalNewsComposer({
             }
             value={draft.audience}
           >
-            <option value="both">Всем</option>
-            <option value="student">Только школьнику</option>
-            <option value="family">Только родителям</option>
+            <option value="both">
+              <Trans>Всем</Trans>
+            </option>
+            <option value="student">
+              <Trans>Только школьнику</Trans>
+            </option>
+            <option value="family">
+              <Trans>Только родителям</Trans>
+            </option>
           </select>
         </Label>
         <Label className="grid gap-1.5" htmlFor="local-news-attendance">
-          Очность
+          <Trans>Очность</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={targetDisabled}
@@ -131,18 +141,26 @@ export function StaffLocalNewsComposer({
             }
             value={draft.attendanceMode}
           >
-            <option value="all">Всем</option>
-            <option value="in_person">Только очные</option>
-            <option value="online">Только онлайн</option>
+            <option value="all">
+              <Trans>Всем</Trans>
+            </option>
+            <option value="in_person">
+              <Trans>Только очные</Trans>
+            </option>
+            <option value="online">
+              <Trans>Только онлайн</Trans>
+            </option>
           </select>
         </Label>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="local-news-editor">Текст публикации (Markdown)</Label>
+        <Label htmlFor="local-news-editor">
+          <Trans>Текст публикации (Markdown)</Trans>
+        </Label>
         <Suspense
           fallback={
             <div className="min-h-[22rem] rounded-md border border-border p-3 text-caption text-muted-foreground">
-              Загружаем редактор…
+              <Trans>Загружаем редактор…</Trans>
             </div>
           }
         >
@@ -159,8 +177,8 @@ export function StaffLocalNewsComposer({
         <div className="flex items-center justify-between gap-2">
           <Label htmlFor="local-news-published-at">
             {publishedAtDisabled
-              ? 'Опубликовано по московскому времени'
-              : 'Опубликовать по московскому времени'}
+              ? t`Опубликовано по московскому времени`
+              : t`Опубликовать по московскому времени`}
           </Label>
           {!publishedAtDisabled ? (
             <Button
@@ -169,15 +187,15 @@ export function StaffLocalNewsComposer({
               type="button"
               variant="outline"
             >
-              Сейчас
+              <Trans>Сейчас</Trans>
             </Button>
           ) : null}
         </div>
         <Input
           aria-label={
             publishedAtDisabled
-              ? 'Опубликовано по московскому времени'
-              : 'Опубликовать по московскому времени'
+              ? t`Опубликовано по московскому времени`
+              : t`Опубликовать по московскому времени`
           }
           disabled={publishedAtDisabled}
           id="local-news-published-at"
@@ -188,11 +206,13 @@ export function StaffLocalNewsComposer({
         />
       </div>
       <p className="text-caption text-muted-foreground">
-        Сохранение доступно только после строгой проверки Markdown. Внешние картинки копируются на
-        сервер при сохранении.
+        <Trans>
+          Сохранение доступно только после строгой проверки Markdown. Внешние картинки копируются на
+          сервер при сохранении.
+        </Trans>
       </p>
       <Button disabled={!valid || pending} type="submit">
-        {pending ? 'Сохраняем…' : submitLabel}
+        {pending ? t`Сохраняем…` : submitLabel}
       </Button>
     </form>
   )

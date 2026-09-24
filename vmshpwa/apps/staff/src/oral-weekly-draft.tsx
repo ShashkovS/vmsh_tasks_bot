@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -48,7 +50,7 @@ function blank(groupLessonId: string): Entry {
     groupLessonIds: [groupLessonId],
     opensAt: inputTime(start),
     closesAt: inputTime(new Date(start.getTime() + 7200000)),
-    joinLabel: 'Подключиться к Zoom',
+    joinLabel: t`Подключиться к Zoom`,
     joinUrl: '',
     joinCode: '',
   }
@@ -148,7 +150,7 @@ export function OralWeeklyDraft({
       setError(
         failure instanceof ApiResponseError
           ? failure.message
-          : 'Ответ сервера не получен. Повторите сохранение того же черновика — дубликатов не будет.',
+          : t`Ответ сервера не получен. Повторите сохранение того же черновика — дубликатов не будет.`,
       )
     },
   })
@@ -181,14 +183,14 @@ export function OralWeeklyDraft({
       mutation.mutate()
     } catch {
       setError(
-        'Проверьте даты, HTTPS-ссылку и группы. Должно быть выбрано хотя бы одно окно. Для безопасного повтора также требуется доступное хранилище браузера.',
+        t`Проверьте даты, HTTPS-ссылку и группы. Должно быть выбрано хотя бы одно окно. Для безопасного повтора также требуется доступное хранилище браузера.`,
       )
     }
   }
   const previous = () => {
     if (
       !plan.data?.previous.length ||
-      !confirm('Заменить текущий черновик окнами прошлого занятия со сдвигом на 7 дней?')
+      !confirm(t`Заменить текущий черновик окнами прошлого занятия со сдвигом на 7 дней?`)
     )
       return
     update(plan.data.previous.map((e) => copyOralWindow(e.window, e.groupLessonIds, 7)))
@@ -196,7 +198,7 @@ export function OralWeeklyDraft({
   const weekdays = () => {
     if (
       !confirm(
-        'Заменить черновик тремя окнами пн/вт/ср недели первой даты? Время, ссылка и группы берутся из первого окна.',
+        t`Заменить черновик тремя окнами пн/вт/ср недели первой даты? Время, ссылка и группы берутся из первого окна.`,
       )
     )
       return
@@ -204,7 +206,7 @@ export function OralWeeklyDraft({
     const start = new Date(first.opensAt),
       end = new Date(first.closesAt)
     if (!Number.isFinite(+start) || !Number.isFinite(+end)) {
-      setError('Сначала укажите корректные даты первого окна.')
+      setError(t`Сначала укажите корректные даты первого окна.`)
       return
     }
     const monday = new Date(start)
@@ -226,23 +228,29 @@ export function OralWeeklyDraft({
   return (
     <Card>
       <CardContent className="space-y-3 pt-4">
-        <h2 className="font-semibold">Черновик окон</h2>
+        <h2 className="font-semibold">
+          <Trans>Черновик окон</Trans>
+        </h2>
         {plan.data ? (
           <p className="text-small">
-            {plan.data.courseName} · занятие {plan.data.lessonNumber}
+            <Trans>
+              {plan.data.courseName} · занятие {plan.data.lessonNumber}
+            </Trans>
           </p>
         ) : null}
         {plan.isError ? (
           <p role="alert">
-            Не удалось загрузить группы.{' '}
+            <Trans>Не удалось загрузить группы. </Trans>
             <Button variant="ghost" onClick={() => void plan.refetch()}>
-              Повторить
+              <Trans>Повторить</Trans>
             </Button>
           </p>
         ) : null}
         <p className="text-caption text-muted-foreground">
-          Время: {Intl.DateTimeFormat().resolvedOptions().timeZone}. Отметьте дни, которые нужно
-          создать. Общие окна изменяются сразу для всех своих групп.
+          <Trans>
+            Время: {Intl.DateTimeFormat().resolvedOptions().timeZone}. Отметьте дни, которые нужно
+            создать. Общие окна изменяются сразу для всех своих групп.
+          </Trans>
         </p>
         <fieldset disabled={draft.locked || mutation.isPending} className="space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -253,10 +261,10 @@ export function OralWeeklyDraft({
               disabled={!plan.data?.previous.length}
               onClick={previous}
             >
-              С прошлого занятия (+7 дней)
+              <Trans>С прошлого занятия (+7 дней)</Trans>
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={weekdays}>
-              Пн / вт / ср
+              <Trans>Пн / вт / ср</Trans>
             </Button>
           </div>
           {draft.entries.map((entry, index) => (
@@ -268,7 +276,7 @@ export function OralWeeklyDraft({
                     checked={entry.included}
                     onChange={(e) => change(entry.id, { included: e.target.checked })}
                   />
-                  Окно {index + 1}
+                  <Trans>Окно</Trans> {index + 1}
                 </label>
               </legend>
               <fieldset disabled={!entry.included} className="space-y-2">
@@ -276,7 +284,7 @@ export function OralWeeklyDraft({
                   {(['opensAt', 'closesAt'] as const).map((field) => (
                     <div key={field}>
                       <Label htmlFor={`${entry.id}-${field}`}>
-                        {field === 'opensAt' ? 'Открывается' : 'Закрывается'}
+                        {field === 'opensAt' ? t`Открывается` : t`Закрывается`}
                       </Label>
                       <Input
                         id={`${entry.id}-${field}`}
@@ -310,9 +318,9 @@ export function OralWeeklyDraft({
                 </div>
                 {(
                   [
-                    { field: 'joinLabel', label: 'Подпись кнопки' },
-                    { field: 'joinUrl', label: 'HTTPS-ссылка' },
-                    { field: 'joinCode', label: 'Код, если нужен' },
+                    { field: 'joinLabel', label: t`Подпись кнопки` },
+                    { field: 'joinUrl', label: t`HTTPS-ссылка` },
+                    { field: 'joinCode', label: t`Код, если нужен` },
                   ] as const
                 ).map(({ field, label }) => (
                   <div key={field}>
@@ -333,7 +341,7 @@ export function OralWeeklyDraft({
             disabled={draft.entries.length >= 20}
             onClick={() => update([...draft.entries, blank(groupLessonId)])}
           >
-            Добавить ещё окно
+            <Trans>Добавить ещё окно</Trans>
           </Button>
         </fieldset>
         {error ? (
@@ -343,20 +351,20 @@ export function OralWeeklyDraft({
         ) : null}
         {draft.locked && !mutation.isPending ? (
           <p className="text-small">
-            Сначала подтвердите сохранение этого черновика повторным запросом.
+            <Trans>Сначала подтвердите сохранение этого черновика повторным запросом.</Trans>
           </p>
         ) : null}
         {success ? (
           <p role="status" className="text-small">
-            Окна созданы для выбранных групп.
+            <Trans>Окна созданы для выбранных групп.</Trans>
           </p>
         ) : null}
         <Button disabled={mutation.isPending || !plan.data} onClick={save}>
           {mutation.isPending
-            ? 'Сохраняем…'
+            ? t`Сохраняем…`
             : draft.locked
-              ? 'Повторить сохранение'
-              : 'Создать выбранные окна'}
+              ? t`Повторить сохранение`
+              : t`Создать выбранные окна`}
         </Button>
       </CardContent>
     </Card>

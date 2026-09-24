@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import {
   Archive,
   Building2,
@@ -140,14 +142,20 @@ export function ClassroomCatalog({
       <header className="space-y-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-title font-semibold text-foreground">Каталог аудиторий</h2>
+            <h2 className="text-title font-semibold text-foreground">
+              <Trans>Каталог аудиторий</Trans>
+            </h2>
             <p className="text-small text-muted-foreground">
-              Один список для всех занятий. Скрытые аудитории можно восстановить.
+              <Trans>Один список для всех занятий. Скрытые аудитории можно восстановить.</Trans>
             </p>
           </div>
-          <div className="flex gap-1.5" aria-label="Сводка каталога">
-            <Badge variant="neutral">Активных: {activeCount}</Badge>
-            <Badge variant="outline">Скрытых: {archivedCount}</Badge>
+          <div className="flex gap-1.5" aria-label={t`Сводка каталога`}>
+            <Badge variant="neutral">
+              <Trans>Активных: {activeCount}</Trans>
+            </Badge>
+            <Badge variant="outline">
+              <Trans>Скрытых: {archivedCount}</Trans>
+            </Badge>
           </div>
         </div>
       </header>
@@ -160,22 +168,24 @@ export function ClassroomCatalog({
         }}
       >
         <div className="space-y-1">
-          <Label htmlFor={newRoomId}>Новая аудитория</Label>
+          <Label htmlFor={newRoomId}>
+            <Trans>Новая аудитория</Trans>
+          </Label>
           <Input
             aria-describedby={`${newRoomId}-hint`}
             aria-invalid={conflict ? true : undefined}
             id={newRoomId}
             onChange={(event) => onNewRoomNameChange?.(event.target.value)}
-            placeholder="Например, 201 или Актовый зал"
+            placeholder={t`Например, 201 или Актовый зал`}
             value={newRoomName}
           />
           <p className="text-caption text-muted-foreground" id={`${newRoomId}-hint`}>
-            Пробелы по краям уберутся; регистр не создаёт новую аудиторию.
+            <Trans>Пробелы по краям уберутся; регистр не создаёт новую аудиторию.</Trans>
           </p>
         </div>
         <Button className="self-end" disabled={!trimmedNewName} size="sm" type="submit">
           <Plus aria-hidden="true" />
-          Добавить
+          <Trans>Добавить</Trans>
         </Button>
       </form>
 
@@ -183,10 +193,14 @@ export function ClassroomCatalog({
         <Alert role="alert" tone="danger">
           <CircleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Такая аудитория уже есть</AlertTitle>
+            <AlertTitle>
+              <Trans>Такая аудитория уже есть</Trans>
+            </AlertTitle>
             <AlertDescription>
-              «{conflict.inputName.trim()}» совпадает с «{conflict.existingRoomName}» без учёта
-              регистра и формы Unicode.
+              «{conflict.inputName.trim()}
+              <Trans>
+                » совпадает с «{conflict.existingRoomName}» без учёта регистра и формы Unicode.
+              </Trans>
             </AlertDescription>
             <Button
               className="mt-2"
@@ -194,7 +208,7 @@ export function ClassroomCatalog({
               size="xs"
               variant="outline"
             >
-              Показать существующую
+              <Trans>Показать существующую</Trans>
             </Button>
           </AlertContent>
         </Alert>
@@ -202,7 +216,9 @@ export function ClassroomCatalog({
 
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem]">
         <div className="space-y-1">
-          <Label htmlFor={searchId}>Поиск</Label>
+          <Label htmlFor={searchId}>
+            <Trans>Поиск</Trans>
+          </Label>
           <div className="relative">
             <Search
               aria-hidden="true"
@@ -212,13 +228,15 @@ export function ClassroomCatalog({
               className="pl-8"
               id={searchId}
               onChange={(event) => onQueryChange?.(event.target.value)}
-              placeholder="Название аудитории"
+              placeholder={t`Название аудитории`}
               value={query}
             />
           </div>
         </div>
         <div className="space-y-1">
-          <Label htmlFor={statusId}>Показывать</Label>
+          <Label htmlFor={statusId}>
+            <Trans>Показывать</Trans>
+          </Label>
           <select
             className={cn(selectClass, 'w-full')}
             id={statusId}
@@ -227,9 +245,15 @@ export function ClassroomCatalog({
             }
             value={statusFilter}
           >
-            <option value="active">Активные</option>
-            <option value="archived">Скрытые</option>
-            <option value="all">Все</option>
+            <option value="active">
+              <Trans>Активные</Trans>
+            </option>
+            <option value="archived">
+              <Trans>Скрытые</Trans>
+            </option>
+            <option value="all">
+              <Trans>Все</Trans>
+            </option>
           </select>
         </div>
       </div>
@@ -248,7 +272,7 @@ export function ClassroomCatalog({
                 {isEditing ? (
                   <div className="flex min-w-0 gap-2">
                     <Input
-                      aria-label={`Новое название: ${room.name}`}
+                      aria-label={t`Новое название: ${room.name}`}
                       onChange={(event) => setEditing({ id: room.id, name: event.target.value })}
                       value={editing.name}
                     />
@@ -260,10 +284,10 @@ export function ClassroomCatalog({
                       }}
                       size="xs"
                     >
-                      Сохранить
+                      <Trans>Сохранить</Trans>
                     </Button>
                     <Button onClick={() => setEditing(null)} size="xs" variant="ghost">
-                      Отмена
+                      <Trans>Отмена</Trans>
                     </Button>
                   </div>
                 ) : (
@@ -271,11 +295,11 @@ export function ClassroomCatalog({
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-foreground">{room.name}</span>
                       <Badge variant={room.status === 'active' ? 'success' : 'neutral'}>
-                        {room.status === 'active' ? 'Активна' : 'Скрыта'}
+                        {room.status === 'active' ? t`Активна` : t`Скрыта`}
                       </Badge>
                     </div>
                     <p className="text-caption text-muted-foreground">
-                      {room.usageLabel ?? `Версия ${room.version}`}
+                      {room.usageLabel ?? t`Версия ${room.version}`}
                     </p>
                   </div>
                 )}
@@ -283,14 +307,14 @@ export function ClassroomCatalog({
                 {!isEditing ? (
                   <div className="flex flex-wrap gap-1 sm:justify-end">
                     <Button
-                      aria-label={`Переименовать: ${room.name}`}
+                      aria-label={t`Переименовать: ${room.name}`}
                       disabled={pending}
                       onClick={() => setEditing({ id: room.id, name: room.name })}
                       size="xs"
                       variant="ghost"
                     >
                       <Pencil aria-hidden="true" />
-                      Переименовать
+                      <Trans>Переименовать</Trans>
                     </Button>
                     {room.status === 'active' ? (
                       <Button
@@ -300,7 +324,7 @@ export function ClassroomCatalog({
                         variant="outline"
                       >
                         <Archive aria-hidden="true" />
-                        Скрыть
+                        <Trans>Скрыть</Trans>
                       </Button>
                     ) : (
                       <Button
@@ -310,7 +334,7 @@ export function ClassroomCatalog({
                         variant="outline"
                       >
                         <RotateCcw aria-hidden="true" />
-                        Восстановить
+                        <Trans>Восстановить</Trans>
                       </Button>
                     )}
                   </div>
@@ -322,9 +346,11 @@ export function ClassroomCatalog({
       ) : (
         <div className="rounded-md border border-dashed border-border p-6 text-center">
           <Building2 aria-hidden="true" className="mx-auto mb-2 size-6 text-muted-foreground" />
-          <p className="text-small font-medium text-foreground">Аудитории не найдены</p>
+          <p className="text-small font-medium text-foreground">
+            <Trans>Аудитории не найдены</Trans>
+          </p>
           <p className="text-caption text-muted-foreground">
-            Измените поиск или фильтр. Данные каталога не удалены.
+            <Trans>Измените поиск или фильтр. Данные каталога не удалены.</Trans>
           </p>
         </div>
       )}
@@ -381,29 +407,31 @@ export function ClassroomGroupLayout({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-title font-semibold text-foreground">Аудитории по группам</h2>
+            <h2 className="text-title font-semibold text-foreground">
+              <Trans>Аудитории по группам</Trans>
+            </h2>
             <Badge
               variant={state === 'draft' ? 'warning' : state === 'confirmed' ? 'success' : 'info'}
             >
               {state === 'draft'
-                ? 'Черновик'
+                ? t`Черновик`
                 : state === 'confirmed'
-                  ? 'Подтверждено'
-                  : 'Унаследовано'}
+                  ? t`Подтверждено`
+                  : t`Унаследовано`}
             </Badge>
           </div>
           <p className="text-small text-muted-foreground">
             {lessonLabel} ·{' '}
             {version === null || version === undefined
-              ? 'без отдельной версии'
-              : `версия ${version}`}
+              ? t`без отдельной версии`
+              : t`версия ${version}`}
             {sourceLabel ? ` · ${sourceLabel}` : ''}
           </p>
         </div>
         {state !== 'draft' ? (
           <Button onClick={onMaterialize} size="sm" variant="outline">
             <Pencil aria-hidden="true" />
-            {state === 'inherited' ? 'Изменить для занятия' : 'Изменить схему'}
+            {state === 'inherited' ? t`Изменить для занятия` : t`Изменить схему`}
           </Button>
         ) : null}
       </header>
@@ -412,9 +440,13 @@ export function ClassroomGroupLayout({
         <Alert tone="info">
           <History aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Используется последняя подтверждённая схема</AlertTitle>
+            <AlertTitle>
+              <Trans>Используется последняя подтверждённая схема</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Пока вы ничего не меняете, отдельная копия для этого занятия не создаётся.
+              <Trans>
+                Пока вы ничего не меняете, отдельная копия для этого занятия не создаётся.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -424,7 +456,9 @@ export function ClassroomGroupLayout({
         <Alert role="alert" tone="danger">
           <RefreshCw aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Схема уже изменилась</AlertTitle>
+            <AlertTitle>
+              <Trans>Схема уже изменилась</Trans>
+            </AlertTitle>
             <AlertDescription>{optimisticConflict}</AlertDescription>
           </AlertContent>
         </Alert>
@@ -434,10 +468,12 @@ export function ClassroomGroupLayout({
         <Alert role="alert" tone="danger">
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Есть скрытая аудитория</AlertTitle>
+            <AlertTitle>
+              <Trans>Есть скрытая аудитория</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Уберите {invalidRooms.map((room) => room.name).join(', ')} из схемы перед
-              подтверждением.
+              <Trans>Уберите</Trans> {invalidRooms.map((room) => room.name).join(', ')}{' '}
+              <Trans>из схемы перед подтверждением.</Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -445,7 +481,7 @@ export function ClassroomGroupLayout({
 
       <div
         className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
-        aria-label="Число аудиторий по группам"
+        aria-label={t`Число аудиторий по группам`}
       >
         {groups.map((group) => {
           const count = rooms.filter((room) => room.groupId === group.id).length
@@ -470,19 +506,26 @@ export function ClassroomGroupLayout({
               ) : null}
               <p className="text-caption text-muted-foreground">{group.name}</p>
               <p className="font-num text-title font-semibold text-foreground">{count}</p>
-              <p className="text-caption text-muted-foreground">аудиторий</p>
+              <p className="text-caption text-muted-foreground">
+                <Trans>аудиторий</Trans>
+              </p>
               {group.inPersonCount !== undefined ? (
                 <p className="mt-1 font-num text-caption text-foreground">
-                  {group.inPersonCount} очно · {group.assignedCount ?? 0} распределено
+                  <Trans>{group.inPersonCount} очно ·</Trans> {group.assignedCount ?? 0}{' '}
+                  <Trans>распределено</Trans>
                 </p>
               ) : null}
             </div>
           )
         })}
         <div className="rounded-md border border-dashed border-border p-3">
-          <p className="text-caption text-muted-foreground">Не используются</p>
+          <p className="text-caption text-muted-foreground">
+            <Trans>Не используются</Trans>
+          </p>
           <p className="font-num text-title font-semibold text-foreground">{unassignedCount}</p>
-          <p className="text-caption text-muted-foreground">аудиторий</p>
+          <p className="text-caption text-muted-foreground">
+            <Trans>аудиторий</Trans>
+          </p>
         </div>
       </div>
 
@@ -499,11 +542,13 @@ export function ClassroomGroupLayout({
               <div>
                 <p className="font-medium text-foreground">{room.name}</p>
                 {room.invalid ? (
-                  <p className="text-caption text-status-danger">Аудитория скрыта в каталоге</p>
+                  <p className="text-caption text-status-danger">
+                    <Trans>Аудитория скрыта в каталоге</Trans>
+                  </p>
                 ) : null}
               </div>
               <select
-                aria-label={`Группа для аудитории ${room.name}`}
+                aria-label={t`Группа для аудитории ${room.name}`}
                 className={cn(selectClass, 'w-full')}
                 disabled={!editable || pending}
                 onChange={(event) =>
@@ -514,7 +559,9 @@ export function ClassroomGroupLayout({
                 }
                 value={room.groupId ?? ''}
               >
-                <option value="">Не используется</option>
+                <option value="">
+                  <Trans>Не используется</Trans>
+                </option>
                 {groups.map((group) => (
                   <option key={group.id} value={group.id}>
                     {group.name}
@@ -529,11 +576,11 @@ export function ClassroomGroupLayout({
       {editable ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
           <p className="text-caption text-muted-foreground">
-            Неиспользованные активные аудитории не мешают подтверждению.
+            <Trans>Неиспользованные активные аудитории не мешают подтверждению.</Trans>
           </p>
           <Button disabled={pending || invalidRooms.length > 0} onClick={onConfirm} size="sm">
             <Check aria-hidden="true" />
-            Подтвердить схему
+            <Trans>Подтвердить схему</Trans>
           </Button>
         </div>
       ) : null}
@@ -595,12 +642,24 @@ export interface ClassroomStudentPlannerProps {
 }
 
 const sourceLabels: Record<ClassroomAssignmentSource, string> = {
-  'previous-room': 'прежняя аудитория',
-  'least-loaded': 'по фактической загрузке',
-  manual: 'вручную',
-  'group-change': 'после смены группы',
-  'mode-change': 'после смены режима',
-  import: 'импорт',
+  get 'previous-room'() {
+    return t`прежняя аудитория`
+  },
+  get 'least-loaded'() {
+    return t`по фактической загрузке`
+  },
+  get manual() {
+    return t`вручную`
+  },
+  get 'group-change'() {
+    return t`после смены группы`
+  },
+  get 'mode-change'() {
+    return t`после смены режима`
+  },
+  get import() {
+    return t`импорт`
+  },
 }
 
 function oneDecimal(value: number): string {
@@ -614,12 +673,16 @@ function average(values: Array<number | null | undefined>): string {
 }
 
 function normalizedStudentName(value: string): string {
-  return value
-    .normalize('NFKC')
-    .toLocaleLowerCase('ru')
-    .replaceAll('ё', 'е')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return (
+    value
+      .normalize('NFKC')
+      .toLocaleLowerCase('ru')
+      // This is Russian data-search normalization, not displayed product copy (P5 i18n plan).
+      // eslint-disable-next-line lingui/no-unlocalized-strings
+      .replaceAll('ё', 'е')
+      .replace(/\s+/g, ' ')
+      .trim()
+  )
 }
 
 function editDistance(left: string, right: string): number {
@@ -651,9 +714,15 @@ function studentMatchesQuery(student: ClassroomPlanStudent, rawQuery: string): b
 function StudentFacts({ student }: { student: ClassroomPlanStudent }) {
   return (
     <span className="inline-flex flex-wrap gap-x-2 font-num text-caption text-muted-foreground">
-      <span>возраст {student.age == null ? '—' : oneDecimal(student.age)}</span>
-      <span>класс {student.schoolClass ?? '—'}</span>
-      <span>сила {student.strength == null ? '—' : oneDecimal(student.strength)}</span>
+      <span>
+        <Trans>возраст</Trans> {student.age == null ? '—' : oneDecimal(student.age)}
+      </span>
+      <span>
+        <Trans>класс</Trans> {student.schoolClass ?? '—'}
+      </span>
+      <span>
+        <Trans>сила</Trans> {student.strength == null ? '—' : oneDecimal(student.strength)}
+      </span>
     </span>
   )
 }
@@ -676,7 +745,7 @@ function StudentMoveSelect({
 }) {
   return (
     <select
-      aria-label={`Аудитория для ${student.name}`}
+      aria-label={t`Аудитория для ${student.name}`}
       className={cn(selectClass, 'h-8 min-h-0 w-full min-w-28')}
       disabled={pending || rooms.length === 0}
       onChange={(event) => {
@@ -687,7 +756,9 @@ function StudentMoveSelect({
       }}
       value={student.classroomId ?? ''}
     >
-      <option value="">Не назначена</option>
+      <option value="">
+        <Trans>Не назначена</Trans>
+      </option>
       {groups
         .filter(
           (group) => !student.courseId || !group.courseId || group.courseId === student.courseId,
@@ -699,7 +770,7 @@ function StudentMoveSelect({
               .map((room) => (
                 <option key={room.id} value={room.id}>
                   {room.name}
-                  {group.id === student.groupId ? '' : ' · сменить группу'}
+                  {group.id === student.groupId ? '' : t` · сменить группу`}
                 </option>
               ))}
           </optgroup>
@@ -766,7 +837,7 @@ export function ClassroomStudentPlanner({
         key={student.id}
       >
         <Checkbox
-          aria-label={`Выбрать ${student.name}`}
+          aria-label={t`Выбрать ${student.name}`}
           checked={selected.has(student.id)}
           onCheckedChange={(value) => toggleStudent(student.id, Boolean(value))}
         />
@@ -776,8 +847,8 @@ export function ClassroomStudentPlanner({
           <p className="truncate text-caption text-muted-foreground">
             {unresolvedRow
               ? student.status === 'reassigning'
-                ? 'Прежнее назначение сброшено'
-                : 'Ещё не назначена'
+                ? t`Прежнее назначение сброшено`
+                : t`Ещё не назначена`
               : sourceLabels[student.source]}
           </p>
         </div>
@@ -790,11 +861,11 @@ export function ClassroomStudentPlanner({
           student={student}
         />
         <Button
-          aria-label={`История аудиторий: ${student.name}`}
+          aria-label={t`История аудиторий: ${student.name}`}
           disabled={!onShowHistory}
           onClick={() => onShowHistory?.(student.id)}
           size="icon-xs"
-          title="История аудиторий"
+          title={t`История аудиторий`}
           variant="ghost"
         >
           <History aria-hidden="true" />
@@ -808,26 +879,34 @@ export function ClassroomStudentPlanner({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-title font-semibold text-foreground">Школьники по аудиториям</h2>
+            <h2 className="text-title font-semibold text-foreground">
+              <Trans>Школьники по аудиториям</Trans>
+            </h2>
             <Badge
               variant={state === 'confirmed' ? 'success' : state === 'stale' ? 'danger' : 'warning'}
             >
               {state === 'confirmed'
-                ? 'Подтверждено'
+                ? t`Подтверждено`
                 : state === 'stale'
-                  ? 'Нужно пересчитать'
-                  : 'Предпросмотр'}
+                  ? t`Нужно пересчитать`
+                  : t`Предпросмотр`}
             </Badge>
           </div>
           <p className="text-small text-muted-foreground">
-            {lessonLabel} · версия {version}
-            {publishedAt ? ` · опубликовано ${publishedAt}` : ''}
+            <Trans>
+              {lessonLabel} · версия {version}
+            </Trans>
+            {publishedAt ? t` · опубликовано ${publishedAt}` : ''}
           </p>
         </div>
-        <div className="flex gap-1.5" aria-label="Сводка плана">
-          <Badge variant="neutral">Назначено: {assignedCount}</Badge>
+        <div className="flex gap-1.5" aria-label={t`Сводка плана`}>
+          <Badge variant="neutral">
+            <Trans>Назначено: {assignedCount}</Trans>
+          </Badge>
           {unresolved.length > 0 ? (
-            <Badge variant="danger">Требуют внимания: {unresolved.length}</Badge>
+            <Badge variant="danger">
+              <Trans>Требуют внимания: {unresolved.length}</Trans>
+            </Badge>
           ) : null}
         </div>
       </header>
@@ -836,9 +915,11 @@ export function ClassroomStudentPlanner({
         <Alert role="alert" tone="danger">
           <RefreshCw aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>План устарел</AlertTitle>
+            <AlertTitle>
+              <Trans>План устарел</Trans>
+            </AlertTitle>
             <AlertDescription>
-              {staleReason ?? 'Схема аудиторий изменилась. Проверьте новый предпросмотр.'}
+              {staleReason ?? t`Схема аудиторий изменилась. Проверьте новый предпросмотр.`}
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -859,7 +940,9 @@ export function ClassroomStudentPlanner({
       ))}
 
       <div className="space-y-2 rounded-md border border-border bg-surface p-3">
-        <Label htmlFor={searchId}>Быстрый поиск школьника</Label>
+        <Label htmlFor={searchId}>
+          <Trans>Быстрый поиск школьника</Trans>
+        </Label>
         <div className="relative max-w-lg">
           <Search
             aria-hidden="true"
@@ -869,13 +952,15 @@ export function ClassroomStudentPlanner({
             className="h-8 pl-8"
             id={searchId}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Фамилия, имя или примерное написание"
+            placeholder={t`Фамилия, имя или примерное написание`}
             value={query}
           />
         </div>
         {query.trim() ? (
           <div className="flex flex-wrap items-center gap-1" role="status">
-            <span className="text-caption text-muted-foreground">Найдено: {matches.length}</span>
+            <span className="text-caption text-muted-foreground">
+              <Trans>Найдено: {matches.length}</Trans>
+            </span>
             {matches.slice(0, 8).map((student) => (
               <Button
                 key={student.id}
@@ -896,9 +981,11 @@ export function ClassroomStudentPlanner({
 
       {selected.size > 0 ? (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-raised p-2">
-          <span className="text-small font-medium text-foreground">Выбрано: {selected.size}</span>
+          <span className="text-small font-medium text-foreground">
+            <Trans>Выбрано: {selected.size}</Trans>
+          </span>
           <select
-            aria-label="Перенести выбранных в аудиторию"
+            aria-label={t`Перенести выбранных в аудиторию`}
             className={cn(selectClass, 'h-8 min-h-0')}
             disabled={!oneBulkGroup || bulkRooms.length === 0}
             onChange={(event) => {
@@ -908,7 +995,9 @@ export function ClassroomStudentPlanner({
             }}
             value=""
           >
-            <option value="">Перенести выбранных…</option>
+            <option value="">
+              <Trans>Перенести выбранных…</Trans>
+            </option>
             {bulkRooms.map((room) => (
               <option key={room.id} value={room.id}>
                 {room.name}
@@ -917,11 +1006,11 @@ export function ClassroomStudentPlanner({
           </select>
           {!oneBulkGroup ? (
             <span className="text-caption text-muted-foreground">
-              Для массового переноса выберите школьников одной группы.
+              <Trans>Для массового переноса выберите школьников одной группы.</Trans>
             </span>
           ) : null}
           <Button onClick={() => setSelected(new Set())} size="xs" variant="ghost">
-            Снять выбор
+            <Trans>Снять выбор</Trans>
           </Button>
         </div>
       ) : null}
@@ -930,10 +1019,12 @@ export function ClassroomStudentPlanner({
         <section className="space-y-2 rounded-md border border-status-danger-border bg-status-danger-surface p-3">
           <div>
             <h3 className="text-label font-semibold text-foreground">
-              Не распределены / переназначаются
+              <Trans>Не распределены / переназначаются</Trans>
             </h3>
             <p className="text-caption text-muted-foreground">
-              {unresolved.length} школьников требуют назначения до подтверждения плана.
+              <Trans>
+                {unresolved.length} школьников требуют назначения до подтверждения плана.
+              </Trans>
             </p>
           </div>
           <ul className="divide-y divide-status-danger-border">
@@ -978,15 +1069,20 @@ export function ClassroomStudentPlanner({
                     {group.name}
                   </h3>
                   <p className="text-caption text-muted-foreground">
-                    {groupRooms.length} аудиторий · {group.inPersonCount ?? groupStudents.length}{' '}
-                    очно ·{' '}
+                    <Trans>{groupRooms.length} аудиторий ·</Trans>{' '}
+                    {group.inPersonCount ?? groupStudents.length}
+                    <Trans> очно · </Trans>
                     {group.assignedCount ??
                       groupStudents.length -
-                        unresolved.filter((student) => student.groupId === group.id).length}{' '}
-                    распределено
+                        unresolved.filter((student) => student.groupId === group.id).length}
+                    <Trans> распределено</Trans>
                   </p>
                 </div>
-                {groupStudents.length === 0 ? <Badge variant="neutral">Группа пуста</Badge> : null}
+                {groupStudents.length === 0 ? (
+                  <Badge variant="neutral">
+                    <Trans>Группа пуста</Trans>
+                  </Badge>
+                ) : null}
               </header>
 
               {groupRooms.length > 0 ? (
@@ -1000,16 +1096,18 @@ export function ClassroomStudentPlanner({
                       .sort((left, right) => left.name.localeCompare(right.name, 'ru'))
                     return (
                       <section
-                        aria-label={`Аудитория ${room.name}`}
+                        aria-label={t`Аудитория ${room.name}`}
                         className="min-w-72 flex-[1_1_22rem] rounded-md border border-border bg-surface p-2"
                         key={room.id}
                       >
                         <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-2">
                           <h4 className="font-semibold text-foreground">{room.name}</h4>
                           <span className="font-num text-caption text-muted-foreground">
-                            {roomStudents.length} уч. · возраст{' '}
-                            {average(roomStudents.map((student) => student.age))} · класс{' '}
-                            {average(roomStudents.map((student) => student.schoolClass))} · сила{' '}
+                            <Trans>{roomStudents.length} уч. · возраст </Trans>
+                            {average(roomStudents.map((student) => student.age))}{' '}
+                            <Trans>· класс </Trans>
+                            {average(roomStudents.map((student) => student.schoolClass))}{' '}
+                            <Trans>· сила </Trans>
                             {average(roomStudents.map((student) => student.strength))}
                           </span>
                         </div>
@@ -1018,7 +1116,9 @@ export function ClassroomStudentPlanner({
                             {roomStudents.map((student) => renderStudent(student))}
                           </ul>
                         ) : (
-                          <p className="text-caption text-muted-foreground">Пока никого нет</p>
+                          <p className="text-caption text-muted-foreground">
+                            <Trans>Пока никого нет</Trans>
+                          </p>
                         )}
                       </section>
                     )
@@ -1028,11 +1128,13 @@ export function ClassroomStudentPlanner({
                 <Alert role="alert" tone={groupStudents.length > 0 ? 'danger' : 'neutral'}>
                   <Building2 aria-hidden="true" />
                   <AlertContent>
-                    <AlertTitle>У группы нет аудитории</AlertTitle>
+                    <AlertTitle>
+                      <Trans>У группы нет аудитории</Trans>
+                    </AlertTitle>
                     <AlertDescription>
                       {groupStudents.length > 0
-                        ? 'Назначьте группе хотя бы одну активную аудиторию.'
-                        : 'Это допустимо, пока в группе нет очных школьников.'}
+                        ? t`Назначьте группе хотя бы одну активную аудиторию.`
+                        : t`Это допустимо, пока в группе нет очных школьников.`}
                     </AlertDescription>
                   </AlertContent>
                 </Alert>
@@ -1044,13 +1146,15 @@ export function ClassroomStudentPlanner({
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
         <p className="text-caption text-muted-foreground">
-          Пересчёт сначала сохраняет выбранную вручную аудиторию, затем прежнюю допустимую и
-          дораспределяет остальных по фактической загрузке.
+          <Trans>
+            Пересчёт сначала сохраняет выбранную вручную аудиторию, затем прежнюю допустимую и
+            дораспределяет остальных по фактической загрузке.
+          </Trans>
         </p>
         <div className="flex gap-2">
           <Button disabled={pending} onClick={onRecalculate} size="sm" variant="outline">
             <RefreshCw aria-hidden="true" />
-            Пересчитать
+            <Trans>Пересчитать</Trans>
           </Button>
           <Button
             disabled={pending || blocking || state === 'confirmed' || state === 'stale'}
@@ -1058,7 +1162,7 @@ export function ClassroomStudentPlanner({
             size="sm"
           >
             <Check aria-hidden="true" />
-            Подтвердить план
+            <Trans>Подтвердить план</Trans>
           </Button>
         </div>
       </div>

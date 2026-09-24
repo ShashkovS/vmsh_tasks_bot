@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import {
   Archive,
   BookOpenCheck,
@@ -65,15 +67,15 @@ export function CourseGroupCatalog({
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-page-title font-semibold text-foreground" id="course-catalog-title">
-            Курсы и группы
+            <Trans>Курсы и группы</Trans>
           </h2>
           <p className="text-small text-muted-foreground">
-            Сезон 2025–2026 · названия групп уникальны только внутри курса.
+            <Trans>Сезон 2025–2026 · названия групп уникальны только внутри курса.</Trans>
           </p>
         </div>
         <Button onClick={onAddCourse} size="sm">
           <Plus aria-hidden="true" />
-          Добавить курс
+          <Trans>Добавить курс</Trans>
         </Button>
       </div>
 
@@ -92,21 +94,25 @@ export function CourseGroupCatalog({
                     status === 'active' ? 'success' : status === 'draft' ? 'warning' : 'neutral'
                   }
                 >
-                  {status === 'active' ? 'Активен' : status === 'draft' ? 'Черновик' : 'В архиве'}
+                  {status === 'active'
+                    ? t`Активен`
+                    : status === 'draft'
+                      ? t`Черновик`
+                      : t`В архиве`}
                 </Badge>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 <Button onClick={() => onEditCourse?.(course.id)} size="xs" variant="outline">
                   <Settings2 aria-hidden="true" />
-                  Настроить
+                  <Trans>Настроить</Trans>
                 </Button>
                 <Button onClick={() => onAddGroup?.(course.id)} size="xs" variant="ghost">
                   <Plus aria-hidden="true" />
-                  Группа
+                  <Trans>Группа</Trans>
                 </Button>
                 <Button onClick={() => onArchiveCourse?.(course.id)} size="xs" variant="ghost">
                   <Archive aria-hidden="true" />
-                  {status === 'archived' ? 'Восстановить' : 'В архив'}
+                  {status === 'archived' ? t`Восстановить` : t`В архив`}
                 </Button>
               </div>
             </CardHeader>
@@ -120,20 +126,22 @@ export function CourseGroupCatalog({
                     <div className="min-w-0">
                       <LevelChip level={group} />
                       <p className="mt-1 text-caption text-muted-foreground">
-                        {group.activeStudents} учеников · {group.scheduleLabel}
+                        <Trans>
+                          {group.activeStudents} учеников · {group.scheduleLabel}
+                        </Trans>
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Badge variant={group.status === 'active' ? 'neutral' : 'warning'}>
                         {group.status === 'active'
-                          ? 'Активна'
+                          ? t`Активна`
                           : group.status === 'draft'
-                            ? 'Черновик'
-                            : 'Скрыта'}
+                            ? t`Черновик`
+                            : t`Скрыта`}
                       </Badge>
                       {onEditGroup ? (
                         <Button
-                          aria-label={`Изменить группу ${group.name}`}
+                          aria-label={t`Изменить группу ${group.name}`}
                           onClick={() => onEditGroup(group.id)}
                           size="icon-xs"
                           variant="ghost"
@@ -166,10 +174,18 @@ export interface IndependentScheduleRow {
 }
 
 const sourceLabel: Record<ScheduleSource, string> = {
-  course: 'Шаблон курса',
-  group: 'Переопределено группой',
-  lesson: 'Изменено для занятия',
-  disabled: 'Отключено',
+  get course() {
+    return t`Шаблон курса`
+  },
+  get group() {
+    return t`Переопределено группой`
+  },
+  get lesson() {
+    return t`Изменено для занятия`
+  },
+  get disabled() {
+    return t`Отключено`
+  },
 }
 
 export function IndependentScheduleMatrix({
@@ -189,23 +205,41 @@ export function IndependentScheduleMatrix({
     <section className={cn('space-y-3', className)} aria-labelledby="schedule-matrix-title">
       <div>
         <h2 className="text-section font-semibold text-foreground" id="schedule-matrix-title">
-          {course.name} · занятие {lessonNumber}
+          <Trans>
+            {course.name} · занятие {lessonNumber}
+          </Trans>
         </h2>
         <p className="text-small text-muted-foreground">
-          Даты материализованы для каждой группы. Изменение шаблона не сдвигает этот снимок.
+          <Trans>
+            Даты материализованы для каждой группы. Изменение шаблона не сдвигает этот снимок.
+          </Trans>
         </p>
       </div>
       <div className="overflow-x-auto rounded-md border border-border" data-density="staff">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Группа</TableHead>
-              <TableHead>Источник</TableHead>
-              <TableHead>Условие</TableHead>
-              <TableHead>Подсказка</TableHead>
-              <TableHead>Приём до</TableHead>
-              <TableHead>Решение</TableHead>
-              <TableHead>Действие</TableHead>
+              <TableHead>
+                <Trans>Группа</Trans>
+              </TableHead>
+              <TableHead>
+                <Trans>Источник</Trans>
+              </TableHead>
+              <TableHead>
+                <Trans>Условие</Trans>
+              </TableHead>
+              <TableHead>
+                <Trans>Подсказка</Trans>
+              </TableHead>
+              <TableHead>
+                <Trans>Приём до</Trans>
+              </TableHead>
+              <TableHead>
+                <Trans>Решение</Trans>
+              </TableHead>
+              <TableHead>
+                <Trans>Действие</Trans>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -235,7 +269,7 @@ export function IndependentScheduleMatrix({
                 ))}
                 <TableCell>
                   <Button onClick={() => onEdit?.(row.group.id)} size="xs" variant="outline">
-                    Изменить
+                    <Trans>Изменить</Trans>
                   </Button>
                 </TableCell>
               </TableRow>
@@ -289,13 +323,15 @@ export function TelegramBindingsEditor({
             Telegram · {course.name}
           </h2>
           <p className="text-small text-muted-foreground">
-            Новости курса складываются с групповыми. Цели материалов группы заменяют настройки курса
-            по умолчанию.
+            <Trans>
+              Новости курса складываются с групповыми. Цели материалов группы заменяют настройки
+              курса по умолчанию.
+            </Trans>
           </p>
         </div>
         <Button className="self-start" onClick={onAdd} size="sm" variant="outline">
           <Plus aria-hidden="true" />
-          Добавить привязку
+          <Trans>Добавить привязку</Trans>
         </Button>
       </div>
       <ul className="divide-y divide-border rounded-md border border-border bg-surface">
@@ -309,16 +345,16 @@ export function TelegramBindingsEditor({
               <div>
                 <p className="text-small font-medium text-foreground">{binding.ownerLabel}</p>
                 <p className="text-caption text-muted-foreground">
-                  {binding.owner === 'course' ? 'Курс' : 'Группа'}
-                  {binding.inherited ? ' · наследуется' : ''}
+                  {binding.owner === 'course' ? t`Курс` : t`Группа`}
+                  {binding.inherited ? t` · наследуется` : ''}
                 </p>
               </div>
               <div>
                 <p className="inline-flex items-center gap-1.5 text-small text-foreground">
                   <PurposeIcon aria-hidden="true" className="size-4 text-muted-foreground" />
                   {binding.purpose === 'news-source'
-                    ? 'Источник новостей'
-                    : 'Публикация материалов'}
+                    ? t`Источник новостей`
+                    : t`Публикация материалов`}
                 </p>
                 <p className="font-mono text-caption text-muted-foreground">
                   {binding.chatLabel}
@@ -336,10 +372,10 @@ export function TelegramBindingsEditor({
                   }
                 >
                   {binding.status === 'verified'
-                    ? 'Проверена'
+                    ? t`Проверена`
                     : binding.status === 'draft'
-                      ? 'Черновик'
-                      : 'Отключена'}
+                      ? t`Черновик`
+                      : t`Отключена`}
                 </Badge>
                 {binding.status === 'draft' && onVerify ? (
                   <Button
@@ -348,7 +384,7 @@ export function TelegramBindingsEditor({
                     size="xs"
                     variant="outline"
                   >
-                    Проверить
+                    <Trans>Проверить</Trans>
                   </Button>
                 ) : null}
                 {binding.status !== 'disabled' && onDisable ? (
@@ -358,7 +394,7 @@ export function TelegramBindingsEditor({
                     size="xs"
                     variant="ghost"
                   >
-                    Отключить
+                    <Trans>Отключить</Trans>
                   </Button>
                 ) : null}
                 {binding.status === 'disabled' && onRestore ? (
@@ -368,7 +404,7 @@ export function TelegramBindingsEditor({
                     size="xs"
                     variant="outline"
                   >
-                    Вернуть в черновик
+                    <Trans>Вернуть в черновик</Trans>
                   </Button>
                 ) : null}
               </div>

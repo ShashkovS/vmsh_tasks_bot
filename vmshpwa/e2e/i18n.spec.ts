@@ -108,6 +108,43 @@ test('Staff sees English review, result and statistics controls', async ({ page 
   }
 })
 
+// P5 acceptance: course administration, rooms, oral windows, local news, and
+// group announcements follow the account locale. Course/group names and
+// authored publication text are server data and intentionally stay unchanged.
+test('Staff sees English course, classroom, oral, and publishing administration', async ({
+  page,
+}) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
+  try {
+    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
+    await page.getByRole('menuitem', { name: 'English' }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+    await page.goto('/staff/courses?tab=catalog')
+    await expect(page.getByRole('heading', { name: 'Courses and groups' })).toBeVisible()
+
+    await page.goto('/staff/courses?tab=schedule')
+    await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible()
+
+    await page.goto('/staff/classrooms?tab=catalog&roomStatus=active')
+    await expect(page.getByRole('heading', { name: 'Rooms' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Room catalog' })).toBeVisible()
+
+    await page.goto('/staff/oral?groupLesson=gl-921&tab=windows')
+    await expect(page.getByRole('heading', { name: 'Oral session' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Configured windows' })).toBeVisible()
+
+    await page.goto('/staff/news?state=all')
+    await expect(page.getByRole('heading', { level: 1, name: 'News' })).toBeVisible()
+    await expect(page.getByText('New PWA publication', { exact: true })).toBeVisible()
+
+    await page.goto('/staff/broadcasts')
+    await expect(page.getByRole('heading', { name: 'Mailings' })).toBeVisible()
+  } finally {
+    await saveAccountLocale(page, 'staff', 'ru')
+  }
+})
+
 // P2 acceptance: interface chrome changes language while child and course data remain source data.
 test('Family sees English child progress and notification settings', async ({ page }) => {
   await page.context().clearCookies()

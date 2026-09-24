@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDateTime } from '@vmsh/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
@@ -23,8 +26,8 @@ function colorIndex(colorKey: string | null): 0 | 1 | 2 | 3 | 4 {
 
 function describeError(error: Error): string {
   if (error instanceof ApiResponseError) return error.message
-  if (error instanceof ClassroomNetworkError) return 'Проверьте соединение и повторите попытку.'
-  return 'Обновите страницу и повторите попытку.'
+  if (error instanceof ClassroomNetworkError) return t`Проверьте соединение и повторите попытку.`
+  return t`Обновите страницу и повторите попытку.`
 }
 
 function defaultMappings(layout: ClassroomLayout): Record<string, string | null> {
@@ -170,18 +173,24 @@ function LayoutEditor({
       {storageFailed ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Локальный черновик не сохранён</AlertTitle>
-            <AlertDescription>Не закрывайте страницу до подтверждения схемы.</AlertDescription>
+            <AlertTitle>
+              <Trans>Локальный черновик не сохранён</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>Не закрывайте страницу до подтверждения схемы.</Trans>
+            </AlertDescription>
           </AlertContent>
         </Alert>
       ) : null}
       {layout.conflicts.length > 0 ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Одна аудитория унаследована несколькими группами</AlertTitle>
+            <AlertTitle>
+              <Trans>Одна аудитория унаследована несколькими группами</Trans>
+            </AlertTitle>
             <AlertDescription>
-              {layout.conflicts.map((conflict) => conflict.classroomName).join(', ')} не попадёт в
-              черновик, пока администратор не выберет группу заново.
+              {layout.conflicts.map((conflict) => conflict.classroomName).join(', ')}{' '}
+              <Trans>не попадёт в черновик, пока администратор не выберет группу заново.</Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -189,26 +198,28 @@ function LayoutEditor({
       {mutation.error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Схема не сохранена</AlertTitle>
+            <AlertTitle>
+              <Trans>Схема не сохранена</Trans>
+            </AlertTitle>
             <AlertDescription>{describeError(mutation.error)}</AlertDescription>
           </AlertContent>
         </Alert>
       ) : null}
       <ClassroomGroupLayout
         groups={groups}
-        lessonLabel={`${layout.event.name} · ${new Date(layout.event.startsAt).toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'short' })}`}
+        lessonLabel={`${layout.event.name} · ${formatDateTime(new Date(layout.event.startsAt), { dateStyle: 'medium', timeStyle: 'short' })}`}
         onConfirm={() => mutation.mutate('confirm')}
         onMaterialize={() => mutation.mutate('materialize')}
         onRoomGroupChange={(roomId, groupId) => saveLocal({ ...mappings, [roomId]: groupId })}
         optimisticConflict={
           savedAgainstAnotherVersion
-            ? 'На устройстве есть изменения от другой версии. Они сохранены; сравните схему перед подтверждением.'
+            ? t`На устройстве есть изменения от другой версии. Они сохранены; сравните схему перед подтверждением.`
             : null
         }
         pending={mutation.isPending}
         rooms={rooms}
         {...(layout.state === 'inherited'
-          ? { sourceLabel: 'из последних подтверждённых событий групп' }
+          ? { sourceLabel: t`из последних подтверждённых событий групп` }
           : {})}
         state={layout.state}
         version={layout.version}
@@ -257,8 +268,8 @@ export function StaffClassroomLayout({ eventPublicId }: { eventPublicId: string 
         <AlertContent>
           <AlertTitle>
             {error instanceof ApiResponseError && error.status === 403
-              ? 'Недостаточно прав'
-              : 'Не удалось загрузить схему'}
+              ? t`Недостаточно прав`
+              : t`Не удалось загрузить схему`}
           </AlertTitle>
           <AlertDescription>{describeError(error)}</AlertDescription>
         </AlertContent>

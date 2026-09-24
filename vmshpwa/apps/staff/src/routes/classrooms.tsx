@@ -6,7 +6,8 @@ import { StaffClassroomCatalog } from '../classroom-catalog-page'
 import { StaffClassroomAssignments } from '../classroom-assignment-page'
 import { StaffClassroomEventManager } from '../classroom-event-page'
 import { StaffClassroomLayout } from '../classroom-layout-page'
-import { StaffClassroomsPage } from '../pages'
+import { Trans } from '@lingui/react/macro'
+import { StaffClassroomsPage } from '../staff-classrooms-page'
 
 const searchSchema = z.object({
   event: z.string().trim().min(1).optional(),
@@ -31,7 +32,7 @@ function ClassroomsRoute() {
       content(search.event)
     ) : (
       <p className="rounded-md border border-border bg-surface p-4 text-small text-muted-foreground">
-        Создайте или выберите очное занятие выше.
+        <Trans>Создайте или выберите очное занятие выше.</Trans>
       </p>
     )
   return (

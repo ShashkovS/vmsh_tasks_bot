@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
 
@@ -114,7 +117,7 @@ function moscowInput(value: string): string {
 function errorText(error: Error): string {
   return error instanceof ApiResponseError
     ? error.message
-    : 'Проверьте соединение и повторите попытку.'
+    : t`Проверьте соединение и повторите попытку.`
 }
 
 export function StaffGroupBannersPage() {
@@ -226,12 +229,12 @@ export function StaffGroupBannersPage() {
 
   return (
     <PageLayout
-      description="Короткие сообщения для курса или группы: появятся на «Сейчас» и придут уведомлением на устройства с включёнными push."
+      description={t`Короткие сообщения для курса или группы: появятся на «Сейчас» и придут уведомлением на устройства с включёнными push.`}
       eyebrow="Admin only"
-      title="Рассылки"
+      title={t`Рассылки`}
       width="wide"
     >
-      <PageSection title={editing ? 'Изменить объявление' : 'Новое объявление'}>
+      <PageSection title={editing ? t`Изменить объявление` : t`Новое объявление`}>
         {owners.isPending ? <PageStatePanel state="loading" /> : null}
         {owners.error ? <PageStatePanel state="error" /> : null}
         {owners.data ? (
@@ -240,7 +243,7 @@ export function StaffGroupBannersPage() {
               <form className="grid gap-4" onSubmit={submit}>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                   <Label className="grid gap-1">
-                    Курс
+                    <Trans>Курс</Trans>
                     <select
                       className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                       onChange={(event) =>
@@ -260,7 +263,7 @@ export function StaffGroupBannersPage() {
                     </select>
                   </Label>
                   <Label className="grid gap-1">
-                    Группа
+                    <Trans>Группа</Trans>
                     <select
                       className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                       onChange={(event) =>
@@ -268,7 +271,9 @@ export function StaffGroupBannersPage() {
                       }
                       value={draft.groupId}
                     >
-                      <option value="">Все</option>
+                      <option value="">
+                        <Trans>Все</Trans>
+                      </option>
                       {groups.map((group) => (
                         <option key={group.groupId} value={group.groupId}>
                           {group.groupName}
@@ -277,7 +282,7 @@ export function StaffGroupBannersPage() {
                     </select>
                   </Label>
                   <Label className="grid gap-1">
-                    Показывать
+                    <Trans>Показывать</Trans>
                     <select
                       className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                       onChange={(event) =>
@@ -288,13 +293,19 @@ export function StaffGroupBannersPage() {
                       }
                       value={draft.audience}
                     >
-                      <option value="both">Всем</option>
-                      <option value="student">Только школьнику</option>
-                      <option value="family">Только родителям</option>
+                      <option value="both">
+                        <Trans>Всем</Trans>
+                      </option>
+                      <option value="student">
+                        <Trans>Только школьнику</Trans>
+                      </option>
+                      <option value="family">
+                        <Trans>Только родителям</Trans>
+                      </option>
                     </select>
                   </Label>
                   <Label className="grid gap-1">
-                    Очность
+                    <Trans>Очность</Trans>
                     <select
                       className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                       onChange={(event) =>
@@ -305,13 +316,19 @@ export function StaffGroupBannersPage() {
                       }
                       value={draft.attendanceMode}
                     >
-                      <option value="all">Всем</option>
-                      <option value="in_person">Только очные</option>
-                      <option value="online">Только онлайн</option>
+                      <option value="all">
+                        <Trans>Всем</Trans>
+                      </option>
+                      <option value="in_person">
+                        <Trans>Только очные</Trans>
+                      </option>
+                      <option value="online">
+                        <Trans>Только онлайн</Trans>
+                      </option>
                     </select>
                   </Label>
                   <Label className="grid gap-1">
-                    Приоритет
+                    <Trans>Приоритет</Trans>
                     <Input
                       max="100"
                       min="-100"
@@ -324,11 +341,13 @@ export function StaffGroupBannersPage() {
                   </Label>
                 </div>
                 <div className="grid gap-1">
-                  <Label>Текст объявления (Markdown)</Label>
+                  <Label>
+                    <Trans>Текст объявления (Markdown)</Trans>
+                  </Label>
                   <Suspense
                     fallback={
                       <div className="min-h-[22rem] rounded-md border border-border p-3 text-caption text-muted-foreground">
-                        Загружаем редактор…
+                        <Trans>Загружаем редактор…</Trans>
                       </div>
                     }
                   >
@@ -343,7 +362,9 @@ export function StaffGroupBannersPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="grid gap-1">
                     <div className="flex items-center justify-between gap-2">
-                      <Label>Начало показа · Москва</Label>
+                      <Label>
+                        <Trans>Начало показа · Москва</Trans>
+                      </Label>
                       <Button
                         onClick={() =>
                           setDraft((value) => ({
@@ -355,7 +376,7 @@ export function StaffGroupBannersPage() {
                         type="button"
                         variant="outline"
                       >
-                        Сейчас
+                        <Trans>Сейчас</Trans>
                       </Button>
                     </div>
                     <Input
@@ -368,7 +389,7 @@ export function StaffGroupBannersPage() {
                     />
                   </div>
                   <Label className="grid gap-1">
-                    Конец показа · Москва
+                    <Trans>Конец показа · Москва</Trans>
                     <Input
                       onChange={(event) =>
                         setDraft((value) => ({ ...value, endsAt: event.target.value }))
@@ -386,19 +407,21 @@ export function StaffGroupBannersPage() {
                       setDraft((value) => ({ ...value, dismissible: checked === true }))
                     }
                   />
-                  Разрешить получателю скрыть объявление
+                  <Trans>Разрешить получателю скрыть объявление</Trans>
                 </Label>
                 <p className="text-caption text-muted-foreground">
-                  Скрытие действует только в текущем браузере получателя. Уже отправленный push
-                  после изменения фильтров не отзывается и не повторяется. Внешние картинки
-                  копируются на сервер.
+                  <Trans>
+                    Скрытие действует только в текущем браузере получателя. Уже отправленный push
+                    после изменения фильтров не отзывается и не повторяется. Внешние картинки
+                    копируются на сервер.
+                  </Trans>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     disabled={mutation.isPending || courses.length === 0 || document === null}
                     type="submit"
                   >
-                    {editing ? 'Сохранить изменения' : 'Запланировать'}
+                    {editing ? t`Сохранить изменения` : t`Запланировать`}
                   </Button>
                   {editing ? (
                     <Button
@@ -410,7 +433,7 @@ export function StaffGroupBannersPage() {
                       type="button"
                       variant="outline"
                     >
-                      Отмена
+                      <Trans>Отмена</Trans>
                     </Button>
                   ) : null}
                 </div>
@@ -421,13 +444,15 @@ export function StaffGroupBannersPage() {
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Изменение не сохранено</AlertTitle>
+              <AlertTitle>
+                <Trans>Изменение не сохранено</Trans>
+              </AlertTitle>
               <AlertDescription>{errorText(mutation.error)}</AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
       </PageSection>
-      <PageSection title="Запланированные и прошлые">
+      <PageSection title={t`Запланированные и прошлые`}>
         {banners.isPending ? <PageStatePanel state="loading" /> : null}
         {banners.error ? <PageStatePanel state="error" /> : null}
         {banners.data?.items.length === 0 ? <PageStatePanel state="empty" /> : null}
@@ -438,25 +463,25 @@ export function StaffGroupBannersPage() {
                 <GroupBanner banner={banner} />
                 <p className="text-caption text-muted-foreground">
                   {banner.audience === 'both'
-                    ? 'Школьник и родитель'
+                    ? t`Школьник и родитель`
                     : banner.audience === 'student'
-                      ? 'Только школьник'
-                      : 'Только родитель'}
+                      ? t`Только школьник`
+                      : t`Только родитель`}
                   {' · '}
                   {banner.attendanceMode === 'all'
-                    ? 'Очно и онлайн'
+                    ? t`Очно и онлайн`
                     : banner.attendanceMode === 'in_person'
-                      ? 'Только очные'
-                      : 'Только онлайн'}
+                      ? t`Только очные`
+                      : t`Только онлайн`}
                 </p>
                 <p className="font-num text-caption text-muted-foreground">
-                  {new Intl.DateTimeFormat('ru-RU', {
+                  {dateTimeFormat(currentLocale(), {
                     dateStyle: 'short',
                     timeStyle: 'short',
                     timeZone: 'Europe/Moscow',
                   }).format(new Date(banner.startsAt))}{' '}
                   —{' '}
-                  {new Intl.DateTimeFormat('ru-RU', {
+                  {dateTimeFormat(currentLocale(), {
                     dateStyle: 'short',
                     timeStyle: 'short',
                     timeZone: 'Europe/Moscow',
@@ -465,18 +490,20 @@ export function StaffGroupBannersPage() {
                 {banner.status === 'active' ? (
                   <div className="flex gap-2">
                     <Button onClick={() => beginEdit(banner)} size="sm" variant="outline">
-                      Изменить
+                      <Trans>Изменить</Trans>
                     </Button>
                     <Button
                       onClick={() => mutation.mutate({ kind: 'cancel', banner })}
                       size="sm"
                       variant="ghost"
                     >
-                      Отменить
+                      <Trans>Отменить</Trans>
                     </Button>
                   </div>
                 ) : (
-                  <p className="text-caption text-muted-foreground">Отменено</p>
+                  <p className="text-caption text-muted-foreground">
+                    <Trans>Отменено</Trans>
+                  </p>
                 )}
               </CardContent>
             </Card>

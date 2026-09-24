@@ -1,10 +1,13 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { Clock3, Eye, EyeOff, Images, Pencil, RefreshCcw, Send, Trash2, Unlink } from 'lucide-react'
 
 import type { StaffNewsItem } from '@vmsh/contracts'
 import { Badge, Button, Card, CardContent } from '@vmsh/ui'
 
 function formatMoment(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -14,9 +17,27 @@ function formatMoment(value: string): string {
 }
 
 const visibilityCopy = {
-  visible: { label: 'В ленте', variant: 'success' as const, Icon: Eye },
-  manual_hidden: { label: 'Скрыто в PWA', variant: 'warning' as const, Icon: EyeOff },
-  source_deleted: { label: 'Удалено в Telegram', variant: 'neutral' as const, Icon: Trash2 },
+  visible: {
+    get label() {
+      return t`В ленте`
+    },
+    variant: 'success' as const,
+    Icon: Eye,
+  },
+  manual_hidden: {
+    get label() {
+      return t`Скрыто в PWA`
+    },
+    variant: 'warning' as const,
+    Icon: EyeOff,
+  },
+  source_deleted: {
+    get label() {
+      return t`Удалено в Telegram`
+    },
+    variant: 'neutral' as const,
+    Icon: Trash2,
+  },
 }
 
 export function NewsModerationList({
@@ -40,7 +61,7 @@ export function NewsModerationList({
     <ul className="space-y-2">
       {items.map((item) => {
         const state = item.isScheduled
-          ? { label: 'По расписанию', variant: 'info' as const, Icon: Clock3 }
+          ? { label: t`По расписанию`, variant: 'info' as const, Icon: Clock3 }
           : visibilityCopy[item.visibility]
         const StateIcon = state.Icon
         return (
@@ -54,21 +75,21 @@ export function NewsModerationList({
                       {state.label}
                     </Badge>
                     <span className="text-caption text-muted-foreground">
-                      {item.ownerName} · {item.channelTitle ?? 'Локальная публикация'}
+                      {item.ownerName} · {item.channelTitle ?? t`Локальная публикация`}
                     </span>
                     <Badge variant="outline">
                       {item.audience === 'both'
-                        ? 'Школьник и родитель'
+                        ? t`Школьник и родитель`
                         : item.audience === 'student'
-                          ? 'Только школьник'
-                          : 'Только родитель'}
+                          ? t`Только школьник`
+                          : t`Только родитель`}
                     </Badge>
                     <Badge variant="outline">
                       {item.attendanceMode === 'all'
-                        ? 'Очно и онлайн'
+                        ? t`Очно и онлайн`
                         : item.attendanceMode === 'in_person'
-                          ? 'Только очные'
-                          : 'Только онлайн'}
+                          ? t`Только очные`
+                          : t`Только онлайн`}
                     </Badge>
                     {item.mediaCount > 0 ? (
                       <span className="inline-flex items-center gap-1 text-caption text-muted-foreground">
@@ -78,77 +99,77 @@ export function NewsModerationList({
                     ) : null}
                   </div>
                   <p className="line-clamp-2 whitespace-pre-wrap text-small text-foreground">
-                    {item.textExcerpt || 'Публикация без текста'}
+                    {item.textExcerpt || t`Публикация без текста`}
                   </p>
                   <p className="text-caption text-muted-foreground">
-                    {formatMoment(item.publishedAt)} · ревизия {item.revision}
-                    {item.editedAt ? ` · обновлено ${formatMoment(item.editedAt)}` : ''}
+                    {formatMoment(item.publishedAt)} <Trans>· ревизия {item.revision}</Trans>
+                    {item.editedAt ? t` · обновлено ${formatMoment(item.editedAt)}` : ''}
                     {item.moderationReason ? ` · ${item.moderationReason}` : ''}
                   </p>
                 </div>
                 <div className="flex justify-end gap-2">
                   {item.source === 'local' && onEdit ? (
                     <Button
-                      aria-label={`${item.isScheduled ? 'Изменить запланированную' : 'Исправить опубликованную'} публикацию ${item.postId}`}
+                      aria-label={t`${item.isScheduled ? t`Изменить запланированную` : t`Исправить опубликованную`} публикацию ${item.postId}`}
                       disabled={pendingPostId === item.postId}
                       onClick={() => onEdit(item)}
                       size="sm"
                       variant="outline"
                     >
                       <Pencil aria-hidden="true" />
-                      Изменить
+                      <Trans>Изменить</Trans>
                     </Button>
                   ) : null}
                   {item.visibility === 'visible' && onHide ? (
                     <Button
-                      aria-label={`Скрыть публикацию ${item.postId} в PWA`}
+                      aria-label={t`Скрыть публикацию ${item.postId} в PWA`}
                       disabled={pendingPostId === item.postId}
                       onClick={() => onHide(item)}
                       size="sm"
                       variant="outline"
                     >
                       <EyeOff aria-hidden="true" />
-                      Скрыть
+                      <Trans>Скрыть</Trans>
                     </Button>
                   ) : null}
                   {item.visibility === 'manual_hidden' && onRestore ? (
                     <Button
-                      aria-label={`Вернуть публикацию ${item.postId} в PWA`}
+                      aria-label={t`Вернуть публикацию ${item.postId} в PWA`}
                       disabled={pendingPostId === item.postId}
                       onClick={() => onRestore(item)}
                       size="sm"
                       variant="outline"
                     >
                       <Send aria-hidden="true" />
-                      Вернуть
+                      <Trans>Вернуть</Trans>
                     </Button>
                   ) : null}
                   {item.source === 'telegram' &&
                   item.visibility !== 'source_deleted' &&
                   onMarkSourceDeleted ? (
                     <Button
-                      aria-label={`Отметить публикацию ${item.postId} удалённой в Telegram`}
+                      aria-label={t`Отметить публикацию ${item.postId} удалённой в Telegram`}
                       disabled={pendingPostId === item.postId}
                       onClick={() => onMarkSourceDeleted(item)}
                       size="sm"
                       variant="ghost"
                     >
                       <Unlink aria-hidden="true" />
-                      Нет в Telegram
+                      <Trans>Нет в Telegram</Trans>
                     </Button>
                   ) : null}
                   {item.source === 'telegram' &&
                   item.visibility === 'source_deleted' &&
                   onMarkSourcePresent ? (
                     <Button
-                      aria-label={`Отметить публикацию ${item.postId} доступной в Telegram`}
+                      aria-label={t`Отметить публикацию ${item.postId} доступной в Telegram`}
                       disabled={pendingPostId === item.postId}
                       onClick={() => onMarkSourcePresent(item)}
                       size="sm"
                       variant="outline"
                     >
                       <RefreshCcw aria-hidden="true" />
-                      Пост доступен
+                      <Trans>Пост доступен</Trans>
                     </Button>
                   ) : null}
                 </div>
