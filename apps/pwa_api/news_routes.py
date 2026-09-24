@@ -16,6 +16,7 @@ from db_methods.pwa.news import (
     list_visible_posts,
 )
 from helpers.pwa.app_keys import PWA_DATABASE
+from helpers.pwa.i18n import _
 from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
 
@@ -139,7 +140,7 @@ def _media_payload(item: dict[str, object]) -> dict[str, object]:
     return {
         "kind": "document",
         "mediaId": f"news-media.{item['id']}",
-        "name": "Аудио" if item["media_kind"] == "audio" else "Файл",
+        "name": _("Аудио") if item["media_kind"] == "audio" else _("Файл"),
         "url": public_url,
     }
 

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import {
   useContext,
   useMemo,
@@ -90,8 +92,8 @@ export function ZoomableAssetFigure({
   }
 
   const instruction = onScaleCycle
-    ? `Нажмите, чтобы сохранить следующий размер рисунка: ${Math.round(displayedScale * 100)}%.`
-    : `Нажмите, чтобы изменить размер рисунка: ${Math.round(displayedScale * 100)}%.`
+    ? t`Нажмите, чтобы сохранить следующий размер рисунка: ${Math.round(displayedScale * 100)}%.`
+    : t`Нажмите, чтобы изменить размер рисунка: ${Math.round(displayedScale * 100)}%.`
 
   return (
     <figure
@@ -117,7 +119,7 @@ export function ZoomableAssetFigure({
       >
         {imageFailed ? (
           <div className="vmsh-figure-missing" role="status">
-            <strong>Рисунок недоступен.</strong>
+            <strong><Trans>Рисунок недоступен.</Trans></strong>
             <span>{alt}</span>
           </div>
         ) : (

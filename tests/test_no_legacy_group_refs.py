@@ -27,6 +27,9 @@ ALLOWED_FILES = {
     "docs/db_structure.sql",
     "docs/db_data_examples.sql",
     # Rich-text heading levels are unrelated to the removed legacy group field.
+    "helpers/pwa/content/figure_layout.py",
+    # The legacy-print adapter keeps the historical database payload unchanged.
+    "models/pwa/legacy_print.py",
     "models/pwa/rich_document.py",
     "tests/test_no_legacy_group_refs.py",
 }

@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { MessageCircle } from 'lucide-react'
 import { buttonVariants, cn } from '@vmsh/ui'
 import { useMemo, useState } from 'react'
@@ -20,7 +23,7 @@ import { ClassroomAssignmentStatus, GroupBanner } from '@vmsh/product'
 
 function formatMoment(value: string | null): string | undefined {
   if (value === null) return undefined
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -91,7 +94,7 @@ export function FamilyHomePage() {
       actions={
         principal.linkedChildren.length > 1 ? (
           <label className="flex items-center gap-2 text-small font-medium">
-            <span>Ребёнок</span>
+            <span><Trans>Ребёнок</Trans></span>
             <select
               className="min-h-9 rounded-md border border-input bg-surface px-3"
               onChange={(event) => setSelectedChildId(event.target.value)}
@@ -106,8 +109,8 @@ export function FamilyHomePage() {
           </label>
         ) : undefined
       }
-      eyebrow={selectedChild?.displayName ?? 'Кабинет родителя'}
-      title="Текущие занятия"
+      eyebrow={selectedChild?.displayName ?? t`Кабинет родителя`}
+      title={t`Текущие занятия`}
     >
       {/* docs/organizer-questions.md: a visible home action without another navigation item. */}
       <div className="mb-6">
@@ -119,11 +122,11 @@ export function FamilyHomePage() {
           href="/family/organizers/new"
         >
           <MessageCircle aria-hidden="true" className="size-5 shrink-0" />
-          Задать вопрос организаторам
+          <Trans>Задать вопрос организаторам</Trans>
         </a>
       </div>
       {bannerQuery.data ? (
-        <div className="space-y-2" aria-label="Объявления">
+        <div className="space-y-2" aria-label={t`Объявления`}>
           {bannerQuery.data.items
             .filter((banner) => !bannerDismissals.dismissed.has(bannerDismissalId(banner)))
             .map((banner) => (
@@ -135,27 +138,27 @@ export function FamilyHomePage() {
             ))}
         </div>
       ) : null}
-      <PageSection title="Очные занятия">
+      <PageSection title={t`Очные занятия`}>
         {selectedChildId.length === 0 ? (
           <PageStatePanel
-            description="Обратитесь к администратору кружка, чтобы связать аккаунт с ребёнком."
+            description={t`Обратитесь к администратору кружка, чтобы связать аккаунт с ребёнком.`}
             state="empty"
-            title="Нет доступного профиля ребёнка"
+            title={t`Нет доступного профиля ребёнка`}
           />
         ) : null}
         {query.isPending && selectedChildId ? <PageStatePanel state="loading" /> : null}
         {query.error ? (
           <PageStatePanel
-            actionLabel="Повторить"
+            actionLabel={t`Повторить`}
             onAction={() => void query.refetch()}
             state={query.error instanceof PublishedClassroomNetworkError ? 'offline' : 'error'}
           />
         ) : null}
         {query.data?.items.length === 0 ? (
           <PageStatePanel
-            description="Когда администратор добавит группу в очное событие, оно появится здесь."
+            description={t`Когда администратор добавит группу в очное событие, оно появится здесь.`}
             state="empty"
-            title="Очные занятия пока не запланированы"
+            title={t`Очные занятия пока не запланированы`}
           />
         ) : null}
         <div className="grid gap-3 lg:grid-cols-2">

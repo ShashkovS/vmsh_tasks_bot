@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, Volume2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
@@ -55,18 +58,28 @@ const familyCategories: readonly FamilyNotificationCategory[] = [
   'thread_updated',
 ] as const
 
-const categoryCopy: Record<FamilyNotificationCategory, { title: string; description: string }> = {
-  thread_updated: { title: 'Ответ организаторов', description: 'Ответ в вашем личном обращении' },
-  lesson_published: { title: 'Новый урок', description: 'Условия нового занятия' },
-  hint_published: { title: 'Подсказки', description: 'Опубликованы подсказки к задачам' },
-  solution_published: { title: 'Решения', description: 'Опубликованы решения занятия' },
-  review_completed: {
-    title: 'Итоги занятия',
-    description: 'Один итог после завершения всей проверки',
-  },
-  deadline: { title: 'Дедлайн', description: 'Напоминание о публикации решений' },
-  news: { title: 'Новости', description: 'Публикации кружка' },
-  group_announcement: { title: 'Объявление', description: 'Сообщение для группы ребёнка' },
+function categoryCopy(category: FamilyNotificationCategory): {
+  title: string
+  description: string
+} {
+  switch (category) {
+    case 'thread_updated':
+      return { title: t`Ответ организаторов`, description: t`Ответ в вашем личном обращении` }
+    case 'lesson_published':
+      return { title: t`Новый урок`, description: t`Условия нового занятия` }
+    case 'hint_published':
+      return { title: t`Подсказки`, description: t`Опубликованы подсказки к задачам` }
+    case 'solution_published':
+      return { title: t`Решения`, description: t`Опубликованы решения занятия` }
+    case 'review_completed':
+      return { title: t`Итоги занятия`, description: t`Один итог после завершения всей проверки` }
+    case 'deadline':
+      return { title: t`Дедлайн`, description: t`Напоминание о публикации решений` }
+    case 'news':
+      return { title: t`Новости`, description: t`Публикации кружка` }
+    case 'group_announcement':
+      return { title: t`Объявление`, description: t`Сообщение для группы ребёнка` }
+  }
 }
 
 type FamilyNotificationPreference = NotificationPreference & {
@@ -109,20 +122,20 @@ export function FamilyNotificationSettingsView({
   const visiblePreferences = preferences?.filter(isFamilyPreference)
   return (
     <PageLayout
-      description="Новости и материалы всегда остаются в кабинете. Push можно настроить отдельно."
-      eyebrow="Профиль"
-      title="Уведомления"
+      description={t`Новости и материалы всегда остаются в кабинете. Push можно настроить отдельно.`}
+      eyebrow={t`Профиль`}
+      title={t`Уведомления`}
     >
-      <PageSection title="Последние события">
+      <PageSection title={t`Последние события`}>
         {eventsLoading ? <PageStatePanel state="loading" /> : null}
         {eventsError ? (
-          <PageStatePanel actionLabel="Повторить" onAction={onEventsRetry} state="error" />
+          <PageStatePanel actionLabel={t`Повторить`} onAction={onEventsRetry} state="error" />
         ) : null}
         {events?.length === 0 ? (
           <PageStatePanel
-            description="Новые материалы, новости и итог занятия появятся здесь."
+            description={t`Новые материалы, новости и итог занятия появятся здесь.`}
             state="empty"
-            title="Пока пусто"
+            title={t`Пока пусто`}
           />
         ) : null}
         <div className="space-y-2">
@@ -135,18 +148,18 @@ export function FamilyNotificationSettingsView({
           ))}
         </div>
       </PageSection>
-      <PageSection title="На этом устройстве">{pushControls}</PageSection>
+      <PageSection title={t`На этом устройстве`}>{pushControls}</PageSection>
       <PageSection
-        description="Отдельные push о каждой проверенной задаче ребёнка родителю не отправляются."
-        title="Категории"
+        description={t`Отдельные push о каждой проверенной задаче ребёнка родителю не отправляются.`}
+        title={t`Категории`}
       >
         {loading ? <PageStatePanel state="loading" /> : null}
-        {error ? <PageStatePanel actionLabel="Повторить" onAction={onRetry} state="error" /> : null}
+        {error ? <PageStatePanel actionLabel={t`Повторить`} onAction={onRetry} state="error" /> : null}
         {visiblePreferences ? (
           <Card>
             <CardContent className="divide-y divide-border pt-1">
               {visiblePreferences.map((preference) => {
-                const copy = categoryCopy[preference.category]
+                const copy = categoryCopy(preference.category)
                 return (
                   <div
                     className="flex items-center justify-between gap-4 py-3"
@@ -157,7 +170,7 @@ export function FamilyNotificationSettingsView({
                       <p className="text-caption text-muted-foreground">{copy.description}</p>
                     </div>
                     <Switch
-                      aria-label={`Push: ${copy.title}`}
+                      aria-label={t`Push: ${copy.title}`}
                       checked={preference.pushEnabled}
                       disabled={pending}
                       onCheckedChange={(enabled) => onToggle?.(preference, enabled)}
@@ -171,9 +184,9 @@ export function FamilyNotificationSettingsView({
         <Alert tone="neutral">
           <Volume2 aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Звук только с 9:00 до 21:00</AlertTitle>
+            <AlertTitle><Trans>Звук только с 9:00 до 21:00</Trans></AlertTitle>
             <AlertDescription>
-              Ночью новые события остаются видны, но не будят вас.
+              <Trans>Ночью новые события остаются видны, но не будят вас.</Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -183,7 +196,7 @@ export function FamilyNotificationSettingsView({
 }
 
 function formatMoment(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -197,15 +210,15 @@ function familyEventCopy(event: NotificationEvent): { title: string; description
     const lesson = event.payload.lessonNumber
     const group = event.payload.groupName
     return {
-      title: 'Итоги занятия готовы',
+      title: t`Итоги занятия готовы`,
       description:
         typeof lesson === 'number' && typeof group === 'string'
-          ? `${group} · занятие ${lesson}`
-          : 'Результаты ребёнка уже доступны в кабинете',
+          ? t`${group} · занятие ${lesson}`
+          : t`Результаты ребёнка уже доступны в кабинете`,
     }
   }
-  const preference = categoryCopy[event.category as FamilyNotificationCategory]
-  return preference ?? { title: 'Новое событие', description: 'Откройте кабинет' }
+  const preference = categoryCopy(event.category as FamilyNotificationCategory)
+  return preference ?? { title: t`Новое событие`, description: t`Откройте кабинет` }
 }
 
 function VisibleFamilyNotification({
@@ -276,11 +289,11 @@ function FamilyPushDeviceSettings({
   return (
     <PushDeviceControls
       categories={[
-        { id: 'materials', label: 'Новые материалы' },
-        { id: 'results', label: 'Итоги занятия' },
-        { id: 'deadline', label: 'Дедлайн' },
-        { id: 'news', label: 'Новости кружка' },
-        { id: 'group_announcement', label: 'Объявления группы' },
+        { id: 'materials', label: t`Новые материалы` },
+        { id: 'results', label: t`Итоги занятия` },
+        { id: 'deadline', label: t`Дедлайн` },
+        { id: 'news', label: t`Новости кружка` },
+        { id: 'group_announcement', label: t`Объявления группы` },
       ]}
       onDisable={() => void push.disable()}
       onDismiss={push.dismiss}
@@ -354,7 +367,7 @@ export function FamilyNotificationsPage() {
   } else if (pushConfig.error) {
     pushControls = (
       <PageStatePanel
-        actionLabel="Повторить"
+        actionLabel={t`Повторить`}
         onAction={() => void pushConfig.refetch()}
         state="error"
       />
@@ -371,8 +384,8 @@ export function FamilyNotificationsPage() {
       <Alert tone="neutral">
         <Bell aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>Push пока недоступны</AlertTitle>
-          <AlertDescription>Новые материалы всё равно будут видны в кабинете.</AlertDescription>
+          <AlertTitle><Trans>Push пока недоступны</Trans></AlertTitle>
+          <AlertDescription><Trans>Новые материалы всё равно будут видны в кабинете.</Trans></AlertDescription>
         </AlertContent>
       </Alert>
     )

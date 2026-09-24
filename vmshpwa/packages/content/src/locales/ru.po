@@ -12,3 +12,38 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#: packages/content/src/index.tsx
+msgid "Материал не показан: его безопасный формат не прошёл проверку."
+msgstr "Материал не показан: его безопасный формат не прошёл проверку."
+
+#. placeholder {0}: Math.round(displayedScale * 100)
+#: packages/content/src/zoomable-asset-figure.tsx
+msgid "Нажмите, чтобы изменить размер рисунка: {0}%."
+msgstr "Нажмите, чтобы изменить размер рисунка: {0}%."
+
+#. placeholder {0}: Math.round(displayedScale * 100)
+#: packages/content/src/zoomable-asset-figure.tsx
+msgid "Нажмите, чтобы сохранить следующий размер рисунка: {0}%."
+msgstr "Нажмите, чтобы сохранить следующий размер рисунка: {0}%."
+
+#: packages/content/src/index.tsx
+msgid "Некоторые формулы не удалось отобразить. Их исходная запись оставлена в тексте."
+msgstr "Некоторые формулы не удалось отобразить. Их исходная запись оставлена в тексте."
+
+#: packages/content/src/zoomable-asset-figure.tsx
+msgid "Рисунок недоступен."
+msgstr "Рисунок недоступен."
+
+#: packages/content/src/math-document.tsx
+msgid "Рисунок пока недоступен."
+msgstr "Рисунок пока недоступен."
+
+#: packages/content/src/index.tsx
+#: packages/content/src/math-document.tsx
+msgid "Таблица с горизонтальной прокруткой"
+msgstr "Таблица с горизонтальной прокруткой"
+
+#: packages/content/src/katex-rendering.tsx
+msgid "Формулу не удалось отобразить: <0>{latex}</0>"
+msgstr "Формулу не удалось отобразить: <0>{latex}</0>"

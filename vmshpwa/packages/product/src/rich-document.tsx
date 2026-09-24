@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import katex from 'katex'
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 
@@ -73,7 +75,7 @@ function Inline({ nodes, idPrefix }: { nodes: RichInline[]; idPrefix: string }) 
       <span key={path}>{children}</span>
     ) : (
       <button
-        aria-label="Показать скрытый текст"
+        aria-label={t`Показать скрытый текст`}
         className="select-none rounded bg-surface-sunken px-1 blur-[4px] transition-[filter] hover:blur-none focus-visible:blur-none"
         key={path}
         onClick={() =>
@@ -101,11 +103,11 @@ function ImageBlock({
   if (!media?.url) {
     return (
       <div
-        aria-label="Картинка будет скопирована при сохранении"
+        aria-label={t`Картинка будет скопирована при сохранении`}
         className="rounded-md border border-dashed border-border p-4 text-caption text-muted-foreground"
         role="status"
       >
-        Картинка будет скопирована при сохранении
+        <Trans>Картинка будет скопирована при сохранении</Trans>
       </div>
     )
   }
@@ -178,7 +180,7 @@ function Block({ block, document, idPrefix, imageLoading }: { block: RichBlock; 
         {block.items.map((item, index) => (
           <li className="flex gap-2" key={index}>
             <span
-              aria-label={item.checked ? 'Выполнено' : 'Не выполнено'}
+              aria-label={item.checked ? t`Выполнено` : t`Не выполнено`}
               aria-checked={item.checked}
               role="checkbox"
             >

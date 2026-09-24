@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { EyeOff, FileText, Forward, ImageIcon, Play } from 'lucide-react'
 import { Fragment, useState, type ReactNode } from 'react'
 
@@ -52,7 +54,7 @@ function RichText({ text, entities }: { text: string; entities?: TelegramEntity[
               <span key={index}>{segment.text}</span>
             ) : (
               <button
-                aria-label="Показать скрытый текст"
+                aria-label={t`Показать скрытый текст`}
                 className="select-none rounded bg-surface-sunken px-1 blur-[4px] transition-[filter] hover:blur-none"
                 key={index}
                 onClick={() => setRevealed((prev) => new Set(prev).add(index))}
@@ -252,18 +254,18 @@ function StateNotice({
 }) {
   switch (state) {
     case 'source-revised':
-      return <Badge variant="info">Изменено в источнике</Badge>
+      return <Badge variant="info"><Trans>Изменено в источнике</Trans></Badge>
     case 'local-override':
-      return <Badge variant="warning">Локальная правка редакции</Badge>
+      return <Badge variant="warning"><Trans>Локальная правка редакции</Trans></Badge>
     case 'source-deleted':
-      return <Badge variant="neutral">Удалено в источнике</Badge>
+      return <Badge variant="neutral"><Trans>Удалено в источнике</Trans></Badge>
     case 'delivery-error':
       return (
         <div className="flex items-center gap-2">
-          <Badge variant="danger">Ошибка доставки</Badge>
+          <Badge variant="danger"><Trans>Ошибка доставки</Trans></Badge>
           {onRetryDelivery ? (
             <Button onClick={onRetryDelivery} size="xs" variant="outline">
-              Повторить
+              <Trans>Повторить</Trans>
             </Button>
           ) : null}
         </div>
@@ -301,7 +303,7 @@ export function TelegramRichPost({
         )}
       >
         <EyeOff aria-hidden="true" className="size-4" />
-        Пост скрыт редакцией.
+        <Trans>Пост скрыт редакцией.</Trans>
       </div>
     )
   }
@@ -325,7 +327,7 @@ export function TelegramRichPost({
             {post.attribution?.forwardedFrom ? (
               <p className="inline-flex items-center gap-1 text-caption text-muted-foreground">
                 <Forward aria-hidden="true" className="size-3.5" />
-                Переслано из {post.attribution.forwardedFrom}
+                <Trans>Переслано из {post.attribution.forwardedFrom}</Trans>
               </p>
             ) : null}
             {post.attribution?.author || post.attribution?.channel ? (
@@ -371,7 +373,7 @@ export function TelegramRichPost({
       {post.at || post.editedAt ? (
         <p className="text-caption text-muted-foreground">
           {post.at}
-          {post.editedAt ? ` · изменено ${post.editedAt}` : ''}
+          {post.editedAt ? t` · изменено ${post.editedAt}` : ''}
         </p>
       ) : null}
     </article>

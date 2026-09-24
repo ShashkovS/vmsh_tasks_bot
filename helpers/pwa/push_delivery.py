@@ -17,31 +17,53 @@ from db_methods.pwa.notification_deliveries import (
     suppress_unavailable,
 )
 from db_methods.pwa.push_subscriptions import delete_subscription_by_id
+from helpers.pwa.i18n import DEFAULT_LOCALE, N_, translate
 from helpers.pwa.web_push import WebPushTransportError
 
 
 PushSender = Callable[[dict[str, object], dict[str, object]], Awaitable[None]]
 RETRY_DELAYS_SECONDS = (60, 300, 1_800, 7_200)
-PUSH_COPY = {
+PUSH_COPY: dict[str, tuple[str, str]] = {
     "lesson_published": (
-        "Опубликован новый урок",
-        "В кабинете появились новые условия.",
+        N_("Опубликован новый урок"),
+        N_("В кабинете появились новые условия."),
     ),
-    "hint_published": ("Опубликована подсказка", "Подсказки уже доступны в кабинете."),
-    "solution_published": ("Опубликованы решения", "Решения занятия уже доступны."),
+    "hint_published": (
+        N_("Опубликована подсказка"),
+        N_("Подсказки уже доступны в кабинете."),
+    ),
+    "solution_published": (
+        N_("Опубликованы решения"),
+        N_("Решения занятия уже доступны."),
+    ),
     "review_completed": (
-        "Проверка завершена",
-        "Откройте кабинет, чтобы увидеть результат.",
+        N_("Проверка завершена"),
+        N_("Откройте кабинет, чтобы увидеть результат."),
     ),
-    "thread_updated": ("Новое сообщение", "В обсуждении решения появился ответ."),
-    "oral_window": ("Открыт устный приём", "Можно подключиться к устной сдаче."),
+    "thread_updated": (
+        N_("Новое сообщение"),
+        N_("В обсуждении решения появился ответ."),
+    ),
+    "oral_window": (
+        N_("Открыт устный приём"),
+        N_("Можно подключиться к устной сдаче."),
+    ),
     "classroom_assignment": (
-        "Назначена аудитория",
-        "Аудитория опубликована в кабинете.",
+        N_("Назначена аудитория"),
+        N_("Аудитория опубликована в кабинете."),
     ),
-    "deadline": ("Скоро дедлайн", "Проверьте срок сдачи задач."),
-    "news": ("Новая публикация", "В новостях кружка появилась запись."),
-    "group_announcement": ("Новое объявление", "В кабинете появилось объявление."),
+    "deadline": (
+        N_("Скоро дедлайн"),
+        N_("Проверьте срок сдачи задач."),
+    ),
+    "news": (
+        N_("Новая публикация"),
+        N_("В новостях кружка появилась запись."),
+    ),
+    "group_announcement": (
+        N_("Новое объявление"),
+        N_("В кабинете появилось объявление."),
+    ),
 }
 
 
@@ -70,33 +92,48 @@ def _quiet_now(item: dict[str, object], now: datetime) -> bool:
 
 def _payload(item: dict[str, object], now: datetime) -> dict[str, object]:
     category = str(item["category"])
-    title, default_body = PUSH_COPY[category]
+    recipient_locale = str(item.get("recipient_locale") or DEFAULT_LOCALE)
+    default_title, default_body = PUSH_COPY[category]
+    title = translate(recipient_locale, default_title)
+    body = translate(recipient_locale, default_body)
     values = json.loads(str(item["payload_json"]))
     if not isinstance(values, dict):
         raise ValueError("notification payload must be an object")
-    body = default_body
     if category == "classroom_assignment":
         parts = [
             values.get(key) for key in ("courseName", "groupName", "classroomName")
         ]
         names = [str(value) for value in parts if isinstance(value, str) and value]
         if len(names) == 3:
-            names[-1] = f"аудитория {names[-1]}"
+            names[-1] = translate(
+                recipient_locale, N_("аудитория {name}"), {"name": names[-1]}
+            )
         if names:
             body = " · ".join(names)
     elif category == "review_completed":
         if values.get("kind") == "family_lesson_digest":
-            title = "Итоги занятия готовы"
+            title = translate(recipient_locale, N_("Итоги занятия готовы"))
             lesson_number = values.get("lessonNumber")
             group_name = values.get("groupName")
             if isinstance(lesson_number, int) and isinstance(group_name, str):
-                body = f"{group_name} · занятие {lesson_number}. Результаты уже в кабинете."
+                body = translate(
+                    recipient_locale,
+                    N_("{group} · занятие {lesson_number}. Результаты уже в кабинете."),
+                    {"group": group_name, "lesson_number": lesson_number},
+                )
             else:
-                body = "Результаты занятия уже доступны в семейном кабинете."
+                body = translate(
+                    recipient_locale,
+                    N_("Результаты занятия уже доступны в семейном кабинете."),
+                )
         else:
             count = values.get("count")
             if isinstance(count, int) and not isinstance(count, bool) and count > 1:
-                body = f"Проверено задач: {count}. Результаты уже в кабинете."
+                body = translate(
+                    recipient_locale,
+                    N_("Проверено задач: {count}. Результаты уже в кабинете."),
+                    {"count": count},
+                )
     elif category == "group_announcement":
         text = values.get("text")
         if isinstance(text, str) and text.strip():
@@ -104,7 +141,8 @@ def _payload(item: dict[str, object], now: datetime) -> dict[str, object]:
     audience = str(item["audience"])
     route = str(item["route"])
     if category == "thread_updated" and route.startswith(f"/{audience}/organizers/"):
-        title, body = "Ответ организаторов", "В вашем обращении появился ответ."
+        title = translate(recipient_locale, N_("Ответ организаторов"))
+        body = translate(recipient_locale, N_("В вашем обращении появился ответ."))
     if not route.startswith(f"/{audience}/"):
         raise ValueError("notification route escaped its audience")
     sound_enabled = _preference_enabled(item.get("sound_enabled"), category)

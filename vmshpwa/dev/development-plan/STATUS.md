@@ -1,5 +1,22 @@
 # Статус плана разработки
 
+## Интернационализация, P2 — 24 сентября 2026, реализовано локально
+
+Family home, children/history, lesson chrome, news и notifications доступны
+на английском; имена детей, групп/курсов и авторское содержание остаются
+данными на исходном языке. Общие Family-зависимости прогресса, verdict,
+материалов и rich content переведены, включая plural/date/accessibility labels.
+Web Push получает текущий язык получателя из `auth_accounts.locale` при claim,
+переводит только распознаваемые системные шаблоны и сохраняет авторский текст.
+
+Обновлены scopes и frontend/backend PO-каталоги. Прошли push pytest 13/13,
+frontend unit 901/901, полный pytest 124 passed (1 skipped), ESLint, typecheck,
+production build и обе i18n-проверки. `e2e:i18n`: 15/15 в Chromium, WebKit и
+Firefox. Отдельная чистая сборка `7fbbeb15` подтверждает budget P2: initial JS
+не более +3.2 KB и медианный FCP не более +20 мс. [План, доказательства и
+следующий P3](24-i18n.md); [англоязычная процедура](24-i18n-execution-plan.md);
+[замеры](../i18n-performance-report.md).
+
 ## Компактизация распределений аудиторий, P1 — 22 сентября 2026, реализовано локально
 
 Migration `0099.pwa_classroom_assignment_compaction` переводит распределения на
@@ -3266,7 +3283,6 @@ events остаются. Число открытых соединений по-�
 Prometheus `vmsh_websocket_connections`, а HTTP p95 уже строится из отдельной
 `vmsh_http_request_duration_seconds` histogram. Контракт закреплён в
 [`pwa_tests/test_sentry_safety.py`](../../../pwa_tests/test_sentry_safety.py).
-
 
 ## Исправление вставки видео и компоновки — 23 сентября 2026
 

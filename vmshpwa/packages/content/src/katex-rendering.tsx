@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import katex from 'katex'
 import { useEffect, useRef } from 'react'
 
@@ -60,7 +61,7 @@ export function MathExpression({ latex, display = false, className }: MathExpres
     >
       <span ref={outputRef} />
       <span className="vmsh-formula-fallback" hidden ref={fallbackRef} role="status">
-        Формулу не удалось отобразить: <code>{latex}</code>
+        <Trans>Формулу не удалось отобразить: <code>{latex}</code></Trans>
       </span>
     </span>
   )

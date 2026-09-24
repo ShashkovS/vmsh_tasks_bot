@@ -12,6 +12,7 @@ from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.content import AssetConversionError
+from helpers.pwa.i18n import N_
 from helpers.object_storage import ObjectStorageOperationError
 from models.pwa import organizer_questions as domain
 from db_methods.pwa import organizer_questions as db
@@ -46,10 +47,10 @@ async def run(request, fn, write=False):
             "idempotency_conflict": 409,
         }[code]
         message = {
-            "forbidden": "Обращение недоступно",
-            "not_found": "Обращение или фотография не найдены",
-            "validation_error": "Проверьте текст и фотографии",
-            "idempotency_conflict": "Эта отправка уже сохранена с другими данными",
+            "forbidden": N_("Обращение недоступно"),
+            "not_found": N_("Обращение или фотография не найдены"),
+            "validation_error": N_("Проверьте текст и фотографии"),
+            "idempotency_conflict": N_("Эта отправка уже сохранена с другими данными"),
         }[code]
         raise PwaApiError(status=status, code=code, message=message) from error
 

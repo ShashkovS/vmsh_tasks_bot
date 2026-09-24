@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import {
   createContext,
   useContext,
@@ -194,7 +196,7 @@ function ContentBlocks({
       case 'table':
         return (
           <div
-            aria-label="Таблица с горизонтальной прокруткой"
+            aria-label={t`Таблица с горизонтальной прокруткой`}
             className="vmsh-scroll-x"
             key={key}
             role="region"
@@ -236,7 +238,7 @@ function ContentBlocks({
               }
             >
               <div className="vmsh-figure-missing" role="status">
-                <strong>Рисунок пока недоступен.</strong>
+                <strong><Trans>Рисунок пока недоступен.</Trans></strong>
                 <span>{block.alt}</span>
               </div>
               {block.caption ? (
@@ -366,6 +368,8 @@ export function SemanticMathDocument({
                   {!hideProblemHeadings ? (
                     <div className="vmsh-problem-header">
                       <h2 id={headingId}>
+                        {/* The compiled worksheet heading is lesson content, not interface copy. */}
+                        {/* eslint-disable-next-line lingui/no-unlocalized-strings -- compiled worksheet label */}
                         {`Задача ${problemReference(problem)}.`}
                         {problem.title ? <span>«{problem.title}»</span> : null}
                       </h2>

@@ -1,4 +1,6 @@
 import renderMathInElement from 'katex/contrib/auto-render'
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { katexRenderOptions } from './katex-rendering'
@@ -114,7 +116,7 @@ export function MathHtml({ html, className }: MathHtmlProps) {
       if (table.parentElement?.classList.contains('vmsh-scroll-x')) return
       const scroller = document.createElement('div')
       scroller.className = 'vmsh-scroll-x'
-      scroller.setAttribute('aria-label', 'Таблица с горизонтальной прокруткой')
+      scroller.setAttribute('aria-label', t`Таблица с горизонтальной прокруткой`)
       scroller.setAttribute('role', 'region')
       scroller.tabIndex = 0
       table.replaceWith(scroller)
@@ -137,10 +139,10 @@ export function MathHtml({ html, className }: MathHtmlProps) {
       className={['vmsh-math-content font-reading leading-8', className].filter(Boolean).join(' ')}
     >
       <div className="vmsh-content-fallback" hidden ref={fallbackRef} role="alert">
-        Материал не показан: его безопасный формат не прошёл проверку.
+        <Trans>Материал не показан: его безопасный формат не прошёл проверку.</Trans>
       </div>
       <div className="vmsh-content-formula-warning" hidden ref={formulaWarningRef} role="status">
-        Некоторые формулы не удалось отобразить. Их исходная запись оставлена в тексте.
+        <Trans>Некоторые формулы не удалось отобразить. Их исходная запись оставлена в тексте.</Trans>
       </div>
       <div ref={containerRef} />
     </div>

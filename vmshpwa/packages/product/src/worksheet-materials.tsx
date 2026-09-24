@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 import { ChevronDown, ChevronUp, KeyRound, Lightbulb } from 'lucide-react'
 import { Button } from '@vmsh/ui'
@@ -63,7 +65,7 @@ export function WorksheetMaterials({
   return (
     <div
       role="group"
-      aria-label="Подсказка и решение"
+      aria-label={t`Подсказка и решение`}
       className={compact ? 'contents font-sans' : 'mt-4 font-sans'}
     >
       <div className={compact ? 'contents' : 'flex flex-wrap gap-1.5'}>
@@ -83,7 +85,7 @@ export function WorksheetMaterials({
               ) : (
                 <KeyRound aria-hidden="true" className="size-4" />
               )}
-              {kind === 'hint' ? 'Подсказка' : 'Решение'}
+              {kind === 'hint' ? t`Подсказка` : t`Решение`}
               {opened === kind ? (
                 <ChevronUp aria-hidden="true" />
               ) : (
@@ -98,20 +100,20 @@ export function WorksheetMaterials({
           data-print-hide
           className="order-3 mt-2 w-full basis-full rounded-md border border-border p-3 text-small"
         >
-          <p>Показать подсказку? После открытия её уже не получится развидеть.</p>
+          <p><Trans>Показать подсказку? После открытия её уже не получится развидеть.</Trans></p>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button size="sm" onClick={() => void open('hint')}>
-              Показать подсказку
+              <Trans>Показать подсказку</Trans>
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
-              Отмена
+              <Trans>Отмена</Trans>
             </Button>
           </div>
         </div>
       ) : null}
       {loading ? (
         <p role="status" data-print-hide className="order-3 w-full basis-full text-small">
-          Загружаем…
+          <Trans>Загружаем…</Trans>
         </p>
       ) : null}
       {error ? (
@@ -120,9 +122,9 @@ export function WorksheetMaterials({
           data-print-hide
           className="order-3 w-full basis-full text-small text-danger"
         >
-          Не удалось открыть материал. Проверьте соединение и повторите попытку.
+          <Trans>Не удалось открыть материал. Проверьте соединение и повторите попытку.</Trans>
           <Button size="sm" variant="ghost" onClick={() => opened && void open(opened)}>
-            Повторить
+            <Trans>Повторить</Trans>
           </Button>
         </div>
       ) : null}
@@ -132,13 +134,13 @@ export function WorksheetMaterials({
           className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3"
         >
           {opened === 'hint' ? (
-            <p className="vmsh-material-label text-small font-medium">Подсказка</p>
+            <p className="vmsh-material-label text-small font-medium"><Trans>Подсказка</Trans></p>
           ) : null}
           {contents[opened]}
           <div className="mt-2 font-sans" data-print-hide>
             <Button size="sm" variant="ghost" onClick={() => setOpened(null)}>
               <ChevronUp aria-hidden="true" />
-              {opened === 'hint' ? 'Скрыть подсказку' : 'Скрыть решение'}
+              {opened === 'hint' ? t`Скрыть подсказку` : t`Скрыть решение`}
             </Button>
           </div>
         </div>

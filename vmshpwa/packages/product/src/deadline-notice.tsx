@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { cn } from '@vmsh/ui'
 
 /*
@@ -30,7 +31,7 @@ export function DeadlineNotice({
   return (
     <p className={cn('flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-small', className)}>
       <span className={cn('font-medium', toneByState[state])}>
-        {state === 'closed' ? 'Приём закрыт' : `Приём до ${absoluteLabel}`}
+        {state === 'closed' ? t`Приём закрыт` : t`Приём до ${absoluteLabel}`}
       </span>
       <time className="text-muted-foreground" dateTime={closesAt}>
         · {relativeLabel}

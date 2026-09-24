@@ -57,6 +57,34 @@ test('Staff switches the language from the header menu', async ({ page }) => {
   }
 })
 
+// P2 acceptance: interface chrome changes language while child and course data remain source data.
+test('Family sees English child progress and notification settings', async ({ page }) => {
+  await page.context().clearCookies()
+  await loginThroughUi(page, AUTH_PERSONAS.family, '/family/profile')
+  try {
+    await page.getByRole('radio', { name: 'English' }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+    await page.goto('/family/children')
+    await expect(page.getByRole('heading', { name: 'Children' })).toBeVisible()
+    await page
+      .getByText('Алексей Тестовый-Онлайн')
+      .locator('xpath=../../..')
+      .getByRole('button', { name: 'Open' })
+      .click()
+    await expect(page.getByRole('heading', { name: 'Алексей Тестовый-Онлайн' })).toBeVisible()
+    await expect(page.getByText('Course history', { exact: true })).toBeVisible()
+    await expect(page.getByText(/^Lesson \d+$/, { exact: true }).first()).toBeVisible()
+    await expect(page.getByText(/\d+ of \d+ problems accepted/).first()).toBeVisible()
+
+    await page.goto('/family/profile/notifications')
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Recent events' })).toBeVisible()
+  } finally {
+    await saveAccountLocale(page, 'family', 'ru')
+  }
+})
+
 test('English device language translates the sign-in page', async ({ page, context, baseURL }) => {
   await context.addCookies([{ name: 'vmsh-locale', value: 'en', url: baseURL ?? '' }])
   await page.goto('/family/login')

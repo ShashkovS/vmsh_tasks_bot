@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { History } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -53,7 +54,7 @@ export function ProblemHeader({
             type="button"
           >
             <History aria-hidden="true" className="size-4" />
-            История
+            <Trans>История</Trans>
           </button>
         ) : null}
       </div>

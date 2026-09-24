@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
@@ -36,10 +38,15 @@ function hasSubparts(blocks: WebContentBlock[]): boolean {
   )
 }
 
-const materialLabels: Record<ContentMaterialKind, string> = {
-  condition: 'Условие',
-  hint: 'Подсказка',
-  solution: 'Решение',
+function materialLabel(kind: ContentMaterialKind): string {
+  switch (kind) {
+    case 'condition':
+      return t`Условие`
+    case 'hint':
+      return t`Подсказка`
+    case 'solution':
+      return t`Решение`
+  }
 }
 
 /** Family uses the same published derivative but always keeps child ownership explicit. */
@@ -58,6 +65,7 @@ export function FamilyPublishedContentPage({
   problemOrdinal?: number
   displayTitle?: string
 }) {
+  const materialLabelForKind = materialLabel(kind)
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'family') {
@@ -101,22 +109,22 @@ export function FamilyPublishedContentPage({
 
   if (!groupLessonId || !studentPublicId) {
     return (
-      <PageLayout title={`Задача ${taskId}`} width="reading">
+      <PageLayout title={t`Задача ${taskId}`} width="reading">
         <PageStatePanel
           description={
             !studentPublicId
-              ? 'У аккаунта родителя нет доступного профиля ребёнка.'
-              : 'Откройте задачу из опубликованного листка ребёнка.'
+              ? t`У аккаунта родителя нет доступного профиля ребёнка.`
+              : t`Откройте задачу из опубликованного листка ребёнка.`
           }
           state="empty"
-          title={!studentPublicId ? 'Не выбран ребёнок' : 'Не указан опубликованный листок'}
+          title={!studentPublicId ? t`Не выбран ребёнок` : t`Не указан опубликованный листок`}
         />
       </PageLayout>
     )
   }
   if (query.isPending) {
     return (
-      <PageLayout title={materialLabels[kind]} width="reading">
+      <PageLayout title={materialLabelForKind} width="reading">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -132,19 +140,19 @@ export function FamilyPublishedContentPage({
             ? 'empty'
             : 'error'
     return (
-      <PageLayout title={materialLabels[kind]} width="reading">
+      <PageLayout title={materialLabelForKind} width="reading">
         <PageStatePanel
           {...(state === 'error' || state === 'offline'
-            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
             : {})}
           {...(state === 'empty'
             ? {
-                description: 'Этот материал ещё не опубликован для выбранной группы ребёнка.',
+                description: t`Этот материал ещё не опубликован для выбранной группы ребёнка.`,
               }
             : {})}
-          description="Не удалось загрузить материал. Попробуйте ещё раз."
+          description={t`Не удалось загрузить материал. Попробуйте ещё раз.`}
           state={state}
-          {...(state === 'empty' ? { title: 'Материал пока закрыт' } : {})}
+          {...(state === 'empty' ? { title: t`Материал пока закрыт` } : {})}
         />
       </PageLayout>
     )
@@ -157,8 +165,8 @@ export function FamilyPublishedContentPage({
       : document.problems.find((problem) => problem.ordinal === problemOrdinal)
   if (problemOrdinal !== undefined && !selectedProblem) {
     return (
-      <PageLayout title={document.title ?? materialLabels[kind]} width="reading">
-        <PageStatePanel state="empty" title="Задача не найдена" />
+      <PageLayout title={document.title ?? materialLabelForKind} width="reading">
+        <PageStatePanel state="empty" title={t`Задача не найдена`} />
       </PageLayout>
     )
   }
@@ -168,11 +176,11 @@ export function FamilyPublishedContentPage({
 
   return (
     <PageLayout
-      eyebrow={materialLabels[kind]}
+      eyebrow={materialLabelForKind}
       title={
         selectedProblem
-          ? `Задача ${selectedProblem.taskReference ?? selectedProblem.ordinal}.${selectedProblem.title ? ` «${selectedProblem.title}»` : ''}`
-          : (displayTitle ?? document.title ?? materialLabels[kind])
+          ? t`Задача ${selectedProblem.taskReference ?? selectedProblem.ordinal}.${selectedProblem.title ? ` «${selectedProblem.title}»` : ''}`
+          : (displayTitle ?? document.title ?? materialLabelForKind)
       }
       width={selectedProblem ? 'reading' : 'content'}
     >
@@ -236,26 +244,26 @@ export function FamilyReadableContentPage({
 
   if (!selectedChild) {
     return (
-      <PageLayout title="Листок" width="content">
-        <PageStatePanel state="empty" title="Не выбран ребёнок" />
+      <PageLayout title={t`Листок`} width="content">
+        <PageStatePanel state="empty" title={t`Не выбран ребёнок`} />
       </PageLayout>
     )
   }
   if (query.isPending) {
     return (
-      <PageLayout title="Листок" width="content">
+      <PageLayout title={t`Листок`} width="content">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (query.error) {
     return (
-      <PageLayout title="Листок" width="content">
+      <PageLayout title={t`Листок`} width="content">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void query.refetch()}
           state="error"
-          description="Не удалось загрузить данные ребёнка. Попробуйте ещё раз."
+          description={t`Не удалось загрузить данные ребёнка. Попробуйте ещё раз.`}
         />
       </PageLayout>
     )
@@ -270,8 +278,8 @@ export function FamilyReadableContentPage({
   )
   if (!course || !group) {
     return (
-      <PageLayout title="Листок" width="content">
-        <PageStatePanel state="forbidden" description="Эта группа недоступна выбранному ребёнку." />
+      <PageLayout title={t`Листок`} width="content">
+        <PageStatePanel state="forbidden" description={t`Эта группа недоступна выбранному ребёнку.`} />
       </PageLayout>
     )
   }
@@ -317,19 +325,19 @@ function FamilyWorksheet({
       <Badge variant={problem.status === 'accepted' ? 'success' : 'neutral'}>
         {problem.verdict?.symbol ??
           (problem.status === 'sent' || problem.status === 'checking'
-            ? 'На проверке'
-            : 'Не начата')}
+            ? t`На проверке`
+            : t`Не начата`)}
       </Badge>
     ) : null
   return (
     <PageLayout
-      title={`Занятие ${lessonNumber}`}
+      title={t`Занятие ${lessonNumber}`}
       width="content"
       actions={
         <label className="flex items-center gap-2 text-small">
-          Группа
+          <Trans>Группа</Trans>
           <select
-            aria-label="Группа листка"
+            aria-label={t`Группа листка`}
             className="min-h-10 rounded-md border border-input bg-surface px-3"
             value={groupId}
             onChange={(event) => {
@@ -364,13 +372,13 @@ function FamilyWorksheet({
               ? 'empty'
               : 'error'
           }
-          title="Листок пока недоступен"
+          title={t`Листок пока недоступен`}
           description={
             query.error instanceof ApiResponseError && query.error.status === 404
-              ? 'Условие этого занятия для выбранной группы ещё не опубликовано.'
-              : 'Не удалось загрузить условия и оценки. Попробуйте ещё раз.'
+              ? t`Условие этого занятия для выбранной группы ещё не опубликовано.`
+              : t`Не удалось загрузить условия и оценки. Попробуйте ещё раз.`
           }
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void query.refetch()}
         />
       ) : (
@@ -391,7 +399,7 @@ function FamilyWorksheet({
                 mark(query.data.problems?.problems.find((item) => item.sourceOrdinal === problem.ordinal && item.displayNumber.endsWith(label)))
               }
             />
-          ) : <p className="py-4 text-muted-foreground">Задачи ещё не опубликованы.</p>}
+          ) : <p className="py-4 text-muted-foreground"><Trans>Задачи ещё не опубликованы.</Trans></p>}
         </LessonBlocksLayout>
       )}
     </PageLayout>

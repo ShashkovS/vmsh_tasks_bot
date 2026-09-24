@@ -5,7 +5,13 @@ import studentHomeFixture from '../../contracts/fixtures/courses/student-home.v1
 import studentLessonsFixture from '../../contracts/fixtures/courses/student-lessons.v1.json'
 import studentProblemsFixture from '../../contracts/fixtures/courses/student-problems.v1.json'
 import courseProgressFixture from '../../contracts/fixtures/progress/course-summary.v1.json'
-import { runtimeBoundaryByAudience, type RuntimeConfig } from '@vmsh/contracts'
+import {
+  runtimeBoundaryByAudience,
+  studentHomeResponseSchema,
+  studentLessonListResponseSchema,
+  studentLessonSummarySchema,
+  type RuntimeConfig,
+} from '@vmsh/contracts'
 
 import { CourseProtocolError, createStudentCourseClient } from './course-client'
 
@@ -38,7 +44,9 @@ describe('Phase-3 Student course client', () => {
     )
     const client = createStudentCourseClient(runtime(), { fetchImplementation })
 
-    await expect(client.home()).resolves.toEqual(studentHomeFixture.response)
+    await expect(client.home()).resolves.toEqual(
+      studentHomeResponseSchema.parse(studentHomeFixture.response),
+    )
     expect(fetchImplementation).toHaveBeenCalledOnce()
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/student/api/v1/home')
   })
@@ -131,7 +139,7 @@ describe('Phase-3 Student course client', () => {
         groupId: 'group-fixture-alpha-one',
         cursor: '43',
       }),
-    ).resolves.toEqual(studentLessonsFixture.response)
+    ).resolves.toEqual(studentLessonListResponseSchema.parse(studentLessonsFixture.response))
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
       '/student/api/v1/courses/course-fixture-alpha/lessons?group=group-fixture-alpha-one&cursor=43',
     )
@@ -144,7 +152,9 @@ describe('Phase-3 Student course client', () => {
     )
     const client = createStudentCourseClient(runtime(), { fetchImplementation })
 
-    await expect(client.lesson(lesson.courseId, lesson.groupLessonId)).resolves.toEqual(lesson)
+    await expect(client.lesson(lesson.courseId, lesson.groupLessonId)).resolves.toEqual(
+      studentLessonSummarySchema.parse(lesson),
+    )
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
       `/student/api/v1/courses/${lesson.courseId}/lessons/${lesson.groupLessonId}`,
     )

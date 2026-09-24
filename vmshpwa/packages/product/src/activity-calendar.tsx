@@ -1,3 +1,6 @@
+import { plural } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { cn } from '@vmsh/ui'
 
 export interface ActivityCalendarDay {
@@ -40,19 +43,21 @@ function intensity(count: number): string {
 }
 
 function activityLabel(count: number): string {
-  if (count % 10 === 1 && count % 100 !== 11) return `${count} задача`
-  if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) {
-    return `${count} задачи`
-  }
-  return `${count} задач`
+  return plural(count, {
+    one: '# задача',
+    few: '# задачи',
+    many: '# задач',
+    other: '# задачи',
+  })
 }
 
 function daysLabel(count: number): string {
-  if (count % 10 === 1 && count % 100 !== 11) return `${count} день работы`
-  if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) {
-    return `${count} дня работы`
-  }
-  return `${count} дней работы`
+  return plural(count, {
+    one: '# день работы',
+    few: '# дня работы',
+    many: '# дней работы',
+    other: '# дня работы',
+  })
 }
 
 /** Personal course activity required by development-plan/13-phase-9-family-and-progress.md. */
@@ -68,7 +73,7 @@ export function ActivityCalendar({ days, className }: ActivityCalendarProps) {
     calendarDays.push({ date, count: counts.get(date) ?? 0 })
   }
   const total = days.reduce((sum, day) => sum + day.problemCount, 0)
-  const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
+  const dateFormatter = dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
@@ -91,7 +96,7 @@ export function ActivityCalendar({ days, className }: ActivityCalendarProps) {
         </div>
       </div>
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer">Показать по датам</summary>
+        <summary className="cursor-pointer"><Trans>Показать по датам</Trans></summary>
         <ul className="mt-2 space-y-1">
           {days.map((day) => (
             <li key={day.date}>

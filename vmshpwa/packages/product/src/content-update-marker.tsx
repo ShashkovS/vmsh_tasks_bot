@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { Badge } from '@vmsh/ui'
 
 /**
@@ -13,8 +14,8 @@ export function ContentUpdateMarker({ visible }: { visible: boolean }) {
       className="mb-4 flex flex-wrap items-center gap-2 text-small text-muted-foreground"
       role="status"
     >
-      <Badge variant="info">Материал обновлён</Badge>
-      Открыта новая опубликованная версия.
+      <Badge variant="info"><Trans>Материал обновлён</Trans></Badge>
+      <Trans>Открыта новая опубликованная версия.</Trans>
     </p>
   )
 }

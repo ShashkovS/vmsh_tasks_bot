@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { activateLocale } from '@vmsh/i18n'
+import { allCatalogLoaders } from '../../../dev/test-support/i18n-catalogs'
 import { courseAchievementLabel } from './course-achievements'
 
 describe('course achievement labels', () => {
@@ -11,5 +13,12 @@ describe('course achievement labels', () => {
 
   it('does not invent copy for a newer server rule', () => {
     expect(courseAchievementLabel('future_rule')).toBeUndefined()
+  })
+
+  it('resolves achievement labels after switching to English', async () => {
+    await activateLocale('en', allCatalogLoaders)
+
+    expect(courseAchievementLabel('first_submission')).toBe('First problem submitted')
+    expect(courseAchievementLabel('first_accepted')).toBe('First problem accepted')
   })
 })

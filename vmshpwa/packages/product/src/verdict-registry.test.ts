@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { activateLocale } from '@vmsh/i18n'
+import { allCatalogLoaders } from '../../../dev/test-support/i18n-catalogs'
 import { writtenReviewVerdict } from './verdict-registry'
 
 describe('written review verdict projection', () => {
@@ -17,5 +19,11 @@ describe('written review verdict projection', () => {
 
   it('keeps AI provenance visibly distinct', () => {
     expect(writtenReviewVerdict(17, 'ai').provenance).toBe('ai')
+  })
+
+  it('does not freeze Russian verdict labels after the locale changes', async () => {
+    await activateLocale('en', allCatalogLoaders)
+
+    expect(writtenReviewVerdict(17)).toMatchObject({ label: 'Accepted' })
   })
 })

@@ -97,6 +97,7 @@ def claim_deliveries(
     rows = connection.execute(
         "SELECT d.id, d.public_id, d.attempt_count, e.public_id AS event_public_id, "
         "e.category, e.route, e.payload_json, e.occurred_at, a.audience, "
+        "a.locale AS recipient_locale, "
         "s.id AS subscription_id, s.endpoint, s.p256dh, s.auth_secret, "
         "coalesce(cp.push_enabled, p.push_enabled) AS push_enabled, "
         "p.sound_enabled, p.quiet_starts_local, "

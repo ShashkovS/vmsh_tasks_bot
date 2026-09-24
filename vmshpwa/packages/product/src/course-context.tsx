@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { BookOpen, CalendarClock, MapPin, Radio, Settings2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -32,7 +34,7 @@ export function CourseContext({
   courses,
   activeCourseId,
   onCourseChange,
-  label = 'Курс',
+  label = t`Курс`,
   className,
 }: CourseContextProps) {
   return (
@@ -69,13 +71,13 @@ export function CourseGroupSwitcher({
   activeGroupId,
   onChange,
   compact = false,
-  helpText = 'Смена действует только внутри этого курса и требует подтверждения в приложении.',
+  helpText = t`Смена действует только внутри этого курса и требует подтверждения в приложении.`,
   className,
 }: CourseGroupSwitcherProps) {
   return (
     <fieldset className={cn('min-w-0 space-y-2', className)}>
       <legend className="text-label font-medium text-foreground">
-        Группа курса «{course.name}»
+        <Trans>Группа курса «{course.name}»</Trans>
       </legend>
       <div className="flex flex-wrap gap-1.5">
         {groups.map((group) => {
@@ -136,7 +138,7 @@ export function CourseCard({
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-caption text-muted-foreground">
-              {enrollment.course.subjectCode} · занятие {lessonNumber} · {lessonDate}
+              <Trans>{enrollment.course.subjectCode} · занятие {lessonNumber} · {lessonDate}</Trans>
             </p>
             <CardTitle>{enrollment.course.name}</CardTitle>
           </div>
@@ -146,7 +148,7 @@ export function CourseCard({
             ) : (
               <Radio aria-hidden="true" />
             )}
-            {enrollment.attendanceMode === 'in-person' ? 'Очно' : 'Онлайн'}
+            {enrollment.attendanceMode === 'in-person' ? t`Очно` : t`Онлайн`}
           </Badge>
         </div>
         {group ? <LevelChip level={group} /> : null}
@@ -164,13 +166,13 @@ export function CourseCard({
             </p>
           </div>
           {classroomName ? (
-            <p className="text-small text-muted-foreground">Аудитория: {classroomName}</p>
+            <p className="text-small text-muted-foreground"><Trans>Аудитория: {classroomName}</Trans></p>
           ) : null}
           {nextAction}
         </div>
         {onOpen ? (
           <Button onClick={onOpen} size="sm" variant="outline">
-            Открыть курс
+            <Trans>Открыть курс</Trans>
           </Button>
         ) : null}
       </CardContent>
@@ -205,10 +207,10 @@ export function CourseNotificationSettings({
           id="course-notification-title"
         >
           <Settings2 aria-hidden="true" className="size-4" />
-          Настройки по курсам
+          <Trans>Настройки по курсам</Trans>
         </h2>
         <p className="text-caption text-muted-foreground">
-          Значение курса переопределяет общую настройку только для выбранной категории.
+          <Trans>Значение курса переопределяет общую настройку только для выбранной категории.</Trans>
         </p>
       </div>
       <ul className="divide-y divide-border rounded-md border border-border bg-surface">
@@ -221,7 +223,7 @@ export function CourseNotificationSettings({
               <p className="text-small font-medium text-foreground">{preference.course.name}</p>
               <p className="text-caption text-muted-foreground">
                 {preference.label ?? preference.category} ·{' '}
-                {preference.inherited ? 'общая настройка' : 'настройка курса'}
+                {preference.inherited ? t`общая настройка` : t`настройка курса`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -231,7 +233,7 @@ export function CourseNotificationSettings({
                   size="sm"
                   variant="ghost"
                 >
-                  Общая
+                  <Trans>Общая</Trans>
                 </Button>
               ) : null}
               <Switch

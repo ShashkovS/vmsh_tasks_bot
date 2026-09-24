@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatNumber } from '@vmsh/i18n'
 import { scaleLinear } from '@visx/scale'
 
 import { cn } from '@vmsh/ui'
@@ -111,7 +114,7 @@ export function DistributionViolin({
     (_, i) => lo + i * tickStep,
   )
 
-  const label = `${valueLabel ? `${valueLabel}. ` : ''}Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}.`
+  const label = t`${valueLabel ? `${valueLabel}. ` : ''}Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}.`
 
   return (
     <figure className={cn('space-y-1', className)}>
@@ -131,7 +134,7 @@ export function DistributionViolin({
               className="stroke-border/60"
             />
             <text x={0} y={yScale(tick) + 3} className="fill-muted-foreground text-[9px]">
-              {tick.toLocaleString('ru-RU')}
+              {formatNumber(tick)}
             </text>
           </g>
         ))}
@@ -160,16 +163,16 @@ export function DistributionViolin({
         <figcaption className="text-caption text-muted-foreground">{caption}</figcaption>
       ) : null}
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer">Показать числами</summary>
+        <summary className="cursor-pointer"><Trans>Показать числами</Trans></summary>
         <table className="mt-1">
           {valueLabel ? <caption>{valueLabel}</caption> : null}
           <tbody>
             <tr>
-              <td className="pr-3">Медиана</td>
+              <td className="pr-3"><Trans>Медиана</Trans></td>
               <td className="font-num">{median.toFixed(1)}</td>
             </tr>
             <tr>
-              <td className="pr-3">Разброс (Q1–Q3)</td>
+              <td className="pr-3"><Trans>Разброс (Q1–Q3)</Trans></td>
               <td className="font-num">
                 {q1.toFixed(1)}–{q3.toFixed(1)}
               </td>
@@ -237,7 +240,7 @@ export function TrendWithBand({
   })
   const yScale = scaleLinear({ domain: [lo, hi], range: [height - padBottom, padTop] })
 
-  const label = `Динамика: от ${points[0]?.value ?? 0} до ${points[points.length - 1]?.value ?? 0}, с доверительной полосой.`
+  const label = t`Динамика: от ${points[0]?.value ?? 0} до ${points[points.length - 1]?.value ?? 0}, с доверительной полосой.`
 
   return (
     <figure className={cn('space-y-1', className)}>
@@ -271,13 +274,13 @@ export function TrendWithBand({
         <figcaption className="text-caption text-muted-foreground">{caption}</figcaption>
       ) : null}
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer">Показать числами</summary>
+        <summary className="cursor-pointer"><Trans>Показать числами</Trans></summary>
         <table className="mt-1">
           <thead>
             <tr>
-              <th className="pr-3 text-left font-medium">Период</th>
-              <th className="pr-3 text-left font-medium">Значение</th>
-              <th className="text-left font-medium">Полоса</th>
+              <th className="pr-3 text-left font-medium"><Trans>Период</Trans></th>
+              <th className="pr-3 text-left font-medium"><Trans>Значение</Trans></th>
+              <th className="text-left font-medium"><Trans>Полоса</Trans></th>
             </tr>
           </thead>
           <tbody>
@@ -360,7 +363,7 @@ export function StrengthTrend({
     <figure className={cn('space-y-1', className)}>
       <div className="max-w-full overflow-x-auto">
         <svg
-          aria-label="Как получается решать простые и сложные задачи по занятиям, шкала от 0 до 10; выше — легче даётся."
+          aria-label={t`Как получается решать простые и сложные задачи по занятиям, шкала от 0 до 10; выше — легче даётся.`}
           className="h-auto w-full min-w-[420px]"
           role="img"
           viewBox={`0 0 ${width} ${height}`}
@@ -459,17 +462,17 @@ export function StrengthTrend({
       <div className="flex flex-wrap gap-3 text-caption text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <span aria-hidden="true" className="h-0.5 w-4 rounded bg-chart-1" />
-          Простые задачи
+          <Trans>Простые задачи</Trans>
         </span>
         <span className="inline-flex items-center gap-1">
           <span aria-hidden="true" className="h-0.5 w-4 rounded bg-chart-2" />
-          Сложные задачи
+          <Trans>Сложные задачи</Trans>
         </span>
         <span className="inline-flex items-center gap-1">
           <span aria-hidden="true" className="text-chart-3">
             ★
           </span>
-          Сложность занятия
+          <Trans>Сложность занятия</Trans>
         </span>
       </div>
 
@@ -478,15 +481,15 @@ export function StrengthTrend({
       ) : null}
 
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer">Показать числами</summary>
+        <summary className="cursor-pointer"><Trans>Показать числами</Trans></summary>
         <div className="mt-1 max-w-full overflow-x-auto">
           <table>
             <thead>
               <tr>
-                <th className="pr-3 text-left font-medium">Занятие</th>
-                <th className="pr-3 text-left font-medium">Простые</th>
-                <th className="pr-3 text-left font-medium">Сложные</th>
-                <th className="text-left font-medium">Решено</th>
+                <th className="pr-3 text-left font-medium"><Trans>Занятие</Trans></th>
+                <th className="pr-3 text-left font-medium"><Trans>Простые</Trans></th>
+                <th className="pr-3 text-left font-medium"><Trans>Сложные</Trans></th>
+                <th className="text-left font-medium"><Trans>Решено</Trans></th>
               </tr>
             </thead>
             <tbody>

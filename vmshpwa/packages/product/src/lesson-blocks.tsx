@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 import { Play } from 'lucide-react'
 
@@ -11,7 +13,7 @@ import './lesson-blocks.css'
 
 export function LessonVideo({ video }: { video: LessonVideoBlock }) {
   const [loaded, setLoaded] = useState(false)
-  const provider = video.provider === 'youtube' ? 'YouTube' : 'VK Видео'
+  const provider = video.provider === 'youtube' ? 'YouTube' : t`VK Видео`
   const label = video.title && video.title !== 'YouTube video player' ? video.title : provider
   const url = lessonVideoPrintUrl(video)
   return (
@@ -29,7 +31,7 @@ export function LessonVideo({ video }: { video: LessonVideoBlock }) {
           <p className="vmsh-lesson-video-title">{label}</p>
           <Button onClick={() => setLoaded(true)} type="button" variant="outline">
             <Play aria-hidden="true" className="size-4" />
-            Загрузить видео
+            <Trans>Загрузить видео</Trans>
           </Button>
         </div>
       )}

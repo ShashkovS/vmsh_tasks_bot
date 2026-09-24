@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { VerdictTone, VerdictView } from './types'
 
 interface CanonicalVerdict {
@@ -13,21 +14,47 @@ interface CanonicalVerdict {
  * ternary or the full olympiad scale — the UI never hardcodes which.
  */
 export const canonicalVerdicts: Record<string, CanonicalVerdict> = {
-  rejected: { symbol: '−', label: 'Отклонено', weight: 0, tone: 'negative' },
-  'minus-dot': { symbol: '−.', label: 'Есть простая идея', weight: 0.05, tone: 'partial-low' },
-  'minus-plus': { symbol: '∓', label: 'Есть идеи, не доведено', weight: 0.25, tone: 'partial-low' },
-  half: { symbol: '+/2', label: 'Половина', weight: 0.5, tone: 'partial-mid' },
-  'plus-minus': { symbol: '±', label: 'В целом верно', weight: 0.7, tone: 'partial-high' },
-  'plus-dot': { symbol: '+.', label: 'Зачтено с недочётами', weight: 0.95, tone: 'positive' },
-  plus: { symbol: '+', label: 'Зачтено', weight: 1, tone: 'positive' },
+  rejected: { symbol: '−', get label() {
+ return t`Отклонено`
+}, weight: 0, tone: 'negative' },
+  'minus-dot': { symbol: '−.', get label() {
+ return t`Есть простая идея`
+}, weight: 0.05, tone: 'partial-low' },
+  'minus-plus': { symbol: '∓', get label() {
+ return t`Есть идеи, не доведено`
+}, weight: 0.25, tone: 'partial-low' },
+  half: { symbol: '+/2', get label() {
+ return t`Половина`
+}, weight: 0.5, tone: 'partial-mid' },
+  'plus-minus': { symbol: '±', get label() {
+ return t`В целом верно`
+}, weight: 0.7, tone: 'partial-high' },
+  'plus-dot': { symbol: '+.', get label() {
+ return t`Зачтено с недочётами`
+}, weight: 0.95, tone: 'positive' },
+  plus: { symbol: '+', get label() {
+ return t`Зачтено`
+}, weight: 1, tone: 'positive' },
 }
 
 /** Builds an ordered registry (worst → best) from a course's allowed values. */
 export function buildVerdictRegistry(values: readonly string[]): VerdictView[] {
   return values
     .filter((value) => value in canonicalVerdicts)
-    .map((value) => ({ value, ...canonicalVerdicts[value]! }))
+    .map((value) => verdictView(value, canonicalVerdicts[value]!))
     .sort((a, b) => a.weight - b.weight)
+}
+
+function verdictView(value: string, verdict: CanonicalVerdict): VerdictView {
+  return {
+    value,
+    symbol: verdict.symbol,
+    get label() {
+      return verdict.label
+    },
+    weight: verdict.weight,
+    tone: verdict.tone,
+  }
 }
 
 export const fullVerdictScale = buildVerdictRegistry(Object.keys(canonicalVerdicts))
@@ -56,5 +83,14 @@ export function writtenReviewVerdict(
   const value = writtenVerdictValueByLegacyCode[code]
   const verdict = value ? findVerdict(fullVerdictScale, value) : undefined
   if (!verdict) throw new Error(`Unsupported written review verdict: ${code}`)
-  return { ...verdict, provenance }
+  return {
+    value: verdict.value,
+    symbol: verdict.symbol,
+    get label() {
+      return verdict.label
+    },
+    weight: verdict.weight,
+    tone: verdict.tone,
+    provenance,
+  }
 }

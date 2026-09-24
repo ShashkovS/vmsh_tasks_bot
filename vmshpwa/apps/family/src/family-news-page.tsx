@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { Link } from '@tanstack/react-router'
 import { useMemo } from 'react'
 
@@ -16,7 +19,7 @@ import { RichDocumentView, TelegramRichPost, toTelegramPostView } from '@vmsh/pr
 import { Button, buttonVariants } from '@vmsh/ui'
 
 function formatMoment(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -62,7 +65,7 @@ export function FamilyNewsFeedPage() {
   } else if (query.error) {
     content = (
       <PageStatePanel
-        actionLabel="Повторить"
+        actionLabel={t`Повторить`}
         onAction={() => void query.refetch()}
         state={
           query.error instanceof ApiResponseError && query.error.status === 403
@@ -88,7 +91,7 @@ export function FamilyNewsFeedPage() {
               params={{ postId: item.postId }}
               to="/news/$postId"
             >
-              Открыть публикацию
+              <Trans>Открыть публикацию</Trans>
             </Link>
           </div>
         ))}
@@ -98,7 +101,7 @@ export function FamilyNewsFeedPage() {
             onClick={() => void query.fetchNextPage()}
             variant="outline"
           >
-            {query.isFetchingNextPage ? 'Загружаем…' : 'Показать более ранние'}
+            {query.isFetchingNextPage ? t`Загружаем…` : t`Показать более ранние`}
           </Button>
         ) : null}
       </div>
@@ -107,8 +110,8 @@ export function FamilyNewsFeedPage() {
 
   return (
     <PageLayout
-      description="Публикации курсов и групп, доступных вашим детям."
-      title="Новости"
+      description={t`Публикации курсов и групп, доступных вашим детям.`}
+      title={t`Новости`}
       width="reading"
     >
       {content}
@@ -127,11 +130,11 @@ export function FamilyNewsPostPage({ postId }: { postId: string }) {
   )
 
   return (
-    <PageLayout title="Публикация" width="reading">
+    <PageLayout title={t`Публикация`} width="reading">
       {query.isPending ? <PageStatePanel state="loading" /> : null}
       {query.error ? (
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void query.refetch()}
           state={
             query.error instanceof ApiResponseError && query.error.status === 403

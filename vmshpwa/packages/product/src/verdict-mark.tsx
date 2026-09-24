@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { cn } from '@vmsh/ui'
 
 import type { VerdictView } from './types'
@@ -28,7 +29,7 @@ export interface VerdictMarkProps {
 
 export function VerdictMark({ verdict, showLabel = false, className }: VerdictMarkProps) {
   const isAi = verdict.provenance === 'ai'
-  const accessibleLabel = `${verdict.label || 'Нет ответа'}${isAi ? ' · оценка ИИ' : ''}`
+  const accessibleLabel = `${verdict.label || t`Нет ответа`}${isAi ? t` · оценка ИИ` : ''}`
 
   return (
     <span

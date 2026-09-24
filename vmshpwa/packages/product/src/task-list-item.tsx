@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { Badge, cn } from '@vmsh/ui'
 
 import { TaskTypeIcon } from './task-type'
@@ -29,7 +30,7 @@ export function TaskListItem({ task, onOpen, className }: TaskListItemProps) {
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-num text-small font-medium text-muted-foreground">
-            Задача {task.number}.
+            <Trans>Задача {task.number}.</Trans>
           </span>
           {task.verdict ? (
             <VerdictMark showLabel verdict={task.verdict} />
@@ -39,7 +40,7 @@ export function TaskListItem({ task, onOpen, className }: TaskListItemProps) {
           {task.hasNewFeedback ? (
             <span className="ml-auto inline-flex items-center gap-1 text-caption font-medium text-unread">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-unread" />
-              новое
+              <Trans>новое</Trans>
             </span>
           ) : null}
         </span>

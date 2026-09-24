@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { FileText, Mic, PenLine } from 'lucide-react'
 
 import { cn } from '@vmsh/ui'
@@ -12,18 +13,30 @@ import type { TaskType } from './types'
 const config: Record<TaskType, { Icon: typeof FileText; name: string; rule: string }> = {
   test: {
     Icon: FileText,
-    name: 'Тестовая задача',
-    rule: 'Ответ вводится прямо в интерфейсе и проверяется автоматически.',
+    get name() {
+ return t`Тестовая задача`
+},
+    get rule() {
+ return t`Ответ вводится прямо в интерфейсе и проверяется автоматически.`
+},
   },
   written: {
     Icon: PenLine,
-    name: 'Письменная задача',
-    rule: 'Решение отправляется текстом и фотографиями, проверяет преподаватель.',
+    get name() {
+ return t`Письменная задача`
+},
+    get rule() {
+ return t`Решение отправляется текстом и фотографиями, проверяет преподаватель.`
+},
   },
   oral: {
     Icon: Mic,
-    name: 'Устная задача',
-    rule: 'Сдаётся устно в конференции; в окне приёма можно отправить и письменно.',
+    get name() {
+ return t`Устная задача`
+},
+    get rule() {
+ return t`Сдаётся устно в конференции; в окне приёма можно отправить и письменно.`
+},
   },
 }
 

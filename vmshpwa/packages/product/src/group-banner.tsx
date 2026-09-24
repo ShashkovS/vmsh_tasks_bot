@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { X } from 'lucide-react'
 
 import type { GroupBanner as GroupBannerView } from '@vmsh/contracts'
@@ -28,7 +29,7 @@ export function GroupBanner({
         )}
       </AlertContent>
       {banner.dismissible && onDismiss ? (
-        <Button aria-label="Скрыть объявление" onClick={onDismiss} size="icon-sm" variant="ghost">
+        <Button aria-label={t`Скрыть объявление`} onClick={onDismiss} size="icon-sm" variant="ghost">
           <X aria-hidden="true" />
         </Button>
       ) : null}

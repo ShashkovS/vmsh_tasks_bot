@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { LessonVideoBlock } from '@vmsh/contracts'
 
 const youtubeHosts = new Set([
@@ -19,7 +20,7 @@ function seconds(value: string): number | null {
 function videoTitle(value: string | null | undefined): string | null {
   const title = value?.trim()
   if (!title) return null
-  if (title.length > 200) throw new Error('Название видео не должно быть длиннее 200 символов')
+  if (title.length > 200) throw new Error(t`Название видео не должно быть длиннее 200 символов`)
   return title
 }
 
@@ -33,15 +34,15 @@ function cleanSource(value: string): string {
 function iframeSource(value: string): { source: string; title: string | null } | null {
   if (!/^\s*<iframe\b[\s\S]*<\/iframe>\s*$/iu.test(value)) return null
   if (/\bsrcdoc\s*=|\bon\w+\s*=/iu.test(value))
-    throw new Error('В iframe нельзя использовать исполняемые атрибуты')
+    throw new Error(t`В iframe нельзя использовать исполняемые атрибуты`)
   const tags = [...value.matchAll(/<\s*\/?\s*([a-z][a-z0-9-]*)\b/giu)]
   if (tags.some((tag) => tag[1]?.toLowerCase() !== 'iframe')) {
-    throw new Error('Iframe не должен содержать вложенную разметку')
+    throw new Error(t`Iframe не должен содержать вложенную разметку`)
   }
   const sources = [...value.matchAll(/(?:^|\s)src\s*=\s*(["'])([\s\S]*?)\1/giu)]
-  if (sources.length !== 1) throw new Error('Iframe должен содержать ровно один src')
+  if (sources.length !== 1) throw new Error(t`Iframe должен содержать ровно один src`)
   const titles = [...value.matchAll(/(?:^|\s)title\s*=\s*(["'])([\s\S]*?)\1/giu)]
-  if (titles.length > 1) throw new Error('Iframe содержит повторяющийся title')
+  if (titles.length > 1) throw new Error(t`Iframe содержит повторяющийся title`)
   const titleMatch = titles[0]
   return {
     source: cleanSource(sources[0]?.[2] ?? ''),
@@ -56,10 +57,10 @@ export function normalizeLessonVideoUrl(raw: string, title?: string | null): Les
   try {
     url = new URL(frame?.source ?? raw.trim())
   } catch {
-    throw new Error('Укажите корректную HTTPS-ссылку на YouTube или VK Видео')
+    throw new Error(t`Укажите корректную HTTPS-ссылку на YouTube или VK Видео`)
   }
   if (url.protocol !== 'https:' || url.username || url.password || url.port)
-    throw new Error('Видео должно использовать HTTPS без учётных данных')
+    throw new Error(t`Видео должно использовать HTTPS без учётных данных`)
   const hostname = url.hostname.toLowerCase()
   const resolvedTitle = videoTitle(title ?? frame?.title)
   if (youtubeHosts.has(hostname)) {
@@ -68,15 +69,15 @@ export function normalizeLessonVideoUrl(raw: string, title?: string | null): Les
     else if (url.pathname === '/watch') videoId = url.searchParams.get('v')
     else if (/^\/(embed|shorts)\//u.test(url.pathname)) videoId = url.pathname.split('/')[2] ?? null
     if (!videoId || !/^[A-Za-z0-9_-]{11}$/u.test(videoId))
-      throw new Error('Идентификатор YouTube-видео некорректен')
+      throw new Error(t`Идентификатор YouTube-видео некорректен`)
     const times = [url.searchParams.get('start'), url.searchParams.get('t')].filter(
       (item): item is string => item !== null,
     )
     const parsed = times.map(seconds)
     if (parsed.some((item) => item === null) || (parsed.length === 2 && parsed[0] !== parsed[1]))
-      throw new Error('Время начала YouTube-видео некорректно')
+      throw new Error(t`Время начала YouTube-видео некорректно`)
     const startSeconds = parsed[0] ?? 0
-    if (startSeconds > 604800) throw new Error('Время начала YouTube-видео слишком велико')
+    if (startSeconds > 604800) throw new Error(t`Время начала YouTube-видео слишком велико`)
     return { type: 'video', provider: 'youtube', videoId, startSeconds, title: resolvedTitle }
   }
   if (vkHosts.has(hostname)) {
@@ -103,9 +104,9 @@ export function normalizeLessonVideoUrl(raw: string, title?: string | null): Les
       !/^[1-9]\d{0,19}$/u.test(videoId) ||
       ![0, 1, 2, 3].includes(hd)
     )
-      throw new Error('Ссылка VK Видео некорректна')
+      throw new Error(t`Ссылка VK Видео некорректна`)
     if (accessHash !== null && !/^[A-Za-z0-9_-]{1,256}$/u.test(accessHash))
-      throw new Error('Параметр доступа VK Видео некорректен')
+      throw new Error(t`Параметр доступа VK Видео некорректен`)
     return {
       type: 'video',
       provider: 'vk',
@@ -116,7 +117,7 @@ export function normalizeLessonVideoUrl(raw: string, title?: string | null): Les
       title: resolvedTitle,
     }
   }
-  throw new Error('Поддерживаются только YouTube и VK Видео')
+  throw new Error(t`Поддерживаются только YouTube и VK Видео`)
 }
 
 export const parseLessonVideoInput = normalizeLessonVideoUrl

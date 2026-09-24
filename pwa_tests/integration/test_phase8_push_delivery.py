@@ -36,7 +36,12 @@ def _key(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
 
 
-def _prepare_database(tmp_path, *, endpoint: str = "https://push.example.test/device"):
+def _prepare_database(
+    tmp_path,
+    *,
+    endpoint: str = "https://push.example.test/device",
+    recipient_locale: str = "ru",
+):
     database_path = tmp_path / "push-delivery.sqlite3"
     _apply(database_path, {item.id for item in _migrations()})
     with sqlite3.connect(database_path) as connection:
@@ -44,6 +49,10 @@ def _prepare_database(tmp_path, *, endpoint: str = "https://push.example.test/de
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA journal_mode = WAL")
         account_id, session_id = _seed_account(connection)
+        connection.execute(
+            "UPDATE auth_accounts SET locale = ? WHERE id = ?",
+            (recipient_locale, account_id),
+        )
         register_subscription(
             connection,
             account_id=account_id,
@@ -170,6 +179,31 @@ async def test_delivery_is_idempotent_and_quiet_hours_only_silence(tmp_path):
     }
 
 
+async def test_delivery_uses_the_recipient_locale_for_push_copy(tmp_path):
+    _database_path, factory = _prepare_database(tmp_path, recipient_locale="en")
+    sent: list[dict[str, object]] = []
+
+    async def sender(_subscription, payload):
+        sent.append(payload)
+
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+
+    assert result["sent"] == 1
+    assert sent == [
+        {
+            "schemaVersion": 1,
+            "eventId": "n-1",
+            "category": "classroom_assignment",
+            "title": "Room assigned",
+            # Course and group names are authoritative data, so they remain Russian.
+            "body": "Математика · Начинающие · room 202",
+            "route": "/student/",
+            "silent": True,
+            "occurredAt": NOW,
+        }
+    ]
+
+
 async def test_group_announcement_push_uses_announcement_text(tmp_path):
     database_path, factory = _prepare_database(tmp_path)
     with sqlite3.connect(database_path) as connection:
@@ -256,6 +290,36 @@ async def test_family_digest_push_uses_one_lesson_summary(tmp_path):
     assert sent[0]["body"] == (
         "Начинающие · занятие 41. Результаты уже в кабинете."
     )
+
+
+async def test_english_family_digest_keeps_group_name_and_translates_template(tmp_path):
+    _database_path, factory = _prepare_database(tmp_path, recipient_locale="en")
+    factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE notification_events SET category = 'review_completed', "
+            "payload_json = ?, deliver_after = ?",
+            (
+                json.dumps(
+                    {
+                        "kind": "family_lesson_digest",
+                        "lessonNumber": 41,
+                        "groupName": "Начинающие",
+                    }
+                ),
+                DELIVERY_TIME.isoformat(),
+            ),
+        )
+    )
+    sent: list[dict[str, object]] = []
+
+    async def sender(_subscription, payload):
+        sent.append(payload)
+
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+
+    assert result["sent"] == 1
+    assert sent[0]["title"] == "Lesson summary is ready"
+    assert sent[0]["body"] == "Начинающие · lesson 41. Results are already in the account."
 
 
 async def test_temporary_failure_retries_without_duplicate_row(tmp_path):

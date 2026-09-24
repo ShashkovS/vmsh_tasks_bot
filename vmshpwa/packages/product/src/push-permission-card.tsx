@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { Bell } from 'lucide-react'
 import { useId } from 'react'
 
@@ -37,10 +38,10 @@ export function PushPermissionCard({
         <Bell aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
         <div className="space-y-1">
           <h2 className="text-label font-medium text-foreground" id={titleId}>
-            Уведомления
+            <Trans>Уведомления</Trans>
           </h2>
           <p className="text-small text-muted-foreground">
-            Получайте важные сообщения, даже когда кабинет закрыт:
+            <Trans>Получайте важные сообщения, даже когда кабинет закрыт:</Trans>
           </p>
         </div>
       </div>
@@ -58,10 +59,10 @@ export function PushPermissionCard({
 
       <div className="flex gap-2 pl-8">
         <Button onClick={onEnable} size="sm">
-          Включить уведомления
+          <Trans>Включить уведомления</Trans>
         </Button>
         <Button onClick={onDismiss} size="sm" variant="ghost">
-          Не сейчас
+          <Trans>Не сейчас</Trans>
         </Button>
       </div>
     </section>
