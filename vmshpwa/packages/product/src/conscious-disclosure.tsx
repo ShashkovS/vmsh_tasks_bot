@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { ChevronDown, KeyRound, Lightbulb, Lock, type LucideIcon } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 
@@ -71,7 +73,7 @@ export function ConsciousDisclosure({
         await onReveal()
         setLoaded(true)
       } catch {
-        setRevealError('Не удалось открыть материал. Проверьте соединение и повторите попытку.')
+        setRevealError(t`Не удалось открыть материал. Проверьте соединение и повторите попытку.`)
         setRevealing(false)
         return
       }
@@ -132,10 +134,10 @@ export function ConsciousDisclosure({
           <p className="mt-0.5 text-muted-foreground">{confirm.body}</p>
           <div className="mt-2 flex gap-2">
             <Button disabled={revealing} onClick={reveal} size="sm">
-              {revealing ? 'Открываем…' : confirm.action}
+              {revealing ? t`Открываем…` : confirm.action}
             </Button>
             <Button onClick={() => setConfirming(false)} size="sm" variant="ghost">
-              Не сейчас
+              <Trans>Не сейчас</Trans>
             </Button>
           </div>
         </div>
@@ -148,7 +150,7 @@ export function ConsciousDisclosure({
         >
           <span className="min-w-0 flex-1">{revealError}</span>
           <Button onClick={() => void loadAndOpen()} size="sm" variant="outline">
-            Повторить
+            <Trans>Повторить</Trans>
           </Button>
         </div>
       ) : null}
@@ -186,12 +188,12 @@ export function HintDisclosure({
     <ConsciousDisclosure
       className={className}
       confirm={{
-        title: 'Открыть подсказку?',
-        body: 'Сначала попробуйте сами — так задача принесёт больше пользы.',
-        action: 'Показать подсказку',
+        title: t`Открыть подсказку?`,
+        body: t`Сначала попробуйте сами — так задача принесёт больше пользы.`,
+        action: t`Показать подсказку`,
       }}
       icon={Lightbulb}
-      label="Подсказка"
+      label={t`Подсказка`}
       lockedNote={lockedNote}
       meta={meta}
       initiallyRevealed={initiallyRevealed}
@@ -214,12 +216,12 @@ export function SolutionDisclosure({
     <ConsciousDisclosure
       className={className}
       confirm={{
-        title: 'Открыть решение?',
-        body: 'Решение нельзя «развидеть». Открывайте, только если действительно застряли.',
-        action: 'Показать решение',
+        title: t`Открыть решение?`,
+        body: t`Решение нельзя «развидеть». Открывайте, только если действительно застряли.`,
+        action: t`Показать решение`,
       }}
       icon={KeyRound}
-      label="Решение"
+      label={t`Решение`}
       lockedNote={lockedNote}
       meta={meta}
       initiallyRevealed={initiallyRevealed}

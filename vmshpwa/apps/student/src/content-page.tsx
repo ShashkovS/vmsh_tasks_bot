@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { formatDateTime } from '@vmsh/i18n'
 import { useMemo, type ReactNode } from 'react'
 
 import {
@@ -20,9 +22,15 @@ import { ContentUpdateMarker } from '@vmsh/product'
 import { createOfflineStudentPublishedContentClient } from './offline-student-data'
 
 const materialLabels: Record<ContentMaterialKind, string> = {
-  condition: 'Условие',
-  hint: 'Подсказка',
-  solution: 'Решение',
+  get condition() {
+    return t`Условие`
+  },
+  get hint() {
+    return t`Подсказка`
+  },
+  get solution() {
+    return t`Решение`
+  },
 }
 
 /**
@@ -95,11 +103,11 @@ export function StudentPublishedContentPage({
 
   if (!groupLessonId) {
     return (
-      <PageLayout title={`Задача ${taskId}`} width="reading">
+      <PageLayout title={t`Задача ${taskId}`} width="reading">
         <PageStatePanel
-          description="Откройте задачу из опубликованного листка: ссылка должна содержать занятие и вид материала."
+          description={t`Откройте задачу из опубликованного листка: ссылка должна содержать занятие и вид материала.`}
           state="empty"
-          title="Не указан опубликованный листок"
+          title={t`Не указан опубликованный листок`}
         />
       </PageLayout>
     )
@@ -125,13 +133,13 @@ export function StudentPublishedContentPage({
       <PageLayout title={materialLabels[kind]} width="reading">
         <PageStatePanel
           {...(state === 'error' || state === 'offline'
-            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
             : {})}
           {...(state === 'empty'
-            ? { description: 'Этот материал ещё не опубликован для вашей группы.' }
+            ? { description: t`Этот материал ещё не опубликован для вашей группы.` }
             : {})}
           state={state}
-          {...(state === 'empty' ? { title: 'Материал пока закрыт' } : {})}
+          {...(state === 'empty' ? { title: t`Материал пока закрыт` } : {})}
         />
       </PageLayout>
     )
@@ -146,9 +154,9 @@ export function StudentPublishedContentPage({
     return (
       <PageLayout title={document.title ?? materialLabels[kind]} width="reading">
         <PageStatePanel
-          description="В опубликованной версии листка такой задачи нет. Обновите ссылку из списка задач."
+          description={t`В опубликованной версии листка такой задачи нет. Обновите ссылку из списка задач.`}
           state="empty"
-          title="Задача не найдена"
+          title={t`Задача не найдена`}
         />
       </PageLayout>
     )
@@ -163,7 +171,7 @@ export function StudentPublishedContentPage({
   const visibleTitle =
     displayTitle ||
     (selectedProblem
-      ? `Задача ${selectedProblem.taskReference ?? selectedProblem.ordinal}.${selectedProblem.title ? ` «${selectedProblem.title}»` : ''}`
+      ? t`Задача ${selectedProblem.taskReference ?? selectedProblem.ordinal}.${selectedProblem.title ? ` «${selectedProblem.title}»` : ''}`
       : document.title || materialLabels[kind])
 
   const renderedContent = (
@@ -201,7 +209,7 @@ export function StudentPublishedContentPage({
 
   return (
     <PageLayout
-      description={`Опубликовано ${new Date(query.data.publishedAt).toLocaleString('ru-RU')}`}
+      description={t`Опубликовано ${formatDateTime(new Date(query.data.publishedAt))}`}
       eyebrow={materialLabels[kind]}
       title={visibleTitle}
       width={pageWidth ?? 'reading'}

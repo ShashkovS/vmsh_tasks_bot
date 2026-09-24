@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 
@@ -65,7 +66,7 @@ export function AttemptTimeline({ entries, className }: AttemptTimelineProps) {
               aria-hidden="true"
               className={cn('size-4 transition-transform', open && 'rotate-180')}
             />
-            {open ? 'Скрыть историю' : `Показать историю (${rest.length})`}
+            {open ? t`Скрыть историю` : t`Показать историю (${rest.length})`}
           </button>
           {open ? (
             <ol className="space-y-3 border-l border-border pl-4">

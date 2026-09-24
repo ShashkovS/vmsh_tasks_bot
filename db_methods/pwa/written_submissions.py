@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from helpers.consts import WRITTEN_STATUS
+from helpers.pwa.i18n import N_
 from models.pwa.submissions import assess_submission_clock
 
 from .connection import PwaConnectionFactory
@@ -89,7 +90,7 @@ class WrittenIdempotencyPayloadMismatch(WrittenSubmissionRejected):
     def __init__(self) -> None:
         super().__init__(
             code="idempotency_payload_mismatch",
-            message="Этот ключ уже использован для другого действия.",
+            message=N_("Этот ключ уже использован для другого действия."),
             http_status=409,
         )
 
@@ -1339,7 +1340,7 @@ def _resolve_context(
     if len(rows) != 1:
         raise WrittenSubmissionRejected(
             code="written_problem_not_found",
-            message="Задача недоступна для письменной сдачи.",
+            message=N_("Задача недоступна для письменной сдачи."),
             http_status=404,
         )
     row = rows[0]
@@ -1367,7 +1368,7 @@ def _require_revision(expected: ProblemRevisionRef, context: _WrittenContext) ->
     ):
         raise WrittenSubmissionRejected(
             code="written_problem_revision_changed",
-            message="Условие задачи изменилось. Обновите страницу.",
+            message=N_("Условие задачи изменилось. Обновите страницу."),
             http_status=409,
         )
 
@@ -1394,7 +1395,7 @@ def _read_idempotency(
     if row["state"] == "processing":
         raise WrittenSubmissionRejected(
             code="idempotency_request_in_progress",
-            message="Это действие уже выполняется.",
+            message=N_("Это действие уже выполняется."),
             http_status=409,
         )
     try:
@@ -1444,13 +1445,13 @@ def _attachment_target(
     if row is None:
         raise WrittenSubmissionRejected(
             code="written_entry_not_found",
-            message="Черновик письменного решения не найден.",
+            message=N_("Черновик письменного решения не найден."),
             http_status=404,
         )
     if row["state"] not in ("draft", "uploading"):
         raise WrittenSubmissionRejected(
             code="written_entry_not_editable",
-            message="Эта версия решения уже отправлена.",
+            message=N_("Эта версия решения уже отправлена."),
             http_status=409,
         )
     if (
@@ -1459,7 +1460,7 @@ def _attachment_target(
     ):
         raise WrittenSubmissionRejected(
             code="written_submission_version_conflict",
-            message="Решение изменилось в другом окне. Обновите страницу.",
+            message=N_("Решение изменилось в другом окне. Обновите страницу."),
             http_status=409,
         )
     context = _resolve_context(
@@ -1471,7 +1472,7 @@ def _attachment_target(
     if context.problem_revision_id != int(row["problem_revision_id"]):
         raise WrittenSubmissionRejected(
             code="written_problem_revision_changed",
-            message="Условие задачи изменилось. Проверьте решение перед загрузкой.",
+            message=N_("Условие задачи изменилось. Проверьте решение перед загрузкой."),
             http_status=409,
         )
     attachment_rows = connection.execute(
@@ -1481,13 +1482,13 @@ def _attachment_target(
     if len(attachment_rows) >= 10:
         raise WrittenSubmissionRejected(
             code="written_attachment_limit_reached",
-            message="К одному решению можно приложить не больше 10 фотографий.",
+            message=N_("К одному решению можно приложить не больше 10 фотографий."),
             http_status=409,
         )
     if any(int(item["ordinal"]) == command.ordinal for item in attachment_rows):
         raise WrittenSubmissionRejected(
             code="written_attachment_ordinal_conflict",
-            message="Порядок фотографий изменился. Обновите страницу.",
+            message=N_("Порядок фотографий изменился. Обновите страницу."),
             http_status=409,
         )
     return _AttachmentTarget(
@@ -1527,25 +1528,25 @@ def _mutable_entry_target(
     if row is None:
         raise WrittenSubmissionRejected(
             code="written_entry_not_found",
-            message="Письменное решение не найдено.",
+            message=N_("Письменное решение не найдено."),
             http_status=404,
         )
     if row["entry_state"] == "locked":
         raise WrittenSubmissionRejected(
             code="written_attachment_locked",
-            message="Фотографии уже зафиксированы проверкой.",
+            message=N_("Фотографии уже зафиксированы проверкой."),
             http_status=409,
         )
     if row["entry_state"] not in ("draft", "uploading", "submitted"):
         raise WrittenSubmissionRejected(
             code="written_entry_not_editable",
-            message="Эту версию решения уже нельзя изменить.",
+            message=N_("Эту версию решения уже нельзя изменить."),
             http_status=409,
         )
     if row["entry_state"] == "submitted" and row["thread_status"] != "awaiting_review":
         raise WrittenSubmissionRejected(
             code="written_entry_not_editable",
-            message="Эту версию решения уже нельзя изменить.",
+            message=N_("Эту версию решения уже нельзя изменить."),
             http_status=409,
         )
     if (
@@ -1554,7 +1555,7 @@ def _mutable_entry_target(
     ):
         raise WrittenSubmissionRejected(
             code="written_submission_version_conflict",
-            message="Решение изменилось в другом окне. Обновите страницу.",
+            message=N_("Решение изменилось в другом окне. Обновите страницу."),
             http_status=409,
         )
     attachment_rows = connection.execute(
@@ -1566,7 +1567,7 @@ def _mutable_entry_target(
     if any(item["upload_status"] == "locked" for item in attachment_rows):
         raise WrittenSubmissionRejected(
             code="written_attachment_locked",
-            message="Фотографии уже зафиксированы проверкой.",
+            message=N_("Фотографии уже зафиксированы проверкой."),
             http_status=409,
         )
     return _MutableEntryTarget(
@@ -1771,7 +1772,7 @@ def _material_reassignment_preview(
     if source is None:
         raise WrittenSubmissionRejected(
             code="written_source_thread_not_found",
-            message="Исходная переписка не найдена.",
+            message=N_("Исходная переписка не найдена."),
             http_status=404,
         )
     if source["student_public_id"] is None:
@@ -1781,7 +1782,7 @@ def _material_reassignment_preview(
     if str(source["source_problem_public_id"]) == command.target_problem_public_id:
         raise WrittenSubmissionRejected(
             code="written_material_same_problem",
-            message="Исходная и целевая задачи совпадают.",
+            message=N_("Исходная и целевая задачи совпадают."),
             http_status=422,
         )
     target = connection.execute(
@@ -1827,7 +1828,7 @@ def _material_reassignment_preview(
     if target is None:
         raise WrittenSubmissionRejected(
             code="written_target_problem_not_found",
-            message="Целевая задача недоступна этому школьнику.",
+            message=N_("Целевая задача недоступна этому школьнику."),
             http_status=404,
         )
     target_thread = connection.execute(
@@ -1852,7 +1853,7 @@ def _material_reassignment_preview(
         if entry is None or entry["state"] not in {"submitted", "locked"}:
             raise WrittenSubmissionRejected(
                 code="written_material_not_found",
-                message="Выбранный материал не найден или ещё не отправлен.",
+                message=N_("Выбранный материал не найден или ещё не отправлен."),
                 http_status=404,
                 details={"entryId": reference.entry_public_id},
             )
@@ -1865,7 +1866,7 @@ def _material_reassignment_preview(
             if not text or not text.strip():
                 raise WrittenSubmissionRejected(
                     code="written_material_not_found",
-                    message="В выбранном сообщении нет текста.",
+                    message=N_("В выбранном сообщении нет текста."),
                     http_status=404,
                     details={"entryId": reference.entry_public_id},
                 )
@@ -1881,7 +1882,7 @@ def _material_reassignment_preview(
             }:
                 raise WrittenSubmissionRejected(
                     code="written_material_not_found",
-                    message="Выбранная фотография не найдена или не готова.",
+                    message=N_("Выбранная фотография не найдена или не готова."),
                     http_status=404,
                     details={"attachmentId": reference.attachment_public_id},
                 )
@@ -1905,7 +1906,7 @@ def _material_reassignment_preview(
         if already_moved is not None and not allow_reassigned:
             raise WrittenSubmissionRejected(
                 code="written_material_already_reassigned",
-                message="Этот материал уже переносили. Обновите переписку.",
+                message=N_("Этот материал уже переносили. Обновите переписку."),
                 http_status=409,
                 details={"reassignmentId": already_moved["public_id"]},
             )
@@ -2677,7 +2678,7 @@ class PwaWrittenSubmissionRepository:
             ) != len(command.attachment_public_ids):
                 raise WrittenSubmissionRejected(
                     code="written_attachment_set_changed",
-                    message="Список фотографий изменился. Обновите страницу.",
+                    message=N_("Список фотографий изменился. Обновите страницу."),
                     http_status=409,
                 )
             changed = current_ids != command.attachment_public_ids
@@ -2819,7 +2820,7 @@ class PwaWrittenSubmissionRepository:
             if attachment is None:
                 raise WrittenSubmissionRejected(
                     code="written_attachment_not_found",
-                    message="Фотография решения не найдена.",
+                    message=N_("Фотография решения не найдена."),
                     http_status=404,
                 )
             if (
@@ -2829,7 +2830,7 @@ class PwaWrittenSubmissionRepository:
             ):
                 raise WrittenSubmissionRejected(
                     code="written_entry_empty",
-                    message="В отправленном решении должна остаться фотография или текст.",
+                    message=N_("В отправленном решении должна остаться фотография или текст."),
                     http_status=422,
                 )
             connection.execute(
@@ -2980,13 +2981,13 @@ class PwaWrittenSubmissionRepository:
             if row is None:
                 raise WrittenSubmissionRejected(
                     code="written_entry_not_found",
-                    message="Черновик письменного решения не найден.",
+                    message=N_("Черновик письменного решения не найден."),
                     http_status=404,
                 )
             if row["state"] not in ("draft", "uploading"):
                 raise WrittenSubmissionRejected(
                     code="written_entry_not_editable",
-                    message="Эта версия решения уже отправлена.",
+                    message=N_("Эта версия решения уже отправлена."),
                     http_status=409,
                 )
             if (
@@ -2995,7 +2996,7 @@ class PwaWrittenSubmissionRepository:
             ):
                 raise WrittenSubmissionRejected(
                     code="written_submission_version_conflict",
-                    message="Решение изменилось в другом окне. Обновите страницу.",
+                    message=N_("Решение изменилось в другом окне. Обновите страницу."),
                     http_status=409,
                 )
             context = _resolve_context(
@@ -3007,7 +3008,7 @@ class PwaWrittenSubmissionRepository:
             if context.problem_revision_id != int(row["problem_revision_id"]):
                 raise WrittenSubmissionRejected(
                     code="written_problem_revision_changed",
-                    message="Условие задачи изменилось. Проверьте решение перед отправкой.",
+                    message=N_("Условие задачи изменилось. Проверьте решение перед отправкой."),
                     http_status=409,
                 )
             stored_attachments = connection.execute(
@@ -3021,13 +3022,13 @@ class PwaWrittenSubmissionRepository:
             ):
                 raise WrittenSubmissionRejected(
                     code="written_attachments_not_ready",
-                    message="Не все фотографии готовы к отправке.",
+                    message=N_("Не все фотографии готовы к отправке."),
                     http_status=409,
                 )
             if not str(row["text"] or "").strip() and not stored_ids:
                 raise WrittenSubmissionRejected(
                     code="written_entry_empty",
-                    message="Добавьте текст или фотографии решения.",
+                    message=N_("Добавьте текст или фотографии решения."),
                     http_status=422,
                 )
             client_created_at = _parse_timestamp(
@@ -3041,7 +3042,7 @@ class PwaWrittenSubmissionRepository:
             if not clock.timely:
                 raise WrittenSubmissionRejected(
                     code="submission_deadline_passed",
-                    message="Срок сдачи этой задачи уже закончился.",
+                    message=N_("Срок сдачи этой задачи уже закончился."),
                     http_status=409,
                     details={
                         "submissionClosesAt": _timestamp(context.submission_closes_at)
@@ -3191,19 +3192,19 @@ class PwaWrittenSubmissionRepository:
             if row is None:
                 raise WrittenSubmissionRejected(
                     code="written_entry_not_found",
-                    message="Черновик замены не найден.",
+                    message=N_("Черновик замены не найден."),
                     http_status=404,
                 )
             if row["state"] not in ("draft", "uploading"):
                 raise WrittenSubmissionRejected(
                     code="written_entry_not_editable",
-                    message="Эту версию решения уже нельзя использовать для замены.",
+                    message=N_("Эту версию решения уже нельзя использовать для замены."),
                     http_status=409,
                 )
             if row["thread_status"] != "awaiting_review":
                 raise WrittenSubmissionRejected(
                     code="written_replacement_unavailable",
-                    message="Отправленное решение уже начали проверять или проверили.",
+                    message=N_("Отправленное решение уже начали проверять или проверили."),
                     http_status=409,
                 )
             if (
@@ -3212,7 +3213,7 @@ class PwaWrittenSubmissionRepository:
             ):
                 raise WrittenSubmissionRejected(
                     code="written_submission_version_conflict",
-                    message="Решение изменилось в другом окне. Обновите страницу.",
+                    message=N_("Решение изменилось в другом окне. Обновите страницу."),
                     http_status=409,
                 )
             replaced = connection.execute(
@@ -3228,7 +3229,7 @@ class PwaWrittenSubmissionRepository:
             if replaced is None:
                 raise WrittenSubmissionRejected(
                     code="written_replaced_entry_not_found",
-                    message="Исходное отправленное решение не найдено.",
+                    message=N_("Исходное отправленное решение не найдено."),
                     http_status=404,
                 )
             if (
@@ -3237,7 +3238,7 @@ class PwaWrittenSubmissionRepository:
             ):
                 raise WrittenSubmissionRejected(
                     code="written_replacement_target_changed",
-                    message="Исходное решение уже изменилось или попало в проверку.",
+                    message=N_("Исходное решение уже изменилось или попало в проверку."),
                     http_status=409,
                 )
             if connection.execute(
@@ -3247,7 +3248,7 @@ class PwaWrittenSubmissionRepository:
             ).fetchone():
                 raise WrittenSubmissionRejected(
                     code="written_attachment_locked",
-                    message="Фотографии уже зафиксированы проверкой.",
+                    message=N_("Фотографии уже зафиксированы проверкой."),
                     http_status=409,
                 )
             context = _resolve_context(
@@ -3259,7 +3260,7 @@ class PwaWrittenSubmissionRepository:
             if context.problem_revision_id != int(row["problem_revision_id"]):
                 raise WrittenSubmissionRejected(
                     code="written_problem_revision_changed",
-                    message="Условие задачи изменилось. Проверьте решение перед заменой.",
+                    message=N_("Условие задачи изменилось. Проверьте решение перед заменой."),
                     http_status=409,
                 )
             attachments = connection.execute(
@@ -3273,13 +3274,13 @@ class PwaWrittenSubmissionRepository:
             ):
                 raise WrittenSubmissionRejected(
                     code="written_attachments_not_ready",
-                    message="Не все фотографии готовы к замене.",
+                    message=N_("Не все фотографии готовы к замене."),
                     http_status=409,
                 )
             if not str(row["text"] or "").strip() and not stored_ids:
                 raise WrittenSubmissionRejected(
                     code="written_entry_empty",
-                    message="Добавьте текст или фотографии решения.",
+                    message=N_("Добавьте текст или фотографии решения."),
                     http_status=422,
                 )
             client_created_at = _parse_timestamp(
@@ -3293,7 +3294,7 @@ class PwaWrittenSubmissionRepository:
             if not clock.timely:
                 raise WrittenSubmissionRejected(
                     code="submission_deadline_passed",
-                    message="Срок сдачи этой задачи уже закончился.",
+                    message=N_("Срок сдачи этой задачи уже закончился."),
                     http_status=409,
                     details={
                         "submissionClosesAt": _timestamp(context.submission_closes_at)
@@ -3447,7 +3448,7 @@ class PwaWrittenSubmissionRepository:
         if staff_account is None:
             raise WrittenSubmissionRejected(
                 code="forbidden",
-                message="Недостаточно прав для переноса материала.",
+                message=N_("Недостаточно прав для переноса материала."),
                 http_status=403,
             )
         idempotency_id = int(
@@ -3481,7 +3482,7 @@ class PwaWrittenSubmissionRepository:
             ):
                 raise WrittenSubmissionRejected(
                     code="written_material_version_conflict",
-                    message="Переписка изменилась после предпросмотра. Обновите данные.",
+                    message=N_("Переписка изменилась после предпросмотра. Обновите данные."),
                     http_status=409,
                     details={
                         "sourceThreadVersion": preview.source_thread_version,
@@ -3689,7 +3690,7 @@ class PwaWrittenSubmissionRepository:
             if row is None:
                 raise WrittenSubmissionRejected(
                     code="written_attachment_not_found",
-                    message="Фотография решения не найдена.",
+                    message=N_("Фотография решения не найдена."),
                     http_status=404,
                 )
             return StaffWrittenAttachmentMedia(
@@ -3742,7 +3743,7 @@ class PwaWrittenSubmissionRepository:
             if row is None:
                 raise WrittenSubmissionRejected(
                     code="written_attachment_not_found",
-                    message="Фотография решения не найдена.",
+                    message=N_("Фотография решения не найдена."),
                     http_status=404,
                 )
             return WrittenAttachmentMedia(
@@ -3788,7 +3789,7 @@ class PwaWrittenSubmissionRepository:
             if row is None:
                 raise WrittenSubmissionRejected(
                     code="written_attachment_not_found",
-                    message="Фотография решения не найдена.",
+                    message=N_("Фотография решения не найдена."),
                     http_status=404,
                 )
             return WrittenAttachmentMedia(

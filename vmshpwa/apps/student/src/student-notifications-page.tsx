@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, Volume2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -42,26 +45,93 @@ import {
 } from '@vmsh/ui'
 
 const categoryCopy: Record<NotificationCategory, { title: string; description: string }> = {
-  lesson_published: { title: 'Новый урок', description: 'Условия нового занятия' },
-  hint_published: { title: 'Опубликована подсказка', description: 'Подсказки к задачам' },
-  solution_published: { title: 'Опубликованы решения', description: 'Решения задач занятия' },
-  review_completed: {
-    title: 'Проверка завершена',
-    description: 'Результаты письменной проверки',
+  lesson_published: {
+    get title() {
+      return t`Новый урок`
+    },
+    get description() {
+      return t`Условия нового занятия`
+    },
   },
-  thread_updated: { title: 'Новое сообщение', description: 'Обсуждение решения или вопроса' },
-  oral_window: { title: 'Устный приём', description: 'Открытие окна устной сдачи' },
-  classroom_assignment: { title: 'Назначена аудитория', description: 'Очное занятие' },
-  deadline: { title: 'Скоро дедлайн', description: 'Напоминание о публикации решений' },
-  news: { title: 'Новая публикация', description: 'Новости кружка' },
-  group_announcement: { title: 'Новое объявление', description: 'Сообщение для вашей группы' },
+  hint_published: {
+    get title() {
+      return t`Опубликована подсказка`
+    },
+    get description() {
+      return t`Подсказки к задачам`
+    },
+  },
+  solution_published: {
+    get title() {
+      return t`Опубликованы решения`
+    },
+    get description() {
+      return t`Решения задач занятия`
+    },
+  },
+  review_completed: {
+    get title() {
+      return t`Проверка завершена`
+    },
+    get description() {
+      return t`Результаты письменной проверки`
+    },
+  },
+  thread_updated: {
+    get title() {
+      return t`Новое сообщение`
+    },
+    get description() {
+      return t`Обсуждение решения или вопроса`
+    },
+  },
+  oral_window: {
+    get title() {
+      return t`Устный приём`
+    },
+    get description() {
+      return t`Открытие окна устной сдачи`
+    },
+  },
+  classroom_assignment: {
+    get title() {
+      return t`Назначена аудитория`
+    },
+    get description() {
+      return t`Очное занятие`
+    },
+  },
+  deadline: {
+    get title() {
+      return t`Скоро дедлайн`
+    },
+    get description() {
+      return t`Напоминание о публикации решений`
+    },
+  },
+  news: {
+    get title() {
+      return t`Новая публикация`
+    },
+    get description() {
+      return t`Новости кружка`
+    },
+  },
+  group_announcement: {
+    get title() {
+      return t`Новое объявление`
+    },
+    get description() {
+      return t`Сообщение для вашей группы`
+    },
+  },
 }
 
 function eventDescription(event: NotificationEvent): string {
   if (event.category === 'review_completed') {
     const count = event.payload.count
     if (typeof count === 'number' && Number.isInteger(count) && count > 1) {
-      return `Проверено задач: ${count}`
+      return t`Проверено задач: ${count}`
     }
   }
   if (event.category !== 'classroom_assignment') return categoryCopy[event.category].description
@@ -70,7 +140,7 @@ function eventDescription(event: NotificationEvent): string {
 }
 
 function formatMoment(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -147,10 +217,10 @@ export function PushDeviceSettings({
   return (
     <PushDeviceControls
       categories={[
-        { id: 'review', label: 'Результат проверки' },
-        { id: 'deadline', label: 'Дедлайн и новые материалы' },
-        { id: 'news', label: 'Новости кружка' },
-        { id: 'group_announcement', label: 'Объявления группы' },
+        { id: 'review', label: t`Результат проверки` },
+        { id: 'deadline', label: t`Дедлайн и новые материалы` },
+        { id: 'news', label: t`Новости кружка` },
+        { id: 'group_announcement', label: t`Объявления группы` },
       ]}
       onDisable={() => void push.disable()}
       onDismiss={push.dismiss}
@@ -269,23 +339,23 @@ export function StudentNotificationsPage() {
 
   return (
     <PageLayout
-      description="Новые события всегда остаются в кабинете. Push и звук можно настроить отдельно."
-      eyebrow="Профиль"
-      title="Уведомления"
+      description={t`Новые события всегда остаются в кабинете. Push и звук можно настроить отдельно.`}
+      eyebrow={t`Профиль`}
+      title={t`Уведомления`}
     >
       {pushConfig.data?.enabled && pushConfig.data.applicationServerKey ? (
-        <PageSection title="На этом устройстве">
+        <PageSection title={t`На этом устройстве`}>
           <PushDeviceSettings
             applicationServerKey={pushConfig.data.applicationServerKey}
             client={client}
           />
         </PageSection>
       ) : null}
-      <PageSection title="Категории">
+      <PageSection title={t`Категории`}>
         {preferences.isPending ? <PageStatePanel state="loading" /> : null}
         {preferences.error ? (
           <PageStatePanel
-            actionLabel="Повторить"
+            actionLabel={t`Повторить`}
             onAction={() => void preferences.refetch()}
             state="error"
           />
@@ -323,24 +393,30 @@ export function StudentNotificationsPage() {
           <Alert tone="danger">
             <Bell aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Настройка не сохранена</AlertTitle>
-              <AlertDescription>Проверьте соединение и попробуйте ещё раз.</AlertDescription>
+              <AlertTitle>
+                <Trans>Настройка не сохранена</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>Проверьте соединение и попробуйте ещё раз.</Trans>
+              </AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
         <Alert tone="neutral">
           <Volume2 aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Звук только с 9:00 до 21:00</AlertTitle>
+            <AlertTitle>
+              <Trans>Звук только с 9:00 до 21:00</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Ночью новые события видны в приложении, но не будят вас.
+              <Trans>Ночью новые события видны в приложении, но не будят вас.</Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
       </PageSection>
 
       {selectedCourse ? (
-        <PageSection title="По курсам">
+        <PageSection title={t`По курсам`}>
           {courseViews.length > 1 ? (
             <CourseContext
               activeCourseId={selectedCourse.id}
@@ -351,7 +427,7 @@ export function StudentNotificationsPage() {
           {coursePreferences.isPending ? <PageStatePanel state="loading" /> : null}
           {coursePreferences.error ? (
             <PageStatePanel
-              actionLabel="Повторить"
+              actionLabel={t`Повторить`}
               onAction={() => void coursePreferences.refetch()}
               state="error"
             />
@@ -385,28 +461,32 @@ export function StudentNotificationsPage() {
             <Alert tone="danger">
               <Bell aria-hidden="true" />
               <AlertContent>
-                <AlertTitle>Настройка курса не сохранена</AlertTitle>
-                <AlertDescription>Проверьте соединение и попробуйте ещё раз.</AlertDescription>
+                <AlertTitle>
+                  <Trans>Настройка курса не сохранена</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>Проверьте соединение и попробуйте ещё раз.</Trans>
+                </AlertDescription>
               </AlertContent>
             </Alert>
           ) : null}
         </PageSection>
       ) : null}
 
-      <PageSection title="Последние события">
+      <PageSection title={t`Последние события`}>
         {events.isPending ? <PageStatePanel state="loading" /> : null}
         {events.error ? (
           <PageStatePanel
-            actionLabel="Повторить"
+            actionLabel={t`Повторить`}
             onAction={() => void events.refetch()}
             state="error"
           />
         ) : null}
         {events.data?.items.length === 0 ? (
           <PageStatePanel
-            description="Новые события появятся здесь."
+            description={t`Новые события появятся здесь.`}
             state="empty"
-            title="Пока пусто"
+            title={t`Пока пусто`}
           />
         ) : null}
         <div className="space-y-2">

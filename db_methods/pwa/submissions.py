@@ -20,14 +20,17 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from helpers.consts import ANS_TYPE, RES_TYPE, VERDICT
+from helpers.pwa.i18n import N_
 from helpers.pwa.test_checkers import TrustedCheckerExecutor
 from models.pwa.submissions import (
+    BUILT_IN_FEEDBACK_SOURCE,
     SubmissionConfigurationError,
     TestAnswerEvaluation,
     TestAnswerOutcome,
     TestAttemptPolicy,
     TestProblemAnswerConfig,
     assess_submission_clock,
+    built_in_feedback,
     evaluation_version,
     evaluate_test_answer,
 )
@@ -100,7 +103,7 @@ class IdempotencyPayloadMismatch(TestSubmissionRejected):
     def __init__(self) -> None:
         super().__init__(
             code="idempotency_payload_mismatch",
-            message="Этот ключ уже использован для другого ответа.",
+            message=N_("Этот ключ уже использован для другого ответа."),
             http_status=409,
         )
 
@@ -200,6 +203,7 @@ class TestAttemptReceipt:
     server_received_at: str
     clock_suspicious: bool
     attempts: AttemptLimitReceipt
+    feedback_source: str | None = field(default=None, compare=False)
     replayed: bool = field(default=False, compare=False)
 
     def response_payload(self) -> dict[str, object]:
@@ -222,6 +226,19 @@ class TestAttemptReceipt:
             "attempts": self.attempts.payload(),
         }
 
+    def storage_response_payload(self) -> dict[str, object]:
+        """Persist feedback provenance without changing the public wire shape.
+
+        The response body remains the historical contract. The idempotency
+        record retains only the stable source marker needed to localize a known
+        built-in message when the same attempt is read later. See P3.3.
+        """
+
+        payload = self.response_payload()
+        if self.feedback_source == BUILT_IN_FEEDBACK_SOURCE:
+            payload["feedbackSource"] = self.feedback_source
+        return payload
+
     @classmethod
     def from_response(cls, payload: Mapping[str, object]) -> "TestAttemptReceipt":
         revision = payload.get("problemRevision")
@@ -232,12 +249,15 @@ class TestAttemptReceipt:
             )
         try:
             feedback = payload["feedback"]
+            feedback_source = payload.get("feedbackSource")
             checker_message = payload["checkerMessage"]
             verdict = payload["verdict"]
             if feedback is not None and not isinstance(feedback, str):
                 raise TypeError
             if checker_message is not None and not isinstance(checker_message, str):
                 raise TypeError
+            if feedback_source not in {None, BUILT_IN_FEEDBACK_SOURCE}:
+                feedback_source = None
             return cls(
                 attempt_public_id=str(payload["attemptId"]),
                 problem_public_id=str(payload["problemId"]),
@@ -246,6 +266,7 @@ class TestAttemptReceipt:
                 outcome=str(payload["outcome"]),
                 display_answer=str(payload["displayAnswer"]),
                 feedback=feedback,
+                feedback_source=feedback_source,
                 checker_message=checker_message,
                 verdict=None if verdict is None else int(verdict),
                 client_created_at=str(payload["clientCreatedAt"]),
@@ -278,6 +299,7 @@ class TestAttemptHistoryRecord:
     client_created_at: str
     server_received_at: str
     clock_suspicious: bool
+    feedback_source: str | None = field(default=None, compare=False)
 
     def response_payload(self) -> dict[str, object]:
         return {
@@ -692,7 +714,7 @@ def _resolve_recheck_context(
     if len(rows) != 1:
         raise TestSubmissionRejected(
             code="test_problem_not_found",
-            message="Тестовая задача недоступна для перепроверки.",
+            message=N_("Тестовая задача недоступна для перепроверки."),
             http_status=404,
         )
     return _recheck_context_from_row(rows[0])
@@ -803,7 +825,7 @@ def _resolve_context(
     if len(rows) != 1:
         raise TestSubmissionRejected(
             code="test_problem_not_found",
-            message="Тестовая задача недоступна.",
+            message=N_("Тестовая задача недоступна."),
             http_status=404,
         )
     return _context_from_row(rows[0])
@@ -822,7 +844,7 @@ def _require_expected_revision(
     ):
         raise TestSubmissionRejected(
             code="test_problem_revision_changed",
-            message="Условие задачи изменилось. Обновите страницу.",
+            message=N_("Условие задачи изменилось. Обновите страницу."),
             http_status=409,
         )
 
@@ -847,7 +869,7 @@ def _read_idempotency(
     if row["state"] == "processing":
         raise TestSubmissionRejected(
             code="idempotency_request_in_progress",
-            message="Этот ответ уже обрабатывается.",
+            message=N_("Этот ответ уже обрабатывается."),
             http_status=409,
         )
     try:
@@ -933,7 +955,7 @@ def _raise_if_limited(
     if policy.max_per_hour is not None and hour_count >= policy.max_per_hour:
         raise TestSubmissionRejected(
             code="test_attempt_hour_limit",
-            message="На эту задачу закончились попытки на текущий час. Вернитесь к ней позже.",
+            message=N_("На эту задачу закончились попытки на текущий час. Вернитесь к ней позже."),
             http_status=422,
             details=_limit_receipt(
                 policy, hour_count=hour_count, day_count=day_count
@@ -942,7 +964,7 @@ def _raise_if_limited(
     if policy.max_per_day is not None and day_count >= policy.max_per_day:
         raise TestSubmissionRejected(
             code="test_attempt_day_limit",
-            message="На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра.",
+            message=N_("На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра."),
             http_status=422,
             details=_limit_receipt(
                 policy, hour_count=hour_count, day_count=day_count
@@ -1112,6 +1134,46 @@ def _stored_attempt_messages(
     )
 
 
+def _history_feedback_source(
+    row: Mapping[str, object],
+    *,
+    feedback: str | None,
+    outcome: str,
+) -> str | None:
+    """Prove built-in feedback from the exact attempt configuration.
+
+    Historical user copy may match a default Russian phrase. An attempt is
+    therefore localizable only when its stored evaluation fingerprint matches
+    the immutable problem-revision configuration and that configuration has no
+    authored copy for this outcome. A recheck against another configuration
+    deliberately remains source-language data.
+    """
+
+    if feedback is None:
+        return None
+    try:
+        answer_config_raw = json.loads(str(row["answer_config_json"]))
+        if not isinstance(answer_config_raw, dict):
+            return None
+        config = TestProblemAnswerConfig.from_revision(
+            answer_type=int(row["answer_type"]),
+            answer_config=answer_config_raw,
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError, RecursionError):
+        return None
+    stored_evaluation_version = row["evaluation_version"]
+    if (
+        not isinstance(stored_evaluation_version, str)
+        or stored_evaluation_version != evaluation_version(config)
+    ):
+        return None
+    return (
+        BUILT_IN_FEEDBACK_SOURCE
+        if built_in_feedback(config, outcome) == feedback
+        else None
+    )
+
+
 def _history_record(row: Mapping[str, object]) -> TestAttemptHistoryRecord:
     try:
         answer_payload = json.loads(str(row["answer_payload_json"]))
@@ -1142,6 +1204,11 @@ def _history_record(row: Mapping[str, object]) -> TestAttemptHistoryRecord:
             attempt_public_id=attempt_public_id,
             current_outcome=outcome,
         )
+    feedback_source = _history_feedback_source(
+        row,
+        feedback=feedback,
+        outcome=outcome,
+    )
     return TestAttemptHistoryRecord(
         attempt_public_id=attempt_public_id,
         problem_public_id=str(row["problem_public_id"]),
@@ -1151,6 +1218,7 @@ def _history_record(row: Mapping[str, object]) -> TestAttemptHistoryRecord:
         check_status=str(row["check_status"]),
         display_answer=str(answer_payload["displayAnswer"]),
         feedback=feedback,
+        feedback_source=feedback_source,
         checker_message=checker_message,
         verdict=verdict,
         result_version=None if row["result_id"] is None else 1,
@@ -1178,7 +1246,7 @@ def _list_test_attempt_history(
     if account is None:
         raise TestSubmissionRejected(
             code="test_problem_not_found",
-            message="Тестовая задача недоступна.",
+            message=N_("Тестовая задача недоступна."),
             http_status=404,
         )
     student_user_id = int(account["linked_user_id"])
@@ -1189,7 +1257,7 @@ def _list_test_attempt_history(
     if problem is None:
         raise TestSubmissionRejected(
             code="test_problem_not_found",
-            message="Тестовая задача недоступна.",
+            message=N_("Тестовая задача недоступна."),
             http_status=404,
         )
     problem_id = int(problem["id"])
@@ -1220,7 +1288,7 @@ def _list_test_attempt_history(
         if cursor_row is None:
             raise TestSubmissionRejected(
                 code="test_attempt_cursor_invalid",
-                message="История ответов изменилась. Обновите страницу.",
+                message=N_("История ответов изменилась. Обновите страницу."),
                 http_status=422,
             )
         cursor_timestamp = str(cursor_row["server_received_at"])
@@ -1231,8 +1299,10 @@ def _list_test_attempt_history(
         "attempt.public_id AS attempt_public_id, "
         "problem.public_id AS problem_public_id, "
         "condition_revision.public_id AS condition_revision_public_id, "
-        "problem_revision.config_version, attempt.answer_payload_json, "
-        "attempt.parse_status, attempt.check_status, attempt.client_created_at, "
+        "problem_revision.config_version, problem_revision.answer_type, "
+        "problem_revision.answer_config_json, attempt.answer_payload_json, "
+        "attempt.parse_status, attempt.check_status, attempt.evaluation_version, "
+        "attempt.client_created_at, "
         "attempt.server_received_at, attempt.clock_suspicious, attempt.verdict, "
         "attempt.result_id, attempt.feedback, attempt.checker_message, "
         "(SELECT idempotency.response_json "
@@ -1525,7 +1595,7 @@ class PwaTestSubmissionRepository:
         ):
             raise TestSubmissionRejected(
                 code="test_problem_revision_changed",
-                message="Настройки задачи изменились. Обновите страницу.",
+                message=N_("Настройки задачи изменились. Обновите страницу."),
                 http_status=409,
             )
 
@@ -1580,7 +1650,7 @@ class PwaTestSubmissionRepository:
         ):
             raise TestSubmissionRejected(
                 code="test_problem_revision_changed",
-                message="Настройки задачи изменились. Обновите страницу.",
+                message=N_("Настройки задачи изменились. Обновите страницу."),
                 http_status=409,
             )
 
@@ -1811,7 +1881,7 @@ class PwaTestSubmissionRepository:
             if context != initial_context:
                 raise TestSubmissionRejected(
                     code="test_problem_revision_changed",
-                    message="Условие задачи изменилось. Обновите страницу.",
+                    message=N_("Условие задачи изменилось. Обновите страницу."),
                     http_status=409,
                 )
             clock = assess_submission_clock(
@@ -1822,7 +1892,7 @@ class PwaTestSubmissionRepository:
             if not clock.timely:
                 raise TestSubmissionRejected(
                     code="submission_deadline_passed",
-                    message="Срок сдачи этой задачи уже закончился.",
+                    message=N_("Срок сдачи этой задачи уже закончился."),
                     http_status=409,
                     details={
                         "submissionClosesAt": _timestamp(context.submission_closes_at)
@@ -1929,6 +1999,7 @@ class PwaTestSubmissionRepository:
                 outcome=evaluation.outcome.value,
                 display_answer=evaluation.display_answer,
                 feedback=evaluation.feedback,
+                feedback_source=evaluation.feedback_source,
                 checker_message=evaluation.checker_message,
                 verdict=(
                     None if evaluation.verdict is None else int(evaluation.verdict)
@@ -1958,7 +2029,7 @@ class PwaTestSubmissionRepository:
             record_id=record_id,
             state="completed",
             http_status=201,
-            response=receipt.response_payload(),
+            response=receipt.storage_response_payload(),
             completed_at=created_at,
         )
         return receipt, None

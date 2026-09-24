@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { StudentPhotoSupportComposer } from './student-photo-support-composer'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { MessageCircleQuestion } from 'lucide-react'
@@ -50,7 +53,7 @@ export function StudentSupportInboxPage() {
   } else if (query.error) {
     content = (
       <PageStatePanel
-        actionLabel="Повторить"
+        actionLabel={t`Повторить`}
         description={describeSupportError(query.error)}
         onAction={() => void query.refetch()}
         state={supportErrorState(query.error)}
@@ -59,15 +62,15 @@ export function StudentSupportInboxPage() {
   } else if (items.length === 0) {
     content = (
       <PageStatePanel
-        description="Вопрос к задаче можно задать прямо со страницы этой задачи. Переписка появится здесь."
+        description={t`Вопрос к задаче можно задать прямо со страницы этой задачи. Переписка появится здесь.`}
         state="empty"
-        title="Вопросов пока нет"
+        title={t`Вопросов пока нет`}
       />
     )
   } else {
     content = (
       <div className="space-y-3">
-        <ol className="space-y-2" aria-label="Ваши вопросы">
+        <ol className="space-y-2" aria-label={t`Ваши вопросы`}>
           {items.map((item) => (
             <StudentSupportSummary item={item} key={item.threadId} />
           ))}
@@ -79,7 +82,7 @@ export function StudentSupportInboxPage() {
             size="sm"
             variant="outline"
           >
-            {query.isFetchingNextPage ? 'Загружаем…' : 'Показать более ранние'}
+            {query.isFetchingNextPage ? t`Загружаем…` : t`Показать более ранние`}
           </Button>
         ) : null}
       </div>
@@ -88,9 +91,9 @@ export function StudentSupportInboxPage() {
 
   return (
     <PageLayout
-      description="Приватная переписка видна только вам и преподавателям, у которых есть доступ к вашей группе."
-      eyebrow="Помощь"
-      title="Ваши вопросы"
+      description={t`Приватная переписка видна только вам и преподавателям, у которых есть доступ к вашей группе.`}
+      eyebrow={t`Помощь`}
+      title={t`Ваши вопросы`}
       width="reading"
     >
       {content}
@@ -99,7 +102,7 @@ export function StudentSupportInboxPage() {
 }
 
 function StudentSupportSummary({ item }: { item: SupportThreadSummary }) {
-  const title = item.context.problemTitle ?? 'Общий вопрос по занятию'
+  const title = item.context.problemTitle ?? t`Общий вопрос по занятию`
   return (
     <li>
       <Link
@@ -111,16 +114,17 @@ function StudentSupportSummary({ item }: { item: SupportThreadSummary }) {
           <CardHeader>
             <CardTitle>{title}</CardTitle>
             <Badge variant={item.replyState === 'awaiting_student' ? 'info' : 'neutral'}>
-              {item.replyState === 'awaiting_student' ? 'Есть ответ' : 'Ждём преподавателя'}
+              {item.replyState === 'awaiting_student' ? t`Есть ответ` : t`Ждём преподавателя`}
             </Badge>
           </CardHeader>
           <CardContent className="space-y-1">
             <p className="text-caption text-muted-foreground">{supportContext(item)}</p>
             <p className="line-clamp-2 text-small text-foreground">
-              {item.latestEntry.textExcerpt ?? 'Вложение'}
+              {item.latestEntry.textExcerpt ?? t`Вложение`}
             </p>
             <p className="text-caption text-muted-foreground">
-              {formatSupportTime(item.latestEntry.receivedAt)} · сообщений: {item.entryCount}
+              {formatSupportTime(item.latestEntry.receivedAt)}{' '}
+              <Trans>· сообщений: {item.entryCount}</Trans>
             </p>
           </CardContent>
         </Card>
@@ -217,7 +221,7 @@ export function StudentNewSupportPage({
 
   if (threadList.isPending || threadList.hasNextPage || existingThread) {
     return (
-      <PageLayout title="Вопрос" width="reading">
+      <PageLayout title={t`Вопрос`} width="reading">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -227,16 +231,16 @@ export function StudentNewSupportPage({
     <PageLayout
       actions={
         <Link className={buttonVariants({ size: 'sm', variant: 'outline' })} to="/questions">
-          История вопросов
+          <Trans>История вопросов</Trans>
         </Link>
       }
       description={
         problemId
-          ? 'Напишите, какой переход или часть условия вызывает вопрос.'
-          : 'Этот вопрос относится к занятию целиком.'
+          ? t`Напишите, какой переход или часть условия вызывает вопрос.`
+          : t`Этот вопрос относится к занятию целиком.`
       }
-      eyebrow={problemId ? 'Вопрос к задаче' : 'Общий вопрос'}
-      title="Спросить преподавателя"
+      eyebrow={problemId ? t`Вопрос к задаче` : t`Общий вопрос`}
+      title={t`Спросить преподавателя`}
       width="reading"
     >
       <Card>
@@ -295,18 +299,18 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
 
   if (query.isPending) {
     return (
-      <PageLayout title="Вопрос" width="reading">
+      <PageLayout title={t`Вопрос`} width="reading">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (query.error) {
     return (
-      <PageLayout title="Вопрос" width="reading">
+      <PageLayout title={t`Вопрос`} width="reading">
         <PageStatePanel
           {...(supportErrorState(query.error) === 'error' ||
           supportErrorState(query.error) === 'offline'
-            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
             : {})}
           description={describeSupportError(query.error)}
           state={supportErrorState(query.error)}
@@ -338,12 +342,12 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
     <PageLayout
       actions={
         <Link className={buttonVariants({ size: 'sm', variant: 'outline' })} to="/questions">
-          Все вопросы
+          <Trans>Все вопросы</Trans>
         </Link>
       }
       description={supportThreadContext(thread.context)}
-      eyebrow="Приватная переписка"
-      title={thread.context.problemTitle ?? 'Общий вопрос по занятию'}
+      eyebrow={t`Приватная переписка`}
+      title={thread.context.problemTitle ?? t`Общий вопрос по занятию`}
       width="reading"
     >
       <div className="space-y-5">
@@ -364,7 +368,7 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
                 editor.setText(value)
               }}
               saveState={editor.saveState}
-              submitLabel="Дополнить вопрос"
+              submitLabel={t`Дополнить вопрос`}
               value={editor.text}
             />
           </CardContent>
@@ -393,7 +397,7 @@ function supportThreadContext(context: SupportThreadSummary['context']): string 
 }
 
 function formatSupportTime(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -408,10 +412,10 @@ function supportErrorState(error: unknown): 'offline' | 'forbidden' | 'empty' | 
 
 function describeSupportError(error: unknown): string {
   if (error instanceof SupportNetworkError) {
-    return 'Нет связи с сервером. Набранный текст остаётся на этом устройстве.'
+    return t`Нет связи с сервером. Набранный текст остаётся на этом устройстве.`
   }
   if (error instanceof ApiResponseError) return error.message
-  return 'Не удалось обновить переписку. Набранный текст не удалён.'
+  return t`Не удалось обновить переписку. Набранный текст не удалён.`
 }
 
 export function StudentProblemQuestionLink({
@@ -459,7 +463,7 @@ export function StudentProblemQuestionLink({
   const threadId = createdThreadId ?? matchingThread?.threadId
   return (
     <section
-      aria-label="Обсуждение задачи"
+      aria-label={t`Обсуждение задачи`}
       data-print-hide
       className={compact ? 'contents font-sans' : 'mt-2 font-sans'}
     >
@@ -470,14 +474,16 @@ export function StudentProblemQuestionLink({
         variant="ghost"
       >
         <MessageCircleQuestion aria-hidden="true" className="size-4" />
-        {threadId || open ? 'Вопросы по задаче' : 'Задать вопрос'}
+        {threadId || open ? t`Вопросы по задаче` : t`Задать вопрос`}
       </Button>
       {open ? (
         <div className={compact ? 'order-2 mt-2 w-full basis-full' : 'mt-3'}>
           {threadId ? (
             <InlineStudentSupportThread client={client} threadId={threadId} />
           ) : list.isPending || list.hasNextPage ? (
-            <p className="text-small text-muted-foreground">Загружаем предыдущие вопросы…</p>
+            <p className="text-small text-muted-foreground">
+              <Trans>Загружаем предыдущие вопросы…</Trans>
+            </p>
           ) : (
             <InlineNewProblemQuestion
               client={client}
@@ -486,7 +492,7 @@ export function StudentProblemQuestionLink({
               problemId={problemId}
             />
           )}
-          <StudentCollapseAction label="Скрыть вопросы" onClick={() => setOpen(false)} />
+          <StudentCollapseAction label={t`Скрыть вопросы`} onClick={() => setOpen(false)} />
         </div>
       ) : null}
     </section>
@@ -553,7 +559,7 @@ function InlineNewProblemQuestion({
         editor.setText(value)
       }}
       saveState={editor.saveState}
-      submitLabel="Отправить вопрос"
+      submitLabel={t`Отправить вопрос`}
       value={editor.text}
     />
   )
@@ -583,7 +589,11 @@ function InlineStudentSupportThread({
     descriptor,
   )
   if (query.isPending) {
-    return <p className="text-small text-muted-foreground">Загружаем переписку…</p>
+    return (
+      <p className="text-small text-muted-foreground">
+        <Trans>Загружаем переписку…</Trans>
+      </p>
+    )
   }
   if (query.error) {
     return (
@@ -626,7 +636,7 @@ function InlineStudentSupportThread({
           editor.setText(value)
         }}
         saveState={editor.saveState}
-        submitLabel="Дополнить вопрос"
+        submitLabel={t`Дополнить вопрос`}
         value={editor.text}
       />
     </div>

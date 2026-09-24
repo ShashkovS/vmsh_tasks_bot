@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect } from 'react'
 
 import { cn } from '@vmsh/ui'
@@ -73,7 +74,7 @@ export function ReactionPicker({
         </p>
       ) : null}
       <div
-        aria-label={legend ?? 'Реакция'}
+        aria-label={legend ?? t`Реакция`}
         className={cn('flex flex-wrap', compact ? 'gap-0.5' : 'gap-2')}
         role="group"
       >
@@ -127,9 +128,9 @@ export function ReactionPicker({
         <p className="text-caption leading-tight text-muted-foreground">
           {compact
             ? hotkeys
-              ? `⌘/Ctrl + ⌥/Alt + 1–${options.length} · Работает и в комментарии; не видна ученику и родителю.`
-              : 'Не видна ученику и родителю.'
-            : 'Видно только преподавателям и администратору — ученик и родитель не увидят.'}
+              ? t`⌘/Ctrl + ⌥/Alt + 1–${options.length} · Работает и в комментарии; не видна ученику и родителю.`
+              : t`Не видна ученику и родителю.`
+            : t`Видно только преподавателям и администратору — ученик и родитель не увидят.`}
         </p>
       ) : null}
     </div>

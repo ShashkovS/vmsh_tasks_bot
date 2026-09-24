@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useEffect, useMemo, useState } from 'react'
 import { CloudOff, TriangleAlert } from 'lucide-react'
 
@@ -241,7 +243,7 @@ export function StudentTestAnswer({
     (draftStore.value !== null && identity !== null && hydratedIdentity !== identity)
   ) {
     return (
-      <Card aria-label="Загрузка поля ответа" className="mt-5">
+      <Card aria-label={t`Загрузка поля ответа`} className="mt-5">
         <CardContent className="space-y-3 pt-5">
           <Skeleton className="h-5 w-28" />
           <Skeleton className="h-10 w-full" />
@@ -256,15 +258,17 @@ export function StudentTestAnswer({
       <Alert className="mt-5" role="alert" tone="danger">
         <TriangleAlert aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>Не удалось подготовить поле ответа</AlertTitle>
+          <AlertTitle>
+            <Trans>Не удалось подготовить поле ответа</Trans>
+          </AlertTitle>
           <AlertDescription>
             {draftStore.error
-              ? 'Браузер не разрешил надёжно сохранять введённый ответ.'
-              : 'Повторите загрузку. Уже сохранённые ответы не удалены.'}
+              ? t`Браузер не разрешил надёжно сохранять введённый ответ.`
+              : t`Повторите загрузку. Уже сохранённые ответы не удалены.`}
           </AlertDescription>
           {!draftStore.error ? (
             <Button className="mt-2" onClick={() => void inputQuery.refetch()} size="sm">
-              Повторить
+              <Trans>Повторить</Trans>
             </Button>
           ) : null}
         </AlertContent>
@@ -423,7 +427,7 @@ export function StudentTestAnswer({
       own: true,
       at,
       dateLabel,
-      text: attempt.displayAnswer || 'Пустой ответ',
+      text: attempt.displayAnswer || t`Пустой ответ`,
       delivery: 'sent',
     }
     const checked: ChatMessageView = {
@@ -450,7 +454,7 @@ export function StudentTestAnswer({
   }
 
   return (
-    <section aria-label="Ваш ответ" className="mt-4 space-y-3 border-t border-border pt-4">
+    <section aria-label={t`Ваш ответ`} className="mt-4 space-y-3 border-t border-border pt-4">
       {hasEarlier ? (
         <Button
           disabled={historyQuery.isFetchingNextPage}
@@ -461,22 +465,26 @@ export function StudentTestAnswer({
           size="sm"
           variant="ghost"
         >
-          {historyQuery.isFetchingNextPage ? 'Загружаем…' : 'Показать более ранние ответы'}
+          {historyQuery.isFetchingNextPage ? t`Загружаем…` : t`Показать более ранние ответы`}
         </Button>
       ) : null}
 
-      <TaskChat emptyLabel="Отправьте ответ — проверка придёт сразу." messages={messages} />
+      <TaskChat emptyLabel={t`Отправьте ответ — проверка придёт сразу.`} messages={messages} />
 
       {!closed && incompatibleDraft ? (
         <Alert tone="warning">
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Условие изменилось</AlertTitle>
+            <AlertTitle>
+              <Trans>Условие изменилось</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Ответ к предыдущей версии сохранён отдельно и не перенесён автоматически.
+              <Trans>
+                Ответ к предыдущей версии сохранён отдельно и не перенесён автоматически.
+              </Trans>
             </AlertDescription>
             <Button className="mt-2" onClick={restoreOldDraft} size="sm" variant="outline">
-              Перенести только текст ответа
+              <Trans>Перенести только текст ответа</Trans>
             </Button>
           </AlertContent>
         </Alert>
@@ -486,10 +494,14 @@ export function StudentTestAnswer({
         <Alert role="alert" tone="danger">
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Черновик сейчас не сохраняется</AlertTitle>
+            <AlertTitle>
+              <Trans>Черновик сейчас не сохраняется</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и
-              измените ответ ещё раз.
+              <Trans>
+                Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и
+                измените ответ ещё раз.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -502,7 +514,7 @@ export function StudentTestAnswer({
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
             <AlertTitle>
-              {sendState === 'conflict' ? 'Нужно обновить задачу' : 'Ответ не отправлен'}
+              {sendState === 'conflict' ? t`Нужно обновить задачу` : t`Ответ не отправлен`}
             </AlertTitle>
             <AlertDescription>{sendError}</AlertDescription>
           </AlertContent>
@@ -511,21 +523,23 @@ export function StudentTestAnswer({
 
       {submissionClosed ? (
         showDeadlineNotice ? null : (
-          <p className="text-small text-muted-foreground">Приём ответов завершён.</p>
+          <p className="text-small text-muted-foreground">
+            <Trans>Приём ответов завершён.</Trans>
+          </p>
         )
       ) : queuedSend ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle px-3 py-2 font-sans">
           <CloudOff aria-hidden="true" className="size-4 text-muted-foreground" />
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
             {availability.state === 'updating'
-              ? 'Обновляем сервис. Отправим после обновления.'
+              ? t`Обновляем сервис. Отправим после обновления.`
               : pendingItem?.status === 'sending'
-                ? 'Отправляем…'
+                ? t`Отправляем…`
                 : (sendError ?? submissionFailureMessage(undefined, pendingItem?.lastError))}
           </p>
           {pendingItem?.status !== 'sending' ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">
-              Повторить
+              <Trans>Повторить</Trans>
             </Button>
           ) : null}
         </div>
@@ -533,13 +547,13 @@ export function StudentTestAnswer({
         <ChatComposer
           {...(receipt && !receipt.attempts.unlimited
             ? {
-                hint: `Осталось попыток: ${receipt.attempts.remainingThisHour ?? '—'} в этот час, ${receipt.attempts.remainingToday ?? '—'} сегодня.`,
+                hint: t`Осталось попыток: ${receipt.attempts.remainingThisHour ?? '—'} в этот час, ${receipt.attempts.remainingToday ?? '—'} сегодня.`,
               }
             : {})}
           onSend={() => void submit()}
           sendDisabled={!answer.trim()}
           sending={sendState === 'sending'}
-          sendLabel="Проверить"
+          sendLabel={t`Проверить`}
         >
           <TestAnswer
             key={`${identity}:${editorEpoch}`}

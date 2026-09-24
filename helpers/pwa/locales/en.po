@@ -137,6 +137,10 @@ msgstr "The browser returned an invalid push subscription"
 msgid "В вашем обращении появился ответ."
 msgstr "A reply has appeared in your request."
 
+#: db_methods/pwa/written_submissions.py
+msgid "В выбранном сообщении нет текста."
+msgstr "The selected message has no text."
+
 #: helpers/pwa/push_delivery.py
 msgid "В кабинете появились новые условия."
 msgstr "New statements are available in the account."
@@ -152,6 +156,10 @@ msgstr "A post has appeared in the club news."
 #: helpers/pwa/push_delivery.py
 msgid "В обсуждении решения появился ответ."
 msgstr "A reply has appeared in the solution discussion."
+
+#: db_methods/pwa/written_submissions.py
+msgid "В отправленном решении должна остаться фотография или текст."
+msgstr "The submitted solution must retain a photo or text."
 
 #: apps/pwa_api/review_routes.py
 msgid "В проверяемой ветви нет посылок"
@@ -183,19 +191,19 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Введите текст вопроса"
-msgstr ""
+msgstr "Enter question text"
 
 #: apps/pwa_api/submission_routes.py
 msgid "Версия формата ответа не поддерживается"
-msgstr ""
+msgstr "The answer-format version is not supported"
 
 #: apps/pwa_api/submission_routes.py
 msgid "Версия формата перепроверки не поддерживается"
-msgstr ""
+msgstr "The recheck-format version is not supported"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Версия формата письменной сдачи не поддерживается"
-msgstr ""
+msgstr "The written-submission format version is not supported"
 
 #: apps/pwa_api/content_routes.py
 msgid "Вид рисунка не совпадает с исходным LaTeX"
@@ -219,16 +227,16 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Вопрос или его контекст не найден"
-msgstr ""
+msgstr "The question or its context was not found"
 
 #: apps/pwa_api/support_routes.py
 msgid "Вопрос не найден"
-msgstr ""
+msgstr "Question not found"
 
 #: apps/pwa_api/staff_dashboard_routes.py
 #: apps/pwa_api/support_routes.py
 msgid "Вопросы временно недоступны"
-msgstr ""
+msgstr "Questions are temporarily unavailable"
 
 #: apps/pwa_api/review_routes.py
 msgid "Время изменения внутренней пометки закончилось"
@@ -289,7 +297,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Выберите от одного до ста сообщений или фотографий"
-msgstr ""
+msgstr "Choose between one and one hundred messages or photos"
 
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Выберите период не более года"
@@ -306,6 +314,14 @@ msgstr "Choose the interface language"
 #: apps/pwa_api/content_routes.py
 msgid "Выбран недопустимый масштаб рисунка"
 msgstr ""
+
+#: db_methods/pwa/written_submissions.py
+msgid "Выбранная фотография не найдена или не готова."
+msgstr "The selected photo was not found or is not ready."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Выбранный материал не найден или ещё не отправлен."
+msgstr "The selected material was not found or has not been sent yet."
 
 #: apps/pwa_api/content_routes.py
 msgid "Генерация metadata временно недоступна"
@@ -327,6 +343,10 @@ msgstr ""
 #: apps/pwa_api/admin_course_routes.py
 msgid "Группа уже изменилась. Обновите страницу."
 msgstr ""
+
+#: models/pwa/submissions.py
+msgid "Да, всё верно!"
+msgstr "Yes, that is correct!"
 
 #: apps/pwa_api/account_batch_routes.py
 msgid "Данные изменились. Обновите предпросмотр."
@@ -365,6 +385,10 @@ msgstr ""
 #: apps/pwa_api/content_routes.py
 msgid "До публикации или планирования решения задайте дедлайн сдачи."
 msgstr ""
+
+#: db_methods/pwa/written_submissions.py
+msgid "Добавьте текст или фотографии решения."
+msgstr "Add solution text or photos."
 
 #: apps/pwa_api/staff_access_routes.py
 msgid "Доступы преподавателей временно недоступны"
@@ -409,13 +433,17 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Загрузка фотографии должна использовать multipart/form-data"
-msgstr ""
+msgstr "Photo upload must use multipart/form-data"
 
 #: apps/pwa_api/organizer_question_routes.py
 #: apps/pwa_api/support_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Загрузка фотографий временно недоступна"
 msgstr "Photo upload is temporarily unavailable"
+
+#: db_methods/pwa/written_submissions.py
+msgid "Задача недоступна для письменной сдачи."
+msgstr "The problem is unavailable for written submission."
 
 #: apps/pwa_api/course_routes.py
 #: apps/pwa_api/notification_routes.py
@@ -450,7 +478,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Заполните все поля фотографии"
-msgstr ""
+msgstr "Fill in all photo fields"
 
 #: apps/pwa_api/content_routes.py
 msgid "Заполните поля логического имени и вида рисунка"
@@ -496,7 +524,27 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Имя фотографии недопустимо"
-msgstr ""
+msgstr "The photo name is invalid"
+
+#: db_methods/pwa/submissions.py
+msgid "История ответов изменилась. Обновите страницу."
+msgstr "The answer history changed. Refresh the page."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Исходная и целевая задачи совпадают."
+msgstr "The source and target problems are the same."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Исходная переписка не найдена."
+msgstr "The source conversation was not found."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Исходное отправленное решение не найдено."
+msgstr "The source submitted solution was not found."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Исходное решение уже изменилось или попало в проверку."
+msgstr "The source solution has already changed or entered review."
 
 #: apps/pwa_api/notification_routes.py
 msgid "Итог можно отправить только для действующего занятия"
@@ -505,6 +553,10 @@ msgstr "A summary can only be sent for an active lesson"
 #: helpers/pwa/push_delivery.py
 msgid "Итоги занятия готовы"
 msgstr "Lesson summary is ready"
+
+#: db_methods/pwa/written_submissions.py
+msgid "К одному решению можно приложить не больше 10 фотографий."
+msgstr "You can attach no more than 10 photos to one solution."
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Картинка должна быть PNG, JPEG или WebP"
@@ -564,7 +616,7 @@ msgstr ""
 
 #: apps/pwa_api/submission_routes.py
 msgid "Курсор истории ответов некорректен"
-msgstr ""
+msgstr "The answer-history cursor is invalid"
 
 #: apps/pwa_api/course_routes.py
 msgid "Курсор списка занятий некорректен"
@@ -615,6 +667,14 @@ msgstr ""
 msgid "Можно подключиться к устной сдаче."
 msgstr "You can join the oral submission."
 
+#: db_methods/pwa/submissions.py
+msgid "На эту задачу закончились попытки на сегодня. Вернитесь к ней завтра."
+msgstr "You have used all attempts for this problem today. Return to it tomorrow."
+
+#: db_methods/pwa/submissions.py
+msgid "На эту задачу закончились попытки на текущий час. Вернитесь к ней позже."
+msgstr "You have used all attempts for this problem this hour. Return to it later."
+
 #: apps/pwa_api/content_routes.py
 msgid "Название занятия должно содержать не более 200 символов"
 msgstr ""
@@ -625,7 +685,11 @@ msgstr "Room assigned"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Настраивать устный приём может только администратор"
-msgstr ""
+msgstr "Only an administrator can configure oral submission"
+
+#: db_methods/pwa/submissions.py
+msgid "Настройки задачи изменились. Обновите страницу."
+msgstr "The problem settings changed. Refresh the page."
 
 #: apps/pwa_api/course_routes.py
 msgid "Настройки курса временно недоступны"
@@ -645,6 +709,14 @@ msgstr "Settings have already changed. Refresh the page."
 msgid "Начало приёма должно быть раньше дедлайна"
 msgstr ""
 
+#: db_methods/pwa/written_submissions.py
+msgid "Не все фотографии готовы к замене."
+msgstr "Not all photos are ready to be replaced."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Не все фотографии готовы к отправке."
+msgstr "Not all photos are ready to be sent."
+
 #: apps/pwa_api/review_routes.py
 msgid "Не найдено"
 msgstr ""
@@ -659,7 +731,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Не удалось безопасно сохранить фотографию"
-msgstr ""
+msgstr "Could not save the photo safely"
 
 #: apps/pwa_api/middleware.py
 msgid "Не удалось войти. Проверьте логин и данные для входа."
@@ -701,7 +773,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Не удалось разобрать форму фотографии"
-msgstr ""
+msgstr "Could not parse the photo form"
 
 #: apps/pwa_api/content_routes.py
 msgid "Не удалось сохранить рисунок. Повторите попытку."
@@ -709,7 +781,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Не удалось сохранить фотографию. Повторите попытку."
-msgstr ""
+msgstr "Could not save the photo. Try again."
 
 #: apps/pwa_api/auth_routes.py
 msgid "Не удалось сохранить язык интерфейса"
@@ -750,15 +822,19 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Недостаточно прав для исходной или целевой задачи"
-msgstr ""
+msgstr "You do not have permission for the source or target problem"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Недостаточно прав для переноса материала"
-msgstr ""
+msgstr "You do not have permission to move material"
+
+#: db_methods/pwa/written_submissions.py
+msgid "Недостаточно прав для переноса материала."
+msgstr "You do not have permission to move material."
 
 #: apps/pwa_api/submission_routes.py
 msgid "Недостаточно прав для перепроверки задачи"
-msgstr ""
+msgstr "You do not have permission to recheck this problem"
 
 #: apps/pwa_api/review_routes.py
 msgid "Недостаточно прав для проверки работы"
@@ -786,7 +862,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Недостаточно прав для просмотра решения"
-msgstr ""
+msgstr "You do not have permission to view the solution"
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Недостаточно прав для просмотра статистики"
@@ -794,21 +870,25 @@ msgstr ""
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Недостаточно прав для просмотра устного приёма"
-msgstr ""
+msgstr "You do not have permission to view oral submission"
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Недостаточно прав для просмотра фотографии"
+msgstr "You do not have permission to view the photo"
 
 #: apps/pwa_api/classroom_assignment_routes.py
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Недостаточно прав для просмотра этого ученика"
-msgstr ""
+msgstr "You do not have permission to view this student"
 
 #: apps/pwa_api/support_routes.py
 msgid "Недостаточно прав для работы с вопросами школьников"
-msgstr ""
+msgstr "You do not have permission to work with student questions"
 
 #: apps/pwa_api/support_routes.py
 msgid "Недостаточно прав для работы с этим вопросом"
-msgstr ""
+msgstr "You do not have permission to work with this question"
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Недостаточно прав для работы со списком участников"
@@ -821,7 +901,7 @@ msgstr ""
 #: apps/pwa_api/submission_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Недостаточно прав для сдачи задачи"
-msgstr ""
+msgstr "You do not have permission to submit this problem"
 
 #: apps/pwa_api/push_subscription_routes.py
 msgid "Недостаточно прав для управления push-уведомлениями"
@@ -914,7 +994,7 @@ msgstr ""
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/support_routes.py
 msgid "Неподдерживаемая версия запроса"
-msgstr ""
+msgstr "The request version is not supported"
 
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Нет доступа к курсу"
@@ -951,6 +1031,10 @@ msgstr ""
 #: apps/pwa_api/auth_routes.py
 msgid "Нет доступных групп для тестирования"
 msgstr "No groups are available for testing"
+
+#: models/pwa/submissions.py
+msgid "Нет, ответ неверный."
+msgstr "No, the answer is incorrect."
 
 #: helpers/pwa/push_delivery.py
 msgid "Новая публикация"
@@ -1015,6 +1099,10 @@ msgstr ""
 msgid "Обработка рисунков временно недоступна"
 msgstr ""
 
+#: apps/pwa_api/written_submission_routes.py
+msgid "Обработка фотографий временно недоступна"
+msgstr "Photo processing is temporarily unavailable"
+
 #: apps/pwa_api/organizer_question_routes.py
 msgid "Обращение или фотография не найдены"
 msgstr "Request or photo not found"
@@ -1049,7 +1137,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Один материал нельзя выбрать дважды"
-msgstr ""
+msgstr "The same material cannot be selected twice"
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Одна из выбранных групп не относится к этому курсу"
@@ -1069,11 +1157,11 @@ msgstr "JSON is required"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Окно устного приёма не найдено"
-msgstr ""
+msgstr "Oral-submission slot not found"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Окно устного приёма уже изменилось"
-msgstr ""
+msgstr "The oral-submission slot has already changed"
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Окончание занятия должно быть позже начала"
@@ -1107,9 +1195,17 @@ msgstr "Solutions have been published"
 msgid "Ответ организаторов"
 msgstr "Reply from the organizers"
 
+#: models/pwa/submissions.py
+msgid "Ответ принят и ожидает настройки проверки."
+msgstr "The answer was accepted and is waiting for review setup."
+
 #: apps/pwa_api/submission_routes.py
 msgid "Ответ слишком большой"
-msgstr ""
+msgstr "The answer is too large"
+
+#: models/pwa/submissions.py
+msgid "Ответ сохранён, но проверка временно недоступна."
+msgstr "The answer was saved, but review is temporarily unavailable."
 
 #: apps/pwa_api/content_routes.py
 msgid "Откат возможен только на готовую revision"
@@ -1130,6 +1226,10 @@ msgstr ""
 #: apps/pwa_api/notification_routes.py
 msgid "Отправить итог семье может только администратор"
 msgstr "Only an administrator can send a summary to the family"
+
+#: db_methods/pwa/written_submissions.py
+msgid "Отправленное решение уже начали проверять или проверили."
+msgstr "The submitted solution has already entered review or been reviewed."
 
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/staff_dashboard_routes.py
@@ -1158,7 +1258,7 @@ msgstr ""
 
 #: apps/pwa_api/submission_routes.py
 msgid "Параметры истории ответов некорректны"
-msgstr ""
+msgstr "The answer-history parameters are invalid"
 
 #: apps/pwa_api/telegram_binding_routes.py
 msgid "Параметры не поддерживаются"
@@ -1172,17 +1272,22 @@ msgstr ""
 msgid "Параметры списка занятий некорректны"
 msgstr ""
 
+#: db_methods/pwa/written_submissions.py
+msgid "Переписка изменилась после предпросмотра. Обновите данные."
+msgstr "The conversation changed after the preview. Refresh the data."
+
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Пересчёт доступен только администратору"
 msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Письменная сдача временно недоступна"
-msgstr ""
+msgstr "Written submission is temporarily unavailable"
 
 #: apps/pwa_api/written_submission_routes.py
+#: db_methods/pwa/written_submissions.py
 msgid "Письменное решение не найдено."
-msgstr ""
+msgstr "Written solution not found."
 
 #: apps/pwa_api/classroom_delivery_routes.py
 msgid "План изменился. Обновите предпросмотр рассылки."
@@ -1239,7 +1344,11 @@ msgstr ""
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Поля формы должны быть в UTF-8"
-msgstr ""
+msgstr "Form fields must be UTF-8"
+
+#: db_methods/pwa/written_submissions.py
+msgid "Порядок фотографий изменился. Обновите страницу."
+msgstr "The photo order changed. Refresh the page."
 
 #: apps/pwa_api/review_routes.py
 msgid "Посылка или её блокировка изменились. Обновите предпросмотр перед переносом."
@@ -1300,7 +1409,7 @@ msgstr ""
 
 #: apps/pwa_api/submission_routes.py
 msgid "Проверьте введённый ответ"
-msgstr ""
+msgstr "Check the entered answer"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Проверьте версию импорта"
@@ -1308,7 +1417,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте версию письменного решения"
-msgstr ""
+msgstr "Check the written-solution version"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте версию проверки"
@@ -1317,7 +1426,7 @@ msgstr ""
 #: apps/pwa_api/submission_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте версию условия задачи"
-msgstr ""
+msgstr "Check the problem-statement version"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте ветви проверяемой работы"
@@ -1333,19 +1442,19 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте время создания вопроса"
-msgstr ""
+msgstr "Check the question creation time"
 
 #: apps/pwa_api/submission_routes.py
 msgid "Проверьте время создания ответа"
-msgstr ""
+msgstr "Check the answer creation time"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте время создания решения"
-msgstr ""
+msgstr "Check the solution creation time"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Проверьте время устного приёма"
-msgstr ""
+msgstr "Check the oral-submission time"
 
 #: apps/pwa_api/course_routes.py
 #: apps/pwa_api/family_course_routes.py
@@ -1354,7 +1463,7 @@ msgstr "Check the selected group and attendance mode"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте выбранную переписку и задачу"
-msgstr ""
+msgstr "Check the selected conversation and problem"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Проверьте выбранные задачи"
@@ -1366,7 +1475,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте выбранные сообщения и фотографии"
-msgstr ""
+msgstr "Check the selected messages and photos"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Проверьте выбранный курс"
@@ -1438,7 +1547,7 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте задачу, к которой относится вопрос"
-msgstr ""
+msgstr "Check the problem the question is about"
 
 #: apps/pwa_api/family_course_routes.py
 msgid "Проверьте занятие и группу"
@@ -1454,13 +1563,13 @@ msgstr "Check the send request"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте исходную версию решения"
-msgstr ""
+msgstr "Check the source solution version"
 
 #: apps/pwa_api/submission_routes.py
 #: apps/pwa_api/support_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте ключ отправки"
-msgstr ""
+msgstr "Check the submission key"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте комментарий"
@@ -1468,7 +1577,7 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте контекст вопроса"
-msgstr ""
+msgstr "Check the question context"
 
 #: apps/pwa_api/telegram_binding_routes.py
 msgid "Проверьте курс"
@@ -1492,7 +1601,7 @@ msgstr "Check the notification settings"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Проверьте настройки устного приёма"
-msgstr ""
+msgstr "Check the oral-submission settings"
 
 #: apps/pwa_api/notification_routes.py
 msgid "Проверьте настройку курса"
@@ -1571,7 +1680,7 @@ msgstr "Check the list parameters"
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте параметры списка вопросов"
-msgstr ""
+msgstr "Check the question-list parameters"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте параметры списка реакций"
@@ -1595,7 +1704,7 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте поля вопроса"
-msgstr ""
+msgstr "Check the question fields"
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "Проверьте поля группы"
@@ -1623,7 +1732,7 @@ msgstr "Check the announcement fields"
 
 #: apps/pwa_api/submission_routes.py
 msgid "Проверьте поля ответа"
-msgstr ""
+msgstr "Check the answer fields"
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Проверьте поля очного занятия"
@@ -1631,7 +1740,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте поля письменного решения"
-msgstr ""
+msgstr "Check the written-solution fields"
 
 #: apps/pwa_api/classroom_assignment_routes.py
 msgid "Проверьте поля плана распределения"
@@ -1659,7 +1768,7 @@ msgstr ""
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Проверьте поля устного приёма"
-msgstr ""
+msgstr "Check the oral-submission fields"
 
 #: apps/pwa_api/auth_routes.py
 #: apps/pwa_api/content_routes.py
@@ -1669,7 +1778,7 @@ msgstr "Check the form fields"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте поля фотографии"
-msgstr ""
+msgstr "Check the photo fields"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте посылки в границе работы"
@@ -1681,7 +1790,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте причину переноса"
-msgstr ""
+msgstr "Check the move reason"
 
 #: apps/pwa_api/audit_routes.py
 msgid "Проверьте размер страницы"
@@ -1717,7 +1826,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте сведения о вставке текста"
-msgstr ""
+msgstr "Check the text-paste information"
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "Проверьте сезон"
@@ -1733,7 +1842,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте список фотографий"
-msgstr ""
+msgstr "Check the photo list"
 
 #: apps/pwa_api/classroom_assignment_routes.py
 msgid "Проверьте список школьников"
@@ -1761,7 +1870,7 @@ msgstr "Check the text and photos"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте текст решения"
-msgstr ""
+msgstr "Check the solution text"
 
 #: apps/pwa_api/content_routes.py
 msgid "Проверьте текстовое поле строки"
@@ -1769,7 +1878,7 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте тип вопроса"
-msgstr ""
+msgstr "Check the question type"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте токен блокировки"
@@ -1791,13 +1900,17 @@ msgstr ""
 msgid "Проверьте формат аннотации"
 msgstr ""
 
+#: models/pwa/submissions.py
+msgid "Проверьте формат ответа."
+msgstr "Check the answer format."
+
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте фотографии"
-msgstr ""
+msgstr "Check the photos"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Проверьте черновик окон приёма"
-msgstr ""
+msgstr "Check the oral-submission slot draft"
 
 #: apps/pwa_api/content_routes.py
 msgid "Проверьте числовое поле строки"
@@ -1805,7 +1918,7 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте числовые поля фотографии"
-msgstr ""
+msgstr "Check the photo number fields"
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Проверьте школьника, задачи и отметки"
@@ -1920,6 +2033,10 @@ msgstr ""
 msgid "Результаты занятия уже доступны в семейном кабинете."
 msgstr "The lesson results are already available in the family account."
 
+#: db_methods/pwa/written_submissions.py
+msgid "Решение изменилось в другом окне. Обновите страницу."
+msgstr "The solution changed in another window. Refresh the page."
+
 #: helpers/pwa/push_delivery.py
 msgid "Решения занятия уже доступны."
 msgstr "Lesson solutions are already available."
@@ -1938,7 +2055,7 @@ msgstr ""
 
 #: apps/pwa_api/submission_routes.py
 msgid "Сдача тестовых задач временно недоступна"
-msgstr ""
+msgstr "Test-problem submission is temporarily unavailable"
 
 #: apps/pwa_api/middleware.py
 msgid "Сеанс завершён. Войдите снова."
@@ -1954,7 +2071,7 @@ msgstr ""
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Сейчас это окно устного приёма закрыто"
-msgstr ""
+msgstr "This oral-submission slot is currently closed"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Семейный аккаунт не найден"
@@ -2033,6 +2150,15 @@ msgstr ""
 msgid "Список участников временно недоступен"
 msgstr ""
 
+#: db_methods/pwa/written_submissions.py
+msgid "Список фотографий изменился. Обновите страницу."
+msgstr "The photo list changed. Refresh the page."
+
+#: db_methods/pwa/submissions.py
+#: db_methods/pwa/written_submissions.py
+msgid "Срок сдачи этой задачи уже закончился."
+msgstr "The submission deadline for this problem has passed."
+
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Статистика временно недоступна"
 msgstr ""
@@ -2087,16 +2213,16 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Текст вопроса слишком большой"
-msgstr ""
+msgstr "The question text is too large"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Текст решения слишком большой"
-msgstr ""
+msgstr "The solution text is too large"
 
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Текстовое поле формы не должно быть файлом"
-msgstr ""
+msgstr "A form text field must not be a file"
 
 #: apps/pwa_api/account_batch_routes.py
 #: apps/pwa_api/admin_account_routes.py
@@ -2153,9 +2279,14 @@ msgstr "The request body must be a valid JSON object"
 msgid "Тело запроса должно быть пустым JSON-объектом"
 msgstr "The request body must be an empty JSON object"
 
+#: db_methods/pwa/submissions.py
+msgid "Тестовая задача недоступна для перепроверки."
+msgstr "The test problem is unavailable for rechecking."
+
 #: apps/pwa_api/submission_routes.py
+#: db_methods/pwa/submissions.py
 msgid "Тестовая задача недоступна."
-msgstr ""
+msgstr "The test problem is unavailable."
 
 #: apps/pwa_api/review_routes.py
 msgid "У работы уже есть более новая проверка. Обновите страницу."
@@ -2171,11 +2302,11 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "У фотографии отсутствует имя файла"
-msgstr ""
+msgstr "The photo has no file name"
 
 #: apps/pwa_api/support_routes.py
 msgid "У этого запроса нет параметров"
-msgstr ""
+msgstr "This request has no parameters"
 
 #: apps/pwa_api/notification_routes.py
 msgid "Уведомление не найдено"
@@ -2223,7 +2354,7 @@ msgstr ""
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Укажите часовой пояс времени"
-msgstr ""
+msgstr "Specify the time zone"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Управление аккаунтами временно недоступно"
@@ -2269,13 +2400,30 @@ msgstr ""
 msgid "Управлять схемой аудиторий может только администратор"
 msgstr ""
 
+#: db_methods/pwa/submissions.py
+#: db_methods/pwa/written_submissions.py
+msgid "Условие задачи изменилось. Обновите страницу."
+msgstr "The problem statement changed. Refresh the page."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Условие задачи изменилось. Проверьте решение перед загрузкой."
+msgstr "The problem statement changed. Check the solution before uploading."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Условие задачи изменилось. Проверьте решение перед заменой."
+msgstr "The problem statement changed. Check the solution before replacing it."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Условие задачи изменилось. Проверьте решение перед отправкой."
+msgstr "The problem statement changed. Check the solution before sending it."
+
 #: apps/pwa_api/family_course_routes.py
 msgid "Условие этого занятия ещё не опубликовано"
 msgstr "The statement for this lesson has not been published yet"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Устный приём временно недоступен"
-msgstr ""
+msgstr "Oral submission is temporarily unavailable"
 
 #: apps/pwa_api/news_routes.py
 msgid "Файл"
@@ -2308,12 +2456,20 @@ msgstr ""
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Форма фотографии содержит неизвестное или повторное поле"
-msgstr ""
+msgstr "The photo form contains an unknown or duplicate field"
+
+#: db_methods/pwa/written_submissions.py
+msgid "Фотографии уже зафиксированы проверкой."
+msgstr "The photos have already been locked by review."
 
 #: apps/pwa_api/organizer_question_routes.py
 #: apps/pwa_api/support_routes.py
 msgid "Фотография больше 25 МиБ"
 msgstr "The photo is larger than 25 MiB"
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Фотография не прошла безопасную обработку"
+msgstr "The photo did not pass safe processing"
 
 #: apps/pwa_api/organizer_question_routes.py
 #: apps/pwa_api/support_routes.py
@@ -2322,19 +2478,35 @@ msgstr "Photo unavailable"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Фотография недоступна из-за ошибки хранилища"
-msgstr ""
+msgstr "The photo is unavailable because of a storage error"
+
+#: db_methods/pwa/written_submissions.py
+msgid "Фотография решения не найдена."
+msgstr "The solution photo was not found."
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Фотография слишком большая"
-msgstr ""
+msgstr "The photo is too large"
 
 #: apps/pwa_api/content_routes.py
 msgid "Хранилище PDF временно недоступно"
 msgstr ""
 
+#: db_methods/pwa/written_submissions.py
+msgid "Целевая задача недоступна этому школьнику."
+msgstr "The target problem is unavailable to this student."
+
 #: apps/pwa_api/content_routes.py
 msgid "Часовой пояс занятия изменился. Обновите страницу."
 msgstr ""
+
+#: db_methods/pwa/written_submissions.py
+msgid "Черновик замены не найден."
+msgstr "Replacement draft not found."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Черновик письменного решения не найден."
+msgstr "Written-solution draft not found."
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Черновик уже изменился. Обновите страницу."
@@ -2355,6 +2527,10 @@ msgstr ""
 #: apps/pwa_api/content_routes.py
 msgid "Эта revision уже опубликована"
 msgstr ""
+
+#: db_methods/pwa/written_submissions.py
+msgid "Эта версия решения уже отправлена."
+msgstr "This solution version has already been sent."
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Эта операция уже использована с другими данными"
@@ -2383,7 +2559,11 @@ msgstr ""
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/support_routes.py
 msgid "Это действие уже было отправлено с другими данными"
-msgstr ""
+msgstr "This action was already sent with different data"
+
+#: db_methods/pwa/written_submissions.py
+msgid "Это действие уже выполняется."
+msgstr "This action is already in progress."
 
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Это состояние публикации нельзя изменить вручную"
@@ -2395,7 +2575,7 @@ msgstr ""
 
 #: apps/pwa_api/support_routes.py
 msgid "Этот вопрос находится вне доступного контекста"
-msgstr ""
+msgstr "This question is outside the available context"
 
 #: apps/pwa_api/admin_course_routes.py
 #: apps/pwa_api/group_banner_routes.py
@@ -2413,9 +2593,33 @@ msgstr "This request takes no parameters"
 msgid "Этот запрос не принимает параметры"
 msgstr "This request does not accept parameters"
 
+#: db_methods/pwa/written_submissions.py
+msgid "Этот ключ уже использован для другого действия."
+msgstr "This key has already been used for another action."
+
+#: db_methods/pwa/submissions.py
+msgid "Этот ключ уже использован для другого ответа."
+msgstr "This key has already been used for another answer."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Этот материал уже переносили. Обновите переписку."
+msgstr "This material has already been moved. Refresh the conversation."
+
+#: db_methods/pwa/submissions.py
+msgid "Этот ответ уже обрабатывается."
+msgstr "This answer is already being processed."
+
 #: apps/pwa_api/content_routes.py
 msgid "Этот рисунок не найден в текущей версии материала"
 msgstr ""
+
+#: db_methods/pwa/written_submissions.py
+msgid "Эту версию решения уже нельзя изменить."
+msgstr "This solution version can no longer be changed."
+
+#: db_methods/pwa/written_submissions.py
+msgid "Эту версию решения уже нельзя использовать для замены."
+msgstr "This solution version can no longer be used as a replacement."
 
 #: apps/pwa_api/review_routes.py
 msgid "Эту проверку нельзя исправить с текущими правами"

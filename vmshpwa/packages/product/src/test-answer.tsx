@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useId, useState } from 'react'
 
 import { Button, Input, Label, RadioGroup, RadioGroupItem, cn } from '@vmsh/ui'
@@ -35,7 +37,7 @@ export interface TestAnswerProps {
 
 export function TestAnswer({
   spec,
-  label = 'Ответ',
+  label = t`Ответ`,
   defaultValue = '',
   onChange,
   name,
@@ -121,7 +123,9 @@ export function TestAnswer({
           />
           {parsedItems.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1" role="status">
-              <span className="text-caption text-muted-foreground">Распознано:</span>
+              <span className="text-caption text-muted-foreground">
+                <Trans>Распознано:</Trans>
+              </span>
               {parsedItems.map((item, index) => (
                 <span
                   className="rounded bg-surface-subtle px-1.5 py-0.5 font-num text-caption text-muted-foreground"
@@ -147,7 +151,7 @@ export function TestAnswer({
         >
           {parts.map((part, index) => (
             <Input
-              aria-label={`Число ${index + 1}`}
+              aria-label={t`Число ${index + 1}`}
               aria-invalid={formatInvalid || undefined}
               className="w-16 text-center"
               disabled={disabled}
@@ -207,12 +211,17 @@ export function TestAnswer({
 
       <p className="text-caption text-muted-foreground" id={hintId}>
         {hint}
-        {example ? <span> · например {example}</span> : null}
+        {example ? (
+          <span>
+            {' '}
+            <Trans>· например {example}</Trans>
+          </span>
+        ) : null}
       </p>
       {formatInvalid ? (
         <p className="text-caption font-medium text-status-danger" id={errorId} role="alert">
           {spec.validationError ??
-            `Ответ не соответствует формату: ${hint.toLocaleLowerCase('ru')}.`}
+            t`Ответ не соответствует формату: ${hint.toLocaleLowerCase('ru')}.`}
         </p>
       ) : null}
     </div>

@@ -42,6 +42,7 @@ from db_methods.pwa.written_submissions import (
 )
 from helpers.object_storage import ObjectStorageOperationError
 from helpers.pwa.content import AssetConversionError
+from helpers.pwa.i18n import N_
 from helpers.pwa.written_attachments import (
     MAX_WRITTEN_SOURCE_BYTES,
     WrittenAttachmentService,
@@ -749,9 +750,9 @@ def _translate_repository_errors(handler):
                     else "written_attachment_conversion_failed"
                 ),
                 message=(
-                    "Обработка фотографий временно недоступна"
+                    N_("Обработка фотографий временно недоступна")
                     if unavailable
-                    else "Фотография не прошла безопасную обработку"
+                    else N_("Фотография не прошла безопасную обработку")
                 ),
                 details={"reason": error.code, "capability": error.capability},
             ) from error
@@ -971,7 +972,7 @@ async def get_staff_written_attachment_media(request: web.Request) -> web.Respon
     _authorize_staff_material_scope(
         request,
         access.scope,
-        message="Недостаточно прав для просмотра фотографии",
+        message=N_("Недостаточно прав для просмотра фотографии"),
     )
     return await _attachment_media_response(
         request,

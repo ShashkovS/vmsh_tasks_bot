@@ -32,6 +32,7 @@ from db_methods.pwa.submissions import (
     TestSubmissionRejected,
     TestSubmissionRepositoryError,
 )
+from helpers.pwa.i18n import _
 from helpers.pwa.permissions import (
     AccessForbiddenError,
     AuthenticationRequiredError,
@@ -39,7 +40,10 @@ from helpers.pwa.permissions import (
     require_access,
 )
 from models.pwa.auth import AuthAudience
-from models.pwa.submissions import SubmissionConfigurationError
+from models.pwa.submissions import (
+    BUILT_IN_FEEDBACK_SOURCE,
+    SubmissionConfigurationError,
+)
 
 
 TEST_SUBMISSION_BODY_LIMIT_BYTES = 24 * 1024
@@ -331,10 +335,24 @@ def _check_status(outcome: str) -> str:
         ) from error
 
 
+def _localized_feedback(feedback: str | None, feedback_source: str | None) -> str | None:
+    """Translate only feedback whose persisted configuration proves provenance.
+
+    The database and idempotency receipt keep the original Russian bytes. A
+    matching phrase is insufficient because staff can author the same text.
+    See P3.3 in vmshpwa/dev/development-plan/24-i18n-execution-plan.md.
+    """
+
+    if feedback_source == BUILT_IN_FEEDBACK_SOURCE and feedback is not None:
+        return _(feedback)
+    return feedback
+
+
 def _receipt_payload(
     receipt: TestAttemptReceipt, *, request_id: str
 ) -> dict[str, object]:
     payload = receipt.response_payload()
+    payload["feedback"] = _localized_feedback(receipt.feedback, receipt.feedback_source)
     payload.update(
         {
             "checkStatus": _check_status(receipt.outcome),
@@ -349,7 +367,9 @@ def _receipt_payload(
 
 
 def _history_payload(record: TestAttemptHistoryRecord) -> dict[str, object]:
-    return record.response_payload()
+    payload = record.response_payload()
+    payload["feedback"] = _localized_feedback(record.feedback, record.feedback_source)
+    return payload
 
 
 def _recheck_preview_payload(

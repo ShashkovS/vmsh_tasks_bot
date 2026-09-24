@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -24,7 +26,7 @@ export function VerdictPanel({ verdict, author, at, comment, className }: Verdic
   const ai = verdict.provenance === 'ai'
   return (
     <section
-      aria-label="Результат проверки"
+      aria-label={t`Результат проверки`}
       className={cn(
         'space-y-2 rounded-lg border p-4',
         ai
@@ -50,7 +52,9 @@ export function VerdictPanel({ verdict, author, at, comment, className }: Verdic
 
       {ai ? (
         <p className="text-caption text-muted-foreground">
-          Проверил ИИ. Если что-то не так — напишите, и работу посмотрит преподаватель.
+          <Trans>
+            Проверил ИИ. Если что-то не так — напишите, и работу посмотрит преподаватель.
+          </Trans>
         </p>
       ) : null}
     </section>

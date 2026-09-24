@@ -1,10 +1,13 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { ExternalLink, Mic2 } from 'lucide-react'
 
 import type { OralWindowJoin, StudentOralWindow } from '@vmsh/contracts'
 import { Button, buttonVariants, cn } from '@vmsh/ui'
 
 function timeLabel(value: string, date = true): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     ...(date ? { day: 'numeric' as const, month: 'short' as const } : {}),
     hour: '2-digit',
     minute: '2-digit',
@@ -32,7 +35,7 @@ export function OralAdmission({
   const visible = windows.filter((window) => window.state === 'open' || window.state === 'upcoming')
   if (!visible.length) return null
   return (
-    <section aria-label="Устный приём" className={cn('space-y-1 text-small', className)}>
+    <section aria-label={t`Устный приём`} className={cn('space-y-1 text-small', className)}>
       {visible.map((window) => {
         const open = window.state === 'open'
         const join = open && revealedJoin?.windowId === window.windowId ? revealedJoin : null
@@ -43,12 +46,12 @@ export function OralAdmission({
             <span className="inline-flex items-center gap-1.5">
               <Mic2 aria-hidden="true" className="size-4 shrink-0 text-primary" />
               <span className={cn(open ? 'font-medium text-foreground' : 'text-muted-foreground')}>
-                {open ? 'Устный приём сейчас' : 'Устный приём'}
+                {open ? t`Устный приём сейчас` : t`Устный приём`}
               </span>
             </span>
             <span className="font-num text-muted-foreground">
               {open
-                ? `до ${timeLabel(window.closesAt, !sameDay)}`
+                ? t`до ${timeLabel(window.closesAt, !sameDay)}`
                 : `${timeLabel(window.opensAt)} — ${timeLabel(window.closesAt, !sameDay)}`}
             </span>
             {join ? (
@@ -64,7 +67,9 @@ export function OralAdmission({
                 </a>
                 {join.joinCode ? (
                   <span>
-                    Код: <code className="font-num">{join.joinCode}</code>
+                    <Trans>
+                      Код: <code className="font-num">{join.joinCode}</code>
+                    </Trans>
                   </span>
                 ) : null}
               </>
@@ -75,7 +80,7 @@ export function OralAdmission({
                 disabled={joiningWindowId === window.windowId}
                 onClick={() => onRevealJoin?.(window.windowId)}
               >
-                {joiningWindowId === window.windowId ? 'Получаем ссылку…' : window.joinLabel}
+                {joiningWindowId === window.windowId ? t`Получаем ссылку…` : window.joinLabel}
               </Button>
             ) : null}
           </div>

@@ -65,7 +65,9 @@ export function FamilyCourseAchievements({
 
   return (
     <section aria-label={t`Достижения курса`} className="space-y-2">
-      <p className="text-caption font-medium text-foreground"><Trans>Достижения</Trans></p>
+      <p className="text-caption font-medium text-foreground">
+        <Trans>Достижения</Trans>
+      </p>
       <ul className="flex flex-wrap gap-2">
         {visible.map((achievement) => (
           <li key={achievement.code}>
@@ -96,9 +98,12 @@ export function FamilyEnrollmentSettings({
   return (
     <div className="space-y-3 rounded-md border border-border bg-surface-subtle p-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1 text-small font-medium">
-          <span><Trans>Группа</Trans></span>
+        <div className="space-y-1 text-small font-medium">
+          <span>
+            <Trans>Группа</Trans>
+          </span>
           <select
+            aria-label={t`Группа`}
             className="min-h-9 w-full rounded-md border border-input bg-surface px-3"
             disabled={saving}
             onChange={(event) => {
@@ -113,10 +118,13 @@ export function FamilyEnrollmentSettings({
               </option>
             ))}
           </select>
-        </label>
-        <label className="space-y-1 text-small font-medium">
-          <span><Trans>Формат занятий</Trans></span>
+        </div>
+        <div className="space-y-1 text-small font-medium">
+          <span>
+            <Trans>Формат занятий</Trans>
+          </span>
           <select
+            aria-label={t`Формат занятий`}
             className="min-h-9 w-full rounded-md border border-input bg-surface px-3"
             disabled={saving}
             onChange={(event) => {
@@ -125,15 +133,21 @@ export function FamilyEnrollmentSettings({
             }}
             value={mode}
           >
-            <option value="online"><Trans>Онлайн</Trans></option>
-            <option value="in_person"><Trans>Очно в школе</Trans></option>
+            <option value="online">
+              <Trans>Онлайн</Trans>
+            </option>
+            <option value="in_person">
+              <Trans>Очно в школе</Trans>
+            </option>
           </select>
-        </label>
+        </div>
       </div>
       {reviewing ? (
         <p className="text-small text-muted-foreground">
-          <Trans>При очном формате организаторы резервируют место, печатают условия и распределяют
-          преподавателей. Если ребёнок не придёт, выберите онлайн.</Trans>
+          <Trans>
+            При очном формате организаторы резервируют место, печатают условия и распределяют
+            преподавателей. Если ребёнок не придёт, выберите онлайн.
+          </Trans>
         </p>
       ) : null}
       {error ? (
@@ -191,7 +205,11 @@ export function FamilyChildrenPage() {
                       <p className="text-small text-muted-foreground">{child.relationshipLabel}</p>
                     ) : null}
                   </div>
-                  {child.isPrimary ? <Badge variant="outline"><Trans>Основной профиль</Trans></Badge> : null}
+                  {child.isPrimary ? (
+                    <Badge variant="outline">
+                      <Trans>Основной профиль</Trans>
+                    </Badge>
+                  ) : null}
                 </div>
                 <Button
                   className="w-full"
@@ -370,10 +388,14 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                                       <Trans>Занятие {lesson.lessonNumber}</Trans>
                                     </Link>
                                   ) : (
-                                    <span><Trans>Занятие {lesson.lessonNumber}</Trans></span>
+                                    <span>
+                                      <Trans>Занятие {lesson.lessonNumber}</Trans>
+                                    </span>
                                   )}
                                   <span className="text-muted-foreground">
-                                    <Trans>{lesson.accepted} из {lesson.attempted} зачтено</Trans>
+                                    <Trans>
+                                      {lesson.accepted} из {lesson.attempted} зачтено
+                                    </Trans>
                                   </span>
                                 </li>
                               ))}
@@ -398,7 +420,9 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                     </p>
                   )}
                   <p className="text-small text-muted-foreground">
-                    <Trans>{progress.summary.accepted} зачтено из {progress.summary.attempted} задач</Trans>
+                    <Trans>
+                      {progress.summary.accepted} зачтено из {progress.summary.attempted} задач
+                    </Trans>
                     {progress.summary.awaitingReview > 0
                       ? t` · ждут проверки: ${progress.summary.awaitingReview}`
                       : ''}

@@ -75,3 +75,34 @@ Product и Content и не создаёт последовательный за�
 Максимальное ухудшение — +20 мс cold Family, меньше лимита +30 мс. Production
 build и полный frontend unit suite были запущены как phase gates; их результаты
 зафиксированы в [24-i18n.md](development-plan/24-i18n.md#p2--family-общий-прогрессуведомленияорганизаторы-и-web-push).
+
+## P3 — 24 сентября 2026
+
+P3 сравнивается с P2 в этом же рабочем дереве, на той же машине, Node 26.9.0 и
+pnpm 11.15.1. Измерение использует production build после P3 и ту же методику:
+brotli quality 11; Chromium, 9 запусков, 40 ms RTT / 12 Мбит/с для FCP.
+
+### Бандлы (brotli)
+
+| App     | Initial JS, P2 | Initial JS, P3 | Δ       | Total JS, P2 | Total JS, P3 | Каталог ru / en, P3 |
+| ------- | -------------: | -------------: | ------- | -----------: | -----------: | ------------------- |
+| student |       378.1 KB |       382.8 KB | +4.7 KB |     421.3 KB |     428.4 KB | 12.5 / 10.4 KB      |
+| family  |       351.7 KB |       353.2 KB | +1.5 KB |     378.3 KB |     381.4 KB | 10.2 / 8.4 KB       |
+| staff   |       437.8 KB |       439.3 KB | +1.5 KB |     756.9 KB |     760.2 KB | 8.8 / 7.2 KB        |
+| landing |        64.1 KB |        64.1 KB | +0.0 KB |      64.2 KB |      64.2 KB | 0.2 / 0.1 KB        |
+
+Максимальный прирост initial JS — +4.7 KB Student, меньше лимита +10 KB.
+Рост Family и Staff обусловлен общим Product catalog; все каталоги по-прежнему
+preloaded вместе с entry.
+
+### Старт (FCP, медиана, 9 прогонов)
+
+| App     | Cold, P2 | Cold, P3 | Δ     | Warm, P2 | Warm, P3 | Δ     |
+| ------- | -------: | -------: | ----- | -------: | -------: | ----- |
+| student |   492 ms |   496 ms | +4 ms |   100 ms |   104 ms | +4 ms |
+| family  |   464 ms |   468 ms | +4 ms |   104 ms |   104 ms | 0 ms  |
+| staff   |   632 ms |   636 ms | +4 ms |   104 ms |   104 ms | 0 ms  |
+| landing |   196 ms |   200 ms | +4 ms |   140 ms |   140 ms | 0 ms  |
+
+Максимальное ухудшение — +4 ms cold FCP, меньше лимита +30 ms. P3 укладывается
+в performance budget.

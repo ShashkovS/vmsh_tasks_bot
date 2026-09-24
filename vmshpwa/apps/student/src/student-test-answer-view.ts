@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import {
   testAnswerInputResponseSchema,
   type TestAnswerInputResponse,
@@ -32,11 +33,21 @@ export function testAnswerSpec(input: TestAnswerInputResponse): AnswerSpec {
  * bot's reply; the per-attempt detail from the checker follows it.
  */
 const replyByOutcome: Record<TestAttemptOutcome, string> = {
-  correct: 'Да, ответ принят.',
-  wrong: 'Ответ пока неверный.',
-  invalid_format: 'Проверьте формат ответа.',
-  pending_configuration: 'Ответ сохранён и ждёт настройки проверки.',
-  checker_failed: 'Ответ сохранён, но проверка не завершилась.',
+  get correct() {
+    return t`Да, ответ принят.`
+  },
+  get wrong() {
+    return t`Ответ пока неверный.`
+  },
+  get invalid_format() {
+    return t`Проверьте формат ответа.`
+  },
+  get pending_configuration() {
+    return t`Ответ сохранён и ждёт настройки проверки.`
+  },
+  get checker_failed() {
+    return t`Ответ сохранён, но проверка не завершилась.`
+  },
 }
 
 export function testAttemptReply(attempt: {

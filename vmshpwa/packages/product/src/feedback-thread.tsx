@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Bot, Cog, Send, Smartphone } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -25,18 +27,45 @@ export interface ThreadMessageView {
 }
 
 const authorName: Record<ThreadAuthorKind, string> = {
-  student: 'Ученик',
-  family: 'Родитель',
-  teacher: 'Преподаватель',
-  admin: 'Администратор',
-  ai: 'ИИ',
-  system: 'Система',
+  get student() {
+    return t`Ученик`
+  },
+  get family() {
+    return t`Родитель`
+  },
+  get teacher() {
+    return t`Преподаватель`
+  },
+  get admin() {
+    return t`Администратор`
+  },
+  get ai() {
+    return t`ИИ`
+  },
+  get system() {
+    return t`Система`
+  },
 }
 
 const channelView = {
-  pwa: { icon: Smartphone, label: 'в приложении' },
-  telegram: { icon: Send, label: 'через Telegram' },
-  system: { icon: Cog, label: 'системное событие' },
+  pwa: {
+    icon: Smartphone,
+    get label() {
+      return t`в приложении`
+    },
+  },
+  telegram: {
+    icon: Send,
+    get label() {
+      return t`через Telegram`
+    },
+  },
+  system: {
+    icon: Cog,
+    get label() {
+      return t`системное событие`
+    },
+  },
 } as const
 
 function ChannelBadge({ channel }: { channel: Exclude<ThreadChannel, 'staff'> }) {
@@ -95,7 +124,11 @@ export interface FeedbackThreadProps {
 
 export function FeedbackThread({ messages, className }: FeedbackThreadProps) {
   if (messages.length === 0) {
-    return <p className={cn('text-small text-muted-foreground', className)}>Сообщений пока нет.</p>
+    return (
+      <p className={cn('text-small text-muted-foreground', className)}>
+        <Trans>Сообщений пока нет.</Trans>
+      </p>
+    )
   }
   return (
     <ol className={cn('space-y-2', className)}>
@@ -111,7 +144,7 @@ export function FeedbackThread({ messages, className }: FeedbackThreadProps) {
  * on a push notification.
  */
 export function FeedbackAttention({
-  label = 'Новая обратная связь',
+  label = t`Новая обратная связь`,
   className,
 }: {
   label?: string

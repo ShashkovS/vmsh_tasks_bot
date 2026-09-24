@@ -1,6 +1,6 @@
 # RU → EN localization: step-by-step execution plan
 
-Status: P2 was implemented locally on 2026-09-24 and its phase gates passed. P3–P8 remain implementation instructions; this document remains the authoritative procedure for them.
+Status: P3 was implemented locally on 2026-09-24 and its phase gates passed. P4–P8 remain implementation instructions; this document remains the authoritative procedure for them.
 
 This is an English-language execution companion to [24-i18n.md](24-i18n.md), intended for an agent that needs explicit, small, verifiable tasks. Follow the existing architecture; do not invent a replacement translation system. Finish one batch before starting another.
 
@@ -700,6 +700,10 @@ Paths in frontend lists below are relative to `vmshpwa/`. Backend paths are rela
 - Verify create/reply/failure/empty/offline states in English.
 
 **P3 exit:** every Student route is reviewed, answer and upload behavior is unchanged, default feedback is localized with documented provenance limits, user content remains unchanged, RU/EN submission and support journeys pass.
+
+**P3 completion evidence (2026-09-24):** P3.1–P3.4 translated the declared Student and shared submission/support scopes. Answers, option tokens, regular expressions, IDs, names and authored content remain source data. Test feedback carries a private `built_in` provenance only when it was generated from a null configuration default; it is stored in new idempotency receipts but is never added to the public response schema. The PWA adapter localizes that proven source on initial response, retry and history, while custom text, source-text collisions and history whose immutable revision/evaluation version does not prove the source remain unchanged. Focused feedback pytest passed 3 tests; the full Python suite passed 123 tests with 2 skips; frontend unit passed 902 tests; lint, typecheck, build and frontend/backend catalog checks passed. `e2e:i18n` passed 18 tests across Chromium, WebKit and Firefox; support E2E passed 3 tests. P2 → P3 maximum initial-JS growth was 4.7 KB and maximum cold FCP difference was 4 ms; see [i18n-performance-report.md](../i18n-performance-report.md). Start P4 in the next session.
+
+The current broad Storybook and feature E2E suites still contain separately scoped historical failures: five Storybook files/13 tests lack Storybook auth or activate verdict labels at module load; three submissions offline expectations, three oral current-lesson expectations, and the first scheduled-news scenario do not currently complete. Do not call those suites green without a fresh baseline comparison and focused repair.
 
 ### P4 — Staff review, live marking, results and statistics
 

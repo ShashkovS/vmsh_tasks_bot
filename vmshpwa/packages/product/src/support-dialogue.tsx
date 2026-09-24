@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Send } from 'lucide-react'
 import type { FormEvent, KeyboardEvent, ReactNode } from 'react'
 
@@ -34,7 +36,7 @@ export function SupportComposer({
   density = 'comfortable',
   saveState = 'idle',
   error,
-  submitLabel = 'Отправить',
+  submitLabel = t`Отправить`,
   className,
 }: SupportComposerProps) {
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -53,36 +55,36 @@ export function SupportComposer({
       disabled={disabled || busy || (!value.trim() && !hasAttachments)}
       size="sm"
       className="min-w-0 max-w-full"
-      aria-label={busy ? 'Отправляем…' : submitLabel}
+      aria-label={busy ? t`Отправляем…` : submitLabel}
       title={`${submitLabel} (Ctrl/Cmd+Enter)`}
       type="submit"
     >
       <Send aria-hidden="true" />
-      <span className="truncate">{busy ? 'Отправляем…' : submitLabel}</span>
+      <span className="truncate">{busy ? t`Отправляем…` : submitLabel}</span>
     </Button>
   )
 
   return (
     <form className={cn('space-y-2', className)} onSubmit={submit}>
       <Textarea
-        aria-label="Сообщение"
+        aria-label={t`Сообщение`}
         disabled={disabled || busy}
         id="support-message"
         maxLength={100_000}
         onChange={(event) => onValueChange(event.target.value)}
         onKeyDown={submitFromKeyboard}
-        placeholder="Опишите, что именно осталось непонятно…"
+        placeholder={t`Опишите, что именно осталось непонятно…`}
         rows={density === 'compact' ? 3 : 5}
         value={value}
       />
       <div className="empty:hidden">
         {saveState === 'saved' ? (
           <p className="text-caption text-muted-foreground" role="status">
-            Черновик сохранён на этом устройстве.
+            <Trans>Черновик сохранён на этом устройстве.</Trans>
           </p>
         ) : saveState === 'unavailable' ? (
           <p className="text-caption text-danger" role="status">
-            Черновик не сохраняется. Не закрывайте страницу до отправки.
+            <Trans>Черновик не сохраняется. Не закрывайте страницу до отправки.</Trans>
           </p>
         ) : null}
       </div>

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { z } from 'zod'
 
 import {
@@ -69,23 +70,59 @@ export function resolveStudentTasksContext(
 }
 
 export function lessonHeading(lesson: StudentLessonSummary): string {
-  return lesson.title?.trim() || `Занятие ${lesson.lessonNumber}`
+  return lesson.title?.trim() || t`Занятие ${lesson.lessonNumber}`
 }
 
 export function publishedMaterialLabel(lesson: StudentLessonSummary): string {
   const available: string[] = []
-  if (lesson.materials.hint.status === 'published') available.push('подсказка')
-  if (lesson.materials.solution.status === 'published') available.push('решение')
-  return available.length === 0 ? 'Только условие' : `Есть ${available.join(' и ')}`
+  if (lesson.materials.hint.status === 'published') available.push(t`подсказка`)
+  if (lesson.materials.solution.status === 'published') available.push(t`решение`)
+  return available.length === 0 ? t`Только условие` : t`Есть ${available.join(t` и `)}`
 }
 
 const taskStatusByValue: Record<StudentProblemStatus, TaskStatusView> = {
-  'not-started': { kind: 'not-started', label: 'Не начата', tone: 'neutral' },
-  sent: { kind: 'sent', label: 'Отправлено', tone: 'info' },
-  checking: { kind: 'checking', label: 'На проверке', tone: 'info' },
-  accepted: { kind: 'accepted', label: 'Зачтено', tone: 'success' },
-  'needs-work': { kind: 'needs-work', label: 'Нужна доработка', tone: 'warning' },
-  rejected: { kind: 'rejected', label: 'Ответ не принят', tone: 'danger' },
+  'not-started': {
+    kind: 'not-started',
+    get label() {
+      return t`Не начата`
+    },
+    tone: 'neutral',
+  },
+  sent: {
+    kind: 'sent',
+    get label() {
+      return t`Отправлено`
+    },
+    tone: 'info',
+  },
+  checking: {
+    kind: 'checking',
+    get label() {
+      return t`На проверке`
+    },
+    tone: 'info',
+  },
+  accepted: {
+    kind: 'accepted',
+    get label() {
+      return t`Зачтено`
+    },
+    tone: 'success',
+  },
+  'needs-work': {
+    kind: 'needs-work',
+    get label() {
+      return t`Нужна доработка`
+    },
+    tone: 'warning',
+  },
+  rejected: {
+    kind: 'rejected',
+    get label() {
+      return t`Ответ не принят`
+    },
+    tone: 'danger',
+  },
 }
 
 const verdictKeyByLegacyId = {
@@ -109,7 +146,7 @@ function problemVerdict(problem: StudentProblemSummary): VerdictView | null {
     return {
       value,
       symbol: problem.verdict.symbol,
-      label: 'Нет ответа',
+      label: t`Нет ответа`,
       weight: problem.verdict.weight,
       tone: 'none',
     }

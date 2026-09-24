@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { backToWorksheet } from './worksheet-return'
 
@@ -218,7 +220,7 @@ export function StudentProblemWorkspace({
       {!submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started') ? (
         <Button aria-expanded={answerOpen} onClick={onToggleAnswer} size="sm" variant="ghost">
           <PencilLine aria-hidden="true" className="size-4" />
-          {submissionClosed ? 'Мой ответ' : 'Ответить'}
+          {submissionClosed ? t`Мой ответ` : t`Ответить`}
           {answerOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
         </Button>
       ) : null}
@@ -242,7 +244,7 @@ export function StudentProblemWorkspace({
             problem={problem}
             submissionClosed={submissionClosed}
           />
-          <StudentCollapseAction label="Свернуть" onClick={onToggleAnswer} />
+          <StudentCollapseAction label={t`Свернуть`} onClick={onToggleAnswer} />
         </div>
       ) : null}
     </div>
@@ -374,7 +376,7 @@ export function CanonicalStudentTask({
 
   if (query.isPending) {
     return (
-      <PageLayout title="Задача" width="reading">
+      <PageLayout title={t`Задача`} width="reading">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -382,12 +384,12 @@ export function CanonicalStudentTask({
   if (query.error) {
     const state = problemRequestState(query.error)
     return (
-      <PageLayout title="Задача" width="reading">
+      <PageLayout title={t`Задача`} width="reading">
         <PageStatePanel
           {...(state === 'error' || state === 'offline'
-            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
             : {})}
-          {...(state === 'empty' ? { title: 'Листок не найден' } : {})}
+          {...(state === 'empty' ? { title: t`Листок не найден` } : {})}
           state={state}
         />
       </PageLayout>
@@ -399,7 +401,7 @@ export function CanonicalStudentTask({
     query.data.groupLessonId !== groupLessonId
   ) {
     return (
-      <PageLayout title="Задача" width="reading">
+      <PageLayout title={t`Задача`} width="reading">
         <PageStatePanel state="forbidden" />
       </PageLayout>
     )
@@ -408,11 +410,11 @@ export function CanonicalStudentTask({
   const problem = query.data.problems.find((candidate) => candidate.problemId === taskId)
   if (!problem) {
     return (
-      <PageLayout title="Задача" width="reading">
+      <PageLayout title={t`Задача`} width="reading">
         <PageStatePanel
-          description="В текущей опубликованной версии листка такой задачи нет. Откройте её заново из списка задач."
+          description={t`В текущей опубликованной версии листка такой задачи нет. Откройте её заново из списка задач.`}
           state="empty"
-          title="Задача не найдена"
+          title={t`Задача не найдена`}
         />
       </PageLayout>
     )
@@ -433,7 +435,8 @@ export function CanonicalStudentTask({
             size="sm"
             variant="ghost"
           >
-            <ArrowLeft aria-hidden="true" className="size-4" />К листку
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            <Trans>К листку</Trans>
           </Button>
         </div>
       }
@@ -465,12 +468,42 @@ export function CanonicalStudentTask({
 }
 
 const problemStatusView = {
-  'not-started': { label: 'Не начата', variant: 'neutral' },
-  sent: { label: 'Отправлено', variant: 'info' },
-  checking: { label: 'На проверке', variant: 'info' },
-  accepted: { label: 'Зачтено', variant: 'success' },
-  'needs-work': { label: 'Нужна доработка', variant: 'warning' },
-  rejected: { label: 'Ответ не принят', variant: 'danger' },
+  'not-started': {
+    get label() {
+      return t`Не начата`
+    },
+    variant: 'neutral',
+  },
+  sent: {
+    get label() {
+      return t`Отправлено`
+    },
+    variant: 'info',
+  },
+  checking: {
+    get label() {
+      return t`На проверке`
+    },
+    variant: 'info',
+  },
+  accepted: {
+    get label() {
+      return t`Зачтено`
+    },
+    variant: 'success',
+  },
+  'needs-work': {
+    get label() {
+      return t`Нужна доработка`
+    },
+    variant: 'warning',
+  },
+  rejected: {
+    get label() {
+      return t`Ответ не принят`
+    },
+    variant: 'danger',
+  },
 } as const
 
 export function ProblemStatusBadge({ problem }: { problem: StudentProblemSummary }) {

@@ -379,7 +379,7 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
 
   await page.goto(taskUrl)
   await expect(
-    page.getByRole('region', { name: 'Ваш ответ' }).getByText('Да, ответ принят.'),
+    page.getByRole('region', { name: 'Ваш ответ' }).getByText('Да, всё верно!'),
   ).toBeVisible()
   expect((await serverAttempts(page, problemId)).attempts).toEqual([
     expect.objectContaining({ displayAnswer: '7', outcome: 'correct' }),

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useWorksheetReturn } from './worksheet-return'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -64,14 +65,14 @@ export function StudentReadableTaskPage({
 
   if (access.isPending) {
     return (
-      <PageLayout title="Листок" width="content">
+      <PageLayout title={t`Листок`} width="content">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (access.error) {
     return (
-      <PageLayout title="Листок" width="content">
+      <PageLayout title={t`Листок`} width="content">
         <ReadableRouteState error={access.error} />
       </PageLayout>
     )
@@ -86,11 +87,11 @@ export function StudentReadableTaskPage({
   )
   if (!enrollment || !group || !Number.isInteger(lessonNumber) || lessonNumber < 0) {
     return (
-      <PageLayout title="Листок" width="content">
+      <PageLayout title={t`Листок`} width="content">
         <PageStatePanel
-          description="Проверьте код курса, группы и номер занятия в ссылке."
+          description={t`Проверьте код курса, группы и номер занятия в ссылке.`}
           state="empty"
-          title="Листок не найден"
+          title={t`Листок не найден`}
         />
       </PageLayout>
     )
@@ -144,22 +145,22 @@ function ReadableLesson({
 
   if (archive.isPending || (!lesson && archive.hasNextPage)) {
     return (
-      <PageLayout title="Листок" width="content">
+      <PageLayout title={t`Листок`} width="content">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (archive.error) {
     return (
-      <PageLayout title="Листок" width="content">
+      <PageLayout title={t`Листок`} width="content">
         <ReadableRouteState error={archive.error} />
       </PageLayout>
     )
   }
   if (!lesson) {
     return (
-      <PageLayout title="Листок" width="content">
-        <PageStatePanel state="empty" title="Занятие ещё не опубликовано" />
+      <PageLayout title={t`Листок`} width="content">
+        <PageStatePanel state="empty" title={t`Занятие ещё не опубликовано`} />
       </PageLayout>
     )
   }
@@ -180,8 +181,8 @@ function ReadableLesson({
   }
   if (lesson.materials.condition.status !== 'published') {
     return (
-      <PageLayout title="Задача" width="content">
-        <PageStatePanel state="empty" title="Задачи ещё не опубликованы" />
+      <PageLayout title={t`Задача`} width="content">
+        <PageStatePanel state="empty" title={t`Задачи ещё не опубликованы`} />
       </PageLayout>
     )
   }
@@ -226,14 +227,14 @@ function ReadableProblem({
   const problems = useStudentProblemsQuery(client, principal, courseId, groupId, groupLessonId)
   if (problems.isPending) {
     return (
-      <PageLayout title="Задача" width="reading">
+      <PageLayout title={t`Задача`} width="reading">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (problems.error) {
     return (
-      <PageLayout title="Задача" width="reading">
+      <PageLayout title={t`Задача`} width="reading">
         <ReadableRouteState error={problems.error} />
       </PageLayout>
     )
@@ -243,8 +244,8 @@ function ReadableProblem({
   )
   if (!problem) {
     return (
-      <PageLayout title="Задача" width="reading">
-        <PageStatePanel state="empty" title="Задача не найдена" />
+      <PageLayout title={t`Задача`} width="reading">
+        <PageStatePanel state="empty" title={t`Задача не найдена`} />
       </PageLayout>
     )
   }

@@ -45,6 +45,7 @@ from helpers.pwa.content.metadata_generation import (
     MetadataGenerationRequest,
     MetadataGenerationResult,
 )
+from helpers.pwa.i18n import LOCALE_COOKIE_NAME
 from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience, CredentialHasher
 from models.pwa.content import ProblemMatchDecision, ProblemRevisionDraft
@@ -797,6 +798,9 @@ async def _prepare_published_test_problem(
     correct_answer: str | None = "7",
     correct_answer_checker: str | None = None,
     problem_type: int = 1,
+    validation_error: str | None = "Введите целое число, например -7",
+    wrong_answer: str | None = "Нет, это другое число.",
+    congratulation: str | None = "Да, всё верно!",
 ) -> tuple[str, str]:
     """Use the real Staff content API to create one submit-ready problem."""
 
@@ -858,15 +862,13 @@ async def _prepare_published_test_problem(
             "problemType": problem_type,
             "answerType": 3 if problem_type == 1 else None,
             "answerValidation": None,
-            "validationError": (
-                "Введите целое число, например -7" if problem_type == 1 else None
-            ),
+            "validationError": validation_error if problem_type == 1 else None,
             "correctAnswer": correct_answer if problem_type == 1 else None,
             "correctAnswerChecker": (
                 correct_answer_checker if problem_type == 1 else None
             ),
-            "wrongAnswer": "Нет, это другое число." if problem_type == 1 else None,
-            "congratulation": "Да, всё верно!" if problem_type == 1 else None,
+            "wrongAnswer": wrong_answer if problem_type == 1 else None,
+            "congratulation": congratulation if problem_type == 1 else None,
         }
     )
     row.pop("reviewed")
@@ -1244,6 +1246,71 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
         )
     )
     assert counts == (2, 1, 2)
+
+
+async def test_student_test_submission_localizes_only_proven_built_in_feedback(
+    content_http: ContentHttpFixture,
+):
+    """P3.3: the response is localized while stored and authored copy stays exact."""
+
+    fixture = content_http
+    problem_public_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture,
+        validation_error=None,
+        wrong_answer=None,
+        congratulation=None,
+    )
+    route = f"/student/api/v1/problems/{problem_public_id}/test-attempts"
+    payload = {
+        "schemaVersion": 1,
+        "idempotencyKey": "018f47f6-7668-7c85-a034-c5b8218bac19",
+        "problemRevision": {
+            "conditionRevisionId": condition_revision_id,
+            "configVersion": 1,
+        },
+        "displayAnswer": "7",
+        "clientCreatedAt": _timestamp(),
+    }
+    english_cookies = _cookie(fixture, "student") | {LOCALE_COOKIE_NAME: "en"}
+
+    created = await fixture.client.post(
+        route,
+        json=payload,
+        cookies=english_cookies,
+        headers=_headers(unsafe=True),
+    )
+    assert created.status == 201, await created.text()
+    english_receipt = await created.json()
+    assert english_receipt["feedback"] == "Yes, that is correct!"
+    assert "feedbackSource" not in english_receipt
+
+    stored = fixture.factory.run_read(
+        lambda connection: json.loads(
+            connection.execute(
+                "SELECT response_json FROM idempotency_records "
+                "WHERE operation = 'test-attempt:create'"
+            ).fetchone()["response_json"]
+        )
+    )
+    assert stored["feedback"] == "Да, всё верно!"
+    assert stored["feedbackSource"] == "built_in"
+
+    replay = await fixture.client.post(
+        route,
+        json=payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert replay.status == 201
+    assert (await replay.json())["feedback"] == "Да, всё верно!"
+
+    history = await fixture.client.get(
+        route,
+        cookies=english_cookies,
+        headers=_headers(),
+    )
+    assert history.status == 200, await history.text()
+    assert (await history.json())["attempts"][0]["feedback"] == "Yes, that is correct!"
 
 
 async def test_student_test_submission_http_rejects_unauthenticated_and_bad_cursor(

@@ -11,7 +11,7 @@ import {
   Search,
   TriangleAlert,
 } from 'lucide-react'
-import { type ReactNode, useId, useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 
 import {
   Alert,

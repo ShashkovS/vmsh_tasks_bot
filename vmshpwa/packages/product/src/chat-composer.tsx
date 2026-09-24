@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Camera, ChevronLeft, ChevronRight, ImagePlus, SendHorizontal, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -24,11 +25,21 @@ export interface ChatAttachmentStripProps {
 }
 
 const statusLabel: Record<AttachmentView['status'], string> = {
-  processing: 'сжимаем',
-  uploading: 'загружаем',
-  ready: 'готово',
-  queued: 'в очереди',
-  failed: 'ошибка',
+  get processing() {
+    return t`сжимаем`
+  },
+  get uploading() {
+    return t`загружаем`
+  },
+  get ready() {
+    return t`готово`
+  },
+  get queued() {
+    return t`в очереди`
+  },
+  get failed() {
+    return t`ошибка`
+  },
 }
 
 export function ChatAttachmentStrip({
@@ -43,7 +54,7 @@ export function ChatAttachmentStrip({
   return (
     <ol className={cn('flex gap-2 overflow-x-auto pb-1', className)}>
       {attachments.map((attachment, index) => {
-        const page = `Страница ${index + 1}`
+        const page = t`Страница ${index + 1}`
         return (
           <li
             className="relative w-20 shrink-0 space-y-1 rounded-md border border-border bg-surface p-1"
@@ -57,7 +68,7 @@ export function ChatAttachmentStrip({
                 {index + 1}
               </span>
               <Button
-                aria-label={`${page}: удалить`}
+                aria-label={t`${page}: удалить`}
                 className="absolute right-0.5 top-0.5 bg-surface/90"
                 disabled={disabled}
                 onClick={() => onRemove?.(attachment.id)}
@@ -78,7 +89,7 @@ export function ChatAttachmentStrip({
             </p>
             <div className="flex justify-between">
               <Button
-                aria-label={`${page}: раньше`}
+                aria-label={t`${page}: раньше`}
                 disabled={disabled || index === 0}
                 onClick={() => onMoveUp?.(attachment.id)}
                 size="icon-xs"
@@ -87,7 +98,7 @@ export function ChatAttachmentStrip({
                 <ChevronLeft aria-hidden="true" />
               </Button>
               <Button
-                aria-label={`${page}: позже`}
+                aria-label={t`${page}: позже`}
                 disabled={disabled || index === attachments.length - 1}
                 onClick={() => onMoveDown?.(attachment.id)}
                 size="icon-xs"
@@ -130,14 +141,14 @@ export interface ChatComposerProps {
 export function ChatComposer({
   children,
   onSend,
-  sendLabel = 'Отправить',
+  sendLabel = t`Отправить`,
   sendDisabled,
   sending,
   onAttach,
-  attachLabel = 'Добавить фото',
+  attachLabel = t`Добавить фото`,
   attachDisabled,
   onCapture,
-  captureLabel = 'Сделать фото',
+  captureLabel = t`Сделать фото`,
   captureDisabled,
   attachments = [],
   onMoveAttachmentUp,
@@ -188,7 +199,7 @@ export function ChatComposer({
           onClick={onSend}
         >
           <SendHorizontal aria-hidden="true" />
-          <span className="max-sm:sr-only">{sending ? 'Отправляем…' : sendLabel}</span>
+          <span className="max-sm:sr-only">{sending ? t`Отправляем…` : sendLabel}</span>
         </Button>
       </div>
       {hint ? <div className="text-caption text-muted-foreground">{hint}</div> : null}

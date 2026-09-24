@@ -44,6 +44,35 @@ test('Student switches the account to English in the profile', async ({ page, br
   }
 })
 
+// P3 acceptance: Student home-adjacent routes, support, news and notification
+// preferences use the selected interface language while server-provided names
+// and message bodies remain source data.
+test('Student sees English support, news, progress and notification chrome', async ({ page }) => {
+  await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
+  try {
+    await page.getByRole('radio', { name: 'English' }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+    await page.goto('/student/questions')
+    await expect(page.getByRole('heading', { name: 'Your questions' })).toBeVisible()
+
+    await page.goto('/student/news')
+    await expect(page.getByRole('heading', { name: 'News' })).toBeVisible()
+    await expect(
+      page.getByText('Posts from Telegram channels and club announcements.'),
+    ).toBeVisible()
+
+    await page.goto('/student/progress')
+    await expect(page.getByRole('heading', { name: 'Progress' })).toBeVisible()
+
+    await page.goto('/student/profile/notifications')
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible()
+  } finally {
+    await saveAccountLocale(page, 'student', 'ru')
+  }
+})
+
 test('Staff switches the language from the header menu', async ({ page }) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
   try {

@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatNumber } from '@vmsh/i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CloudOff, Pencil, TriangleAlert } from 'lucide-react'
 
@@ -84,16 +87,16 @@ interface StudentWrittenSubmissionProps {
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} Б`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} КБ`
-  return `${(bytes / (1024 * 1024)).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} МБ`
+  if (bytes < 1024) return t`${bytes} Б`
+  if (bytes < 1024 * 1024) return t`${Math.round(bytes / 1024)} КБ`
+  return t`${formatNumber(bytes / (1024 * 1024), { maximumFractionDigits: 1 })} МБ`
 }
 
 function deliveryMessage(error: unknown): string {
   reportHandledError(error, 'written.submit')
   if (error instanceof ApiResponseError) return submissionFailureMessage(error)
   if (error instanceof Error && error.name === 'WrittenSubmissionLocalEvidenceError') {
-    return 'Одна из сохранённых фотографий недоступна. Добавьте её заново.'
+    return t`Одна из сохранённых фотографий недоступна. Добавьте её заново.`
   }
   return submissionFailureMessage(error)
 }
@@ -134,7 +137,7 @@ function EntryPhotos({ entry }: { entry: WrittenEntry }) {
           <li key={attachment.attachmentId}>
             <a href={attachment.mediaPath} rel="noreferrer" target="_blank">
               <img
-                alt={`Страница ${index + 1}`}
+                alt={t`Страница ${index + 1}`}
                 className="max-h-32 rounded border border-border bg-surface-sunken"
                 loading="lazy"
                 src={attachment.mediaPath}
@@ -165,7 +168,7 @@ function ReviewAnnotations({
         if (!attachment) return null
         return (
           <ReviewAnnotationViewer
-            imageAlt={`Проверенная страница решения ${index + 1}`}
+            imageAlt={t`Проверенная страница решения ${index + 1}`}
             imageSource={attachment.mediaPath}
             key={`${review.reviewId}:${annotation.attachmentId}`}
             manifest={annotation}
@@ -213,7 +216,9 @@ function ReviewReactions({
         />
       ) : current ? (
         <div className="space-y-1">
-          <p className="text-caption text-muted-foreground">Ваша реакция</p>
+          <p className="text-caption text-muted-foreground">
+            <Trans>Ваша реакция</Trans>
+          </p>
           <ReactionChip reaction={current} />
         </div>
       ) : null}
@@ -257,7 +262,7 @@ function writtenChatMessages({
       return {
         ...base,
         author: 'system' as const,
-        text: entry.text ?? 'Событие по задаче',
+        text: entry.text ?? t`Событие по задаче`,
       }
     }
     const ai = review?.source === 'ai' || entry?.authorKind === 'ai'
@@ -405,7 +410,7 @@ export function StudentWrittenSubmission({
         message:
           error instanceof ApiResponseError
             ? error.message
-            : 'Не удалось сохранить реакцию. Обновите проверку и попробуйте ещё раз.',
+            : t`Не удалось сохранить реакцию. Обновите проверку и попробуйте ещё раз.`,
       })
       await refetchThread().catch(() => undefined)
     }
@@ -603,7 +608,7 @@ export function StudentWrittenSubmission({
 
   if (!hydrated) {
     return (
-      <Card aria-label="Загрузка письменного решения" className="mt-5">
+      <Card aria-label={t`Загрузка письменного решения`} className="mt-5">
         <CardContent className="space-y-3 pt-5">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-32 w-full" />
@@ -629,9 +634,9 @@ export function StudentWrittenSubmission({
 
   if (closed || deadlineClosed) {
     return (
-      <section aria-label="Отправленные решения" className="mt-4 space-y-3">
+      <section aria-label={t`Отправленные решения`} className="mt-4 space-y-3">
         <TaskChat
-          emptyLabel="Приём решений завершён, ничего не отправлено."
+          emptyLabel={t`Приём решений завершён, ничего не отправлено.`}
           messages={chatMessages}
         />
         {showDeadlineNotice ? <StudentSubmissionDeadlineNotice /> : null}
@@ -644,10 +649,14 @@ export function StudentWrittenSubmission({
       <Alert className="mt-5" role="alert" tone="danger">
         <TriangleAlert aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>Нельзя надёжно сохранить решение</AlertTitle>
+          <AlertTitle>
+            <Trans>Нельзя надёжно сохранить решение</Trans>
+          </AlertTitle>
           <AlertDescription>
-            Браузер не разрешил локальное хранение. Мы не открываем редактор, чтобы работа не
-            потерялась при перезагрузке.
+            <Trans>
+              Браузер не разрешил локальное хранение. Мы не открываем редактор, чтобы работа не
+              потерялась при перезагрузке.
+            </Trans>
           </AlertDescription>
         </AlertContent>
       </Alert>
@@ -707,7 +716,7 @@ export function StudentWrittenSubmission({
               ? {
                   ...photo,
                   status: 'failed',
-                  error: error instanceof Error ? error.message : 'Не удалось сохранить фото',
+                  error: error instanceof Error ? error.message : t`Не удалось сохранить фото`,
                 }
               : photo,
           ),
@@ -739,7 +748,7 @@ export function StudentWrittenSubmission({
   }
 
   const remove = async (photoId: string) => {
-    if (!window.confirm('Удалить эту страницу из решения?')) return
+    if (!window.confirm(t`Удалить эту страницу из решения?`)) return
     if (pendingPhotos.some((photo) => photo.id === photoId)) {
       photoProcessing.current.get(photoId)?.abort()
       setPendingPhotos((current) => current.filter((photo) => photo.id !== photoId))
@@ -759,7 +768,7 @@ export function StudentWrittenSubmission({
       if (
         replacementTarget &&
         !window.confirm(
-          'Заменить ранее отправленное решение этой версией? Прежняя версия исчезнет из очереди проверки.',
+          t`Заменить ранее отправленное решение этой версией? Прежняя версия исчезнет из очереди проверки.`,
         )
       ) {
         return
@@ -821,7 +830,7 @@ export function StudentWrittenSubmission({
     if (!replaceableEntry || queued || replacementLoading) return
     if (
       !window.confirm(
-        'Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений.',
+        t`Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений.`,
       )
     ) {
       return
@@ -839,7 +848,7 @@ export function StudentWrittenSubmission({
       for (const [index, attachment] of replaceableEntry.attachments.entries()) {
         const blob = await client.attachmentMedia(replaceableEntry.entryId, attachment.attachmentId)
         await draftStore.value.addPhoto(descriptor, {
-          fileName: `Страница ${index + 1}.webp`,
+          fileName: t`Страница ${index + 1}.webp`,
           blob,
           width: attachment.width,
           height: attachment.height,
@@ -849,7 +858,7 @@ export function StudentWrittenSubmission({
       await reloadDraft()
     } catch {
       setSendError(
-        'Не удалось полностью скопировать прежнюю версию. Уже сохранённые страницы не потеряны; проверьте черновик и добавьте недостающие.',
+        t`Не удалось полностью скопировать прежнюю версию. Уже сохранённые страницы не потеряны; проверьте черновик и добавьте недостающие.`,
       )
       await reloadDraft().catch(() => undefined)
     } finally {
@@ -860,7 +869,7 @@ export function StudentWrittenSubmission({
   const cancelReplacement = () => {
     if (
       !window.confirm(
-        'Отменить режим замены? Текст и фотографии останутся в черновике и смогут отправиться новым сообщением.',
+        t`Отменить режим замены? Текст и фотографии останутся в черновике и смогут отправиться новым сообщением.`,
       )
     ) {
       return
@@ -892,7 +901,7 @@ export function StudentWrittenSubmission({
                     {photos.map((photo, index) => (
                       <li key={photo.id}>
                         <img
-                          alt={`Страница ${index + 1}`}
+                          alt={t`Страница ${index + 1}`}
                           className="max-h-32 rounded border border-border bg-surface-sunken"
                           src={previewUrls.get(photo.id)}
                         />
@@ -919,7 +928,7 @@ export function StudentWrittenSubmission({
               variant="ghost"
             >
               <Pencil aria-hidden="true" />
-              Изменить
+              <Trans>Изменить</Trans>
             </Button>
           ),
         }
@@ -930,18 +939,22 @@ export function StudentWrittenSubmission({
 
   return (
     <section
-      aria-label={replacementTarget ? 'Изменить решение' : 'Сдать решение'}
+      aria-label={replacementTarget ? t`Изменить решение` : t`Сдать решение`}
       className="mt-4 space-y-3 border-t border-border pt-4"
     >
-      <TaskChat emptyLabel="Пока ничего не отправлено." messages={messages} />
+      <TaskChat emptyLabel={t`Пока ничего не отправлено.`} messages={messages} />
 
       {storageError ? (
         <Alert role="alert" tone="danger">
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Последнее изменение не сохранено</AlertTitle>
+            <AlertTitle>
+              <Trans>Последнее изменение не сохранено</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Не закрывайте страницу. Освободите место в браузере и повторите изменение.
+              <Trans>
+                Не закрывайте страницу. Освободите место в браузере и повторите изменение.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -950,7 +963,9 @@ export function StudentWrittenSubmission({
         <Alert role="alert" tone="danger">
           <TriangleAlert aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Отправка не завершена</AlertTitle>
+            <AlertTitle>
+              <Trans>Отправка не завершена</Trans>
+            </AlertTitle>
             <AlertDescription>{sendError}</AlertDescription>
           </AlertContent>
         </Alert>
@@ -976,12 +991,16 @@ export function StudentWrittenSubmission({
       {recoveryAvailable ? (
         <Alert role="alert">
           <AlertContent>
-            <AlertTitle>Отправьте исправление новым сообщением</AlertTitle>
+            <AlertTitle>
+              <Trans>Отправьте исправление новым сообщением</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Прежнее решение уже начали проверять или изменили. Текст и фотографии сохранены.
+              <Trans>
+                Прежнее решение уже начали проверять или изменили. Текст и фотографии сохранены.
+              </Trans>
             </AlertDescription>
             <Button onClick={() => void recoverReplacement()} className="mt-2" variant="outline">
-              Отправить новым сообщением
+              <Trans>Отправить новым сообщением</Trans>
             </Button>
           </AlertContent>
         </Alert>
@@ -992,19 +1011,19 @@ export function StudentWrittenSubmission({
           ) : null}
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
             {availability.state === 'updating'
-              ? 'Обновляем сервис. Отправим после обновления.'
+              ? t`Обновляем сервис. Отправим после обновления.`
               : deliveryPending
                 ? deliveryDelayed
-                  ? 'Отправка занимает больше времени, чем обычно. Ждём подтверждения…'
-                  : 'Отправляем…'
+                  ? t`Отправка занимает больше времени, чем обычно. Ждём подтверждения…`
+                  : t`Отправляем…`
                 : (sendError ??
                   (!online
-                    ? 'Отправим, когда появится сеть.'
+                    ? t`Отправим, когда появится сеть.`
                     : submissionFailureMessage(undefined, queueItem?.lastError)))}
           </p>
           {online && !isDelivering && (queueItem?.status === 'retrying' || sendError) ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">
-              Повторить
+              <Trans>Повторить</Trans>
             </Button>
           ) : null}
         </div>
@@ -1015,12 +1034,12 @@ export function StudentWrittenSubmission({
               <Pencil aria-hidden="true" className="size-4 text-muted-foreground" />
               <p className="min-w-0 flex-1 text-small text-muted-foreground">
                 {replacementLoading
-                  ? 'Копируем прежнее решение…'
-                  : 'Изменяете отправленное решение — оно заменится одной операцией.'}
+                  ? t`Копируем прежнее решение…`
+                  : t`Изменяете отправленное решение — оно заменится одной операцией.`}
               </p>
               {!replacementLoading ? (
                 <Button onClick={cancelReplacement} size="sm" variant="ghost">
-                  Отменить
+                  <Trans>Отменить</Trans>
                 </Button>
               ) : null}
             </div>
@@ -1035,11 +1054,20 @@ export function StudentWrittenSubmission({
                     <span className="flex flex-wrap items-center gap-x-3">
                       {attachments.length > 0 ? (
                         <span>
-                          {attachments.length} из 10 фотографий · {formatBytes(totalBytes)}
+                          <Trans>{attachments.length} из 10 фотографий ·</Trans>{' '}
+                          {formatBytes(totalBytes)}
                         </span>
                       ) : null}
-                      {problemType === 'oral' ? <span>Можно сдать и устно на занятии.</span> : null}
-                      {online ? null : <span>Нет сети — отправим позже.</span>}
+                      {problemType === 'oral' ? (
+                        <span>
+                          <Trans>Можно сдать и устно на занятии.</Trans>
+                        </span>
+                      ) : null}
+                      {online ? null : (
+                        <span>
+                          <Trans>Нет сети — отправим позже.</Trans>
+                        </span>
+                      )}
                     </span>
                   ),
                 }
@@ -1054,7 +1082,7 @@ export function StudentWrittenSubmission({
             sending={replacementLoading}
           >
             <Textarea
-              aria-label="Ваше решение"
+              aria-label={t`Ваше решение`}
               className="field-sizing-content max-h-56 min-h-11 py-2 text-base sm:text-[1.0625rem]"
               disabled={replacementLoading}
               onChange={(event) => saveText(event.target.value)}
@@ -1068,7 +1096,7 @@ export function StudentWrittenSubmission({
                 const characterCount = event.clipboardData.getData('text').length
                 if (characterCount > 0) recordPaste(characterCount)
               }}
-              placeholder="Решение или пояснение. Формулы можно приложить фотографией."
+              placeholder={t`Решение или пояснение. Формулы можно приложить фотографией.`}
               value={text}
             />
           </ChatComposer>

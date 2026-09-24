@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { ArrowDown, ArrowUp, ImageIcon, RotateCw, Trash2 } from 'lucide-react'
 
 import { Button, Progress, cn } from '@vmsh/ui'
@@ -42,27 +44,37 @@ function StatusLine({ attachment }: { attachment: AttachmentView }) {
     case 'processing':
       return (
         <div className="space-y-1">
-          <Progress aria-label={`Обработка: ${page}`} value={attachment.progress ?? null} />
-          <p className="text-caption text-muted-foreground">Сжатие… {attachment.progress ?? 0}%</p>
+          <Progress aria-label={t`Обработка: ${page}`} value={attachment.progress ?? null} />
+          <p className="text-caption text-muted-foreground">
+            <Trans>Сжатие…</Trans> {attachment.progress ?? 0}%
+          </p>
         </div>
       )
     case 'uploading':
       return (
         <div className="space-y-1">
-          <Progress aria-label={`Загрузка: ${page}`} value={attachment.progress ?? null} />
+          <Progress aria-label={t`Загрузка: ${page}`} value={attachment.progress ?? null} />
           <p className="text-caption text-muted-foreground">
-            Загрузка… {attachment.progress ?? 0}%
+            <Trans>Загрузка…</Trans> {attachment.progress ?? 0}%
           </p>
         </div>
       )
     case 'ready':
-      return <p className="text-caption text-status-success">Готово к отправке</p>
+      return (
+        <p className="text-caption text-status-success">
+          <Trans>Готово к отправке</Trans>
+        </p>
+      )
     case 'queued':
-      return <p className="text-caption text-muted-foreground">В очереди на отправку</p>
+      return (
+        <p className="text-caption text-muted-foreground">
+          <Trans>В очереди на отправку</Trans>
+        </p>
+      )
     case 'failed':
       return (
         <p className="text-caption text-status-danger">
-          {attachment.error ?? 'Не удалось загрузить'}
+          {attachment.error ?? t`Не удалось загрузить`}
         </p>
       )
   }
@@ -79,7 +91,7 @@ export function AttachmentItem({
   onRetry,
   disabled,
 }: AttachmentItemProps) {
-  const pageLabel = `Страница ${index + 1}`
+  const pageLabel = t`Страница ${index + 1}`
   return (
     <li className="flex items-start gap-3 rounded-md border border-border bg-surface p-2">
       <div className="relative size-16 shrink-0 overflow-hidden rounded bg-surface-sunken">
@@ -119,7 +131,7 @@ export function AttachmentItem({
             size="xs"
             variant="outline"
           >
-            Повторить
+            <Trans>Повторить</Trans>
           </Button>
         ) : null}
       </div>
@@ -127,7 +139,7 @@ export function AttachmentItem({
       <div className="flex shrink-0 flex-col gap-1">
         <div className="flex gap-1">
           <Button
-            aria-label={`${pageLabel}: выше`}
+            aria-label={t`${pageLabel}: выше`}
             disabled={disabled || index === 0}
             onClick={() => onMoveUp?.(attachment.id)}
             size="icon-xs"
@@ -136,7 +148,7 @@ export function AttachmentItem({
             <ArrowUp aria-hidden="true" />
           </Button>
           <Button
-            aria-label={`${pageLabel}: ниже`}
+            aria-label={t`${pageLabel}: ниже`}
             disabled={disabled || index === count - 1}
             onClick={() => onMoveDown?.(attachment.id)}
             size="icon-xs"
@@ -148,7 +160,7 @@ export function AttachmentItem({
         <div className="flex gap-1">
           {onRotate ? (
             <Button
-              aria-label={`${pageLabel}: повернуть`}
+              aria-label={t`${pageLabel}: повернуть`}
               disabled={disabled}
               onClick={() => onRotate(attachment.id)}
               size="icon-xs"
@@ -158,7 +170,7 @@ export function AttachmentItem({
             </Button>
           ) : null}
           <Button
-            aria-label={`${pageLabel}: удалить`}
+            aria-label={t`${pageLabel}: удалить`}
             disabled={disabled}
             onClick={() => onRemove?.(attachment.id)}
             size="icon-xs"

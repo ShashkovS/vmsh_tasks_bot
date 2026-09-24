@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { OrganizerLink } from '@vmsh/app-shell'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { BookOpen, MapPin, Radio } from 'lucide-react'
@@ -35,7 +38,7 @@ import { createOfflineStudentCourseClient } from './offline-student-data'
 
 function formatMoment(value: string | null): string | undefined {
   if (value === null) return undefined
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -63,14 +66,14 @@ function EmptyCourseCard({ course }: { course: StudentHomeCourse }) {
             ) : (
               <Radio aria-hidden="true" />
             )}
-            {enrollment.attendanceMode === 'in-person' ? 'Очно' : 'Онлайн'}
+            {enrollment.attendanceMode === 'in-person' ? t`Очно` : t`Онлайн`}
           </Badge>
         </div>
         {group ? <LevelChip level={group} /> : null}
       </CardHeader>
       <CardContent className="flex items-center gap-2 text-small text-muted-foreground">
         <BookOpen aria-hidden="true" className="size-4" />
-        Новое занятие пока не опубликовано
+        <Trans>Новое занятие пока не опубликовано</Trans>
       </CardContent>
     </Card>
   )
@@ -140,7 +143,7 @@ export function StudentHomePage() {
 
   if (query.isPending) {
     return (
-      <PageLayout title="Сейчас">
+      <PageLayout title={t`Сейчас`}>
         <OrganizerLink create />
         <PageStatePanel state="loading" />
       </PageLayout>
@@ -154,11 +157,11 @@ export function StudentHomePage() {
           ? 'forbidden'
           : 'error'
     return (
-      <PageLayout title="Сейчас">
+      <PageLayout title={t`Сейчас`}>
         <OrganizerLink create />
         <PageStatePanel
           {...(state === 'error' || state === 'offline'
-            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
             : {})}
           state={state}
         />
@@ -167,10 +170,10 @@ export function StudentHomePage() {
   }
 
   return (
-    <PageLayout eyebrow="Ваши курсы" title="Сейчас">
+    <PageLayout eyebrow={t`Ваши курсы`} title={t`Сейчас`}>
       <OrganizerLink create />
       {bannerQuery.data ? (
-        <div className="space-y-2" aria-label="Объявления">
+        <div className="space-y-2" aria-label={t`Объявления`}>
           {bannerQuery.data.items
             .filter((banner) => !bannerDismissals.dismissed.has(bannerDismissalId(banner)))
             .map((banner) => (
@@ -185,9 +188,9 @@ export function StudentHomePage() {
       <section>
         {query.data.courses.length === 0 ? (
           <PageStatePanel
-            description="Когда вас добавят на курс, он появится здесь."
+            description={t`Когда вас добавят на курс, он появится здесь.`}
             state="empty"
-            title="Нет активных курсов"
+            title={t`Нет активных курсов`}
           />
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
@@ -231,11 +234,11 @@ export function StudentHomePage() {
           </div>
         )}
       </section>
-      <PageSection className="mt-8" title="Очные занятия">
+      <PageSection className="mt-8" title={t`Очные занятия`}>
         {classroomQuery.isPending ? <PageStatePanel state="loading" /> : null}
         {classroomQuery.error ? (
           <PageStatePanel
-            actionLabel="Повторить"
+            actionLabel={t`Повторить`}
             onAction={() => void classroomQuery.refetch()}
             state={
               classroomQuery.error instanceof PublishedClassroomNetworkError ? 'offline' : 'error'
@@ -244,7 +247,7 @@ export function StudentHomePage() {
         ) : null}
         {classroomQuery.data?.items.length === 0 ? (
           <p className="text-small text-muted-foreground">
-            Для ваших групп пока нет запланированных очных занятий.
+            <Trans>Для ваших групп пока нет запланированных очных занятий.</Trans>
           </p>
         ) : null}
         <div className="grid gap-3 lg:grid-cols-2">
@@ -264,7 +267,7 @@ export function StudentHomePage() {
                   endsAt={item.endsAt}
                   onlineModeAction={
                     <Link className="text-link underline-offset-2 hover:underline" to="/profile">
-                      Поменять
+                      <Trans>Поменять</Trans>
                     </Link>
                   }
                   startsAt={item.startsAt}

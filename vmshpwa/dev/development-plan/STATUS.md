@@ -1,5 +1,18 @@
 # Статус плана разработки
 
+## Интернационализация, P3 — 24 сентября 2026, реализовано локально
+
+Student home/tasks/progress/profile, карточки задач, сдача короткого и
+письменного решения, oral admission, support, news и notifications доступны на
+английском. Авторские вопросы/ответы, контент, имена и допустимые варианты
+ответа остаются исходными данными. Built-in feedback локализуется на чтении
+только при сохранённом provenance; custom и двусмысленный historical feedback
+не подменяется. Прошли Python 123 passed (2 skipped), frontend unit 902 passed,
+lint, typecheck, build, catalog gates, i18n E2E 18/18 и support E2E 3/3.
+P2 → P3: максимум +4.7 KB initial JS и +4 мс cold FCP. [План и P4](24-i18n.md),
+[англоязычная процедура](24-i18n-execution-plan.md),
+[замеры](../i18n-performance-report.md).
+
 ## Интернационализация, P2 — 24 сентября 2026, реализовано локально
 
 Family home, children/history, lesson chrome, news и notifications доступны

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { OrganizerLink } from '@vmsh/app-shell'
 import { useMemo, useState } from 'react'
@@ -50,11 +51,12 @@ export function StudentEnrollmentSettings({
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1 text-small font-medium">
+        <div className="space-y-1 text-small font-medium">
           <span>
             <Trans>Активная группа</Trans>
           </span>
           <select
+            aria-label={t`Активная группа`}
             className="min-h-10 w-full rounded-md border border-input bg-surface px-3"
             disabled={saving}
             onChange={(event) => {
@@ -69,10 +71,13 @@ export function StudentEnrollmentSettings({
               </option>
             ))}
           </select>
-        </label>
-        <label className="space-y-1 text-small font-medium">
-          <span>Формат занятий</span>
+        </div>
+        <div className="space-y-1 text-small font-medium">
+          <span>
+            <Trans>Формат занятий</Trans>
+          </span>
           <select
+            aria-label={t`Формат занятий`}
             className="min-h-10 w-full rounded-md border border-input bg-surface px-3"
             disabled={saving}
             onChange={(event) => {
@@ -81,20 +86,26 @@ export function StudentEnrollmentSettings({
             }}
             value={mode}
           >
-            <option value="online">Онлайн</option>
-            <option value="in_person">Очно в школе</option>
+            <option value="online">
+              <Trans>Онлайн</Trans>
+            </option>
+            <option value="in_person">
+              <Trans>Очно в школе</Trans>
+            </option>
           </select>
-        </label>
+        </div>
       </div>
       {reviewing ? (
         <p className="text-small text-muted-foreground">
-          При очном формате для вас резервируют место, печатают условия и распределяют
-          преподавателей. Если вы не придёте, выберите онлайн.
+          <Trans>
+            При очном формате для вас резервируют место, печатают условия и распределяют
+            преподавателей. Если вы не придёте, выберите онлайн.
+          </Trans>
         </p>
       ) : null}
       {error ? (
         <p className="text-small text-status-error" role="alert">
-          Не удалось сохранить. Обновите страницу и попробуйте ещё раз.
+          <Trans>Не удалось сохранить. Обновите страницу и попробуйте ещё раз.</Trans>
         </p>
       ) : null}
       <Button
@@ -113,7 +124,7 @@ export function StudentEnrollmentSettings({
         size="sm"
         variant={reviewing ? 'default' : 'outline'}
       >
-        {saving ? t`Сохраняем…` : reviewing ? 'Подтвердить изменения' : 'Изменить'}
+        {saving ? t`Сохраняем…` : reviewing ? t`Подтвердить изменения` : t`Изменить`}
       </Button>
     </div>
   )
@@ -144,7 +155,7 @@ export function StudentProfilePage() {
 
   if (courses.isPending) {
     return (
-      <PageLayout title="Профиль">
+      <PageLayout title={t`Профиль`}>
         <OrganizerLink />
         <PageStatePanel state="loading" />
       </PageLayout>
@@ -152,10 +163,10 @@ export function StudentProfilePage() {
   }
   if (courses.error) {
     return (
-      <PageLayout title="Профиль">
+      <PageLayout title={t`Профиль`}>
         <OrganizerLink />
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void courses.refetch()}
           state={courses.error instanceof CourseNetworkError ? 'offline' : 'error'}
         />
@@ -165,7 +176,7 @@ export function StudentProfilePage() {
 
   return (
     <PageLayout
-      description="Группа и формат задаются отдельно для каждого курса."
+      description={t`Группа и формат задаются отдельно для каждого курса.`}
       title={principal.displayName}
     >
       <div className="grid gap-4 lg:grid-cols-2">
@@ -194,25 +205,29 @@ export function StudentProfilePage() {
         })}
         <Card>
           <CardHeader>
-            <CardTitle>Уведомления</CardTitle>
+            <CardTitle>
+              <Trans>Уведомления</Trans>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-small text-muted-foreground">
-              Выберите, какие уведомления получать, и подключите это устройство.
+              <Trans>Выберите, какие уведомления получать, и подключите это устройство.</Trans>
             </p>
             <a
               className="inline-flex min-h-10 items-center text-link underline underline-offset-2"
               href="/student/profile/notifications"
             >
-              Настроить уведомления
+              <Trans>Настроить уведомления</Trans>
             </a>
           </CardContent>
         </Card>
         <InterfaceLanguageCard />
-        <AccountSessionManager title="Устройства и сеансы" />
+        <AccountSessionManager title={t`Устройства и сеансы`} />
         <Card>
           <CardHeader>
-            <CardTitle>Помощь</CardTitle>
+            <CardTitle>
+              <Trans>Помощь</Trans>
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-3 text-small">
             <OrganizerLink />
@@ -221,7 +236,7 @@ export function StudentProfilePage() {
               href="/student/questions"
             >
               <MessageCircleQuestion aria-hidden="true" className="size-4 shrink-0" />
-              Мои вопросы
+              <Trans>Мои вопросы</Trans>
             </a>
             <a
               className="inline-flex min-h-7 items-center gap-2 text-link underline-offset-2 hover:underline"

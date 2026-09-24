@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import {
   rememberWorksheet,
   useWorksheetReturn,
@@ -37,7 +39,7 @@ import {
 } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
 import { CourseContext, CourseGroupSwitcher, LessonBlocksLayout } from '@vmsh/product'
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
+import { Badge, Button, Card, CardHeader, CardTitle } from '@vmsh/ui'
 
 import { formatCalendarDate, problemCountLabel, toCourseEnrollmentView } from './student-home-view'
 import {
@@ -145,7 +147,8 @@ export function StudentLessonFeedItem({
         <Card className="overflow-hidden gap-0 py-0">
           <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
             <p className="text-caption text-muted-foreground">
-              Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}
+              <Trans>Занятие {lesson.lessonNumber} ·</Trans>{' '}
+              {formatCalendarDate(lesson.cycleAnchorDate)}
             </p>
             <CardTitle>{lessonHeading(lesson)}</CardTitle>
           </CardHeader>
@@ -156,7 +159,9 @@ export function StudentLessonFeedItem({
             before={lesson.blocks.before?.document ?? null}
             idPrefix={`student-${lesson.groupLessonId}`}
           >
-            <p className="px-4 py-5 text-muted-foreground sm:px-7">Задачи ещё не опубликованы.</p>
+            <p className="px-4 py-5 text-muted-foreground sm:px-7">
+              <Trans>Задачи ещё не опубликованы.</Trans>
+            </p>
           </LessonBlocksLayout>
         </div>
       </section>
@@ -171,7 +176,7 @@ export function StudentLessonFeedItem({
       <PageStatePanel
         {...(state === 'error' || state === 'offline'
           ? {
-              actionLabel: 'Повторить',
+              actionLabel: t`Повторить`,
               onAction: () => {
                 void problemsQuery.refetch()
                 void contentQuery.refetch()
@@ -201,13 +206,13 @@ export function StudentLessonFeedItem({
     <span className="vmsh-problem-actions-row font-sans">
       <ProblemStatusBadge problem={problem} />
       <Button
-        aria-label={`Открыть задачу ${problem.displayNumber}`}
+        aria-label={t`Открыть задачу ${problem.displayNumber}`}
         data-task-return-id={problem.problemId}
         onClick={() => openProblem(problem.displayNumber, problem.problemId)}
         size="sm"
         variant="ghost"
       >
-        Открыть
+        <Trans>Открыть</Trans>
         <ChevronRight aria-hidden="true" />
       </Button>
     </span>
@@ -259,7 +264,8 @@ export function StudentLessonFeedItem({
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-caption text-muted-foreground">
-                    Занятие {lesson.lessonNumber} · {formatCalendarDate(lesson.cycleAnchorDate)}
+                    <Trans>Занятие {lesson.lessonNumber} ·</Trans>{' '}
+                    {formatCalendarDate(lesson.cycleAnchorDate)}
                   </p>
                   <CardTitle>{lessonHeading(lesson)}</CardTitle>
                 </div>
@@ -278,10 +284,10 @@ export function StudentLessonFeedItem({
                       variant="outline"
                     >
                       {allExpanded
-                        ? 'Свернуть всё'
+                        ? t`Свернуть всё`
                         : submissionClosed
-                          ? 'Показать все ответы'
-                          : 'Ответить на все задачи'}
+                          ? t`Показать все ответы`
+                          : t`Ответить на все задачи`}
                     </Button>
                   ) : null}
                 </div>
@@ -361,7 +367,7 @@ function StudentLessonArchive({
     return (
       <PageStatePanel
         {...(state === 'error' || state === 'offline'
-          ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+          ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
           : {})}
         state={state}
       />
@@ -408,9 +414,9 @@ function StudentLessonArchive({
       <div>
         {visibleLessons.length === 0 ? (
           <PageStatePanel
-            description={'После публикации условия листок появится здесь.'}
+            description={t`После публикации условия листок появится здесь.`}
             state="empty"
-            title="Пока нет опубликованных листков"
+            title={t`Пока нет опубликованных листков`}
           />
         ) : (
           <div className="space-y-6">
@@ -441,7 +447,7 @@ function StudentLessonArchive({
             size="sm"
             variant="ghost"
           >
-            {query.isFetchingNextPage ? 'Загружаем…' : 'Показать более ранние занятия'}
+            {query.isFetchingNextPage ? t`Загружаем…` : t`Показать более ранние занятия`}
           </Button>
         ) : null}
       </div>
@@ -509,7 +515,7 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
     content = (
       <PageStatePanel
         {...(state === 'error' || state === 'offline'
-          ? { actionLabel: 'Повторить', onAction: () => void accessQuery.refetch() }
+          ? { actionLabel: t`Повторить`, onAction: () => void accessQuery.refetch() }
           : {})}
         state={state}
       />
@@ -519,13 +525,13 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
     content =
       loadedContext.kind === 'empty' ? (
         <PageStatePanel
-          description="Когда вас добавят на курс, здесь появятся опубликованные листки."
+          description={t`Когда вас добавят на курс, здесь появятся опубликованные листки.`}
           state="empty"
-          title="Нет доступных курсов"
+          title={t`Нет доступных курсов`}
         />
       ) : loadedContext.kind === 'forbidden' ? (
         <PageStatePanel
-          description="Выберите курс и группу из тех, которые доступны вашей учётной записи."
+          description={t`Выберите курс и группу из тех, которые доступны вашей учётной записи.`}
           state="forbidden"
         />
       ) : (

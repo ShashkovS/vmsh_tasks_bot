@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { ImagePlus, Info, WifiOff } from 'lucide-react'
 import { useId, type KeyboardEvent } from 'react'
 
@@ -73,7 +75,7 @@ export function SubmissionComposer({
     <div className={cn('space-y-4', className)}>
       <div>
         <Textarea
-          aria-label="Ваше решение"
+          aria-label={t`Ваше решение`}
           aria-describedby={taskType === 'oral' ? oralNoteId : undefined}
           className="min-h-36 text-base sm:text-[1.0625rem]"
           disabled={editingDisabled}
@@ -84,7 +86,7 @@ export function SubmissionComposer({
             const characterCount = event.clipboardData.getData('text').length
             if (characterCount > 0) onTextPaste?.(characterCount)
           }}
-          placeholder="Опишите решение. Формулы можно приложить фотографией."
+          placeholder={t`Опишите решение. Формулы можно приложить фотографией.`}
           value={text}
         />
       </div>
@@ -93,9 +95,11 @@ export function SubmissionComposer({
         <Alert tone="info">
           <Info aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Устная задача</AlertTitle>
+            <AlertTitle>
+              <Trans>Устная задача</Trans>
+            </AlertTitle>
             <AlertDescription id={oralNoteId}>
-              Можно сдать устно в конференции или отправить письменное решение здесь.
+              <Trans>Можно сдать устно в конференции или отправить письменное решение здесь.</Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -104,10 +108,12 @@ export function SubmissionComposer({
       <section aria-labelledby={photosId} className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-label font-medium text-foreground" id={photosId}>
-            Фотографии{' '}
-            <span className="text-muted-foreground">
-              ({attachments.length} из {maxPhotos})
-            </span>
+            <Trans>
+              Фотографии{' '}
+              <span className="text-muted-foreground">
+                ({attachments.length} из {maxPhotos})
+              </span>
+            </Trans>
           </h2>
           {totalSizeLabel ? (
             <span className="font-num text-caption text-muted-foreground">{totalSizeLabel}</span>
@@ -129,9 +135,11 @@ export function SubmissionComposer({
         <Alert tone="warning">
           <WifiOff aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>Нет сети</AlertTitle>
+            <AlertTitle>
+              <Trans>Нет сети</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Решение сохранится и отправится автоматически, когда связь вернётся.
+              <Trans>Решение сохранится и отправится автоматически, когда связь вернётся.</Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -145,24 +153,26 @@ export function SubmissionComposer({
           variant="outline"
         >
           <ImagePlus aria-hidden="true" />
-          Добавить фото
+          <Trans>Добавить фото</Trans>
         </Button>
         {closed ? (
-          <span className="text-small font-medium text-status-danger">Приём закрыт</span>
+          <span className="text-small font-medium text-status-danger">
+            <Trans>Приём закрыт</Trans>
+          </span>
         ) : (
           <Button
             disabled={submitting || queued || empty}
             onClick={onSubmit}
             size="lg"
-            title="Отправить (Ctrl/Cmd+Enter)"
+            title={t`Отправить (Ctrl/Cmd+Enter)`}
           >
             {queued
-              ? 'В очереди'
+              ? t`В очереди`
               : submitting
-                ? 'Отправка…'
+                ? t`Отправка…`
                 : offline
-                  ? 'Поставить в очередь'
-                  : 'Отправить'}
+                  ? t`Поставить в очередь`
+                  : t`Отправить`}
           </Button>
         )}
       </div>

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Bot, Check, Clock, TriangleAlert } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 
@@ -45,16 +47,42 @@ export interface ChatMessageView {
  * as a live teacher.
  */
 const defaultAuthorName: Partial<Record<ChatAuthorKind, string>> = {
-  teacher: 'Преподаватель',
-  admin: 'Администратор',
-  ai: 'Проверил ИИ',
+  get teacher() {
+    return t`Преподаватель`
+  },
+  get admin() {
+    return t`Администратор`
+  },
+  get ai() {
+    return t`Проверил ИИ`
+  },
 }
 
 const deliveryView: Record<ChatDeliveryState, { icon: typeof Check; label: string }> = {
-  queued: { icon: Clock, label: 'В очереди' },
-  sending: { icon: Clock, label: 'Отправляется' },
-  sent: { icon: Check, label: 'Отправлено' },
-  failed: { icon: TriangleAlert, label: 'Не отправлено' },
+  queued: {
+    icon: Clock,
+    get label() {
+      return t`В очереди`
+    },
+  },
+  sending: {
+    icon: Clock,
+    get label() {
+      return t`Отправляется`
+    },
+  },
+  sent: {
+    icon: Check,
+    get label() {
+      return t`Отправлено`
+    },
+  },
+  failed: {
+    icon: TriangleAlert,
+    get label() {
+      return t`Не отправлено`
+    },
+  },
 }
 
 /** Delivery is a mark, not a sentence: the word only reaches assistive tech. */
@@ -103,7 +131,11 @@ export function ChatMessage({ message }: { message: ChatMessageView }) {
   // Time rides at the end of the text instead of claiming a line of its own.
   const meta = (
     <span className="ml-1.5 inline-flex items-baseline gap-1 align-baseline text-caption text-muted-foreground">
-      {message.edited ? <span>изм.</span> : null}
+      {message.edited ? (
+        <span>
+          <Trans>изм.</Trans>
+        </span>
+      ) : null}
       {message.at ? <time className="font-num">{message.at}</time> : null}
       {message.delivery ? <DeliveryIcon state={message.delivery} /> : null}
     </span>
@@ -162,7 +194,7 @@ export function TaskChat({ messages, emptyLabel, className }: TaskChatProps) {
     ) : null
   }
   return (
-    <ol aria-label="Переписка по задаче" className={cn('space-y-1 font-sans', className)}>
+    <ol aria-label={t`Переписка по задаче`} className={cn('space-y-1 font-sans', className)}>
       {withDateDividers(messages).map(({ message, divider }) => {
         return (
           <Fragment key={message.id}>

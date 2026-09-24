@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 /*
  * Requirements: dev/design-system/04-product-components.md (test inputs) and
  * dev/development-plan/08-phase-4-test-submissions.md. Legacy compatibility is
@@ -102,6 +103,7 @@ export function answerInputKind(type: AnswerType): AnswerInputKind {
 }
 
 /** Visible payloads accepted by the legacy weekday checker. */
+// eslint-disable-next-line lingui/no-unlocalized-strings -- These are persisted legacy answer tokens, not UI copy.
 export const weekdayOptions = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'] as const
 
 export function resolveArity(spec: AnswerSpec): number {
@@ -120,38 +122,144 @@ export function answerInputMode(type: AnswerType): 'numeric' | 'decimal' | 'text
 }
 
 const defaults: Record<AnswerType, { hint: string; example: string }> = {
-  digit: { hint: 'Введите одну цифру', example: '7' },
-  natural: { hint: 'Введите натуральное число', example: '179' },
-  integer: { hint: 'Введите целое число', example: '-179' },
-  ratio: { hint: 'Введите отношение', example: '5/3' },
-  float: { hint: 'Введите десятичную дробь', example: '3.14' },
-  'float-eps': { hint: 'Введите десятичную дробь (можно приближённо)', example: '3.14' },
-  fraction: { hint: 'Введите обыкновенную или десятичную дробь', example: '7/3' },
-  'mixed-fraction': { hint: 'Введите смешанную дробь', example: '1 2/3' },
-  polynomial: { hint: 'Введите выражение от n', example: '2n^2 + n(n+1)/2' },
-  'int-2': { hint: 'Введите два целых числа', example: '1, 7' },
-  'int-3': { hint: 'Введите три целых числа', example: '1, 7, 9' },
-  'int-4': { hint: 'Введите четыре целых числа', example: '0, 1, 7, 9' },
+  digit: {
+    get hint() {
+      return t`Введите одну цифру`
+    },
+    example: '7',
+  },
+  natural: {
+    get hint() {
+      return t`Введите натуральное число`
+    },
+    example: '179',
+  },
+  integer: {
+    get hint() {
+      return t`Введите целое число`
+    },
+    example: '-179',
+  },
+  ratio: {
+    get hint() {
+      return t`Введите отношение`
+    },
+    example: '5/3',
+  },
+  float: {
+    get hint() {
+      return t`Введите десятичную дробь`
+    },
+    example: '3.14',
+  },
+  'float-eps': {
+    get hint() {
+      return t`Введите десятичную дробь (можно приближённо)`
+    },
+    example: '3.14',
+  },
+  fraction: {
+    get hint() {
+      return t`Введите обыкновенную или десятичную дробь`
+    },
+    example: '7/3',
+  },
+  'mixed-fraction': {
+    get hint() {
+      return t`Введите смешанную дробь`
+    },
+    example: '1 2/3',
+  },
+  polynomial: {
+    get hint() {
+      return t`Введите выражение от n`
+    },
+    example: '2n^2 + n(n+1)/2',
+  },
+  'int-2': {
+    get hint() {
+      return t`Введите два целых числа`
+    },
+    example: '1, 7',
+  },
+  'int-3': {
+    get hint() {
+      return t`Введите три целых числа`
+    },
+    example: '1, 7, 9',
+  },
+  'int-4': {
+    get hint() {
+      return t`Введите четыре целых числа`
+    },
+    example: '0, 1, 7, 9',
+  },
   'int-seq': {
-    hint: 'Целые числа через запятую — порядок важен',
+    get hint() {
+      return t`Целые числа через запятую — порядок важен`
+    },
     example: '1, 7, 9',
   },
   'int-set': {
-    hint: 'Целые числа через запятую — порядок и повторы не важны',
+    get hint() {
+      return t`Целые числа через запятую — порядок и повторы не важны`
+    },
     example: '1, 7, 9',
   },
-  'frac-seq': { hint: 'Дроби через запятую — порядок важен', example: '2/5, 3.75, -1' },
+  'frac-seq': {
+    get hint() {
+      return t`Дроби через запятую — порядок важен`
+    },
+    example: '2/5, 3.75, -1',
+  },
   multiset: {
-    hint: 'Числа через запятую — повторы учитываются, порядок нет',
+    get hint() {
+      return t`Числа через запятую — повторы учитываются, порядок нет`
+    },
     example: '1, 1, 2, 2/5',
   },
-  time: { hint: 'Введите время', example: '12:08' },
-  date: { hint: 'Введите дату', example: '31.12' },
-  weekday: { hint: 'Выберите день недели', example: '' },
-  'symb-expression': { hint: 'Введите символьное выражение', example: 'a + b^2' },
-  'symb-equiv': { hint: 'Введите тождественно равное выражение', example: 'b*b + a' },
-  'select-one': { hint: 'Выберите один вариант', example: '' },
-  string: { hint: 'Введите ответ', example: '' },
+  time: {
+    get hint() {
+      return t`Введите время`
+    },
+    example: '12:08',
+  },
+  date: {
+    get hint() {
+      return t`Введите дату`
+    },
+    example: '31.12',
+  },
+  weekday: {
+    get hint() {
+      return t`Выберите день недели`
+    },
+    example: '',
+  },
+  'symb-expression': {
+    get hint() {
+      return t`Введите символьное выражение`
+    },
+    example: 'a + b^2',
+  },
+  'symb-equiv': {
+    get hint() {
+      return t`Введите тождественно равное выражение`
+    },
+    example: 'b*b + a',
+  },
+  'select-one': {
+    get hint() {
+      return t`Выберите один вариант`
+    },
+    example: '',
+  },
+  string: {
+    get hint() {
+      return t`Введите ответ`
+    },
+    example: '',
+  },
 }
 
 export function defaultAnswerHint(type: AnswerType): { hint: string; example: string } {

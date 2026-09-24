@@ -1,5 +1,16 @@
 # Design-system status
 
+## Интернационализация, P3 — 24 сентября 2026, реализовано локально
+
+Student UI, submission/review chrome, oral admission, support, news и
+notifications переключаются с языком аккаунта; авторские данные и ответные
+токены остаются исходными. Встроенный feedback автоматической проверки
+переводится только при доказанном системном происхождении. Прошли Python 123
+passed (2 skipped), frontend unit 902 passed, catalog/type/lint/build gates,
+i18n E2E 18/18 и support E2E 3/3. P2 → P3: максимум +4.7 KB initial JS и +4
+мс cold FCP. Подробнее — [план](../development-plan/24-i18n.md) и
+[процедура](../development-plan/24-i18n-execution-plan.md).
+
 ## Интернационализация, P2 — 24 сентября 2026, реализовано локально
 
 Family-поверхность и её общие progress/content/notification-компоненты получили

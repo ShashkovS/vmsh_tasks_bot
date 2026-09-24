@@ -1,4 +1,5 @@
 import type { WrittenEntry, WrittenReviewProjection, WrittenThread } from '@vmsh/contracts'
+import { formatDate, formatTime } from '@vmsh/i18n'
 
 /**
  * Written thread as one conversation. The server keeps material entries and
@@ -73,13 +74,10 @@ export function replaceableWrittenEntry(thread: WrittenThread | null): WrittenEn
   )
 }
 
-const timeFormat = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' })
-const dateFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' })
-
 export function chatTime(value: string): string {
-  return timeFormat.format(new Date(value))
+  return formatTime(value, { hour: '2-digit', minute: '2-digit' })
 }
 
 export function chatDate(value: string): string {
-  return dateFormat.format(new Date(value))
+  return formatDate(value, { day: 'numeric', month: 'long' })
 }

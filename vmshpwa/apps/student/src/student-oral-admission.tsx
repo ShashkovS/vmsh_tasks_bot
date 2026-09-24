@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo, useState } from 'react'
 
 import {
@@ -52,7 +54,7 @@ export function StudentOralAdmission({
   if (query.error) {
     return (
       <p className="mt-5 text-small text-muted-foreground">
-        Не удалось загрузить окна устного приёма. Письменная сдача доступна ниже.
+        <Trans>Не удалось загрузить окна устного приёма. Письменная сдача доступна ниже.</Trans>
       </p>
     )
   }
@@ -68,7 +70,7 @@ export function StudentOralAdmission({
       setJoinError(
         error instanceof ApiResponseError
           ? error.message
-          : 'Не удалось получить ссылку. Попробуйте ещё раз.',
+          : t`Не удалось получить ссылку. Попробуйте ещё раз.`,
       )
     } finally {
       setJoiningWindowId(null)

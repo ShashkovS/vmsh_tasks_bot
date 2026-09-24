@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { Clock3 } from 'lucide-react'
 
 import { submissionDeadlineMessage } from '@vmsh/app-shell'
@@ -8,7 +9,9 @@ export function StudentSubmissionDeadlineNotice() {
     <Alert role="status" tone="warning">
       <Clock3 aria-hidden="true" />
       <AlertContent>
-        <AlertTitle>Приём завершён</AlertTitle>
+        <AlertTitle>
+          <Trans>Приём завершён</Trans>
+        </AlertTitle>
         <AlertDescription>{submissionDeadlineMessage()}</AlertDescription>
       </AlertContent>
     </Alert>

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo } from 'react'
 
 import {
@@ -62,16 +64,16 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
 
   if (courses.isPending) {
     return (
-      <PageLayout title="Прогресс">
+      <PageLayout title={t`Прогресс`}>
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (courses.error) {
     return (
-      <PageLayout title="Прогресс">
+      <PageLayout title={t`Прогресс`}>
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void courses.refetch()}
           state={courses.error instanceof CourseNetworkError ? 'offline' : 'error'}
         />
@@ -80,14 +82,14 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
   }
   if (!enrollment) {
     return (
-      <PageLayout title="Прогресс">
-        <PageStatePanel state="empty" title="Нет активных курсов" />
+      <PageLayout title={t`Прогресс`}>
+        <PageStatePanel state="empty" title={t`Нет активных курсов`} />
       </PageLayout>
     )
   }
   if (progress.isPending) {
     return (
-      <PageLayout title="Прогресс">
+      <PageLayout title={t`Прогресс`}>
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -95,10 +97,10 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
   if (progress.error) {
     const forbidden = progress.error instanceof ApiResponseError && progress.error.status === 403
     return (
-      <PageLayout title="Прогресс">
+      <PageLayout title={t`Прогресс`}>
         <PageStatePanel
           {...(!forbidden
-            ? { actionLabel: 'Повторить', onAction: () => void progress.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void progress.refetch() }
             : {})}
           state={
             forbidden
@@ -114,7 +116,7 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
 
   const view = toCourseEnrollmentView(enrollment)
   return (
-    <PageLayout title="Прогресс">
+    <PageLayout title={t`Прогресс`}>
       <div className="space-y-5">
         <CourseContext
           activeCourseId={view.course.id}
@@ -134,16 +136,18 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
             />
             {progress.data.summary.attempted > 0 ? (
               <p className="mt-3 text-small text-muted-foreground">
-                Частично решено: {progress.data.summary.partial} · нужно вернуться:{' '}
-                {progress.data.summary.needsWork} · ждут проверки:{' '}
-                {progress.data.summary.awaitingReview}
+                <Trans>
+                  Частично решено: {progress.data.summary.partial} · нужно вернуться:{' '}
+                  {progress.data.summary.needsWork} · ждут проверки:{' '}
+                  {progress.data.summary.awaitingReview}
+                </Trans>
               </p>
             ) : null}
           </CardContent>
         </Card>
-        <PageSection title="По занятиям">
+        <PageSection title={t`По занятиям`}>
           {progress.data.lessons.length === 0 ? (
-            <PageStatePanel state="empty" title="Пока нет проверенных задач" />
+            <PageStatePanel state="empty" title={t`Пока нет проверенных задач`} />
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border bg-surface">
               {progress.data.lessons.map((lesson) => (
@@ -151,19 +155,21 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
                   className="flex items-center justify-between gap-4 px-3 py-2"
                   key={lesson.lessonNumber}
                 >
-                  <span className="font-medium">Занятие {lesson.lessonNumber}</span>
-                  <span className="text-small text-muted-foreground">
-                    {lesson.accepted} зачтено из {lesson.attempted}
-                  </span>
+                  <Trans>
+                    <span className="font-medium">Занятие {lesson.lessonNumber}</span>
+                    <span className="text-small text-muted-foreground">
+                      {lesson.accepted} зачтено из {lesson.attempted}
+                    </span>
+                  </Trans>
                 </li>
               ))}
             </ul>
           )}
         </PageSection>
         {progress.data.analytics?.lessons.length ? (
-          <PageSection title="Как получается решать задачи">
+          <PageSection title={t`Как получается решать задачи`}>
             <StrengthTrend
-              caption="Ваша личная динамика по занятиям. С другими школьниками здесь не сравниваем."
+              caption={t`Ваша личная динамика по занятиям. С другими школьниками здесь не сравниваем.`}
               points={progress.data.analytics.lessons.map((lesson) => ({
                 lesson: String(lesson.lessonNumber),
                 simple: lesson.simpleStrength,
@@ -177,9 +183,11 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
             />
           </PageSection>
         ) : null}
-        <PageSection title="Дни работы">
+        <PageSection title={t`Дни работы`}>
           {progress.data.activity.length === 0 ? (
-            <p className="text-small text-muted-foreground">Отправок пока нет.</p>
+            <p className="text-small text-muted-foreground">
+              <Trans>Отправок пока нет.</Trans>
+            </p>
           ) : (
             <ActivityCalendar days={progress.data.activity} />
           )}

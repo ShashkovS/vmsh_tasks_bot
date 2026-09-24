@@ -889,6 +889,9 @@ async def test_pending_attempt_recheck_uses_previewed_current_configuration(
     assert {row["answer"] for row in results} == {"179", "180"}
     assert {record.outcome for record in history.attempts} == {"correct", "wrong"}
     assert {record.feedback for record in history.attempts} == {"Да.", "Нет."}
+    # Recheck copy came from a newer configuration than the immutable attempt
+    # revision, so it must remain authored/source-language data (P3.3).
+    assert {record.feedback_source for record in history.attempts} == {None}
 
     repeated = await fixture.repository.recheck_pending_test_attempts(
         problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
@@ -1706,6 +1709,131 @@ async def test_history_is_reverse_ordered_paginated_and_keeps_safe_feedback(
     assert second_page.attempts[0].display_answer == "8"
     assert second_page.attempts[0].feedback == "Нет, это другое число."
     assert second_page.next_cursor is None
+
+
+async def test_null_feedback_configuration_marks_only_built_in_copy_for_localization(
+    submission_fixture: SubmissionFixture,
+):
+    """P3.3 keeps raw receipt bytes but records provenance for known defaults."""
+
+    fixture = submission_fixture
+    default_config = json.dumps(
+        {
+            "schemaVersion": 1,
+            "answerType": int(ANS_TYPE.INTEGER),
+            "answerValidation": None,
+            "validationError": None,
+            "correctAnswer": "179",
+            "correctAnswerChecker": None,
+            "wrongAnswer": None,
+            "congratulation": None,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    publish_pending_problem_configuration(fixture, answer_config_json=default_config)
+    correct = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            answer="179",
+            key="built-in-feedback-correct",
+        )
+    )
+    wrong = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            answer="180",
+            key="built-in-feedback-wrong",
+        )
+    )
+    invalid = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            answer="not-an-integer",
+            key="built-in-feedback-invalid",
+        )
+    )
+
+    assert [receipt.feedback for receipt in (correct, wrong, invalid)] == [
+        "Да, всё верно!",
+        "Нет, ответ неверный.",
+        "Проверьте формат ответа.",
+    ]
+    assert {receipt.feedback_source for receipt in (correct, wrong, invalid)} == {
+        "built_in"
+    }
+    stored = fixture.factory.run_read(
+        lambda connection: [
+            json.loads(row["response_json"])
+            for row in connection.execute(
+                "SELECT response_json FROM idempotency_records "
+                "WHERE operation = 'test-attempt:create' ORDER BY id"
+            ).fetchall()
+        ]
+    )
+    assert [item["feedback"] for item in stored] == [
+        "Да, всё верно!",
+        "Нет, ответ неверный.",
+        "Проверьте формат ответа.",
+    ]
+    assert {item["feedbackSource"] for item in stored} == {"built_in"}
+
+    history = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+    )
+    assert {attempt.feedback_source for attempt in history.attempts} == {"built_in"}
+
+
+async def test_authored_feedback_is_never_inferred_from_matching_default_text(
+    submission_fixture: SubmissionFixture,
+):
+    """An author may intentionally use a phrase equal to a product default."""
+
+    fixture = submission_fixture
+    authored = await fixture.repository.submit_test_answer(
+        command(fixture, key="authored-feedback-matches-default")
+    )
+    assert authored.feedback == "Да, всё верно!"
+    assert authored.feedback_source is None
+    stored = fixture.factory.run_read(
+        lambda connection: json.loads(
+            connection.execute(
+                "SELECT response_json FROM idempotency_records "
+                "WHERE operation = 'test-attempt:create'"
+            ).fetchone()["response_json"]
+        )
+    )
+    assert "feedbackSource" not in stored
+
+    custom_config = json.dumps(
+        {
+            "schemaVersion": 1,
+            "answerType": int(ANS_TYPE.INTEGER),
+            "answerValidation": None,
+            "validationError": "Use an integer.",
+            "correctAnswer": "179",
+            "correctAnswerChecker": None,
+            "wrongAnswer": "That is not correct.",
+            "congratulation": "Great job!",
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    publish_pending_problem_configuration(fixture, answer_config_json=custom_config)
+    custom = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            answer="179",
+            key="authored-feedback-english",
+        )
+    )
+    assert custom.feedback == "Great job!"
+    assert custom.feedback_source is None
 
 
 async def test_history_allows_empty_current_problem_and_old_owned_work_after_access_revoked(

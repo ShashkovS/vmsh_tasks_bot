@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import type { CourseEnrollment, StudentHomeCourse } from '@vmsh/contracts'
 import type { CourseEnrollmentView } from '@vmsh/product'
 
@@ -31,7 +33,7 @@ export function toCourseEnrollmentView(enrollment: CourseEnrollment): CourseEnro
 }
 
 export function formatCalendarDate(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     timeZone: 'UTC',
@@ -39,7 +41,7 @@ export function formatCalendarDate(value: string): string {
 }
 
 function formatDeadline(value: string, timezone: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -49,7 +51,7 @@ function formatDeadline(value: string, timezone: string): string {
 }
 
 export function studentPhaseLabel(course: StudentHomeCourse): string {
-  if (course.phase === 'no_lesson') return 'Новое занятие пока не опубликовано'
+  if (course.phase === 'no_lesson') return t`Новое занятие пока не опубликовано`
   const deadline = course.currentLesson.window
     ? formatDeadline(
         course.currentLesson.window.submissionClosesAt,
@@ -58,17 +60,17 @@ export function studentPhaseLabel(course: StudentHomeCourse): string {
     : null
   switch (course.phase) {
     case 'materials_only':
-      return 'Материалы занятия уже опубликованы'
+      return t`Материалы занятия уже опубликованы`
     case 'published':
-      return 'Условие опубликовано · время сдачи уточняется'
+      return t`Условие опубликовано · время сдачи уточняется`
     case 'solving':
-      return deadline ? `Решаем задачи · до ${deadline}` : 'Решаем задачи'
+      return deadline ? t`Решаем задачи · до ${deadline}` : t`Решаем задачи`
     case 'hints':
-      return deadline ? `Подсказки опубликованы · до ${deadline}` : 'Подсказки опубликованы'
+      return deadline ? t`Подсказки опубликованы · до ${deadline}` : t`Подсказки опубликованы`
     case 'checking':
-      return 'Приём завершён · идёт проверка'
+      return t`Приём завершён · идёт проверка`
     case 'solutions':
-      return 'Решения опубликованы'
+      return t`Решения опубликованы`
   }
 }
 
@@ -77,11 +79,11 @@ export function problemCountLabel(count: number): string {
   const modulo10 = count % 10
   const noun =
     modulo100 >= 11 && modulo100 <= 14
-      ? 'задач'
+      ? t`задач`
       : modulo10 === 1
-        ? 'задача'
+        ? t`задача`
         : modulo10 >= 2 && modulo10 <= 4
-          ? 'задачи'
-          : 'задач'
-  return `${count} ${noun} в листке`
+          ? t`задачи`
+          : t`задач`
+  return t`${count} ${noun} в листке`
 }

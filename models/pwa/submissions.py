@@ -22,6 +22,7 @@ from enum import StrEnum
 
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
 from helpers.consts import ANS_TYPE, VERDICT
+from helpers.pwa.i18n import N_
 from helpers.pwa.test_checkers import (
     TRUSTED_CHECKER_PATTERN,
     TrustedCheckerExecutor,
@@ -32,6 +33,7 @@ from helpers.pwa.test_checkers import (
 NORMALIZED_ANSWER_SCHEMA_VERSION = 1
 CHECKER_POLICY_VERSION = "pwa-test-checker-v2"
 SELECT_ONE_COMPATIBILITY_LIMIT = 24
+BUILT_IN_FEEDBACK_SOURCE = "built_in"
 
 
 class SubmissionConfigurationError(ValueError):
@@ -112,6 +114,7 @@ class TestAnswerEvaluation:
     checker_version: str | None
     verdict: VERDICT | None
     feedback: str | None
+    feedback_source: str | None = None
     checker_message: str | None = None
     diagnostic_code: str | None = None
 
@@ -254,7 +257,11 @@ def _invalid_format(
         outcome=TestAnswerOutcome.INVALID_FORMAT,
         checker_version=None,
         verdict=None,
-        feedback=config.validation_error or "Проверьте формат ответа.",
+        feedback=config.validation_error
+        or N_("Проверьте формат ответа."),
+        feedback_source=(
+            BUILT_IN_FEEDBACK_SOURCE if config.validation_error is None else None
+        ),
     )
 
 
@@ -278,7 +285,8 @@ def _pending_configuration(
         outcome=TestAnswerOutcome.PENDING_CONFIGURATION,
         checker_version=None,
         verdict=None,
-        feedback="Ответ принят и ожидает настройки проверки.",
+        feedback=N_("Ответ принят и ожидает настройки проверки."),
+        feedback_source=BUILT_IN_FEEDBACK_SOURCE,
         diagnostic_code=diagnostic_code,
     )
 
@@ -305,9 +313,14 @@ def _checked(
         checker_version=checker_version(config),
         verdict=VERDICT.SOLVED if correct else VERDICT.WRONG_ANSWER,
         feedback=(
-            config.congratulation or "Да, всё верно!"
+            config.congratulation or N_("Да, всё верно!")
             if correct
-            else config.wrong_answer or "Нет, ответ неверный."
+            else config.wrong_answer or N_("Нет, ответ неверный.")
+        ),
+        feedback_source=(
+            BUILT_IN_FEEDBACK_SOURCE
+            if (config.congratulation if correct else config.wrong_answer) is None
+            else None
         ),
         checker_message=checker_message,
     )
@@ -461,7 +474,8 @@ def evaluate_test_answer(
             outcome=TestAnswerOutcome.CHECKER_FAILED,
             checker_version=checker_version(config),
             verdict=None,
-            feedback="Ответ сохранён, но проверка временно недоступна.",
+            feedback=N_("Ответ сохранён, но проверка временно недоступна."),
+            feedback_source=BUILT_IN_FEEDBACK_SOURCE,
             diagnostic_code="standard_checker_failed",
         )
     return _checked(
@@ -473,8 +487,38 @@ def evaluate_test_answer(
     )
 
 
+def built_in_feedback(
+    config: TestProblemAnswerConfig,
+    outcome: TestAnswerOutcome | str,
+) -> str | None:
+    """Return a default only when configuration proves no author copy exists.
+
+    Attempt rows intentionally store the rendered feedback rather than a
+    destructive locale-specific rewrite.  This helper is the provenance check
+    used by the Student HTTP boundary: a matching phrase alone is never enough
+    to translate it.  See P3.3 in 24-i18n-execution-plan.md.
+    """
+
+    try:
+        resolved = TestAnswerOutcome(outcome)
+    except ValueError:
+        return None
+    if resolved is TestAnswerOutcome.INVALID_FORMAT:
+        return N_("Проверьте формат ответа.") if config.validation_error is None else None
+    if resolved is TestAnswerOutcome.PENDING_CONFIGURATION:
+        return N_("Ответ принят и ожидает настройки проверки.")
+    if resolved is TestAnswerOutcome.CHECKER_FAILED:
+        return N_("Ответ сохранён, но проверка временно недоступна.")
+    if resolved is TestAnswerOutcome.CORRECT:
+        return N_("Да, всё верно!") if config.congratulation is None else None
+    if resolved is TestAnswerOutcome.WRONG:
+        return N_("Нет, ответ неверный.") if config.wrong_answer is None else None
+    return None
+
+
 __all__ = [
     "CHECKER_POLICY_VERSION",
+    "BUILT_IN_FEEDBACK_SOURCE",
     "NORMALIZED_ANSWER_SCHEMA_VERSION",
     "SubmissionClockAssessment",
     "SubmissionConfigurationError",
@@ -485,6 +529,7 @@ __all__ = [
     "TestAttemptParseStatus",
     "TestProblemAnswerConfig",
     "assess_submission_clock",
+    "built_in_feedback",
     "checker_version",
     "evaluation_version",
     "evaluate_test_answer",
