@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -110,7 +112,7 @@ export function StaffOralResultsPage({ groupLessonId }: { groupLessonId: string 
 
   if (!allowed) {
     return (
-      <PageLayout title="Устный приём" width="wide">
+      <PageLayout title={t`Устный приём`} width="wide">
         <PageStatePanel state="forbidden" />
       </PageLayout>
     )
@@ -132,9 +134,9 @@ export function StaffOralResultsPage({ groupLessonId }: { groupLessonId: string 
 
   return (
     <PageLayout
-      description="Выберите школьника, отметьте принятые задачи и сохраните один раунд. Черновик не теряется при перезагрузке."
-      eyebrow={`Групповое занятие ${groupLessonId}`}
-      title="Результаты устного приёма"
+      description={t`Выберите школьника, отметьте принятые задачи и сохраните один раунд. Черновик не теряется при перезагрузке.`}
+      eyebrow={t`Групповое занятие ${groupLessonId}`}
+      title={t`Результаты устного приёма`}
       width="wide"
     >
       {query.isPending ? <PageStatePanel state="loading" /> : null}
@@ -143,7 +145,9 @@ export function StaffOralResultsPage({ groupLessonId }: { groupLessonId: string 
         <Alert tone="info">
           <AlertContent>
             <AlertDescription>
-              Нет online-школьников или опубликованных устных задач для этого занятия.
+              <Trans>
+                Нет online-школьников или опубликованных устных задач для этого занятия.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -179,12 +183,12 @@ export function StaffOralResultsPage({ groupLessonId }: { groupLessonId: string 
         <p className="text-small text-destructive" role="alert">
           {mutation.error instanceof ApiResponseError
             ? mutation.error.message
-            : 'Не удалось сохранить устные результаты.'}
+            : t`Не удалось сохранить устные результаты.`}
         </p>
       ) : null}
       {mutation.isSuccess ? (
         <p className="text-small text-status-success" role="status">
-          Результаты сохранены.
+          <Trans>Результаты сохранены.</Trans>
         </p>
       ) : null}
     </PageLayout>

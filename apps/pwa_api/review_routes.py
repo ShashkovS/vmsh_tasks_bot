@@ -1725,7 +1725,8 @@ async def correct_completed_review(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=409,
             code="review_already_claimed",
-            message=f"Сейчас проверяет {error}",
+            message="Сейчас проверяет {teacher}",
+            params={"teacher": str(error)},
         ) from error
     except ReviewCorrectionNotFound as error:
         raise PwaApiError(

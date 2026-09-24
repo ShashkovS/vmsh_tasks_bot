@@ -232,11 +232,11 @@ export const liveVisitsSchema = z.object({
 export const liveSessionReceiptSchema = z.object({ ...envelope, sessionId: id })
 export const liveVisitReceiptSchema = liveVisitSchema.extend(envelope)
 export const LIVE_REACTIONS = [
-  { id: 300, label: 'Очень круто!', short: '👍 Круто' },
-  { id: 301, label: 'Мутно', short: '🌫 Мутно' },
-  { id: 304, label: 'Похоже на ИИ', short: '🤖 ИИ' },
-  { id: 305, label: 'Помогают родители', short: '👪 Родители' },
-  { id: 303, label: 'Проблемы со связью', short: '📡 Связь' },
+  { id: 300 },
+  { id: 301 },
+  { id: 304 },
+  { id: 305 },
+  { id: 303 },
 ] as const
 
 export const liveConditionSchema = z.object({

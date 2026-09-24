@@ -1,5 +1,21 @@
 # Статус плана разработки
 
+## Интернационализация, P4 — 24 сентября 2026, реализовано локально
+
+Staff review queue/workspace, history/series/reactions, live marking, student
+results, oral results, statistics и test-answer rechecks доступны на английском.
+Системные реакции локализуются по stable ID в presentation boundary; неизвестные
+historical labels, имена, курсы/группы, названия задач, условия, комментарии,
+вложения, exports и protocol values остаются исходными данными. Dynamic review
+lease error переводится через backend catalog с named parameter. Прошли focused
+Python 75/75, frontend unit 903/903, lint, typecheck, build, обе i18n-проверки,
+i18n E2E 21/21, review E2E 6/6 и student-results E2E 6/6 в трёх браузерах.
+P3 → P4: максимум +7.9 KB initial JS и +12 мс cold FCP. Global Python suite
+отдельно воспроизводит 7 stale generated-artifact/guard failures вне P4; общий
+format check — 9 прежних файлов вне области. [План и P5](24-i18n.md),
+[англоязычная процедура](24-i18n-execution-plan.md),
+[замеры](../i18n-performance-report.md).
+
 ## Интернационализация, P3 — 24 сентября 2026, реализовано локально
 
 Student home/tasks/progress/profile, карточки задач, сдача короткого и

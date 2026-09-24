@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useId, useMemo, useState } from 'react'
 
 import type { OralResultOutcome, StaffOralRosterResponse } from '@vmsh/contracts'
@@ -65,23 +67,27 @@ export function OralResultForm({
       <CardContent className="space-y-4 py-4">
         <div className="grid gap-2 sm:grid-cols-[minmax(10rem,0.65fr)_minmax(14rem,1fr)]">
           <div className="space-y-1">
-            <Label htmlFor={searchId}>Быстрый поиск</Label>
+            <Label htmlFor={searchId}>
+              <Trans>Быстрый поиск</Trans>
+            </Label>
             <Input
               id={searchId}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Фамилия или имя"
+              placeholder={t`Фамилия или имя`}
               value={search}
             />
           </div>
           <div className="space-y-1">
-            <Label id={studentIdLabel}>Школьник</Label>
+            <Label id={studentIdLabel}>
+              <Trans>Школьник</Trans>
+            </Label>
             <Select
               disabled={busy}
               onValueChange={(value) => onStudentChange(value ?? '')}
               value={studentId || null}
             >
               <SelectTrigger aria-labelledby={studentIdLabel} className="w-full" size="sm">
-                <SelectValue>{selected?.displayName ?? 'Выберите школьника'}</SelectValue>
+                <SelectValue>{selected?.displayName ?? t`Выберите школьника`}</SelectValue>
               </SelectTrigger>
               <SelectContent align="start">
                 {filteredStudents.map((student) => (
@@ -95,7 +101,9 @@ export function OralResultForm({
         </div>
 
         <fieldset className="space-y-1.5" disabled={busy || !studentId}>
-          <legend className="mb-1 text-label font-medium">Задачи</legend>
+          <legend className="mb-1 text-label font-medium">
+            <Trans>Задачи</Trans>
+          </legend>
           {problems.map((problem) => {
             const value = marks[problem.problemId] ?? 'unmarked'
             return (
@@ -108,15 +116,15 @@ export function OralResultForm({
                   {problem.title}
                 </p>
                 <div
-                  aria-label={`Результат задачи ${problem.displayNumber}`}
+                  aria-label={t`Результат задачи ${problem.displayNumber}`}
                   className="flex gap-1"
                   role="group"
                 >
                   {(
                     [
-                      ['unmarked', '—', 'Не отмечено'],
-                      ['accepted', '+', 'Зачтено'],
-                      ['rejected', '−', 'Не зачтено'],
+                      ['unmarked', '—', t`Не отмечено`],
+                      ['accepted', '+', t`Зачтено`],
+                      ['rejected', '−', t`Не зачтено`],
                     ] as const
                   ).map(([option, symbol, label]) => (
                     <button
@@ -149,7 +157,7 @@ export function OralResultForm({
           compact
           disabled={busy || !studentId}
           hotkeys
-          legend="Внутренняя пометка"
+          legend={t`Внутренняя пометка`}
           onSelect={onReactionChange}
           options={reactions}
           value={reactionId}
@@ -157,10 +165,12 @@ export function OralResultForm({
 
         <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
           <p className="text-caption text-muted-foreground">
-            Отмечено: {markedCount} из {problems.length}
+            <Trans>
+              Отмечено: {markedCount} из {problems.length}
+            </Trans>
           </p>
           <Button disabled={busy || !studentId || markedCount === 0} onClick={onSubmit} size="sm">
-            {busy ? 'Сохраняем…' : 'Сохранить результаты'}
+            {busy ? t`Сохраняем…` : t`Сохранить результаты`}
           </Button>
         </div>
       </CardContent>

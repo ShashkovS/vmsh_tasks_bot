@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { ArrowDown, ArrowUpDown } from 'lucide-react'
 
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, cn } from '@vmsh/ui'
@@ -105,9 +107,11 @@ export function ReviewQueue({
         <div className="flex flex-wrap items-center justify-between gap-2">
           {showSummary ? (
             <p className="text-small text-muted-foreground" role="status">
-              В очереди: <span className="font-medium text-foreground">{items.length}</span>
+              <Trans>
+                В очереди: <span className="font-medium text-foreground">{items.length}</span>
+              </Trans>
               {oldest > 0
-                ? `, дольше всех ждёт ${Math.floor(oldest / 60)} ч ${oldest % 60} мин`
+                ? t`, дольше всех ждёт ${Math.floor(oldest / 60)} ч ${oldest % 60} мин`
                 : ''}
             </p>
           ) : null}
@@ -126,7 +130,7 @@ export function ReviewQueue({
                   onClick={() => onModeChange(value)}
                   type="button"
                 >
-                  {value === 'list' ? 'Список' : 'По одной'}
+                  {value === 'list' ? t`Список` : t`По одной`}
                 </button>
               ))}
             </div>
@@ -138,17 +142,36 @@ export function ReviewQueue({
         <Table>
           <TableHeader>
             <TableRow>
-              <SortHead active={sort} label="Задача" onSortChange={onSortChange} sortKey="task" />
-              <TableHead>Уровень</TableHead>
-              <SortHead active={sort} label="Группа" onSortChange={onSortChange} sortKey="group" />
               <SortHead
                 active={sort}
-                label="Ученик"
+                label={t`Задача`}
+                onSortChange={onSortChange}
+                sortKey="task"
+              />
+              <TableHead>
+                <Trans>Уровень</Trans>
+              </TableHead>
+              <SortHead
+                active={sort}
+                label={t`Группа`}
+                onSortChange={onSortChange}
+                sortKey="group"
+              />
+              <SortHead
+                active={sort}
+                label={t`Ученик`}
                 onSortChange={onSortChange}
                 sortKey="student"
               />
-              <SortHead active={sort} label="Ждёт" onSortChange={onSortChange} sortKey="waiting" />
-              <TableHead className="text-right">Действие</TableHead>
+              <SortHead
+                active={sort}
+                label={t`Ждёт`}
+                onSortChange={onSortChange}
+                sortKey="waiting"
+              />
+              <TableHead className="text-right">
+                <Trans>Действие</Trans>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -169,15 +192,15 @@ export function ReviewQueue({
                 <TableCell className="text-right">
                   {item.busyBy ? (
                     <span className="text-caption text-muted-foreground">
-                      Проверяет {item.busyBy}
+                      <Trans>Проверяет {item.busyBy}</Trans>
                     </span>
                   ) : item.reviewed ? (
                     <Button onClick={() => onRecheck?.(item.id)} size="xs" variant="ghost">
-                      Перепроверить
+                      <Trans>Перепроверить</Trans>
                     </Button>
                   ) : (
                     <Button onClick={() => onOpen?.(item.id)} size="xs" variant="outline">
-                      Открыть
+                      <Trans>Открыть</Trans>
                     </Button>
                   )}
                 </TableCell>

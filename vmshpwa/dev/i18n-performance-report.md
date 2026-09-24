@@ -106,3 +106,34 @@ preloaded вместе с entry.
 
 Максимальное ухудшение — +4 ms cold FCP, меньше лимита +30 ms. P3 укладывается
 в performance budget.
+
+## P4 — 24 сентября 2026
+
+P4 сравнивается с P3 в том же рабочем дереве, на той же машине, Node 26.9.0 и
+pnpm 11.15.1. Измерение использует production build после P4 и ту же методику:
+brotli quality 11; Chromium, 9 запусков, 40 ms RTT / 12 Мбит/с для FCP.
+
+### Бандлы (brotli)
+
+| App     | Initial JS, P3 | Initial JS, P4 | Δ       | Total JS, P3 | Total JS, P4 | Каталог ru / en, P4 |
+| ------- | -------------: | -------------: | ------- | -----------: | -----------: | ------------------- |
+| student |       382.8 KB |       385.1 KB | +2.3 KB |     428.4 KB |     432.5 KB | 14.7 / 12.3 KB      |
+| family  |       353.2 KB |       355.5 KB | +2.3 KB |     381.4 KB |     385.7 KB | 12.5 / 10.3 KB      |
+| staff   |       439.3 KB |       447.2 KB | +7.9 KB |     760.2 KB |     771.0 KB | 17.0 / 14.3 KB      |
+| landing |        64.1 KB |        64.1 KB | +0.0 KB |      64.2 KB |      64.1 KB | 0.2 / 0.1 KB        |
+
+Максимальный прирост initial JS — +7.9 KB Staff, меньше лимита +10 KB.
+Staff-каталог вырос за счёт P4 chrome, а live-marking держит locale-sensitive
+copy вне hot cell loop; catalog по-прежнему preloaded вместе с entry.
+
+### Старт (FCP, медиана, 9 прогонов)
+
+| App     | Cold, P3 | Cold, P4 | Δ      | Warm, P3 | Warm, P4 | Δ    |
+| ------- | -------: | -------: | ------ | -------: | -------: | ---- |
+| student |   496 ms |   496 ms | 0 ms   |   104 ms |   104 ms | 0 ms |
+| family  |   468 ms |   464 ms | -4 ms  |   104 ms |   104 ms | 0 ms |
+| staff   |   636 ms |   648 ms | +12 ms |   104 ms |   104 ms | 0 ms |
+| landing |   200 ms |   200 ms | 0 ms   |   140 ms |   140 ms | 0 ms |
+
+Максимальное ухудшение — +12 ms cold FCP, меньше лимита +30 ms. P4 укладывается
+в performance budget.

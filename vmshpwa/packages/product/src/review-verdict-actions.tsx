@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { useEffect } from 'react'
 
 import { cn } from '@vmsh/ui'
@@ -80,7 +81,9 @@ export function VerdictActions({
         })}
       </div>
       <p className="text-caption text-muted-foreground">
-        Клавиши 1–{ordered.length}: от лучшего к худшему, 1 — «+». Не срабатывают в поле ввода.
+        <Trans>
+          Клавиши 1–{ordered.length}: от лучшего к худшему, 1 — «+». Не срабатывают в поле ввода.
+        </Trans>
       </p>
     </div>
   )

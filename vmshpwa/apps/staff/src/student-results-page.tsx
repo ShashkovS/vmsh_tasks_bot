@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDateTime } from '@vmsh/i18n'
 import { useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { onlineManager, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -46,7 +49,7 @@ function Tables({
             // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
             tabIndex={0}
             role="region"
-            aria-label={`Плюсы · ${g.name}`}
+            aria-label={t`Плюсы · ${g.name}`}
           >
             <table className="w-full border-collapse text-center text-small">
               <thead>
@@ -72,7 +75,7 @@ function Tables({
                       <button
                         type="button"
                         className="min-h-10 w-full px-2 hover:bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-                        aria-label={`История оценки · задача ${p.label} · ${g.name}`}
+                        aria-label={t`История оценки · задача ${p.label} · ${g.name}`}
                         onClick={(event) => {
                           event.currentTarget.focus()
                           onGrade(p.problemId, `${p.label} · ${g.name}`)
@@ -173,32 +176,41 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
   return (
     <main className="mx-auto w-full min-w-0 max-w-6xl space-y-4 p-2 sm:p-4">
       <header className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-lg font-semibold">Результаты школьника</h1>
+        <h1 className="mr-auto text-lg font-semibold">
+          <Trans>Результаты школьника</Trans>
+        </h1>
         <Button variant="outline" size="sm" onClick={refresh}>
-          Обновить
+          <Trans>Обновить</Trans>
         </Button>
       </header>
       {!online && (
         <p role="status" className="text-small text-muted-foreground">
-          Нет соединения. Доступны загруженные результаты; обновление продолжится после подключения.
+          <Trans>
+            Нет соединения. Доступны загруженные результаты; обновление продолжится после
+            подключения.
+          </Trans>
         </p>
       )}
       {(!search.student || searchOpen || overview.isError) && (
-        <section aria-label="Поиск школьника" className="space-y-2">
+        <section aria-label={t`Поиск школьника`} className="space-y-2">
           <label className="text-small font-medium" htmlFor="results-student-search">
-            Фамилия и имя
+            <Trans>Фамилия и имя</Trans>
           </label>
           <Input
             id="results-student-search"
             autoComplete="off"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Найти школьника…"
+            placeholder={t`Найти школьника…`}
           />
-          {directory.isPending && <p role="status">Загружаем список…</p>}
+          {directory.isPending && (
+            <p role="status">
+              <Trans>Загружаем список…</Trans>
+            </p>
+          )}
           {directory.isError && (
             <p role="alert">
-              Не удалось загрузить список. Проверьте соединение и нажмите «Обновить».
+              <Trans>Не удалось загрузить список. Проверьте соединение и нажмите «Обновить».</Trans>
             </p>
           )}
           <ul className="max-h-72 overflow-auto divide-y rounded border">
@@ -214,46 +226,56 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                 >
                   <span className="block text-small font-semibold">{s.name}</span>
                   <span className="text-caption text-muted-foreground">
-                    {[s.grade ? `${s.grade} кл.` : '', s.middleName, s.groups]
+                    {[s.grade ? t`${s.grade} кл.` : '', s.middleName, s.groups]
                       .filter(Boolean)
-                      .join(' · ') || 'Архивный школьник'}
+                      .join(' · ') || t`Архивный школьник`}
                   </span>
                 </button>
               </li>
             ))}
           </ul>
-          {directory.data && !matches.length && <p>Школьники не найдены.</p>}
+          {directory.data && !matches.length && (
+            <p>
+              <Trans>Школьники не найдены.</Trans>
+            </p>
+          )}
           {matches.length === 50 && (
             <p className="text-caption text-muted-foreground">
-              Первые 50 совпадений — уточните имя.
+              <Trans>Первые 50 совпадений — уточните имя.</Trans>
             </p>
           )}
         </section>
       )}
       {overview.isError && (
         <p role="alert">
-          Не удалось открыть результаты. Проверьте соединение или выберите другого школьника.
+          <Trans>
+            Не удалось открыть результаты. Проверьте соединение или выберите другого школьника.
+          </Trans>
         </p>
       )}
-      {search.student && overview.isPending && <p role="status">Загружаем сводку…</p>}
+      {search.student && overview.isPending && (
+        <p role="status">
+          <Trans>Загружаем сводку…</Trans>
+        </p>
+      )}
       {data && (
         <>
           <div className="flex flex-wrap items-center gap-2">
             <div className="mr-auto min-w-0">
               <h2 className="font-semibold">{data.student.name}</h2>
               <p className="text-caption text-muted-foreground">
-                {[data.student.grade ? `${data.student.grade} кл.` : '', data.student.middleName]
+                {[data.student.grade ? t`${data.student.grade} кл.` : '', data.student.middleName]
                   .filter(Boolean)
                   .join(' · ')}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => setSearchOpen((v) => !v)}>
-              Сменить школьника
+              <Trans>Сменить школьника</Trans>
             </Button>
             {data.courses.length > 1 && (
               <select
                 className={selectStyle}
-                aria-label="Курс"
+                aria-label={t`Курс`}
                 value={course}
                 onChange={(e) => {
                   setGrade(null)
@@ -269,7 +291,7 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
             )}
           </div>
           <section
-            aria-label="Плюсы по всем занятиям"
+            aria-label={t`Плюсы по всем занятиям`}
             className="grid min-w-0 gap-3 lg:grid-cols-2"
           >
             {data.summaries.map((s) => (
@@ -278,45 +300,53 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                 className={`min-w-0 space-y-2 rounded-lg border p-2 ${s.number === number ? 'border-primary bg-accent/30' : ''}`}
               >
                 <Button variant="ghost" size="sm" onClick={() => chooseLesson(s.number)}>
-                  Занятие {s.number}
-                  {s.number === number ? ' · выбрано' : ''}
+                  <Trans>Занятие {s.number}</Trans>
+                  {s.number === number ? t` · выбрано` : ''}
                 </Button>
                 <Tables groups={s.groups} onGrade={(id, label) => setGrade({ id, label })} />
               </article>
             ))}
           </section>
           {!data.summaries.length && (
-            <p className="text-small text-muted-foreground">Результатов и посылок пока нет.</p>
+            <p className="text-small text-muted-foreground">
+              <Trans>Результатов и посылок пока нет.</Trans>
+            </p>
           )}
           {course && number !== undefined && (
             <section
               ref={detailRef}
               tabIndex={-1}
-              aria-label="История занятия"
+              aria-label={t`История занятия`}
               className="min-w-0 space-y-4 scroll-mt-3"
             >
               <div className="flex flex-wrap items-center gap-2 border-b pb-2">
-                <h2 className="mr-auto font-semibold">История занятия</h2>
+                <h2 className="mr-auto font-semibold">
+                  <Trans>История занятия</Trans>
+                </h2>
                 <select
-                  aria-label="Занятие"
+                  aria-label={t`Занятие`}
                   className={selectStyle}
                   value={number}
                   onChange={(e) => chooseLesson(Number(e.target.value))}
                 >
                   {data.lessons.map((l) => (
                     <option key={l.number} value={l.number}>
-                      Занятие {l.number}
-                      {l.hasActivity ? '' : ' · без результатов'}
+                      <Trans>Занятие {l.number}</Trans>
+                      {l.hasActivity ? '' : t` · без результатов`}
                     </option>
                   ))}
                 </select>
               </div>
-              {lesson.isPending && <p role="status">Загружаем посылки…</p>}
+              {lesson.isPending && (
+                <p role="status">
+                  <Trans>Загружаем посылки…</Trans>
+                </p>
+              )}
               {lesson.isError && (
                 <p role="alert">
-                  История недоступна.{' '}
+                  <Trans>История недоступна. </Trans>
                   <Button variant="outline" onClick={() => void lesson.refetch()}>
-                    Повторить
+                    <Trans>Повторить</Trans>
                   </Button>
                 </p>
               )}
@@ -324,20 +354,21 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                 <>
                   {lesson.data.notes.some((n) => n.reaction || n.action !== 'current') && (
                     <aside className="rounded border bg-surface-subtle p-3">
-                      <h3 className="mb-2 text-small font-semibold">Пометки Zoom-приёма</h3>
+                      <h3 className="mb-2 text-small font-semibold">
+                        <Trans>Пометки Zoom-приёма</Trans>
+                      </h3>
                       {lesson.data.notes
                         .filter((n) => n.reaction || n.action !== 'current')
                         .map((n, i) => (
                           <p key={`${n.id}-${i}`} className="text-small">
                             {n.action === 'undo'
-                              ? 'Отмена: '
+                              ? t`Отмена: `
                               : n.action === 'changed'
-                                ? 'Пометки: '
+                                ? t`Пометки: `
                                 : ''}
-                            {n.reaction ?? 'сняты'}{' '}
+                            {n.reaction ?? t`сняты`}{' '}
                             <span className="text-caption text-muted-foreground">
-                              · {n.author} ·{' '}
-                              {new Date(n.reaction_at ?? n.ts).toLocaleString('ru-RU')}
+                              · {n.author} · {formatDateTime(new Date(n.reaction_at ?? n.ts))}
                             </span>
                           </p>
                         ))}
@@ -345,7 +376,7 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                   )}
                   {!lesson.data.groups.length && (
                     <p className="text-small text-muted-foreground">
-                      Отправленных решений и тестовых попыток в этом занятии нет.
+                      <Trans>Отправленных решений и тестовых попыток в этом занятии нет.</Trans>
                     </p>
                   )}
                   {lesson.data.groups.map((g) => (
@@ -358,10 +389,11 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                         >
                           <header className="flex flex-wrap items-center gap-2">
                             <h4 className="mr-auto min-w-0 break-words font-semibold">
-                              Задача {p.label}.{p.title ? ` «${p.title}»` : ''}
+                              <Trans>Задача {p.label}.</Trans>
+                              {p.title ? ` «${p.title}»` : ''}
                             </h4>
                             <span className="text-caption text-muted-foreground">
-                              Текущий результат
+                              <Trans>Текущий результат</Trans>
                             </span>
                             <ResultMark
                               value={p.current?.verdict ?? null}
@@ -369,7 +401,7 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                             />
                             {p.reviewUrl && (
                               <a className="text-small text-primary underline" href={p.reviewUrl}>
-                                Открыть проверку
+                                <Trans>Открыть проверку</Trans>
                               </a>
                             )}
                           </header>
@@ -399,8 +431,12 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
       >
         <DialogContent className="max-h-[85svh] overflow-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>История оценки · {grade?.label}</DialogTitle>
-            <DialogDescription>Все сохранённые изменения и ответы по задаче</DialogDescription>
+            <DialogTitle>
+              <Trans>История оценки · {grade?.label}</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>Все сохранённые изменения и ответы по задаче</Trans>
+            </DialogDescription>
           </DialogHeader>
           {grade && search.student && (
             <ResultHistory

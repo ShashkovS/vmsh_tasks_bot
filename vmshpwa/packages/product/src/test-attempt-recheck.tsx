@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { CheckCircle2, CircleAlert, RefreshCw, Wrench } from 'lucide-react'
 
 import {
@@ -88,11 +90,13 @@ export function TestAttemptRecheckPanel({
 }: TestAttemptRecheckPanelProps) {
   if (loading) {
     return (
-      <Card aria-label="Загрузка тестовых ответов" className={className} role="status">
+      <Card aria-label={t`Загрузка тестовых ответов`} className={className} role="status">
         <CardContent className="space-y-3 pt-5">
           <Skeleton className="h-5 w-52" />
           <Skeleton className="h-10 w-full" />
-          <span className="sr-only">Загружаем сохранённые тестовые ответы</span>
+          <span className="sr-only">
+            <Trans>Загружаем сохранённые тестовые ответы</Trans>
+          </span>
         </CardContent>
       </Card>
     )
@@ -105,48 +109,53 @@ export function TestAttemptRecheckPanel({
           <div className="min-w-0">
             <h2 className="flex items-center gap-2 text-small font-semibold text-foreground">
               <Wrench aria-hidden="true" className="size-4 text-muted-foreground" />
-              Перепроверка тестовых ответов
+              <Trans>Перепроверка тестовых ответов</Trans>
             </h2>
             <p className="mt-1 max-w-2xl text-caption leading-5 text-muted-foreground">
-              Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные
-              посылки останутся неизменными, а прежний вердикт может измениться.
+              <Trans>
+                Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные
+                посылки останутся неизменными, а прежний вердикт может измениться.
+              </Trans>
             </p>
           </div>
           <Badge variant={pendingAttempts > 0 ? 'warning' : 'neutral'}>
-            Ответов: {pendingAttempts}
+            <Trans>Ответов: {pendingAttempts}</Trans>
           </Badge>
         </div>
 
         {problem ? (
           <div className="rounded-md border border-border bg-surface-sunken p-3 text-small">
             <p className="font-semibold">
-              Задача {problem.displayNumber}. {problem.title ? `«${problem.title}»` : ''}
+              <Trans>Задача {problem.displayNumber}.</Trans>{' '}
+              {problem.title ? `«${problem.title}»` : ''}
             </p>
             <p className="mt-1 text-muted-foreground">
-              Текущий правильный ответ: {problem.correctAnswer ?? 'не настроен'}
+              <Trans>Текущий правильный ответ:</Trans> {problem.correctAnswer ?? t`не настроен`}
             </p>
           </div>
         ) : null}
 
         {pendingAttempts > 0 ? (
           <dl className="grid gap-2 text-small sm:grid-cols-2 lg:grid-cols-3">
-            <Impact label="Школьников" value={studentCount} />
-            <Impact label="Будет обновлено" value={updatesRequired} />
-            <Impact label="Вердиктов изменится" value={verdictChanges} />
+            <Impact label={t`Школьников`} value={studentCount} />
+            <Impact label={t`Будет обновлено`} value={updatesRequired} />
+            <Impact label={t`Вердиктов изменится`} value={verdictChanges} />
             <Impact label="− → +" value={becameCorrect} />
             <Impact label="+ → −" value={becameWrong} />
-            <Impact label="Переходов формата" value={formatChanges} />
-            <Impact label="Ошибок формата после проверки" value={invalidFormat} />
-            <Impact label="Ожидают настройки" value={pendingConfiguration} />
-            <Impact label="Ошибок checker-а" value={checkerFailed} />
-            <Impact label="Реплик изменится" value={messageChanges} />
+            <Impact label={t`Переходов формата`} value={formatChanges} />
+            <Impact label={t`Ошибок формата после проверки`} value={invalidFormat} />
+            <Impact label={t`Ожидают настройки`} value={pendingConfiguration} />
+            <Impact label={t`Ошибок checker-а`} value={checkerFailed} />
+            <Impact label={t`Реплик изменится`} value={messageChanges} />
           </dl>
         ) : null}
 
         {problemRevision ? (
           <p className="font-num text-caption text-muted-foreground">
-            Текущая опубликованная версия: v{problemRevision.configVersion} ·{' '}
-            {problemRevision.conditionRevisionId}
+            <Trans>
+              Текущая опубликованная версия: v{problemRevision.configVersion} ·{' '}
+              {problemRevision.conditionRevisionId}
+            </Trans>
           </p>
         ) : null}
 
@@ -156,7 +165,9 @@ export function TestAttemptRecheckPanel({
           <Alert tone="danger">
             <CircleAlert aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Не удалось выполнить перепроверку</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось выполнить перепроверку</Trans>
+              </AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -170,18 +181,18 @@ export function TestAttemptRecheckPanel({
                 className={applying ? 'animate-spin motion-reduce:animate-none' : undefined}
               />
               {applying
-                ? 'Перепроверяем…'
-                : `Перепроверить все ${formatAttemptCount(pendingAttempts)}`}
+                ? t`Перепроверяем…`
+                : t`Перепроверить все ${formatAttemptCount(pendingAttempts)}`}
             </Button>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-small text-status-success">
               <CheckCircle2 aria-hidden="true" className="size-4" />
-              Нет сохранённых ответов
+              <Trans>Нет сохранённых ответов</Trans>
             </span>
           )}
           {error && onRetry ? (
             <Button disabled={applying} onClick={onRetry} size="sm" type="button" variant="outline">
-              Обновить данные
+              <Trans>Обновить данные</Trans>
             </Button>
           ) : null}
         </div>
@@ -197,20 +208,24 @@ function RecheckResult({ result }: { result: TestAttemptRecheckResultView }) {
       <Alert tone={hasUnresolved ? 'warning' : 'success'}>
         <AlertContent>
           <AlertTitle>
-            Проверено {result.scannedAttempts}, обновлено {result.updatedAttempts}
+            <Trans>
+              Проверено {result.scannedAttempts}, обновлено {result.updatedAttempts}
+            </Trans>
           </AlertTitle>
           <AlertDescription>
-            Без изменений: {result.unchangedAttempts} · верных: {result.correct} · неверных:{' '}
-            {result.wrong} · вердиктов изменено: {result.verdictChanges} · реплик изменено:{' '}
-            {result.messageChanges} · − → +: {result.becameCorrect} · + → −: {result.becameWrong}
-            {result.formatChanges > 0 ? ` · переходов формата: ${result.formatChanges}` : ''}
-            {result.invalidFormat > 0 ? ` · ошибок формата: ${result.invalidFormat}` : ''}
+            <Trans>
+              Без изменений: {result.unchangedAttempts} · верных: {result.correct} · неверных:{' '}
+              {result.wrong} · вердиктов изменено: {result.verdictChanges} · реплик изменено:{' '}
+              {result.messageChanges} · − → +: {result.becameCorrect} · + → −: {result.becameWrong}
+            </Trans>
+            {result.formatChanges > 0 ? t` · переходов формата: ${result.formatChanges}` : ''}
+            {result.invalidFormat > 0 ? t` · ошибок формата: ${result.invalidFormat}` : ''}
             {result.pendingConfiguration > 0
-              ? ` · ожидают настройки: ${result.pendingConfiguration}`
+              ? t` · ожидают настройки: ${result.pendingConfiguration}`
               : ''}
-            {result.checkerFailed > 0 ? ` · ошибок checker-а: ${result.checkerFailed}` : ''}
+            {result.checkerFailed > 0 ? t` · ошибок checker-а: ${result.checkerFailed}` : ''}
             {result.skippedConcurrent > 0
-              ? ` · уже обработаны параллельно: ${result.skippedConcurrent}`
+              ? t` · уже обработаны параллельно: ${result.skippedConcurrent}`
               : ''}
           </AlertDescription>
         </AlertContent>
@@ -231,8 +246,8 @@ function Impact({ label, value }: { label: string; value: number }) {
 function formatAttemptCount(count: number): string {
   const modulo100 = count % 100
   const modulo10 = count % 10
-  if (modulo100 >= 11 && modulo100 <= 14) return `${count} ответов`
-  if (modulo10 === 1) return `${count} ответ`
-  if (modulo10 >= 2 && modulo10 <= 4) return `${count} ответа`
-  return `${count} ответов`
+  if (modulo100 >= 11 && modulo100 <= 14) return t`${count} ответов`
+  if (modulo10 === 1) return t`${count} ответ`
+  if (modulo10 >= 2 && modulo10 <= 4) return t`${count} ответа`
+  return t`${count} ответов`
 }

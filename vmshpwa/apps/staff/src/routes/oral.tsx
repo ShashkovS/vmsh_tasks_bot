@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
@@ -27,7 +29,10 @@ function OralRoute() {
     const tab = search.tab ?? 'results'
     return (
       <div>
-        <nav aria-label="Разделы устного приёма" className="mx-auto flex max-w-7xl gap-1 px-4 pt-4">
+        <nav
+          aria-label={t`Разделы устного приёма`}
+          className="mx-auto flex max-w-7xl gap-1 px-4 pt-4"
+        >
           <Button
             onClick={() =>
               void navigate({ search: { groupLesson: search.groupLesson, tab: 'results' } })
@@ -35,7 +40,7 @@ function OralRoute() {
             size="sm"
             variant={tab === 'results' ? 'secondary' : 'ghost'}
           >
-            Результаты
+            <Trans>Результаты</Trans>
           </Button>
           {principal.audience === 'staff' && principal.role === 'admin' ? (
             <Button
@@ -45,7 +50,7 @@ function OralRoute() {
               size="sm"
               variant={tab === 'windows' ? 'secondary' : 'ghost'}
             >
-              Окна приёма
+              <Trans>Окна приёма</Trans>
             </Button>
           ) : null}
         </nav>

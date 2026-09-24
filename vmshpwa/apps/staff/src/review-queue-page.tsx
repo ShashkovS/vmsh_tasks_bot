@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type ComponentProps } from 'react'
@@ -96,7 +98,7 @@ export function StaffReviewQueuePage() {
   } else if (queue.error) {
     content = (
       <PageStatePanel
-        actionLabel="Повторить"
+        actionLabel={t`Повторить`}
         description={describeReviewError(queue.error)}
         onAction={() => void queue.refetch()}
         state={
@@ -109,9 +111,9 @@ export function StaffReviewQueuePage() {
   } else if (!queue.data?.items.length) {
     content = (
       <PageStatePanel
-        description="Новые письменные решения появятся здесь автоматически."
+        description={t`Новые письменные решения появятся здесь автоматически.`}
         state="empty"
-        title="Все работы проверены"
+        title={t`Все работы проверены`}
       />
     )
   } else {
@@ -124,19 +126,21 @@ export function StaffReviewQueuePage() {
         {claim.error ? (
           <Alert tone="danger" role="alert">
             <AlertContent>
-              <AlertTitle>Не удалось открыть работу</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось открыть работу</Trans>
+              </AlertTitle>
               <AlertDescription>{describeReviewError(claim.error)}</AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
         <dl
-          aria-label="Сводка очереди"
+          aria-label={t`Сводка очереди`}
           className="grid gap-3 rounded-md border border-border bg-surface p-3 sm:grid-cols-3"
         >
           {[
-            ['Ждут проверки', counts.total],
-            ['Можно проверить', counts.available],
-            ['У других преподавателей', counts.busy],
+            [t`Ждут проверки`, counts.total],
+            [t`Можно проверить`, counts.available],
+            [t`У других преподавателей`, counts.busy],
           ].map(([label, value]) => (
             <div key={label}>
               <dt className="text-small text-muted-foreground">{label}</dt>
@@ -146,7 +150,7 @@ export function StaffReviewQueuePage() {
         </dl>
         <div className="grid gap-3 sm:grid-cols-2">
           <QueueSelect
-            label="Курс"
+            label={t`Курс`}
             value={search.queueCourse ?? ''}
             onChange={(event) => {
               const course = event.target.value || undefined
@@ -159,9 +163,13 @@ export function StaffReviewQueuePage() {
               })
             }}
           >
-            <option value="">Все курсы</option>
+            <option value="">
+              <Trans>Все курсы</Trans>
+            </option>
             {search.queueCourse && !options.courses.some((c) => c.id === search.queueCourse) ? (
-              <option value={search.queueCourse}>Выбранный курс — нет работ</option>
+              <option value={search.queueCourse}>
+                <Trans>Выбранный курс — нет работ</Trans>
+              </option>
             ) : null}
             {options.courses.map((course) => (
               <option key={course.id} value={course.id}>
@@ -170,13 +178,17 @@ export function StaffReviewQueuePage() {
             ))}
           </QueueSelect>
           <QueueSelect
-            label="Группа"
+            label={t`Группа`}
             value={search.queueGroup ?? ''}
             onChange={(event) => updateSearch({ queueGroup: event.target.value || undefined })}
           >
-            <option value="">Все группы</option>
+            <option value="">
+              <Trans>Все группы</Trans>
+            </option>
             {search.queueGroup && !options.groups.some((g) => g.id === search.queueGroup) ? (
-              <option value={search.queueGroup}>Выбранная группа — нет работ</option>
+              <option value={search.queueGroup}>
+                <Trans>Выбранная группа — нет работ</Trans>
+              </option>
             ) : null}
             {options.groups.map((group) => (
               <option key={group.id} value={group.id}>
@@ -192,34 +204,38 @@ export function StaffReviewQueuePage() {
               variant={byProblem ? 'default' : 'outline'}
               onClick={() => updateSearch({ queueView: 'problems' })}
             >
-              По задачам
+              <Trans>По задачам</Trans>
             </Button>
             <Button
               aria-pressed={!byProblem}
               variant={byProblem ? 'outline' : 'default'}
               onClick={() => updateSearch({ queueView: 'works' })}
             >
-              Все работы
+              <Trans>Все работы</Trans>
             </Button>
           </div>
           {byProblem ? (
             <QueueSelect
-              label="Порядок задач"
+              label={t`Порядок задач`}
               value={search.queueSort ?? 'waiting'}
               onChange={(event) =>
                 updateSearch({ queueSort: event.target.value === 'count' ? 'count' : 'waiting' })
               }
             >
-              <option value="waiting">Дольше ждут</option>
-              <option value="count">Больше работ</option>
+              <option value="waiting">
+                <Trans>Дольше ждут</Trans>
+              </option>
+              <option value="count">
+                <Trans>Больше работ</Trans>
+              </option>
             </QueueSelect>
           ) : null}
         </div>
         {!filtered.length ? (
           <PageStatePanel
             state="empty"
-            title="По выбранным фильтрам работ нет"
-            actionLabel="Сбросить фильтры"
+            title={t`По выбранным фильтрам работ нет`}
+            actionLabel={t`Сбросить фильтры`}
             onAction={() => updateSearch({ queueCourse: undefined, queueGroup: undefined })}
           />
         ) : byProblem ? (
@@ -240,19 +256,23 @@ export function StaffReviewQueuePage() {
                       <div className="text-caption text-muted-foreground">
                         {problem.courseName} · {problem.groupName}
                       </div>
-                      <p className="mt-2 font-medium">Ждут проверки: {workCount(total)}</p>
+                      <p className="mt-2 font-medium">
+                        <Trans>Ждут проверки:</Trans> {workCount(total)}
+                      </p>
                       {busy > 0 ? (
                         <p className="text-small text-muted-foreground">
-                          Можно проверить: {available} · У других преподавателей: {busy}
+                          <Trans>
+                            Можно проверить: {available} · У других преподавателей: {busy}
+                          </Trans>
                         </p>
                       ) : null}
                       <p className="text-small text-muted-foreground">
-                        Самая давняя работа ждёт{' '}
+                        <Trans>Самая давняя работа ждёт </Trans>
                         {formatReviewWaiting((now - Date.parse(oldest)) / 60_000)}
                       </p>
                       {!available ? (
                         <p className="text-small text-muted-foreground">
-                          Все работы уже взяты другими преподавателями
+                          <Trans>Все работы уже взяты другими преподавателями</Trans>
                         </p>
                       ) : null}
                     </div>
@@ -267,7 +287,7 @@ export function StaffReviewQueuePage() {
                         />
                       }
                     >
-                      Проверять подряд
+                      <Trans>Проверять подряд</Trans>
                     </Button>
                   </article>
                 )
@@ -289,9 +309,9 @@ export function StaffReviewQueuePage() {
 
   return (
     <PageLayout
-      description="Выберите задачу для серийной проверки или откройте отдельную работу."
-      eyebrow="Письменные задачи"
-      title="Очередь проверки"
+      description={t`Выберите задачу для серийной проверки или откройте отдельную работу.`}
+      eyebrow={t`Письменные задачи`}
+      title={t`Очередь проверки`}
       width="wide"
     >
       {content}
@@ -322,7 +342,7 @@ function mapQueueItem(
     taskTitle:
       item.branches.length === 1
         ? first.problemTitle
-        : `${first.problemTitle} · ${item.branches.length} синонимичные ветки`,
+        : t`${first.problemTitle} · ${item.branches.length} синонимичные ветки`,
     level: group,
     studentName: item.student.displayName,
     groupName:
@@ -332,7 +352,7 @@ function mapQueueItem(
     waitingLabel: formatReviewWaiting(waitingMinutes),
     waitingMinutes,
     ...(openingId === item.queueId
-      ? { busyBy: 'открываем…' }
+      ? { busyBy: t`открываем…` }
       : item.lock && !item.lock.isOwnedByCurrentStaff
         ? { busyBy: item.lock.teacher.displayName }
         : {}),

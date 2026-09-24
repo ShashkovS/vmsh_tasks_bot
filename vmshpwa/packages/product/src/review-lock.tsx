@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { AlertTriangle, Lock, UserRound } from 'lucide-react'
 
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button, cn } from '@vmsh/ui'
@@ -34,7 +36,8 @@ export function ReviewLock({
         role="status"
       >
         <Lock aria-hidden="true" className="size-3.5" />
-        Работа за вами{expiresInLabel ? ` · ${expiresInLabel}` : ''}
+        <Trans>Работа за вами</Trans>
+        {expiresInLabel ? ` · ${expiresInLabel}` : ''}
       </p>
     )
   }
@@ -44,8 +47,12 @@ export function ReviewLock({
       <Alert className={className} tone="neutral">
         <UserRound aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>Проверяет {holderName ?? 'другой преподаватель'}</AlertTitle>
-          <AlertDescription>Откроется, когда освободится или через 30 минут.</AlertDescription>
+          <AlertTitle>
+            <Trans>Проверяет</Trans> {holderName ?? t`другой преподаватель`}
+          </AlertTitle>
+          <AlertDescription>
+            <Trans>Откроется, когда освободится или через 30 минут.</Trans>
+          </AlertDescription>
         </AlertContent>
       </Alert>
     )
@@ -55,15 +62,19 @@ export function ReviewLock({
     <Alert className={className} role="alert" tone="danger">
       <AlertTriangle aria-hidden="true" />
       <AlertContent>
-        <AlertTitle>Работа больше не за вами</AlertTitle>
+        <AlertTitle>
+          <Trans>Работа больше не за вами</Trans>
+        </AlertTitle>
         <AlertDescription>
-          Аренда истекла или досталась другому. Вердикт устарел — обновите работу, прежде чем
-          продолжить.
+          <Trans>
+            Аренда истекла или досталась другому. Вердикт устарел — обновите работу, прежде чем
+            продолжить.
+          </Trans>
         </AlertDescription>
         {onRefetch ? (
           <div className="mt-2">
             <Button onClick={onRefetch} size="sm" variant="outline">
-              Обновить работу
+              <Trans>Обновить работу</Trans>
             </Button>
           </div>
         ) : null}

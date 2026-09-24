@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDate, formatDateTime, formatTime } from '@vmsh/i18n'
 import {
   useCallback,
   useEffect,
@@ -52,6 +55,21 @@ import { LiveConditionDialog } from './live-marking-condition'
 
 // Page composition: live-marking.md and design-system/05-pages-and-flows.md.
 
+function liveReactionCopy(reactionId: (typeof LIVE_REACTIONS)[number]['id']) {
+  switch (reactionId) {
+    case 300:
+      return { label: t`Очень круто!`, short: t`👍 Круто` }
+    case 301:
+      return { label: t`Мутно`, short: t`🌫 Мутно` }
+    case 304:
+      return { label: t`Похоже на ИИ`, short: t`🤖 ИИ` }
+    case 305:
+      return { label: t`Помогают родители`, short: t`👪 Родители` }
+    case 303:
+      return { label: t`Проблемы со связью`, short: t`📡 Связь` }
+  }
+}
+
 export function StudentSearch({
   students,
   onSelect,
@@ -84,8 +102,8 @@ export function StudentSearch({
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <Input
         ref={input}
-        aria-label="Поиск школьника"
-        placeholder={surnameOnly ? 'Фамилия…' : 'Фамилия или имя…'}
+        aria-label={t`Поиск школьника`}
+        placeholder={surnameOnly ? t`Фамилия…` : t`Фамилия или имя…`}
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -94,7 +112,7 @@ export function StudentSearch({
       <div className="flex min-h-9 items-center gap-2 px-1">
         <Switch id={surnameOnlyId} checked={surnameOnly} onCheckedChange={onSurnameOnlyChange} />
         <FieldLabel className="cursor-pointer text-sm font-normal" htmlFor={surnameOnlyId}>
-          Искать только по фамилии
+          <Trans>Искать только по фамилии</Trans>
         </FieldLabel>
       </div>
       <div className="min-h-0 overflow-auto" aria-live="polite">
@@ -108,10 +126,10 @@ export function StudentSearch({
             <span className="font-semibold">{s.displayName}</span>
             <span className="text-xs text-muted-foreground">
               {[
-                s.grade ? `${s.grade} кл.` : null,
+                s.grade ? t`${s.grade} кл.` : null,
                 s.middleName,
                 s.groupName,
-                transfer ? (s.attendanceMode === 'online' ? 'Онлайн' : 'Очно') : null,
+                transfer ? (s.attendanceMode === 'online' ? t`Онлайн` : t`Очно`) : null,
               ]
                 .filter(Boolean)
                 .join(' · ')}
@@ -122,21 +140,22 @@ export function StudentSearch({
                   .slice(0, 3)
                   .map(
                     (r) =>
-                      `${r.roomName ?? 'Без аудитории'} (${new Date(r.startsAt).toLocaleDateString('ru-RU')})`,
+                      `${r.roomName ?? t`Без аудитории`} (${formatDate(new Date(r.startsAt))})`,
                   )
-                  .join(' ← ') || 'Назначений ещё нет'}
+                  .join(' ← ') || t`Назначений ещё нет`}
               </span>
             ) : null}
           </button>
         ))}
         {query && matches.length === 0 ? (
           <p className="p-3 text-sm text-muted-foreground">
-            Никого не нашли. Попробуйте другую часть {surnameOnly ? 'фамилии' : 'имени'}.
+            <Trans>Никого не нашли. Попробуйте другую часть</Trans>{' '}
+            {surnameOnly ? t`фамилии` : t`имени`}.
           </p>
         ) : null}
         {!query ? (
           <p className="p-3 text-sm text-muted-foreground">
-            {surnameOnly ? 'Введите фамилию школьника.' : 'Введите фамилию или имя школьника.'}
+            {surnameOnly ? t`Введите фамилию школьника.` : t`Введите фамилию или имя школьника.`}
           </p>
         ) : null}
       </div>
@@ -332,7 +351,7 @@ export function LiveMarkingPage({
     try {
       await fn()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось выполнить действие')
+      setError(e instanceof Error ? e.message : t`Не удалось выполнить действие`)
       authentication.handleApiError(e)
     } finally {
       setBusy(false)
@@ -364,7 +383,7 @@ export function LiveMarkingPage({
             .entries.some((entry) => entry.command.context.contextId === spec.contextId)
         )
           throw new Error(
-            'Сохранение ещё не подтверждено. Повторите отмену после восстановления связи; предыдущая оценка не отменена.',
+            t`Сохранение ещё не подтверждено. Повторите отмену после восстановления связи; предыдущая оценка не отменена.`,
           )
         const latest = await history.refetch()
         if (latest.error) throw latest.error
@@ -395,7 +414,7 @@ export function LiveMarkingPage({
             .entries.some((entry) => entry.command.context.contextId === spec.contextId)
         )
           throw new Error(
-            'Отмена ещё не подтверждена сервером. Запрос сохранён и будет повторён безопасно.',
+            t`Отмена ещё не подтверждена сервером. Запрос сохранён и будет повторён безопасно.`,
           )
         // received() already invalidates history. Its background refresh must not
         // keep the grid locked if the network disappears after the undo receipt.
@@ -519,7 +538,7 @@ export function LiveMarkingPage({
       if (
         target !== undefined &&
         window.confirm(
-          `${before || 'Не сдавал'} → ${target || 'Не сдавал'}. Снять мои оценки этой ячейки в текущем приёме? Другие способы сдачи и история сохранятся.`,
+          t`${before || t`Не сдавал`} → ${target || t`Не сдавал`}. Снять мои оценки этой ячейки в текущем приёме? Другие способы сдачи и история сохранятся.`,
         )
       )
         queue.clearMark(markCommand(studentId, problemId), before, target)
@@ -595,21 +614,21 @@ export function LiveMarkingPage({
   )
   const isOffline = realtime?.state.status !== 'ready'
   const compactStatus = scopedPending.length
-    ? `${scopedPending.length} не отправлено`
+    ? t`${scopedPending.length} не отправлено`
     : isOffline
-      ? 'Нет синхронизации'
-      : 'Сохранено'
+      ? t`Нет синхронизации`
+      : t`Сохранено`
 
   const lessonPicker = lesson ? (
     <select
-      aria-label="Занятие"
+      aria-label={t`Занятие`}
       value={lesson.lessonId}
       className="h-11 rounded-md border bg-background px-2 text-sm"
       onChange={(e) => navigate({ ...search, lesson: e.target.value })}
     >
       {lessons.map((l) => (
         <option key={l.lessonId} value={l.lessonId}>
-          Занятие {l.number}
+          <Trans>Занятие {l.number}</Trans>
         </option>
       ))}
     </select>
@@ -617,7 +636,7 @@ export function LiveMarkingPage({
   const schoolSettings = (
     <>
       <select
-        aria-label="Очное событие"
+        aria-label={t`Очное событие`}
         className="h-11 max-w-44 rounded-md border bg-background px-2 text-sm"
         value={event?.eventId ?? ''}
         onChange={(e) =>
@@ -631,7 +650,7 @@ export function LiveMarkingPage({
         ))}
       </select>
       <select
-        aria-label="Аудитория"
+        aria-label={t`Аудитория`}
         className="h-11 max-w-40 rounded-md border bg-background px-2 text-sm"
         value={room?.roomId ?? ''}
         onChange={(e) =>
@@ -643,10 +662,14 @@ export function LiveMarkingPage({
           })
         }
       >
-        <option value="">Выберите аудиторию</option>
+        <option value="">
+          <Trans>Выберите аудиторию</Trans>
+        </option>
         {event?.rooms.map((r) => (
           <option key={r.roomId} value={r.roomId}>
-            {r.name} · {r.groupName} · {r.studentCount} шк.
+            <Trans>
+              {r.name} · {r.groupName} · {r.studentCount} шк.
+            </Trans>
           </option>
         ))}
       </select>
@@ -660,7 +683,7 @@ export function LiveMarkingPage({
   return (
     <section
       className="flex h-[calc(100svh-2.5rem)] min-h-0 flex-col bg-background"
-      aria-label={mode === 'school' ? 'Очное занятие' : 'Zoom-приём'}
+      aria-label={mode === 'school' ? t`Очное занятие` : t`Zoom-приём`}
     >
       <div className="relative flex shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1">
         {mode === 'school' ? (
@@ -669,17 +692,18 @@ export function LiveMarkingPage({
             <Button
               variant="ghost"
               className="min-h-11 min-w-0 max-w-36 flex-1 justify-between px-1 sm:hidden"
-              aria-label="Настройки занятия"
-              title={`${room?.name ?? 'Аудитория'} · Занятие ${lesson?.number ?? '—'}`}
+              aria-label={t`Настройки занятия`}
+              title={t`${room?.name ?? t`Аудитория`} · Занятие ${lesson?.number ?? '—'}`}
               onClick={(event) => {
                 event.currentTarget.focus()
                 setSettingsOpen(true)
               }}
             >
               <span className="min-w-0 text-left">
-                <span className="block truncate text-sm">{room?.name ?? 'Аудитория'}</span>
+                <span className="block truncate text-sm">{room?.name ?? t`Аудитория`}</span>
                 <span className="block text-[11px] font-normal text-muted-foreground">
-                  Занятие {lesson?.number ?? '—'} · {room?.studentCount ?? 0} шк.
+                  <Trans>Занятие</Trans> {lesson?.number ?? '—'} · {room?.studentCount ?? 0}{' '}
+                  <Trans>шк.</Trans>
                 </span>
               </span>
               <ChevronDown className="size-3 shrink-0" />
@@ -691,7 +715,7 @@ export function LiveMarkingPage({
               <Button
                 size="icon"
                 variant="ghost"
-                aria-label="Найти следующего школьника"
+                aria-label={t`Найти следующего школьника`}
                 onClick={() => setFindOpen(true)}
               >
                 <Search />
@@ -702,7 +726,7 @@ export function LiveMarkingPage({
                 <div className="truncate text-sm font-semibold">{student.displayName}</div>
                 <div className="truncate text-xs text-muted-foreground">
                   {[
-                    student.grade ? `${student.grade} кл.` : null,
+                    student.grade ? t`${student.grade} кл.` : null,
                     student.middleName,
                     student.groupName,
                   ]
@@ -711,11 +735,13 @@ export function LiveMarkingPage({
                 </div>
               </div>
             ) : (
-              <span className="px-1 font-semibold">Zoom-приём</span>
+              <span className="px-1 font-semibold">
+                <Trans>Zoom-приём</Trans>
+              </span>
             )}
             {!student || (catalog.data?.courses.length ?? 0) > 1 ? (
               <select
-                aria-label="Курс"
+                aria-label={t`Курс`}
                 className="h-11 max-w-40 rounded-md border bg-background px-2 text-sm"
                 value={course?.courseId ?? ''}
                 onChange={(e) => navigate({ course: e.target.value })}
@@ -729,7 +755,9 @@ export function LiveMarkingPage({
             ) : null}
             {session ? (
               <Button variant="ghost" onClick={() => setVisitsOpen(true)}>
-                За сессию · {new Set(visits.data?.visits.map((v) => v.studentId)).size}
+                <Trans>
+                  За сессию · {new Set(visits.data?.visits.map((v) => v.studentId)).size}
+                </Trans>
               </Button>
             ) : null}
           </>
@@ -740,14 +768,18 @@ export function LiveMarkingPage({
             {student ? (
               <div
                 role="group"
-                aria-label="Уровень задач"
+                aria-label={t`Уровень задач`}
                 className="flex flex-wrap items-center gap-1"
               >
-                <span className="text-xs text-muted-foreground">Уровень задач</span>
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Уровень задач</Trans>
+                </span>
                 {zoomSelection.groups.map((group) => (
                   <span
                     key={group.id}
-                    title={!group.target ? 'Для этого занятия нет опубликованных задач' : undefined}
+                    title={
+                      !group.target ? t`Для этого занятия нет опубликованных задач` : undefined
+                    }
                   >
                     <Button
                       size="sm"
@@ -756,7 +788,7 @@ export function LiveMarkingPage({
                       aria-pressed={group.id === zoomSelection.groupId}
                       aria-label={
                         !group.target
-                          ? `${group.name}: Для этого занятия нет опубликованных задач`
+                          ? t`${group.name}: Для этого занятия нет опубликованных задач`
                           : group.name
                       }
                       disabled={!group.target}
@@ -768,7 +800,7 @@ export function LiveMarkingPage({
                 ))}
               </div>
             ) : null}
-            <div role="group" aria-label="Тип задач" className="flex gap-1">
+            <div role="group" aria-label={t`Тип задач`} className="flex gap-1">
               {[true, false].map((oralOnly) => (
                 <Button
                   key={String(oralOnly)}
@@ -776,7 +808,7 @@ export function LiveMarkingPage({
                   aria-pressed={(search.oralOnly !== false) === oralOnly}
                   onClick={() => navigate({ ...search, oralOnly })}
                 >
-                  {oralOnly ? 'Устные' : 'Все'}
+                  {oralOnly ? t`Устные` : t`Все`}
                 </Button>
               ))}
             </div>
@@ -787,14 +819,14 @@ export function LiveMarkingPage({
             aria-pressed={!!search.presentOnly}
             onClick={() => navigate({ ...search, presentOnly: !search.presentOnly })}
           >
-            {search.presentOnly ? 'Пришли' : 'Все'}
+            {search.presentOnly ? t`Пришли` : t`Все`}
           </Button>
         ) : null}
         <Button
           size="sm"
           variant="ghost"
-          aria-label="Отменить последнее действие"
-          title="Отменить · Ctrl/Cmd+Z"
+          aria-label={t`Отменить последнее действие`}
+          title={t`Отменить · Ctrl/Cmd+Z`}
           disabled={
             busy ||
             (!undoTarget && !scopedPending.length && !queue.canUndoLocal(spec?.contextId ?? '')) ||
@@ -803,13 +835,13 @@ export function LiveMarkingPage({
           onClick={undo}
         >
           <Undo2 />
-          Отменить
+          <Trans>Отменить</Trans>
         </Button>
         {mode === 'school' && room ? (
           <Button
             size="icon"
             variant="ghost"
-            aria-label="Добавить в группу школьника"
+            aria-label={t`Добавить в группу школьника`}
             onClick={() => setFindOpen(true)}
           >
             <UserPlus />
@@ -835,15 +867,17 @@ export function LiveMarkingPage({
         </span>
       </div>
       <p className="border-b px-2 py-1 text-xs text-muted-foreground">
-        Нажатия на оценку: было → + → − → не трогать. ∅ — не сдавал. ↶ — снять свои оценки этой
-        ячейки. Красное — сохранение не подтверждено. Отменить: Ctrl/Cmd+Z.
+        <Trans>
+          Нажатия на оценку: было → + → − → не трогать. ∅ — не сдавал. ↶ — снять свои оценки этой
+          ячейки. Красное — сохранение не подтверждено. Отменить: Ctrl/Cmd+Z.
+        </Trans>
       </p>
       {error || queueState.storageError || board.error || cells.error ? (
         <div
           className="flex flex-wrap items-center gap-2 border-b bg-destructive/10 p-2 text-sm text-destructive"
           role="alert"
         >
-          {error ?? queueState.storageError ?? 'Не удалось загрузить таблицу.'}
+          {error ?? queueState.storageError ?? t`Не удалось загрузить таблицу.`}
           {error && undoTarget ? (
             <Button
               size="sm"
@@ -853,7 +887,7 @@ export function LiveMarkingPage({
                 setError(null)
               }}
             >
-              Пропустить в undo
+              <Trans>Пропустить в undo</Trans>
             </Button>
           ) : null}
           <Button
@@ -865,7 +899,7 @@ export function LiveMarkingPage({
               void cells.refetch()
             }}
           >
-            Обновить
+            <Trans>Обновить</Trans>
           </Button>
         </div>
       ) : null}
@@ -877,24 +911,24 @@ export function LiveMarkingPage({
             className="flex flex-wrap items-center gap-2 border-b p-2 text-sm"
             role="alert"
           >
-            <span>{entry.status === 'conflict' ? 'Ячейка уже изменена.' : entry.error}</span>
+            <span>{entry.status === 'conflict' ? t`Ячейка уже изменена.` : entry.error}</span>
             {entry.command.kind === 'mark' ? (
               <span>
-                Сейчас:{' '}
+                <Trans>Сейчас: </Trans>
                 {entry.command.context.lessonId !== lesson?.lessonId
-                  ? 'другой листок'
+                  ? t`другой листок`
                   : cellMap.get(liveCellKey(entry.command.studentId, entry.command.problemId))
-                      ?.symbol || 'пусто'}{' '}
-                · Ваше:{' '}
+                      ?.symbol || t`пусто`}
+                <Trans> · Ваше: </Trans>
                 {entry.command.value === 'plus'
                   ? '+'
                   : entry.command.value === 'minus'
                     ? '−'
-                    : `снять мои оценки (${entry.targetSymbol || '∅'})`}
+                    : t`снять мои оценки (${entry.targetSymbol || '∅'})`}
               </span>
             ) : null}
             <Button size="sm" variant="outline" onClick={() => queue.discard(entry.id)}>
-              Принять актуальное
+              <Trans>Принять актуальное</Trans>
             </Button>
             <Button
               size="sm"
@@ -919,7 +953,7 @@ export function LiveMarkingPage({
                 })
               }
             >
-              Применить моё
+              <Trans>Применить моё</Trans>
             </Button>
           </div>
         ))}
@@ -932,16 +966,22 @@ export function LiveMarkingPage({
               variant="outline"
               onClick={() => navigate({ ...search, event: event.eventId, room: r.roomId })}
             >
-              <span className="min-w-0 text-left">
-                <span className="block truncate font-semibold">{r.name}</span>
-                <span className="block truncate text-caption text-muted-foreground">
-                  {r.groupName}
+              <Trans>
+                <span className="min-w-0 text-left">
+                  <span className="block truncate font-semibold">{r.name}</span>
+                  <span className="block truncate text-caption text-muted-foreground">
+                    {r.groupName}
+                  </span>
                 </span>
-              </span>
-              <span className="shrink-0 tabular-nums">Школьников: {r.studentCount}</span>
+                <span className="shrink-0 tabular-nums">Школьников: {r.studentCount}</span>
+              </Trans>
             </Button>
           ))}
-          {!event ? <p>Пока нет очных событий с подтверждёнными аудиториями.</p> : null}
+          {!event ? (
+            <p>
+              <Trans>Пока нет очных событий с подтверждёнными аудиториями.</Trans>
+            </p>
+          ) : null}
         </div>
       ) : null}
       {mode === 'zoom' && !student ? (
@@ -957,7 +997,9 @@ export function LiveMarkingPage({
       ) : null}
       {mode === 'zoom' && student && !lesson ? (
         <p className="p-3">
-          У этой группы пока нет опубликованных занятий. Выберите другой уровень задач.
+          <Trans>
+            У этой группы пока нет опубликованных занятий. Выберите другой уровень задач.
+          </Trans>
         </p>
       ) : null}
       {boardEnabled && (board.isPending || cells.isPending) ? (
@@ -986,40 +1028,43 @@ export function LiveMarkingPage({
             onCondition={setConditionProblem}
           />
           <div className="shrink-0 border-t bg-background px-2 py-1 sm:flex sm:items-center sm:gap-2">
-            <div className="flex gap-1 overflow-x-auto" aria-label="Внутренние пометки">
-              {LIVE_REACTIONS.map((reaction) => (
-                <Button
-                  key={reaction.id}
-                  size="sm"
-                  className="min-h-11 shrink-0"
-                  variant={
-                    board.data?.visit?.reactions.includes(reaction.id) ? 'secondary' : 'ghost'
-                  }
-                  aria-pressed={!!board.data?.visit?.reactions.includes(reaction.id)}
-                  title={`${reaction.label} · видно только сотрудникам`}
-                  disabled={busy || !!board.data?.readOnly}
-                  onClick={() => {
-                    if (spec && student)
-                      void action(async () => {
-                        await queue.flush()
-                        const current = await client.visit(spec)
-                        const values = current.reactions.includes(reaction.id)
-                          ? current.reactions.filter((id) => id !== reaction.id)
-                          : [...current.reactions, reaction.id]
-                        await execute({
-                          kind: 'reaction',
-                          operationId: crypto.randomUUID(),
-                          context: spec,
-                          studentId: student.studentId,
-                          expectedVersion: current.version,
-                          reactions: values as (300 | 301 | 303 | 304 | 305)[],
+            <div className="flex gap-1 overflow-x-auto" aria-label={t`Внутренние пометки`}>
+              {LIVE_REACTIONS.map((reaction) => {
+                const copy = liveReactionCopy(reaction.id)
+                return (
+                  <Button
+                    key={reaction.id}
+                    size="sm"
+                    className="min-h-11 shrink-0"
+                    variant={
+                      board.data?.visit?.reactions.includes(reaction.id) ? 'secondary' : 'ghost'
+                    }
+                    aria-pressed={!!board.data?.visit?.reactions.includes(reaction.id)}
+                    title={t`${copy.label} · видно только сотрудникам`}
+                    disabled={busy || !!board.data?.readOnly}
+                    onClick={() => {
+                      if (spec && student)
+                        void action(async () => {
+                          await queue.flush()
+                          const current = await client.visit(spec)
+                          const values = current.reactions.includes(reaction.id)
+                            ? current.reactions.filter((id) => id !== reaction.id)
+                            : [...current.reactions, reaction.id]
+                          await execute({
+                            kind: 'reaction',
+                            operationId: crypto.randomUUID(),
+                            context: spec,
+                            studentId: student.studentId,
+                            expectedVersion: current.version,
+                            reactions: values as (300 | 301 | 303 | 304 | 305)[],
+                          })
                         })
-                      })
-                  }}
-                >
-                  {reaction.short}
-                </Button>
-              ))}
+                    }}
+                  >
+                    {copy.short}
+                  </Button>
+                )
+              })}
             </div>
             <div className="flex items-center gap-1 sm:flex-1">
               <Button
@@ -1044,10 +1089,10 @@ export function LiveMarkingPage({
               >
                 {board.data?.visit?.praisedAt ? (
                   <>
-                    <Check /> Похвала отправлена
+                    <Check /> <Trans>Похвала отправлена</Trans>
                   </>
                 ) : (
-                  'Похвалить ученика'
+                  t`Похвалить ученика`
                 )}
               </Button>
               <Button
@@ -1058,7 +1103,7 @@ export function LiveMarkingPage({
                   setFindOpen(true)
                 }}
               >
-                Следующий
+                <Trans>Следующий</Trans>
               </Button>
             </div>
           </div>
@@ -1076,13 +1121,19 @@ export function LiveMarkingPage({
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-h-[85svh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Настройки занятия</DialogTitle>
-            <DialogDescription>Событие, аудитория и список задач</DialogDescription>
+            <DialogTitle>
+              <Trans>Настройки занятия</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>Событие, аудитория и список задач</Trans>
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 [&_select]:w-full [&_select]:max-w-full">
             {schoolSettings}
           </div>
-          <Button onClick={() => setSettingsOpen(false)}>Готово</Button>
+          <Button onClick={() => setSettingsOpen(false)}>
+            <Trans>Готово</Trans>
+          </Button>
         </DialogContent>
       </Dialog>
       <Dialog
@@ -1095,12 +1146,12 @@ export function LiveMarkingPage({
         <DialogContent className="flex max-h-[85svh] flex-col sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {mode === 'school' ? 'Добавить в группу школьника' : 'Следующий школьник'}
+              {mode === 'school' ? t`Добавить в группу школьника` : t`Следующий школьник`}
             </DialogTitle>
             <DialogDescription>
               {mode === 'school'
-                ? `Перенос в аудиторию ${room?.name ?? ''}`
-                : 'Поиск по всему курсу'}
+                ? t`Перенос в аудиторию ${room?.name ?? ''}`
+                : t`Поиск по всему курсу`}
             </DialogDescription>
           </DialogHeader>
           {transferStudent ? (
@@ -1109,16 +1160,18 @@ export function LiveMarkingPage({
                 {transferStudent.displayName} {transferStudent.middleName}
               </p>
               <p className="text-sm">
-                {transferStudent.attendanceMode === 'online' ? 'Онлайн → очно' : 'Очно'} ·{' '}
-                {transferStudent.groupName} → {room?.groupName} · аудитория {room?.name}. Посещение:
-                пришёл.
+                {transferStudent.attendanceMode === 'online' ? t`Онлайн → очно` : t`Очно`}{' '}
+                <Trans>
+                  · {transferStudent.groupName} → {room?.groupName} · аудитория {room?.name}.
+                  Посещение: пришёл.
+                </Trans>
               </p>
               <p className="text-xs text-muted-foreground">
-                Режим и уровень меняются постоянно. Перенос можно отменить.
+                <Trans>Режим и уровень меняются постоянно. Перенос можно отменить.</Trans>
               </p>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setTransferStudent(null)}>
-                  <ArrowLeft /> Назад
+                  <ArrowLeft /> <Trans>Назад</Trans>
                 </Button>
                 <Button
                   disabled={busy || !navigator.onLine || !board.data?.planId}
@@ -1138,7 +1191,7 @@ export function LiveMarkingPage({
                       })
                   }}
                 >
-                  Перенести в {room?.name}
+                  <Trans>Перенести в {room?.name}</Trans>
                 </Button>
               </div>
             </div>
@@ -1156,15 +1209,17 @@ export function LiveMarkingPage({
       <Dialog open={visitsOpen} onOpenChange={setVisitsOpen}>
         <DialogContent className="flex max-h-[85svh] flex-col">
           <DialogHeader>
-            <DialogTitle>Школьники за сессию</DialogTitle>
+            <DialogTitle>
+              <Trans>Школьники за сессию</Trans>
+            </DialogTitle>
             <DialogDescription>
               {session?.finishedAt
-                ? 'Завершённая сессия · только просмотр'
-                : 'Можно вернуться и исправить оценки'}
+                ? t`Завершённая сессия · только просмотр`
+                : t`Можно вернуться и исправить оценки`}
             </DialogDescription>
           </DialogHeader>
           <select
-            aria-label="Сессия"
+            aria-label={t`Сессия`}
             value={session?.sessionId ?? ''}
             className="h-11 rounded border bg-background p-2 text-sm"
             onChange={(e) =>
@@ -1178,8 +1233,8 @@ export function LiveMarkingPage({
           >
             {course?.sessions.map((s) => (
               <option key={s.sessionId} value={s.sessionId}>
-                {new Date(s.createdAt).toLocaleString('ru-RU')}{' '}
-                {s.finishedAt ? '· завершена' : '· активна'}
+                {formatDateTime(new Date(s.createdAt))}{' '}
+                {s.finishedAt ? t`· завершена` : t`· активна`}
               </option>
             ))}
           </select>
@@ -1205,14 +1260,14 @@ export function LiveMarkingPage({
                     {(() => {
                       const visited = course?.lessons.find((item) => item.lessonId === v.lessonId)
                       return visited
-                        ? `Занятие ${visited.number} · ${visited.groupName}`
+                        ? t`Занятие ${visited.number} · ${visited.groupName}`
                         : v.lessonId
                     })()}
                   </span>
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {v.changedCount} оценок ·{' '}
-                  {new Date(v.updatedAt).toLocaleTimeString('ru-RU', {
+                  <Trans>{v.changedCount} оценок · </Trans>
+                  {formatTime(new Date(v.updatedAt), {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
@@ -1231,7 +1286,7 @@ export function LiveMarkingPage({
                 })
               }}
             >
-              Новая сессия
+              <Trans>Новая сессия</Trans>
             </Button>
           ) : (
             <Button
@@ -1246,7 +1301,7 @@ export function LiveMarkingPage({
                         .getSnapshot()
                         .entries.some((e) => e.command.context.contextId === session.sessionId)
                     ) {
-                      setError('Сначала отправьте или разрешите все изменения этой сессии.')
+                      setError(t`Сначала отправьте или разрешите все изменения этой сессии.`)
                       return
                     }
                     await client.finish(session.sessionId)
@@ -1257,7 +1312,7 @@ export function LiveMarkingPage({
                   })
               }}
             >
-              <X /> Завершить сессию
+              <X /> <Trans>Завершить сессию</Trans>
             </Button>
           )}
         </DialogContent>

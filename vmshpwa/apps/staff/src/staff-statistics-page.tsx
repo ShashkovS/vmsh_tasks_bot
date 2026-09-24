@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat, formatNumber } from '@vmsh/i18n'
 import './staff-statistics.css'
 import { StatisticsRecalculationControl } from './statistics-recalculation-control'
 import { BarChart3, CalendarDays, UsersRound } from 'lucide-react'
@@ -44,13 +47,11 @@ import {
  */
 
 function formatMetric(value: number | null, suffix = ''): string {
-  return value === null
-    ? '—'
-    : `${value.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}${suffix}`
+  return value === null ? '—' : `${formatNumber(value, { maximumFractionDigits: 1 })}${suffix}`
 }
 
 function formatRunDate(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     dateStyle: 'long',
     timeStyle: 'short',
     timeZone: 'Europe/Moscow',
@@ -120,14 +121,18 @@ export function StaffStatisticsView({
       actions={
         <div className="grid min-w-64 gap-2 sm:grid-cols-2">
           <Label className="grid gap-1 text-caption">
-            Курс
+            <Trans>Курс</Trans>
             <select
-              aria-label="Курс"
+              aria-label={t`Курс`}
               className="min-h-9 rounded-md border border-input bg-surface px-3 text-small"
               onChange={(event) => onCourseChange(event.currentTarget.value)}
               value={data.selectedCourseId ?? ''}
             >
-              {data.courses.length === 0 ? <option value="">Нет доступных курсов</option> : null}
+              {data.courses.length === 0 ? (
+                <option value="">
+                  <Trans>Нет доступных курсов</Trans>
+                </option>
+              ) : null}
               {data.courses.map((item) => (
                 <option key={item.courseId} value={item.courseId}>
                   {item.name}
@@ -136,15 +141,17 @@ export function StaffStatisticsView({
             </select>
           </Label>
           <Label className="grid gap-1 text-caption">
-            Группа
+            <Trans>Группа</Trans>
             <select
-              aria-label="Группа"
+              aria-label={t`Группа`}
               className="min-h-9 rounded-md border border-input bg-surface px-3 text-small"
               disabled={course === null}
               onChange={(event) => onGroupChange(event.currentTarget.value || null)}
               value={data.selectedGroupId ?? ''}
             >
-              <option value="">Все доступные</option>
+              <option value="">
+                <Trans>Все доступные</Trans>
+              </option>
               {course?.groups.map((group) => (
                 <option key={group.groupId} value={group.groupId}>
                   {group.name}
@@ -155,7 +162,7 @@ export function StaffStatisticsView({
         </div>
       }
       className="staff-statistics"
-      title="Статистика курса"
+      title={t`Статистика курса`}
       width="wide"
     >
       <LessonStatistics
@@ -168,65 +175,83 @@ export function StaffStatisticsView({
       />
       {data.courses.length === 0 ? (
         <PageStatePanel
-          description="Администратор ещё не выдал вам доступ к курсу со статистикой."
+          description={t`Администратор ещё не выдал вам доступ к курсу со статистикой.`}
           state="empty"
-          title="Нет доступных курсов"
+          title={t`Нет доступных курсов`}
         />
       ) : data.run === null || data.lessons.length === 0 || lesson === null ? (
         <PageStatePanel
-          description="Первый завершённый расчёт появится здесь автоматически. Исходные результаты при этом не изменяются."
+          description={t`Первый завершённый расчёт появится здесь автоматически. Исходные результаты при этом не изменяются.`}
           state="empty"
-          title="Расчётов пока нет"
+          title={t`Расчётов пока нет`}
         />
       ) : (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
-            <Badge variant="neutral">{course?.name ?? 'Курс'}</Badge>
+            <Badge variant="neutral">{course?.name ?? t`Курс`}</Badge>
+            <Trans>
+              <span>
+                Расчёт {data.run.algorithm} · версия {data.run.algorithmVersion}
+              </span>
+              <span aria-hidden="true">·</span>
+            </Trans>
             <span>
-              Расчёт {data.run.algorithm} · версия {data.run.algorithmVersion}
+              {formatRunDate(data.run.completedAt)} <Trans>МСК</Trans>
             </span>
-            <span aria-hidden="true">·</span>
-            <span>{formatRunDate(data.run.completedAt)} МСК</span>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               icon={CalendarDays}
-              label="Выбрано занятие"
+              label={t`Выбрано занятие`}
               value={`№ ${lesson.lessonNumber}`}
             />
             <MetricCard
               icon={UsersRound}
-              label="Школьников в агрегате"
+              label={t`Школьников в агрегате`}
               value={String(lesson.studentCount)}
             />
             <MetricCard
               icon={BarChart3}
-              label="Среднее число решённых"
+              label={t`Среднее число решённых`}
               value={formatMetric(lesson.meanSolvedItems)}
             />
             <MetricCard
               icon={BarChart3}
-              label="Доля решённых задач"
+              label={t`Доля решённых задач`}
               value={formatMetric(lesson.completionRate, '%')}
             />
           </div>
 
           <PageSection
-            description="Строки относятся к одному зафиксированному расчёту; выбор занятия сохраняется в адресе страницы."
-            title="Занятия"
+            description={t`Строки относятся к одному зафиксированному расчёту; выбор занятия сохраняется в адресе страницы.`}
+            title={t`Занятия`}
           >
             <div className="overflow-x-auto rounded-lg border border-border bg-surface">
               <Table className="min-w-[48rem]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Занятие</TableHead>
-                    <TableHead>Группы</TableHead>
-                    <TableHead className="text-right">Школьники</TableHead>
-                    <TableHead className="text-right">Простые</TableHead>
-                    <TableHead className="text-right">Сложные</TableHead>
-                    <TableHead className="text-right">Решено</TableHead>
-                    <TableHead className="text-right">Доля</TableHead>
+                    <TableHead>
+                      <Trans>Занятие</Trans>
+                    </TableHead>
+                    <TableHead>
+                      <Trans>Группы</Trans>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Trans>Школьники</Trans>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Trans>Простые</Trans>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Trans>Сложные</Trans>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Trans>Решено</Trans>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Trans>Доля</Trans>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -244,7 +269,7 @@ export function StaffStatisticsView({
                             size="sm"
                             variant={active ? 'secondary' : 'ghost'}
                           >
-                            Занятие {item.lessonNumber}
+                            <Trans>Занятие {item.lessonNumber}</Trans>
                           </Button>
                         </TableCell>
                         <TableCell>
@@ -278,19 +303,21 @@ export function StaffStatisticsView({
           </PageSection>
 
           <PageSection
-            description="Распределение обезличено: график не содержит маркера или позиции отдельного школьника."
-            title={`Занятие ${lesson.lessonNumber}`}
+            description={t`Распределение обезличено: график не содержит маркера или позиции отдельного школьника.`}
+            title={t`Занятие ${lesson.lessonNumber}`}
           >
             <div className="grid gap-4 lg:grid-cols-[minmax(15rem,22rem)_1fr]">
               <Card>
                 <CardHeader>
-                  <CardTitle>Сколько задач решено</CardTitle>
+                  <CardTitle>
+                    <Trans>Сколько задач решено</Trans>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <DistributionViolin
                     height={260}
-                    valueLabel="Число решённых задач"
-                    caption={`Распределение по ${lesson.studentCount} школьникам.`}
+                    valueLabel={t`Число решённых задач`}
+                    caption={t`Распределение по ${lesson.studentCount} школьникам.`}
                     domain={[0, distributionMaximum]}
                     values={lesson.solvedDistribution}
                   />
@@ -298,7 +325,9 @@ export function StaffStatisticsView({
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Состав агрегата</CardTitle>
+                  <CardTitle>
+                    <Trans>Состав агрегата</Trans>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {lesson.groups.map((group) => (
@@ -308,7 +337,9 @@ export function StaffStatisticsView({
                     >
                       <div>
                         <div className="font-medium">{group.name}</div>
-                        <div className="text-caption text-muted-foreground">Код {group.code}</div>
+                        <div className="text-caption text-muted-foreground">
+                          <Trans>Код {group.code}</Trans>
+                        </div>
                       </div>
                       <span className="font-num text-small">{group.studentCount}</span>
                     </div>
@@ -367,16 +398,16 @@ export function StaffStatisticsPage({
 
   if (result.isPending) {
     return (
-      <PageLayout title="Статистика курса" width="wide">
+      <PageLayout title={t`Статистика курса`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (result.error) {
     return (
-      <PageLayout title="Статистика курса" width="wide">
+      <PageLayout title={t`Статистика курса`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void result.refetch()}
           state={
             result.error instanceof ApiResponseError && result.error.status === 403

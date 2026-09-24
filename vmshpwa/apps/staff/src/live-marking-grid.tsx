@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { memo, useRef, useLayoutEffect, useCallback, useState, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { LiveBoard } from '@vmsh/contracts'
@@ -49,27 +51,27 @@ export const LiveMarkButton = memo(
       display.pending === 'conflict'
     const status =
       display.pending === 'conflict'
-        ? 'Конфликт: оценка не сохранена'
+        ? t`Конфликт: оценка не сохранена`
         : display.pending === 'failed'
-          ? 'Ошибка: сохранение не подтверждено'
+          ? t`Ошибка: сохранение не подтверждено`
           : delayed
-            ? 'Сохранение не подтверждено: ждём ответ сервера'
+            ? t`Сохранение не подтверждено: ждём ответ сервера`
             : display.pending === 'sending'
-              ? 'Сохраняем'
+              ? t`Сохраняем`
               : display.pending === 'queued'
-                ? 'Сохранение не подтверждено: в очереди отправки'
+                ? t`Сохранение не подтверждено: в очереди отправки`
                 : display.pending === 'draft'
-                  ? 'Ожидает отправки'
-                  : 'Сохранено'
+                  ? t`Ожидает отправки`
+                  : t`Сохранено`
     return (
       <div className="relative flex h-full">
         <button
           type="button"
           onClick={() => onMark(studentId, problemId)}
           disabled={display.disabled}
-          aria-label={`${label}: ${display.pending ? `${display.beforeSymbol || 'не сдавал'} → ${display.symbol || 'не сдавал'}` : display.symbol || 'не сдавал'}${display.mine ? ', моя оценка' : ''}, ${status}`}
+          aria-label={`${label}: ${display.pending ? `${display.beforeSymbol || t`не сдавал`} → ${display.symbol || t`не сдавал`}` : display.symbol || t`не сдавал`}${display.mine ? t`, моя оценка` : ''}, ${status}`}
           aria-busy={display.pending === 'sending'}
-          title={`${display.pending ? `${display.beforeSymbol || 'Не сдавал'} → ${display.symbol || 'Не сдавал'}. ` : ''}${status}. Нажатия: плюс → минус → не трогать.`}
+          title={t`${display.pending ? `${display.beforeSymbol || t`Не сдавал`} → ${display.symbol || t`Не сдавал`}. ` : ''}${status}. Нажатия: плюс → минус → не трогать.`}
           className={cn(
             'relative flex h-full min-h-11 w-full min-w-11 items-center justify-center border border-transparent text-2xl font-medium tabular-nums outline-none transition-colors hover:bg-accent focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait',
             display.mine && 'bg-primary/10 font-bold text-primary',
@@ -93,7 +95,7 @@ export const LiveMarkButton = memo(
           )}
           {display.mine ? (
             <span className="absolute bottom-0.5 left-1 text-[8px] leading-none" aria-hidden="true">
-              я
+              <Trans>я</Trans>
             </span>
           ) : null}
           {display.pending ? (
@@ -107,8 +109,8 @@ export const LiveMarkButton = memo(
             type="button"
             disabled={display.disabled}
             className="min-h-11 w-6 shrink-0 border-l text-xs text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`Снять мои оценки в этом приёме: ${label}`}
-            title="Снять мои оценки в этом приёме (другие способы сдачи сохранятся)"
+            aria-label={t`Снять мои оценки в этом приёме: ${label}`}
+            title={t`Снять мои оценки в этом приёме (другие способы сдачи сохранятся)`}
             onClick={() => onMark(studentId, problemId, true)}
           >
             ↶
@@ -145,7 +147,17 @@ function useMarkAction(action: LiveSchoolGridProps['onMark']) {
     [],
   )
 }
-const attendanceText = { unmarked: 'Не отмечен', present: 'Пришёл', absent: 'Отсутствует' }
+const attendanceText = {
+  get unmarked() {
+    return t`Не отмечен`
+  },
+  get present() {
+    return t`Пришёл`
+  },
+  get absent() {
+    return t`Отсутствует`
+  },
+}
 const attendanceSymbol = { unmarked: '○', present: '✓', absent: '−' }
 export interface LiveSchoolGridProps {
   board: LiveBoard
@@ -187,7 +199,7 @@ export function LiveSchoolGrid({
     <div
       ref={scroll}
       className="min-h-0 flex-1 overflow-auto overscroll-contain"
-      aria-label="Таблица очного занятия"
+      aria-label={t`Таблица очного занятия`}
     >
       <table className="w-max border-separate border-spacing-0 text-sm">
         <thead className="sticky top-0 z-30 bg-background">
@@ -196,10 +208,10 @@ export function LiveSchoolGrid({
               scope="col"
               className="sticky left-0 z-30 w-28 min-w-28 max-w-28 border-b border-r bg-background px-1 py-2 text-left text-xs sm:w-40 sm:min-w-40 sm:max-w-40 sm:px-2 sm:text-sm"
             >
-              Школьник
+              <Trans>Школьник</Trans>
             </th>
             <th scope="col" className="border-b border-r px-1 text-xs font-normal">
-              Пришёл
+              <Trans>Пришёл</Trans>
             </th>
             {board.problems.map((p) => (
               <th
@@ -249,7 +261,7 @@ export function LiveSchoolGrid({
                     {student.displayName}
                     {expanded === student.studentId ? (
                       <span className="mt-1 text-xs font-normal text-muted-foreground">
-                        {student.grade ? `${student.grade} кл. · ` : ''}
+                        {student.grade ? t`${student.grade} кл. · ` : ''}
                         {student.middleName}
                       </span>
                     ) : null}
@@ -273,7 +285,7 @@ export function LiveSchoolGrid({
                 {board.problems.map((p) => (
                   <td key={p.problemId} className="min-w-11 border-b border-r p-0">
                     <LiveMarkButton
-                      label={`${student.displayName}, задача ${p.label}`}
+                      label={t`${student.displayName}, задача ${p.label}`}
                       display={display(student.studentId, p.problemId)}
                       onMark={mark}
                       studentId={student.studentId}
@@ -292,7 +304,9 @@ export function LiveSchoolGrid({
         </tbody>
       </table>
       {board.students.length === 0 ? (
-        <p className="p-4 text-sm text-muted-foreground">В этом списке пока нет школьников.</p>
+        <p className="p-4 text-sm text-muted-foreground">
+          <Trans>В этом списке пока нет школьников.</Trans>
+        </p>
       ) : null}
     </div>
   )
@@ -310,11 +324,16 @@ export function LiveZoomGrid({
 }) {
   const mark = useMarkAction(onMark)
   const student = board.students[0]
-  if (!student) return <p className="p-4">Школьник не найден.</p>
+  if (!student)
+    return (
+      <p className="p-4">
+        <Trans>Школьник не найден.</Trans>
+      </p>
+    )
   return (
     <div
       className="min-h-0 flex-1 overflow-auto overscroll-contain p-2"
-      aria-label="Оценки школьника"
+      aria-label={t`Оценки школьника`}
     >
       <div className="grid grid-cols-[repeat(auto-fill,minmax(5.625rem,1fr))] content-start gap-1">
         {board.problems.map((p) => (
@@ -333,7 +352,7 @@ export function LiveZoomGrid({
             </div>
             <div className="flex h-11">
               <LiveMarkButton
-                label={`Задача ${p.label}`}
+                label={t`Задача ${p.label}`}
                 display={display(student.studentId, p.problemId)}
                 onMark={mark}
                 studentId={student.studentId}
@@ -342,8 +361,8 @@ export function LiveZoomGrid({
               <button
                 type="button"
                 className="flex h-11 w-11 shrink-0 items-center justify-center border-l text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                aria-label={`Показать условие задачи ${p.label}`}
-                title="Показать условие"
+                aria-label={t`Показать условие задачи ${p.label}`}
+                title={t`Показать условие`}
                 onClick={(event) => {
                   // Safari does not focus buttons on pointer click; restore this target after the dialog.
                   event.currentTarget.focus()
@@ -358,7 +377,7 @@ export function LiveZoomGrid({
       </div>
       {board.problems.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">
-          Устных задач нет. Переключитесь на «Все».
+          <Trans>Устных задач нет. Переключитесь на «Все».</Trans>
         </p>
       ) : null}
     </div>

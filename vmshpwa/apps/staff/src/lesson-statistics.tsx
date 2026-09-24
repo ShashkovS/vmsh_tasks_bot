@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDateTime, formatNumber } from '@vmsh/i18n'
 import type { ReactNode } from 'react'
 import { DistributionViolin, StrengthTrend } from '@vmsh/product'
 import type { StaffStatisticsResponse } from '@vmsh/contracts'
@@ -32,16 +35,20 @@ export function LessonStatistics({
   const lesson = data.basicLesson
   const maximum = Math.max(1, ...(lesson?.groups.map((g) => g.problems.length) ?? []))
   return (
-    <section className="space-y-4" aria-label="Статистика по отправленным задачам">
+    <section className="space-y-4" aria-label={t`Статистика по отправленным задачам`}>
       <div className="flex flex-wrap items-start gap-3">
         <Label>
-          Занятие
+          <Trans>Занятие</Trans>
           <select
             className="ml-2 rounded border border-input bg-surface p-2"
             value={lesson?.lessonNumber ?? ''}
             onChange={(e) => onLessonChange(Number(e.target.value))}
           >
-            {!data.lessonNumbers.length && <option value="">Нет опубликованных занятий</option>}
+            {!data.lessonNumbers.length && (
+              <option value="">
+                <Trans>Нет опубликованных занятий</Trans>
+              </option>
+            )}
             {data.lessonNumbers.map((n) => (
               <option key={n} value={n}>
                 {n}
@@ -50,7 +57,7 @@ export function LessonStatistics({
           </select>
         </Label>
         <Button onClick={onRefresh} variant="outline">
-          Обновить статистику
+          <Trans>Обновить статистику</Trans>
         </Button>
         {recalculationControl}
       </div>
@@ -58,13 +65,15 @@ export function LessonStatistics({
         {lesson?.groups.map((group, index) => (
           <div key={group.groupId} className="w-55">
             {group.distribution.length === 0 ? (
-              <p>{group.name}: пока нет отправок</p>
+              <p>
+                <Trans>{group.name}: пока нет отправок</Trans>
+              </p>
             ) : group.distribution.length === 1 ? (
               <figure>
                 <svg
                   viewBox="0 0 220 260"
                   role="img"
-                  aria-label={`${group.name}: один участник, число решённых задач ${group.distribution[0]}`}
+                  aria-label={t`${group.name}: один участник, число решённых задач ${group.distribution[0] ?? 0}`}
                   className="h-65 w-full"
                 >
                   <circle
@@ -74,16 +83,18 @@ export function LessonStatistics({
                     className="fill-chart-1"
                   />
                 </svg>
-                <figcaption>{group.name} · 1 участник</figcaption>
+                <figcaption>
+                  <Trans>{group.name} · 1 участник</Trans>
+                </figcaption>
               </figure>
             ) : (
               <DistributionViolin
                 height={260}
-                valueLabel="Число решённых задач"
+                valueLabel={t`Число решённых задач`}
                 colorIndex={index % 3 === 0 ? 1 : index % 3 === 1 ? 2 : 3}
                 values={group.distribution}
                 domain={[0, maximum]}
-                caption={`${group.name} · ${group.participantCount} участников`}
+                caption={t`${group.name} · ${group.participantCount} участников`}
               />
             )}
           </div>
@@ -92,26 +103,25 @@ export function LessonStatistics({
       {lesson?.groups.map((group) => (
         <section key={group.groupId} className="space-y-2">
           <h2 className="font-semibold">
-            {group.name} · занятие {lesson.lessonNumber}
+            <Trans>
+              {group.name} · занятие {lesson.lessonNumber}
+            </Trans>
           </h2>
           <div className="overflow-x-auto">
             <Table className="lesson-statistics-table">
               <TableHeader>
                 <TableRow>
                   {[
-                    'Задача',
-                    'Название',
-                    'Решили',
-                    'Пробовали',
-                    'Участников',
-                    'Доля',
-                    'Сложность для слабых',
-                    'Сложность для сильных',
-                  ].map((label) => (
-                    <TableHead
-                      className={label === 'Задача' || label === 'Название' ? '' : 'text-right'}
-                      key={label}
-                    >
+                    { align: 'left', label: t`Задача` },
+                    { align: 'left', label: t`Название` },
+                    { align: 'right', label: t`Решили` },
+                    { align: 'right', label: t`Пробовали` },
+                    { align: 'right', label: t`Участников` },
+                    { align: 'right', label: t`Доля` },
+                    { align: 'right', label: t`Сложность для слабых` },
+                    { align: 'right', label: t`Сложность для сильных` },
+                  ].map(({ align, label }) => (
+                    <TableHead className={align === 'left' ? '' : 'text-right'} key={label}>
                       {label}
                     </TableHead>
                   ))}
@@ -122,7 +132,7 @@ export function LessonStatistics({
                   <TableRow key={problem.problemId}>
                     <TableCell>{problem.label}</TableCell>
                     <TableCell>{problem.title}</TableCell>
-                    <TableCell>{problem.points.toLocaleString('ru-RU')}</TableCell>
+                    <TableCell>{formatNumber(problem.points)}</TableCell>
                     <TableCell>{problem.tried}</TableCell>
                     <TableCell>{group.participantCount}</TableCell>
                     <TableCell
@@ -140,7 +150,7 @@ export function LessonStatistics({
                     </TableCell>
                     {[problem.difficultyWeak, problem.difficultyStrong].map((value, index) => (
                       <TableCell key={index}>
-                        {value === null ? 'Ещё не рассчитано' : value.toFixed(3)}
+                        {value === null ? t`Ещё не рассчитано` : value.toFixed(3)}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -170,13 +180,15 @@ export function LessonStatistics({
             }))}
           />
         ) : (
-          <p>Для школьника пока нет расчёта силы по занятиям от 1.</p>
+          <p>
+            <Trans>Для школьника пока нет расчёта силы по занятиям от 1.</Trans>
+          </p>
         ))}
       {data.run && (
         <p className="text-caption text-muted-foreground">
-          Сложности и сила рассчитаны:{' '}
-          {new Date(data.run.completedAt).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}{' '}
-          МСК
+          <Trans>Сложности и сила рассчитаны: </Trans>
+          {formatDateTime(new Date(data.run.completedAt), { timeZone: 'Europe/Moscow' })}
+          <Trans> МСК</Trans>
         </p>
       )}
     </section>

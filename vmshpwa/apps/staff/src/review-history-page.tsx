@@ -1,3 +1,6 @@
+import { t as translate } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDateTime } from '@vmsh/i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -34,7 +37,7 @@ import type { HistorySearch } from './review-history-search'
 
 function historyError(error: unknown): string {
   return error instanceof ApiResponseError
-    ? `${error.message} Код обращения: ${error.requestId}.`
+    ? translate`${error.message} Код обращения: ${error.requestId}.`
     : describeReviewError(error)
 }
 const verdictValues = [
@@ -99,7 +102,7 @@ export function StaffReviewHistoryPage({
     requestAnimationFrame(() => window.scrollTo(0, scroll.current))
   }
   return (
-    <PageLayout title="Завершённые проверки">
+    <PageLayout title={translate`Завершённые проверки`}>
       {search.review ? (
         <CompletedReviewCard key={search.review} reviewId={search.review} onClose={close} />
       ) : (
@@ -110,7 +113,7 @@ export function StaffReviewHistoryPage({
             <PageStatePanel
               state="error"
               description={historyError(history.error)}
-              actionLabel="Повторить"
+              actionLabel={translate`Повторить`}
               onAction={() => void history.refetch()}
             />
           ) : (
@@ -118,9 +121,9 @@ export function StaffReviewHistoryPage({
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-4">
                   <Label>
-                    Курс
+                    <Trans>Курс</Trans>
                     <select
-                      aria-label="Курс"
+                      aria-label={translate`Курс`}
                       className="block rounded border border-border bg-surface p-2"
                       value={options.courseId ?? ''}
                       onChange={(e) =>
@@ -141,9 +144,9 @@ export function StaffReviewHistoryPage({
                     </select>
                   </Label>
                   <Label>
-                    Занятие
+                    <Trans>Занятие</Trans>
                     <select
-                      aria-label="Занятие"
+                      aria-label={translate`Занятие`}
                       className="block rounded border border-border bg-surface p-2"
                       value={options.lesson ?? ''}
                       onChange={(e) =>
@@ -162,9 +165,9 @@ export function StaffReviewHistoryPage({
                     </select>
                   </Label>
                   <Label>
-                    Преподаватель
+                    <Trans>Преподаватель</Trans>
                     <select
-                      aria-label="Преподаватель"
+                      aria-label={translate`Преподаватель`}
                       disabled={!options.canChooseTeacher}
                       className="block rounded border border-border bg-surface p-2"
                       value={
@@ -173,7 +176,11 @@ export function StaffReviewHistoryPage({
                       }
                       onChange={(e) => change({ teacher: e.target.value || undefined })}
                     >
-                      {options.canChooseTeacher && <option value="">Все преподаватели</option>}
+                      {options.canChooseTeacher && (
+                        <option value="">
+                          <Trans>Все преподаватели</Trans>
+                        </option>
+                      )}
                       {options.teachers.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.name}
@@ -182,14 +189,16 @@ export function StaffReviewHistoryPage({
                     </select>
                   </Label>
                   <Label>
-                    Задача
+                    <Trans>Задача</Trans>
                     <select
-                      aria-label="Задача"
+                      aria-label={translate`Задача`}
                       className="block rounded border border-border bg-surface p-2"
                       value={search.problem ?? ''}
                       onChange={(e) => change({ problem: e.target.value || undefined })}
                     >
-                      <option value="">Все задачи</option>
+                      <option value="">
+                        <Trans>Все задачи</Trans>
+                      </option>
                       {options.problems.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name}
@@ -199,31 +208,33 @@ export function StaffReviewHistoryPage({
                   </Label>
                 </div>
                 <StatisticsStudentSearch
-                  label="Школьник"
+                  label={translate`Школьник`}
                   students={options.students}
                   studentId={search.student ?? null}
                   onChange={(id) => change({ student: id ?? undefined })}
                 />
                 <Label>
-                  Фрагмент комментария
+                  <Trans>Фрагмент комментария</Trans>
                   <Input
                     type="search"
                     value={search.comment ?? ''}
                     onChange={(e) => change({ comment: e.target.value || undefined })}
                   />
                 </Label>
-                <Button onClick={() => void history.refetch()}>Обновить</Button>
+                <Button onClick={() => void history.refetch()}>
+                  <Trans>Обновить</Trans>
+                </Button>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr>
                         {[
-                          'Когда',
-                          'Преподаватель',
-                          'Школьник',
-                          'Задача',
-                          'Оценка',
-                          'Комментарий',
+                          translate`Когда`,
+                          translate`Преподаватель`,
+                          translate`Школьник`,
+                          translate`Задача`,
+                          translate`Оценка`,
+                          translate`Комментарий`,
                           '',
                         ].map((s, i) => (
                           <th className="p-2" key={i}>
@@ -235,13 +246,16 @@ export function StaffReviewHistoryPage({
                     <tbody>
                       {history.data?.items.map((item) => (
                         <tr className="border-t border-border" key={item.reviewId}>
-                          <td className="p-2">
-                            {new Date(item.completedAt).toLocaleString('ru-RU')}
-                          </td>
+                          <td className="p-2">{formatDateTime(new Date(item.completedAt))}</td>
                           <td className="p-2">{item.teacherName}</td>
                           <td className="p-2">
                             {item.studentName}
-                            {item.isTestStudent && <span> · Тест учителя</span>}
+                            {item.isTestStudent && (
+                              <span>
+                                {' '}
+                                <Trans>· Тест учителя</Trans>
+                              </span>
+                            )}
                           </td>
                           <td className="p-2">
                             {item.problemNumber} · {item.problemTitle}
@@ -249,7 +263,11 @@ export function StaffReviewHistoryPage({
                           </td>
                           <td className="p-2">
                             {writtenReviewVerdict(item.verdict).label}
-                            {!item.isLatestReview && <div>Устаревшая</div>}
+                            {!item.isLatestReview && (
+                              <div>
+                                <Trans>Устаревшая</Trans>
+                              </div>
+                            )}
                           </td>
                           <td className="p-2">{item.comment}</td>
                           <td className="p-2">
@@ -264,7 +282,7 @@ export function StaffReviewHistoryPage({
                                 change({ cursor: search.cursor, review: item.reviewId })
                               }}
                             >
-                              Перепроверить
+                              <Trans>Перепроверить</Trans>
                             </Button>
                           </td>
                         </tr>
@@ -272,16 +290,22 @@ export function StaffReviewHistoryPage({
                     </tbody>
                   </table>
                 </div>
-                {!history.data?.items.length && <p>Завершённых проверок по этим фильтрам нет.</p>}
+                {!history.data?.items.length && (
+                  <p>
+                    <Trans>Завершённых проверок по этим фильтрам нет.</Trans>
+                  </p>
+                )}
                 <div className="flex gap-2">
                   {search.cursor && (
-                    <Button onClick={() => change({ cursor: undefined })}>В начало списка</Button>
+                    <Button onClick={() => change({ cursor: undefined })}>
+                      <Trans>В начало списка</Trans>
+                    </Button>
                   )}
                   {history.data?.nextCursor && (
                     <Button
                       onClick={() => change({ cursor: history.data?.nextCursor ?? undefined })}
                     >
-                      Следующие 50
+                      <Trans>Следующие 50</Trans>
                     </Button>
                   )}
                 </div>
@@ -328,14 +352,18 @@ export function CompletedReviewCard({
   })
   return (
     <div className="space-y-4">
-      {!readOnly && <Button onClick={onClose}>Назад</Button>}
+      {!readOnly && (
+        <Button onClick={onClose}>
+          <Trans>Назад</Trans>
+        </Button>
+      )}
       {query.isPending ? (
         <PageStatePanel state="loading" />
       ) : query.error ? (
         <PageStatePanel
           state="error"
           description={historyError(query.error)}
-          actionLabel="Обновить"
+          actionLabel={translate`Обновить`}
           onAction={() => void query.refetch()}
         />
       ) : readOnly ? (
@@ -466,7 +494,7 @@ function CorrectionEditor({
     if (
       newer &&
       !window.confirm(
-        `Более новая проверка: ${latest?.teacherName}, ${latest ? new Date(latest.completedAt).toLocaleString('ru-RU') : ''}, ${latest ? writtenReviewVerdict(latest.verdict).label : ''}. Заменить её вашей оценкой?`,
+        translate`Более новая проверка: ${latest?.teacherName ?? ''}, ${latest ? formatDateTime(new Date(latest.completedAt)) : ''}, ${latest ? writtenReviewVerdict(latest.verdict).label : ''}. Заменить её вашей оценкой?`,
       )
     )
       return
@@ -514,29 +542,36 @@ function CorrectionEditor({
       </h2>
       {!detail.review.isLatestReview && (
         <p role="alert">
-          Вы исправляете устаревшую проверку. Более новые вердикты показаны ниже; их замена
-          потребует подтверждения.
+          <Trans>
+            Вы исправляете устаревшую проверку. Более новые вердикты показаны ниже; их замена
+            потребует подтверждения.
+          </Trans>
         </p>
       )}
       {!detail.review.isLatestReview && detail.timeline[0] && (
         <p>
-          Актуальная проверка: {detail.timeline[0].teacherName} ·{' '}
-          {new Date(detail.timeline[0].completedAt).toLocaleString('ru-RU')} ·{' '}
+          <Trans>Актуальная проверка: {detail.timeline[0].teacherName} · </Trans>
+          {formatDateTime(new Date(detail.timeline[0].completedAt))} ·{' '}
           {writtenReviewVerdict(detail.timeline[0].verdict).label}
         </p>
       )}
       {detail.blockedBy && (
         <p role="alert">
-          Сейчас проверяет {detail.blockedBy}. <Button onClick={refresh}>Обновить</Button>
+          <Trans>Сейчас проверяет {detail.blockedBy}.</Trans>{' '}
+          <Button onClick={refresh}>
+            <Trans>Обновить</Trans>
+          </Button>
         </p>
       )}
       <details>
-        <summary>Условие задачи</summary>
+        <summary>
+          <Trans>Условие задачи</Trans>
+        </summary>
         {detail.document ? (
           <SemanticMathDocument document={detail.document} />
         ) : (
           <p className="whitespace-pre-wrap">
-            {detail.statement || 'Условие не сохранено для этой работы.'}
+            {detail.statement || translate`Условие не сохранено для этой работы.`}
           </p>
         )}
       </details>
@@ -561,10 +596,12 @@ function CorrectionEditor({
         </article>
       ))}
       <details>
-        <summary>История вердиктов и комментариев</summary>
+        <summary>
+          <Trans>История вердиктов и комментариев</Trans>
+        </summary>
         {detail.timeline.map((t) => (
           <p className="whitespace-pre-wrap border-t border-border p-2" key={t.reviewId}>
-            {t.teacherName} · {new Date(t.completedAt).toLocaleString('ru-RU')} ·{' '}
+            {t.teacherName} · {formatDateTime(new Date(t.completedAt))} ·{' '}
             {writtenReviewVerdict(t.verdict).label}
             {'\n'}
             {t.comment}
@@ -572,17 +609,21 @@ function CorrectionEditor({
         ))}
       </details>
       {storageFailed && (
-        <p role="alert">Браузер не сохраняет черновик. Не закрывайте страницу до отправки.</p>
+        <p role="alert">
+          <Trans>Браузер не сохраняет черновик. Не закрывайте страницу до отправки.</Trans>
+        </p>
       )}
       {error && (
         <p role="alert">
-          {error} Ваши изменения остаются в форме.{' '}
-          <Button onClick={refresh}>Обновить данные</Button>
+          <Trans>{error} Ваши изменения остаются в форме. </Trans>
+          <Button onClick={refresh}>
+            <Trans>Обновить данные</Trans>
+          </Button>
         </p>
       )}
       {stale && (
         <p role="alert">
-          Работа изменилась. Черновик сохранён.{' '}
+          <Trans>Работа изменилась. Черновик сохранён. </Trans>
           <Button
             onClick={() =>
               save({
@@ -593,7 +634,7 @@ function CorrectionEditor({
               })
             }
           >
-            Ознакомился с обновлениями, продолжить
+            <Trans>Ознакомился с обновлениями, продолжить</Trans>
           </Button>
         </p>
       )}

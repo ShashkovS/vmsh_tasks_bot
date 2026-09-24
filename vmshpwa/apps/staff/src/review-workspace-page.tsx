@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { useNavigate } from '@tanstack/react-router'
 import { ReviewTransfer } from './review-transfer'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -115,7 +118,7 @@ export function StaffReviewWorkspacePage({ queueId }: { queueId: string }) {
       <WorkspacePageShell
         content={
           <PageStatePanel
-            actionLabel="Повторить"
+            actionLabel={t`Повторить`}
             description={describeReviewError(leaseQuery.error)}
             onAction={() => void leaseQuery.refetch()}
             state={
@@ -339,21 +342,23 @@ export function LoadedReviewWorkspace({
     <PageLayout
       actions={
         <Button disabled={release.isPending} onClick={() => void abandon()} variant="ghost">
-          Отказаться от проверки
+          <Trans>Отказаться от проверки</Trans>
         </Button>
       }
-      description={`${currentLease.student.displayName} · ${first.courseName ?? 'Курс'} · ${first.groupName}`}
+      description={`${currentLease.student.displayName} · ${first.courseName ?? t`Курс`} · ${first.groupName}`}
       eyebrow={`${first.problemNumber} · ${first.problemTitle}`}
-      title="Проверка работы"
+      title={t`Проверка работы`}
       width="wide"
     >
       <div className="space-y-3">
         {!storageAvailable ? (
           <Alert tone="danger" role="alert">
             <AlertContent>
-              <AlertTitle>Не удалось сохранить черновик на устройстве</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось сохранить черновик на устройстве</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Не закрывайте страницу и скопируйте комментарий перед продолжением.
+                <Trans>Не закрывайте страницу и скопируйте комментарий перед продолжением.</Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -361,9 +366,11 @@ export function LoadedReviewWorkspace({
         {leaseLost ? (
           <Alert tone="danger" role="alert">
             <AlertContent>
-              <AlertTitle>Блокировка проверки потеряна</AlertTitle>
+              <AlertTitle>
+                <Trans>Блокировка проверки потеряна</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Черновик сохранён. Вернитесь в очередь и откройте работу заново.
+                <Trans>Черновик сохранён. Вернитесь в очередь и откройте работу заново.</Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -371,18 +378,24 @@ export function LoadedReviewWorkspace({
         {errors ? (
           <Alert tone="danger" role="alert">
             <AlertContent>
-              <AlertTitle>Проверка не сохранена</AlertTitle>
+              <AlertTitle>
+                <Trans>Проверка не сохранена</Trans>
+              </AlertTitle>
               <AlertDescription>{describeReviewError(errors)}</AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
         <ThreePaneReview
           evidence={
-            <PageSection title="Работа и переписка">
+            <PageSection title={t`Работа и переписка`}>
               <Card>
                 <CardHeader className="flex-row items-center justify-between">
-                  <CardTitle>{messages.length} сообщений</CardTitle>
-                  <Badge variant="success">Взята вами</Badge>
+                  <CardTitle>
+                    <Trans>{messages.length} сообщений</Trans>
+                  </CardTitle>
+                  <Badge variant="success">
+                    <Trans>Взята вами</Trans>
+                  </Badge>
                 </CardHeader>
                 <CardContent>
                   <FeedbackThread messages={messages} />
@@ -476,13 +489,13 @@ function timelineMessages(
             ...(entry.authorKind === 'student'
               ? { name: lease.student.displayName }
               : entry.authorKind === 'system'
-                ? { name: 'Система' }
+                ? { name: t`Система` }
                 : {}),
           },
           at: formatMessageTime(entry.submittedAt),
           channel: 'pwa' as const,
           origin: {
-            courseName: branch.courseName ?? 'Курс',
+            courseName: branch.courseName ?? t`Курс`,
             groupName: branch.groupName,
             taskNumber: branch.problemNumber,
           },
@@ -607,12 +620,16 @@ export function ReviewAttachmentImage({
   }, [attachmentId, entryId, mediaClient, visible])
 
   if (failed)
-    return <p className="text-caption text-status-error">Не удалось загрузить страницу.</p>
+    return (
+      <p className="text-caption text-status-error">
+        <Trans>Не удалось загрузить страницу.</Trans>
+      </p>
+    )
   if (!source)
     return (
       <div
         ref={placeholder}
-        aria-label="Загружаем страницу"
+        aria-label={t`Загружаем страницу`}
         className="h-48 animate-pulse rounded-md bg-surface-sunken"
       />
     )
@@ -621,7 +638,7 @@ export function ReviewAttachmentImage({
       <ReviewAnnotationEditor
         attachmentId={attachmentId}
         disabled={annotationDisabled}
-        imageAlt={`Страница решения ${ordinal + 1}`}
+        imageAlt={t`Страница решения ${ordinal + 1}`}
         imageSource={source}
         initialManifest={annotation}
         onChange={(next) => onAnnotationChange(attachmentId, next)}
@@ -631,14 +648,14 @@ export function ReviewAttachmentImage({
   if (annotation)
     return (
       <ReviewAnnotationViewer
-        imageAlt={`Страница решения ${ordinal + 1}`}
+        imageAlt={t`Страница решения ${ordinal + 1}`}
         imageSource={source}
         manifest={annotation}
       />
     )
   return (
     <img
-      alt={`Страница решения ${ordinal + 1}`}
+      alt={t`Страница решения ${ordinal + 1}`}
       className="max-h-[42rem] w-full rounded-md border border-border bg-surface object-contain"
       src={source}
     />
@@ -675,7 +692,7 @@ export function ReviewedWorkSnapshot({
 }
 
 function formatMessageTime(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -685,7 +702,7 @@ function formatMessageTime(value: string): string {
 
 function WorkspacePageShell({ content }: { content: React.ReactNode }) {
   return (
-    <PageLayout eyebrow="Письменная задача" title="Проверка работы" width="wide">
+    <PageLayout eyebrow={t`Письменная задача`} title={t`Проверка работы`} width="wide">
       {content}
     </PageLayout>
   )

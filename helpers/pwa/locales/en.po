@@ -127,7 +127,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Блокировка проверки завершилась. Обновите очередь."
-msgstr ""
+msgstr "The review lock expired. Refresh the queue."
 
 #: apps/pwa_api/push_subscription_routes.py
 msgid "Браузер вернул некорректную push-подписку"
@@ -163,7 +163,7 @@ msgstr "The submitted solution must retain a photo or text."
 
 #: apps/pwa_api/review_routes.py
 msgid "В проверяемой ветви нет посылок"
-msgstr ""
+msgstr "There are no submissions in the reviewed branch"
 
 #: apps/pwa_api/content_routes.py
 msgid "В старой версии не хватает рисунков. Загрузите исходный файл заново вместе с рисунками."
@@ -211,7 +211,7 @@ msgstr ""
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Внесение устных результатов временно недоступно"
-msgstr ""
+msgstr "Entering oral-session results is temporarily unavailable"
 
 #: apps/pwa_app.py
 msgid "Внутренняя ошибка сервера"
@@ -219,11 +219,11 @@ msgstr "Internal server error"
 
 #: apps/pwa_api/review_routes.py
 msgid "Внутренняя пометка не найдена"
-msgstr ""
+msgstr "The internal note was not found"
 
 #: apps/pwa_api/review_routes.py
 msgid "Внутренняя пометка уже изменилась. Обновите проверку."
-msgstr ""
+msgstr "The internal note has changed. Refresh the review."
 
 #: apps/pwa_api/support_routes.py
 msgid "Вопрос или его контекст не найден"
@@ -240,11 +240,11 @@ msgstr "Questions are temporarily unavailable"
 
 #: apps/pwa_api/review_routes.py
 msgid "Время изменения внутренней пометки закончилось"
-msgstr ""
+msgstr "The time to change the internal note has expired"
 
 #: apps/pwa_api/review_routes.py
 msgid "Время изменения реакции закончилось"
-msgstr ""
+msgstr "The time to change the reaction has expired"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Время публикации некорректно"
@@ -273,11 +273,11 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Выберите доступную внутреннюю пометку"
-msgstr ""
+msgstr "Choose an available internal note"
 
 #: apps/pwa_api/review_routes.py
 msgid "Выберите доступную реакцию"
-msgstr ""
+msgstr "Choose an available reaction"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Выберите задачи без повторов"
@@ -285,11 +285,11 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Выберите корректный вердикт"
-msgstr ""
+msgstr "Choose a valid verdict"
 
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Выберите курс"
-msgstr ""
+msgstr "Choose a course"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Выберите курс и XLSX-файл"
@@ -380,7 +380,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Для этой работы ещё не подготовлена полная история PWA"
-msgstr ""
+msgstr "The full PWA history is not ready for this work yet"
 
 #: apps/pwa_api/content_routes.py
 msgid "До публикации или планирования решения задайте дедлайн сдачи."
@@ -462,7 +462,7 @@ msgstr ""
 #: apps/pwa_api/admin_schedule_routes.py
 #: apps/pwa_api/student_results_routes.py
 msgid "Запись не найдена"
-msgstr ""
+msgstr "Record not found"
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Запись уже изменилась. Обновите список."
@@ -581,7 +581,7 @@ msgstr ""
 
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Ключ запроса уже использован для другого курса"
-msgstr ""
+msgstr "The request key has already been used for another course"
 
 #: apps/pwa_api/staff_access_routes.py
 msgid "Курс или группа изменились. Обновите страницу и повторите загрузку"
@@ -624,7 +624,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Курсор списка реакций устарел"
-msgstr ""
+msgstr "The reaction-list cursor is stale"
 
 #: apps/pwa_api/family_course_routes.py
 msgid "Листок пока недоступен"
@@ -640,7 +640,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Материал не найден или недоступен"
-msgstr ""
+msgstr "The material was not found or is unavailable"
 
 #: apps/pwa_api/content_routes.py
 msgid "Материал не прошёл проверку"
@@ -719,7 +719,7 @@ msgstr "Not all photos are ready to be sent."
 
 #: apps/pwa_api/review_routes.py
 msgid "Не найдено"
-msgstr ""
+msgstr "Not found"
 
 #: apps/pwa_api/content_routes.py
 msgid "Не удалось безопасно прочитать материал"
@@ -801,7 +801,7 @@ msgstr ""
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Неверный номер занятия"
-msgstr ""
+msgstr "Invalid class number"
 
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Неверный период аналитики"
@@ -818,7 +818,7 @@ msgstr "Insufficient permissions"
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Недостаточно прав для внесения устных результатов"
-msgstr ""
+msgstr "You do not have permission to enter oral-session results"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Недостаточно прав для исходной или целевой задачи"
@@ -838,7 +838,7 @@ msgstr "You do not have permission to recheck this problem"
 
 #: apps/pwa_api/review_routes.py
 msgid "Недостаточно прав для проверки работы"
-msgstr ""
+msgstr "You do not have permission to review this work"
 
 #: apps/pwa_api/classroom_assignment_routes.py
 msgid "Недостаточно прав для просмотра аудиторий"
@@ -858,7 +858,7 @@ msgstr "Insufficient permissions to view news"
 
 #: apps/pwa_api/review_routes.py
 msgid "Недостаточно прав для просмотра очереди проверки"
-msgstr ""
+msgstr "You do not have permission to view the review queue"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Недостаточно прав для просмотра решения"
@@ -866,7 +866,7 @@ msgstr "You do not have permission to view the solution"
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Недостаточно прав для просмотра статистики"
-msgstr ""
+msgstr "You do not have permission to view statistics"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Недостаточно прав для просмотра устного приёма"
@@ -896,7 +896,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Недостаточно прав для реакции на эту проверку"
-msgstr ""
+msgstr "You do not have permission to react to this review"
 
 #: apps/pwa_api/submission_routes.py
 #: apps/pwa_api/written_submission_routes.py
@@ -937,11 +937,11 @@ msgstr ""
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Неизвестный параметр статистики"
-msgstr ""
+msgstr "Unknown statistics parameter"
 
 #: apps/pwa_api/review_routes.py
 msgid "Неизвестный порядок очереди"
-msgstr ""
+msgstr "Unknown queue order"
 
 #: apps/pwa_api/content_routes.py
 msgid "Неизвестный режим публикации"
@@ -953,7 +953,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Неизвестный тип реакции"
-msgstr ""
+msgstr "Unknown reaction type"
 
 #: apps/pwa_api/organizer_question_routes.py
 msgid "Неизвестный фильтр"
@@ -973,11 +973,11 @@ msgstr "Invalid request"
 
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Некорректный запрос пересчёта"
-msgstr ""
+msgstr "Invalid recalculation request"
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Некорректный идентификатор"
-msgstr ""
+msgstr "Invalid identifier"
 
 #: apps/pwa_api/auth_routes.py
 msgid "Некорректный идентификатор сеанса"
@@ -985,7 +985,7 @@ msgstr "Invalid session identifier"
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Некорректный номер занятия"
-msgstr ""
+msgstr "Invalid class number"
 
 #: apps/pwa_api/content_routes.py
 msgid "Немедленная публикация не принимает местное время или часовой пояс"
@@ -998,7 +998,7 @@ msgstr "The request version is not supported"
 
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Нет доступа к курсу"
-msgstr ""
+msgstr "You do not have access to the course"
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Нет доступа к материалам для разбора"
@@ -1010,19 +1010,19 @@ msgstr ""
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Нет доступа к статистике школьника"
-msgstr ""
+msgstr "You do not have access to this student's statistics"
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Нет доступа к статистике этого курса"
-msgstr ""
+msgstr "You do not have access to this course's statistics"
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Нет доступа к статистике этой группы"
-msgstr ""
+msgstr "You do not have access to this group's statistics"
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Нет доступа к этой группе"
-msgstr ""
+msgstr "You do not have access to this group"
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Нет доступа к этому уровню"
@@ -1234,7 +1234,7 @@ msgstr "The submitted solution has already entered review or been reviewed."
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/staff_dashboard_routes.py
 msgid "Очередь проверки временно недоступна"
-msgstr ""
+msgstr "The review queue is temporarily unavailable"
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Очное занятие не найдено"
@@ -1278,7 +1278,7 @@ msgstr "The conversation changed after the preview. Refresh the data."
 
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Пересчёт доступен только администратору"
-msgstr ""
+msgstr "Recalculation is available only to an administrator"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Письменная сдача временно недоступна"
@@ -1327,7 +1327,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Подтвердите отправку вердикта без комментария"
-msgstr ""
+msgstr "Confirm that you want to submit a verdict without a comment"
 
 #: apps/pwa_api/content_routes.py
 msgid "Подтвердите полную перегенерацию metadata для этой версии условия"
@@ -1352,7 +1352,7 @@ msgstr "The photo order changed. Refresh the page."
 
 #: apps/pwa_api/review_routes.py
 msgid "Посылка или её блокировка изменились. Обновите предпросмотр перед переносом."
-msgstr ""
+msgstr "The submission or its lock has changed. Refresh the preview before moving it."
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Преподаватель может менять только активную группу в своём доступе"
@@ -1376,7 +1376,7 @@ msgstr "Problems reviewed: {count}. Results are already in the account."
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверка временно недоступна"
-msgstr ""
+msgstr "Review is temporarily unavailable"
 
 #: helpers/pwa/push_delivery.py
 msgid "Проверка завершена"
@@ -1384,11 +1384,11 @@ msgstr "Review complete"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверка не найдена"
-msgstr ""
+msgstr "Review not found"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверка не найдена или недоступна"
-msgstr ""
+msgstr "The review was not found or is unavailable"
 
 #: apps/pwa_api/group_banner_routes.py
 #: apps/pwa_api/news_moderation_routes.py
@@ -1401,7 +1401,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте аннотации к работе"
-msgstr ""
+msgstr "Check the work annotations"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Проверьте введённые данные"
@@ -1421,7 +1421,7 @@ msgstr "Check the written-solution version"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте версию проверки"
-msgstr ""
+msgstr "Check the review version"
 
 #: apps/pwa_api/submission_routes.py
 #: apps/pwa_api/written_submission_routes.py
@@ -1430,7 +1430,7 @@ msgstr "Check the problem-statement version"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте ветви проверяемой работы"
-msgstr ""
+msgstr "Check the branches of the work being reviewed"
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Проверьте время и смещение"
@@ -1483,11 +1483,11 @@ msgstr ""
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Проверьте выбранный курс и группу"
-msgstr ""
+msgstr "Check the selected course and group"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте границу проверяемой работы"
-msgstr ""
+msgstr "Check the reviewed-work boundary"
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Проверьте группы и режим школьника"
@@ -1499,11 +1499,11 @@ msgstr "Check the push subscription data"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте данные внутренней пометки"
-msgstr ""
+msgstr "Check the internal-note data"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте данные завершения проверки"
-msgstr ""
+msgstr "Check the review-completion data"
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "Проверьте данные занятия"
@@ -1515,7 +1515,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте данные проверки"
-msgstr ""
+msgstr "Check the review data"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Проверьте данные семейного аккаунта"
@@ -1527,7 +1527,7 @@ msgstr ""
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Проверьте данные устной сдачи"
-msgstr ""
+msgstr "Check the oral-submission data"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Проверьте данные формы"
@@ -1573,7 +1573,7 @@ msgstr "Check the submission key"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте комментарий"
-msgstr ""
+msgstr "Check the comment"
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте контекст вопроса"
@@ -1613,11 +1613,11 @@ msgstr ""
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Проверьте отметки устных задач"
-msgstr ""
+msgstr "Check the oral-problem marks"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте оценку по шкале курса, подтверждение комментария и пометки на исходных фотографиях"
-msgstr ""
+msgstr "Check the course-scale grade, comment confirmation, and annotations on the original photos"
 
 #: apps/pwa_api/group_banner_routes.py
 #: apps/pwa_api/news_moderation_routes.py
@@ -1628,7 +1628,7 @@ msgstr "Check the limit parameter"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте параметры"
-msgstr ""
+msgstr "Check the parameters"
 
 #: apps/pwa_api/audit_routes.py
 msgid "Проверьте параметры журнала"
@@ -1645,11 +1645,11 @@ msgstr "Check the news feed parameters"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте параметры очереди"
-msgstr ""
+msgstr "Check the queue parameters"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте параметры переноса"
-msgstr ""
+msgstr "Check the move parameters"
 
 #: apps/pwa_api/classroom_delivery_routes.py
 msgid "Проверьте параметры повтора рассылки"
@@ -1684,7 +1684,7 @@ msgstr "Check the question-list parameters"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте параметры списка реакций"
-msgstr ""
+msgstr "Check the reaction-list parameters"
 
 #: apps/pwa_api/notification_routes.py
 msgid "Проверьте параметры списка уведомлений"
@@ -1696,7 +1696,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте подтверждение отправки"
-msgstr ""
+msgstr "Check the submission confirmation"
 
 #: apps/pwa_api/classroom_routes.py
 msgid "Проверьте поля аудитории"
@@ -1712,7 +1712,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте поля запроса"
-msgstr ""
+msgstr "Check the request fields"
 
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Проверьте поля изменения"
@@ -1782,11 +1782,11 @@ msgstr "Check the photo fields"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте посылки в границе работы"
-msgstr ""
+msgstr "Check the submissions in the work boundary"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте посылку"
-msgstr ""
+msgstr "Check the submission"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте причину переноса"
@@ -1798,7 +1798,7 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте разметку фотографии"
-msgstr ""
+msgstr "Check the photo annotation"
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Проверьте расписание"
@@ -1882,23 +1882,23 @@ msgstr "Check the question type"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте токен блокировки"
-msgstr ""
+msgstr "Check the lock token"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте фильтр реакции"
-msgstr ""
+msgstr "Check the reaction filter"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте фильтры"
-msgstr ""
+msgstr "Check the filters"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте фильтры списка реакций"
-msgstr ""
+msgstr "Check the reaction-list filters"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте формат аннотации"
-msgstr ""
+msgstr "Check the annotation format"
 
 #: models/pwa/submissions.py
 msgid "Проверьте формат ответа."
@@ -1922,11 +1922,11 @@ msgstr "Check the photo number fields"
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Проверьте школьника, задачи и отметки"
-msgstr ""
+msgstr "Check the student, problems, and marks"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте элемент разметки"
-msgstr ""
+msgstr "Check the annotation item"
 
 #: apps/pwa_api/course_routes.py
 msgid "Прогресс временно недоступен"
@@ -1955,15 +1955,15 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Работа в очереди не найдена"
-msgstr ""
+msgstr "The queued work was not found"
 
 #: apps/pwa_api/review_routes.py
 msgid "Работа изменилась. Обновите её перед проверкой."
-msgstr ""
+msgstr "The work has changed. Refresh it before reviewing."
 
 #: apps/pwa_api/review_routes.py
 msgid "Работа находится вне доступных групп"
-msgstr ""
+msgstr "The work is outside your available groups"
 
 #: apps/pwa_api/content_routes.py
 msgid "Работа с материалами временно недоступна"
@@ -2019,15 +2019,15 @@ msgstr ""
 
 #: apps/pwa_api/review_routes.py
 msgid "Реакции учеников и преподавателей доступны только администратору"
-msgstr ""
+msgstr "Student and teacher reactions are available only to an administrator"
 
 #: apps/pwa_api/review_routes.py
 msgid "Реакция уже изменилась. Обновите проверку."
-msgstr ""
+msgstr "The reaction has changed. Refresh the review."
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Результаты доступны только администратору"
-msgstr ""
+msgstr "Results are available only to an administrator"
 
 #: helpers/pwa/push_delivery.py
 msgid "Результаты занятия уже доступны в семейном кабинете."
@@ -2068,6 +2068,10 @@ msgstr ""
 #: apps/pwa_api/admin_course_routes.py
 msgid "Сезон с таким кодом уже существует"
 msgstr ""
+
+#: apps/pwa_api/review_routes.py
+msgid "Сейчас проверяет {teacher}"
+msgstr "{teacher} is reviewing this now"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Сейчас это окно устного приёма закрыто"
@@ -2161,7 +2165,7 @@ msgstr "The submission deadline for this problem has passed."
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Статистика временно недоступна"
-msgstr ""
+msgstr "Statistics are temporarily unavailable"
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Схема аудиторий временно недоступна"
@@ -2290,7 +2294,7 @@ msgstr "The test problem is unavailable."
 
 #: apps/pwa_api/review_routes.py
 msgid "У работы уже есть более новая проверка. Обновите страницу."
-msgstr ""
+msgstr "This work already has a newer review. Refresh the page."
 
 #: apps/pwa_api/news_moderation_routes.py
 msgid "У уже опубликованной новости можно исправить текст, но не время"
@@ -2431,11 +2435,11 @@ msgstr "File"
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Файл не сохранился"
-msgstr ""
+msgstr "The file was not saved"
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Файл повреждён или недоступен"
-msgstr ""
+msgstr "The file is corrupted or unavailable"
 
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/problem_import_routes.py
@@ -2518,7 +2522,7 @@ msgstr ""
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Школьник или занятие не найдены"
-msgstr ""
+msgstr "The student or class was not found"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Школьник не найден"
@@ -2534,7 +2538,7 @@ msgstr "This solution version has already been sent."
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Эта операция уже использована с другими данными"
-msgstr ""
+msgstr "This operation has already been used with different data"
 
 #: apps/pwa_api/content_routes.py
 msgid "Эта отложенная публикация уже изменилась"
@@ -2623,11 +2627,11 @@ msgstr "This solution version can no longer be used as a replacement."
 
 #: apps/pwa_api/review_routes.py
 msgid "Эту проверку нельзя исправить с текущими правами"
-msgstr ""
+msgstr "This review cannot be corrected with your current permissions"
 
 #: apps/pwa_api/review_routes.py
 msgid "Эту работу уже проверяет другой преподаватель"
-msgstr ""
+msgstr "Another teacher is already reviewing this work"
 
 #: helpers/pwa/push_delivery.py
 msgid "аудитория {name}"

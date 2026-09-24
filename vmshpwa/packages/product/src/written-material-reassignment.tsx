@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { AlertTriangle, FileText, ImageIcon, MoveRight, RotateCcw } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 
@@ -81,15 +83,15 @@ function materialCountLabel(count: number) {
   const remainder10 = count % 10
 
   if (remainder100 >= 11 && remainder100 <= 14) {
-    return `${count} материалов будут показаны`
+    return t`${count} материалов будут показаны`
   }
   if (remainder10 === 1) {
-    return `${count} материал будет показан`
+    return t`${count} материал будет показан`
   }
   if (remainder10 >= 2 && remainder10 <= 4) {
-    return `${count} материала будут показаны`
+    return t`${count} материала будут показаны`
   }
-  return `${count} материалов будут показаны`
+  return t`${count} материалов будут показаны`
 }
 
 export function WrittenMaterialReassignment({
@@ -131,24 +133,30 @@ export function WrittenMaterialReassignment({
 
   return (
     <section
-      aria-label="Исправить привязку письменной работы"
+      aria-label={t`Исправить привязку письменной работы`}
       className={cn('w-full space-y-4 rounded-lg border border-border bg-surface p-4', className)}
       data-density="staff"
     >
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="text-title-sm font-semibold text-foreground">
-            Перенести материал в другую задачу
+            <Trans>Перенести материал в другую задачу</Trans>
           </h3>
           <p className="text-small text-muted-foreground">
-            {studentName} · сейчас в {sourceLabel}
+            <Trans>
+              {studentName} · сейчас в {sourceLabel}
+            </Trans>
           </p>
         </div>
-        <Badge variant="neutral">Исправление привязки</Badge>
+        <Badge variant="neutral">
+          <Trans>Исправление привязки</Trans>
+        </Badge>
       </header>
 
       <fieldset className="space-y-2" disabled={busy || previewActive}>
-        <legend className="text-label font-medium text-foreground">Что переносим</legend>
+        <legend className="text-label font-medium text-foreground">
+          <Trans>Что переносим</Trans>
+        </legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {materials.map((material) => (
             <label
@@ -156,7 +164,7 @@ export function WrittenMaterialReassignment({
               key={material.id}
             >
               <Checkbox
-                aria-label={`Выбрать: ${material.label}`}
+                aria-label={t`Выбрать: ${material.label}`}
                 checked={selected.has(material.id)}
                 onCheckedChange={(checked) => toggle(material.id, checked === true)}
               />
@@ -181,7 +189,11 @@ export function WrittenMaterialReassignment({
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-1 text-small font-medium text-foreground">
                   {material.label}
-                  {material.locked ? <Badge variant="warning">После проверки</Badge> : null}
+                  {material.locked ? (
+                    <Badge variant="warning">
+                      <Trans>После проверки</Trans>
+                    </Badge>
+                  ) : null}
                 </span>
                 {material.text ? (
                   <span className="mt-0.5 line-clamp-3 block text-caption text-muted-foreground">
@@ -196,7 +208,9 @@ export function WrittenMaterialReassignment({
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,0.6fr)]">
         <div className="min-w-0 space-y-1">
-          <Label htmlFor={targetId}>Целевая задача</Label>
+          <Label htmlFor={targetId}>
+            <Trans>Целевая задача</Trans>
+          </Label>
           <Select
             disabled={busy || previewActive}
             onValueChange={(value) => setTargetProblemId(value ?? '')}
@@ -205,7 +219,7 @@ export function WrittenMaterialReassignment({
             <SelectTrigger className="w-full min-w-0 overflow-hidden" id={targetId} size="sm">
               <SelectValue className="min-w-0 overflow-hidden">
                 <span className="block min-w-0 truncate">
-                  {target ? `${target.taskLabel} · ${target.contextLabel}` : 'Выберите задачу'}
+                  {target ? `${target.taskLabel} · ${target.contextLabel}` : t`Выберите задачу`}
                 </span>
               </SelectValue>
             </SelectTrigger>
@@ -224,13 +238,15 @@ export function WrittenMaterialReassignment({
           </Select>
         </div>
         <div className="min-w-0 space-y-1">
-          <Label htmlFor={reasonId}>Причина для журнала (необязательно)</Label>
+          <Label htmlFor={reasonId}>
+            <Trans>Причина для журнала (необязательно)</Trans>
+          </Label>
           <Input
             disabled={busy || previewActive}
             id={reasonId}
             maxLength={2000}
             onChange={(event) => setReason(event.target.value)}
-            placeholder="Например, выбран соседний номер"
+            placeholder={t`Например, выбран соседний номер`}
             value={reason}
           />
         </div>
@@ -240,11 +256,16 @@ export function WrittenMaterialReassignment({
         <Alert tone={preview.postReview ? 'warning' : 'neutral'}>
           <AlertTriangle aria-hidden="true" />
           <AlertContent>
-            <AlertTitle>{materialCountLabel(preview.selectedCount)} в другой задаче</AlertTitle>
+            <AlertTitle>
+              {materialCountLabel(preview.selectedCount)} <Trans>в другой задаче</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Исходные сообщения, фотографии и их байты останутся на месте. Вердикт не переносится.
+              <Trans>
+                Исходные сообщения, фотографии и их байты останутся на месте. Вердикт не
+                переносится.
+              </Trans>
               {preview.postReview
-                ? ' Проверка уже началась: зафиксированное evidence и прежний вердикт останутся неизменными.'
+                ? t` Проверка уже началась: зафиксированное evidence и прежний вердикт останутся неизменными.`
                 : ''}
             </AlertDescription>
           </AlertContent>
@@ -271,11 +292,11 @@ export function WrittenMaterialReassignment({
               size="sm"
             >
               <MoveRight aria-hidden="true" />
-              {busy ? 'Переносим…' : 'Подтвердить перенос'}
+              {busy ? t`Переносим…` : t`Подтвердить перенос`}
             </Button>
             <Button disabled={busy} onClick={onResetPreview} size="sm" variant="outline">
               <RotateCcw aria-hidden="true" />
-              Изменить выбор
+              <Trans>Изменить выбор</Trans>
             </Button>
           </>
         ) : (
@@ -285,11 +306,13 @@ export function WrittenMaterialReassignment({
             size="sm"
             variant="outline"
           >
-            Проверить перенос
+            <Trans>Проверить перенос</Trans>
           </Button>
         )}
         <span className="text-caption text-muted-foreground">
-          Выбрано: {selectedItems.length} из {materials.length}
+          <Trans>
+            Выбрано: {selectedItems.length} из {materials.length}
+          </Trans>
         </span>
       </div>
     </section>

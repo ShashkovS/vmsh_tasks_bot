@@ -1,5 +1,17 @@
 # Design-system status
 
+## Интернационализация, P4 — 24 сентября 2026, реализовано локально
+
+Review, history/reactions, live marking, results, oral results, statistics и
+recheck controls переключаются с языком аккаунта. Реакции с известным stable ID
+локализуются за пределами горячих ячеек; historical wording, данные школьников
+и учебный контент остаются исходными. Focused Python 75/75, frontend unit
+903/903, catalog/type/lint/build gates, i18n E2E 21/21, review E2E 6/6 и
+student-results E2E 6/6 прошли во всех трёх браузерах. P3 → P4: максимум
++7.9 KB initial JS и +12 мс cold FCP. Подробности — [план](../development-plan/24-i18n.md),
+[процедура](../development-plan/24-i18n-execution-plan.md) и
+[замеры](../i18n-performance-report.md).
+
 ## Интернационализация, P3 — 24 сентября 2026, реализовано локально
 
 Student UI, submission/review chrome, oral admission, support, news и

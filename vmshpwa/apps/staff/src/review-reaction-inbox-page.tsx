@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo, useState } from 'react'
 
 import {
@@ -77,7 +79,7 @@ export function StaffReviewReactionInboxPage() {
   } else if (inbox.error) {
     content = (
       <PageStatePanel
-        actionLabel="Повторить"
+        actionLabel={t`Повторить`}
         description={describeReviewError(inbox.error)}
         onAction={() => void inbox.refetch()}
         state={
@@ -117,7 +119,7 @@ export function StaffReviewReactionInboxPage() {
             size="sm"
             variant="outline"
           >
-            {inbox.isFetchingNextPage ? 'Загружаем…' : 'Показать ещё'}
+            {inbox.isFetchingNextPage ? t`Загружаем…` : t`Показать ещё`}
           </Button>
         ) : null}
       </div>
@@ -126,9 +128,9 @@ export function StaffReviewReactionInboxPage() {
 
   return (
     <PageLayout
-      description="Реакции помогают заметить спорную проверку или подозрение преподавателя, но сами не меняют результат."
-      eyebrow="Контроль проверки"
-      title="Реакции и разногласия"
+      description={t`Реакции помогают заметить спорную проверку или подозрение преподавателя, но сами не меняют результат.`}
+      eyebrow={t`Контроль проверки`}
+      title={t`Реакции и разногласия`}
       width="wide"
     >
       {content}
@@ -193,33 +195,41 @@ function CorrectionPanel({
   }
 
   return (
-    <Card aria-label={`Перепроверка: ${item.student.displayName}`}>
+    <Card aria-label={t`Перепроверка: ${item.student.displayName}`}>
       <CardContent className="space-y-3 pt-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <p className="text-small font-semibold text-foreground">
-              Перепроверка · {item.student.displayName}
+              <Trans>Перепроверка · {item.student.displayName}</Trans>
             </p>
             <p className="text-caption text-muted-foreground">
-              {item.problem.problemNumber} · {item.problem.problemTitle} · прежний вердикт:{' '}
-              {writtenReviewVerdict(item.verdict).label}
+              <Trans>
+                {item.problem.problemNumber} · {item.problem.problemTitle} · прежний вердикт:{' '}
+                {writtenReviewVerdict(item.verdict).label}
+              </Trans>
             </p>
           </div>
           <Button onClick={onClose} size="xs" variant="ghost">
-            Закрыть
+            <Trans>Закрыть</Trans>
           </Button>
         </div>
         <Alert tone="info">
           <AlertContent>
-            <AlertTitle>Исходная проверка останется в истории</AlertTitle>
+            <AlertTitle>
+              <Trans>Исходная проверка останется в истории</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Новый вердикт станет текущим. Фото, переписка, прежний комментарий и реакция не
-              изменяются.
+              <Trans>
+                Новый вердикт станет текущим. Фото, переписка, прежний комментарий и реакция не
+                изменяются.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
-        <section aria-label="Исходная работа ученика" className="space-y-2">
-          <h3 className="text-small font-semibold text-foreground">Работа ученика</h3>
+        <section aria-label={t`Исходная работа ученика`} className="space-y-2">
+          <h3 className="text-small font-semibold text-foreground">
+            <Trans>Работа ученика</Trans>
+          </h3>
           {item.evidenceEntries.map((entry) => (
             <article className="space-y-2 rounded-md border border-border p-2" key={entry.entryId}>
               {entry.text ? (
@@ -229,7 +239,7 @@ function CorrectionPanel({
                 <div className="grid gap-2 sm:grid-cols-2">
                   {entry.attachments.map((attachment) => (
                     <img
-                      alt={`Страница ${attachment.ordinal + 1} решения ученика`}
+                      alt={t`Страница ${attachment.ordinal + 1} решения ученика`}
                       className="max-h-80 w-full rounded-md border border-border bg-surface object-contain"
                       key={attachment.attachmentId}
                       loading="lazy"
@@ -244,7 +254,9 @@ function CorrectionPanel({
         {correction.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Не удалось сохранить перепроверку</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось сохранить перепроверку</Trans>
+              </AlertTitle>
               <AlertDescription>{describeReviewError(correction.error)}</AlertDescription>
             </AlertContent>
           </Alert>

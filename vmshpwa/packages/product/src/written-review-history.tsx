@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import type { WrittenReviewProjection } from '@vmsh/contracts'
 import { useState } from 'react'
 
@@ -31,7 +33,7 @@ export interface WrittenReviewHistoryProps {
 }
 
 function reviewDate(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -57,7 +59,7 @@ export function WrittenReviewHistory({
   )
 
   return (
-    <section aria-label="История проверок" className="space-y-4">
+    <section aria-label={t`История проверок`} className="space-y-4">
       {[...reviews].reverse().map((review, index) => {
         const currentReaction =
           review.studentReaction?.reactionId === null
@@ -71,7 +73,7 @@ export function WrittenReviewHistory({
         const pending = pendingStudentReactionReviewId === review.reviewId
         return (
           <section
-            aria-label={index === 0 ? 'Последняя проверка' : 'Прошлая проверка'}
+            aria-label={index === 0 ? t`Последняя проверка` : t`Прошлая проверка`}
             className="space-y-3"
             key={review.reviewId}
           >
@@ -87,7 +89,7 @@ export function WrittenReviewHistory({
             {onStudentReactionChange && editable ? (
               <ReactionPicker
                 disabled={pending}
-                legend="Ваша реакция на проверку"
+                legend={t`Ваша реакция на проверку`}
                 onSelect={(reactionId) =>
                   onStudentReactionChange(
                     review.reviewId,
@@ -101,7 +103,7 @@ export function WrittenReviewHistory({
             ) : currentReaction ? (
               <div className="space-y-1">
                 <p className="text-caption text-muted-foreground">
-                  {onStudentReactionChange ? 'Ваша реакция' : 'Реакция ученика'}
+                  {onStudentReactionChange ? t`Ваша реакция` : t`Реакция ученика`}
                 </p>
                 <ReactionChip reaction={currentReaction} />
               </div>
@@ -116,7 +118,7 @@ export function WrittenReviewHistory({
               if (!attachment) return null
               return (
                 <ReviewAnnotationViewer
-                  imageAlt={`Проверенная страница решения ${annotationIndex + 1}`}
+                  imageAlt={t`Проверенная страница решения ${annotationIndex + 1}`}
                   imageSource={attachment.mediaPath}
                   key={`${review.reviewId}:${annotation.attachmentId}`}
                   manifest={annotation}

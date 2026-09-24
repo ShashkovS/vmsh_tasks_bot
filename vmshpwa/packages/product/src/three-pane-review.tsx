@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ReactNode } from 'react'
 
 import { cn } from '@vmsh/ui'
@@ -24,10 +25,10 @@ export function ThreePaneReview({
 }: ThreePaneReviewProps) {
   return (
     <div className={cn('grid gap-3', className)}>
-      <section aria-label="Ветки задачи" className="min-w-0">
+      <section aria-label={t`Ветки задачи`} className="min-w-0">
         {queue}
       </section>
-      <section aria-label="Работа и обсуждение" className="min-w-0 space-y-3">
+      <section aria-label={t`Работа и обсуждение`} className="min-w-0 space-y-3">
         <div>{evidence}</div>
         {discussion ? <div>{discussion}</div> : null}
         <div className="rounded-md border border-border bg-surface p-3">{feedback}</div>

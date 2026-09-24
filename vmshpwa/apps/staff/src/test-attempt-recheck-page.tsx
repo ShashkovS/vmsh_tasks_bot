@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useMemo } from 'react'
 
 import {
@@ -44,7 +45,7 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
     if (!preview.data || recheck.isPending) return
     if (
       !window.confirm(
-        `Перепроверить все ${preview.data.pendingAttempts} ответов задачи ${preview.data.problem.displayNumber}? Исходные ответы и время отправки сохранятся.`,
+        t`Перепроверить все ${preview.data.pendingAttempts} ответов задачи ${preview.data.problem.displayNumber}? Исходные ответы и время отправки сохранятся.`,
       )
     ) {
       return
@@ -65,12 +66,12 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
 
   return (
     <PageLayout
-      description="Исправление конфигурации не меняет исходные ответы: их текущий вердикт пересчитывается по новой настройке."
-      eyebrow="Администрирование тестовой задачи"
+      description={t`Исправление конфигурации не меняет исходные ответы: их текущий вердикт пересчитывается по новой настройке.`}
+      eyebrow={t`Администрирование тестовой задачи`}
       title={
         preview.data
-          ? `Задача ${preview.data.problem.displayNumber}. ${preview.data.problem.title}`
-          : `Задача ${problemId}`
+          ? t`Задача ${preview.data.problem.displayNumber}. ${preview.data.problem.title}`
+          : t`Задача ${problemId}`
       }
       width="wide"
     >
@@ -78,7 +79,7 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
         <TestAttemptRecheckPanel loading />
       ) : preview.error ? (
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           description={describeRecheckError(preview.error)}
           onAction={() => void preview.refetch()}
           state={
@@ -87,7 +88,7 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
               : 'error'
           }
           {...(preview.error instanceof ApiResponseError && preview.error.status === 404
-            ? { title: 'Задача не найдена' }
+            ? { title: t`Задача не найдена` }
             : {})}
         />
       ) : preview.data ? (
@@ -121,16 +122,16 @@ export function StaffTestAttemptRecheckPage({ problemId }: { problemId: string }
 
 function describeRecheckError(error: unknown): string {
   if (error instanceof ApiResponseError && error.status === 409) {
-    return 'Опубликована новая версия задачи. Данные обновлены; проверьте действие ещё раз.'
+    return t`Опубликована новая версия задачи. Данные обновлены; проверьте действие ещё раз.`
   }
   if (error instanceof ApiResponseError) {
-    return `${error.message} Код обращения: ${error.requestId}.`
+    return t`${error.message} Код обращения: ${error.requestId}.`
   }
   if (error instanceof TestAttemptRecheckNetworkError) {
-    return 'Нет связи с сервером. Проверьте подключение и повторите действие.'
+    return t`Нет связи с сервером. Проверьте подключение и повторите действие.`
   }
   if (error instanceof TestAttemptRecheckProtocolError) {
-    return 'Сервер вернул неожиданный ответ. Обновите страницу и повторите действие.'
+    return t`Сервер вернул неожиданный ответ. Обновите страницу и повторите действие.`
   }
-  return 'Не удалось перепроверить ответы. Обновите данные и повторите действие.'
+  return t`Не удалось перепроверить ответы. Обновите данные и повторите действие.`
 }

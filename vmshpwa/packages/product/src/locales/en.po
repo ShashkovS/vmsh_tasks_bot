@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2026-09-24 13:43+0300\n"
+"POT-Creation-Date: 2026-09-24 16:10+0300\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -18,9 +18,48 @@ msgstr ""
 msgid " · изменено {0}"
 msgstr " · edited {0}"
 
+#: packages/product/src/review-annotation-surface.tsx
+msgid " · можно прокрутить"
+msgstr " · scrollable"
+
+#. placeholder {0}: result.pendingConfiguration
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · ожидают настройки: {0}"
+msgstr " · awaiting setup: {0}"
+
 #: packages/product/src/verdict-mark.tsx
 msgid " · оценка ИИ"
 msgstr " · AI assessment"
+
+#. placeholder {0}: result.checkerFailed
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · ошибок checker-а: {0}"
+msgstr " · checker errors: {0}"
+
+#. placeholder {0}: result.invalidFormat
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · ошибок формата: {0}"
+msgstr " · format errors: {0}"
+
+#. placeholder {0}: result.formatChanges
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · переходов формата: {0}"
+msgstr " · format changes: {0}"
+
+#. placeholder {0}: result.skippedConcurrent
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · уже обработаны параллельно: {0}"
+msgstr " · already handled in parallel: {0}"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid " Проверка уже началась: зафиксированное evidence и прежний вердикт останутся неизменными."
+msgstr " Review has already started: the captured evidence and previous verdict will remain unchanged."
+
+#. placeholder {0}: Math.floor(oldest / 60)
+#. placeholder {1}: oldest % 60
+#: packages/product/src/review-queue.tsx
+msgid ", дольше всех ждёт {0} ч {1} мин"
+msgstr ", waiting longest for {0} h {1} min"
 
 #: packages/product/src/test-answer.tsx
 msgid "· например {example}"
@@ -30,6 +69,11 @@ msgstr "· for example {example}"
 #: packages/product/src/course-context.tsx
 msgid "{0} · занятие {lessonNumber} · {lessonDate}"
 msgstr "{0} · lesson {lessonNumber} · {lessonDate}"
+
+#. placeholder {0}: item.student.displayName
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "{0}: {reactionLabel}"
+msgstr "{0}: {reactionLabel}"
 
 #. placeholder {0}: valueLabel ? `${valueLabel}. ` : ''
 #. placeholder {1}: median.toFixed(1)
@@ -46,6 +90,34 @@ msgstr "{count, plural, one {# active day} other {# active days}}"
 #: packages/product/src/activity-calendar.tsx
 msgid "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
 msgstr "{count, plural, one {# problem} other {# problems}}"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{count} материал будет показан"
+msgstr "{count} material will be shown"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{count} материала будут показаны"
+msgstr "{count} materials will be shown"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{count} материалов будут показаны"
+msgstr "{count} materials will be shown"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "{count} ответ"
+msgstr "{count} answer"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "{count} ответа"
+msgstr "{count} answers"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "{count} ответов"
+msgstr "{count} answers"
+
+#: packages/product/src/review-annotation-surface.tsx
+msgid "{imageAlt}; область можно прокручивать после увеличения"
+msgstr "{imageAlt}; the area can be scrolled after zooming in"
 
 #: packages/product/src/chat-composer.tsx
 msgid "{page}: позже"
@@ -75,9 +147,27 @@ msgstr "{pageLabel}: rotate"
 msgid "{pageLabel}: удалить"
 msgstr "{pageLabel}: delete"
 
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{studentName} · сейчас в {sourceLabel}"
+msgstr "{studentName} · currently in {sourceLabel}"
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "{studentName}: сейчас онлайн-режим."
 msgstr "{studentName}: online attendance is currently selected."
+
+#. placeholder {0}: document.rotation
+#. placeholder {1}: document.marks.length
+#: packages/product/src/review-annotation-editor.tsx
+msgid "% · {0}° · {1} пометок"
+msgstr "% · {0}° · {1} annotations"
+
+#. placeholder {0}: item.problem.problemNumber
+#. placeholder {1}: item.problem.problemTitle
+#. placeholder {2}: item.problem.groupName
+#. placeholder {3}: item.reviewer.displayName
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "<0>{0}</0><1>{1}</1><2>·</2><3>{2}</3><4>·</4><5>проверил {3}</5>"
+msgstr "<0>{0}</0><1>{1}</1><2>·</2><3>{2}</3><4>·</4><5>reviewed by {3}</5>"
 
 #: packages/product/src/push-device-controls.tsx
 msgid "<0>Chrome и Edge:</0> нажмите значок слева от адреса сайта → «Настройки сайта» или «Разрешения» → «Уведомления» → «Разрешить»."
@@ -99,6 +189,10 @@ msgstr "<0>Safari on Mac:</0> Safari → Settings → Websites → Notifications
 #: packages/product/src/reaction-picker.tsx
 msgid "⌘/Ctrl + ⌥/Alt + 1–{0} · Работает и в комментарии; не видна ученику и родителю."
 msgstr "⌘/Ctrl + ⌥/Alt + 1–{0} · Also works in a comment; it is not visible to the student or parent."
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии."
+msgstr "⌘/Ctrl + Enter — submit verdict. Also works in the comment field."
 
 #: packages/product/src/lesson-video.ts
 msgid "Iframe должен содержать ровно один src"
@@ -133,6 +227,14 @@ msgstr "VK Video"
 msgid "Администратор"
 msgstr "Administrator"
 
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Активных реакций нет"
+msgstr "No active reactions"
+
+#: packages/product/src/review-lock.tsx
+msgid "Аренда истекла или досталась другому. Вердикт устарел — обновите работу, прежде чем продолжить."
+msgstr "The lease expired or belongs to someone else. The verdict is stale — refresh the work before continuing."
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Аудитория переназначается"
 msgstr "Room is being reassigned"
@@ -149,9 +251,32 @@ msgstr "Room: {classroomName}"
 msgid "Аудитория: {familyStudentName}"
 msgstr "Room: {familyStudentName}"
 
+#. placeholder {0}: result.unchangedAttempts
+#. placeholder {1}: result.correct
+#. placeholder {2}: result.wrong
+#. placeholder {3}: result.verdictChanges
+#. placeholder {4}: result.messageChanges
+#. placeholder {5}: result.becameCorrect
+#. placeholder {6}: result.becameWrong
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Без изменений: {0} · верных: {1} · неверных: {2} · вердиктов изменено: {3} · реплик изменено: {4} · − → +: {5} · + → −: {6}"
+msgstr "Unchanged: {0} · correct: {1} · incorrect: {2} · verdicts changed: {3} · replies changed: {4} · − → +: {5} · + → −: {6}"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Будет обновлено"
+msgstr "Will be updated"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Быстрый поиск"
+msgstr "Quick search"
+
 #: packages/product/src/lesson-video.ts
 msgid "В iframe нельзя использовать исполняемые атрибуты"
 msgstr "The iframe cannot use executable attributes"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "в другой задаче"
+msgstr "in another problem"
 
 #: packages/product/src/chat-composer.tsx
 msgid "в очереди"
@@ -174,6 +299,11 @@ msgstr "Queued: {queuedCount}"
 msgid "В очереди: {queuedCount} — показать"
 msgstr "Queued: {queuedCount} — show"
 
+#. placeholder {0}: items.length
+#: packages/product/src/review-queue.tsx
+msgid "В очереди: <0>{0}</0>"
+msgstr "Queued: <0>{0}</0>"
+
 #: packages/product/src/feedback-thread.tsx
 msgid "в приложении"
 msgstr "in the app"
@@ -185,6 +315,14 @@ msgstr "Mostly correct"
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Ваша аудитория"
 msgstr "Your room"
+
+#: packages/product/src/written-review-history.tsx
+msgid "Ваша реакция"
+msgstr "Your reaction"
+
+#: packages/product/src/written-review-history.tsx
+msgid "Ваша реакция на проверку"
+msgstr "Your reaction to the review"
 
 #: packages/product/src/submission-composer.tsx
 msgid "Ваше решение"
@@ -258,6 +396,14 @@ msgstr "Enter an integer"
 msgid "Введите четыре целых числа"
 msgstr "Enter four integers"
 
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Вердиктов изменится"
+msgstr "Verdicts will change"
+
+#: packages/product/src/three-pane-review.tsx
+msgid "Ветки задачи"
+msgstr "Problem branches"
+
 #: packages/product/src/lesson-video.ts
 msgid "Видео должно использовать HTTPS без учётных данных"
 msgstr "The video must use HTTPS without credentials"
@@ -275,6 +421,14 @@ msgstr "Enabling notifications…"
 msgid "Включить уведомления"
 msgstr "Enable notifications"
 
+#: packages/product/src/oral-result-form.tsx
+msgid "Внутренняя пометка"
+msgstr "Internal note"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Внутренняя пометка (не видна ученику)"
+msgstr "Internal note (not visible to the student)"
+
 #: packages/product/src/reaction.ts
 msgid "Внятно, уверенно."
 msgstr "Clear and confident."
@@ -291,6 +445,10 @@ msgstr "The YouTube video start time is invalid"
 msgid "Время начала YouTube-видео слишком велико"
 msgstr "The YouTube video start time is too large"
 
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Все"
+msgstr "All"
+
 #: packages/product/src/sync-indicator.tsx
 msgid "Всё отправлено"
 msgstr "Everything is sent"
@@ -299,21 +457,52 @@ msgstr "Everything is sent"
 msgid "Все события всё равно останутся в приложении."
 msgstr "All events will still remain in the app."
 
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные посылки останутся неизменными, а прежний вердикт может измениться."
+msgstr "All saved answers to this problem will be evaluated using the current configuration. Original submissions remain unchanged, while the previous verdict may change."
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Все формулировки"
+msgstr "All statements"
+
 #: packages/product/src/answer-spec.ts
 msgid "Выберите день недели"
 msgstr "Choose a day of the week"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Выберите задачу"
+msgstr "Select a problem"
 
 #: packages/product/src/answer-spec.ts
 msgid "Выберите один вариант"
 msgstr "Choose one option"
 
+#: packages/product/src/oral-result-form.tsx
+msgid "Выберите школьника"
+msgstr "Select a student"
+
 #: packages/product/src/question-photos.tsx
 msgid "Выбранная фотография"
 msgstr "Selected photo"
 
+#. placeholder {0}: selectedItems.length
+#. placeholder {1}: materials.length
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Выбрано: {0} из {1}"
+msgstr "Selected: {0} of {1}"
+
 #: packages/product/src/question-photos.tsx
 msgid "Выбрать фотографии"
 msgstr "Choose photos"
+
+#. placeholder {0}: material.label
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Выбрать: {0}"
+msgstr "Select: {0}"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Выделение"
+msgstr "Selection"
 
 #: packages/product/src/rich-document.tsx
 msgid "Выполнено"
@@ -327,10 +516,22 @@ msgstr "done"
 msgid "Готово к отправке"
 msgstr "Ready to send"
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Графитовый"
+msgstr "Graphite"
+
+#: packages/product/src/review-queue.tsx
+msgid "Группа"
+msgstr "Group"
+
 #. placeholder {0}: course.name
 #: packages/product/src/course-context.tsx
 msgid "Группа курса «{0}»"
 msgstr "Group for course “{0}”"
+
+#: packages/product/src/review-queue.tsx
+msgid "Действие"
+msgstr "Action"
 
 #. placeholder {0}: points[0]?.value ?? 0
 #. placeholder {1}: points[points.length - 1]?.value ?? 0
@@ -342,6 +543,14 @@ msgstr "Trend: from {0} to {1}, with a confidence band."
 #: packages/product/src/oral-admission.tsx
 msgid "до {0}"
 msgstr "until {0}"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Добавить комментарий"
+msgstr "Add comment"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Добавить текст"
+msgstr "Add text"
 
 #: packages/product/src/chat-composer.tsx
 #: packages/product/src/submission-composer.tsx
@@ -360,6 +569,10 @@ msgstr "Update available"
 msgid "Дроби через запятую — порядок важен"
 msgstr "Fractions separated by commas — order matters"
 
+#: packages/product/src/review-lock.tsx
+msgid "другой преподаватель"
+msgstr "another teacher"
+
 #: packages/product/src/verdict-registry.ts
 msgid "Есть идеи, не доведено"
 msgstr "Ideas present, not completed"
@@ -367,6 +580,10 @@ msgstr "Ideas present, not completed"
 #: packages/product/src/verdict-registry.ts
 msgid "Есть простая идея"
 msgstr "A simple idea is present"
+
+#: packages/product/src/review-queue.tsx
+msgid "Ждёт"
+msgstr "Waiting"
 
 #: packages/product/src/reaction.ts
 msgid "Жуткая муть."
@@ -376,6 +593,10 @@ msgstr "Utterly unclear."
 msgid "загружаем"
 msgstr "uploading"
 
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Загружаем сохранённые тестовые ответы"
+msgstr "Loading saved test answers"
+
 #: packages/product/src/worksheet-materials.tsx
 msgid "Загружаем…"
 msgstr "Loading…"
@@ -383,6 +604,10 @@ msgstr "Loading…"
 #: packages/product/src/lesson-blocks.tsx
 msgid "Загрузить видео"
 msgstr "Load video"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Загрузка тестовых ответов"
+msgstr "Loading test answers"
 
 #: packages/product/src/attachment.tsx
 msgid "Загрузка: {page}"
@@ -392,15 +617,26 @@ msgstr "Uploading: {page}"
 msgid "Загрузка…"
 msgstr "Uploading…"
 
+#: packages/product/src/review-queue.tsx
+msgid "Задача"
+msgstr "Problem"
+
+#. placeholder {0}: problem.displayNumber
 #. placeholder {0}: task.number
 #: packages/product/src/task-list-item.tsx
+#: packages/product/src/test-attempt-recheck.tsx
 msgid "Задача {0}."
 msgstr "Problem {0}."
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Задачи"
+msgstr "Problems"
 
 #: packages/product/src/progress-charts.tsx
 msgid "Занятие"
 msgstr "Lesson"
 
+#: packages/product/src/oral-result-form.tsx
 #: packages/product/src/verdict-registry.ts
 msgid "Зачтено"
 msgstr "Accepted"
@@ -408,6 +644,10 @@ msgstr "Accepted"
 #: packages/product/src/verdict-registry.ts
 msgid "Зачтено с недочётами"
 msgstr "Accepted with minor issues"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Здесь появятся реакции учеников и внутренние пометки преподавателей."
+msgstr "Student reactions and teachers’ internal notes will appear here."
 
 #: packages/product/src/progress-charts.tsx
 msgid "Значение"
@@ -429,13 +669,41 @@ msgstr "edited"
 msgid "Изменено в источнике"
 msgstr "Changed in source"
 
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Изменить выбор"
+msgstr "Change selection"
+
 #: packages/product/src/feedback-thread.tsx
 msgid "ИИ"
 msgstr "AI"
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Инструменты разметки"
+msgstr "Annotation tools"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Исправить привязку письменной работы"
+msgstr "Correct written-work assignment"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Исправление привязки"
+msgstr "Assignment correction"
+
 #: packages/product/src/problem-header.tsx
 msgid "История"
 msgstr "History"
+
+#: packages/product/src/written-review-history.tsx
+msgid "История проверок"
+msgstr "Review history"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Источник реакции"
+msgstr "Reaction source"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Исходные сообщения, фотографии и их байты останутся на месте. Вердикт не переносится."
+msgstr "The original messages, photos, and their bytes stay in place. The verdict is not moved."
 
 #: packages/product/src/push-device-controls.tsx
 msgid "Кабинет не может отменить запрет браузера. Разрешите уведомления вручную:"
@@ -445,6 +713,10 @@ msgstr "The account cannot override a browser block. Allow notifications manuall
 msgid "Как получается решать простые и сложные задачи по занятиям, шкала от 0 до 10; выше — легче даётся."
 msgstr "How easily simple and difficult problems are solved over lessons, on a scale from 0 to 10; higher is easier."
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Карандаш"
+msgstr "Pencil"
+
 #: packages/product/src/rich-document.tsx
 msgid "Картинка будет скопирована при сохранении"
 msgstr "The image will be copied on save"
@@ -453,10 +725,28 @@ msgstr "The image will be copied on save"
 msgid "Категории можно настроить ниже."
 msgstr "You can configure categories below."
 
+#. placeholder {0}: ordered.length
+#: packages/product/src/review-verdict-actions.tsx
+msgid "Клавиши 1–{0}: от лучшего к худшему, 1 — «+». Не срабатывают в поле ввода."
+msgstr "Keys 1–{0}: best to worst, 1 is “+”. They do not work in an input field."
+
 #. placeholder {0}: join.joinCode
 #: packages/product/src/oral-admission.tsx
 msgid "Код: <0>{0}</0>"
 msgstr "Code: <0>{0}</0>"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Комментарий"
+msgstr "Comment"
+
+#. placeholder {0}: item.comment
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Комментарий: {0}"
+msgstr "Comment: {0}"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Красный"
+msgstr "Red"
 
 #: packages/product/src/connection-banner.tsx
 msgid "Кто-то обновил эту работу. Сравните версии, чтобы ничего не потерять."
@@ -465,6 +755,10 @@ msgstr "Someone updated this work. Compare the versions so nothing is lost."
 #: packages/product/src/course-context.tsx
 msgid "Курс"
 msgstr "Course"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Ластик"
+msgstr "Eraser"
 
 #: packages/product/src/telegram-rich-post.tsx
 msgid "Локальная правка редакции"
@@ -506,6 +800,10 @@ msgstr "Name to be confirmed"
 msgid "Назначена"
 msgstr "Assigned"
 
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Например, выбран соседний номер"
+msgstr "For example, a neighboring number was selected"
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Настроить уведомления"
 msgstr "Configure notifications"
@@ -526,9 +824,25 @@ msgstr "Not visible to the student or parent."
 msgid "Не выполнено"
 msgstr "Not completed"
 
+#: packages/product/src/oral-result-form.tsx
+msgid "Не зачтено"
+msgstr "Not accepted"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Не меняет результат автоматически."
+msgstr "Does not change the result automatically."
+
 #: packages/product/src/reaction.ts
 msgid "Не могу согласиться с проверкой!"
 msgstr "I disagree with the review!"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "не настроен"
+msgstr "not configured"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Не отмечено"
+msgstr "Not marked"
 
 #: packages/product/src/task-chat.tsx
 msgid "Не отправлено"
@@ -538,6 +852,10 @@ msgstr "Not sent"
 #: packages/product/src/push-permission-card.tsx
 msgid "Не сейчас"
 msgstr "Not now"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Не удалось выполнить перепроверку"
+msgstr "Could not recheck"
 
 #: packages/product/src/attachment.tsx
 msgid "Не удалось загрузить"
@@ -552,6 +870,10 @@ msgstr "Could not configure push"
 msgid "Не удалось открыть материал. Проверьте соединение и повторите попытку."
 msgstr "Could not open the material. Check the connection and try again."
 
+#: packages/product/src/review-feedback-form.tsx
+msgid "Незачёт без комментария. Отправить всё равно?"
+msgstr "Submit a non-acceptance verdict without a comment anyway?"
+
 #: packages/product/src/reaction.ts
 msgid "Непонятно, что не так…"
 msgstr "It is unclear what is wrong…"
@@ -565,6 +887,10 @@ msgstr "No response"
 msgid "Нет сети"
 msgstr "Offline"
 
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Нет сохранённых ответов"
+msgstr "No saved answers"
+
 #: packages/product/src/feedback-thread.tsx
 msgid "Новая обратная связь"
 msgstr "New feedback"
@@ -577,6 +903,10 @@ msgstr "new"
 msgid "Новое"
 msgstr "New"
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Область разметки фотографии"
+msgstr "Photo annotation area"
+
 #: packages/product/src/update-prompt.tsx
 msgid "Обновимся за секунду. Черновик и несохранённый текст останутся на месте."
 msgstr "The update takes a second. Your draft and unsaved text will stay in place."
@@ -584,6 +914,14 @@ msgstr "The update takes a second. Your draft and unsaved text will stay in plac
 #: packages/product/src/update-prompt.tsx
 msgid "Обновить"
 msgstr "Refresh"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Обновить данные"
+msgstr "Refresh data"
+
+#: packages/product/src/review-lock.tsx
+msgid "Обновить работу"
+msgstr "Refresh work"
 
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Обновлено {publishedAt}"
@@ -600,6 +938,10 @@ msgstr "General"
 #: packages/product/src/course-context.tsx
 msgid "общая настройка"
 msgstr "general setting"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ожидают настройки"
+msgstr "Awaiting setup"
 
 #: packages/product/src/reaction.ts
 msgid "Ок. Всё ясно."
@@ -621,6 +963,14 @@ msgstr "Describe what is still unclear…"
 msgid "Опубликовано {publishedAt}"
 msgstr "Published {publishedAt}"
 
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "От преподавателей"
+msgstr "From teachers"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "От учеников"
+msgstr "From students"
+
 #: packages/product/src/test-answer.tsx
 msgid "Ответ"
 msgstr "Answer"
@@ -634,6 +984,10 @@ msgstr "The answer is entered directly in the interface and checked automaticall
 msgid "Ответ не соответствует формату: {0}."
 msgstr "The answer does not match the format: {0}."
 
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ответов: {pendingAttempts}"
+msgstr "Answers: {pendingAttempts}"
+
 #: packages/product/src/verdict-registry.ts
 msgid "Отклонено"
 msgstr "Rejected"
@@ -646,6 +1000,10 @@ msgstr "Disabling notifications…"
 msgid "Отключить"
 msgstr "Disable"
 
+#: packages/product/src/review-lock.tsx
+msgid "Откроется, когда освободится или через 30 минут."
+msgstr "It will open when available or after 30 minutes."
+
 #: packages/product/src/conscious-disclosure.tsx
 msgid "Открываем…"
 msgstr "Opening…"
@@ -653,6 +1011,10 @@ msgstr "Opening…"
 #: packages/product/src/content-update-marker.tsx
 msgid "Открыта новая опубликованная версия."
 msgstr "A new published version is open."
+
+#: packages/product/src/review-queue.tsx
+msgid "Открыть"
+msgstr "Open"
 
 #: packages/product/src/course-context.tsx
 msgid "Открыть курс"
@@ -670,6 +1032,19 @@ msgstr "Open the solution?"
 msgid "Отмена"
 msgstr "Cancel"
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Отменить"
+msgstr "Cancel"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Отменить текст"
+msgstr "Cancel text"
+
+#. placeholder {0}: problems.length
+#: packages/product/src/oral-result-form.tsx
+msgid "Отмечено: {markedCount} из {0}"
+msgstr "Marked: {markedCount} of {0}"
+
 #: packages/product/src/chat-composer.tsx
 #: packages/product/src/submission-composer.tsx
 #: packages/product/src/support-dialogue.tsx
@@ -679,6 +1054,14 @@ msgstr "Send"
 #: packages/product/src/submission-composer.tsx
 msgid "Отправить (Ctrl/Cmd+Enter)"
 msgstr "Send (Ctrl/Cmd+Enter)"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Отправить вердикт"
+msgstr "Submit verdict"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Отправить всё равно"
+msgstr "Submit anyway"
 
 #: packages/product/src/submission-composer.tsx
 msgid "Отправка…"
@@ -697,6 +1080,10 @@ msgstr "Sending…"
 msgid "Отправляется"
 msgstr "Sending"
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Очистить разметку"
+msgstr "Clear annotations"
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Очная аудитория не требуется"
 msgstr "No in-person room is required"
@@ -712,6 +1099,14 @@ msgstr "error"
 #: packages/product/src/telegram-rich-post.tsx
 msgid "Ошибка доставки"
 msgstr "Delivery error"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ошибок checker-а"
+msgstr "Checker errors"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ошибок формата после проверки"
+msgstr "Format errors after checking"
 
 #: packages/product/src/lesson-video.ts
 msgid "Параметр доступа VK Видео некорректен"
@@ -729,14 +1124,47 @@ msgstr "First problem submitted"
 msgid "Первая письменная работа"
 msgstr "First written submission"
 
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Перенести материал в другую задачу"
+msgstr "Move material to another problem"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Переносим…"
+msgstr "Moving…"
+
 #: packages/product/src/task-chat.tsx
 msgid "Переписка по задаче"
 msgstr "Conversation about the problem"
+
+#: packages/product/src/review-queue.tsx
+msgid "Перепроверить"
+msgstr "Recheck"
+
+#. placeholder {0}: formatAttemptCount(pendingAttempts)
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Перепроверить все {0}"
+msgstr "Recheck all {0}"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Перепроверить результат"
+msgstr "Recheck result"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Перепроверка тестовых ответов"
+msgstr "Recheck test answers"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Перепроверяем…"
+msgstr "Rechecking…"
 
 #. placeholder {0}: post.attribution.forwardedFrom
 #: packages/product/src/telegram-rich-post.tsx
 msgid "Переслано из {0}"
 msgstr "Forwarded from {0}"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Переходов формата"
+msgstr "Format changes"
 
 #: packages/product/src/progress-charts.tsx
 msgid "Период"
@@ -746,8 +1174,21 @@ msgstr "Period"
 msgid "Письменная задача"
 msgstr "Written problem"
 
+#: packages/product/src/review-queue.tsx
+msgid "По одной"
+msgstr "One at a time"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Повернуть по часовой стрелке"
+msgstr "Rotate clockwise"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Повернуть против часовой стрелки"
+msgstr "Rotate counterclockwise"
+
 #: packages/product/src/attachment.tsx
 #: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/review-annotation-editor.tsx
 #: packages/product/src/telegram-rich-post.tsx
 #: packages/product/src/worksheet-materials.tsx
 msgid "Повторить"
@@ -766,6 +1207,10 @@ msgstr "Hint"
 msgid "Подсказка и решение"
 msgstr "Hint and solution"
 
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Подтвердить перенос"
+msgstr "Confirm move"
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Подтверждено {confirmedAt}"
 msgstr "Confirmed {confirmedAt}"
@@ -773,6 +1218,11 @@ msgstr "Confirmed {confirmedAt}"
 #: packages/product/src/update-prompt.tsx
 msgid "Позже"
 msgstr "Later"
+
+#. placeholder {0}: items.length
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Показано: {0}"
+msgstr "Shown: {0}"
 
 #. placeholder {0}: rest.length
 #: packages/product/src/attempt-timeline.tsx
@@ -821,9 +1271,25 @@ msgstr "Getting the link…"
 msgid "Получайте важные сообщения, даже когда кабинет закрыт:"
 msgstr "Receive important messages even when the account is closed:"
 
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Пометка преподавателя"
+msgstr "Teacher note"
+
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Пометки преподавателя ·"
+msgstr "Teacher annotations ·"
+
 #: packages/product/src/push-device-controls.tsx
 msgid "После изменения вернитесь сюда и нажмите «Включить уведомления». Если кнопка не появилась, обновите страницу. Также проверьте, разрешены ли уведомления для браузера в настройках устройства."
 msgstr "After changing this, return here and click “Enable notifications”. If the button does not appear, refresh the page. Also check whether notifications are allowed for the browser in your device settings."
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "После проверки"
+msgstr "After review"
+
+#: packages/product/src/written-review-history.tsx
+msgid "Последняя проверка"
+msgstr "Latest review"
 
 #: packages/product/src/telegram-rich-post.tsx
 msgid "Пост скрыт редакцией."
@@ -855,6 +1321,21 @@ msgstr "Submission until {absoluteLabel}"
 msgid "Приём закрыт"
 msgstr "Submission closed"
 
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Причина для журнала (необязательно)"
+msgstr "Reason for the log (optional)"
+
+#. placeholder {0}: annotationIndex + 1
+#: packages/product/src/written-review-history.tsx
+msgid "Проверенная страница решения {0}"
+msgstr "Reviewed solution page {0}"
+
+#. placeholder {0}: result.scannedAttempts
+#. placeholder {1}: result.updatedAttempts
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Проверено {0}, обновлено {1}"
+msgstr "Reviewed {0}, updated {1}"
+
 #: packages/product/src/task-chat.tsx
 msgid "Проверил ИИ"
 msgstr "Checked by AI"
@@ -862,6 +1343,10 @@ msgstr "Checked by AI"
 #: packages/product/src/verdict-panel.tsx
 msgid "Проверил ИИ. Если что-то не так — напишите, и работу посмотрит преподаватель."
 msgstr "Checked by AI. If something is wrong, write to us and a teacher will review the work."
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Проверить перенос"
+msgstr "Check move"
 
 #: packages/product/src/push-device-controls.tsx
 msgid "Проверьте соединение и попробуйте ещё раз."
@@ -871,6 +1356,15 @@ msgstr "Check the connection and try again."
 msgid "Проверяем это устройство…"
 msgstr "Checking this device…"
 
+#: packages/product/src/review-lock.tsx
+msgid "Проверяет"
+msgstr "Reviewing"
+
+#. placeholder {0}: item.busyBy
+#: packages/product/src/review-queue.tsx
+msgid "Проверяет {0}"
+msgstr "{0} is reviewing"
+
 #: packages/product/src/progress-charts.tsx
 msgid "Простые"
 msgstr "Simple"
@@ -879,6 +1373,26 @@ msgstr "Simple"
 msgid "Простые задачи"
 msgstr "Simple problems"
 
+#: packages/product/src/written-review-history.tsx
+msgid "Прошлая проверка"
+msgstr "Previous review"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Прямоугольник"
+msgstr "Rectangle"
+
+#: packages/product/src/review-lock.tsx
+msgid "Работа больше не за вами"
+msgstr "The work is no longer assigned to you"
+
+#: packages/product/src/review-lock.tsx
+msgid "Работа за вами"
+msgstr "The work is assigned to you"
+
+#: packages/product/src/three-pane-review.tsx
+msgid "Работа и обсуждение"
+msgstr "Work and discussion"
+
 #: packages/product/src/connection-banner.tsx
 msgid "Работа изменилась"
 msgstr "The work has changed"
@@ -886,6 +1400,10 @@ msgstr "The work has changed"
 #: packages/product/src/progress-charts.tsx
 msgid "Разброс (Q1–Q3)"
 msgstr "Range (Q1–Q3)"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Разметка: {imageAlt}"
+msgstr "Annotations: {imageAlt}"
 
 #: packages/product/src/connection-banner.tsx
 msgid "Разобраться"
@@ -907,13 +1425,27 @@ msgstr "Recognized:"
 msgid "Реакция"
 msgstr "Reaction"
 
+#: packages/product/src/review-reaction-inbox.tsx
+#: packages/product/src/written-review-history.tsx
+msgid "Реакция ученика"
+msgstr "Student reaction"
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "ребёнок"
 msgstr "child"
 
+#. placeholder {0}: problem.displayNumber
+#: packages/product/src/oral-result-form.tsx
+msgid "Результат задачи {0}"
+msgstr "Problem result {0}"
+
 #: packages/product/src/verdict-panel.tsx
 msgid "Результат проверки"
 msgstr "Review result"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Реплик изменится"
+msgstr "Replies will change"
 
 #: packages/product/src/conscious-disclosure.tsx
 #: packages/product/src/worksheet-materials.tsx
@@ -956,6 +1488,11 @@ msgstr "Parent"
 msgid "С устным приёмом всё ОК."
 msgstr "The oral submission went well."
 
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Сбросить масштаб"
+msgstr "Reset zoom"
+
 #: packages/product/src/reaction.ts
 msgid "Связь прервалась."
 msgstr "Connection lost."
@@ -995,6 +1532,10 @@ msgstr "Compressing…"
 #: packages/product/src/chat-composer.tsx
 msgid "сжимаем"
 msgstr "compressing"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Синий"
+msgstr "Blue"
 
 #: packages/product/src/connection-banner.tsx
 #: packages/product/src/sync-indicator.tsx
@@ -1053,6 +1594,18 @@ msgstr "Message"
 msgid "Сообщений пока нет."
 msgstr "No messages yet."
 
+#: packages/product/src/oral-result-form.tsx
+msgid "Сохранить результаты"
+msgstr "Save results"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Сохраняем…"
+msgstr "Saving…"
+
+#: packages/product/src/review-queue.tsx
+msgid "Список"
+msgstr "List"
+
 #: packages/product/src/lesson-video.ts
 msgid "Ссылка VK Видео некорректна"
 msgstr "The VK Video link is invalid"
@@ -1063,9 +1616,31 @@ msgstr "The VK Video link is invalid"
 msgid "Страница {0}"
 msgstr "Page {0}"
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Стрелка"
+msgstr "Arrow"
+
 #: packages/product/src/reaction.ts
 msgid "Суперское решение."
 msgstr "Great solution."
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Текст"
+msgstr "Text"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Текст пометки"
+msgstr "Annotation text"
+
+#. placeholder {0}: problemRevision.configVersion
+#. placeholder {1}: problemRevision.conditionRevisionId
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Текущая опубликованная версия: v{0} · {1}"
+msgstr "Current published version: v{0} · {1}"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Текущий правильный ответ:"
+msgstr "Current correct answer:"
 
 #: packages/product/src/task-type.tsx
 msgid "Тестовая задача"
@@ -1092,13 +1667,31 @@ msgstr "Notifications on iPhone and iPad"
 msgid "Уведомления об изменениях"
 msgstr "Change notifications"
 
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Увеличить масштаб"
+msgstr "Zoom in"
+
 #: packages/product/src/telegram-rich-post.tsx
 msgid "Удалено в источнике"
 msgstr "Deleted in source"
 
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Уже есть более новая проверка"
+msgstr "A newer review already exists"
+
 #: packages/product/src/lesson-video.ts
 msgid "Укажите корректную HTTPS-ссылку на YouTube или VK Видео"
 msgstr "Enter a valid HTTPS link to YouTube or VK Video"
+
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Уменьшить масштаб"
+msgstr "Zoom out"
+
+#: packages/product/src/review-queue.tsx
+msgid "Уровень"
+msgstr "Level"
 
 #: packages/product/src/submission-composer.tsx
 #: packages/product/src/task-type.tsx
@@ -1114,8 +1707,17 @@ msgid "Устный приём сейчас"
 msgstr "Oral submission now"
 
 #: packages/product/src/feedback-thread.tsx
+#: packages/product/src/review-queue.tsx
 msgid "Ученик"
 msgstr "Student"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Фамилия или имя"
+msgstr "Surname or name"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Формулировка реакции"
+msgstr "Reaction wording"
 
 #. placeholder {0}: attachments.length
 #: packages/product/src/submission-composer.tsx
@@ -1126,6 +1728,10 @@ msgstr "Photos <0>({0} of {maxPhotos})</0>"
 #: packages/product/src/question-photos.tsx
 msgid "Фотография {0}"
 msgstr "Photo {0}"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Целевая задача"
+msgstr "Target problem"
 
 #: packages/product/src/answer-spec.ts
 msgid "Целые числа через запятую — порядок важен"
@@ -1156,6 +1762,30 @@ msgstr "Numbers separated by commas — duplicates matter, order does not"
 msgid "Число {0}"
 msgstr "Number {0}"
 
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Что нужно исправить"
+msgstr "What needs correcting"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Что переносим"
+msgstr "What to move"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Что получилось, что стоит поправить…"
+msgstr "What worked, what should be improved…"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Школьник"
+msgstr "Student"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Школьников"
+msgstr "Students"
+
 #: packages/product/src/reaction.ts
 msgid "Это старые плюсики поставили…"
 msgstr "Those are old pluses…"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Янтарный"
+msgstr "Amber"

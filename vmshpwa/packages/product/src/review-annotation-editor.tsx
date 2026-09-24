@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import {
   ArrowUpRight,
   Check,
@@ -76,12 +78,48 @@ const toolOptions: Array<{
   label: string
   icon: typeof Pencil
 }> = [
-  { tool: 'pencil', label: 'Карандаш', icon: Pencil },
-  { tool: 'eraser', label: 'Ластик', icon: Eraser },
-  { tool: 'text', label: 'Текст', icon: TypeIcon },
-  { tool: 'arrow', label: 'Стрелка', icon: ArrowUpRight },
-  { tool: 'rectangle', label: 'Прямоугольник', icon: Square },
-  { tool: 'highlight', label: 'Выделение', icon: Highlighter },
+  {
+    tool: 'pencil',
+    get label() {
+      return t`Карандаш`
+    },
+    icon: Pencil,
+  },
+  {
+    tool: 'eraser',
+    get label() {
+      return t`Ластик`
+    },
+    icon: Eraser,
+  },
+  {
+    tool: 'text',
+    get label() {
+      return t`Текст`
+    },
+    icon: TypeIcon,
+  },
+  {
+    tool: 'arrow',
+    get label() {
+      return t`Стрелка`
+    },
+    icon: ArrowUpRight,
+  },
+  {
+    tool: 'rectangle',
+    get label() {
+      return t`Прямоугольник`
+    },
+    icon: Square,
+  },
+  {
+    tool: 'highlight',
+    get label() {
+      return t`Выделение`
+    },
+    icon: Highlighter,
+  },
 ]
 
 const colorOptions: Array<{
@@ -89,10 +127,34 @@ const colorOptions: Array<{
   label: string
   className: string
 }> = [
-  { color: 'red', label: 'Красный', className: 'bg-annotation-pen' },
-  { color: 'blue', label: 'Синий', className: 'bg-annotation-comment' },
-  { color: 'graphite', label: 'Графитовый', className: 'bg-foreground' },
-  { color: 'amber', label: 'Янтарный', className: 'bg-annotation-highlight' },
+  {
+    color: 'red',
+    get label() {
+      return t`Красный`
+    },
+    className: 'bg-annotation-pen',
+  },
+  {
+    color: 'blue',
+    get label() {
+      return t`Синий`
+    },
+    className: 'bg-annotation-comment',
+  },
+  {
+    color: 'graphite',
+    get label() {
+      return t`Графитовый`
+    },
+    className: 'bg-foreground',
+  },
+  {
+    color: 'amber',
+    get label() {
+      return t`Янтарный`
+    },
+    className: 'bg-annotation-highlight',
+  },
 ]
 
 function nextMarkId(): string {
@@ -271,11 +333,11 @@ export function ReviewAnnotationEditor({
   const visibleMarks = previewMark ? [...document.marks, previewMark] : document.marks
 
   return (
-    <section className={cn('space-y-2', className)} aria-label={`Разметка: ${imageAlt}`}>
+    <section className={cn('space-y-2', className)} aria-label={t`Разметка: ${imageAlt}`}>
       <div
         className="flex flex-wrap items-center gap-1"
         role="toolbar"
-        aria-label="Инструменты разметки"
+        aria-label={t`Инструменты разметки`}
       >
         {toolOptions.map((option) => {
           const Icon = option.icon
@@ -314,7 +376,7 @@ export function ReviewAnnotationEditor({
         ))}
         <span aria-hidden="true" className="mx-1 h-5 w-px bg-border" />
         <Button
-          aria-label="Отменить"
+          aria-label={t`Отменить`}
           disabled={disabled || past.length === 0}
           onClick={undo}
           size="icon-sm"
@@ -324,7 +386,7 @@ export function ReviewAnnotationEditor({
           <Undo2 aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Повторить"
+          aria-label={t`Повторить`}
           disabled={disabled || future.length === 0}
           onClick={redo}
           size="icon-sm"
@@ -334,7 +396,7 @@ export function ReviewAnnotationEditor({
           <Redo2 aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Повернуть против часовой стрелки"
+          aria-label={t`Повернуть против часовой стрелки`}
           disabled={disabled}
           onClick={() => commit({ ...document, rotation: rotate(document.rotation, -1) })}
           size="icon-sm"
@@ -344,7 +406,7 @@ export function ReviewAnnotationEditor({
           <RotateCcw aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Повернуть по часовой стрелке"
+          aria-label={t`Повернуть по часовой стрелке`}
           disabled={disabled}
           onClick={() => commit({ ...document, rotation: rotate(document.rotation, 1) })}
           size="icon-sm"
@@ -354,7 +416,7 @@ export function ReviewAnnotationEditor({
           <RotateCw aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Очистить разметку"
+          aria-label={t`Очистить разметку`}
           disabled={disabled || document.marks.length === 0}
           onClick={() => commit({ ...document, marks: [] })}
           size="icon-sm"
@@ -370,7 +432,7 @@ export function ReviewAnnotationEditor({
         imageSource={imageSource}
         marks={visibleMarks}
         overlayProps={{
-          'aria-label': 'Область разметки фотографии',
+          'aria-label': t`Область разметки фотографии`,
           className: 'touch-none',
           onPointerCancel: finishGesture,
           onPointerDown: beginGesture,
@@ -386,7 +448,7 @@ export function ReviewAnnotationEditor({
 
       <div className="flex flex-wrap items-center gap-1">
         <Button
-          aria-label="Уменьшить масштаб"
+          aria-label={t`Уменьшить масштаб`}
           disabled={zoom <= MIN_ZOOM}
           onClick={() => setZoom((value) => Math.max(MIN_ZOOM, value - ZOOM_STEP))}
           size="icon-sm"
@@ -396,7 +458,7 @@ export function ReviewAnnotationEditor({
           <Minus aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Увеличить масштаб"
+          aria-label={t`Увеличить масштаб`}
           disabled={zoom >= MAX_ZOOM}
           onClick={() => setZoom((value) => Math.min(MAX_ZOOM, value + ZOOM_STEP))}
           size="icon-sm"
@@ -406,7 +468,7 @@ export function ReviewAnnotationEditor({
           <Plus aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Сбросить масштаб"
+          aria-label={t`Сбросить масштаб`}
           disabled={zoom === 1}
           onClick={() => setZoom(1)}
           size="icon-sm"
@@ -416,7 +478,10 @@ export function ReviewAnnotationEditor({
           <Maximize2 aria-hidden="true" />
         </Button>
         <span className="font-num text-caption text-muted-foreground">
-          {Math.round(zoom * 100)}% · {document.rotation}° · {document.marks.length} пометок
+          {Math.round(zoom * 100)}
+          <Trans>
+            % · {document.rotation}° · {document.marks.length} пометок
+          </Trans>
         </span>
       </div>
 
@@ -429,7 +494,9 @@ export function ReviewAnnotationEditor({
           }}
         >
           <div className="min-w-0 flex-1 space-y-1">
-            <Label htmlFor={textControlId}>Текст пометки</Label>
+            <Label htmlFor={textControlId}>
+              <Trans>Текст пометки</Trans>
+            </Label>
             <Input
               id={textControlId}
               maxLength={500}
@@ -438,13 +505,13 @@ export function ReviewAnnotationEditor({
                   current ? { ...current, value: event.target.value } : null,
                 )
               }
-              placeholder="Что нужно исправить"
+              placeholder={t`Что нужно исправить`}
               ref={textInputRef}
               value={pendingText.value}
             />
           </div>
           <Button
-            aria-label="Добавить текст"
+            aria-label={t`Добавить текст`}
             disabled={!pendingText.value.trim()}
             size="icon-sm"
             type="submit"
@@ -452,7 +519,7 @@ export function ReviewAnnotationEditor({
             <Check aria-hidden="true" />
           </Button>
           <Button
-            aria-label="Отменить текст"
+            aria-label={t`Отменить текст`}
             onClick={() => setPendingText(null)}
             size="icon-sm"
             type="button"

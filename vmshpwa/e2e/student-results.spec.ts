@@ -7,6 +7,8 @@ test('Student archive: fuzzy search, multiple levels, complete history, URL and 
   context,
 }, info) => {
   test.setTimeout(120_000)
+  // The archive fixture attaches to review fixture 9701, seeded first for Chromium.
+  const archivedProblemTitle = 'E2E проверка chromium'
   await page.setViewportSize({ width: 1440, height: 1000 })
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/student-results')
   await page.getByLabel('Фамилия и имя').fill('Архивво Александр')
@@ -26,7 +28,9 @@ test('Student archive: fuzzy search, multiple levels, complete history, URL and 
   await expect(detail.getByText('Ответ на тест · Приложение')).toBeVisible()
   await expect(detail.getByText('Файл не сохранился или недоступен.')).toBeVisible()
   await expect(detail.getByRole('button', { name: /Ещё 50 событий/ })).toBeVisible()
-  await expect(detail.getByText('Равнобедренный треугольник', { exact: true })).toBeVisible()
+  await expect(
+    detail.getByRole('heading', { name: new RegExp(archivedProblemTitle) }),
+  ).toBeVisible()
   await page.screenshot({ path: info.outputPath('results-desktop.png'), animations: 'disabled' })
   await detail.getByRole('button', { name: /Ещё 50 событий/ }).click()
   await expect(detail.getByText('Архивная досылка 55: уточнение решения.')).toBeVisible()
@@ -47,10 +51,10 @@ test('Student archive: fuzzy search, multiple levels, complete history, URL and 
   })
   const condition = detail.getByRole('button', { name: 'Условие на момент отправки' }).first()
   await condition.click()
-  await expect(page.getByRole('dialog')).toContainText('Равнобедренный треугольник')
+  await expect(page.getByRole('dialog')).toContainText(archivedProblemTitle)
   await page.keyboard.press('Escape')
   await expect(condition).toBeFocused()
-  const grade = page.getByRole('button', { name: /История оценки · задача 3/ }).first()
+  const grade = page.getByRole('button', { name: /История оценки · задача 9701н\.3/ }).first()
   await grade.click()
   await expect(page.getByRole('dialog')).toContainText('Очное занятие')
   await page.keyboard.press('Escape')

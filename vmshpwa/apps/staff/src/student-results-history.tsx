@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDateTime } from '@vmsh/i18n'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { StudentResultsClient } from '@vmsh/app-shell'
@@ -26,18 +29,26 @@ export function ResultCondition({
   legacyText?: string | null
 }) {
   return document ? (
-    <Suspense fallback={<p>Загружаем условие…</p>}>
+    <Suspense
+      fallback={
+        <p>
+          <Trans>Загружаем условие…</Trans>
+        </p>
+      }
+    >
       <MathDocument document={document} />
     </Suspense>
   ) : legacyText ? (
     <div className="space-y-1">
       <p className="text-caption text-muted-foreground">
-        Сохранённый текст условия · версия неизвестна
+        <Trans>Сохранённый текст условия · версия неизвестна</Trans>
       </p>
       <p className="whitespace-pre-wrap break-words">{legacyText}</p>
     </div>
   ) : (
-    <p className="text-small text-muted-foreground">Архивное условие недоступно.</p>
+    <p className="text-small text-muted-foreground">
+      <Trans>Архивное условие недоступно.</Trans>
+    </p>
   )
 }
 export function ResultMark({ value, symbol }: { value: number | null; symbol: string }) {
@@ -48,38 +59,82 @@ export function ResultMark({ value, symbol }: { value: number | null; symbol: st
   )
 }
 const kinds: Record<StudentResultEvent['kind'], string> = {
-  entry: 'Посылка / сообщение',
-  test: 'Ответ на тест',
-  review: 'Проверка',
-  discussion: 'Сообщение',
-  result: 'Оценка',
-  reaction: 'Учительская пометка',
-  student_reaction: 'Реакция ученику',
-  legacy_reaction: 'Реакция',
-  transfer: 'Перенос материалов',
-  reassignment: 'Перенос материалов',
-  replacement: 'Посылка заменена',
-  undo: 'Отмена изменения оценки',
+  get entry() {
+    return t`Посылка / сообщение`
+  },
+  get test() {
+    return t`Ответ на тест`
+  },
+  get review() {
+    return t`Проверка`
+  },
+  get discussion() {
+    return t`Сообщение`
+  },
+  get result() {
+    return t`Оценка`
+  },
+  get reaction() {
+    return t`Учительская пометка`
+  },
+  get student_reaction() {
+    return t`Реакция ученику`
+  },
+  get legacy_reaction() {
+    return t`Реакция`
+  },
+  get transfer() {
+    return t`Перенос материалов`
+  },
+  get reassignment() {
+    return t`Перенос материалов`
+  },
+  get replacement() {
+    return t`Посылка заменена`
+  },
+  get undo() {
+    return t`Отмена изменения оценки`
+  },
 }
 const sources: Record<string, string> = {
-  pwa: 'Приложение',
+  get pwa() {
+    return t`Приложение`
+  },
   telegram: 'Telegram',
-  staff: 'Преподаватель',
-  archive: 'Архив',
+  get staff() {
+    return t`Преподаватель`
+  },
+  get archive() {
+    return t`Архив`
+  },
   zoom: 'Zoom',
-  school: 'Очное занятие',
-  system: 'Система',
-  ai: 'ИИ',
+  get school() {
+    return t`Очное занятие`
+  },
+  get system() {
+    return t`Система`
+  },
+  get ai() {
+    return t`ИИ`
+  },
 }
 const checks: Record<string, string> = {
-  pending_configuration: 'Ожидает настройки проверки',
-  pending: 'Ожидает проверки',
-  checked: 'Проверено',
-  failed: 'Ошибка проверки',
+  get pending_configuration() {
+    return t`Ожидает настройки проверки`
+  },
+  get pending() {
+    return t`Ожидает проверки`
+  },
+  get checked() {
+    return t`Проверено`
+  },
+  get failed() {
+    return t`Ошибка проверки`
+  },
 }
 function date(value: string) {
   const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleString('ru-RU')
+  return Number.isNaN(d.getTime()) ? value : formatDateTime(d)
 }
 
 function ArchiveImage({ attachment }: { attachment: StudentResultEvent['attachments'][number] }) {
@@ -103,7 +158,7 @@ function ArchiveImage({ attachment }: { attachment: StudentResultEvent['attachme
     <div ref={ref} onErrorCapture={() => setMissing(true)} className="my-2 min-h-12 max-w-xl">
       {missing ? (
         <p role="status" className="text-small text-muted-foreground">
-          Файл не сохранился или недоступен.
+          <Trans>Файл не сохранился или недоступен.</Trans>
         </p>
       ) : attachment.kind === 'file' ? (
         <a
@@ -112,30 +167,43 @@ function ArchiveImage({ attachment }: { attachment: StudentResultEvent['attachme
           target="_blank"
           rel="noreferrer"
         >
-          Скачать вложение
+          <Trans>Скачать вложение</Trans>
         </a>
       ) : near ? (
         attachment.annotation ? (
-          <Suspense fallback={<p>Загружаем фотографию…</p>}>
+          <Suspense
+            fallback={
+              <p>
+                <Trans>Загружаем фотографию…</Trans>
+              </p>
+            }
+          >
             <AnnotationViewer
-              imageAlt="Решение с отметками преподавателя"
+              imageAlt={t`Решение с отметками преподавателя`}
               imageSource={attachment.url}
               manifest={attachment.annotation}
             />
           </Suspense>
         ) : (
-          <a href={attachment.url} target="_blank" rel="noreferrer" aria-label="Открыть вложение">
+          <a
+            href={attachment.url}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={t`Открыть вложение`}
+          >
             <img
               className="max-h-96 max-w-full rounded object-contain"
               src={attachment.url}
-              alt="Вложение к посылке"
+              alt={t`Вложение к посылке`}
               loading="lazy"
               onError={() => setMissing(true)}
             />
           </a>
         )
       ) : (
-        <p className="text-small text-muted-foreground">Фотография</p>
+        <p className="text-small text-muted-foreground">
+          <Trans>Фотография</Trans>
+        </p>
       )}
     </div>
   )
@@ -172,17 +240,23 @@ export function ResultHistory({
   const events = query.data?.pages.flatMap((p) => p.events) ?? []
   return (
     <div className="space-y-3">
-      {query.isPending && <p role="status">Загружаем историю…</p>}
+      {query.isPending && (
+        <p role="status">
+          <Trans>Загружаем историю…</Trans>
+        </p>
+      )}
       {query.isError && (
         <p role="alert">
-          Не удалось загрузить историю.{' '}
+          <Trans>Не удалось загрузить историю. </Trans>
           <Button variant="outline" onClick={() => void query.refetch()}>
-            Повторить
+            <Trans>Повторить</Trans>
           </Button>
         </p>
       )}
       {!query.isPending && !query.isError && !events.length && (
-        <p className="text-small text-muted-foreground">Сохранённых событий нет.</p>
+        <p className="text-small text-muted-foreground">
+          <Trans>Сохранённых событий нет.</Trans>
+        </p>
       )}
       <ol className="space-y-2 break-words">
         {events.map((e) => (
@@ -192,17 +266,25 @@ export function ResultHistory({
               id: e.id,
               author: {
                 kind: e.authorKind,
-                name: e.author ?? sources[e.source] ?? 'Архив',
+                name: e.author ?? sources[e.source] ?? t`Архив`,
               },
               at: date(e.at),
               body: (
                 <>
                   <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
                     <span>
-                      {kinds[e.kind]} · {sources[e.source] ?? 'Архив'}
+                      {kinds[e.kind]} · {sources[e.source] ?? t`Архив`}
                     </span>
-                    {e.internal && <span className="font-semibold">Внутренняя пометка</span>}
-                    {e.action === 'deleted' && <span>Удалена</span>}
+                    {e.internal && (
+                      <span className="font-semibold">
+                        <Trans>Внутренняя пометка</Trans>
+                      </span>
+                    )}
+                    {e.action === 'deleted' && (
+                      <span>
+                        <Trans>Удалена</Trans>
+                      </span>
+                    )}
                     {e.verdict !== null && <ResultMark value={e.verdict} symbol={e.symbol} />}
                   </div>
                   {e.text && (
@@ -210,13 +292,15 @@ export function ResultHistory({
                   )}
                   {e.checkStatus && (
                     <p className="text-caption text-muted-foreground">
-                      {checks[e.checkStatus] ?? 'Статус проверки неизвестен'}
+                      {checks[e.checkStatus] ?? t`Статус проверки неизвестен`}
                     </p>
                   )}
                   {e.transfer && (
                     <p>
-                      {e.transfer.mode === 'clone' ? 'Копия' : 'Перенос'}: задача{' '}
-                      {e.transfer.source} → {e.transfer.target}
+                      {e.transfer.mode === 'clone' ? t`Копия` : t`Перенос`}
+                      <Trans>
+                        : задача {e.transfer.source} → {e.transfer.target}
+                      </Trans>
                     </p>
                   )}
                   {e.attachments.map((a) => (
@@ -224,7 +308,7 @@ export function ResultHistory({
                   ))}
                   {e.revisionId && (
                     <Button variant="ghost" size="sm" onClick={() => setRevision(e.revisionId)}>
-                      Условие на момент отправки
+                      <Trans>Условие на момент отправки</Trans>
                     </Button>
                   )}
                   {e.reviewId && (
@@ -232,7 +316,7 @@ export function ResultHistory({
                       className="ml-2 text-small text-primary underline"
                       href={`/staff/review/history?review=${encodeURIComponent(e.reviewId)}`}
                     >
-                      Открыть проверку
+                      <Trans>Открыть проверку</Trans>
                     </a>
                   )}
                 </>
@@ -247,7 +331,9 @@ export function ResultHistory({
           disabled={query.isFetchingNextPage}
           onClick={() => void query.fetchNextPage()}
         >
-          Ещё 50 событий ({events.length} из {query.data?.pages[0]?.total})
+          <Trans>
+            Ещё 50 событий ({events.length} из {query.data?.pages[0]?.total})
+          </Trans>
         </Button>
       )}
       <Dialog
@@ -258,13 +344,21 @@ export function ResultHistory({
       >
         <DialogContent className="max-h-[85svh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Условие при отправке</DialogTitle>
-            <DialogDescription>Версия, связанная с этой посылкой</DialogDescription>
+            <DialogTitle>
+              <Trans>Условие при отправке</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>Версия, связанная с этой посылкой</Trans>
+            </DialogDescription>
           </DialogHeader>
           {condition.isPending ? (
-            <p>Загружаем…</p>
+            <p>
+              <Trans>Загружаем…</Trans>
+            </p>
           ) : condition.isError ? (
-            <p role="alert">Не удалось загрузить условие.</p>
+            <p role="alert">
+              <Trans>Не удалось загрузить условие.</Trans>
+            </p>
           ) : (
             <ResultCondition document={condition.data?.document ?? null} />
           )}

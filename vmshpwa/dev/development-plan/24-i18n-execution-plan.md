@@ -1,6 +1,6 @@
 # RU → EN localization: step-by-step execution plan
 
-Status: P3 was implemented locally on 2026-09-24 and its phase gates passed. P4–P8 remain implementation instructions; this document remains the authoritative procedure for them.
+Status: P3 and P4 were implemented locally on 2026-09-24 and their scoped phase gates passed. P5–P8 remain implementation instructions; this document remains the authoritative procedure for them.
 
 This is an English-language execution companion to [24-i18n.md](24-i18n.md), intended for an agent that needs explicit, small, verifiable tasks. Follow the existing architecture; do not invent a replacement translation system. Finish one batch before starting another.
 
@@ -737,6 +737,8 @@ The current broad Storybook and feature E2E suites still contain separately scop
 - Preserve export contracts and Russian person sorting. Handle any user-facing export headings only after distinguishing them from a fixed machine format.
 
 **P4 exit:** review → verdict → history, live marking and statistics work in both locales; visible server labels are covered; hot-list performance remains within budget.
+
+**P4 completion evidence (2026-09-24):** P4.1–P4.4 translated the declared Staff review, live-marking, result, oral-result, statistics and recheck scopes. Known system reaction labels resolve at the UI boundary from stable IDs, retain their emoji and switch with the locale; unrecognized historical reaction wording remains source data. `LIVE_REACTIONS` stores only IDs and live-marking resolves copy outside the hot cell loop. The dynamic review-lease `PwaApiError` uses named parameters, so its English response preserves the teacher name without changing its status or code. Course/group/problem/person names, lesson statements, comments, attachments, exports, verdict codes and keyboard commands remain unchanged. Frontend unit passed 903 tests; focused Python P4 regression passed 75 tests; lint, typecheck, production build, frontend/backend catalog checks and P4 formatting passed. English i18n E2E passed 21 tests, review E2E 6 and student-results E2E 6 across Chromium, WebKit and Firefox. P3 → P4 maximum initial-JS growth was 7.9 KB and maximum cold FCP difference was 12 ms; see [i18n-performance-report.md](../i18n-performance-report.md). The broad Python suite still has seven separately reproducible generated-artifact/guard failures outside P4; do not fold those repairs into this phase.
 
 ### P5 — Staff course administration, scheduling, rooms, oral sessions, news
 

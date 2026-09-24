@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -180,7 +182,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
           setWorks(owned.current)
         } catch (error) {
           if (error instanceof ApiResponseError && [404, 409].includes(error.status)) {
-            if (alive.current) setMessage('Эту работу уже проверяют. Выбираем следующую…')
+            if (alive.current) setMessage(t`Эту работу уже проверяют. Выбираем следующую…`)
             continue
           }
           throw error
@@ -338,12 +340,16 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     <div className="mx-auto max-w-[1500px] px-4 py-3">
       <h1 className="text-subtitle font-semibold">{condition.data?.label ?? problemId}</h1>
       <details className="my-3 rounded-lg border border-border p-3">
-        <summary className="cursor-pointer font-medium">Условие задачи</summary>
+        <summary className="cursor-pointer font-medium">
+          <Trans>Условие задачи</Trans>
+        </summary>
         {condition.data?.document ? (
           <SemanticMathDocument document={condition.data.document} />
         ) : (
           <p className="py-3">
-            {condition.isPending ? 'Загружаем условие…' : 'Условие проверяемой версии недоступно.'}
+            {condition.isPending
+              ? t`Загружаем условие…`
+              : t`Условие проверяемой версии недоступно.`}
           </p>
         )}
       </details>
@@ -355,17 +361,17 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
         onClick={() => void loadHistory()}
       >
         {historyBusy
-          ? 'Загружаем…'
+          ? t`Загружаем…`
           : historyCursor === null
-            ? 'Более ранних собственных проверок нет'
-            : 'Показать предыдущие 20 проверок'}
+            ? t`Более ранних собственных проверок нет`
+            : t`Показать предыдущие 20 проверок`}
       </Button>
       <div
         ref={toolbarElement}
         className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background py-2"
       >
         <Button render={<Link to="/review" search={true} />} variant="outline" size="sm">
-          К списку задач
+          <Trans>К списку задач</Trans>
         </Button>
         <Button
           disabled={!previous || savingReview}
@@ -376,7 +382,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
           variant="outline"
           size="sm"
         >
-          {correcting ? 'Продолжить серию' : 'Исправить предыдущую'} · ⌘/Ctrl + Alt + ←
+          {correcting ? t`Продолжить серию` : t`Исправить предыдущую`} · ⌘/Ctrl + Alt + ←
         </Button>
         <Button
           disabled={correcting || savingReview}
@@ -384,10 +390,14 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
           variant="ghost"
           size="sm"
         >
-          Дальше · ⌘/Ctrl + Alt + →
+          <Trans>Дальше · ⌘/Ctrl + Alt + →</Trans>
         </Button>
         <span className="text-caption text-muted-foreground">
-          {works.length > 1 ? 'Следующая работа подготовлена' : loading ? 'Готовим следующую…' : ''}
+          {works.length > 1
+            ? t`Следующая работа подготовлена`
+            : loading
+              ? t`Готовим следующую…`
+              : ''}
         </span>
       </div>
       {message ? (
@@ -427,7 +437,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
                   mediaClient={mediaClient}
                   annotations={[]}
                   comment=""
-                  verdict={`Перенесено в ${item.movedTo}`}
+                  verdict={t`Перенесено в ${item.movedTo}`}
                 />
               ) : item.lease && item.draft ? (
                 <ReviewedWorkSnapshot
@@ -452,7 +462,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
                   disabled={savingReview || correcting}
                   onClick={() => openCorrection(item.reviewId)}
                 >
-                  Перепроверить
+                  <Trans>Перепроверить</Trans>
                 </Button>
               )}
             </>
@@ -483,9 +493,9 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
       {!works.length && !correcting ? (
         <PageStatePanel
           state={loading ? 'loading' : 'empty'}
-          title="Доступных работ по этой задаче больше нет"
-          description="Остальные работы могут проверять другие преподаватели."
-          actionLabel="Проверить ещё раз"
+          title={t`Доступных работ по этой задаче больше нет`}
+          description={t`Остальные работы могут проверять другие преподаватели.`}
+          actionLabel={t`Проверить ещё раз`}
           onAction={() => {
             completed.current.clear()
             void fill()
@@ -494,7 +504,9 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
       ) : null}
       {correcting && editingId && !feed.some((item) => item.reviewId === editingId) ? (
         <section className="space-y-3 py-4">
-          <h2 className="text-subtitle font-semibold">Предыдущая проверка</h2>
+          <h2 className="text-subtitle font-semibold">
+            <Trans>Предыдущая проверка</Trans>
+          </h2>
           <CompletedReviewCard
             reviewId={editingId}
             onClose={closeCorrection}

@@ -1,3 +1,5 @@
+import { t as translate } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState } from 'react'
 import {
   ApiResponseError,
@@ -94,7 +96,7 @@ export function ReviewTransfer({
           disabled={disabled || busy}
           onClick={() => void open('move')}
         >
-          Перенести в другую задачу
+          <Trans>Перенести в другую задачу</Trans>
         </Button>
         <Button
           size="sm"
@@ -102,7 +104,7 @@ export function ReviewTransfer({
           disabled={disabled || busy}
           onClick={() => void open('clone')}
         >
-          Клонировать в другую задачу
+          <Trans>Клонировать в другую задачу</Trans>
         </Button>
       </div>
       {error && <p role="alert">{error}</p>}
@@ -113,26 +115,30 @@ export function ReviewTransfer({
           disabled={busy || disabled}
           onClick={() => void open(mode)}
         >
-          Обновить предпросмотр
+          <Trans>Обновить предпросмотр</Trans>
         </Button>
       )}
       {preview && (
         <section
-          aria-label="Подтверждение переноса посылки"
+          aria-label={translate`Подтверждение переноса посылки`}
           className="space-y-3 rounded-lg border border-border p-3"
         >
           <p>
-            {preview.studentName} · {preview.sourceLabel} · фотографий: {preview.photoCount}
+            <Trans>
+              {preview.studentName} · {preview.sourceLabel} · фотографий: {preview.photoCount}
+            </Trans>
           </p>
           <Label>
-            Целевая задача
+            <Trans>Целевая задача</Trans>
             <select
               className="block w-full rounded border border-border bg-surface p-2"
               disabled={busy || request !== null}
               value={target}
               onChange={(e) => setTarget(e.target.value)}
             >
-              <option value="">Выберите задачу</option>
+              <option value="">
+                <Trans>Выберите задачу</Trans>
+              </option>
               {preview.targets.map((t) => (
                 <option key={t.problemId} value={t.problemId}>
                   {t.label}
@@ -141,26 +147,28 @@ export function ReviewTransfer({
             </select>
           </Label>
           {!preview.targets.length && (
-            <p>Нет подходящих письменных или устных задач этого занятия и уровня.</p>
+            <p>
+              <Trans>Нет подходящих письменных или устных задач этого занятия и уровня.</Trans>
+            </p>
           )}
           <p>
             {mode === 'move'
-              ? 'Вся посылка будет перенесена в целевую очередь. Вы перейдёте к следующей работе.'
-              : 'Копия всей посылки попадёт в целевую очередь. Исходная останется здесь.'}{' '}
-            Оценка и учительские пометки не копируются.
+              ? translate`Вся посылка будет перенесена в целевую очередь. Вы перейдёте к следующей работе.`
+              : translate`Копия всей посылки попадёт в целевую очередь. Исходная останется здесь.`}
+            <Trans> Оценка и учительские пометки не копируются.</Trans>
           </p>
           <div className="flex gap-2">
             <Button disabled={busy || !target} onClick={() => void send()}>
               {busy
-                ? 'Сохраняем…'
+                ? translate`Сохраняем…`
                 : request
-                  ? 'Повторить запрос'
+                  ? translate`Повторить запрос`
                   : mode === 'move'
-                    ? 'Перенести посылку'
-                    : 'Клонировать посылку'}
+                    ? translate`Перенести посылку`
+                    : translate`Клонировать посылку`}
             </Button>
             <Button variant="ghost" disabled={busy} onClick={() => setPreview(null)}>
-              Закрыть
+              <Trans>Закрыть</Trans>
             </Button>
           </div>
         </section>

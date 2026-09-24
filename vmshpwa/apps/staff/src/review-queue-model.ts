@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { z } from 'zod'
 import type { ReviewQueueItem } from '@vmsh/contracts'
 import { reviewProblemGroups } from './review-series-model'
@@ -25,13 +26,13 @@ export function queueOptions(items: ReviewQueueItem[], course?: string) {
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
   return {
-    courses: options(branches.map((b) => [queueCourseKey(b), b.courseName ?? 'Без курса'])),
+    courses: options(branches.map((b) => [queueCourseKey(b), b.courseName ?? t`Без курса`])),
     groups: options(
       branches
         .filter((b) => !course || queueCourseKey(b) === course)
         .map((b) => [
           queueGroupKey(b),
-          course ? b.groupName : `${b.groupName} · ${b.courseName ?? 'Без курса'}`,
+          course ? b.groupName : `${b.groupName} · ${b.courseName ?? t`Без курса`}`,
         ]),
     ),
   }
@@ -74,12 +75,12 @@ export function sortedReviewProblems(
 export function workCount(count: number) {
   const last = count % 10,
     hundred = count % 100
-  return `${count} ${last === 1 && hundred !== 11 ? 'работа' : last >= 2 && last <= 4 && (hundred < 12 || hundred > 14) ? 'работы' : 'работ'}`
+  return `${count} ${last === 1 && hundred !== 11 ? t`работа` : last >= 2 && last <= 4 && (hundred < 12 || hundred > 14) ? t`работы` : t`работ`}`
 }
 export function formatReviewWaiting(minutes: number) {
   minutes = Math.max(0, Math.floor(minutes))
-  if (minutes < 60) return `${minutes} мин`
+  if (minutes < 60) return t`${minutes} мин`
   const hours = Math.floor(minutes / 60)
-  if (hours >= 24) return `${Math.floor(hours / 24)} д${hours % 24 ? ` ${hours % 24} ч` : ''}`
-  return `${hours} ч${minutes % 60 ? ` ${minutes % 60} мин` : ''}`
+  if (hours >= 24) return t`${Math.floor(hours / 24)} д${hours % 24 ? t` ${hours % 24} ч` : ''}`
+  return t`${hours} ч${minutes % 60 ? t` ${minutes % 60} мин` : ''}`
 }

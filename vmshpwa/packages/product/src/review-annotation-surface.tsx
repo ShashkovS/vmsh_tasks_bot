@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Maximize2, Minus, Plus } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type CSSProperties, type SVGProps } from 'react'
 
@@ -76,7 +78,7 @@ export function ReviewAnnotationSurface({
 
   return (
     <div
-      aria-label={`${imageAlt}; область можно прокручивать после увеличения`}
+      aria-label={t`${imageAlt}; область можно прокручивать после увеличения`}
       className={cn(
         'max-w-full overflow-auto rounded-md border border-paper-edge bg-surface-sunken p-1',
         className,
@@ -185,7 +187,7 @@ export function ReviewAnnotationViewer({
       />
       <div className="flex flex-wrap items-center gap-1">
         <Button
-          aria-label="Уменьшить масштаб"
+          aria-label={t`Уменьшить масштаб`}
           disabled={zoom <= MINIMUM_ZOOM}
           onClick={() => setZoom((value) => stepZoom(value, -1))}
           size="icon-xs"
@@ -195,7 +197,7 @@ export function ReviewAnnotationViewer({
           <Minus aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Увеличить масштаб"
+          aria-label={t`Увеличить масштаб`}
           disabled={zoom >= MAXIMUM_ZOOM}
           onClick={() => setZoom((value) => stepZoom(value, 1))}
           size="icon-xs"
@@ -205,7 +207,7 @@ export function ReviewAnnotationViewer({
           <Plus aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Сбросить масштаб"
+          aria-label={t`Сбросить масштаб`}
           disabled={zoom === NATURAL_ZOOM}
           onClick={() => setZoom(NATURAL_ZOOM)}
           size="icon-xs"
@@ -215,8 +217,9 @@ export function ReviewAnnotationViewer({
           <Maximize2 aria-hidden="true" />
         </Button>
         <figcaption className="text-caption text-muted-foreground">
-          Пометки преподавателя · <span className="font-num">{Math.round(zoom * 100)}%</span>
-          {zoom > NATURAL_ZOOM ? ' · можно прокрутить' : ''}
+          <Trans>Пометки преподавателя ·</Trans>{' '}
+          <span className="font-num">{Math.round(zoom * 100)}%</span>
+          {zoom > NATURAL_ZOOM ? t` · можно прокрутить` : ''}
         </figcaption>
       </div>
       {textMarks.length > 0 ? (

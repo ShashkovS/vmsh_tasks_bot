@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2026-09-18 22:22+0300\n"
+"POT-Creation-Date: 2026-09-24 16:10+0300\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -13,13 +13,278 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: apps/staff/src/student-results-page.tsx
+msgid " · без результатов"
+msgstr " · no results"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid " · Ваше: "
+msgstr " · Yours: "
+
+#: apps/staff/src/student-results-page.tsx
+msgid " · выбрано"
+msgstr " · selected"
+
+#. placeholder {0}: minutes % 60
+#: apps/staff/src/review-queue-model.ts
+msgid " {0} мин"
+msgstr " {0} min"
+
+#. placeholder {0}: hours % 24
+#: apps/staff/src/review-queue-model.ts
+msgid " {0} ч"
+msgstr " {0} h"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid " МСК"
+msgstr " MSK"
+
+#: apps/staff/src/review-transfer.tsx
+msgid " Оценка и учительские пометки не копируются."
+msgstr " Grades and teacher notes are not copied."
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid ", моя оценка"
+msgstr ", my grade"
+
+#. placeholder {0}: e.transfer.source
+#. placeholder {1}: e.transfer.target
+#: apps/staff/src/student-results-history.tsx
+msgid ": задача {0} → {1}"
+msgstr ": problem {0} → {1}"
+
+#: apps/staff/src/statistics-student-search.tsx
+msgid ". Показаны первые 20 — уточните имя или фамилию."
+msgstr ". The first 20 are shown — refine the name or surname."
+
+#. placeholder {0}: transferStudent.groupName
+#. placeholder {1}: room?.groupName
+#. placeholder {2}: room?.name
+#: apps/staff/src/live-marking-page.tsx
+msgid "· {0} → {1} · аудитория {2}. Посещение: пришёл."
+msgstr "· {0} → {1} · room {2}. Attendance: present."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "· активна"
+msgstr "· active"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "· завершена"
+msgstr "· completed"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "· Тест учителя"
+msgstr "· Teacher test"
+
+#. placeholder {0}: r.name
+#. placeholder {1}: r.groupName
+#. placeholder {2}: r.studentCount
+#: apps/staff/src/live-marking-page.tsx
+msgid "{0} · {1} · {2} шк."
+msgstr "{0} · {1} · {2} students"
+
+#. placeholder {0}: item.problem.problemNumber
+#. placeholder {1}: item.problem.problemTitle
+#. placeholder {2}: writtenReviewVerdict(item.verdict).label
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "{0} · {1} · прежний вердикт: {2}"
+msgstr "{0} · {1} · previous verdict: {2}"
+
+#. placeholder {0}: preview.studentName
+#. placeholder {1}: preview.sourceLabel
+#. placeholder {2}: preview.photoCount
+#: apps/staff/src/review-transfer.tsx
+msgid "{0} · {1} · фотографий: {2}"
+msgstr "{0} · {1} · photos: {2}"
+
+#. placeholder {0}: first.problemTitle
+#. placeholder {1}: item.branches.length
+#: apps/staff/src/review-queue-page.tsx
+msgid "{0} · {1} синонимичные ветки"
+msgstr "{0} · {1} synonymous branches"
+
+#. placeholder {0}: group.name
+#. placeholder {1}: group.participantCount
+#: apps/staff/src/lesson-statistics.tsx
+msgid "{0} · {1} участников"
+msgstr "{0} · {1} participants"
+
+#. placeholder {0}: group.name
+#: apps/staff/src/lesson-statistics.tsx
+msgid "{0} · 1 участник"
+msgstr "{0} · 1 participant"
+
+#. placeholder {0}: copy.label
+#: apps/staff/src/live-marking-page.tsx
+msgid "{0} · видно только сотрудникам"
+msgstr "{0} · visible only to staff"
+
+#. placeholder {0}: group.name
+#. placeholder {1}: lesson.lessonNumber
+#: apps/staff/src/lesson-statistics.tsx
+msgid "{0} · занятие {1}"
+msgstr "{0} · class {1}"
+
+#. placeholder {0}: room?.name ?? t`Аудитория`
+#. placeholder {1}: lesson?.number ?? '—'
+#: apps/staff/src/live-marking-page.tsx
+msgid "{0} · Занятие {1}"
+msgstr "{0} · Class {1}"
+
+#. placeholder {0}: before || t`Не сдавал`
+#. placeholder {1}: target || t`Не сдавал`
+#: apps/staff/src/live-marking-page.tsx
+msgid "{0} → {1}. Снять мои оценки этой ячейки в текущем приёме? Другие способы сдачи и история сохранятся."
+msgstr "{0} → {1}. Remove my grades for this cell in the current session? Other submission methods and the history will be retained."
+
+#. placeholder {0}: Math.floor(hours / 24)
+#. placeholder {1}: hours % 24 ? t` ${hours % 24} ч` : ''
+#: apps/staff/src/review-queue-model.ts
+msgid "{0} д{1}"
+msgstr "{0} d {1}"
+
+#. placeholder {0}: data.student.grade
+#. placeholder {0}: s.grade
+#. placeholder {0}: student.grade
+#: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/student-results-page.tsx
+msgid "{0} кл."
+msgstr "Grade {0}"
+
+#. placeholder {0}: student.grade
+#: apps/staff/src/live-marking-grid.tsx
+msgid "{0} кл. · "
+msgstr "Grade {0} · "
+
+#. placeholder {0}: error.message
+#. placeholder {1}: error.requestId
+#: apps/staff/src/review-errors.ts
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "{0} Код обращения: {1}."
+msgstr "{0} Request ID: {1}."
+
+#. placeholder {0}: scopedPending.length
+#: apps/staff/src/live-marking-page.tsx
+msgid "{0} не отправлено"
+msgstr "{0} not sent"
+
+#. placeholder {0}: v.changedCount
+#: apps/staff/src/live-marking-page.tsx
+msgid "{0} оценок · "
+msgstr "{0} grades · "
+
+#. placeholder {0}: messages.length
+#: apps/staff/src/review-workspace-page.tsx
+msgid "{0} сообщений"
+msgstr "{0} messages"
+
+#. placeholder {0}: student.displayName
+#. placeholder {1}: p.label
+#: apps/staff/src/live-marking-grid.tsx
+msgid "{0}, задача {1}"
+msgstr "{0}, problem {1}"
+
+#. placeholder {0}: group.name
+#: apps/staff/src/live-marking-page.tsx
+msgid "{0}: Для этого занятия нет опубликованных задач"
+msgstr "{0}: There are no published problems for this class"
+
+#. placeholder {0}: group.name
+#. placeholder {1}: group.distribution[0] ?? 0
+#: apps/staff/src/lesson-statistics.tsx
+msgid "{0}: один участник, число решённых задач {1}"
+msgstr "{0}: one participant, {1} problems solved"
+
+#. placeholder {0}: group.name
+#: apps/staff/src/lesson-statistics.tsx
+msgid "{0}: пока нет отправок"
+msgstr "{0}: no submissions yet"
+
+#. placeholder {0}: display.pending ? `${display.beforeSymbol || t`Не сдавал`} → ${display.symbol || t`Не сдавал`}. ` : ''
+#: apps/staff/src/live-marking-grid.tsx
+msgid "{0}{status}. Нажатия: плюс → минус → не трогать."
+msgstr "{0}{status}. Clicks: plus → minus → leave unchanged."
+
+#: apps/staff/src/review-history-page.tsx
+msgid "{error} Ваши изменения остаются в форме. "
+msgstr "{error} Your changes remain in the form. "
+
+#. placeholder {0}: minutes % 60 ? t` ${minutes % 60} мин` : ''
+#: apps/staff/src/review-queue-model.ts
+msgid "{hours} ч{0}"
+msgstr "{hours} h{0}"
+
+#: apps/staff/src/review-queue-model.ts
+msgid "{minutes} мин"
+msgstr "{minutes} min"
+
+#. placeholder {0}: r.name
+#. placeholder {1}: r.groupName
+#. placeholder {2}: r.studentCount
+#: apps/staff/src/live-marking-page.tsx
+msgid "<0><1>{0}</1><2>{1}</2></0><3>Школьников: {2}</3>"
+msgstr "<0><1>{0}</1><2>{1}</2></0><3>Students: {2}</3>"
+
+#. placeholder {0}: data.run.algorithm
+#. placeholder {1}: data.run.algorithmVersion
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "<0>Расчёт {0} · версия {1}</0><1>·</1>"
+msgstr "<0>Calculation {0} · version {1}</0><1>·</1>"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "🌫 Мутно"
+msgstr "🌫 Confusing"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "👍 Круто"
+msgstr "👍 Great"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "👪 Родители"
+msgstr "👪 Parents"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "📡 Связь"
+msgstr "📡 Connection"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "🤖 ИИ"
+msgstr "🤖 AI"
+
+#: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/routes/__root.tsx
 msgid "Zoom-приём"
 msgstr "Zoom session"
 
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Администратор ещё не выдал вам доступ к курсу со статистикой."
+msgstr "An administrator has not granted you access to a course with statistics yet."
+
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Администрирование тестовой задачи"
+msgstr "Test problem administration"
+
+#. placeholder {0}: detail.timeline[0].teacherName
+#: apps/staff/src/review-history-page.tsx
+msgid "Актуальная проверка: {0} · "
+msgstr "Current review: {0} · "
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Аналитика"
 msgstr "Analytics"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Архив"
+msgstr "Archive"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Архивное условие недоступно."
+msgstr "The archived statement is unavailable."
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Архивный школьник"
+msgstr "Archived student"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Аудит"
@@ -29,6 +294,69 @@ msgstr "Audit"
 msgid "Аудитории"
 msgstr "Rooms"
 
+#: apps/staff/src/live-marking-page.tsx
+msgid "Аудитория"
+msgstr "Room"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Без аудитории"
+msgstr "No room"
+
+#: apps/staff/src/review-queue-model.ts
+msgid "Без курса"
+msgstr "No course"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Блокировка проверки потеряна"
+msgstr "Review lock lost"
+
+#. placeholder {0}: latest?.teacherName ?? ''
+#. placeholder {1}: latest ? formatDateTime(new Date(latest.completedAt)) : ''
+#. placeholder {2}: latest ? writtenReviewVerdict(latest.verdict).label : ''
+#: apps/staff/src/review-history-page.tsx
+msgid "Более новая проверка: {0}, {1}, {2}. Заменить её вашей оценкой?"
+msgstr "A newer review exists: {0}, {1}, {2}. Replace it with your grade?"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Более ранних собственных проверок нет"
+msgstr "There are no earlier reviews of your own"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Больше работ"
+msgstr "More work"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Браузер не сохраняет черновик. Не закрывайте страницу до отправки."
+msgstr "The browser cannot save the draft. Do not close the page before submitting."
+
+#: apps/staff/src/review-history-page.tsx
+msgid "В начало списка"
+msgstr "Start of list"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "В этом списке пока нет школьников."
+msgstr "There are no students in this list yet."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Введите фамилию или имя школьника."
+msgstr "Enter the student’s surname or given name."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Введите фамилию школьника."
+msgstr "Enter the student’s surname."
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Версия, связанная с этой посылкой"
+msgstr "Version associated with this submission"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Взята вами"
+msgstr "Assigned to you"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Вложение к посылке"
+msgstr "Submission attachment"
+
 #: apps/staff/src/login-page.tsx
 msgid "ВМШ 179"
 msgstr "VMSh 179"
@@ -37,6 +365,14 @@ msgstr "VMSh 179"
 msgid "ВМШ 179 — учитель и администратор"
 msgstr "VMSh 179 — teacher and administrator"
 
+#: apps/staff/src/live-marking-page.tsx
+msgid "Внутренние пометки"
+msgstr "Internal notes"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Внутренняя пометка"
+msgstr "Internal note"
+
 #: apps/staff/src/login-page.tsx
 msgid "Войти"
 msgstr "Sign in"
@@ -44,6 +380,50 @@ msgstr "Sign in"
 #: apps/staff/src/routes/__root.tsx
 msgid "Вопросы"
 msgstr "Questions"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Все"
+msgstr "All"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Все группы"
+msgstr "All groups"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Все доступные"
+msgstr "All available"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Все задачи"
+msgstr "All problems"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Все курсы"
+msgstr "All courses"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Все преподаватели"
+msgstr "All teachers"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Все работы"
+msgstr "All work"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Все работы проверены"
+msgstr "All work is reviewed"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Все работы уже взяты другими преподавателями"
+msgstr "All work has already been assigned to other teachers"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Все сохранённые изменения и ответы по задаче"
+msgstr "All saved changes and answers for the problem"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Вся посылка будет перенесена в целевую очередь. Вы перейдёте к следующей работе."
+msgstr "The whole submission will move to the target queue. You will move on to the next work item."
 
 #: apps/staff/src/login-page.tsx
 msgid "Вход для преподавателя"
@@ -57,6 +437,43 @@ msgstr "Sign-in for this account is unavailable right now. Please contact the ad
 msgid "Входим…"
 msgstr "Signing in…"
 
+#: apps/staff/src/review-history-page.tsx
+msgid "Вы исправляете устаревшую проверку. Более новые вердикты показаны ниже; их замена потребует подтверждения."
+msgstr "You are correcting a stale review. Newer verdicts appear below; replacing them requires confirmation."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Выберите аудиторию"
+msgstr "Select a room"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Выберите задачу"
+msgstr "Select a problem"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Выберите задачу для серийной проверки или откройте отдельную работу."
+msgstr "Choose a problem for a review series or open an individual work item."
+
+#: apps/staff/src/staff-oral-results-page.tsx
+msgid "Выберите школьника, отметьте принятые задачи и сохраните один раунд. Черновик не теряется при перезагрузке."
+msgstr "Choose a student, mark accepted problems, and save one round. The draft is retained after reload."
+
+#. placeholder {0}: selected.name
+#: apps/staff/src/statistics-student-search.tsx
+msgid "Выбран: {0}"
+msgstr "Selected: {0}"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Выбранная группа — нет работ"
+msgstr "Selected group — no work"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Выбранный курс — нет работ"
+msgstr "Selected course — no work"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Выбрано занятие"
+msgstr "Class selected"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Выйти"
 msgstr "Sign out"
@@ -65,13 +482,320 @@ msgstr "Sign out"
 msgid "Выйти из кабинета"
 msgstr "Sign out"
 
+#: apps/staff/src/review-series-page.tsx
+msgid "Готовим следующую…"
+msgstr "Preparing the next one…"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Готово"
+msgstr "Done"
+
+#: apps/staff/src/statistics-student-search.tsx
+msgid "График школьника"
+msgstr "Student chart"
+
+#: apps/staff/src/review-queue-page.tsx
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Группа"
+msgstr "Group"
+
+#: apps/staff/src/staff-oral-results-page.tsx
+msgid "Групповое занятие {groupLessonId}"
+msgstr "Group class {groupLessonId}"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Группы"
+msgstr "Groups"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Дальше · ⌘/Ctrl + Alt + →"
+msgstr "Next · ⌘/Ctrl + Alt + →"
+
+#: apps/staff/src/live-marking-condition.tsx
+msgid "Для загрузки условия подключитесь к сети."
+msgstr "Connect to the network to load the statement."
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Для школьника пока нет расчёта силы по занятиям от 1."
+msgstr "There is no per-class strength calculation for this student from class 1 yet."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Для этого занятия нет опубликованных задач"
+msgstr "There are no published problems for this class"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Добавить в группу школьника"
+msgstr "Add the student to a group"
+
 #: apps/staff/src/lesson-video-dialog.tsx
 msgid "Добавить видео"
 msgstr "Add video"
 
+#: apps/staff/src/review-queue-page.tsx
+msgid "Дольше ждут"
+msgstr "Waiting longer"
+
+#: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Доля"
+msgstr "Share"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Доля решённых задач"
+msgstr "Share of problems solved"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Доступных работ по этой задаче больше нет"
+msgstr "There is no more available work for this problem"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "другой листок"
+msgstr "another worksheet"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Есть изменения"
 msgstr "Unsaved changes"
+
+#. placeholder {0}: events.length
+#. placeholder {1}: query.data?.pages[0]?.total
+#: apps/staff/src/student-results-history.tsx
+msgid "Ещё 50 событий ({0} из {1})"
+msgstr "50 more events ({0} of {1})"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Ещё не рассчитано"
+msgstr "Not calculated yet"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Ждут проверки"
+msgstr "Awaiting review"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Ждут проверки:"
+msgstr "Awaiting review:"
+
+#. placeholder {0}: new Set(visits.data?.visits.map((v) => v.studentId)).size
+#: apps/staff/src/live-marking-page.tsx
+msgid "За сессию · {0}"
+msgstr "For this session · {0}"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Завершённая сессия · только просмотр"
+msgstr "Completed session · view only"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Завершённые проверки"
+msgstr "Completed reviews"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Завершённых проверок по этим фильтрам нет."
+msgstr "There are no completed reviews for these filters."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Завершить сессию"
+msgstr "Finish session"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Загружаем историю…"
+msgstr "Loading history…"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Загружаем посылки…"
+msgstr "Loading submissions…"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Загружаем сводку…"
+msgstr "Loading summary…"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Загружаем список…"
+msgstr "Loading list…"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Загружаем страницу"
+msgstr "Loading page"
+
+#: apps/staff/src/live-marking-condition.tsx
+#: apps/staff/src/review-series-page.tsx
+#: apps/staff/src/student-results-history.tsx
+msgid "Загружаем условие…"
+msgstr "Loading statement…"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Загружаем фотографию…"
+msgstr "Loading photo…"
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+#: apps/staff/src/review-series-page.tsx
+#: apps/staff/src/student-results-history.tsx
+msgid "Загружаем…"
+msgstr "Loading…"
+
+#: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/review-history-page.tsx
+msgid "Задача"
+msgstr "Problem"
+
+#. placeholder {0}: p.label
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Задача {0}"
+msgstr "Problem {0}"
+
+#. placeholder {0}: p.label
+#: apps/staff/src/student-results-page.tsx
+msgid "Задача {0}."
+msgstr "Problem {0}."
+
+#. placeholder {0}: preview.data.problem.displayNumber
+#. placeholder {1}: preview.data.problem.title
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Задача {0}. {1}"
+msgstr "Problem {0}. {1}"
+
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Задача {problemId}"
+msgstr "Problem {problemId}"
+
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Задача не найдена"
+msgstr "Problem not found"
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+#: apps/staff/src/review-transfer.tsx
+msgid "Закрыть"
+msgstr "Close"
+
+#: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/student-results-page.tsx
+msgid "Занятие"
+msgstr "Class"
+
+#. placeholder {0}: item.lessonNumber
+#. placeholder {0}: l.number
+#. placeholder {0}: lesson.lessonNumber
+#: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/student-results-page.tsx
+msgid "Занятие {0}"
+msgstr "Class {0}"
+
+#. placeholder {0}: visited.number
+#. placeholder {1}: visited.groupName
+#: apps/staff/src/live-marking-page.tsx
+msgid "Занятие {0} · {1}"
+msgstr "Class {0} · {1}"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Занятия"
+msgstr "Classes"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "ИИ"
+msgstr "AI"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "имени"
+msgstr "given name"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Искать только по фамилии"
+msgstr "Search by surname only"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Исправить предыдущую"
+msgstr "Correct previous"
+
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Исправление конфигурации не меняет исходные ответы: их текущий вердикт пересчитывается по новой настройке."
+msgstr "Correcting the configuration does not change the original answers: their current verdict is recalculated using the new settings."
+
+#: apps/staff/src/review-history-page.tsx
+msgid "История вердиктов и комментариев"
+msgstr "Verdict and comment history"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "История занятия"
+msgstr "Class history"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "История недоступна. "
+msgstr "History is unavailable. "
+
+#. placeholder {0}: grade?.label
+#: apps/staff/src/student-results-page.tsx
+msgid "История оценки · {0}"
+msgstr "Grade history · {0}"
+
+#. placeholder {0}: p.label
+#. placeholder {1}: g.name
+#: apps/staff/src/student-results-page.tsx
+msgid "История оценки · задача {0} · {1}"
+msgstr "Grade history · problem {0} · {1}"
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Исходная проверка останется в истории"
+msgstr "The original review will remain in the history"
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Исходная работа ученика"
+msgstr "Original student work"
+
+#: apps/staff/src/live-marking-condition.tsx
+msgid "К оценкам"
+msgstr "To grades"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "К списку задач"
+msgstr "To problem list"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Клонировать в другую задачу"
+msgstr "Clone to another problem"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Клонировать посылку"
+msgstr "Clone submission"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Когда"
+msgstr "When"
+
+#. placeholder {0}: group.code
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Код {0}"
+msgstr "Code {0}"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Комментарий"
+msgstr "Comment"
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Контроль проверки"
+msgstr "Review control"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Конфликт: оценка не сохранена"
+msgstr "Conflict: grade not saved"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Копия"
+msgstr "Copy"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Копия всей посылки попадёт в целевую очередь. Исходная останется здесь."
+msgstr "A copy of the whole submission will enter the target queue. The original will remain here."
+
+#: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/review-queue-page.tsx
+#: apps/staff/src/review-workspace-page.tsx
+#: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/student-results-page.tsx
+msgid "Курс"
+msgstr "Course"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Курсы"
@@ -89,13 +813,89 @@ msgstr "The login or password is incorrect. Check the keyboard layout and try ag
 msgid "Материалы для разбора"
 msgstr "Materials for discussion"
 
+#: apps/staff/src/live-marking-page.tsx
+msgid "Можно вернуться и исправить оценки"
+msgstr "You can return and correct grades"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Можно проверить"
+msgstr "Available to review"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Можно проверить: {available} · У других преподавателей: {busy}"
+msgstr "Available to review: {available} · With other teachers: {busy}"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "МСК"
+msgstr "MSK"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Мутно"
+msgstr "Confusing"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Нажатия на оценку: было → + → − → не трогать. ∅ — не сдавал. ↶ — снять свои оценки этой ячейки. Красное — сохранение не подтверждено. Отменить: Ctrl/Cmd+Z."
+msgstr "Grade clicks: current → + → − → leave unchanged. ∅ means did not submit. ↶ removes your grades from this cell. Red means the save is unconfirmed. Undo: Ctrl/Cmd+Z."
+
+#: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/review-history-page.tsx
+msgid "Назад"
+msgstr "Back"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Название"
+msgstr "Title"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Назначений ещё нет"
+msgstr "There are no assignments yet"
+
+#: apps/staff/src/statistics-student-search.tsx
+msgid "Найденные школьники"
+msgstr "Found students"
+
+#. placeholder {0}: matches.length
+#. placeholder {1}: matches.length > 20 ? t`. Показаны первые 20 — уточните имя или фамилию.` : ''
+#: apps/staff/src/statistics-student-search.tsx
+msgid "Найдено: {0}{1}"
+msgstr "Found: {0}{1}"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Найти следующего школьника"
+msgstr "Find the next student"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Найти школьника…"
+msgstr "Find a student…"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Настройки занятия"
+msgstr "Class settings"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Не добавлен"
 msgstr "Not added"
 
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Не закрывайте страницу и скопируйте комментарий перед продолжением."
+msgstr "Do not close the page; copy the comment before continuing."
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Не отмечен"
+msgstr "Not marked"
+
 #: apps/staff/src/login-page.tsx
 msgid "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
 msgstr "Forgot your access details? Write to <0>vmsh@179.ru</0>."
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "не сдавал"
+msgstr "did not submit"
+
+#: apps/staff/src/live-marking-grid.tsx
+#: apps/staff/src/live-marking-page.tsx
+msgid "Не сдавал"
+msgstr "Did not submit"
 
 #: apps/staff/src/login-page.tsx
 msgid "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
@@ -105,77 +905,956 @@ msgstr "Could not complete sign-in securely. Try again or contact the administra
 msgid "Не удалось войти"
 msgstr "Could not sign in"
 
+#: apps/staff/src/live-marking-page.tsx
+msgid "Не удалось выполнить действие"
+msgstr "Could not complete the action"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Не удалось загрузить историю. "
+msgstr "Could not load history. "
+
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Не удалось загрузить состояние пересчёта. Попробуйте ещё раз."
+msgstr "Could not load the recalculation status. Please try again."
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Не удалось загрузить список. Проверьте соединение и нажмите «Обновить»."
+msgstr "Could not load the list. Check the connection and click “Refresh”."
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Не удалось загрузить страницу."
+msgstr "Could not load the page."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Не удалось загрузить таблицу."
+msgstr "Could not load the table."
+
+#: apps/staff/src/live-marking-condition.tsx
+#: apps/staff/src/student-results-history.tsx
+msgid "Не удалось загрузить условие."
+msgstr "Could not load the statement."
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Не удалось открыть работу"
+msgstr "Could not open the work item"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Не удалось открыть результаты. Проверьте соединение или выберите другого школьника."
+msgstr "Could not open the results. Check the connection or choose another student."
+
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Не удалось перепроверить ответы. Обновите данные и повторите действие."
+msgstr "Could not recheck the answers. Refresh the data and try again."
+
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Не удалось подтвердить запуск. Повторите запрос."
+msgstr "Could not confirm the start. Try the request again."
+
 #: apps/staff/src/login-page.tsx
 msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
 msgstr "Could not reach the server. Check the internet connection and try again."
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Не удалось сохранить перепроверку"
+msgstr "Could not save the recheck"
+
+#: apps/staff/src/staff-oral-results-page.tsx
+msgid "Не удалось сохранить устные результаты."
+msgstr "Could not save the oral-session results."
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Не удалось сохранить черновик на устройстве"
+msgstr "Could not save the draft on this device"
+
+#: apps/staff/src/staff-oral-results-page.tsx
+msgid "Нет online-школьников или опубликованных устных задач для этого занятия."
+msgstr "There are no online students or published oral problems for this class."
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Нет доступных курсов"
+msgstr "No available courses"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Нет опубликованных занятий"
+msgstr "There are no published classes"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Нет подходящих письменных или устных задач этого занятия и уровня."
+msgstr "There are no suitable written or oral problems for this class and level."
+
+#: apps/staff/src/review-errors.ts
+msgid "Нет связи с сервером или получен неожиданный ответ. Повторите действие."
+msgstr "The server is unreachable or returned an unexpected response. Try again."
+
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Нет связи с сервером. Проверьте подключение и повторите действие."
+msgstr "The server is unreachable. Check your connection and try again."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Нет синхронизации"
+msgstr "Not synchronized"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Нет соединения. Доступны загруженные результаты; обновление продолжится после подключения."
+msgstr "No connection. Loaded results are available; refresh will continue once connected."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Никого не нашли. Попробуйте другую часть"
+msgstr "No one was found. Try a different part"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Новая сессия"
+msgstr "New session"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Новости"
 msgstr "News"
 
+#: apps/staff/src/review-queue-page.tsx
+msgid "Новые письменные решения появятся здесь автоматически."
+msgstr "New written solutions will appear here automatically."
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Новый вердикт станет текущим. Фото, переписка, прежний комментарий и реакция не изменяются."
+msgstr "The new verdict will become current. Photos, conversation, the previous comment, and the reaction will not change."
+
+#: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/student-results-page.tsx
+msgid "Обновить"
+msgstr "Refresh"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Обновить данные"
+msgstr "Refresh data"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Обновить предпросмотр"
+msgstr "Refresh preview"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Обновить статистику"
+msgstr "Refresh statistics"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Ожидает настройки проверки"
+msgstr "Awaiting review setup"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Ожидает отправки"
+msgstr "Awaiting sending"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Ожидает проверки"
+msgstr "Under review"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Ознакомился с обновлениями, продолжить"
+msgstr "I have reviewed the updates; continue"
+
+#: apps/staff/src/routes/oral.tsx
+msgid "Окна приёма"
+msgstr "Session windows"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Онлайн"
+msgstr "Online"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Онлайн → очно"
+msgstr "Online → in person"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Опубликован"
 msgstr "Published"
 
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Опубликована новая версия задачи. Данные обновлены; проверьте действие ещё раз."
+msgstr "A new problem version was published. Data was refreshed; check the action again."
+
+#: apps/staff/src/live-marking-condition.tsx
+msgid "Опубликованное условие"
+msgstr "Published statement"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Остальные работы могут проверять другие преподаватели."
+msgstr "Other work items may be reviewed by other teachers."
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Ответ на тест"
+msgstr "Test answer"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Отказаться от проверки"
+msgstr "Release review"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "открываем…"
+msgstr "opening…"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Открыть вложение"
+msgstr "Open attachment"
+
+#: apps/staff/src/student-results-history.tsx
+#: apps/staff/src/student-results-page.tsx
+msgid "Открыть проверку"
+msgstr "Open review"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Отмена ещё не подтверждена сервером. Запрос сохранён и будет повторён безопасно."
+msgstr "The undo has not been confirmed by the server. The request was saved and will be safely retried."
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Отмена изменения оценки"
+msgstr "Undo grade change"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Отмена: "
+msgstr "Undo: "
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Отменить"
+msgstr "Cancel"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Отменить · Ctrl/Cmd+Z"
+msgstr "Undo · Ctrl/Cmd+Z"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Отменить последнее действие"
+msgstr "Undo last action"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Отправленных решений и тестовых попыток в этом занятии нет."
+msgstr "There are no submitted solutions or test attempts in this class."
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Отсутствует"
+msgstr "Absent"
+
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/student-results-history.tsx
+msgid "Оценка"
+msgstr "Grade"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Оценки школьника"
+msgstr "Student grades"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Очень круто!"
+msgstr "Very cool!"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Очередь проверки"
+msgstr "Review queue"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Очно"
+msgstr "In person"
+
+#: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/student-results-history.tsx
 msgid "Очное занятие"
 msgstr "In-person class"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Очное событие"
+msgstr "In-person event"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Ошибка проверки"
+msgstr "Review error"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Ошибка: сохранение не подтверждено"
+msgstr "Error: save not confirmed"
 
 #: apps/staff/src/login-page.tsx
 msgid "Пароль"
 msgstr "Password"
 
+#: apps/staff/src/student-results-page.tsx
+msgid "Первые 50 совпадений — уточните имя."
+msgstr "The first 50 matches are shown — refine the name."
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Первый завершённый расчёт появится здесь автоматически. Исходные результаты при этом не изменяются."
+msgstr "The first completed calculation will appear here automatically. Original results will not change."
+
+#. placeholder {0}: item.movedTo
+#: apps/staff/src/review-series-page.tsx
+msgid "Перенесено в {0}"
+msgstr "Moved to {0}"
+
+#. placeholder {0}: room?.name
+#: apps/staff/src/live-marking-page.tsx
+msgid "Перенести в {0}"
+msgstr "Move to {0}"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Перенести в другую задачу"
+msgstr "Move to another problem"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Перенести посылку"
+msgstr "Move submission"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Перенос"
+msgstr "Move"
+
+#. placeholder {0}: room?.name ?? ''
+#: apps/staff/src/live-marking-page.tsx
+msgid "Перенос в аудиторию {0}"
+msgstr "Move to room {0}"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Перенос материалов"
+msgstr "Material move"
+
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/review-series-page.tsx
+msgid "Перепроверить"
+msgstr "Recheck"
+
+#. placeholder {0}: preview.data.pendingAttempts
+#. placeholder {1}: preview.data.problem.displayNumber
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Перепроверить все {0} ответов задачи {1}? Исходные ответы и время отправки сохранятся."
+msgstr "Recheck all {0} answers to problem {1}? Original answers and submission times will be retained."
+
+#. placeholder {0}: item.student.displayName
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Перепроверка · {0}"
+msgstr "Recheck · {0}"
+
+#. placeholder {0}: item.student.displayName
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Перепроверка: {0}"
+msgstr "Recheck: {0}"
+
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Пересчёт не завершён. Прежние показатели сохранены. Можно повторить."
+msgstr "Recalculation did not complete. Previous metrics were retained. You can retry it."
+
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Пересчёт сложности и силы по всему курсу"
+msgstr "Recalculate difficulty and strength across the course"
+
+#. placeholder {0}: formatDateTime(new Date(operation.completedAt))
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Пересчитано: {0}"
+msgstr "Recalculated: {0}"
+
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Пересчитать сложность"
+msgstr "Recalculate difficulty"
+
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Пересчитываем…"
+msgstr "Recalculating…"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Письменная задача"
+msgstr "Written problem"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Письменные задачи"
+msgstr "Written problems"
+
+#. placeholder {0}: g.name
+#: apps/staff/src/student-results-page.tsx
+msgid "Плюсы · {0}"
+msgstr "Pluses · {0}"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Плюсы по всем занятиям"
+msgstr "Pluses across all classes"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "По выбранным фильтрам работ нет"
+msgstr "There is no work for the selected filters"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "По задачам"
+msgstr "By problem"
+
+#: apps/staff/src/live-marking-condition.tsx
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/review-queue-page.tsx
+#: apps/staff/src/review-reaction-inbox-page.tsx
+#: apps/staff/src/review-workspace-page.tsx
+#: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/student-results-history.tsx
+#: apps/staff/src/student-results-page.tsx
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Повторить"
+msgstr "Retry"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Повторить запрос"
+msgstr "Retry request"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Подтверждение переноса посылки"
+msgstr "Confirm submission move"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Поиск по всему курсу"
+msgstr "Search across the course"
+
+#: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/student-results-page.tsx
+msgid "Поиск школьника"
+msgstr "Student search"
+
+#: apps/staff/src/review-errors.ts
+msgid "Пока вы проверяли, школьник дополнил работу. Откройте её заново перед сохранением."
+msgstr "While you were reviewing, the student added to the work. Reopen it before saving."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Пока нет очных событий с подтверждёнными аудиториями."
+msgstr "There are no in-person events with confirmed rooms yet."
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Показать ещё"
+msgstr "Show more"
+
 #: apps/staff/src/login-page.tsx
 msgid "Показать пароль"
 msgstr "Show password"
 
+#: apps/staff/src/review-series-page.tsx
+msgid "Показать предыдущие 20 проверок"
+msgstr "Show the previous 20 reviews"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Показать условие"
+msgstr "Show statement"
+
+#. placeholder {0}: p.label
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Показать условие задачи {0}"
+msgstr "Show statement for problem {0}"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Пометки Zoom-приёма"
+msgstr "Zoom-session notes"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Пометки: "
+msgstr "Notes: "
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Помогают родители"
+msgstr "Parents are helping"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Порядок задач"
+msgstr "Problem order"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Посылка / сообщение"
+msgstr "Submission / message"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Посылка заменена"
+msgstr "Submission replaced"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Похвала отправлена"
+msgstr "Praise sent"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Похвалить ученика"
+msgstr "Praise student"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Похоже на ИИ"
+msgstr "Looks like AI"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Предыдущая проверка"
+msgstr "Previous review"
+
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/student-results-history.tsx
+msgid "Преподаватель"
+msgstr "Teacher"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Приложение"
+msgstr "Attachment"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Применить моё"
+msgstr "Apply mine"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Принять актуальное"
+msgstr "Accept current"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Пришёл"
+msgstr "Present"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Пришли"
+msgstr "Present"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Проблемы со связью"
+msgstr "Connection problems"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Пробовали"
+msgstr "Attempted"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Проверено"
+msgstr "Reviewed"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Проверить ещё раз"
+msgstr "Review again"
+
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/student-results-history.tsx
 msgid "Проверка"
 msgstr "Review"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Проверка не сохранена"
+msgstr "Review not saved"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Проверка работы"
+msgstr "Review work"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Проверять подряд"
+msgstr "Review in sequence"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Продолжить серию"
+msgstr "Continue series"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Пропустить в undo"
+msgstr "Skip in undo"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Простые"
+msgstr "Easy"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "пусто"
+msgstr "empty"
+
+#: apps/staff/src/review-queue-model.ts
+msgid "работ"
+msgstr "work"
+
+#: apps/staff/src/review-queue-model.ts
+msgid "работа"
+msgstr "work"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Работа и переписка"
+msgstr "Work and conversation"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Работа изменилась. Черновик сохранён. "
+msgstr "The work changed. The draft was saved. "
+
+#: apps/staff/src/review-errors.ts
+msgid "Работа уже исчезла из очереди или была проверена."
+msgstr "The work item has already left the queue or has been reviewed."
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Работа ученика"
+msgstr "Student work"
+
+#: apps/staff/src/review-queue-model.ts
+msgid "работы"
+msgstr "work items"
+
+#: apps/staff/src/routes/oral.tsx
+msgid "Разделы устного приёма"
+msgstr "Oral-session sections"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Распределение обезличено: график не содержит маркера или позиции отдельного школьника."
+msgstr "The distribution is anonymized: the chart does not include a marker or position for an individual student."
+
+#. placeholder {0}: lesson.studentCount
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Распределение по {0} школьникам."
+msgstr "Distribution across {0} students."
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Рассылки"
 msgstr "Mailings"
 
+#: apps/staff/src/statistics-recalculation-control.tsx
+msgid "Расчёт уже выполняется. Можно покинуть страницу."
+msgstr "The calculation is already running. You can leave the page."
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Расчётов пока нет"
+msgstr "There are no calculations yet"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Реакции"
 msgstr "Reactions"
 
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Реакции и разногласия"
+msgstr "Reactions and disagreements"
+
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Реакции помогают заметить спорную проверку или подозрение преподавателя, но сами не меняют результат."
+msgstr "Reactions help identify a disputed review or a teacher’s suspicion, but they do not change the result themselves."
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Реакция"
+msgstr "Reaction"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Реакция ученику"
+msgstr "Reaction to student"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Режим и уровень меняются постоянно. Перенос можно отменить."
+msgstr "Mode and level are changed permanently. The move can be undone."
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Результатов и посылок пока нет."
+msgstr "There are no results or submissions yet."
+
+#: apps/staff/src/routes/oral.tsx
+msgid "Результаты"
+msgstr "Results"
+
+#: apps/staff/src/staff-oral-results-page.tsx
+msgid "Результаты сохранены."
+msgstr "Results saved."
+
+#: apps/staff/src/staff-oral-results-page.tsx
+msgid "Результаты устного приёма"
+msgstr "Oral-session results"
+
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/student-results-page.tsx
 msgid "Результаты школьника"
 msgstr "Student results"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Решение с отметками преподавателя"
+msgstr "Solution with teacher annotations"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Решено"
+msgstr "Solved"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Решили"
+msgstr "Solved"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Самая давняя работа ждёт "
+msgstr "The oldest work item has been waiting "
+
+#: apps/staff/src/statistics-student-search.tsx
+msgid "Сбросить выбор"
+msgstr "Clear selection"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "Сбросить фильтры"
+msgstr "Clear filters"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Сводка"
 msgstr "Overview"
 
+#: apps/staff/src/review-queue-page.tsx
+msgid "Сводка очереди"
+msgstr "Queue summary"
+
+#. placeholder {0}: detail.blockedBy
+#: apps/staff/src/review-history-page.tsx
+msgid "Сейчас проверяет {0}."
+msgstr "{0} is reviewing now."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Сейчас: "
+msgstr "Now: "
+
+#: apps/staff/src/test-attempt-recheck-page.tsx
+msgid "Сервер вернул неожиданный ответ. Обновите страницу и повторите действие."
+msgstr "The server returned an unexpected response. Refresh the page and try again."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Сессия"
+msgstr "Session"
+
+#: apps/staff/src/review-workspace-page.tsx
+#: apps/staff/src/student-results-history.tsx
+msgid "Система"
+msgstr "System"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Скачать вложение"
+msgstr "Download attachment"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Сколько задач решено"
+msgstr "Problems solved"
+
 #: apps/staff/src/login-page.tsx
 msgid "Скрыть пароль"
 msgstr "Hide password"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Следующая работа подготовлена"
+msgstr "The next work item is ready"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Следующие 50"
+msgstr "Next 50"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Следующий"
+msgstr "Next"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Следующий школьник"
+msgstr "Next student"
 
 #: apps/staff/src/login-page.tsx
 msgid "Слишком много попыток. Подождите немного и попробуйте ещё раз."
 msgstr "Too many attempts. Wait a little and try again."
 
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Сложности и сила рассчитаны: "
+msgstr "Difficulty and strength calculated: "
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Сложность для сильных"
+msgstr "Difficulty for stronger students"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Сложность для слабых"
+msgstr "Difficulty for weaker students"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Сложные"
+msgstr "Advanced"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Сменить школьника"
+msgstr "Change student"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Сначала отправьте или разрешите все изменения этой сессии."
+msgstr "First submit or resolve all changes from this session."
+
+#: apps/staff/src/student-results-page.tsx
+msgid "сняты"
+msgstr "removed"
+
+#. placeholder {0}: entry.targetSymbol || '∅'
+#: apps/staff/src/live-marking-page.tsx
+msgid "снять мои оценки ({0})"
+msgstr "remove my grades ({0})"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Снять мои оценки в этом приёме (другие способы сдачи сохранятся)"
+msgstr "Remove my grades in this session (other submission methods will be retained)"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Снять мои оценки в этом приёме: {label}"
+msgstr "Remove my grades in this session: {label}"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Событие, аудитория и список задач"
+msgstr "Event, room, and problem list"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Сообщение"
+msgstr "Message"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Состав агрегата"
+msgstr "Aggregate composition"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Сохранение ещё не подтверждено. Повторите отмену после восстановления связи; предыдущая оценка не отменена."
+msgstr "The save is not confirmed yet. Repeat the undo after reconnecting; the previous grade was not undone."
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Сохранение не подтверждено: в очереди отправки"
+msgstr "Save not confirmed: in send queue"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Сохранение не подтверждено: ждём ответ сервера"
+msgstr "Save not confirmed: waiting for the server response"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Сохранённый текст условия · версия неизвестна"
+msgstr "Saved statement text · version unknown"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Сохранённых событий нет."
+msgstr "There are no saved events."
+
+#: apps/staff/src/live-marking-grid.tsx
+#: apps/staff/src/live-marking-page.tsx
+msgid "Сохранено"
+msgstr "Saved"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Сохраняем"
+msgstr "Saving"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Сохраняем…"
+msgstr "Saving…"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Среднее число решённых"
+msgstr "Average number solved"
+
+#: apps/staff/src/review-errors.ts
+msgid "Срок блокировки работы истёк. Откройте работу заново и повторите проверку."
+msgstr "The work lock expired. Reopen the work item and repeat the review."
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Статистика"
 msgstr "Statistics"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Статистика курса"
+msgstr "Course statistics"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Статистика по отправленным задачам"
+msgstr "Statistics for submitted problems"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Статус проверки неизвестен"
+msgstr "Review status is unknown"
+
+#. placeholder {0}: attachment.ordinal + 1
+#: apps/staff/src/review-reaction-inbox-page.tsx
+msgid "Страница {0} решения ученика"
+msgstr "Page {0} of the student solution"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Страница не найдена"
 msgstr "Page not found"
 
+#. placeholder {0}: ordinal + 1
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Страница решения {0}"
+msgstr "Solution page {0}"
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Строки относятся к одному зафиксированному расчёту; выбор занятия сохраняется в адресе страницы."
+msgstr "The rows belong to one recorded calculation; the selected class is retained in the page address."
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Таблица очного занятия"
+msgstr "In-person class grid"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Текущий результат"
+msgstr "Current result"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Тестирование"
 msgstr "Testing"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Тип задач"
+msgstr "Problem type"
+
+#: apps/staff/src/review-queue-page.tsx
+msgid "У других преподавателей"
+msgstr "With other teachers"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "У этой группы пока нет опубликованных занятий. Выберите другой уровень задач."
+msgstr "This group has no published classes yet. Choose a different problem level."
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Удалена"
+msgstr "Deleted"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Уровень задач"
+msgstr "Problem level"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Уроки"
 msgstr "Lessons"
 
+#: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/review-series-page.tsx
+msgid "Условие задачи"
+msgstr "Problem statement"
+
+#. placeholder {0}: problem.label
+#: apps/staff/src/live-marking-condition.tsx
+msgid "Условие задачи {0}"
+msgstr "Statement for problem {0}"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Условие на момент отправки"
+msgstr "Statement at submission time"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Условие не сохранено для этой работы."
+msgstr "The statement was not saved for this work item."
+
+#: apps/staff/src/live-marking-condition.tsx
+msgid "Условие пока недоступно."
+msgstr "The statement is not available yet."
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Условие при отправке"
+msgstr "Statement when submitted"
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Условие проверяемой версии недоступно."
+msgstr "The statement for the reviewed version is unavailable."
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Устаревшая"
+msgstr "Stale"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Устные"
+msgstr "Oral"
+
+#: apps/staff/src/staff-oral-results-page.tsx
+msgid "Устный приём"
+msgstr "Oral session"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Устных задач нет. Переключитесь на «Все»."
+msgstr "There are no oral problems. Switch to “All”."
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Участники"
 msgstr "People"
+
+#: apps/staff/src/lesson-statistics.tsx
+msgid "Участников"
+msgstr "Participants"
 
 #: apps/staff/src/login-page.tsx
 msgid "Учитель видит разрешённые группы; admin — административные разделы."
@@ -185,6 +1864,104 @@ msgstr "A teacher sees the permitted groups; an admin also sees the administrati
 msgid "Учитель и администратор"
 msgstr "Teacher and administrator"
 
+#: apps/staff/src/student-results-history.tsx
+msgid "Учительская пометка"
+msgstr "Teacher note"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Файл не сохранился или недоступен."
+msgstr "The file was not saved or is unavailable."
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "фамилии"
+msgstr "surname"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Фамилия и имя"
+msgstr "Surname and name"
+
+#: apps/staff/src/statistics-student-search.tsx
+msgid "Фамилия или имя, можно с опечаткой"
+msgstr "Surname or given name; a typo is allowed"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Фамилия или имя…"
+msgstr "Surname or given name…"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Фамилия…"
+msgstr "Surname…"
+
+#: apps/staff/src/student-results-history.tsx
+msgid "Фотография"
+msgstr "Photo"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Фрагмент комментария"
+msgstr "Comment excerpt"
+
+#: apps/staff/src/review-transfer.tsx
+msgid "Целевая задача"
+msgstr "Target problem"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Черновик"
 msgstr "Draft"
+
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Черновик сохранён. Вернитесь в очередь и откройте работу заново."
+msgstr "The draft was saved. Return to the queue and reopen the work item."
+
+#: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Число решённых задач"
+msgstr "Number of problems solved"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "шк."
+msgstr "students"
+
+#: apps/staff/src/live-marking-grid.tsx
+#: apps/staff/src/review-history-page.tsx
+msgid "Школьник"
+msgstr "Student"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "Школьник не найден."
+msgstr "Student not found."
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Школьники"
+msgstr "Students"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Школьники за сессию"
+msgstr "Students in this session"
+
+#: apps/staff/src/statistics-student-search.tsx
+msgid "Школьники не найдены"
+msgstr "Students not found"
+
+#: apps/staff/src/student-results-page.tsx
+msgid "Школьники не найдены."
+msgstr "Students not found."
+
+#: apps/staff/src/staff-statistics-page.tsx
+msgid "Школьников в агрегате"
+msgstr "Students in aggregate"
+
+#: apps/staff/src/review-errors.ts
+msgid "Эту работу уже проверяет другой преподаватель. Обновите очередь."
+msgstr "Another teacher is already reviewing this work item. Refresh the queue."
+
+#: apps/staff/src/review-series-page.tsx
+msgid "Эту работу уже проверяют. Выбираем следующую…"
+msgstr "This work item is already being reviewed. Choosing the next one…"
+
+#: apps/staff/src/live-marking-grid.tsx
+msgid "я"
+msgstr "me"
+
+#: apps/staff/src/live-marking-page.tsx
+msgid "Ячейка уже изменена."
+msgstr "The cell has already changed."

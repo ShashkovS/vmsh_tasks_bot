@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { lazy, Suspense } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { LiveMarkingClient } from '@vmsh/app-shell'
@@ -45,37 +47,49 @@ export function LiveConditionDialog({
         showCloseButton={false}
       >
         <DialogHeader>
-          <DialogTitle>Условие задачи {problem.label}</DialogTitle>
-          <DialogDescription>{problem.title || 'Опубликованное условие'}</DialogDescription>
+          <DialogTitle>
+            <Trans>Условие задачи {problem.label}</Trans>
+          </DialogTitle>
+          <DialogDescription>{problem.title || t`Опубликованное условие`}</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 overflow-auto overscroll-contain">
           {condition.isPending ? (
             <p role="status">
               {condition.fetchStatus === 'paused'
-                ? 'Для загрузки условия подключитесь к сети.'
-                : 'Загружаем условие…'}
+                ? t`Для загрузки условия подключитесь к сети.`
+                : t`Загружаем условие…`}
             </p>
           ) : null}
           {condition.isError ? (
             <div role="alert">
-              <p>Не удалось загрузить условие.</p>
+              <p>
+                <Trans>Не удалось загрузить условие.</Trans>
+              </p>
               <Button variant="outline" onClick={() => void condition.refetch()}>
-                Повторить
+                <Trans>Повторить</Trans>
               </Button>
             </div>
           ) : null}
           {condition.data ? (
             condition.data.document ? (
-              <Suspense fallback={<p role="status">Загружаем условие…</p>}>
+              <Suspense
+                fallback={
+                  <p role="status">
+                    <Trans>Загружаем условие…</Trans>
+                  </p>
+                }
+              >
                 <MathematicalDocument document={condition.data.document} />
               </Suspense>
             ) : (
-              <p>Условие пока недоступно.</p>
+              <p>
+                <Trans>Условие пока недоступно.</Trans>
+              </p>
             )
           ) : null}
         </div>
         <Button className="min-h-11 shrink-0" variant="outline" onClick={onClose}>
-          К оценкам
+          <Trans>К оценкам</Trans>
         </Button>
       </DialogContent>
     </Dialog>

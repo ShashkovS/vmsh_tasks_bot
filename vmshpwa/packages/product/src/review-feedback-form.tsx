@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useEffect, useId, useRef, useState } from 'react'
 
 import { Button, Textarea, cn } from '@vmsh/ui'
@@ -90,7 +92,7 @@ export function ReviewFeedbackForm({
     >
       <div className="space-y-1.5">
         <label className="block text-label font-medium text-foreground" htmlFor={commentId}>
-          Комментарий
+          <Trans>Комментарий</Trans>
         </label>
         <Textarea
           className="min-h-16 text-small"
@@ -106,7 +108,7 @@ export function ReviewFeedbackForm({
             })
             setConfirming(false)
           }}
-          placeholder="Что получилось, что стоит поправить…"
+          placeholder={t`Что получилось, что стоит поправить…`}
           value={comment}
         />
       </div>
@@ -126,7 +128,7 @@ export function ReviewFeedbackForm({
         <ReactionPicker
           compact
           hotkeys={!disabled}
-          legend="Внутренняя пометка (не видна ученику)"
+          legend={t`Внутренняя пометка (не видна ученику)`}
           onSelect={(nextReactionId) => {
             setReactionId(nextReactionId)
             onDraftChange?.({
@@ -145,23 +147,25 @@ export function ReviewFeedbackForm({
           className="space-y-2 rounded-md border border-status-warning-border bg-status-warning-surface p-3 text-small"
           role="group"
         >
-          <p className="text-foreground">Незачёт без комментария. Отправить всё равно?</p>
+          <p className="text-foreground">
+            <Trans>Незачёт без комментария. Отправить всё равно?</Trans>
+          </p>
           <div className="flex gap-2">
             <Button onClick={submit} size="sm">
-              Отправить всё равно
+              <Trans>Отправить всё равно</Trans>
             </Button>
             <Button onClick={() => setConfirming(false)} size="sm" variant="ghost">
-              Добавить комментарий
+              <Trans>Добавить комментарий</Trans>
             </Button>
           </div>
         </div>
       ) : (
         <Button disabled={disabled || !verdict} size="lg" type="submit">
-          Отправить вердикт
+          <Trans>Отправить вердикт</Trans>
         </Button>
       )}
       <p className="text-caption text-muted-foreground">
-        ⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии.
+        <Trans>⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии.</Trans>
       </p>
     </form>
   )

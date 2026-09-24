@@ -1,9 +1,12 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import type { ReviewReactionId, ReviewReactionInboxItem } from '@vmsh/contracts'
 import { Badge, Button, cn } from '@vmsh/ui'
 
 import { VerdictMark } from './verdict-mark'
 import { writtenReviewVerdict } from './verdict-registry'
-import { reactionRegistry } from './reaction'
+import { findReaction, reactionRegistry } from './reaction'
 
 export type ReviewReactionInboxKind = 'all' | 'student' | 'teacher'
 
@@ -19,18 +22,43 @@ export interface ReviewReactionInboxProps {
 }
 
 const kindOptions: Array<{ value: ReviewReactionInboxKind; label: string }> = [
-  { value: 'all', label: 'Все' },
-  { value: 'student', label: 'От учеников' },
-  { value: 'teacher', label: 'От преподавателей' },
+  {
+    value: 'all',
+    get label() {
+      return t`Все`
+    },
+  },
+  {
+    value: 'student',
+    get label() {
+      return t`От учеников`
+    },
+  },
+  {
+    value: 'teacher',
+    get label() {
+      return t`От преподавателей`
+    },
+  },
 ]
 
 function formattedMoment(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+/**
+ * reactionLabel is retained in the response as historic evidence. For registry
+ * IDs, render the locale-aware label from the stable ID; unknown historic data
+ * stays visible verbatim. See development-plan/24-i18n.md, P4.
+ */
+export function reviewReactionInboxLabel(reactionId: number, reactionLabel: string): string {
+  const reaction = findReaction(reactionId)
+  return reaction ? `${reaction.emoji} ${reaction.label}` : reactionLabel
 }
 
 /** Admin-only current reaction inbox. Reactions are context, never a verdict mutation. */
@@ -56,7 +84,7 @@ export function ReviewReactionInbox({
   return (
     <section className={cn('space-y-3', className)} data-density="staff">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div aria-label="Источник реакции" className="flex flex-wrap gap-1" role="group">
+        <div aria-label={t`Источник реакции`} className="flex flex-wrap gap-1" role="group">
           {kindOptions.map((option) => (
             <Button
               aria-pressed={kind === option.value}
@@ -70,19 +98,19 @@ export function ReviewReactionInbox({
           ))}
         </div>
         <p className="text-caption text-muted-foreground" role="status">
-          Показано: {items.length}
+          <Trans>Показано: {items.length}</Trans>
         </p>
       </div>
 
       {onReactionIdChange ? (
-        <div aria-label="Формулировка реакции" className="flex flex-wrap gap-1" role="group">
+        <div aria-label={t`Формулировка реакции`} className="flex flex-wrap gap-1" role="group">
           <Button
             aria-pressed={reactionId === null}
             onClick={() => onReactionIdChange(null)}
             size="xs"
             variant={reactionId === null ? 'outline' : 'ghost'}
           >
-            Все формулировки
+            <Trans>Все формулировки</Trans>
           </Button>
           {visibleReactions.map((reaction) => (
             <Button
@@ -101,75 +129,80 @@ export function ReviewReactionInbox({
 
       {items.length === 0 ? (
         <div className="rounded-md border border-dashed border-border px-3 py-6 text-center">
-          <p className="text-small font-medium text-foreground">Активных реакций нет</p>
+          <p className="text-small font-medium text-foreground">
+            <Trans>Активных реакций нет</Trans>
+          </p>
           <p className="mt-1 text-caption text-muted-foreground">
-            Здесь появятся реакции учеников и внутренние пометки преподавателей.
+            <Trans>Здесь появятся реакции учеников и внутренние пометки преподавателей.</Trans>
           </p>
         </div>
       ) : (
         <div className="grid gap-2">
-          {items.map((item) => (
-            <article
-              aria-label={`${item.student.displayName}: ${item.reactionLabel}`}
-              className="rounded-md border border-border bg-surface px-3 py-2"
-              key={item.itemId}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="text-small font-semibold text-foreground">
-                      {item.student.displayName}
-                    </p>
-                    <Badge variant={item.kind === 'student' ? 'info' : 'neutral'}>
-                      {item.kind === 'student' ? 'Реакция ученика' : 'Пометка преподавателя'}
-                    </Badge>
+          {items.map((item) => {
+            const reactionLabel = reviewReactionInboxLabel(item.reactionId, item.reactionLabel)
+            return (
+              <article
+                aria-label={t`${item.student.displayName}: ${reactionLabel}`}
+                className="rounded-md border border-border bg-surface px-3 py-2"
+                key={item.itemId}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="text-small font-semibold text-foreground">
+                        {item.student.displayName}
+                      </p>
+                      <Badge variant={item.kind === 'student' ? 'info' : 'neutral'}>
+                        {item.kind === 'student' ? t`Реакция ученика` : t`Пометка преподавателя`}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-small font-medium text-foreground">{reactionLabel}</p>
                   </div>
-                  <p className="mt-1 text-small font-medium text-foreground">
-                    {item.reactionLabel}
-                  </p>
+                  <time
+                    className="shrink-0 text-caption text-muted-foreground"
+                    dateTime={item.updatedAt}
+                  >
+                    {formattedMoment(item.updatedAt)}
+                  </time>
                 </div>
-                <time
-                  className="shrink-0 text-caption text-muted-foreground"
-                  dateTime={item.updatedAt}
-                >
-                  {formattedMoment(item.updatedAt)}
-                </time>
-              </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
-                <VerdictMark verdict={writtenReviewVerdict(item.verdict)} />
-                <span className="font-num text-foreground">{item.problem.problemNumber}</span>
-                <span>{item.problem.problemTitle}</span>
-                <span aria-hidden="true">·</span>
-                <span>{item.problem.groupName}</span>
-                <span aria-hidden="true">·</span>
-                <span>проверил {item.reviewer.displayName}</span>
-              </div>
-              {item.comment ? (
-                <p className="mt-1 line-clamp-2 text-caption text-muted-foreground">
-                  Комментарий: {item.comment}
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
+                  <VerdictMark verdict={writtenReviewVerdict(item.verdict)} />
+                  <Trans>
+                    <span className="font-num text-foreground">{item.problem.problemNumber}</span>
+                    <span>{item.problem.problemTitle}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{item.problem.groupName}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>проверил {item.reviewer.displayName}</span>
+                  </Trans>
+                </div>
+                {item.comment ? (
+                  <p className="mt-1 line-clamp-2 text-caption text-muted-foreground">
+                    <Trans>Комментарий: {item.comment}</Trans>
+                  </p>
+                ) : null}
+                <p className="mt-1 text-caption text-muted-foreground">
+                  <Trans>Не меняет результат автоматически.</Trans>
                 </p>
-              ) : null}
-              <p className="mt-1 text-caption text-muted-foreground">
-                Не меняет результат автоматически.
-              </p>
-              {item.isLatestReview && onRecheck ? (
-                <Button
-                  aria-expanded={recheckingReviewId === item.reviewId}
-                  className="mt-2"
-                  onClick={() => onRecheck(item)}
-                  size="xs"
-                  variant="outline"
-                >
-                  Перепроверить результат
-                </Button>
-              ) : !item.isLatestReview ? (
-                <Badge className="mt-2" variant="neutral">
-                  Уже есть более новая проверка
-                </Badge>
-              ) : null}
-            </article>
-          ))}
+                {item.isLatestReview && onRecheck ? (
+                  <Button
+                    aria-expanded={recheckingReviewId === item.reviewId}
+                    className="mt-2"
+                    onClick={() => onRecheck(item)}
+                    size="xs"
+                    variant="outline"
+                  >
+                    <Trans>Перепроверить результат</Trans>
+                  </Button>
+                ) : !item.isLatestReview ? (
+                  <Badge className="mt-2" variant="neutral">
+                    <Trans>Уже есть более новая проверка</Trans>
+                  </Badge>
+                ) : null}
+              </article>
+            )
+          })}
         </div>
       )}
     </section>

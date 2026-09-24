@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDateTime } from '@vmsh/i18n'
 import { useEffect, useMemo, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -60,20 +63,22 @@ export function StatisticsRecalculationControl({
         onClick={() => mutation.mutate()}
         variant="outline"
       >
-        {busy ? 'Пересчитываем…' : 'Пересчитать сложность'}
+        {busy ? t`Пересчитываем…` : t`Пересчитать сложность`}
       </Button>
-      <p className="text-caption text-muted-foreground">Пересчёт сложности и силы по всему курсу</p>
+      <p className="text-caption text-muted-foreground">
+        <Trans>Пересчёт сложности и силы по всему курсу</Trans>
+      </p>
       <p className="text-caption text-muted-foreground" role="status">
         {busy
-          ? 'Расчёт уже выполняется. Можно покинуть страницу.'
+          ? t`Расчёт уже выполняется. Можно покинуть страницу.`
           : mutation.error
-            ? 'Не удалось подтвердить запуск. Повторите запрос.'
+            ? t`Не удалось подтвердить запуск. Повторите запрос.`
             : status.error
-              ? 'Не удалось загрузить состояние пересчёта. Попробуйте ещё раз.'
+              ? t`Не удалось загрузить состояние пересчёта. Попробуйте ещё раз.`
               : operation?.state === 'failed'
-                ? 'Пересчёт не завершён. Прежние показатели сохранены. Можно повторить.'
+                ? t`Пересчёт не завершён. Прежние показатели сохранены. Можно повторить.`
                 : operation?.state === 'completed' && operation.completedAt
-                  ? `Пересчитано: ${new Date(operation.completedAt).toLocaleString('ru-RU')}`
+                  ? t`Пересчитано: ${formatDateTime(new Date(operation.completedAt))}`
                   : null}
       </p>
     </div>

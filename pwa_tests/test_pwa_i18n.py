@@ -41,6 +41,13 @@ def test_real_catalog_translates_shared_server_error():
     assert translate("ru", "Внутренняя ошибка сервера") == "Внутренняя ошибка сервера"
 
 
+def test_real_catalog_translates_review_lease_error_with_named_parameter():
+    assert (
+        translate("en", "Сейчас проверяет {teacher}", {"teacher": "Alex"})
+        == "Alex is reviewing this now"
+    )
+
+
 def test_missing_translation_and_unknown_locale_fall_back_to_russian():
     assert (
         translate("en", "Такой строки нет в каталоге") == "Такой строки нет в каталоге"

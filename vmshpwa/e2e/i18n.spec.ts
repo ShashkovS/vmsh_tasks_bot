@@ -86,6 +86,28 @@ test('Staff switches the language from the header menu', async ({ page }) => {
   }
 })
 
+// P4 acceptance: Staff review, result and statistics chrome follows the account
+// locale, while course, group and person names are still server-provided data.
+test('Staff sees English review, result and statistics controls', async ({ page }) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
+  try {
+    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
+    await page.getByRole('menuitem', { name: 'English' }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+    await page.goto('/staff/review')
+    await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
+
+    await page.goto('/staff/student-results')
+    await expect(page.getByRole('heading', { name: 'Student results' })).toBeVisible()
+
+    await page.goto('/staff/statistics?course=c-1&lesson=41')
+    await expect(page.getByRole('heading', { name: 'Course statistics' })).toBeVisible()
+  } finally {
+    await saveAccountLocale(page, 'staff', 'ru')
+  }
+})
+
 // P2 acceptance: interface chrome changes language while child and course data remain source data.
 test('Family sees English child progress and notification settings', async ({ page }) => {
   await page.context().clearCookies()

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useId, useMemo, useState } from 'react'
 import { Button, Input, Label } from '@vmsh/ui'
 import { studentNameMatchesSearch } from './student-directory-search'
@@ -7,7 +9,7 @@ export function StatisticsStudentSearch({
   students,
   studentId,
   onChange,
-  label = 'График школьника',
+  label = t`График школьника`,
 }: {
   students: { studentId: string; name: string }[]
   studentId: string | null
@@ -31,12 +33,14 @@ export function StatisticsStudentSearch({
         id={id}
         type="search"
         value={query}
-        placeholder="Фамилия или имя, можно с опечаткой"
+        placeholder={t`Фамилия или имя, можно с опечаткой`}
         onChange={(event) => setQuery(event.target.value)}
       />
       {selected && (
         <div className="flex items-center gap-2">
-          <span>Выбран: {selected.name}</span>
+          <span>
+            <Trans>Выбран: {selected.name}</Trans>
+          </span>
           <Button
             variant="ghost"
             onClick={() => {
@@ -44,7 +48,7 @@ export function StatisticsStudentSearch({
               onChange(null)
             }}
           >
-            Сбросить выбор
+            <Trans>Сбросить выбор</Trans>
           </Button>
         </div>
       )}
@@ -52,10 +56,10 @@ export function StatisticsStudentSearch({
         <>
           <p role="status" className="text-small text-muted-foreground">
             {matches.length
-              ? `Найдено: ${matches.length}${matches.length > 20 ? '. Показаны первые 20 — уточните имя или фамилию.' : ''}`
-              : 'Школьники не найдены'}
+              ? t`Найдено: ${matches.length}${matches.length > 20 ? t`. Показаны первые 20 — уточните имя или фамилию.` : ''}`
+              : t`Школьники не найдены`}
           </p>
-          <ul aria-label="Найденные школьники" className="max-h-64 overflow-y-auto">
+          <ul aria-label={t`Найденные школьники`} className="max-h-64 overflow-y-auto">
             {matches.slice(0, 20).map((student) => (
               <li key={student.studentId}>
                 <Button
