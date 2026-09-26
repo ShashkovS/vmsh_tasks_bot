@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
@@ -76,7 +78,7 @@ interface SaveCommand {
 function errorMessage(error: Error): string {
   return error instanceof ApiResponseError
     ? error.message
-    : 'Проверьте соединение и повторите попытку.'
+    : t`Проверьте соединение и повторите попытку.`
 }
 
 function fullName(student: AdminStudentDirectoryEntry): string {
@@ -166,7 +168,7 @@ function EnrollmentEditor({
     <form className="space-y-4" onSubmit={submit}>
       <div className="grid gap-3 md:grid-cols-3">
         <Label className="grid gap-1">
-          Активная группа
+          <Trans>Активная группа</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={saving}
@@ -188,7 +190,7 @@ function EnrollmentEditor({
           </select>
         </Label>
         <Label className="grid gap-1">
-          Формат занятий
+          <Trans>Формат занятий</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={saving || !canManageEnrollment}
@@ -200,12 +202,16 @@ function EnrollmentEditor({
             }
             value={draft.attendanceMode}
           >
-            <option value="online">Онлайн</option>
-            <option value="in_person">Очно</option>
+            <option value="online">
+              <Trans>Онлайн</Trans>
+            </option>
+            <option value="in_person">
+              <Trans>Очно</Trans>
+            </option>
           </select>
         </Label>
         <Label className="grid gap-1">
-          Состояние записи
+          <Trans>Состояние записи</Trans>
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
             disabled={saving || !canManageEnrollment}
@@ -217,15 +223,23 @@ function EnrollmentEditor({
             }
             value={draft.status}
           >
-            <option value="active">Активна</option>
-            <option value="paused">Приостановлена</option>
-            <option value="archived">В архиве</option>
+            <option value="active">
+              <Trans>Активна</Trans>
+            </option>
+            <option value="paused">
+              <Trans>Приостановлена</Trans>
+            </option>
+            <option value="archived">
+              <Trans>В архиве</Trans>
+            </option>
           </select>
         </Label>
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-small font-medium">Доступные группы</legend>
+        <legend className="text-small font-medium">
+          <Trans>Доступные группы</Trans>
+        </legend>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {allGroups.map((group) => {
             const active = group.groupId === draft.activeGroupId
@@ -238,29 +252,31 @@ function EnrollmentEditor({
                 />
                 <span>
                   {group.code} · {group.name}
-                  {group.status === 'archived' ? ' (архив)' : ''}
+                  {group.status === 'archived' ? t` (архив)` : ''}
                 </span>
               </Label>
             )
           })}
         </div>
         <p className="text-caption text-muted-foreground">
-          Активную группу нельзя убрать из доступных. Сначала выберите другую активную группу.
+          <Trans>
+            Активную группу нельзя убрать из доступных. Сначала выберите другую активную группу.
+          </Trans>
         </p>
       </fieldset>
 
       {!storageAvailable ? (
         <p className="text-small text-status-error" role="alert">
-          Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+          <Trans>Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.</Trans>
         </p>
       ) : changed ? (
         <p className="text-caption text-muted-foreground" role="status">
-          Несохранённые изменения хранятся на этом устройстве.
+          <Trans>Несохранённые изменения хранятся на этом устройстве.</Trans>
         </p>
       ) : null}
 
       <Button disabled={saving || !changed} type="submit">
-        {saving ? 'Сохраняем…' : 'Сохранить изменения'}
+        {saving ? t`Сохраняем…` : t`Сохранить изменения`}
       </Button>
     </form>
   )
@@ -346,26 +362,32 @@ export function StudentDirectoryView({
       <div className="grid min-h-[34rem] gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
         <Card className="min-w-0">
           <CardHeader className="gap-3">
-            <CardTitle>Школьники</CardTitle>
+            <CardTitle>
+              <Trans>Школьники</Trans>
+            </CardTitle>
             <Label className="grid gap-1 text-small">
-              Поиск по имени
+              <Trans>Поиск по имени</Trans>
               <Input
                 onChange={(event) => onSearchChange({ query: event.target.value })}
-                placeholder="Фамилия, имя или часть с опечаткой"
+                placeholder={t`Фамилия, имя или часть с опечаткой`}
                 type="search"
                 value={search.query}
               />
             </Label>
-            <p className="text-caption text-muted-foreground">Найдено: {matches.length}</p>
+            <p className="text-caption text-muted-foreground">
+              <Trans>Найдено: {matches.length}</Trans>
+            </p>
           </CardHeader>
           <CardContent
-            aria-label="Список школьников"
+            aria-label={t`Список школьников`}
             className="max-h-[48rem] overflow-y-auto px-2 pb-2"
             ref={studentList}
             role="region"
           >
             {matches.length === 0 ? (
-              <p className="p-3 text-small text-muted-foreground">Никого не нашли.</p>
+              <p className="p-3 text-small text-muted-foreground">
+                <Trans>Никого не нашли.</Trans>
+              </p>
             ) : (
               <ol className="relative w-full" style={{ height: `${studentRows.getTotalSize()}px` }}>
                 {studentRows.getVirtualItems().map((virtualRow) => {
@@ -391,13 +413,17 @@ export function StudentDirectoryView({
                         <span className="block text-small font-medium">{fullName(student)}</span>
                         <span className="mt-1 flex flex-wrap gap-1 text-caption text-muted-foreground">
                           <span>
-                            {student.grade === null ? 'класс —' : `${student.grade} класс`}
+                            {student.grade === null ? t`класс —` : t`${student.grade} класс`}
                           </span>
                           <span>·</span>
                           <span>
-                            {student.strength === null ? 'сила —' : `сила ${student.strength}`}
+                            {student.strength === null ? t`сила —` : t`сила ${student.strength}`}
                           </span>
-                          {student.enrollments.length === 0 ? <span>· нет курса</span> : null}
+                          {student.enrollments.length === 0 ? (
+                            <span>
+                              <Trans>· нет курса</Trans>
+                            </span>
+                          ) : null}
                         </span>
                       </button>
                     </li>
@@ -421,42 +447,52 @@ export function StudentDirectoryView({
                       }
                     >
                       {selectedStudent.webAccount === null
-                        ? 'Web-вход не создан'
+                        ? t`Web-вход не создан`
                         : selectedStudent.webAccount.status === 'active'
-                          ? 'Web-вход активен'
-                          : 'Web-вход отключён'}
+                          ? t`Web-вход активен`
+                          : t`Web-вход отключён`}
                     </Badge>
                   ) : null}
                 </div>
               </CardHeader>
               <CardContent className="grid gap-3 text-small sm:grid-cols-2 xl:grid-cols-4">
                 <div>
-                  <p className="text-caption text-muted-foreground">Класс</p>
+                  <p className="text-caption text-muted-foreground">
+                    <Trans>Класс</Trans>
+                  </p>
                   <p>{selectedStudent.grade ?? '—'}</p>
                 </div>
                 <div>
-                  <p className="text-caption text-muted-foreground">Дата рождения</p>
+                  <p className="text-caption text-muted-foreground">
+                    <Trans>Дата рождения</Trans>
+                  </p>
                   <p>{selectedStudent.birthday ?? '—'}</p>
                 </div>
                 <div>
-                  <p className="text-caption text-muted-foreground">Сила</p>
+                  <p className="text-caption text-muted-foreground">
+                    <Trans>Сила</Trans>
+                  </p>
                   <p>{selectedStudent.strength ?? '—'}</p>
                 </div>
                 {showPrivateAccounts ? (
                   <>
                     <div>
-                      <p className="text-caption text-muted-foreground">Логин</p>
+                      <p className="text-caption text-muted-foreground">
+                        <Trans>Логин</Trans>
+                      </p>
                       <p>{selectedStudent.webAccount?.username ?? '—'}</p>
                     </div>
                     <div className="sm:col-span-2 xl:col-span-4">
-                      <p className="text-caption text-muted-foreground">Аккаунты родителей</p>
+                      <p className="text-caption text-muted-foreground">
+                        <Trans>Аккаунты родителей</Trans>
+                      </p>
                       <p>
                         {selectedStudent.familyAccounts.length === 0
                           ? '—'
                           : selectedStudent.familyAccounts
                               .map(
                                 (account) =>
-                                  `${account.displayName} · ${account.username} · ${account.relationshipLabel ?? 'родитель'}`,
+                                  `${account.displayName} · ${account.username} · ${account.relationshipLabel ?? t`родитель`}`,
                               )
                               .join(', ')}
                       </p>
@@ -472,7 +508,7 @@ export function StudentDirectoryView({
                     type="button"
                     variant="destructive"
                   >
-                    Удалить школьника
+                    <Trans>Удалить школьника</Trans>
                   </Button>
                 </CardContent>
               ) : null}
@@ -482,10 +518,15 @@ export function StudentDirectoryView({
               <Dialog onOpenChange={setDeleteOpen} open={deleteOpen}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Удалить школьника?</DialogTitle>
+                    <DialogTitle>
+                      <Trans>Удалить школьника?</Trans>
+                    </DialogTitle>
                     <DialogDescription>
-                      {fullName(selectedStudent)} исчезнет из административных списков. Его вход
-                      будет отключён; решения и другая история останутся в базе.
+                      {fullName(selectedStudent)}{' '}
+                      <Trans>
+                        исчезнет из административных списков. Его вход будет отключён; решения и
+                        другая история останутся в базе.
+                      </Trans>
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
@@ -495,7 +536,7 @@ export function StudentDirectoryView({
                       type="button"
                       variant="outline"
                     >
-                      Отмена
+                      <Trans>Отмена</Trans>
                     </Button>
                     <Button
                       disabled={deleteSaving}
@@ -506,7 +547,7 @@ export function StudentDirectoryView({
                       type="button"
                       variant="destructive"
                     >
-                      {deleteSaving ? 'Удаляем…' : 'Удалить'}
+                      {deleteSaving ? t`Удаляем…` : t`Удалить`}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -516,7 +557,9 @@ export function StudentDirectoryView({
             {showPrivateAccounts && onAccountChange ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Доступ в кабинеты</CardTitle>
+                  <CardTitle>
+                    <Trans>Доступ в кабинеты</Trans>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {selectedStudent.webAccount ? (
@@ -539,7 +582,7 @@ export function StudentDirectoryView({
                     />
                   ) : (
                     <p className="text-small text-muted-foreground">
-                      Аккаунт школьника ещё не создан.
+                      <Trans>Аккаунт школьника ещё не создан.</Trans>
                     </p>
                   )}
                   {onFamilyChange ? (
@@ -556,7 +599,9 @@ export function StudentDirectoryView({
                   {selectedStudent.familyAccounts.map((account) => (
                     <details className="rounded-md border border-border" key={account.accountId}>
                       <summary className="cursor-pointer px-3 py-2 text-small font-medium">
-                        Настроить вход: {account.displayName} · {account.username}
+                        <Trans>
+                          Настроить вход: {account.displayName} · {account.username}
+                        </Trans>
                       </summary>
                       <div className="border-t border-border p-3">
                         <StudentAccountControls
@@ -576,16 +621,18 @@ export function StudentDirectoryView({
             {selectedStudent.enrollments.length === 0 ? (
               <Card>
                 <CardContent className="pt-5 text-small text-muted-foreground">
-                  Школьник пока не записан ни на один курс.
+                  <Trans>Школьник пока не записан ни на один курс.</Trans>
                 </CardContent>
               </Card>
             ) : (
               <Card>
                 <CardHeader className="gap-3">
-                  <CardTitle>Курс и доступ</CardTitle>
+                  <CardTitle>
+                    <Trans>Курс и доступ</Trans>
+                  </CardTitle>
                   {selectedStudent.enrollments.length > 1 ? (
                     <Label className="grid max-w-sm gap-1 text-small">
-                      Курс
+                      <Trans>Курс</Trans>
                       <select
                         className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                         onChange={(event) =>
@@ -755,7 +802,7 @@ export function StaffStudentDirectoryPage({
 
   if (directory.isPending || (isAdmin && catalog.isPending)) {
     return (
-      <PageLayout title="Участники и группы" width="wide">
+      <PageLayout title={t`Участники и группы`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -763,9 +810,9 @@ export function StaffStudentDirectoryPage({
   const error = directory.error ?? (isAdmin ? catalog.error : null)
   if (error) {
     return (
-      <PageLayout title="Участники и группы" width="wide">
+      <PageLayout title={t`Участники и группы`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() =>
             void Promise.all([directory.refetch(), ...(isAdmin ? [catalog.refetch()] : [])])
           }
@@ -776,7 +823,7 @@ export function StaffStudentDirectoryPage({
   }
   if (!directory.data || (isAdmin && !catalog.data)) {
     return (
-      <PageLayout title="Участники и группы" width="wide">
+      <PageLayout title={t`Участники и группы`} width="wide">
         <PageStatePanel state="error" />
       </PageLayout>
     )
@@ -784,9 +831,9 @@ export function StaffStudentDirectoryPage({
 
   return (
     <PageLayout
-      description="Поиск школьника, его курсы, активные и доступные группы и формат занятий."
+      description={t`Поиск школьника, его курсы, активные и доступные группы и формат занятий.`}
       eyebrow={isAdmin ? 'Admin' : 'Teacher'}
-      title="Участники и группы"
+      title={t`Участники и группы`}
       width="wide"
     >
       <div className="space-y-4">
@@ -799,10 +846,14 @@ export function StaffStudentDirectoryPage({
         {!isAdmin ? (
           <Alert>
             <AlertContent>
-              <AlertTitle>Показаны только ваши группы</AlertTitle>
+              <AlertTitle>
+                <Trans>Показаны только ваши группы</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Вы можете сменить активную группу школьника в пределах выданного доступа. Остальные
-                поля изменяет администратор.
+                <Trans>
+                  Вы можете сменить активную группу школьника в пределах выданного доступа.
+                  Остальные поля изменяет администратор.
+                </Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -815,7 +866,9 @@ export function StaffStudentDirectoryPage({
         deleteStudentMutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Изменение не сохранено</AlertTitle>
+              <AlertTitle>
+                <Trans>Изменение не сохранено</Trans>
+              </AlertTitle>
               <AlertDescription>
                 {errorMessage(
                   (mutation.error ??

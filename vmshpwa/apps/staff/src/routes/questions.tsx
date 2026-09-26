@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { createFileRoute, Outlet, Link, useRouterState } from '@tanstack/react-router'
 import { MessageCircle, MessagesSquare } from 'lucide-react'
 import { useAuthenticatedPrincipal, useOrganizerCount } from '@vmsh/app-shell'
@@ -33,7 +35,7 @@ function QuestionSections({ accountId }: { accountId: string }) {
   return (
     <div className="mx-auto w-full max-w-[1500px] px-4 pt-5 sm:px-6 sm:pt-7">
       <nav
-        aria-label="Разделы вопросов"
+        aria-label={t`Разделы вопросов`}
         className="flex gap-1 rounded-lg border border-border bg-surface p-1 sm:w-fit"
       >
         <Link
@@ -44,7 +46,7 @@ function QuestionSections({ accountId }: { accountId: string }) {
           className={tabClass(!organizers)}
         >
           <MessageCircle aria-hidden="true" className="hidden size-4 shrink-0 sm:block" />
-          Школьников
+          <Trans>Школьников</Trans>
         </Link>
         <Link
           to="/questions/organizers"
@@ -53,10 +55,10 @@ function QuestionSections({ accountId }: { accountId: string }) {
           className={tabClass(organizers)}
         >
           <MessagesSquare aria-hidden="true" className="hidden size-4 shrink-0 sm:block" />
-          Организаторам
+          <Trans>Организаторам</Trans>
           {count.data ? (
             <span
-              aria-label={`Нужен ответ: ${count.data}`}
+              aria-label={t`Нужен ответ: ${count.data}`}
               className="rounded-full border border-current px-1.5 text-caption tabular-nums"
             >
               {count.data}

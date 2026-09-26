@@ -1,3 +1,4 @@
+import { i18n } from '@lingui/core'
 import { describe, expect, it } from 'vitest'
 
 import { parseTeacherBatchTsv } from './teacher-batch-tsv'
@@ -21,5 +22,13 @@ describe('teacher TSV batch', () => {
         'Иванова\tМария\t\tTeacher01\tQwerty01\nПетров\tИван\t\tteacher01\tQwerty02',
       ),
     ).toThrow('логин повторяется')
+  })
+
+  it('localizes validation errors but leaves TSV credentials untouched', () => {
+    i18n.activate('en')
+    const source = 'Иванова\tМария\t\tTeacher01\tQwerty01\nПетров\tИван\t\tteacher01\tQwerty02'
+
+    expect(() => parseTeacherBatchTsv(source)).toThrow(/username.*duplicat/i)
+    expect(source).toContain('Qwerty02')
   })
 })

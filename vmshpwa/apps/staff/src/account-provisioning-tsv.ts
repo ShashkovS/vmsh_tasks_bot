@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type {
   CourseEnrollmentProvisioningRow,
   FamilyProvisioningRow,
@@ -9,7 +10,7 @@ export class ProvisioningTsvError extends Error {
     readonly lineNumber: number,
     message: string,
   ) {
-    super(`Строка ${lineNumber}: ${message}`)
+    super(t`Строка ${lineNumber}: ${message}`)
   }
 }
 
@@ -18,8 +19,8 @@ function lines(source: string) {
     .split(/\r?\n/)
     .map((line, index) => ({ cells: line.split('\t').map((cell) => cell.trim()), index }))
     .filter(({ cells }) => cells.some(Boolean))
-  if (result.length === 0) throw new ProvisioningTsvError(1, 'вставьте хотя бы одну строку')
-  if (result.length > 2_000) throw new ProvisioningTsvError(2_001, 'не больше 2000 строк за раз')
+  if (result.length === 0) throw new ProvisioningTsvError(1, t`вставьте хотя бы одну строку`)
+  if (result.length > 2_000) throw new ProvisioningTsvError(2_001, t`не больше 2000 строк за раз`)
   return result
 }
 
@@ -28,7 +29,7 @@ function dateValue(value: string, lineNumber: number) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
   const match = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(value)
   if (!match)
-    throw new ProvisioningTsvError(lineNumber, 'дата должна быть ГГГГ-ММ-ДД или ДД.ММ.ГГГГ')
+    throw new ProvisioningTsvError(lineNumber, t`дата должна быть ГГГГ-ММ-ДД или ДД.ММ.ГГГГ`)
   return `${match[3]}-${match[2]!.padStart(2, '0')}-${match[1]!.padStart(2, '0')}`
 }
 
@@ -36,17 +37,17 @@ export function parseStudentProvisioningTsv(source: string): StudentProvisioning
   return lines(source).map(({ cells, index }) => {
     const lineNumber = index + 1
     if (cells.length !== 7) {
-      throw new ProvisioningTsvError(lineNumber, 'нужно 7 столбцов, разделённых табуляцией')
+      throw new ProvisioningTsvError(lineNumber, t`нужно 7 столбцов, разделённых табуляцией`)
     }
     const [surname, name, patronymic, birthDate, gradeText, login, password] = cells
     if (!surname || !name || !login || !password) {
-      throw new ProvisioningTsvError(lineNumber, 'фамилия, имя, логин и пароль обязательны')
+      throw new ProvisioningTsvError(lineNumber, t`фамилия, имя, логин и пароль обязательны`)
     }
     let grade: number | undefined
     if (gradeText) {
       grade = Number(gradeText)
       if (!Number.isInteger(grade) || grade < 1 || grade > 11) {
-        throw new ProvisioningTsvError(lineNumber, 'класс должен быть целым числом от 1 до 11')
+        throw new ProvisioningTsvError(lineNumber, t`класс должен быть целым числом от 1 до 11`)
       }
     }
     return {
@@ -65,18 +66,18 @@ export function parseFamilyProvisioningTsv(source: string): FamilyProvisioningRo
   return lines(source).map(({ cells, index }) => {
     const lineNumber = index + 1
     if (cells.length !== 5) {
-      throw new ProvisioningTsvError(lineNumber, 'нужно 5 столбцов, разделённых табуляцией')
+      throw new ProvisioningTsvError(lineNumber, t`нужно 5 столбцов, разделённых табуляцией`)
     }
     const [name, login, password, emails, childLoginsText] = cells
     if (!name || !login || !password || !emails || !childLoginsText) {
-      throw new ProvisioningTsvError(lineNumber, 'все пять столбцов обязательны')
+      throw new ProvisioningTsvError(lineNumber, t`все пять столбцов обязательны`)
     }
     const childLogins = childLoginsText
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean)
     if (childLogins.length === 0) {
-      throw new ProvisioningTsvError(lineNumber, 'укажите хотя бы один логин ребёнка')
+      throw new ProvisioningTsvError(lineNumber, t`укажите хотя бы один логин ребёнка`)
     }
     return { name, login, password, emails, childLogins }
   })
@@ -118,18 +119,18 @@ export function parseCourseEnrollmentProvisioningTsv(
   return lines(source).map(({ cells, index }) => {
     const lineNumber = index + 1
     if (cells.length !== 3) {
-      throw new ProvisioningTsvError(lineNumber, 'нужно 3 столбца, разделённых табуляцией')
+      throw new ProvisioningTsvError(lineNumber, t`нужно 3 столбца, разделённых табуляцией`)
     }
     const [login, courseCode, allowedGroupsText] = cells
     if (!login || !courseCode || !allowedGroupsText) {
-      throw new ProvisioningTsvError(lineNumber, 'все три столбца обязательны')
+      throw new ProvisioningTsvError(lineNumber, t`все три столбца обязательны`)
     }
     const allowedGroupCodes = allowedGroupsText
       .split(/[,;]/)
       .map((value) => value.trim())
       .filter(Boolean)
     if (allowedGroupCodes.length === 0) {
-      throw new ProvisioningTsvError(lineNumber, 'укажите хотя бы одну доступную группу')
+      throw new ProvisioningTsvError(lineNumber, t`укажите хотя бы одну доступную группу`)
     }
     return { login, courseCode, allowedGroupCodes }
   })

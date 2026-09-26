@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { createFileRoute, Outlet, Link, useRouterState } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useAuthentication, useAuthenticatedPrincipal } from '@vmsh/app-shell'
@@ -27,7 +29,7 @@ function ReviewNavigation() {
   return (
     <>
       <nav
-        aria-label="Проверки"
+        aria-label={t`Проверки`}
         className="mx-4 mb-3 flex flex-wrap items-center gap-2 border-b border-border py-3"
       >
         <Link
@@ -38,14 +40,14 @@ function ReviewNavigation() {
           to="/review"
           search={true}
         >
-          Очередь
+          <Trans>Очередь</Trans>
         </Link>
         <Link
           className={buttonVariants({ variant: inHistory ? 'default' : 'outline', size: 'sm' })}
           activeProps={{ 'aria-current': 'page' }}
           to="/review/history"
         >
-          Проверено
+          <Trans>Проверено</Trans>
         </Link>
         {last && (
           <Link
@@ -53,7 +55,7 @@ function ReviewNavigation() {
             to="/review/history"
             search={{ review: last }}
           >
-            Исправить последнюю
+            <Trans>Исправить последнюю</Trans>
           </Link>
         )}
       </nav>

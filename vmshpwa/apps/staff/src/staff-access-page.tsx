@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState, type FormEvent } from 'react'
 
@@ -81,12 +83,14 @@ function StaffMemberCreator({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Новый сотрудник</CardTitle>
+        <CardTitle>
+          <Trans>Новый сотрудник</Trans>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={submit}>
           <Label className="grid gap-1">
-            Фамилия
+            <Trans>Фамилия</Trans>
             <Input
               disabled={saving}
               onChange={(event) => setDraft({ ...draft, surname: event.target.value })}
@@ -95,7 +99,7 @@ function StaffMemberCreator({
             />
           </Label>
           <Label className="grid gap-1">
-            Имя
+            <Trans>Имя</Trans>
             <Input
               disabled={saving}
               onChange={(event) => setDraft({ ...draft, name: event.target.value })}
@@ -104,7 +108,7 @@ function StaffMemberCreator({
             />
           </Label>
           <Label className="grid gap-1">
-            Отчество
+            <Trans>Отчество</Trans>
             <Input
               disabled={saving}
               onChange={(event) => setDraft({ ...draft, middleName: event.target.value || null })}
@@ -112,7 +116,7 @@ function StaffMemberCreator({
             />
           </Label>
           <Label className="grid gap-1">
-            Логин
+            <Trans>Логин</Trans>
             <Input
               autoComplete="off"
               disabled={saving}
@@ -122,7 +126,7 @@ function StaffMemberCreator({
             />
           </Label>
           <Label className="grid gap-1 md:col-span-2">
-            Временный пароль
+            <Trans>Временный пароль</Trans>
             <Input
               autoComplete="new-password"
               disabled={saving}
@@ -134,7 +138,7 @@ function StaffMemberCreator({
             />
           </Label>
           <Label className="grid gap-1">
-            Роль
+            <Trans>Роль</Trans>
             <select
               className="min-h-(--touch-target) rounded-md border border-input bg-surface px-3 text-small"
               disabled={saving}
@@ -143,8 +147,12 @@ function StaffMemberCreator({
               }
               value={draft.role}
             >
-              <option value="teacher">Преподаватель</option>
-              <option value="admin">Администратор</option>
+              <option value="teacher">
+                <Trans>Преподаватель</Trans>
+              </option>
+              <option value="admin">
+                <Trans>Администратор</Trans>
+              </option>
             </select>
           </Label>
           {error ? (
@@ -154,10 +162,10 @@ function StaffMemberCreator({
           ) : null}
           <div className="flex gap-2 md:col-span-2">
             <Button disabled={saving} type="submit">
-              {saving ? 'Создаём…' : 'Создать сотрудника'}
+              {saving ? t`Создаём…` : t`Создать сотрудника`}
             </Button>
             <Button disabled={saving} onClick={onCancel} type="button" variant="outline">
-              Отмена
+              <Trans>Отмена</Trans>
             </Button>
           </div>
         </form>
@@ -175,12 +183,12 @@ function scopeCountLabel(count: number): string {
   const last = count % 10
   const noun =
     lastTwo >= 11 && lastTwo <= 14
-      ? 'областей'
+      ? t`областей`
       : last === 1
-        ? 'область'
+        ? t`область`
         : last >= 2 && last <= 4
-          ? 'области'
-          : 'областей'
+          ? t`области`
+          : t`областей`
   return `${count} ${noun}`
 }
 
@@ -265,7 +273,7 @@ function StaffScopeEditor({
           const wholeCourse = selected.has(scopeKey({ courseId: course.courseId, groupId: null }))
           return (
             <Card
-              aria-label={`Доступ к курсу «${course.name}»`}
+              aria-label={t`Доступ к курсу «${course.name}»`}
               className="min-w-0"
               key={course.courseId}
               role="group"
@@ -281,7 +289,7 @@ function StaffScopeEditor({
                     disabled={saving || course.status !== 'active'}
                     onCheckedChange={(checked) => toggleCourse(course.courseId, checked === true)}
                   />
-                  Весь курс
+                  <Trans>Весь курс</Trans>
                 </Label>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-x-5 gap-y-2 pt-0">
@@ -300,7 +308,7 @@ function StaffScopeEditor({
                       }
                     />
                     {group.shortCode} · {group.name}
-                    {group.status !== 'active' ? ' (архив)' : ''}
+                    {group.status !== 'active' ? t` (архив)` : ''}
                   </Label>
                 ))}
               </CardContent>
@@ -311,16 +319,16 @@ function StaffScopeEditor({
 
       {!storageAvailable ? (
         <p className="text-small text-status-error" role="alert">
-          Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+          <Trans>Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.</Trans>
         </p>
       ) : changed ? (
         <p className="text-caption text-muted-foreground" role="status">
-          Несохранённые изменения хранятся на этом устройстве.
+          <Trans>Несохранённые изменения хранятся на этом устройстве.</Trans>
         </p>
       ) : null}
 
       <Button disabled={saving || !changed} type="submit">
-        {saving ? 'Сохраняем…' : 'Сохранить доступы'}
+        {saving ? t`Сохраняем…` : t`Сохранить доступы`}
       </Button>
     </form>
   )
@@ -355,17 +363,21 @@ export function StaffAccessView({
     <div className="grid min-h-[34rem] gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
       <Card className="min-w-0">
         <CardHeader className="gap-3">
-          <CardTitle>Сотрудники</CardTitle>
+          <CardTitle>
+            <Trans>Сотрудники</Trans>
+          </CardTitle>
           <Label className="grid gap-1 text-small">
-            Поиск по имени
+            <Trans>Поиск по имени</Trans>
             <Input
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Фамилия или имя"
+              placeholder={t`Фамилия или имя`}
               type="search"
               value={query}
             />
           </Label>
-          <p className="text-caption text-muted-foreground">Найдено: {matches.length}</p>
+          <p className="text-caption text-muted-foreground">
+            <Trans>Найдено: {matches.length}</Trans>
+          </p>
         </CardHeader>
         <CardContent className="max-h-[48rem] overflow-y-auto px-2 pb-2">
           <ol className="space-y-1">
@@ -379,7 +391,7 @@ export function StaffAccessView({
                 >
                   <span className="block text-small font-medium">{fullName(member)}</span>
                   <span className="mt-1 flex gap-2 text-caption text-muted-foreground">
-                    <span>{member.role === 'admin' ? 'Администратор' : 'Преподаватель'}</span>
+                    <span>{member.role === 'admin' ? t`Администратор` : t`Преподаватель`}</span>
                     <span>·</span>
                     <span>{scopeCountLabel(member.scopes.length)}</span>
                   </span>
@@ -398,12 +410,12 @@ export function StaffAccessView({
                 <CardTitle>{fullName(selected)}</CardTitle>
                 <Badge variant={selected.account?.status === 'active' ? 'success' : 'warning'}>
                   {selected.account?.status === 'active'
-                    ? 'Web-вход активен'
-                    : 'Web-вход недоступен'}
+                    ? t`Web-вход активен`
+                    : t`Web-вход недоступен`}
                 </Badge>
               </div>
               <p className="text-small text-muted-foreground">
-                {selected.account?.username ?? 'Staff-аккаунт ещё не создан'}
+                {selected.account?.username ?? t`Staff-аккаунт ещё не создан`}
               </p>
             </CardHeader>
           </Card>
@@ -411,9 +423,11 @@ export function StaffAccessView({
           {selected.role === 'admin' ? (
             <Alert>
               <AlertContent>
-                <AlertTitle>Администратор видит все курсы и группы</AlertTitle>
+                <AlertTitle>
+                  <Trans>Администратор видит все курсы и группы</Trans>
+                </AlertTitle>
                 <AlertDescription>
-                  Его глобальный доступ определяется ролью и здесь не редактируется.
+                  <Trans>Его глобальный доступ определяется ролью и здесь не редактируется.</Trans>
                 </AlertDescription>
               </AlertContent>
             </Alert>
@@ -426,7 +440,7 @@ export function StaffAccessView({
                     onClick={() => {
                       if (
                         globalThis.confirm(
-                          `Сделать ${fullName(selected)} администратором? Он получит доступ ко всем данным и настройкам.`,
+                          t`Сделать ${fullName(selected)} администратором? Он получит доступ ко всем данным и настройкам.`,
                         )
                       ) {
                         onPromote(selected)
@@ -435,7 +449,7 @@ export function StaffAccessView({
                     size="sm"
                     variant="outline"
                   >
-                    Сделать администратором
+                    <Trans>Сделать администратором</Trans>
                   </Button>
                 </div>
               ) : null}
@@ -454,7 +468,7 @@ export function StaffAccessView({
       ) : (
         <Card>
           <CardContent className="pt-5 text-small text-muted-foreground">
-            Сотрудники не найдены.
+            <Trans>Сотрудники не найдены.</Trans>
           </CardContent>
         </Card>
       )}
@@ -465,7 +479,7 @@ export function StaffAccessView({
 function errorMessage(error: Error): string {
   return error instanceof ApiResponseError
     ? error.message
-    : 'Проверьте соединение и повторите попытку.'
+    : t`Проверьте соединение и повторите попытку.`
 }
 
 /** Phase 10 Staff scope editor; capabilities remain fixed by the teacher role. */
@@ -533,7 +547,7 @@ export function StaffAccessPage({
 
   if (!isAdmin) {
     return (
-      <PageLayout title="Преподаватели и доступы" width="wide">
+      <PageLayout title={t`Преподаватели и доступы`} width="wide">
         <UsersSectionTabs onChange={onSectionChange} section="students" showTeachers={false} />
         <PageStatePanel state="forbidden" />
       </PageLayout>
@@ -541,7 +555,7 @@ export function StaffAccessPage({
   }
   if (directory.isPending || catalog.isPending) {
     return (
-      <PageLayout title="Преподаватели и доступы" width="wide">
+      <PageLayout title={t`Преподаватели и доступы`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -549,9 +563,9 @@ export function StaffAccessPage({
   const error = directory.error ?? catalog.error
   if (error || !directory.data || !catalog.data) {
     return (
-      <PageLayout title="Преподаватели и доступы" width="wide">
+      <PageLayout title={t`Преподаватели и доступы`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void Promise.all([directory.refetch(), catalog.refetch()])}
           state={error instanceof ApiResponseError && error.status === 403 ? 'forbidden' : 'error'}
         />
@@ -561,9 +575,9 @@ export function StaffAccessPage({
 
   return (
     <PageLayout
-      description="Выберите, какие курсы целиком или отдельные группы доступны преподавателю."
+      description={t`Выберите, какие курсы целиком или отдельные группы доступны преподавателю.`}
       eyebrow="Admin"
-      title="Преподаватели и доступы"
+      title={t`Преподаватели и доступы`}
       width="wide"
     >
       <div className="space-y-4">
@@ -575,10 +589,10 @@ export function StaffAccessPage({
             size="sm"
             variant="outline"
           >
-            Пакетная загрузка
+            <Trans>Пакетная загрузка</Trans>
           </Button>
           <Button onClick={() => setCreatorOpen(true)} size="sm">
-            Добавить сотрудника
+            <Trans>Добавить сотрудника</Trans>
           </Button>
         </div>
         {batchOpen ? (
@@ -600,17 +614,23 @@ export function StaffAccessPage({
         ) : null}
         <Alert>
           <AlertContent>
-            <AlertTitle>Возможности преподавателя фиксированы ролью</AlertTitle>
+            <AlertTitle>
+              <Trans>Возможности преподавателя фиксированы ролью</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Здесь настраивается только область данных: весь курс или выбранные группы. Рассылки,
-              аудитории, аудит и административные настройки преподавателю недоступны.
+              <Trans>
+                Здесь настраивается только область данных: весь курс или выбранные группы. Рассылки,
+                аудитории, аудит и административные настройки преподавателю недоступны.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Доступы не сохранены</AlertTitle>
+              <AlertTitle>
+                <Trans>Доступы не сохранены</Trans>
+              </AlertTitle>
               <AlertDescription>{errorMessage(mutation.error)}</AlertDescription>
             </AlertContent>
           </Alert>

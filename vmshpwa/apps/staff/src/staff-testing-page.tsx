@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { pwaFetch } from '@vmsh/contracts'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -43,31 +45,46 @@ export function StaffTestingPage({ view = 'tasks' }: { view?: 'tasks' | 'news' |
     <PageLayout
       title={
         view === 'news'
-          ? 'Новости для школьников'
+          ? t`Новости для школьников`
           : view === 'courses'
-            ? 'Доступные курсы'
-            : 'Занятия — тестирование'
+            ? t`Доступные курсы`
+            : t`Занятия — тестирование`
       }
     >
       <p>
-        Откроется настоящий кабинет школьника с вашей тестовой учётной записью. Можно сдавать ответы
-        и фотографии, получать и исправлять вердикты. Эти работы не входят в общую статистику.
+        <Trans>
+          Откроется настоящий кабинет школьника с вашей тестовой учётной записью. Можно сдавать
+          ответы и фотографии, получать и исправлять вердикты. Эти работы не входят в общую
+          статистику.
+        </Trans>
       </p>
       <p className="text-small text-muted-foreground">
-        Текущий вход в кабинет школьника в этом браузере будет заменён. Вход в Staff сохранится.
-        Перед входом завершите отправки и закройте другие вкладки кабинета школьника.
+        <Trans>
+          Текущий вход в кабинет школьника в этом браузере будет заменён. Вход в Staff сохранится.
+          Перед входом завершите отправки и закройте другие вкладки кабинета школьника.
+        </Trans>
       </p>
-      {courses.isPending ? <p role="status">Загружаем доступные курсы…</p> : null}
+      {courses.isPending ? (
+        <p role="status">
+          <Trans>Загружаем доступные курсы…</Trans>
+        </p>
+      ) : null}
       {courses.error || enter.error ? (
         <p role="alert">{(courses.error ?? enter.error)?.message}</p>
       ) : null}
-      {courses.error ? <Button onClick={() => void courses.refetch()}>Повторить</Button> : null}
+      {courses.error ? (
+        <Button onClick={() => void courses.refetch()}>
+          <Trans>Повторить</Trans>
+        </Button>
+      ) : null}
       {courses.data?.courses.length === 0 ? (
-        <p>Вам пока не назначены активные курсы и группы.</p>
+        <p>
+          <Trans>Вам пока не назначены активные курсы и группы.</Trans>
+        </p>
       ) : null}
       {view === 'news' && courses.data?.courses.length ? (
         <Button disabled={enter.isPending} onClick={() => enter.mutate(undefined)}>
-          Читать новости как школьник
+          <Trans>Читать новости как школьник</Trans>
         </Button>
       ) : null}
       <div className="grid gap-4">
@@ -79,7 +96,7 @@ export function StaffTestingPage({ view = 'tasks' }: { view?: 'tasks' | 'news' |
             <CardContent className="grid gap-3">
               <p>{course.groups.map((group) => group.name).join(' · ')}</p>
               <Button disabled={enter.isPending} onClick={() => enter.mutate(course.courseId)}>
-                Открыть как школьник
+                <Trans>Открыть как школьник</Trans>
               </Button>
             </CardContent>
           </Card>

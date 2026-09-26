@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { BookOpenCheck, CircleAlert, ClipboardCheck, MessagesSquare } from 'lucide-react'
 import { useMemo } from 'react'
 
@@ -20,18 +22,36 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
  */
 
 const phaseLabels = {
-  draft: 'Черновик',
-  scheduled: 'Запланировано',
-  active: 'Приём идёт',
-  hints_published: 'Подсказки опубликованы',
-  submissions_closed: 'Приём закрыт',
-  solutions_published: 'Решения опубликованы',
+  get draft() {
+    return t`Черновик`
+  },
+  get scheduled() {
+    return t`Запланировано`
+  },
+  get active() {
+    return t`Приём идёт`
+  },
+  get hints_published() {
+    return t`Подсказки опубликованы`
+  },
+  get submissions_closed() {
+    return t`Приём закрыт`
+  },
+  get solutions_published() {
+    return t`Решения опубликованы`
+  },
 } as const
 
 const publicationLabels = {
-  none: 'Не задано',
-  scheduled: 'По расписанию',
-  published: 'Опубликовано',
+  get none() {
+    return t`Не задано`
+  },
+  get scheduled() {
+    return t`По расписанию`
+  },
+  get published() {
+    return t`Опубликовано`
+  },
 } as const
 
 function SummaryCard({
@@ -83,8 +103,8 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
   const { summary } = data
   return (
     <PageLayout
-      description="Текущие занятия, публикации и входящая работа в доступных вам курсах и группах."
-      title="Рабочая сводка"
+      description={t`Текущие занятия, публикации и входящая работа в доступных вам курсах и группах.`}
+      title={t`Рабочая сводка`}
       width="wide"
     >
       <div className="space-y-6">
@@ -92,39 +112,39 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
           <SummaryCard
             detail={
               summary.review.claimedByOthers === 0
-                ? 'Все доступны вам'
-                : `${summary.review.claimedByOthers} у коллег`
+                ? t`Все доступны вам`
+                : t`${summary.review.claimedByOthers} у коллег`
             }
             href="/staff/review"
             icon={ClipboardCheck}
-            label="Ожидают проверки"
+            label={t`Ожидают проверки`}
             value={summary.review.totalCases}
           />
           <SummaryCard
             detail={
               summary.questions.olderThanOneHour === 0
-                ? 'Старых вопросов нет'
-                : `${summary.questions.olderThanOneHour} ждут больше часа`
+                ? t`Старых вопросов нет`
+                : t`${summary.questions.olderThanOneHour} ждут больше часа`
             }
             href="/staff/questions"
             icon={MessagesSquare}
-            label="Вопросы"
+            label={t`Вопросы`}
             value={summary.questions.awaitingStaff}
             warning={summary.questions.olderThanOneHour > 0}
           />
           <SummaryCard
-            detail={`${summary.publications.conditionsPublished} условий опубликовано`}
+            detail={t`${summary.publications.conditionsPublished} условий опубликовано`}
             href="/staff/lessons"
             icon={BookOpenCheck}
-            label="Текущие листки"
+            label={t`Текущие листки`}
             value={summary.publications.groupLessons}
           />
           {summary.delivery ? (
             <SummaryCard
-              detail={`${summary.delivery.failedBatches} рассылок требуют внимания`}
+              detail={t`${summary.delivery.failedBatches} рассылок требуют внимания`}
               href="/staff/classrooms"
               icon={CircleAlert}
-              label="Не доставлены аудитории"
+              label={t`Не доставлены аудитории`}
               value={summary.delivery.failedRecipients}
               warning={summary.delivery.failedRecipients > 0}
             />
@@ -132,14 +152,14 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
         </div>
 
         <PageSection
-          description="Для каждой доступной группы показано последнее начавшееся занятие или ближайшее предстоящее."
-          title="Занятия по группам"
+          description={t`Для каждой доступной группы показано последнее начавшееся занятие или ближайшее предстоящее.`}
+          title={t`Занятия по группам`}
         >
           {data.lessons.length === 0 ? (
             <PageStatePanel
-              description="Создайте занятие или попросите администратора выдать доступ к группе."
+              description={t`Создайте занятие или попросите администратора выдать доступ к группе.`}
               state="empty"
-              title="Текущих занятий нет"
+              title={t`Текущих занятий нет`}
             />
           ) : (
             <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
@@ -153,28 +173,38 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
                       </Badge>
                     </div>
                     <CardTitle>
-                      {lesson.group.name} · занятие {lesson.lessonNumber}
+                      <Trans>
+                        {lesson.group.name} · занятие {lesson.lessonNumber}
+                      </Trans>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-small">
-                      <dt className="text-muted-foreground">Условие</dt>
+                      <dt className="text-muted-foreground">
+                        <Trans>Условие</Trans>
+                      </dt>
                       <dd>
                         <PublicationBadge state={lesson.publications.condition.state} />
                       </dd>
-                      <dt className="text-muted-foreground">Подсказка</dt>
+                      <dt className="text-muted-foreground">
+                        <Trans>Подсказка</Trans>
+                      </dt>
                       <dd>
                         <PublicationBadge state={lesson.publications.hint.state} />
                       </dd>
-                      <dt className="text-muted-foreground">Решение</dt>
+                      <dt className="text-muted-foreground">
+                        <Trans>Решение</Trans>
+                      </dt>
                       <dd>
                         <PublicationBadge state={lesson.publications.solution.state} />
                       </dd>
                     </dl>
                     {lesson.oral.openWindows + lesson.oral.upcomingWindows > 0 ? (
                       <p className="border-t border-border pt-3 text-caption text-muted-foreground">
-                        Устно: открыто {lesson.oral.openWindows}, позже{' '}
-                        {lesson.oral.upcomingWindows}
+                        <Trans>
+                          Устно: открыто {lesson.oral.openWindows}, позже{' '}
+                          {lesson.oral.upcomingWindows}
+                        </Trans>
                       </p>
                     ) : null}
                   </CardContent>
@@ -213,16 +243,16 @@ export function StaffDashboardPage() {
 
   if (result.isPending) {
     return (
-      <PageLayout title="Рабочая сводка" width="wide">
+      <PageLayout title={t`Рабочая сводка`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (result.error) {
     return (
-      <PageLayout title="Рабочая сводка" width="wide">
+      <PageLayout title={t`Рабочая сводка`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void result.refetch()}
           state={
             result.error instanceof ApiResponseError && result.error.status === 403

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type FormEvent } from 'react'
 
 import { type ManagedAccountStatus } from '@vmsh/contracts'
@@ -24,10 +26,18 @@ interface AccountSummary {
 }
 
 const statusLabels: Record<ManagedAccountStatus, string> = {
-  active: 'Активен',
-  blocked: 'Заблокирован',
-  disabled: 'Отключён',
-  archived: 'В архиве',
+  get active() {
+    return t`Активен`
+  },
+  get blocked() {
+    return t`Заблокирован`
+  },
+  get disabled() {
+    return t`Отключён`
+  },
+  get archived() {
+    return t`В архиве`
+  },
 }
 
 /** Existing-account controls from development Phase 10. */
@@ -66,15 +76,15 @@ export function StudentAccountControls({
     setCredential('')
   }
 
-  const title = audience === 'student' ? 'Аккаунт школьника' : 'Аккаунт родителя'
-  const credentialLabel = audience === 'student' ? 'Новый Telegram-токен' : 'Новый пароль'
+  const title = audience === 'student' ? t`Аккаунт школьника` : t`Аккаунт родителя`
+  const credentialLabel = audience === 'student' ? t`Новый Telegram-токен` : t`Новый пароль`
 
   return (
     <section className="grid gap-3 rounded-md border border-border p-3" aria-label={title}>
       <p className="text-small font-medium">{title}</p>
       <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => void saveStatus(event)}>
         <Label className="grid min-w-44 gap-1 text-small">
-          Состояние
+          <Trans>Состояние</Trans>
           <select
             className="min-h-9 rounded-md border border-input bg-surface px-3 text-small"
             disabled={pending}
@@ -89,7 +99,7 @@ export function StudentAccountControls({
           </select>
         </Label>
         <Button disabled={pending || status === account.status} size="sm" type="submit">
-          Сохранить состояние
+          <Trans>Сохранить состояние</Trans>
         </Button>
       </form>
       <form
@@ -115,12 +125,14 @@ export function StudentAccountControls({
           type="submit"
           variant="outline"
         >
-          Заменить данные для входа
+          <Trans>Заменить данные для входа</Trans>
         </Button>
       </form>
       <p className="text-caption text-muted-foreground">
-        После изменения все текущие сессии этого аккаунта завершатся. Токен или пароль в браузере не
-        сохраняется.
+        <Trans>
+          После изменения все текущие сессии этого аккаунта завершатся. Токен или пароль в браузере
+          не сохраняется.
+        </Trans>
       </p>
     </section>
   )

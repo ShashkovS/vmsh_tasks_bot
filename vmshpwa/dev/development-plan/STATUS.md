@@ -1,5 +1,14 @@
 # Статус плана разработки
 
+## i18n P7 — 26 September 2026, implementation verified; performance gate open
+
+Staff user management, access, audit, Telegram bindings, dashboard, analytics and
+support routes now have English UI under the complete Staff i18n source scope.
+Known audit labels are translated while stored names, credentials and serialized
+values remain unchanged. The verification record is
+[`24-i18n-p7-report.md`](24-i18n-p7-report.md). The catalog-loading optimization
+is deferred, so the cumulative P0 performance gate remains open; P8 is queued.
+
 ## i18n P6 — 26 September 2026, implementation verified; performance gate open
 
 Staff content, lessons, imports, synonyms, figure layout and Whiteboard controls

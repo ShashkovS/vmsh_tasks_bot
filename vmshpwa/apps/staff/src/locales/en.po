@@ -33,11 +33,24 @@ msgstr " · selected"
 msgid " · задача"
 msgstr " · problem"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid " · изменён"
+msgstr " · modified"
+
 #. placeholder {0}: block.pending.revisionNumber
 #. placeholder {1}: block.pendingMode === 'scheduled' && block.scheduledAt ? `: ${formatPublishedAt(block.scheduledAt)}` : t` вместе с занятием`
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid " · ожидает версия №{0}{1}"
 msgstr " · version #{0}{1} pending"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid " · основной контакт"
+msgstr " · primary contact"
+
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid " (архив)"
+msgstr " (archived)"
 
 #. placeholder {0}: minutes % 60
 #: apps/staff/src/review-queue-model.ts
@@ -48,6 +61,10 @@ msgstr " {0} min"
 #: apps/staff/src/review-queue-model.ts
 msgid " {0} ч"
 msgstr " {0} h"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid " В поле выше оставлены только строки, которые нужно исправить."
+msgstr " Only rows that need correction remain in the field above."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid " вместе с занятием"
@@ -106,6 +123,15 @@ msgstr "· completed"
 msgid "· затронет"
 msgstr "· affects"
 
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "· нет курса"
+msgstr "· no course"
+
+#. placeholder {0}: item.entryCount
+#: apps/staff/src/staff-support-pages.tsx
+msgid "· сообщений: {0}"
+msgstr "· messages: {0}"
+
 #: apps/staff/src/review-history-page.tsx
 msgid "· Тест учителя"
 msgstr "· Teacher test"
@@ -148,6 +174,11 @@ msgstr "{0} · {1} participants"
 msgid "{0} · 1 участник"
 msgstr "{0} · 1 participant"
 
+#. placeholder {0}: course.name
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "{0} · весь курс"
+msgstr "{0} · whole course"
+
 #. placeholder {0}: copy.label
 #: apps/staff/src/live-marking-page.tsx
 msgid "{0} · видно только сотрудникам"
@@ -165,6 +196,7 @@ msgstr "{0} · problem"
 #. placeholder {1}: plan.data.lessonNumber
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "{0} · занятие {1}"
 msgstr "{0} · class {1}"
@@ -182,6 +214,11 @@ msgstr "{0} · Class {1}"
 msgid "{0} · занятие {1} · групп: {2}"
 msgstr "{0} · class {1} · groups: {2}"
 
+#. placeholder {0}: course.courseName
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "{0} · курс"
+msgstr "{0} · course"
+
 #. placeholder {0}: before || t`Не сдавал`
 #. placeholder {1}: target || t`Не сдавал`
 #: apps/staff/src/live-marking-page.tsx
@@ -193,6 +230,11 @@ msgstr "{0} → {1}. Remove my grades for this cell in the current session? Othe
 #: apps/staff/src/review-queue-model.ts
 msgid "{0} д{1}"
 msgstr "{0} d {1}"
+
+#. placeholder {0}: summary.questions.olderThanOneHour
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "{0} ждут больше часа"
+msgstr "{0} have been waiting for over an hour"
 
 #. placeholder {0}: data.student.grade
 #. placeholder {0}: s.grade
@@ -206,6 +248,11 @@ msgstr "Grade {0}"
 #: apps/staff/src/live-marking-grid.tsx
 msgid "{0} кл. · "
 msgstr "Grade {0} · "
+
+#. placeholder {0}: student.grade
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "{0} класс"
+msgstr "Grade {0}"
 
 #. placeholder {0}: error.message
 #. placeholder {1}: error.requestId
@@ -226,10 +273,25 @@ msgstr "{0} not sent"
 msgid "{0} оценок · "
 msgstr "{0} grades · "
 
+#. placeholder {0}: summary.delivery.failedBatches
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "{0} рассылок требуют внимания"
+msgstr "{0} deliveries need attention"
+
 #. placeholder {0}: messages.length
 #: apps/staff/src/review-workspace-page.tsx
 msgid "{0} сообщений"
 msgstr "{0} messages"
+
+#. placeholder {0}: summary.review.claimedByOthers
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "{0} у коллег"
+msgstr "{0} claimed by colleagues"
+
+#. placeholder {0}: summary.publications.conditionsPublished
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "{0} условий опубликовано"
+msgstr "{0} statements published"
 
 #. placeholder {0}: student.displayName
 #. placeholder {1}: p.label
@@ -317,6 +379,10 @@ msgstr "Could not convert {subject} to SVG{0}"
 msgid "{subject}: на сервере временно недоступен {0}. Повторите позднее."
 msgstr "{subject}: {0} is temporarily unavailable on the server. Try again later."
 
+#: apps/staff/src/pages.tsx
+msgid "{submissionId} · Анна Белова · Начинающие"
+msgstr "{submissionId} · Анна Белова · Начинающие"
+
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "+ и −"
 msgstr "+ and −"
@@ -367,16 +433,101 @@ msgstr "📡 Connection"
 msgid "🤖 ИИ"
 msgstr "🤖 AI"
 
+#: apps/staff/src/pages.tsx
+msgid "1 февраля, 10:00–13:00"
+msgstr "1 февраля, 10:00–13:00"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "1. Школьники"
+msgstr "1. Students"
+
+#: apps/staff/src/pages.tsx
+msgid "12 задач распознано"
+msgstr "12 problems recognized"
+
+#: apps/staff/src/pages.tsx
+msgid "2 ч 10 мин"
+msgstr "2 ч 10 мин"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "2. Родители"
+msgstr "2. Parents"
+
+#: apps/staff/src/pages.tsx
+msgid "25 января, 20:54"
+msgstr "25 января, 20:54"
+
+#: apps/staff/src/pages.tsx
+msgid "25 января, 21:15"
+msgstr "25 января, 21:15"
+
+#: apps/staff/src/pages.tsx
+msgid "25 января, 21:31"
+msgstr "25 января, 21:31"
+
+#: apps/staff/src/pages.tsx
+msgid "3 ждут больше часа"
+msgstr "3 have been waiting for over an hour"
+
+#: apps/staff/src/pages.tsx
+msgid "3 ч 20 мин"
+msgstr "3 ч 20 мин"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "3. Зачисление на курс"
+msgstr "3. Course enrolment"
+
+#: apps/staff/src/pages.tsx
+msgid "31 января, 12:00"
+msgstr "31 января, 12:00"
+
+#: apps/staff/src/pages.tsx
+msgid "41н.6"
+msgstr "41н.6"
+
+#: apps/staff/src/pages.tsx
+msgid "41н.6 · Расстановка ладей"
+msgstr "41н.6 · Расстановка ладей"
+
+#: apps/staff/src/pages.tsx
+msgid "41н.7"
+msgstr "41н.7"
+
+#: apps/staff/src/pages.tsx
+msgid "41п.4"
+msgstr "41п.4"
+
+#: apps/staff/src/pages.tsx
+msgid "45 мин"
+msgstr "45 мин"
+
+#: apps/staff/src/pages.tsx
+msgid "7 уже взяты коллегами"
+msgstr "7 already claimed by colleagues"
+
+#: apps/staff/src/pages.tsx
+msgid "8 изображений переиспользовано"
+msgstr "8 images reused"
+
 #: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Canvas недоступен"
 msgstr "Canvas is unavailable"
+
+#: apps/staff/src/pages.tsx
+msgid "diagram-41-7.pdf отсутствует"
+msgstr "diagram-41-7.pdf is missing"
 
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "HTTPS-ссылка"
 msgstr "HTTPS link"
 
+#: apps/staff/src/product-analytics-page.tsx
+msgid "ID пользователя"
+msgstr "User ID"
+
 #: apps/staff/src/content-page.tsx
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "LaTeX — единственный источник"
 msgstr "LaTeX is the only source"
@@ -422,6 +573,27 @@ msgstr "PNG, JPEG, or WebP · up to 10 MiB"
 msgid "Revision уже изменилась. Список ресурсов обновлён; проверьте его и повторите действие."
 msgstr "The revision has changed. The asset list has been refreshed; check it and try again."
 
+#: apps/staff/src/staff-access-page.tsx
+msgid "Staff-аккаунт ещё не создан"
+msgstr "Staff account has not been created yet"
+
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Web-вход активен"
+msgstr "Web sign-in is active"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Web-вход не создан"
+msgstr "Web sign-in has not been created"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Web-вход недоступен"
+msgstr "Web sign-in is unavailable"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Web-вход отключён"
+msgstr "Web sign-in is disabled"
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "XLSX-файл"
 msgstr "XLSX file"
@@ -431,6 +603,18 @@ msgstr "XLSX file"
 msgid "Zoom-приём"
 msgstr "Zoom session"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Административные изменения с исполнителем, request ID и безопасным сравнением значений. Пароли и токены сюда не записываются."
+msgstr "Administrative changes with an actor, request ID, and safe value comparison. Passwords and tokens are never recorded here."
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Администратор"
+msgstr "Administrator"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Администратор видит все курсы и группы"
+msgstr "Administrators can see all courses and groups"
+
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Администратор ещё не выдал вам доступ к курсу со статистикой."
 msgstr "An administrator has not granted you access to a course with statistics yet."
@@ -439,9 +623,62 @@ msgstr "An administrator has not granted you access to a course with statistics 
 msgid "Администрирование тестовой задачи"
 msgstr "Test problem administration"
 
+#: apps/staff/src/student-account-controls.tsx
+msgid "Аккаунт родителя"
+msgstr "Parent account"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Аккаунт родителя создан и привязан."
+msgstr "Parent account created and linked."
+
+#: apps/staff/src/student-account-controls.tsx
+msgid "Аккаунт школьника"
+msgstr "Student account"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Аккаунт школьника ещё не создан."
+msgstr "Student account has not been created yet."
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Аккаунтов родителей пока нет."
+msgstr "There are no parent accounts yet."
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Аккаунты"
+msgstr "Accounts"
+
+#: apps/staff/src/family-account-manager.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Аккаунты родителей"
+msgstr "Parent accounts"
+
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/family-account-manager.tsx
+#: apps/staff/src/student-account-controls.tsx
 msgid "Активен"
 msgstr "Active"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Активна"
+msgstr "Active"
+
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Активная группа"
+msgstr "Active group"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Активную группу нельзя убрать из доступных. Сначала выберите другую активную группу."
+msgstr "The active group cannot be removed from the available groups. Choose another active group first."
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Активные пользователи"
+msgstr "Active users"
+
+#: apps/staff/src/pages.tsx
+msgid "Актовый зал"
+msgstr "Актовый зал"
 
 #. placeholder {0}: detail.timeline[0].teacherName
 #: apps/staff/src/review-history-page.tsx
@@ -452,9 +689,14 @@ msgstr "Current review: {0} · "
 msgid "Актуально"
 msgstr "Up to date"
 
+#: apps/staff/src/product-analytics-page.tsx
 #: apps/staff/src/routes/__root.tsx
 msgid "Аналитика"
 msgstr "Analytics"
+
+#: apps/staff/src/pages.tsx
+msgid "Анна Белова"
+msgstr "Анна Белова"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Архив"
@@ -472,6 +714,7 @@ msgstr "Archived student"
 msgid "Аудит"
 msgstr "Audit"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/routes/__root.tsx
 #: apps/staff/src/staff-classrooms-page.tsx
 msgid "Аудитории"
@@ -486,9 +729,18 @@ msgstr "No rooms have been selected yet."
 msgid "Аудитория"
 msgstr "Room"
 
+#. placeholder {0}: digest.unlinkedStudents.length
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Без активного аккаунта родителя: {0}"
+msgstr "No active parent account: {0}"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Без аудитории"
 msgstr "No room"
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Без входа: {withoutAccount}"
+msgstr "Without sign-in: {withoutAccount}"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Без изменений"
@@ -497,6 +749,10 @@ msgstr "Unchanged"
 #: apps/staff/src/review-queue-model.ts
 msgid "Без курса"
 msgstr "No course"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "без полей"
+msgstr "no fields"
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Блок перед задачами"
@@ -525,6 +781,10 @@ msgstr "There are no earlier reviews of your own"
 msgid "Больше работ"
 msgstr "More work"
 
+#: apps/staff/src/pages.tsx
+msgid "Борис Ветров"
+msgstr "Борис Ветров"
+
 #: apps/staff/src/review-history-page.tsx
 msgid "Браузер не сохраняет черновик. Не закрывайте страницу до отправки."
 msgstr "The browser cannot save the draft. Do not close the page before submitting."
@@ -535,6 +795,14 @@ msgstr "The browser cannot save the draft. Do not close the page before submitti
 msgid "Будет создано {0} и обновлено {1} задач. Откат возможен, пока эти строки не изменены и новые задачи не используются."
 msgstr "{0} problems will be created and {1} updated. You can roll back while these rows remain unchanged and the new problems are unused."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Было"
+msgstr "Before"
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "В PWA появится одно событие; при разрешённых push оно будет доставлено на подписанные устройства."
+msgstr "One event will appear in the PWA; if push is permitted, it will be delivered to subscribed devices."
+
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "В TikZ есть запрещённая файловая или исполняемая команда."
 msgstr "The TikZ contains a prohibited file or executable command."
@@ -544,6 +812,8 @@ msgid "В TikZ-фрагмент попали команды начала или 
 msgstr "The TikZ fragment contains document start or end commands."
 
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+#: apps/staff/src/student-account-controls.tsx
 msgid "В архиве"
 msgstr "Archived"
 
@@ -571,13 +841,25 @@ msgstr "Multiple problems found in one group"
 msgid "В одной группе совпали несколько названий — перед объединением выберите одну задачу."
 msgstr "Multiple titles match in one group. Select one problem before merging."
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "В первой версии пароли хранятся для внешней почтовой рассылки. Не вставляйте сюда production-данные на общем устройстве."
+msgstr "In the first version, passwords are retained for external email delivery. Do not paste production credentials here on a shared device."
+
 #: apps/staff/src/live-marking-grid.tsx
 msgid "В этом списке пока нет школьников."
 msgstr "There are no students in this list yet."
 
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Вам пока не назначены активные курсы и группы."
+msgstr "You have not been assigned any active courses or groups yet."
+
 #: apps/staff/src/content-page.tsx
 msgid "Вариант предпросмотра"
 msgstr "Preview variant"
+
+#: apps/staff/src/pages.tsx
+msgid "вв"
+msgstr "вв"
 
 #: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Введение"
@@ -591,6 +873,14 @@ msgstr "Enter the student’s surname or given name."
 msgid "Введите фамилию школьника."
 msgstr "Enter the student’s surname."
 
+#: apps/staff/src/pages.tsx
+msgid "Вводная"
+msgstr "Вводная"
+
+#: apps/staff/src/pages.tsx
+msgid "Вера Орлова"
+msgstr "Вера Орлова"
+
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Вернуть исходное расположение"
 msgstr "Restore original layout"
@@ -603,6 +893,10 @@ msgstr "Revert the published material to version {0}?"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Верный ответ"
 msgstr "Correct answer feedback"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Версия"
+msgstr "Version"
 
 #. placeholder {0}: group.version
 #: apps/staff/src/problem-synonym-page.tsx
@@ -640,6 +934,10 @@ msgstr "Version {0} · {1} · {2}"
 msgid "Версия {0} проверяется. Повтор станет доступен после завершения текущей сборки."
 msgstr "Version {0} is being checked. You can retry after the current build finishes."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Версия данных для входа"
+msgstr "Sign-in credential version"
+
 #: apps/staff/src/content-page.tsx
 msgid "Версия для отката"
 msgstr "Version to restore"
@@ -664,6 +962,15 @@ msgstr "Version associated with this submission"
 msgid "Вес в статистике"
 msgstr "Statistical weight"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Вес результатов"
+msgstr "Result weight"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Весь курс"
+msgstr "Whole course"
+
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Взята вами"
 msgstr "Assigned to you"
@@ -676,6 +983,18 @@ msgstr "Material type"
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Вид материала для файла {0}"
 msgstr "Material type for file {0}"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Видимость"
+msgstr "Visibility"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Владелец"
+msgstr "Owner"
+
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Вложение"
+msgstr "Attachment"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Вложение к посылке"
@@ -705,6 +1024,10 @@ msgstr "Internal notes"
 msgid "Внутренняя пометка"
 msgstr "Internal note"
 
+#: apps/staff/src/staff-access-page.tsx
+msgid "Возможности преподавателя фиксированы ролью"
+msgstr "Teacher permissions are fixed by their role"
+
 #. placeholder {0}: preview.synonymCandidates.length
 #: apps/staff/src/problem-import-page.tsx
 msgid "Возможные синонимы · {0}"
@@ -714,9 +1037,18 @@ msgstr "Possible synonyms · {0}"
 msgid "Войти"
 msgstr "Sign in"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Вопрос школьника"
+msgstr "Student question"
+
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 msgid "Вопросы"
 msgstr "Questions"
+
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Вопросы школьников"
+msgstr "Student questions"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "восстановить"
@@ -725,6 +1057,10 @@ msgstr "restore"
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Восстановить"
 msgstr "Restore"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Временный пароль"
+msgstr "Temporary password"
 
 #: apps/staff/src/course-schedule-editor.tsx
 #: apps/staff/src/problem-metadata-columns.ts
@@ -743,6 +1079,10 @@ msgstr "Time is set relative to the cycle start date and saved in the course tim
 msgid "Время занятия: {businessTimezone}. Сервер проверит переходы летнего времени."
 msgstr "Class time zone: {businessTimezone}. The server will check daylight saving time transitions."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Время публикации"
+msgstr "Publication time"
+
 #: apps/staff/src/content-page.tsx
 msgid "Время указано для {timezone}. Дедлайн меняется отдельно от публикации решений."
 msgstr "Time is shown in {timezone}. The deadline is changed separately from solution publication."
@@ -752,16 +1092,38 @@ msgstr "Time is shown in {timezone}. The deadline is changed separately from sol
 msgid "Время: {0}. Отметьте дни, которые нужно создать. Общие окна изменяются сразу для всех своих групп."
 msgstr "Time: {0}. Select the days to create. Shared windows are changed immediately for all their groups."
 
+#: apps/staff/src/pages.tsx
+msgid "вс 13:00"
+msgstr "вс 13:00"
+
+#: apps/staff/src/pages.tsx
+msgid "вс 14:00"
+msgstr "вс 14:00"
+
+#: apps/staff/src/pages.tsx
+msgid "вс 15:00"
+msgstr "вс 15:00"
+
+#: apps/staff/src/pages.tsx
+msgid "вс 16:00"
+msgstr "вс 16:00"
+
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/product-analytics-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 #: apps/staff/src/staff-news-page.tsx
+#: apps/staff/src/staff-support-pages.tsx
 msgid "Все"
 msgstr "All"
 
 #: apps/staff/src/review-queue-page.tsx
 msgid "Все группы"
 msgstr "All groups"
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Все доступны вам"
+msgstr "All are available to you"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Все доступные"
@@ -775,9 +1137,17 @@ msgstr "All problems"
 msgid "Все курсы"
 msgstr "All courses"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Все объекты"
+msgstr "All objects"
+
 #: apps/staff/src/review-history-page.tsx
 msgid "Все преподаватели"
 msgstr "All teachers"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "все пять столбцов обязательны"
+msgstr "all five columns are required"
 
 #: apps/staff/src/review-queue-page.tsx
 msgid "Все работы"
@@ -795,6 +1165,10 @@ msgstr "All work has already been assigned to other teachers"
 msgid "Все сохранённые изменения и ответы по задаче"
 msgstr "All saved changes and answers for the problem"
 
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "все три столбца обязательны"
+msgstr "all three columns are required"
+
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Всем"
@@ -804,9 +1178,38 @@ msgstr "Everyone"
 msgid "Вставить видео"
 msgstr "Insert video"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Вставленный текст сохраняется только в этом браузере до успешного зачисления."
+msgstr "The pasted text is kept only in this browser until enrolment succeeds."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Вставленный текст сохраняется только в этом браузере до успешного создания аккаунтов."
+msgstr "The pasted text is kept only in this browser until the accounts are created successfully."
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Вставьте преподавателей из таблицы"
+msgstr "Paste teachers from a table"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Вставьте строки зачисления"
+msgstr "Paste enrolment rows"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Вставьте строки из таблицы"
+msgstr "Paste rows from a table"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "вставьте хотя бы одну строку"
+msgstr "paste at least one row"
+
 #: apps/staff/src/review-transfer.tsx
 msgid "Вся посылка будет перенесена в целевую очередь. Вы перейдёте к следующей работе."
 msgstr "The whole submission will move to the target queue. You will move on to the next work item."
+
+#: apps/staff/src/pages.tsx
+msgid "вт 17:00"
+msgstr "вт 17:00"
 
 #: apps/staff/src/login-page.tsx
 msgid "Вход для преподавателя"
@@ -816,6 +1219,10 @@ msgstr "Teacher sign-in"
 msgid "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
 msgstr "Sign-in for this account is unavailable right now. Please contact the administrators."
 
+#: apps/staff/src/family-account-manager.tsx
+msgid "Вход отключён"
+msgstr "Sign-in disabled"
+
 #: apps/staff/src/login-page.tsx
 msgid "Входим…"
 msgstr "Signing in…"
@@ -823,6 +1230,10 @@ msgstr "Signing in…"
 #: apps/staff/src/review-history-page.tsx
 msgid "Вы исправляете устаревшую проверку. Более новые вердикты показаны ниже; их замена потребует подтверждения."
 msgstr "You are correcting a stale review. Newer verdicts appear below; replacing them requires confirmation."
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Вы можете сменить активную группу школьника в пределах выданного доступа. Остальные поля изменяет администратор."
+msgstr "You can change the student's active group within your granted access. An administrator changes the other fields."
 
 #. placeholder {0}: course.name
 #: apps/staff/src/staff-course-catalog-page.tsx
@@ -874,9 +1285,21 @@ msgstr "Select a problem type"
 msgid "Выберите хотя бы один LaTeX-файл."
 msgstr "Select at least one LaTeX file."
 
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Выберите хотя бы один курс или группу."
+msgstr "Choose at least one course or group."
+
 #: apps/staff/src/staff-oral-results-page.tsx
 msgid "Выберите школьника, отметьте принятые задачи и сохраните один раунд. Черновик не теряется при перезагрузке."
 msgstr "Choose a student, mark accepted problems, and save one round. The draft is retained after reload."
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Выберите, какие курсы целиком или отдельные группы доступны преподавателю."
+msgstr "Choose which whole courses or individual groups are available to the teacher."
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Выбор не сохраняется в этом браузере. Не закрывайте вкладку до создания аккаунтов."
+msgstr "The selection is not saved in this browser. Do not close the tab until the accounts are created."
 
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Выбор одного варианта"
@@ -898,6 +1321,20 @@ msgstr "Selected course — no work"
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Выбрано занятие"
 msgstr "Class selected"
+
+#. placeholder {0}: selectedCandidates.length
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Выбрано: {0}. Выбор хранится на этом устройстве до создания аккаунтов или явной отмены."
+msgstr "Selected: {0}. The selection is kept on this device until accounts are created or you cancel it."
+
+#. placeholder {0}: matches.length
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Выбрать найденных · {0}"
+msgstr "Select found · {0}"
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Выбрать школьников"
+msgstr "Select students"
 
 #. placeholder {0}: state.conversionDebug.stage
 #: apps/staff/src/content-page.tsx
@@ -945,8 +1382,10 @@ msgstr "Preparing TikZ figures…"
 msgid "Готовим следующую…"
 msgstr "Preparing the next one…"
 
+#: apps/staff/src/account-provisioning-page.tsx
 #: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/teacher-batch-panel.tsx
 msgid "Готово"
 msgstr "Done"
 
@@ -954,10 +1393,31 @@ msgstr "Done"
 msgid "Готово: {readyCount} · требуют внимания: {attentionCount}"
 msgstr "Ready: {readyCount} · need attention: {attentionCount}"
 
+#. placeholder {0}: candidates.length
+#. placeholder {0}: preview.counts.ready
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Готовы: {0}"
+msgstr "Ready: {0}"
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Готовые аккаунты"
+msgstr "Ready accounts"
+
 #: apps/staff/src/statistics-student-search.tsx
 msgid "График школьника"
 msgstr "Student chart"
 
+#: apps/staff/src/pages.tsx
+msgid "Григорий Яшин"
+msgstr "Григорий Яшин"
+
+#: apps/staff/src/pages.tsx
+msgid "Григорий Яшин остаётся в разделе переназначения."
+msgstr "Григорий Яшин remains in reassignment."
+
+#: apps/staff/src/family-digest-panel.tsx
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/review-queue-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
@@ -985,17 +1445,35 @@ msgstr "Group class {groupLessonId}"
 msgid "Групповое занятие не найдено"
 msgstr "Group class not found"
 
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Группы"
 msgstr "Groups"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "да"
+msgstr "yes"
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Дальше · ⌘/Ctrl + Alt + →"
 msgstr "Next · ⌘/Ctrl + Alt + →"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Данные для входа"
+msgstr "Sign-in credentials"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "данные изменились после предпросмотра"
+msgstr "data changed after the preview"
+
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Дата"
 msgstr "Date"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "дата должна быть ГГГГ-ММ-ДД или ДД.ММ.ГГГГ"
+msgstr "date must be YYYY-MM-DD or DD.MM.YYYY"
 
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Дата занятия"
@@ -1004,6 +1482,10 @@ msgstr "Class date"
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Дата и время будут показаны школьникам и родителям"
 msgstr "Students and parents will see the date and time"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Дата рождения"
+msgstr "Date of birth"
 
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Два целых"
@@ -1026,6 +1508,7 @@ msgid "Дедлайн сдачи при этом не изменится."
 msgstr "This will not change the submission deadline."
 
 #: apps/staff/src/problem-import-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Действие"
 msgstr "Action"
 
@@ -1045,6 +1528,7 @@ msgstr "Day of the week"
 msgid "Десятичная дробь"
 msgstr "Decimal"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-import-page.tsx
 msgid "Диагностика"
 msgstr "Diagnostics"
@@ -1054,6 +1538,14 @@ msgstr "Diagnostics"
 msgid "Диагностика версии {0}"
 msgstr "Version {0} diagnostics"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Для выбранного фильтра нет приватных вопросов."
+msgstr "There are no private questions for the selected filter."
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Для выбранных школьников будет создан вход с предложенным логином. Паролем останется их текущий Telegram-токен; он не передаётся в браузер."
+msgstr "Selected students will receive sign-in access using the suggested login. Their current Telegram token remains the password and is not sent to the browser."
+
 #: apps/staff/src/live-marking-condition.tsx
 msgid "Для загрузки условия подключитесь к сети."
 msgstr "Connect to the network to load the statement."
@@ -1061,6 +1553,14 @@ msgstr "Connect to the network to load the statement."
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Для занятия ещё нет окон устного приёма."
 msgstr "There are no oral-session windows for this class yet."
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Для каждой доступной группы показано последнее начавшееся занятие или ближайшее предстоящее."
+msgstr "Each available group shows its latest started class or its nearest upcoming class."
+
+#: apps/staff/src/student-account-creator.tsx
+msgid "Для предложения логина нужны корректные фамилия и дата рождения. Введите логин вручную."
+msgstr "A valid surname and date of birth are required to suggest a login. Enter a login manually."
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Для тестовой задачи нужен тип ответа"
@@ -1102,9 +1602,25 @@ msgstr "Add window"
 msgid "Добавить сезон"
 msgstr "Add season"
 
+#: apps/staff/src/staff-access-page.tsx
+msgid "Добавить сотрудника"
+msgstr "Add staff member"
+
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Добавить статистику"
 msgstr "Include statistics"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Добавлена связь с родителем"
+msgstr "Parent link added"
+
+#: apps/staff/src/users-section-tabs.tsx
+msgid "Добавление"
+msgstr "Add"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Добавлено задач"
+msgstr "Problems added"
 
 #: apps/staff/src/review-queue-page.tsx
 msgid "Дольше ждут"
@@ -1119,13 +1635,52 @@ msgstr "Share"
 msgid "Доля решённых задач"
 msgstr "Share of problems solved"
 
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Доступ в кабинеты"
+msgstr "Account access"
+
+#. placeholder {0}: course.name
+#: apps/staff/src/staff-access-page.tsx
+msgid "Доступ к курсу «{0}»"
+msgstr "Access to course “{0}”"
+
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Доступные группы"
+msgstr "Available groups"
+
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Доступные курсы"
+msgstr "Available courses"
+
 #: apps/staff/src/review-series-page.tsx
 msgid "Доступных работ по этой задаче больше нет"
 msgstr "There is no more available work for this problem"
 
+#: apps/staff/src/staff-access-page.tsx
+msgid "Доступы не сохранены"
+msgstr "Access permissions were not saved"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Доступы преподавателей"
+msgstr "Teacher access permissions"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "другой листок"
 msgstr "another worksheet"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Дубли уже существующих логинов или email будут проигнорированы: {previewDuplicateCount}."
+msgstr "Duplicate existing logins or email addresses will be ignored: {previewDuplicateCount}."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Дубли: {previewDuplicateCount}"
+msgstr "Duplicates: {previewDuplicateCount}"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Его глобальный доступ определяется ролью и здесь не редактируется."
+msgstr "Their global access is determined by the role and cannot be edited here."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Есть изменения"
@@ -1145,6 +1700,10 @@ msgstr "50 more events ({0} of {1})"
 msgid "Ещё не рассчитано"
 msgstr "Not calculated yet"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Ждём школьника"
+msgstr "Waiting for the student"
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "Ждут проверки"
 msgstr "Awaiting review"
@@ -1152,6 +1711,14 @@ msgstr "Awaiting review"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Ждут проверки:"
 msgstr "Awaiting review:"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Журнал изменений"
+msgstr "Change log"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "За выбранный период событий нет."
+msgstr "There are no events for the selected period."
 
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "За один раз можно загрузить не больше {MAX_BATCH_FILES} файлов."
@@ -1161,6 +1728,10 @@ msgstr "You can upload up to {MAX_BATCH_FILES} files at a time."
 #: apps/staff/src/live-marking-page.tsx
 msgid "За сессию · {0}"
 msgstr "For this session · {0}"
+
+#: apps/staff/src/student-account-controls.tsx
+msgid "Заблокирован"
+msgstr "Blocked"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Завершённая сессия · только просмотр"
@@ -1190,6 +1761,10 @@ msgstr "Finish session"
 msgid "Загружаем"
 msgstr "Uploading"
 
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Загружаем аналитику"
+msgstr "Loading analytics"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Загружаем блоки занятия…"
 msgstr "Loading class blocks…"
@@ -1197,6 +1772,10 @@ msgstr "Loading class blocks…"
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Загружаем группы занятия…"
 msgstr "Loading class groups…"
+
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Загружаем доступные курсы…"
+msgstr "Loading available courses…"
 
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Загружаем занятия…"
@@ -1210,6 +1789,10 @@ msgstr "Uploading and checking the LaTeX file…"
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем историю…"
 msgstr "Loading history…"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Загружаем ленту"
+msgstr "Loading activity feed"
 
 #: apps/staff/src/content-page.tsx
 msgid "Загружаем название…"
@@ -1268,6 +1851,7 @@ msgstr "Loading photo…"
 
 #: apps/staff/src/review-reaction-inbox-page.tsx
 #: apps/staff/src/review-series-page.tsx
+#: apps/staff/src/staff-support-pages.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем…"
 msgstr "Loading…"
@@ -1275,6 +1859,10 @@ msgstr "Loading…"
 #: apps/staff/src/content-page.tsx
 msgid "загружена, но не проверена"
 msgstr "uploaded, not checked"
+
+#: apps/staff/src/pages.tsx
+msgid "Загрузить LaTeX"
+msgstr "Upload LaTeX"
 
 #: apps/staff/src/content-page.tsx
 msgid "Загрузить и проверить"
@@ -1289,6 +1877,10 @@ msgstr "Upload image"
 msgid "Загрузить набор и проверить"
 msgstr "Upload and check batch"
 
+#: apps/staff/src/pages.tsx
+msgid "Загрузить недостающее"
+msgstr "Upload missing files"
+
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Загрузка сохранена, требуется исправление"
 msgstr "Upload saved, corrections needed"
@@ -1301,8 +1893,13 @@ msgstr "Loading asset list"
 msgid "Задать вопрос"
 msgstr "Ask a question"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Задач в группе"
+msgstr "Problems in the group"
+
 #: apps/staff/src/figure-layout-editor.tsx
 #: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/review-history-page.tsx
 msgid "Задача"
@@ -1340,6 +1937,14 @@ msgstr "Problem {problemId}"
 msgid "Задача не найдена"
 msgstr "Problem not found"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Задачи объединены в синонимы"
+msgstr "Problems merged as synonyms"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Задачи разделены"
+msgstr "Problems split"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Закрывается"
@@ -1358,6 +1963,14 @@ msgstr "Close submissions · Moscow"
 msgid "Закрыть приём сейчас"
 msgstr "Close submissions now"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Заменены данные для входа"
+msgstr "Sign-in credentials replaced"
+
+#: apps/staff/src/student-account-controls.tsx
+msgid "Заменить данные для входа"
+msgstr "Replace sign-in credentials"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Заменить текущий черновик окнами прошлого занятия со сдвигом на 7 дней?"
 msgstr "Replace the current draft with the previous class’s windows shifted by 7 days?"
@@ -1366,6 +1979,7 @@ msgstr "Replace the current draft with the previous class’s windows shifted by
 msgid "Заменить черновик тремя окнами пн/вт/ср недели первой даты? Время, ссылка и группы берутся из первого окна."
 msgstr "Replace the draft with three Mon/Tue/Wed windows in the week of the first date? Time, link, and groups come from the first window."
 
+#: apps/staff/src/family-digest-panel.tsx
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/review-history-page.tsx
@@ -1394,6 +2008,14 @@ msgstr "Class {0}"
 msgid "Занятие {0} · {1}"
 msgstr "Class {0} · {1}"
 
+#: apps/staff/src/pages.tsx
+msgid "занятие изменено отдельно"
+msgstr "class changed separately"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Занятие курса"
+msgstr "Course class"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Занятие курса · {courseLessonId}"
 msgstr "Course class · {courseLessonId}"
@@ -1410,14 +2032,23 @@ msgstr "No classes yet"
 msgid "Занятия"
 msgstr "Classes"
 
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Занятия — тестирование"
+msgstr "Classes — testing"
+
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Занятия не созданы"
 msgstr "Classes not created"
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Занятия по группам"
+msgstr "Classes by group"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Запланированные и прошлые"
 msgstr "Scheduled and past"
 
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Запланировано"
 msgstr "Scheduled"
@@ -1425,6 +2056,10 @@ msgstr "Scheduled"
 #: apps/staff/src/content-page.tsx
 msgid "Запланировано на "
 msgstr "Scheduled for "
+
+#: apps/staff/src/pages.tsx
+msgid "Запланировано на вторую фазу"
+msgstr "Planned for the second phase"
 
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
@@ -1445,9 +2080,48 @@ msgstr "Schedule publication"
 msgid "Заполните короткое название задачи"
 msgstr "Enter a short problem title"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Запускайте отдельно для каждого курса. Активной станет первая доступная группа по её порядку, а не первая группа в строке."
+msgstr "Run this separately for each course. The first available group by its order becomes active, not the first group in the row."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Зачисление обработано"
+msgstr "Enrolment processed"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "зачисление повторено в этой таблице"
+msgstr "enrolment is duplicated in this table"
+
+#. placeholder {0}: receipt.counts.created
+#. placeholder {1}: receipt.counts.skipped
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Зачислено: {0}. Пропущено: {1}."
+msgstr "Enrolled: {0}. Skipped: {1}."
+
+#. placeholder {0}: preview?.counts.ready ?? 0
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Зачислить готовых · {0}"
+msgstr "Enrol ready · {0}"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Зачисляем…"
+msgstr "Enrolling…"
+
+#: apps/staff/src/pages.tsx
+msgid "Здесь будут preview, dry-run, категории и отдельный выбор PWA/Telegram."
+msgstr "This will contain preview, dry-run, categories, and separate PWA/Telegram selection."
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Здесь настраивается только область данных: весь курс или выбранные группы. Рассылки, аудитории, аудит и административные настройки преподавателю недоступны."
+msgstr "Only the data scope is configured here: a whole course or selected groups. Deliveries, rooms, audit, and administrative settings are unavailable to the teacher."
+
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
 msgstr "Only classes and publications saved in the database are shown here."
+
+#: apps/staff/src/pages.tsx
+msgid "И. Соколов"
+msgstr "И. Соколов"
 
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Идентификатор занятия курса"
@@ -1456,6 +2130,22 @@ msgstr "Course class ID"
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "из последних подтверждённых событий групп"
 msgstr "from the most recently confirmed group events"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменён курс"
+msgstr "Course changed"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменён статус аккаунта"
+msgstr "Account status changed"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменена группа"
+msgstr "Group changed"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменена привязка Telegram"
+msgstr "Telegram binding changed"
 
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Изменение не выполнено"
@@ -1466,8 +2156,18 @@ msgstr "Change failed"
 #: apps/staff/src/staff-course-catalog-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-news-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+#: apps/staff/src/telegram-bindings-page.tsx
 msgid "Изменение не сохранено"
 msgstr "Change not saved"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменений не найдено"
+msgstr "No changes found"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменения"
+msgstr "Changes"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Изменения и ошибки"
@@ -1476,6 +2176,22 @@ msgstr "Changes and errors"
 #: apps/staff/src/problem-import-page.tsx
 msgid "Изменения применены"
 msgstr "Changes applied"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменено задач"
+msgstr "Problems changed"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменено участие в курсе"
+msgstr "Course enrolment changed"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Изменены доступы преподавателя"
+msgstr "Teacher access permissions changed"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Измените период или фильтр."
+msgstr "Change the period or filter."
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Изменится"
@@ -1528,9 +2244,33 @@ msgstr "AI"
 msgid "имени"
 msgstr "given name"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Импорт задач"
+msgstr "Problem import"
+
+#: apps/staff/src/pages.tsx
+msgid "Импорт и метаданные"
+msgstr "Import and metadata"
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "Импорт отменён"
 msgstr "Import rolled back"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Имя"
+msgstr "Name"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Имя · Логин · Пароль · Email через запятую · Логины детей через запятую"
+msgstr "Name · Login · Password · Comma-separated email addresses · Comma-separated child logins"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Имя аккаунта"
+msgstr "Account name"
+
+#: apps/staff/src/pages.tsx
+msgid "инцидент доставки"
+msgstr "delivery incident"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Искать только по фамилии"
@@ -1539,6 +2279,10 @@ msgstr "Search by surname only"
 #: apps/staff/src/staff-news-page.tsx
 msgid "Исправить опубликованную новость"
 msgstr "Correct published news"
+
+#: apps/staff/src/routes/review.tsx
+msgid "Исправить последнюю"
+msgstr "Correct the latest"
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Исправить предыдущую"
@@ -1593,6 +2337,10 @@ msgstr "Grade history · problem {0} · {1}"
 msgid "История сохранится, но материал перестанет быть доступен для чтения."
 msgstr "History will be preserved, but the material will no longer be available to read."
 
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "Источник новостей"
+msgstr "News source"
+
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Исходная проверка останется в истории"
 msgstr "The original review will remain in the history"
@@ -1605,6 +2353,26 @@ msgstr "Original student work"
 msgid "Исходные посылки и проверки не переносятся. Если связь ошибочна, отделите конкретную задачу после предпросмотра."
 msgstr "Original submissions and reviews are not moved. If a link is incorrect, separate the specific problem after previewing."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Исходный файл"
+msgstr "Source file"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "исчезнет из административных списков. Его вход будет отключён; решения и другая история останутся в базе."
+msgstr "will disappear from administrative lists. Their sign-in will be disabled; solutions and other history remain in the database."
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Итог уже разослан"
+msgstr "Summary already sent"
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Итоги для родителей"
+msgstr "Family summary"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Итоговый логин"
+msgstr "Resolved login"
+
 #: apps/staff/src/live-marking-condition.tsx
 msgid "К оценкам"
 msgstr "To grades"
@@ -1612,6 +2380,11 @@ msgstr "To grades"
 #: apps/staff/src/review-series-page.tsx
 msgid "К списку задач"
 msgstr "To problem list"
+
+#: apps/staff/src/product-analytics-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Кабинет"
+msgstr "Account"
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "как в курсе"
@@ -1639,10 +2412,12 @@ msgstr "Image"
 msgid "Картинка загружена; сохраните черновик, чтобы закрепить её в версии."
 msgstr "Image uploaded; save the draft to attach it to the version."
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-classrooms-page.tsx
 msgid "Каталог"
 msgstr "Catalog"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-classrooms-page.tsx
 msgid "Каталог, схема по группам и версионируемый план для выбранного очного события."
 msgstr "Catalog, group layout, and a versioned plan for the selected in-person event."
@@ -1651,6 +2426,22 @@ msgstr "Catalog, group layout, and a versioned plan for the selected in-person e
 #: apps/staff/src/content-page.tsx
 msgid "КБ"
 msgstr "KB"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Класс"
+msgstr "Grade"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "класс —"
+msgstr "grade —"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "класс должен быть от 1 до 11"
+msgstr "grade must be from 1 to 11"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "класс должен быть целым числом от 1 до 11"
+msgstr "grade must be a whole number from 1 to 11"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Клонировать"
@@ -1665,10 +2456,12 @@ msgid "Клонировать посылку"
 msgstr "Clone submission"
 
 #: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Когда"
 msgstr "When"
 
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Код"
 msgstr "Code"
@@ -1686,6 +2479,10 @@ msgstr "Code, if needed"
 #: apps/staff/src/review-history-page.tsx
 msgid "Комментарий"
 msgstr "Comment"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Компактная история просмотра страниц и завершённых действий. Данные хранятся до следующей границы учебного года."
+msgstr "A compact history of page views and completed actions. Data is retained until the next school-year boundary."
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Конец занятий"
@@ -1716,6 +2513,7 @@ msgid "Короткие сообщения для курса или группы
 msgstr "Short messages for a course or group: they appear in “Now” and notify devices with push enabled."
 
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Короткий код"
 msgstr "Short code"
 
@@ -1723,44 +2521,122 @@ msgstr "Short code"
 msgid "Краткая причина"
 msgstr "Brief reason"
 
+#: apps/staff/src/pages.tsx
+msgid "Крылья бабочки"
+msgstr "Крылья бабочки"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Кто"
+msgstr "Who"
+
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-queue-page.tsx
 #: apps/staff/src/review-workspace-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-course-schedule-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 #: apps/staff/src/student-results-page.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Курс"
 msgstr "Course"
 
+#: apps/staff/src/pages.tsx
+msgid "Курс задаёт общий контекст, а группы имеют собственные расписания, публикации и Telegram-привязки."
+msgstr "A course provides shared context, while groups have their own schedules, publications, and Telegram bindings."
+
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Курс задаёт общий учебный контекст. Группы внутри него могут иметь собственные расписания и публикации."
 msgstr "A course provides shared educational context. Its groups can have their own schedules and publications."
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Курс и доступ"
+msgstr "Course and access"
+
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "Курс или группа"
+msgstr "Course or group"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "курс находится в архиве"
+msgstr "course is archived"
 
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "Курс объединяет группы одного предмета и хранит общий контекст статистики."
 msgstr "A course combines groups for one subject and stores their shared statistical context."
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "курс с таким кодом не найден"
+msgstr "course with this code was not found"
+
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Курсы"
 msgstr "Courses"
 
+#: apps/staff/src/pages.tsx
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Курсы и группы"
 msgstr "Courses and groups"
 
+#: apps/staff/src/family-account-manager.tsx
 #: apps/staff/src/login-page.tsx
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+#: apps/staff/src/teacher-batch-panel.tsx
 msgid "Логин"
 msgstr "Login"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Логин · Код курса · Коды доступных групп через запятую"
+msgstr "Login · Course code · Comma-separated available group codes"
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Логин занят"
+msgstr "Login is taken"
 
 #: apps/staff/src/login-page.tsx
 msgid "Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз."
 msgstr "The login or password is incorrect. Check the keyboard layout and try again."
+
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "логин не должен быть длиннее 100 символов"
+msgstr "username must not exceed 100 characters"
+
+#: apps/staff/src/student-account-creator.tsx
+msgid "Логин не сохраняется в этом браузере. Не закрывайте вкладку до отправки."
+msgstr "The login is not saved in this browser. Do not close the tab before sending."
+
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "логин повторяется в этой таблице"
+msgstr "username is duplicated in this table"
+
+#: apps/staff/src/student-account-creator.tsx
+msgid "Логин предложен по фамилии и дню рождения. Его можно исправить до создания."
+msgstr "A login was suggested from the surname and date of birth. You can change it before creating the account."
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Логин родителя"
+msgstr "Parent login"
+
+#: apps/staff/src/student-account-creator.tsx
+msgid "Логин школьника"
+msgstr "Student login"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Логин, имя и роль сохраняются на этом устройстве до отправки. Пароль — никогда."
+msgstr "The login, name, and role are kept on this device until sending. The password is never kept."
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Логины уже используются"
+msgstr "Logins already in use"
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Локальные копии Telegram-постов. Скрытие влияет только на PWA и не меняет сообщение в Telegram."
@@ -1771,6 +2647,14 @@ msgstr "Local copies of Telegram posts. Hiding affects only the PWA and does not
 msgid "Локальный черновик не сохранён"
 msgstr "Local draft not saved"
 
+#: apps/staff/src/pages.tsx
+msgid "М. Иванова"
+msgstr "М. Иванова"
+
+#: apps/staff/src/pages.tsx
+msgid "Маршрут включён в информационную архитектуру первой версии."
+msgstr "The route is included in the first-version information architecture."
+
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Массовая загрузка"
 msgstr "Bulk upload"
@@ -1778,6 +2662,14 @@ msgstr "Bulk upload"
 #: apps/staff/src/staff-worksheet-preview.tsx
 msgid "Масштаб рисунков для публикации"
 msgstr "Figure scale for publication"
+
+#: apps/staff/src/pages.tsx
+msgid "Математика"
+msgstr "Математика"
+
+#: apps/staff/src/pages.tsx
+msgid "Математика 5–7"
+msgstr "Математика 5–7"
 
 #: apps/staff/src/content-page.tsx
 msgid "Материал уже изменён. Обновляем версии и публикации…"
@@ -1787,6 +2679,10 @@ msgstr "The material has changed. Refreshing versions and publications…"
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Материалы для разбора"
 msgstr "Materials for discussion"
+
+#: apps/staff/src/pages.tsx
+msgid "материалы начинающих"
+msgstr "материалы начинающих"
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Метаданные задач"
@@ -1828,6 +2724,14 @@ msgstr "Multiset"
 msgid "Мутно"
 msgstr "Confusing"
 
+#: apps/staff/src/pages.tsx
+msgid "н"
+msgstr "н"
+
+#: apps/staff/src/pages.tsx
+msgid "На первой странице — идея, на второй я закончил подсчёт."
+msgstr "На первой странице — идея, на второй я закончил подсчёт."
+
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "На сервере временно недоступен инструмент обработки рисунков."
 msgstr "The figure processing tool is temporarily unavailable on the server."
@@ -1853,9 +2757,14 @@ msgstr "Grade clicks: current → + → − → leave unchanged. ∅ means did n
 msgid "Назад"
 msgstr "Back"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Назад к вопросам"
+msgstr "Back to questions"
+
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/course-catalog-editors.tsx
 #: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 #: apps/staff/src/staff-course-catalog-page.tsx
@@ -1867,6 +2776,10 @@ msgstr "Title"
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Название (необязательно)"
 msgstr "Title (optional)"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Название в Telegram"
+msgstr "Telegram title"
 
 #: apps/staff/src/content-page.tsx
 msgid "Название занятия"
@@ -1892,6 +2805,11 @@ msgstr "The title is shared by this class number across all groups in the course
 msgid "Название сохранено"
 msgstr "Title saved"
 
+#: apps/staff/src/staff-audit-page.tsx
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "Назначение"
+msgstr "Purpose"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Назначений ещё нет"
 msgstr "There are no assignments yet"
@@ -1901,10 +2819,20 @@ msgid "Найденные школьники"
 msgstr "Found students"
 
 #. placeholder {0}: matches.length
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Найдено: {0}"
+msgstr "Found: {0}"
+
+#. placeholder {0}: matches.length
 #. placeholder {1}: matches.length > 20 ? t`. Показаны первые 20 — уточните имя или фамилию.` : ''
 #: apps/staff/src/statistics-student-search.tsx
 msgid "Найдено: {0}{1}"
 msgstr "Found: {0}{1}"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Найти"
+msgstr "Find"
 
 #: apps/staff/src/content-page.tsx
 msgid "Найти недостающие рисунки"
@@ -1923,6 +2851,22 @@ msgstr "Find the next student"
 msgid "Найти школьника…"
 msgstr "Find a student…"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Например, request-2026-08-02"
+msgstr "For example, request-2026-08-02"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Например, u-2"
+msgstr "For example, u-2"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Например, Анна Иванова"
+msgstr "For example, Anna Ivanova"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Например, родитель"
+msgstr "For example, parent"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Например: задачи были объединены по совпавшему названию"
 msgstr "For example: the problems were merged because their titles matched"
@@ -1931,9 +2875,19 @@ msgstr "For example: the problems were merged because their titles matched"
 msgid "Например: проверено в канале, пост отсутствует"
 msgstr "For example: checked in the channel, post is missing"
 
+#: apps/staff/src/pages.tsx
+msgid "наследуется с прошлого события этих групп"
+msgstr "inherited from the previous event for these groups"
+
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Настроенные окна"
 msgstr "Configured windows"
+
+#. placeholder {0}: account.displayName
+#. placeholder {1}: account.username
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Настроить вход: {0} · {1}"
+msgstr "Configure sign-in: {0} · {1}"
 
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "Настройки группы"
@@ -1959,6 +2913,10 @@ msgstr "Course settings have not loaded yet"
 msgid "Настройки публикации сохранены."
 msgstr "Publication settings saved."
 
+#: apps/staff/src/pages.tsx
+msgid "Натуральное"
+msgstr "Natural number"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Натуральное число"
 msgstr "Natural number"
@@ -1975,6 +2933,26 @@ msgstr "Start · Moscow"
 msgid "Начало показа · Москва"
 msgstr "Display begins · Moscow"
 
+#: apps/staff/src/pages.tsx
+msgid "Начинающие"
+msgstr "Начинающие"
+
+#: apps/staff/src/pages.tsx
+msgid "Начинающие · с занятия 38"
+msgstr "Начинающие · с занятия 38"
+
+#: apps/staff/src/pages.tsx
+msgid "Начинающие · с занятия 39"
+msgstr "Начинающие · с занятия 39"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "не больше 2000 строк за раз"
+msgstr "no more than 2,000 rows at once"
+
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "не больше 500 строк за раз"
+msgstr "no more than 500 rows at once"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Не выбран"
 msgstr "Not selected"
@@ -1983,6 +2961,11 @@ msgstr "Not selected"
 msgid "Не добавлен"
 msgstr "Not added"
 
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Не доставлены аудитории"
+msgstr "Rooms not delivered"
+
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Не задано"
 msgstr "Not set"
@@ -2049,6 +3032,10 @@ msgstr "Could not complete the action"
 msgid "Не удалось выполнить операцию. Обновите данные и попробуйте ещё раз."
 msgstr "Could not complete the operation. Refresh the data and try again."
 
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Не удалось загрузить аналитику"
+msgstr "Could not load analytics"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Не удалось загрузить блоки занятия."
 msgstr "Could not load class blocks."
@@ -2081,6 +3068,10 @@ msgstr "Could not load the catalog"
 msgid "Не удалось загрузить курсы"
 msgstr "Could not load courses"
 
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Не удалось загрузить ленту"
+msgstr "Could not load the activity feed"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Не удалось загрузить очные занятия"
 msgstr "Could not load in-person classes"
@@ -2088,6 +3079,10 @@ msgstr "Could not load in-person classes"
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "Не удалось загрузить план"
 msgstr "Could not load the plan"
+
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "Не удалось загрузить привязки Telegram"
+msgstr "Could not load Telegram bindings"
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Не удалось загрузить проверку задач"
@@ -2138,6 +3133,10 @@ msgstr "Could not load the statement."
 msgid "Не удалось изменить блок занятия"
 msgstr "Could not update class block"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Не удалось обновить переписку. Набранный ответ не удалён."
+msgstr "Could not refresh the conversation. Your drafted reply was not deleted."
+
 #: apps/staff/src/revision-assets-recovery.tsx
 msgid "Не удалось обработать ресурс. Повторите действие."
 msgstr "Could not process the asset. Try again."
@@ -2162,6 +3161,10 @@ msgstr "Could not recheck the answers. Refresh the data and try again."
 msgid "Не удалось подготовить архив"
 msgstr "Could not prepare archive"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "не удалось подобрать свободный логин"
+msgstr "could not find an available login"
+
 #: apps/staff/src/statistics-recalculation-control.tsx
 msgid "Не удалось подтвердить запуск. Повторите запрос."
 msgstr "Could not confirm the start. Try the request again."
@@ -2174,9 +3177,18 @@ msgstr "Could not load class groups"
 msgid "Не удалось проверить Markdown"
 msgstr "Could not validate Markdown"
 
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Не удалось проверить получателей"
+msgstr "Could not check recipients"
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "Не удалось проверить файл. Повторите попытку."
 msgstr "Could not check the file. Try again."
+
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Не удалось продолжить"
+msgstr "Could not continue"
 
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Не удалось прочитать один из выбранных файлов. Скопируйте его на локальный диск и выберите набор ещё раз."
@@ -2214,6 +3226,10 @@ msgstr "Could not create PNG"
 msgid "не удалось создать изображение"
 msgstr "could not create image"
 
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Не удалось создать преподавателей. Проверьте соединение и повторите попытку."
+msgstr "Could not create teachers. Check the connection and try again."
+
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие."
 msgstr "Could not save or load the layout. Refresh the data and try again."
@@ -2234,6 +3250,10 @@ msgstr "Could not save the oral-session results."
 msgid "Не удалось сохранить черновик на устройстве"
 msgstr "Could not save the draft on this device"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "неверное число или название столбцов"
+msgstr "invalid number or name of columns"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Неверный ответ"
 msgstr "Incorrect answer feedback"
@@ -2248,14 +3268,40 @@ msgstr "Insufficient permissions"
 msgid "Незавершённые загрузки"
 msgstr "Unfinished uploads"
 
+#: apps/staff/src/account-provisioning-batch.ts
+msgid "Некорректная нумерация строк в предпросмотре"
+msgstr "Invalid row numbering in the preview"
+
+#: apps/staff/src/account-provisioning-batch.ts
+msgid "Некорректная нумерация строк в результате импорта"
+msgstr "Invalid row numbering in the import result"
+
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "необязательно"
+msgstr "optional"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Неподтверждённых совпадений на этом занятии нет."
 msgstr "There are no unconfirmed matches in this class."
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Несекретный черновик формы не сохраняется в этом браузере."
+msgstr "The non-secret form draft is not saved in this browser."
 
 #: apps/staff/src/content-page.tsx
 msgid "Несовместимый предпросмотр материала"
 msgstr "Incompatible material preview"
 
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Несохранённые изменения хранятся на этом устройстве."
+msgstr "Unsaved changes are kept on this device."
+
+#: apps/staff/src/student-account-creator.tsx
+msgid "Несохранённый логин хранится на этом устройстве."
+msgstr "The unsaved login is kept on this device."
+
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "нет"
 msgstr "none"
@@ -2263,6 +3309,14 @@ msgstr "none"
 #: apps/staff/src/staff-oral-results-page.tsx
 msgid "Нет online-школьников или опубликованных устных задач для этого занятия."
 msgstr "There are no online students or published oral problems for this class."
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Нет аккаунтов родителей для рассылки"
+msgstr "There are no parent accounts to notify"
+
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Нет вопросов без ответа"
+msgstr "No unanswered questions"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Нет доступных курсов"
@@ -2284,6 +3338,10 @@ msgstr "There are no suitable written or oral problems for this class and level.
 msgid "Нет связи с сервером или получен неожиданный ответ. Повторите действие."
 msgstr "The server is unreachable or returned an unexpected response. Try again."
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Нет связи с сервером. Набранный ответ остаётся на этом устройстве."
+msgstr "There is no connection to the server. Your drafted reply stays on this device."
+
 #: apps/staff/src/revision-assets-recovery.tsx
 #: apps/staff/src/test-attempt-recheck-page.tsx
 msgid "Нет связи с сервером. Проверьте подключение и повторите действие."
@@ -2301,6 +3359,10 @@ msgstr "No connection"
 msgid "Нет соединения. Доступны загруженные результаты; обновление продолжится после подключения."
 msgstr "No connection. Loaded results are available; refresh will continue once connected."
 
+#: apps/staff/src/pages.tsx
+msgid "Нет элементов"
+msgstr "No items"
+
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Ниже"
 msgstr "Below"
@@ -2309,9 +3371,17 @@ msgstr "Below"
 msgid "Ниже точный standalone LaTeX, переданный конвертеру, и его вывод."
 msgstr "The exact standalone LaTeX sent to the converter and its output are shown below."
 
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Никого не нашли."
+msgstr "No one was found."
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Никого не нашли. Попробуйте другую часть"
 msgstr "No one was found. Try a different part"
+
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Ничего не найдено"
+msgstr "Nothing found"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Новая"
@@ -2354,9 +3424,21 @@ msgstr "New window"
 msgid "Новости"
 msgstr "News"
 
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Новости для школьников"
+msgstr "News for students"
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "Новые письменные решения появятся здесь автоматически."
 msgstr "New written solutions will appear here automatically."
+
+#: apps/staff/src/student-account-controls.tsx
+msgid "Новый Telegram-токен"
+msgstr "New Telegram token"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Новый аккаунт родителя"
+msgstr "New parent account"
 
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Новый вердикт станет текущим. Фото, переписка, прежний комментарий и реакция не изменяются."
@@ -2366,9 +3448,25 @@ msgstr "The new verdict will become current. Photos, conversation, the previous 
 msgid "Новый курс"
 msgstr "New course"
 
+#: apps/staff/src/pages.tsx
+msgid "Новый ответ добавляется после всей существующей переписки."
+msgstr "A new reply is added after the entire existing conversation."
+
+#: apps/staff/src/student-account-controls.tsx
+msgid "Новый пароль"
+msgstr "New password"
+
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Новый сезон"
 msgstr "New season"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Новый сотрудник"
+msgstr "New staff member"
+
+#: apps/staff/src/pages.tsx
+msgid "Новый файл"
+msgstr "New file"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Новых"
@@ -2387,6 +3485,28 @@ msgstr "The room number comes only from the confirmed plan. Notifications are se
 msgid "Номер занятия"
 msgstr "Class number"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Нужен ответ"
+msgstr "Reply needed"
+
+#. placeholder {0}: count.data
+#: apps/staff/src/routes/questions.tsx
+msgid "Нужен ответ: {0}"
+msgstr "Reply needed: {0}"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "нужно 3 столбца, разделённых табуляцией"
+msgstr "3 tab-separated columns are required"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "нужно 5 столбцов, разделённых табуляцией"
+msgstr "5 tab-separated columns are required"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "нужно 7 столбцов, разделённых табуляцией"
+msgstr "7 tab-separated columns are required"
+
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Нужны рисунки:"
 msgstr "Figures needed:"
@@ -2400,9 +3520,29 @@ msgstr "the required converter"
 msgid "Нулевой результат означает, что школьник ничего не сдавал, и преподавателем не выбирается."
 msgstr "A zero result means the student did not submit anything and cannot be chosen by a teacher."
 
+#: apps/staff/src/staff-access-page.tsx
+msgid "областей"
+msgstr "scopes"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Областей доступа"
+msgstr "Access scopes"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "области"
+msgstr "scopes"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "область"
+msgstr "scope"
+
 #: apps/staff/src/staff-news-page.tsx
 msgid "Обновите данные и попробуйте открыть редактор ещё раз."
 msgstr "Refresh the data and try to open the editor again."
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Обновите данные. Ничего не будет отправлено без отдельного подтверждения."
+msgstr "Refresh the data. Nothing will be sent without separate confirmation."
 
 #: apps/staff/src/classroom-assignment-page.tsx
 #: apps/staff/src/classroom-catalog-page.tsx
@@ -2443,13 +3583,33 @@ msgstr "Processing batch…"
 msgid "Обрабатываем…"
 msgstr "Processing…"
 
+#: apps/staff/src/pages.tsx
+msgid "Обсуждение"
+msgstr "Discussion"
+
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Общее окно связано со всеми выбранными группами. Изменения времени, ссылки и отмена применяются ко всем этим группам."
 msgstr "A shared window is linked to all selected groups. Changes to its time and link, and cancellation, apply to all those groups."
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Общие вопросы и вопросы к задачам. Диалог не закрепляется за одним преподавателем."
+msgstr "General and problem questions. A conversation is not assigned to one teacher."
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Общие доступы пачки"
+msgstr "Shared batch access"
+
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Общий блок"
 msgstr "Shared block"
+
+#: apps/staff/src/staff-support-utils.ts
+msgid "Общий вопрос по занятию"
+msgstr "General question about the class"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Объект"
+msgstr "Object"
 
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Объявлено"
@@ -2458,6 +3618,18 @@ msgstr "Announced"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Обыкновенная или десятичная дробь"
 msgstr "Fraction or decimal"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Один аккаунт можно связать с несколькими детьми."
+msgstr "One account can be linked to several children."
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Один общий итог после завершения всей проверки занятия. Исправления результатов не отправляют повторный push автоматически."
+msgstr "One summary is sent after all work for the class is reviewed. Corrected results do not send push notifications again automatically."
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Одинаковые доступы будут назначены всем строкам этой пачки. Для другого набора доступов загрузите следующую пачку."
+msgstr "The same access permissions will be assigned to every row in this batch. Upload the next batch for a different set of permissions."
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Одинаковые названия найдены в разных группах одного занятия. Импорт не объединяет задачи автоматически: каждую связь нужно подтвердить отдельно."
@@ -2470,6 +3642,14 @@ msgstr "One room is inherited by several groups"
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "Одна группа и вид материала выбраны для нескольких файлов."
 msgstr "Multiple files have the same group and material type."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "одна из групп находится в архиве"
+msgstr "one of the groups is archived"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "одна из групп не найдена в этом курсе"
+msgstr "one of the groups was not found in this course"
 
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Ожидает"
@@ -2486,6 +3666,15 @@ msgstr "Awaiting sending"
 #: apps/staff/src/student-results-history.tsx
 msgid "Ожидает проверки"
 msgstr "Under review"
+
+#. placeholder {0}: digest.pendingFamilyCount
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Ожидают {0}"
+msgstr "Waiting: {0}"
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Ожидают проверки"
+msgstr "Awaiting review"
 
 #: apps/staff/src/review-history-page.tsx
 msgid "Ознакомился с обновлениями, продолжить"
@@ -2525,6 +3714,7 @@ msgid "Окончание · Москва"
 msgstr "End · Moscow"
 
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 msgid "Онлайн"
 msgstr "Online"
 
@@ -2560,7 +3750,12 @@ msgstr "Published version: "
 msgid "Опубликованное условие"
 msgstr "Published statement"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Опубликованное условие недоступно."
+msgstr "The published statement is unavailable."
+
 #: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Опубликовано"
 msgstr "Published"
@@ -2587,6 +3782,18 @@ msgstr "Schedule publication"
 msgid "Опубликовать сейчас"
 msgstr "Publish now"
 
+#: apps/staff/src/routes/questions.tsx
+msgid "Организаторам"
+msgstr "Organizers"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Основная связь"
+msgstr "Primary link"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Основной родительский контакт"
+msgstr "Primary parent contact"
+
 #: apps/staff/src/review-series-page.tsx
 msgid "Остальные работы могут проверять другие преподаватели."
 msgstr "Other work items may be reviewed by other teachers."
@@ -2599,13 +3806,26 @@ msgstr "Answer"
 msgid "Ответ на тест"
 msgstr "Test answer"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Ответ отправлен"
+msgstr "Reply sent"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Ответ сервера не получен. Повторите сохранение того же черновика — дубликатов не будет."
 msgstr "No server response was received. Save the same draft again; no duplicates will be created."
 
+#: apps/staff/src/staff-support-pages.tsx
 #: apps/staff/src/staff-worksheet-preview.tsx
 msgid "Ответить"
 msgstr "Reply"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Отвязать аккаунт только от этого школьника?"
+msgstr "Unlink the account only from this student?"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Отвязать от школьника"
+msgstr "Unlink from student"
 
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Отделить"
@@ -2623,6 +3843,14 @@ msgstr "Roll back import"
 msgid "Откатить опубликованное"
 msgstr "Revert publication"
 
+#: apps/staff/src/student-account-controls.tsx
+msgid "Отключён"
+msgstr "Disabled"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Отключена привязка Telegram"
+msgstr "Telegram binding disabled"
+
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "отключено"
 msgstr "disabled"
@@ -2630,6 +3858,10 @@ msgstr "disabled"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Отключено"
 msgstr "Disabled"
+
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Откроется настоящий кабинет школьника с вашей тестовой учётной записью. Можно сдавать ответы и фотографии, получать и исправлять вердикты. Эти работы не входят в общую статистику."
+msgstr "The real student account will open using your test credentials. You can submit answers and photos, receive and correct verdicts. These submissions are excluded from overall statistics."
 
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Откройте этот раздел из конкретного занятия или укажите его публичный идентификатор."
@@ -2647,6 +3879,10 @@ msgstr "Opens"
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "открыто"
 msgstr "open"
+
+#: apps/staff/src/pages.tsx
+msgid "открытых вопросов"
+msgstr "open questions"
 
 #: apps/staff/src/problem-synonym-page.tsx
 #: apps/staff/src/staff-worksheet-preview.tsx
@@ -2668,6 +3904,10 @@ msgstr "Open class"
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Открыть исправление"
 msgstr "Open corrections"
+
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Открыть как школьник"
+msgstr "Open as student"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Открыть копию окна на следующий день? Текущий черновик создания будет заменён."
@@ -2697,12 +3937,16 @@ msgstr "Scheduled publication canceled."
 
 #: apps/staff/src/classroom-assignment-page.tsx
 #: apps/staff/src/content-page.tsx
+#: apps/staff/src/family-account-manager.tsx
+#: apps/staff/src/family-digest-panel.tsx
 #: apps/staff/src/problem-import-page.tsx
+#: apps/staff/src/staff-access-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-news-page.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Отмена"
 msgstr "Cancel"
@@ -2718,6 +3962,10 @@ msgstr "Undo grade change"
 #: apps/staff/src/student-results-page.tsx
 msgid "Отмена: "
 msgstr "Undo: "
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Отменён импорт задач"
+msgstr "Problem import cancelled"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "отменено"
@@ -2760,6 +4008,15 @@ msgstr "Cancel schedule"
 msgid "Отношение"
 msgstr "Ratio"
 
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Отправить"
+msgstr "Send"
+
+#. placeholder {0}: digest.pendingFamilyCount
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Отправить итог {0} родителям?"
+msgstr "Send the summary to {0} parents?"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Отправленных решений и тестовых попыток в этом занятии нет."
 msgstr "There are no submitted solutions or test attempts in this class."
@@ -2767,6 +4024,14 @@ msgstr "There are no submitted solutions or test attempts in this class."
 #: apps/staff/src/live-marking-grid.tsx
 msgid "Отсутствует"
 msgstr "Absent"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Отчество"
+msgstr "Patronymic"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Отчество, дата рождения и класс могут быть пустыми. Дата: ДД.ММ.ГГГГ или ГГГГ-ММ-ДД."
+msgstr "Patronymic, date of birth, and grade may be empty. Date: DD.MM.YYYY or YYYY-MM-DD."
 
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/student-results-history.tsx
@@ -2781,6 +4046,11 @@ msgstr "Student grades"
 msgid "Очень круто!"
 msgstr "Very cool!"
 
+#: apps/staff/src/routes/review.tsx
+msgid "Очередь"
+msgstr "Queue"
+
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/review-queue-page.tsx
 msgid "Очередь проверки"
 msgstr "Review queue"
@@ -2790,12 +4060,17 @@ msgid "Очистить список"
 msgstr "Clear list"
 
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 msgid "Очно"
 msgstr "In person"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Очно и онлайн"
 msgstr "In person and online"
+
+#: apps/staff/src/pages.tsx
+msgid "Очное воскресенье"
+msgstr "In-person Sunday"
 
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/live-marking-page.tsx
@@ -2811,6 +4086,14 @@ msgstr "In-person class not saved"
 #: apps/staff/src/live-marking-page.tsx
 msgid "Очное событие"
 msgstr "In-person event"
+
+#: apps/staff/src/pages.tsx
+msgid "Очное событие 1 февраля · Математика, занятие 41"
+msgstr "In-person event on 1 February · Математика, class 41"
+
+#: apps/staff/src/pages.tsx
+msgid "Очное событие 1 февраля · черновик наследованного плана"
+msgstr "In-person event on 1 February · inherited plan draft"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
@@ -2833,9 +4116,45 @@ msgstr "Format error"
 msgid "Ошибка: сохранение не подтверждено"
 msgstr "Error: save not confirmed"
 
+#: apps/staff/src/pages.tsx
+msgid "п"
+msgstr "п"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Пакет обработан"
+msgstr "Batch processed"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Пакетная загрузка"
+msgstr "Batch upload"
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Пакетная загрузка преподавателей"
+msgstr "Teacher batch upload"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Пакетное создание аккаунтов"
+msgstr "Batch account creation"
+
+#: apps/staff/src/student-account-creator.tsx
+msgid "Паролем останется текущий Telegram-токен школьника. Он не передаётся в браузер."
+msgstr "The student's current Telegram token remains the password. It is not sent to the browser."
+
 #: apps/staff/src/login-page.tsx
 msgid "Пароль"
 msgstr "Password"
+
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "пароль должен содержать от 8 до 256 символов"
+msgstr "password must contain 8 to 256 characters"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Пароль не сохраняется в браузере и после отправки не показывается снова."
+msgstr "The password is not saved in the browser and is not shown again after sending."
+
+#: apps/staff/src/pages.tsx
+msgid "Парсер сначала делает dry-run и отдельно запрашивает недостающие assets."
+msgstr "The parser first performs a dry run and requests missing assets separately."
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Первые 50 совпадений — уточните имя."
@@ -2844,6 +4163,10 @@ msgstr "The first 50 matches are shown — refine the name."
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Первый завершённый расчёт появится здесь автоматически. Исходные результаты при этом не изменяются."
 msgstr "The first completed calculation will appear here automatically. Original results will not change."
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Первый пароль"
+msgstr "Initial password"
 
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Перед ответом и решением"
@@ -2939,10 +4262,15 @@ msgstr "Recalculate difficulty"
 msgid "Пересчитываем…"
 msgstr "Recalculating…"
 
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Период и фильтры"
+msgstr "Period and filters"
+
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "письменная"
 msgstr "written"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Письменная"
@@ -2952,6 +4280,7 @@ msgstr "Written"
 msgid "Письменная задача"
 msgstr "Written problem"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/review-queue-page.tsx
 msgid "Письменные задачи"
 msgstr "Written problems"
@@ -2977,10 +4306,31 @@ msgstr "Pluses across all classes"
 msgid "Пн / вт / ср"
 msgstr "Mon / Tue / Wed"
 
+#: apps/staff/src/pages.tsx
+msgid "пн 16:30"
+msgstr "пн 16:30"
+
+#: apps/staff/src/pages.tsx
+msgid "пн 17:00"
+msgstr "пн 17:00"
+
+#: apps/staff/src/pages.tsx
+msgid "пн 18:00"
+msgstr "пн 18:00"
+
+#: apps/staff/src/pages.tsx
+msgid "пн 18:10"
+msgstr "пн 18:10"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "По"
+msgstr "To"
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "По выбранным фильтрам работ нет"
 msgstr "There is no work for the selected filters"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-classrooms-page.tsx
 msgid "По группам"
 msgstr "By group"
@@ -2990,6 +4340,7 @@ msgid "По задачам"
 msgstr "By problem"
 
 #: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "По расписанию"
@@ -2997,8 +4348,10 @@ msgstr "Scheduled"
 
 #: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/content-page.tsx
+#: apps/staff/src/family-digest-panel.tsx
 #: apps/staff/src/live-marking-condition.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/problem-review-workflow.tsx
 #: apps/staff/src/problem-synonym-page.tsx
@@ -3007,11 +4360,17 @@ msgstr "Scheduled"
 #: apps/staff/src/review-reaction-inbox-page.tsx
 #: apps/staff/src/review-workspace-page.tsx
 #: apps/staff/src/revision-assets-recovery.tsx
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-news-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+#: apps/staff/src/staff-support-pages.tsx
+#: apps/staff/src/staff-testing-page.tsx
 #: apps/staff/src/student-results-history.tsx
 #: apps/staff/src/student-results-page.tsx
 #: apps/staff/src/test-attempt-recheck-page.tsx
@@ -3031,6 +4390,10 @@ msgstr "Rebuild material"
 msgid "Повторить сохранение"
 msgstr "Retry saving"
 
+#: apps/staff/src/pages.tsx
+msgid "повторная отправка запущена"
+msgstr "retry has started"
+
 #: apps/staff/src/content-page.tsx
 msgid "Повторно обработать исходник"
 msgstr "Reprocess source"
@@ -3044,6 +4407,10 @@ msgstr "Supports h1–h5 headings, lists, formulas, spoilers, footnotes, details
 msgid "Подключиться к Zoom"
 msgstr "Join Zoom"
 
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "Подпись"
+msgstr "Label"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Подпись кнопки"
@@ -3051,6 +4418,7 @@ msgstr "Button label"
 
 #: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Подсказка"
 msgstr "Hint"
@@ -3067,6 +4435,7 @@ msgstr "Hints · Moscow (optional)"
 msgid "Подсказки и решения"
 msgstr "Hints and solutions"
 
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Подсказки опубликованы"
 msgstr "Hints published"
@@ -3079,6 +4448,10 @@ msgstr "Confirm database changes"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Подтвердить"
 msgstr "Confirm"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Подтвердить отвязку"
+msgstr "Confirm unlink"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Подтвердить откат"
@@ -3113,10 +4486,27 @@ msgstr "There are no confirmed links in this class yet."
 msgid "Поиск по всему курсу"
 msgstr "Search across the course"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Поиск по действию, объекту или request ID"
+msgstr "Search by action, object, or request ID"
+
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Поиск по имени"
+msgstr "Search by name"
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Поиск среди готовых"
+msgstr "Search ready accounts"
+
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/student-results-page.tsx
 msgid "Поиск школьника"
 msgstr "Student search"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Поиск школьника, его курсы, активные и доступные группы и формат занятий."
+msgstr "Search for a student, their courses, active and available groups, and attendance mode."
 
 #: apps/staff/src/review-errors.ts
 msgid "Пока вы проверяли, школьник дополнил работу. Откройте её заново перед сохранением."
@@ -3132,9 +4522,28 @@ msgstr "There are no in-person events with confirmed rooms yet."
 msgid "Показано {0} из {1}"
 msgstr "Showing {0} of {1}"
 
+#. placeholder {0}: rows.length
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Показаны первые 100 из {0}; будут созданы все строки."
+msgstr "The first 100 of {0} are shown; every row will be created."
+
+#. placeholder {0}: preview.rows.length
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Показаны первые 100 из {0}; итоговые счётчики учитывают все строки."
+msgstr "The first 100 of {0} are shown; totals include every row."
+
+#. placeholder {0}: matches.length
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Показаны первые 100 из {0}. Уточните поиск или выберите всех найденных."
+msgstr "The first 100 of {0} are shown. Refine the search or select everyone found."
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "Показаны первые 50 кандидатов."
 msgstr "Showing the first 50 candidates."
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Показаны только ваши группы"
+msgstr "Only your groups are shown"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Показать"
@@ -3145,10 +4554,12 @@ msgid "Показать PWA и Telegram"
 msgstr "Show PWA and Telegram"
 
 #: apps/staff/src/review-reaction-inbox-page.tsx
+#: apps/staff/src/staff-support-pages.tsx
 msgid "Показать ещё"
 msgstr "Show more"
 
 #: apps/staff/src/course-schedule-editor.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Показать изменения"
 msgstr "Show changes"
 
@@ -3174,6 +4585,10 @@ msgstr "Show statement for problem {0}"
 msgid "Показывать"
 msgstr "Show"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Поле"
+msgstr "Field"
+
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Полная шкала: +, +., ±, +/2, ∓, −., −"
 msgstr "Full scale: +, +., ±, +/2, ∓, −., −"
@@ -3181,6 +4596,10 @@ msgstr "Full scale: +, +., ±, +/2, ∓, −., −"
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач."
 msgstr "Regenerate all metadata? The current draft and displayed table will be replaced by the model output. After review, “Save metadata” will replace the saved problem configuration."
+
+#: apps/staff/src/pages.tsx
+msgid "Полный Markdown-редактор и отправка появятся во второй продуктовой фазе."
+msgstr "The full Markdown editor and sending will arrive in the second product phase."
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Поля ответа доступны только для тестовой задачи"
@@ -3198,7 +4617,20 @@ msgstr "Notes: "
 msgid "Помогают родители"
 msgstr "Parents are helping"
 
+#: apps/staff/src/pages.tsx
+msgid "Понедельник · фаза решения"
+msgstr "Monday · solution phase"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Попробуйте изменить фильтр или строку поиска."
+msgstr "Try changing the filter or search text."
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Популярные маршруты"
+msgstr "Popular routes"
+
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Порядок"
 msgstr "Order"
 
@@ -3206,13 +4638,29 @@ msgstr "Order"
 msgid "Порядок задач"
 msgstr "Problem order"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Порядок столбцов: {columns}. Пустые необязательные ячейки оставляйте пустыми; разделители между столбцами должны оставаться табуляцией."
+msgstr "Column order: {columns}. Leave optional cells empty; separators between columns must remain tabs."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Порядок столбцов: логин, код курса, доступные группы. Группы можно разделять запятыми или точками с запятой."
+msgstr "Column order: login, course code, available groups. Separate groups with commas or semicolons."
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "После выбора другого курса или файла запустите проверку заново."
 msgstr "After selecting another course or file, run the check again."
 
+#: apps/staff/src/student-account-controls.tsx
+msgid "После изменения все текущие сессии этого аккаунта завершатся. Токен или пароль в браузере не сохраняется."
+msgstr "After the change, every current session for this account will end. The token or password is not kept in the browser."
+
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "Последнее подтверждённое распределение каждого очного занятия."
 msgstr "The most recently confirmed assignment for every in-person class."
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Последние события"
+msgstr "Recent events"
 
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Последовательность дробей"
@@ -3221,6 +4669,14 @@ msgstr "Sequence of fractions"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Последовательность целых"
 msgstr "Sequence of integers"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Пост отмечен доступным в Telegram"
+msgstr "Post marked available in Telegram"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Пост отмечен удалённым в Telegram"
+msgstr "Post marked deleted in Telegram"
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Пост снова доступен?"
@@ -3250,6 +4706,10 @@ msgstr "Praise student"
 msgid "Похоже на ИИ"
 msgstr "Looks like AI"
 
+#: apps/staff/src/pages.tsx
+msgid "Почему выбранные ладьи не бьют друг друга?"
+msgstr "Почему выбранные ладьи не бьют друг друга?"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Правильный ответ"
 msgstr "Correct answer"
@@ -3258,7 +4718,13 @@ msgstr "Correct answer"
 msgid "Правки появятся у школьников после публикации."
 msgstr "Students will see the changes after publication."
 
+#. placeholder {0}: usernameSuggestion.username
+#: apps/staff/src/student-account-creator.tsx
+msgid "Предложенный логин {0} уже занят или совпал у нескольких школьников. Введите уникальный логин вручную."
+msgstr "The suggested login {0} is already taken or was generated for several students. Enter a unique login manually."
+
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Предмет"
 msgstr "Subject"
 
@@ -3269,6 +4735,10 @@ msgstr "Preview"
 #: apps/staff/src/rich-markdown-editor.tsx
 msgid "Предпросмотр Markdown"
 msgstr "Markdown preview"
+
+#: apps/staff/src/account-provisioning-batch.ts
+msgid "Предпросмотр вернул не все строки"
+msgstr "The preview did not return every row"
 
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Предпросмотр влияния"
@@ -3303,15 +4773,58 @@ msgstr "Preview: {0}"
 msgid "Предыдущая проверка"
 msgstr "Previous review"
 
+#: apps/staff/src/users-section-tabs.tsx
+msgid "Преподаватели"
+msgstr "Teachers"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Преподаватели и доступы"
+msgstr "Teachers and access"
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Преподаватели созданы"
+msgstr "Teachers created"
+
 #: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/staff-access-page.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Преподаватель"
 msgstr "Teacher"
 
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Приватная переписка"
+msgstr "Private conversation"
+
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Приватные диалоги"
+msgstr "Private conversations"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Привязать аккаунт"
+msgstr "Link account"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Привязать существующий"
+msgstr "Link existing account"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Привязка возвращена в черновик"
+msgstr "Binding returned to draft"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Привязки Telegram"
+msgstr "Telegram bindings"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Привязываем…"
+msgstr "Linking…"
+
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Приём закрыт"
 msgstr "Submissions closed"
 
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Приём идёт"
 msgstr "Submissions open"
@@ -3323,6 +4836,10 @@ msgstr "Solution submission deadline"
 #: apps/staff/src/student-results-history.tsx
 msgid "Приложение"
 msgstr "Attachment"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Применён импорт задач"
+msgstr "Problem import applied"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Применить изменения · {changedRows}"
@@ -3344,9 +4861,26 @@ msgstr "Accept current"
 msgid "Приоритет"
 msgstr "Priority"
 
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Приостановлена"
+msgstr "Suspended"
+
+#: apps/staff/src/pages.tsx
+msgid "Присланная работа · 2 страницы"
+msgstr "Submitted work · 2 pages"
+
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Причина"
+msgstr "Reason"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Причина разделения"
 msgstr "Reason for separation"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Причина сверки"
+msgstr "Reconciliation reason"
 
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "Причина: {detail}"
@@ -3368,21 +4902,49 @@ msgstr "Connection problems"
 msgid "Пробовали"
 msgstr "Attempted"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Проверена привязка Telegram"
+msgstr "Telegram binding verified"
+
+#: apps/staff/src/routes/review.tsx
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Проверено"
 msgstr "Reviewed"
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Проверить вручную: {needsManualLogin}"
+msgstr "Review manually: {needsManualLogin}"
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Проверить ещё раз"
 msgstr "Review again"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Проверить зачисление"
+msgstr "Check enrolment"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Проверить объединение"
 msgstr "Preview merge"
 
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Проверить таблицу"
+msgstr "Check table"
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "Проверить файл"
 msgstr "Check file"
+
+#. placeholder {0}: preview.counts.invalid
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Проверить: {0}"
+msgstr "Check: {0}"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Проверить: {previewErrorCount}"
+msgstr "Check: {previewErrorCount}"
 
 #: apps/staff/src/routes/__root.tsx
 #: apps/staff/src/student-results-history.tsx
@@ -3401,13 +4963,38 @@ msgstr "Review not saved"
 msgid "проверка прервалась"
 msgstr "check interrupted"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Проверка работы"
 msgstr "Review work"
 
+#: apps/staff/src/routes/review.tsx
+msgid "Проверки"
+msgstr "Reviews"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте дату рождения"
+msgstr "check the date of birth"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Проверьте даты, HTTPS-ссылку и группы. Должно быть выбрано хотя бы одно окно. Для безопасного повтора также требуется доступное хранилище браузера."
 msgstr "Check the dates, HTTPS link, and groups. At least one window must be selected. Available browser storage is also required for a safe retry."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте имя"
+msgstr "check the name"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте код курса"
+msgstr "check the course code"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте логин"
+msgstr "check the login"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте логины детей"
+msgstr "check the child logins"
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Проверьте названия, способы сдачи и сообщения проверки. Таблица сохраняется локально до подтверждения. Сохранение заменяет текущую конфигурацию задачи; для тестовой задачи затем перепроверьте ответы по новой конфигурации."
@@ -3421,6 +5008,14 @@ msgstr "Check the number, time, label, and HTTPS link."
 msgid "Проверьте обязательные даты и повторите попытку."
 msgstr "Check the required dates and try again."
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте отчество"
+msgstr "check the patronymic"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте пароль"
+msgstr "check the password"
+
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Проверьте сгенерированные metadata"
 msgstr "Review generated metadata"
@@ -3429,16 +5024,31 @@ msgstr "Review generated metadata"
 #: apps/staff/src/classroom-catalog-page.tsx
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/classroom-layout-page.tsx
+#: apps/staff/src/staff-access-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 #: apps/staff/src/staff-course-schedule-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-news-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+#: apps/staff/src/telegram-bindings-page.tsx
 msgid "Проверьте соединение и повторите попытку."
 msgstr "Check your connection and try again."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте список email"
+msgstr "check the email list"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте список доступных групп"
+msgstr "check the available groups"
 
 #: apps/staff/src/content-page.tsx
 msgid "Проверьте ссылку или создайте занятие перед загрузкой LaTeX."
 msgstr "Check the link or create a class before uploading LaTeX."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "проверьте фамилию"
+msgstr "check the surname"
 
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Проверяем"
@@ -3448,10 +5058,23 @@ msgstr "Checking"
 msgid "Проверяем LaTeX-файл…"
 msgstr "Checking LaTeX file…"
 
+#: apps/staff/src/routes/login.tsx
+msgid "Проверяем вход"
+msgstr "Checking sign-in"
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Проверяем получателей…"
+msgstr "Checking recipients…"
+
 #: apps/staff/src/content-page.tsx
 msgid "Проверяем структуру материала…"
 msgstr "Checking material structure…"
 
+#: apps/staff/src/routes/login.tsx
+msgid "Проверяем, выполнен ли вход на этом устройстве."
+msgstr "Checking whether this device is signed in."
+
+#: apps/staff/src/account-provisioning-page.tsx
 #: apps/staff/src/problem-import-page.tsx
 msgid "Проверяем…"
 msgstr "Checking…"
@@ -3464,6 +5087,10 @@ msgstr "Checker"
 msgid "Проверять подряд"
 msgstr "Review in sequence"
 
+#: apps/staff/src/pages.tsx
+msgid "Продолжающие"
+msgstr "Продолжающие"
+
 #: apps/staff/src/review-series-page.tsx
 msgid "Продолжить серию"
 msgstr "Continue series"
@@ -3472,13 +5099,33 @@ msgstr "Continue series"
 msgid "Пропустить в undo"
 msgstr "Skip in undo"
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Пропущены"
+msgstr "Skipped"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Просмотры"
+msgstr "Page views"
+
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Простые"
 msgstr "Easy"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Публикации"
+msgstr "Publications"
+
+#: apps/staff/src/pages.tsx
+msgid "Публикации, проверка, вопросы, устные задачи и доставка за текущую неделю."
+msgstr "Publications, reviews, questions, oral tasks, and delivery for the current week."
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Публикация"
 msgstr "Publication"
+
+#: apps/staff/src/telegram-bindings-page.tsx
+msgid "Публикация материалов"
+msgstr "Materials publication"
 
 #: apps/staff/src/course-schedule-draft.ts
 msgid "Публикация подсказки"
@@ -3504,6 +5151,10 @@ msgstr "Part"
 msgid "пусто"
 msgstr "empty"
 
+#: apps/staff/src/pages.tsx
+msgid "Пустое состояние не прячет фильтры и контекст."
+msgstr "The empty state keeps filters and context visible."
+
 #: apps/staff/src/review-queue-model.ts
 msgid "работ"
 msgstr "work"
@@ -3511,6 +5162,10 @@ msgstr "work"
 #: apps/staff/src/review-queue-model.ts
 msgid "работа"
 msgstr "work"
+
+#: apps/staff/src/pages.tsx
+msgid "Работа блокируется за одним учителем; очередь обновляется в реальном времени."
+msgstr "A submission is claimed by one teacher; the queue updates in real time."
 
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Работа и переписка"
@@ -3532,13 +5187,46 @@ msgstr "Student work"
 msgid "работы"
 msgstr "work items"
 
+#: apps/staff/src/pages.tsx
+msgid "работы в очереди"
+msgstr "submissions in the queue"
+
+#: apps/staff/src/pages.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Рабочая сводка"
+msgstr "Work overview"
+
+#: apps/staff/src/pages.tsx
+msgid "Рабочее состояние"
+msgstr "Working state"
+
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Раздел"
 msgstr "Section"
 
+#: apps/staff/src/users-section-tabs.tsx
+msgid "Раздел участников"
+msgstr "Participant section"
+
+#: apps/staff/src/routes/questions.tsx
+msgid "Разделы вопросов"
+msgstr "Question sections"
+
 #: apps/staff/src/routes/oral.tsx
 msgid "Разделы устного приёма"
 msgstr "Oral-session sections"
+
+#: apps/staff/src/pages.tsx
+msgid "Разнообразные вагоны"
+msgstr "Разнообразные вагоны"
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Разослано"
+msgstr "Sent"
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Разослать итог"
+msgstr "Send summary"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Разрешить получателю скрыть объявление"
@@ -3559,6 +5247,10 @@ msgstr "Schedule"
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "расписание группы"
 msgstr "group schedule"
+
+#: apps/staff/src/pages.tsx
+msgid "расписание группы v2"
+msgstr "group schedule v2"
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Расписание не изменено"
@@ -3589,6 +5281,11 @@ msgstr "Distribution across {0} students."
 msgid "Распределение по аудиториям"
 msgstr "Room assignments"
 
+#: apps/staff/src/pages.tsx
+msgid "Расстановка ладей"
+msgstr "Расстановка ладей"
+
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/routes/__root.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Рассылки"
@@ -3630,6 +5327,15 @@ msgstr "Mode"
 msgid "Режим и уровень меняются постоянно. Перенос можно отменить."
 msgstr "Mode and level are changed permanently. The move can be undone."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Режим участия"
+msgstr "Attendance mode"
+
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Результат"
+msgstr "Result"
+
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Результат генерации уже показан в таблице ниже. Проверьте его и нажмите «Сохранить метаданные», чтобы заменить текущую конфигурацию задач."
 msgstr "The generated result is shown in the table below. Review it and click “Save metadata” to replace the current problem configuration."
@@ -3670,6 +5376,7 @@ msgstr "Resources did not load within 30 seconds"
 #: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/figure-layout-editor.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Решение"
 msgstr "Solution"
@@ -3686,9 +5393,14 @@ msgstr "Solutions"
 msgid "Решения · Москва (необязательно)"
 msgstr "Solutions · Moscow (optional)"
 
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Решения опубликованы"
 msgstr "Solutions published"
+
+#: apps/staff/src/pages.tsx
+msgid "решения пока закрыты"
+msgstr "solutions are still closed"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Решено"
@@ -3738,6 +5450,60 @@ msgstr "Figure unavailable"
 msgid "Рисунок: {logicalAsset}."
 msgstr "Figure: {logicalAsset}."
 
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Ровно пять столбцов, разделённых табуляцией. Отчество можно оставить пустым. Пароль не показывается в предпросмотре."
+msgstr "Exactly five tab-separated columns. Patronymic may be empty. The password is not shown in the preview."
+
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Родителей"
+msgstr "Parents"
+
+#. placeholder {0}: digest.alreadySentFamilyCount
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Родителей уведомлено: {0}. Повторных событий не создано."
+msgstr "Parents notified: {0}. No duplicate events were created."
+
+#: apps/staff/src/family-account-manager.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "родитель"
+msgstr "parent"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Родитель"
+msgstr "Parent"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Родитель или школьник"
+msgstr "Parent or student"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "родитель с таким email уже есть"
+msgstr "a parent with this email already exists"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "родитель с таким логином и email уже есть"
+msgstr "a parent with this login and email already exists"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "родитель с таким логином уже есть"
+msgstr "a parent with this login already exists"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Родительский пакет запускайте после создания школьников. Один аккаунт может быть связан с несколькими детьми."
+msgstr "Run the parent batch after creating students. One account can be linked to several children."
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Роль"
+msgstr "Role"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Роль родителя"
+msgstr "Parent role"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "С"
+msgstr "From"
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "С ошибками"
 msgstr "With errors"
@@ -3749,6 +5515,18 @@ msgstr "From the previous class (+7 days)"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Самая давняя работа ждёт "
 msgstr "The oldest work item has been waiting "
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Самостоятельная смена"
+msgstr "Self-service change"
+
+#: apps/staff/src/pages.tsx
+msgid "сб 12:00"
+msgstr "сб 12:00"
+
+#: apps/staff/src/pages.tsx
+msgid "сб 15:00"
+msgstr "сб 15:00"
 
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "Сборка рисунка превысила лимит времени."
@@ -3775,6 +5553,10 @@ msgstr "Queue summary"
 msgid "Своё время"
 msgstr "Custom time"
 
+#: apps/staff/src/pages.tsx
+msgid "своё расписание"
+msgstr "own schedule"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Своя валидация"
 msgstr "Custom validation"
@@ -3783,9 +5565,38 @@ msgstr "Custom validation"
 msgid "Связи меняют только вычисляемое представление. Каждая посылка, переписка и проверка остаётся у исходной задачи."
 msgstr "Links affect only the computed view. Each submission, conversation, and review stays with its original problem."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Связи с родителями"
+msgstr "Parent links"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Связь активна"
+msgstr "Link is active"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Связь со школьником"
+msgstr "Student link"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Связь со школьником удалена. Учётная запись родителя сохранена."
+msgstr "The student link was removed. The parent account was kept."
+
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Сгенерировать metadata"
 msgstr "Generate metadata"
+
+#. placeholder {0}: fullName(selected)
+#: apps/staff/src/staff-access-page.tsx
+msgid "Сделать {0} администратором? Он получит доступ ко всем данным и настройкам."
+msgstr "Make {0} an administrator? They will have access to all data and settings."
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Сделать администратором"
+msgstr "Make administrator"
+
+#: apps/staff/src/pages.tsx
+msgid "Сезон 2025–2026"
+msgstr "2025–2026 season"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сезон станет активным сразу после создания."
@@ -3827,6 +5638,10 @@ msgstr "The server returned an incompatible preview"
 msgid "Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу."
 msgstr "The server does not support automatic TikZ preparation. Refresh the page."
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Сервер не подтвердил операцию. Уже завершённые части пакета сохранены; обновите предпросмотр перед повтором."
+msgstr "The server did not confirm the operation. Completed batch parts were saved; refresh the preview before retrying."
+
 #: apps/staff/src/revision-assets-recovery.tsx
 msgid "Сервер не подтвердил прикрепление ресурса"
 msgstr "The server did not confirm the asset attachment"
@@ -3847,12 +5662,26 @@ msgstr "Sessions are available until"
 msgid "Сессия"
 msgstr "Session"
 
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Сила"
+msgstr "Strength"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "сила —"
+msgstr "strength —"
+
+#. placeholder {0}: student.strength
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "сила {0}"
+msgstr "strength {0}"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Символьное выражение"
 msgstr "Symbolic expression"
 
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/problem-synonym-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Синонимы задач"
 msgstr "Problem synonyms"
 
@@ -3898,6 +5727,10 @@ msgstr "Hidden figures"
 msgid "Скрыть"
 msgstr "Hide"
 
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Скрыть выбор"
+msgstr "Clear selection"
+
 #: apps/staff/src/content-page.tsx
 msgid "Скрыть опубликованное"
 msgstr "Hide publication"
@@ -3918,6 +5751,10 @@ msgstr "Left"
 #: apps/staff/src/review-series-page.tsx
 msgid "Следующая работа подготовлена"
 msgstr "The next work item is ready"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Следующая страница"
+msgstr "Next page"
 
 #: apps/staff/src/review-history-page.tsx
 msgid "Следующие 50"
@@ -3991,6 +5828,10 @@ msgstr "Attach all missing assets first"
 msgid "Сначала проверьте версии для PWA и Telegram. Изменение времени решения не меняет дедлайн сдачи."
 msgstr "Check the PWA and Telegram versions first. Changing the solution time does not change the submission deadline."
 
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Сначала свяжите хотя бы один активный аккаунт родителя со школьником этой группы."
+msgstr "First link at least one active parent account to a student in this group."
+
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Сначала создайте группу"
 msgstr "Create a group first"
@@ -4002,6 +5843,10 @@ msgstr "First create a student-assignment preview."
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сначала создайте учебный сезон, затем добавьте в него курсы и группы."
 msgstr "First create an academic season, then add courses and groups to it."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Сначала создайте школьников, затем аккаунты родителей. Зачисление на курс выполняется отдельным действием."
+msgstr "Create students first, then parent accounts. Course enrolment is a separate action."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Сначала сохраните черновик."
@@ -4015,9 +5860,17 @@ msgstr "Preview first"
 msgid "Сначала укажите корректные даты первого окна."
 msgstr "First provide valid dates for the first window."
 
+#: apps/staff/src/pages.tsx
+msgid "снимок шаблона v4"
+msgstr "template snapshot v4"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "сняты"
 msgstr "removed"
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Снять выбор"
+msgstr "Deselect"
 
 #. placeholder {0}: entry.targetSymbol || '∅'
 #: apps/staff/src/live-marking-page.tsx
@@ -4048,14 +5901,37 @@ msgstr "Event"
 msgid "Событие, аудитория и список задач"
 msgstr "Event, room, and problem list"
 
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Событий нет"
+msgstr "No events"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "События"
+msgstr "Events"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Совпавшее название только предлагает связь. Объединение всегда требует предпросмотра и подтверждения администратора."
 msgstr "A matching title only suggests a link. Merging always requires a preview and administrator confirmation."
 
+#: apps/staff/src/family-account-manager.tsx
+#: apps/staff/src/staff-access-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
+#: apps/staff/src/student-account-batch-panel.tsx
+#: apps/staff/src/student-account-creator.tsx
+#: apps/staff/src/teacher-batch-panel.tsx
 msgid "Создаём…"
 msgstr "Creating…"
+
+#. placeholder {0}: applyProgress?.processed ?? 0
+#. placeholder {1}: applyProgress?.total ?? rows?.length ?? 0
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Создаём… {0}/{1}"
+msgstr "Creating… {0}/{1}"
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Создайте занятие или попросите администратора выдать доступ к группе."
+msgstr "Create a class or ask an administrator to grant access to the group."
 
 #: apps/staff/src/routes/classrooms.tsx
 msgid "Создайте или выберите очное занятие выше."
@@ -4064,6 +5940,30 @@ msgstr "Create or select an in-person class above."
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Создайте первое занятие после добавления курсов и групп."
 msgstr "Create the first class after adding courses and groups."
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Создан вход родителя"
+msgstr "Parent sign-in created"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Создан вход школьника"
+msgstr "Student sign-in created"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Создан курс"
+msgstr "Course created"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Создана группа"
+msgstr "Group created"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Создана привязка Telegram"
+msgstr "Telegram binding created"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Создана публикация в PWA"
+msgstr "PWA publication created"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Созданные задачи удалены, прежние значения восстановлены одной транзакцией."
@@ -4077,9 +5977,51 @@ msgstr "Created problems were deleted and previous values restored in one transa
 msgid "Создано {0}, обновлено {1}, пропущено с ошибками {2}. Квитанция: {3}."
 msgstr "Created: {0}, updated: {1}, skipped with errors: {2}. Receipt: {3}."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Создано задач"
+msgstr "Problems created"
+
+#. placeholder {0}: receipt.counts.created
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Создано: {0}."
+msgstr "Created: {0}."
+
+#. placeholder {0}: receipt.counts.created
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Создано: {0}. Дубликатов проигнорировано: {receiptDuplicateCount}. Не создано из-за ошибок: {receiptErrorCount}."
+msgstr "Created: {0}. Duplicates ignored: {receiptDuplicateCount}. Not created due to errors: {receiptErrorCount}."
+
+#. placeholder {0}: result.createdStudentIds.length
+#. placeholder {1}: result.failures.length
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Создано: {0}. Ошибок: {1}."
+msgstr "Created: {0}. Errors: {1}."
+
+#: apps/staff/src/student-account-creator.tsx
+msgid "Создать web-вход"
+msgstr "Create web sign-in"
+
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Создать web-входы"
+msgstr "Create web sign-ins"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Создать аккаунт"
+msgstr "Create account"
+
+#. placeholder {0}: selectedCandidates.length ? ` · ${selectedCandidates.length}` : ''
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Создать аккаунты{0}"
+msgstr "Create accounts{0}"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Создать выбранные окна"
 msgstr "Create selected windows"
+
+#. placeholder {0}: preview?.counts.ready ?? 0
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Создать готовые · {0}"
+msgstr "Create ready accounts · {0}"
 
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Создать для всех групп"
@@ -4097,13 +6039,26 @@ msgstr "Create a class for all active course groups at once"
 msgid "Создать и открыть"
 msgstr "Create and open"
 
+#: apps/staff/src/family-account-manager.tsx
+msgid "Создать и привязать"
+msgstr "Create and link"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Создать очное занятие"
 msgstr "Create in-person class"
 
+#. placeholder {0}: rows?.length ?? 0
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Создать преподавателей · {0}"
+msgstr "Create teachers · {0}"
+
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Создать сезон"
 msgstr "Create season"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Создать сотрудника"
+msgstr "Create staff member"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Сообщение"
@@ -4127,9 +6082,27 @@ msgstr "Aggregate composition"
 
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-news-page.tsx
+#: apps/staff/src/student-account-controls.tsx
 msgid "Состояние"
 msgstr "State"
+
+#: apps/staff/src/staff-support-pages.tsx
+msgid "Состояние вопроса"
+msgstr "Question status"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Состояние записи"
+msgstr "Record status"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Сотрудники"
+msgstr "Staff members"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Сотрудники не найдены."
+msgstr "No staff members found."
 
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Сохранение доступно только после строгой проверки Markdown. Внешние картинки копируются на сервер при сохранении."
@@ -4165,8 +6138,13 @@ msgstr "Saved"
 msgid "Сохранить"
 msgstr "Save"
 
+#: apps/staff/src/staff-access-page.tsx
+msgid "Сохранить доступы"
+msgstr "Save access permissions"
+
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-news-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 msgid "Сохранить изменения"
 msgstr "Save changes"
 
@@ -4190,7 +6168,12 @@ msgstr "Save publication schedule"
 msgid "Сохранить сверку"
 msgstr "Save reconciliation"
 
+#: apps/staff/src/student-account-controls.tsx
+msgid "Сохранить состояние"
+msgstr "Save status"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
+#: apps/staff/src/telegram-bindings-page.tsx
 msgid "Сохранить черновик"
 msgstr "Save draft"
 
@@ -4207,11 +6190,17 @@ msgstr "Saving"
 #: apps/staff/src/course-schedule-editor.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/review-transfer.tsx
+#: apps/staff/src/staff-access-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 msgid "Сохраняем…"
 msgstr "Saving…"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Список школьников"
+msgstr "Student directory"
 
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Справа"
@@ -4229,6 +6218,14 @@ msgstr "The work lock expired. Reopen the work item and repeat the review."
 msgid "Ссылка YouTube/VK или iframe"
 msgstr "YouTube/VK link or iframe"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Стало"
+msgstr "After"
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Старых вопросов нет"
+msgstr "No old questions"
+
 #: apps/staff/src/routes/__root.tsx
 #: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Статистика"
@@ -4241,6 +6238,10 @@ msgstr "Course statistics"
 #: apps/staff/src/lesson-statistics.tsx
 msgid "Статистика по отправленным задачам"
 msgstr "Statistics for submitted problems"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Статус"
+msgstr "Status"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Статус проверки неизвестен"
@@ -4255,6 +6256,10 @@ msgstr "Side"
 msgid "Страница {0} решения ученика"
 msgstr "Page {0} of the student solution"
 
+#: apps/staff/src/pages.tsx
+msgid "Страница {page}"
+msgstr "Page {page}"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Страница не найдена"
 msgstr "Page not found"
@@ -4268,10 +6273,28 @@ msgstr "Solution page {0}"
 msgid "Строк"
 msgstr "Rows"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Строк обработано"
+msgstr "Rows processed"
+
+#: apps/staff/src/account-provisioning-page.tsx
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Строка"
 msgstr "String"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "Строка {lineNumber}: {message}"
+msgstr "Row {lineNumber}: {message}"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "строка конфликтует с актуальными данными"
+msgstr "row conflicts with current data"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "строка не прошла проверку"
+msgstr "row did not pass validation"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Строки относятся к одному зафиксированному расчёту; выбор занятия сохраняется в адресе страницы."
@@ -4285,6 +6308,14 @@ msgstr "Rows with errors will be skipped"
 msgid "Структура задач или пунктов не совпадает с условием. Исправьте LaTeX-файл и загрузите новую revision."
 msgstr "The problem or part structure does not match the statement. Fix the LaTeX file and upload a new revision."
 
+#: apps/staff/src/family-account-manager.tsx
+msgid "Существующий аккаунт родителя"
+msgstr "Existing parent account"
+
+#: apps/staff/src/family-account-manager.tsx
+msgid "Существующий аккаунт родителя привязан."
+msgstr "Existing parent account linked."
+
 #: apps/staff/src/content-page.tsx
 msgid "Сформированный content.tex"
 msgstr "Generated content.tex"
@@ -4293,6 +6324,10 @@ msgstr "Generated content.tex"
 msgid "Схема не сохранена"
 msgstr "Layout not saved"
 
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Таблица и выбранные доступы сохраняются только в этом браузере до успешного создания."
+msgstr "The table and selected access permissions are kept only in this browser until creation succeeds."
+
 #: apps/staff/src/live-marking-grid.tsx
 msgid "Таблица очного занятия"
 msgstr "In-person class grid"
@@ -4300,6 +6335,10 @@ msgstr "In-person class grid"
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Такого времени нет в часовом поясе занятия. Выберите другое время."
 msgstr "This time does not exist in the class time zone. Select another time."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "такой Telegram-токен уже используется"
+msgstr "this Telegram token is already in use"
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Текст и время можно изменить, пока публикация ещё не появилась в ленте. Получатели и Telegram не меняются."
@@ -4321,6 +6360,18 @@ msgstr "current version"
 msgid "текущая группа"
 msgstr "current group"
 
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Текущие занятия, публикации и входящая работа в доступных вам курсах и группах."
+msgstr "Current classes, publications, and incoming work in the courses and groups available to you."
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Текущие листки"
+msgstr "Current worksheets"
+
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Текущий вход в кабинет школьника в этом браузере будет заменён. Вход в Staff сохранится. Перед входом завершите отправки и закройте другие вкладки кабинета школьника."
+msgstr "The current student-account sign-in in this browser will be replaced. Your Staff sign-in remains. Finish submissions and close other student-account tabs before signing in."
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Текущий план выбранного очного занятия."
 msgstr "The current plan for the selected in-person class."
@@ -4328,6 +6379,14 @@ msgstr "The current plan for the selected in-person class."
 #: apps/staff/src/student-results-page.tsx
 msgid "Текущий результат"
 msgstr "Current result"
+
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Текущих занятий нет"
+msgstr "No current classes"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Тема чата"
+msgstr "Chat topic"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Тестирование"
@@ -4337,6 +6396,7 @@ msgstr "Testing"
 msgid "тестовая"
 msgstr "test"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Тестовая"
@@ -4351,17 +6411,27 @@ msgstr "type {0}"
 msgid "Тип {value}"
 msgstr "Type {value}"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Тип владельца"
+msgstr "Owner type"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Тип задач"
 msgstr "Problem type"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Тип задачи"
 msgstr "Problem type"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Тип ответа"
 msgstr "Answer type"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Только для глобального администратора"
+msgstr "Global administrators only"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Только изменённые"
@@ -4419,9 +6489,17 @@ msgstr "Recheck required"
 msgid "Три целых"
 msgstr "Three integers"
 
+#: apps/staff/src/pages.tsx
+msgid "У группы экспертов нет свободной аудитории"
+msgstr "The expert group has no available room"
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "У других преподавателей"
 msgstr "With other teachers"
+
+#: apps/staff/src/pages.tsx
+msgid "У каждой своя строка и свой столбец; дописала пояснение."
+msgstr "У каждой своя строка и свой столбец; дописала пояснение."
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "У этой группы пока нет опубликованных занятий. Выберите другой уровень задач."
@@ -4432,13 +6510,51 @@ msgstr "This group has no published classes yet. Choose a different problem leve
 msgid "Убрать файл {0}"
 msgstr "Remove file {0}"
 
+#: apps/staff/src/product-analytics-page.tsx
+msgid "удалён"
+msgstr "deleted"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Удалена"
 msgstr "Deleted"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Удалена связь с родителем"
+msgstr "Parent link removed"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Удалено в источнике"
+msgstr "Deleted in source"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Удалено задач"
+msgstr "Problems deleted"
+
 #: apps/staff/src/staff-news-page.tsx
 msgid "Удалены в Telegram"
 msgstr "Deleted in Telegram"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Удалить"
+msgstr "Delete"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Удалить школьника"
+msgstr "Delete student"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Удалить школьника?"
+msgstr "Delete student?"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Удаляем…"
+msgstr "Deleting…"
+
+#. placeholder {0}: digest.alreadySentFamilyCount
+#. placeholder {1}: digest.pendingFamilyCount
+#: apps/staff/src/family-digest-panel.tsx
+msgid "Уже уведомлены {0}; сейчас будут уведомлены {1}."
+msgstr "Already notified: {0}; notifying now: {1}."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Укажите время публикации в часовом поясе занятия."
@@ -4447,6 +6563,14 @@ msgstr "Enter the publication time in the class time zone."
 #: apps/staff/src/content-page.tsx
 msgid "Укажите корректные дату и время публикации."
 msgstr "Enter a valid publication date and time."
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "укажите хотя бы один логин ребёнка"
+msgstr "specify at least one child login"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+msgid "укажите хотя бы одну доступную группу"
+msgstr "specify at least one available group"
 
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
@@ -4457,22 +6581,33 @@ msgstr "Level"
 msgid "Уровень задач"
 msgstr "Problem level"
 
+#: apps/staff/src/pages.tsx
+msgid "уровня опубликовано"
+msgstr "levels published"
+
+#: apps/staff/src/pages.tsx
+msgid "Урок {lessonId}"
+msgstr "Class {lessonId}"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Уроки"
 msgstr "Lessons"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Уроки и публикации"
 msgstr "Lessons and publications"
 
 #: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Условие"
 msgstr "Statement"
 
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-series-page.tsx
+#: apps/staff/src/staff-support-pages.tsx
 msgid "Условие задачи"
 msgstr "Problem statement"
 
@@ -4509,6 +6644,10 @@ msgstr "The statement for the reviewed version is unavailable."
 msgid "Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации."
 msgstr "Statements, hints, and solutions have separate versions, previews, and publication actions."
 
+#: apps/staff/src/pages.tsx
+msgid "Условие, подсказка и решение публикуются или планируются независимо для каждого уровня."
+msgstr "The statement, hint, and solution are published or scheduled independently for each level."
+
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Условия задач в PNG для Zoom Whiteboard"
 msgstr "Problem statements as PNG files for Zoom Whiteboard"
@@ -4521,6 +6660,7 @@ msgstr "Stale"
 msgid "устная"
 msgstr "oral"
 
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-metadata-columns.ts
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Устная"
@@ -4529,6 +6669,12 @@ msgstr "Oral"
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Устная с письменной сдачей"
 msgstr "Oral with written submission"
+
+#. placeholder {0}: lesson.oral.openWindows
+#. placeholder {1}: lesson.oral.upcomingWindows
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Устно: открыто {0}, позже {1}"
+msgstr "Oral: open {0}, later {1}"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Устные"
@@ -4546,6 +6692,14 @@ msgstr "There are no oral problems. Switch to “All”."
 #: apps/staff/src/routes/__root.tsx
 msgid "Участники"
 msgstr "People"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Участники и группы"
+msgstr "Participants and groups"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Участники курсов"
+msgstr "Course participants"
 
 #: apps/staff/src/lesson-statistics.tsx
 msgid "Участников"
@@ -4602,9 +6756,25 @@ msgstr "Files processed, but material history could not be refreshed. Refresh th
 msgid "фамилии"
 msgstr "surname"
 
+#: apps/staff/src/staff-access-page.tsx
+msgid "Фамилия"
+msgstr "Surname"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Фамилия · Имя · Отчество · Дата рождения · Класс · Логин · Пароль"
+msgstr "Surname · Given name · Patronymic · Date of birth · Grade · Login · Password"
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Фамилия · Имя · Отчество · Логин · Временный пароль"
+msgstr "Surname · Given name · Patronymic · Login · Temporary password"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Фамилия и имя"
 msgstr "Surname and name"
+
+#: apps/staff/src/staff-access-page.tsx
+msgid "Фамилия или имя"
+msgstr "Surname or given name"
 
 #: apps/staff/src/statistics-student-search.tsx
 msgid "Фамилия или имя, можно с опечаткой"
@@ -4614,9 +6784,39 @@ msgstr "Surname or given name; a typo is allowed"
 msgid "Фамилия или имя…"
 msgstr "Surname or given name…"
 
+#: apps/staff/src/staff-student-directory-page.tsx
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Фамилия, имя или часть с опечаткой"
+msgstr "Surname, given name, or a misspelled part"
+
+#: apps/staff/src/account-provisioning-tsv.ts
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "фамилия, имя, логин и пароль обязательны"
+msgstr "surname, given name, login, and password are required"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Фамилия…"
 msgstr "Surname…"
+
+#: apps/staff/src/pages.tsx
+msgid "Физика"
+msgstr "Физика"
+
+#: apps/staff/src/pages.tsx
+msgid "Физика: эксперимент"
+msgstr "Физика: эксперимент"
+
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "ФИО"
+msgstr "Full name"
+
+#: apps/staff/src/teacher-batch-tsv.ts
+msgid "ФИО не должно быть длиннее 100 символов"
+msgstr "full name must not exceed 100 characters"
+
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Формат занятий"
+msgstr "Attendance mode"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Фотография"
@@ -4626,6 +6826,18 @@ msgstr "Photo"
 msgid "Фрагмент комментария"
 msgstr "Comment excerpt"
 
+#: apps/staff/src/pages.tsx
+msgid "х"
+msgstr "х"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Цвет группы"
+msgstr "Group colour"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Цвет курса"
+msgstr "Course colour"
+
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "Цветовой ключ"
 msgstr "Color key"
@@ -4633,6 +6845,10 @@ msgstr "Color key"
 #: apps/staff/src/review-transfer.tsx
 msgid "Целевая задача"
 msgstr "Target problem"
+
+#: apps/staff/src/pages.tsx
+msgid "Целое"
+msgstr "Integer"
 
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Целое число"
@@ -4646,8 +6862,13 @@ msgstr "Digit"
 msgid "Часовой пояс"
 msgstr "Time zone"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Чат"
+msgstr "Chat"
+
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/course-catalog-editors.tsx
+#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Черновик"
@@ -4671,8 +6892,15 @@ msgstr "Draft was not saved on this device"
 
 #: apps/staff/src/course-catalog-editors.tsx
 #: apps/staff/src/course-schedule-editor.tsx
+#: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 msgid "Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки."
 msgstr "The draft cannot be saved in this browser. Do not close the tab before submitting."
+
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/teacher-batch-panel.tsx
+msgid "Черновик не сохраняется в этом браузере. Не закрывайте вкладку."
+msgstr "The draft is not saved in this browser. Do not close the tab."
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Черновик нужно проверить и сохранить вручную."
@@ -4706,6 +6934,10 @@ msgstr "Draft: "
 msgid "Четыре целых"
 msgstr "Four integers"
 
+#: apps/staff/src/pages.tsx
+msgid "Числа на доске"
+msgstr "Числа на доске"
+
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Число решённых задач"
@@ -4718,6 +6950,14 @@ msgstr "Number with tolerance"
 #: apps/staff/src/content-page.tsx
 msgid "Читаем LaTeX-файл…"
 msgstr "Reading LaTeX file…"
+
+#: apps/staff/src/staff-testing-page.tsx
+msgid "Читать новости как школьник"
+msgstr "Read news as student"
+
+#: apps/staff/src/pages.tsx
+msgid "шаблон курса"
+msgstr "course template"
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Шаблон курса"
@@ -4732,9 +6972,15 @@ msgid "шк."
 msgstr "students"
 
 #: apps/staff/src/live-marking-grid.tsx
+#: apps/staff/src/product-analytics-page.tsx
 #: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Школьник"
 msgstr "Student"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Школьник и курс"
+msgstr "Student and course"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Школьник и родитель"
@@ -4744,8 +6990,23 @@ msgstr "Student and parent"
 msgid "Школьник не найден."
 msgstr "Student not found."
 
+#: apps/staff/src/staff-student-directory-page.tsx
+msgid "Школьник пока не записан ни на один курс."
+msgstr "The student is not enrolled in any course yet."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "школьник с таким логином не найден"
+msgstr "student with this login was not found"
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "школьник уже зачислен на этот курс"
+msgstr "student is already enrolled in this course"
+
+#: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-classrooms-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
+#: apps/staff/src/users-section-tabs.tsx
 msgid "Школьники"
 msgstr "Students"
 
@@ -4762,6 +7023,8 @@ msgid "Школьники не найдены."
 msgstr "Students not found."
 
 #: apps/staff/src/classroom-event-page.tsx
+#: apps/staff/src/family-digest-panel.tsx
+#: apps/staff/src/routes/questions.tsx
 msgid "Школьников"
 msgstr "Students"
 
@@ -4769,17 +7032,37 @@ msgstr "Students"
 msgid "Школьников в агрегате"
 msgstr "Students in aggregate"
 
+#: apps/staff/src/pages.tsx
+msgid "э"
+msgstr "э"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Эквивалентное выражение"
 msgstr "Equivalent expression"
+
+#: apps/staff/src/pages.tsx
+msgid "Эксперты"
+msgstr "Эксперты"
+
+#: apps/staff/src/pages.tsx
+msgid "Эксперты · с занятия 37"
+msgstr "Эксперты · с занятия 37"
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Эта ручная сверка меняет PWA-ленту и сохраняется в журнале. Само сообщение в Telegram не изменяется."
 msgstr "This manual reconciliation changes the PWA feed and is saved in the log. The Telegram message itself is not changed."
 
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "Эти строки не будут загружены, пока ошибки не исправлены:"
+msgstr "These rows will not be uploaded until the errors are fixed:"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Это время неоднозначно в часовом поясе занятия. Выберите другое время."
 msgstr "This time is ambiguous in the class time zone. Select another time."
+
+#: apps/staff/src/account-provisioning-page.tsx
+msgid "этот родитель уже был импортирован с теми же данными"
+msgstr "this parent was already imported with the same data"
 
 #: apps/staff/src/review-errors.ts
 msgid "Эту работу уже проверяет другой преподаватель. Обновите очередь."

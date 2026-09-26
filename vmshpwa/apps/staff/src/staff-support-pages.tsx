@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { SupportPhotoBody } from '@vmsh/product'
 import { Link } from '@tanstack/react-router'
 import { useMemo } from 'react'
@@ -59,7 +62,7 @@ export function StaffSupportInboxPage({ filters }: { filters: StaffInboxFilters 
       <PageStatePanel
         {...(supportErrorState(query.error) === 'error' ||
         supportErrorState(query.error) === 'offline'
-          ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+          ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
           : {})}
         description={describeSupportError(query.error)}
         state={supportErrorState(query.error)}
@@ -68,15 +71,17 @@ export function StaffSupportInboxPage({ filters }: { filters: StaffInboxFilters 
   } else if (items.length === 0) {
     content = (
       <PageStatePanel
-        description="Для выбранного фильтра нет приватных вопросов."
+        description={t`Для выбранного фильтра нет приватных вопросов.`}
         state="empty"
-        title={filters.state === 'awaiting_staff' ? 'Нет вопросов без ответа' : 'Ничего не найдено'}
+        title={
+          filters.state === 'awaiting_staff' ? t`Нет вопросов без ответа` : t`Ничего не найдено`
+        }
       />
     )
   } else {
     content = (
       <div className="space-y-3">
-        <ol className="grid gap-2 lg:grid-cols-2" aria-label="Вопросы школьников">
+        <ol className="grid gap-2 lg:grid-cols-2" aria-label={t`Вопросы школьников`}>
           {items.map((item) => (
             <StaffSupportSummary item={item} key={item.threadId} />
           ))}
@@ -88,7 +93,7 @@ export function StaffSupportInboxPage({ filters }: { filters: StaffInboxFilters 
             size="sm"
             variant="outline"
           >
-            {query.isFetchingNextPage ? 'Загружаем…' : 'Показать ещё'}
+            {query.isFetchingNextPage ? t`Загружаем…` : t`Показать ещё`}
           </Button>
         ) : null}
       </div>
@@ -97,17 +102,17 @@ export function StaffSupportInboxPage({ filters }: { filters: StaffInboxFilters 
 
   return (
     <PageLayout
-      description="Общие вопросы и вопросы к задачам. Диалог не закрепляется за одним преподавателем."
-      eyebrow="Приватные диалоги"
-      title="Вопросы школьников"
+      description={t`Общие вопросы и вопросы к задачам. Диалог не закрепляется за одним преподавателем.`}
+      eyebrow={t`Приватные диалоги`}
+      title={t`Вопросы школьников`}
       width="wide"
     >
-      <div className="mb-4 flex flex-wrap gap-1" aria-label="Состояние вопроса">
+      <div className="mb-4 flex flex-wrap gap-1" aria-label={t`Состояние вопроса`}>
         {(
           [
-            ['awaiting_staff', 'Нужен ответ'],
-            ['awaiting_student', 'Ждём школьника'],
-            ['all', 'Все'],
+            ['awaiting_staff', t`Нужен ответ`],
+            ['awaiting_student', t`Ждём школьника`],
+            ['all', t`Все`],
           ] as const
         ).map(([state, label]) => (
           <Link
@@ -141,7 +146,7 @@ function StaffSupportSummary({ item }: { item: SupportThreadSummary }) {
             <CardTitle className="flex min-w-0 flex-wrap items-center gap-2">
               <span>{item.student.displayName}</span>
               <Badge variant={item.replyState === 'awaiting_staff' ? 'warning' : 'neutral'}>
-                {item.replyState === 'awaiting_staff' ? 'Нужен ответ' : 'Ответ отправлен'}
+                {item.replyState === 'awaiting_staff' ? t`Нужен ответ` : t`Ответ отправлен`}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -149,10 +154,11 @@ function StaffSupportSummary({ item }: { item: SupportThreadSummary }) {
             <p className="font-medium text-foreground">{supportProblemLabel(item.context)}</p>
             <p className="text-caption text-muted-foreground">{supportContext(item)}</p>
             <p className="line-clamp-2 text-small text-foreground">
-              {item.latestEntry.textExcerpt ?? 'Вложение'}
+              {item.latestEntry.textExcerpt ?? t`Вложение`}
             </p>
             <p className="text-caption text-muted-foreground">
-              {formatSupportTime(item.latestEntry.receivedAt)} · сообщений: {item.entryCount}
+              {formatSupportTime(item.latestEntry.receivedAt)}{' '}
+              <Trans>· сообщений: {item.entryCount}</Trans>
             </p>
           </CardContent>
         </Card>
@@ -195,18 +201,18 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
 
   if (query.isPending) {
     return (
-      <PageLayout title="Вопрос школьника" width="content">
+      <PageLayout title={t`Вопрос школьника`} width="content">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (query.error) {
     return (
-      <PageLayout title="Вопрос школьника" width="content">
+      <PageLayout title={t`Вопрос школьника`} width="content">
         <PageStatePanel
           {...(supportErrorState(query.error) === 'error' ||
           supportErrorState(query.error) === 'offline'
-            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
             : {})}
           description={describeSupportError(query.error)}
           state={supportErrorState(query.error)}
@@ -223,6 +229,7 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
         schemaVersion: 1,
         idempotencyKey: editor.delivery.idempotencyKey,
         // Existing support entries require a caption; docs/question-photos.md.
+        // eslint-disable-next-line lingui/no-unlocalized-strings -- stored support-entry content, not UI copy.
         text: editor.text.trim() ? editor.text : 'Фотография',
         photoIds,
         clientCreatedAt: editor.delivery.clientCreatedAt,
@@ -243,23 +250,27 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
           search={{ state: 'awaiting_staff' }}
           to="/questions"
         >
-          Назад к вопросам
+          <Trans>Назад к вопросам</Trans>
         </Link>
       }
       description={[thread.student.displayName, thread.context.courseName, thread.context.groupName]
         .filter(Boolean)
         .join(' · ')}
-      eyebrow="Приватная переписка"
+      eyebrow={t`Приватная переписка`}
       title={supportProblemLabel(thread.context)}
       width="content"
     >
       {thread.context.problemId ? (
         <details className="mb-5 rounded-xl border p-4">
-          <summary className="cursor-pointer font-medium">Условие задачи</summary>
+          <summary className="cursor-pointer font-medium">
+            <Trans>Условие задачи</Trans>
+          </summary>
           {thread.problemDocument ? (
             <SemanticMathDocument document={thread.problemDocument} />
           ) : (
-            <p className="mt-3 text-muted-foreground">Опубликованное условие недоступно.</p>
+            <p className="mt-3 text-muted-foreground">
+              <Trans>Опубликованное условие недоступно.</Trans>
+            </p>
           )}
         </details>
       ) : null}
@@ -283,7 +294,7 @@ export function StaffSupportThreadPage({ threadId }: { threadId: string }) {
                 editor.setText(value)
               }}
               saveState={editor.saveState}
-              submitLabel="Ответить"
+              submitLabel={t`Ответить`}
               value={editor.text}
             />
           </CardContent>
@@ -309,7 +320,7 @@ function supportContext(item: SupportThreadSummary): string {
 }
 
 function formatSupportTime(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -324,8 +335,8 @@ function supportErrorState(error: unknown): 'offline' | 'forbidden' | 'empty' | 
 
 function describeSupportError(error: unknown): string {
   if (error instanceof SupportNetworkError) {
-    return 'Нет связи с сервером. Набранный ответ остаётся на этом устройстве.'
+    return t`Нет связи с сервером. Набранный ответ остаётся на этом устройстве.`
   }
   if (error instanceof ApiResponseError) return error.message
-  return 'Не удалось обновить переписку. Набранный ответ не удалён.'
+  return t`Не удалось обновить переписку. Набранный ответ не удалён.`
 }

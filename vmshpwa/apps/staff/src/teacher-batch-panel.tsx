@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo, useState } from 'react'
 
 import {
@@ -81,7 +83,7 @@ function message(error: unknown): string {
   if (error instanceof TeacherBatchTsvError || error instanceof ApiResponseError) {
     return error.message
   }
-  return 'Не удалось создать преподавателей. Проверьте соединение и повторите попытку.'
+  return t`Не удалось создать преподавателей. Проверьте соединение и повторите попытку.`
 }
 
 export function TeacherBatchPanel({
@@ -182,30 +184,38 @@ export function TeacherBatchPanel({
   return (
     <Card>
       <CardHeader className="gap-1">
-        <CardTitle>Пакетная загрузка преподавателей</CardTitle>
+        <CardTitle>
+          <Trans>Пакетная загрузка преподавателей</Trans>
+        </CardTitle>
         <p className="text-small text-muted-foreground">
-          Одинаковые доступы будут назначены всем строкам этой пачки. Для другого набора доступов
-          загрузите следующую пачку.
+          <Trans>
+            Одинаковые доступы будут назначены всем строкам этой пачки. Для другого набора доступов
+            загрузите следующую пачку.
+          </Trans>
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         <Label className="grid gap-1 text-small">
-          Вставьте преподавателей из таблицы
+          <Trans>Вставьте преподавателей из таблицы</Trans>
           <Textarea
             className="min-h-36 font-mono text-caption"
             onChange={(event) => changeSource(event.target.value)}
-            placeholder="Фамилия · Имя · Отчество · Логин · Временный пароль"
+            placeholder={t`Фамилия · Имя · Отчество · Логин · Временный пароль`}
             spellCheck={false}
             value={source}
           />
         </Label>
         <p className="text-caption text-muted-foreground">
-          Ровно пять столбцов, разделённых табуляцией. Отчество можно оставить пустым. Пароль не
-          показывается в предпросмотре.
+          <Trans>
+            Ровно пять столбцов, разделённых табуляцией. Отчество можно оставить пустым. Пароль не
+            показывается в предпросмотре.
+          </Trans>
         </p>
 
         <fieldset className="space-y-2">
-          <legend className="text-small font-medium">Общие доступы пачки</legend>
+          <legend className="text-small font-medium">
+            <Trans>Общие доступы пачки</Trans>
+          </legend>
           <div className="grid gap-2 lg:grid-cols-2">
             {courses
               .filter((course) => course.status === 'active')
@@ -222,7 +232,7 @@ export function TeacherBatchPanel({
                           toggleCourse(course.courseId, checked === true)
                         }
                       />
-                      {course.name} · весь курс
+                      <Trans>{course.name} · весь курс</Trans>
                     </Label>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
                       {course.groups
@@ -255,7 +265,7 @@ export function TeacherBatchPanel({
 
         <div className="flex flex-wrap gap-2">
           <Button disabled={!source.trim() || saving} onClick={preview} type="button">
-            Проверить таблицу
+            <Trans>Проверить таблицу</Trans>
           </Button>
           <Button
             disabled={
@@ -265,28 +275,32 @@ export function TeacherBatchPanel({
             type="button"
             variant="outline"
           >
-            {saving ? 'Создаём…' : `Создать преподавателей · ${rows?.length ?? 0}`}
+            {saving ? t`Создаём…` : t`Создать преподавателей · ${rows?.length ?? 0}`}
           </Button>
         </div>
 
         {!storageAvailable ? (
           <p className="text-small text-status-error" role="alert">
-            Черновик не сохраняется в этом браузере. Не закрывайте вкладку.
+            <Trans>Черновик не сохраняется в этом браузере. Не закрывайте вкладку.</Trans>
           </p>
         ) : (
           <p className="text-caption text-muted-foreground" role="status">
-            Таблица и выбранные доступы сохраняются только в этом браузере до успешного создания.
+            <Trans>
+              Таблица и выбранные доступы сохраняются только в этом браузере до успешного создания.
+            </Trans>
           </p>
         )}
         {scopes.length === 0 ? (
           <p className="text-small text-status-warning" role="status">
-            Выберите хотя бы один курс или группу.
+            <Trans>Выберите хотя бы один курс или группу.</Trans>
           </p>
         ) : null}
         {conflicts?.length ? (
           <Alert tone="danger">
             <AlertContent>
-              <AlertTitle>Логины уже используются</AlertTitle>
+              <AlertTitle>
+                <Trans>Логины уже используются</Trans>
+              </AlertTitle>
               <AlertDescription>{conflicts.map((row) => row.username).join(', ')}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -294,7 +308,9 @@ export function TeacherBatchPanel({
         {error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Не удалось продолжить</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось продолжить</Trans>
+              </AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -302,8 +318,12 @@ export function TeacherBatchPanel({
         {receipt ? (
           <Alert tone="success">
             <AlertContent>
-              <AlertTitle>Преподаватели созданы</AlertTitle>
-              <AlertDescription>Создано: {receipt.counts.created}.</AlertDescription>
+              <AlertTitle>
+                <Trans>Преподаватели созданы</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>Создано: {receipt.counts.created}.</Trans>
+              </AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
@@ -313,9 +333,15 @@ export function TeacherBatchPanel({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ФИО</TableHead>
-                  <TableHead>Логин</TableHead>
-                  <TableHead>Результат</TableHead>
+                  <TableHead>
+                    <Trans>ФИО</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Логин</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Результат</Trans>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -327,7 +353,7 @@ export function TeacherBatchPanel({
                         {[row.surname, row.name, row.middleName].filter(Boolean).join(' ')}
                       </TableCell>
                       <TableCell className="font-mono text-caption">{row.username}</TableCell>
-                      <TableCell>{conflict ? 'Логин занят' : 'Готово'}</TableCell>
+                      <TableCell>{conflict ? t`Логин занят` : t`Готово`}</TableCell>
                     </TableRow>
                   )
                 })}
@@ -337,7 +363,7 @@ export function TeacherBatchPanel({
         ) : null}
         {rows && rows.length > 100 ? (
           <p className="text-caption text-muted-foreground">
-            Показаны первые 100 из {rows.length}; будут созданы все строки.
+            <Trans>Показаны первые 100 из {rows.length}; будут созданы все строки.</Trans>
           </p>
         ) : null}
       </CardContent>

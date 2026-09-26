@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, Send } from 'lucide-react'
 import { useState } from 'react'
@@ -53,32 +55,42 @@ export function FamilyDigestPanelView({
     <Card>
       <CardHeader className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
         <div className="space-y-1">
-          <CardTitle>Итоги для родителей</CardTitle>
+          <CardTitle>
+            <Trans>Итоги для родителей</Trans>
+          </CardTitle>
           <p className="text-small text-muted-foreground">
-            Один общий итог после завершения всей проверки занятия. Исправления результатов не
-            отправляют повторный push автоматически.
+            <Trans>
+              Один общий итог после завершения всей проверки занятия. Исправления результатов не
+              отправляют повторный push автоматически.
+            </Trans>
           </p>
         </div>
         {hasRecipients ? (
           <Badge variant={allSent ? 'success' : 'neutral'}>
-            {allSent ? 'Разослано' : `Ожидают ${digest.pendingFamilyCount}`}
+            {allSent ? t`Разослано` : t`Ожидают ${digest.pendingFamilyCount}`}
           </Badge>
         ) : null}
       </CardHeader>
       <CardContent className="space-y-3">
         {loading ? (
-          <p className="text-small text-muted-foreground">Проверяем получателей…</p>
+          <p className="text-small text-muted-foreground">
+            <Trans>Проверяем получателей…</Trans>
+          </p>
         ) : null}
         {error ? (
           <Alert tone="danger">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Не удалось проверить получателей</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось проверить получателей</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Обновите данные. Ничего не будет отправлено без отдельного подтверждения.
+                <Trans>
+                  Обновите данные. Ничего не будет отправлено без отдельного подтверждения.
+                </Trans>
               </AlertDescription>
               <Button className="mt-2" onClick={onRetry} size="xs" variant="outline">
-                Повторить
+                <Trans>Повторить</Trans>
               </Button>
             </AlertContent>
           </Alert>
@@ -87,19 +99,27 @@ export function FamilyDigestPanelView({
           <>
             <dl className="grid grid-cols-2 gap-2 text-small sm:grid-cols-4">
               <div>
-                <dt className="text-muted-foreground">Группа</dt>
+                <dt className="text-muted-foreground">
+                  <Trans>Группа</Trans>
+                </dt>
                 <dd className="font-medium">{digest.groupName}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Занятие</dt>
+                <dt className="text-muted-foreground">
+                  <Trans>Занятие</Trans>
+                </dt>
                 <dd className="font-num font-medium">{digest.lessonNumber}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Школьников</dt>
+                <dt className="text-muted-foreground">
+                  <Trans>Школьников</Trans>
+                </dt>
                 <dd className="font-num font-medium">{digest.studentCount}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Родителей</dt>
+                <dt className="text-muted-foreground">
+                  <Trans>Родителей</Trans>
+                </dt>
                 <dd className="font-num font-medium">{digest.familyCount}</dd>
               </div>
             </dl>
@@ -108,7 +128,7 @@ export function FamilyDigestPanelView({
                 <AlertTriangle aria-hidden="true" />
                 <AlertContent>
                   <AlertTitle>
-                    Без активного аккаунта родителя: {digest.unlinkedStudents.length}
+                    <Trans>Без активного аккаунта родителя: {digest.unlinkedStudents.length}</Trans>
                   </AlertTitle>
                   <AlertDescription>
                     {digest.unlinkedStudents.map((student) => student.displayName).join(', ')}
@@ -120,10 +140,14 @@ export function FamilyDigestPanelView({
               <Alert tone="warning">
                 <AlertTriangle aria-hidden="true" />
                 <AlertContent>
-                  <AlertTitle>Нет аккаунтов родителей для рассылки</AlertTitle>
+                  <AlertTitle>
+                    <Trans>Нет аккаунтов родителей для рассылки</Trans>
+                  </AlertTitle>
                   <AlertDescription>
-                    Сначала свяжите хотя бы один активный аккаунт родителя со школьником этой
-                    группы.
+                    <Trans>
+                      Сначала свяжите хотя бы один активный аккаунт родителя со школьником этой
+                      группы.
+                    </Trans>
                   </AlertDescription>
                 </AlertContent>
               </Alert>
@@ -131,10 +155,14 @@ export function FamilyDigestPanelView({
               <Alert tone="success">
                 <CheckCircle2 aria-hidden="true" />
                 <AlertContent>
-                  <AlertTitle>Итог уже разослан</AlertTitle>
+                  <AlertTitle>
+                    <Trans>Итог уже разослан</Trans>
+                  </AlertTitle>
                   <AlertDescription>
-                    Родителей уведомлено: {digest.alreadySentFamilyCount}. Повторных событий не
-                    создано.
+                    <Trans>
+                      Родителей уведомлено: {digest.alreadySentFamilyCount}. Повторных событий не
+                      создано.
+                    </Trans>
                   </AlertDescription>
                 </AlertContent>
               </Alert>
@@ -145,30 +173,34 @@ export function FamilyDigestPanelView({
                 role="alertdialog"
               >
                 <p className="font-medium" id="family-digest-confirmation-title">
-                  Отправить итог {digest.pendingFamilyCount} родителям?
+                  <Trans>Отправить итог {digest.pendingFamilyCount} родителям?</Trans>
                 </p>
                 <p className="mt-1 text-small text-muted-foreground">
-                  В PWA появится одно событие; при разрешённых push оно будет доставлено на
-                  подписанные устройства.
+                  <Trans>
+                    В PWA появится одно событие; при разрешённых push оно будет доставлено на
+                    подписанные устройства.
+                  </Trans>
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button disabled={pending} onClick={onConfirm} size="sm">
-                    Отправить
+                    <Trans>Отправить</Trans>
                   </Button>
                   <Button disabled={pending} onClick={onCancel} size="sm" variant="outline">
-                    Отмена
+                    <Trans>Отмена</Trans>
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-small text-muted-foreground">
-                  Уже уведомлены {digest.alreadySentFamilyCount}; сейчас будут уведомлены{' '}
-                  {digest.pendingFamilyCount}.
+                  <Trans>
+                    Уже уведомлены {digest.alreadySentFamilyCount}; сейчас будут уведомлены{' '}
+                    {digest.pendingFamilyCount}.
+                  </Trans>
                 </p>
                 <Button disabled={pending} onClick={onStart} size="sm">
                   <Send aria-hidden="true" />
-                  Разослать итог
+                  <Trans>Разослать итог</Trans>
                 </Button>
               </div>
             )}

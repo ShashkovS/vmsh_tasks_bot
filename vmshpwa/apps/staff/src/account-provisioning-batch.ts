@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type {
   AccountProvisioningPreviewResponse,
   AccountProvisioningReceipt,
@@ -35,13 +36,13 @@ export async function applyProvisioningInChunks<Row>({
 
   for (const row of initialPreview.rows) {
     if (row.rowNumber > rows.length || seen.has(row.rowNumber)) {
-      throw new Error('Некорректная нумерация строк в предпросмотре')
+      throw new Error(t`Некорректная нумерация строк в предпросмотре`)
     }
     seen.add(row.rowNumber)
     if (row.state === 'ready') readyRowNumbers.push(row.rowNumber)
     else receiptRows.push({ rowNumber: row.rowNumber, state: 'skipped', code: row.code })
   }
-  if (seen.size !== rows.length) throw new Error('Предпросмотр вернул не все строки')
+  if (seen.size !== rows.length) throw new Error(t`Предпросмотр вернул не все строки`)
 
   let processed = receiptRows.length
   onProgress?.(processed, rows.length)
@@ -58,7 +59,7 @@ export async function applyProvisioningInChunks<Row>({
     for (const result of receipt.rows) {
       const originalRowNumber = sourceNumbers[result.rowNumber - 1]
       if (originalRowNumber === undefined) {
-        throw new Error('Некорректная нумерация строк в результате импорта')
+        throw new Error(t`Некорректная нумерация строк в результате импорта`)
       }
       const mapped = { ...result, rowNumber: originalRowNumber }
       receiptRows.push(mapped)

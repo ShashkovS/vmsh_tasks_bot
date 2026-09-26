@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Camera, FileUp, LockKeyhole, Send, Upload } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { PageLayout, PageSection, PageStatePanel, type PageDisplayState } from '@vmsh/app-shell'
@@ -54,43 +56,67 @@ import {
 const beginner = {
   id: 'math-beginner',
   courseId: 'math-5-7',
-  code: 'н',
-  name: 'Начинающие',
+  get code() {
+    return t`н`
+  },
+  get name() {
+    return t`Начинающие`
+  },
   colorIndex: 1 as const,
 }
 const continuing = {
   id: 'math-continuing',
   courseId: 'math-5-7',
-  code: 'п',
-  name: 'Продолжающие',
+  get code() {
+    return t`п`
+  },
+  get name() {
+    return t`Продолжающие`
+  },
   colorIndex: 2 as const,
 }
 const expert = {
   id: 'math-expert',
   courseId: 'math-5-7',
-  code: 'э',
-  name: 'Эксперты',
+  get code() {
+    return t`э`
+  },
+  get name() {
+    return t`Эксперты`
+  },
   colorIndex: 3 as const,
 }
 const physicsIntro = {
   id: 'physics-intro',
   courseId: 'physics-experiment',
-  code: 'вв',
-  name: 'Вводная',
+  get code() {
+    return t`вв`
+  },
+  get name() {
+    return t`Вводная`
+  },
   colorIndex: 4 as const,
 }
 const mathCourse: CourseView = {
   id: 'math-5-7',
   code: 'MATH-5-7',
-  name: 'Математика 5–7',
-  subjectCode: 'Математика',
+  get name() {
+    return t`Математика 5–7`
+  },
+  get subjectCode() {
+    return t`Математика`
+  },
   accentIndex: 1,
 }
 const physicsCourse: CourseView = {
   id: 'physics-experiment',
   code: 'PHYS-EXP',
-  name: 'Физика: эксперимент',
-  subjectCode: 'Физика',
+  get name() {
+    return t`Физика: эксперимент`
+  },
+  get subjectCode() {
+    return t`Физика`
+  },
   accentIndex: 4,
 }
 
@@ -107,7 +133,7 @@ function StatefulPage({
   return (
     <PageLayout title={title} width="wide">
       <PageStatePanel
-        actionLabel={state === 'error' ? 'Повторить' : undefined}
+        actionLabel={state === 'error' ? t`Повторить` : undefined}
         onAction={state === 'error' ? () => undefined : undefined}
         state={state}
       />
@@ -117,19 +143,19 @@ function StatefulPage({
 
 export function StaffHomePage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <StatefulPage state={state} title="Рабочая сводка">
+    <StatefulPage state={state} title={t`Рабочая сводка`}>
       <PageLayout
-        description="Публикации, проверка, вопросы, устные задачи и доставка за текущую неделю."
-        eyebrow="Понедельник · фаза решения"
-        title="Рабочая сводка"
+        description={t`Публикации, проверка, вопросы, устные задачи и доставка за текущую неделю.`}
+        eyebrow={t`Понедельник · фаза решения`}
+        title={t`Рабочая сводка`}
         width="wide"
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            ['43', 'работы в очереди', '7 уже взяты коллегами'],
-            ['12', 'открытых вопросов', '3 ждут больше часа'],
-            ['3/3', 'уровня опубликовано', 'решения пока закрыты'],
-            ['1', 'инцидент доставки', 'повторная отправка запущена'],
+            ['43', t`работы в очереди`, t`7 уже взяты коллегами`],
+            ['12', t`открытых вопросов`, t`3 ждут больше часа`],
+            ['3/3', t`уровня опубликовано`, t`решения пока закрыты`],
+            ['1', t`инцидент доставки`, t`повторная отправка запущена`],
           ].map(([value, label, detail]) => (
             <Card key={label}>
               <CardContent className="pt-4">
@@ -153,7 +179,7 @@ const managedCourses: ManagedCourse[] = [
       ...group,
       status: 'active' as const,
       activeStudents: [142, 118, 39][index]!,
-      scheduleLabel: index === 1 ? 'своё расписание' : 'шаблон курса',
+      scheduleLabel: index === 1 ? t`своё расписание` : t`шаблон курса`,
     })),
   },
   {
@@ -164,7 +190,9 @@ const managedCourses: ManagedCourse[] = [
         ...physicsIntro,
         status: 'active' as const,
         activeStudents: 32,
-        scheduleLabel: 'своё расписание',
+        get scheduleLabel() {
+          return t`своё расписание`
+        },
       },
     ],
   },
@@ -174,29 +202,57 @@ const independentSchedules: IndependentScheduleRow[] = [
   {
     group: beginner,
     source: 'course',
-    conditionAt: 'пн 16:30',
-    hintAt: 'сб 12:00',
-    closesAt: 'вс 13:00',
-    solutionAt: 'вс 14:00',
-    snapshotLabel: 'снимок шаблона v4',
+    get conditionAt() {
+      return t`пн 16:30`
+    },
+    get hintAt() {
+      return t`сб 12:00`
+    },
+    get closesAt() {
+      return t`вс 13:00`
+    },
+    get solutionAt() {
+      return t`вс 14:00`
+    },
+    get snapshotLabel() {
+      return t`снимок шаблона v4`
+    },
   },
   {
     group: continuing,
     source: 'group',
-    conditionAt: 'вт 17:00',
-    hintAt: 'сб 15:00',
-    closesAt: 'вс 15:00',
-    solutionAt: 'вс 16:00',
-    snapshotLabel: 'расписание группы v2',
+    get conditionAt() {
+      return t`вт 17:00`
+    },
+    get hintAt() {
+      return t`сб 15:00`
+    },
+    get closesAt() {
+      return t`вс 15:00`
+    },
+    get solutionAt() {
+      return t`вс 16:00`
+    },
+    get snapshotLabel() {
+      return t`расписание группы v2`
+    },
   },
   {
     group: expert,
     source: 'lesson',
-    conditionAt: 'пн 18:10',
+    get conditionAt() {
+      return t`пн 18:10`
+    },
     hintAt: '—',
-    closesAt: 'пн 17:00',
-    solutionAt: 'пн 18:00',
-    snapshotLabel: 'занятие изменено отдельно',
+    get closesAt() {
+      return t`пн 17:00`
+    },
+    get solutionAt() {
+      return t`пн 18:00`
+    },
+    get snapshotLabel() {
+      return t`занятие изменено отдельно`
+    },
   },
 ]
 
@@ -208,11 +264,11 @@ export function StaffCoursesPage({
   telegram?: ReactNode
 }) {
   return (
-    <StatefulPage state={state} title="Курсы и группы">
+    <StatefulPage state={state} title={t`Курсы и группы`}>
       <PageLayout
-        description="Курс задаёт общий контекст, а группы имеют собственные расписания, публикации и Telegram-привязки."
-        eyebrow="Сезон 2025–2026"
-        title="Курсы и группы"
+        description={t`Курс задаёт общий контекст, а группы имеют собственные расписания, публикации и Telegram-привязки.`}
+        eyebrow={t`Сезон 2025–2026`}
+        title={t`Курсы и группы`}
         width="wide"
       >
         <div className="space-y-6">
@@ -239,7 +295,7 @@ export function StaffCoursesPage({
                   ownerLabel: beginner.name,
                   purpose: 'materials-target',
                   chatLabel: '-100179000201',
-                  topicLabel: 'материалы начинающих',
+                  topicLabel: t`материалы начинающих`,
                   status: 'verified',
                 },
               ]}
@@ -255,34 +311,66 @@ export function StaffCoursesPage({
 const queueItems: ReviewQueueItem[] = [
   {
     id: 'sub-1',
-    taskNumber: '41н.6',
-    taskTitle: 'Расстановка ладей',
+    get taskNumber() {
+      return t`41н.6`
+    },
+    get taskTitle() {
+      return t`Расстановка ладей`
+    },
     level: beginner,
-    studentName: 'Анна Белова',
-    groupName: 'Начинающие',
-    waitingLabel: '3 ч 20 мин',
+    get studentName() {
+      return t`Анна Белова`
+    },
+    get groupName() {
+      return t`Начинающие`
+    },
+    get waitingLabel() {
+      return t`3 ч 20 мин`
+    },
     waitingMinutes: 200,
   },
   {
     id: 'sub-2',
-    taskNumber: '41н.7',
-    taskTitle: 'Крылья бабочки',
+    get taskNumber() {
+      return t`41н.7`
+    },
+    get taskTitle() {
+      return t`Крылья бабочки`
+    },
     level: beginner,
-    studentName: 'Борис Ветров',
-    groupName: 'Начинающие',
-    waitingLabel: '2 ч 10 мин',
+    get studentName() {
+      return t`Борис Ветров`
+    },
+    get groupName() {
+      return t`Начинающие`
+    },
+    get waitingLabel() {
+      return t`2 ч 10 мин`
+    },
     waitingMinutes: 130,
   },
   {
     id: 'sub-3',
-    taskNumber: '41п.4',
-    taskTitle: 'Числа на доске',
+    get taskNumber() {
+      return t`41п.4`
+    },
+    get taskTitle() {
+      return t`Числа на доске`
+    },
     level: continuing,
-    studentName: 'Вера Орлова',
-    groupName: 'Продолжающие',
-    waitingLabel: '45 мин',
+    get studentName() {
+      return t`Вера Орлова`
+    },
+    get groupName() {
+      return t`Продолжающие`
+    },
+    get waitingLabel() {
+      return t`45 мин`
+    },
     waitingMinutes: 45,
-    busyBy: 'И. Соколов',
+    get busyBy() {
+      return t`И. Соколов`
+    },
   },
 ]
 
@@ -303,11 +391,11 @@ function QueueHarness({ compact = false }: { compact?: boolean }) {
 
 export function ReviewQueuePage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <StatefulPage state={state} title="Очередь проверки">
+    <StatefulPage state={state} title={t`Очередь проверки`}>
       <PageLayout
-        description="Работа блокируется за одним учителем; очередь обновляется в реальном времени."
-        eyebrow="Письменные задачи"
-        title="Очередь проверки"
+        description={t`Работа блокируется за одним учителем; очередь обновляется в реальном времени.`}
+        eyebrow={t`Письменные задачи`}
+        title={t`Очередь проверки`}
         width="wide"
       >
         <QueueHarness />
@@ -319,24 +407,51 @@ export function ReviewQueuePage({ state = 'ready' }: { state?: PageDisplayState 
 const reviewMessages: ThreadMessageView[] = [
   {
     id: 's1',
-    author: { kind: 'student', name: 'Анна Белова' },
-    at: '25 января, 20:54',
+    author: {
+      kind: 'student',
+      get name() {
+        return t`Анна Белова`
+      },
+    },
+    get at() {
+      return t`25 января, 20:54`
+    },
     channel: 'pwa',
-    body: 'На первой странице — идея, на второй я закончил подсчёт.',
+    get body() {
+      return t`На первой странице — идея, на второй я закончил подсчёт.`
+    },
   },
   {
     id: 't1',
-    author: { kind: 'teacher', name: 'М. Иванова' },
-    at: '25 января, 21:15',
+    author: {
+      kind: 'teacher',
+      get name() {
+        return t`М. Иванова`
+      },
+    },
+    get at() {
+      return t`25 января, 21:15`
+    },
     channel: 'pwa',
-    body: 'Почему выбранные ладьи не бьют друг друга?',
+    get body() {
+      return t`Почему выбранные ладьи не бьют друг друга?`
+    },
   },
   {
     id: 's2',
-    author: { kind: 'student', name: 'Анна Белова' },
-    at: '25 января, 21:31',
+    author: {
+      kind: 'student',
+      get name() {
+        return t`Анна Белова`
+      },
+    },
+    get at() {
+      return t`25 января, 21:31`
+    },
     channel: 'pwa',
-    body: 'У каждой своя строка и свой столбец; дописала пояснение.',
+    get body() {
+      return t`У каждой своя строка и свой столбец; дописала пояснение.`
+    },
   },
 ]
 
@@ -348,11 +463,11 @@ export function ReviewWorkspacePage({
   state?: PageDisplayState
 }) {
   return (
-    <StatefulPage state={state} title="Проверка работы">
+    <StatefulPage state={state} title={t`Проверка работы`}>
       <PageLayout
-        description={`${submissionId} · Анна Белова · Начинающие`}
-        eyebrow="41н.6 · Расстановка ладей"
-        title="Проверка работы"
+        description={t`${submissionId} · Анна Белова · Начинающие`}
+        eyebrow={t`41н.6 · Расстановка ладей`}
+        title={t`Проверка работы`}
         width="wide"
       >
         <ThreePaneReview
@@ -360,9 +475,11 @@ export function ReviewWorkspacePage({
           evidence={
             <Card>
               <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Присланная работа · 2 страницы</CardTitle>
+                <CardTitle>
+                  <Trans>Присланная работа · 2 страницы</Trans>
+                </CardTitle>
                 <Badge variant="success">
-                  <LockKeyhole className="size-3" /> Взята вами
+                  <LockKeyhole className="size-3" /> <Trans>Взята вами</Trans>
                 </Badge>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -372,7 +489,9 @@ export function ReviewWorkspacePage({
                     key={page}
                   >
                     <Camera className="size-12 text-muted-foreground" />
-                    <span className="sr-only">Страница {page}</span>
+                    <span className="sr-only">
+                      <Trans>Страница {page}</Trans>
+                    </span>
                   </div>
                 ))}
               </CardContent>
@@ -380,8 +499,8 @@ export function ReviewWorkspacePage({
           }
           discussion={
             <PageSection
-              description="Новый ответ добавляется после всей существующей переписки."
-              title="Обсуждение"
+              description={t`Новый ответ добавляется после всей существующей переписки.`}
+              title={t`Обсуждение`}
             >
               <FeedbackThread messages={reviewMessages} />
             </PageSection>
@@ -399,7 +518,11 @@ const publicationRows = [
     task: 'published' as const,
     hint: 'scheduled' as const,
     solution: 'draft' as const,
-    scheduledAt: { hint: '31 января, 12:00' },
+    scheduledAt: {
+      get hint() {
+        return t`31 января, 12:00`
+      },
+    },
   },
   {
     level: continuing,
@@ -411,16 +534,16 @@ const publicationRows = [
 
 export function StaffLessonsPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <StatefulPage state={state} title="Уроки и публикации">
+    <StatefulPage state={state} title={t`Уроки и публикации`}>
       <PageLayout
         actions={
           <Button>
-            <FileUp /> Загрузить LaTeX
+            <FileUp /> <Trans>Загрузить LaTeX</Trans>
           </Button>
         }
-        description="Условие, подсказка и решение публикуются или планируются независимо для каждого уровня."
-        eyebrow="LaTeX — единственный источник"
-        title="Уроки и публикации"
+        description={t`Условие, подсказка и решение публикуются или планируются независимо для каждого уровня.`}
+        eyebrow={t`LaTeX — единственный источник`}
+        title={t`Уроки и публикации`}
         width="wide"
       >
         <PublicationControl rows={publicationRows} />
@@ -430,27 +553,76 @@ export function StaffLessonsPage({ state = 'ready' }: { state?: PageDisplayState
 }
 
 const metadataColumns = [
-  { id: 'level', header: 'Группа' },
-  { id: 'problem', header: 'Задача' },
-  { id: 'title', header: 'Название' },
+  {
+    id: 'level',
+    get header() {
+      return t`Группа`
+    },
+  },
+  {
+    id: 'problem',
+    get header() {
+      return t`Задача`
+    },
+  },
+  {
+    id: 'title',
+    get header() {
+      return t`Название`
+    },
+  },
   {
     id: 'taskType',
-    header: 'Тип задачи',
+    get header() {
+      return t`Тип задачи`
+    },
     editor: 'select' as const,
     options: [
-      { value: 'test', label: 'Тестовая' },
-      { value: 'written', label: 'Письменная' },
-      { value: 'oral', label: 'Устная' },
+      {
+        value: 'test',
+        get label() {
+          return t`Тестовая`
+        },
+      },
+      {
+        value: 'written',
+        get label() {
+          return t`Письменная`
+        },
+      },
+      {
+        value: 'oral',
+        get label() {
+          return t`Устная`
+        },
+      },
     ],
   },
   {
     id: 'answerType',
-    header: 'Тип ответа',
+    get header() {
+      return t`Тип ответа`
+    },
     editor: 'select' as const,
     options: [
-      { value: 'natural', label: 'Натуральное' },
-      { value: 'integer', label: 'Целое' },
-      { value: 'date', label: 'Дата' },
+      {
+        value: 'natural',
+        get label() {
+          return t`Натуральное`
+        },
+      },
+      {
+        value: 'integer',
+        get label() {
+          return t`Целое`
+        },
+      },
+      {
+        value: 'date',
+        get label() {
+          return t`Дата`
+        },
+      },
     ],
   },
 ]
@@ -463,29 +635,37 @@ export function StaffLessonDetailPage({
   state?: PageDisplayState
 }) {
   return (
-    <StatefulPage state={state} title="Импорт и метаданные">
+    <StatefulPage state={state} title={t`Импорт и метаданные`}>
       <PageLayout
         actions={
           <Button variant="outline">
-            <Upload /> Новый файл
+            <Upload /> <Trans>Новый файл</Trans>
           </Button>
         }
-        description="Парсер сначала делает dry-run и отдельно запрашивает недостающие assets."
-        eyebrow={`Урок ${lessonId}`}
-        title="Импорт и метаданные"
+        description={t`Парсер сначала делает dry-run и отдельно запрашивает недостающие assets.`}
+        eyebrow={t`Урок ${lessonId}`}
+        title={t`Импорт и метаданные`}
         width="wide"
       >
         <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
           <Card>
             <CardHeader>
-              <CardTitle>Диагностика</CardTitle>
+              <CardTitle>
+                <Trans>Диагностика</Trans>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-small">
-              <p className="text-status-success">12 задач распознано</p>
-              <p className="text-status-success">8 изображений переиспользовано</p>
-              <p className="text-status-danger">diagram-41-7.pdf отсутствует</p>
+              <p className="text-status-success">
+                <Trans>12 задач распознано</Trans>
+              </p>
+              <p className="text-status-success">
+                <Trans>8 изображений переиспользовано</Trans>
+              </p>
+              <p className="text-status-danger">
+                <Trans>diagram-41-7.pdf отсутствует</Trans>
+              </p>
               <Button className="w-full" variant="outline">
-                Загрузить недостающее
+                <Trans>Загрузить недостающее</Trans>
               </Button>
             </CardContent>
           </Card>
@@ -493,16 +673,16 @@ export function StaffLessonDetailPage({
             columns={metadataColumns}
             initialRows={[
               {
-                level: 'н',
+                level: t`н`,
                 problem: '41.1',
-                title: 'Разнообразные вагоны',
+                title: t`Разнообразные вагоны`,
                 taskType: 'test',
                 answerType: 'natural',
               },
               {
-                level: 'н',
+                level: t`н`,
                 problem: '41.6',
-                title: 'Расстановка ладей',
+                title: t`Расстановка ладей`,
                 taskType: 'written',
                 answerType: '',
               },
@@ -517,45 +697,83 @@ export function StaffLessonDetailPage({
 const classroomGroups: ClassroomGroupOption[] = [
   {
     id: 'beginner',
-    name: 'Начинающие',
-    shortCode: 'н',
+    get name() {
+      return t`Начинающие`
+    },
+    get shortCode() {
+      return t`н`
+    },
     colorIndex: 1,
     inPersonCount: 84,
     assignedCount: 82,
   },
   {
     id: 'continuing',
-    name: 'Продолжающие',
-    shortCode: 'п',
+    get name() {
+      return t`Продолжающие`
+    },
+    get shortCode() {
+      return t`п`
+    },
     colorIndex: 2,
     inPersonCount: 68,
     assignedCount: 68,
   },
   {
     id: 'expert',
-    name: 'Эксперты',
-    shortCode: 'х',
+    get name() {
+      return t`Эксперты`
+    },
+    get shortCode() {
+      return t`х`
+    },
     colorIndex: 3,
     inPersonCount: 27,
     assignedCount: 27,
   },
 ]
 const catalogRooms: ClassroomCatalogRoom[] = [
-  { id: '201', name: '201', status: 'active', version: 3, usageLabel: 'Начинающие · с занятия 38' },
-  { id: '202', name: '202', status: 'active', version: 1, usageLabel: 'Начинающие · с занятия 39' },
+  {
+    id: '201',
+    name: '201',
+    status: 'active',
+    version: 3,
+    get usageLabel() {
+      return t`Начинающие · с занятия 38`
+    },
+  },
+  {
+    id: '202',
+    name: '202',
+    status: 'active',
+    version: 1,
+    get usageLabel() {
+      return t`Начинающие · с занятия 39`
+    },
+  },
   {
     id: 'hall',
-    name: 'Актовый зал',
+    get name() {
+      return t`Актовый зал`
+    },
     status: 'active',
     version: 4,
-    usageLabel: 'Эксперты · с занятия 37',
+    get usageLabel() {
+      return t`Эксперты · с занятия 37`
+    },
   },
 ]
 const layoutRooms: ClassroomLayoutRoom[] = [
   { id: '201', name: '201', groupId: 'beginner' },
   { id: '202', name: '202', groupId: 'beginner' },
   { id: '301', name: '301', groupId: 'continuing' },
-  { id: 'hall', name: 'Актовый зал', groupId: 'expert' },
+  {
+    id: 'hall',
+    get name() {
+      return t`Актовый зал`
+    },
+    groupId: 'expert',
+  },
 ]
 const planRooms: ClassroomPlanRoom[] = layoutRooms.flatMap((room) =>
   room.groupId ? [{ id: room.id, name: room.name, groupId: room.groupId }] : [],
@@ -563,7 +781,9 @@ const planRooms: ClassroomPlanRoom[] = layoutRooms.flatMap((room) =>
 const planStudents: ClassroomPlanStudent[] = [
   {
     id: 'anna',
-    name: 'Анна Белова',
+    get name() {
+      return t`Анна Белова`
+    },
     groupId: 'beginner',
     classroomId: '201',
     status: 'assigned',
@@ -574,7 +794,9 @@ const planStudents: ClassroomPlanStudent[] = [
   },
   {
     id: 'boris',
-    name: 'Борис Ветров',
+    get name() {
+      return t`Борис Ветров`
+    },
     groupId: 'beginner',
     classroomId: '202',
     status: 'assigned',
@@ -585,7 +807,9 @@ const planStudents: ClassroomPlanStudent[] = [
   },
   {
     id: 'vera',
-    name: 'Вера Орлова',
+    get name() {
+      return t`Вера Орлова`
+    },
     groupId: 'continuing',
     classroomId: '301',
     status: 'assigned',
@@ -596,7 +820,9 @@ const planStudents: ClassroomPlanStudent[] = [
   },
   {
     id: 'grigory',
-    name: 'Григорий Яшин',
+    get name() {
+      return t`Григорий Яшин`
+    },
     groupId: 'expert',
     classroomId: null,
     status: 'reassigning',
@@ -668,10 +894,10 @@ export function StaffClassroomsPage({
     onTabChange?.(next)
   }
   return (
-    <StatefulPage state={state} title="Аудитории">
+    <StatefulPage state={state} title={t`Аудитории`}>
       <PageLayout
-        description="Каталог, схема по группам и версионируемый план для выбранного очного события."
-        title="Аудитории"
+        description={t`Каталог, схема по группам и версионируемый план для выбранного очного события.`}
+        title={t`Аудитории`}
         width="wide"
       >
         <div className="space-y-6">
@@ -685,15 +911,21 @@ export function StaffClassroomsPage({
                   ),
                 )
               }
-              startsAt="1 февраля, 10:00–13:00"
-              title="Очное воскресенье"
+              startsAt={t`1 февраля, 10:00–13:00`}
+              title={t`Очное воскресенье`}
             />
           )}
           <Tabs onValueChange={setTab} value={tab}>
             <TabsList>
-              <TabsTrigger value="catalog">Каталог</TabsTrigger>
-              <TabsTrigger value="groups">По группам</TabsTrigger>
-              <TabsTrigger value="students">Школьники</TabsTrigger>
+              <TabsTrigger value="catalog">
+                <Trans>Каталог</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="groups">
+                <Trans>По группам</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="students">
+                <Trans>Школьники</Trans>
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="catalog">
               {catalog ?? (
@@ -713,9 +945,9 @@ export function StaffClassroomsPage({
               {layout ?? (
                 <ClassroomGroupLayout
                   groups={classroomGroups}
-                  lessonLabel="Очное событие 1 февраля · Математика, занятие 41"
+                  lessonLabel={t`Очное событие 1 февраля · Математика, занятие 41`}
                   rooms={layoutRooms}
-                  sourceLabel="наследуется с прошлого события этих групп"
+                  sourceLabel={t`наследуется с прошлого события этих групп`}
                   state="inherited"
                   version={7}
                 />
@@ -728,12 +960,12 @@ export function StaffClassroomsPage({
                   incidents={[
                     {
                       id: 'no-room',
-                      title: 'У группы экспертов нет свободной аудитории',
-                      description: 'Григорий Яшин остаётся в разделе переназначения.',
+                      title: t`У группы экспертов нет свободной аудитории`,
+                      description: t`Григорий Яшин остаётся в разделе переназначения.`,
                       blocking: true,
                     },
                   ]}
-                  lessonLabel="Очное событие 1 февраля · черновик наследованного плана"
+                  lessonLabel={t`Очное событие 1 февраля · черновик наследованного плана`}
                   onMove={() => undefined}
                   onRequestGroupChange={() => undefined}
                   onShowHistory={() => undefined}
@@ -768,17 +1000,21 @@ export function StaffGenericPage({
         <div className="grid gap-3 sm:grid-cols-2">
           <Card>
             <CardContent className="pt-5">
-              <p className="font-medium">Рабочее состояние</p>
+              <p className="font-medium">
+                <Trans>Рабочее состояние</Trans>
+              </p>
               <p className="mt-1 text-small text-muted-foreground">
-                Маршрут включён в информационную архитектуру первой версии.
+                <Trans>Маршрут включён в информационную архитектуру первой версии.</Trans>
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5">
-              <p className="font-medium">Нет элементов</p>
+              <p className="font-medium">
+                <Trans>Нет элементов</Trans>
+              </p>
               <p className="mt-1 text-small text-muted-foreground">
-                Пустое состояние не прячет фильтры и контекст.
+                <Trans>Пустое состояние не прячет фильтры и контекст.</Trans>
               </p>
             </CardContent>
           </Card>
@@ -790,19 +1026,21 @@ export function StaffGenericPage({
 
 export function BroadcastComposerPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <StatefulPage state={state} title="Рассылки">
+    <StatefulPage state={state} title={t`Рассылки`}>
       <PageLayout
-        description="Полный Markdown-редактор и отправка появятся во второй продуктовой фазе."
+        description={t`Полный Markdown-редактор и отправка появятся во второй продуктовой фазе.`}
         eyebrow="Admin only"
-        title="Рассылки"
+        title={t`Рассылки`}
         width="wide"
       >
         <Alert tone="info">
           <Send />
           <AlertContent>
-            <AlertTitle>Запланировано на вторую фазу</AlertTitle>
+            <AlertTitle>
+              <Trans>Запланировано на вторую фазу</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Здесь будут preview, dry-run, категории и отдельный выбор PWA/Telegram.
+              <Trans>Здесь будут preview, dry-run, категории и отдельный выбор PWA/Telegram.</Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>

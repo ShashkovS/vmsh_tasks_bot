@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo, useState } from 'react'
 
 import type { AdminStudentDirectoryEntry } from '@vmsh/contracts'
@@ -104,18 +106,28 @@ export function StudentAccountBatchPanel({
     <Card>
       <CardHeader className="gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle>Создать web-входы</CardTitle>
+          <CardTitle>
+            <Trans>Создать web-входы</Trans>
+          </CardTitle>
           <div className="flex flex-wrap gap-1">
-            <Badge variant="neutral">Без входа: {withoutAccount}</Badge>
-            <Badge variant="success">Готовы: {candidates.length}</Badge>
+            <Badge variant="neutral">
+              <Trans>Без входа: {withoutAccount}</Trans>
+            </Badge>
+            <Badge variant="success">
+              <Trans>Готовы: {candidates.length}</Trans>
+            </Badge>
             {needsManualLogin > 0 ? (
-              <Badge variant="warning">Проверить вручную: {needsManualLogin}</Badge>
+              <Badge variant="warning">
+                <Trans>Проверить вручную: {needsManualLogin}</Trans>
+              </Badge>
             ) : null}
           </div>
         </div>
         <p className="text-small text-muted-foreground">
-          Для выбранных школьников будет создан вход с предложенным логином. Паролем останется их
-          текущий Telegram-токен; он не передаётся в браузер.
+          <Trans>
+            Для выбранных школьников будет создан вход с предложенным логином. Паролем останется их
+            текущий Telegram-токен; он не передаётся в браузер.
+          </Trans>
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -126,7 +138,7 @@ export function StudentAccountBatchPanel({
             type="button"
             variant="outline"
           >
-            {expanded ? 'Скрыть выбор' : 'Выбрать школьников'}
+            {expanded ? t`Скрыть выбор` : t`Выбрать школьников`}
           </Button>
           <Button
             disabled={pending || selectedCandidates.length === 0}
@@ -134,8 +146,8 @@ export function StudentAccountBatchPanel({
             type="button"
           >
             {pending
-              ? 'Создаём…'
-              : `Создать аккаунты${selectedCandidates.length ? ` · ${selectedCandidates.length}` : ''}`}
+              ? t`Создаём…`
+              : t`Создать аккаунты${selectedCandidates.length ? ` · ${selectedCandidates.length}` : ''}`}
           </Button>
           {selectedCandidates.length > 0 ? (
             <Button
@@ -144,7 +156,7 @@ export function StudentAccountBatchPanel({
               type="button"
               variant="ghost"
             >
-              Снять выбор
+              <Trans>Снять выбор</Trans>
             </Button>
           ) : null}
         </div>
@@ -153,10 +165,10 @@ export function StudentAccountBatchPanel({
           <div className="space-y-3 rounded-md border border-border p-3">
             <div className="flex flex-wrap items-end gap-2">
               <Label className="grid min-w-[16rem] flex-1 gap-1 text-small">
-                Поиск среди готовых
+                <Trans>Поиск среди готовых</Trans>
                 <Input
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Фамилия, имя или часть с опечаткой"
+                  placeholder={t`Фамилия, имя или часть с опечаткой`}
                   type="search"
                   value={query}
                 />
@@ -167,10 +179,10 @@ export function StudentAccountBatchPanel({
                 type="button"
                 variant="outline"
               >
-                Выбрать найденных · {matches.length}
+                <Trans>Выбрать найденных · {matches.length}</Trans>
               </Button>
             </div>
-            <div className="max-h-72 overflow-y-auto" role="group" aria-label="Готовые аккаунты">
+            <div className="max-h-72 overflow-y-auto" role="group" aria-label={t`Готовые аккаунты`}>
               {listedMatches.map((student) => (
                 <Label
                   className="grid min-h-9 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-1 text-small last:border-b-0"
@@ -193,24 +205,33 @@ export function StudentAccountBatchPanel({
             </div>
             {matches.length > listedMatches.length ? (
               <p className="text-caption text-muted-foreground">
-                Показаны первые 100 из {matches.length}. Уточните поиск или выберите всех найденных.
+                <Trans>
+                  Показаны первые 100 из {matches.length}. Уточните поиск или выберите всех
+                  найденных.
+                </Trans>
               </p>
             ) : null}
             <p className="text-caption text-muted-foreground" role="status">
-              Выбрано: {selectedCandidates.length}. Выбор хранится на этом устройстве до создания
-              аккаунтов или явной отмены.
+              <Trans>
+                Выбрано: {selectedCandidates.length}. Выбор хранится на этом устройстве до создания
+                аккаунтов или явной отмены.
+              </Trans>
             </p>
           </div>
         ) : null}
 
         {!storageAvailable ? (
           <p className="text-small text-status-error" role="alert">
-            Выбор не сохраняется в этом браузере. Не закрывайте вкладку до создания аккаунтов.
+            <Trans>
+              Выбор не сохраняется в этом браузере. Не закрывайте вкладку до создания аккаунтов.
+            </Trans>
           </p>
         ) : null}
         {result ? (
           <div className="text-small" role={result.failures.length ? 'alert' : 'status'}>
-            Создано: {result.createdStudentIds.length}. Ошибок: {result.failures.length}.
+            <Trans>
+              Создано: {result.createdStudentIds.length}. Ошибок: {result.failures.length}.
+            </Trans>
             {result.failures.length ? (
               <ul className="mt-1 list-disc pl-5">
                 {result.failures.slice(0, 10).map((failure) => (

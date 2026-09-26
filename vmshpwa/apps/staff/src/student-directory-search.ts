@@ -1,12 +1,16 @@
 import type { AdminStudentDirectoryEntry } from '@vmsh/contracts'
 
 function normalize(value: string): string {
-  return value
-    .normalize('NFKC')
-    .toLocaleLowerCase('ru-RU')
-    .replaceAll('ё', 'е')
-    .trim()
-    .replaceAll(/\s+/g, ' ')
+  return (
+    value
+      .normalize('NFKC')
+      // Russian-name search normalization is data handling, not interface copy.
+      .toLocaleLowerCase('ru-RU')
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- treats the Russian spelling variants as equal.
+      .replaceAll('ё', 'е')
+      .trim()
+      .replaceAll(/\s+/g, ' ')
+  )
 }
 
 function editDistance(left: string, right: string): number {

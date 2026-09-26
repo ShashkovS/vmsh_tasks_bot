@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState, type FormEvent } from 'react'
 
@@ -34,7 +36,7 @@ type Command =
 
 function errorText(error: Error): string {
   if (error instanceof ApiResponseError) return error.message
-  return 'Проверьте соединение и повторите попытку.'
+  return t`Проверьте соединение и повторите попытку.`
 }
 
 export function StaffTelegramBindings() {
@@ -92,7 +94,9 @@ export function StaffTelegramBindings() {
     return (
       <Alert role="alert" tone="danger">
         <AlertContent>
-          <AlertTitle>Не удалось загрузить привязки Telegram</AlertTitle>
+          <AlertTitle>
+            <Trans>Не удалось загрузить привязки Telegram</Trans>
+          </AlertTitle>
           <AlertDescription>{errorText(error)}</AlertDescription>
         </AlertContent>
       </Alert>
@@ -104,7 +108,7 @@ export function StaffTelegramBindings() {
       key: `course:${course.courseId}`,
       ownerType: 'course' as const,
       ownerId: course.courseId,
-      label: `${course.courseName} · курс`,
+      label: t`${course.courseName} · курс`,
       disabled: course.status === 'archived',
     },
     ...course.groups.map((group) => ({
@@ -153,7 +157,7 @@ export function StaffTelegramBindings() {
         <CardContent className="pt-4">
           <form className="grid gap-3 lg:grid-cols-6 lg:items-end" onSubmit={submit}>
             <Label className="grid gap-1 lg:col-span-2">
-              Курс или группа
+              <Trans>Курс или группа</Trans>
               <select
                 className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                 id="telegram-binding-owner"
@@ -168,7 +172,7 @@ export function StaffTelegramBindings() {
               </select>
             </Label>
             <Label className="grid gap-1">
-              Назначение
+              <Trans>Назначение</Trans>
               <select
                 className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
                 onChange={(event) =>
@@ -176,8 +180,12 @@ export function StaffTelegramBindings() {
                 }
                 value={purpose}
               >
-                <option value="news_source">Источник новостей</option>
-                <option value="materials_target">Публикация материалов</option>
+                <option value="news_source">
+                  <Trans>Источник новостей</Trans>
+                </option>
+                <option value="materials_target">
+                  <Trans>Публикация материалов</Trans>
+                </option>
               </select>
             </Label>
             <Label className="grid gap-1">
@@ -195,20 +203,20 @@ export function StaffTelegramBindings() {
               <Input
                 inputMode="numeric"
                 onChange={(event) => setMessageThreadId(event.target.value)}
-                placeholder="необязательно"
+                placeholder={t`необязательно`}
                 value={messageThreadId}
               />
             </Label>
             <Label className="grid gap-1">
-              Подпись
+              <Trans>Подпись</Trans>
               <Input
                 onChange={(event) => setTitleCached(event.target.value)}
-                placeholder="необязательно"
+                placeholder={t`необязательно`}
                 value={titleCached}
               />
             </Label>
             <Button disabled={!selectedOwner || mutation.isPending} type="submit">
-              Сохранить черновик
+              <Trans>Сохранить черновик</Trans>
             </Button>
           </form>
         </CardContent>
@@ -217,7 +225,9 @@ export function StaffTelegramBindings() {
       {mutation.error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Изменение не сохранено</AlertTitle>
+            <AlertTitle>
+              <Trans>Изменение не сохранено</Trans>
+            </AlertTitle>
             <AlertDescription>{errorText(mutation.error)}</AlertDescription>
           </AlertContent>
         </Alert>

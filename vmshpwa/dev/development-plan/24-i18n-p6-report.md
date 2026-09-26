@@ -115,4 +115,4 @@ against P5 pass the size/startup/build budgets, but the original cumulative P0
 size/startup budget was already exceeded before P6. It remains exceeded and has
 not been waived or silently rebased. Keep P6's performance gate open until the
 owner decides the comparison policy or authorizes the required optimization.
-P7/P8 have not been started.
+P7 is now complete; see the [P7 report](24-i18n-p7-report.md). P8 remains queued.

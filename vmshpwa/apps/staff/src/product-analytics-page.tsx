@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { formatDateTime, formatNumber } from '@vmsh/i18n'
 import { Activity, MousePointerClick, UsersRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -43,9 +46,7 @@ function Metric({
         <CardTitle className="text-caption font-medium text-muted-foreground">{label}</CardTitle>
         <Icon className="size-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="font-num text-title font-semibold">
-        {value.toLocaleString('ru-RU')}
-      </CardContent>
+      <CardContent className="font-num text-title font-semibold">{formatNumber(value)}</CardContent>
     </Card>
   )
 }
@@ -68,14 +69,16 @@ export function ProductAnalyticsPage() {
 
   return (
     <PageLayout
-      description="Компактная история просмотра страниц и завершённых действий. Данные хранятся до следующей границы учебного года."
-      eyebrow="Только для глобального администратора"
-      title="Аналитика"
+      description={t`Компактная история просмотра страниц и завершённых действий. Данные хранятся до следующей границы учебного года.`}
+      eyebrow={t`Только для глобального администратора`}
+      title={t`Аналитика`}
     >
-      <PageSection title="Период и фильтры">
+      <PageSection title={t`Период и фильтры`}>
         <div className="grid gap-3 md:grid-cols-4">
           <div>
-            <Label htmlFor="analytics-from">С</Label>
+            <Label htmlFor="analytics-from">
+              <Trans>С</Trans>
+            </Label>
             <Input
               id="analytics-from"
               onChange={(event) => setFrom(event.target.value)}
@@ -84,7 +87,9 @@ export function ProductAnalyticsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="analytics-to">По</Label>
+            <Label htmlFor="analytics-to">
+              <Trans>По</Trans>
+            </Label>
             <Input
               id="analytics-to"
               onChange={(event) => setTo(event.target.value)}
@@ -93,49 +98,59 @@ export function ProductAnalyticsPage() {
             />
           </div>
           <div>
-            <Label id="analytics-audience-label">Кабинет</Label>
+            <Label id="analytics-audience-label">
+              <Trans>Кабинет</Trans>
+            </Label>
             <Select
               onValueChange={(value) => setAudience(value === 'all' ? '' : (value ?? ''))}
               value={audience || 'all'}
             >
               <SelectTrigger aria-labelledby="analytics-audience-label">
-                <SelectValue placeholder="Все" />
+                <SelectValue placeholder={t`Все`} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Все</SelectItem>
-                <SelectItem value="student">Школьник</SelectItem>
-                <SelectItem value="family">Родитель</SelectItem>
+                <SelectItem value="all">
+                  <Trans>Все</Trans>
+                </SelectItem>
+                <SelectItem value="student">
+                  <Trans>Школьник</Trans>
+                </SelectItem>
+                <SelectItem value="family">
+                  <Trans>Родитель</Trans>
+                </SelectItem>
                 <SelectItem value="staff">Staff</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="analytics-user">ID пользователя</Label>
+            <Label htmlFor="analytics-user">
+              <Trans>ID пользователя</Trans>
+            </Label>
             <Input
               id="analytics-user"
               onChange={(event) => setAccountId(event.target.value)}
-              placeholder="Например, u-2"
+              placeholder={t`Например, u-2`}
               value={accountId}
             />
           </div>
         </div>
       </PageSection>
       {summary.isPending ? (
-        <PageStatePanel state="loading" title="Загружаем аналитику" />
+        <PageStatePanel state="loading" title={t`Загружаем аналитику`} />
       ) : summary.isError ? (
-        <PageStatePanel state="error" title="Не удалось загрузить аналитику" />
+        <PageStatePanel state="error" title={t`Не удалось загрузить аналитику`} />
       ) : summary.data ? (
         <>
           <section className="grid gap-3 sm:grid-cols-3">
             <Metric
               icon={UsersRound}
-              label="Активные пользователи"
+              label={t`Активные пользователи`}
               value={summary.data.activeUsers}
             />
-            <Metric icon={Activity} label="Просмотры" value={summary.data.pageViews} />
-            <Metric icon={MousePointerClick} label="События" value={summary.data.actions} />
+            <Metric icon={Activity} label={t`Просмотры`} value={summary.data.pageViews} />
+            <Metric icon={MousePointerClick} label={t`События`} value={summary.data.actions} />
           </section>
-          <PageSection title="Популярные маршруты">
+          <PageSection title={t`Популярные маршруты`}>
             <div className="flex flex-wrap gap-2">
               {summary.data.popularRoutes.length ? (
                 summary.data.popularRoutes.map((item) => (
@@ -144,18 +159,20 @@ export function ProductAnalyticsPage() {
                   </Badge>
                 ))
               ) : (
-                <span className="text-muted-foreground">За выбранный период событий нет.</span>
+                <span className="text-muted-foreground">
+                  <Trans>За выбранный период событий нет.</Trans>
+                </span>
               )}
             </div>
           </PageSection>
         </>
       ) : null}
-      <PageSection title="Последние события">
+      <PageSection title={t`Последние события`}>
         <div className="space-y-2">
           {events.isPending ? (
-            <PageStatePanel state="loading" title="Загружаем ленту" />
+            <PageStatePanel state="loading" title={t`Загружаем ленту`} />
           ) : events.isError ? (
-            <PageStatePanel state="error" title="Не удалось загрузить ленту" />
+            <PageStatePanel state="error" title={t`Не удалось загрузить ленту`} />
           ) : events.data?.events.length ? (
             events.data.events.map((event) => (
               <Card key={event.eventId} size="sm">
@@ -163,8 +180,8 @@ export function ProductAnalyticsPage() {
                   <div className="flex flex-wrap gap-x-2">
                     <strong>{event.account.displayName}</strong>
                     <span className="text-muted-foreground">
-                      {event.account.currentAudience ?? 'удалён'} ·{' '}
-                      {new Date(event.occurred_at).toLocaleString('ru-RU')}
+                      {event.account.currentAudience ?? t`удалён`} ·{' '}
+                      {formatDateTime(new Date(event.occurred_at))}
                     </span>
                   </div>
                   <div>
@@ -181,9 +198,9 @@ export function ProductAnalyticsPage() {
             ))
           ) : (
             <PageStatePanel
-              description="Измените период или фильтр."
+              description={t`Измените период или фильтр.`}
               state="empty"
-              title="Событий нет"
+              title={t`Событий нет`}
             />
           )}
         </div>

@@ -167,7 +167,8 @@
     "apps/staff/src/whiteboard-zip.worker.ts",
     "apps/staff/src/problem-metadata-columns.ts",
     "packages/product/src/rich-markdown.ts",
-    "packages/product/src/lesson-rich-markdown.ts"
+    "packages/product/src/lesson-rich-markdown.ts",
+    "apps/staff/src/**/*.{ts,tsx}"
   ],
   "backend": [
     "apps/pwa_app.py",
@@ -209,6 +210,13 @@
     "apps/pwa_api/problem_synonym_routes.py",
     "apps/pwa_api/whiteboard_export_routes.py",
     "helpers/pwa/content/diagnostic_i18n.py",
-    "helpers/pwa/content/metadata_generation.py"
+    "helpers/pwa/content/metadata_generation.py",
+    "apps/pwa_api/admin_account_routes.py",
+    "apps/pwa_api/account_batch_routes.py",
+    "apps/pwa_api/staff_access_routes.py",
+    "apps/pwa_api/audit_routes.py",
+    "apps/pwa_api/telegram_binding_routes.py",
+    "apps/pwa_api/staff_dashboard_routes.py",
+    "apps/pwa_api/product_analytics_routes.py"
   ]
 }

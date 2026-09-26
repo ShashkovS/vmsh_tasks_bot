@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { ChevronRight, Search } from 'lucide-react'
 import { useMemo, type FormEvent } from 'react'
 
@@ -24,95 +27,253 @@ import {
 } from '@vmsh/ui'
 
 const objectLabels: Record<AuditObjectType, string> = {
-  all: 'Все объекты',
-  account: 'Аккаунты',
-  family_link: 'Связи с родителями',
-  course_enrollment: 'Участники курсов',
-  problem_import: 'Импорт задач',
-  course: 'Курсы',
-  group: 'Группы',
-  telegram_binding: 'Привязки Telegram',
-  problem_synonym: 'Синонимы задач',
-  news_post: 'Публикации',
-  staff_scope: 'Доступы преподавателей',
+  get all() {
+    return t`Все объекты`
+  },
+  get account() {
+    return t`Аккаунты`
+  },
+  get family_link() {
+    return t`Связи с родителями`
+  },
+  get course_enrollment() {
+    return t`Участники курсов`
+  },
+  get problem_import() {
+    return t`Импорт задач`
+  },
+  get course() {
+    return t`Курсы`
+  },
+  get group() {
+    return t`Группы`
+  },
+  get telegram_binding() {
+    return t`Привязки Telegram`
+  },
+  get problem_synonym() {
+    return t`Синонимы задач`
+  },
+  get news_post() {
+    return t`Публикации`
+  },
+  get staff_scope() {
+    return t`Доступы преподавателей`
+  },
 }
 
 const actionLabels: Record<string, string> = {
-  'student.account_created': 'Создан вход школьника',
-  'family.account_created': 'Создан вход родителя',
-  'family.student_linked': 'Добавлена связь с родителем',
-  'family.student_unlinked': 'Удалена связь с родителем',
-  'account.status_changed': 'Изменён статус аккаунта',
-  'account.credential_changed': 'Заменены данные для входа',
-  'course_enrollment.updated': 'Изменено участие в курсе',
-  'problem_import.applied': 'Применён импорт задач',
-  'problem_import.rolled_back': 'Отменён импорт задач',
-  'course.created': 'Создан курс',
-  'course.updated': 'Изменён курс',
-  'group.created': 'Создана группа',
-  'group.updated': 'Изменена группа',
-  'telegram_binding.created': 'Создана привязка Telegram',
-  'telegram_binding.updated': 'Изменена привязка Telegram',
-  'telegram_binding.disabled': 'Отключена привязка Telegram',
-  'telegram_binding.draft_restored': 'Привязка возвращена в черновик',
-  'telegram_binding.verified': 'Проверена привязка Telegram',
-  'problem_synonym.merged': 'Задачи объединены в синонимы',
-  'problem_synonym.split': 'Задачи разделены',
-  'news_source.marked_deleted': 'Пост отмечен удалённым в Telegram',
-  'news_source.marked_present': 'Пост отмечен доступным в Telegram',
-  'news_local.created': 'Создана публикация в PWA',
-  'staff_scope.replaced': 'Изменены доступы преподавателя',
+  get 'student.account_created'() {
+    return t`Создан вход школьника`
+  },
+  get 'family.account_created'() {
+    return t`Создан вход родителя`
+  },
+  get 'family.student_linked'() {
+    return t`Добавлена связь с родителем`
+  },
+  get 'family.student_unlinked'() {
+    return t`Удалена связь с родителем`
+  },
+  get 'account.status_changed'() {
+    return t`Изменён статус аккаунта`
+  },
+  get 'account.credential_changed'() {
+    return t`Заменены данные для входа`
+  },
+  get 'course_enrollment.updated'() {
+    return t`Изменено участие в курсе`
+  },
+  get 'problem_import.applied'() {
+    return t`Применён импорт задач`
+  },
+  get 'problem_import.rolled_back'() {
+    return t`Отменён импорт задач`
+  },
+  get 'course.created'() {
+    return t`Создан курс`
+  },
+  get 'course.updated'() {
+    return t`Изменён курс`
+  },
+  get 'group.created'() {
+    return t`Создана группа`
+  },
+  get 'group.updated'() {
+    return t`Изменена группа`
+  },
+  get 'telegram_binding.created'() {
+    return t`Создана привязка Telegram`
+  },
+  get 'telegram_binding.updated'() {
+    return t`Изменена привязка Telegram`
+  },
+  get 'telegram_binding.disabled'() {
+    return t`Отключена привязка Telegram`
+  },
+  get 'telegram_binding.draft_restored'() {
+    return t`Привязка возвращена в черновик`
+  },
+  get 'telegram_binding.verified'() {
+    return t`Проверена привязка Telegram`
+  },
+  get 'problem_synonym.merged'() {
+    return t`Задачи объединены в синонимы`
+  },
+  get 'problem_synonym.split'() {
+    return t`Задачи разделены`
+  },
+  get 'news_source.marked_deleted'() {
+    return t`Пост отмечен удалённым в Telegram`
+  },
+  get 'news_source.marked_present'() {
+    return t`Пост отмечен доступным в Telegram`
+  },
+  get 'news_local.created'() {
+    return t`Создана публикация в PWA`
+  },
+  get 'staff_scope.replaced'() {
+    return t`Изменены доступы преподавателя`
+  },
 }
 
 const fieldLabels: Record<string, string> = {
-  activeGroupId: 'Активная группа',
-  accentKey: 'Цвет курса',
-  allowedGroupIds: 'Доступные группы',
-  addedCount: 'Добавлено задач',
-  attendanceMode: 'Режим участия',
-  audience: 'Кабинет',
-  courseId: 'Курс',
-  courseLessonId: 'Занятие курса',
-  chatId: 'Чат',
-  code: 'Код',
-  colorKey: 'Цвет группы',
-  created: 'Создано задач',
-  credentialVersion: 'Версия данных для входа',
-  isPrimary: 'Основная связь',
-  allowSelfSwitch: 'Самостоятельная смена',
-  linked: 'Связь активна',
-  messageThreadId: 'Тема чата',
-  memberCount: 'Задач в группе',
-  ownerId: 'Владелец',
-  ownerType: 'Тип владельца',
-  purpose: 'Назначение',
-  publishedAt: 'Время публикации',
-  reason: 'Причина',
-  reconciliationReason: 'Причина сверки',
-  removedCount: 'Удалено задач',
-  relationshipLabel: 'Роль родителя',
-  rows: 'Строк обработано',
-  scoreWeight: 'Вес результатов',
-  scopeCount: 'Областей доступа',
-  scopes: 'Курсы и группы',
-  shortCode: 'Короткий код',
-  sortOrder: 'Порядок',
-  sourceFilename: 'Исходный файл',
-  sourceDeletedAt: 'Удалено в источнике',
-  state: 'Состояние',
-  status: 'Статус',
-  studentId: 'Школьник',
-  subjectCode: 'Предмет',
-  titleCached: 'Название в Telegram',
-  updated: 'Изменено задач',
-  username: 'Логин',
-  version: 'Версия',
-  verifiedAt: 'Проверено',
-  visibility: 'Видимость',
+  get activeGroupId() {
+    return t`Активная группа`
+  },
+  get accentKey() {
+    return t`Цвет курса`
+  },
+  get allowedGroupIds() {
+    return t`Доступные группы`
+  },
+  get addedCount() {
+    return t`Добавлено задач`
+  },
+  get attendanceMode() {
+    return t`Режим участия`
+  },
+  get audience() {
+    return t`Кабинет`
+  },
+  get courseId() {
+    return t`Курс`
+  },
+  get courseLessonId() {
+    return t`Занятие курса`
+  },
+  get chatId() {
+    return t`Чат`
+  },
+  get code() {
+    return t`Код`
+  },
+  get colorKey() {
+    return t`Цвет группы`
+  },
+  get created() {
+    return t`Создано задач`
+  },
+  get credentialVersion() {
+    return t`Версия данных для входа`
+  },
+  get isPrimary() {
+    return t`Основная связь`
+  },
+  get allowSelfSwitch() {
+    return t`Самостоятельная смена`
+  },
+  get linked() {
+    return t`Связь активна`
+  },
+  get messageThreadId() {
+    return t`Тема чата`
+  },
+  get memberCount() {
+    return t`Задач в группе`
+  },
+  get ownerId() {
+    return t`Владелец`
+  },
+  get ownerType() {
+    return t`Тип владельца`
+  },
+  get purpose() {
+    return t`Назначение`
+  },
+  get publishedAt() {
+    return t`Время публикации`
+  },
+  get reason() {
+    return t`Причина`
+  },
+  get reconciliationReason() {
+    return t`Причина сверки`
+  },
+  get removedCount() {
+    return t`Удалено задач`
+  },
+  get relationshipLabel() {
+    return t`Роль родителя`
+  },
+  get rows() {
+    return t`Строк обработано`
+  },
+  get scoreWeight() {
+    return t`Вес результатов`
+  },
+  get scopeCount() {
+    return t`Областей доступа`
+  },
+  get scopes() {
+    return t`Курсы и группы`
+  },
+  get shortCode() {
+    return t`Короткий код`
+  },
+  get sortOrder() {
+    return t`Порядок`
+  },
+  get sourceFilename() {
+    return t`Исходный файл`
+  },
+  get sourceDeletedAt() {
+    return t`Удалено в источнике`
+  },
+  get state() {
+    return t`Состояние`
+  },
+  get status() {
+    return t`Статус`
+  },
+  get studentId() {
+    return t`Школьник`
+  },
+  get subjectCode() {
+    return t`Предмет`
+  },
+  get titleCached() {
+    return t`Название в Telegram`
+  },
+  get updated() {
+    return t`Изменено задач`
+  },
+  get username() {
+    return t`Логин`
+  },
+  get version() {
+    return t`Версия`
+  },
+  get verifiedAt() {
+    return t`Проверено`
+  },
+  get visibility() {
+    return t`Видимость`
+  },
 }
 
 function dateTime(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     dateStyle: 'short',
     timeStyle: 'medium',
     timeZone: 'Europe/Moscow',
@@ -121,8 +282,8 @@ function dateTime(value: string): string {
 
 function displayValue(value: string | number | boolean | null | undefined): string {
   if (value === undefined || value === null) return '—'
-  if (value === true) return 'да'
-  if (value === false) return 'нет'
+  if (value === true) return t`да`
+  if (value === false) return t`нет`
   return String(value)
 }
 
@@ -130,16 +291,27 @@ function AuditChanges({ event }: { event: AuditEvent }) {
   const keys = Array.from(
     new Set([...Object.keys(event.before ?? {}), ...Object.keys(event.after ?? {})]),
   ).sort((left, right) => left.localeCompare(right, 'ru'))
-  if (keys.length === 0) return <span className="text-muted-foreground">без полей</span>
+  if (keys.length === 0)
+    return (
+      <span className="text-muted-foreground">
+        <Trans>без полей</Trans>
+      </span>
+    )
   return (
     <details className="min-w-64">
       <summary className="cursor-pointer text-small font-medium text-link">
-        Показать изменения
+        <Trans>Показать изменения</Trans>
       </summary>
       <dl className="mt-2 grid grid-cols-[minmax(8rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)] gap-x-3 gap-y-1 rounded-md border border-border bg-surface-subtle p-2 text-caption">
-        <dt className="font-medium text-muted-foreground">Поле</dt>
-        <dd className="font-medium text-muted-foreground">Было</dd>
-        <dd className="font-medium text-muted-foreground">Стало</dd>
+        <dt className="font-medium text-muted-foreground">
+          <Trans>Поле</Trans>
+        </dt>
+        <dd className="font-medium text-muted-foreground">
+          <Trans>Было</Trans>
+        </dd>
+        <dd className="font-medium text-muted-foreground">
+          <Trans>Стало</Trans>
+        </dd>
         {keys.map((key) => (
           <div className="col-span-3 grid grid-cols-subgrid border-t border-border pt-1" key={key}>
             <dt>{fieldLabels[key] ?? key}</dt>
@@ -178,8 +350,8 @@ export function StaffAuditView({
 
   return (
     <PageLayout
-      description="Административные изменения с исполнителем, request ID и безопасным сравнением значений. Пароли и токены сюда не записываются."
-      title="Журнал изменений"
+      description={t`Административные изменения с исполнителем, request ID и безопасным сравнением значений. Пароли и токены сюда не записываются.`}
+      title={t`Журнал изменений`}
       width="wide"
     >
       <form
@@ -188,7 +360,7 @@ export function StaffAuditView({
         onSubmit={submit}
       >
         <Label className="grid min-w-52 gap-1 text-caption">
-          Объект
+          <Trans>Объект</Trans>
           <select
             className="min-h-9 rounded-md border border-input bg-surface px-3 text-small"
             defaultValue={objectType}
@@ -202,37 +374,47 @@ export function StaffAuditView({
           </select>
         </Label>
         <Label className="grid min-w-64 flex-1 gap-1 text-caption">
-          Поиск по действию, объекту или request ID
+          <Trans>Поиск по действию, объекту или request ID</Trans>
           <Input
             defaultValue={query}
             maxLength={100}
             name="q"
-            placeholder="Например, request-2026-08-02"
+            placeholder={t`Например, request-2026-08-02`}
           />
         </Label>
         <Button type="submit" variant="outline">
           <Search aria-hidden="true" />
-          Найти
+          <Trans>Найти</Trans>
         </Button>
       </form>
 
       {events.length === 0 ? (
         <PageStatePanel
-          description="Попробуйте изменить фильтр или строку поиска."
+          description={t`Попробуйте изменить фильтр или строку поиска.`}
           state="empty"
-          title="Изменений не найдено"
+          title={t`Изменений не найдено`}
         />
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Когда</TableHead>
-                <TableHead>Действие</TableHead>
-                <TableHead>Объект</TableHead>
-                <TableHead>Кто</TableHead>
+                <TableHead>
+                  <Trans>Когда</Trans>
+                </TableHead>
+                <TableHead>
+                  <Trans>Действие</Trans>
+                </TableHead>
+                <TableHead>
+                  <Trans>Объект</Trans>
+                </TableHead>
+                <TableHead>
+                  <Trans>Кто</Trans>
+                </TableHead>
                 <TableHead>Request ID</TableHead>
-                <TableHead>Изменения</TableHead>
+                <TableHead>
+                  <Trans>Изменения</Trans>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -266,7 +448,7 @@ export function StaffAuditView({
       {nextCursor ? (
         <div className="mt-4 flex justify-end">
           <Button onClick={() => onNextPage(nextCursor)} variant="outline">
-            Следующая страница
+            <Trans>Следующая страница</Trans>
             <ChevronRight aria-hidden="true" />
           </Button>
         </div>
@@ -313,16 +495,16 @@ export function StaffAuditPage({
 
   if (result.isPending) {
     return (
-      <PageLayout title="Журнал изменений" width="wide">
+      <PageLayout title={t`Журнал изменений`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (result.error) {
     return (
-      <PageLayout title="Журнал изменений" width="wide">
+      <PageLayout title={t`Журнал изменений`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void result.refetch()}
           state={
             result.error instanceof ApiResponseError && result.error.status === 403

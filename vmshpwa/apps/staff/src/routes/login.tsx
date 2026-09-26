@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useCallback } from 'react'
 import { z } from 'zod'
@@ -37,9 +38,9 @@ function StaffLoginRoute() {
   if (login.isResolvingSession) {
     return (
       <AppStartupScreen
-        description="Проверяем, выполнен ли вход на этом устройстве."
+        description={t`Проверяем, выполнен ли вход на этом устройстве.`}
         state="loading"
-        title="Проверяем вход"
+        title={t`Проверяем вход`}
       />
     )
   }

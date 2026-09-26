@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type FormEvent } from 'react'
 
 import type { AdminStudentDirectoryEntry, CreateStudentAccountRequest } from '@vmsh/contracts'
@@ -47,7 +49,7 @@ export function StudentAccountCreator({
       onSubmit={(event) => void submit(event).catch(() => undefined)}
     >
       <Label className="grid gap-1 text-small">
-        Логин школьника
+        <Trans>Логин школьника</Trans>
         <Input
           autoComplete="off"
           disabled={pending}
@@ -62,32 +64,38 @@ export function StudentAccountCreator({
         />
       </Label>
       <Button disabled={pending} type="submit">
-        {pending ? 'Создаём…' : 'Создать web-вход'}
+        {pending ? t`Создаём…` : t`Создать web-вход`}
       </Button>
       <p className="text-caption text-muted-foreground sm:col-span-2">
-        Паролем останется текущий Telegram-токен школьника. Он не передаётся в браузер.
+        <Trans>
+          Паролем останется текущий Telegram-токен школьника. Он не передаётся в браузер.
+        </Trans>
       </p>
       {usernameSuggestion?.state === 'ready' ? (
         <p className="text-caption text-muted-foreground sm:col-span-2">
-          Логин предложен по фамилии и дню рождения. Его можно исправить до создания.
+          <Trans>Логин предложен по фамилии и дню рождения. Его можно исправить до создания.</Trans>
         </p>
       ) : usernameSuggestion?.state === 'collision' ? (
         <p className="text-small text-status-warning sm:col-span-2">
-          Предложенный логин {usernameSuggestion.username} уже занят или совпал у нескольких
-          школьников. Введите уникальный логин вручную.
+          <Trans>
+            Предложенный логин {usernameSuggestion.username} уже занят или совпал у нескольких
+            школьников. Введите уникальный логин вручную.
+          </Trans>
         </p>
       ) : usernameSuggestion?.state === 'invalid_identity' ? (
         <p className="text-small text-status-warning sm:col-span-2">
-          Для предложения логина нужны корректные фамилия и дата рождения. Введите логин вручную.
+          <Trans>
+            Для предложения логина нужны корректные фамилия и дата рождения. Введите логин вручную.
+          </Trans>
         </p>
       ) : null}
       {!storageAvailable ? (
         <p className="text-small text-status-error sm:col-span-2" role="alert">
-          Логин не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+          <Trans>Логин не сохраняется в этом браузере. Не закрывайте вкладку до отправки.</Trans>
         </p>
       ) : draft.username ? (
         <p className="text-caption text-muted-foreground sm:col-span-2" role="status">
-          Несохранённый логин хранится на этом устройстве.
+          <Trans>Несохранённый логин хранится на этом устройстве.</Trans>
         </p>
       ) : null}
     </form>

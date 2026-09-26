@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
+import { i18n } from '@lingui/core'
 import { afterEach, expect, it, vi } from 'vitest'
 
 import type {
@@ -83,4 +84,45 @@ it('counts duplicate parents and leaves only actual errors in the editor', async
   expect(screen.getByText(/Дубликатов проигнорировано: 1/)).toBeTruthy()
   await waitFor(() => expect((editor as HTMLTextAreaElement).value).toBe(third))
   expect(screen.getByText(/оставлены только строки, которые нужно исправить/)).toBeTruthy()
+})
+
+it('translates provisioning controls and diagnostics without changing imported rows', async () => {
+  i18n.activate('en')
+  const preview: AccountProvisioningPreviewResponse = {
+    schemaVersion: 1,
+    previewHash: 'a'.repeat(64),
+    counts: { total: 1, ready: 0, invalid: 1 },
+    rows: [
+      {
+        rowNumber: 1,
+        state: 'invalid',
+        resolvedLogin: null,
+        loginAdjusted: false,
+        code: 'family_email_duplicate',
+      },
+    ],
+    requestId: 'preview',
+  }
+  render(
+    <AccountProvisioningView
+      accountId="a-admin"
+      storageNamespace="test-provisioning-en"
+      onSectionChange={() => undefined}
+      previewStudents={vi.fn()}
+      applyStudents={vi.fn()}
+      previewFamilies={vi.fn().mockResolvedValue(preview)}
+      applyFamilies={vi.fn()}
+      previewCourseEnrollments={vi.fn()}
+      applyCourseEnrollments={vi.fn()}
+    />,
+  )
+
+  const imported = 'Дубль родителя\tparent-two\tpassword-two\tone@example.org\tstudent-one'
+  const editor = screen.getAllByLabelText('Paste rows from a table')[1]!
+  fireEvent.change(editor, { target: { value: imported } })
+  fireEvent.click(screen.getAllByRole('button', { name: 'Check table' })[1]!)
+
+  await screen.findByText('a parent with this email already exists')
+  expect(screen.getByText('Дубль родителя · parent-two')).toBeTruthy()
+  expect((editor as HTMLTextAreaElement).value).toBe(imported)
 })

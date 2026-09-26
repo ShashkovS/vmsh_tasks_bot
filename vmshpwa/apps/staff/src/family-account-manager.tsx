@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -28,14 +30,18 @@ const createFallback: FamilyAccountDraft = {
   kind: 'create',
   username: '',
   displayName: '',
-  relationshipLabel: 'родитель',
+  get relationshipLabel() {
+    return t`родитель`
+  },
   isPrimary: true,
 }
 const linkFallback: FamilyAccountDraft = {
   schemaVersion: 1,
   kind: 'link',
   familyUsername: '',
-  relationshipLabel: 'родитель',
+  get relationshipLabel() {
+    return t`родитель`
+  },
   isPrimary: false,
 }
 
@@ -96,7 +102,7 @@ export function FamilyAccountManager({
     setCreateDraft(createFallback)
     setPassword('')
     setMode(null)
-    setSavedMessage('Аккаунт родителя создан и привязан.')
+    setSavedMessage(t`Аккаунт родителя создан и привязан.`)
   }
 
   async function submitLink(event: FormEvent<HTMLFormElement>) {
@@ -115,22 +121,24 @@ export function FamilyAccountManager({
     clearFamilyAccountDraft(globalThis.localStorage, linkKey)
     setLinkDraft(linkFallback)
     setMode(null)
-    setSavedMessage('Существующий аккаунт родителя привязан.')
+    setSavedMessage(t`Существующий аккаунт родителя привязан.`)
   }
 
   async function unlink(accountId: string) {
     await onChange({ kind: 'unlink', studentId, accountId })
     setConfirmUnlink(null)
-    setSavedMessage('Связь со школьником удалена. Учётная запись родителя сохранена.')
+    setSavedMessage(t`Связь со школьником удалена. Учётная запись родителя сохранена.`)
   }
 
   return (
-    <section aria-label="Аккаунты родителей" className="space-y-3">
+    <section aria-label={t`Аккаунты родителей`} className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-small font-medium">Аккаунты родителей</p>
+          <p className="text-small font-medium">
+            <Trans>Аккаунты родителей</Trans>
+          </p>
           <p className="text-caption text-muted-foreground">
-            Один аккаунт можно связать с несколькими детьми.
+            <Trans>Один аккаунт можно связать с несколькими детьми.</Trans>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -141,7 +149,7 @@ export function FamilyAccountManager({
             type="button"
             variant="outline"
           >
-            Создать аккаунт
+            <Trans>Создать аккаунт</Trans>
           </Button>
           <Button
             aria-pressed={mode === 'link'}
@@ -150,14 +158,14 @@ export function FamilyAccountManager({
             type="button"
             variant="outline"
           >
-            Привязать существующий
+            <Trans>Привязать существующий</Trans>
           </Button>
         </div>
       </div>
 
       {accounts.length === 0 ? (
         <p className="rounded-md border border-dashed border-border p-3 text-small text-muted-foreground">
-          Аккаунтов родителей пока нет.
+          <Trans>Аккаунтов родителей пока нет.</Trans>
         </p>
       ) : (
         <ul className="space-y-2">
@@ -167,17 +175,19 @@ export function FamilyAccountManager({
                 <div className="min-w-0">
                   <p className="text-small font-medium">{account.displayName}</p>
                   <p className="break-all text-caption text-muted-foreground">
-                    {account.username} · {account.relationshipLabel ?? 'родитель'}
-                    {account.isPrimary ? ' · основной контакт' : ''}
+                    {account.username} · {account.relationshipLabel ?? t`родитель`}
+                    {account.isPrimary ? t` · основной контакт` : ''}
                   </p>
                 </div>
                 <Badge variant={account.status === 'active' ? 'success' : 'warning'}>
-                  {account.status === 'active' ? 'Активен' : 'Вход отключён'}
+                  {account.status === 'active' ? t`Активен` : t`Вход отключён`}
                 </Badge>
               </div>
               {confirmUnlink === account.accountId ? (
                 <div className="mt-3 rounded-md bg-muted p-3 text-small" role="alert">
-                  <p>Отвязать аккаунт только от этого школьника?</p>
+                  <p>
+                    <Trans>Отвязать аккаунт только от этого школьника?</Trans>
+                  </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                       disabled={pending}
@@ -186,7 +196,7 @@ export function FamilyAccountManager({
                       type="button"
                       variant="destructive"
                     >
-                      Подтвердить отвязку
+                      <Trans>Подтвердить отвязку</Trans>
                     </Button>
                     <Button
                       disabled={pending}
@@ -195,7 +205,7 @@ export function FamilyAccountManager({
                       type="button"
                       variant="ghost"
                     >
-                      Отмена
+                      <Trans>Отмена</Trans>
                     </Button>
                   </div>
                 </div>
@@ -208,7 +218,7 @@ export function FamilyAccountManager({
                   type="button"
                   variant="ghost"
                 >
-                  Отвязать от школьника
+                  <Trans>Отвязать от школьника</Trans>
                 </Button>
               )}
             </li>
@@ -221,9 +231,11 @@ export function FamilyAccountManager({
           className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-2"
           onSubmit={(event) => void submitCreate(event).catch(() => undefined)}
         >
-          <p className="text-small font-medium md:col-span-2">Новый аккаунт родителя</p>
+          <p className="text-small font-medium md:col-span-2">
+            <Trans>Новый аккаунт родителя</Trans>
+          </p>
           <Label className="grid gap-1 text-small">
-            Логин
+            <Trans>Логин</Trans>
             <Input
               autoComplete="off"
               disabled={pending}
@@ -234,18 +246,18 @@ export function FamilyAccountManager({
             />
           </Label>
           <Label className="grid gap-1 text-small">
-            Имя аккаунта
+            <Trans>Имя аккаунта</Trans>
             <Input
               disabled={pending}
               maxLength={200}
               onChange={(event) => persist({ ...createDraft, displayName: event.target.value })}
-              placeholder="Например, Анна Иванова"
+              placeholder={t`Например, Анна Иванова`}
               required
               value={createDraft.displayName}
             />
           </Label>
           <Label className="grid gap-1 text-small">
-            Первый пароль
+            <Trans>Первый пароль</Trans>
             <Input
               autoComplete="new-password"
               disabled={pending}
@@ -260,10 +272,12 @@ export function FamilyAccountManager({
           <RelationshipFields draft={createDraft} disabled={pending} onChange={persist} />
           <div className="flex flex-wrap items-center gap-3 md:col-span-2">
             <Button disabled={pending} size="sm" type="submit">
-              {pending ? 'Создаём…' : 'Создать и привязать'}
+              {pending ? t`Создаём…` : t`Создать и привязать`}
             </Button>
             <p className="text-caption text-muted-foreground">
-              Пароль не сохраняется в браузере и после отправки не показывается снова.
+              <Trans>
+                Пароль не сохраняется в браузере и после отправки не показывается снова.
+              </Trans>
             </p>
           </div>
         </form>
@@ -274,9 +288,11 @@ export function FamilyAccountManager({
           className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-2"
           onSubmit={(event) => void submitLink(event).catch(() => undefined)}
         >
-          <p className="text-small font-medium md:col-span-2">Существующий аккаунт родителя</p>
+          <p className="text-small font-medium md:col-span-2">
+            <Trans>Существующий аккаунт родителя</Trans>
+          </p>
           <Label className="grid gap-1 text-small">
-            Логин родителя
+            <Trans>Логин родителя</Trans>
             <Input
               autoComplete="off"
               disabled={pending}
@@ -288,18 +304,20 @@ export function FamilyAccountManager({
           </Label>
           <RelationshipFields draft={linkDraft} disabled={pending} onChange={persist} />
           <Button className="md:col-span-2 md:w-fit" disabled={pending} size="sm" type="submit">
-            {pending ? 'Привязываем…' : 'Привязать аккаунт'}
+            {pending ? t`Привязываем…` : t`Привязать аккаунт`}
           </Button>
         </form>
       ) : null}
 
       {!storageAvailable ? (
         <p className="text-small text-status-error" role="alert">
-          Несекретный черновик формы не сохраняется в этом браузере.
+          <Trans>Несекретный черновик формы не сохраняется в этом браузере.</Trans>
         </p>
       ) : mode !== null ? (
         <p className="text-caption text-muted-foreground" role="status">
-          Логин, имя и роль сохраняются на этом устройстве до отправки. Пароль — никогда.
+          <Trans>
+            Логин, имя и роль сохраняются на этом устройстве до отправки. Пароль — никогда.
+          </Trans>
         </p>
       ) : null}
       {savedMessage ? (
@@ -323,12 +341,12 @@ function RelationshipFields({
   return (
     <>
       <Label className="grid gap-1 text-small">
-        Связь со школьником
+        <Trans>Связь со школьником</Trans>
         <Input
           disabled={disabled}
           maxLength={100}
           onChange={(event) => onChange({ ...draft, relationshipLabel: event.target.value })}
-          placeholder="Например, родитель"
+          placeholder={t`Например, родитель`}
           required
           value={draft.relationshipLabel}
         />
@@ -339,7 +357,7 @@ function RelationshipFields({
           disabled={disabled}
           onCheckedChange={(checked) => onChange({ ...draft, isPrimary: checked === true })}
         />
-        Основной родительский контакт
+        <Trans>Основной родительский контакт</Trans>
       </Label>
     </>
   )

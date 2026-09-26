@@ -239,3 +239,39 @@ test('Staff sees English lesson, import, synonym, and whiteboard tools', async (
     await saveAccountLocale(page, 'staff', 'ru')
   }
 })
+
+// P7 acceptance: administrative controls translate independently from account,
+// course, group, audit and support records returned by the API.
+test('Staff sees English account, access, audit, analytics, binding, and support controls', async ({
+  page,
+}) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
+  try {
+    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
+    await page.getByRole('menuitem', { name: 'English' }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+    await page.goto('/staff/users?tab=imports')
+    await expect(page.getByRole('heading', { name: 'Batch account creation' })).toBeVisible()
+    await expect(page.getByLabel('Paste rows from a table').first()).toBeVisible()
+
+    await page.goto('/staff/users?tab=teachers')
+    await expect(page.getByRole('heading', { name: 'Teachers and access' })).toBeVisible()
+
+    await page.goto('/staff/audit?objectType=all&q=e2e.audit.baseline')
+    await expect(page.getByRole('heading', { name: 'Change log' })).toBeVisible()
+    await expect(page.getByText('e2e.audit.baseline', { exact: true })).toBeVisible()
+
+    await page.goto('/staff/analytics')
+    await expect(page.getByRole('heading', { name: 'Analytics' })).toBeVisible()
+
+    await page.goto('/staff/courses?tab=telegram')
+    await expect(page.getByLabel('Course or group')).toBeVisible()
+    await expect(page.getByLabel('Purpose')).toBeVisible()
+
+    await page.goto('/staff/questions?state=awaiting_staff')
+    await expect(page.getByRole('heading', { name: 'Student questions' })).toBeVisible()
+  } finally {
+    await saveAccountLocale(page, 'staff', 'ru')
+  }
+})

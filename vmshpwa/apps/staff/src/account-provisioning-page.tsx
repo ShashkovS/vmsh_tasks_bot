@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMemo, useState } from 'react'
 
 import {
@@ -52,37 +54,99 @@ import { applyProvisioningInChunks } from './account-provisioning-batch'
 import { UsersSectionTabs, type UsersSection } from './users-section-tabs'
 
 const diagnosticLabels: Record<string, string> = {
-  invalid_student_row: 'неверное число или название столбцов',
-  invalid_family_row: 'неверное число или название столбцов',
-  invalid_enrollment_row: 'неверное число или название столбцов',
-  invalid_surname: 'проверьте фамилию',
-  invalid_name: 'проверьте имя',
-  invalid_patronymic: 'проверьте отчество',
-  invalid_birth_date: 'проверьте дату рождения',
-  invalid_grade: 'класс должен быть от 1 до 11',
-  invalid_login: 'проверьте логин',
-  invalid_password: 'проверьте пароль',
-  invalid_emails: 'проверьте список email',
-  invalid_child_logins: 'проверьте логины детей',
-  child_login_not_found: 'школьник с таким логином не найден',
-  student_token_conflict: 'такой Telegram-токен уже используется',
-  login_suffix_exhausted: 'не удалось подобрать свободный логин',
-  account_conflict: 'данные изменились после предпросмотра',
-  account_already_imported: 'этот родитель уже был импортирован с теми же данными',
-  family_login_duplicate: 'родитель с таким логином уже есть',
-  family_email_duplicate: 'родитель с таким email уже есть',
-  family_login_email_duplicate: 'родитель с таким логином и email уже есть',
-  invalid_row: 'строка не прошла проверку',
-  invalid_course: 'проверьте код курса',
-  invalid_allowed_groups: 'проверьте список доступных групп',
-  student_login_not_found: 'школьник с таким логином не найден',
-  course_not_found: 'курс с таким кодом не найден',
-  course_archived: 'курс находится в архиве',
-  group_not_found: 'одна из групп не найдена в этом курсе',
-  group_archived: 'одна из групп находится в архиве',
-  duplicate_enrollment_row: 'зачисление повторено в этой таблице',
-  enrollment_exists: 'школьник уже зачислен на этот курс',
-  row_conflict: 'строка конфликтует с актуальными данными',
+  get invalid_student_row() {
+    return t`неверное число или название столбцов`
+  },
+  get invalid_family_row() {
+    return t`неверное число или название столбцов`
+  },
+  get invalid_enrollment_row() {
+    return t`неверное число или название столбцов`
+  },
+  get invalid_surname() {
+    return t`проверьте фамилию`
+  },
+  get invalid_name() {
+    return t`проверьте имя`
+  },
+  get invalid_patronymic() {
+    return t`проверьте отчество`
+  },
+  get invalid_birth_date() {
+    return t`проверьте дату рождения`
+  },
+  get invalid_grade() {
+    return t`класс должен быть от 1 до 11`
+  },
+  get invalid_login() {
+    return t`проверьте логин`
+  },
+  get invalid_password() {
+    return t`проверьте пароль`
+  },
+  get invalid_emails() {
+    return t`проверьте список email`
+  },
+  get invalid_child_logins() {
+    return t`проверьте логины детей`
+  },
+  get child_login_not_found() {
+    return t`школьник с таким логином не найден`
+  },
+  get student_token_conflict() {
+    return t`такой Telegram-токен уже используется`
+  },
+  get login_suffix_exhausted() {
+    return t`не удалось подобрать свободный логин`
+  },
+  get account_conflict() {
+    return t`данные изменились после предпросмотра`
+  },
+  get account_already_imported() {
+    return t`этот родитель уже был импортирован с теми же данными`
+  },
+  get family_login_duplicate() {
+    return t`родитель с таким логином уже есть`
+  },
+  get family_email_duplicate() {
+    return t`родитель с таким email уже есть`
+  },
+  get family_login_email_duplicate() {
+    return t`родитель с таким логином и email уже есть`
+  },
+  get invalid_row() {
+    return t`строка не прошла проверку`
+  },
+  get invalid_course() {
+    return t`проверьте код курса`
+  },
+  get invalid_allowed_groups() {
+    return t`проверьте список доступных групп`
+  },
+  get student_login_not_found() {
+    return t`школьник с таким логином не найден`
+  },
+  get course_not_found() {
+    return t`курс с таким кодом не найден`
+  },
+  get course_archived() {
+    return t`курс находится в архиве`
+  },
+  get group_not_found() {
+    return t`одна из групп не найдена в этом курсе`
+  },
+  get group_archived() {
+    return t`одна из групп находится в архиве`
+  },
+  get duplicate_enrollment_row() {
+    return t`зачисление повторено в этой таблице`
+  },
+  get enrollment_exists() {
+    return t`школьник уже зачислен на этот курс`
+  },
+  get row_conflict() {
+    return t`строка конфликтует с актуальными данными`
+  },
 }
 
 function readDraft(key: string) {
@@ -107,7 +171,7 @@ function errorText(error: unknown) {
   if (error instanceof ProvisioningTsvError || error instanceof ApiResponseError) {
     return error.message
   }
-  return 'Сервер не подтвердил операцию. Уже завершённые части пакета сохранены; обновите предпросмотр перед повтором.'
+  return t`Сервер не подтвердил операцию. Уже завершённые части пакета сохранены; обновите предпросмотр перед повтором.`
 }
 
 function provisioningRowIdentity(
@@ -165,7 +229,7 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
     null,
   )
   const [storageAvailable, setStorageAvailable] = useState(true)
-  const title = audience === 'student' ? '1. Школьники' : '2. Родители'
+  const title = audience === 'student' ? t`1. Школьники` : t`2. Родители`
   const previewDuplicateCount =
     audience === 'family'
       ? (preview?.rows.filter((row) => row.state === 'invalid' && isFamilyDuplicate(row.code))
@@ -273,12 +337,18 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
           <CardTitle>{title}</CardTitle>
           {preview ? (
             <div className="flex gap-1">
-              <Badge variant="success">Готовы: {preview.counts.ready}</Badge>
+              <Badge variant="success">
+                <Trans>Готовы: {preview.counts.ready}</Trans>
+              </Badge>
               {previewDuplicateCount ? (
-                <Badge variant="secondary">Дубли: {previewDuplicateCount}</Badge>
+                <Badge variant="secondary">
+                  <Trans>Дубли: {previewDuplicateCount}</Trans>
+                </Badge>
               ) : null}
               {previewErrorCount ? (
-                <Badge variant="warning">Проверить: {previewErrorCount}</Badge>
+                <Badge variant="warning">
+                  <Trans>Проверить: {previewErrorCount}</Trans>
+                </Badge>
               ) : null}
             </div>
           ) : null}
@@ -287,7 +357,7 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
       </CardHeader>
       <CardContent className="space-y-3">
         <Label className="grid gap-1 text-small">
-          Вставьте строки из таблицы
+          <Trans>Вставьте строки из таблицы</Trans>
           <Textarea
             className="min-h-36 font-mono text-caption"
             onChange={(event) => changeSource(event.target.value)}
@@ -297,16 +367,20 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
           />
         </Label>
         <p className="text-caption text-muted-foreground">
-          Порядок столбцов: {columns}. Пустые необязательные ячейки оставляйте пустыми; разделители
-          между столбцами должны оставаться табуляцией.
+          <Trans>
+            Порядок столбцов: {columns}. Пустые необязательные ячейки оставляйте пустыми;
+            разделители между столбцами должны оставаться табуляцией.
+          </Trans>
         </p>
         {!storageAvailable ? (
           <p className="text-small text-status-error" role="alert">
-            Черновик не сохраняется в этом браузере. Не закрывайте вкладку.
+            <Trans>Черновик не сохраняется в этом браузере. Не закрывайте вкладку.</Trans>
           </p>
         ) : (
           <p className="text-caption text-muted-foreground" role="status">
-            Вставленный текст сохраняется только в этом браузере до успешного создания аккаунтов.
+            <Trans>
+              Вставленный текст сохраняется только в этом браузере до успешного создания аккаунтов.
+            </Trans>
           </p>
         )}
 
@@ -316,7 +390,7 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
             onClick={() => void previewRows()}
             type="button"
           >
-            {pending === 'preview' ? 'Проверяем…' : 'Проверить таблицу'}
+            {pending === 'preview' ? t`Проверяем…` : t`Проверить таблицу`}
           </Button>
           <Button
             disabled={!preview?.counts.ready || pending !== null}
@@ -325,15 +399,17 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
             variant="outline"
           >
             {pending === 'apply'
-              ? `Создаём… ${applyProgress?.processed ?? 0}/${applyProgress?.total ?? rows?.length ?? 0}`
-              : `Создать готовые · ${preview?.counts.ready ?? 0}`}
+              ? t`Создаём… ${applyProgress?.processed ?? 0}/${applyProgress?.total ?? rows?.length ?? 0}`
+              : t`Создать готовые · ${preview?.counts.ready ?? 0}`}
           </Button>
         </div>
 
         {error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Не удалось продолжить</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось продолжить</Trans>
+              </AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -343,23 +419,33 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
           <>
             {previewDuplicateCount ? (
               <p className="text-small font-medium text-muted-foreground">
-                Дубли уже существующих логинов или email будут проигнорированы:{' '}
-                {previewDuplicateCount}.
+                <Trans>
+                  Дубли уже существующих логинов или email будут проигнорированы:{' '}
+                  {previewDuplicateCount}.
+                </Trans>
               </p>
             ) : null}
             {previewErrorCount ? (
               <p className="text-small font-medium text-status-warning">
-                Эти строки не будут загружены, пока ошибки не исправлены:
+                <Trans>Эти строки не будут загружены, пока ошибки не исправлены:</Trans>
               </p>
             ) : null}
             <div className="max-h-80 overflow-auto rounded-md border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16">Строка</TableHead>
-                    <TableHead>Родитель или школьник</TableHead>
-                    <TableHead>Итоговый логин</TableHead>
-                    <TableHead>Результат</TableHead>
+                    <TableHead className="w-16">
+                      <Trans>Строка</Trans>
+                    </TableHead>
+                    <TableHead>
+                      <Trans>Родитель или школьник</Trans>
+                    </TableHead>
+                    <TableHead>
+                      <Trans>Итоговый логин</Trans>
+                    </TableHead>
+                    <TableHead>
+                      <Trans>Результат</Trans>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -372,11 +458,11 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
                       <TableCell>{provisioningRowIdentity(rows?.[row.rowNumber - 1])}</TableCell>
                       <TableCell className="font-mono text-caption">
                         {row.resolvedLogin ?? '—'}
-                        {row.state === 'ready' && row.loginAdjusted ? ' · изменён' : ''}
+                        {row.state === 'ready' && row.loginAdjusted ? t` · изменён` : ''}
                       </TableCell>
                       <TableCell>
                         {row.state === 'ready'
-                          ? 'Готово'
+                          ? t`Готово`
                           : (diagnosticLabels[row.code] ?? row.code)}
                       </TableCell>
                     </TableRow>
@@ -388,18 +474,24 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
         ) : null}
         {preview && !preview.counts.invalid && preview.rows.length > 100 ? (
           <p className="text-caption text-muted-foreground">
-            Показаны первые 100 из {preview.rows.length}; итоговые счётчики учитывают все строки.
+            <Trans>
+              Показаны первые 100 из {preview.rows.length}; итоговые счётчики учитывают все строки.
+            </Trans>
           </p>
         ) : null}
         {receipt ? (
           <Alert tone={receiptErrorCount ? 'warning' : 'success'}>
             <AlertContent>
-              <AlertTitle>Пакет обработан</AlertTitle>
+              <AlertTitle>
+                <Trans>Пакет обработан</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Создано: {receipt.counts.created}. Дубликатов проигнорировано:{' '}
-                {receiptDuplicateCount}. Не создано из-за ошибок: {receiptErrorCount}.
+                <Trans>
+                  Создано: {receipt.counts.created}. Дубликатов проигнорировано:{' '}
+                  {receiptDuplicateCount}. Не создано из-за ошибок: {receiptErrorCount}.
+                </Trans>
                 {receiptErrorCount
-                  ? ' В поле выше оставлены только строки, которые нужно исправить.'
+                  ? t` В поле выше оставлены только строки, которые нужно исправить.`
                   : ''}
               </AlertDescription>
             </AlertContent>
@@ -407,14 +499,22 @@ function ProvisioningPanel<Row extends StudentProvisioningRow | FamilyProvisioni
         ) : null}
         {receipt?.counts.skipped && receiptRows ? (
           <div className="space-y-2">
-            <p className="text-small font-medium">Пропущены</p>
+            <p className="text-small font-medium">
+              <Trans>Пропущены</Trans>
+            </p>
             <div className="max-h-80 overflow-auto rounded-md border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16">Строка</TableHead>
-                    <TableHead>Родитель или школьник</TableHead>
-                    <TableHead>Причина</TableHead>
+                    <TableHead className="w-16">
+                      <Trans>Строка</Trans>
+                    </TableHead>
+                    <TableHead>
+                      <Trans>Родитель или школьник</Trans>
+                    </TableHead>
+                    <TableHead>
+                      <Trans>Причина</Trans>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -513,43 +613,55 @@ function CourseEnrollmentProvisioningPanel({
     <Card>
       <CardHeader className="gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle>3. Зачисление на курс</CardTitle>
+          <CardTitle>
+            <Trans>3. Зачисление на курс</Trans>
+          </CardTitle>
           {preview ? (
             <div className="flex gap-1">
-              <Badge variant="success">Готовы: {preview.counts.ready}</Badge>
+              <Badge variant="success">
+                <Trans>Готовы: {preview.counts.ready}</Trans>
+              </Badge>
               {preview.counts.invalid ? (
-                <Badge variant="warning">Проверить: {preview.counts.invalid}</Badge>
+                <Badge variant="warning">
+                  <Trans>Проверить: {preview.counts.invalid}</Trans>
+                </Badge>
               ) : null}
             </div>
           ) : null}
         </div>
         <p className="text-small text-muted-foreground">
-          Запускайте отдельно для каждого курса. Активной станет первая доступная группа по её
-          порядку, а не первая группа в строке.
+          <Trans>
+            Запускайте отдельно для каждого курса. Активной станет первая доступная группа по её
+            порядку, а не первая группа в строке.
+          </Trans>
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         <Label className="grid gap-1 text-small">
-          Вставьте строки зачисления
+          <Trans>Вставьте строки зачисления</Trans>
           <Textarea
             className="min-h-36 font-mono text-caption"
             onChange={(event) => changeSource(event.target.value)}
-            placeholder="Логин · Код курса · Коды доступных групп через запятую"
+            placeholder={t`Логин · Код курса · Коды доступных групп через запятую`}
             spellCheck={false}
             value={source}
           />
         </Label>
         <p className="text-caption text-muted-foreground">
-          Порядок столбцов: логин, код курса, доступные группы. Группы можно разделять запятыми или
-          точками с запятой.
+          <Trans>
+            Порядок столбцов: логин, код курса, доступные группы. Группы можно разделять запятыми
+            или точками с запятой.
+          </Trans>
         </p>
         {!storageAvailable ? (
           <p className="text-small text-status-error" role="alert">
-            Черновик не сохраняется в этом браузере. Не закрывайте вкладку.
+            <Trans>Черновик не сохраняется в этом браузере. Не закрывайте вкладку.</Trans>
           </p>
         ) : (
           <p className="text-caption text-muted-foreground" role="status">
-            Вставленный текст сохраняется только в этом браузере до успешного зачисления.
+            <Trans>
+              Вставленный текст сохраняется только в этом браузере до успешного зачисления.
+            </Trans>
           </p>
         )}
         <div className="flex flex-wrap gap-2">
@@ -558,7 +670,7 @@ function CourseEnrollmentProvisioningPanel({
             onClick={() => void previewRows()}
             type="button"
           >
-            {pending === 'preview' ? 'Проверяем…' : 'Проверить зачисление'}
+            {pending === 'preview' ? t`Проверяем…` : t`Проверить зачисление`}
           </Button>
           <Button
             disabled={!preview?.counts.ready || pending !== null}
@@ -567,14 +679,16 @@ function CourseEnrollmentProvisioningPanel({
             variant="outline"
           >
             {pending === 'apply'
-              ? 'Зачисляем…'
-              : `Зачислить готовых · ${preview?.counts.ready ?? 0}`}
+              ? t`Зачисляем…`
+              : t`Зачислить готовых · ${preview?.counts.ready ?? 0}`}
           </Button>
         </div>
         {error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Не удалось продолжить</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось продолжить</Trans>
+              </AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -584,11 +698,21 @@ function CourseEnrollmentProvisioningPanel({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Строка</TableHead>
-                  <TableHead>Школьник и курс</TableHead>
-                  <TableHead>Активная группа</TableHead>
-                  <TableHead>Доступные группы</TableHead>
-                  <TableHead>Результат</TableHead>
+                  <TableHead className="w-16">
+                    <Trans>Строка</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Школьник и курс</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Активная группа</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Доступные группы</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Результат</Trans>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -602,7 +726,9 @@ function CourseEnrollmentProvisioningPanel({
                         </TableCell>
                         <TableCell>{row.activeGroupCode}</TableCell>
                         <TableCell>{row.allowedGroupCodes.join(', ')}</TableCell>
-                        <TableCell>Готово</TableCell>
+                        <TableCell>
+                          <Trans>Готово</Trans>
+                        </TableCell>
                       </>
                     ) : (
                       <TableCell colSpan={4}>{diagnosticLabels[row.code] ?? row.code}</TableCell>
@@ -616,9 +742,13 @@ function CourseEnrollmentProvisioningPanel({
         {receipt ? (
           <Alert tone={receipt.counts.skipped ? 'warning' : 'success'}>
             <AlertContent>
-              <AlertTitle>Зачисление обработано</AlertTitle>
+              <AlertTitle>
+                <Trans>Зачисление обработано</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Зачислено: {receipt.counts.created}. Пропущено: {receipt.counts.skipped}.
+                <Trans>
+                  Зачислено: {receipt.counts.created}. Пропущено: {receipt.counts.skipped}.
+                </Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -666,27 +796,31 @@ export function AccountProvisioningView({
 }) {
   return (
     <PageLayout
-      description="Сначала создайте школьников, затем аккаунты родителей. Зачисление на курс выполняется отдельным действием."
+      description={t`Сначала создайте школьников, затем аккаунты родителей. Зачисление на курс выполняется отдельным действием.`}
       eyebrow="Admin"
-      title="Пакетное создание аккаунтов"
+      title={t`Пакетное создание аккаунтов`}
       width="wide"
     >
       <div className="space-y-4">
         <UsersSectionTabs onChange={onSectionChange} section="imports" showImports showTeachers />
         <Alert>
           <AlertContent>
-            <AlertTitle>Данные для входа</AlertTitle>
+            <AlertTitle>
+              <Trans>Данные для входа</Trans>
+            </AlertTitle>
             <AlertDescription>
-              В первой версии пароли хранятся для внешней почтовой рассылки. Не вставляйте сюда
-              production-данные на общем устройстве.
+              <Trans>
+                В первой версии пароли хранятся для внешней почтовой рассылки. Не вставляйте сюда
+                production-данные на общем устройстве.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
         <ProvisioningPanel
           applyRequest={applyStudents}
           audience="student"
-          columns="Фамилия · Имя · Отчество · Дата рождения · Класс · Логин · Пароль"
-          description="Отчество, дата рождения и класс могут быть пустыми. Дата: ДД.ММ.ГГГГ или ГГГГ-ММ-ДД."
+          columns={t`Фамилия · Имя · Отчество · Дата рождения · Класс · Логин · Пароль`}
+          description={t`Отчество, дата рождения и класс могут быть пустыми. Дата: ДД.ММ.ГГГГ или ГГГГ-ММ-ДД.`}
           draftKey={provisioningDraftKey(storageNamespace, accountId, 'student')}
           parse={parseStudentProvisioningTsv}
           previewRequest={previewStudents}
@@ -695,8 +829,8 @@ export function AccountProvisioningView({
         <ProvisioningPanel
           applyRequest={applyFamilies}
           audience="family"
-          columns="Имя · Логин · Пароль · Email через запятую · Логины детей через запятую"
-          description="Родительский пакет запускайте после создания школьников. Один аккаунт может быть связан с несколькими детьми."
+          columns={t`Имя · Логин · Пароль · Email через запятую · Логины детей через запятую`}
+          description={t`Родительский пакет запускайте после создания школьников. Один аккаунт может быть связан с несколькими детьми.`}
           draftKey={provisioningDraftKey(storageNamespace, accountId, 'family')}
           parse={parseFamilyProvisioningTsv}
           previewRequest={previewFamilies}
@@ -729,7 +863,7 @@ export function StaffAccountProvisioningPage({
   )
   if (principal.role !== 'admin') {
     return (
-      <PageLayout title="Пакетное создание аккаунтов">
+      <PageLayout title={t`Пакетное создание аккаунтов`}>
         <PageStatePanel state="forbidden" />
       </PageLayout>
     )

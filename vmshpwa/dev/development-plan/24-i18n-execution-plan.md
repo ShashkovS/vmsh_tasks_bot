@@ -1,6 +1,6 @@
 # RU → EN localization: step-by-step execution plan
 
-Status: P0–P5 are implemented locally (P5 commit `2233052c`). P6 implementation and functional verification are complete on 2026-09-26; its cumulative P0 performance gate remains open (see [P6 report](24-i18n-p6-report.md)). P7–P8 remain queued. This document is the authoritative execution procedure.
+Status: P0–P5 are implemented locally (P5 commit `2233052c`). P6 and P7 implementation and functional verification are complete on 2026-09-26; the cumulative P0 performance gate remains open (see [P6 report](24-i18n-p6-report.md) and [P7 report](24-i18n-p7-report.md)). P8 remains queued. This document is the authoritative execution procedure.
 
 This is an English-language execution companion to [24-i18n.md](24-i18n.md), intended for an agent that needs explicit, small, verifiable tasks. Follow the existing architecture; do not invent a replacement translation system. Finish one batch before starting another.
 
@@ -815,7 +815,7 @@ The current broad Storybook and feature E2E suites still contain separately scop
 - Backend `staff_dashboard_routes.py`, `product_analytics_routes.py`, `support_routes.py`, organizer routes not fully covered earlier.
 - Cover charts, filters, empty/loading/error states, support actions and generic fallback names.
 
-**P7 exit:** inspect every non-generated Staff route and follow every remaining Cyrillic hit. No Staff page is left unassigned merely because its filename was absent from a batch list. All feature-level production files can now be put under complete frontend scopes, except explicitly scheduled P8 work.
+**P7 exit (complete, 2026-09-26):** every non-generated Staff route was inspected and the complete Staff source scope now runs under the frontend i18n checker. Account, access, audit, Telegram bindings, dashboard, analytics and support UI are English; stored names, credentials, payloads and authored content remain data. See the [P7 report](24-i18n-p7-report.md) for proof. P8 retains the repository-wide audit, Landing, service-failure fallback and final performance decision.
 
 ### P8 — Complete coverage, remaining labels, Landing, maintenance and final audit
 
