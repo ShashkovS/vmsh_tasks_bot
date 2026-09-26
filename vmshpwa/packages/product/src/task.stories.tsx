@@ -11,6 +11,7 @@ import { VerdictMark } from './verdict-mark'
 import {
   binaryVerdictScale,
   findVerdict,
+  writtenReviewVerdict,
   fullVerdictScale,
   ternaryVerdictScale,
 } from './verdict-registry'
@@ -47,7 +48,8 @@ export const Levels: Story = {
   ),
 }
 
-const aiVerdict = { ...findVerdict(fullVerdictScale, 'minus-plus')!, provenance: 'ai' as const }
+// Preserve lazy labels until the Storybook locale loader has run.
+const aiVerdict = writtenReviewVerdict(13, 'ai')
 
 export const Verdicts: Story = {
   name: 'Вердикты и шкалы курса',

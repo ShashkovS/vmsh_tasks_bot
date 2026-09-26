@@ -116,4 +116,4 @@ export const test = base.extend<E2eFixtures>({
 })
 
 export { expect }
-export type { Page } from '@playwright/test'
+export type { Locator, Page } from '@playwright/test'

@@ -2,11 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
-import type { StaffFamilyDigestClient } from '@vmsh/app-shell'
+import { AuthenticationProvider, type StaffFamilyDigestClient } from '@vmsh/app-shell'
+import { http, HttpResponse } from 'msw'
+import authFixture from '@vmsh/contracts/fixtures/auth/staff.v1.json'
+import runtimeFixture from '@vmsh/contracts/fixtures/runtime/staff.v1.json'
 import fixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
 import { ContentNetworkError, type ContentApiClient } from '@vmsh/content'
 import {
   ApiResponseError,
+  parseRuntimeConfigForAudience,
   contentEtagSchema,
   publishedContentSchema,
   staffContentHistorySchema,
@@ -472,7 +476,32 @@ function rollbackHistory(): StaffContentHistory {
 
 const meta = {
   title: 'Pages/Staff/Content publication',
-  parameters: { layout: 'fullscreen' },
+  decorators: [
+    (Story) => (
+      <AuthenticationProvider
+        audience="staff"
+        runtime={parseRuntimeConfigForAudience('staff', runtimeFixture.response)}
+      >
+        <Story />
+      </AuthenticationProvider>
+    ),
+  ],
+  parameters: {
+    layout: 'fullscreen',
+    msw: {
+      handlers: [
+        http.get('/staff/api/v1/auth/me', () => HttpResponse.json(authFixture.authContext)),
+        http.get('/staff/api/v1/group-lessons/:id/blocks', ({ params }) =>
+          HttpResponse.json({
+            groupLessonId: params.id,
+            businessTimezone: 'Europe/Moscow',
+            before: null,
+            after: null,
+          }),
+        ),
+      ],
+    },
+  },
 } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>

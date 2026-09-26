@@ -1,6 +1,6 @@
 import { writtenThreadResponseSchema } from '../packages/contracts/src/written-submissions'
 import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
-import type { Locator } from '@playwright/test'
+import type { Locator } from './fixtures'
 
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test, type Page } from './fixtures'

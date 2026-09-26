@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 981700ab07b0298a673945fc069252d09579f5bdc3e01a4d8f8a49985c6eb845
+-- Product schema SHA-256: 3a15a645f562810d21831e10d90ed336defefa5f504b0f3870d092bfdef7e71e
 
 CREATE TABLE achievement_definitions
 (
@@ -1230,6 +1230,61 @@ CREATE TABLE last_keyboards
     user_id   INTEGER not null primary key references users,
     chat_id   INTEGER not null,
     tg_msg_id INTEGER not null
+);
+
+CREATE TABLE lesson_block_events
+(
+    id              integer primary key,
+    public_id text generated always as ('lbe-' || id) virtual unique,
+    block_id        integer not null references lesson_blocks (id),
+    revision_id     integer references lesson_block_revisions (id),
+    action          text not null check (action in (
+        'draft_saved', 'published', 'scheduled', 'with_lesson_armed',
+        'publication_cancelled', 'hidden', 'schedule_activated'
+    )),
+    actor_user_id   integer references users (id),
+    created_at      text not null,
+    block_version   integer not null check (block_version > 0),
+    details_json    text not null default '{}'
+);
+
+CREATE TABLE lesson_block_revisions
+(
+    id              integer primary key,
+    public_id text generated always as ('lbr-' || id) virtual unique,
+    block_id        integer not null references lesson_blocks (id),
+    revision_number integer not null check (revision_number > 0),
+    markdown        text not null,
+    document_json   text,
+    created_at      text not null,
+    created_by_user_id integer not null references users (id),
+    unique (block_id, revision_number),
+    unique (block_id, id),
+    check ((length(trim(markdown)) = 0) = (document_json is null))
+);
+
+CREATE TABLE lesson_blocks
+(
+    id                    integer primary key,
+    public_id text generated always as ('lb-' || id) virtual unique,
+    group_lesson_id       integer not null references group_lessons (id),
+    position              text not null check (position in ('before', 'after')),
+    draft_revision_id     integer,
+    published_revision_id integer,
+    published_at          text,
+    pending_revision_id   integer,
+    pending_mode          text check (pending_mode in ('scheduled', 'with_lesson')),
+    scheduled_at          text,
+    version               integer not null default 1 check (version > 0),
+    created_at            text not null,
+    updated_at            text not null,
+    created_by_user_id    integer references users (id),
+    updated_by_user_id    integer references users (id),
+    unique (group_lesson_id, position),
+    check ((published_revision_id is null) = (published_at is null)),
+    check ((pending_revision_id is null) = (pending_mode is null)),
+    check ((pending_mode = 'scheduled') = (scheduled_at is not null)),
+    check (pending_mode = 'scheduled' or scheduled_at is null)
 );
 
 CREATE TABLE lesson_publications
@@ -3041,6 +3096,16 @@ CREATE INDEX in_person_event_group_lessons_lesson_idx
 CREATE INDEX in_person_events_season_time_idx
     on in_person_events (season_id, starts_at, id);
 
+CREATE INDEX lesson_block_events_block_idx on lesson_block_events (block_id, id);
+
+CREATE INDEX lesson_block_revisions_block_idx on lesson_block_revisions (block_id, revision_number);
+
+CREATE INDEX lesson_blocks_due_idx on lesson_blocks (scheduled_at, id)
+    where pending_mode = 'scheduled';
+
+CREATE INDEX lesson_blocks_waiting_lesson_idx on lesson_blocks (group_lesson_id, id)
+    where pending_mode = 'with_lesson';
+
 CREATE UNIQUE INDEX lesson_publications_one_published_uq
     on lesson_publications (group_lesson_id, kind)
     where state = 'published';
@@ -3972,6 +4037,46 @@ when not (
 )
 begin
     select raise(abort, 'invalid idempotency state transition');
+end;
+
+CREATE TRIGGER lesson_block_revisions_delete_forbidden
+before delete on lesson_block_revisions
+for each row begin
+    select raise(abort, 'lesson block revisions cannot be deleted');
+end;
+
+CREATE TRIGGER lesson_block_revisions_immutable
+before update on lesson_block_revisions
+for each row begin
+    select raise(abort, 'lesson block revisions are immutable');
+end;
+
+CREATE TRIGGER lesson_blocks_revision_scope_insert
+before insert on lesson_blocks
+for each row when (
+    (new.draft_revision_id is not null and not exists (
+        select 1 from lesson_block_revisions where id = new.draft_revision_id and block_id = new.id
+    )) or (new.published_revision_id is not null and not exists (
+        select 1 from lesson_block_revisions where id = new.published_revision_id and block_id = new.id
+    )) or (new.pending_revision_id is not null and not exists (
+        select 1 from lesson_block_revisions where id = new.pending_revision_id and block_id = new.id
+    ))
+) begin
+    select raise(abort, 'lesson block revision is outside its block');
+end;
+
+CREATE TRIGGER lesson_blocks_revision_scope_update
+before update of draft_revision_id, published_revision_id, pending_revision_id on lesson_blocks
+for each row when (
+    (new.draft_revision_id is not null and not exists (
+        select 1 from lesson_block_revisions where id = new.draft_revision_id and block_id = new.id
+    )) or (new.published_revision_id is not null and not exists (
+        select 1 from lesson_block_revisions where id = new.published_revision_id and block_id = new.id
+    )) or (new.pending_revision_id is not null and not exists (
+        select 1 from lesson_block_revisions where id = new.pending_revision_id and block_id = new.id
+    ))
+) begin
+    select raise(abort, 'lesson block revision is outside its block');
 end;
 
 CREATE TRIGGER lesson_publications_activation_scope_insert

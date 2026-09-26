@@ -1,8 +1,7 @@
 import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
-import type { Locator } from '@playwright/test'
 
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
-import { expect, test, type Page } from './fixtures'
+import { expect, test, type Locator, type Page } from './fixtures'
 
 test.setTimeout(90_000)
 
@@ -380,6 +379,11 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null)
   const offlineMarker = 'vmsh-e2e-student-api-offline'
   await page.addInitScript((marker) => {
+    // Service availability distinguishes an offline device from an unreachable server.
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      get: () => window.sessionStorage.getItem(marker) !== '1',
+    })
     const nativeFetch = window.fetch.bind(window)
     window.fetch = (input, init) => {
       const rawUrl = typeof input === 'string' || input instanceof URL ? String(input) : input.url

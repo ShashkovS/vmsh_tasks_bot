@@ -1,6 +1,6 @@
 /** docs/figure-layout.md: real API, publication boundary, keyboard and exports. */
 import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
-import type { Locator } from '@playwright/test'
+import type { Locator } from './fixtures'
 import { readFile, writeFile } from 'node:fs/promises'
 import { unzipSync } from 'fflate'
 import { figureLayoutSchema } from '../packages/contracts/src/content'

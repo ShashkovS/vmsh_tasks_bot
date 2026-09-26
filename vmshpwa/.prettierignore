@@ -4,3 +4,6 @@ playwright-report
 test-results
 coverage
 **/routeTree.gen.ts
+
+# Canonical formatting is owned by golden_corpus.write_manifest().
+fixtures/content/golden-manifest.json

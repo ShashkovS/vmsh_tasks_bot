@@ -100,7 +100,9 @@ export function WorksheetMaterials({
           data-print-hide
           className="order-3 mt-2 w-full basis-full rounded-md border border-border p-3 text-small"
         >
-          <p><Trans>Показать подсказку? После открытия её уже не получится развидеть.</Trans></p>
+          <p>
+            <Trans>Показать подсказку? После открытия её уже не получится развидеть.</Trans>
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button size="sm" onClick={() => void open('hint')}>
               <Trans>Показать подсказку</Trans>
@@ -134,8 +136,15 @@ export function WorksheetMaterials({
           className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3"
         >
           {opened === 'hint' ? (
-            <p className="vmsh-material-label text-small font-medium"><Trans>Подсказка</Trans></p>
-          ) : null}
+            <p className="vmsh-material-label text-small font-medium">
+              <Trans>Подсказка</Trans>
+            </p>
+          ) : (
+            // docs/worksheet-print.md: retain the print label without duplicating the screen disclosure.
+            <p className="vmsh-material-label hidden text-small font-medium print:block">
+              <Trans>Решение</Trans>
+            </p>
+          )}
           {contents[opened]}
           <div className="mt-2 font-sans" data-print-hide>
             <Button size="sm" variant="ghost" onClick={() => setOpened(null)}>

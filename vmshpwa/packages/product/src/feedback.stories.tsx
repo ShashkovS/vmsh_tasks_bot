@@ -11,7 +11,7 @@ import { reactionsForScope } from './reaction'
 import { ReactionPicker } from './reaction-picker'
 import { SupportComposer } from './support-dialogue'
 import { VerdictPanel } from './verdict-panel'
-import { findVerdict, fullVerdictScale } from './verdict-registry'
+import { findVerdict, fullVerdictScale, writtenReviewVerdict } from './verdict-registry'
 import { WrittenReviewHistory } from './written-review-history'
 
 const meta = { title: 'Product/Feedback', parameters: { layout: 'padded' } } satisfies Meta
@@ -19,7 +19,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const partial = findVerdict(fullVerdictScale, 'plus-minus')!
-const aiVerdict = { ...findVerdict(fullVerdictScale, 'minus-plus')!, provenance: 'ai' as const }
+// Preserve lazy labels until the Storybook locale loader has run.
+const aiVerdict = writtenReviewVerdict(13, 'ai')
 
 const timeline: TimelineEntry[] = [
   { id: 'v', at: '26 января, 12:30', label: 'Проверено', verdict: partial },
