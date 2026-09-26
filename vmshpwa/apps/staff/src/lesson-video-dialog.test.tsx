@@ -26,3 +26,17 @@ it.each([
     expect.objectContaining({ type: 'video', provider }),
   )
 })
+
+it('uses English dialog controls and preserves the inserted video URL', async () => {
+  const { i18n } = await import('@lingui/core')
+  i18n.activate('en')
+  const onInsert = vi.fn()
+  render(<LessonVideoDialog onInsert={onInsert} />)
+  fireEvent.click(screen.getByText('Add video'))
+  fireEvent.change(screen.getByLabelText('YouTube/VK link or iframe'), {
+    target: { value: 'https://youtu.be/4ke2IJirSds' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Insert video' }))
+  expect(onInsert).toHaveBeenCalledOnce()
+  expect(onInsert.mock.calls[0]?.[0]).toContain('4ke2IJirSds')
+})

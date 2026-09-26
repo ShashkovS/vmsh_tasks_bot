@@ -52,7 +52,10 @@ function SelectTrigger({
   )
 }
 
+// P6 content selectors need named listboxes; see controls.stories.tsx and 24-i18n-p6-report.md.
 function SelectContent({
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
   className,
   children,
   side = 'bottom',
@@ -86,7 +89,9 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          <SelectPrimitive.List aria-label={ariaLabel} aria-labelledby={ariaLabelledBy}>
+            {children}
+          </SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>

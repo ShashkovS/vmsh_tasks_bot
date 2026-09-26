@@ -1,3 +1,6 @@
+import { answerTypeOptions, metadataColumns, problemTypeOptions } from './problem-metadata-columns'
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { CheckCircle2, LoaderCircle, Pencil, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -15,7 +18,6 @@ import {
 import {
   MetadataGrid,
   ProblemMatching,
-  type MetadataColumn,
   type MetadataError,
   type MetadataRow,
   type ProblemMatchingSelection,
@@ -47,95 +49,18 @@ interface StoredMetadataDraft {
   rows: MetadataRow[]
 }
 
-const problemTypeOptions = [
-  { value: '1', label: 'Тестовая' },
-  { value: '2', label: 'Письменная' },
-  { value: '3', label: 'Устная' },
-]
-
-const answerTypeOptions = [
-  [1, 'Цифра'],
-  [2, 'Натуральное число'],
-  [3, 'Целое число'],
-  [4, 'Отношение'],
-  [5, 'Десятичная дробь'],
-  [6, 'Обыкновенная или десятичная дробь'],
-  [7, 'Последовательность целых'],
-  [8, 'Два целых'],
-  [9, 'Три целых'],
-  [10, 'Четыре целых'],
-  [11, 'Множество целых'],
-  [12, 'Многочлен'],
-  [13, 'Число с точностью'],
-  [14, 'Время'],
-  [15, 'Дата'],
-  [16, 'День недели'],
-  [17, 'Последовательность дробей'],
-  [18, 'Мультимножество'],
-  [19, 'Смешанная дробь'],
-  [20, 'Символьное выражение'],
-  [21, 'Эквивалентное выражение'],
-  [98, 'Выбор одного варианта'],
-  [99, 'Строка'],
-].map(([value, label]) => ({ value: String(value), label: String(label) }))
-
 const metadataGenerationExpectedSeconds = 70
 
-const metadataColumns: MetadataColumn[] = [
-  { id: 'displayNumber', header: 'Номер', width: 80, minWidth: 64 },
-  { id: 'title', header: 'Название', width: 240, minWidth: 160 },
-  {
-    id: 'problemType',
-    header: 'Тип задачи',
-    editor: 'select',
-    width: 150,
-    minWidth: 120,
-    options: problemTypeOptions,
-  },
-  {
-    id: 'answerType',
-    header: 'Тип ответа',
-    editor: 'select',
-    width: 210,
-    minWidth: 160,
-    options: answerTypeOptions,
-  },
-  {
-    id: 'correctAnswer',
-    header: 'Правильный ответ',
-    editor: 'textarea',
-    width: 180,
-    minWidth: 120,
-  },
-  {
-    id: 'answerValidation',
-    header: 'Своя валидация',
-    editor: 'textarea',
-    width: 240,
-    minWidth: 160,
-  },
-  {
-    id: 'validationError',
-    header: 'Ошибка формата',
-    editor: 'textarea',
-    width: 260,
-    minWidth: 160,
-  },
-  {
-    id: 'correctAnswerChecker',
-    header: 'Проверяльщик',
-    editor: 'textarea',
-    width: 240,
-    minWidth: 160,
-  },
-  { id: 'wrongAnswer', header: 'Неверный ответ', editor: 'textarea', width: 240, minWidth: 160 },
-  { id: 'congratulation', header: 'Верный ответ', editor: 'textarea', width: 240, minWidth: 160 },
-]
-
 const typeLabels: Record<number, string> = {
-  1: 'тестовая',
-  2: 'письменная',
-  3: 'устная',
+  get 1() {
+    return t`тестовая`
+  },
+  get 2() {
+    return t`письменная`
+  },
+  get 3() {
+    return t`устная`
+  },
 }
 
 function problemKey(sourceOrdinal: number, sourceItem: string): string {
@@ -292,10 +217,10 @@ function validateMetadataRows(rows: MetadataRow[]): MetadataError[] {
   const errors: MetadataError[] = []
   rows.forEach((row, index) => {
     if (!row.title?.trim()) {
-      errors.push({ row: index, col: 'title', message: 'Заполните короткое название задачи' })
+      errors.push({ row: index, col: 'title', message: t`Заполните короткое название задачи` })
     }
     if (!problemTypeOptions.some((option) => option.value === row.problemType)) {
-      errors.push({ row: index, col: 'problemType', message: 'Выберите тип задачи' })
+      errors.push({ row: index, col: 'problemType', message: t`Выберите тип задачи` })
     }
     if (
       row.problemType === '1' &&
@@ -304,7 +229,7 @@ function validateMetadataRows(rows: MetadataRow[]): MetadataError[] {
       errors.push({
         row: index,
         col: 'answerType',
-        message: 'Для тестовой задачи нужен тип ответа',
+        message: t`Для тестовой задачи нужен тип ответа`,
       })
     }
     if (row.problemType !== '1') {
@@ -322,7 +247,7 @@ function validateMetadataRows(rows: MetadataRow[]): MetadataError[] {
           errors.push({
             row: index,
             col: field,
-            message: 'Поля ответа доступны только для тестовой задачи',
+            message: t`Поля ответа доступны только для тестовой задачи`,
           })
         }
       })
@@ -352,7 +277,7 @@ function metadataMutationRows(rows: MetadataRow[]): ProblemMetadataMutationRow[]
 function readableError(error: unknown): string {
   if (error instanceof ApiResponseError) return error.message
   if (error instanceof Error) return error.message
-  return 'Не удалось загрузить проверку задач'
+  return t`Не удалось загрузить проверку задач`
 }
 
 export function ProblemReviewWorkflow({
@@ -452,7 +377,7 @@ export function ProblemReviewWorkflow({
           allMatched = current.data.items.every((item) => item.match !== null)
         } else if (kind !== 'condition') {
           throw new Error(
-            'Структура задач или пунктов не совпадает с условием. Исправьте LaTeX-файл и загрузите новую revision.',
+            t`Структура задач или пунктов не совпадает с условием. Исправьте LaTeX-файл и загрузите новую revision.`,
           )
         }
         if (!allMatched) {
@@ -522,7 +447,7 @@ export function ProblemReviewWorkflow({
         number: candidate.problemNumber,
         item: candidate.item,
         title: candidate.title,
-        typeLabel: typeLabels[candidate.problemType] ?? `тип ${candidate.problemType}`,
+        typeLabel: typeLabels[candidate.problemType] ?? t`тип ${candidate.problemType}`,
       })) ?? [],
     [matchResource],
   )
@@ -534,7 +459,7 @@ export function ProblemReviewWorkflow({
     try {
       const matches = matchResource.data.items.map((item) => {
         const selection = selections[problemKey(item.sourceOrdinal, item.sourceItem)]
-        if (!selection) throw new Error('Выберите действие для каждой задачи')
+        if (!selection) throw new Error(t`Выберите действие для каждой задачи`)
         return {
           sourceOrdinal: item.sourceOrdinal,
           sourceItem: item.sourceItem,
@@ -558,7 +483,7 @@ export function ProblemReviewWorkflow({
         await advanceAfterMatching(current)
         if (current.data.items.some((item) => item.match === null)) {
           setMessage(
-            'Сервер уже принял другое изменение. Текущее состояние загружено заново; проверьте только строки, которые нельзя сопоставить автоматически.',
+            t`Сервер уже принял другое изменение. Текущее состояние загружено заново; проверьте только строки, которые нельзя сопоставить автоматически.`,
           )
         }
       } else {
@@ -605,7 +530,7 @@ export function ProblemReviewWorkflow({
     if (
       confirmedOverwrite &&
       !globalThis.confirm(
-        'Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач.',
+        t`Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач.`,
       )
     ) {
       return
@@ -639,17 +564,23 @@ export function ProblemReviewWorkflow({
   }
 
   if (phase === 'loading') {
-    return <p className="text-small text-muted-foreground">Загружаем структуру задач…</p>
+    return (
+      <p className="text-small text-muted-foreground">
+        <Trans>Загружаем структуру задач…</Trans>
+      </p>
+    )
   }
 
   if (phase === 'error') {
     return (
       <Alert role="alert" tone="danger">
         <AlertContent>
-          <AlertTitle>Не удалось загрузить проверку задач</AlertTitle>
+          <AlertTitle>
+            <Trans>Не удалось загрузить проверку задач</Trans>
+          </AlertTitle>
           <AlertDescription>{message}</AlertDescription>
           <Button className="mt-2" onClick={() => void reload()} size="xs" variant="outline">
-            <RefreshCw aria-hidden="true" /> Повторить
+            <RefreshCw aria-hidden="true" /> <Trans>Повторить</Trans>
           </Button>
         </AlertContent>
       </Alert>
@@ -692,12 +623,14 @@ export function ProblemReviewWorkflow({
       <section aria-labelledby={`problem-metadata-${kind}`} className="space-y-2">
         <div>
           <h3 className="text-small font-semibold" id={`problem-metadata-${kind}`}>
-            Метаданные задач
+            <Trans>Метаданные задач</Trans>
           </h3>
           <p className="text-caption text-muted-foreground">
-            Проверьте названия, способы сдачи и сообщения проверки. Таблица сохраняется локально до
-            подтверждения. Сохранение заменяет текущую конфигурацию задачи; для тестовой задачи
-            затем перепроверьте ответы по новой конфигурации.
+            <Trans>
+              Проверьте названия, способы сдачи и сообщения проверки. Таблица сохраняется локально
+              до подтверждения. Сохранение заменяет текущую конфигурацию задачи; для тестовой задачи
+              затем перепроверьте ответы по новой конфигурации.
+            </Trans>
           </p>
         </div>
         {metadataResource.data.canGenerateMetadata && client.generateMetadata ? (
@@ -709,14 +642,14 @@ export function ProblemReviewWorkflow({
               variant="outline"
             >
               {metadataGenerationStartedAt === undefined
-                ? 'Сгенерировать metadata'
-                : 'Генерируем metadata…'}
+                ? t`Сгенерировать metadata`
+                : t`Генерируем metadata…`}
             </Button>
             {metadataGenerationStartedAt === undefined ? (
               <span className="text-caption text-muted-foreground">
                 {metadataResource.data.metadataGenerationRequiresConfirmation
-                  ? 'Новая генерация полностью заменит таблицу после подтверждения; затем её нужно проверить и сохранить вручную.'
-                  : 'Черновик нужно проверить и сохранить вручную.'}
+                  ? t`Новая генерация полностью заменит таблицу после подтверждения; затем её нужно проверить и сохранить вручную.`
+                  : t`Черновик нужно проверить и сохранить вручную.`}
               </span>
             ) : (
               <div
@@ -727,13 +660,15 @@ export function ProblemReviewWorkflow({
                 <LoaderCircle aria-hidden="true" className="size-4 shrink-0 animate-spin" />
                 <div className="min-w-48 flex-1 space-y-1">
                   <p>
-                    Генерируем и перепроверяем metadata. Обычно это занимает 30–60 секунд
+                    <Trans>
+                      Генерируем и перепроверяем metadata. Обычно это занимает 30–60 секунд
+                    </Trans>
                     {metadataGenerationElapsedSeconds >= metadataGenerationExpectedSeconds
-                      ? '; запрос всё ещё выполняется: для большого условия это может занять до 10 минут. Не закрывайте страницу.'
+                      ? t`; запрос всё ещё выполняется: для большого условия это может занять до 10 минут. Не закрывайте страницу.`
                       : '.'}
                   </p>
                   <Progress
-                    aria-label="Генерация metadata"
+                    aria-label={t`Генерация metadata`}
                     value={Math.min(
                       95,
                       (metadataGenerationElapsedSeconds / metadataGenerationExpectedSeconds) * 100,
@@ -747,7 +682,9 @@ export function ProblemReviewWorkflow({
         {message ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
-              <AlertTitle>Не удалось сгенерировать metadata</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось сгенерировать metadata</Trans>
+              </AlertTitle>
               <AlertDescription>{message}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -755,10 +692,14 @@ export function ProblemReviewWorkflow({
         {generatedRows ? (
           <Alert tone="success">
             <AlertContent>
-              <AlertTitle>Черновик metadata обновлён</AlertTitle>
+              <AlertTitle>
+                <Trans>Черновик metadata обновлён</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Результат генерации уже показан в таблице ниже. Проверьте его и нажмите «Сохранить
-                метаданные», чтобы заменить текущую конфигурацию задач.
+                <Trans>
+                  Результат генерации уже показан в таблице ниже. Проверьте его и нажмите «Сохранить
+                  метаданные», чтобы заменить текущую конфигурацию задач.
+                </Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -766,7 +707,9 @@ export function ProblemReviewWorkflow({
         {generationWarnings.length ? (
           <Alert tone="warning">
             <AlertContent>
-              <AlertTitle>Проверьте сгенерированные metadata</AlertTitle>
+              <AlertTitle>
+                <Trans>Проверьте сгенерированные metadata</Trans>
+              </AlertTitle>
               <AlertDescription>{generationWarnings.join(' ')}</AlertDescription>
             </AlertContent>
           </Alert>
@@ -774,9 +717,13 @@ export function ProblemReviewWorkflow({
         {staleDraft ? (
           <Alert tone="warning">
             <AlertContent>
-              <AlertTitle>Серверная версия изменилась</AlertTitle>
+              <AlertTitle>
+                <Trans>Серверная версия изменилась</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Черновик не потерян. Сверьте строки с текущими данными перед сохранением.
+                <Trans>
+                  Черновик не потерян. Сверьте строки с текущими данными перед сохранением.
+                </Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -784,7 +731,7 @@ export function ProblemReviewWorkflow({
         <MetadataGrid
           allowPristineCommit
           columns={metadataColumns}
-          commitLabel="Сохранить метаданные"
+          commitLabel={t`Сохранить метаданные`}
           disabled={pending}
           {...(draft ? { initialDraftRows: draft.rows } : {})}
           initialRows={baseline}
@@ -806,7 +753,7 @@ export function ProblemReviewWorkflow({
                 setMetadataResource(current)
                 setStaleDraft(true)
                 throw new Error(
-                  'Метаданные уже изменились. Ваш локальный черновик сохранён; обновите и сверьте строки.',
+                  t`Метаданные уже изменились. Ваш локальный черновик сохранён; обновите и сверьте строки.`,
                 )
               }
               throw new Error(readableError(error))
@@ -839,16 +786,16 @@ export function ProblemReviewWorkflow({
         <p className="inline-flex items-center gap-1 text-small text-status-success">
           <CheckCircle2 aria-hidden="true" className="size-4" />
           {kind === 'condition'
-            ? 'Сопоставление и метаданные подтверждены.'
-            : 'Сопоставление задач подтверждено; метаданные берутся из условия.'}
+            ? t`Сопоставление и метаданные подтверждены.`
+            : t`Сопоставление задач подтверждено; метаданные берутся из условия.`}
         </p>
         {kind === 'condition' ? (
           <>
             <Button onClick={() => void editMatches()} size="xs" variant="outline">
-              <Pencil aria-hidden="true" /> Изменить состав задач
+              <Pencil aria-hidden="true" /> <Trans>Изменить состав задач</Trans>
             </Button>
             <Button onClick={() => void editMetadata()} size="xs" variant="outline">
-              <Pencil aria-hidden="true" /> Изменить метаданные
+              <Pencil aria-hidden="true" /> <Trans>Изменить метаданные</Trans>
             </Button>
           </>
         ) : null}
@@ -861,24 +808,30 @@ export function ProblemReviewWorkflow({
               key={row.problemPublicId}
             >
               <span>
-                {row.displayNumber}. {row.title} · ответов: {row.attemptCount}
+                <Trans>
+                  {row.displayNumber}. {row.title} · ответов: {row.attemptCount}
+                </Trans>
                 {row.needsRecheck ? (
-                  <strong className="ml-2 text-status-warning">Требуется перепроверка</strong>
+                  <strong className="ml-2 text-status-warning">
+                    <Trans>Требуется перепроверка</Trans>
+                  </strong>
                 ) : (
-                  <span className="ml-2 text-muted-foreground">Актуально</span>
+                  <span className="ml-2 text-muted-foreground">
+                    <Trans>Актуально</Trans>
+                  </span>
                 )}
               </span>
               <Button
                 render={
                   <a
-                    aria-label={`Перепроверить все ответы задачи ${row.displayNumber}`}
+                    aria-label={t`Перепроверить все ответы задачи ${row.displayNumber}`}
                     href={`/staff/problems/${row.problemPublicId}`}
                   />
                 }
                 size="xs"
                 variant="outline"
               >
-                Перепроверить все ответы
+                <Trans>Перепроверить все ответы</Trans>
               </Button>
             </div>
           ))}

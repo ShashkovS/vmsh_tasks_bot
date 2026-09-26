@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiResponseError, type FigureLayoutEntry, type WebContentDocument } from '@vmsh/contracts'
@@ -74,19 +76,25 @@ export function FigureLayoutEditor({
       className="mt-4 rounded border border-border p-3"
       onToggle={(e) => setOpened(e.currentTarget.open)}
     >
-      <summary className="cursor-pointer font-medium">Расположение рисунков</summary>
+      <summary className="cursor-pointer font-medium">
+        <Trans>Расположение рисунков</Trans>
+      </summary>
       <p className="my-2 text-small text-muted-foreground">
-        Правки появятся у школьников после публикации.
+        <Trans>Правки появятся у школьников после публикации.</Trans>
       </p>
-      {query.isLoading ? <p role="status">Загружаем рисунки…</p> : null}
+      {query.isLoading ? (
+        <p role="status">
+          <Trans>Загружаем рисунки…</Trans>
+        </p>
+      ) : null}
       {query.isError || save.isError ? (
         <div role="alert">
           <p>
             {error instanceof ApiResponseError && error.code === 'recompile_required'
-              ? 'Для этой версии сначала нажмите «Повторно обработать исходник» над предпросмотром.'
+              ? t`Для этой версии сначала нажмите «Повторно обработать исходник» над предпросмотром.`
               : error instanceof ApiResponseError && error.status === 409
-                ? 'Расположение уже изменилось. Обновите данные и повторите действие.'
-                : 'Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие.'}
+                ? t`Расположение уже изменилось. Обновите данные и повторите действие.`
+                : t`Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие.`}
           </p>
           <Button
             onClick={() => {
@@ -94,15 +102,19 @@ export function FigureLayoutEditor({
               void query.refetch()
             }}
           >
-            Обновить
+            <Trans>Обновить</Trans>
           </Button>
         </div>
       ) : null}
       {query.data ? (
         <div className="space-y-3">
           {[false, true].map((hidden) => (
-            <section key={String(hidden)} aria-label={hidden ? 'Скрытые рисунки' : 'Рисунки'}>
-              {hidden ? <h3 className="font-medium">Скрытые рисунки</h3> : null}
+            <section key={String(hidden)} aria-label={hidden ? t`Скрытые рисунки` : t`Рисунки`}>
+              {hidden ? (
+                <h3 className="font-medium">
+                  <Trans>Скрытые рисунки</Trans>
+                </h3>
+              ) : null}
               {query.data.figures.map((row, index) => {
                 const original =
                   query.data.document.problems.find((p) => p.ordinal === row.sourceOrdinal) ??
@@ -129,20 +141,24 @@ export function FigureLayoutEditor({
                     key={row.occurrenceId}
                     className="my-3 flex min-w-0 flex-wrap items-center gap-2 rounded border border-border p-2"
                   >
-                    <legend className="text-small">Рисунок {index + 1}</legend>
+                    <legend className="text-small">
+                      <Trans>Рисунок</Trans> {index + 1}
+                    </legend>
                     {row.figure.asset.status === 'available' ? (
                       <img
                         className="h-20 w-24 object-contain"
                         src={row.figure.asset.src}
-                        alt={row.figure.alt || `Рисунок ${index + 1}`}
+                        alt={row.figure.alt || t`Рисунок ${index + 1}`}
                       />
                     ) : (
-                      <span>Рисунок недоступен</span>
+                      <span>
+                        <Trans>Рисунок недоступен</Trans>
+                      </span>
                     )}
                     <label className="text-small">
-                      Задача
+                      <Trans>Задача</Trans>
                       <select
-                        aria-label="Задача"
+                        aria-label={t`Задача`}
                         className="mx-2 max-w-full rounded border border-border bg-surface p-2"
                         value={entry.targetOrdinal}
                         onChange={(e) =>
@@ -162,14 +178,16 @@ export function FigureLayoutEditor({
                       </select>
                     </label>
                     <label className="text-small">
-                      Пункт
+                      <Trans>Пункт</Trans>
                       <select
-                        aria-label="Пункт"
+                        aria-label={t`Пункт`}
                         className="mx-2 rounded border border-border bg-surface p-2"
                         value={entry.targetPart ?? ''}
                         onChange={(e) => update({ ...entry, targetPart: e.target.value || null })}
                       >
-                        <option value="">Общий блок</option>
+                        <option value="">
+                          <Trans>Общий блок</Trans>
+                        </option>
                         {target.partLabels?.map((label) => (
                           <option key={label}>{label}</option>
                         ))}
@@ -177,9 +195,9 @@ export function FigureLayoutEditor({
                     </label>
                     {query.data.document.materialKind === 'solution' ? (
                       <label className="text-small">
-                        Раздел
+                        <Trans>Раздел</Trans>
                         <select
-                          aria-label="Раздел"
+                          aria-label={t`Раздел`}
                           className="mx-2 rounded border border-border bg-surface p-2"
                           value={entry.section}
                           onChange={(e) =>
@@ -189,31 +207,41 @@ export function FigureLayoutEditor({
                             })
                           }
                         >
-                          <option value="common">Перед ответом и решением</option>
-                          <option value="answer">Ответ</option>
-                          <option value="solution">Решение</option>
+                          <option value="common">
+                            <Trans>Перед ответом и решением</Trans>
+                          </option>
+                          <option value="answer">
+                            <Trans>Ответ</Trans>
+                          </option>
+                          <option value="solution">
+                            <Trans>Решение</Trans>
+                          </option>
                         </select>
                       </label>
                     ) : null}
                     <label className="text-small">
-                      Сторона
+                      <Trans>Сторона</Trans>
                       <select
-                        aria-label="Сторона"
+                        aria-label={t`Сторона`}
                         className="mx-2 rounded border border-border bg-surface p-2"
                         value={entry.side}
                         onChange={(e) =>
                           update({ ...entry, side: e.target.value as 'left' | 'right' })
                         }
                       >
-                        <option value="left">Слева</option>
-                        <option value="right">Справа</option>
+                        <option value="left">
+                          <Trans>Слева</Trans>
+                        </option>
+                        <option value="right">
+                          <Trans>Справа</Trans>
+                        </option>
                       </select>
                     </label>
                     <Button size="sm" variant="outline" onClick={() => reorder(entry, -1)}>
-                      Выше
+                      <Trans>Выше</Trans>
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => reorder(entry, 1)}>
-                      Ниже
+                      <Trans>Ниже</Trans>
                     </Button>
                     <Button
                       size="sm"
@@ -237,7 +265,7 @@ export function FigureLayoutEditor({
                         }
                       }}
                     >
-                      {hidden ? 'Восстановить' : 'Скрыть'}
+                      {hidden ? t`Восстановить` : t`Скрыть`}
                     </Button>
                     <Button
                       size="sm"
@@ -248,7 +276,7 @@ export function FigureLayoutEditor({
                         )
                       }
                     >
-                      Вернуть исходное расположение
+                      <Trans>Вернуть исходное расположение</Trans>
                     </Button>
                   </fieldset>
                 )

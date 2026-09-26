@@ -12,7 +12,7 @@
 - Input, Textarea: label/description/error через Field; prefix/suffix только когда не ухудшают доступность. Native `type=file` сохраняет системный picker, multiple и drag/drop, но его selector визуально оформлен как явная primary-кнопка во всех Staff/Student формах (`UI/Controls--file-inputs`).
 - Field/Label: required, optional, hint, validation, disabled, read-only, horizontal staff arrangement.
 - Checkbox, Switch: indeterminate для checkbox, ясная разница action vs immediate setting.
-- Select: single selection, groups, long labels, keyboard search; native fallback обсуждается для mobile.
+- Select: single selection, groups, long labels, keyboard search; native fallback обсуждается для mobile. `SelectContent` передаёт `aria-label`/`aria-labelledby` самому listbox, включая закрывающую анимацию: [реализация](../../packages/ui/src/components/select.tsx), [NamedSelect interaction](../../packages/ui/src/components/controls.stories.tsx), [P6-проверка](../development-plan/24-i18n-p6-report.md).
 
 ### Overlays
 

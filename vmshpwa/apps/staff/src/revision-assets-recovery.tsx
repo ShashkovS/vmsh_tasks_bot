@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -50,25 +52,25 @@ function describeError(error: unknown, assetRef?: string): string {
       details && typeof details === 'object' && typeof details.detail === 'string'
         ? details.detail
         : undefined
-    const subject = assetRef ? `Рисунок TikZ ${assetRef}` : 'Рисунок TikZ'
+    const subject = assetRef ? t`Рисунок TikZ ${assetRef}` : t`Рисунок TikZ`
     if (error.code === 'content_assets_unavailable') {
-      return `${subject}: на сервере временно недоступен ${capability ?? 'нужный конвертер'}. Повторите позднее.`
+      return t`${subject}: на сервере временно недоступен ${capability ?? t`нужный конвертер`}. Повторите позднее.`
     }
-    return `${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
+    return t`${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
   }
   if (error instanceof ApiResponseError && error.status === 409) {
-    return 'Revision уже изменилась. Список ресурсов обновлён; проверьте его и повторите действие.'
+    return t`Revision уже изменилась. Список ресурсов обновлён; проверьте его и повторите действие.`
   }
   if (error instanceof ApiResponseError) {
-    return `${error.message} Код обращения: ${error.requestId}.`
+    return t`${error.message} Код обращения: ${error.requestId}.`
   }
   if (error instanceof ContentNetworkError) {
-    return 'Нет связи с сервером. Проверьте подключение и повторите действие.'
+    return t`Нет связи с сервером. Проверьте подключение и повторите действие.`
   }
   if (error instanceof ContentProtocolError) {
-    return 'Сервер вернул неожиданный ответ. Обновите страницу и повторите действие.'
+    return t`Сервер вернул неожиданный ответ. Обновите страницу и повторите действие.`
   }
-  return 'Не удалось обработать ресурс. Повторите действие.'
+  return t`Не удалось обработать ресурс. Повторите действие.`
 }
 
 function uploadKindForFile(file: File): 'raster' | 'svg' {
@@ -160,7 +162,7 @@ export function RevisionAssetsRecovery({
         (asset) => asset.logicalName === logicalName,
       )
       if (!refreshedSlot || refreshedSlot.status !== 'attached') {
-        throw new Error('Сервер не подтвердил прикрепление ресурса')
+        throw new Error(t`Сервер не подтвердил прикрепление ресурса`)
       }
     } catch (error) {
       updateDraft(logicalName, {
@@ -181,7 +183,7 @@ export function RevisionAssetsRecovery({
       const refreshedAssets = await assetsQuery.refetch()
       if (refreshedAssets.error) throw refreshedAssets.error
       if (!refreshedAssets.data || refreshedAssets.data.data.missingAssets.length > 0) {
-        throw new Error('Сначала прикрепите все недостающие ресурсы')
+        throw new Error(t`Сначала прикрепите все недостающие ресурсы`)
       }
       // Diagnostics is intentionally fetched after the asset list so compile
       // receives the latest strong revision ETag, not the one shown initially.
@@ -279,7 +281,7 @@ export function RevisionAssetsRecovery({
 
   if (assetsQuery.isPending) {
     return (
-      <section aria-label="Загрузка списка ресурсов" className="space-y-2">
+      <section aria-label={t`Загрузка списка ресурсов`} className="space-y-2">
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-24 w-full" />
       </section>
@@ -291,11 +293,13 @@ export function RevisionAssetsRecovery({
       <Alert role="alert" tone="danger">
         <AlertTriangle aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>Не удалось загрузить список ресурсов</AlertTitle>
+          <AlertTitle>
+            <Trans>Не удалось загрузить список ресурсов</Trans>
+          </AlertTitle>
           <AlertDescription className="space-y-2">
             <span className="block">{describeError(assetsQuery.error)}</span>
             <Button onClick={() => void assetsQuery.refetch()} size="xs" variant="outline">
-              <RefreshCw aria-hidden="true" /> Повторить
+              <RefreshCw aria-hidden="true" /> <Trans>Повторить</Trans>
             </Button>
           </AlertDescription>
         </AlertContent>
@@ -306,7 +310,7 @@ export function RevisionAssetsRecovery({
   const allResolved = assetsQuery.data.data.missingAssets.length === 0
 
   return (
-    <section aria-label="Ресурсы revision" className="space-y-3">
+    <section aria-label={t`Ресурсы revision`} className="space-y-3">
       <MissingAssetsFlow
         assets={items}
         disabled={busyAssetId !== undefined || compilePending || resolvePending}
@@ -327,7 +331,7 @@ export function RevisionAssetsRecovery({
             .catch(() =>
               updateDraft(logicalName, {
                 phase: 'error',
-                errorMessage: 'Не удалось прочитать файл. Выберите его ещё раз.',
+                errorMessage: t`Не удалось прочитать файл. Выберите его ещё раз.`,
               }),
             )
         }}
@@ -336,7 +340,7 @@ export function RevisionAssetsRecovery({
       {allResolved ? (
         <Button disabled={compilePending} onClick={() => void compileResolvedRevision()} size="sm">
           <RefreshCw aria-hidden="true" className={compilePending ? 'animate-spin' : undefined} />
-          {compilePending ? 'Собираем материал…' : 'Повторить сборку материала'}
+          {compilePending ? t`Собираем материал…` : t`Повторить сборку материала`}
         </Button>
       ) : null}
       {compileError ? (

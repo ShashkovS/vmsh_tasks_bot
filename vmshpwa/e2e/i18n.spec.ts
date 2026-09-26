@@ -1,6 +1,9 @@
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test, type Page } from './fixtures'
 
+// Each journey visits several routes and can reload after an account locale change.
+test.setTimeout(60_000)
+
 // English interface: dev/development-plan/24-i18n.md, docs/i18n.md.
 // The account language is saved from the personal cabinet (Staff: header menu),
 // the page reloads in it, and a new device picks it up at sign-in. Fixture
@@ -25,7 +28,10 @@ async function saveAccountLocale(page: Page, audience: string, locale: 'ru' | 'e
 test('Student switches the account to English in the profile', async ({ page, browser }) => {
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
   try {
-    await page.getByRole('radio', { name: 'English' }).click()
+    await Promise.all([
+      page.waitForEvent('load'),
+      page.getByRole('radio', { name: 'English' }).click(),
+    ])
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     await expect(page.getByRole('link', { name: 'Problems' }).first()).toBeVisible()
     await expect(page.getByText('Interface language').first()).toBeVisible()
@@ -121,7 +127,7 @@ test('Staff sees English course, classroom, oral, and publishing administration'
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
 
     await page.goto('/staff/courses?tab=catalog')
-    await expect(page.getByRole('heading', { name: 'Courses and groups' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Courses and groups' })).toBeVisible()
 
     await page.goto('/staff/courses?tab=schedule')
     await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible()
@@ -185,4 +191,51 @@ test('Russian stays the default without a device choice', async ({ page }) => {
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   await expect(page.getByText('Активная группа').first()).toBeVisible()
+})
+
+// P6: content tools change language without translating lesson/course content.
+test('Staff sees English lesson, import, synonym, and whiteboard tools', async ({
+  page,
+}, testInfo) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
+  try {
+    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
+    await page.getByRole('menuitem', { name: 'English' }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await page.goto('/staff/lessons')
+    await expect(
+      page.getByRole('heading', { name: 'Lessons and publications', exact: true }),
+    ).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Create class', exact: true })).toBeVisible()
+    await page.goto('/staff/lessons/gl-921')
+    await expect(page.getByText('LaTeX and publications', { exact: true })).toBeVisible()
+    await page.locator('summary').filter({ hasText: 'Block before problems' }).click()
+    const markdown = page.getByRole('textbox', { name: 'Block before problems: Markdown' })
+    await markdown.fill('> ::video[Авторское название](https://youtu.be/dQw4w9WgXcQ)')
+    await expect(page.locator('details').filter({ has: markdown }).getByRole('alert')).toHaveText(
+      'Video is allowed only as a standalone top-level block',
+    )
+    await markdown.fill('Авторский текст **без перевода**')
+    await expect(page.getByRole('region', { name: 'Draft preview', exact: true })).toContainText(
+      'Авторский текст без перевода',
+    )
+    await page.goto('/staff/problems')
+    await expect(page.getByText('XLSX file', { exact: true })).toBeVisible()
+    await page.goto('/staff/problems/synonyms')
+    await expect(page.getByRole('heading', { name: 'Problem synonyms', exact: true })).toBeVisible()
+    await page.goto('/staff/whiteboard-export')
+    await expect(
+      page.getByText('Problem statements as PNG files for Zoom Whiteboard'),
+    ).toBeVisible()
+    await expect(page.getByText('Include statistics', { exact: true })).toBeVisible()
+    await page.screenshot({ path: testInfo.outputPath('p6-whiteboard-en.png'), fullPage: true })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByRole('button', { name: 'Download ZIP', exact: true })).toBeVisible()
+    await page.screenshot({
+      path: testInfo.outputPath('p6-whiteboard-en-narrow.png'),
+      fullPage: true,
+    })
+  } finally {
+    await saveAccountLocale(page, 'staff', 'ru')
+  }
 })

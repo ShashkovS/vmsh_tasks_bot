@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { useState } from 'react'
 
@@ -27,7 +28,7 @@ export function LessonVideoDialog({ onInsert }: { onInsert: (markdown: string) =
       setTitle('')
       setError(null)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Не удалось разобрать видео')
+      setError(reason instanceof Error ? reason.message : t`Не удалось разобрать видео`)
     }
   }
   return (
@@ -37,15 +38,15 @@ export function LessonVideoDialog({ onInsert }: { onInsert: (markdown: string) =
       </summary>
       <div className="mt-3 grid w-full gap-3 sm:w-96">
         <Label className="flex-col items-start leading-normal">
-          Ссылка YouTube/VK или iframe
+          <Trans>Ссылка YouTube/VK или iframe</Trans>
           <Input onChange={(event) => setSource(event.target.value)} value={source} />
         </Label>
         <Label className="flex-col items-start leading-normal">
-          Название (необязательно)
+          <Trans>Название (необязательно)</Trans>
           <Input onChange={(event) => setTitle(event.target.value)} value={title} />
         </Label>
         <Button onClick={insert} size="sm" type="button" variant="outline">
-          Вставить видео
+          <Trans>Вставить видео</Trans>
         </Button>
         {error ? (
           <p className="text-caption text-status-danger" role="alert">

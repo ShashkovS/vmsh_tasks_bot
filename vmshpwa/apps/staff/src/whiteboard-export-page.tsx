@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { pwaFetch } from '@vmsh/contracts'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -67,7 +69,7 @@ export function WhiteboardExportPage() {
     abort.current = controller
     setError('')
     setStatsError(false)
-    setProgress('Загружаем условия…')
+    setProgress(t`Загружаем условия…`)
     try {
       const data = whiteboardExportSchema.parse(
         await get(`/${selected.groupLessonId}?statistics=${withStats ? 1 : 0}`, controller.signal),
@@ -87,29 +89,38 @@ export function WhiteboardExportPage() {
       setTimeout(() => URL.revokeObjectURL(url), 30_000)
     } catch (e) {
       if (!controller.signal.aborted)
-        setError(e instanceof Error ? e.message : 'Не удалось подготовить архив')
+        setError(e instanceof Error ? e.message : t`Не удалось подготовить архив`)
     } finally {
       abort.current = null
       setProgress('')
     }
   }
   return (
-    <PageLayout title="Материалы для разбора" description="Условия задач в PNG для Zoom Whiteboard">
+    <PageLayout
+      title={t`Материалы для разбора`}
+      description={t`Условия задач в PNG для Zoom Whiteboard`}
+    >
       <div className="space-y-5 rounded-xl border bg-card p-5">
         {catalog.isPending ? (
-          <p>Загружаем занятия…</p>
+          <p>
+            <Trans>Загружаем занятия…</Trans>
+          </p>
         ) : catalog.isError ? (
           <div role="alert">
-            Не удалось загрузить занятия.{' '}
-            <Button onClick={() => void catalog.refetch()}>Повторить</Button>
+            <Trans>Не удалось загрузить занятия. </Trans>
+            <Button onClick={() => void catalog.refetch()}>
+              <Trans>Повторить</Trans>
+            </Button>
           </div>
         ) : sheets.length === 0 ? (
-          <p>Нет доступных опубликованных листков.</p>
+          <p>
+            <Trans>Нет доступных опубликованных листков.</Trans>
+          </p>
         ) : (
           <>
             <fieldset disabled={Boolean(progress)} className="grid gap-4 sm:grid-cols-3">
               <label className="space-y-2">
-                Курс
+                <Trans>Курс</Trans>
                 <select
                   className="block w-full rounded-md border bg-background p-2"
                   value={course?.courseId}
@@ -126,7 +137,7 @@ export function WhiteboardExportPage() {
                 </select>
               </label>
               <label className="space-y-2">
-                Занятие
+                <Trans>Занятие</Trans>
                 <select
                   className="block w-full rounded-md border bg-background p-2"
                   value={lesson?.lessonNumber}
@@ -139,14 +150,14 @@ export function WhiteboardExportPage() {
                 >
                   {lessons.map((s) => (
                     <option key={s.lessonNumber} value={s.lessonNumber}>
-                      Занятие {s.lessonNumber}
+                      <Trans>Занятие {s.lessonNumber}</Trans>
                       {s.lessonTitle ? ` · ${s.lessonTitle}` : ''}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="space-y-2">
-                Уровень
+                <Trans>Уровень</Trans>
                 <select
                   className="block w-full rounded-md border bg-background p-2"
                   value={selected?.groupId}
@@ -176,17 +187,17 @@ export function WhiteboardExportPage() {
                 disabled={Boolean(progress)}
                 onChange={(e) => setIncludeStats(e.target.checked)}
               />
-              Добавить статистику
+              <Trans>Добавить статистику</Trans>
             </label>
             <div className="flex flex-wrap items-center gap-3">
               <Button disabled={Boolean(progress)} onClick={() => void generate()}>
-                Скачать ZIP
+                <Trans>Скачать ZIP</Trans>
               </Button>
               {progress && (
                 <>
                   <span role="status">{progress}</span>
                   <Button variant="outline" onClick={() => abort.current?.abort()}>
-                    Отмена
+                    <Trans>Отмена</Trans>
                   </Button>
                 </>
               )}
@@ -194,20 +205,28 @@ export function WhiteboardExportPage() {
             {statsError && (
               <div role="alert" className="space-y-3">
                 <p>
-                  Не удалось загрузить статистику. Можно повторить запрос или скачать только
-                  условия.
+                  <Trans>
+                    Не удалось загрузить статистику. Можно повторить запрос или скачать только
+                    условия.
+                  </Trans>
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={() => void generate(true)}>Повторить</Button>
+                  <Button onClick={() => void generate(true)}>
+                    <Trans>Повторить</Trans>
+                  </Button>
                   <Button variant="outline" onClick={() => void generate(false)}>
-                    Скачать без статистики
+                    <Trans>Скачать без статистики</Trans>
                   </Button>
                 </div>
               </div>
             )}
-            {error && <p role="alert">{error}. Попробуйте ещё раз.</p>}
+            {error && (
+              <p role="alert">
+                <Trans>{error}. Попробуйте ещё раз.</Trans>
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
-              Распакуйте архив и перетащите PNG на доску Zoom Whiteboard.
+              <Trans>Распакуйте архив и перетащите PNG на доску Zoom Whiteboard.</Trans>
             </p>
           </>
         )}

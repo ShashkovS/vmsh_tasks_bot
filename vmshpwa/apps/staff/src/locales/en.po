@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2026-09-24 18:09+0300\n"
+"POT-Creation-Date: 2026-09-26 12:06+0300\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -12,6 +12,10 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid " · архив"
+msgstr " · archived"
 
 #: apps/staff/src/student-results-page.tsx
 msgid " · без результатов"
@@ -25,6 +29,16 @@ msgstr " · Yours: "
 msgid " · выбрано"
 msgstr " · selected"
 
+#: apps/staff/src/problem-synonym-page.tsx
+msgid " · задача"
+msgstr " · problem"
+
+#. placeholder {0}: block.pending.revisionNumber
+#. placeholder {1}: block.pendingMode === 'scheduled' && block.scheduledAt ? `: ${formatPublishedAt(block.scheduledAt)}` : t` вместе с занятием`
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid " · ожидает версия №{0}{1}"
+msgstr " · version #{0}{1} pending"
+
 #. placeholder {0}: minutes % 60
 #: apps/staff/src/review-queue-model.ts
 msgid " {0} мин"
@@ -34,6 +48,10 @@ msgstr " {0} min"
 #: apps/staff/src/review-queue-model.ts
 msgid " {0} ч"
 msgstr " {0} h"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid " вместе с занятием"
+msgstr " with the class"
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid " занятий, готовых окон:"
@@ -51,11 +69,19 @@ msgstr " Grades and teacher notes are not copied."
 msgid ", моя оценка"
 msgstr ", my grade"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "; запрос всё ещё выполняется: для большого условия это может занять до 10 минут. Не закрывайте страницу."
+msgstr "; the request is still running: a large statement can take up to 10 minutes. Keep this page open."
+
 #. placeholder {0}: e.transfer.source
 #. placeholder {1}: e.transfer.target
 #: apps/staff/src/student-results-history.tsx
 msgid ": задача {0} → {1}"
 msgstr ": problem {0} → {1}"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid ". Их можно выбрать и проверить на странице исправления."
+msgstr ". You can select and review them on the correction page."
 
 #: apps/staff/src/statistics-student-search.tsx
 msgid ". Показаны первые 20 — уточните имя или фамилию."
@@ -127,12 +153,19 @@ msgstr "{0} · 1 participant"
 msgid "{0} · видно только сотрудникам"
 msgstr "{0} · visible only to staff"
 
+#. placeholder {0}: problem.groupCode
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "{0} · задача"
+msgstr "{0} · problem"
+
 #. placeholder {0}: group.name
+#. placeholder {0}: lesson.group.name
 #. placeholder {0}: plan.data.courseName
 #. placeholder {1}: lesson.lessonNumber
 #. placeholder {1}: plan.data.lessonNumber
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
+#: apps/staff/src/staff-lessons-page.tsx
 msgid "{0} · занятие {1}"
 msgstr "{0} · class {1}"
 
@@ -141,6 +174,13 @@ msgstr "{0} · class {1}"
 #: apps/staff/src/live-marking-page.tsx
 msgid "{0} · Занятие {1}"
 msgstr "{0} · Class {1}"
+
+#. placeholder {0}: targetsQuery.data.courseName
+#. placeholder {1}: targetsQuery.data.lessonNumber
+#. placeholder {2}: targets.length
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "{0} · занятие {1} · групп: {2}"
+msgstr "{0} · class {1} · groups: {2}"
 
 #. placeholder {0}: before || t`Не сдавал`
 #. placeholder {1}: target || t`Не сдавал`
@@ -171,6 +211,7 @@ msgstr "Grade {0} · "
 #. placeholder {1}: error.requestId
 #: apps/staff/src/review-errors.ts
 #: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/revision-assets-recovery.tsx
 #: apps/staff/src/test-attempt-recheck-page.tsx
 msgid "{0} Код обращения: {1}."
 msgstr "{0} Request ID: {1}."
@@ -217,6 +258,13 @@ msgstr "{0}: one participant, {1} problems solved"
 msgid "{0}: пока нет отправок"
 msgstr "{0}: no submissions yet"
 
+#. placeholder {0}: row.displayNumber
+#. placeholder {1}: row.title
+#. placeholder {2}: row.attemptCount
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "{0}. {1} · ответов: {2}"
+msgstr "{0}. {1} · answers: {2}"
+
 #. placeholder {0}: value.dayOffset > 0 ? '+' : ''
 #. placeholder {1}: value.dayOffset
 #: apps/staff/src/staff-course-schedule-page.tsx
@@ -228,9 +276,25 @@ msgstr "{0}{1} d."
 msgid "{0}{status}. Нажатия: плюс → минус → не трогать."
 msgstr "{0}{status}. Clicks: plus → minus → leave unchanged."
 
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
+msgstr "{count, plural, one {# problem} other {# problems}}"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "{count, plural, one {# посылка} few {# посылки} many {# посылок} other {# посылки}}"
+msgstr "{count, plural, one {# submission} other {# submissions}}"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "{count, plural, one {# проверка} few {# проверки} many {# проверок} other {# проверки}}"
+msgstr "{count, plural, one {# review} other {# reviews}}"
+
 #: apps/staff/src/review-history-page.tsx
 msgid "{error} Ваши изменения остаются в форме. "
 msgstr "{error} Your changes remain in the form. "
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "{error}. Попробуйте ещё раз."
+msgstr "{error}. Try again."
 
 #. placeholder {0}: minutes % 60 ? t` ${minutes % 60} мин` : ''
 #: apps/staff/src/review-queue-model.ts
@@ -240,6 +304,18 @@ msgstr "{hours} h{0}"
 #: apps/staff/src/review-queue-model.ts
 msgid "{minutes} мин"
 msgstr "{minutes} min"
+
+#. placeholder {0}: detail ? `: ${detail}` : '.'
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "{subject} не удалось преобразовать в SVG{0}"
+msgstr "Could not convert {subject} to SVG{0}"
+
+#. placeholder {0}: capability ?? t`нужный конвертер`
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "{subject}: на сервере временно недоступен {0}. Повторите позднее."
+msgstr "{subject}: {0} is temporarily unavailable on the server. Try again later."
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "+ и −"
@@ -291,10 +367,64 @@ msgstr "📡 Connection"
 msgid "🤖 ИИ"
 msgstr "🤖 AI"
 
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Canvas недоступен"
+msgstr "Canvas is unavailable"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "HTTPS-ссылка"
 msgstr "HTTPS link"
+
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "LaTeX — единственный источник"
+msgstr "LaTeX is the only source"
+
+#: apps/staff/src/content-page.tsx
+msgid "LaTeX и публикации"
+msgstr "LaTeX and publications"
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "LaTeX-компилятор не смог безопасно собрать рисунок."
+msgstr "The LaTeX compiler could not safely render the figure."
+
+#: apps/staff/src/content-page.tsx
+msgid "LaTeX-файл"
+msgstr "LaTeX file"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "LaTeX-файлы"
+msgstr "LaTeX files"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Markdown публикации"
+msgstr "Publication Markdown"
+
+#: apps/staff/src/content-page.tsx
+msgid "PDF для этой версии пока не сохранён."
+msgstr "No PDF has been saved for this version yet."
+
+#: apps/staff/src/content-page.tsx
+msgid "PDF исходного файла, без правок расположения · "
+msgstr "Original source PDF, without layout changes · "
+
+#. placeholder {0}: state.pdfErrorMessage
+#: apps/staff/src/content-page.tsx
+msgid "PDF не удалось проверить: {0}"
+msgstr "Could not check the PDF: {0}"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "PNG, JPEG или WebP · до 10 МиБ"
+msgstr "PNG, JPEG, or WebP · up to 10 MiB"
+
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Revision уже изменилась. Список ресурсов обновлён; проверьте его и повторите действие."
+msgstr "The revision has changed. The asset list has been refreshed; check it and try again."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "XLSX-файл"
+msgstr "XLSX file"
 
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/routes/__root.tsx
@@ -317,6 +447,10 @@ msgstr "Active"
 #: apps/staff/src/review-history-page.tsx
 msgid "Актуальная проверка: {0} · "
 msgstr "Current review: {0} · "
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Актуально"
+msgstr "Up to date"
 
 #: apps/staff/src/routes/__root.tsx
 msgid "Аналитика"
@@ -356,9 +490,21 @@ msgstr "Room"
 msgid "Без аудитории"
 msgstr "No room"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Без изменений"
+msgstr "Unchanged"
+
 #: apps/staff/src/review-queue-model.ts
 msgid "Без курса"
 msgstr "No course"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Блок перед задачами"
+msgstr "Block before problems"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Блок после задач"
+msgstr "Block after problems"
 
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Блокировка проверки потеряна"
@@ -383,6 +529,20 @@ msgstr "More work"
 msgid "Браузер не сохраняет черновик. Не закрывайте страницу до отправки."
 msgstr "The browser cannot save the draft. Do not close the page before submitting."
 
+#. placeholder {0}: preview.summary.create
+#. placeholder {1}: preview.summary.update
+#: apps/staff/src/problem-import-page.tsx
+msgid "Будет создано {0} и обновлено {1} задач. Откат возможен, пока эти строки не изменены и новые задачи не используются."
+msgstr "{0} problems will be created and {1} updated. You can roll back while these rows remain unchanged and the new problems are unused."
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "В TikZ есть запрещённая файловая или исполняемая команда."
+msgstr "The TikZ contains a prohibited file or executable command."
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "В TikZ-фрагмент попали команды начала или конца документа."
+msgstr "The TikZ fragment contains document start or end commands."
+
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "В архиве"
 msgstr "Archived"
@@ -395,13 +555,33 @@ msgstr "per cycle day"
 msgid "В ленте"
 msgstr "On the feed"
 
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "В листке нет условий для экспорта"
+msgstr "The worksheet has no statements to export"
+
 #: apps/staff/src/review-history-page.tsx
 msgid "В начало списка"
 msgstr "Start of list"
 
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "В одной группе найдено несколько задач"
+msgstr "Multiple problems found in one group"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "В одной группе совпали несколько названий — перед объединением выберите одну задачу."
+msgstr "Multiple titles match in one group. Select one problem before merging."
+
 #: apps/staff/src/live-marking-grid.tsx
 msgid "В этом списке пока нет школьников."
 msgstr "There are no students in this list yet."
+
+#: apps/staff/src/content-page.tsx
+msgid "Вариант предпросмотра"
+msgstr "Preview variant"
+
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Введение"
+msgstr "Introduction"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Введите фамилию или имя школьника."
@@ -411,10 +591,70 @@ msgstr "Enter the student’s surname or given name."
 msgid "Введите фамилию школьника."
 msgstr "Enter the student’s surname."
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Вернуть исходное расположение"
+msgstr "Restore original layout"
+
+#. placeholder {0}: rollbackRevision?.data.revisionNumber ?? '—'
+#: apps/staff/src/content-page.tsx
+msgid "Вернуть опубликованный материал к версии {0}?"
+msgstr "Revert the published material to version {0}?"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Верный ответ"
+msgstr "Correct answer feedback"
+
+#. placeholder {0}: group.version
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "версия {0}"
+msgstr "version {0}"
+
 #. placeholder {0}: selected.version
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Версия {0}"
 msgstr "Version {0}"
+
+#. placeholder {0}: publishedRevision.data.revisionNumber
+#. placeholder {1}: publishedRevision.data.logicalFilename
+#: apps/staff/src/content-page.tsx
+msgid "версия {0} · {1}"
+msgstr "version {0} · {1}"
+
+#. placeholder {0}: revision.data.revisionNumber
+#. placeholder {0}: rollbackRevision.data.revisionNumber
+#. placeholder {1}: revision.data.logicalFilename
+#. placeholder {1}: rollbackRevision.data.logicalFilename
+#: apps/staff/src/content-page.tsx
+msgid "Версия {0} · {1}"
+msgstr "Version {0} · {1}"
+
+#. placeholder {0}: revision.revisionNumber
+#. placeholder {1}: revision.logicalFilename
+#. placeholder {2}: formatInBusinessTimezone(revision.uploadedAt, timezone)
+#: apps/staff/src/content-page.tsx
+msgid "Версия {0} · {1} · {2}"
+msgstr "Version {0} · {1} · {2}"
+
+#. placeholder {0}: revision.data.revisionNumber
+#: apps/staff/src/content-page.tsx
+msgid "Версия {0} проверяется. Повтор станет доступен после завершения текущей сборки."
+msgstr "Version {0} is being checked. You can retry after the current build finishes."
+
+#: apps/staff/src/content-page.tsx
+msgid "Версия для отката"
+msgstr "Version to restore"
+
+#: apps/staff/src/content-page.tsx
+msgid "Версия для проверки и публикации"
+msgstr "Version to review and publish"
+
+#: apps/staff/src/content-page.tsx
+msgid "Версия обновилась во время подготовки рисунков. Нажмите «Найти недостающие рисунки» ещё раз."
+msgstr "The version changed while preparing figures. Click “Find missing figures” again."
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Версия сохранена, но требует отдельной проверки."
+msgstr "The version has been saved but needs a separate review."
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Версия, связанная с этой посылкой"
@@ -428,6 +668,15 @@ msgstr "Statistical weight"
 msgid "Взята вами"
 msgstr "Assigned to you"
 
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Вид материала"
+msgstr "Material type"
+
+#. placeholder {0}: row.file.name
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Вид материала для файла {0}"
+msgstr "Material type for file {0}"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Вложение к посылке"
 msgstr "Submission attachment"
@@ -435,6 +684,10 @@ msgstr "Submission attachment"
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "Вместе с аудиторией изменится активная группа в этом курсе. Изменение попадёт в историю после подтверждения всего плана."
 msgstr "Changing the room also changes the active group in this course. The change is recorded in history after the whole plan is confirmed."
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Вместе с занятием"
+msgstr "With the class"
 
 #: apps/staff/src/login-page.tsx
 msgid "ВМШ 179"
@@ -452,6 +705,11 @@ msgstr "Internal notes"
 msgid "Внутренняя пометка"
 msgstr "Internal note"
 
+#. placeholder {0}: preview.synonymCandidates.length
+#: apps/staff/src/problem-import-page.tsx
+msgid "Возможные синонимы · {0}"
+msgstr "Possible synonyms · {0}"
+
 #: apps/staff/src/login-page.tsx
 msgid "Войти"
 msgstr "Sign in"
@@ -464,13 +722,30 @@ msgstr "Questions"
 msgid "восстановить"
 msgstr "restore"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Восстановить"
+msgstr "Restore"
+
 #: apps/staff/src/course-schedule-editor.tsx
+#: apps/staff/src/problem-metadata-columns.ts
 msgid "Время"
 msgstr "Time"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Время ({businessTimezone})"
+msgstr "Time ({businessTimezone})"
 
 #: apps/staff/src/course-schedule-editor.tsx
 msgid "Время задаётся относительно даты начала цикла и сохраняется в часовом поясе курса."
 msgstr "Time is set relative to the cycle start date and saved in the course time zone."
+
+#: apps/staff/src/content-page.tsx
+msgid "Время занятия: {businessTimezone}. Сервер проверит переходы летнего времени."
+msgstr "Class time zone: {businessTimezone}. The server will check daylight saving time transitions."
+
+#: apps/staff/src/content-page.tsx
+msgid "Время указано для {timezone}. Дедлайн меняется отдельно от публикации решений."
+msgstr "Time is shown in {timezone}. The deadline is changed separately from solution publication."
 
 #. placeholder {0}: Intl.DateTimeFormat().resolvedOptions().timeZone
 #: apps/staff/src/oral-weekly-draft.tsx
@@ -525,6 +800,10 @@ msgstr "All saved changes and answers for the problem"
 msgid "Всем"
 msgstr "Everyone"
 
+#: apps/staff/src/lesson-video-dialog.tsx
+msgid "Вставить видео"
+msgstr "Insert video"
+
 #: apps/staff/src/review-transfer.tsx
 msgid "Вся посылка будет перенесена в целевую очередь. Вы перейдёте к следующей работе."
 msgstr "The whole submission will move to the target queue. You will move on to the next work item."
@@ -554,9 +833,26 @@ msgstr "Are you sure you want to {action} the course “{0}”?"
 msgid "Выберите аудиторию"
 msgstr "Select a room"
 
+#: apps/staff/src/content-page.tsx
+msgid "Выберите версию"
+msgstr "Select a revision"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Выберите группу"
+msgstr "Select a group"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Выберите дату, время и конкретные занятия участвующих групп."
 msgstr "Select the date, time, and specific classes for the participating groups."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Выберите действие для каждой задачи"
+msgstr "Choose an action for each problem"
+
+#. placeholder {0}: row.file.name
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Выберите действующую группу для файла «{0}»."
+msgstr "Select an active group for “{0}”."
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Выберите задачу"
@@ -566,9 +862,25 @@ msgstr "Select a problem"
 msgid "Выберите задачу для серийной проверки или откройте отдельную работу."
 msgstr "Choose a problem for a review series or open an individual work item."
 
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Выберите несколько файлов и укажите группу. По умолчанию это условия; при необходимости вид материала можно изменить. Загрузка ничего не публикует."
+msgstr "Select multiple files and a group. The default material type is statements; you can change it if needed. Uploading does not publish anything."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Выберите тип задачи"
+msgstr "Select a problem type"
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Выберите хотя бы один LaTeX-файл."
+msgstr "Select at least one LaTeX file."
+
 #: apps/staff/src/staff-oral-results-page.tsx
 msgid "Выберите школьника, отметьте принятые задачи и сохраните один раунд. Черновик не теряется при перезагрузке."
 msgstr "Choose a student, mark accepted problems, and save one round. The draft is retained after reload."
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Выбор одного варианта"
+msgstr "Single choice"
 
 #. placeholder {0}: selected.name
 #: apps/staff/src/statistics-student-search.tsx
@@ -587,6 +899,11 @@ msgstr "Selected course — no work"
 msgid "Выбрано занятие"
 msgstr "Class selected"
 
+#. placeholder {0}: state.conversionDebug.stage
+#: apps/staff/src/content-page.tsx
+msgid "Вывод {0}"
+msgstr "{0} output"
+
 #: apps/staff/src/routes/__root.tsx
 msgid "Выйти"
 msgstr "Sign out"
@@ -595,13 +912,47 @@ msgstr "Sign out"
 msgid "Выйти из кабинета"
 msgstr "Sign out"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Выше"
+msgstr "Above"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Генерация metadata"
+msgstr "Metadata generation"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Генерируем metadata…"
+msgstr "Generating metadata…"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Генерируем и перепроверяем metadata. Обычно это занимает 30–60 секунд"
+msgstr "Generating and checking metadata. This usually takes 30–60 seconds"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Готовим картинку…"
+msgstr "Preparing image…"
+
+#: apps/staff/src/content-page.tsx
+msgid "Готовим рисунки из TikZ. Это может занять немного времени…"
+msgstr "Preparing TikZ figures. This may take a little time…"
+
+#: apps/staff/src/content-page.tsx
+msgid "Готовим рисунки из TikZ…"
+msgstr "Preparing TikZ figures…"
+
 #: apps/staff/src/review-series-page.tsx
 msgid "Готовим следующую…"
 msgstr "Preparing the next one…"
 
+#: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/live-marking-page.tsx
 msgid "Готово"
 msgstr "Done"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Готово: {readyCount} · требуют внимания: {attentionCount}"
+msgstr "Ready: {readyCount} · need attention: {attentionCount}"
 
 #: apps/staff/src/statistics-student-search.tsx
 msgid "График школьника"
@@ -609,6 +960,7 @@ msgstr "Student chart"
 
 #: apps/staff/src/review-queue-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Группа"
@@ -618,10 +970,20 @@ msgstr "Group"
 msgid "Группа для переопределений"
 msgstr "Group for overrides"
 
+#. placeholder {0}: row.file.name
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Группа для файла {0}"
+msgstr "Group for file {0}"
+
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-oral-results-page.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Групповое занятие {groupLessonId}"
 msgstr "Group class {groupLessonId}"
+
+#: apps/staff/src/content-page.tsx
+msgid "Групповое занятие не найдено"
+msgstr "Group class not found"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Группы"
@@ -631,9 +993,66 @@ msgstr "Groups"
 msgid "Дальше · ⌘/Ctrl + Alt + →"
 msgstr "Next · ⌘/Ctrl + Alt + →"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Дата"
+msgstr "Date"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Дата занятия"
+msgstr "Class date"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Дата и время будут показаны школьникам и родителям"
 msgstr "Students and parents will see the date and time"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Два целых"
+msgstr "Two integers"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Дедлайн и публикация решений независимы. Расписание можно менять отдельно."
+msgstr "The deadline and solution publication are independent. You can change their schedules separately."
+
+#: apps/staff/src/content-page.tsx
+msgid "Дедлайн не изменён"
+msgstr "Deadline unchanged"
+
+#: apps/staff/src/content-page.tsx
+msgid "Дедлайн сдачи"
+msgstr "Submission deadline"
+
+#: apps/staff/src/content-page.tsx
+msgid "Дедлайн сдачи при этом не изменится."
+msgstr "This will not change the submission deadline."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Действие"
+msgstr "Action"
+
+#: apps/staff/src/content-page.tsx
+msgid "Действие изменит видимую опубликованную версию."
+msgstr "This action will change the visible published version."
+
+#: apps/staff/src/content-page.tsx
+msgid "Действие не выполнено"
+msgstr "Action failed"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "День недели"
+msgstr "Day of the week"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Десятичная дробь"
+msgstr "Decimal"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Диагностика"
+msgstr "Diagnostics"
+
+#. placeholder {0}: visibleRevision?.revisionNumber
+#: apps/staff/src/content-page.tsx
+msgid "Диагностика версии {0}"
+msgstr "Version {0} diagnostics"
 
 #: apps/staff/src/live-marking-condition.tsx
 msgid "Для загрузки условия подключитесь к сети."
@@ -643,6 +1062,14 @@ msgstr "Connect to the network to load the statement."
 msgid "Для занятия ещё нет окон устного приёма."
 msgstr "There are no oral-session windows for this class yet."
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Для тестовой задачи нужен тип ответа"
+msgstr "A test problem requires an answer type"
+
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Для ученического превью сначала загрузите условия."
+msgstr "Upload statements first to see the student preview."
+
 #: apps/staff/src/lesson-statistics.tsx
 msgid "Для школьника пока нет расчёта силы по занятиям от 1."
 msgstr "There is no per-class strength calculation for this student from class 1 yet."
@@ -650,6 +1077,10 @@ msgstr "There is no per-class strength calculation for this student from class 1
 #: apps/staff/src/live-marking-page.tsx
 msgid "Для этого занятия нет опубликованных задач"
 msgstr "There are no published problems for this class"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Для этой версии сначала нажмите «Повторно обработать исходник» над предпросмотром."
+msgstr "For this version, click “Reprocess source” above the preview first."
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Добавить в группу школьника"
@@ -670,6 +1101,10 @@ msgstr "Add window"
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Добавить сезон"
 msgstr "Add season"
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Добавить статистику"
+msgstr "Include statistics"
 
 #: apps/staff/src/review-queue-page.tsx
 msgid "Дольше ждут"
@@ -696,6 +1131,10 @@ msgstr "another worksheet"
 msgid "Есть изменения"
 msgstr "Unsaved changes"
 
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Есть несохранённые изменения."
+msgstr "You have unsaved changes."
+
 #. placeholder {0}: events.length
 #. placeholder {1}: query.data?.pages[0]?.total
 #: apps/staff/src/student-results-history.tsx
@@ -713,6 +1152,10 @@ msgstr "Awaiting review"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Ждут проверки:"
 msgstr "Awaiting review:"
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "За один раз можно загрузить не больше {MAX_BATCH_FILES} файлов."
+msgstr "You can upload up to {MAX_BATCH_FILES} files at a time."
 
 #. placeholder {0}: new Set(visits.data?.visits.map((v) => v.studentId)).size
 #: apps/staff/src/live-marking-page.tsx
@@ -743,14 +1186,42 @@ msgstr "Completed"
 msgid "Завершить сессию"
 msgstr "Finish session"
 
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Загружаем"
+msgstr "Uploading"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Загружаем блоки занятия…"
+msgstr "Loading class blocks…"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Загружаем группы занятия…"
+msgstr "Loading class groups…"
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Загружаем занятия…"
+msgstr "Loading classes…"
+
+#: apps/staff/src/content-page.tsx
+msgid "Загружаем и проверяем LaTeX-файл…"
+msgstr "Uploading and checking the LaTeX file…"
+
 #: apps/staff/src/classroom-assignment-page.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем историю…"
 msgstr "Loading history…"
 
+#: apps/staff/src/content-page.tsx
+msgid "Загружаем название…"
+msgstr "Loading title…"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем посылки…"
 msgstr "Loading submissions…"
+
+#: apps/staff/src/content-page.tsx
+msgid "Загружаем предпросмотр…"
+msgstr "Loading preview…"
 
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Загружаем распределение по аудиториям…"
@@ -760,6 +1231,10 @@ msgstr "Loading room assignments…"
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Загружаем редактор…"
 msgstr "Loading editor…"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Загружаем рисунки…"
+msgstr "Loading figures…"
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем сводку…"
@@ -773,11 +1248,19 @@ msgstr "Loading list…"
 msgid "Загружаем страницу"
 msgstr "Loading page"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Загружаем структуру задач…"
+msgstr "Loading problem structure…"
+
 #: apps/staff/src/live-marking-condition.tsx
 #: apps/staff/src/review-series-page.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем условие…"
 msgstr "Loading statement…"
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Загружаем условия…"
+msgstr "Loading statements…"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем фотографию…"
@@ -789,15 +1272,54 @@ msgstr "Loading photo…"
 msgid "Загружаем…"
 msgstr "Loading…"
 
+#: apps/staff/src/content-page.tsx
+msgid "загружена, но не проверена"
+msgstr "uploaded, not checked"
+
+#: apps/staff/src/content-page.tsx
+msgid "Загрузить и проверить"
+msgstr "Upload and check"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Загрузить картинку"
+msgstr "Upload image"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Загрузить набор и проверить"
+msgstr "Upload and check batch"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Загрузка сохранена, требуется исправление"
+msgstr "Upload saved, corrections needed"
+
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Загрузка списка ресурсов"
+msgstr "Loading asset list"
+
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Задать вопрос"
+msgstr "Ask a question"
+
+#: apps/staff/src/figure-layout-editor.tsx
 #: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/review-history-page.tsx
 msgid "Задача"
 msgstr "Problem"
 
 #. placeholder {0}: p.label
+#. placeholder {0}: problem.taskReference ?? problem.ordinal
 #: apps/staff/src/live-marking-grid.tsx
+#: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Задача {0}"
 msgstr "Problem {0}"
+
+#. placeholder {0}: index + 1
+#. placeholder {1}: data.document.problems.length
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Задача {0} из {1}"
+msgstr "Problem {0} of {1}"
 
 #. placeholder {0}: p.label
 #: apps/staff/src/student-results-page.tsx
@@ -828,6 +1350,14 @@ msgstr "Closes"
 msgid "Закрыть"
 msgstr "Close"
 
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Закрыть приём · Москва"
+msgstr "Close submissions · Moscow"
+
+#: apps/staff/src/content-page.tsx
+msgid "Закрыть приём сейчас"
+msgstr "Close submissions now"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Заменить текущий черновик окнами прошлого занятия со сдвигом на 7 дней?"
 msgstr "Replace the current draft with the previous class’s windows shifted by 7 days?"
@@ -841,6 +1371,7 @@ msgstr "Replace the draft with three Mon/Tue/Wed windows in the week of the firs
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/student-results-page.tsx
+#: apps/staff/src/whiteboard-export-page.tsx
 msgid "Занятие"
 msgstr "Class"
 
@@ -850,41 +1381,105 @@ msgstr "Class"
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/student-results-page.tsx
+#: apps/staff/src/whiteboard-export-page.tsx
 msgid "Занятие {0}"
 msgstr "Class {0}"
 
+#. placeholder {0}: candidate.lessonNumber
 #. placeholder {0}: visited.number
+#. placeholder {1}: candidate.displayTitle
 #. placeholder {1}: visited.groupName
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/problem-import-page.tsx
 msgid "Занятие {0} · {1}"
 msgstr "Class {0} · {1}"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Занятие курса · {courseLessonId}"
+msgstr "Course class · {courseLessonId}"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Занятие не создано"
+msgstr "Class not created"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Занятий пока нет"
+msgstr "No classes yet"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Занятия"
 msgstr "Classes"
 
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Занятия не созданы"
+msgstr "Classes not created"
+
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Запланированные и прошлые"
 msgstr "Scheduled and past"
 
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Запланировано"
+msgstr "Scheduled"
+
+#: apps/staff/src/content-page.tsx
+msgid "Запланировано на "
+msgstr "Scheduled for "
+
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Запланировать"
 msgstr "Schedule"
+
+#. placeholder {0}: selectedRevision?.data.revisionNumber ?? '—'
+#. placeholder {1}: state.scheduleAt.replace('T', ' ')
+#: apps/staff/src/content-page.tsx
+msgid "Запланировать версию {0} на {1} ({businessTimezone})?"
+msgstr "Schedule version {0} for {1} ({businessTimezone})?"
 
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Запланировать публикацию"
 msgstr "Schedule publication"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Заполните короткое название задачи"
+msgstr "Enter a short problem title"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
+msgstr "Only classes and publications saved in the database are shown here."
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Идентификатор занятия курса"
+msgstr "Course class ID"
+
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "из последних подтверждённых событий групп"
 msgstr "from the most recently confirmed group events"
 
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Изменение не выполнено"
+msgstr "Change failed"
+
 #: apps/staff/src/classroom-catalog-page.tsx
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-news-page.tsx
 msgid "Изменение не сохранено"
 msgstr "Change not saved"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Изменения и ошибки"
+msgstr "Changes and errors"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Изменения применены"
+msgstr "Changes applied"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Изменится"
+msgstr "Will change"
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
@@ -892,9 +1487,22 @@ msgstr "Change not saved"
 msgid "Изменить"
 msgstr "Edit"
 
+#: apps/staff/src/content-page.tsx
+msgid "Изменить дедлайн"
+msgstr "Change deadline"
+
+#. placeholder {0}: value.replace('T', ' ')
+#: apps/staff/src/content-page.tsx
+msgid "Изменить дедлайн сдачи на {0}?"
+msgstr "Change the submission deadline to {0}?"
+
 #: apps/staff/src/staff-news-page.tsx
 msgid "Изменить запланированную публикацию"
 msgstr "Edit scheduled publication"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Изменить метаданные"
+msgstr "Edit metadata"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Изменить объявление"
@@ -904,6 +1512,14 @@ msgstr "Edit announcement"
 msgid "Изменить окно"
 msgstr "Edit window"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Изменить состав задач"
+msgstr "Edit problem selection"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Изменятся"
+msgstr "Will change"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "ИИ"
 msgstr "AI"
@@ -911,6 +1527,10 @@ msgstr "AI"
 #: apps/staff/src/live-marking-page.tsx
 msgid "имени"
 msgstr "given name"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Импорт отменён"
+msgstr "Import rolled back"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Искать только по фамилии"
@@ -931,6 +1551,15 @@ msgstr "Correcting the configuration does not change the original answers: their
 #: apps/staff/src/staff-news-page.tsx
 msgid "Исправление появится в ленте с пометкой «Обновлено». Повторное уведомление не отправится; время и получатели не меняются."
 msgstr "The correction will appear in the feed marked “Updated”. A second notification will not be sent; the time and recipients stay unchanged."
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Исправьте ошибку в markdown."
+msgstr "Fix the Markdown error."
+
+#. placeholder {0}: preview.summary.invalid
+#: apps/staff/src/problem-import-page.tsx
+msgid "Исправьте файл, если эти {0} строк тоже должны попасть в базу. Остальные строки можно применить сейчас."
+msgstr "Fix the file if these {0} rows should also be imported. You can apply the other rows now."
 
 #. placeholder {0}: historyStudent?.name
 #: apps/staff/src/classroom-assignment-page.tsx
@@ -960,6 +1589,10 @@ msgstr "Grade history · {0}"
 msgid "История оценки · задача {0} · {1}"
 msgstr "Grade history · problem {0} · {1}"
 
+#: apps/staff/src/content-page.tsx
+msgid "История сохранится, но материал перестанет быть доступен для чтения."
+msgstr "History will be preserved, but the material will no longer be available to read."
+
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Исходная проверка останется в истории"
 msgstr "The original review will remain in the history"
@@ -967,6 +1600,10 @@ msgstr "The original review will remain in the history"
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Исходная работа ученика"
 msgstr "Original student work"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Исходные посылки и проверки не переносятся. Если связь ошибочна, отделите конкретную задачу после предпросмотра."
+msgstr "Original submissions and reviews are not moved. If a link is incorrect, separate the specific problem after previewing."
 
 #: apps/staff/src/live-marking-condition.tsx
 msgid "К оценкам"
@@ -989,6 +1626,19 @@ msgstr "As in the course"
 msgid "Какие группы участвуют"
 msgstr "Participating groups"
 
+#. placeholder {0}: data.candidates.length
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Кандидаты · {0}"
+msgstr "Candidates · {0}"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Картинка"
+msgstr "Image"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Картинка загружена; сохраните черновик, чтобы закрепить её в версии."
+msgstr "Image uploaded; save the draft to attach it to the version."
+
 #: apps/staff/src/staff-classrooms-page.tsx
 msgid "Каталог"
 msgstr "Catalog"
@@ -996,6 +1646,11 @@ msgstr "Catalog"
 #: apps/staff/src/staff-classrooms-page.tsx
 msgid "Каталог, схема по группам и версионируемый план для выбранного очного события."
 msgstr "Catalog, group layout, and a versioned plan for the selected in-person event."
+
+#: apps/staff/src/bulk-content-upload.tsx
+#: apps/staff/src/content-page.tsx
+msgid "КБ"
+msgstr "KB"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Клонировать"
@@ -1069,14 +1724,17 @@ msgid "Краткая причина"
 msgstr "Brief reason"
 
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-queue-page.tsx
 #: apps/staff/src/review-workspace-page.tsx
 #: apps/staff/src/staff-course-schedule-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/student-results-page.tsx
+#: apps/staff/src/whiteboard-export-page.tsx
 msgid "Курс"
 msgstr "Course"
 
@@ -1113,9 +1771,38 @@ msgstr "Local copies of Telegram posts. Hiding affects only the PWA and does not
 msgid "Локальный черновик не сохранён"
 msgstr "Local draft not saved"
 
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Массовая загрузка"
+msgstr "Bulk upload"
+
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Масштаб рисунков для публикации"
+msgstr "Figure scale for publication"
+
+#: apps/staff/src/content-page.tsx
+msgid "Материал уже изменён. Обновляем версии и публикации…"
+msgstr "The material has changed. Refreshing versions and publications…"
+
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/whiteboard-export-page.tsx
 msgid "Материалы для разбора"
 msgstr "Materials for discussion"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Метаданные задач"
+msgstr "Problem metadata"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Метаданные уже изменились. Ваш локальный черновик сохранён; обновите и сверьте строки."
+msgstr "The metadata has changed. Your local draft is saved; refresh and compare the rows."
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Многочлен"
+msgstr "Polynomial"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Множество целых"
+msgstr "Set of integers"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Можно вернуться и исправить оценки"
@@ -1133,9 +1820,17 @@ msgstr "Available to review: {available} · With other teachers: {busy}"
 msgid "МСК"
 msgstr "MSK"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Мультимножество"
+msgstr "Multiset"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Мутно"
 msgstr "Confusing"
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "На сервере временно недоступен инструмент обработки рисунков."
+msgstr "The figure processing tool is temporarily unavailable on the server."
 
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "На устройстве есть изменения от другой версии. Они сохранены; сравните схему перед подтверждением."
@@ -1144,6 +1839,10 @@ msgstr "There are changes from another version on this device. They were saved; 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Набор вердиктов"
 msgstr "Verdict set"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Набор готов"
+msgstr "Batch ready"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Нажатия на оценку: было → + → − → не трогать. ∅ — не сдавал. ↶ — снять свои оценки этой ячейки. Красное — сохранение не подтверждено. Отменить: Ctrl/Cmd+Z."
@@ -1157,13 +1856,41 @@ msgstr "Back"
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/course-catalog-editors.tsx
 #: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/problem-import-page.tsx
+#: apps/staff/src/problem-metadata-columns.ts
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Название"
 msgstr "Title"
 
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/lesson-video-dialog.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Название (необязательно)"
+msgstr "Title (optional)"
+
+#: apps/staff/src/content-page.tsx
+msgid "Название занятия"
+msgstr "Class title"
+
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "Название и короткий код должны быть уникальны внутри выбранного курса."
 msgstr "The title and short code must be unique within the selected course."
+
+#: apps/staff/src/content-page.tsx
+msgid "Название не загружено"
+msgstr "Title not loaded"
+
+#: apps/staff/src/content-page.tsx
+msgid "Название не сохранено"
+msgstr "Title not saved"
+
+#: apps/staff/src/content-page.tsx
+msgid "Название общее для этого номера занятия во всех группах курса."
+msgstr "The title is shared by this class number across all groups in the course."
+
+#: apps/staff/src/content-page.tsx
+msgid "Название сохранено"
+msgstr "Title saved"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Назначений ещё нет"
@@ -1179,6 +1906,15 @@ msgstr "Found students"
 msgid "Найдено: {0}{1}"
 msgstr "Found: {0}{1}"
 
+#: apps/staff/src/content-page.tsx
+msgid "Найти недостающие рисунки"
+msgstr "Find missing figures"
+
+#. placeholder {0}: revision.data.revisionNumber
+#: apps/staff/src/content-page.tsx
+msgid "Найти недостающие рисунки в версии {0}"
+msgstr "Find missing figures in version {0}"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Найти следующего школьника"
 msgstr "Find the next student"
@@ -1186,6 +1922,10 @@ msgstr "Find the next student"
 #: apps/staff/src/student-results-page.tsx
 msgid "Найти школьника…"
 msgstr "Find a student…"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Например: задачи были объединены по совпавшему названию"
+msgstr "For example: the problems were merged because their titles matched"
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Например: проверено в канале, пост отсутствует"
@@ -1199,6 +1939,10 @@ msgstr "Configured windows"
 msgid "Настройки группы"
 msgstr "Group settings"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Настройки задач"
+msgstr "Problem settings"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Настройки занятия"
 msgstr "Class settings"
@@ -1210,6 +1954,14 @@ msgstr "Course settings"
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Настройки курса ещё не загружены"
 msgstr "Course settings have not loaded yet"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Настройки публикации сохранены."
+msgstr "Publication settings saved."
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Натуральное число"
+msgstr "Natural number"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Начало"
@@ -1231,6 +1983,10 @@ msgstr "Not selected"
 msgid "Не добавлен"
 msgstr "Not added"
 
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Не задано"
+msgstr "Not set"
+
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "Не закрывайте страницу до подтверждения плана."
 msgstr "Do not close the page until the plan is confirmed."
@@ -1246,6 +2002,14 @@ msgstr "Do not close the page; copy the comment before continuing."
 #: apps/staff/src/course-schedule-editor.tsx
 msgid "Не использовать"
 msgstr "Do not use"
+
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Не начата"
+msgstr "Not started"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "не опубликован"
+msgstr "not published"
 
 #: apps/staff/src/live-marking-grid.tsx
 msgid "Не отмечен"
@@ -1276,17 +2040,38 @@ msgstr "Could not complete sign-in securely. Try again or contact the administra
 msgid "Не удалось войти"
 msgstr "Could not sign in"
 
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/live-marking-page.tsx
 msgid "Не удалось выполнить действие"
 msgstr "Could not complete the action"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Не удалось выполнить операцию. Обновите данные и попробуйте ещё раз."
+msgstr "Could not complete the operation. Refresh the data and try again."
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Не удалось загрузить блоки занятия."
+msgstr "Could not load class blocks."
 
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Не удалось загрузить группы. "
 msgstr "Could not load groups. "
 
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Не удалось загрузить занятия. "
+msgstr "Could not load classes. "
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Не удалось загрузить историю. "
 msgstr "Could not load history. "
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Не удалось загрузить картинку"
+msgstr "Could not upload image"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Не удалось загрузить картинку."
+msgstr "Could not upload the image."
 
 #: apps/staff/src/classroom-catalog-page.tsx
 msgid "Не удалось загрузить каталог"
@@ -1304,6 +2089,10 @@ msgstr "Could not load in-person classes"
 msgid "Не удалось загрузить план"
 msgstr "Could not load the plan"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Не удалось загрузить проверку задач"
+msgstr "Could not load problem review"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Не удалось загрузить распределение по аудиториям"
 msgstr "Could not load room assignments"
@@ -1316,9 +2105,17 @@ msgstr "Could not load the recalculation status. Please try again."
 msgid "Не удалось загрузить список получателей"
 msgstr "Could not load the recipient list"
 
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Не удалось загрузить список ресурсов"
+msgstr "Could not load asset list"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Не удалось загрузить список. Проверьте соединение и нажмите «Обновить»."
 msgstr "Could not load the list. Check the connection and click “Refresh”."
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Не удалось загрузить статистику. Можно повторить запрос или скачать только условия."
+msgstr "Could not load statistics. Retry the request or download statements only."
 
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Не удалось загрузить страницу."
@@ -1337,6 +2134,18 @@ msgstr "Could not load the table."
 msgid "Не удалось загрузить условие."
 msgstr "Could not load the statement."
 
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Не удалось изменить блок занятия"
+msgstr "Could not update class block"
+
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Не удалось обработать ресурс. Повторите действие."
+msgstr "Could not process the asset. Try again."
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Не удалось обработать файл."
+msgstr "Could not process the file."
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "Не удалось открыть работу"
 msgstr "Could not open the work item"
@@ -1349,13 +2158,65 @@ msgstr "Could not open the results. Check the connection or choose another stude
 msgid "Не удалось перепроверить ответы. Обновите данные и повторите действие."
 msgstr "Could not recheck the answers. Refresh the data and try again."
 
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Не удалось подготовить архив"
+msgstr "Could not prepare archive"
+
 #: apps/staff/src/statistics-recalculation-control.tsx
 msgid "Не удалось подтвердить запуск. Повторите запрос."
 msgstr "Could not confirm the start. Try the request again."
 
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Не удалось получить группы занятия"
+msgstr "Could not load class groups"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Не удалось проверить Markdown"
+msgstr "Could not validate Markdown"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Не удалось проверить файл. Повторите попытку."
+msgstr "Could not check the file. Try again."
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Не удалось прочитать один из выбранных файлов. Скопируйте его на локальный диск и выберите набор ещё раз."
+msgstr "Could not read one of the selected files. Copy it to a local drive and select the batch again."
+
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Не удалось прочитать файл. Выберите его ещё раз."
+msgstr "Could not read the file. Select it again."
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Не удалось разобрать Markdown"
+msgstr "Could not parse Markdown"
+
+#: apps/staff/src/lesson-video-dialog.tsx
+msgid "Не удалось разобрать видео"
+msgstr "Could not parse video"
+
 #: apps/staff/src/login-page.tsx
 msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
 msgstr "Could not reach the server. Check the internet connection and try again."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Не удалось сгенерировать metadata"
+msgstr "Could not generate metadata"
+
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Не удалось собрать ZIP"
+msgstr "Could not create ZIP"
+
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Не удалось создать PNG"
+msgstr "Could not create PNG"
+
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "не удалось создать изображение"
+msgstr "could not create image"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие."
+msgstr "Could not save or load the layout. Refresh the data and try again."
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Не удалось сохранить окно."
@@ -1373,11 +2234,31 @@ msgstr "Could not save the oral-session results."
 msgid "Не удалось сохранить черновик на устройстве"
 msgstr "Could not save the draft on this device"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Неверный ответ"
+msgstr "Incorrect answer feedback"
+
 #: apps/staff/src/classroom-assignment-page.tsx
 #: apps/staff/src/classroom-catalog-page.tsx
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "Недостаточно прав"
 msgstr "Insufficient permissions"
+
+#: apps/staff/src/content-page.tsx
+msgid "Незавершённые загрузки"
+msgstr "Unfinished uploads"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Неподтверждённых совпадений на этом занятии нет."
+msgstr "There are no unconfirmed matches in this class."
+
+#: apps/staff/src/content-page.tsx
+msgid "Несовместимый предпросмотр материала"
+msgstr "Incompatible material preview"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "нет"
+msgstr "none"
 
 #: apps/staff/src/staff-oral-results-page.tsx
 msgid "Нет online-школьников или опубликованных устных задач для этого занятия."
@@ -1386,6 +2267,10 @@ msgstr "There are no online students or published oral problems for this class."
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Нет доступных курсов"
 msgstr "No available courses"
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Нет доступных опубликованных листков."
+msgstr "No published worksheets available."
 
 #: apps/staff/src/lesson-statistics.tsx
 msgid "Нет опубликованных занятий"
@@ -1399,6 +2284,7 @@ msgstr "There are no suitable written or oral problems for this class and level.
 msgid "Нет связи с сервером или получен неожиданный ответ. Повторите действие."
 msgstr "The server is unreachable or returned an unexpected response. Try again."
 
+#: apps/staff/src/revision-assets-recovery.tsx
 #: apps/staff/src/test-attempt-recheck-page.tsx
 msgid "Нет связи с сервером. Проверьте подключение и повторите действие."
 msgstr "The server is unreachable. Check your connection and try again."
@@ -1415,9 +2301,25 @@ msgstr "No connection"
 msgid "Нет соединения. Доступны загруженные результаты; обновление продолжится после подключения."
 msgstr "No connection. Loaded results are available; refresh will continue once connected."
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Ниже"
+msgstr "Below"
+
+#: apps/staff/src/content-page.tsx
+msgid "Ниже точный standalone LaTeX, переданный конвертеру, и его вывод."
+msgstr "The exact standalone LaTeX sent to the converter and its output are shown below."
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Никого не нашли. Попробуйте другую часть"
 msgstr "No one was found. Try a different part"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Новая"
+msgstr "New"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Новая генерация полностью заменит таблицу после подтверждения; затем её нужно проверить и сохранить вручную."
+msgstr "After confirmation, a new generation will replace the entire table. You must then review and save it manually."
 
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "Новая группа"
@@ -1434,6 +2336,10 @@ msgstr "New session"
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Новое"
 msgstr "New"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Новое занятие группы"
+msgstr "New group class"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Новое объявление"
@@ -1464,6 +2370,11 @@ msgstr "New course"
 msgid "Новый сезон"
 msgstr "New season"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Новых"
+msgstr "New"
+
+#: apps/staff/src/problem-metadata-columns.ts
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Номер"
 msgstr "Number"
@@ -1471,6 +2382,19 @@ msgstr "Number"
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Номер аудитории берётся только из подтверждённого плана. Уведомления отправляются отдельной рассылкой."
 msgstr "The room number comes only from the confirmed plan. Notifications are sent in a separate mailing."
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Номер занятия"
+msgstr "Class number"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Нужны рисунки:"
+msgstr "Figures needed:"
+
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "нужный конвертер"
+msgstr "the required converter"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Нулевой результат означает, что школьник ничего не сдавал, и преподавателем не выбирается."
@@ -1488,6 +2412,7 @@ msgstr "Refresh the data and try to open the editor again."
 msgid "Обновите страницу и повторите попытку."
 msgstr "Refresh the page and try again."
 
+#: apps/staff/src/figure-layout-editor.tsx
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/student-results-page.tsx
@@ -1506,17 +2431,49 @@ msgstr "Refresh preview"
 msgid "Обновить статистику"
 msgstr "Refresh statistics"
 
+#: apps/staff/src/content-page.tsx
+msgid "Обновить статус"
+msgstr "Refresh status"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Обрабатываем набор…"
+msgstr "Processing batch…"
+
+#: apps/staff/src/content-page.tsx
+msgid "Обрабатываем…"
+msgstr "Processing…"
+
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Общее окно связано со всеми выбранными группами. Изменения времени, ссылки и отмена применяются ко всем этим группам."
 msgstr "A shared window is linked to all selected groups. Changes to its time and link, and cancellation, apply to all those groups."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Общий блок"
+msgstr "Shared block"
 
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Объявлено"
 msgstr "Announced"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Обыкновенная или десятичная дробь"
+msgstr "Fraction or decimal"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Одинаковые названия найдены в разных группах одного занятия. Импорт не объединяет задачи автоматически: каждую связь нужно подтвердить отдельно."
+msgstr "Matching titles were found in different groups of the same class. Import does not merge problems automatically: each link must be confirmed separately."
+
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "Одна аудитория унаследована несколькими группами"
 msgstr "One room is inherited by several groups"
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Одна группа и вид материала выбраны для нескольких файлов."
+msgstr "Multiple files have the same group and material type."
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Ожидает"
+msgstr "Waiting"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Ожидает настройки проверки"
@@ -1542,6 +2499,18 @@ msgstr "Session windows"
 msgid "Окна созданы для выбранных групп."
 msgstr "Windows were created for the selected groups."
 
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Окна устного приёма"
+msgstr "Oral session windows"
+
+#. placeholder {0}: lesson.course.name
+#. placeholder {1}: lesson.group.name
+#. placeholder {2}: lesson.lessonNumber
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Окна устного приёма: {0}, {1}, занятие {2}"
+msgstr "Oral session windows: {0}, {1}, class {2}"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Окно"
 msgstr "Window"
@@ -1563,29 +2532,68 @@ msgstr "Online"
 msgid "Онлайн → очно"
 msgstr "Online → in person"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Операция не выполнена"
+msgstr "Operation failed"
+
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Опубликован"
 msgstr "Published"
+
+#: apps/staff/src/content-page.tsx
+msgid "Опубликована "
+msgstr "Published "
 
 #: apps/staff/src/test-attempt-recheck-page.tsx
 msgid "Опубликована новая версия задачи. Данные обновлены; проверьте действие ещё раз."
 msgstr "A new problem version was published. Data was refreshed; check the action again."
 
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Опубликованная версия скрыта."
+msgstr "The published version is hidden."
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Опубликованная версия: "
+msgstr "Published version: "
+
 #: apps/staff/src/live-marking-condition.tsx
 msgid "Опубликованное условие"
 msgstr "Published statement"
+
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Опубликовано"
+msgstr "Published"
 
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Опубликовано по московскому времени"
 msgstr "Published in Moscow time"
 
+#. placeholder {0}: materialLabels[kind].toLowerCase()
+#. placeholder {1}: selectedRevision?.data.revisionNumber ?? '—'
+#: apps/staff/src/content-page.tsx
+msgid "Опубликовать {0} версии {1} сейчас?"
+msgstr "Publish {0}, version {1}, now?"
+
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Опубликовать по московскому времени"
 msgstr "Publish in Moscow time"
 
+#: apps/staff/src/content-page.tsx
+msgid "Опубликовать по расписанию"
+msgstr "Schedule publication"
+
+#: apps/staff/src/content-page.tsx
+msgid "Опубликовать сейчас"
+msgstr "Publish now"
+
 #: apps/staff/src/review-series-page.tsx
 msgid "Остальные работы могут проверять другие преподаватели."
 msgstr "Other work items may be reviewed by other teachers."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Ответ"
+msgstr "Answer"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Ответ на тест"
@@ -1595,9 +2603,25 @@ msgstr "Test answer"
 msgid "Ответ сервера не получен. Повторите сохранение того же черновика — дубликатов не будет."
 msgstr "No server response was received. Save the same draft again; no duplicates will be created."
 
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Ответить"
+msgstr "Reply"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Отделить"
+msgstr "Separate"
+
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Отказаться от проверки"
 msgstr "Release review"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Откатить импорт"
+msgstr "Roll back import"
+
+#: apps/staff/src/content-page.tsx
+msgid "Откатить опубликованное"
+msgstr "Revert publication"
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "отключено"
@@ -1606,6 +2630,10 @@ msgstr "disabled"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Отключено"
 msgstr "Disabled"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Откройте этот раздел из конкретного занятия или укажите его публичный идентификатор."
+msgstr "Open this section from a specific class or enter its public ID."
 
 #: apps/staff/src/review-queue-page.tsx
 msgid "открываем…"
@@ -1620,24 +2648,62 @@ msgstr "Opens"
 msgid "открыто"
 msgstr "open"
 
+#: apps/staff/src/problem-synonym-page.tsx
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Открыть"
+msgstr "Open"
+
+#: apps/staff/src/content-page.tsx
+msgid "Открыть PDF"
+msgstr "Open PDF"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Открыть вложение"
 msgstr "Open attachment"
 
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Открыть занятие"
+msgstr "Open class"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Открыть исправление"
+msgstr "Open corrections"
+
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Открыть копию окна на следующий день? Текущий черновик создания будет заменён."
 msgstr "Open a copy of the window on the next day? The current creation draft will be replaced."
+
+#: apps/staff/src/content-page.tsx
+msgid "Открыть приём"
+msgstr "Open submissions"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Открыть приём · Москва (необязательно)"
+msgstr "Open submissions · Moscow (optional)"
 
 #: apps/staff/src/student-results-history.tsx
 #: apps/staff/src/student-results-page.tsx
 msgid "Открыть проверку"
 msgstr "Open review"
 
+#. placeholder {0}: state.conversionDebug.stage
+#: apps/staff/src/content-page.tsx
+msgid "Отладка конвертации TikZ: {0}"
+msgstr "TikZ conversion details: {0}"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Отложенная публикация отменена."
+msgstr "Scheduled publication canceled."
+
 #: apps/staff/src/classroom-assignment-page.tsx
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-news-page.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
+#: apps/staff/src/whiteboard-export-page.tsx
 msgid "Отмена"
 msgstr "Cancel"
 
@@ -1659,6 +2725,7 @@ msgstr "cancelled"
 
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
+#: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Отменено"
 msgstr "Cancelled"
 
@@ -1677,9 +2744,21 @@ msgstr "Undo · Ctrl/Cmd+Z"
 msgid "Отменить окно для всех его групп: {0}?"
 msgstr "Cancel the window for all its groups: {0}?"
 
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Отменить отложенную публикацию"
+msgstr "Cancel scheduled publication"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Отменить последнее действие"
 msgstr "Undo last action"
+
+#: apps/staff/src/content-page.tsx
+msgid "Отменить расписание"
+msgstr "Cancel schedule"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Отношение"
+msgstr "Ratio"
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Отправленных решений и тестовых попыток в этом занятии нет."
@@ -1705,6 +2784,10 @@ msgstr "Very cool!"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Очередь проверки"
 msgstr "Review queue"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Очистить список"
+msgstr "Clear list"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Очно"
@@ -1734,9 +2817,17 @@ msgstr "In-person event"
 msgid "Очность"
 msgstr "Format"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Ошибка"
+msgstr "Error"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Ошибка проверки"
 msgstr "Review error"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Ошибка формата"
+msgstr "Format error"
 
 #: apps/staff/src/live-marking-grid.tsx
 msgid "Ошибка: сохранение не подтверждено"
@@ -1753,6 +2844,10 @@ msgstr "The first 50 matches are shown — refine the name."
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Первый завершённый расчёт появится здесь автоматически. Исходные результаты при этом не изменяются."
 msgstr "The first completed calculation will appear here automatically. Original results will not change."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Перед ответом и решением"
+msgstr "Before the answer and solution"
 
 #. placeholder {0}: item.movedTo
 #: apps/staff/src/review-series-page.tsx
@@ -1800,6 +2895,15 @@ msgstr "Recheck"
 msgid "Перепроверить все {0} ответов задачи {1}? Исходные ответы и время отправки сохранятся."
 msgstr "Recheck all {0} answers to problem {1}? Original answers and submission times will be retained."
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Перепроверить все ответы"
+msgstr "Recheck all answers"
+
+#. placeholder {0}: row.displayNumber
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Перепроверить все ответы задачи {0}"
+msgstr "Recheck all answers for problem {0}"
+
 #. placeholder {0}: item.student.displayName
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Перепроверка · {0}"
@@ -1834,6 +2938,15 @@ msgstr "Recalculate difficulty"
 #: apps/staff/src/statistics-recalculation-control.tsx
 msgid "Пересчитываем…"
 msgstr "Recalculating…"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "письменная"
+msgstr "written"
+
+#: apps/staff/src/problem-metadata-columns.ts
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Письменная"
+msgstr "Written"
 
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Письменная задача"
@@ -1876,18 +2989,33 @@ msgstr "By group"
 msgid "По задачам"
 msgstr "By problem"
 
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-lesson-block-editor.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "По расписанию"
+msgstr "Scheduled"
+
+#: apps/staff/src/bulk-content-upload.tsx
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/live-marking-condition.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
+#: apps/staff/src/problem-import-page.tsx
+#: apps/staff/src/problem-review-workflow.tsx
+#: apps/staff/src/problem-synonym-page.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-queue-page.tsx
 #: apps/staff/src/review-reaction-inbox-page.tsx
 #: apps/staff/src/review-workspace-page.tsx
+#: apps/staff/src/revision-assets-recovery.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
+#: apps/staff/src/staff-lesson-block-editor.tsx
+#: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-news-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/student-results-history.tsx
 #: apps/staff/src/student-results-page.tsx
 #: apps/staff/src/test-attempt-recheck-page.tsx
+#: apps/staff/src/whiteboard-export-page.tsx
 msgid "Повторить"
 msgstr "Retry"
 
@@ -1895,9 +3023,21 @@ msgstr "Retry"
 msgid "Повторить запрос"
 msgstr "Retry request"
 
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Повторить сборку материала"
+msgstr "Rebuild material"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Повторить сохранение"
 msgstr "Retry saving"
+
+#: apps/staff/src/content-page.tsx
+msgid "Повторно обработать исходник"
+msgstr "Reprocess source"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Поддерживаются заголовки h1–h5, списки, формулы, spoilers, сноски, details и отдельные HTTPS-картинки."
+msgstr "Supports h1–h5 headings, lists, formulas, spoilers, footnotes, details, and standalone HTTPS images."
 
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
@@ -1909,9 +3049,44 @@ msgstr "Join Zoom"
 msgid "Подпись кнопки"
 msgstr "Button label"
 
+#: apps/staff/src/bulk-content-upload.tsx
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Подсказка"
+msgstr "Hint"
+
+#: apps/staff/src/content-page.tsx
+msgid "Подсказки"
+msgstr "Hints"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Подсказки · Москва (необязательно)"
+msgstr "Hints · Moscow (optional)"
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Подсказки и решения"
+msgstr "Hints and solutions"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Подсказки опубликованы"
+msgstr "Hints published"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Подтвердите запись в SQLite"
+msgstr "Confirm database changes"
+
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Подтвердить"
 msgstr "Confirm"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Подтвердить откат"
+msgstr "Confirm rollback"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Подтвердить применение"
+msgstr "Confirm changes"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Подтверждение переноса посылки"
@@ -1921,9 +3096,18 @@ msgstr "Confirm submission move"
 msgid "Подтверждённая аудитория больше недоступна"
 msgstr "The confirmed room is no longer available"
 
+#. placeholder {0}: data.synonymGroups.length
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Подтверждённые связи · {0}"
+msgstr "Confirmed links · {0}"
+
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "Подтверждённых назначений пока нет."
 msgstr "There are no confirmed assignments yet."
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Подтверждённых связей на этом занятии пока нет."
+msgstr "There are no confirmed links in this class yet."
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Поиск по всему курсу"
@@ -1941,6 +3125,24 @@ msgstr "While you were reviewing, the student added to the work. Reopen it befor
 #: apps/staff/src/live-marking-page.tsx
 msgid "Пока нет очных событий с подтверждёнными аудиториями."
 msgstr "There are no in-person events with confirmed rooms yet."
+
+#. placeholder {0}: visibleRows.length
+#. placeholder {1}: filteredRows.length
+#: apps/staff/src/problem-import-page.tsx
+msgid "Показано {0} из {1}"
+msgstr "Showing {0} of {1}"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Показаны первые 50 кандидатов."
+msgstr "Showing the first 50 candidates."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Показать"
+msgstr "Show"
+
+#: apps/staff/src/content-page.tsx
+msgid "Показать PWA и Telegram"
+msgstr "Show PWA and Telegram"
 
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Показать ещё"
@@ -1976,6 +3178,14 @@ msgstr "Show"
 msgid "Полная шкала: +, +., ±, +/2, ∓, −., −"
 msgstr "Full scale: +, +., ±, +/2, ∓, −., −"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач."
+msgstr "Regenerate all metadata? The current draft and displayed table will be replaced by the model output. After review, “Save metadata” will replace the saved problem configuration."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Поля ответа доступны только для тестовой задачи"
+msgstr "Answer fields are available for test problems only"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Пометки Zoom-приёма"
 msgstr "Zoom-session notes"
@@ -1996,9 +3206,21 @@ msgstr "Order"
 msgid "Порядок задач"
 msgstr "Problem order"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "После выбора другого курса или файла запустите проверку заново."
+msgstr "After selecting another course or file, run the check again."
+
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "Последнее подтверждённое распределение каждого очного занятия."
 msgstr "The most recently confirmed assignment for every in-person class."
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Последовательность дробей"
+msgstr "Sequence of fractions"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Последовательность целых"
+msgstr "Sequence of integers"
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Пост снова доступен?"
@@ -2028,9 +3250,54 @@ msgstr "Praise student"
 msgid "Похоже на ИИ"
 msgstr "Looks like AI"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Правильный ответ"
+msgstr "Correct answer"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Правки появятся у школьников после публикации."
+msgstr "Students will see the changes after publication."
+
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "Предмет"
 msgstr "Subject"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Предпросмотр"
+msgstr "Preview"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Предпросмотр Markdown"
+msgstr "Markdown preview"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Предпросмотр влияния"
+msgstr "Impact preview"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Предпросмотр опубликованной версии"
+msgstr "Published version preview"
+
+#: apps/staff/src/rich-markdown-editor.tsx
+msgid "Предпросмотр появится после ввода текста."
+msgstr "The preview will appear after you enter text."
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Предпросмотр черновика"
+msgstr "Draft preview"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Предпросмотр читает листы «Задачи» и «Старые» и сравнивает их с SQLite, но ничего не сохраняет."
+msgstr "The preview reads the “Задачи” and “Старые” sheets and compares them with SQLite without saving anything."
+
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Предпросмотр школьника. Отправка ответов, вопросы и переход к задаче отключены; просмотры не записываются."
+msgstr "Student preview. Answer submission, questions, and problem navigation are disabled; views are not recorded."
+
+#. placeholder {0}: materialLabels[kind]
+#: apps/staff/src/content-page.tsx
+msgid "Предпросмотр: {0}"
+msgstr "Preview: {0}"
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Предыдущая проверка"
@@ -2041,6 +3308,14 @@ msgstr "Previous review"
 msgid "Преподаватель"
 msgstr "Teacher"
 
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Приём закрыт"
+msgstr "Submissions closed"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Приём идёт"
+msgstr "Submissions open"
+
 #: apps/staff/src/course-schedule-draft.ts
 msgid "Приём решений до"
 msgstr "Solution submission deadline"
@@ -2049,9 +3324,17 @@ msgstr "Solution submission deadline"
 msgid "Приложение"
 msgstr "Attachment"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Применить изменения · {changedRows}"
+msgstr "Apply changes · {changedRows}"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Применить моё"
 msgstr "Apply mine"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Применить публикацию"
+msgstr "Apply publication"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Принять актуальное"
@@ -2060,6 +3343,14 @@ msgstr "Accept current"
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Приоритет"
 msgstr "Priority"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Причина разделения"
+msgstr "Reason for separation"
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Причина: {detail}"
+msgstr "Reason: {detail}"
 
 #: apps/staff/src/live-marking-grid.tsx
 msgid "Пришёл"
@@ -2085,14 +3376,30 @@ msgstr "Reviewed"
 msgid "Проверить ещё раз"
 msgstr "Review again"
 
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Проверить объединение"
+msgstr "Preview merge"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Проверить файл"
+msgstr "Check file"
+
 #: apps/staff/src/routes/__root.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Проверка"
 msgstr "Review"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Проверка XLSX из текущего процесса перед управляемым отказом от Google-листов."
+msgstr "Validate XLSX files from the current workflow before the planned transition away from Google Sheets."
+
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Проверка не сохранена"
 msgstr "Review not saved"
+
+#: apps/staff/src/content-page.tsx
+msgid "проверка прервалась"
+msgstr "check interrupted"
 
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Проверка работы"
@@ -2102,9 +3409,21 @@ msgstr "Review work"
 msgid "Проверьте даты, HTTPS-ссылку и группы. Должно быть выбрано хотя бы одно окно. Для безопасного повтора также требуется доступное хранилище браузера."
 msgstr "Check the dates, HTTPS link, and groups. At least one window must be selected. Available browser storage is also required for a safe retry."
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Проверьте названия, способы сдачи и сообщения проверки. Таблица сохраняется локально до подтверждения. Сохранение заменяет текущую конфигурацию задачи; для тестовой задачи затем перепроверьте ответы по новой конфигурации."
+msgstr "Check titles, submission methods, and feedback messages. The table is saved locally until confirmation. Saving replaces the current problem configuration; for test problems, then recheck answers using the new configuration."
+
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Проверьте номер, время, подпись и HTTPS-ссылку."
 msgstr "Check the number, time, label, and HTTPS link."
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Проверьте обязательные даты и повторите попытку."
+msgstr "Check the required dates and try again."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Проверьте сгенерированные metadata"
+msgstr "Review generated metadata"
 
 #: apps/staff/src/classroom-assignment-page.tsx
 #: apps/staff/src/classroom-catalog-page.tsx
@@ -2116,6 +3435,30 @@ msgstr "Check the number, time, label, and HTTPS link."
 #: apps/staff/src/staff-news-page.tsx
 msgid "Проверьте соединение и повторите попытку."
 msgstr "Check your connection and try again."
+
+#: apps/staff/src/content-page.tsx
+msgid "Проверьте ссылку или создайте занятие перед загрузкой LaTeX."
+msgstr "Check the link or create a class before uploading LaTeX."
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Проверяем"
+msgstr "Checking"
+
+#: apps/staff/src/content-page.tsx
+msgid "Проверяем LaTeX-файл…"
+msgstr "Checking LaTeX file…"
+
+#: apps/staff/src/content-page.tsx
+msgid "Проверяем структуру материала…"
+msgstr "Checking material structure…"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Проверяем…"
+msgstr "Checking…"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Проверяльщик"
+msgstr "Checker"
 
 #: apps/staff/src/review-queue-page.tsx
 msgid "Проверять подряд"
@@ -2133,6 +3476,10 @@ msgstr "Skip in undo"
 msgid "Простые"
 msgstr "Easy"
 
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Публикация"
+msgstr "Publication"
+
 #: apps/staff/src/course-schedule-draft.ts
 msgid "Публикация подсказки"
 msgstr "Hint publication"
@@ -2148,6 +3495,10 @@ msgstr "Solution publication"
 #: apps/staff/src/course-schedule-draft.ts
 msgid "Публикация условия"
 msgstr "Statement publication"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Пункт"
+msgstr "Part"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "пусто"
@@ -2181,6 +3532,10 @@ msgstr "Student work"
 msgid "работы"
 msgstr "work items"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Раздел"
+msgstr "Section"
+
 #: apps/staff/src/routes/oral.tsx
 msgid "Разделы устного приёма"
 msgstr "Oral-session sections"
@@ -2193,6 +3548,10 @@ msgstr "Allow the recipient to hide the announcement"
 msgid "Разрешить самостоятельный переход"
 msgstr "Allow self-enrollment"
 
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Распакуйте архив и перетащите PNG на доску Zoom Whiteboard."
+msgstr "Extract the archive and drag the PNG files onto Zoom Whiteboard."
+
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Расписание"
 msgstr "Schedule"
@@ -2204,6 +3563,18 @@ msgstr "group schedule"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Расписание не изменено"
 msgstr "Schedule unchanged"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Расположение рисунков"
+msgstr "Figure layout"
+
+#: apps/staff/src/content-page.tsx
+msgid "Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала."
+msgstr "Layout saved, but some previews could not be refreshed. Open the material again."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Расположение уже изменилось. Обновите данные и повторите действие."
+msgstr "The layout has changed. Refresh the data and try again."
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Распределение обезличено: график не содержит маркера или позиции отдельного школьника."
@@ -2259,6 +3630,14 @@ msgstr "Mode"
 msgid "Режим и уровень меняются постоянно. Перенос можно отменить."
 msgstr "Mode and level are changed permanently. The move can be undone."
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Результат генерации уже показан в таблице ниже. Проверьте его и нажмите «Сохранить метаданные», чтобы заменить текущую конфигурацию задач."
+msgstr "The generated result is shown in the table below. Review it and click “Save metadata” to replace the current problem configuration."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Результат проверки"
+msgstr "Check result"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Результатов и посылок пока нет."
 msgstr "There are no results or submissions yet."
@@ -2280,9 +3659,36 @@ msgstr "Oral-session results"
 msgid "Результаты школьника"
 msgstr "Student results"
 
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Ресурсы revision"
+msgstr "Revision assets"
+
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Ресурсы не загрузились за 30 секунд"
+msgstr "Resources did not load within 30 seconds"
+
+#: apps/staff/src/bulk-content-upload.tsx
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/figure-layout-editor.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Решение"
+msgstr "Solution"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Решение с отметками преподавателя"
 msgstr "Solution with teacher annotations"
+
+#: apps/staff/src/content-page.tsx
+msgid "Решения"
+msgstr "Solutions"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Решения · Москва (необязательно)"
+msgstr "Solutions · Moscow (optional)"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Решения опубликованы"
+msgstr "Solutions published"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Решено"
@@ -2292,6 +3698,50 @@ msgstr "Solved"
 msgid "Решили"
 msgstr "Solved"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Рисунки"
+msgstr "Figures"
+
+#: apps/staff/src/figure-layout-editor.tsx
+#: apps/staff/src/staff-worksheet-preview.tsx
+msgid "Рисунок"
+msgstr "Figure"
+
+#. placeholder {0}: index + 1
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Рисунок {0}"
+msgstr "Figure {0}"
+
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Рисунок TikZ"
+msgstr "TikZ figure"
+
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Рисунок TikZ {assetRef}"
+msgstr "TikZ figure {assetRef}"
+
+#: apps/staff/src/content-page.tsx
+msgid "Рисунок TikZ {logicalAsset}"
+msgstr "TikZ figure {logicalAsset}"
+
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Рисунок не загрузился"
+msgstr "Figure did not load"
+
+#: apps/staff/src/figure-layout-editor.tsx
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Рисунок недоступен"
+msgstr "Figure unavailable"
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Рисунок: {logicalAsset}."
+msgstr "Figure: {logicalAsset}."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "С ошибками"
+msgstr "With errors"
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "С прошлого занятия (+7 дней)"
 msgstr "From the previous class (+7 days)"
@@ -2299,6 +3749,10 @@ msgstr "From the previous class (+7 days)"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Самая давняя работа ждёт "
 msgstr "The oldest work item has been waiting "
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Сборка рисунка превысила лимит времени."
+msgstr "Figure rendering exceeded the time limit."
 
 #: apps/staff/src/statistics-student-search.tsx
 msgid "Сбросить выбор"
@@ -2321,11 +3775,24 @@ msgstr "Queue summary"
 msgid "Своё время"
 msgstr "Custom time"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Своя валидация"
+msgstr "Custom validation"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Связи меняют только вычисляемое представление. Каждая посылка, переписка и проверка остаётся у исходной задачи."
+msgstr "Links affect only the computed view. Each submission, conversation, and review stays with its original problem."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Сгенерировать metadata"
+msgstr "Generate metadata"
+
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сезон станет активным сразу после создания."
 msgstr "The season will become active immediately after creation."
 
 #: apps/staff/src/staff-group-banners-page.tsx
+#: apps/staff/src/staff-lesson-block-editor.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Сейчас"
 msgstr "Now"
@@ -2339,9 +3806,38 @@ msgstr "{0} is reviewing now."
 msgid "Сейчас: "
 msgstr "Now: "
 
+#: apps/staff/src/revision-assets-recovery.tsx
 #: apps/staff/src/test-attempt-recheck-page.tsx
 msgid "Сервер вернул неожиданный ответ. Обновите страницу и повторите действие."
 msgstr "The server returned an unexpected response. Refresh the page and try again."
+
+#: apps/staff/src/content-page.tsx
+msgid "Сервер вернул несовместимые preview"
+msgstr "The server returned incompatible previews"
+
+#: apps/staff/src/content-page.tsx
+msgid "Сервер вернул несовместимый PDF preview"
+msgstr "The server returned an incompatible PDF preview"
+
+#: apps/staff/src/content-page.tsx
+msgid "Сервер вернул несовместимый preview"
+msgstr "The server returned an incompatible preview"
+
+#: apps/staff/src/content-page.tsx
+msgid "Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу."
+msgstr "The server does not support automatic TikZ preparation. Refresh the page."
+
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Сервер не подтвердил прикрепление ресурса"
+msgstr "The server did not confirm the asset attachment"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Сервер уже принял другое изменение. Текущее состояние загружено заново; проверьте только строки, которые нельзя сопоставить автоматически."
+msgstr "The server has already accepted another change. The current state has been reloaded; check only the rows that cannot be matched automatically."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Серверная версия изменилась"
+msgstr "Server version changed"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сессии действуют до"
@@ -2351,10 +3847,27 @@ msgstr "Sessions are available until"
 msgid "Сессия"
 msgstr "Session"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Символьное выражение"
+msgstr "Symbolic expression"
+
+#: apps/staff/src/problem-import-page.tsx
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Синонимы задач"
+msgstr "Problem synonyms"
+
 #: apps/staff/src/review-workspace-page.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Система"
 msgstr "System"
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Скачать ZIP"
+msgstr "Download ZIP"
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Скачать без статистики"
+msgstr "Download without statistics"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Скачать вложение"
@@ -2376,9 +3889,31 @@ msgstr "Hiding applies only in the recipient’s current browser. A push already
 msgid "Скрыты в PWA"
 msgstr "Hidden in PWA"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Скрытые рисунки"
+msgstr "Hidden figures"
+
+#: apps/staff/src/figure-layout-editor.tsx
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Скрыть"
+msgstr "Hide"
+
+#: apps/staff/src/content-page.tsx
+msgid "Скрыть опубликованное"
+msgstr "Hide publication"
+
+#. placeholder {0}: materialLabels[kind].toLowerCase()
+#: apps/staff/src/content-page.tsx
+msgid "Скрыть опубликованное {0} у школьников и родителей?"
+msgstr "Hide the published {0} from students and parents?"
+
 #: apps/staff/src/login-page.tsx
 msgid "Скрыть пароль"
 msgstr "Hide password"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Слева"
+msgstr "Left"
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Следующая работа подготовлена"
@@ -2428,9 +3963,17 @@ msgstr "Change the student’s study group?"
 msgid "Сменить школьника"
 msgstr "Change student"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Смешанная дробь"
+msgstr "Mixed fraction"
+
 #: apps/staff/src/course-schedule-editor.tsx
 msgid "Смещение в днях"
 msgstr "Offset in days"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Сначала исправьте повтор в метаданных: одна группа занятия может содержать только один экземпляр синонимичной задачи."
+msgstr "Fix the duplicate in the metadata first: a class group can contain only one instance of a synonymous problem."
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Сначала отправьте или разрешите все изменения этой сессии."
@@ -2440,6 +3983,18 @@ msgstr "First submit or resolve all changes from this session."
 msgid "Сначала подтвердите сохранение этого черновика повторным запросом."
 msgstr "First confirm saving this draft with a repeat request."
 
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Сначала прикрепите все недостающие ресурсы"
+msgstr "Attach all missing assets first"
+
+#: apps/staff/src/content-page.tsx
+msgid "Сначала проверьте версии для PWA и Telegram. Изменение времени решения не меняет дедлайн сдачи."
+msgstr "Check the PWA and Telegram versions first. Changing the solution time does not change the submission deadline."
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Сначала создайте группу"
+msgstr "Create a group first"
+
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "Сначала создайте предпросмотр распределения школьников."
 msgstr "First create a student-assignment preview."
@@ -2447,6 +4002,14 @@ msgstr "First create a student-assignment preview."
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сначала создайте учебный сезон, затем добавьте в него курсы и группы."
 msgstr "First create an academic season, then add courses and groups to it."
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Сначала сохраните черновик."
+msgstr "Save the draft first."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Сначала только проверка"
+msgstr "Preview first"
 
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Сначала укажите корректные даты первого окна."
@@ -2469,6 +4032,14 @@ msgstr "Remove my grades in this session (other submission methods will be retai
 msgid "Снять мои оценки в этом приёме: {label}"
 msgstr "Remove my grades in this session: {label}"
 
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Собираем ZIP…"
+msgstr "Creating ZIP…"
+
+#: apps/staff/src/revision-assets-recovery.tsx
+msgid "Собираем материал…"
+msgstr "Building material…"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Событие"
 msgstr "Event"
@@ -2477,7 +4048,12 @@ msgstr "Event"
 msgid "Событие, аудитория и список задач"
 msgstr "Event, room, and problem list"
 
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Совпавшее название только предлагает связь. Объединение всегда требует предпросмотра и подтверждения администратора."
+msgstr "A matching title only suggests a link. Merging always requires a preview and administrator confirmation."
+
 #: apps/staff/src/staff-course-catalog-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
 msgid "Создаём…"
 msgstr "Creating…"
 
@@ -2485,9 +4061,41 @@ msgstr "Creating…"
 msgid "Создайте или выберите очное занятие выше."
 msgstr "Create or select an in-person class above."
 
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Создайте первое занятие после добавления курсов и групп."
+msgstr "Create the first class after adding courses and groups."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Созданные задачи удалены, прежние значения восстановлены одной транзакцией."
+msgstr "Created problems were deleted and previous values restored in one transaction."
+
+#. placeholder {0}: receipt.summary.created
+#. placeholder {1}: receipt.summary.updated
+#. placeholder {2}: receipt.summary.skippedInvalid
+#. placeholder {3}: receipt.importId
+#: apps/staff/src/problem-import-page.tsx
+msgid "Создано {0}, обновлено {1}, пропущено с ошибками {2}. Квитанция: {3}."
+msgstr "Created: {0}, updated: {1}, skipped with errors: {2}. Receipt: {3}."
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Создать выбранные окна"
 msgstr "Create selected windows"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Создать для всех групп"
+msgstr "Create for all groups"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Создать занятие"
+msgstr "Create class"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Создать занятие сразу для всех активных групп курса"
+msgstr "Create a class for all active course groups at once"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Создать и открыть"
+msgstr "Create and open"
 
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Создать очное занятие"
@@ -2500,6 +4108,18 @@ msgstr "Create season"
 #: apps/staff/src/student-results-history.tsx
 msgid "Сообщение"
 msgstr "Message"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Сопоставление задач подтверждено; метаданные берутся из условия."
+msgstr "Problem matching confirmed; metadata is taken from the statement."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Сопоставление и метаданные подтверждены."
+msgstr "Matching and metadata confirmed."
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Сопоставление файлов"
+msgstr "File matching"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Состав агрегата"
@@ -2550,13 +4170,29 @@ msgstr "Save"
 msgid "Сохранить изменения"
 msgstr "Save changes"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Сохранить метаданные"
+msgstr "Save metadata"
+
+#: apps/staff/src/content-page.tsx
+msgid "Сохранить название"
+msgstr "Save title"
+
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Сохранить очное занятие"
 msgstr "Save in-person class"
 
+#: apps/staff/src/content-page.tsx
+msgid "Сохранить расписание публикаций"
+msgstr "Save publication schedule"
+
 #: apps/staff/src/staff-news-page.tsx
 msgid "Сохранить сверку"
 msgstr "Save reconciliation"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Сохранить черновик"
+msgstr "Save draft"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сохранить шкалу"
@@ -2566,6 +4202,7 @@ msgstr "Save scale"
 msgid "Сохраняем"
 msgstr "Saving"
 
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/course-catalog-editors.tsx
 #: apps/staff/src/course-schedule-editor.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
@@ -2576,6 +4213,10 @@ msgstr "Saving"
 msgid "Сохраняем…"
 msgstr "Saving…"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Справа"
+msgstr "Right"
+
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Среднее число решённых"
 msgstr "Average number solved"
@@ -2584,7 +4225,12 @@ msgstr "Average number solved"
 msgid "Срок блокировки работы истёк. Откройте работу заново и повторите проверку."
 msgstr "The work lock expired. Reopen the work item and repeat the review."
 
+#: apps/staff/src/lesson-video-dialog.tsx
+msgid "Ссылка YouTube/VK или iframe"
+msgstr "YouTube/VK link or iframe"
+
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Статистика"
 msgstr "Statistics"
 
@@ -2600,6 +4246,10 @@ msgstr "Statistics for submitted problems"
 msgid "Статус проверки неизвестен"
 msgstr "Review status is unknown"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Сторона"
+msgstr "Side"
+
 #. placeholder {0}: attachment.ordinal + 1
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Страница {0} решения ученика"
@@ -2614,9 +4264,30 @@ msgstr "Page not found"
 msgid "Страница решения {0}"
 msgstr "Solution page {0}"
 
+#: apps/staff/src/problem-import-page.tsx
+msgid "Строк"
+msgstr "Rows"
+
+#: apps/staff/src/problem-import-page.tsx
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Строка"
+msgstr "String"
+
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Строки относятся к одному зафиксированному расчёту; выбор занятия сохраняется в адресе страницы."
 msgstr "The rows belong to one recorded calculation; the selected class is retained in the page address."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Строки с ошибками будут пропущены"
+msgstr "Rows with errors will be skipped"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Структура задач или пунктов не совпадает с условием. Исправьте LaTeX-файл и загрузите новую revision."
+msgstr "The problem or part structure does not match the statement. Fix the LaTeX file and upload a new revision."
+
+#: apps/staff/src/content-page.tsx
+msgid "Сформированный content.tex"
+msgstr "Generated content.tex"
 
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "Схема не сохранена"
@@ -2625,6 +4296,10 @@ msgstr "Layout not saved"
 #: apps/staff/src/live-marking-grid.tsx
 msgid "Таблица очного занятия"
 msgstr "In-person class grid"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Такого времени нет в часовом поясе занятия. Выберите другое время."
+msgstr "This time does not exist in the class time zone. Select another time."
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Текст и время можно изменить, пока публикация ещё не появилась в ленте. Получатели и Telegram не меняются."
@@ -2637,6 +4312,10 @@ msgstr "Announcement text (Markdown)"
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Текст публикации (Markdown)"
 msgstr "Publication text (Markdown)"
+
+#: apps/staff/src/content-page.tsx
+msgid "текущая версия"
+msgstr "current version"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "текущая группа"
@@ -2654,9 +4333,43 @@ msgstr "Current result"
 msgid "Тестирование"
 msgstr "Testing"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "тестовая"
+msgstr "test"
+
+#: apps/staff/src/problem-metadata-columns.ts
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Тестовая"
+msgstr "Test"
+
+#. placeholder {0}: candidate.problemType
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "тип {0}"
+msgstr "type {0}"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Тип {value}"
+msgstr "Type {value}"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Тип задач"
 msgstr "Problem type"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Тип задачи"
+msgstr "Problem type"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Тип ответа"
+msgstr "Answer type"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Только изменённые"
+msgstr "Changed only"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Только новые"
+msgstr "New only"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
@@ -2667,6 +4380,10 @@ msgstr "Online only"
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Только очные"
 msgstr "In-person only"
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Только ошибки"
+msgstr "Errors only"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Только родитель"
@@ -2686,6 +4403,22 @@ msgstr "Student only"
 msgid "Только школьнику"
 msgstr "Students only"
 
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Точная причина и имена рисунков показаны рядом с каждым файлом. По кнопке «Открыть исправление» доступны сохранённая версия, рисунки и повторная сборка. TikZ обрабатывается автоматически; заново создавать занятие не нужно."
+msgstr "The exact reason and figure names are shown next to each file. “Open corrections” opens the saved version, figures, and rebuild controls. TikZ is processed automatically; you do not need to recreate the class."
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Требует внимания"
+msgstr "Needs attention"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Требуется перепроверка"
+msgstr "Recheck required"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Три целых"
+msgstr "Three integers"
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "У других преподавателей"
 msgstr "With other teachers"
@@ -2693,6 +4426,11 @@ msgstr "With other teachers"
 #: apps/staff/src/live-marking-page.tsx
 msgid "У этой группы пока нет опубликованных занятий. Выберите другой уровень задач."
 msgstr "This group has no published classes yet. Choose a different problem level."
+
+#. placeholder {0}: row.file.name
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Убрать файл {0}"
+msgstr "Remove file {0}"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Удалена"
@@ -2702,7 +4440,16 @@ msgstr "Deleted"
 msgid "Удалены в Telegram"
 msgstr "Deleted in Telegram"
 
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Укажите время публикации в часовом поясе занятия."
+msgstr "Enter the publication time in the class time zone."
+
+#: apps/staff/src/content-page.tsx
+msgid "Укажите корректные дату и время публикации."
+msgstr "Enter a valid publication date and time."
+
 #: apps/staff/src/classroom-event-page.tsx
+#: apps/staff/src/whiteboard-export-page.tsx
 msgid "Уровень"
 msgstr "Level"
 
@@ -2713,6 +4460,16 @@ msgstr "Problem level"
 #: apps/staff/src/routes/__root.tsx
 msgid "Уроки"
 msgstr "Lessons"
+
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Уроки и публикации"
+msgstr "Lessons and publications"
+
+#: apps/staff/src/bulk-content-upload.tsx
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/staff-lessons-page.tsx
+msgid "Условие"
+msgstr "Statement"
 
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-series-page.tsx
@@ -2736,6 +4493,10 @@ msgstr "The statement was not saved for this work item."
 msgid "Условие пока недоступно."
 msgstr "The statement is not available yet."
 
+#: apps/staff/src/whiteboard-export-generator.tsx
+msgid "Условие превышает допустимый размер изображения"
+msgstr "The statement exceeds the maximum image size"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Условие при отправке"
 msgstr "Statement when submitted"
@@ -2744,9 +4505,30 @@ msgstr "Statement when submitted"
 msgid "Условие проверяемой версии недоступно."
 msgstr "The statement for the reviewed version is unavailable."
 
+#: apps/staff/src/content-page.tsx
+msgid "Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации."
+msgstr "Statements, hints, and solutions have separate versions, previews, and publication actions."
+
+#: apps/staff/src/whiteboard-export-page.tsx
+msgid "Условия задач в PNG для Zoom Whiteboard"
+msgstr "Problem statements as PNG files for Zoom Whiteboard"
+
 #: apps/staff/src/review-history-page.tsx
 msgid "Устаревшая"
 msgstr "Stale"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "устная"
+msgstr "oral"
+
+#: apps/staff/src/problem-metadata-columns.ts
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Устная"
+msgstr "Oral"
+
+#: apps/staff/src/problem-synonym-page.tsx
+msgid "Устная с письменной сдачей"
+msgstr "Oral with written submission"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Устные"
@@ -2781,9 +4563,40 @@ msgstr "Teacher and administrator"
 msgid "Учительская пометка"
 msgstr "Teacher note"
 
+#: apps/staff/src/content-page.tsx
+msgid "Фазы занятия"
+msgstr "Class phases"
+
+#. placeholder {0}: row.file.name
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Файл «{0}» больше 512 КБ."
+msgstr "File “{0}” exceeds 512 KB."
+
+#. placeholder {0}: row.file.name
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Файл «{0}» должен иметь расширение .tex."
+msgstr "File “{0}” must have the .tex extension."
+
+#. placeholder {0}: row.file.name
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Файл «{0}» пуст."
+msgstr "File “{0}” is empty."
+
+#: apps/staff/src/problem-import-page.tsx
+msgid "Файл и курс"
+msgstr "File and course"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Файл не сохранился или недоступен."
 msgstr "The file was not saved or is unavailable."
+
+#: apps/staff/src/bulk-content-upload-model.ts
+msgid "Файл сохранён. Откройте занятие и добавьте недостающие рисунки."
+msgstr "File saved. Open the class and add the missing figures."
+
+#: apps/staff/src/bulk-content-upload.tsx
+msgid "Файлы обработаны, но историю материалов не удалось обновить. Обновите страницу."
+msgstr "Files processed, but material history could not be refreshed. Refresh the page."
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "фамилии"
@@ -2821,6 +4634,14 @@ msgstr "Color key"
 msgid "Целевая задача"
 msgstr "Target problem"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Целое число"
+msgstr "Integer"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Цифра"
+msgstr "Digit"
+
 #: apps/staff/src/course-schedule-editor.tsx
 msgid "Часовой пояс"
 msgstr "Time zone"
@@ -2828,8 +4649,21 @@ msgstr "Time zone"
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/course-catalog-editors.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
+#: apps/staff/src/staff-lessons-page.tsx
 msgid "Черновик"
 msgstr "Draft"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Черновик metadata обновлён"
+msgstr "Metadata draft updated"
+
+#: apps/staff/src/content-page.tsx
+msgid "Черновик готов"
+msgstr "Draft ready"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Черновик не потерян. Сверьте строки с текущими данными перед сохранением."
+msgstr "Your draft is safe. Compare its rows with the current data before saving."
 
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Черновик не сохранился на устройстве"
@@ -2840,9 +4674,17 @@ msgstr "Draft was not saved on this device"
 msgid "Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки."
 msgstr "The draft cannot be saved in this browser. Do not close the tab before submitting."
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Черновик нужно проверить и сохранить вручную."
+msgstr "Review and save the draft manually."
+
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Черновик окон"
 msgstr "Window draft"
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Черновик сохранён."
+msgstr "Draft saved."
 
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Черновик сохранён. Вернитесь в очередь и откройте работу заново."
@@ -2860,10 +4702,22 @@ msgstr "Draft:"
 msgid "Черновик: "
 msgstr "Draft: "
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Четыре целых"
+msgstr "Four integers"
+
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Число решённых задач"
 msgstr "Number of problems solved"
+
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Число с точностью"
+msgstr "Number with tolerance"
+
+#: apps/staff/src/content-page.tsx
+msgid "Читаем LaTeX-файл…"
+msgstr "Reading LaTeX file…"
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Шаблон курса"
@@ -2915,9 +4769,17 @@ msgstr "Students"
 msgid "Школьников в агрегате"
 msgstr "Students in aggregate"
 
+#: apps/staff/src/problem-metadata-columns.ts
+msgid "Эквивалентное выражение"
+msgstr "Equivalent expression"
+
 #: apps/staff/src/staff-news-page.tsx
 msgid "Эта ручная сверка меняет PWA-ленту и сохраняется в журнале. Само сообщение в Telegram не изменяется."
 msgstr "This manual reconciliation changes the PWA feed and is saved in the log. The Telegram message itself is not changed."
+
+#: apps/staff/src/staff-lesson-block-editor.tsx
+msgid "Это время неоднозначно в часовом поясе занятия. Выберите другое время."
+msgstr "This time is ambiguous in the class time zone. Select another time."
 
 #: apps/staff/src/review-errors.ts
 msgid "Эту работу уже проверяет другой преподаватель. Обновите очередь."

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { AlertTriangle, CheckCircle2, Files, LoaderCircle, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -17,7 +19,7 @@ import {
   CardTitle,
   Input,
   Label,
-  Select,
+  Select as UiSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -37,10 +39,18 @@ import {
 import { stableBrowserFile } from './stable-browser-file'
 
 const materialLabels: Record<BulkContentMaterialKind, string> = {
-  condition: 'Условие',
-  hint: 'Подсказка',
-  solution: 'Решение',
-  hint_solution: 'Подсказки и решения',
+  get condition() {
+    return t`Условие`
+  },
+  get hint() {
+    return t`Подсказка`
+  },
+  get solution() {
+    return t`Решение`
+  },
+  get hint_solution() {
+    return t`Подсказки и решения`
+  },
 }
 
 function colorIndex(colorKey: string | null): GroupView['colorIndex'] {
@@ -61,15 +71,35 @@ function groupView(target: ContentUploadTarget, courseId: string): GroupView {
 function rowStatus(row: BulkContentUploadRow) {
   switch (row.phase) {
     case 'uploading':
-      return <Badge variant="info">Загружаем</Badge>
+      return (
+        <Badge variant="info">
+          <Trans>Загружаем</Trans>
+        </Badge>
+      )
     case 'compiling':
-      return <Badge variant="info">Проверяем</Badge>
+      return (
+        <Badge variant="info">
+          <Trans>Проверяем</Trans>
+        </Badge>
+      )
     case 'ready':
-      return <Badge variant="success">Готово</Badge>
+      return (
+        <Badge variant="success">
+          <Trans>Готово</Trans>
+        </Badge>
+      )
     case 'attention':
-      return <Badge variant="warning">Требует внимания</Badge>
+      return (
+        <Badge variant="warning">
+          <Trans>Требует внимания</Trans>
+        </Badge>
+      )
     default:
-      return <Badge variant="neutral">Ожидает</Badge>
+      return (
+        <Badge variant="neutral">
+          <Trans>Ожидает</Trans>
+        </Badge>
+      )
   }
 }
 
@@ -122,7 +152,7 @@ export function BulkContentUpload({
             if (uploaded.data.status !== 'ready') {
               const compiled = await client.compileRevision(uploaded.data.revisionId, uploaded.etag)
               if (compiled.data.status !== 'ready') {
-                throw new Error('Версия сохранена, но требует отдельной проверки.')
+                throw new Error(t`Версия сохранена, но требует отдельной проверки.`)
               }
             }
           }
@@ -154,7 +184,7 @@ export function BulkContentUpload({
         await onCompleted()
       } catch {
         setBatchError(
-          'Файлы обработаны, но историю материалов не удалось обновить. Обновите страницу.',
+          t`Файлы обработаны, но историю материалов не удалось обновить. Обновите страницу.`,
         )
       }
     } finally {
@@ -171,39 +201,47 @@ export function BulkContentUpload({
       <CardHeader className="gap-1">
         <CardTitle className="flex items-center gap-2" aria-level={2} role="heading">
           <Files aria-hidden="true" />
-          Массовая загрузка
+          <Trans>Массовая загрузка</Trans>
         </CardTitle>
         <p className="text-small text-muted-foreground">
-          Выберите несколько файлов и укажите группу. По умолчанию это условия; при необходимости
-          вид материала можно изменить. Загрузка ничего не публикует.
+          <Trans>
+            Выберите несколько файлов и укажите группу. По умолчанию это условия; при необходимости
+            вид материала можно изменить. Загрузка ничего не публикует.
+          </Trans>
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         {targetsQuery.isPending ? (
           <p className="text-small text-muted-foreground" role="status">
-            Загружаем группы занятия…
+            <Trans>Загружаем группы занятия…</Trans>
           </p>
         ) : targetsQuery.error ? (
           <Alert tone="danger">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Не удалось получить группы занятия</AlertTitle>
+              <AlertTitle>
+                <Trans>Не удалось получить группы занятия</Trans>
+              </AlertTitle>
               <AlertDescription>
                 <Button onClick={() => void targetsQuery.refetch()} size="xs" variant="outline">
-                  Повторить
+                  <Trans>Повторить</Trans>
                 </Button>
               </AlertDescription>
             </AlertContent>
           </Alert>
         ) : (
           <p className="text-caption text-muted-foreground">
-            {targetsQuery.data.courseName} · занятие {targetsQuery.data.lessonNumber} · групп:{' '}
-            {targets.length}
+            <Trans>
+              {targetsQuery.data.courseName} · занятие {targetsQuery.data.lessonNumber} · групп:{' '}
+              {targets.length}
+            </Trans>
           </p>
         )}
 
         <div className="space-y-1">
-          <Label htmlFor="bulk-content-files">LaTeX-файлы</Label>
+          <Label htmlFor="bulk-content-files">
+            <Trans>LaTeX-файлы</Trans>
+          </Label>
           <Input
             accept=".tex,text/plain,application/x-tex"
             disabled={running || targetsQuery.isPending || Boolean(targetsQuery.error)}
@@ -215,7 +253,7 @@ export function BulkContentUpload({
                 (files) => setRows(createBulkContentUploadRows(files)),
                 () =>
                   setBatchError(
-                    'Не удалось прочитать один из выбранных файлов. Скопируйте его на локальный диск и выберите набор ещё раз.',
+                    t`Не удалось прочитать один из выбранных файлов. Скопируйте его на локальный диск и выберите набор ещё раз.`,
                   ),
               )
             }}
@@ -224,7 +262,7 @@ export function BulkContentUpload({
         </div>
 
         {rows.length > 0 ? (
-          <div className="space-y-2" aria-label="Сопоставление файлов">
+          <div className="space-y-2" aria-label={t`Сопоставление файлов`}>
             {rows.map((row, index) => {
               const groupLabelId = `${row.id}-group-label`
               const kindLabelId = `${row.id}-kind-label`
@@ -242,20 +280,20 @@ export function BulkContentUpload({
                       {index + 1}. {row.file.name}
                     </p>
                     <p className="text-caption text-muted-foreground">
-                      {Math.max(1, Math.ceil(row.file.size / 1024))} КБ
+                      {Math.max(1, Math.ceil(row.file.size / 1024))} <Trans>КБ</Trans>
                     </p>
                   </div>
                   <div className="min-w-0 space-y-1">
                     <span className="sr-only" id={groupLabelId}>
-                      Группа для файла {row.file.name}
+                      <Trans>Группа для файла {row.file.name}</Trans>
                     </span>
-                    <Select
+                    <UiSelect
                       disabled={running}
                       onValueChange={(value) => updateRow(row.id, { groupLessonId: value ?? '' })}
                       value={row.groupLessonId || null}
                     >
                       <SelectTrigger aria-labelledby={groupLabelId} className="w-full" size="sm">
-                        <SelectValue placeholder="Выберите группу">
+                        <SelectValue placeholder={t`Выберите группу`}>
                           {selectedTarget ? (
                             <>
                               <LevelChip
@@ -270,7 +308,7 @@ export function BulkContentUpload({
                           ) : undefined}
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent align="start">
+                      <SelectContent align="start" aria-labelledby={groupLabelId}>
                         {targets.map((target) => (
                           <SelectItem
                             disabled={target.status === 'archived'}
@@ -282,17 +320,17 @@ export function BulkContentUpload({
                               level={groupView(target, targetsQuery.data?.courseId ?? 'course')}
                             />
                             {target.groupName}
-                            {target.status === 'archived' ? ' · архив' : ''}
+                            {target.status === 'archived' ? t` · архив` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </UiSelect>
                   </div>
                   <div className="min-w-0 space-y-1">
                     <span className="sr-only" id={kindLabelId}>
-                      Вид материала для файла {row.file.name}
+                      <Trans>Вид материала для файла {row.file.name}</Trans>
                     </span>
-                    <Select
+                    <UiSelect
                       disabled={running}
                       onValueChange={(value) =>
                         updateRow(row.id, {
@@ -302,23 +340,23 @@ export function BulkContentUpload({
                       value={row.kind || null}
                     >
                       <SelectTrigger aria-labelledby={kindLabelId} className="w-full" size="sm">
-                        <SelectValue placeholder="Вид материала">
+                        <SelectValue placeholder={t`Вид материала`}>
                           {row.kind ? materialLabels[row.kind] : undefined}
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent align="start">
+                      <SelectContent align="start" aria-labelledby={kindLabelId}>
                         {(Object.keys(materialLabels) as BulkContentMaterialKind[]).map((kind) => (
                           <SelectItem key={kind} value={kind}>
                             {materialLabels[kind]}
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </UiSelect>
                   </div>
                   <div className="flex items-center justify-between gap-2 lg:justify-end">
                     {rowStatus(row)}
                     <Button
-                      aria-label={`Убрать файл ${row.file.name}`}
+                      aria-label={t`Убрать файл ${row.file.name}`}
                       disabled={running}
                       onClick={() =>
                         setRows((current) => current.filter((item) => item.id !== row.id))
@@ -341,7 +379,7 @@ export function BulkContentUpload({
                             className={buttonVariants({ size: 'xs', variant: 'outline' })}
                             href={recoveryHref}
                           >
-                            Открыть исправление
+                            <Trans>Открыть исправление</Trans>
                             {selectedTarget
                               ? ` ${targetsQuery.data?.lessonNumber ?? ''} · ${selectedTarget.groupName}`
                               : ''}
@@ -350,8 +388,8 @@ export function BulkContentUpload({
                       </div>
                       {row.missingAssets?.length ? (
                         <p>
-                          Нужны рисунки: {row.missingAssets.join(', ')}. Их можно выбрать и
-                          проверить на странице исправления.
+                          <Trans>Нужны рисунки:</Trans> {row.missingAssets.join(', ')}
+                          <Trans>. Их можно выбрать и проверить на странице исправления.</Trans>
                         </p>
                       ) : null}
                       {row.diagnostics?.length ? (
@@ -392,7 +430,9 @@ export function BulkContentUpload({
             ) : (
               <CheckCircle2 aria-hidden="true" className="text-status-success" />
             )}
-            Готово: {readyCount} · требуют внимания: {attentionCount}
+            <Trans>
+              Готово: {readyCount} · требуют внимания: {attentionCount}
+            </Trans>
           </p>
         ) : null}
 
@@ -400,11 +440,15 @@ export function BulkContentUpload({
           <Alert tone="warning">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Загрузка сохранена, требуется исправление</AlertTitle>
+              <AlertTitle>
+                <Trans>Загрузка сохранена, требуется исправление</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Точная причина и имена рисунков показаны рядом с каждым файлом. По кнопке «Открыть
-                исправление» доступны сохранённая версия, рисунки и повторная сборка. TikZ
-                обрабатывается автоматически; заново создавать занятие не нужно.
+                <Trans>
+                  Точная причина и имена рисунков показаны рядом с каждым файлом. По кнопке «Открыть
+                  исправление» доступны сохранённая версия, рисунки и повторная сборка. TikZ
+                  обрабатывается автоматически; заново создавать занятие не нужно.
+                </Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -422,14 +466,14 @@ export function BulkContentUpload({
               <Files aria-hidden="true" />
             )}
             {running
-              ? 'Обрабатываем набор…'
+              ? t`Обрабатываем набор…`
               : allReady
-                ? 'Набор готов'
-                : 'Загрузить набор и проверить'}
+                ? t`Набор готов`
+                : t`Загрузить набор и проверить`}
           </Button>
           {rows.length > 0 ? (
             <Button disabled={running} onClick={() => setRows([])} size="sm" variant="ghost">
-              Очистить список
+              <Trans>Очистить список</Trans>
             </Button>
           ) : null}
         </div>

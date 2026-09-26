@@ -75,3 +75,12 @@ describe('RichMarkdownEditor', () => {
     )
   })
 })
+
+it('renders English editor controls while preserving authored Markdown', async () => {
+  const { i18n } = await import('@lingui/core')
+  i18n.activate('en')
+  const authored = 'Авторский текст $x^2$'
+  render(<RichMarkdownEditor onChange={vi.fn()} value={authored} />)
+  expect(screen.getByLabelText('Publication Markdown').textContent).toBe(authored)
+  expect(screen.getByLabelText('Markdown preview').textContent).toContain('Авторский текст')
+})

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { RichParseError, parseMarkdown } from '@puregram/rich'
 import {
   isRichHttpsUrl,
@@ -30,7 +31,7 @@ function record(value: unknown): { type: string; [key: string]: unknown } {
     Array.isArray(value) ||
     typeof (value as { type?: unknown }).type !== 'string'
   ) {
-    throw new RichMarkdownDiagnostic('Некорректный узел rich Markdown')
+    throw new RichMarkdownDiagnostic(t`Некорректный узел rich Markdown`)
   }
   return value as { type: string; [key: string]: unknown }
 }
@@ -58,19 +59,19 @@ function inline(value: NativeNode, source: string): RichInline[] {
   const node = record(value)
   if (node.type === 'mathematical_expression') {
     if (typeof node.expression !== 'string' || !node.expression.trim()) {
-      throw new RichMarkdownDiagnostic('Формула не должна быть пустой')
+      throw new RichMarkdownDiagnostic(t`Формула не должна быть пустой`)
     }
     return [{ type: 'math', latex: node.expression }]
   }
   if (node.type === 'reference_link') {
     if (typeof node.reference_name !== 'string')
-      throw new RichMarkdownDiagnostic('Некорректная сноска')
+      throw new RichMarkdownDiagnostic(t`Некорректная сноска`)
     return [{ type: 'footnoteRef', id: node.reference_name }]
   }
   if (node.type === 'url') {
     if (typeof node.url !== 'string' || !isRichHttpsUrl(node.url)) {
       throw new RichMarkdownDiagnostic(
-        'Ссылка должна быть безопасным HTTPS URL',
+        t`Ссылка должна быть безопасным HTTPS URL`,
         sourcePosition(source, typeof node.url === 'string' ? node.url : ''),
       )
     }
@@ -99,19 +100,19 @@ function inline(value: NativeNode, source: string): RichInline[] {
     ]
   }
   if (node.type === 'code') {
-    if (typeof node.text !== 'string') throw new RichMarkdownDiagnostic('Некорректный inline code')
+    if (typeof node.text !== 'string') throw new RichMarkdownDiagnostic(t`Некорректный inline code`)
     return [{ type: 'code', text: node.text }]
   }
   throw new RichMarkdownDiagnostic(
-    `Синтаксис «${node.type}» пока не поддерживается`,
+    t`Синтаксис «${node.type}» пока не поддерживается`,
     sourcePosition(source, `<${node.type}`),
   )
 }
 
 function singleInlineBlock(value: unknown, source: string): RichInline[] {
-  const blocks = array(value, 'Некорректный элемент списка')
+  const blocks = array(value, t`Некорректный элемент списка`)
   if (blocks.length !== 1 || record(blocks[0]).type !== 'paragraph') {
-    throw new RichMarkdownDiagnostic('Вложенные списки пока не поддерживаются')
+    throw new RichMarkdownDiagnostic(t`Вложенные списки пока не поддерживаются`)
   }
   return inline(record(blocks[0]).text as NativeNode, source)
 }
@@ -124,7 +125,7 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
       typeof text === 'object' && text !== null && !Array.isArray(text) ? record(text) : null
     if (reference?.type === 'reference') {
       if (typeof reference.name !== 'string')
-        throw new RichMarkdownDiagnostic('Некорректная сноска')
+        throw new RichMarkdownDiagnostic(t`Некорректная сноска`)
       return {
         type: 'footnote',
         id: reference.name,
@@ -136,7 +137,7 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
   if (node.type === 'heading') {
     if (typeof node.size !== 'number' || node.size < 1 || node.size > 5) {
       throw new RichMarkdownDiagnostic(
-        'Заголовок уровня 6 не поддерживается',
+        t`Заголовок уровня 6 не поддерживается`,
         sourcePosition(source, '######'),
       )
     }
@@ -149,12 +150,12 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
   if (node.type === 'blockquote') {
     return {
       type: 'quote',
-      blocks: array(node.blocks, 'Некорректная цитата').map((item) => block(item, source, media)),
+      blocks: array(node.blocks, t`Некорректная цитата`).map((item) => block(item, source, media)),
     }
   }
   if (node.type === 'divider') return { type: 'divider' }
   if (node.type === 'pre') {
-    if (typeof node.text !== 'string') throw new RichMarkdownDiagnostic('Некорректный блок кода')
+    if (typeof node.text !== 'string') throw new RichMarkdownDiagnostic(t`Некорректный блок кода`)
     return {
       type: 'code',
       code: node.text,
@@ -163,16 +164,16 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
   }
   if (node.type === 'mathematical_expression') {
     if (typeof node.expression !== 'string' || !node.expression.trim())
-      throw new RichMarkdownDiagnostic('Формула не должна быть пустой')
+      throw new RichMarkdownDiagnostic(t`Формула не должна быть пустой`)
     return { type: 'math', latex: node.expression }
   }
   if (node.type === 'list') {
-    const items = array(node.items, 'Некорректный список').map((item) =>
-      object(item, 'Некорректный элемент списка'),
+    const items = array(node.items, t`Некорректный список`).map((item) =>
+      object(item, t`Некорректный элемент списка`),
     )
     const hasCheckbox = items.some((item) => item.has_checkbox === true)
     if (hasCheckbox && !items.every((item) => item.has_checkbox === true)) {
-      throw new RichMarkdownDiagnostic('Нельзя смешивать обычные пункты и задачи в одном списке')
+      throw new RichMarkdownDiagnostic(t`Нельзя смешивать обычные пункты и задачи в одном списке`)
     }
     if (hasCheckbox) {
       return {
@@ -185,7 +186,7 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
     }
     const ordered = items.some((item) => typeof item.value === 'number')
     if (ordered && !items.every((item) => typeof item.value === 'number'))
-      throw new RichMarkdownDiagnostic('Некорректный упорядоченный список')
+      throw new RichMarkdownDiagnostic(t`Некорректный упорядоченный список`)
     return {
       type: 'list',
       ordered,
@@ -198,7 +199,7 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
       type: 'details',
       summary: inline(node.summary as NativeNode, source),
       open: node.is_open === true,
-      blocks: array(node.blocks, 'Некорректный details').map((item) => block(item, source, media)),
+      blocks: array(node.blocks, t`Некорректный details`).map((item) => block(item, source, media)),
     }
   }
   // `@puregram/rich` represents Markdown GIFs as a video node. It is still an
@@ -210,7 +211,7 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
   if (node.type === 'photo' || node.type === 'animation' || gifVideo) {
     const mediaNode = record(node[node.type === 'video' ? 'video' : node.type])
     if (typeof mediaNode.media !== 'string' || !isRichHttpsUrl(mediaNode.media)) {
-      throw new RichMarkdownDiagnostic('Картинка должна быть отдельным HTTPS URL')
+      throw new RichMarkdownDiagnostic(t`Картинка должна быть отдельным HTTPS URL`)
     }
     const mediaId = `media-${media.length + 1}`
     media.push({
@@ -227,17 +228,17 @@ function block(value: unknown, source: string, media: RichMedia[]): RichBlock {
     return { type: 'image', mediaId, alt: '' }
   }
   if (node.type === 'table')
-    throw new RichMarkdownDiagnostic('Таблицы пока не поддерживаются', sourcePosition(source, '|'))
+    throw new RichMarkdownDiagnostic(t`Таблицы пока не поддерживаются`, sourcePosition(source, '|'))
   if (['video', 'audio', 'voice_note'].includes(node.type))
-    throw new RichMarkdownDiagnostic('Видео и аудио пока не поддерживаются')
-  throw new RichMarkdownDiagnostic(`Блок «${node.type}» пока не поддерживается`)
+    throw new RichMarkdownDiagnostic(t`Видео и аудио пока не поддерживаются`)
+  throw new RichMarkdownDiagnostic(t`Блок «${node.type}» пока не поддерживается`)
 }
 
 function rejectNestedLists(source: string): void {
   const nested = /^\s{2,}(?:[-*+]\s+|\d+\.\s+)/mu.exec(source)
   if (nested?.index !== undefined)
     throw new RichMarkdownDiagnostic(
-      'Вложенные списки пока не поддерживаются',
+      t`Вложенные списки пока не поддерживаются`,
       nested.index,
       nested.index + nested[0].length,
     )
@@ -259,13 +260,13 @@ function rejectUnclosedInlineMath(source: string): void {
   }
   if (delimiters.length % 2 === 1) {
     const from = delimiters.at(-1) ?? 0
-    throw new RichMarkdownDiagnostic('Незакрытая inline-формула', from, from + 1)
+    throw new RichMarkdownDiagnostic(t`Незакрытая inline-формула`, from, from + 1)
   }
 }
 
 /** Parse Markdown with @puregram/rich and narrow it to the supported PWA subset. */
 export function parseRichMarkdown(markdown: string): RichDocument {
-  if (!markdown.trim()) throw new RichMarkdownDiagnostic('Введите текст публикации')
+  if (!markdown.trim()) throw new RichMarkdownDiagnostic(t`Введите текст публикации`)
   rejectNestedLists(markdown)
   rejectUnclosedInlineMath(markdown)
   try {
@@ -313,6 +314,7 @@ export function richDocumentPlainText(document: RichDocument): string {
           return item.items.map((entry) => inlineText(entry.children)).join('\n')
         if (item.type === 'code') return item.code
         if (item.type === 'math') return item.latex
+        // eslint-disable-next-line lingui/no-unlocalized-strings -- Serialized publication plain text preserves source content.
         if (item.type === 'image') return item.alt || '[Картинка]'
         return ''
       })

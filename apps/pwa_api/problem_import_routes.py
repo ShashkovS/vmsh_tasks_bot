@@ -18,6 +18,7 @@ from db_methods.pwa.problem_imports import (
     list_course_problems,
 )
 from helpers.pwa.app_keys import PWA_DATABASE
+from helpers.pwa.i18n import N_, _
 from models.pwa.auth import AuthAudience
 from models.pwa.problem_import import (
     compare_problem_rows,
@@ -39,18 +40,18 @@ _SHA256 = re.compile(r"[a-f0-9]{64}")
 _REQUEST_LIMIT = 12 * 1024 * 1024
 _WORKBOOK_LIMIT = 10 * 1024 * 1024
 _MESSAGES = {
-    "invalid_header": "В листе изменились названия или порядок столбцов.",
-    "cell_too_long": "Ячейка слишком большая.",
-    "cell_format_unsupported": "Формат даты или времени в ячейке не поддерживается.",
-    "group_required": "Не указана группа.",
-    "group_unknown": "Такой группы нет в выбранном курсе.",
-    "lesson_invalid": "Номер занятия должен быть целым неотрицательным числом.",
-    "problem_number_invalid": "Номер задачи должен быть положительным целым числом.",
-    "title_required": "У задачи нет названия.",
-    "problem_type_invalid": "Неизвестный тип задачи.",
-    "answer_type_invalid": "Для тестовой задачи нужен известный тип ответа.",
-    "answer_validation_invalid": "Регулярное выражение валидации не компилируется.",
-    "duplicate_problem": "Эта группа, занятие, задача и пункт встречаются несколько раз.",
+    "invalid_header": N_("В листе изменились названия или порядок столбцов."),
+    "cell_too_long": N_("Ячейка слишком большая."),
+    "cell_format_unsupported": N_("Формат даты или времени в ячейке не поддерживается."),
+    "group_required": N_("Не указана группа."),
+    "group_unknown": N_("Такой группы нет в выбранном курсе."),
+    "lesson_invalid": N_("Номер занятия должен быть целым неотрицательным числом."),
+    "problem_number_invalid": N_("Номер задачи должен быть положительным целым числом."),
+    "title_required": N_("У задачи нет названия."),
+    "problem_type_invalid": N_("Неизвестный тип задачи."),
+    "answer_type_invalid": N_("Для тестовой задачи нужен известный тип ответа."),
+    "answer_validation_invalid": N_("Регулярное выражение валидации не компилируется."),
+    "duplicate_problem": N_("Эта группа, занятие, задача и пункт встречаются несколько раз."),
 }
 
 
@@ -60,7 +61,7 @@ def _factory(request: web.Request):
         raise PwaApiError(
             status=503,
             code="problem_import_unavailable",
-            message="Импорт задач временно недоступен",
+            message=N_("Импорт задач временно недоступен"),
         )
     return state.factory
 
@@ -75,7 +76,7 @@ def _require_admin(request: web.Request) -> int:
         raise PwaApiError(
             status=403,
             code="forbidden",
-            message="Импортировать задачи может только администратор",
+            message=N_("Импортировать задачи может только администратор"),
         )
     return principal.linked_user_id
 
@@ -89,7 +90,7 @@ async def _part_bytes(part, *, limit: int) -> bytes:
             raise PwaApiError(
                 status=413,
                 code="payload_too_large",
-                message="Файл слишком большой",
+                message=N_("Файл слишком большой"),
             )
         chunks.append(chunk)
     return b"".join(chunks)
@@ -100,13 +101,13 @@ async def _multipart(
 ) -> tuple[str, dict[str, bytes]]:
     if request.content_length is not None and request.content_length > _REQUEST_LIMIT:
         raise PwaApiError(
-            status=413, code="payload_too_large", message="Файл слишком большой"
+            status=413, code="payload_too_large", message=N_("Файл слишком большой")
         )
     if request.content_type != "multipart/form-data":
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Загрузка должна использовать multipart/form-data",
+            message=N_("Загрузка должна использовать multipart/form-data"),
         )
     try:
         reader = await request.multipart()
@@ -114,7 +115,7 @@ async def _multipart(
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Не удалось разобрать форму загрузки",
+            message=N_("Не удалось разобрать форму загрузки"),
         ) from error
     values: dict[str, bytes] = {}
     filename: str | None = None
@@ -123,7 +124,7 @@ async def _multipart(
             raise PwaApiError(
                 status=422,
                 code="validation_error",
-                message="Форма содержит неизвестное или повторное поле",
+                message=N_("Форма содержит неизвестное или повторное поле"),
             )
         if part.name == "workbook":
             filename = part.filename
@@ -131,7 +132,7 @@ async def _multipart(
                 raise PwaApiError(
                     status=422,
                     code="validation_error",
-                    message="Выберите файл XLSX",
+                    message=N_("Выберите файл XLSX"),
                 )
             limit = _WORKBOOK_LIMIT
         else:
@@ -139,7 +140,7 @@ async def _multipart(
                 raise PwaApiError(
                     status=422,
                     code="validation_error",
-                    message="Идентификатор курса должен быть текстом",
+                    message=N_("Идентификатор курса должен быть текстом"),
                 )
             limit = 256
         values[part.name] = await _part_bytes(part, limit=limit)
@@ -147,7 +148,7 @@ async def _multipart(
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Выберите курс и XLSX-файл",
+            message=N_("Выберите курс и XLSX-файл"),
         )
     return filename, values
 
@@ -157,7 +158,7 @@ def _text_field(values: dict[str, bytes], name: str) -> str:
         return values[name].decode("utf-8", errors="strict")
     except UnicodeDecodeError as error:
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте данные формы"
+            status=422, code="validation_error", message=N_("Проверьте данные формы")
         ) from error
 
 
@@ -165,7 +166,7 @@ def _course_id(values: dict[str, bytes]) -> str:
     course_id = _text_field(values, "courseId")
     if _PUBLIC_ID.fullmatch(course_id) is None:
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте выбранный курс"
+            status=422, code="validation_error", message=N_("Проверьте выбранный курс")
         )
     return course_id
 
@@ -176,7 +177,7 @@ def _sha256_field(values: dict[str, bytes], name: str) -> str:
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Проверьте подтверждение импорта",
+            message=N_("Проверьте подтверждение импорта"),
         )
     return value
 
@@ -189,7 +190,7 @@ def _diagnostics(items: object) -> list[dict[str, object]]:
             "row": item["row"],
             "field": item["field"],
             "code": item["code"],
-            "message": _MESSAGES.get(str(item["code"]), "Проверьте значение ячейки."),
+            "message": _(_MESSAGES.get(str(item["code"]), N_("Проверьте значение ячейки."))),
         }
         for item in items
     ]
@@ -250,7 +251,7 @@ async def preview_problem_import(request: web.Request) -> web.Response:
     _require_admin(request)
     if request.query:
         raise PwaApiError(
-            status=422, code="validation_error", message="Этот запрос без параметров"
+            status=422, code="validation_error", message=N_("Этот запрос без параметров")
         )
     filename, values = await _multipart(request, fields=_PREVIEW_FIELDS)
     course_public_id = _course_id(values)
@@ -269,21 +270,21 @@ async def preview_problem_import(request: web.Request) -> web.Response:
 
     database = await _factory(request).run_read_async(read)
     if database is None:
-        raise PwaApiError(status=404, code="course_not_found", message="Курс не найден")
+        raise PwaApiError(status=404, code="course_not_found", message=N_("Курс не найден"))
     course, groups, current = database
     try:
         parsed, _ = await asyncio.to_thread(parse_problem_workbook, source)
     except ValueError as error:
         code = str(error)
         messages = {
-            "invalid_workbook": "Не удалось прочитать XLSX-файл",
-            "missing_problem_sheets": "В файле нет листов «Задачи» или «Старые»",
-            "too_many_rows": "В файле слишком много строк",
+            "invalid_workbook": N_("Не удалось прочитать XLSX-файл"),
+            "missing_problem_sheets": N_("В файле нет листов «Задачи» или «Старые»"),
+            "too_many_rows": N_("В файле слишком много строк"),
         }
         raise PwaApiError(
             status=422,
             code=f"problem_import_{code}",
-            message=messages.get(code, "Не удалось проверить XLSX-файл"),
+            message=messages.get(code, N_("Не удалось проверить XLSX-файл")),
         ) from error
     compared = compare_problem_rows(parsed, groups, current)
     synonym_candidates = find_problem_import_synonym_candidates(compared)
@@ -325,17 +326,17 @@ async def preview_problem_import(request: web.Request) -> web.Response:
 def _import_error(error: ValueError) -> PwaApiError:
     code = str(error)
     messages = {
-        "course_not_found": (404, "Курс не найден"),
-        "source_changed": (409, "Файл изменился после предпросмотра"),
-        "preview_changed": (409, "Данные изменились после предпросмотра"),
-        "import_already_rolled_back": (409, "Этот импорт уже был отменён"),
-        "import_not_found": (404, "Импорт не найден"),
-        "import_version_changed": (409, "Состояние импорта уже изменилось"),
-        "invalid_import_receipt": (409, "Квитанция импорта повреждена"),
-        "import_result_changed": (409, "Задачи изменились после импорта"),
-        "import_result_in_use": (409, "Новые задачи уже используются"),
+        "course_not_found": (404, N_("Курс не найден")),
+        "source_changed": (409, N_("Файл изменился после предпросмотра")),
+        "preview_changed": (409, N_("Данные изменились после предпросмотра")),
+        "import_already_rolled_back": (409, N_("Этот импорт уже был отменён")),
+        "import_not_found": (404, N_("Импорт не найден")),
+        "import_version_changed": (409, N_("Состояние импорта уже изменилось")),
+        "invalid_import_receipt": (409, N_("Квитанция импорта повреждена")),
+        "import_result_changed": (409, N_("Задачи изменились после импорта")),
+        "import_result_in_use": (409, N_("Новые задачи уже используются")),
     }
-    status, message = messages.get(code, (409, "Импорт нельзя выполнить"))
+    status, message = messages.get(code, (409, N_("Импорт нельзя выполнить")))
     return PwaApiError(status=status, code=f"problem_{code}", message=message)
 
 
@@ -364,7 +365,7 @@ async def apply_problem_import_route(request: web.Request) -> web.Response:
     actor_account_public_id = authenticated_session(request).principal.account_public_id
     if request.query:
         raise PwaApiError(
-            status=422, code="validation_error", message="Этот запрос без параметров"
+            status=422, code="validation_error", message=N_("Этот запрос без параметров")
         )
     filename, values = await _multipart(request, fields=_APPLY_FIELDS)
     course_public_id = _course_id(values)
@@ -398,7 +399,7 @@ async def apply_problem_import_route(request: web.Request) -> web.Response:
             raise PwaApiError(
                 status=422,
                 code=f"problem_import_{error}",
-                message="Не удалось прочитать XLSX-файл",
+                message=N_("Не удалось прочитать XLSX-файл"),
             ) from error
         raise _import_error(error) from error
     return web.json_response(
@@ -416,13 +417,13 @@ async def rollback_problem_import_route(request: web.Request) -> web.Response:
     receipt_public_id = request.match_info["receipt_public_id"]
     if _PUBLIC_ID.fullmatch(receipt_public_id) is None:
         raise PwaApiError(
-            status=404, code="problem_import_not_found", message="Импорт не найден"
+            status=404, code="problem_import_not_found", message=N_("Импорт не найден")
         )
     try:
         value = await request.json()
     except (ValueError, TypeError) as error:
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте версию импорта"
+            status=422, code="validation_error", message=N_("Проверьте версию импорта")
         ) from error
     if (
         not isinstance(value, dict)
@@ -431,7 +432,7 @@ async def rollback_problem_import_route(request: web.Request) -> web.Response:
         or value["expectedVersion"] < 1
     ):
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте версию импорта"
+            status=422, code="validation_error", message=N_("Проверьте версию импорта")
         )
     try:
         receipt = await _factory(request).run_write_async(

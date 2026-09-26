@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { linter, type Diagnostic } from '@codemirror/lint'
@@ -146,7 +148,7 @@ function diagnostic(markdown: string): Diagnostic[] {
         from: 0,
         to: Math.max(1, markdown.length),
         severity: 'error',
-        message: 'Не удалось проверить Markdown',
+        message: t`Не удалось проверить Markdown`,
       },
     ]
   }
@@ -189,7 +191,7 @@ function Editor({
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({
           ...(initialId.current === undefined ? {} : { id: initialId.current }),
-          'aria-label': 'Markdown публикации',
+          'aria-label': t`Markdown публикации`,
         }),
         EditorView.theme({
           '&': {
@@ -236,6 +238,7 @@ function Editor({
 
 function imageAlt(filename: string): string {
   const withoutExtension = filename.replace(/\.[^.]+$/u, '')
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- Inserted Markdown content, not editor chrome.
   return withoutExtension.replaceAll('[', '').replaceAll(']', '').trim() || 'Картинка'
 }
 
@@ -263,7 +266,7 @@ export function RichMarkdownEditor({
         error:
           reason instanceof RichMarkdownDiagnostic
             ? reason
-            : new RichMarkdownDiagnostic('Не удалось проверить Markdown'),
+            : new RichMarkdownDiagnostic(t`Не удалось проверить Markdown`),
       }
     }
   }, [isEmpty, value])
@@ -322,7 +325,7 @@ export function RichMarkdownEditor({
       if (insertAtCursor) insertAtCursor(markdown)
       else handleChange(`${value}${markdown}`)
     } catch (reason) {
-      setImageError(reason instanceof Error ? reason.message : 'Не удалось загрузить картинку.')
+      setImageError(reason instanceof Error ? reason.message : t`Не удалось загрузить картинку.`)
     } finally {
       setIsUploadingImage(false)
     }
@@ -362,10 +365,10 @@ export function RichMarkdownEditor({
               variant="outline"
             >
               <ImagePlus aria-hidden="true" />
-              {isUploadingImage ? 'Готовим картинку…' : 'Загрузить картинку'}
+              {isUploadingImage ? t`Готовим картинку…` : t`Загрузить картинку`}
             </Button>
             <span className="text-caption text-muted-foreground">
-              PNG, JPEG или WebP · до 10 МиБ
+              <Trans>PNG, JPEG или WebP · до 10 МиБ</Trans>
             </span>
           </div>
         ) : null}
@@ -376,28 +379,34 @@ export function RichMarkdownEditor({
         ) : null}
         {error ? (
           <p className="text-caption text-status-danger" role="alert">
-            Исправьте ошибку в markdown.
+            <Trans>Исправьте ошибку в markdown.</Trans>
           </p>
         ) : (
           <p className="text-caption text-muted-foreground">
-            Поддерживаются заголовки h1–h5, списки, формулы, spoilers, сноски, details и отдельные
-            HTTPS-картинки.
+            <Trans>
+              Поддерживаются заголовки h1–h5, списки, формулы, spoilers, сноски, details и отдельные
+              HTTPS-картинки.
+            </Trans>
           </p>
         )}
       </div>
       <section
-        aria-label="Предпросмотр Markdown"
+        aria-label={t`Предпросмотр Markdown`}
         className="min-h-[22rem] rounded-md border border-border bg-surface p-4"
       >
-        <p className="mb-3 text-label font-medium">Предпросмотр</p>
+        <p className="mb-3 text-label font-medium">
+          <Trans>Предпросмотр</Trans>
+        </p>
         {previewDocument ? (
           <RichDocumentView document={previewDocument} />
         ) : isEmpty ? (
           <p className="text-caption text-muted-foreground">
-            Предпросмотр появится после ввода текста.
+            <Trans>Предпросмотр появится после ввода текста.</Trans>
           </p>
         ) : (
-          <p className="text-caption text-muted-foreground">Исправьте ошибку в markdown.</p>
+          <p className="text-caption text-muted-foreground">
+            <Trans>Исправьте ошибку в markdown.</Trans>
+          </p>
         )}
       </section>
     </div>

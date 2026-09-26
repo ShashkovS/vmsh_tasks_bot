@@ -1,3 +1,6 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { FigureLayoutEditor } from './figure-layout-editor'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, FileCode2, Mic, RefreshCw, Send, Upload } from 'lucide-react'
@@ -56,7 +59,7 @@ import {
   CardTitle,
   Input,
   Label,
-  Select,
+  Select as UiSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -75,9 +78,15 @@ import { StaffLessonBlocksEditor } from './staff-lesson-block-editor'
 
 const materialOrder: ContentMaterialKind[] = ['condition', 'hint', 'solution']
 const materialLabels: Record<ContentMaterialKind, string> = {
-  condition: 'Условие',
-  hint: 'Подсказка',
-  solution: 'Решение',
+  get condition() {
+    return t`Условие`
+  },
+  get hint() {
+    return t`Подсказка`
+  },
+  get solution() {
+    return t`Решение`
+  },
 }
 
 type VersionedRevision = VersionedContentResource<StaffContentRevision>
@@ -255,15 +264,15 @@ function errorMessage(error: unknown): string {
       typeof details?.logicalAsset === 'string' ? details.logicalAsset : undefined
     const capability = typeof details?.capability === 'string' ? details.capability : undefined
     const detail = typeof details?.detail === 'string' ? details.detail : undefined
-    const subject = logicalAsset ? `Рисунок TikZ ${logicalAsset}` : 'Рисунок TikZ'
+    const subject = logicalAsset ? t`Рисунок TikZ ${logicalAsset}` : t`Рисунок TikZ`
     if (error.code === 'content_assets_unavailable') {
-      return `${subject}: на сервере временно недоступен ${capability ?? 'нужный конвертер'}. Повторите позднее.`
+      return t`${subject}: на сервере временно недоступен ${capability ?? t`нужный конвертер`}. Повторите позднее.`
     }
-    return `${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
+    return t`${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
   }
   if (error instanceof ApiResponseError) return error.message
   if (error instanceof Error) return error.message
-  return 'Не удалось выполнить действие'
+  return t`Не удалось выполнить действие`
 }
 
 function tikzConversionDebug(error: unknown): TikzConversionDebug | undefined {
@@ -284,7 +293,7 @@ async function optionalPdfPreview(
 ): Promise<{ preview?: StaffPdfContentPreview; error?: string }> {
   try {
     const preview = await client.preview(revisionId, 'pdf')
-    if (preview.kind !== 'pdf') throw new Error('Сервер вернул несовместимый PDF preview')
+    if (preview.kind !== 'pdf') throw new Error(t`Сервер вернул несовместимый PDF preview`)
     return { preview }
   } catch (error) {
     if (error instanceof ApiResponseError && error.status === 404) return {}
@@ -309,7 +318,7 @@ function isRecoverableRevision(revision: StaffContentRevision, now = Date.now())
 }
 
 function formatInBusinessTimezone(instant: string, timezone: BusinessTimezone): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return dateTimeFormat(currentLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: timezone,
@@ -317,7 +326,7 @@ function formatInBusinessTimezone(instant: string, timezone: BusinessTimezone): 
 }
 
 function revisionLabel(revision: StaffContentRevision, timezone: BusinessTimezone): string {
-  return `Версия ${revision.revisionNumber} · ${revision.logicalFilename} · ${formatInBusinessTimezone(revision.uploadedAt, timezone)}`
+  return t`Версия ${revision.revisionNumber} · ${revision.logicalFilename} · ${formatInBusinessTimezone(revision.uploadedAt, timezone)}`
 }
 
 function MaterialWorkflowCard({
@@ -448,7 +457,7 @@ function MaterialWorkflowCard({
   const handleMutationError = (error: unknown) => {
     if (error instanceof ApiResponseError && error.status === 409) {
       patchState({
-        errorMessage: 'Материал уже изменён. Обновляем версии и публикации…',
+        errorMessage: t`Материал уже изменён. Обновляем версии и публикации…`,
         conversionDebug: undefined,
       })
       void onConflict()
@@ -464,7 +473,7 @@ function MaterialWorkflowCard({
     const read = async (revisionId: string | undefined) => {
       if (!revisionId) return undefined
       const result = await client.preview(revisionId, 'web')
-      if (result.kind !== 'web') throw new Error('Несовместимый предпросмотр материала')
+      if (result.kind !== 'web') throw new Error(t`Несовместимый предпросмотр материала`)
       return result.document
     }
     const [hintDocument, solutionDocument] = await Promise.all([
@@ -489,7 +498,7 @@ function MaterialWorkflowCard({
           : Promise.resolve(undefined),
       ])
     if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
-      throw new Error('Сервер вернул несовместимые preview')
+      throw new Error(t`Сервер вернул несовместимые preview`)
     }
     const supplementary = await supplementalPreviews()
     setState((current) => ({
@@ -513,7 +522,8 @@ function MaterialWorkflowCard({
       conditionDocument: conditionWeb?.kind === 'web' ? conditionWeb.document : undefined,
       telegramHtml:
         kind === 'hint' && conditionTelegram?.kind === 'telegram'
-          ? `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
+          ? // eslint-disable-next-line lingui/no-unlocalized-strings -- Telegram publication preview preserves source content.
+            `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
           : telegramPreview.html,
       pdfPreview: pdf.preview,
       pdfCheckedRevisionId: inspected.data.revisionId,
@@ -529,7 +539,7 @@ function MaterialWorkflowCard({
   const compileStoredRevision = async (revision: VersionedRevision, refreshedOnce = false) => {
     patchState({
       phase: 'processing',
-      processingMessage: 'Проверяем LaTeX-файл…',
+      processingMessage: t`Проверяем LaTeX-файл…`,
       errorMessage: undefined,
       conversionDebug: undefined,
       invalidRevision: undefined,
@@ -546,9 +556,11 @@ function MaterialWorkflowCard({
       // upload.  Prepare it explicitly before compilation so an unavailable
       // server converter is reported as such instead of a misleading parser
       // diagnostic about a missing SVG.
-      patchState({ processingMessage: 'Готовим рисунки из TikZ…' })
+      patchState({ processingMessage: t`Готовим рисунки из TikZ…` })
       if (!client.resolveRevisionAssets) {
-        throw new Error('Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу.')
+        throw new Error(
+          t`Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу.`,
+        )
       }
       const prepared = await client.resolveRevisionAssets(revision.data.revisionId, revision.etag)
       const inspected = await client.diagnostics(revision.data.revisionId)
@@ -567,7 +579,7 @@ function MaterialWorkflowCard({
         }))
         return
       }
-      patchState({ processingMessage: 'Проверяем LaTeX-файл…' })
+      patchState({ processingMessage: t`Проверяем LaTeX-файл…` })
       const compiled = await client.compileRevision(inspected.data.revisionId, inspected.etag)
       await inspectCompiledRevision(compiled.data.revisionId)
     } catch (error) {
@@ -611,8 +623,7 @@ function MaterialWorkflowCard({
                 ),
                 inspected,
               ].sort((left, right) => left.data.revisionNumber - right.data.revisionNumber),
-              errorMessage:
-                'Версия обновилась во время подготовки рисунков. Нажмите «Найти недостающие рисунки» ещё раз.',
+              errorMessage: t`Версия обновилась во время подготовки рисунков. Нажмите «Найти недостающие рисунки» ещё раз.`,
             }))
             return
           }
@@ -657,17 +668,17 @@ function MaterialWorkflowCard({
       phase: 'processing',
       errorMessage: undefined,
       conversionDebug: undefined,
-      processingMessage: 'Читаем LaTeX-файл…',
+      processingMessage: t`Читаем LaTeX-файл…`,
     })
     try {
       const stableFile = await stableBrowserFile(state.file)
       const sourceText = await stableFile.text()
       if (/\\(?:begin\s*\{tikzpicture\}|tikz\b)/u.test(sourceText)) {
         patchState({
-          processingMessage: 'Готовим рисунки из TikZ. Это может занять немного времени…',
+          processingMessage: t`Готовим рисунки из TikZ. Это может занять немного времени…`,
         })
       } else {
-        patchState({ processingMessage: 'Загружаем и проверяем LaTeX-файл…' })
+        patchState({ processingMessage: t`Загружаем и проверяем LaTeX-файл…` })
       }
       const uploaded = await client.uploadSource({
         groupLessonId,
@@ -677,7 +688,7 @@ function MaterialWorkflowCard({
       })
       setState((current) => ({
         ...current,
-        processingMessage: 'Проверяем структуру материала…',
+        processingMessage: t`Проверяем структуру материала…`,
         revisions: [
           ...current.revisions.filter(
             (revision) => revision.data.revisionId !== uploaded.data.revisionId,
@@ -742,7 +753,7 @@ function MaterialWorkflowCard({
         ],
       )
       if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
-        throw new Error('Сервер вернул несовместимые preview')
+        throw new Error(t`Сервер вернул несовместимые preview`)
       }
       const supplementary = await supplementalPreviews()
       patchState({
@@ -752,7 +763,8 @@ function MaterialWorkflowCard({
         conditionDocument: conditionWeb?.kind === 'web' ? conditionWeb.document : undefined,
         telegramHtml:
           kind === 'hint' && conditionTelegram?.kind === 'telegram'
-            ? `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
+            ? // eslint-disable-next-line lingui/no-unlocalized-strings -- Telegram publication preview preserves source content.
+              `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
             : telegramPreview.html,
         pdfPreview: pdf.preview,
         pdfCheckedRevisionId: selectedRevision.data.revisionId,
@@ -775,7 +787,7 @@ function MaterialWorkflowCard({
         assetId: asset.assetId,
         scale,
       })
-      if (preview.kind !== 'web') throw new Error('Сервер вернул несовместимый preview')
+      if (preview.kind !== 'web') throw new Error(t`Сервер вернул несовместимый preview`)
       setState((current) => ({
         ...current,
         webDocument: preview.document,
@@ -798,7 +810,7 @@ function MaterialWorkflowCard({
     const parsedLocalTime =
       mode === 'schedule' ? localPublicationTimeSchema.safeParse(state.scheduleAt) : undefined
     if (mode === 'schedule' && !parsedLocalTime?.success) {
-      patchState({ errorMessage: 'Укажите корректные дату и время публикации.' })
+      patchState({ errorMessage: t`Укажите корректные дату и время публикации.` })
       return
     }
     patchState({ errorMessage: undefined, mutationPending: true })
@@ -901,18 +913,26 @@ function MaterialWorkflowCard({
             {materialLabels[kind]}
           </CardTitle>
           {state.currentPublication ? (
-            <Badge variant="success">Опубликовано</Badge>
+            <Badge variant="success">
+              <Trans>Опубликовано</Trans>
+            </Badge>
           ) : state.scheduledPublication ? (
-            <Badge variant="info">По расписанию</Badge>
+            <Badge variant="info">
+              <Trans>По расписанию</Trans>
+            </Badge>
           ) : latest?.data.status === 'ready' ? (
-            <Badge variant="neutral">Черновик готов</Badge>
+            <Badge variant="neutral">
+              <Trans>Черновик готов</Trans>
+            </Badge>
           ) : null}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div className="min-w-0 space-y-1">
-            <Label htmlFor={inputId}>LaTeX-файл</Label>
+            <Label htmlFor={inputId}>
+              <Trans>LaTeX-файл</Trans>
+            </Label>
             <Input
               accept=".tex,text/plain,application/x-tex"
               id={inputId}
@@ -949,7 +969,7 @@ function MaterialWorkflowCard({
             size="sm"
           >
             <Upload aria-hidden="true" />
-            {state.phase === 'processing' ? 'Обрабатываем…' : 'Загрузить и проверить'}
+            {state.phase === 'processing' ? t`Обрабатываем…` : t`Загрузить и проверить`}
           </Button>
         </div>
 
@@ -982,7 +1002,7 @@ function MaterialWorkflowCard({
             ]}
             onRetry={() => void retryFileOrStoredRevision()}
             {...(state.invalidRevision?.status === 'invalid'
-              ? { retryLabel: 'Обновить статус' }
+              ? { retryLabel: t`Обновить статус` }
               : {})}
           />
         ) : null}
@@ -993,7 +1013,7 @@ function MaterialWorkflowCard({
             className="space-y-2 rounded-md border border-border bg-surface-subtle p-3"
           >
             <h3 className="text-small font-medium" id={`unfinished-revisions-${kind}`}>
-              Незавершённые загрузки
+              <Trans>Незавершённые загрузки</Trans>
             </h3>
             <ul className="space-y-2">
               {recoverableRevisions.map((revision) => (
@@ -1002,28 +1022,32 @@ function MaterialWorkflowCard({
                   key={revision.data.revisionId}
                 >
                   <span>
-                    Версия {revision.data.revisionNumber} · {revision.data.logicalFilename}
+                    <Trans>
+                      Версия {revision.data.revisionNumber} · {revision.data.logicalFilename}
+                    </Trans>
                     <span className="ml-1 text-muted-foreground">
                       {revision.data.status === 'uploaded'
-                        ? 'загружена, но не проверена'
-                        : 'проверка прервалась'}
+                        ? t`загружена, но не проверена`
+                        : t`проверка прервалась`}
                     </span>
                   </span>
                   <Button
-                    aria-label={`Найти недостающие рисунки в версии ${revision.data.revisionNumber}`}
+                    aria-label={t`Найти недостающие рисунки в версии ${revision.data.revisionNumber}`}
                     disabled={state.phase === 'processing'}
                     onClick={() => void compileStoredRevision(revision)}
                     size="xs"
                     variant="outline"
                   >
-                    <RefreshCw aria-hidden="true" /> Найти недостающие рисунки
+                    <RefreshCw aria-hidden="true" /> <Trans>Найти недостающие рисунки</Trans>
                   </Button>
                 </li>
               ))}
               {activeCompilations.map((revision) => (
                 <li className="text-small text-muted-foreground" key={revision.data.revisionId}>
-                  Версия {revision.data.revisionNumber} проверяется. Повтор станет доступен после
-                  завершения текущей сборки.
+                  <Trans>
+                    Версия {revision.data.revisionNumber} проверяется. Повтор станет доступен после
+                    завершения текущей сборки.
+                  </Trans>
                 </li>
               ))}
             </ul>
@@ -1032,8 +1056,10 @@ function MaterialWorkflowCard({
 
         {readyRevisions.length > 1 ? (
           <div className="max-w-md space-y-1">
-            <Label htmlFor={`ready-revision-${kind}`}>Версия для проверки и публикации</Label>
-            <Select
+            <Label htmlFor={`ready-revision-${kind}`}>
+              <Trans>Версия для проверки и публикации</Trans>
+            </Label>
+            <UiSelect
               onValueChange={(value) =>
                 patchState({
                   selectedRevisionId: value as string,
@@ -1052,17 +1078,17 @@ function MaterialWorkflowCard({
                 <SelectValue>
                   {selectedRevision
                     ? revisionLabel(selectedRevision.data, businessTimezone)
-                    : 'Выберите версию'}
+                    : t`Выберите версию`}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent aria-label={t`Версия для проверки и публикации`}>
                 {[...readyRevisions].reverse().map((revision) => (
                   <SelectItem key={revision.data.revisionId} value={revision.data.revisionId}>
                     {revisionLabel(revision.data, businessTimezone)}
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </UiSelect>
           </div>
         ) : null}
 
@@ -1077,7 +1103,9 @@ function MaterialWorkflowCard({
           >
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Диагностика версии {visibleRevision?.revisionNumber}</AlertTitle>
+              <AlertTitle>
+                <Trans>Диагностика версии {visibleRevision?.revisionNumber}</Trans>
+              </AlertTitle>
               <div className="mt-0.5 text-muted-foreground">
                 <ul className="list-disc space-y-1 pl-5">
                   {diagnosticMessages.map((message) => (
@@ -1114,23 +1142,29 @@ function MaterialWorkflowCard({
           <Alert role="alert" tone="danger">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Действие не выполнено</AlertTitle>
+              <AlertTitle>
+                <Trans>Действие не выполнено</Trans>
+              </AlertTitle>
               <div className="mt-0.5 space-y-3 text-muted-foreground">
                 <p>{state.errorMessage}</p>
                 {state.conversionDebug ? (
                   <details className="rounded-md border border-status-error/30 bg-surface p-3" open>
                     <summary className="cursor-pointer font-medium">
-                      Отладка конвертации TikZ: {state.conversionDebug.stage}
+                      <Trans>Отладка конвертации TikZ: {state.conversionDebug.stage}</Trans>
                     </summary>
                     <p className="mt-3 text-small">
-                      Ниже точный standalone LaTeX, переданный конвертеру, и его вывод.
+                      <Trans>
+                        Ниже точный standalone LaTeX, переданный конвертеру, и его вывод.
+                      </Trans>
                     </p>
-                    <p className="mt-3 text-small font-medium">Сформированный content.tex</p>
+                    <p className="mt-3 text-small font-medium">
+                      <Trans>Сформированный content.tex</Trans>
+                    </p>
                     <pre className="mt-1 max-h-80 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
                       {state.conversionDebug.generatedTex}
                     </pre>
                     <p className="mt-3 text-small font-medium">
-                      Вывод {state.conversionDebug.stage}
+                      <Trans>Вывод {state.conversionDebug.stage}</Trans>
                     </p>
                     <pre className="mt-1 max-h-64 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
                       {state.conversionDebug.toolOutput}
@@ -1164,7 +1198,7 @@ function MaterialWorkflowCard({
                 )
             }}
           >
-            Повторно обработать исходник
+            <Trans>Повторно обработать исходник</Trans>
           </Button>
         ) : null}
 
@@ -1178,16 +1212,16 @@ function MaterialWorkflowCard({
             size="sm"
             variant="outline"
           >
-            {state.previewLoading ? 'Загружаем предпросмотр…' : 'Показать PWA и Telegram'}
+            {state.previewLoading ? t`Загружаем предпросмотр…` : t`Показать PWA и Telegram`}
           </Button>
         ) : null}
 
         {state.webDocument &&
         state.telegramHtml &&
         state.previewRevisionId === selectedRevision?.data.revisionId ? (
-          <section aria-label={`Preview: ${materialLabels[kind]}`} className="min-w-0">
+          <section aria-label={t`Предпросмотр: ${materialLabels[kind]}`} className="min-w-0">
             <Tabs defaultValue="pwa">
-              <TabsList aria-label="Вариант предпросмотра" variant="line">
+              <TabsList aria-label={t`Вариант предпросмотра`} variant="line">
                 <TabsTrigger value="pwa">PWA</TabsTrigger>
                 <TabsTrigger value="telegram">Telegram</TabsTrigger>
                 <TabsTrigger value="pdf">PDF</TabsTrigger>
@@ -1213,8 +1247,7 @@ function MaterialWorkflowCard({
                       patchState({ webDocument: document, pdfPreview: undefined })
                       void inspectCompiledRevision(selectedRevision.data.revisionId).catch(() => {
                         patchState({
-                          errorMessage:
-                            'Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала.',
+                          errorMessage: t`Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала.`,
                         })
                       })
                     }}
@@ -1234,9 +1267,9 @@ function MaterialWorkflowCard({
                   {state.pdfPreview && state.pdfCheckedRevisionId === state.previewRevisionId ? (
                     <>
                       <p className="text-muted-foreground">
-                        PDF исходного файла, без правок расположения ·{' '}
+                        <Trans>PDF исходного файла, без правок расположения · </Trans>
                         <span className="font-num">
-                          {Math.ceil(state.pdfPreview.byteSize / 1024)} КБ
+                          {Math.ceil(state.pdfPreview.byteSize / 1024)} <Trans>КБ</Trans>
                         </span>
                       </p>
                       <a
@@ -1245,15 +1278,17 @@ function MaterialWorkflowCard({
                         rel="noreferrer"
                         target="_blank"
                       >
-                        Открыть PDF
+                        <Trans>Открыть PDF</Trans>
                       </a>
                     </>
                   ) : state.pdfErrorMessage ? (
                     <p className="text-status-danger" role="alert">
-                      PDF не удалось проверить: {state.pdfErrorMessage}
+                      <Trans>PDF не удалось проверить: {state.pdfErrorMessage}</Trans>
                     </p>
                   ) : (
-                    <p className="text-muted-foreground">PDF для этой версии пока не сохранён.</p>
+                    <p className="text-muted-foreground">
+                      <Trans>PDF для этой версии пока не сохранён.</Trans>
+                    </p>
                   )}
                 </div>
               </TabsContent>
@@ -1270,7 +1305,7 @@ function MaterialWorkflowCard({
                   onClick={() => setConfirmation('publish')}
                   size="sm"
                 >
-                  <Send aria-hidden="true" /> Опубликовать сейчас
+                  <Send aria-hidden="true" /> <Trans>Опубликовать сейчас</Trans>
                 </Button>
               ) : null}
               {state.currentPublication ? (
@@ -1280,14 +1315,16 @@ function MaterialWorkflowCard({
                   size="sm"
                   variant="outline"
                 >
-                  Скрыть опубликованное
+                  <Trans>Скрыть опубликованное</Trans>
                 </Button>
               ) : null}
             </div>
             {readyForPublication ? (
               <div className="grid max-w-xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="space-y-1">
-                  <Label htmlFor={scheduleId}>Опубликовать по расписанию</Label>
+                  <Label htmlFor={scheduleId}>
+                    <Trans>Опубликовать по расписанию</Trans>
+                  </Label>
                   <Input
                     id={scheduleId}
                     onChange={(event) => patchState({ scheduleAt: event.target.value })}
@@ -1296,7 +1333,9 @@ function MaterialWorkflowCard({
                     value={state.scheduleAt}
                   />
                   <p className="text-caption text-muted-foreground">
-                    Время занятия: {businessTimezone}. Сервер проверит переходы летнего времени.
+                    <Trans>
+                      Время занятия: {businessTimezone}. Сервер проверит переходы летнего времени.
+                    </Trans>
                   </p>
                 </div>
                 <Button
@@ -1306,13 +1345,13 @@ function MaterialWorkflowCard({
                       setConfirmation('schedule')
                       patchState({ errorMessage: undefined })
                     } else {
-                      patchState({ errorMessage: 'Укажите корректные дату и время публикации.' })
+                      patchState({ errorMessage: t`Укажите корректные дату и время публикации.` })
                     }
                   }}
                   size="sm"
                   variant="outline"
                 >
-                  Запланировать
+                  <Trans>Запланировать</Trans>
                 </Button>
               </div>
             ) : null}
@@ -1322,19 +1361,21 @@ function MaterialWorkflowCard({
             ) ? (
               <div className="grid max-w-xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="space-y-1">
-                  <Label htmlFor={`rollback-revision-${kind}`}>Версия для отката</Label>
-                  <Select
+                  <Label htmlFor={`rollback-revision-${kind}`}>
+                    <Trans>Версия для отката</Trans>
+                  </Label>
+                  <UiSelect
                     onValueChange={(value) => value && patchState({ rollbackRevisionId: value })}
                     value={state.rollbackRevisionId}
                   >
                     <SelectTrigger className="w-full" id={`rollback-revision-${kind}`}>
                       <SelectValue>
                         {rollbackRevision
-                          ? `Версия ${rollbackRevision.data.revisionNumber} · ${rollbackRevision.data.logicalFilename}`
-                          : 'Выберите версию'}
+                          ? t`Версия ${rollbackRevision.data.revisionNumber} · ${rollbackRevision.data.logicalFilename}`
+                          : t`Выберите версию`}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent aria-label={t`Версия для отката`}>
                       {[...readyRevisions]
                         .reverse()
                         .filter(
@@ -1346,11 +1387,14 @@ function MaterialWorkflowCard({
                             key={revision.data.revisionId}
                             value={revision.data.revisionId}
                           >
-                            Версия {revision.data.revisionNumber} · {revision.data.logicalFilename}
+                            <Trans>
+                              Версия {revision.data.revisionNumber} ·{' '}
+                              {revision.data.logicalFilename}
+                            </Trans>
                           </SelectItem>
                         ))}
                     </SelectContent>
-                  </Select>
+                  </UiSelect>
                 </div>
                 <Button
                   disabled={!rollbackRevision || state.mutationPending}
@@ -1358,7 +1402,7 @@ function MaterialWorkflowCard({
                   size="sm"
                   variant="outline"
                 >
-                  Откатить опубликованное
+                  <Trans>Откатить опубликованное</Trans>
                 </Button>
               </div>
             ) : null}
@@ -1370,19 +1414,19 @@ function MaterialWorkflowCard({
               >
                 <p className="font-medium" id={`publication-confirmation-${kind}`}>
                   {confirmation === 'publish'
-                    ? `Опубликовать ${materialLabels[kind].toLocaleLowerCase('ru-RU')} версии ${selectedRevision?.data.revisionNumber} сейчас?`
+                    ? t`Опубликовать ${materialLabels[kind].toLowerCase()} версии ${selectedRevision?.data.revisionNumber ?? '—'} сейчас?`
                     : confirmation === 'schedule'
-                      ? `Запланировать версию ${selectedRevision?.data.revisionNumber} на ${state.scheduleAt.replace('T', ' ')} (${businessTimezone})?`
+                      ? t`Запланировать версию ${selectedRevision?.data.revisionNumber ?? '—'} на ${state.scheduleAt.replace('T', ' ')} (${businessTimezone})?`
                       : confirmation === 'rollback'
-                        ? `Вернуть опубликованный материал к версии ${rollbackRevision?.data.revisionNumber}?`
-                        : `Скрыть опубликованное ${materialLabels[kind].toLocaleLowerCase('ru-RU')} у школьников и родителей?`}
+                        ? t`Вернуть опубликованный материал к версии ${rollbackRevision?.data.revisionNumber ?? '—'}?`
+                        : t`Скрыть опубликованное ${materialLabels[kind].toLowerCase()} у школьников и родителей?`}
                 </p>
                 <p className="text-caption text-muted-foreground">
                   {confirmation === 'hide'
-                    ? 'История сохранится, но материал перестанет быть доступен для чтения.'
+                    ? t`История сохранится, но материал перестанет быть доступен для чтения.`
                     : confirmation === 'schedule'
-                      ? 'Дедлайн сдачи при этом не изменится.'
-                      : 'Действие изменит видимую опубликованную версию.'}
+                      ? t`Дедлайн сдачи при этом не изменится.`
+                      : t`Действие изменит видимую опубликованную версию.`}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -1395,7 +1439,7 @@ function MaterialWorkflowCard({
                     }}
                     size="sm"
                   >
-                    {state.mutationPending ? 'Сохраняем…' : 'Подтвердить'}
+                    {state.mutationPending ? t`Сохраняем…` : t`Подтвердить`}
                   </Button>
                   <Button
                     disabled={state.mutationPending}
@@ -1403,7 +1447,7 @@ function MaterialWorkflowCard({
                     size="sm"
                     variant="ghost"
                   >
-                    Отмена
+                    <Trans>Отмена</Trans>
                   </Button>
                 </div>
               </div>
@@ -1411,16 +1455,16 @@ function MaterialWorkflowCard({
             {state.currentPublication ? (
               <p className="flex items-center gap-1 text-caption text-status-success" role="status">
                 <CheckCircle2 aria-hidden="true" className="size-3.5" />
-                Опубликована{' '}
+                <Trans>Опубликована </Trans>
                 {publishedRevision
-                  ? `версия ${publishedRevision.data.revisionNumber} · ${publishedRevision.data.logicalFilename}`
-                  : 'текущая версия'}
+                  ? t`версия ${publishedRevision.data.revisionNumber} · ${publishedRevision.data.logicalFilename}`
+                  : t`текущая версия`}
               </p>
             ) : null}
             {state.scheduledPublication ? (
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-caption text-muted-foreground" role="status">
-                  Запланировано на{' '}
+                  <Trans>Запланировано на </Trans>
                   {formatInBusinessTimezone(
                     state.scheduledPublication.data.scheduledAt!,
                     businessTimezone,
@@ -1433,7 +1477,7 @@ function MaterialWorkflowCard({
                   size="xs"
                   variant="ghost"
                 >
-                  Отменить расписание
+                  <Trans>Отменить расписание</Trans>
                 </Button>
               </div>
             ) : null}
@@ -1479,7 +1523,7 @@ function LessonTitlePanelEnabled({
       setTitleDraft(null)
       setSaved(true)
     } catch (caught) {
-      setError(caught instanceof ApiResponseError ? caught.message : 'Название не сохранено')
+      setError(caught instanceof ApiResponseError ? caught.message : t`Название не сохранено`)
     } finally {
       setSaving(false)
     }
@@ -1488,22 +1532,28 @@ function LessonTitlePanelEnabled({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Название занятия</CardTitle>
+        <CardTitle>
+          <Trans>Название занятия</Trans>
+        </CardTitle>
         <p className="text-small text-muted-foreground">
-          Название общее для этого номера занятия во всех группах курса.
+          <Trans>Название общее для этого номера занятия во всех группах курса.</Trans>
         </p>
       </CardHeader>
       <CardContent>
         {query.isPending ? (
-          <p className="text-small text-muted-foreground">Загружаем название…</p>
+          <p className="text-small text-muted-foreground">
+            <Trans>Загружаем название…</Trans>
+          </p>
         ) : query.error ? (
           <Alert tone="danger">
             <AlertTriangle aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Название не загружено</AlertTitle>
+              <AlertTitle>
+                <Trans>Название не загружено</Trans>
+              </AlertTitle>
               <AlertDescription>
                 <Button onClick={() => void query.refetch()} size="sm" variant="outline">
-                  Повторить
+                  <Trans>Повторить</Trans>
                 </Button>
               </AlertDescription>
             </AlertContent>
@@ -1517,7 +1567,7 @@ function LessonTitlePanelEnabled({
             }}
           >
             <Label className="grid min-w-64 flex-1 gap-1">
-              Название (необязательно)
+              <Trans>Название (необязательно)</Trans>
               <Input
                 disabled={saving}
                 maxLength={200}
@@ -1532,11 +1582,11 @@ function LessonTitlePanelEnabled({
               disabled={saving || title.trim() === (resource?.data.title ?? '')}
               type="submit"
             >
-              {saving ? 'Сохраняем…' : 'Сохранить название'}
+              {saving ? t`Сохраняем…` : t`Сохранить название`}
             </Button>
             {saved ? (
               <p className="text-small text-status-success" role="status">
-                Название сохранено
+                <Trans>Название сохранено</Trans>
               </p>
             ) : null}
             {error ? (
@@ -1632,7 +1682,7 @@ function LessonWindowEditor({
       })
       await onRefetch()
     } catch (caught) {
-      setError(caught instanceof ApiResponseError ? caught.message : 'Изменение не сохранено')
+      setError(caught instanceof ApiResponseError ? caught.message : t`Изменение не сохранено`)
     } finally {
       setPending(null)
     }
@@ -1651,7 +1701,7 @@ function LessonWindowEditor({
       setDraft((current) => ({ ...current, submissionClosesLocalTime: value }))
       await onRefetch()
     } catch (caught) {
-      setError(caught instanceof ApiResponseError ? caught.message : 'Дедлайн не изменён')
+      setError(caught instanceof ApiResponseError ? caught.message : t`Дедлайн не изменён`)
     } finally {
       setPending(null)
     }
@@ -1659,7 +1709,7 @@ function LessonWindowEditor({
 
   function confirmCutoffChange(value = draft.submissionClosesLocalTime) {
     if (!value) return
-    if (!globalThis.confirm(`Изменить дедлайн сдачи на ${value.replace('T', ' ')}?`)) return
+    if (!globalThis.confirm(t`Изменить дедлайн сдачи на ${value.replace('T', ' ')}?`)) return
     void saveCutoff(value)
   }
 
@@ -1667,15 +1717,19 @@ function LessonWindowEditor({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Фазы занятия</CardTitle>
+        <CardTitle>
+          <Trans>Фазы занятия</Trans>
+        </CardTitle>
         <p className="text-small text-muted-foreground">
-          Время указано для {timezone}. Дедлайн меняется отдельно от публикации решений.
+          <Trans>
+            Время указано для {timezone}. Дедлайн меняется отдельно от публикации решений.
+          </Trans>
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid gap-3 md:grid-cols-3">
           <Label className="grid gap-1">
-            Открыть приём
+            <Trans>Открыть приём</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, opensLocalTime: event.target.value }))
@@ -1685,7 +1739,7 @@ function LessonWindowEditor({
             />
           </Label>
           <Label className="grid gap-1">
-            Подсказки
+            <Trans>Подсказки</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, hintScheduledLocalTime: event.target.value }))
@@ -1695,7 +1749,7 @@ function LessonWindowEditor({
             />
           </Label>
           <Label className="grid gap-1">
-            Решения
+            <Trans>Решения</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, solutionScheduledLocalTime: event.target.value }))
@@ -1706,11 +1760,11 @@ function LessonWindowEditor({
           </Label>
         </div>
         <Button disabled={pending !== null} onClick={() => void saveSchedule()} size="sm">
-          Сохранить расписание публикаций
+          <Trans>Сохранить расписание публикаций</Trans>
         </Button>
         <div className="grid gap-3 border-t border-border pt-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
           <Label className="grid gap-1">
-            Дедлайн сдачи
+            <Trans>Дедлайн сдачи</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({
@@ -1724,7 +1778,7 @@ function LessonWindowEditor({
             />
           </Label>
           <Button disabled={pending !== null} onClick={() => confirmCutoffChange()} size="sm">
-            Изменить дедлайн
+            <Trans>Изменить дедлайн</Trans>
           </Button>
           <Button
             disabled={pending !== null}
@@ -1732,7 +1786,7 @@ function LessonWindowEditor({
             size="sm"
             variant="outline"
           >
-            Закрыть приём сейчас
+            <Trans>Закрыть приём сейчас</Trans>
           </Button>
         </div>
         {error ? (
@@ -1764,7 +1818,7 @@ export function StaffContentWorkspace({
   const history = useStaffContentHistoryQuery(client, groupLessonId)
   if (history.isPending) {
     return (
-      <PageLayout title="LaTeX и публикации" width="wide">
+      <PageLayout title={t`LaTeX и публикации`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -1777,16 +1831,16 @@ export function StaffContentWorkspace({
           ? 'empty'
           : 'error'
     return (
-      <PageLayout title="LaTeX и публикации" width="wide">
+      <PageLayout title={t`LaTeX и публикации`} width="wide">
         <PageStatePanel
           {...(state === 'error'
-            ? { actionLabel: 'Повторить', onAction: () => void history.refetch() }
+            ? { actionLabel: t`Повторить`, onAction: () => void history.refetch() }
             : {})}
           state={state}
           {...(state === 'empty'
             ? {
-                title: 'Групповое занятие не найдено',
-                description: 'Проверьте ссылку или создайте занятие перед загрузкой LaTeX.',
+                title: t`Групповое занятие не найдено`,
+                description: t`Проверьте ссылку или создайте занятие перед загрузкой LaTeX.`,
               }
             : {})}
         />
@@ -1812,22 +1866,26 @@ export function StaffContentWorkspace({
             className={buttonVariants({ variant: 'outline' })}
             href={`/staff/oral?groupLesson=${encodeURIComponent(groupLessonId)}&tab=windows`}
           >
-            <Mic aria-hidden="true" /> Окна устного приёма
+            <Mic aria-hidden="true" /> <Trans>Окна устного приёма</Trans>
           </a>
         ) : undefined
       }
-      description="Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации."
-      eyebrow={`Групповое занятие ${groupLessonId}`}
-      title="LaTeX и публикации"
+      description={t`Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации.`}
+      eyebrow={t`Групповое занятие ${groupLessonId}`}
+      title={t`LaTeX и публикации`}
       width="wide"
     >
       <Alert className="mb-4" tone="info">
         <FileCode2 aria-hidden="true" />
         <AlertContent>
-          <AlertTitle>LaTeX — единственный источник</AlertTitle>
+          <AlertTitle>
+            <Trans>LaTeX — единственный источник</Trans>
+          </AlertTitle>
           <AlertDescription>
-            Сначала проверьте версии для PWA и Telegram. Изменение времени решения не меняет дедлайн
-            сдачи.
+            <Trans>
+              Сначала проверьте версии для PWA и Telegram. Изменение времени решения не меняет
+              дедлайн сдачи.
+            </Trans>
           </AlertDescription>
         </AlertContent>
       </Alert>

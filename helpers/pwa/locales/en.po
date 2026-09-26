@@ -9,29 +9,89 @@ msgstr ""
 msgid "API печати не настроен"
 msgstr ""
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Environment 'multicols' не содержит число колонок."
+msgstr "The 'multicols' environment has no column count."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Environment tikzpicture не закрыт."
+msgstr "The tikzpicture environment is not closed."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Environment {value0} не закрыт."
+msgstr "Environment {value0} is not closed."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Environment {value0} не поддерживается compiler."
+msgstr "Environment {value0} is not supported by the compiler."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Environment {value0} не содержит обязательные аргументы."
+msgstr "Environment {value0} is missing required arguments."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Environment {value0} не содержит формулу."
+msgstr "Environment {value0} contains no formula."
+
 #: apps/pwa_api/content_routes.py
 msgid "LaTeX-файл должен быть в UTF-8 или Windows-1251"
-msgstr ""
+msgstr "The LaTeX file must use UTF-8 or Windows-1251"
 
 #: apps/pwa_api/content_routes.py
 msgid "LaTeX-файл не удалось разобрать"
-msgstr ""
+msgstr "Could not parse the LaTeX file"
 
 #: apps/pwa_api/content_routes.py
 msgid "LaTeX-файл пуст"
-msgstr ""
+msgstr "The LaTeX file is empty"
 
 #: apps/pwa_api/content_routes.py
 msgid "LaTeX-файл содержит ошибки и не может быть опубликован"
-msgstr ""
+msgstr "The LaTeX file contains errors and cannot be published"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Legacy environment 'picture' пропущен до будущей конвертации в TikZ."
+msgstr "The legacy 'picture' environment was skipped pending conversion to TikZ."
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Markdown должен быть текстом"
-msgstr ""
+msgstr "Markdown must be text"
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "OpenRouter временно не выполнил генерацию. Повторите попытку; технические детали записаны в журнал сервера."
+msgstr "OpenRouter could not generate metadata at this time. Try again; technical details are in the server log."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "OpenRouter временно ограничил запросы. Подождите немного и повторите попытку."
+msgstr "OpenRouter temporarily limited requests. Wait a moment and try again."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "OpenRouter не выполнил запрос: у аккаунта нет доступного кредита. Пополните баланс или выберите доступную модель."
+msgstr "OpenRouter could not complete the request: the account has no available credit. Add credit or select an available model."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "OpenRouter не ответил за отведённое время. Черновик не был сохранён; повторите генерацию позже."
+msgstr "OpenRouter did not respond in time. The draft was not saved; try generating it again later."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "OpenRouter не принял параметры генерации. Технические детали записаны в журнал сервера."
+msgstr "OpenRouter rejected the generation parameters. Technical details are in the server log."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "OpenRouter отклонил запрос ({status_code}: доступ запрещён). Проверьте настоящий OPENROUTER_API_KEY в production-конфиге и ограничения этого ключа."
+msgstr "OpenRouter rejected the request ({status_code}: access denied). Check the real OPENROUTER_API_KEY in the production configuration and the key’s restrictions."
 
 #: apps/pwa_api/content_routes.py
 msgid "Preview доступно только после успешной компиляции"
-msgstr ""
+msgstr "Preview is available only after successful compilation"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Print-layout command \\{value0} пересекает границу условия/подсказки/решения и не переносится в web AST."
+msgstr "Print-layout command \\{value0} crosses a statement/hint/solution boundary and is not included in the web AST."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Print-layout environment {value0} пересекает границу условия/подсказки/решения и не переносится в web AST."
+msgstr "Print-layout environment {value0} crosses a statement/hint/solution boundary and is not included in the web AST."
 
 #: apps/pwa_api/push_subscription_routes.py
 msgid "Push-уведомления временно недоступны"
@@ -43,11 +103,23 @@ msgstr "Push notifications are not configured yet"
 
 #: apps/pwa_api/content_routes.py
 msgid "Revision относится к другому групповому занятию"
-msgstr ""
+msgstr "The revision belongs to another group class"
 
 #: apps/pwa_api/content_routes.py
 msgid "Revision относится к другому занятию или виду материала"
-msgstr ""
+msgstr "The revision belongs to another class or material type"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Source не содержит оболочку \\begin{document}; разобран как фрагмент."
+msgstr "The source has no \\begin{document} wrapper; parsed as a fragment."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Source содержит символ замены U+FFFD ({value0} вхождений) и уже повреждён до загрузки."
+msgstr "The source contains the U+FFFD replacement character ({value0} occurrences) and was already damaged before upload."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Telegram Rich derivative не прошёл allowlist/limits-проверку: {value0}"
+msgstr "The Telegram Rich derivative failed allowlist/limit validation: {value0}"
 
 #: apps/pwa_api/telegram_binding_routes.py
 msgid "Telegram вернул другой канал или некорректное название"
@@ -61,13 +133,45 @@ msgstr ""
 msgid "Telegram-токен изменился. Повторите создание входа."
 msgstr ""
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "TikZ-блок превышает безопасный лимит размера."
+msgstr "The TikZ block exceeds the safe size limit."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "TikZ-блок пуст."
+msgstr "The TikZ block is empty."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "URL производного asset использует запрещённую схему или authority."
+msgstr "The derived asset URL uses a prohibited scheme or authority."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "URL производного asset расходится с опубликованным typed descriptor."
+msgstr "The derived asset URL differs from the published typed descriptor."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Web renderer сохраняет semantic field blocks без печатной раскладки."
+msgstr "The web renderer preserves semantic field blocks without print layout."
+
 #: apps/pwa_api/admin_account_routes.py
 msgid "Web-вход уже создан или такой логин занят"
 msgstr ""
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "WebContentDocument v1 не прошёл contract boundary: {value0}"
+msgstr "WebContentDocument v1 failed contract validation: {value0}"
+
 #: helpers/pwa/push_delivery.py
 msgid "{group} · занятие {lesson_number}. Результаты уже в кабинете."
 msgstr "{group} · lesson {lesson_number}. Results are already in the account."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "{number}: {reason}; добавьте checker вручную перед публикацией"
+msgstr "{number}: {reason}; add a checker manually before publishing"
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "{number}: нужна проверка"
+msgstr "{number}: review required"
 
 #: apps/pwa_api/staff_access_routes.py
 msgid "Администратор имеет доступ ко всем курсам"
@@ -117,13 +221,17 @@ msgstr "The room has already changed. Refresh the page."
 msgid "База печати временно недоступна"
 msgstr ""
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Блок {value0} не имеет завершающей команды."
+msgstr "Block {value0} has no closing command."
+
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Блок занятия не найден"
-msgstr ""
+msgstr "Class block not found"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Блок уже изменился. Обновите страницу."
-msgstr ""
+msgstr "The block has changed. Refresh the page."
 
 #: apps/pwa_api/review_routes.py
 msgid "Блокировка проверки завершилась. Обновите очередь."
@@ -141,6 +249,10 @@ msgstr "A reply has appeared in your request."
 msgid "В выбранном сообщении нет текста."
 msgstr "The selected message has no text."
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "В источнике не найдено ни одной поддерживаемой команды задачи."
+msgstr "No supported problem commands were found in the source."
+
 #: helpers/pwa/push_delivery.py
 msgid "В кабинете появились новые условия."
 msgstr "New statements are available in the account."
@@ -149,6 +261,10 @@ msgstr "New statements are available in the account."
 msgid "В кабинете появилось объявление."
 msgstr "An announcement has appeared in the account."
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "В листе изменились названия или порядок столбцов."
+msgstr "The sheet’s column names or order have changed."
+
 #: helpers/pwa/push_delivery.py
 msgid "В новостях кружка появилась запись."
 msgstr "A post has appeared in the club news."
@@ -156,6 +272,10 @@ msgstr "A post has appeared in the club news."
 #: helpers/pwa/push_delivery.py
 msgid "В обсуждении решения появился ответ."
 msgstr "A reply has appeared in the solution discussion."
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "В одной группе можно выбрать только одну задачу"
+msgstr "You can select only one problem per group"
 
 #: db_methods/pwa/written_submissions.py
 msgid "В отправленном решении должна остаться фотография или текст."
@@ -167,7 +287,15 @@ msgstr "There are no submissions in the reviewed branch"
 
 #: apps/pwa_api/content_routes.py
 msgid "В старой версии не хватает рисунков. Загрузите исходный файл заново вместе с рисунками."
-msgstr ""
+msgstr "The old version is missing figures. Upload the source file again with its figures."
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "В файле нет листов «Задачи» или «Старые»"
+msgstr "The file has no “Задачи” or “Старые” sheets"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "В файле слишком много строк"
+msgstr "The file has too many rows"
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "В этом курсе уже есть группа с таким кодом или названием"
@@ -207,11 +335,15 @@ msgstr "The written-submission format version is not supported"
 
 #: apps/pwa_api/content_routes.py
 msgid "Вид рисунка не совпадает с исходным LaTeX"
-msgstr ""
+msgstr "The figure type does not match the original LaTeX"
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Внесение устных результатов временно недоступно"
 msgstr "Entering oral-session results is temporarily unavailable"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Внутренняя ошибка компилятора. Загрузите новую revision или обратитесь к администратору."
+msgstr "Internal compiler error. Upload a new revision or contact an administrator."
 
 #: apps/pwa_app.py
 msgid "Внутренняя ошибка сервера"
@@ -238,6 +370,10 @@ msgstr "Question not found"
 msgid "Вопросы временно недоступны"
 msgstr "Questions are temporarily unavailable"
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+msgstr "Restore the source file from a valid UTF-8/Windows-1251 copy; re-encoding the current bytes will not recover lost characters."
+
 #: apps/pwa_api/review_routes.py
 msgid "Время изменения внутренней пометки закончилось"
 msgstr "The time to change the internal note has expired"
@@ -248,7 +384,7 @@ msgstr "The time to change the reaction has expired"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Время публикации некорректно"
-msgstr ""
+msgstr "Invalid publication time"
 
 #: apps/pwa_api/middleware.py
 msgid "Вход временно недоступен"
@@ -261,11 +397,11 @@ msgstr "Select JPEG, PNG, or WebP"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Выберите группу синонимов"
-msgstr ""
+msgstr "Select a synonym group"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Выберите действие"
-msgstr ""
+msgstr "Choose an action"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Выберите допустимое состояние аккаунта"
@@ -281,7 +417,7 @@ msgstr "Choose an available reaction"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Выберите задачи без повторов"
-msgstr ""
+msgstr "Select problems without duplicates"
 
 #: apps/pwa_api/review_routes.py
 msgid "Выберите корректный вердикт"
@@ -293,7 +429,7 @@ msgstr "Choose a course"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Выберите курс и XLSX-файл"
-msgstr ""
+msgstr "Select a course and an XLSX file"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Выберите от одного до ста сообщений или фотографий"
@@ -305,7 +441,7 @@ msgstr ""
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Выберите файл XLSX"
-msgstr ""
+msgstr "Select an XLSX file"
 
 #: apps/pwa_api/auth_routes.py
 msgid "Выберите язык интерфейса"
@@ -313,7 +449,11 @@ msgstr "Choose the interface language"
 
 #: apps/pwa_api/content_routes.py
 msgid "Выбран недопустимый масштаб рисунка"
-msgstr ""
+msgstr "Invalid figure scale selected"
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Выбранная задача не входит в эту группу синонимов"
+msgstr "The selected problem is not in this synonym group"
 
 #: db_methods/pwa/written_submissions.py
 msgid "Выбранная фотография не найдена или не готова."
@@ -323,9 +463,17 @@ msgstr "The selected photo was not found or is not ready."
 msgid "Выбранный материал не найден или ещё не отправлен."
 msgstr "The selected material was not found or has not been sent yet."
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Вынесите конструкцию из команды форматирования."
+msgstr "Move the structure outside the formatting command."
+
 #: apps/pwa_api/content_routes.py
 msgid "Генерация metadata временно недоступна"
-msgstr ""
+msgstr "Metadata generation is temporarily unavailable"
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "Генерация metadata не настроена: укажите настоящий OPENROUTER_API_KEY в production-конфиге."
+msgstr "Metadata generation is not configured: set a real OPENROUTER_API_KEY in the production configuration."
 
 #: apps/pwa_api/admin_course_routes.py
 #: apps/pwa_api/admin_schedule_routes.py
@@ -340,6 +488,14 @@ msgstr "The group is not available to the child"
 msgid "Группа недоступна этому школьнику"
 msgstr "This group is unavailable to the student"
 
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Группа синонимов не найдена"
+msgstr "Synonym group not found"
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Группа синонимов уже изменилась"
+msgstr "The synonym group has changed"
+
 #: apps/pwa_api/admin_course_routes.py
 msgid "Группа уже изменилась. Обновите страницу."
 msgstr "The group has already changed. Refresh the page."
@@ -347,6 +503,10 @@ msgstr "The group has already changed. Refresh the page."
 #: models/pwa/submissions.py
 msgid "Да, всё верно!"
 msgstr "Yes, that is correct!"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Данные изменились после предпросмотра"
+msgstr "The data has changed since the preview"
 
 #: apps/pwa_api/account_batch_routes.py
 msgid "Данные изменились. Обновите предпросмотр."
@@ -368,7 +528,11 @@ msgstr "Sign in to your account to continue."
 
 #: apps/pwa_api/content_routes.py
 msgid "Для расписания текущая и отложенная версии должны совпадать"
-msgstr ""
+msgstr "The current and scheduled versions must match to set the schedule"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Для тестовой задачи нужен известный тип ответа."
+msgstr "A test problem requires a supported answer type."
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Для этого режима время не задаётся"
@@ -384,11 +548,27 @@ msgstr "The full PWA history is not ready for this work yet"
 
 #: apps/pwa_api/content_routes.py
 msgid "До публикации или планирования решения задайте дедлайн сдачи."
-msgstr ""
+msgstr "Set a submission deadline before publishing or scheduling the solution."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Добавьте \\кзадача или \\eproblem."
+msgstr "Add \\кзадача or \\eproblem."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Добавьте \\кобъявление для обычного или \\кважноеОбъявление для важного объявления."
+msgstr "Add \\кобъявление for a regular announcement or \\кважноеОбъявление for an important one."
 
 #: db_methods/pwa/written_submissions.py
 msgid "Добавьте текст или фотографии решения."
 msgstr "Add solution text or photos."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Добавьте текст объявления или удалите пустой блок."
+msgstr "Add announcement text or remove the empty block."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Документ превышает безопасный лимит структурных узлов."
+msgstr "The document exceeds the safe limit for structural nodes."
 
 #: apps/pwa_api/staff_access_routes.py
 msgid "Доступы преподавателей временно недоступны"
@@ -406,6 +586,10 @@ msgstr ""
 msgid "Журнал изменений доступен только администратору"
 msgstr ""
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Завершающая команда \\{value0} не имеет начала объявления."
+msgstr "Closing command \\{value0} has no announcement start."
+
 #: apps/pwa_api/lesson_block_routes.py
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Загрузите ровно один файл в поле image"
@@ -414,7 +598,7 @@ msgstr "Upload exactly one file in the image field"
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/problem_import_routes.py
 msgid "Загрузка должна использовать multipart/form-data"
-msgstr ""
+msgstr "The upload must use multipart/form-data"
 
 #: apps/pwa_api/lesson_block_routes.py
 #: apps/pwa_api/news_moderation_routes.py
@@ -429,7 +613,7 @@ msgstr "Image upload is temporarily unavailable"
 
 #: apps/pwa_api/content_routes.py
 msgid "Загрузка рисунка должна использовать multipart/form-data"
-msgstr ""
+msgstr "The figure upload must use multipart/form-data"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Загрузка фотографии должна использовать multipart/form-data"
@@ -441,12 +625,57 @@ msgstr "Photo upload must use multipart/form-data"
 msgid "Загрузка фотографий временно недоступна"
 msgstr "Photo upload is temporarily unavailable"
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача {value0}: пункты материала не совпадают с условием."
+msgstr "Problem {value0}: the material’s parts do not match the statement."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача не имеет явной завершающей команды."
+msgstr "The problem has no explicit closing command."
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Задача не найдена"
+msgstr "Problem not found"
+
 #: db_methods/pwa/written_submissions.py
 msgid "Задача недоступна для письменной сдачи."
 msgstr "The problem is unavailable for written submission."
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "Задачи изменились после импорта"
+msgstr "The problems have changed since the import"
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Задачи изменились после предпросмотра"
+msgstr "The problems have changed since the preview"
+
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Задачи относятся к разным занятиям курса"
+msgstr "The problems belong to different course classes"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Закройте document environment и повторите compile."
+msgstr "Close the document environment and compile again."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Закройте блок соответствующей парной командой."
+msgstr "Close the block with its matching command."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Закройте текущее объявление до начала следующего."
+msgstr "Close the current announcement before starting the next one."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Замените environment поддерживаемой структурой или добавьте parser fixture."
+msgstr "Replace the environment with a supported structure or add a parser fixture."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Замените команду поддерживаемой конструкцией или расширьте compiler с тестом."
+msgstr "Replace the command with a supported structure or extend the compiler with a test."
+
 #: apps/pwa_api/course_routes.py
 #: apps/pwa_api/notification_routes.py
+#: apps/pwa_api/problem_synonym_routes.py
 msgid "Занятие не найдено"
 msgstr "Lesson not found"
 
@@ -474,7 +703,7 @@ msgstr "The record has already changed. Refresh the page."
 
 #: apps/pwa_api/content_routes.py
 msgid "Заполните все поля загрузки"
-msgstr ""
+msgstr "Complete all upload fields"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Заполните все поля фотографии"
@@ -482,7 +711,7 @@ msgstr "Fill in all photo fields"
 
 #: apps/pwa_api/content_routes.py
 msgid "Заполните поля логического имени и вида рисунка"
-msgstr ""
+msgstr "Enter the logical name and figure type"
 
 #: apps/pwa_api/middleware.py
 msgid "Запрос отклонён политикой безопасности."
@@ -496,35 +725,79 @@ msgstr "The request is too large"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Идентификатор курса должен быть текстом"
-msgstr ""
+msgstr "The course ID must be text"
 
 #: apps/pwa_api/content_routes.py
 msgid "Изменение конфликтует с текущим состоянием материала"
-msgstr ""
+msgstr "The change conflicts with the current material state"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Импорт задач временно недоступен"
-msgstr ""
+msgstr "Problem import is temporarily unavailable"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Импорт не найден"
-msgstr ""
+msgstr "Import not found"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Импорт нельзя выполнить"
+msgstr "The import cannot be completed"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Импортировать задачи может только администратор"
-msgstr ""
+msgstr "Only an administrator can import problems"
 
 #: apps/pwa_api/content_routes.py
 msgid "Имя LaTeX-файла должно быть безопасным относительным путём .tex"
-msgstr ""
+msgstr "The LaTeX filename must be a safe relative path ending in .tex"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Имя asset пусто, выходит из логического namespace или содержит опасные символы."
+msgstr "The asset name is empty, outside the logical namespace, or contains unsafe characters."
 
 #: apps/pwa_api/content_routes.py
 msgid "Имя загружаемого файла недопустимо"
-msgstr ""
+msgstr "Invalid upload filename"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Имя фотографии недопустимо"
 msgstr "The photo name is invalid"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+msgstr "Use \\задача…\\кзадача or \\problem…\\eproblem."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Используйте абсолютный HTTPS URL, mailto, tel или локальный #anchor."
+msgstr "Use an absolute HTTPS URL, mailto, tel, or a local #anchor."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Используйте завершающую команду того же вида объявления."
+msgstr "Use a closing command for the same announcement type."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Используйте один опубликованный descriptor для web и Telegram."
+msgstr "Use one published descriptor for web and Telegram."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Используйте относительное логическое имя без .., URL и абсолютного пути."
+msgstr "Use a relative logical name without .., URLs, or an absolute path."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Исправьте AST adapter; публикация такого derivative запрещена."
+msgstr "Fix the AST adapter; publishing this derivative is prohibited."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Исправьте AST renderer; отправка такого derivative запрещена."
+msgstr "Fix the AST renderer; sending this derivative is prohibited."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Исправьте URL mapping для логического asset {value0}."
+msgstr "Fix the URL mapping for logical asset {value0}."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Исправьте разметку пунктов перед публикацией."
+msgstr "Fix the part markup before publishing."
 
 #: db_methods/pwa/submissions.py
 msgid "История ответов изменилась. Обновите страницу."
@@ -560,7 +833,7 @@ msgstr "You can attach no more than 10 photos to one solution."
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Картинка должна быть PNG, JPEG или WebP"
-msgstr ""
+msgstr "The image must be PNG, JPEG, or WebP"
 
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Картинка должна быть PNG, JPEG или WebP и успешно преобразовываться"
@@ -579,9 +852,41 @@ msgstr "The room catalog is temporarily unavailable"
 msgid "Каталог курсов временно недоступен"
 msgstr "The course catalog is temporarily unavailable"
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "Квитанция импорта повреждена"
+msgstr "The import receipt is corrupted"
+
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Ключ запроса уже использован для другого курса"
 msgstr "The request key has already been used for another course"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Команда \\tikz не содержит braced-тело."
+msgstr "Command \\tikz has no braced body."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Команда \\tikzset не примыкает к TikZ и не включена в asset."
+msgstr "Command \\tikzset is not adjacent to TikZ and was not included in the asset."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Команда \\verb не имеет завершающего delimiter."
+msgstr "Command \\verb has no closing delimiter."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Команда \\{value0} запрещена в загружаемом content source."
+msgstr "Command \\{value0} is prohibited in uploaded content sources."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Команда \\{value0} не входит в поддерживаемый LaTeX-корпус."
+msgstr "Command \\{value0} is not part of the supported LaTeX subset."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Команда \\{value0} не получила обязательную braced-группу."
+msgstr "Command \\{value0} is missing a required braced group."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Команда \\{value0} не соответствует началу \\{value1}."
+msgstr "Command \\{value0} does not match opening command \\{value1}."
 
 #: apps/pwa_api/staff_access_routes.py
 msgid "Курс или группа изменились. Обновите страницу и повторите загрузку"
@@ -632,11 +937,15 @@ msgstr "The worksheet is not available yet"
 
 #: apps/pwa_api/content_routes.py
 msgid "Логическое имя рисунка должно точно совпадать с LaTeX"
-msgstr ""
+msgstr "The figure’s logical name must exactly match the LaTeX"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Маркер % addToTikz не имеет парного закрывающего маркера."
+msgstr "The % addToTikz marker has no matching closing marker."
 
 #: apps/pwa_api/content_routes.py
 msgid "Материал не найден"
-msgstr ""
+msgstr "Material not found"
 
 #: apps/pwa_api/review_routes.py
 msgid "Материал не найден или недоступен"
@@ -644,15 +953,15 @@ msgstr "The material was not found or is unavailable"
 
 #: apps/pwa_api/content_routes.py
 msgid "Материал не прошёл проверку"
-msgstr ""
+msgstr "Material validation failed"
 
 #: apps/pwa_api/content_routes.py
 msgid "Материал уже изменился. Обновите страницу."
-msgstr ""
+msgstr "The material has changed. Refresh the page."
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Материалы временно недоступны"
-msgstr ""
+msgstr "Materials are temporarily unavailable"
 
 #: apps/pwa_api/course_routes.py
 #: apps/pwa_api/lesson_block_routes.py
@@ -661,7 +970,7 @@ msgstr "Class materials are temporarily unavailable"
 
 #: apps/pwa_api/content_routes.py
 msgid "Метаданные задач редактируются для файла условий"
-msgstr ""
+msgstr "Edit problem metadata for the statement file"
 
 #: helpers/pwa/push_delivery.py
 msgid "Можно подключиться к устной сдаче."
@@ -677,7 +986,7 @@ msgstr "You have used all attempts for this problem this hour. Return to it late
 
 #: apps/pwa_api/content_routes.py
 msgid "Название занятия должно содержать не более 200 символов"
-msgstr ""
+msgstr "The class title must be no longer than 200 characters"
 
 #: helpers/pwa/push_delivery.py
 msgid "Назначена аудитория"
@@ -717,17 +1026,33 @@ msgstr "Not all photos are ready to be replaced."
 msgid "Не все фотографии готовы к отправке."
 msgstr "Not all photos are ready to be sent."
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Не найдена завершающая команда \\end{document}."
+msgstr "Closing command \\end{document} was not found."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Не найдена закрывающая граница математической формулы."
+msgstr "The closing delimiter of a math formula was not found."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Не найдена закрывающая фигурная скобка."
+msgstr "A closing brace was not found."
+
 #: apps/pwa_api/review_routes.py
 msgid "Не найдено"
 msgstr "Not found"
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Не удалось атомарно сохранить производные компиляции."
+msgstr "Could not save compiled derivatives atomically."
+
 #: apps/pwa_api/content_routes.py
 msgid "Не удалось безопасно прочитать материал"
-msgstr ""
+msgstr "Could not safely read the material"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Не удалось безопасно сохранить картинку"
-msgstr ""
+msgstr "Could not safely save the image"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Не удалось безопасно сохранить фотографию"
@@ -739,25 +1064,33 @@ msgstr "Could not sign in. Check your login and credentials."
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Не удалось обработать блок занятия"
-msgstr ""
+msgstr "Could not process the class block"
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Не удалось применить изменение. Обновите список."
 msgstr "Could not apply the change. Refresh the list."
 
 #: apps/pwa_api/problem_import_routes.py
+msgid "Не удалось проверить XLSX-файл"
+msgstr "Could not check the XLSX file"
+
+#: apps/pwa_api/problem_import_routes.py
 msgid "Не удалось прочитать XLSX-файл"
-msgstr ""
+msgstr "Could not read the XLSX file"
 
 #: apps/pwa_api/organizer_question_routes.py
 #: apps/pwa_api/support_routes.py
 msgid "Не удалось прочитать фотографию"
 msgstr "Could not read the photo"
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Не удалось разобрать объявление \\{value0}."
+msgstr "Could not parse declaration \\{value0}."
+
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/problem_import_routes.py
 msgid "Не удалось разобрать форму загрузки"
-msgstr ""
+msgstr "Could not parse the upload form"
 
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Не удалось разобрать форму загрузки картинки"
@@ -765,19 +1098,27 @@ msgstr "Could not parse the image-upload form"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Не удалось разобрать форму картинки"
-msgstr ""
+msgstr "Could not parse the image form"
 
 #: apps/pwa_api/content_routes.py
 msgid "Не удалось разобрать форму рисунка"
-msgstr ""
+msgstr "Could not parse the figure form"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Не удалось разобрать форму фотографии"
 msgstr "Could not parse the photo form"
 
+#: helpers/pwa/content/metadata_generation.py
+msgid "Не удалось связаться с OpenRouter. Повторите попытку; технические детали записаны в журнал сервера."
+msgstr "Could not connect to OpenRouter. Try again; technical details are in the server log."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "Не удалось сгенерировать metadata. Повторите попытку."
+msgstr "Could not generate metadata. Try again."
+
 #: apps/pwa_api/content_routes.py
 msgid "Не удалось сохранить рисунок. Повторите попытку."
-msgstr ""
+msgstr "Could not save the figure. Try again."
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Не удалось сохранить фотографию. Повторите попытку."
@@ -786,6 +1127,10 @@ msgstr "Could not save the photo. Try again."
 #: apps/pwa_api/auth_routes.py
 msgid "Не удалось сохранить язык интерфейса"
 msgstr "Could not save the interface language"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Не указана группа."
+msgstr "No group specified."
 
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Неверная аудитория аналитики"
@@ -797,7 +1142,7 @@ msgstr ""
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Неверные параметры экспорта"
-msgstr ""
+msgstr "Invalid export parameters"
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Неверный номер занятия"
@@ -913,7 +1258,7 @@ msgstr "Insufficient permissions to manage notifications"
 
 #: apps/pwa_api/content_routes.py
 msgid "Недостаточно прав для этого действия"
-msgstr ""
+msgstr "You do not have permission for this action"
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Неизвестное поле расписания"
@@ -921,15 +1266,15 @@ msgstr "Unknown schedule field"
 
 #: apps/pwa_api/content_routes.py
 msgid "Неизвестное решение сопоставления"
-msgstr ""
+msgstr "Unknown matching decision"
 
 #: apps/pwa_api/content_routes.py
 msgid "Неизвестный вид материала"
-msgstr ""
+msgstr "Unknown material type"
 
 #: apps/pwa_api/content_routes.py
 msgid "Неизвестный вид рисунка"
-msgstr ""
+msgstr "Unknown figure type"
 
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Неизвестный параметр аналитики"
@@ -945,11 +1290,15 @@ msgstr "Unknown queue order"
 
 #: apps/pwa_api/content_routes.py
 msgid "Неизвестный режим публикации"
-msgstr ""
+msgstr "Unknown publication mode"
 
 #: apps/pwa_api/classroom_routes.py
 msgid "Неизвестный статус аудитории"
 msgstr "Unknown room status"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Неизвестный тип задачи."
+msgstr "Unknown problem type."
 
 #: apps/pwa_api/review_routes.py
 msgid "Неизвестный тип реакции"
@@ -989,7 +1338,7 @@ msgstr "Invalid class number"
 
 #: apps/pwa_api/content_routes.py
 msgid "Немедленная публикация не принимает местное время или часовой пояс"
-msgstr ""
+msgstr "Immediate publication does not accept a local time or time zone"
 
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/support_routes.py
@@ -1002,7 +1351,7 @@ msgstr "You do not have access to the course"
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Нет доступа к материалам для разбора"
-msgstr ""
+msgstr "You do not have access to whiteboard materials"
 
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Нет доступа к продуктовой аналитике"
@@ -1026,7 +1375,7 @@ msgstr "You do not have access to this group"
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Нет доступа к этому уровню"
-msgstr ""
+msgstr "You do not have access to this level"
 
 #: apps/pwa_api/auth_routes.py
 msgid "Нет доступных групп для тестирования"
@@ -1051,6 +1400,18 @@ msgstr "New message"
 #: apps/pwa_api/news_routes.py
 msgid "Новости временно недоступны"
 msgstr "News is temporarily unavailable"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Новые задачи уже используются"
+msgstr "The new problems are already in use"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Номер задачи должен быть положительным целым числом."
+msgstr "The problem number must be a positive integer."
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Номер занятия должен быть целым неотрицательным числом."
+msgstr "The class number must be a nonnegative integer."
 
 #: apps/pwa_api/legacy_print_routes.py
 msgid "Нужен токен API печати"
@@ -1097,7 +1458,7 @@ msgstr "Refresh the layout before saving"
 
 #: apps/pwa_api/content_routes.py
 msgid "Обработка рисунков временно недоступна"
-msgstr ""
+msgstr "Figure processing is temporarily unavailable"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Обработка фотографий временно недоступна"
@@ -1113,11 +1474,19 @@ msgstr "The request is unavailable"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Объединять и разделять задачи может только администратор"
-msgstr ""
+msgstr "Only an administrator can merge and separate problems"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Объявление \\{value0} не имеет завершающей команды."
+msgstr "Announcement \\{value0} has no closing command."
 
 #: apps/pwa_api/group_banner_routes.py
 msgid "Объявление не найдено"
 msgstr "Announcement not found"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Объявление не содержит отображаемого текста."
+msgstr "The announcement contains no displayable text."
 
 #: apps/pwa_api/group_banner_routes.py
 msgid "Объявление уже изменилось. Обновите список."
@@ -1131,6 +1500,10 @@ msgstr "Announcement, course, or group not found"
 msgid "Объявления временно недоступны"
 msgstr "Announcements are temporarily unavailable"
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Объявления нельзя вкладывать друг в друга."
+msgstr "Announcements cannot be nested."
+
 #: apps/pwa_api/staff_access_routes.py
 msgid "Один из логинов преподавателей уже используется"
 msgstr ""
@@ -1138,6 +1511,10 @@ msgstr ""
 #: apps/pwa_api/written_submission_routes.py
 msgid "Один материал нельзя выбрать дважды"
 msgstr "The same material cannot be selected twice"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Одиночный обратный слеш не образует LaTeX-команду."
+msgstr "A single backslash does not form a LaTeX command."
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Одна из выбранных групп не относится к этому курсу"
@@ -1167,6 +1544,10 @@ msgstr "The oral-submission slot has already changed"
 msgid "Окончание занятия должно быть позже начала"
 msgstr "The class end must be after its start"
 
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Операцию с синонимами нельзя выполнить"
+msgstr "The synonym operation cannot be completed"
+
 #: helpers/pwa/push_delivery.py
 msgid "Опубликован новый урок"
 msgstr "A new lesson has been published"
@@ -1181,7 +1562,7 @@ msgstr "Published class not found"
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Опубликованные условия не найдены"
-msgstr ""
+msgstr "Published statements not found"
 
 #: apps/pwa_api/course_routes.py
 msgid "Опубликованный список задач не найден"
@@ -1209,7 +1590,7 @@ msgstr "The answer was saved, but review is temporarily unavailable."
 
 #: apps/pwa_api/content_routes.py
 msgid "Откат возможен только на готовую revision"
-msgstr ""
+msgstr "You can revert only to a ready revision"
 
 #: helpers/pwa/push_delivery.py
 msgid "Откройте кабинет, чтобы увидеть результат."
@@ -1221,7 +1602,7 @@ msgstr "Oral submission is open"
 
 #: apps/pwa_api/content_routes.py
 msgid "Отложенная публикация уже изменилась. Обновите страницу."
-msgstr ""
+msgstr "The scheduled publication has changed. Refresh the page."
 
 #: apps/pwa_api/notification_routes.py
 msgid "Отправить итог семье может только администратор"
@@ -1272,6 +1653,10 @@ msgstr ""
 msgid "Параметры списка занятий некорректны"
 msgstr "The class-list parameters are invalid"
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Перенесите рисунок в TikZ для отображения в web-производной."
+msgstr "Convert the figure to TikZ to display it in the web derivative."
+
 #: db_methods/pwa/written_submissions.py
 msgid "Переписка изменилась после предпросмотра. Обновите данные."
 msgstr "The conversation changed after the preview. Refresh the data."
@@ -1307,7 +1692,7 @@ msgstr "The plan has already changed. Refresh the page."
 
 #: apps/pwa_api/content_routes.py
 msgid "Повторная обработка выявила ошибки. Исправьте исходный файл перед публикацией."
-msgstr ""
+msgstr "Reprocessing found errors. Fix the source file before publishing."
 
 #: helpers/pwa/push_delivery.py
 msgid "Подсказки уже доступны в кабинете."
@@ -1315,15 +1700,15 @@ msgstr "Hints are already available in the account."
 
 #: apps/pwa_api/content_routes.py
 msgid "Подтвердите дедлайн сдачи отдельным действием."
-msgstr ""
+msgstr "Confirm the submission deadline in a separate action."
 
 #: apps/pwa_api/content_routes.py
 msgid "Подтвердите изменение дедлайна отдельным действием."
-msgstr ""
+msgstr "Confirm the deadline change in a separate action."
 
 #: apps/pwa_api/content_routes.py
 msgid "Подтвердите открытие материала в задаче"
-msgstr ""
+msgstr "Confirm opening the material in the problem"
 
 #: apps/pwa_api/review_routes.py
 msgid "Подтвердите отправку вердикта без комментария"
@@ -1331,11 +1716,11 @@ msgstr "Confirm that you want to submit a verdict without a comment"
 
 #: apps/pwa_api/content_routes.py
 msgid "Подтвердите полную перегенерацию metadata для этой версии условия"
-msgstr ""
+msgstr "Confirm full metadata regeneration for this statement version"
 
 #: apps/pwa_api/content_routes.py
 msgid "Подтверждение перезаписи metadata должно быть булевым значением"
-msgstr ""
+msgstr "The metadata overwrite confirmation must be a boolean"
 
 #: apps/pwa_api/classroom_routes.py
 msgid "Поисковый запрос слишком длинный"
@@ -1353,6 +1738,10 @@ msgstr "The photo order changed. Refresh the page."
 #: apps/pwa_api/review_routes.py
 msgid "Посылка или её блокировка изменились. Обновите предпросмотр перед переносом."
 msgstr "The submission or its lock has changed. Refresh the preview before moving it."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Превышена максимальная глубина вложенности фигурных скобок."
+msgstr "The maximum brace nesting depth was exceeded."
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Преподаватель может менять только активную группу в своём доступе"
@@ -1397,7 +1786,7 @@ msgstr "Check the Markdown and external images"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Проверьте revision"
-msgstr ""
+msgstr "Check the revision"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте аннотации к работе"
@@ -1413,7 +1802,7 @@ msgstr "Check the entered answer"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Проверьте версию импорта"
-msgstr ""
+msgstr "Check the import version"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте версию письменного решения"
@@ -1467,7 +1856,7 @@ msgstr "Check the selected conversation and problem"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Проверьте выбранные задачи"
-msgstr ""
+msgstr "Check the selected problems"
 
 #: apps/pwa_api/staff_access_routes.py
 msgid "Проверьте выбранные курсы и группы"
@@ -1479,7 +1868,7 @@ msgstr "Check the selected messages and photos"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Проверьте выбранный курс"
-msgstr ""
+msgstr "Check the selected course"
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Проверьте выбранный курс и группу"
@@ -1531,7 +1920,7 @@ msgstr "Check the oral-submission data"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Проверьте данные формы"
-msgstr ""
+msgstr "Check the form data"
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "Проверьте дату занятия"
@@ -1560,6 +1949,10 @@ msgstr "Check the request"
 #: apps/pwa_api/notification_routes.py
 msgid "Проверьте запрос отправки"
 msgstr "Check the send request"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Проверьте значение ячейки."
+msgstr "Check the cell value."
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте исходную версию решения"
@@ -1692,7 +2085,7 @@ msgstr "Check the notification list parameters"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Проверьте подтверждение импорта"
-msgstr ""
+msgstr "Check the import confirmation"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте подтверждение отправки"
@@ -1760,7 +2153,7 @@ msgstr "Check the reconciliation fields"
 
 #: apps/pwa_api/content_routes.py
 msgid "Проверьте поля строки"
-msgstr ""
+msgstr "Check the row fields"
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Проверьте поля схемы аудиторий"
@@ -1834,7 +2227,7 @@ msgstr "Check the season"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Проверьте содержимое или настройки публикации"
-msgstr ""
+msgstr "Check the content or publication settings"
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Проверьте список аудиторий"
@@ -1874,7 +2267,7 @@ msgstr "Check the solution text"
 
 #: apps/pwa_api/content_routes.py
 msgid "Проверьте текстовое поле строки"
-msgstr ""
+msgstr "Check the row’s text field"
 
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте тип вопроса"
@@ -1914,7 +2307,7 @@ msgstr "Check the oral-submission slot draft"
 
 #: apps/pwa_api/content_routes.py
 msgid "Проверьте числовое поле строки"
-msgstr ""
+msgstr "Check the row’s numeric field"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте числовые поля фотографии"
@@ -1947,11 +2340,11 @@ msgstr "The publication has already changed. Refresh the list."
 
 #: apps/pwa_api/content_routes.py
 msgid "Публикация уже изменилась. Обновите страницу."
-msgstr ""
+msgstr "The publication has changed. Refresh the page."
 
 #: apps/pwa_api/content_routes.py
 msgid "Публиковать можно только успешно скомпилированную revision"
-msgstr ""
+msgstr "Only successfully compiled revisions can be published"
 
 #: apps/pwa_api/review_routes.py
 msgid "Работа в очереди не найдена"
@@ -1967,7 +2360,7 @@ msgstr "The work is outside your available groups"
 
 #: apps/pwa_api/content_routes.py
 msgid "Работа с материалами временно недоступна"
-msgstr ""
+msgstr "Material management is temporarily unavailable"
 
 #: apps/pwa_api/staff_dashboard_routes.py
 msgid "Рабочая сводка временно недоступна"
@@ -1977,9 +2370,17 @@ msgstr ""
 msgid "Рабочая сводка доступна только преподавателям"
 msgstr ""
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Разделите материал на несколько source-файлов."
+msgstr "Split the material into several source files."
+
 #: apps/pwa_api/content_routes.py
 msgid "Размер рисунка можно менять после успешной компиляции"
-msgstr ""
+msgstr "You can resize figures after successful compilation"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Разместите локальный \\tikzset непосредственно перед \\begin{tikzpicture} или внутри % addToTikz-блока."
+msgstr "Place the local \\tikzset directly before \\begin{tikzpicture} or inside an % addToTikz block."
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Расписание временно недоступно"
@@ -1991,11 +2392,11 @@ msgstr "The schedule has changed. Refresh the page."
 
 #: apps/pwa_api/content_routes.py
 msgid "Расположение не удалось подготовить для публикации. Проверьте рисунки и объём материала."
-msgstr ""
+msgstr "Could not prepare the layout for publication. Check the figures and material size."
 
 #: apps/pwa_api/content_routes.py
 msgid "Расположение рисунков недоступно: повторите обработку материала или проверьте выбранные пункты."
-msgstr ""
+msgstr "Figure layout is unavailable: reprocess the material or check the selected parts."
 
 #: apps/pwa_api/classroom_assignment_routes.py
 msgid "Распределение школьников временно недоступно"
@@ -2025,6 +2426,10 @@ msgstr "Student and teacher reactions are available only to an administrator"
 msgid "Реакция уже изменилась. Обновите проверку."
 msgstr "The reaction has changed. Refresh the review."
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "Регулярное выражение валидации не компилируется."
+msgstr "The validation regular expression does not compile."
+
 #: apps/pwa_api/student_results_routes.py
 msgid "Результаты доступны только администратору"
 msgstr "Results are available only to an administrator"
@@ -2043,11 +2448,11 @@ msgstr "Lesson solutions are already available."
 
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Рисунок не найден"
-msgstr ""
+msgstr "Figure not found"
 
 #: apps/pwa_api/content_routes.py
 msgid "Рисунок слишком большой"
-msgstr ""
+msgstr "The figure is too large"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Связь семейного аккаунта со школьником не найдена"
@@ -2083,7 +2488,7 @@ msgstr ""
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Синонимы задач временно недоступны"
-msgstr ""
+msgstr "Problem synonyms are temporarily unavailable"
 
 #: helpers/pwa/push_delivery.py
 msgid "Скоро дедлайн"
@@ -2103,7 +2508,7 @@ msgstr "Too many students"
 
 #: apps/pwa_api/content_routes.py
 msgid "Сначала загрузите все рисунки из LaTeX-файла"
-msgstr ""
+msgstr "Upload all figures from the LaTeX file first"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Сначала задайте данные для входа"
@@ -2112,7 +2517,7 @@ msgstr ""
 #: apps/pwa_api/account_batch_routes.py
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Сначала обновите предпросмотр"
-msgstr ""
+msgstr "Refresh the preview first"
 
 #: apps/pwa_api/classroom_delivery_routes.py
 msgid "Сначала подтвердите корректное распределение аудиторий"
@@ -2122,13 +2527,21 @@ msgstr "First confirm valid room assignments"
 msgid "Сначала подтвердите это поле в расписании курса"
 msgstr "First confirm this field in the course schedule"
 
+#: apps/pwa_api/problem_synonym_routes.py
+msgid "Сначала разделите существующие группы синонимов"
+msgstr "Separate the existing synonym groups first"
+
 #: apps/pwa_api/content_routes.py
 msgid "Сначала сопоставьте хотя бы одну задачу для генерации metadata"
-msgstr ""
+msgstr "Match at least one problem before generating metadata"
 
 #: apps/pwa_app.py
 msgid "Сообщение WebSocket должно быть корректным JSON"
 msgstr "A WebSocket message must be valid JSON"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Сопоставьте существующий hash или загрузите недостающий asset."
+msgstr "Match an existing hash or upload the missing asset."
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Состав групп уже используется в плане аудиторий"
@@ -2138,6 +2551,10 @@ msgstr "This group composition is already used in a room plan"
 msgid "Состав курса или групп изменился. Обновите предпросмотр."
 msgstr ""
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "Состояние импорта уже изменилось"
+msgstr "The import state has changed"
+
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Состояние источника уже изменилось или недоступно для этого поста"
 msgstr "The source state has changed or is unavailable for this post"
@@ -2146,9 +2563,13 @@ msgstr "The source state has changed or is unavailable for this post"
 msgid "Сотрудник не найден"
 msgstr ""
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Список не содержит команд \\item."
+msgstr "The list contains no \\item commands."
+
 #: apps/pwa_api/content_routes.py
 msgid "Список сопоставлений имеет неверный формат"
-msgstr ""
+msgstr "Invalid matching list format"
 
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Список участников временно недоступен"
@@ -2163,9 +2584,17 @@ msgstr "The photo list changed. Refresh the page."
 msgid "Срок сдачи этой задачи уже закончился."
 msgstr "The submission deadline for this problem has passed."
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Ссылка использует запрещённую или некорректную схему URL."
+msgstr "The link uses a prohibited or invalid URL scheme."
+
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Статистика временно недоступна"
 msgstr "Statistics are temporarily unavailable"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Структурная команда \\{value0} вложена в inline-группу."
+msgstr "Structural command \\{value0} is nested inside an inline group."
 
 #: apps/pwa_api/classroom_layout_routes.py
 msgid "Схема аудиторий временно недоступна"
@@ -2185,7 +2614,15 @@ msgstr ""
 
 #: apps/pwa_api/content_routes.py
 msgid "Таблица метаданных имеет неверный формат"
-msgstr ""
+msgstr "Invalid metadata table format"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Таблица не содержит полного column preamble."
+msgstr "The table has no complete column preamble."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Табличная раскладка рисунков преобразована в последовательные web-блоки."
+msgstr "The table layout of figures was converted into sequential web blocks."
 
 #: apps/pwa_api/telegram_binding_routes.py
 msgid "Такая привязка Telegram уже существует"
@@ -2193,7 +2630,11 @@ msgstr ""
 
 #: apps/pwa_api/content_routes.py
 msgid "Такого рисунка нет в этой revision"
-msgstr ""
+msgstr "This figure is not in this revision"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Такой группы нет в выбранном курсе."
+msgstr "This group does not exist in the selected course."
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "Такой код или название группы уже используется в курсе"
@@ -2228,6 +2669,14 @@ msgstr "The solution text is too large"
 msgid "Текстовое поле формы не должно быть файлом"
 msgstr "A form text field must not be a file"
 
+#: apps/pwa_api/content_routes.py
+msgid "Текущая версия публикации указана неверно"
+msgstr "The current publication version is invalid"
+
+#: apps/pwa_api/content_routes.py
+msgid "Текущая отложенная публикация указана неверно"
+msgstr "The current scheduled publication is invalid"
+
 #: apps/pwa_api/account_batch_routes.py
 #: apps/pwa_api/admin_account_routes.py
 #: apps/pwa_api/admin_course_routes.py
@@ -2256,7 +2705,7 @@ msgstr "The request body must be JSON"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Тело запроса должно быть JSON-объектом"
-msgstr ""
+msgstr "The request body must be a JSON object"
 
 #: apps/pwa_api/auth_routes.py
 msgid "Тело запроса должно быть корректным JSON"
@@ -2292,6 +2741,10 @@ msgstr "The test problem is unavailable for rechecking."
 msgid "Тестовая задача недоступна."
 msgstr "The test problem is unavailable."
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "У задачи нет названия."
+msgstr "The problem has no title."
+
 #: apps/pwa_api/review_routes.py
 msgid "У работы уже есть более новая проверка. Обновите страницу."
 msgstr "This work already has a newer review. Refresh the page."
@@ -2320,13 +2773,25 @@ msgstr "Notification not found"
 msgid "Уведомления временно недоступны"
 msgstr "Notifications are temporarily unavailable"
 
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Удалите лишнюю команду или добавьте соответствующее начало объявления."
+msgstr "Remove the extra command or add the corresponding announcement start."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Удалите слеш или используйте \\\\ для переноса строки."
+msgstr "Remove the backslash or use \\\\ for a line break."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Удалите файловый, динамический или output-примитив из source."
+msgstr "Remove file, dynamic, or output primitives from the source."
+
 #: apps/pwa_api/content_routes.py
 msgid "Укажите revision для генерации metadata"
-msgstr ""
+msgstr "Specify a revision for metadata generation"
 
 #: apps/pwa_api/content_routes.py
 msgid "Укажите revision для таблицы метаданных"
-msgstr ""
+msgstr "Specify a revision for the metadata table"
 
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Укажите краткую причину"
@@ -2338,27 +2803,31 @@ msgstr ""
 
 #: apps/pwa_api/content_routes.py
 msgid "Укажите одну revision для таблицы метаданных"
-msgstr ""
+msgstr "Specify exactly one revision for the metadata table"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Укажите причину разделения"
-msgstr ""
+msgstr "Enter a reason for separation"
 
 #: apps/pwa_api/content_routes.py
 msgid "Укажите рисунок для изменения размера"
-msgstr ""
+msgstr "Specify a figure to resize"
 
 #: apps/pwa_api/content_routes.py
 msgid "Укажите ровно один groupLesson"
-msgstr ""
+msgstr "Specify exactly one groupLesson"
 
 #: apps/pwa_api/content_routes.py
 msgid "Укажите существующее однозначное местное время занятия с точностью до минуты"
-msgstr ""
+msgstr "Enter a valid, unambiguous local class time with minute precision"
 
 #: apps/pwa_api/oral_window_routes.py
 msgid "Укажите часовой пояс времени"
 msgstr "Specify the time zone"
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Указанный рисунок отсутствует в переданной библиотеке assets."
+msgstr "The specified figure is missing from the supplied asset library."
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Управление аккаунтами временно недоступно"
@@ -2433,6 +2902,10 @@ msgstr "Oral submission is temporarily unavailable"
 msgid "Файл"
 msgstr "File"
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "Файл изменился после предпросмотра"
+msgstr "The file has changed since the preview"
+
 #: apps/pwa_api/student_results_routes.py
 msgid "Файл не сохранился"
 msgstr "The file was not saved"
@@ -2444,23 +2917,27 @@ msgstr "The file is corrupted or unavailable"
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/problem_import_routes.py
 msgid "Файл слишком большой"
-msgstr ""
+msgstr "The file is too large"
 
 #: apps/pwa_api/content_routes.py
 msgid "Форма загрузки содержит неизвестное или повторное поле"
-msgstr ""
+msgstr "The upload form contains an unknown or duplicate field"
 
 #: apps/pwa_api/content_routes.py
 msgid "Форма рисунка содержит неизвестное или повторное поле"
-msgstr ""
+msgstr "The figure form contains an unknown or duplicate field"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Форма содержит неизвестное или повторное поле"
-msgstr ""
+msgstr "The form contains an unknown or duplicate field"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Форма фотографии содержит неизвестное или повторное поле"
 msgstr "The photo form contains an unknown or duplicate field"
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Формат даты или времени в ячейке не поддерживается."
+msgstr "Date or time cell formats are not supported."
 
 #: db_methods/pwa/written_submissions.py
 msgid "Фотографии уже зафиксированы проверкой."
@@ -2494,7 +2971,7 @@ msgstr "The photo is too large"
 
 #: apps/pwa_api/content_routes.py
 msgid "Хранилище PDF временно недоступно"
-msgstr ""
+msgstr "PDF storage is temporarily unavailable"
 
 #: db_methods/pwa/written_submissions.py
 msgid "Целевая задача недоступна этому школьнику."
@@ -2502,7 +2979,7 @@ msgstr "The target problem is unavailable to this student."
 
 #: apps/pwa_api/content_routes.py
 msgid "Часовой пояс занятия изменился. Обновите страницу."
-msgstr ""
+msgstr "The class time zone has changed. Refresh the page."
 
 #: db_methods/pwa/written_submissions.py
 msgid "Черновик замены не найден."
@@ -2530,11 +3007,15 @@ msgstr ""
 
 #: apps/pwa_api/content_routes.py
 msgid "Эта revision уже опубликована"
-msgstr ""
+msgstr "This revision is already published"
 
 #: db_methods/pwa/written_submissions.py
 msgid "Эта версия решения уже отправлена."
 msgstr "This solution version has already been sent."
+
+#: apps/pwa_api/problem_import_routes.py
+msgid "Эта группа, занятие, задача и пункт встречаются несколько раз."
+msgstr "This group, class, problem, and part appear more than once."
 
 #: apps/pwa_api/oral_result_routes.py
 msgid "Эта операция уже использована с другими данными"
@@ -2542,7 +3023,7 @@ msgstr "This operation has already been used with different data"
 
 #: apps/pwa_api/content_routes.py
 msgid "Эта отложенная публикация уже изменилась"
-msgstr ""
+msgstr "This scheduled publication has changed"
 
 #: apps/pwa_api/organizer_question_routes.py
 msgid "Эта отправка уже сохранена с другими данными"
@@ -2550,7 +3031,7 @@ msgstr "This submission was already saved with different data"
 
 #: apps/pwa_api/content_routes.py
 msgid "Эта публикация уже изменена"
-msgstr ""
+msgstr "This publication has changed"
 
 #: apps/pwa_api/admin_account_routes.py
 msgid "Эти данные для входа уже используются"
@@ -2558,7 +3039,7 @@ msgstr ""
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Эти задачи уже изменились"
-msgstr ""
+msgstr "These problems have changed"
 
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/support_routes.py
@@ -2575,7 +3056,7 @@ msgstr "This publication state cannot be changed manually"
 
 #: apps/pwa_api/content_routes.py
 msgid "Этот вид материала нельзя публиковать"
-msgstr ""
+msgstr "This material type cannot be published"
 
 #: apps/pwa_api/support_routes.py
 msgid "Этот вопрос находится вне доступного контекста"
@@ -2597,6 +3078,10 @@ msgstr "This request takes no parameters"
 msgid "Этот запрос не принимает параметры"
 msgstr "This request does not accept parameters"
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "Этот импорт уже был отменён"
+msgstr "This import has already been rolled back"
+
 #: db_methods/pwa/written_submissions.py
 msgid "Этот ключ уже использован для другого действия."
 msgstr "This key has already been used for another action."
@@ -2615,7 +3100,7 @@ msgstr "This answer is already being processed."
 
 #: apps/pwa_api/content_routes.py
 msgid "Этот рисунок не найден в текущей версии материала"
-msgstr ""
+msgstr "This figure was not found in the current material version"
 
 #: db_methods/pwa/written_submissions.py
 msgid "Эту версию решения уже нельзя изменить."
@@ -2633,6 +3118,14 @@ msgstr "This review cannot be corrected with your current permissions"
 msgid "Эту работу уже проверяет другой преподаватель"
 msgstr "Another teacher is already reviewing this work"
 
+#: apps/pwa_api/problem_import_routes.py
+msgid "Ячейка слишком большая."
+msgstr "The cell is too large."
+
 #: helpers/pwa/push_delivery.py
 msgid "аудитория {name}"
 msgstr "room {name}"
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "нужен отдельный checker"
+msgstr "a separate checker is required"

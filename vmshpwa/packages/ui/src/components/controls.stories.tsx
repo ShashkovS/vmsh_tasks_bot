@@ -40,11 +40,11 @@ function FieldRow() {
   return (
     <div className="flex flex-wrap items-end gap-2">
       <Input aria-label="Короткий ответ" className="w-40" placeholder="Например: 179" />
-      <Select>
+      <Select items={{ n: 'Начинающие', p: 'Продолжающие', e: 'Эксперты' }}>
         <SelectTrigger aria-label="Уровень">
           <SelectValue placeholder="Уровень" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent aria-label="Уровень">
           <SelectItem value="n">Начинающие</SelectItem>
           <SelectItem value="p">Продолжающие</SelectItem>
           <SelectItem value="e">Эксперты</SelectItem>
@@ -237,5 +237,30 @@ export const FormValidation: Story = {
     // Повторная отправка — успех.
     await userEvent.click(submit)
     await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Ответ отправлен.'))
+  },
+}
+
+// P6: the accessible name belongs to the listbox, including its closing animation.
+export const NamedSelect: Story = {
+  render: () => <FieldRow />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('combobox', { name: 'Уровень' }))
+    const body = within(canvasElement.ownerDocument.body)
+    await expect(await body.findByRole('listbox', { name: 'Уровень' })).toBeVisible()
+    await userEvent.click(body.getByRole('option', { name: 'Эксперты' }))
+    await expect(canvas.getByRole('combobox', { name: 'Уровень' })).toHaveTextContent('Эксперты')
+    await userEvent.keyboard('{Escape}')
+    await expect(canvas.getByRole('combobox', { name: 'Уровень' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    // Let the closing overlay release its temporary focus guards before the a11y audit.
+    await waitFor(() =>
+      expect(
+        canvasElement.ownerDocument.querySelectorAll('[data-base-ui-focus-guard]'),
+      ).toHaveLength(0),
+    )
+    await expect(body.getByRole('listbox', { hidden: true })).not.toBeVisible()
   },
 }

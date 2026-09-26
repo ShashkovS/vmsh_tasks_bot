@@ -5849,3 +5849,42 @@ async def test_reprocessing_preserves_layout_and_published_material(content_http
         )
     ).json()
     assert after == before
+
+
+@pytest.mark.asyncio
+async def test_content_diagnostics_translate_on_read_without_rewriting_revision(content_http):
+    """P6: even a successful diagnostics response localizes only known messages."""
+    source = r"\задача Текст \неизвестная{авторский текст}\кзадача"
+    uploaded = await _upload(
+        content_http, group_lesson=content_http.group_lesson_a, kind="condition",
+        filename="locale-diagnostics.tex", source=source.encode(),
+    )
+    assert uploaded.status == 201
+    revision_id = (await uploaded.json())["revisionId"]
+    compiled = await content_http.client.post(
+        f"/staff/api/v1/content/revisions/{revision_id}/compile",
+        cookies={**_cookie(content_http, "admin"), LOCALE_COOKIE_NAME: "en"},
+        headers=_headers(unsafe=True, if_match=uploaded.headers["ETag"]),
+    )
+    assert compiled.status == 422
+    repository = PwaContentRepository(content_http.factory)
+    before = (await repository.get_revision_context(revision_id)).revision
+    responses = []
+    for locale in ("en", "ru"):
+        response = await content_http.client.get(
+            f"/staff/api/v1/content/uploads/{revision_id}/diagnostics",
+            cookies={**_cookie(content_http, "admin"), LOCALE_COOKIE_NAME: locale},
+            headers=_headers(),
+        )
+        assert response.status == 200
+        responses.append(await response.json())
+    english, russian = responses
+    en_diagnostics, ru_diagnostics = english.pop("diagnostics"), russian.pop("diagnostics")
+    assert english == russian
+    en_message = next(d["message"] for d in en_diagnostics if d["code"] == "latex.unknown_macro")
+    ru_message = next(d["message"] for d in ru_diagnostics if d["code"] == "latex.unknown_macro")
+    assert en_message == r"Command \неизвестная is not part of the supported LaTeX subset."
+    assert ru_message == r"Команда \неизвестная не входит в поддерживаемый LaTeX-корпус."
+    after = (await repository.get_revision_context(revision_id)).revision
+    assert after == before
+    assert after.latex_text == source

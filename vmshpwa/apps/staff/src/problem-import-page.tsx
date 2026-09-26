@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState, type FormEvent } from 'react'
@@ -40,10 +42,18 @@ import {
 } from '@vmsh/ui'
 
 const actionLabels: Record<ProblemImportAction, string> = {
-  create: 'Новая',
-  update: 'Изменится',
-  unchanged: 'Без изменений',
-  invalid: 'Ошибка',
+  get create() {
+    return t`Новая`
+  },
+  get update() {
+    return t`Изменится`
+  },
+  get unchanged() {
+    return t`Без изменений`
+  },
+  get invalid() {
+    return t`Ошибка`
+  },
 }
 
 function actionBadge(action: ProblemImportAction) {
@@ -114,17 +124,23 @@ export function ProblemImportView({
     <div className="space-y-5">
       <Alert>
         <AlertContent>
-          <AlertTitle>Сначала только проверка</AlertTitle>
+          <AlertTitle>
+            <Trans>Сначала только проверка</Trans>
+          </AlertTitle>
           <AlertDescription>
-            Предпросмотр читает листы «Задачи» и «Старые» и сравнивает их с SQLite, но ничего не
-            сохраняет.
+            <Trans>
+              Предпросмотр читает листы «Задачи» и «Старые» и сравнивает их с SQLite, но ничего не
+              сохраняет.
+            </Trans>
           </AlertDescription>
         </AlertContent>
       </Alert>
 
       <Card>
         <CardHeader>
-          <CardTitle>Файл и курс</CardTitle>
+          <CardTitle>
+            <Trans>Файл и курс</Trans>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -132,7 +148,7 @@ export function ProblemImportView({
             onSubmit={submit}
           >
             <Label className="grid gap-1 text-small">
-              Курс
+              <Trans>Курс</Trans>
               <select
                 className="h-10 rounded-md border border-input bg-surface px-3 text-small"
                 disabled={pending}
@@ -150,7 +166,7 @@ export function ProblemImportView({
               </select>
             </Label>
             <Label className="grid gap-1 text-small">
-              XLSX-файл
+              <Trans>XLSX-файл</Trans>
               <Input
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 disabled={pending}
@@ -162,7 +178,7 @@ export function ProblemImportView({
               />
             </Label>
             <Button disabled={!courseId || !workbook || pending} type="submit">
-              {pending ? 'Проверяем…' : 'Проверить файл'}
+              {pending ? t`Проверяем…` : t`Проверить файл`}
             </Button>
           </form>
         </CardContent>
@@ -171,11 +187,13 @@ export function ProblemImportView({
       {error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Операция не выполнена</AlertTitle>
+            <AlertTitle>
+              <Trans>Операция не выполнена</Trans>
+            </AlertTitle>
             <AlertDescription>
               {error instanceof ApiResponseError
                 ? error.message
-                : 'Не удалось проверить файл. Повторите попытку.'}
+                : t`Не удалось проверить файл. Повторите попытку.`}
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -185,7 +203,7 @@ export function ProblemImportView({
         <section aria-labelledby="problem-import-result" className="space-y-4">
           <div>
             <h2 className="text-title font-semibold" id="problem-import-result">
-              Результат проверки
+              <Trans>Результат проверки</Trans>
             </h2>
             <p className="text-small text-muted-foreground">
               {preview.source.filename} · {preview.course.name}
@@ -194,11 +212,11 @@ export function ProblemImportView({
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
             {(
               [
-                ['Строк', preview.summary.rows],
-                ['Новых', preview.summary.create],
-                ['Изменятся', preview.summary.update],
-                ['Без изменений', preview.summary.unchanged],
-                ['С ошибками', preview.summary.invalid],
+                [t`Строк`, preview.summary.rows],
+                [t`Новых`, preview.summary.create],
+                [t`Изменятся`, preview.summary.update],
+                [t`Без изменений`, preview.summary.unchanged],
+                [t`С ошибками`, preview.summary.invalid],
               ] as const
             ).map(([label, value]) => (
               <Card key={label}>
@@ -212,12 +230,16 @@ export function ProblemImportView({
           {preview.synonymCandidates.length > 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle>Возможные синонимы · {preview.synonymCandidates.length}</CardTitle>
+                <CardTitle>
+                  <Trans>Возможные синонимы · {preview.synonymCandidates.length}</Trans>
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-small text-muted-foreground">
-                  Одинаковые названия найдены в разных группах одного занятия. Импорт не объединяет
-                  задачи автоматически: каждую связь нужно подтвердить отдельно.
+                  <Trans>
+                    Одинаковые названия найдены в разных группах одного занятия. Импорт не
+                    объединяет задачи автоматически: каждую связь нужно подтвердить отдельно.
+                  </Trans>
                 </p>
                 <ul className="grid gap-2 lg:grid-cols-2">
                   {preview.synonymCandidates.slice(0, 50).map((candidate) => (
@@ -226,7 +248,9 @@ export function ProblemImportView({
                       key={`${candidate.lessonNumber}:${candidate.normalizedTitle}`}
                     >
                       <p className="font-medium text-foreground">
-                        Занятие {candidate.lessonNumber} · {candidate.displayTitle}
+                        <Trans>
+                          Занятие {candidate.lessonNumber} · {candidate.displayTitle}
+                        </Trans>
                       </p>
                       <p className="text-caption text-muted-foreground">
                         {candidate.members
@@ -237,8 +261,10 @@ export function ProblemImportView({
                       </p>
                       {candidate.hasGroupConflict ? (
                         <p className="mt-1 text-caption text-status-warning">
-                          В одной группе совпали несколько названий — перед объединением выберите
-                          одну задачу.
+                          <Trans>
+                            В одной группе совпали несколько названий — перед объединением выберите
+                            одну задачу.
+                          </Trans>
                         </p>
                       ) : null}
                     </li>
@@ -246,7 +272,7 @@ export function ProblemImportView({
                 </ul>
                 {preview.synonymCandidates.length > 50 ? (
                   <p className="text-caption text-muted-foreground">
-                    Показаны первые 50 кандидатов.
+                    <Trans>Показаны первые 50 кандидатов.</Trans>
                   </p>
                 ) : null}
               </CardContent>
@@ -255,42 +281,68 @@ export function ProblemImportView({
           {preview.summary.invalid > 0 ? (
             <Alert tone="warning">
               <AlertContent>
-                <AlertTitle>Строки с ошибками будут пропущены</AlertTitle>
+                <AlertTitle>
+                  <Trans>Строки с ошибками будут пропущены</Trans>
+                </AlertTitle>
                 <AlertDescription>
-                  Исправьте файл, если эти {preview.summary.invalid} строк тоже должны попасть в
-                  базу. Остальные строки можно применить сейчас.
+                  <Trans>
+                    Исправьте файл, если эти {preview.summary.invalid} строк тоже должны попасть в
+                    базу. Остальные строки можно применить сейчас.
+                  </Trans>
                 </AlertDescription>
               </AlertContent>
             </Alert>
           ) : null}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <Label className="grid gap-1 text-small">
-              Показать
+              <Trans>Показать</Trans>
               <select
                 className="h-9 rounded-md border border-input bg-surface px-3 text-small"
                 onChange={(event) => setFilter(event.target.value as typeof filter)}
                 value={filter}
               >
-                <option value="changes">Изменения и ошибки</option>
-                <option value="invalid">Только ошибки</option>
-                <option value="create">Только новые</option>
-                <option value="update">Только изменённые</option>
-                <option value="unchanged">Без изменений</option>
+                <option value="changes">
+                  <Trans>Изменения и ошибки</Trans>
+                </option>
+                <option value="invalid">
+                  <Trans>Только ошибки</Trans>
+                </option>
+                <option value="create">
+                  <Trans>Только новые</Trans>
+                </option>
+                <option value="update">
+                  <Trans>Только изменённые</Trans>
+                </option>
+                <option value="unchanged">
+                  <Trans>Без изменений</Trans>
+                </option>
               </select>
             </Label>
             <p className="text-caption text-muted-foreground">
-              Показано {visibleRows.length} из {filteredRows.length}
+              <Trans>
+                Показано {visibleRows.length} из {filteredRows.length}
+              </Trans>
             </p>
           </div>
           <div className="max-h-[38rem] overflow-auto rounded-md border border-border">
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-surface-raised">
                 <TableRow>
-                  <TableHead>Строка</TableHead>
-                  <TableHead>Задача</TableHead>
-                  <TableHead>Название</TableHead>
-                  <TableHead>Действие</TableHead>
-                  <TableHead>Диагностика</TableHead>
+                  <TableHead>
+                    <Trans>Строка</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Задача</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Название</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Действие</Trans>
+                  </TableHead>
+                  <TableHead>
+                    <Trans>Диагностика</Trans>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -315,10 +367,15 @@ export function ProblemImportView({
           {receipt?.state === 'applied' ? (
             <Alert tone="success">
               <AlertContent>
-                <AlertTitle>Изменения применены</AlertTitle>
+                <AlertTitle>
+                  <Trans>Изменения применены</Trans>
+                </AlertTitle>
                 <AlertDescription>
-                  Создано {receipt.summary.created}, обновлено {receipt.summary.updated}, пропущено
-                  с ошибками {receipt.summary.skippedInvalid}. Квитанция: {receipt.importId}.
+                  <Trans>
+                    Создано {receipt.summary.created}, обновлено {receipt.summary.updated},
+                    пропущено с ошибками {receipt.summary.skippedInvalid}. Квитанция:{' '}
+                    {receipt.importId}.
+                  </Trans>
                 </AlertDescription>
                 {confirmation === 'rollback' ? (
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -328,10 +385,10 @@ export function ProblemImportView({
                       type="button"
                       variant="destructive"
                     >
-                      Подтвердить откат
+                      <Trans>Подтвердить откат</Trans>
                     </Button>
                     <Button onClick={() => setConfirmation(null)} type="button" variant="outline">
-                      Отмена
+                      <Trans>Отмена</Trans>
                     </Button>
                   </div>
                 ) : (
@@ -342,7 +399,7 @@ export function ProblemImportView({
                     type="button"
                     variant="outline"
                   >
-                    Откатить импорт
+                    <Trans>Откатить импорт</Trans>
                   </Button>
                 )}
               </AlertContent>
@@ -350,19 +407,28 @@ export function ProblemImportView({
           ) : receipt?.state === 'rolled_back' ? (
             <Alert>
               <AlertContent>
-                <AlertTitle>Импорт отменён</AlertTitle>
+                <AlertTitle>
+                  <Trans>Импорт отменён</Trans>
+                </AlertTitle>
                 <AlertDescription>
-                  Созданные задачи удалены, прежние значения восстановлены одной транзакцией.
+                  <Trans>
+                    Созданные задачи удалены, прежние значения восстановлены одной транзакцией.
+                  </Trans>
                 </AlertDescription>
               </AlertContent>
             </Alert>
           ) : confirmation === 'apply' ? (
             <Alert tone="warning">
               <AlertContent>
-                <AlertTitle>Подтвердите запись в SQLite</AlertTitle>
+                <AlertTitle>
+                  <Trans>Подтвердите запись в SQLite</Trans>
+                </AlertTitle>
                 <AlertDescription>
-                  Будет создано {preview.summary.create} и обновлено {preview.summary.update} задач.
-                  Откат возможен, пока эти строки не изменены и новые задачи не используются.
+                  <Trans>
+                    Будет создано {preview.summary.create} и обновлено {preview.summary.update}{' '}
+                    задач. Откат возможен, пока эти строки не изменены и новые задачи не
+                    используются.
+                  </Trans>
                 </AlertDescription>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
@@ -372,10 +438,10 @@ export function ProblemImportView({
                     }}
                     type="button"
                   >
-                    Подтвердить применение
+                    <Trans>Подтвердить применение</Trans>
                   </Button>
                   <Button onClick={() => setConfirmation(null)} type="button" variant="outline">
-                    Отмена
+                    <Trans>Отмена</Trans>
                   </Button>
                 </div>
               </AlertContent>
@@ -387,11 +453,11 @@ export function ProblemImportView({
                 onClick={() => setConfirmation('apply')}
                 type="button"
               >
-                Применить изменения · {changedRows}
+                <Trans>Применить изменения · {changedRows}</Trans>
               </Button>
               {!selectionMatchesPreview ? (
                 <p className="text-small text-muted-foreground">
-                  После выбора другого курса или файла запустите проверку заново.
+                  <Trans>После выбора другого курса или файла запустите проверку заново.</Trans>
                 </p>
               ) : null}
             </div>
@@ -451,23 +517,23 @@ export function ProblemImportPage() {
 
   if (!isAdmin) {
     return (
-      <PageLayout title="Настройки задач" width="wide">
+      <PageLayout title={t`Настройки задач`} width="wide">
         <PageStatePanel state="forbidden" />
       </PageLayout>
     )
   }
   if (catalog.isPending) {
     return (
-      <PageLayout title="Настройки задач" width="wide">
+      <PageLayout title={t`Настройки задач`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (catalog.error || !catalog.data) {
     return (
-      <PageLayout title="Настройки задач" width="wide">
+      <PageLayout title={t`Настройки задач`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void catalog.refetch()}
           state="error"
         />
@@ -479,12 +545,12 @@ export function ProblemImportPage() {
     <PageLayout
       actions={
         <Link className={buttonVariants({ variant: 'outline' })} to="/problems/synonyms">
-          Синонимы задач
+          <Trans>Синонимы задач</Trans>
         </Link>
       }
-      description="Проверка XLSX из текущего процесса перед управляемым отказом от Google-листов."
+      description={t`Проверка XLSX из текущего процесса перед управляемым отказом от Google-листов.`}
       eyebrow="Admin"
-      title="Настройки задач"
+      title={t`Настройки задач`}
       width="wide"
     >
       <ProblemImportView

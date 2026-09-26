@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core'
+import { I18nProvider } from '@lingui/react'
+import { t } from '@lingui/core/macro'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import type { ReactNode } from 'react'
@@ -13,13 +16,14 @@ export function exportPrefix(data: WhiteboardExport) {
 function validateBlocks(blocks: WebContentBlock[]) {
   for (const block of blocks) {
     if (block.type === 'figure' && block.asset.status !== 'available')
-      throw new Error('Рисунок недоступен')
+      throw new Error(t`Рисунок недоступен`)
     if (block.type === 'subpart' || block.type === 'callout') validateBlocks(block.blocks)
     if (block.type === 'list') block.items.forEach(validateBlocks)
   }
 }
 
 // Export-only React root, not a Fast Refresh component module.
+/* eslint-disable lingui/no-unlocalized-strings -- P6 preserves generated export content; docs/whiteboard-export.md. */
 // eslint-disable-next-line react-refresh/only-export-components
 function Statistics({ data }: { data: WhiteboardExport }) {
   const stats = data.statistics!
@@ -56,6 +60,8 @@ function Statistics({ data }: { data: WhiteboardExport }) {
   )
 }
 
+/* eslint-enable lingui/no-unlocalized-strings */
+
 // DOM capture must run on the main thread; ZIP work runs in the cancellable worker.
 // See docs/whiteboard-export.md for size limits and all-or-nothing download.
 export async function generateWhiteboard(
@@ -78,10 +84,10 @@ export async function generateWhiteboard(
       return await Promise.race([
         promise,
         new Promise<never>((_, reject) => {
-          abort = () => reject(new DOMException('Отменено', 'AbortError'))
+          abort = () => reject(new DOMException(t`Отменено`, 'AbortError'))
           signal.addEventListener('abort', abort, { once: true })
           timeout = setTimeout(
-            () => reject(new Error('Ресурсы не загрузились за 30 секунд')),
+            () => reject(new Error(t`Ресурсы не загрузились за 30 секунд`)),
             30_000,
           )
         }),
@@ -94,25 +100,31 @@ export async function generateWhiteboard(
   const root = createRoot(host)
   const files: Record<string, Uint8Array> = {}
   const prefix = exportPrefix(data)
-  let current = 'Введение'
+  let current = t`Введение`
   try {
     async function capture(name: string, node: ReactNode, blocks: WebContentBlock[] = []) {
       signal.throwIfAborted()
       validateBlocks(blocks)
-      flushSync(() => root.render(<div className="vmsh-export-paper">{node}</div>))
+      flushSync(() =>
+        root.render(
+          <I18nProvider i18n={i18n}>
+            <div className="vmsh-export-paper">{node}</div>
+          </I18nProvider>,
+        ),
+      )
       const paper = host.firstElementChild as HTMLElement
       await resources(document.fonts.ready)
       await Promise.all(
         Array.from(paper.querySelectorAll('img')).map(async (img) => {
           await resources(img.decode())
-          if (!img.naturalWidth) throw new Error('Рисунок не загрузился')
+          if (!img.naturalWidth) throw new Error(t`Рисунок не загрузился`)
         }),
       )
       signal.throwIfAborted()
-      if (paper.querySelector('.vmsh-figure-missing')) throw new Error('Рисунок не загрузился')
+      if (paper.querySelector('.vmsh-figure-missing')) throw new Error(t`Рисунок не загрузился`)
       const height = Math.ceil(paper.getBoundingClientRect().height)
       if (height * 2 > 16000 || height * 800 * 4 > 16_000_000 || paper.scrollWidth > 800) {
-        throw new Error('Условие превышает допустимый размер изображения')
+        throw new Error(t`Условие превышает допустимый размер изображения`)
       }
       const fontEmbedCSS = await resources(getFontEmbedCSS(paper))
       signal.throwIfAborted()
@@ -141,7 +153,7 @@ export async function generateWhiteboard(
       try {
         signal.throwIfAborted()
         const context = canvas.getContext('2d')
-        if (!context) throw new Error('Canvas недоступен')
+        if (!context) throw new Error(t`Canvas недоступен`)
         for (const picture of pictures) {
           context.drawImage(
             picture.img,
@@ -153,7 +165,7 @@ export async function generateWhiteboard(
         }
         const blob = await new Promise<Blob>((resolve, reject) =>
           canvas.toBlob(
-            (b) => (b ? resolve(b) : reject(new Error('Не удалось создать PNG'))),
+            (b) => (b ? resolve(b) : reject(new Error(t`Не удалось создать PNG`))),
             'image/png',
           ),
         )
@@ -167,6 +179,7 @@ export async function generateWhiteboard(
     if (data.document.introduction.some((b) => b.type !== 'divider' && b.type !== 'heading')) {
       progress(current)
       await capture(
+        // eslint-disable-next-line lingui/no-unlocalized-strings -- Documented export filename, independent of UI locale.
         `${prefix}_введение.png`,
         <SemanticMathDocument
           document={{ ...base, introduction: data.document.introduction }}
@@ -176,8 +189,8 @@ export async function generateWhiteboard(
       )
     }
     for (const [index, problem] of data.document.problems.entries()) {
-      current = `Задача ${problem.taskReference ?? problem.ordinal}`
-      progress(`Задача ${index + 1} из ${data.document.problems.length}`)
+      current = t`Задача ${problem.taskReference ?? problem.ordinal}`
+      progress(t`Задача ${index + 1} из ${data.document.problems.length}`)
       await capture(
         `${prefix}.${String(problem.ordinal).padStart(2, '0')}.png`,
         <SemanticMathDocument document={{ ...base, problems: [problem] }} imageLoading="eager" />,
@@ -185,18 +198,19 @@ export async function generateWhiteboard(
       )
     }
     if (data.statistics) {
-      current = 'Статистика'
+      current = t`Статистика`
       progress(current)
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- Documented export filename, independent of UI locale.
       await capture(`${prefix}_статистика.png`, <Statistics data={data} />)
     }
     signal.throwIfAborted()
-    if (Object.keys(files).length === 0) throw new Error('В листке нет условий для экспорта')
-    progress('Собираем ZIP…')
+    if (Object.keys(files).length === 0) throw new Error(t`В листке нет условий для экспорта`)
+    progress(t`Собираем ZIP…`)
     const Worker = (await import('./whiteboard-zip.worker?worker')).default
     const worker = new Worker()
     try {
       const bytes = await new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
-        const abort = () => reject(new DOMException('Отменено', 'AbortError'))
+        const abort = () => reject(new DOMException(t`Отменено`, 'AbortError'))
         signal.addEventListener('abort', abort, { once: true })
         worker.onmessage = (event: MessageEvent<Uint8Array<ArrayBuffer>>) => {
           signal.removeEventListener('abort', abort)
@@ -204,7 +218,7 @@ export async function generateWhiteboard(
         }
         worker.onerror = () => {
           signal.removeEventListener('abort', abort)
-          reject(new Error('Не удалось собрать ZIP'))
+          reject(new Error(t`Не удалось собрать ZIP`))
         }
         worker.postMessage(
           files,
@@ -215,6 +229,7 @@ export async function generateWhiteboard(
       signal.throwIfAborted()
       return {
         blob: new Blob([bytes], { type: 'application/zip' }),
+        // eslint-disable-next-line lingui/no-unlocalized-strings -- Documented export filename, independent of UI locale.
         filename: `${prefix}_разбор.zip`,
       }
     } finally {
@@ -223,7 +238,7 @@ export async function generateWhiteboard(
   } catch (error) {
     if (signal.aborted) throw error
     throw new Error(
-      `${current}: ${error instanceof Error ? error.message : 'не удалось создать изображение'}`,
+      `${current}: ${error instanceof Error ? error.message : t`не удалось создать изображение`}`,
     )
   } finally {
     root.unmount()

@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useEffect, useMemo, useState, type ClipboardEvent } from 'react'
 import { Copy, Maximize2, Minimize2, Redo2, Undo2 } from 'lucide-react'
 
@@ -64,7 +66,7 @@ function selectErrors(rows: MetadataRow[], columns: MetadataColumn[]): MetadataE
         {
           row: rowIndex,
           col: column.id,
-          message: `Выберите допустимое значение «${column.header}»`,
+          message: t`Выберите допустимое значение «${column.header}»`,
         },
       ]
     }),
@@ -84,12 +86,12 @@ function allErrors(
 }
 
 function formatClipboardError(reason: string): string {
-  if (reason === 'quotes') return 'Не удалось вставить таблицу: в данных незакрытая кавычка.'
+  if (reason === 'quotes') return t`Не удалось вставить таблицу: в данных незакрытая кавычка.`
   if (reason === 'shape')
-    return 'Не удалось вставить таблицу: все строки должны содержать одинаковое число ячеек.'
-  if (reason === 'empty') return 'В буфере нет значений для вставки.'
-  if (reason === 'bounds') return 'Фрагмент не помещается в таблицу. Данные не были изменены.'
-  return 'Не удалось вставить таблицу.'
+    return t`Не удалось вставить таблицу: все строки должны содержать одинаковое число ячеек.`
+  if (reason === 'empty') return t`В буфере нет значений для вставки.`
+  if (reason === 'bounds') return t`Фрагмент не помещается в таблицу. Данные не были изменены.`
+  return t`Не удалось вставить таблицу.`
 }
 
 /** Spreadsheet-like editor for the Staff condition-review metadata flow. */
@@ -120,8 +122,8 @@ export function MetadataGrid({
     Object.fromEntries(columns.map((column) => [column.id, column.width ?? 180])),
   )
 
-  const gridTitle = title ?? 'Метаданные задач'
-  const commitText = commitLabel ?? 'Сохранить'
+  const gridTitle = title ?? t`Метаданные задач`
+  const commitText = commitLabel ?? t`Сохранить`
 
   const dirty = !rowsEqual(model.rows, model.baseline)
   const interactionDisabled = disabled || saving
@@ -200,7 +202,7 @@ export function MetadataGrid({
       setErrors([])
       setValidationSucceeded(false)
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить изменения')
+      setSaveError(error instanceof Error ? error.message : t`Не удалось сохранить изменения`)
     } finally {
       setSaving(false)
     }
@@ -212,11 +214,11 @@ export function MetadataGrid({
       await globalThis.navigator.clipboard.writeText(text)
       setClipboardError(undefined)
     } catch {
-      setClipboardError('Браузер не дал доступ к буферу. Выделите таблицу и нажмите Ctrl/Cmd+C.')
+      setClipboardError(t`Браузер не дал доступ к буферу. Выделите таблицу и нажмите Ctrl/Cmd+C.`)
     }
   }
 
-  const copySelection = (event: ClipboardEvent<HTMLDivElement>) => {
+  const copySelection = (event: ClipboardEvent<HTMLTableElement>) => {
     if (!model.selection) return
     const range = cellRange(model.selection)
     const text = serializeMetadataTsv(
@@ -228,7 +230,7 @@ export function MetadataGrid({
     event.clipboardData.setData('text/plain', text)
   }
 
-  const paste = (event: ClipboardEvent<HTMLDivElement>) => {
+  const paste = (event: ClipboardEvent<HTMLTableElement>) => {
     if (interactionDisabled || !model.selection) return
     const text = event.clipboardData.getData('text/plain')
     if (!text) return
@@ -277,7 +279,7 @@ export function MetadataGrid({
     )
   }
 
-  const keyboardUndoRedo = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const keyboardUndoRedo = (event: React.KeyboardEvent<HTMLTableElement>) => {
     if (!(event.metaKey || event.ctrlKey) || event.altKey) return
     const key = event.key.toLocaleLowerCase('ru')
     if (key === 'z') {
@@ -320,7 +322,7 @@ export function MetadataGrid({
         size="sm"
         variant="outline"
       >
-        <Copy aria-hidden="true" /> Копировать всю таблицу
+        <Copy aria-hidden="true" /> <Trans>Копировать всю таблицу</Trans>
       </Button>
       <Button
         disabled={!model.undo.length || interactionDisabled}
@@ -328,7 +330,7 @@ export function MetadataGrid({
         size="sm"
         variant="outline"
       >
-        <Undo2 aria-hidden="true" /> Отменить
+        <Undo2 aria-hidden="true" /> <Trans>Отменить</Trans>
       </Button>
       <Button
         disabled={!model.redo.length || interactionDisabled}
@@ -336,13 +338,13 @@ export function MetadataGrid({
         size="sm"
         variant="outline"
       >
-        <Redo2 aria-hidden="true" /> Повторить
+        <Redo2 aria-hidden="true" /> <Trans>Повторить</Trans>
       </Button>
       <Button onClick={runDryRun} size="sm" variant="outline">
-        Проверить таблицу
+        <Trans>Проверить таблицу</Trans>
       </Button>
       <Button disabled={!dirty || interactionDisabled} onClick={discard} size="sm" variant="ghost">
-        Отменить правки
+        <Trans>Отменить правки</Trans>
       </Button>
       <Button
         disabled={
@@ -351,7 +353,7 @@ export function MetadataGrid({
         onClick={() => void save()}
         size="sm"
       >
-        {saving ? 'Сохраняем…' : commitText}
+        {saving ? t`Сохраняем…` : commitText}
       </Button>
     </div>
   )
@@ -383,7 +385,7 @@ export function MetadataGrid({
                   }}
                   type="button"
                 >
-                  Строка {error.row + 1}, «{column?.header}»: {error.message}
+                  <Trans>Строка</Trans> {error.row + 1}, «{column?.header}»: {error.message}
                 </button>
               </li>
             )
@@ -392,7 +394,7 @@ export function MetadataGrid({
       ) : null}
       {validationSucceeded ? (
         <p className="text-small text-status-success" role="status">
-          Ошибок не найдено. Можно подтверждать метаданные.
+          <Trans>Ошибок не найдено. Можно подтверждать метаданные.</Trans>
         </p>
       ) : null}
       {saveError ? (
@@ -407,10 +409,13 @@ export function MetadataGrid({
     <div className={cn('space-y-3', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-caption text-muted-foreground">
-          Выделяйте диапазон мышью или Shift+стрелками. Можно вставить и скопировать TSV из таблицы.
+          <Trans>
+            Выделяйте диапазон мышью или Shift+стрелками. Можно вставить и скопировать TSV из
+            таблицы.
+          </Trans>
         </p>
         <Button onClick={() => setFullscreen(true)} size="sm" variant="outline">
-          <Maximize2 aria-hidden="true" /> На весь экран
+          <Maximize2 aria-hidden="true" /> <Trans>На весь экран</Trans>
         </Button>
       </div>
       {table('max-h-[min(60dvh,40rem)]')}
@@ -425,7 +430,7 @@ export function MetadataGrid({
           <DialogHeader className="flex-row items-center justify-between gap-4">
             <DialogTitle>{gridTitle}</DialogTitle>
             <Button onClick={() => setFullscreen(false)} size="sm" variant="outline">
-              <Minimize2 aria-hidden="true" /> Свернуть
+              <Minimize2 aria-hidden="true" /> <Trans>Свернуть</Trans>
             </Button>
           </DialogHeader>
           {table('flex-1', 'min-h-0 flex flex-1 flex-col')}

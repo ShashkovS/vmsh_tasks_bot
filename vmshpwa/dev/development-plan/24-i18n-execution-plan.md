@@ -1,6 +1,6 @@
 # RU → EN localization: step-by-step execution plan
 
-Status: P3 and P4 were implemented locally on 2026-09-24 and their scoped phase gates passed. P5–P8 remain implementation instructions; this document remains the authoritative procedure for them.
+Status: P0–P5 are implemented locally (P5 commit `2233052c`). P6 implementation and functional verification are complete on 2026-09-26; its cumulative P0 performance gate remains open (see [P6 report](24-i18n-p6-report.md)). P7–P8 remain queued. This document is the authoritative execution procedure.
 
 This is an English-language execution companion to [24-i18n.md](24-i18n.md), intended for an agent that needs explicit, small, verifiable tasks. Follow the existing architecture; do not invent a replacement translation system. Finish one batch before starting another.
 
@@ -972,6 +972,8 @@ Compare with [i18n-performance-report.md](../i18n-performance-report.md), keepin
 Record machine/tool versions and measurement method. The original timings are from a much earlier revision, so unrelated product growth must be reported separately with an appropriate comparison; do not silently reset the accepted budget. If a budget is exceeded, investigate and document the delta. Do not “pass” it by omitting a catalog from the size calculation or changing the baseline without an explicit decision.
 
 ## 11. Scope-gate rules and false confidence to avoid
+
+Lingui's unlocalized-string rule exempts JSX named `Select` as an ICU macro, even when it is imported from the UI package. Use `Select as UiSelect` for UI selectors (see `content-page.tsx` and `bulk-content-upload.tsx`) and inspect their placeholders, selected values and option suffixes explicitly. P6 found untranslated copy that the otherwise green rule missed.
 
 Add exact completed file globs first. Use a directory glob only when every production file in that directory has been inspected. Frontend paths are relative to `vmshpwa/`; backend paths are relative to the repository root.
 

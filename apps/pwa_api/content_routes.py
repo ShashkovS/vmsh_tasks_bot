@@ -44,6 +44,8 @@ from db_methods.pwa.content import (
     StudentProblemRevealRecord,
     TextDerivativeDraft,
 )
+from helpers.pwa.i18n import N_, current_locale
+from helpers.pwa.content.diagnostic_i18n import localize_diagnostics
 from helpers.pwa.content import (
     AssetConversionError,
     COMPILER_VERSION,
@@ -890,7 +892,7 @@ def _revision_payload(context: ContentRevisionContext) -> dict[str, object]:
         "parserVersion": revision.parser_version,
         "compileLeaseExpiresAt": _iso(revision.compile_lease_expires_at),
         "compileAttempt": revision.compile_attempt_count,
-        "diagnostics": list(revision.diagnostics),
+        "diagnostics": localize_diagnostics(list(revision.diagnostics)),
         "missingAssets": _missing_assets(revision.canonical_document),
     }
 
@@ -2276,6 +2278,7 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
             ),
         )
     generation_request = MetadataGenerationRequest(
+        locale=current_locale.get(),
         revision_public_id=context.revision.public_id,
         source_filename=context.source.logical_filename,
         latex_text=context.revision.latex_text,
@@ -2299,6 +2302,7 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
             status=503,
             code="metadata_generation_unavailable",
             message=error.public_message,
+            params=error.public_params,
         ) from error
     except MetadataGenerationError as error:
         logger.error(
@@ -2311,6 +2315,7 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
             status=502,
             code="metadata_generation_failed",
             message=error.public_message,
+            params=error.public_params,
         ) from error
     return web.json_response(
         {
@@ -2401,7 +2406,7 @@ async def reprocess_content_revision(request: web.Request) -> web.Response:
             status=422,
             code="content_compile_invalid",
             message="Повторная обработка выявила ошибки. Исправьте исходный файл перед публикацией.",
-            details={"diagnostics": _diagnostics(result.diagnostics)},
+            details={"diagnostics": localize_diagnostics(_diagnostics(result.diagnostics))},
         )
     provenance = {
         "compilerVersion": COMPILER_VERSION,
@@ -2721,7 +2726,7 @@ def _expected_slot(
     *,
     public_id_field: str,
     version_field: str,
-    label: str,
+    message: str,
 ) -> tuple[str | None, int | None]:
     public_id = payload[public_id_field]
     version = payload[version_field]
@@ -2737,7 +2742,7 @@ def _expected_slot(
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message=f"{label} указана неверно",
+            message=message,
         )
     return public_id, version
 
@@ -2747,7 +2752,7 @@ def _expected_current(payload: Mapping[str, object]) -> tuple[str | None, int | 
         payload,
         public_id_field="expectedCurrentPublicationId",
         version_field="expectedCurrentVersion",
-        label="Текущая версия публикации",
+        message=N_("Текущая версия публикации указана неверно"),
     )
 
 
@@ -2758,7 +2763,7 @@ def _expected_scheduled(
         payload,
         public_id_field="expectedScheduledPublicationId",
         version_field="expectedScheduledVersion",
-        label="Текущая отложенная публикация",
+        message=N_("Текущая отложенная публикация указана неверно"),
     )
 
 

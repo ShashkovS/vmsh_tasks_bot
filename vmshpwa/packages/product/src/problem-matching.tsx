@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { CheckCircle2, Link2 } from 'lucide-react'
 
 import { Alert, AlertContent, AlertDescription, AlertTitle, Badge, Button, cn } from '@vmsh/ui'
@@ -41,7 +43,7 @@ export interface ProblemMatchingProps {
 
 function candidateLabel(candidate: ProblemMatchingCandidate): string {
   const position = `${candidate.number}${candidate.item ? candidate.item : ''}`
-  return `${position} · ${candidate.title || 'Без названия'} · ${candidate.typeLabel}`
+  return `${position} · ${candidate.title || t`Без названия`} · ${candidate.typeLabel}`
 }
 
 function selectionValue(selection: ProblemMatchingSelection | undefined): string {
@@ -91,23 +93,31 @@ export function ProblemMatching({
         <div>
           <h3 className="flex items-center gap-2 text-small font-semibold" id={`${id}-title`}>
             <Link2 aria-hidden="true" className="size-4" />
-            Сопоставление задач
+            <Trans>Сопоставление задач</Trans>
           </h3>
           <p className="mt-0.5 text-caption text-muted-foreground">
-            Для каждой задачи выберите существующую запись, создайте новую или явно пропустите её.
+            <Trans>
+              Для каждой задачи выберите существующую запись, создайте новую или явно пропустите её.
+            </Trans>
           </p>
         </div>
         <Badge variant={allCompleted ? 'success' : 'neutral'}>
-          {completed} из {items.length}
+          <Trans>
+            {completed} из {items.length}
+          </Trans>
         </Badge>
       </div>
 
       {staleDraft ? (
         <Alert tone="warning">
           <AlertContent>
-            <AlertTitle>Серверная версия изменилась</AlertTitle>
+            <AlertTitle>
+              <Trans>Серверная версия изменилась</Trans>
+            </AlertTitle>
             <AlertDescription>
-              Ваш локальный черновик сохранён. Проверьте решения перед повторной отправкой.
+              <Trans>
+                Ваш локальный черновик сохранён. Проверьте решения перед повторной отправкой.
+              </Trans>
             </AlertDescription>
           </AlertContent>
         </Alert>
@@ -125,17 +135,17 @@ export function ProblemMatching({
             >
               <div className="min-w-0">
                 <span className="font-num text-caption text-muted-foreground">
-                  Задача {item.displayNumber}
+                  <Trans>Задача {item.displayNumber}</Trans>
                 </span>
                 <p
                   className="truncate text-small font-medium"
                   title={item.sourceTitle ?? undefined}
                 >
-                  {item.sourceTitle ?? 'Название не извлечено'}
+                  {item.sourceTitle ?? t`Название не извлечено`}
                 </p>
               </div>
               <select
-                aria-label={`Сопоставление задачи ${item.displayNumber}`}
+                aria-label={t`Сопоставление задачи ${item.displayNumber}`}
                 className="h-8 min-w-0 rounded-md border border-input bg-surface px-2 text-small text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 disabled={pending}
                 onChange={(event) =>
@@ -143,21 +153,27 @@ export function ProblemMatching({
                 }
                 value={selectionValue(selections[item.key])}
               >
-                <option value="">Выберите действие…</option>
+                <option value="">
+                  <Trans>Выберите действие…</Trans>
+                </option>
                 {suggested ? (
                   <option value={`auto_position:${suggested.id}`}>
-                    По позиции: {candidateLabel(suggested)}
+                    <Trans>По позиции:</Trans> {candidateLabel(suggested)}
                   </option>
                 ) : null}
                 {candidates
                   .filter((candidate) => candidate.id !== suggested?.id)
                   .map((candidate) => (
                     <option key={candidate.id} value={`manual_match:${candidate.id}`}>
-                      Существующая: {candidateLabel(candidate)}
+                      <Trans>Существующая:</Trans> {candidateLabel(candidate)}
                     </option>
                   ))}
-                <option value="insert_new">Создать новую задачу</option>
-                <option value="omit">Не публиковать эту задачу</option>
+                <option value="insert_new">
+                  <Trans>Создать новую задачу</Trans>
+                </option>
+                <option value="omit">
+                  <Trans>Не публиковать эту задачу</Trans>
+                </option>
               </select>
             </li>
           )
@@ -172,15 +188,16 @@ export function ProblemMatching({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button disabled={!allCompleted || pending} onClick={onCommit} size="sm">
-          {pending ? 'Сохраняем…' : 'Подтвердить сопоставление'}
+          {pending ? t`Сохраняем…` : t`Подтвердить сопоставление`}
         </Button>
         {allCompleted ? (
           <span className="inline-flex items-center gap-1 text-caption text-status-success">
-            <CheckCircle2 aria-hidden="true" className="size-3.5" /> Все строки заполнены
+            <CheckCircle2 aria-hidden="true" className="size-3.5" />{' '}
+            <Trans>Все строки заполнены</Trans>
           </span>
         ) : (
           <span className="text-caption text-muted-foreground">
-            Публикация останется недоступной до заполнения всех строк.
+            <Trans>Публикация останется недоступной до заполнения всех строк.</Trans>
           </span>
         )}
       </div>

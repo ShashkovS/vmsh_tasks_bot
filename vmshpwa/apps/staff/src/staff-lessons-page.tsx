@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { BookOpenCheck, Mic, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
@@ -35,18 +37,36 @@ import {
 } from '@vmsh/ui'
 
 const phaseLabels = {
-  draft: 'Черновик',
-  scheduled: 'Запланировано',
-  active: 'Приём идёт',
-  hints_published: 'Подсказки опубликованы',
-  submissions_closed: 'Приём закрыт',
-  solutions_published: 'Решения опубликованы',
+  get draft() {
+    return t`Черновик`
+  },
+  get scheduled() {
+    return t`Запланировано`
+  },
+  get active() {
+    return t`Приём идёт`
+  },
+  get hints_published() {
+    return t`Подсказки опубликованы`
+  },
+  get submissions_closed() {
+    return t`Приём закрыт`
+  },
+  get solutions_published() {
+    return t`Решения опубликованы`
+  },
 } as const
 
 const publicationLabels = {
-  none: 'Не задано',
-  scheduled: 'По расписанию',
-  published: 'Опубликовано',
+  get none() {
+    return t`Не задано`
+  },
+  get scheduled() {
+    return t`По расписанию`
+  },
+  get published() {
+    return t`Опубликовано`
+  },
 } as const
 
 function PublicationState({ state }: { state: keyof typeof publicationLabels }) {
@@ -88,7 +108,7 @@ function lessonCreationError(error: unknown): string {
     ? error.message
     : error instanceof Error && error.message
       ? error.message
-      : 'Проверьте обязательные даты и повторите попытку.'
+      : t`Проверьте обязательные даты и повторите попытку.`
 }
 
 function readDraft(key: string): LessonDraft {
@@ -125,7 +145,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
     selectedCourse?.groups[0]
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!selectedCourse || !selectedGroup) throw new Error('Сначала создайте группу')
+      if (!selectedCourse || !selectedGroup) throw new Error(t`Сначала создайте группу`)
       const groups = draft.createForAllGroups
         ? selectedCourse.groups.filter((group) => group.status === 'active')
         : [selectedGroup]
@@ -152,7 +172,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
           failures.push(`${group.shortCode} · ${group.name}: ${lessonCreationError(error)}`)
         }
       }
-      if (created.length === 0) throw new Error(failures.join('; ') || 'Занятия не созданы')
+      if (created.length === 0) throw new Error(failures.join('; ') || t`Занятия не созданы`)
       return { created }
     },
     onSuccess: async ({ created }) => {
@@ -180,12 +200,14 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Новое занятие группы</CardTitle>
+        <CardTitle>
+          <Trans>Новое занятие группы</Trans>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={submit}>
           <Label className="grid gap-1">
-            Курс
+            <Trans>Курс</Trans>
             <select
               className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
               onChange={(event) =>
@@ -201,7 +223,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             </select>
           </Label>
           <Label className="grid gap-1">
-            Группа
+            <Trans>Группа</Trans>
             <select
               className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
               disabled={mutation.isPending || draft.createForAllGroups}
@@ -223,13 +245,13 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
                 setDraft((value) => ({ ...value, createForAllGroups: checked === true }))
               }
             />
-            Создать занятие сразу для всех активных групп курса
+            <Trans>Создать занятие сразу для всех активных групп курса</Trans>
             {selectedCourse
               ? ` (${selectedCourse.groups.filter((group) => group.status === 'active').length})`
               : ''}
           </Label>
           <Label className="grid gap-1">
-            Номер занятия
+            <Trans>Номер занятия</Trans>
             <Input
               max="10000"
               min="0"
@@ -242,14 +264,14 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             />
           </Label>
           <Label className="grid gap-1">
-            Название (необязательно)
+            <Trans>Название (необязательно)</Trans>
             <Input
               onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))}
               value={draft.title}
             />
           </Label>
           <Label className="grid gap-1">
-            Дата занятия
+            <Trans>Дата занятия</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, cycleAnchorDate: event.target.value }))
@@ -260,7 +282,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             />
           </Label>
           <Label className="grid gap-1">
-            Открыть приём · Москва (необязательно)
+            <Trans>Открыть приём · Москва (необязательно)</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, opensLocalTime: event.target.value }))
@@ -270,7 +292,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             />
           </Label>
           <Label className="grid gap-1">
-            Закрыть приём · Москва
+            <Trans>Закрыть приём · Москва</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, submissionClosesLocalTime: event.target.value }))
@@ -281,7 +303,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             />
           </Label>
           <Label className="grid gap-1">
-            Подсказки · Москва (необязательно)
+            <Trans>Подсказки · Москва (необязательно)</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, hintScheduledLocalTime: event.target.value }))
@@ -291,7 +313,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             />
           </Label>
           <Label className="grid gap-1">
-            Решения · Москва (необязательно)
+            <Trans>Решения · Москва (необязательно)</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, solutionScheduledLocalTime: event.target.value }))
@@ -301,12 +323,16 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             />
           </Label>
           <p className="self-end text-caption text-muted-foreground">
-            Дедлайн и публикация решений независимы. Расписание можно менять отдельно.
+            <Trans>
+              Дедлайн и публикация решений независимы. Расписание можно менять отдельно.
+            </Trans>
           </p>
           {mutation.error ? (
             <Alert className="md:col-span-2" tone="danger">
               <AlertContent>
-                <AlertTitle>Занятие не создано</AlertTitle>
+                <AlertTitle>
+                  <Trans>Занятие не создано</Trans>
+                </AlertTitle>
                 <AlertDescription>{lessonCreationError(mutation.error)}</AlertDescription>
               </AlertContent>
             </Alert>
@@ -314,13 +340,13 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
           <div className="flex gap-2 md:col-span-2">
             <Button disabled={mutation.isPending || !selectedGroup} type="submit">
               {mutation.isPending
-                ? 'Создаём…'
+                ? t`Создаём…`
                 : draft.createForAllGroups
-                  ? 'Создать для всех групп'
-                  : 'Создать и открыть'}
+                  ? t`Создать для всех групп`
+                  : t`Создать и открыть`}
             </Button>
             <Button disabled={mutation.isPending} onClick={onClose} type="button" variant="outline">
-              Отмена
+              <Trans>Отмена</Trans>
             </Button>
           </div>
         </form>
@@ -352,16 +378,16 @@ export function StaffLessonsPage() {
 
   if (result.isPending) {
     return (
-      <PageLayout title="Уроки и публикации" width="wide">
+      <PageLayout title={t`Уроки и публикации`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (result.error) {
     return (
-      <PageLayout title="Уроки и публикации" width="wide">
+      <PageLayout title={t`Уроки и публикации`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void result.refetch()}
           state={
             result.error instanceof ApiResponseError && result.error.status === 403
@@ -378,13 +404,13 @@ export function StaffLessonsPage() {
       actions={
         principal.audience === 'staff' && principal.role === 'admin' ? (
           <Button onClick={() => setCreatorOpen((value) => !value)}>
-            <Plus /> Создать занятие
+            <Plus /> <Trans>Создать занятие</Trans>
           </Button>
         ) : undefined
       }
-      description="Здесь отображаются только занятия и публикации, сохранённые в базе данных."
-      eyebrow="LaTeX — единственный источник"
-      title="Уроки и публикации"
+      description={t`Здесь отображаются только занятия и публикации, сохранённые в базе данных.`}
+      eyebrow={t`LaTeX — единственный источник`}
+      title={t`Уроки и публикации`}
       width="wide"
     >
       {creatorOpen ? (
@@ -394,9 +420,9 @@ export function StaffLessonsPage() {
       ) : null}
       {result.data.lessons.length === 0 ? (
         <PageStatePanel
-          description="Создайте первое занятие после добавления курсов и групп."
+          description={t`Создайте первое занятие после добавления курсов и групп.`}
           state="empty"
-          title="Занятий пока нет"
+          title={t`Занятий пока нет`}
         />
       ) : (
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
@@ -415,26 +441,35 @@ export function StaffLessonsPage() {
                       </Badge>
                     </div>
                     <CardTitle>
-                      {lesson.group.name} · занятие {lesson.lessonNumber}
+                      <Trans>
+                        {lesson.group.name} · занятие {lesson.lessonNumber}
+                      </Trans>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-small">
-                      <dt className="text-muted-foreground">Условие</dt>
+                      <dt className="text-muted-foreground">
+                        <Trans>Условие</Trans>
+                      </dt>
                       <dd>
                         <PublicationState state={lesson.publications.condition.state} />
                       </dd>
-                      <dt className="text-muted-foreground">Подсказка</dt>
+                      <dt className="text-muted-foreground">
+                        <Trans>Подсказка</Trans>
+                      </dt>
                       <dd>
                         <PublicationState state={lesson.publications.hint.state} />
                       </dd>
-                      <dt className="text-muted-foreground">Решение</dt>
+                      <dt className="text-muted-foreground">
+                        <Trans>Решение</Trans>
+                      </dt>
                       <dd>
                         <PublicationState state={lesson.publications.solution.state} />
                       </dd>
                     </dl>
                     <p className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-caption text-muted-foreground">
-                      <BookOpenCheck aria-hidden="true" className="size-4" /> Открыть занятие
+                      <BookOpenCheck aria-hidden="true" className="size-4" />{' '}
+                      <Trans>Открыть занятие</Trans>
                     </p>
                   </CardContent>
                 </Card>
@@ -445,9 +480,9 @@ export function StaffLessonsPage() {
                 <a
                   className={buttonVariants({ size: 'sm', variant: 'outline' })}
                   href={`/staff/oral?groupLesson=${encodeURIComponent(lesson.groupLessonId)}&tab=windows`}
-                  aria-label={`Окна устного приёма: ${lesson.course.name}, ${lesson.group.name}, занятие ${lesson.lessonNumber}`}
+                  aria-label={t`Окна устного приёма: ${lesson.course.name}, ${lesson.group.name}, занятие ${lesson.lessonNumber}`}
                 >
-                  <Mic aria-hidden="true" /> Окна устного приёма
+                  <Mic aria-hidden="true" /> <Trans>Окна устного приёма</Trans>
                 </a>
               ) : null}
             </div>

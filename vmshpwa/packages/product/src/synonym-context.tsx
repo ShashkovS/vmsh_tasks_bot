@@ -1,3 +1,5 @@
+import { plural, t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { GitMerge, GitPullRequest, Link2Off, MessageSquareText } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -35,16 +37,25 @@ export interface SynonymProblemView {
   reviewCount: number
 }
 
-function countLabel(count: number, one: string, few: string, many: string): string {
-  const lastTwo = count % 100
-  const last = count % 10
-  const word =
-    last === 1 && lastTwo !== 11
-      ? one
-      : last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)
-        ? few
-        : many
-  return `${count} ${word}`
+function countLabel(count: number, kind: 'problem' | 'submission' | 'review'): string {
+  switch (kind) {
+    case 'problem':
+      return plural(count, { one: '# задача', few: '# задачи', many: '# задач', other: '# задачи' })
+    case 'submission':
+      return plural(count, {
+        one: '# посылка',
+        few: '# посылки',
+        many: '# посылок',
+        other: '# посылки',
+      })
+    case 'review':
+      return plural(count, {
+        one: '# проверка',
+        few: '# проверки',
+        many: '# проверок',
+        other: '# проверки',
+      })
+  }
 }
 
 export function SynonymMergeSplitPreview({
@@ -76,10 +87,12 @@ export function SynonymMergeSplitPreview({
           id="synonym-preview-title"
         >
           <Icon aria-hidden="true" className="size-4" />
-          {mode === 'merge' ? 'Объединить задачи логически' : 'Разделить задачи'}
+          {mode === 'merge' ? t`Объединить задачи логически` : t`Разделить задачи`}
         </h2>
         <p className="text-small text-muted-foreground">
-          Курс и номер занятия совпадают. Тип ответа и способ сдачи не блокируют действие.
+          <Trans>
+            Курс и номер занятия совпадают. Тип ответа и способ сдачи не блокируют действие.
+          </Trans>
         </p>
       </div>
 
@@ -92,15 +105,15 @@ export function SynonymMergeSplitPreview({
                   {problem.taskNumber} · {problem.title}
                 </p>
                 <p className="text-caption text-muted-foreground">
-                  {problem.courseName} · {problem.groupName} · занятие {problem.lessonNumber}
+                  <Trans>
+                    {problem.courseName} · {problem.groupName} · занятие {problem.lessonNumber}
+                  </Trans>
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 <Badge variant="neutral">{problem.taskType}</Badge>
                 {problem.answerType ? <Badge variant="neutral">{problem.answerType}</Badge> : null}
-                <Badge variant="info">
-                  {countLabel(problem.submissionCount, 'посылка', 'посылки', 'посылок')}
-                </Badge>
+                <Badge variant="info">{countLabel(problem.submissionCount, 'submission')}</Badge>
               </div>
             </CardContent>
           </Card>
@@ -111,23 +124,23 @@ export function SynonymMergeSplitPreview({
         <GitPullRequest aria-hidden="true" />
         <AlertContent>
           <AlertTitle>
-            Исходные записи не изменятся: {countLabel(submissions, 'посылка', 'посылки', 'посылок')}
-            , {countLabel(reviews, 'проверка', 'проверки', 'проверок')}
+            <Trans>Исходные записи не изменятся:</Trans> {countLabel(submissions, 'submission')},{' '}
+            {countLabel(reviews, 'review')}
           </AlertTitle>
           <AlertDescription>
             {mode === 'merge'
-              ? 'Карточки получат общий вычисляемый статус и хронологию, но каждая запись сохранит исходный problem_id.'
-              : 'Общий verdict останется у задачи последней включённой посылки; остальные ветки снова вычислят собственный статус.'}
+              ? t`Карточки получат общий вычисляемый статус и хронологию, но каждая запись сохранит исходный problem_id.`
+              : t`Общий verdict останется у задачи последней включённой посылки; остальные ветки снова вычислят собственный статус.`}
           </AlertDescription>
         </AlertContent>
       </Alert>
 
       <div className="flex flex-wrap gap-2">
         <Button disabled={confirmDisabled} onClick={onConfirm}>
-          {mode === 'merge' ? 'Объединить' : 'Разделить'}
+          {mode === 'merge' ? t`Объединить` : t`Разделить`}
         </Button>
         <Button onClick={onCancel} variant="ghost">
-          Отмена
+          <Trans>Отмена</Trans>
         </Button>
       </div>
     </section>
@@ -151,10 +164,10 @@ export function SynonymMergedTimeline({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-section font-semibold text-foreground" id="synonym-timeline-title">
-            Общая история решения
+            <Trans>Общая история решения</Trans>
           </h2>
           <p className="text-caption text-muted-foreground">
-            Ветки показаны по времени; источник каждой записи остаётся видимым.
+            <Trans>Ветки показаны по времени; источник каждой записи остаётся видимым.</Trans>
           </p>
         </div>
         <Badge variant="info">{status}</Badge>
@@ -194,11 +207,20 @@ export function SynonymReviewCase({
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="text-caption text-muted-foreground">Один логический кейс</p>
+            <p className="text-caption text-muted-foreground">
+              <Trans>Один логический кейс</Trans>
+            </p>
             <CardTitle>{taskTitle}</CardTitle>
             <p className="text-small text-muted-foreground">{studentName}</p>
           </div>
-          <Badge variant="warning">{submissions.length} посылки объединены</Badge>
+          <Badge variant="warning">
+            {plural(submissions.length, {
+              one: '# посылка объединена',
+              few: '# посылки объединены',
+              many: '# посылок объединены',
+              other: '# посылки объединены',
+            })}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -222,10 +244,14 @@ export function SynonymReviewCase({
           <Alert tone="info">
             <MessageSquareText aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Вердикт будет записан в {originLabel(latest)}</AlertTitle>
+              <AlertTitle>
+                <Trans>Вердикт будет записан в</Trans> {originLabel(latest)}
+              </AlertTitle>
               <AlertDescription>
-                Проверка сохранит неизменяемый список всех увиденных посылок. При разделении задач
-                ответ останется у последней посылки.
+                <Trans>
+                  Проверка сохранит неизменяемый список всех увиденных посылок. При разделении задач
+                  ответ останется у последней посылки.
+                </Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>

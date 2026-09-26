@@ -170,3 +170,62 @@ preloaded вместе с entry и не добавляют последоват�
 
 Cold и warm FCP не ухудшились ни для одного приложения; P5 укладывается в
 performance budget.
+
+## P6 — 26 сентября 2026
+
+Сравнение с точным P5 `2233052c`: отдельная копия `git archive`, собственная
+установка pnpm по frozen lockfile; Node 26.9.0, pnpm 11.15.1, та же машина.
+Сборки и замеры выполнялись последовательно после браузерных тестов. Методика:
+Brotli quality 11; Chromium, 9 прогонов каждого приложения, 40 ms RTT / 12 Мбит/с.
+
+| App     | Initial JS P5 | Initial JS P6 |       Δ | Total JS P5 | Total JS P6 | Каталог ru / en P6 |
+| ------- | ------------: | ------------: | ------: | ----------: | ----------: | ------------------ |
+| student |      388.9 KB |      390.3 KB | +1.4 KB |    439.6 KB |    442.4 KB | 20.0 / 16.8 KB     |
+| family  |      359.3 KB |      360.8 KB | +1.5 KB |    392.7 KB |    395.5 KB | 17.8 / 14.9 KB     |
+| staff   |      452.7 KB |      459.6 KB | +6.9 KB |    780.7 KB |    792.6 KB | 32.6 / 27.9 KB     |
+| landing |       64.1 KB |       64.1 KB |    0 KB |     64.2 KB |     64.2 KB | 0.2 / 0.1 KB       |
+
+| App     | Cold P5 | Cold P6 |      Δ | Warm P5 | Warm P6 |      Δ |
+| ------- | ------: | ------: | -----: | ------: | ------: | -----: |
+| student |  496 ms |  496 ms |   0 ms |  104 ms |  104 ms |   0 ms |
+| family  |  464 ms |  464 ms |   0 ms |  120 ms |  104 ms | −16 ms |
+| staff   |  644 ms |  632 ms | −12 ms |  120 ms |  120 ms |   0 ms |
+| landing |  200 ms |  200 ms |   0 ms |  140 ms |  140 ms |   0 ms |
+
+Два прогона `pnpm build`: P5 — 6.21 / 3.27 s; P6 — 3.61 / 3.28 s.
+Среднее — 4.74 / 3.45 s. Первый P5 запуск использовал свежую установку;
+сравнение повторных сборок — +0.01 s (+0.3%). Результаты не показывают
+регрессии сборки или FCP относительно P5. Максимальный прирост начального JS
+в этой фазе — 6.9 KB. Рост приходится на новые переводы Staff/Product;
+архитектура загрузки не менялась. Каталог RU по-прежнему preloaded с entry,
+а Student/Family service workers precache оба языковых каталога.
+
+### Исходный бюджет P0: решение ещё не принято
+
+В [24-i18n.md](development-plan/24-i18n.md#производительность-бюджет-каждой-фазы)
+раздел назван «бюджет каждой фазы», но численные ограничения привязаны к P0.
+Последовательные отчёты P2–P5 сравнивали отдельные фазы. Чтобы не подменять
+исходную базу, здесь сохранено и накопленное сравнение:
+
+| App     | Initial JS P0 |  P5 − P0 |  P6 − P0 |
+| ------- | ------------: | -------: | -------: |
+| student |      368.7 KB | +20.2 KB | +21.6 KB |
+| family  |      336.1 KB | +23.2 KB | +24.7 KB |
+| staff   |      402.6 KB | +50.1 KB | +57.0 KB |
+| landing |       63.2 KB |  +0.9 KB |  +0.9 KB |
+
+Лимит +10 KB от P0 был превышен ещё до P6. Cold FCP Staff также превышает
+P0: 632 против 500 ms; до P6 в парном замере было 644 ms. Накопленный рост
+включает последующее развитие продукта и предыдущие фазы i18n; измерения этой
+фазы не разделяют всю историю по причинам. Инкремент P6 проходит сравнение
+с P5, но это **не** означает выполнения строгого накопленного бюджета P0.
+Вопрос о базе сравнения задан владельцу; без ответа performance-гейт P6
+остаётся открытым. Реализация, тесты и коммит не требуют молча менять бюджет.
+
+Frontend unit comparison (`pnpm exec vitest run --project unit --maxWorkers 2`,
+one sequential run per revision, same environment without inherited `VITE_*`
+overrides): P5 **903 passed**, 39.37 s wall time; P6 **912 passed**, 44.27 s
+(**+12.4%**, below +25%). Vitest durations: 38.53 / 43.61 s.
+The discarded first comparison used E2E environment overrides and failed two
+production-guard tests because those overrides shadowed their `.env.production`
+fixtures; neither source revision was changed to obtain the passing comparison.

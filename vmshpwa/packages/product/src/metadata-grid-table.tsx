@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import {
   useEffect,
   useRef,
@@ -22,7 +23,7 @@ import type {
 function rangeLabel(selection: GridSelection | null): string | undefined {
   if (!selection) return undefined
   const range = cellRange(selection)
-  return `Выделено строк ${range.firstRow + 1}–${range.lastRow + 1}, столбцов ${range.firstCol + 1}–${range.lastCol + 1}`
+  return t`Выделено строк ${range.firstRow + 1}–${range.lastRow + 1}, столбцов ${range.firstCol + 1}–${range.lastCol + 1}`
 }
 
 export function MetadataGridTable({
@@ -53,12 +54,12 @@ export function MetadataGridTable({
   onOpenCell: (address: CellAddress) => void
   onStartTyping: (address: CellAddress, value: string) => void
   onClearSelection: () => void
-  onCopy: (event: ClipboardEvent<HTMLDivElement>) => void
-  onPaste: (event: ClipboardEvent<HTMLDivElement>) => void
+  onCopy: (event: ClipboardEvent<HTMLTableElement>) => void
+  onPaste: (event: ClipboardEvent<HTMLTableElement>) => void
   onResize: (column: MetadataColumn, width: number) => void
-  onGridKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
+  onGridKeyDown: (event: KeyboardEvent<HTMLTableElement>) => void
 }) {
-  const gridRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLTableElement>(null)
   const [dragAnchor, setDragAnchor] = useState<CellAddress | null>(null)
 
   useEffect(() => {
@@ -158,22 +159,22 @@ export function MetadataGridTable({
 
   return (
     <div
-      aria-label="Таблица метаданных задач"
-      aria-multiselectable="true"
-      aria-rowcount={rows.length}
-      aria-colcount={columns.length}
       className={cn('min-h-0 overflow-auto rounded-md border border-border bg-surface', className)}
-      onCopy={onCopy}
-      onKeyDown={onGridKeyDown}
-      onPaste={onPaste}
-      ref={gridRef}
-      role="grid"
-      tabIndex={-1}
     >
       <span className="sr-only" role="status">
         {rangeLabel(selection)}
       </span>
       <table
+        onCopy={onCopy}
+        onKeyDown={onGridKeyDown}
+        onPaste={onPaste}
+        ref={gridRef}
+        tabIndex={-1}
+        aria-label={t`Таблица метаданных задач`}
+        aria-multiselectable="true"
+        aria-rowcount={rows.length + 1}
+        aria-colcount={columns.length}
+        role="grid"
         className="border-separate border-spacing-0 table-fixed text-small"
         style={{
           width: columns.reduce(
@@ -200,7 +201,7 @@ export function MetadataGridTable({
               >
                 <span className="block truncate pr-2">{column.header}</span>
                 <button
-                  aria-label={`Изменить ширину столбца «${column.header}»`}
+                  aria-label={t`Изменить ширину столбца «${column.header}»`}
                   className="absolute top-0 right-0 h-full w-2 cursor-col-resize touch-none outline-none focus-visible:bg-ring/40"
                   onKeyDown={(event) => {
                     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
@@ -232,7 +233,7 @@ export function MetadataGridTable({
                 const error = errors.find((item) => item.row === rowIndex && item.col === column.id)
                 return (
                   <td
-                    aria-label={`${column.header}, строка ${rowIndex + 1}`}
+                    aria-label={t`${column.header}, строка ${rowIndex + 1}`}
                     aria-describedby={error ? `metadata-error-${rowIndex}-${column.id}` : undefined}
                     aria-invalid={error ? true : undefined}
                     aria-selected={selected}

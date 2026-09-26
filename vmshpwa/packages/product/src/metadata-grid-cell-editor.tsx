@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useEffect, useRef, useState } from 'react'
 
 import {
@@ -60,7 +62,9 @@ export function MetadataGridCellEditor({
       <DialogContent showCloseButton={false} className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{column.header}</DialogTitle>
-          <DialogDescription>Задача {displayNumber || 'без номера'}</DialogDescription>
+          <DialogDescription>
+            <Trans>Задача</Trans> {displayNumber || t`без номера`}
+          </DialogDescription>
         </DialogHeader>
         {column.editor === 'select' ? (
           <select
@@ -100,9 +104,11 @@ export function MetadataGridCellEditor({
         )}
         <DialogFooter>
           <Button onClick={onClose} variant="outline">
-            Отмена
+            <Trans>Отмена</Trans>
           </Button>
-          <Button onClick={apply}>Применить</Button>
+          <Button onClick={apply}>
+            <Trans>Применить</Trans>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

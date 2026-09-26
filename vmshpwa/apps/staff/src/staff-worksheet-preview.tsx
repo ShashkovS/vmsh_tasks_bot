@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { ChevronDown, ChevronRight, MessageCircleQuestion, PencilLine } from 'lucide-react'
 import { SemanticMathDocument, WorksheetDocument } from '@vmsh/content'
 import type {
@@ -33,12 +34,19 @@ export function StaffWorksheetPreview({
 }) {
   const materialKind = document.materialKind
   const paper = materialKind === 'condition' ? document : condition
-  if (!paper) return <p role="status">Для ученического превью сначала загрузите условия.</p>
+  if (!paper)
+    return (
+      <p role="status">
+        <Trans>Для ученического превью сначала загрузите условия.</Trans>
+      </p>
+    )
   const actions = () => (
     <span className="vmsh-problem-actions-row font-sans">
-      <Badge variant="neutral">Не начата</Badge>
+      <Badge variant="neutral">
+        <Trans>Не начата</Trans>
+      </Badge>
       <Button disabled size="sm" variant="ghost">
-        Открыть
+        <Trans>Открыть</Trans>
         <ChevronRight aria-hidden="true" />
       </Button>
     </span>
@@ -97,13 +105,13 @@ export function StaffWorksheetPreview({
           {!submissionClosed ? (
             <Button disabled size="sm" variant="ghost">
               <PencilLine aria-hidden="true" className="size-4" />
-              Ответить
+              <Trans>Ответить</Trans>
               <ChevronDown aria-hidden="true" />
             </Button>
           ) : null}
           <Button disabled size="sm" variant="ghost">
             <MessageCircleQuestion aria-hidden="true" className="size-4" />
-            Задать вопрос
+            <Trans>Задать вопрос</Trans>
           </Button>
           <WorksheetMaterials
             compact
@@ -118,8 +126,10 @@ export function StaffWorksheetPreview({
   return (
     <>
       <p className="mb-3 text-small text-muted-foreground">
-        Предпросмотр школьника. Отправка ответов, вопросы и переход к задаче отключены; просмотры не
-        записываются.
+        <Trans>
+          Предпросмотр школьника. Отправка ответов, вопросы и переход к задаче отключены; просмотры
+          не записываются.
+        </Trans>
       </p>
       <div
         data-density="student"
@@ -161,11 +171,13 @@ export function FigureScaleTools({
   if (!figures.size) return null
   return (
     <details className="mt-4">
-      <summary className="cursor-pointer text-small">Масштаб рисунков для публикации</summary>
+      <summary className="cursor-pointer text-small">
+        <Trans>Масштаб рисунков для публикации</Trans>
+      </summary>
       <div className="mt-2 flex flex-wrap gap-3">
         {[...figures.values()].map(({ asset, scale }, index) => (
           <label key={asset.assetId} className="flex items-center gap-2 text-small">
-            Рисунок {index + 1}
+            <Trans>Рисунок</Trans> {index + 1}
             <select
               className="rounded border border-border bg-surface p-2"
               value={scale}

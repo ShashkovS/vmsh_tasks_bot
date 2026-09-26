@@ -477,3 +477,31 @@ async def test_problem_import_rollback_is_atomic_after_a_later_edit(classroom_ht
     problems, receipt = classroom_http.factory.run_read(rows)
     assert [row["title"] for row in problems] == ["Поздняя правка", "Новая задача"]
     assert receipt["state"] == "applied"
+
+
+@pytest.mark.asyncio
+async def test_import_preview_localizes_only_diagnostics(classroom_http):
+    """P6: identical workbook values/hashes in RU and EN, including invalid rows."""
+    source = _workbook()
+    previews = []
+    for locale in ("ru", "en"):
+        response = await classroom_http.client.post(
+            "/staff/api/v1/problem-imports/preview",
+            data=_form(source=source),
+            headers=_headers(unsafe=True),
+            cookies={**_cookies(classroom_http, "admin"), "vmsh-locale": locale},
+        )
+        assert response.status == 200
+        previews.append(await response.json())
+    russian, english = previews
+    assert russian["previewSha256"] == english["previewSha256"]
+    assert russian["source"] == english["source"]
+    assert russian["summary"] == english["summary"]
+    messages = []
+    for ru_row, en_row in zip(russian["rows"], english["rows"], strict=True):
+        ru_issues, en_issues = ru_row.pop("diagnostics"), en_row.pop("diagnostics")
+        assert ru_row == en_row
+        for ru_issue, en_issue in zip(ru_issues, en_issues, strict=True):
+            messages.append((ru_issue.pop("message"), en_issue.pop("message")))
+            assert ru_issue == en_issue
+    assert ("Такой группы нет в выбранном курсе.", "This group does not exist in the selected course.") in messages

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 
 import pytest
 
@@ -38,9 +39,10 @@ def _request() -> MetadataGenerationRequest:
     )
 
 
-def test_metadata_generation_keeps_only_server_identities_and_test_fields():
+@pytest.mark.parametrize("locale", ["ru", "en"])
+def test_metadata_generation_keeps_only_server_identities_and_test_fields(locale):
     result = _normalize_generated_rows(
-        _request(),
+        replace(_request(), locale=locale),
         GeneratedMetadata.model_validate(
             {
                 "rows": [
@@ -125,8 +127,9 @@ def test_metadata_generation_explains_openrouter_access_denial_safely():
     error = _upstream_generation_error(_UpstreamError(403))
 
     assert str(error) == "OpenRouter denied metadata generation with HTTP 403"
+    assert error.public_params == {"status_code": 403}
     assert error.public_message == (
-        "OpenRouter отклонил запрос (403: доступ запрещён). Проверьте настоящий "
+        "OpenRouter отклонил запрос ({status_code}: доступ запрещён). Проверьте настоящий "
         "OPENROUTER_API_KEY в production-конфиге и ограничения этого ключа."
     )
 
@@ -200,7 +203,9 @@ async def test_metadata_generation_reports_its_local_deadline(
         metadata_generation_module, "generate_lesson_json", stalled_generate_lesson_json
     )
 
-    with pytest.raises(MetadataGenerationError, match="local request deadline") as raised:
+    with pytest.raises(
+        MetadataGenerationError, match="local request deadline"
+    ) as raised:
         await OpenRouterMetadataGenerator(
             api_key="sk-or-v1-live-key", timeout_ms=1
         ).generate(_request())
@@ -309,9 +314,10 @@ def test_source_markup_turns_named_closed_question_into_complete_choice():
     assert markup_contract.audit_lesson_markup(fixed, parsed)[0] == []
 
 
-def test_metadata_generation_never_uses_a_provisional_answer_that_needs_checker():
+@pytest.mark.parametrize("locale", ["ru", "en"])
+def test_metadata_generation_never_uses_a_provisional_answer_that_needs_checker(locale):
     result = _normalize_reference_markup(
-        _request(),
+        replace(_request(), locale=locale),
         {
             "rows": [
                 {
@@ -337,6 +343,10 @@ def test_metadata_generation_never_uses_a_provisional_answer_that_needs_checker(
 
     assert result.rows[0]["correctAnswer"] is None
     assert result.warnings == (
-        "1: эквивалентность выражений; добавьте checker вручную перед публикацией",
+        (
+            "1: эквивалентность выражений; добавьте checker вручную перед публикацией"
+            if locale == "ru"
+            else "1: эквивалентность выражений; add a checker manually before publishing"
+        ),
         "1: needs_checker",
     )

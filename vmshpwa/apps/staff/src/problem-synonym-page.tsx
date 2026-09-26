@@ -1,3 +1,5 @@
+import { plural, t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState, type FormEvent } from 'react'
 
@@ -34,10 +36,18 @@ import {
 } from '@vmsh/ui'
 
 const problemTypeLabel: Record<number, string> = {
-  1: 'Тестовая',
-  2: 'Письменная',
-  3: 'Устная',
-  4: 'Устная с письменной сдачей',
+  get 1() {
+    return t`Тестовая`
+  },
+  get 2() {
+    return t`Письменная`
+  },
+  get 3() {
+    return t`Устная`
+  },
+  get 4() {
+    return t`Устная с письменной сдачей`
+  },
 } as const
 
 function taskNumber(problem: ProblemSynonymProblem): string {
@@ -45,23 +55,32 @@ function taskNumber(problem: ProblemSynonymProblem): string {
 }
 
 function problemTypeText(value: number): string {
-  return problemTypeLabel[value] ?? `Тип ${value}`
+  return problemTypeLabel[value] ?? t`Тип ${value}`
 }
 
 function answerTypeText(value: number): string {
   return defaultAnswerHint(answerTypeFromLegacyId(value)).hint.replace(/^Введите /, '')
 }
 
-function countLabel(count: number, one: string, few: string, many: string): string {
-  const lastTwo = count % 100
-  const last = count % 10
-  const word =
-    last === 1 && lastTwo !== 11
-      ? one
-      : last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)
-        ? few
-        : many
-  return `${count} ${word}`
+function countLabel(count: number, kind: 'problem' | 'submission' | 'review'): string {
+  switch (kind) {
+    case 'problem':
+      return plural(count, { one: '# задача', few: '# задачи', many: '# задач', other: '# задачи' })
+    case 'submission':
+      return plural(count, {
+        one: '# посылка',
+        few: '# посылки',
+        many: '# посылок',
+        other: '# посылки',
+      })
+    case 'review':
+      return plural(count, {
+        one: '# проверка',
+        few: '# проверки',
+        many: '# проверок',
+        other: '# проверки',
+      })
+  }
 }
 
 function previewProblem(problem: ProblemSynonymProblem) {
@@ -82,7 +101,7 @@ function previewProblem(problem: ProblemSynonymProblem) {
 function errorMessage(error: Error): string {
   return error instanceof ApiResponseError
     ? error.message
-    : 'Не удалось выполнить операцию. Обновите данные и попробуйте ещё раз.'
+    : t`Не удалось выполнить операцию. Обновите данные и попробуйте ещё раз.`
 }
 
 export function ProblemSynonymView({
@@ -111,7 +130,9 @@ export function ProblemSynonymView({
       {error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Изменение не выполнено</AlertTitle>
+            <AlertTitle>
+              <Trans>Изменение не выполнено</Trans>
+            </AlertTitle>
             <AlertDescription>{errorMessage(error)}</AlertDescription>
           </AlertContent>
         </Alert>
@@ -120,7 +141,9 @@ export function ProblemSynonymView({
       {preview ? (
         <Card>
           <CardHeader>
-            <CardTitle>Предпросмотр влияния</CardTitle>
+            <CardTitle>
+              <Trans>Предпросмотр влияния</Trans>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <SynonymMergeSplitPreview
@@ -135,12 +158,12 @@ export function ProblemSynonymView({
             />
             {preview.mode === 'split' ? (
               <Label className="grid max-w-2xl gap-1 text-small">
-                Причина разделения
+                <Trans>Причина разделения</Trans>
                 <Textarea
                   disabled={pending}
                   maxLength={500}
                   onChange={(event) => setSplitReason(event.target.value)}
-                  placeholder="Например: задачи были объединены по совпавшему названию"
+                  placeholder={t`Например: задачи были объединены по совпавшему названию`}
                   value={splitReason}
                 />
               </Label>
@@ -152,16 +175,18 @@ export function ProblemSynonymView({
       <section aria-labelledby="synonym-candidates-title" className="space-y-3">
         <div>
           <h2 className="text-subtitle font-semibold" id="synonym-candidates-title">
-            Кандидаты · {data.candidates.length}
+            <Trans>Кандидаты · {data.candidates.length}</Trans>
           </h2>
           <p className="text-small text-muted-foreground">
-            Совпавшее название только предлагает связь. Объединение всегда требует предпросмотра и
-            подтверждения администратора.
+            <Trans>
+              Совпавшее название только предлагает связь. Объединение всегда требует предпросмотра и
+              подтверждения администратора.
+            </Trans>
           </p>
         </div>
         {data.candidates.length === 0 ? (
           <p className="rounded-md border border-dashed border-border p-4 text-small text-muted-foreground">
-            Неподтверждённых совпадений на этом занятии нет.
+            <Trans>Неподтверждённых совпадений на этом занятии нет.</Trans>
           </p>
         ) : (
           <div className="grid gap-3 xl:grid-cols-2">
@@ -171,7 +196,7 @@ export function ProblemSynonymView({
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <CardTitle>{candidate.displayTitle}</CardTitle>
                     <Badge variant={candidate.hasGroupConflict ? 'warning' : 'neutral'}>
-                      {countLabel(candidate.problems.length, 'задача', 'задачи', 'задач')}
+                      {countLabel(candidate.problems.length, 'problem')}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -184,12 +209,12 @@ export function ProblemSynonymView({
                       >
                         <span className="min-w-0">
                           <span className="block text-small font-medium">
-                            {problem.groupCode} · задача {taskNumber(problem)}
+                            <Trans>{problem.groupCode} · задача</Trans> {taskNumber(problem)}
                           </span>
                           <span className="block text-caption text-muted-foreground">
                             {problemTypeText(problem.problemType)} ·{' '}
-                            {countLabel(problem.submissionCount, 'посылка', 'посылки', 'посылок')} ·{' '}
-                            {countLabel(problem.reviewCount, 'проверка', 'проверки', 'проверок')}
+                            {countLabel(problem.submissionCount, 'submission')} ·{' '}
+                            {countLabel(problem.reviewCount, 'review')}
                           </span>
                         </span>
                         <Badge variant="neutral">{problem.groupName}</Badge>
@@ -199,10 +224,14 @@ export function ProblemSynonymView({
                   {candidate.hasGroupConflict ? (
                     <Alert tone="warning">
                       <AlertContent>
-                        <AlertTitle>В одной группе найдено несколько задач</AlertTitle>
+                        <AlertTitle>
+                          <Trans>В одной группе найдено несколько задач</Trans>
+                        </AlertTitle>
                         <AlertDescription>
-                          Сначала исправьте повтор в метаданных: одна группа занятия может содержать
-                          только один экземпляр синонимичной задачи.
+                          <Trans>
+                            Сначала исправьте повтор в метаданных: одна группа занятия может
+                            содержать только один экземпляр синонимичной задачи.
+                          </Trans>
                         </AlertDescription>
                       </AlertContent>
                     </Alert>
@@ -215,7 +244,7 @@ export function ProblemSynonymView({
                       size="sm"
                       variant="outline"
                     >
-                      Проверить объединение
+                      <Trans>Проверить объединение</Trans>
                     </Button>
                   )}
                 </CardContent>
@@ -228,16 +257,18 @@ export function ProblemSynonymView({
       <section aria-labelledby="active-synonyms-title" className="space-y-3">
         <div>
           <h2 className="text-subtitle font-semibold" id="active-synonyms-title">
-            Подтверждённые связи · {data.synonymGroups.length}
+            <Trans>Подтверждённые связи · {data.synonymGroups.length}</Trans>
           </h2>
           <p className="text-small text-muted-foreground">
-            Исходные посылки и проверки не переносятся. Если связь ошибочна, отделите конкретную
-            задачу после предпросмотра.
+            <Trans>
+              Исходные посылки и проверки не переносятся. Если связь ошибочна, отделите конкретную
+              задачу после предпросмотра.
+            </Trans>
           </p>
         </div>
         {data.synonymGroups.length === 0 ? (
           <p className="rounded-md border border-dashed border-border p-4 text-small text-muted-foreground">
-            Подтверждённых связей на этом занятии пока нет.
+            <Trans>Подтверждённых связей на этом занятии пока нет.</Trans>
           </p>
         ) : (
           <div className="grid gap-3 xl:grid-cols-2">
@@ -246,7 +277,7 @@ export function ProblemSynonymView({
                 <CardHeader className="gap-1 pb-3">
                   <CardTitle>{group.displayTitle}</CardTitle>
                   <p className="font-num text-caption text-muted-foreground">
-                    версия {group.version}
+                    <Trans>версия {group.version}</Trans>
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -259,8 +290,7 @@ export function ProblemSynonymView({
                         <span className="min-w-0 text-small">
                           <span className="font-medium">{problem.groupName}</span>
                           <span className="text-muted-foreground">
-                            {' '}
-                            · задача {taskNumber(problem)}
+                            <Trans> · задача</Trans> {taskNumber(problem)}
                           </span>
                         </span>
                         <Button
@@ -269,7 +299,7 @@ export function ProblemSynonymView({
                           size="sm"
                           variant="ghost"
                         >
-                          Отделить
+                          <Trans>Отделить</Trans>
                         </Button>
                       </li>
                     ))}
@@ -353,7 +383,7 @@ export function ProblemSynonymPage({
 
   if (!isAdmin) {
     return (
-      <PageLayout title="Синонимы задач" width="wide">
+      <PageLayout title={t`Синонимы задач`} width="wide">
         <PageStatePanel state="forbidden" />
       </PageLayout>
     )
@@ -365,16 +395,16 @@ export function ProblemSynonymPage({
 
   if (query.isPending) {
     return (
-      <PageLayout title="Синонимы задач" width="wide">
+      <PageLayout title={t`Синонимы задач`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
   if (query.error || !query.data) {
     return (
-      <PageLayout title="Синонимы задач" width="wide">
+      <PageLayout title={t`Синонимы задач`} width="wide">
         <PageStatePanel
-          actionLabel="Повторить"
+          actionLabel={t`Повторить`}
           onAction={() => void query.refetch()}
           state="error"
         />
@@ -384,9 +414,9 @@ export function ProblemSynonymPage({
 
   return (
     <PageLayout
-      description="Связи меняют только вычисляемое представление. Каждая посылка, переписка и проверка остаётся у исходной задачи."
-      eyebrow={`Занятие курса · ${courseLessonId}`}
-      title="Синонимы задач"
+      description={t`Связи меняют только вычисляемое представление. Каждая посылка, переписка и проверка остаётся у исходной задачи.`}
+      eyebrow={t`Занятие курса · ${courseLessonId}`}
+      title={t`Синонимы задач`}
       width="wide"
     >
       <ProblemSynonymView
@@ -417,16 +447,16 @@ function CourseLessonSelector({ onSelect }: { onSelect: (courseLessonId: string)
   }
   return (
     <PageLayout
-      description="Откройте этот раздел из конкретного занятия или укажите его публичный идентификатор."
+      description={t`Откройте этот раздел из конкретного занятия или укажите его публичный идентификатор.`}
       eyebrow="Admin"
-      title="Синонимы задач"
+      title={t`Синонимы задач`}
       width="content"
     >
       <Card>
         <CardContent className="pt-4">
           <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={submit}>
             <Label className="grid min-w-0 flex-1 gap-1 text-small">
-              Идентификатор занятия курса
+              <Trans>Идентификатор занятия курса</Trans>
               <Input
                 onChange={(event) => setValue(event.target.value)}
                 placeholder="course-lesson…"
@@ -434,7 +464,9 @@ function CourseLessonSelector({ onSelect }: { onSelect: (courseLessonId: string)
                 value={value}
               />
             </Label>
-            <Button type="submit">Открыть</Button>
+            <Button type="submit">
+              <Trans>Открыть</Trans>
+            </Button>
           </form>
         </CardContent>
       </Card>

@@ -112,12 +112,24 @@ msgstr "· сила "
 msgid "» совпадает с «{0}» без учёта регистра и формы Unicode."
 msgstr "» совпадает с «{0}» без учёта регистра и формы Unicode."
 
+#. placeholder {0}: submissions.length
+#: packages/product/src/synonym-context.tsx
+msgid "{0, plural, one {# посылка объединена} few {# посылки объединены} many {# посылок объединены} other {# посылки объединены}}"
+msgstr "{0, plural, one {# посылка объединена} few {# посылки объединены} many {# посылок объединены} other {# посылки объединены}}"
+
 #. placeholder {0}: recipient.courseName
 #. placeholder {1}: recipient.groupName
 #. placeholder {2}: recipient.classroomName
 #: packages/product/src/classroom-delivery.tsx
 msgid "{0} · {1} · аудитория {2}"
 msgstr "{0} · {1} · аудитория {2}"
+
+#. placeholder {0}: problem.courseName
+#. placeholder {1}: problem.groupName
+#. placeholder {2}: problem.lessonNumber
+#: packages/product/src/synonym-context.tsx
+msgid "{0} · {1} · занятие {2}"
+msgstr "{0} · {1} · занятие {2}"
 
 #. placeholder {0}: groupLesson.course.name
 #. placeholder {1}: groupLesson.lessonNumber
@@ -177,6 +189,12 @@ msgstr "{0} учеников · {1}"
 msgid "{0} школьников требуют назначения до подтверждения плана."
 msgstr "{0} школьников требуют назначения до подтверждения плана."
 
+#. placeholder {0}: column.header
+#. placeholder {1}: rowIndex + 1
+#: packages/product/src/metadata-grid-table.tsx
+msgid "{0}, строка {1}"
+msgstr "{0}, строка {1}"
+
 #. placeholder {0}: item.student.displayName
 #: packages/product/src/review-reaction-inbox.tsx
 msgid "{0}: {reactionLabel}"
@@ -190,13 +208,27 @@ msgstr "{0}: {reactionLabel}"
 msgid "{0}Распределение по группе. Медиана {1}, разброс от {2} до {3}."
 msgstr "{0}Распределение по группе. Медиана {1}, разброс от {2} до {3}."
 
+#. placeholder {0}: items.length
+#: packages/product/src/problem-matching.tsx
+msgid "{completed} из {0}"
+msgstr "{completed} из {0}"
+
 #: packages/product/src/activity-calendar.tsx
 msgid "{count, plural, one {# день работы} few {# дня работы} many {# дней работы} other {# дня работы}}"
 msgstr "{count, plural, one {# день работы} few {# дня работы} many {# дней работы} other {# дня работы}}"
 
 #: packages/product/src/activity-calendar.tsx
+#: packages/product/src/synonym-context.tsx
 msgid "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
 msgstr "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
+
+#: packages/product/src/synonym-context.tsx
+msgid "{count, plural, one {# посылка} few {# посылки} many {# посылок} other {# посылки}}"
+msgstr "{count, plural, one {# посылка} few {# посылки} many {# посылок} other {# посылки}}"
+
+#: packages/product/src/synonym-context.tsx
+msgid "{count, plural, one {# проверка} few {# проверки} many {# проверок} other {# проверки}}"
+msgstr "{count, plural, one {# проверка} few {# проверки} many {# проверок} other {# проверки}}"
 
 #: packages/product/src/written-material-reassignment.tsx
 msgid "{count} материал будет показан"
@@ -442,9 +474,26 @@ msgstr "Без Telegram: {0}"
 msgid "Без изменений: {0} · верных: {1} · неверных: {2} · вердиктов изменено: {3} · реплик изменено: {4} · − → +: {5} · + → −: {6}"
 msgstr "Без изменений: {0} · верных: {1} · неверных: {2} · вердиктов изменено: {3} · реплик изменено: {4} · − → +: {5} · + → −: {6}"
 
+#: packages/product/src/problem-matching.tsx
+msgid "Без названия"
+msgstr "Без названия"
+
+#: packages/product/src/metadata-grid-cell-editor.tsx
+msgid "без номера"
+msgstr "без номера"
+
 #: packages/product/src/classroom-planning.tsx
 msgid "без отдельной версии"
 msgstr "без отдельной версии"
+
+#. placeholder {0}: node.type
+#: packages/product/src/rich-markdown.ts
+msgid "Блок «{0}» пока не поддерживается"
+msgstr "Блок «{0}» пока не поддерживается"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Браузер не дал доступ к буферу. Выделите таблицу и нажмите Ctrl/Cmd+C."
+msgstr "Браузер не дал доступ к буферу. Выделите таблицу и нажмите Ctrl/Cmd+C."
 
 #: packages/product/src/test-attempt-recheck.tsx
 msgid "Будет обновлено"
@@ -474,6 +523,10 @@ msgstr "В архив"
 #: packages/product/src/course-admin.tsx
 msgid "В архиве"
 msgstr "В архиве"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "В буфере нет значений для вставки."
+msgstr "В буфере нет значений для вставки."
 
 #: packages/product/src/written-material-reassignment.tsx
 msgid "в другой задаче"
@@ -526,6 +579,10 @@ msgstr "В целом верно"
 #: packages/product/src/staff-outreach.tsx
 msgid "Важное"
 msgstr "Важное"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Ваш локальный черновик сохранён. Проверьте решения перед повторной отправкой."
+msgstr "Ваш локальный черновик сохранён. Проверьте решения перед повторной отправкой."
 
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Ваша аудитория"
@@ -595,6 +652,10 @@ msgstr "Введите символьное выражение"
 msgid "Введите смешанную дробь"
 msgstr "Введите смешанную дробь"
 
+#: packages/product/src/rich-markdown.ts
+msgid "Введите текст публикации"
+msgstr "Введите текст публикации"
+
 #: packages/product/src/answer-spec.ts
 msgid "Введите тождественно равное выражение"
 msgstr "Введите тождественно равное выражение"
@@ -610,6 +671,10 @@ msgstr "Введите целое число"
 #: packages/product/src/answer-spec.ts
 msgid "Введите четыре целых числа"
 msgstr "Введите четыре целых числа"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Вердикт будет записан в"
+msgstr "Вердикт будет записан в"
 
 #: packages/product/src/test-attempt-recheck.tsx
 msgid "Вердиктов изменится"
@@ -641,9 +706,25 @@ msgstr "версия {version}"
 msgid "Ветки задачи"
 msgstr "Ветки задачи"
 
+#: packages/product/src/synonym-context.tsx
+msgid "Ветки показаны по времени; источник каждой записи остаётся видимым."
+msgstr "Ветки показаны по времени; источник каждой записи остаётся видимым."
+
 #: packages/product/src/lesson-video.ts
 msgid "Видео должно использовать HTTPS без учётных данных"
 msgstr "Видео должно использовать HTTPS без учётных данных"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Видео и аудио пока не поддерживаются"
+msgstr "Видео и аудио пока не поддерживаются"
+
+#: packages/product/src/lesson-rich-markdown.ts
+msgid "Видео не найдено"
+msgstr "Видео не найдено"
+
+#: packages/product/src/lesson-rich-markdown.ts
+msgid "Видео разрешено только отдельным корневым блоком"
+msgstr "Видео разрешено только отдельным корневым блоком"
 
 #: packages/product/src/reaction-picker.tsx
 msgid "Видно только преподавателям и администратору — ученик и родитель не увидят."
@@ -663,6 +744,10 @@ msgstr "Включить {0}, {1}"
 #: packages/product/src/push-permission-card.tsx
 msgid "Включить уведомления"
 msgstr "Включить уведомления"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Вложенные списки пока не поддерживаются"
+msgstr "Вложенные списки пока не поддерживаются"
 
 #: packages/product/src/oral-result-form.tsx
 msgid "Внутренняя пометка"
@@ -722,13 +807,26 @@ msgstr "Все события всё равно останутся в прило
 msgid "Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные посылки останутся неизменными, а прежний вердикт может измениться."
 msgstr "Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные посылки останутся неизменными, а прежний вердикт может измениться."
 
+#: packages/product/src/problem-matching.tsx
+msgid "Все строки заполнены"
+msgstr "Все строки заполнены"
+
 #: packages/product/src/review-reaction-inbox.tsx
 msgid "Все формулировки"
 msgstr "Все формулировки"
 
+#: packages/product/src/problem-matching.tsx
+msgid "Выберите действие…"
+msgstr "Выберите действие…"
+
 #: packages/product/src/answer-spec.ts
 msgid "Выберите день недели"
 msgstr "Выберите день недели"
+
+#. placeholder {0}: column.header
+#: packages/product/src/metadata-grid.tsx
+msgid "Выберите допустимое значение «{0}»"
+msgstr "Выберите допустимое значение «{0}»"
 
 #: packages/product/src/written-material-reassignment.tsx
 msgid "Выберите задачу"
@@ -787,6 +885,18 @@ msgstr "Выбрать: {0}"
 #: packages/product/src/review-annotation-editor.tsx
 msgid "Выделение"
 msgstr "Выделение"
+
+#. placeholder {0}: range.firstRow + 1
+#. placeholder {1}: range.lastRow + 1
+#. placeholder {2}: range.firstCol + 1
+#. placeholder {3}: range.lastCol + 1
+#: packages/product/src/metadata-grid-table.tsx
+msgid "Выделено строк {0}–{1}, столбцов {2}–{3}"
+msgstr "Выделено строк {0}–{1}, столбцов {2}–{3}"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Выделяйте диапазон мышью или Shift+стрелками. Можно вставить и скопировать TSV из таблицы."
+msgstr "Выделяйте диапазон мышью или Shift+стрелками. Можно вставить и скопировать TSV из таблицы."
 
 #: packages/product/src/rich-document.tsx
 msgid "Выполнено"
@@ -858,6 +968,10 @@ msgstr "Действие"
 #: packages/product/src/progress-charts.tsx
 msgid "Динамика: от {0} до {1}, с доверительной полосой."
 msgstr "Динамика: от {0} до {1}, с доверительной полосой."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Для каждой задачи выберите существующую запись, создайте новую или явно пропустите её."
+msgstr "Для каждой задачи выберите существующую запись, создайте новую или явно пропустите её."
 
 #: packages/product/src/classroom-planning.tsx
 msgid "Для массового переноса выберите школьников одной группы."
@@ -945,6 +1059,10 @@ msgstr "Жуткая муть."
 msgid "Завершено с ошибками"
 msgstr "Завершено с ошибками"
 
+#: packages/product/src/rich-markdown.ts
+msgid "Заголовок уровня 6 не поддерживается"
+msgstr "Заголовок уровня 6 не поддерживается"
+
 #: packages/product/src/chat-composer.tsx
 msgid "загружаем"
 msgstr "загружаем"
@@ -977,9 +1095,15 @@ msgstr "Загрузка: {page}"
 msgid "Загрузка…"
 msgstr "Загрузка…"
 
+#: packages/product/src/metadata-grid-cell-editor.tsx
 #: packages/product/src/review-queue.tsx
 msgid "Задача"
 msgstr "Задача"
+
+#. placeholder {0}: item.displayNumber
+#: packages/product/src/problem-matching.tsx
+msgid "Задача {0}"
+msgstr "Задача {0}"
 
 #. placeholder {0}: problem.displayNumber
 #. placeholder {0}: task.number
@@ -1084,6 +1208,11 @@ msgstr "Изменить запланированную"
 msgid "Изменить схему"
 msgstr "Изменить схему"
 
+#. placeholder {0}: column.header
+#: packages/product/src/metadata-grid-table.tsx
+msgid "Изменить ширину столбца «{0}»"
+msgstr "Изменить ширину столбца «{0}»"
+
 #: packages/product/src/staff-publishing.tsx
 msgid "Изображение"
 msgstr "Изображение"
@@ -1153,6 +1282,10 @@ msgstr "Источник реакции"
 msgid "Исходник"
 msgstr "Исходник"
 
+#: packages/product/src/synonym-context.tsx
+msgid "Исходные записи не изменятся:"
+msgstr "Исходные записи не изменятся:"
+
 #: packages/product/src/written-material-reassignment.tsx
 msgid "Исходные сообщения, фотографии и их байты останутся на месте. Вердикт не переносится."
 msgstr "Исходные сообщения, фотографии и их байты останутся на месте. Вердикт не переносится."
@@ -1172,6 +1305,14 @@ msgstr "Карандаш"
 #: packages/product/src/rich-document.tsx
 msgid "Картинка будет скопирована при сохранении"
 msgstr "Картинка будет скопирована при сохранении"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Картинка должна быть отдельным HTTPS URL"
+msgstr "Картинка должна быть отдельным HTTPS URL"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Карточки получат общий вычисляемый статус и хронологию, но каждая запись сохранит исходный problem_id."
+msgstr "Карточки получат общий вычисляемый статус и хронологию, но каждая запись сохранит исходный problem_id."
 
 #: packages/product/src/classroom-planning.tsx
 msgid "Каталог аудиторий"
@@ -1225,6 +1366,10 @@ msgstr "Конвертируем TikZ"
 msgid "Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически."
 msgstr "Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически."
 
+#: packages/product/src/metadata-grid.tsx
+msgid "Копировать всю таблицу"
+msgstr "Копировать всю таблицу"
+
 #: packages/product/src/review-annotation-editor.tsx
 msgid "Красный"
 msgstr "Красный"
@@ -1245,6 +1390,10 @@ msgstr "Куда отправить"
 #: packages/product/src/course-context.tsx
 msgid "Курс"
 msgstr "Курс"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Курс и номер занятия совпадают. Тип ответа и способ сдачи не блокируют действие."
+msgstr "Курс и номер занятия совпадают. Тип ответа и способ сдачи не блокируют действие."
 
 #: packages/product/src/course-admin.tsx
 msgid "Курсы и группы"
@@ -1270,6 +1419,10 @@ msgstr "Материал обновлён"
 msgid "Медиана"
 msgstr "Медиана"
 
+#: packages/product/src/metadata-grid.tsx
+msgid "Метаданные задач"
+msgstr "Метаданные задач"
+
 #: packages/product/src/staff-publishing.tsx
 msgid "Можно повторить сборку материала."
 msgstr "Можно повторить сборку материала."
@@ -1286,6 +1439,10 @@ msgstr "Можно сдать устно в конференции или отп
 msgid "Мутно, много ошибок."
 msgstr "Мутно, много ошибок."
 
+#: packages/product/src/metadata-grid.tsx
+msgid "На весь экран"
+msgstr "На весь экран"
+
 #: packages/product/src/connection-banner.tsx
 msgid "На связи"
 msgstr "На связи"
@@ -1297,6 +1454,10 @@ msgstr "Название аудитории"
 #: packages/product/src/lesson-video.ts
 msgid "Название видео не должно быть длиннее 200 символов"
 msgstr "Название видео не должно быть длиннее 200 символов"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Название не извлечено"
+msgstr "Название не извлечено"
 
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Название уточняется"
@@ -1411,6 +1572,10 @@ msgstr "Не отмечено"
 msgid "Не отправлено"
 msgstr "Не отправлено"
 
+#: packages/product/src/problem-matching.tsx
+msgid "Не публиковать эту задачу"
+msgstr "Не публиковать эту задачу"
+
 #: packages/product/src/classroom-planning.tsx
 msgid "Не распределены / переназначаются"
 msgstr "Не распределены / переназначаются"
@@ -1419,6 +1584,18 @@ msgstr "Не распределены / переназначаются"
 #: packages/product/src/push-permission-card.tsx
 msgid "Не сейчас"
 msgstr "Не сейчас"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось вставить таблицу: в данных незакрытая кавычка."
+msgstr "Не удалось вставить таблицу: в данных незакрытая кавычка."
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось вставить таблицу: все строки должны содержать одинаковое число ячеек."
+msgstr "Не удалось вставить таблицу: все строки должны содержать одинаковое число ячеек."
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось вставить таблицу."
+msgstr "Не удалось вставить таблицу."
 
 #: packages/product/src/test-attempt-recheck.tsx
 msgid "Не удалось выполнить перепроверку"
@@ -1437,6 +1614,10 @@ msgstr "Не удалось настроить push"
 msgid "Не удалось открыть материал. Проверьте соединение и повторите попытку."
 msgstr "Не удалось открыть материал. Проверьте соединение и повторите попытку."
 
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось сохранить изменения"
+msgstr "Не удалось сохранить изменения"
+
 #: packages/product/src/staff-publishing.tsx
 msgid "Не хватает ресурсов: {unresolvedCount}"
 msgstr "Не хватает ресурсов: {unresolvedCount}"
@@ -1445,6 +1626,10 @@ msgstr "Не хватает ресурсов: {unresolvedCount}"
 msgid "недоступно"
 msgstr "недоступно"
 
+#: packages/product/src/rich-markdown.ts
+msgid "Незакрытая inline-формула"
+msgstr "Незакрытая inline-формула"
+
 #: packages/product/src/review-feedback-form.tsx
 msgid "Незачёт без комментария. Отправить всё равно?"
 msgstr "Незачёт без комментария. Отправить всё равно?"
@@ -1452,6 +1637,46 @@ msgstr "Незачёт без комментария. Отправить всё 
 #: packages/product/src/classroom-planning.tsx
 msgid "Неиспользованные активные аудитории не мешают подтверждению."
 msgstr "Неиспользованные активные аудитории не мешают подтверждению."
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректная сноска"
+msgstr "Некорректная сноска"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректная цитата"
+msgstr "Некорректная цитата"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный details"
+msgstr "Некорректный details"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный inline code"
+msgstr "Некорректный inline code"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный блок кода"
+msgstr "Некорректный блок кода"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный список"
+msgstr "Некорректный список"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный узел rich Markdown"
+msgstr "Некорректный узел rich Markdown"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный упорядоченный список"
+msgstr "Некорректный упорядоченный список"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный элемент списка"
+msgstr "Некорректный элемент списка"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Нельзя смешивать обычные пункты и задачи в одном списке"
+msgstr "Нельзя смешивать обычные пункты и задачи в одном списке"
 
 #: packages/product/src/reaction.ts
 msgid "Непонятно, что не так…"
@@ -1568,13 +1793,33 @@ msgstr "Обработка: {page}"
 msgid "Общая"
 msgstr "Общая"
 
+#: packages/product/src/synonym-context.tsx
+msgid "Общая история решения"
+msgstr "Общая история решения"
+
 #: packages/product/src/course-context.tsx
 msgid "общая настройка"
 msgstr "общая настройка"
 
+#: packages/product/src/synonym-context.tsx
+msgid "Общий verdict останется у задачи последней включённой посылки; остальные ветки снова вычислят собственный статус."
+msgstr "Общий verdict останется у задачи последней включённой посылки; остальные ветки снова вычислят собственный статус."
+
 #: packages/product/src/classroom-delivery.tsx
 msgid "Общий результат доставки"
 msgstr "Общий результат доставки"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Объединить"
+msgstr "Объединить"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Объединить задачи логически"
+msgstr "Объединить задачи логически"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Один логический кейс"
+msgstr "Один логический кейс"
 
 #: packages/product/src/classroom-planning.tsx
 msgid "Один список для всех занятий. Скрытые аудитории можно восстановить."
@@ -1718,16 +1963,23 @@ msgid "Открыть решение?"
 msgstr "Открыть решение?"
 
 #: packages/product/src/classroom-planning.tsx
+#: packages/product/src/metadata-grid-cell-editor.tsx
 #: packages/product/src/staff-outreach.tsx
 #: packages/product/src/staff-publishing.tsx
+#: packages/product/src/synonym-context.tsx
 #: packages/product/src/worksheet-materials.tsx
 msgid "Отмена"
 msgstr "Отмена"
 
+#: packages/product/src/metadata-grid.tsx
 #: packages/product/src/review-annotation-editor.tsx
 #: packages/product/src/staff-publishing.tsx
 msgid "Отменить"
 msgstr "Отменить"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Отменить правки"
+msgstr "Отменить правки"
 
 #: packages/product/src/staff-publishing.tsx
 msgid "Отменить расписание"
@@ -1832,6 +2084,10 @@ msgstr "ошибок"
 #: packages/product/src/test-attempt-recheck.tsx
 msgid "Ошибок checker-а"
 msgstr "Ошибок checker-а"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Ошибок не найдено. Можно подтверждать метаданные."
+msgstr "Ошибок не найдено. Можно подтверждать метаданные."
 
 #: packages/product/src/test-attempt-recheck.tsx
 msgid "Ошибок формата после проверки"
@@ -1954,6 +2210,10 @@ msgstr "План устарел"
 msgid "По одной"
 msgstr "По одной"
 
+#: packages/product/src/problem-matching.tsx
+msgid "По позиции:"
+msgstr "По позиции:"
+
 #: packages/product/src/news-moderation.tsx
 #: packages/product/src/staff-publishing.tsx
 msgid "По расписанию"
@@ -1977,6 +2237,7 @@ msgstr "Повтор затронет только неуспешные пары
 
 #: packages/product/src/attachment.tsx
 #: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/metadata-grid.tsx
 #: packages/product/src/review-annotation-editor.tsx
 #: packages/product/src/staff-publishing.tsx
 #: packages/product/src/telegram-rich-post.tsx
@@ -2030,6 +2291,10 @@ msgstr "Подтвердить перенос"
 #: packages/product/src/classroom-planning.tsx
 msgid "Подтвердить план"
 msgstr "Подтвердить план"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Подтвердить сопоставление"
+msgstr "Подтвердить сопоставление"
 
 #: packages/product/src/classroom-planning.tsx
 msgid "Подтвердить схему"
@@ -2234,6 +2499,10 @@ msgstr "Прикреплён"
 msgid "Прикреплённый ресурс {0}"
 msgstr "Прикреплённый ресурс {0}"
 
+#: packages/product/src/metadata-grid-cell-editor.tsx
+msgid "Применить"
+msgstr "Применить"
+
 #: packages/product/src/written-material-reassignment.tsx
 msgid "Причина для журнала (необязательно)"
 msgstr "Причина для журнала (необязательно)"
@@ -2282,6 +2551,14 @@ msgstr "Проверить перенос"
 msgid "Проверить получателей ({0})"
 msgstr "Проверить получателей ({0})"
 
+#: packages/product/src/metadata-grid.tsx
+msgid "Проверить таблицу"
+msgstr "Проверить таблицу"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Проверка сохранит неизменяемый список всех увиденных посылок. При разделении задач ответ останется у последней посылки."
+msgstr "Проверка сохранит неизменяемый список всех увиденных посылок. При разделении задач ответ останется у последней посылки."
+
 #: packages/product/src/push-device-controls.tsx
 msgid "Проверьте соединение и попробуйте ещё раз."
 msgstr "Проверьте соединение и попробуйте ещё раз."
@@ -2327,6 +2604,10 @@ msgstr "Публикация материалов"
 msgid "Публикация недоступна, пока все ссылки не разрешены."
 msgstr "Публикация недоступна, пока все ссылки не разрешены."
 
+#: packages/product/src/problem-matching.tsx
+msgid "Публикация останется недоступной до заполнения всех строк."
+msgstr "Публикация останется недоступной до заполнения всех строк."
+
 #: packages/product/src/review-lock.tsx
 msgid "Работа больше не за вами"
 msgstr "Работа больше не за вами"
@@ -2346,6 +2627,14 @@ msgstr "Работа изменилась"
 #: packages/product/src/progress-charts.tsx
 msgid "Разброс (Q1–Q3)"
 msgstr "Разброс (Q1–Q3)"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Разделить"
+msgstr "Разделить"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Разделить задачи"
+msgstr "Разделить задачи"
 
 #: packages/product/src/review-annotation-editor.tsx
 msgid "Разметка: {imageAlt}"
@@ -2469,6 +2758,10 @@ msgstr "С устным приёмом всё ОК."
 msgid "Сбросить масштаб"
 msgstr "Сбросить масштаб"
 
+#: packages/product/src/metadata-grid.tsx
+msgid "Свернуть"
+msgstr "Свернуть"
+
 #: packages/product/src/classroom-planning.tsx
 msgid "Сводка каталога"
 msgstr "Сводка каталога"
@@ -2521,6 +2814,10 @@ msgstr "Сейчас у вас онлайн-режим."
 msgid "Сейчас у ребёнка онлайн-режим."
 msgstr "Сейчас у ребёнка онлайн-режим."
 
+#: packages/product/src/problem-matching.tsx
+msgid "Серверная версия изменилась"
+msgstr "Серверная версия изменилась"
+
 #: packages/product/src/attachment.tsx
 msgid "Сжатие…"
 msgstr "Сжатие…"
@@ -2536,6 +2833,11 @@ msgstr "сила"
 #: packages/product/src/review-annotation-editor.tsx
 msgid "Синий"
 msgstr "Синий"
+
+#. placeholder {0}: node.type
+#: packages/product/src/rich-markdown.ts
+msgid "Синтаксис «{0}» пока не поддерживается"
+msgstr "Синтаксис «{0}» пока не поддерживается"
 
 #: packages/product/src/connection-banner.tsx
 #: packages/product/src/sync-indicator.tsx
@@ -2617,6 +2919,10 @@ msgstr "Сначала попробуйте сами — так задача п�
 msgid "Снять выбор"
 msgstr "Снять выбор"
 
+#: packages/product/src/problem-matching.tsx
+msgid "Создать новую задачу"
+msgstr "Создать новую задачу"
+
 #: packages/product/src/staff-outreach.tsx
 #: packages/product/src/support-dialogue.tsx
 msgid "Сообщение"
@@ -2626,7 +2932,17 @@ msgstr "Сообщение"
 msgid "Сообщений пока нет."
 msgstr "Сообщений пока нет."
 
+#: packages/product/src/problem-matching.tsx
+msgid "Сопоставление задач"
+msgstr "Сопоставление задач"
+
+#. placeholder {0}: item.displayNumber
+#: packages/product/src/problem-matching.tsx
+msgid "Сопоставление задачи {0}"
+msgstr "Сопоставление задачи {0}"
+
 #: packages/product/src/classroom-planning.tsx
+#: packages/product/src/metadata-grid.tsx
 msgid "Сохранить"
 msgstr "Сохранить"
 
@@ -2634,7 +2950,9 @@ msgstr "Сохранить"
 msgid "Сохранить результаты"
 msgstr "Сохранить результаты"
 
+#: packages/product/src/metadata-grid.tsx
 #: packages/product/src/oral-result-form.tsx
+#: packages/product/src/problem-matching.tsx
 msgid "Сохраняем…"
 msgstr "Сохраняем…"
 
@@ -2646,6 +2964,10 @@ msgstr "Список"
 msgid "Ссылка VK Видео некорректна"
 msgstr "Ссылка VK Видео некорректна"
 
+#: packages/product/src/rich-markdown.ts
+msgid "Ссылка должна быть безопасным HTTPS URL"
+msgstr "Ссылка должна быть безопасным HTTPS URL"
+
 #. placeholder {0}: index + 1
 #: packages/product/src/attachment.tsx
 #: packages/product/src/chat-composer.tsx
@@ -2656,9 +2978,17 @@ msgstr "Страница {0}"
 msgid "Стрелка"
 msgstr "Стрелка"
 
+#: packages/product/src/metadata-grid.tsx
+msgid "Строка"
+msgstr "Строка"
+
 #: packages/product/src/reaction.ts
 msgid "Суперское решение."
 msgstr "Суперское решение."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Существующая:"
+msgstr "Существующая:"
 
 #: packages/product/src/classroom-planning.tsx
 msgid "Схема аудиторий изменилась. Проверьте новый предпросмотр."
@@ -2667,6 +2997,14 @@ msgstr "Схема аудиторий изменилась. Проверьте �
 #: packages/product/src/classroom-planning.tsx
 msgid "Схема уже изменилась"
 msgstr "Схема уже изменилась"
+
+#: packages/product/src/metadata-grid-table.tsx
+msgid "Таблица метаданных задач"
+msgstr "Таблица метаданных задач"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Таблицы пока не поддерживаются"
+msgstr "Таблицы пока не поддерживаются"
 
 #: packages/product/src/classroom-planning.tsx
 msgid "Такая аудитория уже есть"
@@ -2831,6 +3169,10 @@ msgstr "Фамилия или имя"
 msgid "Фамилия, имя или примерное написание"
 msgstr "Фамилия, имя или примерное написание"
 
+#: packages/product/src/rich-markdown.ts
+msgid "Формула не должна быть пустой"
+msgstr "Формула не должна быть пустой"
+
 #: packages/product/src/review-reaction-inbox.tsx
 msgid "Формулировка реакции"
 msgstr "Формулировка реакции"
@@ -2844,6 +3186,10 @@ msgstr "Фотографии <0>({0} из {maxPhotos})</0>"
 #: packages/product/src/question-photos.tsx
 msgid "Фотография {0}"
 msgstr "Фотография {0}"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Фрагмент не помещается в таблицу. Данные не были изменены."
+msgstr "Фрагмент не помещается в таблицу. Данные не были изменены."
 
 #: packages/product/src/written-material-reassignment.tsx
 msgid "Целевая задача"

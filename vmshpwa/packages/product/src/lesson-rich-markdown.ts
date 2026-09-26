@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import {
   lessonRichDocumentSchema,
   type LessonRichDocument,
@@ -55,7 +56,7 @@ function protectFencedCode(markdown: string): {
 
 function rejectNestedVideos(markdown: string): void {
   if (/^\s{0,3}(?:>\s*|[-*+]\s+|\d+[.)]\s+)(?:::video\[|<iframe\b)/mu.test(markdown)) {
-    throw new RichMarkdownDiagnostic('Видео разрешено только отдельным корневым блоком')
+    throw new RichMarkdownDiagnostic(t`Видео разрешено только отдельным корневым блоком`)
   }
 }
 
@@ -90,7 +91,7 @@ export function parseLessonRichMarkdown(markdown: string): LessonRichDocument {
       const match = /^vmshlessonvideotoken(\d+)$/u.exec(block.children[0].text)
       if (match) {
         const video = extracted.videos[Number(match[1])]
-        if (!video) throw new RichMarkdownDiagnostic('Видео не найдено')
+        if (!video) throw new RichMarkdownDiagnostic(t`Видео не найдено`)
         return video
       }
     }

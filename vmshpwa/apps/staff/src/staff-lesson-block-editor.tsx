@@ -1,3 +1,5 @@
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { t } from '@lingui/core/macro'
 import { useMemo, useState } from 'react'
 
@@ -14,8 +16,8 @@ import { Button, Card, CardContent, Input, Label } from '@vmsh/ui'
 import { LessonVideoDialog } from './lesson-video-dialog'
 
 function formatPublishedAt(value: string | null): string {
-  if (value === null) return 'не опубликован'
-  return new Intl.DateTimeFormat('ru-RU', {
+  if (value === null) return t`не опубликован`
+  return dateTimeFormat(currentLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -23,7 +25,7 @@ function formatPublishedAt(value: string | null): string {
 
 function scheduleInstant(value: string, timezone: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/u.exec(value)
-  if (!match) throw new Error('Укажите время публикации в часовом поясе занятия.')
+  if (!match) throw new Error(t`Укажите время публикации в часовом поясе занятия.`)
 
   const wanted = `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}`
   const formatter = new Intl.DateTimeFormat('sv-SE', {
@@ -56,10 +58,10 @@ function scheduleInstant(value: string, timezone: string): string {
     }
   }
   if (candidates.length === 0) {
-    throw new Error('Такого времени нет в часовом поясе занятия. Выберите другое время.')
+    throw new Error(t`Такого времени нет в часовом поясе занятия. Выберите другое время.`)
   }
   if (candidates.length !== 1) {
-    throw new Error('Это время неоднозначно в часовом поясе занятия. Выберите другое время.')
+    throw new Error(t`Это время неоднозначно в часовом поясе занятия. Выберите другое время.`)
   }
   return new Date(candidates[0] ?? base).toISOString()
 }
@@ -95,7 +97,7 @@ export function StaffLessonBlockEditor({
     } catch (error) {
       return {
         document: null,
-        error: error instanceof Error ? error.message : 'Не удалось разобрать Markdown',
+        error: error instanceof Error ? error.message : t`Не удалось разобрать Markdown`,
       }
     }
   }, [value])
@@ -107,7 +109,7 @@ export function StaffLessonBlockEditor({
     try {
       await operation()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Не удалось изменить блок занятия')
+      setMessage(error instanceof Error ? error.message : t`Не удалось изменить блок занятия`)
     } finally {
       setIsMutating(false)
     }
@@ -121,7 +123,7 @@ export function StaffLessonBlockEditor({
         document: parsed.document,
       })
       setMarkdown(null)
-      setMessage('Черновик сохранён.')
+      setMessage(t`Черновик сохранён.`)
       await refetch()
     })
 
@@ -129,7 +131,7 @@ export function StaffLessonBlockEditor({
     run(async () => {
       const revisionId = block?.draft?.revisionId
       if (!revisionId) {
-        setMessage('Сначала сохраните черновик.')
+        setMessage(t`Сначала сохраните черновик.`)
         return
       }
       await client.publish(groupLessonId, position, etag, {
@@ -137,7 +139,7 @@ export function StaffLessonBlockEditor({
         mode,
         scheduledAt: mode === 'scheduled' ? scheduleInstant(scheduledAt, businessTimezone) : null,
       })
-      setMessage('Настройки публикации сохранены.')
+      setMessage(t`Настройки публикации сохранены.`)
       await refetch()
     })
 
@@ -151,11 +153,11 @@ export function StaffLessonBlockEditor({
         image.name
           .replace(/\.[^.]+$/u, '')
           .replaceAll('[', '')
-          .replaceAll(']', '') || 'Картинка'
+          .replaceAll(']', '') || t`Картинка`
       insert(`\n\n![${alt}](${uploaded.url})\n`)
-      setMessage('Картинка загружена; сохраните черновик, чтобы закрепить её в версии.')
+      setMessage(t`Картинка загружена; сохраните черновик, чтобы закрепить её в версии.`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Не удалось загрузить картинку')
+      setMessage(error instanceof Error ? error.message : t`Не удалось загрузить картинку`)
     } finally {
       setIsUploadingImage(false)
     }
@@ -178,15 +180,15 @@ export function StaffLessonBlockEditor({
         </summary>
         <CardContent className="space-y-3 border-t border-border py-4">
           <p className="text-small text-muted-foreground">
-            Опубликованная версия:{' '}
+            <Trans>Опубликованная версия: </Trans>
             {block?.published
               ? `№${block.published.revisionNumber}, ${formatPublishedAt(block.publishedAt)}`
-              : 'нет'}
+              : t`нет`}
             {block?.pending
-              ? ` · ожидает версия №${block.pending.revisionNumber}${
+              ? t` · ожидает версия №${block.pending.revisionNumber}${
                   block.pendingMode === 'scheduled' && block.scheduledAt
                     ? `: ${formatPublishedAt(block.scheduledAt)}`
-                    : ' вместе с занятием'
+                    : t` вместе с занятием`
                 }`
               : ''}
           </p>
@@ -198,12 +200,12 @@ export function StaffLessonBlockEditor({
           />
           {hasUnsavedChanges ? (
             <p className="text-small text-status-warning" role="status">
-              Есть несохранённые изменения.
+              <Trans>Есть несохранённые изменения.</Trans>
             </p>
           ) : null}
           <div className="flex flex-wrap items-start gap-2">
             <Label className="cursor-pointer rounded-md border border-input px-3 py-2 text-small">
-              {isUploadingImage ? 'Готовим картинку…' : 'Загрузить картинку'}
+              {isUploadingImage ? t`Готовим картинку…` : t`Загрузить картинку`}
               <input
                 accept="image/png,image/jpeg,image/webp"
                 className="sr-only"
@@ -223,8 +225,10 @@ export function StaffLessonBlockEditor({
               {parsed.error}
             </p>
           ) : parsed.document ? (
-            <section aria-label="Предпросмотр черновика" className="space-y-2">
-              <p className="text-small font-medium">Предпросмотр черновика</p>
+            <section aria-label={t`Предпросмотр черновика`} className="space-y-2">
+              <p className="text-small font-medium">
+                <Trans>Предпросмотр черновика</Trans>
+              </p>
               <LessonRichDocumentView
                 document={parsed.document}
                 idPrefix={`staff-draft-${groupLessonId}-${position}`}
@@ -234,7 +238,7 @@ export function StaffLessonBlockEditor({
           {block?.published?.document ? (
             <details className="rounded-md border border-border p-3">
               <summary className="cursor-pointer text-small font-medium">
-                Предпросмотр опубликованной версии
+                <Trans>Предпросмотр опубликованной версии</Trans>
               </summary>
               <LessonRichDocumentView
                 document={block.published.document}
@@ -244,20 +248,26 @@ export function StaffLessonBlockEditor({
           ) : null}
           <div className="grid gap-2 sm:grid-cols-2">
             <Label className="flex-col items-start leading-normal">
-              Публикация
+              <Trans>Публикация</Trans>
               <select
                 className="min-h-10 rounded-md border border-input bg-surface px-3"
                 onChange={(event) => setMode(event.target.value as typeof mode)}
                 value={mode}
               >
-                <option value="now">Сейчас</option>
-                <option value="with_lesson">Вместе с занятием</option>
-                <option value="scheduled">По расписанию</option>
+                <option value="now">
+                  <Trans>Сейчас</Trans>
+                </option>
+                <option value="with_lesson">
+                  <Trans>Вместе с занятием</Trans>
+                </option>
+                <option value="scheduled">
+                  <Trans>По расписанию</Trans>
+                </option>
               </select>
             </Label>
             {mode === 'scheduled' ? (
               <Label className="flex-col items-start leading-normal">
-                Время ({businessTimezone})
+                <Trans>Время ({businessTimezone})</Trans>
                 <Input
                   onChange={(event) => setScheduledAt(event.target.value)}
                   type="datetime-local"
@@ -268,7 +278,7 @@ export function StaffLessonBlockEditor({
           </div>
           <div className="flex flex-wrap items-start gap-2">
             <Button disabled={isMutating || Boolean(parsed.error)} onClick={save} size="sm">
-              Сохранить черновик
+              <Trans>Сохранить черновик</Trans>
             </Button>
             <Button
               disabled={isMutating || !block?.draft || hasUnsavedChanges}
@@ -276,7 +286,7 @@ export function StaffLessonBlockEditor({
               size="sm"
               variant="outline"
             >
-              Применить публикацию
+              <Trans>Применить публикацию</Trans>
             </Button>
             {block?.pending ? (
               <Button
@@ -284,14 +294,14 @@ export function StaffLessonBlockEditor({
                 onClick={() =>
                   void run(async () => {
                     await client.cancel(groupLessonId, position, etag)
-                    setMessage('Отложенная публикация отменена.')
+                    setMessage(t`Отложенная публикация отменена.`)
                     await refetch()
                   })
                 }
                 size="sm"
                 variant="outline"
               >
-                Отменить отложенную публикацию
+                <Trans>Отменить отложенную публикацию</Trans>
               </Button>
             ) : null}
             {block?.published ? (
@@ -300,14 +310,14 @@ export function StaffLessonBlockEditor({
                 onClick={() =>
                   void run(async () => {
                     await client.hide(groupLessonId, position, etag)
-                    setMessage('Опубликованная версия скрыта.')
+                    setMessage(t`Опубликованная версия скрыта.`)
                     await refetch()
                   })
                 }
                 size="sm"
                 variant="outline"
               >
-                Скрыть
+                <Trans>Скрыть</Trans>
               </Button>
             ) : null}
           </div>
@@ -334,15 +344,21 @@ export function StaffLessonBlocksEditor({ groupLessonId }: { groupLessonId: stri
   const query = useStaffLessonBlocksQuery(client, groupLessonId)
 
   if (query.isPending) {
-    return <p className="text-small text-muted-foreground">Загружаем блоки занятия…</p>
+    return (
+      <p className="text-small text-muted-foreground">
+        <Trans>Загружаем блоки занятия…</Trans>
+      </p>
+    )
   }
   if (query.isError || !query.data) {
     return (
       <Card>
         <CardContent className="space-y-2 p-4">
-          <p className="text-small text-status-error">Не удалось загрузить блоки занятия.</p>
+          <p className="text-small text-status-error">
+            <Trans>Не удалось загрузить блоки занятия.</Trans>
+          </p>
           <Button onClick={() => void query.refetch()} size="sm" variant="outline">
-            Повторить
+            <Trans>Повторить</Trans>
           </Button>
         </CardContent>
       </Card>
@@ -358,7 +374,7 @@ export function StaffLessonBlocksEditor({ groupLessonId }: { groupLessonId: stri
         groupLessonId={groupLessonId}
         position="before"
         refetch={query.refetch}
-        title="Блок перед задачами"
+        title={t`Блок перед задачами`}
       />
       <StaffLessonBlockEditor
         block={query.data.after}
@@ -367,7 +383,7 @@ export function StaffLessonBlocksEditor({ groupLessonId }: { groupLessonId: stri
         groupLessonId={groupLessonId}
         position="after"
         refetch={query.refetch}
-        title="Блок после задач"
+        title={t`Блок после задач`}
       />
     </section>
   )

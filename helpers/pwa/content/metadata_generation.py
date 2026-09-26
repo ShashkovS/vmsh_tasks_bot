@@ -16,6 +16,7 @@ from typing import Any, Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from helpers.consts import ANS_TYPES_DECODER
+from helpers.pwa.i18n import N_, translate
 from models.pwa.content import ANSWER_TYPE_VALUES
 from vmsh_openrouter_tools_fixed_v2.vmsh_openrouter_contract import (
     generate_lesson_json,
@@ -44,11 +45,16 @@ class MetadataGenerationError(RuntimeError):
     """The upstream generator could not produce a usable draft."""
 
     def __init__(
-        self, message: str, *, public_message: str | None = None
+        self,
+        message: str,
+        *,
+        public_message: str | None = None,
+        public_params: dict[str, object] | None = None,
     ) -> None:
         super().__init__(message)
+        self.public_params = public_params
         self.public_message = public_message or (
-            "Не удалось сгенерировать metadata. Повторите попытку."
+            N_("Не удалось сгенерировать metadata. Повторите попытку.")
         )
 
 
@@ -75,48 +81,61 @@ def _upstream_generation_error(error: Exception) -> MetadataGenerationError:
         return MetadataGenerationError(
             f"OpenRouter denied metadata generation with HTTP {status_code}",
             public_message=(
-                f"OpenRouter отклонил запрос ({status_code}: доступ запрещён). "
-                "Проверьте настоящий OPENROUTER_API_KEY в production-конфиге "
-                "и ограничения этого ключа."
+                N_(
+                    "OpenRouter отклонил запрос ({status_code}: доступ запрещён). "
+                    "Проверьте настоящий OPENROUTER_API_KEY в production-конфиге "
+                    "и ограничения этого ключа."
+                )
             ),
+            public_params={"status_code": status_code},
         )
     if status_code == 402:
         return MetadataGenerationError(
             "OpenRouter rejected metadata generation because the account has no credit",
             public_message=(
-                "OpenRouter не выполнил запрос: у аккаунта нет доступного "
-                "кредита. Пополните баланс или выберите доступную модель."
+                N_(
+                    "OpenRouter не выполнил запрос: у аккаунта нет доступного "
+                    "кредита. Пополните баланс или выберите доступную модель."
+                )
             ),
         )
     if status_code == 429:
         return MetadataGenerationError(
             "OpenRouter rate limited metadata generation",
             public_message=(
-                "OpenRouter временно ограничил запросы. Подождите немного и "
-                "повторите попытку."
+                N_(
+                    "OpenRouter временно ограничил запросы. Подождите немного и "
+                    "повторите попытку."
+                )
             ),
         )
     if status_code in {400, 413, 422}:
         return MetadataGenerationError(
             f"OpenRouter rejected metadata generation request with HTTP {status_code}",
             public_message=(
-                "OpenRouter не принял параметры генерации. Технические детали "
-                "записаны в журнал сервера."
+                N_(
+                    "OpenRouter не принял параметры генерации. Технические детали "
+                    "записаны в журнал сервера."
+                )
             ),
         )
     if status_code is not None:
         return MetadataGenerationError(
             f"OpenRouter metadata generation failed with HTTP {status_code}",
             public_message=(
-                "OpenRouter временно не выполнил генерацию. Повторите попытку; "
-                "технические детали записаны в журнал сервера."
+                N_(
+                    "OpenRouter временно не выполнил генерацию. Повторите попытку; "
+                    "технические детали записаны в журнал сервера."
+                )
             ),
         )
     return MetadataGenerationError(
         "OpenRouter metadata request failed before a response was received",
         public_message=(
-            "Не удалось связаться с OpenRouter. Повторите попытку; технические "
-            "детали записаны в журнал сервера."
+            N_(
+                "Не удалось связаться с OpenRouter. Повторите попытку; технические "
+                "детали записаны в журнал сервера."
+            )
         ),
     )
 
@@ -163,6 +182,8 @@ class MetadataGenerationRequest:
     source_filename: str
     latex_text: str
     targets: tuple[MetadataGenerationTarget, ...]
+    # P6: response-only warnings; model prompts and generated content stay unchanged.
+    locale: str = "ru"
 
 
 @dataclass(frozen=True, slots=True)
@@ -252,12 +273,16 @@ class OpenRouterMetadataGenerator:
             raise MetadataGenerationUnavailable(
                 "OpenRouter is not configured with a usable API key",
                 public_message=(
-                    "Генерация metadata не настроена: укажите настоящий "
-                    "OPENROUTER_API_KEY в production-конфиге."
+                    N_(
+                        "Генерация metadata не настроена: укажите настоящий "
+                        "OPENROUTER_API_KEY в production-конфиге."
+                    )
                 ),
             )
         if len(request.latex_text) > MAX_LATEX_CHARS:
-            raise MetadataGenerationError("LaTeX source is too large for metadata generation")
+            raise MetadataGenerationError(
+                "LaTeX source is too large for metadata generation"
+            )
 
         try:
             lesson_number, lesson_group = infer_lesson_identity(
@@ -291,8 +316,10 @@ class OpenRouterMetadataGenerator:
                 "OpenRouter metadata generation exceeded the local request deadline "
                 f"of {timeout_seconds:g} seconds",
                 public_message=(
-                    "OpenRouter не ответил за отведённое время. Черновик не был "
-                    "сохранён; повторите генерацию позже."
+                    N_(
+                        "OpenRouter не ответил за отведённое время. Черновик не был "
+                        "сохранён; повторите генерацию позже."
+                    )
                 ),
             ) from error
         except Exception as error:
@@ -341,7 +368,9 @@ def _validation_text(row: Mapping[str, object]) -> str | None:
             return value.strip()
     if mode == "choices":
         choices = raw_validation.get("choices")
-        if isinstance(choices, list) and all(isinstance(choice, str) for choice in choices):
+        if isinstance(choices, list) and all(
+            isinstance(choice, str) for choice in choices
+        ):
             normalized = [choice.strip() for choice in choices if choice.strip()]
             if normalized:
                 return ";".join(normalized)
@@ -371,10 +400,12 @@ def _normalize_reference_markup(
             raise MetadataGenerationError("VMSh markup contains duplicate task rows")
         generated_by_identity[identity] = raw_row
 
-    target_by_identity = {_target_identity(target): target for target in request.targets}
-    if len(target_by_identity) != len(request.targets) or set(generated_by_identity) != set(
-        target_by_identity
-    ):
+    target_by_identity = {
+        _target_identity(target): target for target in request.targets
+    }
+    if len(target_by_identity) != len(request.targets) or set(
+        generated_by_identity
+    ) != set(target_by_identity):
         raise MetadataGenerationError(
             "VMSh markup rows do not match the compiled tasks; no draft was applied"
         )
@@ -392,7 +423,9 @@ def _normalize_reference_markup(
             else None
         )
         if title is None or problem_type is None:
-            raise MetadataGenerationError("VMSh markup row has invalid title or task type")
+            raise MetadataGenerationError(
+                "VMSh markup row has invalid title or task type"
+            )
         if problem_type == 1:
             raw_answer_type = generated_row.get("ans_type")
             answer_type = (
@@ -401,7 +434,9 @@ def _normalize_reference_markup(
                 else None
             )
             if answer_type is None or int(answer_type) not in ANSWER_TYPE_VALUES:
-                raise MetadataGenerationError("VMSh markup row has an unsupported answer type")
+                raise MetadataGenerationError(
+                    "VMSh markup row has an unsupported answer type"
+                )
             answer_validation = _validation_text(generated_row)
             correct_answers = _normalized_text_list(
                 generated_row.get("correct_answers"), field="correct_answers"
@@ -432,13 +467,21 @@ def _normalize_reference_markup(
                 reason = (
                     checker_reason.strip()
                     if isinstance(checker_reason, str) and checker_reason.strip()
-                    else "нужен отдельный checker"
+                    else translate(request.locale, N_("нужен отдельный checker"))
                 )
                 warnings.append(
-                    f"{target.display_number}: {reason}; добавьте checker вручную перед публикацией"
+                    translate(
+                        request.locale,
+                        N_(
+                            "{number}: {reason}; добавьте checker вручную перед публикацией"
+                        ),
+                        {"number": target.display_number, "reason": reason},
+                    )
                 )
             elif needs_checker is not False:
-                raise MetadataGenerationError("VMSh markup row has invalid needs_checker")
+                raise MetadataGenerationError(
+                    "VMSh markup row has invalid needs_checker"
+                )
         else:
             answer_type = None
             answer_validation = None
@@ -478,15 +521,18 @@ def _normalize_generated_rows(
     request: MetadataGenerationRequest, generated: GeneratedMetadata
 ) -> MetadataGenerationResult:
     target_by_identity = {
-        (target.source_ordinal, target.source_item): target for target in request.targets
+        (target.source_ordinal, target.source_item): target
+        for target in request.targets
     }
     generated_by_identity = {
         (row.source_ordinal, row.source_item): row for row in generated.rows
     }
-    if len(generated_by_identity) != len(generated.rows) or set(generated_by_identity) != set(
-        target_by_identity
-    ):
-        raise MetadataGenerationError("OpenRouter metadata rows do not match the compiled tasks")
+    if len(generated_by_identity) != len(generated.rows) or set(
+        generated_by_identity
+    ) != set(target_by_identity):
+        raise MetadataGenerationError(
+            "OpenRouter metadata rows do not match the compiled tasks"
+        )
 
     rows: list[dict[str, object]] = []
     warnings = [_optional_text(warning) for warning in generated.warnings]
@@ -497,7 +543,9 @@ def _normalize_generated_rows(
             raise MetadataGenerationError("OpenRouter generated an empty task title")
         if row.problem_type == 1:
             if row.answer_type not in ANSWER_TYPE_VALUES:
-                raise MetadataGenerationError("OpenRouter generated an unsupported answer type")
+                raise MetadataGenerationError(
+                    "OpenRouter generated an unsupported answer type"
+                )
             answer_type = row.answer_type
             answer_validation = _optional_text(row.answer_validation)
             validation_error = _optional_text(row.validation_error)
@@ -512,8 +560,15 @@ def _normalize_generated_rows(
             wrong_answer = None
             congratulation = None
         if row.review_note:
+            note = _optional_text(row.review_note)
             warnings.append(
-                f"{target.display_number}: {_optional_text(row.review_note) or 'нужна проверка'}"
+                f"{target.display_number}: {note}"
+                if note
+                else translate(
+                    request.locale,
+                    N_("{number}: нужна проверка"),
+                    {"number": target.display_number},
+                )
             )
         rows.append(
             {

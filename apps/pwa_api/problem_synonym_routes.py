@@ -17,6 +17,7 @@ from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.audit import insert_audit_event
 from helpers.pwa.app_keys import PWA_DATABASE
+from helpers.pwa.i18n import N_
 from models.pwa.auth import AuthAudience
 from models.pwa.problem_synonyms import (
     ProblemSynonymError,
@@ -44,7 +45,7 @@ def _factory(request: web.Request):
         raise PwaApiError(
             status=503,
             code="problem_synonyms_unavailable",
-            message="Синонимы задач временно недоступны",
+            message=N_("Синонимы задач временно недоступны"),
         )
     return state.factory
 
@@ -59,7 +60,7 @@ def _admin_user_id(request: web.Request) -> int:
         raise PwaApiError(
             status=403,
             code="forbidden",
-            message="Объединять и разделять задачи может только администратор",
+            message=N_("Объединять и разделять задачи может только администратор"),
         )
     return principal.linked_user_id
 
@@ -77,7 +78,7 @@ def _public_id(value: str, *, code: str, message: str) -> str:
 async def _json(request: web.Request, fields: set[str]) -> dict[str, object]:
     if request.content_type != "application/json":
         raise PwaApiError(
-            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+            status=422, code="validation_error", message=N_("Тело запроса должно быть JSON")
         )
     try:
         payload = json.loads(await request.read())
@@ -85,7 +86,7 @@ async def _json(request: web.Request, fields: set[str]) -> dict[str, object]:
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Проверьте выбранные задачи",
+            message=N_("Проверьте выбранные задачи"),
         ) from error
     if (
         not isinstance(payload, dict)
@@ -96,7 +97,7 @@ async def _json(request: web.Request, fields: set[str]) -> dict[str, object]:
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Проверьте выбранные задачи",
+            message=N_("Проверьте выбранные задачи"),
         )
     return payload
 
@@ -114,7 +115,7 @@ def _problem_ids(value: object, *, minimum: int) -> tuple[str, ...]:
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Выберите задачи без повторов",
+            message=N_("Выберите задачи без повторов"),
         )
     return tuple(value)
 
@@ -124,7 +125,7 @@ def _preview_hash(value: object) -> str:
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Сначала обновите предпросмотр",
+            message=N_("Сначала обновите предпросмотр"),
         )
     return value
 
@@ -246,29 +247,29 @@ async def _invalidate(
 def _domain_error(error: ProblemSynonymError) -> PwaApiError:
     code = str(error)
     messages = {
-        "problem_selection_invalid": (422, "Выберите задачи без повторов"),
-        "problem_not_found": (404, "Задача не найдена"),
-        "course_lesson_not_found": (404, "Занятие не найдено"),
-        "synonym_not_found": (404, "Группа синонимов не найдена"),
-        "course_lesson_mismatch": (422, "Задачи относятся к разным занятиям курса"),
+        "problem_selection_invalid": (422, N_("Выберите задачи без повторов")),
+        "problem_not_found": (404, N_("Задача не найдена")),
+        "course_lesson_not_found": (404, N_("Занятие не найдено")),
+        "synonym_not_found": (404, N_("Группа синонимов не найдена")),
+        "course_lesson_mismatch": (422, N_("Задачи относятся к разным занятиям курса")),
         "group_lesson_duplicate": (
             422,
-            "В одной группе можно выбрать только одну задачу",
+            N_("В одной группе можно выбрать только одну задачу"),
         ),
         "different_synonym_groups": (
             409,
-            "Сначала разделите существующие группы синонимов",
+            N_("Сначала разделите существующие группы синонимов"),
         ),
-        "synonym_state_invalid": (409, "Группа синонимов уже изменилась"),
+        "synonym_state_invalid": (409, N_("Группа синонимов уже изменилась")),
         "problem_not_in_synonym": (
             422,
-            "Выбранная задача не входит в эту группу синонимов",
+            N_("Выбранная задача не входит в эту группу синонимов"),
         ),
-        "preview_changed": (409, "Задачи изменились после предпросмотра"),
-        "version_conflict": (409, "Группа синонимов уже изменилась"),
+        "preview_changed": (409, N_("Задачи изменились после предпросмотра")),
+        "version_conflict": (409, N_("Группа синонимов уже изменилась")),
     }
     status, message = messages.get(
-        code, (409, "Операцию с синонимами нельзя выполнить")
+        code, (409, N_("Операцию с синонимами нельзя выполнить"))
     )
     return PwaApiError(status=status, code=f"problem_synonym_{code}", message=message)
 
@@ -281,7 +282,7 @@ async def get_synonym_candidates(request: web.Request) -> web.Response:
     course_lesson_public_id = _public_id(
         request.match_info["course_lesson_public_id"],
         code="course_lesson_not_found",
-        message="Занятие не найдено",
+        message=N_("Занятие не найдено"),
     )
     try:
         candidates, active_groups = await _factory(request).run_read_async(
@@ -333,7 +334,7 @@ async def preview_problem_synonyms(request: web.Request) -> web.Response:
     mode = payload["mode"]
     if mode not in {"merge", "split"}:
         raise PwaApiError(
-            status=422, code="validation_error", message="Выберите действие"
+            status=422, code="validation_error", message=N_("Выберите действие")
         )
     problem_ids = _problem_ids(
         payload["problemIds"], minimum=2 if mode == "merge" else 1
@@ -341,12 +342,12 @@ async def preview_problem_synonyms(request: web.Request) -> web.Response:
     synonym_id = payload["synonymId"]
     if mode == "merge" and synonym_id is not None:
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте выбранные задачи"
+            status=422, code="validation_error", message=N_("Проверьте выбранные задачи")
         )
     if mode == "split":
         if not isinstance(synonym_id, str) or _PUBLIC_ID.fullmatch(synonym_id) is None:
             raise PwaApiError(
-                status=422, code="validation_error", message="Выберите группу синонимов"
+                status=422, code="validation_error", message=N_("Выберите группу синонимов")
             )
     try:
         if mode == "merge":
@@ -434,7 +435,7 @@ async def merge_problem_synonyms_route(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=409,
             code="problem_synonym_conflict",
-            message="Эти задачи уже изменились",
+            message=N_("Эти задачи уже изменились"),
         ) from error
     await _invalidate(request, plan, reason="problem-synonyms-changed")
     return web.json_response(
@@ -450,7 +451,7 @@ async def split_problem_synonyms_route(request: web.Request) -> web.Response:
     synonym_public_id = _public_id(
         request.match_info["synonym_public_id"],
         code="problem_synonym_not_found",
-        message="Группа синонимов не найдена",
+        message=N_("Группа синонимов не найдена"),
     )
     payload = await _json(
         request,
@@ -463,7 +464,7 @@ async def split_problem_synonyms_route(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422,
             code="validation_error",
-            message="Укажите причину разделения",
+            message=N_("Укажите причину разделения"),
         )
     reason = reason.strip()
     now = datetime.now(UTC).isoformat()

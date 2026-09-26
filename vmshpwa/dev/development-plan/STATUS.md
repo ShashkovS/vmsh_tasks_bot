@@ -1,5 +1,12 @@
 # Статус плана разработки
 
+## i18n P6 — 26 September 2026, implementation verified; performance gate open
+
+Staff content, lessons, imports, synonyms, figure layout and Whiteboard controls
+are translated, with source content and import/export formats preserved.
+Functional checks pass; the cumulative P0 performance budget remains exceeded
+and has not been rebased. See the [P6 evidence and completion boundary](24-i18n-p6-report.md).
+
 ## Интернационализация, P5 — 24 сентября 2026, реализовано локально
 
 Staff catalog/schedule, rooms and assignments, weekly oral windows, news,
