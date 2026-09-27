@@ -72,29 +72,43 @@ registerRoute(
     },
   ),
 )
+// Complete lesson image copies are immutable and pinned until replacement/logout.
+// See docs/offline-current-lessons.md and prepare-offline-lessons.ts.
 registerRoute(
-  ({ request, url }) => {
-    return shouldCacheRecentMediaRequest({
+  ({ request, url }) =>
+    request.method === 'GET' &&
+    request.destination === 'image' &&
+    (url.origin === self.location.origin || url.origin === publicMediaOrigin),
+  async ({ request, event }) => {
+    for (const name of await caches.keys()) {
+      if (!name.startsWith('vmsh-student-offline-assets-')) continue
+      const cached = await (await caches.open(name)).match(request)
+      if (cached) return cached
+    }
+    // Legacy condition envelopes can contain audience API asset URLs. Serve
+    // them only when explicitly prepared; do not runtime-cache arbitrary images.
+    const recent = shouldCacheRecentMediaRequest({
       method: request.method,
       destination: request.destination,
-      url,
+      url: new URL(request.url),
       applicationOrigin: self.location.origin,
       audienceGeneratedMediaPrefix: '/student/media/generated/',
       publicMediaOrigin,
     })
+    return recent ? recentMediaStrategy.handle({ request, event }) : fetch(request)
   },
-  new CacheFirst({
-    cacheName: 'vmsh-179-student-recent-media-v1',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }) as WorkboxPlugin,
-      new ExpirationPlugin({
-        maxAgeSeconds: twoWeeksInSeconds,
-        maxEntries: 80,
-        purgeOnQuotaError: true,
-      }) as WorkboxPlugin,
-    ],
-  }),
 )
+const recentMediaStrategy = new CacheFirst({
+  cacheName: 'vmsh-179-student-recent-media-v1',
+  plugins: [
+    new CacheableResponsePlugin({ statuses: [0, 200] }) as WorkboxPlugin,
+    new ExpirationPlugin({
+      maxAgeSeconds: twoWeeksInSeconds,
+      maxEntries: 80,
+      purgeOnQuotaError: true,
+    }) as WorkboxPlugin,
+  ],
+})
 
 self.addEventListener('message', (event) => {
   const message: unknown = event.data

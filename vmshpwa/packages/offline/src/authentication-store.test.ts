@@ -108,7 +108,7 @@ describe('offline authentication store', () => {
     expect(serialized).not.toContain('password')
   })
 
-  it('fails closed and clears owner data when the durable boundary expired', async () => {
+  it('preserves Student reading and drafts past the server session expiry', async () => {
     const target = database('auth-expired')
     const online = new Date('2026-07-27T10:00:00.000Z')
     const store = createOfflineAuthenticationStore(target, 'student', { now: () => online })
@@ -124,11 +124,11 @@ describe('offline authentication store', () => {
     const afterExpiry = createOfflineAuthenticationStore(target, 'student', {
       now: () => new Date('2036-08-10T00:00:00.000Z'),
     })
-    await expect(afterExpiry.read()).resolves.toBeNull()
-    expect(await target.authentication.count()).toBe(0)
-    expect(await target.documents.where('ownerId').equals(ownerId).count()).toBe(0)
-    expect(await target.outbox.where('ownerId').equals(ownerId).count()).toBe(0)
-    expect(await target.writtenDraftPhotos.where('ownerId').equals(ownerId).count()).toBe(0)
+    expect((await afterExpiry.read())?.ownerId).toBe(ownerId)
+    expect(await target.authentication.count()).toBe(1)
+    expect(await target.documents.where('ownerId').equals(ownerId).count()).toBe(1)
+    expect(await target.outbox.where('ownerId').equals(ownerId).count()).toBe(1)
+    expect(await target.writtenDraftPhotos.where('ownerId').equals(ownerId).count()).toBe(1)
   })
 
   it('atomically removes the previous owner cache on an account switch', async () => {
@@ -178,4 +178,18 @@ describe('offline authentication store', () => {
     await expect(familyStore.save(context())).rejects.toThrow('audience')
     expect(await target.authentication.count()).toBe(0)
   })
+})
+
+it('keeps the Family expiry boundary unchanged', async () => {
+  const { default: familyFixture } = await import('@vmsh/contracts/fixtures/auth/family.v1.json')
+  const target = new VmshOfflineDatabase({ audience: 'family', instance: 'family-expiry' })
+  databases.add(target)
+  const value = authContextSchema.parse(familyFixture.authContext)
+  const store = createOfflineAuthenticationStore(target, 'family', { now: () => NOW })
+  await store.save(value)
+  const expired = createOfflineAuthenticationStore(target, 'family', {
+    now: () => new Date(Date.parse(value.policy.sessionExpiresAt) + 1),
+  })
+  expect(await expired.read()).toBeNull()
+  expect(await target.authentication.count()).toBe(0)
 })

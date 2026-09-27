@@ -10,6 +10,7 @@ import { type CachedDocument, type VmshOfflineDatabase } from './database'
  * See `dev/development-plan/07-phase-3-student-reading.md`.
  */
 export const offlineDocumentKindSchema = z.enum([
+  'student-offline-bundle',
   'student-home',
   'student-course-access',
   'student-course-enrollment',
@@ -138,6 +139,16 @@ export async function pruneOfflineDocuments(
   const deleteKeys: string[] = []
   for (const record of records) {
     if (entries <= maxEntries && bytes <= maxBytes) break
+    // Complete current lessons are pinned; archive writes cannot evict them.
+    if (
+      record.key ===
+      offlineDocumentKey({
+        ownerId: parsedOwnerId,
+        kind: 'student-offline-bundle',
+        resourceParts: ['current'],
+      })
+    )
+      continue
     deleteKeys.push(record.key)
     entries -= 1
     bytes -= approximateBytes(record)

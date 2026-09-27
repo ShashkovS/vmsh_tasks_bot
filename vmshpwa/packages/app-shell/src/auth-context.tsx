@@ -46,6 +46,7 @@ export type AuthenticationState =
       context?: AuthSessionContext
       principal?: Principal
       sessionExpiresAt?: string
+      sessionExpired?: boolean
     }
   | { status: 'error'; error: unknown }
 
@@ -174,6 +175,7 @@ export function AuthenticationProvider({
   }, [offlineStore])
 
   const currentSessionQuery = useQuery({
+    networkMode: offlineStore ? 'always' : 'online',
     queryKey,
     queryFn: async ({ signal }) => {
       try {
@@ -298,7 +300,9 @@ export function AuthenticationProvider({
       if (timeout) clearTimeout(timeout)
       const remaining = Number.isFinite(expiresAt) ? expiresAt - Date.now() : 0
       if (remaining <= 0) {
-        endLocalSession('session_expired')
+        // docs/offline-current-lessons.md: expiry removes server authority, not Student reading.
+        if (audience === 'student' && offlineStore) setClockNow(Date.now())
+        else endLocalSession('session_expired')
         return
       }
       timeout = setTimeout(
@@ -324,7 +328,14 @@ export function AuthenticationProvider({
         document.removeEventListener('visibilitychange', checkAfterBrowserResume)
       }
     }
-  }, [currentSessionQuery.data, endLocalSession, locallySignedOut, offlineSnapshotState])
+  }, [
+    audience,
+    offlineStore,
+    currentSessionQuery.data,
+    endLocalSession,
+    locallySignedOut,
+    offlineSnapshotState,
+  ])
 
   const state = useMemo<AuthenticationState>(() => {
     if (locallySignedOut) {
@@ -337,7 +348,19 @@ export function AuthenticationProvider({
     if (verifiedContext) {
       const expiresAt = Date.parse(verifiedContext.policy.sessionExpiresAt)
       if (!Number.isFinite(expiresAt) || clockNow >= expiresAt) {
-        return { status: 'unauthenticated', reason: 'session_expired' }
+        if (audience === 'student' && offlineStore && !currentSessionQuery.error) {
+          return {
+            status: 'offline-unverified',
+            principal: verifiedContext.principal,
+            sessionExpiresAt: verifiedContext.policy.sessionExpiresAt,
+            sessionExpired: clockNow >= Date.parse(verifiedContext.policy.sessionExpiresAt),
+            error: new AuthNetworkError({
+              cause: new Error('Session requires online verification'),
+            }),
+          }
+        }
+        if (audience !== 'student' || !offlineStore)
+          return { status: 'unauthenticated', reason: 'session_expired' }
       }
     }
 
@@ -363,16 +386,21 @@ export function AuthenticationProvider({
             context: verifiedContext,
             principal: verifiedContext.principal,
             sessionExpiresAt: verifiedContext.policy.sessionExpiresAt,
+            sessionExpired: clockNow >= Date.parse(verifiedContext.policy.sessionExpiresAt),
           }
         }
         if (offlineSnapshotState.status === 'loading') return { status: 'checking' }
         const snapshot = offlineSnapshotState.snapshot
-        if (snapshot && clockNow < Date.parse(snapshot.sessionExpiresAt)) {
+        if (
+          snapshot &&
+          (audience === 'student' || clockNow < Date.parse(snapshot.sessionExpiresAt))
+        ) {
           return {
             status: 'offline-unverified',
             error: queryError,
             principal: snapshot.principal,
             sessionExpiresAt: snapshot.sessionExpiresAt,
+            sessionExpired: clockNow >= Date.parse(snapshot.sessionExpiresAt),
           }
         }
         return { status: 'offline-unverified', error: queryError }
@@ -395,6 +423,8 @@ export function AuthenticationProvider({
     localEndReason,
     locallySignedOut,
     offlineSnapshotState,
+    audience,
+    offlineStore,
   ])
 
   const observabilityAccountId = authenticationStatePrincipal(state)?.accountId ?? null

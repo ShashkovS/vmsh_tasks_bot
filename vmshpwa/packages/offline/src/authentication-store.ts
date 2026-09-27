@@ -1,3 +1,4 @@
+import { clearLessonAssetCaches } from './lesson-bundle'
 import { z } from 'zod'
 
 import {
@@ -103,7 +104,7 @@ export function createOfflineAuthenticationStore(
         stored.ownerId !== snapshot.ownerId ||
         stored.expiresAt !== snapshot.sessionExpiresAt ||
         stored.cachedAt !== snapshot.cachedAt ||
-        Date.parse(snapshot.sessionExpiresAt) <= now().getTime()
+        (expectedAudience !== 'student' && Date.parse(snapshot.sessionExpiresAt) <= now().getTime())
       if (!invalid) return snapshot
 
       await database.transaction('rw', ownerScopedTables(database), async () => {
@@ -112,6 +113,8 @@ export function createOfflineAuthenticationStore(
         }
         await database.authentication.delete('current')
       })
+      if (typeof stored.ownerId === 'string')
+        await clearLessonAssetCaches(database.name, stored.ownerId)
       return null
     },
 
@@ -132,6 +135,7 @@ export function createOfflineAuthenticationStore(
         throw new TypeError('Expired authentication cannot unlock an offline cache')
       }
 
+      const previousOwner = (await database.authentication.get('current'))?.ownerId
       await database.transaction('rw', ownerScopedTables(database), async () => {
         const previous = await database.authentication.get('current')
         if (previous && previous.ownerId !== snapshot.ownerId) {
@@ -139,15 +143,19 @@ export function createOfflineAuthenticationStore(
         }
         await database.authentication.put(record(snapshot))
       })
+      if (previousOwner && previousOwner !== snapshot.ownerId)
+        await clearLessonAssetCaches(database.name, previousOwner)
       return snapshot
     },
 
     async clear() {
+      const ownerId = (await database.authentication.get('current'))?.ownerId
       await database.transaction('rw', ownerScopedTables(database), async () => {
         const current = await database.authentication.get('current')
         if (current) await clearOwner(database, current.ownerId)
         await database.authentication.delete('current')
       })
+      if (ownerId) await clearLessonAssetCaches(database.name, ownerId)
     },
   }
 }

@@ -16,6 +16,7 @@ import {
   groupSummarySchema,
   studentHomeContractFixtureSchema,
   studentHomeResponseSchema,
+  studentOfflineLessonsResponseSchema,
   studentLessonContractFixtureSchema,
   studentLessonListResponseSchema,
   studentLessonSummarySchema,
@@ -270,4 +271,24 @@ it('distinguishes lifetime hint consent from the current publication audit', () 
     confirmationRequired: false,
     publicationId: 'lp-new',
   })
+})
+
+it('validates current lessons across groups and rejects duplicate group scopes', () => {
+  const first = studentLessonSummarySchema.parse(studentLessonsFixture.response.lessons[0])
+  const second = {
+    ...first,
+    groupId: 'group-fixture-alpha-two',
+    groupLessonId: 'lesson-other-level',
+  }
+  const response = {
+    generatedAt: studentHomeFixture.response.generatedAt,
+    lessons: [first, second],
+  }
+  expect(studentOfflineLessonsResponseSchema.parse(response).lessons).toHaveLength(2)
+  expect(
+    studentOfflineLessonsResponseSchema.safeParse({ ...response, lessons: [first, first] }).success,
+  ).toBe(false)
+  expect(
+    studentOfflineLessonsResponseSchema.safeParse({ ...response, generatedAt: 'invalid' }).success,
+  ).toBe(false)
 })

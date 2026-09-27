@@ -5922,3 +5922,59 @@ async def test_content_diagnostics_translate_on_read_without_rewriting_revision(
     after = (await repository.get_revision_context(revision_id)).revision
     assert after == before
     assert after.latex_text == source
+
+
+async def test_student_offline_lessons_include_allowed_groups_without_switching(
+    content_http: ContentHttpFixture,
+):
+    """docs/offline-current-lessons.md: same current policy for all allowed groups."""
+    fixture = content_http
+    for group_lesson in (fixture.group_lesson_a, fixture.group_lesson_b):
+        revision, _ = await _upload_and_compile(
+            fixture,
+            group_lesson=group_lesson,
+            kind="condition",
+            filename=f"offline-{group_lesson}.tex",
+            source=r"\задача Сохранённое условие \кзадача",
+        )
+        publication = await _publish(
+            fixture,
+            group_lesson=group_lesson,
+            kind="condition",
+            revision_id=revision["revisionId"],
+        )
+        assert publication.status == 201, await publication.text()
+
+    async def student_get(path):
+        return await fixture.client.get(
+            path, cookies=_cookie(fixture, "student"), headers=_headers()
+        )
+
+    # A non-granted published level is excluded, then a real grant includes it.
+    limited = await student_get("/student/api/v1/offline-lessons")
+    assert {lesson["groupLessonId"] for lesson in (await limited.json())["lessons"]} == {
+        fixture.group_lesson_a
+    }
+
+    def grant(connection):
+        connection.execute(
+            "INSERT INTO course_group_access "
+            "(enrollment_id, course_id, group_id, valid_from, created_at, updated_at) "
+            "VALUES (1, 1, 'content-b', ?, ?, ?)",
+            (_timestamp(), _timestamp(), _timestamp()),
+        )
+
+    await fixture.factory.run_write_async(grant)
+    before = await student_get("/student/api/v1/courses")
+    response = await student_get("/student/api/v1/offline-lessons")
+    assert response.status == 200, await response.text()
+    payload = await response.json()
+    assert {lesson["groupLessonId"] for lesson in payload["lessons"]} == {
+        fixture.group_lesson_a, fixture.group_lesson_b
+    }
+    after = await student_get("/student/api/v1/courses")
+    assert await before.json() == await after.json()
+    forbidden_selector = await student_get("/student/api/v1/offline-lessons?group=other")
+    assert forbidden_selector.status == 422
+    anonymous = await fixture.client.get("/student/api/v1/offline-lessons", headers=_headers())
+    assert anonymous.status == 401

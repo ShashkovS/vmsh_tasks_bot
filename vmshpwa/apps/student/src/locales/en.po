@@ -299,6 +299,10 @@ msgstr "Deadlines and new materials"
 msgid "Для ваших групп пока нет запланированных очных занятий."
 msgstr "There are no in-person lessons scheduled for your groups yet."
 
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Для отправки ответов и других действий войдите снова при наличии интернета."
+msgstr "To submit answers or perform other actions, sign in again when online."
+
 #: apps/student/src/student-progress-page.tsx
 msgid "Дни работы"
 msgstr "Active days"
@@ -405,6 +409,10 @@ msgstr "problems"
 #: apps/student/src/routes/__root.tsx
 msgid "Задачи"
 msgstr "Problems"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Задачи всех уровней сохранены"
+msgstr "Problems for all levels are saved"
 
 #: apps/student/src/student-readable-task-page.tsx
 msgid "Задачи ещё не опубликованы"
@@ -566,6 +574,11 @@ msgstr "The login or token is incorrect. Check the keyboard layout and try again
 msgid "Локальное хранилище сейчас недоступно. Отправка без сети не будет надёжной, поэтому кабинет не открыт."
 msgstr "Local storage is unavailable right now. Offline sending would not be reliable, so your account is not opened."
 
+#: apps/student/src/student-offline-preparation.tsx
+#: apps/student/src/student-read-state-panel.tsx
+msgid "Материал ещё не сохранён на устройстве"
+msgstr "This material has not been saved on this device yet"
+
 #: apps/student/src/content-page.tsx
 msgid "Материал пока закрыт"
 msgstr "Material is not available yet"
@@ -627,6 +640,10 @@ msgstr "Setting was not saved"
 #: apps/student/src/pages.tsx
 msgid "Начинающие · очный режим"
 msgstr "Начинающие · in person"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Не все задачи сохранены для просмотра без интернета"
+msgstr "Some problems have not been saved for offline reading"
 
 #: apps/student/src/student-test-answer.tsx
 msgid "Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и измените ответ ещё раз."
@@ -1054,6 +1071,7 @@ msgstr "Try loading again. Already saved answers were not deleted."
 #: apps/student/src/student-home-page.tsx
 #: apps/student/src/student-news-page.tsx
 #: apps/student/src/student-notifications-page.tsx
+#: apps/student/src/student-offline-preparation.tsx
 #: apps/student/src/student-profile-page.tsx
 #: apps/student/src/student-progress-page.tsx
 #: apps/student/src/student-support-pages.tsx
@@ -1067,6 +1085,10 @@ msgstr "Retry"
 #: apps/student/src/student-written-submission.tsx
 msgid "Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений."
 msgstr "Prepare a replacement for the submitted solution? The earlier version will remain unchanged until you send it."
+
+#: apps/student/src/student-read-state-panel.tsx
+msgid "Подключитесь к интернету, чтобы загрузить этот материал."
+msgstr "Connect to the internet to download this material."
 
 #: apps/student/src/student-tasks-view.ts
 msgid "подсказка"
@@ -1407,6 +1429,10 @@ msgstr "Problem event"
 #: apps/student/src/student-notifications-page.tsx
 msgid "Сообщение для вашей группы"
 msgstr "Message for your group"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Сохраняем задачи для просмотра без интернета"
+msgstr "Saving problems for offline reading"
 
 #: apps/student/src/student-profile-page.tsx
 msgid "Сохраняем…"

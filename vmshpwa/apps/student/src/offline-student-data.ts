@@ -39,6 +39,7 @@ import {
 } from '@vmsh/contracts'
 import {
   readOfflineDocument,
+  bundledDocument,
   writeOfflineDocument,
   type OfflineDocumentDescriptor,
   type VmshOfflineDatabase,
@@ -106,6 +107,45 @@ async function readThroughCache<T>(input: {
   isNetworkError: (error: unknown) => boolean
   allowOfflineFallback?: boolean
 }): Promise<T> {
+  const local = async () => {
+    if (input.allowOfflineFallback === false) return null
+    const bundled = await bundledDocument(input.database, input.descriptor)
+    if (bundled) {
+      // A later audited reveal/status of this same condition is still valid.
+      const recent = await readOfflineDocument(input.database, input.descriptor, input.parser)
+      if (recent && recent.version === bundled.version && recent.fetchedAt > bundled.fetchedAt)
+        return recent
+      try {
+        return {
+          data: input.parser.parse(bundled.payload),
+          fetchedAt: bundled.fetchedAt,
+          expiresAt: bundled.expiresAt,
+          stale: Date.parse(bundled.expiresAt) <= Date.now(),
+        }
+      } catch {
+        /* Corrupt content cannot unlock a page. Try the independently validated cache. */
+      }
+    }
+    return readOfflineDocument(input.database, input.descriptor, input.parser)
+  }
+  const fallback = async (error: unknown): Promise<T> => {
+    const cached = await local()
+    if (!cached) throw error
+    updateOfflineRead({
+      ownerId: input.descriptor.ownerId,
+      kind: input.descriptor.kind,
+      fetchedAt: cached.fetchedAt,
+      expiresAt: cached.expiresAt,
+      stale: cached.stale,
+    })
+    return cached.data
+  }
+  // Query networkMode must allow reaching this branch; docs/offline-current-lessons.md.
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return fallback(
+      new CourseNetworkError({ cause: new Error('Material not saved on this device') }),
+    )
+  }
   try {
     const payload = await input.request()
     await persistSuccessfulRead(
@@ -119,17 +159,7 @@ async function readThroughCache<T>(input: {
     return payload
   } catch (error) {
     if (!input.isNetworkError(error)) throw error
-    if (input.allowOfflineFallback === false) throw error
-    const cached = await readOfflineDocument(input.database, input.descriptor, input.parser)
-    if (!cached) throw error
-    updateOfflineRead({
-      ownerId: input.descriptor.ownerId,
-      kind: input.descriptor.kind,
-      fetchedAt: cached.fetchedAt,
-      expiresAt: cached.expiresAt,
-      stale: cached.stale,
-    })
-    return cached.data
+    return fallback(error)
   }
 }
 
@@ -285,7 +315,7 @@ export function createOfflineStudentTestAnswerInputClient(
 export type StudentPublishedContentClient = Pick<ContentApiClient, 'audience' | 'published'>
 
 export function createOfflineStudentPublishedContentClient(
-  online: ContentApiClient,
+  online: StudentPublishedContentClient,
   database: VmshOfflineDatabase,
   ownerId: string,
 ): StudentPublishedContentClient {

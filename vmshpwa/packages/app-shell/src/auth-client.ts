@@ -1,4 +1,4 @@
-import { pwaFetch } from '@vmsh/contracts'
+import { pwaFetch, pwaOfflineReadFetch } from '@vmsh/contracts'
 import {
   ApiResponseError,
   apiErrorSchema,
@@ -134,7 +134,8 @@ class BrowserAuthClient<A extends Audience> implements AuthClient<A> {
     this.#authBase = `${this.runtime.apiBase}/auth`
     this.#refreshCoordinator =
       options.refreshCoordinator ?? createBrowserAuthRefreshCoordinator(this.audience)
-    const fetchImplementation = options.fetchImplementation ?? pwaFetch
+    const fetchImplementation =
+      options.fetchImplementation ?? (audience === 'student' ? pwaOfflineReadFetch : pwaFetch)
     // Calling a native Window.fetch as `this.#fetch(...)` gives it the client
     // instance as a receiver and throws `Illegal invocation` in real browsers.
     // The lexical wrapper preserves function-call semantics for both the

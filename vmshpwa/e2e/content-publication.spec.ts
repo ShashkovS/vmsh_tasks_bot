@@ -418,6 +418,12 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()
 
+  // Keep a Student document mounted while Staff publishes: no Student reload
+  // is allowed for this freshness assertion (docs/offline-current-lessons.md).
+  const liveStudent = await page.context().newPage()
+  await liveStudent.goto(studentUrl)
+  await expect(liveStudent.getByText(firstStatement)).toBeVisible()
+
   await page.goto(staffUrl)
   const secondStatement = `Вторая опубликованная версия для ${attempt}.`
   const secondRevisionId = await uploadReviewAndPublish({
@@ -428,6 +434,9 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
     match: 'suggested',
   })
   expect(secondRevisionId).not.toBe(firstRevisionId)
+  await liveStudent.bringToFront()
+  await expect(liveStudent.getByText(secondStatement)).toBeVisible({ timeout: 15_000 })
+  await expect(liveStudent.getByText(firstStatement)).toHaveCount(0)
 
   await page.goto(studentUrl)
   await expect(page.getByText(secondStatement)).toBeVisible()
@@ -450,6 +459,9 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   expect(rollbackResponse.status()).toBe(201)
   const rollback = (await rollbackResponse.json()) as { revisionId: string }
   expect(rollback.revisionId).toBe(firstRevisionId)
+  await liveStudent.bringToFront()
+  await expect(liveStudent.getByText(firstStatement)).toBeVisible({ timeout: 15_000 })
+  await liveStudent.close()
   await expect(workflow.getByText(/Опубликована версия \d+ · condition\.tex/)).toBeVisible()
 
   await page.goto(studentUrl)
@@ -474,7 +486,9 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await page.evaluate((marker) => window.sessionStorage.setItem(marker, '1'), offlineMarker)
   try {
     await page.goto(studentUrl)
-    await expect(page.getByRole('heading', { name: 'Нет сети' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Материал ещё не сохранён на устройстве' }),
+    ).toBeVisible()
     await expect(page.getByText(firstStatement)).toHaveCount(0)
     await expect(page.getByText(hintStatement)).toHaveCount(0)
   } finally {

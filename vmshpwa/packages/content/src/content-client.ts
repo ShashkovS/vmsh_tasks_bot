@@ -1,4 +1,4 @@
-import { pwaFetch } from '@vmsh/contracts'
+import { pwaFetch, pwaOfflineReadFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -382,7 +382,9 @@ class BrowserContentApiClient implements ContentApiClient {
     const parsedRuntime = parseRuntimeConfigForAudience(runtime.audience, runtime)
     this.audience = parsedRuntime.audience
     this.#apiBase = parsedRuntime.apiBase
-    const fetchImplementation = options.fetchImplementation ?? pwaFetch
+    const fetchImplementation =
+      options.fetchImplementation ??
+      (runtime.audience === 'student' ? pwaOfflineReadFetch : pwaFetch)
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     if (options.refreshSession) this.#refreshSession = options.refreshSession
   }
@@ -1060,6 +1062,7 @@ export function usePublishedContentQuery(
     throw new TypeError('Published content query principal must match the client audience')
   }
   return useQuery({
+    networkMode: client.audience === 'student' ? 'always' : 'online',
     queryKey: contentQueryKeys.published(
       principal,
       input.groupLessonId,

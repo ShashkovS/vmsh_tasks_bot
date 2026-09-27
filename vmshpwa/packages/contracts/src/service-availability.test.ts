@@ -139,3 +139,27 @@ it('recovers against an old installation returning HTML for the unknown status r
   expect((await result).ok).toBe(true)
   expect(t.getSnapshot().state).toBe('ready')
 })
+
+it('lets cache-backed reads fall back when the browser reports online but the network is unreachable', async () => {
+  vi.useFakeTimers()
+  vi.stubGlobal('navigator', { onLine: true })
+  const transport = createServiceTransport({
+    origin: 'https://school.test',
+    fetch: vi.fn(() => Promise.reject(new TypeError('unreachable'))),
+  })
+  await expect(transport.fetchOfflineRead('/student/api/v1/home')).rejects.toThrow('unreachable')
+  // Later cache-backed requests must not hang behind the background recovery loop.
+  await expect(transport.fetchOfflineRead('/student/api/v1/courses')).rejects.toThrow(
+    'Network recovery',
+  )
+})
+
+it('keeps explicit deploy recovery for cache-backed reads', async () => {
+  const f = fixture()
+  const pending = f.transport.fetchOfflineRead('/student/api/v1/home')
+  await vi.advanceTimersByTimeAsync(5_000)
+  expect(f.transport.getSnapshot().state).toBe('updating')
+  f.setMode('ready')
+  await vi.advanceTimersByTimeAsync(5_000)
+  expect((await pending).status).toBe(200)
+})

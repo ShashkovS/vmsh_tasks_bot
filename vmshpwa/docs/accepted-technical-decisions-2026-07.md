@@ -66,7 +66,9 @@
   без повторного credential и допустимость logout с непустым outbox после
   предупреждения. Безопасный implementation default делает cache account-scoped,
   называет состояние `offline-unverified`, ограничивает его локально известным
-  `sessionExpiresAt` и после подтверждённого logout/account switch очищает cache,
+  `sessionExpiresAt` (для Student это ограничение отменено решением
+  [27 сентября: офлайн-чтение текущих занятий](offline-current-lessons.md))
+  и после подтверждённого logout/account switch очищает cache,
   drafts и outbox, чтобы их не увидел следующий пользователь общего устройства.
 - Незавершённая значимая работа Student/Staff переживает reload и update. Небольшие сериализуемые drafts и UI-state хранятся в `localStorage`, фотографии/blobs и durable outbox — в audience/account-scoped Dexie. Draft удаляется только после серверного receipt или явного discard; токены и cookies в эти хранилища не копируются.
 - Повтор одного `idempotencyKey` с тем же payload hash возвращает исходный receipt. Другой payload получает conflict и требует нового ключа после явного действия пользователя.

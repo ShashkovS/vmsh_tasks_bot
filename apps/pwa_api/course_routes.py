@@ -506,6 +506,35 @@ async def get_student_course_progress(request: web.Request) -> web.Response:
     )
 
 
+@course_routes.get("/student/api/v1/offline-lessons")
+async def get_student_offline_lessons(request: web.Request) -> web.Response:
+    """All allowed groups use the same current-lesson policy as home.
+
+    See vmshpwa/docs/offline-current-lessons.md; this never changes enrollment.
+    """
+    _reject_query(request)
+    authenticated = _student_session(request)
+    scopes = tuple(
+        (enrollment.course_public_id, group.group_public_id)
+        for enrollment in authenticated.course_enrollments
+        for group in enrollment.allowed_groups
+    )
+    snapshot = await _repository(request).get_student_home_snapshot(scopes=scopes)
+    if any(
+        (record.lesson.course_public_id, record.lesson.group_public_id) not in scopes
+        for record in snapshot.lessons
+    ):
+        raise ContentRepositoryError("offline lessons returned an unauthorized scope")
+    return web.json_response(
+        {
+            "generatedAt": _iso(snapshot.generated_at),
+            "lessons": [
+                _student_lesson_payload(record.lesson) for record in snapshot.lessons
+            ],
+        }
+    )
+
+
 @course_routes.get("/student/api/v1/home")
 async def get_student_home(request: web.Request) -> web.Response:
     _reject_query(request)

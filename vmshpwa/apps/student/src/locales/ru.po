@@ -299,6 +299,10 @@ msgstr "Дедлайн и новые материалы"
 msgid "Для ваших групп пока нет запланированных очных занятий."
 msgstr "Для ваших групп пока нет запланированных очных занятий."
 
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Для отправки ответов и других действий войдите снова при наличии интернета."
+msgstr "Для отправки ответов и других действий войдите снова при наличии интернета."
+
 #: apps/student/src/student-progress-page.tsx
 msgid "Дни работы"
 msgstr "Дни работы"
@@ -405,6 +409,10 @@ msgstr "задачи"
 #: apps/student/src/routes/__root.tsx
 msgid "Задачи"
 msgstr "Задачи"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Задачи всех уровней сохранены"
+msgstr "Задачи всех уровней сохранены"
 
 #: apps/student/src/student-readable-task-page.tsx
 msgid "Задачи ещё не опубликованы"
@@ -566,6 +574,11 @@ msgstr "Логин или токен не подошли. Проверьте р�
 msgid "Локальное хранилище сейчас недоступно. Отправка без сети не будет надёжной, поэтому кабинет не открыт."
 msgstr "Локальное хранилище сейчас недоступно. Отправка без сети не будет надёжной, поэтому кабинет не открыт."
 
+#: apps/student/src/student-offline-preparation.tsx
+#: apps/student/src/student-read-state-panel.tsx
+msgid "Материал ещё не сохранён на устройстве"
+msgstr "Материал ещё не сохранён на устройстве"
+
 #: apps/student/src/content-page.tsx
 msgid "Материал пока закрыт"
 msgstr "Материал пока закрыт"
@@ -627,6 +640,10 @@ msgstr "Настройка не сохранена"
 #: apps/student/src/pages.tsx
 msgid "Начинающие · очный режим"
 msgstr "Начинающие · очный режим"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Не все задачи сохранены для просмотра без интернета"
+msgstr "Не все задачи сохранены для просмотра без интернета"
 
 #: apps/student/src/student-test-answer.tsx
 msgid "Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и измените ответ ещё раз."
@@ -1054,6 +1071,7 @@ msgstr "Повторите загрузку. Уже сохранённые от�
 #: apps/student/src/student-home-page.tsx
 #: apps/student/src/student-news-page.tsx
 #: apps/student/src/student-notifications-page.tsx
+#: apps/student/src/student-offline-preparation.tsx
 #: apps/student/src/student-profile-page.tsx
 #: apps/student/src/student-progress-page.tsx
 #: apps/student/src/student-support-pages.tsx
@@ -1067,6 +1085,10 @@ msgstr "Повторить"
 #: apps/student/src/student-written-submission.tsx
 msgid "Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений."
 msgstr "Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений."
+
+#: apps/student/src/student-read-state-panel.tsx
+msgid "Подключитесь к интернету, чтобы загрузить этот материал."
+msgstr "Подключитесь к интернету, чтобы загрузить этот материал."
 
 #: apps/student/src/student-tasks-view.ts
 msgid "подсказка"
@@ -1407,6 +1429,10 @@ msgstr "Событие по задаче"
 #: apps/student/src/student-notifications-page.tsx
 msgid "Сообщение для вашей группы"
 msgstr "Сообщение для вашей группы"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Сохраняем задачи для просмотра без интернета"
+msgstr "Сохраняем задачи для просмотра без интернета"
 
 #: apps/student/src/student-profile-page.tsx
 msgid "Сохраняем…"

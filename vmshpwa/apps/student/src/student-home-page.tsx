@@ -1,3 +1,4 @@
+import { StudentReadStatePanel as PageStatePanel } from './student-read-state-panel'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
@@ -11,7 +12,6 @@ import {
   PublishedClassroomNetworkError,
   PageLayout,
   PageSection,
-  PageStatePanel,
   bannerDismissalId,
   createGroupBannerClient,
   createStudentCourseClient,

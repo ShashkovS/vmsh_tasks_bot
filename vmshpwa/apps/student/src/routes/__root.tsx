@@ -1,3 +1,4 @@
+import { StudentOfflinePreparation } from '../student-offline-preparation'
 import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
@@ -121,6 +122,7 @@ function StudentProtectedShell({
           </div>
         ) : null}
         <StudentOfflineSessionNotice />
+        <StudentOfflinePreparation />
         {!location.pathname.endsWith('/profile/notifications') ? <PushOnboarding /> : null}
         <Outlet />
       </AppShell>

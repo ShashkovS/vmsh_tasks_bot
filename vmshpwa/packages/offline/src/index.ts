@@ -13,3 +13,5 @@ export * from './written-submission-draft'
 export * from './written-submission-outbox'
 export * from './live-marking-outbox'
 export * from './organizer-draft'
+
+export * from './lesson-bundle'

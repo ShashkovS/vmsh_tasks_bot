@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { pwaFetch } from './service-availability'
+import { pwaFetch, pwaOfflineReadFetch } from './service-availability'
 export * from './service-availability'
 
 // Response objects strip additive fields; request envelopes stay strict.
@@ -269,7 +269,8 @@ export async function fetchRuntime(
 ): Promise<RuntimeConfig> {
   const expectedAudience = audienceSchema.parse(audience)
   const boundary = runtimeBoundaryByAudience[expectedAudience]
-  const fetchImplementation = options.fetchImplementation ?? pwaFetch
+  const fetchImplementation =
+    options.fetchImplementation ?? (audience === 'student' ? pwaOfflineReadFetch : pwaFetch)
   const response = await fetchImplementation(`${boundary.apiBase}/runtime`, {
     credentials: 'include',
     headers: { Accept: 'application/json' },

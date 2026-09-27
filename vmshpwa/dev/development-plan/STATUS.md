@@ -3422,3 +3422,18 @@ existing service recovery loop held a new offline answer in `sending`.
 before waiting for recovery, returning control to the durable outbox. A
 regression test reproduced the hang before the fix and passes afterward;
 full browser verification is being repeated.
+
+## Student offline current lessons — 2026-09-27
+
+Implemented locally: [decision and implementation](../../docs/offline-current-lessons.md).
+Automatic all-level conditions/figures, cold offline navigation, resumable complete
+copies and Student-only reading after session expiry. Publication/rollback updates
+an already open Student document without reload.
+
+Verified: full frontend 938 tests; final focused regression 27 tests; backend 64 tests;
+typecheck, lint, i18n and production builds passed. Combined browser acceptance:
+10 passed / 2 documented network-mode skips (Firefox/WebKit harness limitation;
+API-disconnected coverage passed in all three engines).
+[Proof and screenshots](../../../pwa_tests/reports/offline-current-lessons/README.md).
+No deployment; full network-offline Safari/Firefox cold-start proof remains a
+manual-browser follow-up because of the documented automation limitation.

@@ -1,4 +1,4 @@
-import { pwaFetch } from '@vmsh/contracts'
+import { pwaOfflineReadFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
@@ -13,6 +13,8 @@ import {
   publicIdSchema,
   progressQueryKey,
   studentHomeResponseSchema,
+  studentOfflineLessonsResponseSchema,
+  type StudentOfflineLessonsResponse,
   studentLessonListResponseSchema,
   studentProblemListResponseSchema,
   studentLessonSummarySchema,
@@ -102,9 +104,13 @@ class BrowserStudentCourseClient implements StudentCourseClient {
 
   constructor(runtime: RuntimeConfig, options: StudentCourseClientOptions) {
     this.runtime = parseRuntimeConfigForAudience('student', runtime)
-    const fetchImplementation = options.fetchImplementation ?? pwaFetch
+    const fetchImplementation = options.fetchImplementation ?? pwaOfflineReadFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
+  }
+
+  async offlineLessons(options: CourseRequestOptions = {}): Promise<StudentOfflineLessonsResponse> {
+    return this.#request('/offline-lessons', options, studentOfflineLessonsResponseSchema)
   }
 
   async home(options: CourseRequestOptions = {}): Promise<StudentHomeResponse> {
@@ -291,7 +297,9 @@ class BrowserStudentCourseClient implements StudentCourseClient {
 export function createStudentCourseClient(
   runtime: RuntimeConfig,
   options: StudentCourseClientOptions = {},
-): StudentCourseClient {
+): StudentCourseClient & {
+  offlineLessons(options?: CourseRequestOptions): Promise<StudentOfflineLessonsResponse>
+} {
   return new BrowserStudentCourseClient(runtime, options)
 }
 
@@ -300,6 +308,7 @@ export function useStudentCoursesQuery(
   principal: PrincipalQueryScope,
 ) {
   return useQuery({
+    networkMode: 'always',
     queryKey: courseQueryKeys.list(principal),
     queryFn: ({ signal }) => client.list({ signal }),
   })
@@ -310,6 +319,7 @@ export function useStudentHomeQuery(
   principal: PrincipalQueryScope,
 ) {
   return useQuery({
+    networkMode: 'always',
     queryKey: courseQueryKeys.home(principal),
     queryFn: ({ signal }) => client.home({ signal }),
   })
@@ -321,6 +331,7 @@ export function useStudentCourseEnrollmentQuery(
   courseId: string,
 ) {
   return useQuery({
+    networkMode: 'always',
     queryKey: courseQueryKeys.enrollment(principal, courseId),
     queryFn: ({ signal }) => client.enrollment(courseId, { signal }),
   })
@@ -369,6 +380,7 @@ export function useStudentLessonsQuery(
   cursor: LessonCursor | null = null,
 ) {
   return useQuery({
+    networkMode: 'always',
     queryKey: courseQueryKeys.lessons(principal, courseId, groupId, cursor),
     queryFn: ({ signal }) =>
       client.lessons(courseId, {
@@ -387,6 +399,7 @@ export function useStudentLessonArchiveQuery(
   groupId: string,
 ) {
   return useInfiniteQuery({
+    networkMode: 'always',
     queryKey: courseQueryKeys.lessonArchive(principal, courseId, groupId),
     initialPageParam: null as LessonCursor | null,
     queryFn: ({ pageParam, signal }) =>
@@ -409,6 +422,7 @@ export function useStudentLessonQuery(
   groupLessonId: string,
 ) {
   return useQuery({
+    networkMode: 'always',
     queryKey: courseQueryKeys.lesson(principal, courseId, groupId, groupLessonId),
     queryFn: ({ signal }) => client.lesson(courseId, groupLessonId, { signal }),
   })
@@ -424,6 +438,7 @@ export function useStudentProblemsQuery(
   enabled = true,
 ) {
   return useQuery({
+    networkMode: 'always',
     queryKey: courseQueryKeys.problems(principal, courseId, groupId, groupLessonId),
     queryFn: ({ signal }) => client.problems(courseId, groupLessonId, { signal }),
     enabled,

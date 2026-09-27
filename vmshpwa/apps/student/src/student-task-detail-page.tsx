@@ -1,3 +1,4 @@
+import { StudentReadStatePanel as PageStatePanel } from './student-read-state-panel'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
@@ -10,7 +11,6 @@ import { ArrowLeft, ChevronDown, ChevronUp, PencilLine } from 'lucide-react'
 import {
   CourseNetworkError,
   PageLayout,
-  PageStatePanel,
   createStudentCourseClient,
   useAuthenticatedPrincipal,
   useAuthentication,
@@ -215,26 +215,32 @@ export function StudentProblemWorkspace({
   problem: StudentProblemSummary
   submissionClosed?: boolean
 }) {
+  const { state } = useAuthentication()
+  const expiredReadOnly = state.status === 'offline-unverified' && state.sessionExpired === true
   return (
     <div className="vmsh-problem-workspace mt-2 flex flex-wrap items-center gap-1.5 font-sans">
-      {!submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started') ? (
+      {!expiredReadOnly &&
+      (!submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started')) ? (
         <Button aria-expanded={answerOpen} onClick={onToggleAnswer} size="sm" variant="ghost">
           <PencilLine aria-hidden="true" className="size-4" />
           {submissionClosed ? t`Мой ответ` : t`Ответить`}
           {answerOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
         </Button>
       ) : null}
-      <StudentProblemQuestionLink
-        compact
-        groupLessonId={groupLessonId}
-        problemId={problem.problemId}
-      />
+      {!expiredReadOnly ? (
+        <StudentProblemQuestionLink
+          compact
+          groupLessonId={groupLessonId}
+          problemId={problem.problemId}
+        />
+      ) : null}
       <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} compact />
       {/*
        * Panels open below the whole button row, in button order: flex `order`
        * keeps the row intact instead of splitting it around an open panel.
        */}
-      {answerOpen &&
+      {!expiredReadOnly &&
+      answerOpen &&
       (!submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started')) ? (
         <div className="order-1 w-full basis-full" data-print-hide>
           <StudentProblemActions

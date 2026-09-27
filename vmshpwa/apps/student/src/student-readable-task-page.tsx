@@ -1,3 +1,4 @@
+import { StudentReadStatePanel as PageStatePanel } from './student-read-state-panel'
 import { t } from '@lingui/core/macro'
 import { useWorksheetReturn } from './worksheet-return'
 import { useEffect, useMemo, useState } from 'react'
@@ -5,7 +6,6 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   CourseNetworkError,
   PageLayout,
-  PageStatePanel,
   createStudentCourseClient,
   useAuthenticatedPrincipal,
   useAuthentication,

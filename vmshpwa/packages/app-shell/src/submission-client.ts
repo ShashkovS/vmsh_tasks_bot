@@ -283,6 +283,7 @@ export function useTestAnswerInputQuery(
   problemId: string,
 ) {
   return useQuery({
+    networkMode: 'always',
     queryKey: testSubmissionQueryKeys.input(principal, problemId),
     queryFn: ({ signal }) => client.input(problemId, { signal }),
   })

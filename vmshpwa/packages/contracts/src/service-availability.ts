@@ -154,7 +154,11 @@ export function createServiceTransport(options: {
       }),
       { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } },
     )
-  const fetch: typeof globalThis.fetch = async (input, init) => {
+  const request = async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+    allowOfflineRead = false,
+  ): Promise<Response> => {
     const url = new URL(input instanceof Request ? input.url : String(input), options.origin)
     const match = /^\/(student|family|staff)\/api\/v1\//.exec(url.pathname)
     if (url.origin !== options.origin || !match) return options.fetch(input, init)
@@ -184,10 +188,14 @@ export function createServiceTransport(options: {
       // outbox too, instead of waiting behind another request's recovery loop.
       if (typeof navigator !== 'undefined' && !navigator.onLine)
         throw new TypeError('Network is offline')
-      if (recovery) await wait(recovery, signal)
+      if (recovery) {
+        if (read && allowOfflineRead && snapshot.state === 'reconnecting')
+          throw new TypeError('Network recovery in progress')
+        await wait(recovery, signal)
+      }
       signal?.throwIfAborted()
       let response: Response
-      const startup = /\/(runtime|auth\/me)$/.test(url.pathname) && read
+      const startup = read && (allowOfflineRead || /\/(runtime|auth\/me)$/.test(url.pathname))
       const deadline = new AbortController()
       const timeout = startup ? setTimeout(() => deadline.abort(), 5_000) : undefined
       const abortStartup = () => deadline.abort(signal?.reason)
@@ -207,7 +215,8 @@ export function createServiceTransport(options: {
         const pending = recover(runtimePath, false)
         if (!read && !idempotent) return unconfirmed()
         // Preserve the existing explicit offline cache boundary.
-        if (typeof navigator !== 'undefined' && !navigator.onLine) throw error
+        if ((read && allowOfflineRead) || (typeof navigator !== 'undefined' && !navigator.onLine))
+          throw error
         await wait(pending, signal)
         continue
       } finally {
@@ -224,7 +233,12 @@ export function createServiceTransport(options: {
       await wait(pending, signal)
     }
   }
-  return { fetch, subscribe, getSnapshot: () => snapshot }
+  return {
+    fetch: (input: RequestInfo | URL, init?: RequestInit) => request(input, init),
+    fetchOfflineRead: (input: RequestInfo | URL, init?: RequestInit) => request(input, init, true),
+    subscribe,
+    getSnapshot: () => snapshot,
+  }
 }
 
 let browserTransport: ReturnType<typeof createServiceTransport> | undefined
@@ -245,6 +259,9 @@ export function getServiceTransport() {
   return browserTransport
 }
 export const pwaFetch: typeof globalThis.fetch = (...args) => getServiceTransport().fetch(...args)
+/** docs/offline-current-lessons.md: cache-backed GETs escape network recovery; writes and explicit deploys retain their policy. */
+export const pwaOfflineReadFetch: typeof globalThis.fetch = (...args) =>
+  getServiceTransport().fetchOfflineRead(...args)
 export const serviceAvailabilitySnapshot = () => browserTransport?.getSnapshot() ?? ready
 export const subscribeServiceAvailability = (listener: () => void) =>
   getServiceTransport().subscribe(listener)

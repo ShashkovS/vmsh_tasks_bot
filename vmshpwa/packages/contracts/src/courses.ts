@@ -459,7 +459,27 @@ export const studentHomeResponseSchema = z
   })
 export type StudentHomeResponse = z.infer<typeof studentHomeResponseSchema>
 
+/** Current lessons in every allowed group; docs/offline-current-lessons.md. */
+export const studentOfflineLessonsResponseSchema = z
+  .object({
+    generatedAt: z.iso.datetime(),
+    lessons: z.array(studentLessonSummarySchema),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const scopes = new Set<string>()
+    for (const lesson of value.lessons) {
+      const scope = JSON.stringify([lesson.courseId, lesson.groupId])
+      if (scopes.has(scope))
+        context.addIssue({ code: 'custom', message: 'Duplicate current lesson scope' })
+      scopes.add(scope)
+    }
+  })
+export type StudentOfflineLessonsResponse = z.infer<typeof studentOfflineLessonsResponseSchema>
+
 export const courseQueryKeys = {
+  offlineLessons: (principal: PrincipalQueryScope) =>
+    [...principalQueryKey(principal), 'offline-lessons'] as const,
   all: (principal: PrincipalQueryScope) => [...principalQueryKey(principal), 'courses'] as const,
   home: (principal: PrincipalQueryScope) => [...principalQueryKey(principal), 'home'] as const,
   list: (principal: PrincipalQueryScope) => [...courseQueryKeys.all(principal), 'list'] as const,

@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query'
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { act, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -387,7 +388,7 @@ describe('authentication provider and boundary', () => {
     expect(offlineStore.clear).toHaveBeenCalledOnce()
   })
 
-  it('does not unlock a durable snapshot past its server-owned expiry', async () => {
+  it('unlocks Student local reading past session expiry without deleting the copy', async () => {
     vi.useFakeTimers()
     vi.setSystemTime('2026-08-10T08:00:00.000Z')
     const offlineFetch = vi.fn<typeof globalThis.fetch>(() =>
@@ -397,9 +398,8 @@ describe('authentication provider and boundary', () => {
 
     renderStudentBoundary(offlineFetch, offlineStore)
 
-    await vi.waitFor(() => expect(screen.queryByText('Требуется вход')).not.toBeNull())
-    expect(screen.queryByText('Защищённое содержимое')).toBeNull()
-    expect(offlineStore.clear).toHaveBeenCalledOnce()
+    await vi.waitFor(() => expect(screen.queryByText('Защищённое содержимое')).not.toBeNull())
+    expect(offlineStore.clear).not.toHaveBeenCalled()
   })
 
   it('unmounts protected content at the absolute server session expiry', async () => {
@@ -614,4 +614,19 @@ it('keeps refresh identity stable when authority refetches, preserving live queu
   fireEvent.click(await screen.findByRole('button', { name: 'Refresh authority' }))
   await vi.waitFor(() => expect(fetchImplementation).toHaveBeenCalledTimes(2))
   expect(new Set(callbacks).size).toBe(1)
+})
+
+it('reaches the durable Student snapshot when TanStack Query sees a disconnected browser', async () => {
+  const store = mockOfflineStore(durableSnapshot())
+  onlineManager.setOnline(false)
+  try {
+    renderStudentBoundary(
+      vi.fn(() => Promise.reject(new TypeError('offline'))),
+      store,
+    )
+    expect(await screen.findByText('Защищённое содержимое')).not.toBeNull()
+    expect(store.clear).not.toHaveBeenCalled()
+  } finally {
+    onlineManager.setOnline(true)
+  }
 })
