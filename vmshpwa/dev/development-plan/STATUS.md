@@ -1,5 +1,17 @@
 # Статус плана разработки
 
+## Staff news Unicode excerpt fix — 27 September 2026
+
+Implemented: align `staffNewsItemSchema.textExcerpt` in
+`packages/contracts/src/news.ts` with Python code-point slicing in
+`apps/pwa_api/news_moderation_routes.py`. Emoji in a 500-character excerpt
+previously rejected the entire Staff list. Boundary regression coverage in
+`packages/contracts/src/news.test.ts` checks BMP, emoji and mixed text at 500/501
+code points. Focused contract/client tests pass (7 tests); a temporary local test
+also accepted all 16 rows of the supplied production response. No production
+payload is committed. Contracts typecheck and targeted ESLint/Prettier pass.
+No visual changes; deployment and production verification remain pending.
+
 ## Publication decision — 27 September 2026
 
 The owner explicitly authorized committing and pushing the current P8 implementation

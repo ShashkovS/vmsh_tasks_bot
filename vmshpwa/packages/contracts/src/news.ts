@@ -132,7 +132,10 @@ export const staffNewsItemSchema = z
     publishedAt: z.iso.datetime(),
     editedAt: z.iso.datetime().nullable(),
     revision: z.number().int().positive(),
-    textExcerpt: z.string().max(500),
+    // 12-phase-8-news-and-notifications.md: match news_moderation_routes.py's Python code-point slice.
+    textExcerpt: z.string().refine((value) => Array.from(value).length <= 500, {
+      message: 'Text excerpt must contain at most 500 Unicode code points',
+    }),
     editableText: z.string().max(32_768).nullable(),
     markdown: z.string().max(32_768).nullable().optional(),
     document: richDocumentSchema.nullable().optional(),

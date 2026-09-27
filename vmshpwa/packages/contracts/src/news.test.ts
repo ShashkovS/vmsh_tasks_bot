@@ -42,6 +42,25 @@ describe('news contracts', () => {
     )
   })
 
+  it.each([
+    ['BMP', 'а'.repeat(500)],
+    ['emoji', '📆'.repeat(500)],
+    ['mixed', 'а'.repeat(496) + '📆🎄🎄📆'],
+  ])('counts Staff excerpt limits in Unicode code points (%s)', (_name, textExcerpt) => {
+    const payload = {
+      ...moderationFixture,
+      items: [{ ...moderationFixture.items[0], textExcerpt }],
+    }
+
+    expect(staffNewsListResponseSchema.parse(payload).items[0]?.textExcerpt).toBe(textExcerpt)
+    expect(
+      staffNewsListResponseSchema.safeParse({
+        ...payload,
+        items: [{ ...payload.items[0], textExcerpt: textExcerpt + 'а' }],
+      }).success,
+    ).toBe(false)
+  })
+
   it('validates Staff moderation rows and visibility commands', () => {
     const list = staffNewsListResponseSchema.parse(moderationFixture)
     expect(list.items.map((item) => item.visibility)).toEqual([
