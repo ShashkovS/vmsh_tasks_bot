@@ -73,6 +73,13 @@ class ObjectStorage(Protocol):
     def public_url(self, key: str) -> str | None: ...
 
 
+@runtime_checkable
+class SignedReadStorage(Protocol):
+    """Optional direct-download capability; local storage keeps proxy reads."""
+
+    async def signed_read_url(self, key: str, *, expires_in: int) -> str: ...
+
+
 def canonical_object_key(key: str) -> str:
     """Validate a provider-independent, canonical relative object key."""
 
@@ -404,6 +411,26 @@ class S3ObjectStorage:
         if provider_failure is not None:
             raise provider_failure
         raise RuntimeError("unreachable object-storage get state")
+
+    async def signed_read_url(self, key: str, *, expires_in: int) -> str:
+        """Sign locally without fetching bytes; docs/performance/photo-delivery.md."""
+        object_key = self._key(key)
+        if not 1 <= expires_in <= 604800:
+            raise ValueError("Signed read expiry must be between 1 and 604800 seconds")
+        provider_failure: ObjectStorageOperationError | None = None
+        try:
+            async with self._client() as client:
+                return await client.generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": self.config.bucket_name, "Key": object_key},
+                    ExpiresIn=expires_in,
+                    HttpMethod="GET",
+                )
+        except Exception as exc:
+            provider_failure = _redacted_provider_error("sign-read", exc)
+        if provider_failure is not None:
+            raise provider_failure
+        raise RuntimeError("unreachable object-storage signing state")
 
     async def delete(self, key: str) -> None:
         object_key = self._key(key)

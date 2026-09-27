@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import hashlib
 import logging
 import re
 import uuid
@@ -40,7 +39,7 @@ from db_methods.pwa.written_submissions import (
     WrittenMaterialItemRef,
     WrittenMaterialReassignmentPreview,
 )
-from helpers.object_storage import ObjectStorageOperationError
+from helpers.object_storage import ObjectStorageOperationError, SignedReadStorage
 from helpers.pwa.content import AssetConversionError
 from helpers.pwa.i18n import N_
 from helpers.pwa.written_notice_i18n import localize_thread_notices
@@ -60,6 +59,7 @@ from models.pwa.auth import AuthAudience
 
 WRITTEN_SUBMISSION_BODY_LIMIT_BYTES = 128 * 1024
 WRITTEN_ATTACHMENT_REQUEST_LIMIT_BYTES = MAX_WRITTEN_SOURCE_BYTES + 64 * 1024
+WRITTEN_MEDIA_URL_TTL_SECONDS = 24 * 60 * 60
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _UTC_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
 _CREATE_FIELDS = frozenset(
@@ -801,19 +801,29 @@ async def _attachment_media_response(
     media: WrittenAttachmentMedia,
     attachment_public_id: str,
 ) -> web.Response:
+    # Callers have authorized the student/family/staff scope before this point.
+    # Stable mediaPath refreshes the 24h URL on reload; photo-delivery.md explains
+    # the contract (docs/performance/photo-delivery.md).
+    storage = _attachment_service(request).storage
+    if isinstance(storage, SignedReadStorage):
+        location = await storage.signed_read_url(
+            media.object_key, expires_in=WRITTEN_MEDIA_URL_TTL_SECONDS
+        )
+        return web.Response(
+            status=302,
+            headers={"Location": location, "Cache-Control": "no-store"},
+        )
     try:
-        payload = await _attachment_service(request).storage.get(media.object_key)
+        payload = await storage.get(media.object_key)
     except FileNotFoundError as error:
         raise PwaApiError(
             status=500,
             code="written_attachment_storage_invalid",
             message="Фотография недоступна из-за ошибки хранилища",
         ) from error
-    if (
-        media.media_type != "image/webp"
-        or len(payload) != media.byte_size
-        or hashlib.sha256(payload).hexdigest() != media.sha256
-    ):
+    # Read-path decision: docs/performance/2026-09-27-analysis.md.
+    # The upload validates the digest; serving does not rehash the object.
+    if media.media_type != "image/webp" or len(payload) != media.byte_size:
         logger.error(
             "Stored written attachment failed integrity check: attachment=%s",
             attachment_public_id,

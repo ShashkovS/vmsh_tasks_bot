@@ -552,6 +552,22 @@ def _synthetic_s3_config() -> StorageConfig:
 
 
 @pytest.mark.asyncio
+async def test_s3_signed_read_uses_real_signer_with_one_day_expiry_without_io():
+    from urllib.parse import parse_qs, urlsplit
+
+    storage = S3ObjectStorage(_synthetic_s3_config())
+    url = await storage.signed_read_url("sol_imgs/photo.webp", expires_in=86400)
+    parsed = urlsplit(url)
+    query = parse_qs(parsed.query)
+    assert parsed.hostname == "vmsh-test-bucket.fsn1.your-objectstorage.com"
+    assert parsed.path == "/integration/unit-test/sol_imgs/photo.webp"
+    assert query["X-Amz-Expires"] == ["86400"]
+    assert query["X-Amz-SignedHeaders"] == ["host"]
+    assert len(query["X-Amz-Signature"][0]) == 64
+    assert "synthetic-secret-key" not in url
+
+
+@pytest.mark.asyncio
 async def test_s3_adapter_contract_explicit_client_config_and_public_url():
     session = FakeSession()
     config = _synthetic_s3_config()

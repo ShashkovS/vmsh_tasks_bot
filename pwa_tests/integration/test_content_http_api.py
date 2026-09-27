@@ -2154,6 +2154,7 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
 
 async def test_student_written_photo_upload_converts_persists_replays_and_submits(
     content_http: ContentHttpFixture,
+    monkeypatch,
 ):
     fixture = content_http
     problem_public_id, condition_revision_id = await _prepare_published_test_problem(
@@ -2256,6 +2257,39 @@ async def test_student_written_photo_upload_converts_persists_replays_and_submit
     assert media.headers["Content-Type"] == "image/webp"
     assert media.headers["Cache-Control"] == "no-store"
     assert await media.read() == fixture.asset_storage.objects[submission_keys[0]]
+
+    # docs/performance/photo-delivery.md: authorize, then redirect without GET.
+    signed_keys = []
+
+    async def signed_read_url(key, *, expires_in):
+        assert expires_in == 86400
+        signed_keys.append(key)
+        return f"https://media.example.test/photo.webp?signature={len(signed_keys)}"
+
+    async def forbidden_storage_get(_key):
+        pytest.fail("Direct photo delivery must not fetch the object on the server")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(fixture.asset_storage, "signed_read_url", signed_read_url, raising=False)
+        patch.setattr(fixture.asset_storage, "get", forbidden_storage_get)
+        denied = await fixture.client.get(
+            attachment["mediaPath"], headers=_headers(), allow_redirects=False
+        )
+        assert denied.status == 401
+        assert signed_keys == []
+        for signature in (1, 2):
+            redirected = await fixture.client.get(
+                attachment["mediaPath"],
+                cookies=_cookie(fixture, "student"),
+                headers=_headers(),
+                allow_redirects=False,
+            )
+            assert redirected.status == 302
+            assert redirected.headers["Cache-Control"] == "no-store"
+            assert redirected.headers["Location"] == (
+                f"https://media.example.test/photo.webp?signature={signature}"
+            )
+        assert signed_keys == [submission_keys[0], submission_keys[0]]
 
     replay = await fixture.client.post(
         upload_route,
