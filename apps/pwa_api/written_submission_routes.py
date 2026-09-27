@@ -43,6 +43,7 @@ from db_methods.pwa.written_submissions import (
 from helpers.object_storage import ObjectStorageOperationError
 from helpers.pwa.content import AssetConversionError
 from helpers.pwa.i18n import N_
+from helpers.pwa.written_notice_i18n import localize_thread_notices
 from helpers.pwa.written_attachments import (
     MAX_WRITTEN_SOURCE_BYTES,
     WrittenAttachmentService,
@@ -1314,7 +1315,7 @@ async def get_written_thread(request: web.Request) -> web.Response:
         {
             "schemaVersion": 1,
             "problemId": problem_public_id,
-            "thread": None if thread is None else thread.payload(),
+            "thread": None if thread is None else localize_thread_notices(thread.payload()),
             "requestId": request["request_id"],
         }
     )
@@ -1347,9 +1348,11 @@ async def get_family_written_thread(request: web.Request) -> web.Response:
             "thread": (
                 None
                 if thread is None
-                else thread.payload(
-                    media_audience="family",
-                    family_student_public_id=student_public_id,
+                else localize_thread_notices(
+                    thread.payload(
+                        media_audience="family",
+                        family_student_public_id=student_public_id,
+                    )
                 )
             ),
             "requestId": request["request_id"],

@@ -34,7 +34,12 @@ without a service worker.
 - Production builds keep only message IDs in code (`descriptorFields: auto`).
   Each app merges the catalogs of its `@vmsh/*` packages into one chunk per
   locale (`apps/<app>/src/i18n/catalog-<locale>.ts`). The default Russian chunk
-  is preloaded from `index.html`; the service worker precaches both locales.
+  loads in parallel from `index.html`; the service worker precaches both locales.
+  P8 uses an eager module script for this side-effect-free catalog instead of a
+  preload link, because [WebKit 270357](https://bugs.webkit.org/show_bug.cgi?id=270357)
+  retains failed preloads across reloads. Language activation still belongs to
+  `bootstrapLocale`; the catalog remains counted in the initial JS budget (see
+  [P8 verification](../vmshpwa/dev/development-plan/24-i18n-p8-report.md)).
 - A build guard (`vite-i18n.ts`) fails a production build if any message ID in
   the code is missing from the app's catalogs, so a forgotten extraction or an
   unmerged package catalog can never render a hash.

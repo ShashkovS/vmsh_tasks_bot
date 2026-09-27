@@ -63,7 +63,13 @@ export default tseslint.config(
     // Translated scopes (i18n-scopes.json) must not contain unwrapped Russian
     // copy. Strings without Cyrillic are technical and stay allowed.
     files: i18nScopes.frontend,
-    ignores: ['**/*.test.{ts,tsx}', '**/*.stories.{ts,tsx}'],
+    ignores: [
+      '**/*.test.{ts,tsx}',
+      '**/*.stories.{ts,tsx}',
+      'packages/test-utils/**',
+      'packages/content/src/long-document-performance-fixture.ts',
+      'packages/product/src/course-fixtures.ts',
+    ],
     rules: {
       'lingui/no-unlocalized-strings': ['error', { ignore: ['^[^А-Яа-яЁё]*$'] }],
     },

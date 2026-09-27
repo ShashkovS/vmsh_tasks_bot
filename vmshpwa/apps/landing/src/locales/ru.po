@@ -13,6 +13,54 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: apps/landing/src/landing-page.tsx
+msgid "Активность ребёнка, результаты занятий и опубликованные новости."
+msgstr "Активность ребёнка, результаты занятий и опубликованные новости."
+
+#: apps/landing/src/landing-page.tsx
+msgid "ВМШ 179"
+msgstr "ВМШ 179"
+
 #: apps/landing/src/main.tsx
 msgid "ВМШ 179 — математический кружок"
 msgstr "ВМШ 179 — математический кружок"
+
+#: apps/landing/src/main.tsx
+msgid "ВМШ 179 — математический кружок для школьников и родителей"
+msgstr "ВМШ 179 — математический кружок для школьников и родителей"
+
+#: apps/landing/src/landing-page.tsx
+msgid "ВМШ 179 — математический кружок для школьников. Выберите нужный кабинет, чтобы открыть задачи, результаты занятий и новости."
+msgstr "ВМШ 179 — математический кружок для школьников. Выберите нужный кабинет, чтобы открыть задачи, результаты занятий и новости."
+
+#: apps/landing/src/landing-page.tsx
+msgid "ВМШ 179 · математический кружок"
+msgstr "ВМШ 179 · математический кружок"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Задачи, сдача решений, проверки, новости и личный прогресс."
+msgstr "Задачи, сдача решений, проверки, новости и личный прогресс."
+
+#: apps/landing/src/landing-page.tsx
+msgid "Знак ВМШ 179"
+msgstr "Знак ВМШ 179"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Кабинет родителя"
+msgstr "Кабинет родителя"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Кабинет школьника"
+msgstr "Кабинет школьника"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Математика · обучение · общение"
+msgstr "Математика · обучение · общение"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Открыть кабинет"
+msgstr "Открыть кабинет"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Решаем задачи и учимся видеть в математике больше."
+msgstr "Решаем задачи и учимся видеть в математике больше."

@@ -649,6 +649,7 @@ export const previewWrittenMaterialReassignmentResponseSchema = z
         sourceEvidenceUnchanged: z.literal(true),
         sourceVerdictUnchanged: z.literal(true),
         targetRequiresReview: z.literal(true),
+        // eslint-disable-next-line lingui/no-unlocalized-strings -- legacy wire literal; consumers use stable event types, not studentLabel
         studentLabel: z.literal('Перенесено преподавателем'),
       })
       .strip(),
@@ -689,6 +690,7 @@ export const reassignWrittenMaterialResponseSchema = z
     }),
     items: writtenMaterialItemListSchema,
     movedAt: z.iso.datetime(),
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- legacy wire literal; consumers use stable event types, not studentLabel
     studentLabel: z.literal('Перенесено преподавателем'),
     requestId: z.string().trim().min(1).max(200),
   })

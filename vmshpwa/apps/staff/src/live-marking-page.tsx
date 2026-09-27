@@ -55,6 +55,21 @@ import { LiveConditionDialog } from './live-marking-condition'
 
 // Page composition: live-marking.md and design-system/05-pages-and-flows.md.
 
+// dev/development-plan/24-i18n-execution-plan.md P8: LiveMarkingQueue stores
+// error codes; this UI boundary supplies localized copy.
+function queueErrorCopy(error: string | null | undefined) {
+  switch (error) {
+    case 'local_queue_save_failed':
+      return t`Не удалось сохранить очередь на устройстве. Не закрывайте окно.`
+    case 'local_queue_unavailable':
+      return t`Очередь на устройстве недоступна.`
+    case 'local_queue_not_sent':
+      return t`Не отправлено`
+    default:
+      return error
+  }
+}
+
 function liveReactionCopy(reactionId: (typeof LIVE_REACTIONS)[number]['id']) {
   switch (reactionId) {
     case 300:
@@ -877,7 +892,7 @@ export function LiveMarkingPage({
           className="flex flex-wrap items-center gap-2 border-b bg-destructive/10 p-2 text-sm text-destructive"
           role="alert"
         >
-          {error ?? queueState.storageError ?? t`Не удалось загрузить таблицу.`}
+          {error ?? queueErrorCopy(queueState.storageError) ?? t`Не удалось загрузить таблицу.`}
           {error && undoTarget ? (
             <Button
               size="sm"
@@ -911,7 +926,9 @@ export function LiveMarkingPage({
             className="flex flex-wrap items-center gap-2 border-b p-2 text-sm"
             role="alert"
           >
-            <span>{entry.status === 'conflict' ? t`Ячейка уже изменена.` : entry.error}</span>
+            <span>
+              {entry.status === 'conflict' ? t`Ячейка уже изменена.` : queueErrorCopy(entry.error)}
+            </span>
             {entry.command.kind === 'mark' ? (
               <span>
                 <Trans>Сейчас: </Trans>

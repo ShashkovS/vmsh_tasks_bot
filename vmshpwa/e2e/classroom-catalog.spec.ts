@@ -208,12 +208,23 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
       new URL(response.url()).pathname.endsWith('/classroom-assignment-plan/recalculate'),
   )
   await page.getByRole('button', { name: 'Пересчитать' }).click()
-  expect((await recalculateResponse).status()).toBe(200)
+  const recalculated = await recalculateResponse
+  expect(recalculated.status()).toBe(200)
+  // Age depends on the current date; verify the displayed API value.
+  const recalculatedPlan = (await recalculated.json()) as {
+    assignmentPlan: { students: Array<{ studentPublicId: string; age: number }> }
+  }
+  const expectedAge = recalculatedPlan.assignmentPlan.students.find(
+    (student) => student.studentPublicId === `u-${classroomFixtureId(project) + 200}`,
+  )?.age
+  expect(expectedAge).toBeDefined()
   await expect(page.getByText(studentName, { exact: true })).toBeVisible()
 
   const roomSelect = page.getByLabel(`Аудитория для ${studentName}`)
   const studentRow = roomSelect.locator('xpath=ancestor::li[1]')
-  await expect(studentRow.getByText('возраст 13.6', { exact: true })).toBeVisible()
+  await expect(
+    studentRow.getByText(`возраст ${expectedAge!.toFixed(1)}`, { exact: true }),
+  ).toBeVisible()
   await expect(studentRow.getByText('класс 7', { exact: true })).toBeVisible()
   await expect(studentRow.getByText('сила 8.0', { exact: true })).toBeVisible()
   const roomOptions = await roomSelect.locator('option').evaluateAll((options) =>

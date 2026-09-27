@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { InterfaceLanguageCard, OrganizerLink, useAuthenticatedPrincipal } from '@vmsh/app-shell'
 import { FamilyProfilePage } from '../pages'
@@ -23,7 +24,11 @@ function Profile() {
               </Link>
             </li>
           ))}
-          {principal.linkedChildren.length === 0 ? <li>Нет связанных детей</li> : null}
+          {principal.linkedChildren.length === 0 ? (
+            <li>
+              <Trans>Нет связанных детей</Trans>
+            </li>
+          ) : null}
         </ul>
       }
     />

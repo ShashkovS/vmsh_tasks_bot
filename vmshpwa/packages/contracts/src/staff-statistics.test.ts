@@ -75,3 +75,18 @@ describe('Staff statistics contract', () => {
     expect(() => staffStatisticsResponseSchema.parse({ ...response, run: null })).toThrow()
   })
 })
+
+// P8 broad regression: creating a draft course must not break statistics reads.
+it('accepts draft courses and groups alongside the selected active course', () => {
+  const draft = {
+    ...response.courses[0],
+    courseId: 'course.draft',
+    code: 'draft',
+    status: 'draft',
+    groups: [{ ...response.courses[0].groups[0], groupId: 'group.draft', status: 'draft' }],
+  }
+  expect(
+    staffStatisticsResponseSchema.parse({ ...response, courses: [...response.courses, draft] })
+      .courses[1]?.status,
+  ).toBe('draft')
+})

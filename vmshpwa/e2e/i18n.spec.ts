@@ -4,6 +4,51 @@ import { expect, test, type Page } from './fixtures'
 // Each journey visits several routes and can reload after an account locale change.
 test.setTimeout(60_000)
 
+// P8: pre-login device preference, metadata and catalog-independent recovery.
+test('Landing follows the device language and keeps Russian as the default', async ({
+  page,
+}, info) => {
+  await page.goto('/')
+  await expect(page.getByText('Кабинет школьника', { exact: true })).toBeVisible()
+  await page.context().addCookies([{ name: 'vmsh-locale', value: 'en', url: page.url() }])
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page.getByText('Student account', { exact: true })).toBeVisible()
+  await expect(page.getByText('Family account', { exact: true })).toBeVisible()
+  await expect(page).toHaveTitle('VMSh 179 — math circle')
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    /students and parents/,
+  )
+  await page.screenshot({ path: info.outputPath('p8-landing-en.png'), fullPage: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.screenshot({ path: info.outputPath('p8-landing-en-narrow.png'), fullPage: true })
+  await expect(page.getByRole('link', { name: 'Open account' }).first()).toHaveAttribute(
+    'href',
+    '/student/',
+  )
+})
+
+test('Landing recovers from missing catalogs with a bilingual reload screen', async ({ page }) => {
+  let catalogsAvailable = false
+  await page.route('**/catalog-*.js', (route) =>
+    catalogsAvailable
+      ? route.continue()
+      : route.fulfill({
+          status: 503,
+          contentType: 'text/javascript',
+          headers: { 'cache-control': 'no-store' },
+          body: '',
+        }),
+  )
+  await page.goto('/')
+  await expect(page.getByRole('alert')).toContainText('Could not load the interface')
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить интерфейс')
+  catalogsAvailable = true
+  await page.getByRole('button', { name: 'Обновить · Reload' }).click()
+  await expect(page.getByText('Кабинет школьника', { exact: true })).toBeVisible()
+})
+
 // English interface: dev/development-plan/24-i18n.md, docs/i18n.md.
 // The account language is saved from the personal cabinet (Staff: header menu),
 // the page reloads in it, and a new device picks it up at sign-in. Fixture

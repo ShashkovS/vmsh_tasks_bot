@@ -19,7 +19,19 @@ interface RealtimeProbeRecord {
   closeCode: number | null
 }
 
+const realtimeRecords = new WeakMap<Page, Map<string, RealtimeProbeRecord>>()
+
 async function installProductRealtimeProbe(page: Page): Promise<void> {
+  // Keep evidence across the auth boundary's full-page reload, not only in
+  // window memory (docs/smooth-redeploy.md and current-session revoke below).
+  const records = new Map<string, RealtimeProbeRecord>()
+  realtimeRecords.set(page, records)
+  await page.exposeBinding(
+    '__vmshRecordRealtimeProbe',
+    (_source, id: string, record: RealtimeProbeRecord) => {
+      records.set(id, record)
+    },
+  )
   await page.addInitScript(() => {
     const NativeWebSocket = window.WebSocket
     const sockets: WebSocket[] = []
@@ -37,8 +49,17 @@ async function installProductRealtimeProbe(page: Page): Promise<void> {
         receivedTypes: [] as string[],
         closeCode: null as number | null,
       }
+      const id = crypto.randomUUID()
+      const report = () => {
+        void (
+          window as typeof window & {
+            __vmshRecordRealtimeProbe(id: string, record: RealtimeProbeRecord): Promise<void>
+          }
+        ).__vmshRecordRealtimeProbe(id, { ...record, receivedTypes: [...record.receivedTypes] })
+      }
       sockets.push(socket)
       records.push(record)
+      report()
       socket.addEventListener('message', (event) => {
         if (typeof event.data !== 'string') return
         try {
@@ -47,9 +68,11 @@ async function installProductRealtimeProbe(page: Page): Promise<void> {
         } catch {
           record.receivedTypes.push('invalid-json')
         }
+        report()
       })
       socket.addEventListener('close', (event) => {
         record.closeCode = event.code
+        report()
       })
       return socket
     }
@@ -855,6 +878,9 @@ test('student: current-session revoke closes product realtime and returns to log
     // invalidations may arrive before this session is revoked.
     .toEqual(expect.arrayContaining(['connected']))
 
+  // Start the persistent observation after login's initial navigations.
+  const revocationRecords = realtimeRecords.get(page)!
+  revocationRecords.clear()
   const revokeStatus = await page.evaluate(async () => {
     const me = await fetch('/student/api/v1/auth/me', { credentials: 'include' })
     const context = (await me.json()) as { currentSession: { sessionId: string } }
@@ -867,7 +893,7 @@ test('student: current-session revoke closes product realtime and returns to log
   expect(revokeStatus).toBe(204)
   await expect(page).toHaveURL((url) => url.pathname === '/student/login')
   await expect
-    .poll(async () => (await productRealtimeSnapshot(page)).map((record) => record.closeCode))
+    .poll(() => [...revocationRecords.values()].map((record) => record.closeCode))
     // Playwright's pass-through WebSocketRoute currently normalizes the
     // server's 1008 to 1000 in all three engines. Unit and aiohttp integration
     // tests own the exact wire code; this browser proof owns close + HTTP
@@ -876,7 +902,7 @@ test('student: current-session revoke closes product realtime and returns to log
   // An authority-sensitive close invokes one HTTP check and is never
   // interpreted as an endless transport reconnect after revocation.
   await page.waitForTimeout(1_000)
-  expect(await productRealtimeSnapshot(page)).toHaveLength(1)
+  expect([...revocationRecords.values()]).toHaveLength(1)
 })
 
 test('localStorage theme state stays audience-scoped on the shared origin', async ({ page }) => {

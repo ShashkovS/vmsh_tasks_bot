@@ -106,6 +106,11 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   await page.getByRole('button', { name: 'Все работы' }).click()
   const row = page.getByRole('row').filter({ hasText: title })
   await expect(row).toBeVisible()
+  // The queue-navigation scenario can leave this teacher's series lease alive.
+  // Release it explicitly before proving a new claim and its realtime update.
+  await row.getByRole('button', { name: 'Открыть' }).click()
+  await page.getByRole('button', { name: 'Отказаться от проверки', exact: true }).click()
+  await expect(row).toBeVisible()
 
   // A second Staff account keeps the queue open. Claim and completion must
   // update it through the audience-scoped queue invalidations, not polling.

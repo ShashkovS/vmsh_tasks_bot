@@ -408,6 +408,9 @@ export function StudentTestAnswer({
 
   const queuedSend =
     pendingItem !== null && ['queued', 'retrying', 'sending'].includes(pendingItem.status)
+  // docs/task-interaction-polish.md: the delivery lease is acquired after
+  // enqueue; do not advertise a retryable queue while that send is in flight.
+  const sending = sendState === 'sending' || pendingItem?.status === 'sending'
   const deadlineClosed = identity !== null && deadlineClosedIdentity === identity
   const storedDeadlineFailure = isSubmissionDeadlineFailure(undefined, pendingItem?.lastError)
   const showDeadlineNotice = deadlineClosed || (closed && storedDeadlineFailure)
@@ -449,7 +452,7 @@ export function StudentTestAnswer({
       at: chatTime(pendingItem.createdAtClient),
       dateLabel: chatDate(pendingItem.createdAtClient),
       text: pendingItem.payload.request.displayAnswer,
-      delivery: pendingItem.status === 'sending' ? 'sending' : 'queued',
+      delivery: sending ? 'sending' : 'queued',
     })
   }
 
@@ -533,11 +536,11 @@ export function StudentTestAnswer({
           <p className="min-w-0 flex-1 text-small text-muted-foreground">
             {availability.state === 'updating'
               ? t`Обновляем сервис. Отправим после обновления.`
-              : pendingItem?.status === 'sending'
+              : sending
                 ? t`Отправляем…`
                 : (sendError ?? submissionFailureMessage(undefined, pendingItem?.lastError))}
           </p>
-          {pendingItem?.status !== 'sending' ? (
+          {!sending ? (
             <Button onClick={() => void deliver()} size="sm" variant="outline">
               <Trans>Повторить</Trans>
             </Button>

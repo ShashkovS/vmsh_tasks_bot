@@ -299,9 +299,14 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
   await expect(page.getByText(postText, { exact: false })).toBeVisible()
 
   // The production Service Worker supplies the shell; rejecting only Student
-  // API fetches forces the page to prove its account-scoped IndexedDB fallback.
+  // API fetches while reporting an offline device proves its account-scoped IndexedDB fallback.
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null)
   await page.addInitScript((marker) => {
+    // Match the offline-device contract (see content-publication.spec.ts).
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      get: () => window.sessionStorage.getItem(marker) !== '1',
+    })
     const nativeFetch = window.fetch.bind(window)
     window.fetch = (input, init) => {
       const rawUrl = typeof input === 'string' || input instanceof URL ? String(input) : input.url

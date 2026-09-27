@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Maximize2, Minus, Plus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
@@ -40,7 +41,7 @@ export function ZoomableFigure({ children, alt, caption, className }: ZoomableFi
 
       <div className="flex items-center gap-1">
         <Button
-          aria-label="Уменьшить"
+          aria-label={t`Уменьшить`}
           disabled={zoom <= MIN}
           onClick={() => setZoom((value) => clamp(value - STEP))}
           size="icon-sm"
@@ -49,7 +50,7 @@ export function ZoomableFigure({ children, alt, caption, className }: ZoomableFi
           <Minus aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Увеличить"
+          aria-label={t`Увеличить`}
           disabled={zoom >= MAX}
           onClick={() => setZoom((value) => clamp(value + STEP))}
           size="icon-sm"
@@ -58,7 +59,7 @@ export function ZoomableFigure({ children, alt, caption, className }: ZoomableFi
           <Plus aria-hidden="true" />
         </Button>
         <Button
-          aria-label="Сбросить масштаб"
+          aria-label={t`Сбросить масштаб`}
           disabled={zoom === 1}
           onClick={() => setZoom(1)}
           size="icon-sm"

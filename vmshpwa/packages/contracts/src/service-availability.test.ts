@@ -105,12 +105,20 @@ it('does not intercept storage origins, business errors or invalid successful ru
   expect(t.getSnapshot().state).toBe('ready')
 })
 
-it('allows offline cache boundaries to run even while another request is recovering', async () => {
+it.each([
+  ['/student/api/v1/auth/me', undefined],
+  [
+    '/student/api/v1/problems/p-1/test-attempts',
+    { method: 'POST', body: JSON.stringify({ idempotencyKey: 'offline-answer' }) },
+  ],
+])('allows offline cache/outbox boundaries during recovery: %s', async (path, init) => {
   const f = fixture()
   const first = f.transport.fetch('/student/api/v1/runtime')
   await vi.advanceTimersByTimeAsync(1_000)
   vi.stubGlobal('navigator', { onLine: false })
-  await expect(f.transport.fetch('/student/api/v1/auth/me')).rejects.toBeInstanceOf(TypeError)
+  const callsBefore = f.fetch.mock.calls.length
+  await expect(f.transport.fetch(path, init)).rejects.toBeInstanceOf(TypeError)
+  expect(f.fetch.mock.calls).toHaveLength(callsBefore)
   vi.stubGlobal('navigator', { onLine: true })
   f.setMode('ready')
   await vi.advanceTimersByTimeAsync(2_000)

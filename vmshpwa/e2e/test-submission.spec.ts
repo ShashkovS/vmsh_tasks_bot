@@ -279,8 +279,25 @@ test('Phase 4: a test answer survives reload and an offline POST is delivered ex
     (response) =>
       response.request().method() === 'POST' && attemptPath.test(new URL(response.url()).pathname),
   )
-  await page.getByRole('button', { name: 'Проверить' }).click()
+  // task-interaction-polish.md: a pending receipt must not look retryable.
+  let releaseReceipt!: () => void
+  const receiptGate = new Promise<void>((resolve) => {
+    releaseReceipt = resolve
+  })
+  await page.route(attemptPath, async (route) => {
+    if (route.request().method() === 'POST') await receiptGate
+    await route.continue()
+  })
+  try {
+    await page.getByRole('button', { name: 'Проверить' }).click()
+    await expect(page.getByText('Отправляется', { exact: true })).toBeVisible()
+    await expect(page.getByText('В очереди', { exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toHaveCount(0)
+  } finally {
+    releaseReceipt()
+  }
   expect((await created).status()).toBe(201)
+  await page.unroute(attemptPath)
   await expect(page.getByText('Да, всё верно!')).toBeVisible()
 
   const problemId = await publishedProblemId(page, target, sourceItem)
@@ -293,13 +310,13 @@ test('Phase 4: a test answer survives reload and an offline POST is delivered ex
   try {
     await page.getByLabel('Ответ', { exact: true }).fill('8')
     await page.getByRole('button', { name: 'Проверить' }).click()
-    await expect(page.getByText('Отправим, когда появится сеть.')).toBeVisible()
+    await expect(page.getByText('В очереди', { exact: true })).toBeVisible()
   } finally {
     await page.context().setOffline(false)
   }
 
   await page.reload()
-  await expect(page.getByText('Отправим, когда появится сеть.')).toBeVisible()
+  await expect(page.getByText('В очереди', { exact: true })).toBeVisible()
   expect((await serverAttempts(page, problemId)).attempts).toHaveLength(1)
 
   const retried = page.waitForResponse(

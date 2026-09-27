@@ -45,25 +45,26 @@ for (const locale of ['ru', 'en'] as const) {
       )
       let downloadCount = 0
       page.on('download', () => downloadCount++)
-      // Hold real image requests so fast WebKit exports cannot finish before
-      // the cancellation click. This exercises cancellation during generation.
-      let releaseImages!: () => void
-      const imagesReleased = new Promise<void>((resolve) => {
-        releaseImages = resolve
+      // Hold the real export request before any images can enter the document
+      // cache. Blocking images is too late when WebKit reuses decoded resources.
+      const exportRequest = `**/whiteboard-export/gl-${id}?*`
+      let releaseExport!: () => void
+      const exportReleased = new Promise<void>((resolve) => {
+        releaseExport = resolve
       })
-      await page.route('**/whiteboard-export/*/assets/*', async (route) => {
-        await imagesReleased
+      await page.route(exportRequest, async (route) => {
+        await exportReleased
         await route.continue()
       })
       try {
         await page.getByRole('button', { name: copy.download }).click()
         await page.getByRole('button', { name: copy.cancel, exact: true }).click()
-        releaseImages()
+        releaseExport()
         await expect(page.getByRole('button', { name: copy.download })).toBeEnabled()
         expect(downloadCount).toBe(0)
       } finally {
-        releaseImages()
-        await page.unroute('**/whiteboard-export/*/assets/*')
+        releaseExport()
+        await page.unroute(exportRequest)
       }
       // Real backend remains in use: inject a transport failure only for photographs.
       await page.route('**/whiteboard-export/*/assets/*', (route) => route.abort())

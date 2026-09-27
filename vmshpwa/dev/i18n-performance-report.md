@@ -229,3 +229,27 @@ overrides): P5 **903 passed**, 39.37 s wall time; P6 **912 passed**, 44.27 s
 The discarded first comparison used E2E environment overrides and failed two
 production-guard tests because those overrides shadowed their `.env.production`
 fixtures; neither source revision was changed to obtain the passing comparison.
+
+## P8 — 26–27 сентября 2026, итоговые замеры не завершены
+
+Подробности реализации и блокеров: [P8 report](development-plan/24-i18n-p8-report.md).
+После исправления восстановления каталогов в WebKit начальный JS учитывает
+и entry, и eager module script русского каталога, и modulepreload-зависимости.
+Смена тега загрузки не исключает каталог из бюджета. Brotli quality 11:
+
+| App     | P0 initial JS | P8 initial JS |  Δ от P0 | P8 total JS |        RU / EN |
+| ------- | ------------: | ------------: | -------: | ----------: | -------------: |
+| Student |      368.7 KB |      391.6 KB | +22.9 KB |    445.0 KB | 21.6 / 18.3 KB |
+| Family  |      336.1 KB |      362.0 KB | +25.9 KB |    397.4 KB | 18.8 / 15.7 KB |
+| Staff   |      402.6 KB |      467.8 KB | +65.2 KB |    804.2 KB | 40.8 / 35.2 KB |
+| Landing |       63.2 KB |       64.2 KB |  +1.0 KB |     64.6 KB |   0.5 / 0.4 KB |
+
+Строгий накопленный лимит +10 KB не выполнен для Student, Family и Staff.
+Оптимизация отложена владельцем; бюджет не изменён. Эти дельты включают
+развитие продукта после P0, а не только стоимость строк перевода.
+
+Парные P7 → P8 build/unit/FCP замеры ещё не выполнены. Финальный E2E-прогон
+пришлось остановить при повторных тайм-аутах и системном load average 117–269.
+Отдельная копия P7 `c0c3df02` с frozen-lockfile зависимостями подготовлена;
+сравнение нужно завершить на свободной машине после зелёного `make pwa-e2e`.
+Не трактовать отсутствие новых FCP-данных как прохождение performance-гейта.

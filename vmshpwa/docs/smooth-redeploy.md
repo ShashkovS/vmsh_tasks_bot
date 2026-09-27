@@ -14,6 +14,11 @@
   auth и общие API-клиенты используют транспорт. Подтверждённая сессия и экран
   остаются смонтированы. Настоящие 401/403, срок сессии и audience validation
   сохраняются; настоящий offline использует прежний account-scoped cache.
+  При `navigator.onLine === false` новые записи также сразу возвращают ошибку
+  вызывающему outbox, даже если другой запрос уже ждёт восстановления сервера.
+  Иначе ответ может зависнуть в `sending` вместо перехода в очередь. Этот порядок
+  проверяет `packages/contracts/src/service-availability.test.ts`; браузерный
+  сценарий — `e2e/test-submission.spec.ts` (offline POST, reload, exactly once).
 - [`service-availability.tsx`](../packages/app-shell/src/service-availability.tsx)
   показывает компактный status без alert и обновляет активные queries после
   восстановления. [`realtime.tsx`](../packages/app-shell/src/realtime.tsx)

@@ -9,7 +9,7 @@ import {
   CardContent,
   Input,
   Label,
-  Select,
+  Select as UiSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -81,7 +81,7 @@ export function OralResultForm({
             <Label id={studentIdLabel}>
               <Trans>Школьник</Trans>
             </Label>
-            <Select
+            <UiSelect
               disabled={busy}
               onValueChange={(value) => onStudentChange(value ?? '')}
               value={studentId || null}
@@ -96,7 +96,7 @@ export function OralResultForm({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </UiSelect>
           </div>
         </div>
 

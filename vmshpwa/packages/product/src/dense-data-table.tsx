@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
@@ -98,7 +99,7 @@ export function DenseDataTable<T>({
             {selectable ? (
               <TableHead className="w-8">
                 <Checkbox
-                  aria-label="Выбрать все строки"
+                  aria-label={t`Выбрать все строки`}
                   checked={allSelected}
                   indeterminate={someSelected && !allSelected}
                   onCheckedChange={toggleAll}
@@ -150,7 +151,7 @@ export function DenseDataTable<T>({
                 {selectable ? (
                   <TableCell>
                     <Checkbox
-                      aria-label="Выбрать строку"
+                      aria-label={t`Выбрать строку`}
                       checked={isSelected}
                       onCheckedChange={() => toggleRow(key)}
                     />

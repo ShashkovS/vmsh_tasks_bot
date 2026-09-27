@@ -148,6 +148,9 @@ test('a written answer keeps its photograph and resumes the existing outbox oper
   expect(successfulSubmits).toHaveLength(0)
   await mode(page, 'ready')
   await expect.poll(() => successfulSubmits.length, { timeout: 15000 }).toBe(1)
+  // A safe post-update reload may collapse the worksheet's inline answer.
+  // Open its durable task route to verify the confirmed receipt and photograph.
+  await page.getByRole('button', { name: 'Открыть задачу 1', exact: true }).click()
   const message = submission
     .getByRole('list', { name: 'Переписка по задаче' })
     .locator(':scope > li')

@@ -1,3 +1,4 @@
+import { Plural, Trans } from '@lingui/react/macro'
 import { Flame, Sparkles } from 'lucide-react'
 
 import { cn } from '@vmsh/ui'
@@ -8,14 +9,6 @@ import { cn } from '@vmsh/ui'
  * percentile, no red «failures». Student and Family never receive a group
  * distribution in this component; aggregate charts belong to Staff contexts.
  */
-function plural(n: number, one: string, few: string, many: string): string {
-  const mod10 = n % 10
-  const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return one
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few
-  return many
-}
-
 export interface StudentProgressProps {
   solvedCount: number
   attemptedCount?: number
@@ -41,8 +34,10 @@ export function StudentProgress({
           className,
         )}
       >
-        Пока пусто. Когда вы начнёте решать задачи, здесь появится ваш прогресс — без рейтингов и
-        сравнений.
+        <Trans>
+          Пока пусто. Когда вы начнёте решать задачи, здесь появится ваш прогресс — без рейтингов и
+          сравнений.
+        </Trans>
       </div>
     )
   }
@@ -51,19 +46,27 @@ export function StudentProgress({
     <div className={cn('space-y-3', className)}>
       <p className="text-title font-semibold text-foreground">
         <span className="font-num">{solvedCount}</span>{' '}
-        {plural(solvedCount, 'задача зачтена', 'задачи зачтено', 'задач зачтено')}
+        <Plural
+          value={solvedCount}
+          one="задача зачтена"
+          few="задачи зачтено"
+          many="задач зачтено"
+          other="задачи зачтено"
+        />
       </p>
       {attemptedCount ? (
         <p className="text-small text-muted-foreground">
-          из <span className="font-num">{attemptedCount}</span>, над которыми вы работали
+          <Trans>
+            из <span className="font-num">{attemptedCount}</span>, над которыми вы работали
+          </Trans>
         </p>
       ) : null}
 
       {streakDays && streakDays > 1 ? (
         <p className="inline-flex items-center gap-1.5 text-small text-foreground">
           <Flame aria-hidden="true" className="size-4 text-status-warning" />
-          {streakDays} {plural(streakDays, 'день', 'дня', 'дней')} подряд с решениями — ваш личный
-          рекорд
+          {streakDays} <Plural value={streakDays} one="день" few="дня" many="дней" other="дня" />{' '}
+          <Trans>подряд с решениями — ваш личный рекорд</Trans>
         </p>
       ) : null}
 

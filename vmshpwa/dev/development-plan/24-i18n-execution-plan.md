@@ -1,6 +1,14 @@
 # RU → EN localization: step-by-step execution plan
 
-Status: P0–P5 are implemented locally (P5 commit `2233052c`). P6 and P7 implementation and functional verification are complete on 2026-09-26; the cumulative P0 performance gate remains open (see [P6 report](24-i18n-p6-report.md) and [P7 report](24-i18n-p7-report.md)). P8 remains queued. This document is the authoritative execution procedure.
+## Publication decision — 27 September 2026
+
+The owner explicitly authorized committing and pushing the current P8 implementation
+for their production verification after the bounded flaky-test repairs passed
+36/36 checks with retries disabled. This supersedes earlier no-push instructions.
+The complete E2E gate remains pending; performance optimization remains deferred.
+Earlier verification entries below describe the state at the time of each run.
+
+Status: P0–P5 are implemented locally (P5 commit `2233052c`). P6 and P7 implementation and functional verification are complete on 2026-09-26; the cumulative P0 performance gate remains open (see [P6 report](24-i18n-p6-report.md) and [P7 report](24-i18n-p7-report.md)). P8 implementation is complete; final broad/visual verification and timing measurements are blocked by repeated browser timeouts and extreme host load on 2026-09-27. Publication is owner-authorized; see the [P8 report](24-i18n-p8-report.md). This document is the authoritative execution procedure.
 
 This is an English-language execution companion to [24-i18n.md](24-i18n.md), intended for an agent that needs explicit, small, verifiable tasks. Follow the existing architecture; do not invent a replacement translation system. Finish one batch before starting another.
 
@@ -962,7 +970,7 @@ Passing explicit app names matters: the startup script's default list excludes L
 
 Compare with [i18n-performance-report.md](../i18n-performance-report.md), keeping the existing P0/pre-i18n reference and recording the immediately preceding phase too:
 
-- Initial JS, entry plus modulepreload, Brotli: maximum +10 KB per app against the plan's baseline.
+- Initial JS, entry plus modulepreloads and the eager catalog module, Brotli: maximum +10 KB per app against the plan's baseline.
 - Cold and warm median FCP: maximum +30 ms.
 - Build and frontend test duration: maximum +25%.
 - Catalog request starts in parallel with startup, not as a new sequential waterfall.

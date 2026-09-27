@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from urllib.parse import unquote
 
 from aiohttp import web
+from helpers.pwa.i18n import _
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session, validate_request_boundary
@@ -289,7 +290,7 @@ async def analytics_events(request: web.Request) -> web.Response:
         item = dict(row)
         item["account"] = names_by_id.get(
             str(row["account_public_id"]),
-            {"displayName": "Удалённый аккаунт", "currentAudience": None},
+            {"displayName": _("Удалённый аккаунт"), "currentAudience": None},
         )
         item["eventId"] = item.pop("id")
         items.append(item)

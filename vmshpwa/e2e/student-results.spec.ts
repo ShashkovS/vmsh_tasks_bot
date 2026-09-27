@@ -29,7 +29,8 @@ test('Student archive: fuzzy search, multiple levels, complete history, URL and 
   await expect(detail.getByText('Файл не сохранился или недоступен.')).toBeVisible()
   await expect(detail.getByRole('button', { name: /Ещё 50 событий/ })).toBeVisible()
   await expect(
-    detail.getByRole('heading', { name: new RegExp(archivedProblemTitle) }),
+    // The asynchronously loaded statement also has an h2 with this title.
+    detail.getByRole('heading', { name: new RegExp(archivedProblemTitle), level: 4 }),
   ).toBeVisible()
   await page.screenshot({ path: info.outputPath('results-desktop.png'), animations: 'disabled' })
   await detail.getByRole('button', { name: /Ещё 50 событий/ }).click()

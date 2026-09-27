@@ -29,7 +29,17 @@ def test_second_e2e_suite_fails_before_entering_shared_workspace(tmp_path):
 def test_visual_modes_keep_build_before_playwright():
     assert commands_for_mode("all") == (
         ("pnpm", "build"),
-        ("pnpm", "exec", "playwright", "test", "--grep-invert", "@visual"),
+        (
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            r"e2e/(?!figure-layout|statistics-recalculation).*\.spec\.ts",
+            "--grep-invert",
+            "@visual",
+        ),
+        ("pnpm", "exec", "playwright", "test", "e2e/figure-layout.spec.ts"),
+        ("pnpm", "exec", "playwright", "test", "e2e/statistics-recalculation.spec.ts"),
         ("pnpm", "exec", "playwright", "test", "--grep", "@visual"),
     )
     assert commands_for_mode("visual")[-1][-2:] == ("--grep", "@visual")
@@ -120,7 +130,9 @@ def test_failed_build_stops_before_playwright(monkeypatch, tmp_path):
     assert calls == [("pnpm", "build")]
 
 
-def test_all_mode_resets_only_the_e2e_database_between_playwright_phases(monkeypatch, tmp_path):
+def test_all_mode_resets_only_the_e2e_database_between_playwright_phases(
+    monkeypatch, tmp_path
+):
     database = tmp_path / "vmshpwa_e2e.sqlite3"
     database.write_text("stale", encoding="utf-8")
     calls: list[tuple[tuple[str, ...], bool]] = []
@@ -133,14 +145,39 @@ def test_all_mode_resets_only_the_e2e_database_between_playwright_phases(monkeyp
     monkeypatch.setattr("vmshpwa.scripts.e2e_runner.E2E_DATABASE", database)
     monkeypatch.setattr("vmshpwa.scripts.e2e_runner.subprocess.run", fake_run)
 
-    assert run_commands(
-        commands_for_mode("all"),
-        workspace=Path(tmp_path),
-        reset_database_between_commands=True,
-    ) == 0
+    assert (
+        run_commands(
+            commands_for_mode("all"),
+            workspace=Path(tmp_path),
+            reset_database_between_commands=True,
+        )
+        == 0
+    )
     assert calls == [
         (("pnpm", "build"), True),
-        (("pnpm", "exec", "playwright", "test", "--grep-invert", "@visual"), False),
+        (
+            (
+                "pnpm",
+                "exec",
+                "playwright",
+                "test",
+                r"e2e/(?!figure-layout|statistics-recalculation).*\.spec\.ts",
+                "--grep-invert",
+                "@visual",
+            ),
+            False,
+        ),
+        (("pnpm", "exec", "playwright", "test", "e2e/figure-layout.spec.ts"), False),
+        (
+            (
+                "pnpm",
+                "exec",
+                "playwright",
+                "test",
+                "e2e/statistics-recalculation.spec.ts",
+            ),
+            False,
+        ),
         (("pnpm", "exec", "playwright", "test", "--grep", "@visual"), False),
     ]
 

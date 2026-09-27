@@ -21,13 +21,13 @@ export const linguiConfigPath = join(import.meta.dirname, 'lingui.config.ts')
 const DEFAULT_CATALOG_MODULE = /\/src\/i18n\/catalog-ru\.ts$/
 
 /**
- * Preloads the default-locale catalog chunk in parallel with the entry chunk,
+ * Loads the default-locale catalog chunk in parallel with the entry chunk,
  * so the pre-render catalog import adds no sequential request.
  */
-function defaultCatalogPreload(): Plugin {
+function defaultCatalogLoad(): Plugin {
   let base = '/'
   return {
-    name: 'vmsh:i18n-default-catalog-preload',
+    name: 'vmsh:i18n-default-catalog-load',
     apply: 'build',
     configResolved(config) {
       base = config.base
@@ -44,8 +44,10 @@ function defaultCatalogPreload(): Plugin {
         if (!chunk) return []
         return [
           {
-            tag: 'link',
-            attrs: { rel: 'modulepreload', crossorigin: true, href: `${base}${chunk.fileName}` },
+            tag: 'script',
+            // WebKit bug 270357 also affects script preloads. Loading this side-effect-free
+            // catalog as a module preserves parallel fetch without the preload cache.
+            attrs: { type: 'module', crossorigin: true, src: `${base}${chunk.fileName}` },
             injectTo: 'head',
           },
         ]
@@ -115,6 +117,6 @@ export function i18nPlugins(): PluginOption[] {
       presets: [linguiTransformerBabelPreset(undefined, { configPath: linguiConfigPath })],
     }),
     catalogCoverageGuard(),
-    defaultCatalogPreload(),
+    defaultCatalogLoad(),
   ]
 }

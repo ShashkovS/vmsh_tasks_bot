@@ -77,13 +77,28 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     if mode == "all":
         return (
             ("pnpm", "build"),
-            (*playwright, "--grep-invert", "@visual"),
+            # P8 final regression: these destructive fixtures share lesson IDs
+            # with content/live-marking. Give them fresh seeded SQLite phases.
+            (
+                *playwright,
+                r"e2e/(?!figure-layout|statistics-recalculation).*\.spec\.ts",
+                "--grep-invert",
+                "@visual",
+            ),
+            (*playwright, "e2e/figure-layout.spec.ts"),
+            (*playwright, "e2e/statistics-recalculation.spec.ts"),
             (*playwright, "--grep", "@visual"),
         )
     if mode == "authentication":
         playwright.append("e2e/authentication.spec.ts")
     elif mode == "figure-layout":
-        playwright.extend(["e2e/figure-layout.spec.ts", "e2e/whiteboard-export.spec.ts", "e2e/worksheet-print.spec.ts"])
+        playwright.extend(
+            [
+                "e2e/figure-layout.spec.ts",
+                "e2e/whiteboard-export.spec.ts",
+                "e2e/worksheet-print.spec.ts",
+            ]
+        )
     elif mode == "content":
         playwright.append("e2e/content-publication.spec.ts")
     elif mode == "family":
@@ -109,7 +124,9 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     elif mode == "redeploy":
         playwright.append("e2e/smooth-redeploy.spec.ts")
     elif mode == "live-marking":
-        playwright.extend(["e2e/live-marking.spec.ts", "e2e/live-marking-confirmation.spec.ts"])
+        playwright.extend(
+            ["e2e/live-marking.spec.ts", "e2e/live-marking-confirmation.spec.ts"]
+        )
     elif mode == "news":
         playwright.append("e2e/news-notifications.spec.ts")
     elif mode == "runtime-isolation":

@@ -108,7 +108,7 @@ server {
 
     location @vmshpwa_updating {
         default_type application/json;
-        return 503 '{"error":{"code":"service_updating","message":"Обновляем сервис. Подключимся автоматически.","requestId":"service-update"}}';
+        return 503 '{"error":{"code":"service_updating","message":"Обновляем сервис. Подключимся автоматически. · Service updating. We will reconnect automatically.","requestId":"service-update"}}';
     }
 
     location = /metrics {

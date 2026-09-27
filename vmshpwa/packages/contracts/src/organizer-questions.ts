@@ -64,6 +64,7 @@ export const organizerSendSchema = z
   .strict()
   .refine(
     (v) => v.text.trim().length > 0 || v.photoIds.length > 0,
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- schema diagnostic only; organizer-pages renders its own localized validation failure
     'Введите сообщение или добавьте фотографию',
   )
 export const organizerSentSchema = z

@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 from aiohttp import web
 
+from helpers.pwa.i18n import N_
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.oral_result_routes import _factory, _staff_principal
 from db_methods.pwa import live_marking as db
@@ -18,16 +19,16 @@ routes = web.RouteTableDef()
 logger = logging.getLogger(__name__)
 _ID = re.compile(r"^[a-z0-9][a-z0-9._:-]{0,127}$")
 _MESSAGES = {
-    "not_found": (404, "Школьник, занятие или аудитория не найдены"),
-    "forbidden": (403, "Нет доступа к этому приёму"),
-    "conflict": (409, "Данные уже изменились. Сравните с актуальным состоянием"),
-    "plan_unavailable": (409, "Нужен актуальный подтверждённый план аудиторий"),
+    "not_found": (404, N_("Школьник, занятие или аудитория не найдены")),
+    "forbidden": (403, N_("Нет доступа к этому приёму")),
+    "conflict": (409, N_("Данные уже изменились. Сравните с актуальным состоянием")),
+    "plan_unavailable": (409, N_("Нужен актуальный подтверждённый план аудиторий")),
     "admin_draft": (
         409,
-        "Администратор редактирует распределение. Сначала завершите этот план",
+        N_("Администратор редактирует распределение. Сначала завершите этот план"),
     ),
-    "session_finished": (409, "Сессия завершена. Начните новую для исправлений"),
-    "invalid": (422, "Проверьте данные изменения"),
+    "session_finished": (409, N_("Сессия завершена. Начните новую для исправлений")),
+    "invalid": (422, N_("Проверьте данные изменения")),
 }
 
 

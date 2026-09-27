@@ -212,7 +212,7 @@ async def _proxy_http(request: web.Request) -> web.StreamResponse:
             {
                 "error": {
                     "code": "service_updating",
-                    "message": "Обновляем сервис",
+                    "message": "Обновляем сервис. Подключимся автоматически. · Service updating. We will reconnect automatically.",
                     "requestId": "e2e-deploy",
                 }
             },

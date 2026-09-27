@@ -1,5 +1,7 @@
 import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
-import { expect, test } from './fixtures'
+import { familyChildHomeResponseSchema } from '../packages/contracts/src/family-courses'
+
+import { expect, test, type Page } from './fixtures'
 
 function phase9FamilyPersona(project: string): AuthPersona {
   const ordinal = ['chromium', 'webkit', 'firefox'].indexOf(project) + 1
@@ -12,6 +14,30 @@ function phase9FamilyPersona(project: string): AuthPersona {
     credentialField: 'password',
     credential: AUTH_PERSONAS.family.credential,
   }
+}
+
+// Full-suite fixtures can publish newer lessons. Compare each child's own API
+// context instead of assuming a seed-only title or an empty current lesson.
+async function expectCurrentLesson(page: Page, studentId: string) {
+  const home = familyChildHomeResponseSchema.parse(
+    await page.evaluate(async (id) => {
+      const response = await fetch(`/family/api/v1/children/${id}/home`)
+      return (await response.json()) as unknown
+    }, studentId),
+  )
+  const lesson = home.courses[0]!.currentLesson
+  if (lesson) {
+    await expect(
+      page
+        .getByText(lesson.title?.trim() || `Занятие ${lesson.lessonNumber}`, { exact: true })
+        .first(),
+    ).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Открыть листок' })).toBeVisible()
+  } else {
+    await expect(page.getByText('Новое занятие пока не опубликовано')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Открыть листок' })).toHaveCount(0)
+  }
+  return lesson
 }
 
 test('Phase 9: Family switches children and opens only their current course context', async ({
@@ -29,10 +55,9 @@ test('Phase 9: Family switches children and opens only their current course cont
     .click()
   await expect(page).toHaveURL(/\/family\/children\/u-101$/)
   await expect(page.getByRole('heading', { name: 'Алексей Тестовый-Онлайн' })).toBeVisible()
-  const currentLesson = page.getByText(/^Занятие \d+ · /).first()
-  await expect(currentLesson).toBeVisible()
-  const lessonNumber = (await currentLesson.textContent())?.match(/^Занятие (\d+) · /)?.[1]
-  expect(lessonNumber).toBeTruthy()
+  const currentLesson = await expectCurrentLesson(page, 'u-101')
+  expect(currentLesson).not.toBeNull()
+  const lessonNumber = currentLesson!.lessonNumber
   await expect(page.getByText(/\d+ зачтено из \d+ задач/).first()).toBeVisible()
   await page.getByRole('button', { name: 'Открыть листок' }).click()
   await expect(page).toHaveURL(new RegExp(`/family/tasks/[^/]+/[^/]+/${lessonNumber}(?:\\?|$)`))
@@ -43,8 +68,7 @@ test('Phase 9: Family switches children and opens only their current course cont
     .locator('xpath=../../..')
     .getByRole('button', { name: 'Открыть' })
     .click()
-  await expect(page.getByText('Новое занятие пока не опубликовано')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Открыть листок' })).toHaveCount(0)
+  await expectCurrentLesson(page, 'u-102')
 
   await page.goto('/family/children/unlinked-student')
   await expect(page.getByText('Этот профиль не связан с вашей учётной записью.')).toBeVisible()
@@ -100,7 +124,7 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
   await expect(page.getByText('7 класс', { exact: true })).toHaveCount(0)
   releaseSecondChild()
   await expect(page.getByText('5 класс', { exact: true })).toBeVisible()
-  await expect(page.getByText('Новое занятие пока не опубликовано')).toBeVisible()
+  await expectCurrentLesson(page, secondChildId)
   await page.unroute(secondHome)
 
   // Keep this reversible write on the Family-only fixture. Classroom and

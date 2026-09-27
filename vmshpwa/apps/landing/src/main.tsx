@@ -15,6 +15,9 @@ if (!rootElement) throw new Error('Root element is missing')
 void bootstrapLocale(catalogLoaders).then(
   () => {
     document.title = t`ВМШ 179 — математический кружок`
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute('content', t`ВМШ 179 — математический кружок для школьников и родителей`)
     createRoot(rootElement).render(
       <StrictMode>
         <LocaleProvider loaders={catalogLoaders}>

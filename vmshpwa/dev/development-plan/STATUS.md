@@ -1,5 +1,45 @@
 # Статус плана разработки
 
+## Publication decision — 27 September 2026
+
+The owner explicitly authorized committing and pushing the current P8 implementation
+for their production verification after the bounded flaky-test repairs passed
+36/36 checks with retries disabled. This supersedes earlier no-push instructions.
+The complete E2E gate remains pending; performance optimization remains deferred.
+Earlier verification entries below describe the state at the time of each run.
+
+## Bounded flaky-test verification — 27 September 2026
+
+The three pending test repairs are now verified: logout opens a fresh protected
+tab with the same cookies/storage instead of racing an automatic reload;
+archive history selects the card's h4 rather than the asynchronously loaded
+statement's h2; Whiteboard cancellation holds the real export-data request
+before images can be cached. No tests were disabled or assertions weakened.
+
+A temporary Make target used the existing E2E runner's cross-process lock,
+sanitized environment, build and isolated database reset. Only these scenarios
+ran twice in Chromium, WebKit and Firefox, with `--retries 0`: **36/36 passed
+in 3.9 minutes**, with no retries. Focused ESLint and Prettier checks passed.
+The complete task took about five minutes, within the owner's ten-minute cap.
+No full-suite rerun, commit or push. The full P8 gate remains pending; these
+results supersede the earlier "unverified" status for these three repairs.
+
+
+## i18n P8 — 27 September 2026, implementation complete; final regression resumed
+
+Landing, remaining product copy and generated system notices are localized;
+maintenance messages are bilingual. Source/catalog guards cover all production
+PWA roots. The catalog's parallel module loading fixes WebKit recovery after a
+failed preload. Unit (925), Python (2096), Storybook (316), i18n E2E (36) and
+oral/live E2E (15) and redeploy E2E (15) checks passed. The final broad run
+has not passed: WebKit navigation timeouts coincided with extreme host load
+(117–269). Remaining broad/visual gates and isolated timings are pending;
+no commit or push has been made. The owner removed machine load; the full
+isolated E2E gate is running again on 27 September (initial load average 3.89).
+See the [P8 report](24-i18n-p8-report.md). Historical feedback without proven built-in origin
+awaits the owner's acceptance of source-language preservation. Catalog-loading
+optimization remains deferred; the cumulative P0 performance gate stays open.
+
 ## i18n P7 — 26 September 2026, implementation verified; performance gate open
 
 Staff user management, access, audit, Telegram bindings, dashboard, analytics and
@@ -3362,3 +3402,11 @@ Prometheus `vmsh_websocket_connections`, а HTTP p95 уже строится и�
 Storybook просмотрен в браузере, вставка ссылки из пользовательского скриншота
 проверена через реальную кнопку. HTTP 200 провайдера не подтверждает playback;
 предыдущий вывод о необходимости VK Login не доказан проверкой внутри iframe.
+
+
+27 September rerun found a reproducible Firefox offline-write failure: an
+existing service recovery loop held a new offline answer in `sending`.
+`packages/contracts/src/service-availability.ts` now rejects offline writes
+before waiting for recovery, returning control to the durable outbox. A
+regression test reproduced the hang before the fix and passes afterward;
+full browser verification is being repeated.

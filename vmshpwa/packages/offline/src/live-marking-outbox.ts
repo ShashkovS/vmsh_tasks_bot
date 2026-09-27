@@ -80,7 +80,7 @@ export class LiveMarkingQueue {
       .catch(() => {
         this.snapshot = {
           ...this.snapshot,
-          storageError: 'Не удалось сохранить очередь на устройстве. Не закрывайте окно.',
+          storageError: 'local_queue_save_failed',
         }
         this.emit()
       })
@@ -107,7 +107,7 @@ export class LiveMarkingQueue {
       this.snapshot = {
         ...this.snapshot,
         ready: true,
-        storageError: 'Очередь на устройстве недоступна.',
+        storageError: 'local_queue_unavailable',
       }
       this.emit()
     }
@@ -373,7 +373,7 @@ export class LiveMarkingQueue {
             attempted: !status || status >= 500,
             status:
               status === 409 ? 'conflict' : status >= 400 && status < 500 ? 'failed' : 'queued',
-            error: error instanceof Error ? error.message : 'Не отправлено',
+            error: error instanceof Error ? error.message : 'local_queue_not_sent',
           })
           if (!status || status >= 500) {
             retryDelay = 1000

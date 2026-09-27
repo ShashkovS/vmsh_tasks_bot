@@ -7,6 +7,7 @@ import re
 
 from aiohttp import web
 
+from helpers.pwa.i18n import N_
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import validate_request_boundary
 from db_methods.pwa.legacy_print import list_print_events
@@ -24,16 +25,16 @@ from models.pwa.legacy_print import (
 routes = web.RouteTableDef()
 PREFIX = "/staff/api/legacy-print/v1"
 _MESSAGES = {
-    "event_cancelled": "Очное событие отменено",
-    "plan_not_confirmed": "Подтвердите распределение в админке перед печатью",
-    "lesson_mismatch": "Номер занятия не совпадает с выбранным событием",
-    "multiple_courses": "Старые скрипты поддерживают только один курс за запуск",
-    "unsupported_level": "Для старых скриптов нужны коды групп н, п, э",
-    "roster_changed": "Подтверждённый план содержит неполное или противоречивое назначение",
-    "missing_or_duplicate_login": "У ученика нет уникального логина портала",
-    "mixed_room": "В одной аудитории оказались разные группы",
-    "missing_name": "Для печати нужны фамилия и имя каждого ученика",
-    "lesson_has_no_problems": "Для занятия не найдены задачи",
+    "event_cancelled": N_("Очное событие отменено"),
+    "plan_not_confirmed": N_("Подтвердите распределение в админке перед печатью"),
+    "lesson_mismatch": N_("Номер занятия не совпадает с выбранным событием"),
+    "multiple_courses": N_("Старые скрипты поддерживают только один курс за запуск"),
+    "unsupported_level": N_("Для старых скриптов нужны коды групп н, п, э"),
+    "roster_changed": N_("Подтверждённый план содержит неполное или противоречивое назначение"),
+    "missing_or_duplicate_login": N_("У ученика нет уникального логина портала"),
+    "mixed_room": N_("В одной аудитории оказались разные группы"),
+    "missing_name": N_("Для печати нужны фамилия и имя каждого ученика"),
+    "lesson_has_no_problems": N_("Для занятия не найдены задачи"),
 }
 
 

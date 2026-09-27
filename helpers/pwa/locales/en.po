@@ -7,7 +7,7 @@ msgstr ""
 
 #: apps/pwa_api/legacy_print_routes.py
 msgid "API печати не настроен"
-msgstr ""
+msgstr "The print API is not configured"
 
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Environment 'multicols' не содержит число колонок."
@@ -177,6 +177,10 @@ msgstr "{number}: review required"
 msgid "Администратор имеет доступ ко всем курсам"
 msgstr "An administrator has access to every course"
 
+#: apps/pwa_api/live_marking_routes.py
+msgid "Администратор редактирует распределение. Сначала завершите этот план"
+msgstr "An administrator is editing the assignments. Complete that plan first"
+
 #: apps/pwa_api/admin_account_routes.py
 msgid "Аккаунт не найден"
 msgstr "Account not found"
@@ -219,7 +223,7 @@ msgstr "The room has already changed. Refresh the page."
 
 #: apps/pwa_api/legacy_print_routes.py
 msgid "База печати временно недоступна"
-msgstr ""
+msgstr "The print database is temporarily unavailable"
 
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Блок {value0} не имеет завершающей команды."
@@ -272,6 +276,10 @@ msgstr "A post has appeared in the club news."
 #: helpers/pwa/push_delivery.py
 msgid "В обсуждении решения появился ответ."
 msgstr "A reply has appeared in the solution discussion."
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "В одной аудитории оказались разные группы"
+msgstr "Different groups are assigned to the same room"
 
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "В одной группе можно выбрать только одну задачу"
@@ -518,7 +526,19 @@ msgstr "Course data is temporarily unavailable"
 
 #: apps/pwa_api/legacy_print_routes.py
 msgid "Данные печати изменились после предыдущего экспорта"
-msgstr ""
+msgstr "Print data has changed since the previous export"
+
+#: apps/pwa_api/live_marking_routes.py
+msgid "Данные уже изменились. Сравните с актуальным состоянием"
+msgstr "The data has changed. Compare it with the current state"
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Для занятия не найдены задачи"
+msgstr "No problems were found for this class"
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Для печати нужны фамилия и имя каждого ученика"
+msgstr "Each student's first and last names are required for printing"
 
 #: apps/pwa_api/content_routes.py
 #: apps/pwa_api/middleware.py
@@ -529,6 +549,10 @@ msgstr "Sign in to your account to continue."
 #: apps/pwa_api/content_routes.py
 msgid "Для расписания текущая и отложенная версии должны совпадать"
 msgstr "The current and scheduled versions must match to set the schedule"
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Для старых скриптов нужны коды групп н, п, э"
+msgstr "Legacy scripts require group codes н, п, э"
 
 #: apps/pwa_api/problem_import_routes.py
 msgid "Для тестовой задачи нужен известный тип ответа."
@@ -1373,6 +1397,10 @@ msgstr "You do not have access to this group's statistics"
 msgid "Нет доступа к этой группе"
 msgstr "You do not have access to this group"
 
+#: apps/pwa_api/live_marking_routes.py
+msgid "Нет доступа к этому приёму"
+msgstr "You do not have access to this review session"
+
 #: apps/pwa_api/whiteboard_export_routes.py
 msgid "Нет доступа к этому уровню"
 msgstr "You do not have access to this level"
@@ -1414,8 +1442,16 @@ msgid "Номер занятия должен быть целым неотриц
 msgstr "The class number must be a nonnegative integer."
 
 #: apps/pwa_api/legacy_print_routes.py
+msgid "Номер занятия не совпадает с выбранным событием"
+msgstr "The class number does not match the selected event"
+
+#: apps/pwa_api/live_marking_routes.py
+msgid "Нужен актуальный подтверждённый план аудиторий"
+msgstr "A current confirmed room assignment plan is required"
+
+#: apps/pwa_api/legacy_print_routes.py
 msgid "Нужен токен API печати"
-msgstr ""
+msgstr "A print API token is required"
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Обновите данные перед подтверждением"
@@ -1627,7 +1663,11 @@ msgstr "The in-person class has already changed. Refresh the page."
 
 #: apps/pwa_api/legacy_print_routes.py
 msgid "Очное событие не найдено"
-msgstr ""
+msgstr "In-person event not found"
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Очное событие отменено"
+msgstr "The in-person event was cancelled"
 
 #: apps/pwa_api/account_batch_routes.py
 msgid "Пакетные операции временно недоступны"
@@ -1652,6 +1692,14 @@ msgstr "Invalid work overview parameters"
 #: apps/pwa_api/course_routes.py
 msgid "Параметры списка занятий некорректны"
 msgstr "The class-list parameters are invalid"
+
+#: helpers/pwa/written_notice_i18n.py
+msgid "Перенесено преподавателем в задачу {problem}."
+msgstr "Moved by a teacher to problem {problem}."
+
+#: helpers/pwa/written_notice_i18n.py
+msgid "Перенесено преподавателем из задачи {problem}."
+msgstr "Moved by a teacher from problem {problem}."
 
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Перенесите рисунок в TikZ для отображения в web-производной."
@@ -1718,9 +1766,17 @@ msgstr "Confirm that you want to submit a verdict without a comment"
 msgid "Подтвердите полную перегенерацию metadata для этой версии условия"
 msgstr "Confirm full metadata regeneration for this statement version"
 
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Подтвердите распределение в админке перед печатью"
+msgstr "Confirm the assignments in Staff before printing"
+
 #: apps/pwa_api/content_routes.py
 msgid "Подтверждение перезаписи metadata должно быть булевым значением"
 msgstr "The metadata overwrite confirmation must be a boolean"
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Подтверждённый план содержит неполное или противоречивое назначение"
+msgstr "The confirmed plan contains incomplete or conflicting assignments"
 
 #: apps/pwa_api/classroom_routes.py
 msgid "Поисковый запрос слишком длинный"
@@ -1897,6 +1953,10 @@ msgstr "Check the review-completion data"
 #: apps/pwa_api/admin_course_routes.py
 msgid "Проверьте данные занятия"
 msgstr "Check the class data"
+
+#: apps/pwa_api/live_marking_routes.py
+msgid "Проверьте данные изменения"
+msgstr "Check the change details"
 
 #: apps/pwa_api/staff_access_routes.py
 msgid "Проверьте данные преподавателя"
@@ -2486,9 +2546,21 @@ msgstr "This oral-submission slot is currently closed"
 msgid "Семейный аккаунт не найден"
 msgstr "Parent account not found"
 
+#: apps/pwa_api/live_marking_routes.py
+msgid "Сессия завершена. Начните новую для исправлений"
+msgstr "The session has ended. Start a new one to make corrections"
+
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Синонимы задач временно недоступны"
 msgstr "Problem synonyms are temporarily unavailable"
+
+#: helpers/pwa/written_notice_i18n.py
+msgid "Скопировано преподавателем в задачу {problem}."
+msgstr "Copied by a teacher to problem {problem}."
+
+#: helpers/pwa/written_notice_i18n.py
+msgid "Скопировано преподавателем из задачи {problem}."
+msgstr "Copied by a teacher from problem {problem}."
 
 #: helpers/pwa/push_delivery.py
 msgid "Скоро дедлайн"
@@ -2587,6 +2659,10 @@ msgstr "The submission deadline for this problem has passed."
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Ссылка использует запрещённую или некорректную схему URL."
 msgstr "The link uses a prohibited or invalid URL scheme."
+
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Старые скрипты поддерживают только один курс за запуск"
+msgstr "Legacy scripts support only one course per run"
 
 #: apps/pwa_api/staff_statistics_routes.py
 msgid "Статистика временно недоступна"
@@ -2757,6 +2833,10 @@ msgstr "For published news, the text can be corrected but not the time"
 msgid "У уже опубликованной новости нельзя менять получателей"
 msgstr "Recipients cannot be changed for published news"
 
+#: apps/pwa_api/legacy_print_routes.py
+msgid "У ученика нет уникального логина портала"
+msgstr "The student does not have a unique portal username"
+
 #: apps/pwa_api/written_submission_routes.py
 msgid "У фотографии отсутствует имя файла"
 msgstr "The photo has no file name"
@@ -2785,6 +2865,10 @@ msgstr "Remove the backslash or use \\\\ for a line break."
 msgid "Удалите файловый, динамический или output-примитив из source."
 msgstr "Remove file, dynamic, or output primitives from the source."
 
+#: apps/pwa_api/product_analytics_routes.py
+msgid "Удалённый аккаунт"
+msgstr "Deleted account"
+
 #: apps/pwa_api/content_routes.py
 msgid "Укажите revision для генерации metadata"
 msgstr "Specify a revision for metadata generation"
@@ -2799,7 +2883,7 @@ msgstr "Provide a brief reason"
 
 #: apps/pwa_api/legacy_print_routes.py
 msgid "Укажите номер занятия в параметре lesson"
-msgstr ""
+msgstr "Specify the class number in the lesson parameter"
 
 #: apps/pwa_api/content_routes.py
 msgid "Укажите одну revision для таблицы метаданных"
@@ -3004,6 +3088,10 @@ msgstr "The student or class was not found"
 #: apps/pwa_api/admin_account_routes.py
 msgid "Школьник не найден"
 msgstr "Student not found"
+
+#: apps/pwa_api/live_marking_routes.py
+msgid "Школьник, занятие или аудитория не найдены"
+msgstr "Student, class, or room not found"
 
 #: apps/pwa_api/content_routes.py
 msgid "Эта revision уже опубликована"

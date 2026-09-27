@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { Mail, Users } from 'lucide-react'
 import { type ReactNode } from 'react'
 import {
@@ -49,28 +51,36 @@ import {
 const level = {
   id: 'math-beginner',
   courseId: 'math-5-7',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   code: 'н',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   name: 'Начинающие',
   colorIndex: 1 as const,
 }
 const mathCourse: CourseView = {
   id: 'math-5-7',
   code: 'MATH-5-7',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   name: 'Математика 5–7',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   subjectCode: 'Математика',
   accentIndex: 1,
 }
 const physicsCourse: CourseView = {
   id: 'physics-experiment',
   code: 'PHYS-EXP',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   name: 'Физика: эксперимент',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   subjectCode: 'Физика',
   accentIndex: 4,
 }
 const physicsGroup: GroupView = {
   id: 'physics-intro',
   courseId: physicsCourse.id,
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   code: 'вв',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
   name: 'Вводная',
   colorIndex: 4,
 }
@@ -94,27 +104,51 @@ const partial = findVerdict(fullVerdictScale, 'plus-minus')!
 const tasks: TaskListItemView[] = [
   {
     id: '41n-1',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     number: '41н.1',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     title: 'Разнообразные вагоны',
     type: 'test',
-    status: { kind: 'accepted', label: 'Зачтено', tone: 'success' },
+    status: {
+      kind: 'accepted',
+      get label() {
+        return t`Зачтено`
+      },
+      tone: 'success',
+    },
     verdict: accepted,
   },
   {
     id: '41n-6',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     number: '41н.6',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     title: 'Расстановка ладей',
     type: 'written',
-    status: { kind: 'needs-work', label: 'Нужно дополнить', tone: 'warning' },
+    status: {
+      kind: 'needs-work',
+      get label() {
+        return t`Нужно дополнить`
+      },
+      tone: 'warning',
+    },
     verdict: partial,
     hasNewFeedback: true,
   },
   {
     id: '41n-8',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     number: '41н.8',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     title: 'Четыре разреза',
     type: 'oral',
-    status: { kind: 'not-started', label: 'Не начато', tone: 'neutral' },
+    status: {
+      kind: 'not-started',
+      get label() {
+        return t`Не начато`
+      },
+      tone: 'neutral',
+    },
   },
 ]
 
@@ -131,7 +165,7 @@ function StatefulPage({
   return (
     <PageLayout title={title}>
       <PageStatePanel
-        actionLabel={state === 'error' ? 'Повторить' : undefined}
+        actionLabel={state === 'error' ? t`Повторить` : undefined}
         onAction={state === 'error' ? () => undefined : undefined}
         state={state}
       />
@@ -141,10 +175,14 @@ function StatefulPage({
 
 function ChildSwitcher() {
   return (
-    <label className="flex items-center gap-2 text-small font-medium">
-      <span>Ребёнок</span>
+    <label aria-label={t`Ребёнок`} className="flex items-center gap-2 text-small font-medium">
+      <span>
+        <Trans>Ребёнок</Trans>
+      </span>
       <select className="min-h-9 rounded-md border border-input bg-surface px-3">
+        {/* eslint-disable-next-line lingui/no-unlocalized-strings -- fixture student name */}
         <option>Василий Петров</option>
+        {/* eslint-disable-next-line lingui/no-unlocalized-strings -- fixture student name */}
         <option>Мария Петрова</option>
       </select>
     </label>
@@ -153,45 +191,45 @@ function ChildSwitcher() {
 
 export function FamilyHomePage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <StatefulPage state={state} title="Сейчас">
+    <StatefulPage state={state} title={t`Сейчас`}>
       <PageLayout
         actions={<ChildSwitcher />}
-        description="Режим, занятие и прогресс показаны отдельно для каждого курса."
-        eyebrow="Василий · последняя активность сегодня в 12:08"
-        title="Текущие занятия"
+        description={t`Режим, занятие и прогресс показаны отдельно для каждого курса.`}
+        eyebrow={t`Василий · последняя активность сегодня в 12:08`}
+        title={t`Текущие занятия`}
       >
         <div className="space-y-5">
-          <PageSection title="Курсы">
+          <PageSection title={t`Курсы`}>
             <div className="grid gap-3 lg:grid-cols-2">
               <CourseCard
                 classroomName="201"
                 enrollment={familyEnrollments[0]!}
-                lessonDate="26 января"
+                lessonDate={t`26 января`}
                 lessonNumber={41}
-                phase="Решает задачи · до воскресенья, 13:00 МСК"
-                progressLabel="3 из 12 задач зачтено"
+                phase={t`Решает задачи · до воскресенья, 13:00 МСК`}
+                progressLabel={t`3 из 12 задач зачтено`}
               />
               <CourseCard
                 enrollment={familyEnrollments[1]!}
-                lessonDate="29 января"
+                lessonDate={t`29 января`}
                 lessonNumber={9}
-                phase="Условие опубликовано"
-                progressLabel="1 из 4 задач зачтена"
+                phase={t`Условие опубликовано`}
+                progressLabel={t`1 из 4 задач зачтена`}
               />
             </div>
           </PageSection>
           <ClassroomAssignmentStatus
             audience="family"
             classroomName="201"
-            publishedAt="25 января, 18:40"
+            publishedAt={t`25 января, 18:40`}
             status="assigned"
           />
           <Card>
             <CardContent className="grid gap-4 pt-5 sm:grid-cols-3">
               {[
-                ['3', 'задачи зачтено'],
-                ['2', 'ответа на проверке'],
-                ['1', 'ждёт дополнения'],
+                ['3', t`задачи зачтено`],
+                ['2', t`ответа на проверке`],
+                ['1', t`ждёт дополнения`],
               ].map(([value, label]) => (
                 <div key={label}>
                   <p className="font-num text-title font-semibold">{value}</p>
@@ -200,7 +238,7 @@ export function FamilyHomePage({ state = 'ready' }: { state?: PageDisplayState }
               ))}
             </CardContent>
           </Card>
-          <PageSection title="Занятие 41">
+          <PageSection title={t`Занятие 41`}>
             <div className="space-y-2">
               {tasks.map((task) => (
                 <TaskListItem key={task.id} task={task} />
@@ -215,12 +253,20 @@ export function FamilyHomePage({ state = 'ready' }: { state?: PageDisplayState }
 
 export function FamilyChildrenPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <StatefulPage state={state} title="Дети">
-      <PageLayout title="Связанные дети">
+    <StatefulPage state={state} title={t`Дети`}>
+      <PageLayout title={t`Связанные дети`}>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            ['Василий Петров', 'Начинающие · очно', '3 задачи зачтено'],
-            ['Мария Петрова', 'Продолжающие · online', '5 задач зачтено'],
+            [
+              /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Василий Петров' /* eslint-enable lingui/no-unlocalized-strings */,
+              t`Начинающие · очно`,
+              t`3 задачи зачтено`,
+            ],
+            [
+              /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Мария Петрова' /* eslint-enable lingui/no-unlocalized-strings */,
+              t`Продолжающие · online`,
+              t`5 задач зачтено`,
+            ],
           ].map(([name, meta, result]) => (
             <Card key={name}>
               <CardContent className="space-y-2 pt-5">
@@ -228,7 +274,7 @@ export function FamilyChildrenPage({ state = 'ready' }: { state?: PageDisplaySta
                 <p className="text-small text-muted-foreground">{meta}</p>
                 <Badge variant="outline">{result}</Badge>
                 <Button className="w-full" size="sm" variant="outline">
-                  Открыть
+                  <Trans>Открыть</Trans>
                 </Button>
               </CardContent>
             </Card>
@@ -242,16 +288,30 @@ export function FamilyChildrenPage({ state = 'ready' }: { state?: PageDisplaySta
 const messages: ThreadMessageView[] = [
   {
     id: 'student',
-    author: { kind: 'student', name: 'Василий' },
-    at: '25 января, 21:04',
+    author: {
+      kind: 'student',
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+      name: 'Василий',
+    },
+    get at() {
+      return t`25 января, 21:04`
+    },
     channel: 'pwa',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     body: 'На второй фотографии я разобрал общий случай.',
   },
   {
     id: 'teacher',
-    author: { kind: 'teacher', name: 'И. Соколов' },
-    at: '26 января, 12:30',
+    author: {
+      kind: 'teacher',
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+      name: 'И. Соколов',
+    },
+    get at() {
+      return t`26 января, 12:30`
+    },
     channel: 'pwa',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
     body: 'Идея верная. Не хватает объяснения для k = 1.',
   },
 ]
@@ -264,11 +324,13 @@ export function FamilyChildPage({
   state?: PageDisplayState
 }) {
   return (
-    <StatefulPage state={state} title="Активность ребёнка">
+    <StatefulPage state={state} title={t`Активность ребёнка`}>
       <PageLayout
         actions={<ChildSwitcher />}
-        description={`Профиль ${childId} · начинающие · очно`}
-        title="Василий Петров"
+        description={t`Профиль ${childId} · начинающие · очно`}
+        title={
+          /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Василий Петров' /* eslint-enable lingui/no-unlocalized-strings */
+        }
       >
         <div className="space-y-5">
           <Card>
@@ -276,11 +338,15 @@ export function FamilyChildPage({
               <StudentProgress attemptedCount={12} solvedCount={3} />
             </CardContent>
           </Card>
-          <PageSection title="Последняя проверка">
+          <PageSection title={t`Последняя проверка`}>
             <VerdictPanel
-              at="26 января, 12:30"
-              author="И. Соколов"
-              comment="Идея верная. Не хватает разбора случая k = 1."
+              at={t`26 января, 12:30`}
+              author={
+                /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'И. Соколов' /* eslint-enable lingui/no-unlocalized-strings */
+              }
+              comment={
+                /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Идея верная. Не хватает разбора случая k = 1.' /* eslint-enable lingui/no-unlocalized-strings */
+              }
               verdict={partial}
             />
             <FeedbackThread messages={messages} />
@@ -288,13 +354,17 @@ export function FamilyChildPage({
           <Card>
             <CardContent className="flex items-start justify-between gap-4 pt-5">
               <div>
-                <p className="font-medium">Постоянный режим: очно</p>
+                <p className="font-medium">
+                  <Trans>Постоянный режим: очно</Trans>
+                </p>
                 <p className="mt-1 text-caption text-muted-foreground">
-                  При изменении автор и время сохраняются. Если ребёнок не придёт, освободите место
-                  заранее.
+                  <Trans>
+                    При изменении автор и время сохраняются. Если ребёнок не придёт, освободите
+                    место заранее.
+                  </Trans>
                 </p>
               </div>
-              <Switch aria-label="Очное участие" defaultChecked />
+              <Switch aria-label={t`Очное участие`} defaultChecked />
             </CardContent>
           </Card>
         </div>
@@ -311,43 +381,61 @@ export function FamilyTaskPage({
   state?: PageDisplayState
 }) {
   return (
-    <StatefulPage state={state} title={`Задача ${taskId}`}>
+    <StatefulPage state={state} title={t`Задача ${taskId}`}>
       <PageLayout
-        description="Только чтение: сдача и реакции доступны в кабинете ребёнка."
-        title="Расстановка ладей"
+        description={t`Только чтение: сдача и реакции доступны в кабинете ребёнка.`}
+        title={
+          /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Расстановка ладей' /* eslint-enable lingui/no-unlocalized-strings */
+        }
         width="reading"
       >
         <article className="space-y-5">
           <ProblemHeader
             deadline={
               <DeadlineNotice
-                absoluteLabel="воскресенья, 13:00 МСК"
+                absoluteLabel={t`воскресенья, 13:00 МСК`}
                 closesAt="2026-02-01T13:00:00+03:00"
-                relativeLabel="через 2 дня"
+                relativeLabel={t`через 2 дня`}
               />
             }
             level={level}
-            number="41н.6"
-            title="Расстановка ладей"
+            number={
+              /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ '41н.6' /* eslint-enable lingui/no-unlocalized-strings */
+            }
+            title={
+              /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Расстановка ладей' /* eslint-enable lingui/no-unlocalized-strings */
+            }
             type="written"
             verdict={partial}
           />
           <MathDocument>
-            <p>На доске n × n расставляют ладьи так, чтобы никакие две не били друг друга.</p>
+            <p>
+              <>
+                {/* eslint-disable lingui/no-unlocalized-strings -- authored fixture content; docs/i18n.md */}
+                На доске n × n расставляют ладьи так, чтобы никакие две не били друг друга.
+                {/* eslint-enable lingui/no-unlocalized-strings */}
+              </>
+            </p>
           </MathDocument>
           <VerdictPanel
-            at="26 января, 12:30"
-            author="И. Соколов"
-            comment="Идея верная. Не хватает разбора случая k = 1."
+            at={t`26 января, 12:30`}
+            author={
+              /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'И. Соколов' /* eslint-enable lingui/no-unlocalized-strings */
+            }
+            comment={
+              /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Идея верная. Не хватает разбора случая k = 1.' /* eslint-enable lingui/no-unlocalized-strings */
+            }
             verdict={partial}
           />
           <FeedbackThread messages={messages} />
           <Alert tone="neutral">
             <Users aria-hidden="true" />
             <AlertContent>
-              <AlertTitle>Режим просмотра родителя</AlertTitle>
+              <AlertTitle>
+                <Trans>Режим просмотра родителя</Trans>
+              </AlertTitle>
               <AlertDescription>
-                Здесь нельзя отвечать за ребёнка или влиять на его статистику.
+                <Trans>Здесь нельзя отвечать за ребёнка или влиять на его статистику.</Trans>
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -359,13 +447,25 @@ export function FamilyTaskPage({
 
 const newsPost: TelegramPostView = {
   id: 'family-news-41',
-  attribution: { channel: 'ВМШ 179' },
-  at: '26 января, 16:30',
+  attribution: {
+    get channel() {
+      return t`ВМШ 179`
+    },
+  },
+  get at() {
+    return t`26 января, 16:30`
+  },
   state: 'published',
   blocks: [
-    { kind: 'heading', level: 2, text: 'Задачи 41-го занятия' },
+    {
+      kind: 'heading',
+      level: 2,
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+      text: 'Задачи 41-го занятия',
+    },
     {
       kind: 'text',
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
       text: 'Опубликованы условия для всех уровней. Решения принимаются до воскресенья.',
     },
   ],
@@ -373,18 +473,18 @@ const newsPost: TelegramPostView = {
 
 export function FamilyNewsPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <StatefulPage state={state} title="Новости">
+    <StatefulPage state={state} title={t`Новости`}>
       <PageLayout
         actions={<ChildSwitcher />}
-        description="Telegram-публикации и объявления для родителей."
-        title="Новости"
+        description={t`Telegram-публикации и объявления для родителей.`}
+        title={t`Новости`}
       >
         <div className="space-y-3">
           <TelegramRichPost post={newsPost} variant="card" />
           <ClassroomAssignmentStatus
             audience="family"
             classroomName="201"
-            publishedAt="25 января, 18:40"
+            publishedAt={t`25 января, 18:40`}
             status="assigned"
           />
         </div>
@@ -401,8 +501,14 @@ export function FamilyNewsDetailPage({
   state?: PageDisplayState
 }) {
   return (
-    <StatefulPage state={state} title="Публикация">
-      <PageLayout description={`Публикация ${postId}`} title="Задачи 41-го занятия" width="reading">
+    <StatefulPage state={state} title={t`Публикация`}>
+      <PageLayout
+        description={t`Публикация ${postId}`}
+        title={
+          /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Задачи 41-го занятия' /* eslint-enable lingui/no-unlocalized-strings */
+        }
+        width="reading"
+      >
         <TelegramRichPost post={newsPost} />
       </PageLayout>
     </StatefulPage>
@@ -414,7 +520,7 @@ export function FamilyProfilePage({
   sessionManagement,
   languageSettings,
   organizerLink,
-  displayName = 'Профиль',
+  displayName = t`Профиль`,
   childrenLinks,
 }: {
   state?: PageDisplayState
@@ -426,30 +532,38 @@ export function FamilyProfilePage({
   languageSettings?: ReactNode
 }) {
   return (
-    <StatefulPage state={state} title="Профиль">
+    <StatefulPage state={state} title={t`Профиль`}>
       <PageLayout title={displayName}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Дети</CardTitle>
+              <CardTitle>
+                <Trans>Дети</Trans>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {childrenLinks ?? <p className="text-small">Нет связанных детей</p>}
+              {childrenLinks ?? (
+                <p className="text-small">
+                  <Trans>Нет связанных детей</Trans>
+                </p>
+              )}
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Уведомления</CardTitle>
+              <CardTitle>
+                <Trans>Уведомления</Trans>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-small text-muted-foreground">
-                Выберите, какие уведомления получать, и подключите это устройство.
+                <Trans>Выберите, какие уведомления получать, и подключите это устройство.</Trans>
               </p>
               <a
                 className="inline-flex min-h-10 items-center text-link underline underline-offset-2"
                 href="/family/profile/notifications"
               >
-                Настроить уведомления
+                <Trans>Настроить уведомления</Trans>
               </a>
             </CardContent>
           </Card>
@@ -457,7 +571,9 @@ export function FamilyProfilePage({
           {sessionManagement ?? <AccountSessionManager />}
           <Card>
             <CardHeader>
-              <CardTitle>Помощь</CardTitle>
+              <CardTitle>
+                <Trans>Помощь</Trans>
+              </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-3">
               {organizerLink}

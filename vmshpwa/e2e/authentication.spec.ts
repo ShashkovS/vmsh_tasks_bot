@@ -447,7 +447,9 @@ test('Deploy-first: Admin imports a Student TSV, enrolls the account and Student
   )
   await page.getByRole('button', { name: 'Создать готовые · 1' }).click()
   expect((await studentApply).status()).toBe(201)
-  await expect(page.getByText('Создано: 1. Пропущено: 0.')).toBeVisible()
+  await expect(
+    page.getByText('Создано: 1. Дубликатов проигнорировано: 0. Не создано из-за ошибок: 0.'),
+  ).toBeVisible()
 
   await page.getByLabel('Вставьте строки зачисления').fill(`${username}\tmath-5-7\tн,п`)
   const enrollmentPreview = page.waitForResponse(
@@ -758,14 +760,16 @@ for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONA
       })
       .toBe(0)
 
-    // The authenticated boundary may already be redirecting after the 401.
-    // Wait for that navigation before reloading so WebKit does not race two
-    // top-level loads and report a spurious "Frame load interrupted".
+    // The authenticated boundary must also leave its existing protected screen.
     await expect(page).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
     await expect(page.getByRole('button', { name: 'Войти' })).toBeVisible()
-    await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
-    await expect(page.getByRole('button', { name: 'Войти' })).toBeVisible()
+    // A safe PWA update can reload the logged-out tab. Open the protected root
+    // in a fresh tab with the same cookies/storage to prove durable logout
+    // without racing that automatic navigation (docs/smooth-redeploy.md).
+    const reopened = await context.newPage()
+    await reopened.goto(`/${persona.audience}/`)
+    await expect(reopened).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
+    await expect(reopened.getByRole('button', { name: 'Войти' })).toBeVisible()
   })
 }
 

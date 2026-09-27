@@ -147,7 +147,8 @@ export function createServiceTransport(options: {
         error: {
           code: 'request_not_confirmed',
           message:
-            'Сервер не подтвердил действие. Проверьте результат перед повтором; черновик не нужно удалять.',
+            // eslint-disable-next-line lingui/no-unlocalized-strings -- transport can recover before catalogs load; P8 bilingual fallback
+            'Сервер не подтвердил действие. Проверьте результат перед повтором; черновик не нужно удалять. · The server did not confirm the action. Check the result before retrying; keep your draft.',
           requestId: 'service-recovery',
         },
       }),
@@ -179,7 +180,9 @@ export function createServiceTransport(options: {
       }
     }
     for (;;) {
-      if (read && typeof navigator !== 'undefined' && !navigator.onLine)
+      // docs/smooth-redeploy.md: offline writes must return to their durable
+      // outbox too, instead of waiting behind another request's recovery loop.
+      if (typeof navigator !== 'undefined' && !navigator.onLine)
         throw new TypeError('Network is offline')
       if (recovery) await wait(recovery, signal)
       signal?.throwIfAborted()

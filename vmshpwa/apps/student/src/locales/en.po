@@ -49,6 +49,18 @@ msgstr "{bytes} B"
 msgid "{count} {noun} в листке"
 msgstr "{count} {noun} in the worksheet"
 
+#: apps/student/src/pages.tsx
+msgid "{count} отправок"
+msgstr "{count} submissions"
+
+#: apps/student/src/pages.tsx
+msgid "<0>Активная группа:</0> Начинающие"
+msgstr "<0>Active group:</0> Начинающие"
+
+#: apps/student/src/pages.tsx
+msgid "<0>Доступны:</0> Начинающие, Продолжающие"
+msgstr "<0>Available:</0> Начинающие, Продолжающие"
+
 #. placeholder {0}: lesson.lessonNumber
 #. placeholder {1}: lesson.accepted
 #. placeholder {2}: lesson.attempted
@@ -56,9 +68,85 @@ msgstr "{count} {noun} in the worksheet"
 msgid "<0>Занятие {0}</0><1>{1} зачтено из {2}</1>"
 msgstr "<0>Lesson {0}</0><1>{1} accepted out of {2}</1>"
 
+#: apps/student/src/pages.tsx
+msgid "<0>Сейчас:</0> очно в школе"
+msgstr "<0>Currently:</0> in person at school"
+
+#: apps/student/src/pages.tsx
+msgid "0 — пока трудно, 10 — получается почти любая задача."
+msgstr "0 — still difficult, 10 — you can solve almost any problem."
+
+#: apps/student/src/pages.tsx
+msgid "1 из 4 задач зачтена"
+msgstr "1 of 4 problems accepted"
+
+#: apps/student/src/pages.tsx
+msgid "12 задач · 3 зачтено · 2 на проверке"
+msgstr "12 problems · 3 accepted · 2 awaiting review"
+
+#: apps/student/src/pages.tsx
+msgid "25 января, 18:40"
+msgstr "January 25, 6:40 PM"
+
+#: apps/student/src/pages.tsx
+msgid "25 января, 21:04"
+msgstr "January 25, 9:04 PM"
+
+#: apps/student/src/pages.tsx
+msgid "26 января"
+msgstr "January 26"
+
+#: apps/student/src/pages.tsx
+msgid "26 января, 12:30"
+msgstr "January 26, 12:30 PM"
+
+#: apps/student/src/pages.tsx
+msgid "26 января, 16:30"
+msgstr "January 26, 4:30 PM"
+
+#: apps/student/src/pages.tsx
+msgid "29 января"
+msgstr "January 29"
+
+#: apps/student/src/pages.tsx
+msgid "3 из 12"
+msgstr "3 of 12"
+
+#: apps/student/src/pages.tsx
+msgid "3 из 12 задач зачтено"
+msgstr "3 of 12 problems accepted"
+
+#: apps/student/src/pages.tsx
+msgid "31 января, 12:00"
+msgstr "January 31, 12:00 PM"
+
+#: apps/student/src/pages.tsx
+msgid "39 · 12 января"
+msgstr "39 · January 12"
+
+#: apps/student/src/pages.tsx
+msgid "40 · 19 января"
+msgstr "40 · January 19"
+
+#: apps/student/src/pages.tsx
+msgid "41 · 26 января"
+msgstr "41 · January 26"
+
+#: apps/student/src/pages.tsx
+msgid "41н.6 · Расстановка ладей"
+msgstr "41н.6 · Расстановка ладей"
+
+#: apps/student/src/pages.tsx
+msgid "Push можно включать и отключать по категориям."
+msgstr "You can enable or disable push notifications by category."
+
 #: apps/student/src/student-profile-page.tsx
 msgid "Активная группа"
 msgstr "Active group"
+
+#: apps/student/src/pages.tsx
+msgid "Активность по дням"
+msgstr "Daily activity"
 
 #: apps/student/src/student-written-submission.tsx
 msgid "Браузер не разрешил локальное хранение. Мы не открываем редактор, чтобы работа не потерялась при перезагрузке."
@@ -72,10 +160,15 @@ msgstr "The browser does not allow your entered answer to be saved reliably."
 msgid "В опубликованной версии листка такой задачи нет. Обновите ссылку из списка задач."
 msgstr "This problem is not in the published version of the worksheet. Open it again from the task list."
 
+#: apps/student/src/pages.tsx
+msgid "В очереди"
+msgstr "Queued"
+
 #: apps/student/src/student-task-detail-page.tsx
 msgid "В текущей опубликованной версии листка такой задачи нет. Откройте её заново из списка задач."
 msgstr "This problem is not in the current published version of the worksheet. Open it again from the task list."
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-test-answer.tsx
 msgid "Ваш ответ"
 msgstr "Your answer"
@@ -84,9 +177,17 @@ msgstr "Your answer"
 msgid "Ваша личная динамика по занятиям. С другими школьниками здесь не сравниваем."
 msgstr "Your progress across lessons. It is not compared with other students here."
 
+#: apps/student/src/pages.tsx
+msgid "Ваша личная динамика. Здесь нет рейтинга и сравнения с другими школьниками."
+msgstr "Your personal progress. There are no rankings or comparisons with other students."
+
 #: apps/student/src/student-written-submission.tsx
 msgid "Ваша реакция"
 msgstr "Your reaction"
+
+#: apps/student/src/pages.tsx
+msgid "Ваша реакция на проверку"
+msgstr "Your reaction to the review"
 
 #: apps/student/src/student-written-submission.tsx
 msgid "Ваше решение"
@@ -96,6 +197,7 @@ msgstr "Your solution"
 msgid "Ваши вопросы"
 msgstr "Your questions"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-home-page.tsx
 msgid "Ваши курсы"
 msgstr "Your courses"
@@ -105,6 +207,7 @@ msgid "Вложение"
 msgstr "Attachment"
 
 #: apps/student/src/login-page.tsx
+#: apps/student/src/pages.tsx
 msgid "ВМШ 179"
 msgstr "VMSh 179"
 
@@ -136,6 +239,14 @@ msgstr "No questions yet"
 msgid "Вопросы по задаче"
 msgstr "Questions about the problem"
 
+#: apps/student/src/pages.tsx
+msgid "воскресенья, 13:00 МСК"
+msgstr "Sunday, 1:00 PM Moscow time"
+
+#: apps/student/src/pages.tsx
+msgid "Все"
+msgstr "All"
+
 #: apps/student/src/student-support-pages.tsx
 msgid "Все вопросы"
 msgstr "All questions"
@@ -147,6 +258,10 @@ msgstr "Sign-in for this account is unavailable right now. Please contact the ad
 #: apps/student/src/login-page.tsx
 msgid "Входим…"
 msgstr "Signing in…"
+
+#: apps/student/src/pages.tsx
+msgid "Вы"
+msgstr "You"
 
 #: apps/student/src/student-tasks-page.tsx
 msgid "Выберите курс и группу из тех, которые доступны вашей учётной записи."
@@ -167,6 +282,14 @@ msgstr "The group and attendance format are set separately for each course."
 #: apps/student/src/student-test-answer-view.ts
 msgid "Да, ответ принят."
 msgstr "Yes, the answer was accepted."
+
+#: apps/student/src/pages.tsx
+msgid "Данные конференции показываются только после вашего действия. Позиции в очереди нет."
+msgstr "Meeting details are shown only after you choose to reveal them. There is no queue position."
+
+#: apps/student/src/pages.tsx
+msgid "Дедлайн"
+msgstr "Deadline"
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Дедлайн и новые материалы"
@@ -192,6 +315,10 @@ msgstr "Access to the account is suspended. Please contact the administrators."
 msgid "Доступно обновление."
 msgstr "An update is available."
 
+#: apps/student/src/pages.tsx
+msgid "Если вы не придёте, переключитесь в online: для вас резервируют место и печатают листок."
+msgstr "If you cannot attend, switch to online: a seat is reserved and a worksheet printed for you."
+
 #. placeholder {0}: available.join(t` и `)
 #: apps/student/src/student-tasks-view.ts
 msgid "Есть {0}"
@@ -204,6 +331,10 @@ msgstr "Answered"
 #: apps/student/src/student-support-pages.tsx
 msgid "Ждём преподавателя"
 msgstr "Waiting for a teacher"
+
+#: apps/student/src/pages.tsx
+msgid "Ждут вас"
+msgstr "Need your attention"
 
 #: apps/student/src/student-support-pages.tsx
 msgid "Загружаем переписку…"
@@ -232,6 +363,10 @@ msgstr "Loading answer field"
 msgid "Задать вопрос"
 msgstr "Ask a question"
 
+#: apps/student/src/pages.tsx
+msgid "Задать вопрос по задаче"
+msgstr "Ask about this problem"
+
 #: apps/student/src/student-home-view.ts
 msgid "задач"
 msgstr "problems"
@@ -252,6 +387,7 @@ msgid "Задача {0}.{1}"
 msgstr "Problem {0}.{1}"
 
 #: apps/student/src/content-page.tsx
+#: apps/student/src/pages.tsx
 msgid "Задача {taskId}"
 msgstr "Problem {taskId}"
 
@@ -265,6 +401,7 @@ msgstr "Problem not found"
 msgid "задачи"
 msgstr "problems"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/routes/__root.tsx
 msgid "Задачи"
 msgstr "Problems"
@@ -277,6 +414,10 @@ msgstr "Problems have not been published yet"
 msgid "Задачи ещё не опубликованы."
 msgstr "Problems have not been published yet."
 
+#: apps/student/src/pages.tsx
+msgid "задачи зачтено"
+msgstr "problems accepted"
+
 #: apps/student/src/pwa-update.tsx
 msgid "Закрыть"
 msgstr "Close"
@@ -284,6 +425,10 @@ msgstr "Close"
 #: apps/student/src/student-written-submission.tsx
 msgid "Заменить ранее отправленное решение этой версией? Прежняя версия исчезнет из очереди проверки."
 msgstr "Replace the previously submitted solution with this version? The earlier version will leave the review queue."
+
+#: apps/student/src/pages.tsx
+msgid "Занятие"
+msgstr "Class"
 
 #. placeholder {0}: lesson.lessonNumber
 #: apps/student/src/student-tasks-view.ts
@@ -295,15 +440,29 @@ msgstr "Lesson {0}"
 msgid "Занятие {0} ·"
 msgstr "Lesson {0} ·"
 
+#: apps/student/src/pages.tsx
+msgid "Занятие 41"
+msgstr "Class 41"
+
 #: apps/student/src/student-readable-task-page.tsx
 msgid "Занятие ещё не опубликовано"
 msgstr "The lesson has not been published yet"
 
+#: apps/student/src/pages.tsx
+msgid "Запись {submissionId} · последнее обновление 26 января, 12:30"
+msgstr "Entry {submissionId} · last updated January 26, 12:30 PM"
+
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-task-detail-page.tsx
 #: apps/student/src/student-tasks-view.ts
 msgid "Зачтено"
 msgstr "Accepted"
 
+#: apps/student/src/pages.tsx
+msgid "Зачтены"
+msgstr "Accepted"
+
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-notifications-page.tsx
 msgid "Звук только с 9:00 до 21:00"
 msgstr "Sound only from 9:00 to 21:00"
@@ -317,6 +476,10 @@ msgstr "Change"
 msgid "Изменить решение"
 msgstr "Edit solution"
 
+#: apps/student/src/pages.tsx
+msgid "Изменить уровень"
+msgstr "Change level"
+
 #: apps/student/src/student-written-submission.tsx
 msgid "Изменяете отправленное решение — оно заменится одной операцией."
 msgstr "You are editing a submitted solution; it will be replaced in one operation."
@@ -325,6 +488,10 @@ msgstr "You are editing a submitted solution; it will be replaced in one operati
 msgid "Используйте логин из письма после регистрации и текущий токен Telegram-бота как пароль."
 msgstr "Use the login from your registration email and your current Telegram bot token as the password."
 
+#: apps/student/src/pages.tsx
+msgid "История"
+msgstr "History"
+
 #: apps/student/src/student-support-pages.tsx
 msgid "История вопросов"
 msgstr "Question history"
@@ -332,6 +499,10 @@ msgstr "Question history"
 #: apps/student/src/student-task-detail-page.tsx
 msgid "К листку"
 msgstr "To worksheet"
+
+#: apps/student/src/pages.tsx
+msgid "Как меняется работа"
+msgstr "Your work over time"
 
 #: apps/student/src/student-progress-page.tsx
 msgid "Как получается решать задачи"
@@ -349,9 +520,21 @@ msgstr "Published worksheets will appear here when you are added to a course."
 msgid "Когда вас добавят на курс, он появится здесь."
 msgstr "The course will appear here when you are added to it."
 
+#: apps/student/src/pages.tsx
+msgid "Когда материалы становятся доступны"
+msgstr "When materials become available"
+
+#: apps/student/src/pages.tsx
+msgid "Комментарии"
+msgstr "Comments"
+
 #: apps/student/src/student-written-submission.tsx
 msgid "Копируем прежнее решение…"
 msgstr "Copying the earlier solution…"
+
+#: apps/student/src/pages.tsx
+msgid "Курс и доступные группы"
+msgstr "Course and available groups"
 
 #: apps/student/src/student-readable-task-page.tsx
 msgid "Листок"
@@ -361,6 +544,11 @@ msgstr "Worksheet"
 #: apps/student/src/student-task-detail-page.tsx
 msgid "Листок не найден"
 msgstr "Worksheet not found"
+
+#. placeholder {0}: course.name
+#: apps/student/src/pages.tsx
+msgid "Личная динамика только по курсу «{0}»."
+msgstr "Personal progress for the course “{0}” only."
 
 #: apps/student/src/login-page.tsx
 msgid "Личный кабинет школьника"
@@ -390,6 +578,7 @@ msgstr "Lesson materials have been published"
 msgid "Можно сдать и устно на занятии."
 msgstr "You can also submit orally during the lesson."
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-profile-page.tsx
 msgid "Мои вопросы"
 msgstr "My questions"
@@ -415,6 +604,10 @@ msgstr "Room assigned"
 msgid "Напишите, какой переход или часть условия вызывает вопрос."
 msgstr "Describe which step or part of the problem statement raises the question."
 
+#: apps/student/src/pages.tsx
+msgid "Напоминание до публикации решений"
+msgstr "Reminder before solutions are published"
+
 #: apps/student/src/student-notifications-page.tsx
 msgid "Напоминание о публикации решений"
 msgstr "Reminder about solution publication"
@@ -431,6 +624,10 @@ msgstr "Course setting was not saved"
 msgid "Настройка не сохранена"
 msgstr "Setting was not saved"
 
+#: apps/student/src/pages.tsx
+msgid "Начинающие · очный режим"
+msgstr "Начинающие · in person"
+
 #: apps/student/src/student-test-answer.tsx
 msgid "Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и измените ответ ещё раз."
 msgstr "Do not close the page before sending. If possible, free up browser storage and change the answer again."
@@ -442,6 +639,14 @@ msgstr "Do not close the page. Free up browser storage and try the change again.
 #: apps/student/src/student-task-detail-page.tsx
 #: apps/student/src/student-tasks-view.ts
 msgid "Не начата"
+msgstr "Not started"
+
+#: apps/student/src/pages.tsx
+msgid "Не начато"
+msgstr "Not started"
+
+#: apps/student/src/pages.tsx
+msgid "Не начаты"
 msgstr "Not started"
 
 #: apps/student/src/login-page.tsx
@@ -529,6 +734,14 @@ msgstr "No connection to the server. Your typed text remains on this device."
 msgid "Нет сети — отправим позже."
 msgstr "No network connection — we will send it later."
 
+#: apps/student/src/pages.tsx
+msgid "Новая запись в обсуждении"
+msgstr "New discussion entry"
+
+#: apps/student/src/pages.tsx
+msgid "Новая проверка"
+msgstr "New review"
+
 #: apps/student/src/student-notifications-page.tsx
 msgid "Новая публикация"
 msgstr "New publication"
@@ -546,6 +759,7 @@ msgstr "New announcement"
 msgid "Новое сообщение"
 msgstr "New message"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/routes/__root.tsx
 #: apps/student/src/student-news-page.tsx
 msgid "Новости"
@@ -563,10 +777,12 @@ msgstr "New events always remain in your account. Push and sound can be configur
 msgid "Новые события появятся здесь."
 msgstr "New events will appear here."
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-notifications-page.tsx
 msgid "Новый урок"
 msgstr "New lesson"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-notifications-page.tsx
 msgid "Ночью новые события видны в приложении, но не будят вас."
 msgstr "At night, new events are visible in the app but do not wake you."
@@ -575,6 +791,14 @@ msgstr "At night, new events are visible in the app but do not wake you."
 #: apps/student/src/student-tasks-view.ts
 msgid "Нужна доработка"
 msgstr "Needs revision"
+
+#: apps/student/src/pages.tsx
+msgid "Нужно дополнить"
+msgstr "Needs more work"
+
+#: apps/student/src/pages.tsx
+msgid "Нужно дополнить решение"
+msgstr "The solution needs more work"
 
 #: apps/student/src/student-test-answer.tsx
 msgid "Нужно обновить задачу"
@@ -592,6 +816,10 @@ msgstr "The service is being updated. We will send it after the update."
 #: apps/student/src/pwa-update.tsx
 msgid "Обновляем…"
 msgstr "Updating…"
+
+#: apps/student/src/pages.tsx
+msgid "Обсуждение"
+msgstr "Discussion"
 
 #: apps/student/src/student-support-pages.tsx
 msgid "Обсуждение задачи"
@@ -639,11 +867,19 @@ msgstr "Published {0}"
 msgid "Опубликованы решения"
 msgstr "Solutions published"
 
+#: apps/student/src/pages.tsx
+msgid "Осталось 4 попытки."
+msgstr "4 attempts remaining."
+
 #. placeholder {0}: receipt.attempts.remainingThisHour ?? '—'
 #. placeholder {1}: receipt.attempts.remainingToday ?? '—'
 #: apps/student/src/student-test-answer.tsx
 msgid "Осталось попыток: {0} в этот час, {1} сегодня."
 msgstr "Attempts remaining: {0} this hour, {1} today."
+
+#: apps/student/src/pages.tsx
+msgid "Ответ и пересдача — продолжение этого же обсуждения."
+msgstr "Replies and resubmissions continue in this discussion."
 
 #: apps/student/src/student-test-answer.tsx
 msgid "Ответ к предыдущей версии сохранён отдельно и не перенесён автоматически."
@@ -678,9 +914,17 @@ msgstr "Answer"
 msgid "Ответить на все задачи"
 msgstr "Answer all problems"
 
+#: apps/student/src/pages.tsx
+msgid "откроется 1 февраля, 13:00"
+msgstr "opens February 1, 1:00 PM"
+
 #: apps/student/src/content-page.tsx
 msgid "Откройте задачу из опубликованного листка: ссылка должна содержать занятие и вид материала."
 msgstr "Open the problem from a published worksheet: the link must include the lesson and material type."
+
+#: apps/student/src/pages.tsx
+msgid "открыта 31 января"
+msgstr "available since January 31"
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Открытие окна устной сдачи"
@@ -690,10 +934,18 @@ msgstr "Oral-submission slot opens"
 msgid "Открыть"
 msgstr "Open"
 
+#: apps/student/src/pages.tsx
+msgid "Открыть весь листок"
+msgstr "Open the full worksheet"
+
 #. placeholder {0}: problem.displayNumber
 #: apps/student/src/student-tasks-page.tsx
 msgid "Открыть задачу {0}"
 msgstr "Open problem {0}"
+
+#: apps/student/src/pages.tsx
+msgid "Открыть объявление"
+msgstr "Open announcement"
 
 #: apps/student/src/student-news-page.tsx
 msgid "Открыть публикацию"
@@ -769,6 +1021,18 @@ msgstr "In-person lesson"
 msgid "Очные занятия"
 msgstr "In-person lessons"
 
+#: apps/student/src/pages.tsx
+msgid "Первое письменное решение зачтено"
+msgstr "First written solution accepted"
+
+#: apps/student/src/pages.tsx
+msgid "Первый физический эксперимент описан"
+msgstr "First physics experiment described"
+
+#: apps/student/src/pages.tsx
+msgid "Переключить режим"
+msgstr "Switch mode"
+
 #: apps/student/src/student-test-answer.tsx
 msgid "Перенести только текст ответа"
 msgstr "Move only the answer text"
@@ -786,6 +1050,7 @@ msgid "Повторите загрузку. Уже сохранённые отв
 msgstr "Try loading again. Already saved answers were not deleted."
 
 #: apps/student/src/content-page.tsx
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-home-page.tsx
 #: apps/student/src/student-news-page.tsx
 #: apps/student/src/student-notifications-page.tsx
@@ -810,6 +1075,10 @@ msgstr "hint"
 #: apps/student/src/content-page.tsx
 msgid "Подсказка"
 msgstr "Hint"
+
+#: apps/student/src/pages.tsx
+msgid "Подсказки и решения"
+msgstr "Hints and solutions"
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Подсказки к задачам"
@@ -869,6 +1138,10 @@ msgstr "Show earlier answers"
 msgid "Показать все ответы"
 msgstr "Show all answers"
 
+#: apps/student/src/pages.tsx
+msgid "Показать данные для входа"
+msgstr "Show meeting details"
+
 #: apps/student/src/login-page.tsx
 msgid "Показать пароль"
 msgstr "Show password"
@@ -877,6 +1150,7 @@ msgstr "Show password"
 msgid "Поменять"
 msgstr "Change"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-profile-page.tsx
 #: apps/student/src/student-support-pages.tsx
 msgid "Помощь"
@@ -935,14 +1209,20 @@ msgstr "The app is ready to work offline"
 msgid "Проверенная страница решения {0}"
 msgstr "Reviewed solution page {0}"
 
+#: apps/student/src/pages.tsx
+msgid "Проверено"
+msgstr "Reviewed"
+
 #: apps/student/src/student-notifications-page.tsx
 msgid "Проверено задач: {count}"
 msgstr "Problems reviewed: {count}"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-test-answer.tsx
 msgid "Проверить"
 msgstr "Check"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-notifications-page.tsx
 msgid "Проверка завершена"
 msgstr "Review complete"
@@ -963,32 +1243,67 @@ msgstr "Check your connection and try again."
 msgid "Проверьте формат ответа."
 msgstr "Check the answer format."
 
+#: apps/student/src/routes/login.tsx
+msgid "Проверяем вход"
+msgstr "Checking sign-in"
+
 #: apps/student/src/main.tsx
 msgid "Проверяем сохранённые задания и черновики на этом устройстве."
 msgstr "Checking saved assignments and drafts on this device."
 
+#: apps/student/src/routes/login.tsx
+msgid "Проверяем, выполнен ли вход на этом устройстве."
+msgstr "Checking whether you are signed in on this device."
+
+#: apps/student/src/pages.tsx
 #: apps/student/src/routes/__root.tsx
 #: apps/student/src/student-progress-page.tsx
 msgid "Прогресс"
 msgstr "Progress"
 
+#: apps/student/src/pages.tsx
+msgid "Продолжить"
+msgstr "Continue"
+
+#: apps/student/src/pages.tsx
 #: apps/student/src/routes/__root.tsx
 #: apps/student/src/student-notifications-page.tsx
 #: apps/student/src/student-profile-page.tsx
 msgid "Профиль"
 msgstr "Profile"
 
+#: apps/student/src/pages.tsx
+msgid "Публикации Telegram-канала и объявления кружка, сохранённые для чтения без сети."
+msgstr "Telegram channel posts and club announcements saved for offline reading."
+
 #: apps/student/src/student-news-page.tsx
 msgid "Публикации Telegram-каналов и объявления кружка."
 msgstr "Posts from Telegram channels and club announcements."
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-news-page.tsx
 msgid "Публикация"
 msgstr "Publication"
 
+#: apps/student/src/pages.tsx
+msgid "Публикация {postId}"
+msgstr "Post {postId}"
+
 #: apps/student/src/student-test-answer.tsx
 msgid "Пустой ответ"
 msgstr "Empty answer"
+
+#: apps/student/src/pages.tsx
+msgid "Работа в три разных дня недели"
+msgstr "Worked on three different days this week"
+
+#: apps/student/src/pages.tsx
+msgid "Режим участия"
+msgstr "Attendance mode"
+
+#: apps/student/src/pages.tsx
+msgid "Результат и обсуждение"
+msgstr "Result and discussion"
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Результат проверки"
@@ -998,6 +1313,7 @@ msgstr "Review result"
 msgid "Результаты письменной проверки"
 msgstr "Written review results"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-home-view.ts
 msgid "Решаем задачи"
 msgstr "Solving problems"
@@ -1005,6 +1321,10 @@ msgstr "Solving problems"
 #: apps/student/src/student-home-view.ts
 msgid "Решаем задачи · до {deadline}"
 msgstr "Solving problems · due {deadline}"
+
+#: apps/student/src/pages.tsx
+msgid "Решаем задачи · до воскресенья, 13:00 МСК"
+msgstr "Solving problems · until Sunday, 1:00 PM Moscow time"
 
 #: apps/student/src/student-tasks-view.ts
 msgid "решение"
@@ -1017,6 +1337,14 @@ msgstr "Solution"
 #: apps/student/src/student-written-submission.tsx
 msgid "Решение или пояснение. Формулы можно приложить фотографией."
 msgstr "Solution or explanation. You can attach formulas as photos."
+
+#: apps/student/src/pages.tsx
+msgid "Решение отправлено"
+msgstr "Solution submitted"
+
+#: apps/student/src/pages.tsx
+msgid "Решение появится после дедлайна."
+msgstr "The solution will appear after the deadline."
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Решения задач занятия"
@@ -1038,10 +1366,15 @@ msgstr "Collapse all"
 msgid "Сдать решение"
 msgstr "Submit solution"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/routes/__root.tsx
 #: apps/student/src/student-home-page.tsx
 msgid "Сейчас"
 msgstr "Now"
+
+#: apps/student/src/pages.tsx
+msgid "Сейчас по курсам"
+msgstr "Current work by course"
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Скоро дедлайн"
@@ -1063,6 +1396,10 @@ msgstr "Hide password"
 msgid "Слишком много попыток. Подождите немного и попробуйте ещё раз."
 msgstr "Too many attempts. Wait a little and try again."
 
+#: apps/student/src/pages.tsx
+msgid "Сначала показано то, где появилось новое или остался черновик."
+msgstr "Items with updates or saved drafts appear first."
+
 #: apps/student/src/student-written-submission.tsx
 msgid "Событие по задаче"
 msgstr "Problem event"
@@ -1079,6 +1416,10 @@ msgstr "Saving…"
 msgid "Спросить преподавателя"
 msgstr "Ask a teacher"
 
+#: apps/student/src/pages.tsx
+msgid "Ссылка и код конференции появятся после открытия объявления."
+msgstr "The meeting link and code will appear after you open the announcement."
+
 #. placeholder {0}: index + 1
 #: apps/student/src/student-written-submission.tsx
 msgid "Страница {0}"
@@ -1093,6 +1434,14 @@ msgstr "Page {0}.webp"
 msgid "Страница не найдена"
 msgstr "Page not found"
 
+#: apps/student/src/pages.tsx
+msgid "Текущая фаза"
+msgstr "Current phase"
+
+#: apps/student/src/pages.tsx
+msgid "Текущий листок и архив занятий. Внутри листка задачи всегда идут по номеру."
+msgstr "Current worksheet and class archive. Problems within a worksheet are always ordered by number."
+
 #: apps/student/src/routes/__root.tsx
 msgid "Тестирование учителем. Отправки не входят в общую статистику. <0>Вернуться в Staff</0>"
 msgstr "Teacher testing. Submissions are not included in the overall statistics. <0>Back to Staff</0>"
@@ -1105,10 +1454,15 @@ msgstr "Telegram bot token"
 msgid "Только условие"
 msgstr "Problem statement only"
 
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-notifications-page.tsx
 #: apps/student/src/student-profile-page.tsx
 msgid "Уведомления"
 msgstr "Notifications"
+
+#: apps/student/src/pages.tsx
+msgid "Уведомления объединяются в течение 30 минут"
+msgstr "Notifications are grouped over 30 minutes"
 
 #: apps/student/src/student-written-submission.tsx
 msgid "Удалить эту страницу из решения?"
@@ -1126,6 +1480,11 @@ msgstr "Problem statement changed"
 msgid "Условие опубликовано · время сдачи уточняется"
 msgstr "Problem statement published · submission time is being confirmed"
 
+#: apps/student/src/pages.tsx
+msgid "Условие опубликовано · сдача до 5 февраля"
+msgstr "Statement published · submit by February 5"
+
+#: apps/student/src/pages.tsx
 #: apps/student/src/student-notifications-page.tsx
 msgid "Условия нового занятия"
 msgstr "New lesson problem statements"
@@ -1134,9 +1493,21 @@ msgstr "New lesson problem statements"
 msgid "Устный приём"
 msgstr "Oral submission"
 
+#: apps/student/src/pages.tsx
+msgid "Устный приём открыт до 19:30"
+msgstr "Oral review is open until 7:30 PM"
+
 #: apps/student/src/student-profile-page.tsx
 msgid "Устройства и сеансы"
 msgstr "Devices and sessions"
+
+#: apps/student/src/pages.tsx
+msgid "Учёба"
+msgstr "Learning"
+
+#: apps/student/src/pages.tsx
+msgid "Фильтр задач"
+msgstr "Problem filter"
 
 #: apps/student/src/student-profile-page.tsx
 msgid "Формат занятий"
@@ -1149,9 +1520,21 @@ msgstr "Attendance format"
 msgid "Частично решено: {0} · нужно вернуться: {1} · ждут проверки: {2}"
 msgstr "Partly solved: {0} · revisit: {1} · awaiting review: {2}"
 
+#: apps/student/src/pages.tsx
+msgid "через 2 дня"
+msgstr "in 2 days"
+
 #: apps/student/src/student-test-answer.tsx
 msgid "Черновик сейчас не сохраняется"
 msgstr "The draft is not being saved now"
+
+#: apps/student/src/pages.tsx
+msgid "Число отправок за последние четыре недели"
+msgstr "Submissions over the last four weeks"
+
+#: apps/student/src/pages.tsx
+msgid "Число способов"
+msgstr "Number of ways"
 
 #: apps/student/src/routes/__root.tsx
 msgid "Школьник"

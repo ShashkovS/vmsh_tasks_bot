@@ -21,7 +21,7 @@ import {
   CardTitle,
   Input,
   Label,
-  Select,
+  Select as UiSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -101,7 +101,7 @@ export function ProductAnalyticsPage() {
             <Label id="analytics-audience-label">
               <Trans>Кабинет</Trans>
             </Label>
-            <Select
+            <UiSelect
               onValueChange={(value) => setAudience(value === 'all' ? '' : (value ?? ''))}
               value={audience || 'all'}
             >
@@ -120,7 +120,7 @@ export function ProductAnalyticsPage() {
                 </SelectItem>
                 <SelectItem value="staff">Staff</SelectItem>
               </SelectContent>
-            </Select>
+            </UiSelect>
           </div>
           <div>
             <Label htmlFor="analytics-user">

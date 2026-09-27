@@ -290,6 +290,14 @@ msgstr "{pageLabel}: повернуть"
 msgid "{pageLabel}: удалить"
 msgstr "{pageLabel}: удалить"
 
+#: packages/product/src/student-progress.tsx
+msgid "{solvedCount, plural, one {задача зачтена} few {задачи зачтено} many {задач зачтено} other {задачи зачтено}}"
+msgstr "{solvedCount, plural, one {задача зачтена} few {задачи зачтено} many {задач зачтено} other {задачи зачтено}}"
+
+#: packages/product/src/student-progress.tsx
+msgid "{streakDays, plural, one {день} few {дня} many {дней} other {дня}}"
+msgstr "{streakDays, plural, one {день} few {дня} many {дней} other {дня}}"
+
 #: packages/product/src/written-material-reassignment.tsx
 msgid "{studentName} · сейчас в {sourceLabel}"
 msgstr "{studentName} · сейчас в {sourceLabel}"
@@ -311,6 +319,10 @@ msgstr "% · {0}° · {1} пометок"
 #: packages/product/src/review-reaction-inbox.tsx
 msgid "<0>{0}</0><1>{1}</1><2>·</2><3>{2}</3><4>·</4><5>проверил {3}</5>"
 msgstr "<0>{0}</0><1>{1}</1><2>·</2><3>{2}</3><4>·</4><5>проверил {3}</5>"
+
+#: packages/product/src/annotation-overlay.tsx
+msgid "<0><1/>перо</0><2><3/>выделение</2><4><5>1</5>комментарий</4>"
+msgstr "<0><1/>перо</0><2><3/>выделение</2><4><5>1</5>комментарий</4>"
 
 #: packages/product/src/push-device-controls.tsx
 msgid "<0>Chrome и Edge:</0> нажмите значок слева от адреса сайта → «Настройки сайта» или «Разрешения» → «Уведомления» → «Разрешить»."
@@ -873,6 +885,14 @@ msgstr "Выбрано: {0} из {1}"
 msgid "Выбрать {0}"
 msgstr "Выбрать {0}"
 
+#: packages/product/src/dense-data-table.tsx
+msgid "Выбрать все строки"
+msgstr "Выбрать все строки"
+
+#: packages/product/src/dense-data-table.tsx
+msgid "Выбрать строку"
+msgstr "Выбрать строку"
+
 #: packages/product/src/question-photos.tsx
 msgid "Выбрать фотографии"
 msgstr "Выбрать фотографии"
@@ -1157,6 +1177,10 @@ msgstr "и {inheritedStudents} "
 msgid "Идентификатор YouTube-видео некорректен"
 msgstr "Идентификатор YouTube-видео некорректен"
 
+#: packages/product/src/student-progress.tsx
+msgid "из <0>{attemptedCount}</0>, над которыми вы работали"
+msgstr "из <0>{attemptedCount}</0>, над которыми вы работали"
+
 #: packages/product/src/classroom-planning.tsx
 msgid "из схемы перед подтверждением."
 msgstr "из схемы перед подтверждением."
@@ -1348,6 +1372,14 @@ msgstr "Код: <0>{0}</0>"
 #: packages/product/src/review-feedback-form.tsx
 msgid "Комментарий"
 msgstr "Комментарий"
+
+#: packages/product/src/annotation-overlay.tsx
+msgid "Комментарий {number}"
+msgstr "Комментарий {number}"
+
+#: packages/product/src/annotation-overlay.tsx
+msgid "Комментарий преподавателя"
+msgstr "Комментарий преподавателя"
 
 #. placeholder {0}: item.comment
 #: packages/product/src/review-reaction-inbox.tsx
@@ -2265,6 +2297,10 @@ msgstr "Подготовить предпросмотр"
 msgid "Поддерживаются только YouTube и VK Видео"
 msgstr "Поддерживаются только YouTube и VK Видео"
 
+#: packages/product/src/student-progress.tsx
+msgid "подряд с решениями — ваш личный рекорд"
+msgstr "подряд с решениями — ваш личный рекорд"
+
 #: packages/product/src/conscious-disclosure.tsx
 #: packages/product/src/course-admin.tsx
 #: packages/product/src/staff-publishing.tsx
@@ -2323,6 +2359,10 @@ msgstr "Пока вы ничего не меняете, отдельная ко�
 #: packages/product/src/classroom-planning.tsx
 msgid "Пока никого нет"
 msgstr "Пока никого нет"
+
+#: packages/product/src/student-progress.tsx
+msgid "Пока пусто. Когда вы начнёте решать задачи, здесь появится ваш прогресс — без рейтингов и сравнений."
+msgstr "Пока пусто. Когда вы начнёте решать задачи, здесь появится ваш прогресс — без рейтингов и сравнений."
 
 #. placeholder {0}: items.length
 #: packages/product/src/review-reaction-inbox.tsx
@@ -2755,6 +2795,7 @@ msgstr "С устным приёмом всё ОК."
 
 #: packages/product/src/review-annotation-editor.tsx
 #: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/zoomable-figure.tsx
 msgid "Сбросить масштаб"
 msgstr "Сбросить масштаб"
 
@@ -3087,6 +3128,7 @@ msgid "Уведомления об изменениях"
 msgstr "Уведомления об изменениях"
 
 #: packages/product/src/staff-publishing.tsx
+#: packages/product/src/zoomable-figure.tsx
 msgid "Увеличить"
 msgstr "Увеличить"
 
@@ -3115,6 +3157,10 @@ msgstr "Уже есть более новая проверка"
 #: packages/product/src/lesson-video.ts
 msgid "Укажите корректную HTTPS-ссылку на YouTube или VK Видео"
 msgstr "Укажите корректную HTTPS-ссылку на YouTube или VK Видео"
+
+#: packages/product/src/zoomable-figure.tsx
+msgid "Уменьшить"
+msgstr "Уменьшить"
 
 #: packages/product/src/review-annotation-editor.tsx
 #: packages/product/src/review-annotation-surface.tsx

@@ -6,6 +6,7 @@ export const problemImportActionSchema = z.enum(['create', 'update', 'unchanged'
 
 export const problemImportDiagnosticSchema = z
   .object({
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixed XLSX sheet names; docs/i18n.md
     sheet: z.enum(['Задачи', 'Старые']),
     row: z.number().int().positive(),
     field: z.string().min(1),
@@ -16,6 +17,7 @@ export const problemImportDiagnosticSchema = z
 
 export const problemImportRowSchema = z
   .object({
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixed XLSX sheet names; docs/i18n.md
     sheet: z.enum(['Задачи', 'Старые']),
     row: z.number().int().positive(),
     groupCode: z.string().min(1).nullable(),
@@ -49,6 +51,7 @@ export const problemImportSynonymCandidateSchema = z
       .array(
         z
           .object({
+            // eslint-disable-next-line lingui/no-unlocalized-strings -- fixed XLSX sheet names; docs/i18n.md
             sheet: z.enum(['Задачи', 'Старые']),
             row: z.number().int().positive(),
             groupCode: z.string().min(1),

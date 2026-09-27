@@ -21,22 +21,24 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
   const title = `Устная E2E ${project}`
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
-  await page.goto(
-    `/student/tasks?course=${contentFixture.coursePublicId}` +
-      `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
-  )
-  const task = page.getByRole('heading', { name: `1 ${title}`, exact: true })
-  const earlier = page.getByRole('button', { name: 'Показать более ранние занятия' })
-  await expect(task.or(earlier).first()).toBeVisible()
-  if (!(await task.isVisible())) await earlier.click()
+  await page.goto(`/student/tasks/math-5-7/${encodeURIComponent('н')}/${target.lessonNumber}`)
+  const task = page.getByRole('heading', {
+    name: `Задача ${target.lessonNumber}н.1. «${title}»`,
+    exact: true,
+  })
   await expect(task).toBeVisible()
   await task
     .locator('xpath=ancestor::article')
     .getByRole('button', { name: 'Открыть задачу 1' })
     .click()
-  await expect(page.getByRole('heading', { name: `1 ${title}`, exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Устный приём' })).toBeVisible()
-  await expect(page.getByText('Задачу также можно отправить письменно ниже.')).toBeVisible()
+  await expect(
+    page.getByRole('heading', {
+      name: `Задача ${target.lessonNumber}н.1. «${title}»`,
+      exact: true,
+    }),
+  ).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Устный приём', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Сдать решение', exact: true })).toBeVisible()
 
   const joinResponse = page.waitForResponse(
     (response) =>
@@ -72,15 +74,10 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
   expect((await resultResponse).status()).toBe(201)
   await expect(page.getByRole('status')).toContainText('Результаты сохранены')
 
-  await page.goto(
-    `/student/tasks?course=${contentFixture.coursePublicId}` +
-      `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
-  )
-  await expect(task.or(earlier).first()).toBeVisible()
-  if (!(await task.isVisible())) await earlier.click()
+  await page.goto(`/student/tasks/math-5-7/${encodeURIComponent('н')}/${target.lessonNumber}`)
   await expect(
     page
-      .getByRole('heading', { name: `1 ${title}`, exact: true })
+      .getByRole('heading', { name: `Задача ${target.lessonNumber}н.1. «${title}»`, exact: true })
       .locator('xpath=ancestor::article'),
   ).toContainText('Зачтено')
 

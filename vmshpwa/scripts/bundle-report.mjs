@@ -32,12 +32,16 @@ function reportApp(app) {
   const dist = join(workspace, 'apps', app, 'dist')
   const html = readFileSync(join(dist, 'index.html'), 'utf8')
   const base = /src="(\/[^"]*\/)assets\//.exec(html)?.[1] ?? '/'
-  const entry = /<script type="module" crossorigin src="([^"]+)"/.exec(html)?.[1]
+  const entries = [...html.matchAll(/<script type="module" crossorigin src="([^"]+)"/g)].map(
+    (match) => match[1],
+  )
+  // Count the eager catalog module as initial JS (P8 WebKit recovery),
+  // as well as entry/preloads; changing its loading tag must not hide its bytes.
   const preloads = [...html.matchAll(/<link rel="modulepreload" crossorigin href="([^"]+)"/g)].map(
     (match) => match[1],
   )
   const toFile = (href) => join(dist, href.slice(base.length))
-  const initial = [entry, ...preloads].filter(Boolean)
+  const initial = [...new Set([...entries, ...preloads].filter(Boolean))]
   const initialRaw = initial.reduce((sum, href) => sum + statSync(toFile(href)).size, 0)
   const initialBrotli = initial.reduce((sum, href) => sum + brotli(readFileSync(toFile(href))), 0)
   const all = assetsOf(dist)

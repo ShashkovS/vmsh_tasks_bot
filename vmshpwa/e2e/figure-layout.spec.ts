@@ -70,6 +70,18 @@ test('figure placement survives reload and publishes only after confirmation', a
   expect(compiled.status()).toBe(200)
   await page.reload()
   const workflow = page.getByTestId('content-workflow-condition')
+  // A previous publication may use different item identities. Explicitly map
+  // this fixture's three items before editing their metadata.
+  const matching = workflow.getByRole('region', { name: 'Сопоставление задач', exact: true })
+  await expect(
+    matching.or(workflow.getByRole('heading', { name: 'Метаданные задач', exact: true })).first(),
+  ).toBeVisible()
+  if (await matching.isVisible()) {
+    for (const select of await matching.getByRole('combobox').all()) {
+      await select.selectOption('insert_new')
+    }
+    await matching.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
+  }
   for (let i = 1; i <= 3; i++) await setMetadataTitle(page, workflow, i, `Фигуры ${i}`)
   await workflow.getByRole('button', { name: 'Сохранить метаданные', exact: true }).click()
   await expect(workflow.getByText('Сопоставление и метаданные подтверждены.')).toBeVisible()

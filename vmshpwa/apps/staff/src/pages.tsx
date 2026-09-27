@@ -56,67 +56,55 @@ import {
 const beginner = {
   id: 'math-beginner',
   courseId: 'math-5-7',
-  get code() {
-    return t`н`
-  },
-  get name() {
-    return t`Начинающие`
-  },
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  code: 'н',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  name: 'Начинающие',
   colorIndex: 1 as const,
 }
 const continuing = {
   id: 'math-continuing',
   courseId: 'math-5-7',
-  get code() {
-    return t`п`
-  },
-  get name() {
-    return t`Продолжающие`
-  },
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  code: 'п',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  name: 'Продолжающие',
   colorIndex: 2 as const,
 }
 const expert = {
   id: 'math-expert',
   courseId: 'math-5-7',
-  get code() {
-    return t`э`
-  },
-  get name() {
-    return t`Эксперты`
-  },
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  code: 'э',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  name: 'Эксперты',
   colorIndex: 3 as const,
 }
 const physicsIntro = {
   id: 'physics-intro',
   courseId: 'physics-experiment',
-  get code() {
-    return t`вв`
-  },
-  get name() {
-    return t`Вводная`
-  },
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  code: 'вв',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  name: 'Вводная',
   colorIndex: 4 as const,
 }
 const mathCourse: CourseView = {
   id: 'math-5-7',
   code: 'MATH-5-7',
-  get name() {
-    return t`Математика 5–7`
-  },
-  get subjectCode() {
-    return t`Математика`
-  },
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  name: 'Математика 5–7',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  subjectCode: 'Математика',
   accentIndex: 1,
 }
 const physicsCourse: CourseView = {
   id: 'physics-experiment',
   code: 'PHYS-EXP',
-  get name() {
-    return t`Физика: эксперимент`
-  },
-  get subjectCode() {
-    return t`Физика`
-  },
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  name: 'Физика: эксперимент',
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+  subjectCode: 'Физика',
   accentIndex: 4,
 }
 
@@ -179,7 +167,9 @@ const managedCourses: ManagedCourse[] = [
       ...group,
       status: 'active' as const,
       activeStudents: [142, 118, 39][index]!,
-      scheduleLabel: index === 1 ? t`своё расписание` : t`шаблон курса`,
+      get scheduleLabel() {
+        return index === 1 ? t`своё расписание` : t`шаблон курса`
+      },
     })),
   },
   {
@@ -295,7 +285,8 @@ export function StaffCoursesPage({
                   ownerLabel: beginner.name,
                   purpose: 'materials-target',
                   chatLabel: '-100179000201',
-                  topicLabel: t`материалы начинающих`,
+                  topicLabel:
+                    /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'материалы начинающих' /* eslint-enable lingui/no-unlocalized-strings */,
                   status: 'verified',
                 },
               ]}
@@ -311,19 +302,15 @@ export function StaffCoursesPage({
 const queueItems: ReviewQueueItem[] = [
   {
     id: 'sub-1',
-    get taskNumber() {
-      return t`41н.6`
-    },
-    get taskTitle() {
-      return t`Расстановка ладей`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    taskNumber: '41н.6',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    taskTitle: 'Расстановка ладей',
     level: beginner,
-    get studentName() {
-      return t`Анна Белова`
-    },
-    get groupName() {
-      return t`Начинающие`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    studentName: 'Анна Белова',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    groupName: 'Начинающие',
     get waitingLabel() {
       return t`3 ч 20 мин`
     },
@@ -331,19 +318,15 @@ const queueItems: ReviewQueueItem[] = [
   },
   {
     id: 'sub-2',
-    get taskNumber() {
-      return t`41н.7`
-    },
-    get taskTitle() {
-      return t`Крылья бабочки`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    taskNumber: '41н.7',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    taskTitle: 'Крылья бабочки',
     level: beginner,
-    get studentName() {
-      return t`Борис Ветров`
-    },
-    get groupName() {
-      return t`Начинающие`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    studentName: 'Борис Ветров',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    groupName: 'Начинающие',
     get waitingLabel() {
       return t`2 ч 10 мин`
     },
@@ -351,26 +334,21 @@ const queueItems: ReviewQueueItem[] = [
   },
   {
     id: 'sub-3',
-    get taskNumber() {
-      return t`41п.4`
-    },
-    get taskTitle() {
-      return t`Числа на доске`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    taskNumber: '41п.4',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    taskTitle: 'Числа на доске',
     level: continuing,
-    get studentName() {
-      return t`Вера Орлова`
-    },
-    get groupName() {
-      return t`Продолжающие`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    studentName: 'Вера Орлова',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    groupName: 'Продолжающие',
     get waitingLabel() {
       return t`45 мин`
     },
     waitingMinutes: 45,
-    get busyBy() {
-      return t`И. Соколов`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    busyBy: 'И. Соколов',
   },
 ]
 
@@ -409,49 +387,43 @@ const reviewMessages: ThreadMessageView[] = [
     id: 's1',
     author: {
       kind: 'student',
-      get name() {
-        return t`Анна Белова`
-      },
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+      name: 'Анна Белова',
     },
     get at() {
       return t`25 января, 20:54`
     },
     channel: 'pwa',
-    get body() {
-      return t`На первой странице — идея, на второй я закончил подсчёт.`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    body: 'На первой странице — идея, на второй я закончил подсчёт.',
   },
   {
     id: 't1',
     author: {
       kind: 'teacher',
-      get name() {
-        return t`М. Иванова`
-      },
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+      name: 'М. Иванова',
     },
     get at() {
       return t`25 января, 21:15`
     },
     channel: 'pwa',
-    get body() {
-      return t`Почему выбранные ладьи не бьют друг друга?`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    body: 'Почему выбранные ладьи не бьют друг друга?',
   },
   {
     id: 's2',
     author: {
       kind: 'student',
-      get name() {
-        return t`Анна Белова`
-      },
+      // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+      name: 'Анна Белова',
     },
     get at() {
       return t`25 января, 21:31`
     },
     channel: 'pwa',
-    get body() {
-      return t`У каждой своя строка и свой столбец; дописала пояснение.`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    body: 'У каждой своя строка и свой столбец; дописала пояснение.',
   },
 ]
 
@@ -466,7 +438,9 @@ export function ReviewWorkspacePage({
     <StatefulPage state={state} title={t`Проверка работы`}>
       <PageLayout
         description={t`${submissionId} · Анна Белова · Начинающие`}
-        eyebrow={t`41н.6 · Расстановка ладей`}
+        eyebrow={
+          /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ '41н.6 · Расстановка ладей' /* eslint-enable lingui/no-unlocalized-strings */
+        }
         title={t`Проверка работы`}
         width="wide"
       >
@@ -673,16 +647,20 @@ export function StaffLessonDetailPage({
             columns={metadataColumns}
             initialRows={[
               {
-                level: t`н`,
+                level:
+                  /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'н' /* eslint-enable lingui/no-unlocalized-strings */,
                 problem: '41.1',
-                title: t`Разнообразные вагоны`,
+                title:
+                  /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Разнообразные вагоны' /* eslint-enable lingui/no-unlocalized-strings */,
                 taskType: 'test',
                 answerType: 'natural',
               },
               {
-                level: t`н`,
+                level:
+                  /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'н' /* eslint-enable lingui/no-unlocalized-strings */,
                 problem: '41.6',
-                title: t`Расстановка ладей`,
+                title:
+                  /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ 'Расстановка ладей' /* eslint-enable lingui/no-unlocalized-strings */,
                 taskType: 'written',
                 answerType: '',
               },
@@ -697,36 +675,30 @@ export function StaffLessonDetailPage({
 const classroomGroups: ClassroomGroupOption[] = [
   {
     id: 'beginner',
-    get name() {
-      return t`Начинающие`
-    },
-    get shortCode() {
-      return t`н`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Начинающие',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    shortCode: 'н',
     colorIndex: 1,
     inPersonCount: 84,
     assignedCount: 82,
   },
   {
     id: 'continuing',
-    get name() {
-      return t`Продолжающие`
-    },
-    get shortCode() {
-      return t`п`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Продолжающие',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    shortCode: 'п',
     colorIndex: 2,
     inPersonCount: 68,
     assignedCount: 68,
   },
   {
     id: 'expert',
-    get name() {
-      return t`Эксперты`
-    },
-    get shortCode() {
-      return t`х`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Эксперты',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    shortCode: 'х',
     colorIndex: 3,
     inPersonCount: 27,
     assignedCount: 27,
@@ -753,9 +725,8 @@ const catalogRooms: ClassroomCatalogRoom[] = [
   },
   {
     id: 'hall',
-    get name() {
-      return t`Актовый зал`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Актовый зал',
     status: 'active',
     version: 4,
     get usageLabel() {
@@ -769,9 +740,8 @@ const layoutRooms: ClassroomLayoutRoom[] = [
   { id: '301', name: '301', groupId: 'continuing' },
   {
     id: 'hall',
-    get name() {
-      return t`Актовый зал`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Актовый зал',
     groupId: 'expert',
   },
 ]
@@ -781,9 +751,8 @@ const planRooms: ClassroomPlanRoom[] = layoutRooms.flatMap((room) =>
 const planStudents: ClassroomPlanStudent[] = [
   {
     id: 'anna',
-    get name() {
-      return t`Анна Белова`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Анна Белова',
     groupId: 'beginner',
     classroomId: '201',
     status: 'assigned',
@@ -794,9 +763,8 @@ const planStudents: ClassroomPlanStudent[] = [
   },
   {
     id: 'boris',
-    get name() {
-      return t`Борис Ветров`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Борис Ветров',
     groupId: 'beginner',
     classroomId: '202',
     status: 'assigned',
@@ -807,9 +775,8 @@ const planStudents: ClassroomPlanStudent[] = [
   },
   {
     id: 'vera',
-    get name() {
-      return t`Вера Орлова`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Вера Орлова',
     groupId: 'continuing',
     classroomId: '301',
     status: 'assigned',
@@ -820,9 +787,8 @@ const planStudents: ClassroomPlanStudent[] = [
   },
   {
     id: 'grigory',
-    get name() {
-      return t`Григорий Яшин`
-    },
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md
+    name: 'Григорий Яшин',
     groupId: 'expert',
     classroomId: null,
     status: 'reassigning',

@@ -468,6 +468,12 @@ async def test_service_maintenance_is_capability_gated_and_does_not_hide_static(
     blocked = await gateway_client.post("/staff/api/v1/save", headers=headers)
     assert blocked.status == 503
     assert (await blocked.json())["error"]["code"] == "service_updating"
+    message = (await blocked.json())["error"]["message"]
+    assert "Обновляем сервис." in message
+    assert "Service updating." in message
+    # P8: static proxy responses remain useful without Python or catalogs.
+    template = Path("vmshpwa/deploy/nginx/vmshpwa.conf.template").read_text()
+    assert message in template
     assert blocked.headers["Retry-After"] == "2"
     static = await gateway_client.get("/student/", headers=headers)
     assert static.status == 200

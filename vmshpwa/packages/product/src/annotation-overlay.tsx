@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 
 import { cn } from '@vmsh/ui'
@@ -68,7 +70,7 @@ export function AnnotationOverlay({ children, annotations, className }: Annotati
           const selected = openId === annotation.id
           return (
             <button
-              aria-label={`Комментарий ${number}`}
+              aria-label={t`Комментарий ${number}`}
               aria-pressed={selected}
               className="absolute grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-annotation-comment font-num text-caption font-semibold text-white ring-2 ring-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               key={annotation.id}
@@ -83,28 +85,33 @@ export function AnnotationOverlay({ children, annotations, className }: Annotati
       </div>
 
       <div className="flex flex-wrap gap-3 text-caption text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <span aria-hidden="true" className="size-3 rounded-full border-2 border-annotation-pen" />
-          перо
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span aria-hidden="true" className="size-3 rounded-sm bg-annotation-highlight/50" />
-          выделение
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span
-            aria-hidden="true"
-            className="grid size-3.5 place-items-center rounded-full bg-annotation-comment text-[0.5rem] text-white"
-          >
-            1
+        <Trans>
+          <span className="inline-flex items-center gap-1">
+            <span
+              aria-hidden="true"
+              className="size-3 rounded-full border-2 border-annotation-pen"
+            />
+            перо
           </span>
-          комментарий
-        </span>
+          <span className="inline-flex items-center gap-1">
+            <span aria-hidden="true" className="size-3 rounded-sm bg-annotation-highlight/50" />
+            выделение
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span
+              aria-hidden="true"
+              className="grid size-3.5 place-items-center rounded-full bg-annotation-comment text-[0.5rem] text-white"
+            >
+              1
+            </span>
+            комментарий
+          </span>
+        </Trans>
       </div>
 
       {openComment?.note ? (
         <div
-          aria-label="Комментарий преподавателя"
+          aria-label={t`Комментарий преподавателя`}
           className="rounded-md border border-border bg-surface p-3 text-small"
           role="region"
         >

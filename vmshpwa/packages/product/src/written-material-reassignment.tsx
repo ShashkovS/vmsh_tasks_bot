@@ -13,7 +13,7 @@ import {
   Checkbox,
   Input,
   Label,
-  Select,
+  Select as UiSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -211,7 +211,7 @@ export function WrittenMaterialReassignment({
           <Label htmlFor={targetId}>
             <Trans>Целевая задача</Trans>
           </Label>
-          <Select
+          <UiSelect
             disabled={busy || previewActive}
             onValueChange={(value) => setTargetProblemId(value ?? '')}
             value={targetProblemId || null}
@@ -235,7 +235,7 @@ export function WrittenMaterialReassignment({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </UiSelect>
         </div>
         <div className="min-w-0 space-y-1">
           <Label htmlFor={reasonId}>

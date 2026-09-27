@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
+import { courseStatusSchema, groupStatusSchema } from './courses'
 
 const statisticsGroupSchema = z
   .object({
@@ -8,7 +9,7 @@ const statisticsGroupSchema = z
     code: z.string().trim().min(1).max(16),
     name: z.string().trim().min(1).max(160),
     colorKey: z.string().trim().min(1).max(32),
-    status: z.enum(['active', 'archived']),
+    status: groupStatusSchema,
   })
   .strip()
 
@@ -18,7 +19,8 @@ const statisticsCourseSchema = z
     code: z.string().trim().min(1).max(32),
     name: z.string().trim().min(1).max(160),
     subjectCode: z.string().trim().min(1).max(32),
-    status: z.enum(['active', 'archived']),
+    // docs/lesson-statistics.md: match the course catalog lifecycle, including drafts.
+    status: courseStatusSchema,
     groups: z.array(statisticsGroupSchema).max(100),
   })
   .strip()
