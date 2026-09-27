@@ -2271,9 +2271,31 @@ async def test_student_written_photo_upload_converts_persists_replays_and_submit
 
     with monkeypatch.context() as patch:
         patch.setattr(fixture.asset_storage, "signed_read_url", signed_read_url, raising=False)
+        # Both production Blob clients use Accept: image/webp, redirect: error.
+        # Unknown clients and CORS images also keep the same-origin byte response.
+        for media_headers in (
+            {"Accept": "image/webp", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors"},
+            {"Accept": "image/webp"},
+            {"Sec-Fetch-Dest": "image", "Sec-Fetch-Mode": "cors"},
+        ):
+            compatible = await fixture.client.get(
+                attachment["mediaPath"],
+                cookies=_cookie(fixture, "student"),
+                headers={**_headers(), **media_headers},
+                allow_redirects=False,
+            )
+            assert compatible.status == 200
+            assert "Location" not in compatible.headers
+            assert await compatible.read() == fixture.asset_storage.objects[submission_keys[0]]
+        assert signed_keys == []
         patch.setattr(fixture.asset_storage, "get", forbidden_storage_get)
+        image_headers = {
+            **_headers(),
+            "Sec-Fetch-Dest": "image",
+            "Sec-Fetch-Mode": "no-cors",
+        }
         denied = await fixture.client.get(
-            attachment["mediaPath"], headers=_headers(), allow_redirects=False
+            attachment["mediaPath"], headers=image_headers, allow_redirects=False
         )
         assert denied.status == 401
         assert signed_keys == []
@@ -2281,7 +2303,7 @@ async def test_student_written_photo_upload_converts_persists_replays_and_submit
             redirected = await fixture.client.get(
                 attachment["mediaPath"],
                 cookies=_cookie(fixture, "student"),
-                headers=_headers(),
+                headers=image_headers,
                 allow_redirects=False,
             )
             assert redirected.status == 302

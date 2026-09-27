@@ -31,3 +31,13 @@
 - Gate пройден: 32 теста S3/written HTTP PASS, `git diff --check` PASS.
   Read-only проверка production nginx: bucket origin Beget уже разрешён в
   img-src/connect-src. Сервер и bucket не изменялись; нужен обычный backend release.
+
+- 2026-09-27 incident: production 34af1445 включает unconditional photo 302.
+  Найдена несовместимость: WrittenMaterialReassignmentClient и
+  WrittenSubmissionClient используют Blob fetch с redirect:error. Это упущено
+  в исходной проверке. Hotfix: S3 redirect только для Sec-Fetch-Dest:image,
+  Sec-Fetch-Mode:no-cors; fetch/CORS/старые клиенты снова получают 200 с байтами.
+  Повторное SHA256 не возвращается. Выполняется HTTP regression перед выпуском.
+
+- Incident hotfix gate: 32 S3/written HTTP PASS, diff-check PASS; готов к
+  выпуску. Проверка deployment и возврата media 200 выполняется после push.

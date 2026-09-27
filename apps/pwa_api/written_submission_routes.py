@@ -801,11 +801,15 @@ async def _attachment_media_response(
     media: WrittenAttachmentMedia,
     attachment_public_id: str,
 ) -> web.Response:
-    # Callers have authorized the student/family/staff scope before this point.
-    # Stable mediaPath refreshes the 24h URL on reload; photo-delivery.md explains
-    # the contract (docs/performance/photo-delivery.md).
+    # docs/performance/photo-delivery.md: existing Blob clients reject redirects.
+    # Only plain browser images can follow S3 redirects without a CORS fetch.
+    # Callers have already authorized the student/family/staff scope.
     storage = _attachment_service(request).storage
-    if isinstance(storage, SignedReadStorage):
+    if (
+        request.headers.get("Sec-Fetch-Dest") == "image"
+        and request.headers.get("Sec-Fetch-Mode") == "no-cors"
+        and isinstance(storage, SignedReadStorage)
+    ):
         location = await storage.signed_read_url(
             media.object_key, expires_in=WRITTEN_MEDIA_URL_TTL_SECONDS
         )
