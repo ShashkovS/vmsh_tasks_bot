@@ -200,3 +200,12 @@ Full lesson presentations place author-controlled blocks below the heading and
 below the task body. `LessonBlocksLayout` omits empty positions and leaves the
 existing worksheet task surface intact; video begins only after an explicit
 reader action. See [lesson-blocks.md](../../docs/lesson-blocks.md).
+
+
+### Student standalone subparts — 2026-09-28
+
+[`CanonicalStudentTask`](../../apps/student/src/student-task-detail-page.tsx) and
+[`StudentLessonFeedItem`](../../apps/student/src/student-tasks-page.tsx) share
+[`studentWorksheetBindings`](../../apps/student/src/student-worksheet-bindings.tsx):
+status and workspace belong to each subpart, with no duplicate parent form.
+Standalone answer panels start expanded and can be collapsed independently.

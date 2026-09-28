@@ -332,3 +332,13 @@ API-disconnected coverage passed in all three engines).
 [Proof and screenshots](../../../pwa_tests/reports/offline-current-lessons/README.md).
 No deployment; full network-offline Safari/Firefox cold-start proof remains a
 manual-browser follow-up because of the documented automation limitation.
+
+
+## Student task subparts — 2026-09-28
+
+Implemented: feed and standalone task reuse
+[`studentWorksheetBindings`](../../apps/student/src/student-worksheet-bindings.tsx)
+for per-subpart statuses and answer panels. Standalone panels start expanded
+and collapse independently. Targeted Vitest: 7 tests passed; Student TypeScript
+and scoped ESLint passed. Browser visual verification and deployment not performed.
+Regression: [`student-worksheet-bindings.test.tsx`](../../apps/student/src/student-worksheet-bindings.test.tsx).

@@ -3454,3 +3454,13 @@ manual-browser follow-up because of the documented automation limitation.
 - 2026-09-28: ограниченная диагностика media failures и server stages;
   [решение, стоимость и проверки](../../../docs/performance/2026-09-28-instrumentation.md).
   UI и поведение загрузки не меняются; alerts/export требуют администратора.
+
+
+## Student task subparts — 2026-09-28
+
+Implemented: feed and standalone task reuse
+[`studentWorksheetBindings`](../../apps/student/src/student-worksheet-bindings.tsx)
+for per-subpart statuses and answer panels. Standalone panels start expanded
+and collapse independently. Targeted Vitest: 7 tests passed; Student TypeScript
+and scoped ESLint passed. Browser visual verification and deployment not performed.
+Regression: [`student-worksheet-bindings.test.tsx`](../../apps/student/src/student-worksheet-bindings.test.tsx).

@@ -1,3 +1,4 @@
+import { studentWorksheetBindings } from './student-worksheet-bindings'
 import { StudentReadStatePanel as PageStatePanel } from './student-read-state-panel'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
@@ -34,8 +35,6 @@ import {
   type PrincipalQueryScope,
   type StudentLessonSummary,
   type StudentProblemSummary,
-  type WebContentBlock,
-  type WebContentProblem,
 } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
 import { CourseContext, CourseGroupSwitcher, LessonBlocksLayout } from '@vmsh/product'
@@ -64,26 +63,6 @@ function requestState(error: unknown) {
     : error instanceof ApiResponseError && error.status === 403
       ? ('forbidden' as const)
       : ('error' as const)
-}
-
-function containsSubpart(blocks: WebContentBlock[]): boolean {
-  return blocks.some((block) => {
-    if (block.type === 'subpart') return true
-    if (block.type === 'callout') return containsSubpart(block.blocks)
-    if (block.type === 'list') return block.items.some(containsSubpart)
-    return false
-  })
-}
-
-function subpartProblem(
-  problems: StudentProblemSummary[],
-  documentProblem: WebContentProblem,
-  label: string,
-): StudentProblemSummary | undefined {
-  return problems.find(
-    (problem) =>
-      problem.sourceOrdinal === documentProblem.ordinal && problem.displayNumber.endsWith(label),
-  )
 }
 
 /** One published worksheet as it appears in the Student tasks feed. */
@@ -240,10 +219,6 @@ export function StudentLessonFeedItem({
     />
   )
 
-  const problemsFor = (documentProblem: WebContentProblem) =>
-    problemsQuery.data.problems.filter(
-      (problem) => problem.sourceOrdinal === documentProblem.ordinal,
-    )
   const answerableProblems = problemsQuery.data.problems.filter(
     (problem) => !submissionClosed || (problem.hasAnswer ?? problem.status !== 'not-started'),
   )
@@ -302,31 +277,11 @@ export function StudentLessonFeedItem({
             </CardHeader>
             <WorksheetDocument
               document={contentQuery.data.document}
-              renderAfterSubpart={(documentProblem, label) => {
-                const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
-                return problem ? <div className="mb-4">{problemWorkspace(problem)}</div> : null
-              }}
-              renderAfterProblem={(documentProblem) => {
-                if (containsSubpart(documentProblem.blocks)) return null
-                const problems = problemsFor(documentProblem)
-                if (problems.length === 0) return null
-                return (
-                  <div className="mb-4 space-y-2">
-                    {problems.map((problem) => (
-                      <div key={problem.problemId}>{problemWorkspace(problem)}</div>
-                    ))}
-                  </div>
-                )
-              }}
-              renderProblemActions={(documentProblem) => {
-                if (containsSubpart(documentProblem.blocks)) return null
-                const problems = problemsFor(documentProblem)
-                return problems.length === 1 && problems[0] ? problemActions(problems[0]) : null
-              }}
-              renderSubpartActions={(documentProblem, label) => {
-                const problem = subpartProblem(problemsQuery.data.problems, documentProblem, label)
-                return problem ? problemActions(problem) : null
-              }}
+              {...studentWorksheetBindings(
+                problemsQuery.data.problems,
+                problemWorkspace,
+                problemActions,
+              )}
             />
           </Card>
         </LessonBlocksLayout>

@@ -1,3 +1,4 @@
+import { studentWorksheetBindings } from './student-worksheet-bindings'
 import { StudentReadStatePanel as PageStatePanel } from './student-read-state-panel'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
@@ -378,7 +379,7 @@ export function CanonicalStudentTask({
   )
   // Opening a single task is already the intent to work on it, so the answer
   // panel starts expanded; the same control still collapses it.
-  const [answerOpen, setAnswerOpen] = useState(true)
+  const [collapsedProblemIds, setCollapsedProblemIds] = useState<Set<string>>(() => new Set())
 
   if (query.isPending) {
     return (
@@ -452,21 +453,31 @@ export function CanonicalStudentTask({
       hidePageHeading
       kind="condition"
       problemOrdinal={problem.sourceOrdinal}
-      renderAfterProblem={() => (
-        <StudentProblemWorkspace
-          answerOpen={answerOpen}
-          conditionRevisionId={query.data.conditionRevisionId}
-          courseId={courseId}
-          groupLessonId={groupLessonId}
-          onToggleAnswer={() => setAnswerOpen((open) => !open)}
-          problem={problem}
-          submissionClosed={submissionClosed}
-        />
-      )}
-      renderProblemActions={() => (
-        <span className="vmsh-problem-actions-row font-sans">
-          <ProblemStatusBadge problem={problem} />
-        </span>
+      {...studentWorksheetBindings(
+        query.data.problems,
+        (part) => (
+          <StudentProblemWorkspace
+            answerOpen={!collapsedProblemIds.has(part.problemId)}
+            conditionRevisionId={query.data.conditionRevisionId}
+            courseId={courseId}
+            groupLessonId={groupLessonId}
+            onToggleAnswer={() =>
+              setCollapsedProblemIds((current) => {
+                const next = new Set(current)
+                if (next.has(part.problemId)) next.delete(part.problemId)
+                else next.add(part.problemId)
+                return next
+              })
+            }
+            problem={part}
+            submissionClosed={submissionClosed}
+          />
+        ),
+        (part) => (
+          <span className="vmsh-problem-actions-row font-sans">
+            <ProblemStatusBadge problem={part} />
+          </span>
+        ),
       )}
       taskId={problem.problemId}
     />
