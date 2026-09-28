@@ -62,3 +62,8 @@
   [Документация](2026-09-28-instrumentation.md), alert rules (promtool PASS) и
   exporter (bash -n PASS) подготовлены; alerts/export не активированы.
 - Vite production builds staff/student/family PASS (предупреждения о размере chunks).
+- Выпущен a08bc163: 28.09 08:58 UTC, frontend/backend, без migrations.
+  Все deploy health checks PASS; NRestarts=0. Новые loop metrics доступны
+  в production у обоих workers (после старта текущий lag 0.7–0.9 мс).
+  Browser failure события появятся после обновления клиентов и реальных ошибок;
+  их end-to-end приём проверен тестами, production ошибки не провоцировались.
