@@ -1,3 +1,4 @@
+import { observeMediaLoad } from './product-analytics'
 import { pwaFetch } from '@vmsh/contracts'
 import { useMutation } from '@tanstack/react-query'
 import {
@@ -111,6 +112,14 @@ class BrowserWrittenMaterialReassignmentClient implements WrittenMaterialReassig
   }
 
   async attachmentMedia(
+    entryId: string,
+    attachmentId: string,
+    options: WrittenMaterialReassignmentRequestOptions = {},
+  ): Promise<Blob> {
+    return observeMediaLoad(() => this.#attachmentMedia(entryId, attachmentId, options))
+  }
+
+  async #attachmentMedia(
     entryId: string,
     attachmentId: string,
     options: WrittenMaterialReassignmentRequestOptions = {},

@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from threading import Lock
 
 from aiohttp import web
+from prometheus_client import Gauge, Histogram
 from helpers.prometheus_metrics import canonical_route
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,16 @@ logger = logging.getLogger(__name__)
 # intentionally narrower: it emits only bounded slow-request and loop-lag
 # records described in vmshpwa/docs/request-tracing.md.
 logger.setLevel(logging.INFO)
+
+# One observation/second/worker; docs/performance/2026-09-28-instrumentation.md.
+LOOP_LAG = Histogram(
+    "vmsh_event_loop_lag_seconds", "Event loop timer delay",
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5, 1, 2.5, 5),
+)
+LOOP_LAG_CURRENT = Gauge(
+    "vmsh_event_loop_lag_current_seconds", "Last timer delay by live worker",
+    multiprocess_mode="liveall",
+)
 
 
 @dataclass
@@ -124,6 +135,8 @@ async def event_loop_trace_lifecycle(app):
             started = time.perf_counter()
             await asyncio.sleep(1)
             lag = max(0, time.perf_counter() - started - 1)
+            LOOP_LAG.observe(lag)
+            LOOP_LAG_CURRENT.set(lag)
             if lag >= 0.1:
                 logger.info("pwa_event_loop_lag lag_ms=%.2f", lag * 1000)
 

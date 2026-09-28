@@ -1748,3 +1748,7 @@ API-disconnected coverage passed in all three engines).
 [Proof and screenshots](../../../pwa_tests/reports/offline-current-lessons/README.md).
 No deployment; full network-offline Safari/Firefox cold-start proof remains a
 manual-browser follow-up because of the documented automation limitation.
+
+- 2026-09-28: ограниченная диагностика media failures и server stages;
+  [решение, стоимость и проверки](../../../docs/performance/2026-09-28-instrumentation.md).
+  UI и поведение загрузки не меняются; alerts/export требуют администратора.

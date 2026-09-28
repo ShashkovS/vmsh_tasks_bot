@@ -42,6 +42,7 @@ from db_methods.pwa.written_submissions import (
 from helpers.object_storage import ObjectStorageOperationError, SignedReadStorage
 from helpers.pwa.content import AssetConversionError
 from helpers.pwa.i18n import N_
+from helpers.pwa.media_observability import media_stage
 from helpers.pwa.written_notice_i18n import localize_thread_notices
 from helpers.pwa.written_attachments import (
     MAX_WRITTEN_SOURCE_BYTES,
@@ -810,15 +811,17 @@ async def _attachment_media_response(
         and request.headers.get("Sec-Fetch-Mode") == "no-cors"
         and isinstance(storage, SignedReadStorage)
     ):
-        location = await storage.signed_read_url(
-            media.object_key, expires_in=WRITTEN_MEDIA_URL_TTL_SECONDS
-        )
+        with media_stage("media.sign"):
+            location = await storage.signed_read_url(
+                media.object_key, expires_in=WRITTEN_MEDIA_URL_TTL_SECONDS
+            )
         return web.Response(
             status=302,
             headers={"Location": location, "Cache-Control": "no-store"},
         )
     try:
-        payload = await storage.get(media.object_key)
+        with media_stage("storage.get"):
+            payload = await storage.get(media.object_key)
     except FileNotFoundError as error:
         raise PwaApiError(
             status=500,
@@ -1005,7 +1008,8 @@ async def create_written_attachment(request: web.Request) -> web.Response:
     entry_public_id = _public_id(
         request, "entry_public_id", error_code="written_entry_not_found"
     )
-    values, filename = await _multipart_attachment(request)
+    with media_stage("upload.read"):
+        values, filename = await _multipart_attachment(request)
     _schema_version(_form_int(values, "schemaVersion", minimum=1, maximum=1))
     receipt = await _attachment_service(request).convert_and_attach(
         account_id=account_id,

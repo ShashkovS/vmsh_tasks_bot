@@ -9,6 +9,10 @@ that can be stored through :mod:`helpers.object_storage`.
 
 from __future__ import annotations
 
+from contextlib import nullcontext
+
+from helpers.pwa.media_observability import media_stage
+
 import hashlib
 import os
 import re
@@ -605,14 +609,16 @@ class ContentAssetConverter:
         cwd: Path,
         environment: Mapping[str, str],
     ):
+        stage = {"image-normalization": "image.normalize", "raster-to-webp": "image.webp"}.get(capability)
         try:
-            return await run_fixed_command(
-                executable,
-                args,
-                timeout_seconds=self.timeout_seconds,
-                cwd=cwd,
-                environment=environment,
-            )
+            with media_stage(stage) if stage else nullcontext():
+                return await run_fixed_command(
+                    executable,
+                    args,
+                    timeout_seconds=self.timeout_seconds,
+                    cwd=cwd,
+                    environment=environment,
+                )
         except TimeoutError as error:
             raise AssetConversionError(
                 "asset.converter_timeout",

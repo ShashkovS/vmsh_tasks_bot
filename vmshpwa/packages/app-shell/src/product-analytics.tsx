@@ -11,6 +11,7 @@ export type ProductEventType =
   | 'test.submit'
   | 'written.submit'
   | 'photo.attach'
+  | 'media.load.failed'
   | 'question.create'
   | 'question.reply'
   | 'group.change'
@@ -48,6 +49,34 @@ export function recordProductAction(
 ): void {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(PRODUCT_ACTION_EVENT, { detail: { eventType, entity } }))
+}
+
+// Bounded diagnostics; docs/performance/2026-09-28-instrumentation.md.
+let mediaFailuresSent = 0
+let lastMediaFailure = Number.NEGATIVE_INFINITY
+
+export function reportMediaLoadFailure(): void {
+  if (typeof window === 'undefined') return
+  const now = performance.now()
+  if (mediaFailuresSent >= 10 || now - lastMediaFailure < 60_000) return
+  mediaFailuresSent += 1
+  lastMediaFailure = now
+  recordProductAction('media.load.failed')
+}
+
+export async function observeMediaLoad<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+      try {
+        reportMediaLoadFailure()
+      } catch {
+        /* Diagnostics never change the original error. */
+      }
+    }
+    throw error
+  }
 }
 
 function environment(): Omit<ProductEvent, 'eventType' | 'routeId' | 'entityType' | 'entityId'> {
@@ -137,8 +166,21 @@ export function ProductPageView({ audience, pathname }: { audience: Audience; pa
       ).detail
       if (detail) tracker.track(detail.eventType, window.location.pathname, detail.entity)
     }
+    const onImageError = (event: Event) => {
+      const target = event.target
+      if (
+        target instanceof HTMLImageElement &&
+        /\/thread-entries\/[^/]+\/attachments\/[^/]+\/media/.test(target.src)
+      ) {
+        reportMediaLoadFailure()
+      }
+    }
+    window.addEventListener('error', onImageError, true)
     window.addEventListener(PRODUCT_ACTION_EVENT, onAction)
-    return () => window.removeEventListener(PRODUCT_ACTION_EVENT, onAction)
+    return () => {
+      window.removeEventListener(PRODUCT_ACTION_EVENT, onAction)
+      window.removeEventListener('error', onImageError, true)
+    }
   }, [tracker])
   useEffect(() => {
     const flush = () => void tracker.flush()

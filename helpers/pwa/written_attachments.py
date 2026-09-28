@@ -26,6 +26,7 @@ from db_methods.pwa.written_submissions import (
     PwaWrittenSubmissionRepository,
 )
 from helpers.object_storage import ObjectStorage, canonical_object_key
+from helpers.pwa.media_observability import media_stage
 from helpers.pwa.content.assets import (
     ConfiguredContentAssetConverter,
     ContentAssetConverter,
@@ -101,10 +102,12 @@ class WrittenAttachmentService:
             # Exact retries stop before conversion and object storage.
             return prepared
 
-        converted = await self._converter.raster_to_webp(payload)
+        with media_stage("image.convert"):
+            converted = await self._converter.raster_to_webp(payload)
         _validate_converted(payload, source_sha256=source_sha256, converted=converted)
         object_key = self._object_key(prepared)
-        await self._storage.put(object_key, converted.data, "image/webp")
+        with media_stage("storage.put"):
+            await self._storage.put(object_key, converted.data, "image/webp")
         try:
             persisted = PersistWrittenAttachment(
                 object_key=object_key,

@@ -67,7 +67,8 @@ async def test_invalid_report_filter_returns_422(classroom_http, monkeypatch, qu
 
 
 @pytest.mark.asyncio
-async def test_normalized_route_is_stored(classroom_http, monkeypatch, tmp_path):
+@pytest.mark.parametrize("event_type", ["page.view", "media.load.failed"])
+async def test_normalized_route_is_stored(classroom_http, monkeypatch, tmp_path, event_type):
     from apps.pwa_api import product_analytics_routes as routes
     from db_methods.pwa.product_analytics import ProductAnalyticsConnectionFactory
 
@@ -75,9 +76,10 @@ async def test_normalized_route_is_stored(classroom_http, monkeypatch, tmp_path)
     monkeypatch.setattr(routes, "_analytics_factory", lambda request: factory)
     response = await classroom_http.client.post(
         "/staff/api/v1/analytics/events",
-        json={"events": [event("/tasks/vmsh/%D0%BD/:id")]},
+        json={"events": [{**event("/tasks/vmsh/%D0%BD/:id"), "eventType": event_type}]},
         headers=_headers(unsafe=True), cookies=_cookies(classroom_http, "admin"),
     )
     assert response.status == 204, await response.text()
-    row = factory.run_read(lambda db: db.execute("SELECT route_id FROM product_events").fetchone())
+    row = factory.run_read(lambda db: db.execute("SELECT route_id, event_type FROM product_events").fetchone())
     assert row["route_id"] == "/tasks/vmsh/:id/:id"
+    assert row["event_type"] == event_type

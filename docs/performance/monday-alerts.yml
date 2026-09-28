@@ -1,0 +1,33 @@
+groups:
+  - name: vmsh-interactive
+    rules:
+      - alert: VmshInteractiveSlow
+        expr: |
+          (histogram_quantile(0.95, sum by (le, route) (rate(vmsh_http_request_duration_seconds_bucket{route!~".*(attachments|statistics|analytics|content/uploads|recheck).*"}[5m]))) > 0.5)
+          and on (route) (sum by (route) (increase(vmsh_http_request_duration_seconds_count[5m])) >= 100)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Interactive route p95 above 500ms"
+      - alert: VmshReadQueueGrowing
+        expr: vmsh_db_waiting{role="read"} > 20
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Worker read admission queue above 20"
+      - alert: VmshRouteErrors
+        expr: sum by (route) (increase(vmsh_http_requests_total{status=~"5.."}[5m])) >= 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "At least five 5xx on a route in five minutes"
+      - alert: VmshEventLoopStalls
+        expr: increase(vmsh_event_loop_lag_seconds_count[5m]) - increase(vmsh_event_loop_lag_seconds_bucket{le="0.2"}[5m]) >= 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Repeated event loop stalls above 200ms"

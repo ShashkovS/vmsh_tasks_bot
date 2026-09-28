@@ -25,6 +25,12 @@ METRICS_PATH = "/metrics"
 UNMATCHED_ROUTE = "unmatched"
 _WEBSOCKET_HANDLER_ATTRIBUTE = "__vmsh_websocket_handler__"
 
+CLIENT_MEDIA_FAILURES = Counter(
+    "vmsh_client_media_load_failures",
+    "Rate-limited browser photo load failure reports, not all failed images.",
+    ("audience",),
+)
+
 HTTP_REQUESTS = Counter(
     "vmsh_http_requests",
     "Total number of HTTP requests handled by aiohttp.",

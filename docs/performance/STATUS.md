@@ -41,3 +41,24 @@
 
 - Incident hotfix gate: 32 S3/written HTTP PASS, diff-check PASS; готов к
   выпуску. Проверка deployment и возврата media 200 выполняется после push.
+- Hotfix 2504acb0 отправлен и выпущен 27.09 в 12:52:52 UTC. Deploy log:
+  frontend=false, backend=true, migrations=false; все runtime/ready и metrics
+  health checks PASS, service active, NRestarts=0. Frontend symlink остаётся
+  на 34af1445: это ожидаемый backend-only выпуск. Пользовательский browser smoke
+  пока не подтверждён; интерфейс нужно обновить для повторной загрузки фото.
+
+- 2026-09-28: завершена read-only [проверка перед нагрузкой](2026-09-28-readiness.md).
+  [18h baseline](2026-09-28-baseline.json) сохранён. Обычные API p95 88–175 мс,
+  очередь read peak 23/worker, устойчивого насыщения ресурсов нет. Reveal всё
+  ещё даёт 59 HTTP 500 за окно. Prometheus rules пусты; доступ к полному journald
+  остаётся главным ограничением вечернего анализа. Новые metrics/alerts и
+  изменения runtime не выкатывались; предложения и границы проверки в отчёте.
+- 2026-09-28 instrumentation increment: media stages с фиксированными labels,
+  loop lag histogram/live worker gauge и rate-limited frontend failure event
+  через существующую аналитику. Без payload/URL, без дополнительного Sentry,
+  без новых фоновых таймеров. Проверки и подготовка экспорта журнала выполняются.
+
+- Instrumentation gate: 147 Python и 23 frontend tests PASS, ESLint/typecheck PASS.
+  [Документация](2026-09-28-instrumentation.md), alert rules (promtool PASS) и
+  exporter (bash -n PASS) подготовлены; alerts/export не активированы.
+- Vite production builds staff/student/family PASS (предупреждения о размере chunks).

@@ -1,3 +1,4 @@
+import { observeMediaLoad } from './product-analytics'
 import { pwaFetch } from '@vmsh/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -241,6 +242,14 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
   }
 
   async attachmentMedia(
+    entryId: string,
+    attachmentId: string,
+    options: WrittenSubmissionRequestOptions = {},
+  ): Promise<Blob> {
+    return observeMediaLoad(() => this.#attachmentMedia(entryId, attachmentId, options))
+  }
+
+  async #attachmentMedia(
     entryId: string,
     attachmentId: string,
     options: WrittenSubmissionRequestOptions = {},

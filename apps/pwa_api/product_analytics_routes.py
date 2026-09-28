@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from urllib.parse import unquote
 
 from aiohttp import web
+from helpers.prometheus_metrics import CLIENT_MEDIA_FAILURES
 from helpers.pwa.i18n import _
 
 from apps.pwa_api.errors import PwaApiError
@@ -29,6 +30,7 @@ _EVENT_TYPES = frozenset(
         "test.submit",
         "written.submit",
         "photo.attach",
+        "media.load.failed",
         "question.create",
         "question.reply",
         "group.change",
@@ -156,6 +158,11 @@ async def record_events(request: web.Request) -> web.Response:
         parsed = [(item, _event(item)) for item in events]
     except (ValueError, TypeError, KeyError):
         raise PwaApiError(status=422, code="validation_error", message="Некорректное аналитическое событие")
+
+    # Count validated, sampled reports; docs/performance/2026-09-28-instrumentation.md.
+    media_failures = sum(item[1][0] == "media.load.failed" for item in parsed)
+    if media_failures:
+        CLIENT_MEDIA_FAILURES.labels(audience.value).inc(media_failures)
 
     factory = _analytics_factory(request)
     if factory is None:
