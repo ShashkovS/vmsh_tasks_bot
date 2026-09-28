@@ -102,3 +102,11 @@ Implemented [read-only worksheets and child/profile corrections](../../docs/fami
 Family worksheet responses carry the same published before/after blocks as the
 Student response. Their task document and task statuses are nullable only while
 conditions remain unpublished. See [lesson-blocks.md](../../docs/lesson-blocks.md).
+
+## Staff violin follow-up — 2026-09-27
+
+The shared `DistributionViolin` and Staff callers correct smoothing and observed
+support; constant results have no artificial spread. See
+[lesson statistics](../../docs/lesson-statistics.md#violin-density-correction-2026-09-27)
+and `packages/product/src/progress-charts.test.tsx`. Student/Family receive no
+group distributions. Focused unit and Chromium stories pass; deployment pending.

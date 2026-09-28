@@ -145,3 +145,17 @@ Completion time and status survive navigation, reload and device changes.
 Deploy migration 0092 before the new backend/frontend; no new configuration or
 scheduler changes. Stop manual workers before rolling migration 0092 back. See
 [verification report](../dev/statistics-recalculation-report.md).
+
+## Violin density correction (2026-09-27)
+
+Staff callers in `apps/staff/src/lesson-statistics.tsx` and
+`staff-statistics-page.tsx` use Gaussian KDE bandwidth 0.5 solved items, matching
+`web/trash_print_stats.py` and `_external_pipelines/a54_upd_report.py`. Automatic
+bandwidth previously smoothed away local peaks. Width is normalized separately
+per group (density, not participant count). In
+[`DistributionViolin`](../packages/product/src/progress-charts.tsx), the common
+axis is separate from observed support: the silhouette ends at the actual min/max.
+Equal observations render a line, not invented spread. Median and Q1–Q3 use the
+original observations with linear interpolation. The axis reserves a label gutter.
+Regression tests: `packages/product/src/progress-charts.test.tsx`; visual cases:
+`ViolinBoundaryCases` in `progress.stories.tsx`.

@@ -89,6 +89,7 @@ export function LessonStatistics({
               </figure>
             ) : (
               <DistributionViolin
+                bandwidth={0.5}
                 height={260}
                 valueLabel={t`Число решённых задач`}
                 colorIndex={index % 3 === 0 ? 1 : index % 3 === 1 ? 2 : 3}

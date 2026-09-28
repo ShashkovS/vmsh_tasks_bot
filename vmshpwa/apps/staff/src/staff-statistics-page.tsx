@@ -315,6 +315,7 @@ export function StaffStatisticsView({
                 </CardHeader>
                 <CardContent>
                   <DistributionViolin
+                    bandwidth={0.5}
                     height={260}
                     valueLabel={t`Число решённых задач`}
                     caption={t`Распределение по ${lesson.studentCount} школьникам.`}

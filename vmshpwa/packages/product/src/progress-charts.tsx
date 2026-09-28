@@ -64,6 +64,7 @@ export interface DistributionViolinProps {
   valueLabel?: string | undefined
   values: number[]
   domain?: [number, number] | undefined
+  bandwidth?: number | undefined
   width?: number | undefined
   height?: number | undefined
   caption?: string | undefined
@@ -78,6 +79,7 @@ export interface DistributionViolinProps {
 export function DistributionViolin({
   values,
   domain,
+  bandwidth: requestedBandwidth,
   width = 220,
   height = 200,
   valueLabel,
@@ -87,18 +89,33 @@ export function DistributionViolin({
 }: DistributionViolinProps) {
   const pad = 12
   const sorted = [...values].sort((a, b) => a - b)
-  const lo = domain?.[0] ?? sorted[0] ?? 0
-  const hi = domain?.[1] ?? sorted[sorted.length - 1] ?? 1
-  const bandwidth = 1.06 * stdDev(values) * values.length ** (-1 / 5) || 1
+  const minimum = sorted[0] ?? 0
+  const maximum = sorted[sorted.length - 1] ?? 0
+  const lo = Math.min(domain?.[0] ?? minimum, minimum)
+  const upper = Math.max(domain?.[1] ?? maximum, maximum)
+  const hi = upper > lo ? upper : lo + 1
+  const bandwidth = requestedBandwidth ?? (1.06 * stdDev(values) * values.length ** (-1 / 5) || 1)
 
-  const samples = 48
-  const ys = Array.from({ length: samples }, (_, i) => lo + ((hi - lo) * i) / (samples - 1))
+  // docs/lesson-statistics.md: the shared axis must not invent observed scores.
+  // Include observations so narrow peaks are not lost between sampling points.
+  const samples = 256
+  const ys = [
+    ...new Set([
+      ...Array.from(
+        { length: samples },
+        (_, i) => minimum + ((maximum - minimum) * i) / (samples - 1),
+      ),
+      ...sorted,
+    ]),
+  ].sort((a, b) => a - b)
   const densities = ys.map((y) => kde(values, y, bandwidth))
   const maxDensity = Math.max(...densities, 1e-9)
 
   const yScale = scaleLinear({ domain: [lo, hi], range: [height - pad, pad] })
-  const halfScale = scaleLinear({ domain: [0, maxDensity], range: [0, (width - 2 * pad) / 2] })
-  const cx = width / 2
+  const halfScale = scaleLinear({ domain: [0, maxDensity], range: [0, (width - 36 - pad) / 2] })
+  const cx = (36 + width - pad) / 2
+
+  if (values.length === 0) return null
 
   const median = quantileSorted(sorted, 0.5)
   const q1 = quantileSorted(sorted, 0.25)
@@ -138,11 +155,13 @@ export function DistributionViolin({
             </text>
           </g>
         ))}
-        <path
-          className={color}
-          d={buildViolinPath(ys, densities, yScale, halfScale, cx)}
-          strokeWidth={1.5}
-        />
+        {minimum < maximum ? (
+          <path
+            className={color}
+            d={buildViolinPath(ys, densities, yScale, halfScale, cx)}
+            strokeWidth={1.5}
+          />
+        ) : null}
         <rect
           x={cx - 10}
           y={yScale(q3)}
@@ -153,8 +172,14 @@ export function DistributionViolin({
         <line
           className={color}
           strokeWidth={2}
-          x1={cx - halfScale(kde(values, median, bandwidth))}
-          x2={cx + halfScale(kde(values, median, bandwidth))}
+          x1={
+            cx -
+            (minimum === maximum ? 10 : Math.max(10, halfScale(kde(values, median, bandwidth))))
+          }
+          x2={
+            cx +
+            (minimum === maximum ? 10 : Math.max(10, halfScale(kde(values, median, bandwidth))))
+          }
           y1={yScale(median)}
           y2={yScale(median)}
         />
@@ -163,16 +188,22 @@ export function DistributionViolin({
         <figcaption className="text-caption text-muted-foreground">{caption}</figcaption>
       ) : null}
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer"><Trans>Показать числами</Trans></summary>
+        <summary className="cursor-pointer">
+          <Trans>Показать числами</Trans>
+        </summary>
         <table className="mt-1">
           {valueLabel ? <caption>{valueLabel}</caption> : null}
           <tbody>
             <tr>
-              <td className="pr-3"><Trans>Медиана</Trans></td>
+              <td className="pr-3">
+                <Trans>Медиана</Trans>
+              </td>
               <td className="font-num">{median.toFixed(1)}</td>
             </tr>
             <tr>
-              <td className="pr-3"><Trans>Разброс (Q1–Q3)</Trans></td>
+              <td className="pr-3">
+                <Trans>Разброс (Q1–Q3)</Trans>
+              </td>
               <td className="font-num">
                 {q1.toFixed(1)}–{q3.toFixed(1)}
               </td>
@@ -274,13 +305,21 @@ export function TrendWithBand({
         <figcaption className="text-caption text-muted-foreground">{caption}</figcaption>
       ) : null}
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer"><Trans>Показать числами</Trans></summary>
+        <summary className="cursor-pointer">
+          <Trans>Показать числами</Trans>
+        </summary>
         <table className="mt-1">
           <thead>
             <tr>
-              <th className="pr-3 text-left font-medium"><Trans>Период</Trans></th>
-              <th className="pr-3 text-left font-medium"><Trans>Значение</Trans></th>
-              <th className="text-left font-medium"><Trans>Полоса</Trans></th>
+              <th className="pr-3 text-left font-medium">
+                <Trans>Период</Trans>
+              </th>
+              <th className="pr-3 text-left font-medium">
+                <Trans>Значение</Trans>
+              </th>
+              <th className="text-left font-medium">
+                <Trans>Полоса</Trans>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -481,15 +520,25 @@ export function StrengthTrend({
       ) : null}
 
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer"><Trans>Показать числами</Trans></summary>
+        <summary className="cursor-pointer">
+          <Trans>Показать числами</Trans>
+        </summary>
         <div className="mt-1 max-w-full overflow-x-auto">
           <table>
             <thead>
               <tr>
-                <th className="pr-3 text-left font-medium"><Trans>Занятие</Trans></th>
-                <th className="pr-3 text-left font-medium"><Trans>Простые</Trans></th>
-                <th className="pr-3 text-left font-medium"><Trans>Сложные</Trans></th>
-                <th className="text-left font-medium"><Trans>Решено</Trans></th>
+                <th className="pr-3 text-left font-medium">
+                  <Trans>Занятие</Trans>
+                </th>
+                <th className="pr-3 text-left font-medium">
+                  <Trans>Простые</Trans>
+                </th>
+                <th className="pr-3 text-left font-medium">
+                  <Trans>Сложные</Trans>
+                </th>
+                <th className="text-left font-medium">
+                  <Trans>Решено</Trans>
+                </th>
               </tr>
             </thead>
             <tbody>

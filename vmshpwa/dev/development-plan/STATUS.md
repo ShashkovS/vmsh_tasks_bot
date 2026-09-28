@@ -1,5 +1,18 @@
 # Статус плана разработки
 
+
+## Staff violin correction — 27 September 2026
+
+Implemented: fixed 0.5-item bandwidth for Staff (legacy parity), observed min/max
+support independent of shared axis, constant samples without artificial spread,
+visible median in density gaps, and an axis-label gutter.
+[Specification and source links](../../docs/lesson-statistics.md#violin-density-correction-2026-09-27).
+Validation: 9 focused unit tests, 7 Chromium Storybook tests, product typecheck
+and focused ESLint pass. Light/dark browser captures inspected.
+Checks used installed node_modules binaries because pnpm version bootstrap
+could not reach the registry in the sandbox. Production data
+and deployment have not been verified; no visual baseline was updated.
+
 ## Staff news Unicode excerpt fix — 27 September 2026
 
 Implemented: align `staffNewsItemSchema.textExcerpt` in

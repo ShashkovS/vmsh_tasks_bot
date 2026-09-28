@@ -223,3 +223,32 @@ export const Activity: Story = {
     await expect(canvas.getByText(/12 янв/)).toBeInTheDocument()
   },
 }
+
+// Regression cases for docs/lesson-statistics.md: shared axis vs observed support.
+export const ViolinBoundaryCases: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-6">
+      {[
+        [0, 0, 0.5, 1, 1, 2, 5, 5, 6, 6, 6, 7],
+        [2, 2, 2.5, 3, 4],
+        [3, 3, 3],
+        [0, 0, 0, 10, 10, 10],
+      ].map((values, index) => (
+        <DistributionViolin
+          key={index}
+          values={values}
+          domain={[0, 15]}
+          bandwidth={0.5}
+          height={260}
+        />
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('img')).toHaveLength(4)
+    await expect(canvasElement.querySelectorAll('path')).toHaveLength(3)
+    await userEvent.click(canvas.getAllByText('Показать числами')[2]!)
+    await expect(canvas.getAllByText('3.0–3.0')[0]).toBeVisible()
+  },
+}
