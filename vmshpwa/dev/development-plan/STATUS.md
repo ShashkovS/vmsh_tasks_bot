@@ -3451,6 +3451,16 @@ API-disconnected coverage passed in all three engines).
 No deployment; full network-offline Safari/Firefox cold-start proof remains a
 manual-browser follow-up because of the documented automation limitation.
 
+## Staff statistics reports — 2026-09-28, verified
+
+Implemented course summary, read-only plus matrix and per-level analytics under
+[lesson-statistics.md](../../docs/lesson-statistics.md). Written workload counts
+every completed review plus one pending unit per student/problem pair.
+
+Verification: 950 frontend unit, 42 targeted backend, 5 Storybook/axe and 9 E2E
+checks passed. Full lint/typecheck/build and i18n gates passed; no migration.
+[Report and reviewed screenshots](../statistics-reports-report.md).
+
 - 2026-09-28: ограниченная диагностика media failures и server stages;
   [решение, стоимость и проверки](../../../docs/performance/2026-09-28-instrumentation.md).
   UI и поведение загрузки не меняются; alerts/export требуют администратора.

@@ -431,3 +431,7 @@ pwa-e2e-figure-layout:
 .PHONY: pwa-e2e-offline-current
 pwa-e2e-offline-current:
 	CI=true UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode offline-current
+
+.PHONY: pwa-e2e-statistics
+pwa-e2e-statistics:
+	cd $(PWA_DIR) && CI=true pnpm e2e --mode statistics

@@ -18,7 +18,11 @@ test('Admin recalculates whole course and retains statistics filters', async ({ 
       VMSH_PWA_PROTOTYPE: 'true',
     },
   })
-  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/statistics?course=c-1&lesson=931')
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.admin,
+    '/staff/statistics?view=analytics&course=c-1&lesson=931',
+  )
   const recalculate = page.getByRole('button', { name: 'Пересчитать сложность', exact: true })
   await expect(recalculate).toBeEnabled()
   await expect(page.getByText('Зачёт — 1 балл', { exact: false })).toHaveCount(0)
@@ -64,7 +68,11 @@ test('Admin recalculates whole course and retains statistics filters', async ({ 
 })
 
 test('Teacher sees dense statistics without administrative action', async ({ page }) => {
-  await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/statistics?course=c-1&lesson=41')
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.teacher,
+    '/staff/statistics?view=analytics&course=c-1&lesson=41',
+  )
   await expect(page.getByRole('button', { name: 'Обновить статистику' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Пересчитать сложность' })).toHaveCount(0)
 })

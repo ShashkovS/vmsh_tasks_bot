@@ -172,7 +172,8 @@ export const HistoricalCourse: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('heading', { name: 'Статистика курса' })).toBeInTheDocument()
-    await expect(canvas.getByRole('img', { name: /Распределение по группе/ })).toBeInTheDocument()
+    await expect(canvas.queryByText('Среднее число решённых')).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('img')).not.toBeInTheDocument()
     await expect(canvas.queryByText(/место школьника|процентиль ученика/i)).not.toBeInTheDocument()
 
     await userEvent.click(canvas.getByRole('button', { name: 'Занятие 40' }))
@@ -180,6 +181,7 @@ export const HistoricalCourse: Story = {
 
     await userEvent.selectOptions(canvas.getByLabelText('Группа'), 'group.continuing')
     await expect(canvas.getByLabelText('Группа')).toHaveValue('group.continuing')
+    await expect(canvas.getByRole('img')).toBeInTheDocument()
     await expect(canvas.getByText('Состав агрегата')).toBeInTheDocument()
   },
 }

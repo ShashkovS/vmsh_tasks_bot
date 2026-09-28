@@ -93,3 +93,13 @@ def test_staff_statistics_returns_no_rows_for_an_empty_authorized_scope() -> Non
         )
         == []
     )
+
+
+def test_combined_count_deduplicates_students_across_levels():
+    rows = [
+        _row(1, 41, "group.beginner", 1, 2, 5, 5),
+        _row(1, 41, "group.continuing", 2, 3, 5, 5),
+    ]
+    report = summarize_staff_course_metrics(rows)[0]
+    assert report["studentCount"] == 1
+    assert sum(g["studentCount"] for g in report["groups"]) == 2

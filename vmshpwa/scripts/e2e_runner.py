@@ -81,16 +81,18 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
             # with content/live-marking. Give them fresh seeded SQLite phases.
             (
                 *playwright,
-                r"e2e/(?!figure-layout|statistics-recalculation).*\.spec\.ts",
+                r"e2e/(?!figure-layout|statistics-recalculation|statistics-reports).*\.spec\.ts",
                 "--grep-invert",
                 "@visual",
             ),
             (*playwright, "e2e/figure-layout.spec.ts"),
-            (*playwright, "e2e/statistics-recalculation.spec.ts"),
+            (*playwright, "--config", "playwright.statistics.config.ts"),
             (*playwright, "--grep", "@visual"),
         )
     if mode == "authentication":
         playwright.append("e2e/authentication.spec.ts")
+    elif mode == "statistics":
+        playwright.extend(["--config", "playwright.statistics.config.ts"])
     elif mode == "figure-layout":
         playwright.extend(
             [
@@ -220,6 +222,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "content",
             "offline-current",
             "figure-layout",
+            "statistics",
             "family",
             "i18n",
             "nonvisual",

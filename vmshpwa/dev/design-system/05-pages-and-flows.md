@@ -201,6 +201,16 @@ below the task body. `LessonBlocksLayout` omits empty positions and leaves the
 existing worksheet task surface intact; video begins only after an explicit
 reader action. See [lesson-blocks.md](../../docs/lesson-blocks.md).
 
+### Staff statistics reports — 2026-09-28
+
+`apps/staff/src/routes/statistics.tsx` offers course summary, plus matrix and
+analytics tabs. The implementation in `staff-statistics-reports.tsx` follows
+[the live statistics contract](../../docs/lesson-statistics.md#staff-reporting-course-summary-and-plus-matrix-2026-09-28):
+all submitters, full read-only 700 × 20 matrix, separate review workload and
+current credit, and no pooled means/distribution across levels. Visual and large
+fixture acceptance lives in `e2e/statistics-reports.spec.ts` and
+`staff-statistics-reports.stories.tsx`.
+
 
 ### Student standalone subparts — 2026-09-28
 

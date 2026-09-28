@@ -34,12 +34,19 @@ def test_visual_modes_keep_build_before_playwright():
             "exec",
             "playwright",
             "test",
-            r"e2e/(?!figure-layout|statistics-recalculation).*\.spec\.ts",
+            r"e2e/(?!figure-layout|statistics-recalculation|statistics-reports).*\.spec\.ts",
             "--grep-invert",
             "@visual",
         ),
         ("pnpm", "exec", "playwright", "test", "e2e/figure-layout.spec.ts"),
-        ("pnpm", "exec", "playwright", "test", "e2e/statistics-recalculation.spec.ts"),
+        (
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "--config",
+            "playwright.statistics.config.ts",
+        ),
         ("pnpm", "exec", "playwright", "test", "--grep", "@visual"),
     )
     assert commands_for_mode("visual")[-1][-2:] == ("--grep", "@visual")
@@ -61,7 +68,14 @@ def test_diagnostic_modes_keep_the_same_exclusive_build_boundary():
     )
     assert commands_for_mode("offline-current") == (
         ("pnpm", "build"),
-        ("pnpm", "exec", "playwright", "test", "e2e/offline-current-lessons.spec.ts", "e2e/content-publication.spec.ts"),
+        (
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/offline-current-lessons.spec.ts",
+            "e2e/content-publication.spec.ts",
+        ),
     )
     assert commands_for_mode("content") == (
         ("pnpm", "build"),
@@ -165,7 +179,7 @@ def test_all_mode_resets_only_the_e2e_database_between_playwright_phases(
                 "exec",
                 "playwright",
                 "test",
-                r"e2e/(?!figure-layout|statistics-recalculation).*\.spec\.ts",
+                r"e2e/(?!figure-layout|statistics-recalculation|statistics-reports).*\.spec\.ts",
                 "--grep-invert",
                 "@visual",
             ),
@@ -178,7 +192,8 @@ def test_all_mode_resets_only_the_e2e_database_between_playwright_phases(
                 "exec",
                 "playwright",
                 "test",
-                "e2e/statistics-recalculation.spec.ts",
+                "--config",
+                "playwright.statistics.config.ts",
             ),
             False,
         ),

@@ -13,7 +13,7 @@ const statisticsGroupSchema = z
   })
   .strip()
 
-const statisticsCourseSchema = z
+export const statisticsCourseSchema = z
   .object({
     courseId: publicIdSchema,
     code: z.string().trim().min(1).max(32),
@@ -60,17 +60,20 @@ export const staffStatisticsLessonSchema = z
   })
   .strip()
   .superRefine((lesson, context) => {
-    if (lesson.solvedDistribution.length !== lesson.studentCount) {
+    if (
+      lesson.solvedDistribution.length !==
+      lesson.groups.reduce((sum, group) => sum + group.studentCount, 0)
+    ) {
       context.addIssue({
         code: 'custom',
-        message: 'Distribution size must match the lesson student count',
+        message: 'Distribution size must match the group observations',
         path: ['solvedDistribution'],
       })
     }
-    if (lesson.groups.reduce((sum, group) => sum + group.studentCount, 0) !== lesson.studentCount) {
+    if (lesson.groups.reduce((sum, group) => sum + group.studentCount, 0) < lesson.studentCount) {
       context.addIssue({
         code: 'custom',
-        message: 'Group counts must match the lesson student count',
+        message: 'Group counts must cover the unique lesson students',
         path: ['groups'],
       })
     }

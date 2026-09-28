@@ -263,3 +263,13 @@ Firefox и WebKit. Typecheck, ESLint, Stylelint и Ruff прошли. Мигра
 запуск разрешён только глобальному администратору. Существующий CLI и таймер
 сохраняют алгоритм, используя тот же `.analytics.lock`.
 Проверки и снимки: [отчёт](../statistics-recalculation-report.md).
+
+## Staff statistics reports — 2026-09-28, verified
+
+Implemented course summary, read-only plus matrix and per-level analytics under
+[lesson-statistics.md](../../docs/lesson-statistics.md). Written workload counts
+every completed review plus one pending unit per student/problem pair.
+
+Verification: 950 frontend unit, 42 targeted backend, 5 Storybook/axe and 9 E2E
+checks passed. Full lint/typecheck/build and i18n gates passed; no migration.
+[Report and reviewed screenshots](../statistics-reports-report.md).

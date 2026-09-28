@@ -114,6 +114,7 @@ export function StaffStatisticsView({
     data.lessons,
     lessonNumber ?? data.basicLesson?.lessonNumber ?? null,
   )
+  const singleGroup = data.selectedGroupId !== null
   const distributionMaximum = Math.max(1, ...(lesson?.solvedDistribution ?? [1]))
 
   return (
@@ -211,16 +212,20 @@ export function StaffStatisticsView({
               label={t`Школьников в агрегате`}
               value={String(lesson.studentCount)}
             />
-            <MetricCard
-              icon={BarChart3}
-              label={t`Среднее число решённых`}
-              value={formatMetric(lesson.meanSolvedItems)}
-            />
-            <MetricCard
-              icon={BarChart3}
-              label={t`Доля решённых задач`}
-              value={formatMetric(lesson.completionRate, '%')}
-            />
+            {singleGroup ? (
+              <>
+                <MetricCard
+                  icon={BarChart3}
+                  label={t`Среднее число решённых`}
+                  value={formatMetric(lesson.meanSolvedItems)}
+                />
+                <MetricCard
+                  icon={BarChart3}
+                  label={t`Доля решённых задач`}
+                  value={formatMetric(lesson.completionRate, '%')}
+                />
+              </>
+            ) : null}
           </div>
 
           <PageSection
@@ -240,18 +245,22 @@ export function StaffStatisticsView({
                     <TableHead className="text-right">
                       <Trans>Школьники</Trans>
                     </TableHead>
-                    <TableHead className="text-right">
-                      <Trans>Простые</Trans>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Trans>Сложные</Trans>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Trans>Решено</Trans>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Trans>Доля</Trans>
-                    </TableHead>
+                    {singleGroup ? (
+                      <>
+                        <TableHead className="text-right">
+                          <Trans>Простые</Trans>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Trans>Сложные</Trans>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Trans>Решено</Trans>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Trans>Доля</Trans>
+                        </TableHead>
+                      </>
+                    ) : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -282,18 +291,22 @@ export function StaffStatisticsView({
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-num">{item.studentCount}</TableCell>
-                        <TableCell className="text-right font-num">
-                          {formatMetric(item.meanSimpleStrength)}
-                        </TableCell>
-                        <TableCell className="text-right font-num">
-                          {formatMetric(item.meanComplexStrength)}
-                        </TableCell>
-                        <TableCell className="text-right font-num">
-                          {formatMetric(item.meanSolvedItems)}
-                        </TableCell>
-                        <TableCell className="text-right font-num">
-                          {formatMetric(item.completionRate, '%')}
-                        </TableCell>
+                        {singleGroup ? (
+                          <>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.meanSimpleStrength)}
+                            </TableCell>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.meanComplexStrength)}
+                            </TableCell>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.meanSolvedItems)}
+                            </TableCell>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.completionRate, '%')}
+                            </TableCell>
+                          </>
+                        ) : null}
                       </TableRow>
                     )
                   })}
@@ -306,24 +319,30 @@ export function StaffStatisticsView({
             description={t`Распределение обезличено: график не содержит маркера или позиции отдельного школьника.`}
             title={t`Занятие ${lesson.lessonNumber}`}
           >
-            <div className="grid gap-4 lg:grid-cols-[minmax(15rem,22rem)_1fr]">
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <Trans>Сколько задач решено</Trans>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DistributionViolin
-                    bandwidth={0.5}
-                    height={260}
-                    valueLabel={t`Число решённых задач`}
-                    caption={t`Распределение по ${lesson.studentCount} школьникам.`}
-                    domain={[0, distributionMaximum]}
-                    values={lesson.solvedDistribution}
-                  />
-                </CardContent>
-              </Card>
+            <div
+              className={
+                singleGroup ? 'grid gap-4 lg:grid-cols-[minmax(15rem,22rem)_1fr]' : 'grid gap-4'
+              }
+            >
+              {singleGroup ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      <Trans>Сколько задач решено</Trans>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DistributionViolin
+                      bandwidth={0.5}
+                      height={260}
+                      valueLabel={t`Число решённых задач`}
+                      caption={t`Распределение по ${lesson.studentCount} школьникам.`}
+                      domain={[0, distributionMaximum]}
+                      values={lesson.solvedDistribution}
+                    />
+                  </CardContent>
+                </Card>
+              ) : null}
               <Card>
                 <CardHeader>
                   <CardTitle>

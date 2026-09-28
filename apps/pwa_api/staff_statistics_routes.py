@@ -21,6 +21,8 @@ from models.pwa.staff_statistics import summarize_staff_course_metrics
 from db_methods.pwa.lesson_statistics import course_facts
 from db_methods.pwa.iterative_analytics import read_state
 from models.pwa.lesson_statistics import summarize_lessons
+from db_methods.pwa.statistics_reports import report_facts
+from models.pwa.statistics_reports import build_reports
 
 
 staff_statistics_routes = web.RouteTableDef()
@@ -314,6 +316,129 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
         },
         headers={"Cache-Control": "no-store"},
     )
+
+
+@staff_statistics_routes.get("/staff/api/v1/statistics/summary")
+@staff_statistics_routes.get("/staff/api/v1/statistics/plus-table")
+async def get_staff_statistics_report(request: web.Request) -> web.Response:
+    """Live reports, independently of analytics runs; docs/lesson-statistics.md."""
+    principal = _principal(request)
+    matrix = request.path.endswith("/plus-table")
+    keys = (
+        {"courseId", "groupId", "lessonNumber"} if matrix else {"courseId", "groupId"}
+    )
+    if set(request.query) - keys:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Неизвестный параметр статистики",
+        )
+    course_id = _query_id(request, "courseId")
+    group_id = _query_id(request, "groupId")
+    try:
+        number = (
+            int(request.query["lessonNumber"])
+            if "lessonNumber" in request.query
+            else None
+        )
+        if number is not None and number < 0:
+            raise ValueError
+    except ValueError:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Неверный номер занятия"
+        )
+
+    def read(connection):
+        connection.execute("BEGIN")
+        try:
+            courses, groups = _catalog(connection)
+            courses = [
+                c
+                for c in courses
+                if principal.has_staff_course_access(str(c["public_id"]))
+            ]
+            groups = [
+                g
+                for g in groups
+                if any(
+                    int(c["id"]) == int(g["course_id"])
+                    and principal.has_staff_group_access(
+                        course_public_id=str(c["public_id"]),
+                        group_public_id=str(g["public_id"]),
+                    )
+                    for c in courses
+                )
+            ]
+            selected = (
+                next((c for c in courses if c["public_id"] == course_id), None)
+                if course_id
+                else next(iter(courses), None)
+            )
+            if course_id and selected is None:
+                raise PwaApiError(
+                    status=403,
+                    code="forbidden",
+                    message="Нет доступа к статистике этого курса",
+                )
+            selected_groups = [
+                g for g in groups if selected and g["course_id"] == selected["id"]
+            ]
+            if group_id and not any(
+                g["public_id"] == group_id for g in selected_groups
+            ):
+                raise PwaApiError(
+                    status=403,
+                    code="forbidden",
+                    message="Нет доступа к статистике этой группы",
+                )
+            selected_group = group_id or (
+                str(selected_groups[0]["public_id"])
+                if matrix and selected_groups
+                else None
+            )
+            allowed = {
+                str(g["public_id"])
+                for g in selected_groups
+                if selected_group is None or g["public_id"] == selected_group
+            }
+            report = (
+                build_reports(
+                    report_facts(connection, int(selected["id"])),
+                    allowed,
+                    number,
+                    include_table=matrix,
+                )
+                if selected
+                else dict(
+                    lessons=[],
+                    lessonNumbers=[],
+                    lessonNumber=None,
+                    problems=[],
+                    rows=[],
+                )
+            )
+            payload = dict(
+                schemaVersion=1,
+                courses=[_course_payload(c, groups) for c in courses],
+                selectedCourseId=selected["public_id"] if selected else None,
+                selectedGroupId=selected_group,
+                requestId=request["request_id"],
+            )
+            if matrix:
+                payload.update(
+                    {
+                        key: report[key]
+                        for key in ("lessonNumbers", "lessonNumber", "problems", "rows")
+                    }
+                )
+            else:
+                payload["lessons"] = report["lessons"]
+            return payload
+        finally:
+            connection.execute("ROLLBACK")
+
+    payload = await _factory(request).run_analytics_async(read)
+    return web.json_response(payload, headers={"Cache-Control": "no-store"})
 
 
 __all__ = ["staff_statistics_routes"]

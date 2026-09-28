@@ -16,6 +16,7 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
                p.group_id, g.public_id AS group_public_id, g.short_code AS group_code,
                g.public_name AS group_name, g.sort_order AS group_sort_order,
                g.color_key, p.prob, p.item, p.title, p.prob_type AS problem_type,
+               pr.source_ordinal AS publication_order,
                CASE WHEN sg.id IS NULL THEN 'problem:' || p.id
                     ELSE 'synonym:' || sg.id END AS logical_problem_key
         FROM group_lessons gl
@@ -31,7 +32,7 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
         LEFT JOIN problem_synonym_groups sg ON sg.id = sm.synonym_group_id
           AND sg.status = 'active' AND sg.course_lesson_id = gl.course_lesson_id
         WHERE gl.course_id = ? AND p.prob > 0 AND p.lesson >= 0
-        ORDER BY p.lesson, g.sort_order, p.prob, p.item, p.id
+        ORDER BY p.lesson, g.sort_order, pr.source_ordinal, pr.source_item, p.id
     """,
             (course_id,),
         )
@@ -41,7 +42,7 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
         for row in connection.execute(
             """
         SELECT r.id AS result_id, r.student_id AS student_user_id, r.problem_id,
-               r.ts, v.val AS verdict_weight, r.verdict > 0 AS trainable,
+               r.ts, r.res_type, v.val AS verdict_weight, r.verdict > 0 AS trainable,
                u.public_id AS student_public_id,
                trim(coalesce(u.surname, '') || ' ' || coalesce(u.name, '')) AS student_name
         FROM effective_results r JOIN verdicts v ON v.id = r.verdict
@@ -64,13 +65,15 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
         for row in connection.execute(
             """
         SELECT ta.id AS result_id, ta.student_user_id, ta.problem_id,
-               ta.server_received_at AS ts, coalesce(v.val, 0) AS verdict_weight,
+               current_result.id AS source_result_id, current_result.ts AS source_ts,
+               ta.server_received_at AS ts, 1 AS res_type, coalesce(v.val, 0) AS verdict_weight,
                ta.check_status = 'checked' AS trainable,
                u.public_id AS student_public_id,
                trim(coalesce(u.surname, '') || ' ' || coalesce(u.name, '')) AS student_name
         FROM test_attempts ta JOIN users u ON u.id = ta.student_user_id AND u.type IN (1, -2)
         JOIN problems p ON p.id = ta.problem_id JOIN groups g ON g.group_id = p.group_id
         LEFT JOIN verdicts v ON v.id = ta.verdict AND ta.check_status = 'checked'
+        LEFT JOIN results current_result ON current_result.id = ta.result_id
         WHERE g.course_id = ? AND ta.counts_as_attempt = 1
           AND NOT EXISTS(SELECT 1 FROM live_mark_cells mc
             WHERE mc.student_id=ta.student_user_id AND mc.problem_id=ta.problem_id

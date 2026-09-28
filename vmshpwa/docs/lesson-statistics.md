@@ -159,3 +159,61 @@ Equal observations render a line, not invented spread. Median and Q1–Q3 use th
 original observations with linear interpolation. The axis reserves a label gutter.
 Regression tests: `packages/product/src/progress-charts.test.tsx`; visual cases:
 `ViolinBoundaryCases` in `progress.stories.tsx`.
+
+## Staff reporting: course summary and plus matrix (2026-09-28)
+
+`apps/staff/src/routes/statistics.tsx` persists `view=summary|plus-table|analytics`
+and course/group/lesson filters. Summary is the default; only the active tab
+fetches. `staff-statistics-reports.tsx` renders the read-only full matrix with
+all submitters, including unsuccessful and pending submissions. The level is
+that of the attempted problem, not the student's current enrollment. The latest
+published lesson and first authorized level are defaults; switching levels keeps
+the selected lesson, including an empty lesson at the destination level.
+
+- `GET /staff/api/v1/statistics/summary?courseId=…&groupId=…`: live lesson rows,
+  including lesson zero. `groupId` is optional; students are distinct per lesson.
+- `GET /staff/api/v1/statistics/plus-table?courseId=…&groupId=…&lessonNumber=…`:
+  catalog, selected filters, published problem columns and alphabetic student rows.
+- Both are registered in `apps/pwa_api/staff_statistics_routes.py`, require
+  `STATISTICS_READ` and existing course/group scope, use one read snapshot, and
+  send `Cache-Control: no-store`. No analytics run or recalculation is needed.
+- `packages/contracts/src/statistics-reports.ts` validates credit conservation,
+  workload totals and matrix dimensions; `packages/app-shell/src/statistics-reports-client.ts`
+  provides session-aware transport and account-scoped TanStack Query keys.
+
+`db_methods/pwa/statistics_reports.py` reads current facts separately from the
+historical written-review ledger. `models/pwa/statistics_reports.py` chooses the
+highest effective verdict weight per student/problem, then latest timestamp/ID.
+Existing live-mark and test-recheck projections remain authoritative. Full credit
+is 1 (weight >= 0.8), partial credit is 0.5 (positive lower weight), otherwise 0.
+Exactly one source (bot/written/Zoom/in-person) receives that credit; task type
+never overrides its source. Written-task and oral-task subtotals partition their
+respective problem types; total written credit also includes manually reviewed
+test tasks. Synonyms do not transfer credit across levels.
+
+Written workload deliberately uses a different measure:
+`writtenTotal = writtenChecked + writtenPending`.
+Every `results` row with `res_type=2` counts once, regardless of verdict, including
+repeat reviews with the same verdict. `submission_reviews.result_id` references
+the same event and is not counted again. Current-credit corrections do not erase
+historical work. Pending is a distinct student/problem pair across the legacy
+queue and active student submission entries without review evidence. Comments,
+drafts and attachments alone do not count. Two completed reviews plus any number
+of pending submissions for the same pair count as 2 + 1 = 3. Published problem
+membership and deleted-user exclusions apply to both reports.
+
+The matrix has no pagination or nested vertical scrollbar. Desktop uses the
+page width and sticky headings/names; narrow screens allow horizontal scrolling.
+Color and text distinguish sources, with accessible cell descriptions. Pending
+work may coexist with an existing plus. In combined analytics, counts and group
+composition remain but aggregate means, share and pooled violin are hidden;
+per-level and personal views remain. Combined student counts deduplicate levels.
+
+Acceptance coverage: `pwa_tests/domain/test_statistics_reports.py`,
+`pwa_tests/integration/test_statistics_reports_http.py`,
+`apps/staff/src/staff-statistics-reports.test.tsx`, report contract tests,
+`staff-statistics-reports.stories.tsx`, and `e2e/statistics-reports.spec.ts`.
+`make pwa-e2e-statistics` uses `playwright.statistics.config.ts` to seed 700 × 20
+before acquiring the runtime DB lock; the fixture is restricted to the E2E profile.
+
+[Final verification and reviewed screenshots](../dev/statistics-reports-report.md).

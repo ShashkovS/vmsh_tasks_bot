@@ -383,6 +383,10 @@ msgstr "{subject}: на сервере временно недоступен {0}
 msgid "{submissionId} · Анна Белова · Начинающие"
 msgstr "{submissionId} · Анна Белова · Начинающие"
 
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "+ — зачёт, ½ — частичный зачёт, − — незачёт, … — ожидает проверки; пусто — нет отправок."
+msgstr "+ — зачёт, ½ — частичный зачёт, − — незачёт, … — ожидает проверки; пусто — нет отправок."
+
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "+ и −"
 msgstr "+ и −"
@@ -582,6 +586,10 @@ msgstr "Web-вход отключён"
 msgid "XLSX-файл"
 msgstr "XLSX-файл"
 
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Zoom"
+msgstr "Zoom"
+
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/routes/__root.tsx
 msgid "Zoom-приём"
@@ -756,6 +764,10 @@ msgstr "Более ранних собственных проверок нет"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Больше работ"
 msgstr "Больше работ"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Бот"
+msgstr "Бот"
 
 #: apps/staff/src/review-history-page.tsx
 msgid "Браузер не сохраняет черновик. Не закрывайте страницу до отправки."
@@ -1086,6 +1098,7 @@ msgid "Все доступны вам"
 msgstr "Все доступны вам"
 
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 msgid "Все доступные"
 msgstr "Все доступные"
 
@@ -1128,6 +1141,18 @@ msgstr "Все сохранённые изменения и ответы по з
 #: apps/staff/src/account-provisioning-tsv.ts
 msgid "все три столбца обязательны"
 msgstr "все три столбца обязательны"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Всего"
+msgstr "Всего"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Всего плюсов"
+msgstr "Всего плюсов"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Всего с учётом ожидающих"
+msgstr "Всего с учётом ожидающих"
 
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
@@ -1680,10 +1705,18 @@ msgstr "За выбранный период событий нет."
 msgid "За один раз можно загрузить не больше {MAX_BATCH_FILES} файлов."
 msgstr "За один раз можно загрузить не больше {MAX_BATCH_FILES} файлов."
 
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "За письменные задачи"
+msgstr "За письменные задачи"
+
 #. placeholder {0}: new Set(visits.data?.visits.map((v) => v.studentId)).size
 #: apps/staff/src/live-marking-page.tsx
 msgid "За сессию · {0}"
 msgstr "За сессию · {0}"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "За устные задачи"
+msgstr "За устные задачи"
 
 #: apps/staff/src/student-account-controls.tsx
 msgid "Заблокирован"
@@ -1940,6 +1973,7 @@ msgstr "Заменить черновик тремя окнами пн/вт/ср
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/student-results-page.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Занятие"
@@ -2293,6 +2327,10 @@ msgstr "История сохранится, но материал перест�
 msgid "Источник новостей"
 msgstr "Источник новостей"
 
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Источники плюсов"
+msgstr "Источники плюсов"
+
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Исходная проверка останется в истории"
 msgstr "Исходная проверка останется в истории"
@@ -2337,6 +2375,10 @@ msgstr "К списку задач"
 #: apps/staff/src/staff-audit-page.tsx
 msgid "Кабинет"
 msgstr "Кабинет"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Каждая письменная проверка учитывается отдельно, включая повторные. Непроверенные работы добавляют одну единицу на пару школьник–задача. Плюсы отражают текущие оценки."
+msgstr "Каждая письменная проверка учитывается отдельно, включая повторные. Непроверенные работы добавляют одну единицу на пару школьник–задача. Плюсы отражают текущие оценки."
 
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "как в курсе"
@@ -2488,6 +2530,7 @@ msgstr "Кто"
 #: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/staff-student-directory-page.tsx
 #: apps/staff/src/student-results-page.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
@@ -3247,6 +3290,7 @@ msgid "Нет вопросов без ответа"
 msgstr "Нет вопросов без ответа"
 
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 msgid "Нет доступных курсов"
 msgstr "Нет доступных курсов"
 
@@ -3255,8 +3299,13 @@ msgid "Нет доступных опубликованных листков."
 msgstr "Нет доступных опубликованных листков."
 
 #: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 msgid "Нет опубликованных занятий"
 msgstr "Нет опубликованных занятий"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Нет отправок"
+msgstr "Нет отправок"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Нет подходящих письменных или устных задач этого занятия и уровня."
@@ -3496,6 +3545,7 @@ msgid "Обновить предпросмотр"
 msgstr "Обновить предпросмотр"
 
 #: apps/staff/src/lesson-statistics.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 msgid "Обновить статистику"
 msgstr "Обновить статистику"
 
@@ -3591,6 +3641,7 @@ msgstr "Ожидает настройки проверки"
 msgid "Ожидает отправки"
 msgstr "Ожидает отправки"
 
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Ожидает проверки"
 msgstr "Ожидает проверки"
@@ -3992,6 +4043,7 @@ msgid "Очистить список"
 msgstr "Очистить список"
 
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/staff-student-directory-page.tsx
 msgid "Очно"
 msgstr "Очно"
@@ -4031,6 +4083,10 @@ msgstr "Очное событие 1 февраля · черновик насл�
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Очность"
 msgstr "Очность"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Очные плюсы"
+msgstr "Очные плюсы"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Ошибка"
@@ -4208,10 +4264,18 @@ msgstr "Письменная"
 msgid "Письменная задача"
 msgstr "Письменная задача"
 
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Письменно"
+msgstr "Письменно"
+
 #: apps/staff/src/pages.tsx
 #: apps/staff/src/review-queue-page.tsx
 msgid "Письменные задачи"
 msgstr "Письменные задачи"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Письменные плюсы"
+msgstr "Письменные плюсы"
 
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "План ещё не рассчитан"
@@ -4225,6 +4289,10 @@ msgstr "План не сохранён"
 #: apps/staff/src/student-results-page.tsx
 msgid "Плюсы · {0}"
 msgstr "Плюсы · {0}"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Плюсы Zoom"
+msgstr "Плюсы Zoom"
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Плюсы по всем занятиям"
@@ -4296,6 +4364,7 @@ msgstr "По расписанию"
 #: apps/staff/src/staff-lessons-page.tsx
 #: apps/staff/src/staff-news-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/staff-student-directory-page.tsx
 #: apps/staff/src/staff-support-pages.tsx
 #: apps/staff/src/staff-testing-page.tsx
@@ -4439,6 +4508,10 @@ msgstr "Поиск школьника, его курсы, активные и д
 #: apps/staff/src/review-errors.ts
 msgid "Пока вы проверяли, школьник дополнил работу. Откройте её заново перед сохранением."
 msgstr "Пока вы проверяли, школьник дополнил работу. Откройте её заново перед сохранением."
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Пока нет отправок"
+msgstr "Пока нет отправок"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Пока нет очных событий с подтверждёнными аудиториями."
@@ -4832,6 +4905,7 @@ msgstr "Проверена привязка Telegram"
 
 #: apps/staff/src/routes/review.tsx
 #: apps/staff/src/staff-audit-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Проверено"
 msgstr "Проверено"
@@ -5131,6 +5205,10 @@ msgstr "Раздел участников"
 #: apps/staff/src/routes/questions.tsx
 msgid "Разделы вопросов"
 msgstr "Разделы вопросов"
+
+#: apps/staff/src/routes/statistics.tsx
+msgid "Разделы статистики"
+msgstr "Разделы статистики"
 
 #: apps/staff/src/routes/oral.tsx
 msgid "Разделы устного приёма"
@@ -5456,6 +5534,11 @@ msgstr "Сбросить фильтры"
 msgid "Сводка"
 msgstr "Сводка"
 
+#: apps/staff/src/routes/statistics.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Сводка курса"
+msgstr "Сводка курса"
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "Сводка очереди"
 msgstr "Сводка очереди"
@@ -5695,6 +5778,10 @@ msgstr "Сложность для сильных"
 #: apps/staff/src/lesson-statistics.tsx
 msgid "Сложность для слабых"
 msgstr "Сложность для слабых"
+
+#: apps/staff/src/routes/statistics.tsx
+msgid "Сложность и распределения"
+msgstr "Сложность и распределения"
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Сложные"
@@ -6144,6 +6231,7 @@ msgid "Статистика"
 msgstr "Статистика"
 
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 msgid "Статистика курса"
 msgstr "Статистика курса"
 
@@ -6243,6 +6331,11 @@ msgstr "Таблица и выбранные доступы сохраняютс
 #: apps/staff/src/live-marking-grid.tsx
 msgid "Таблица очного занятия"
 msgstr "Таблица очного занятия"
+
+#: apps/staff/src/routes/statistics.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Таблица плюсов"
+msgstr "Таблица плюсов"
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Такого времени нет в часовом поясе занятия. Выберите другое время."
@@ -6481,6 +6574,7 @@ msgid "укажите хотя бы одну доступную группу"
 msgstr "укажите хотя бы одну доступную группу"
 
 #: apps/staff/src/classroom-event-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Уровень"
 msgstr "Уровень"
@@ -6867,6 +6961,7 @@ msgstr "шк."
 #: apps/staff/src/product-analytics-page.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/staff-audit-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 msgid "Школьник"
 msgstr "Школьник"
 
@@ -6897,6 +6992,7 @@ msgstr "школьник уже зачислен на этот курс"
 #: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-classrooms-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
+#: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/staff-student-directory-page.tsx
 #: apps/staff/src/users-section-tabs.tsx
 msgid "Школьники"
@@ -6914,6 +7010,18 @@ msgstr "Школьники не найдены"
 msgid "Школьники не найдены."
 msgstr "Школьники не найдены."
 
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Школьники: Zoom"
+msgstr "Школьники: Zoom"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Школьники: очно"
+msgstr "Школьники: очно"
+
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Школьники: письменно"
+msgstr "Школьники: письменно"
+
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/family-digest-panel.tsx
 #: apps/staff/src/routes/questions.tsx
@@ -6923,6 +7031,11 @@ msgstr "Школьников"
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Школьников в агрегате"
 msgstr "Школьников в агрегате"
+
+#. placeholder {0}: data.rows.length
+#: apps/staff/src/staff-statistics-reports.tsx
+msgid "Школьников: {0}"
+msgstr "Школьников: {0}"
 
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Эквивалентное выражение"

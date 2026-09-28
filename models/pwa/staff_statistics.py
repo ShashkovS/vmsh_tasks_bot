@@ -59,7 +59,7 @@ def summarize_staff_course_metrics(
         lessons.append(
             {
                 "lessonNumber": lesson_number,
-                "studentCount": len(lesson_rows),
+                "studentCount": len({row["student_user_id"] for row in lesson_rows}),
                 "meanSimpleStrength": _mean(
                     [float(row["simple_strength"]) for row in lesson_rows]
                 ),

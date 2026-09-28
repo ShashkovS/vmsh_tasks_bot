@@ -33,6 +33,8 @@ const backendEnv = {
 
 export default defineConfig({
   testDir: './e2e',
+  // Large report data is seeded only by playwright.statistics.config.ts.
+  testIgnore: ['statistics-reports.spec.ts'],
   outputDir: './test-results',
   // The suite shares one real SQLite database. Browser projects deliberately
   // create durable fixtures, so serial execution prevents one project's writes
