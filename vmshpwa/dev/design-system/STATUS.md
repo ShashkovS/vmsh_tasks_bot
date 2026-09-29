@@ -1772,3 +1772,25 @@ for per-subpart statuses and answer panels. Standalone panels start expanded
 and collapse independently. Targeted Vitest: 7 tests passed; Student TypeScript
 and scoped ESLint passed. Browser visual verification and deployment not performed.
 Regression: [`student-worksheet-bindings.test.tsx`](../../apps/student/src/student-worksheet-bindings.test.tsx).
+
+
+### 2026-09-29 — newlistok dialect parity (verified)
+
+Implemented static Russian/English aliases and mixed semantic pairs in
+`helpers/pwa/content/dialect.py` / `parser.py`; preserved source spans, math,
+inert macro definitions and secret-field isolation. Owner-provided Class-ex-9
+and Prep-10 fixtures compile with 11 / 6 problems and no diagnostics, including
+subsection headings and definition blocks. `math-document.tsx` localizes labels
+by UI locale without changing canonical references or callback keys.
+
+Verified: 275 Python tests (dialects, compiler, characterization, TikZ, PDF),
+17 renderer tests, content TypeScript check, scoped ESLint/Ruff and diff whitespace.
+Local Lingui extraction leaves catalogs unchanged; i18n coverage/merge check passes.
+Golden corpus keeps identical AST/derivative hashes; only compiler version changes
+to 7. No schema migration or automatic revision recompilation.
+
+Frontend tools ran from installed `node_modules/.bin`: pnpm's package-manager
+signature verification cannot reach npm registry in this environment. Full
+workspace build/E2E were not run for this bounded compiler/label increment.
+Requirements and implementation links: `vmshpwa/docs/latex-content-pipeline.md`
+(dialect section), `vmshpwa/docs/task-titles.md` (display alphabet).

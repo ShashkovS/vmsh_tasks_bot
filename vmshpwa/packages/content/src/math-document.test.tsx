@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { i18n } from '@lingui/core'
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import webDocumentFixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
 import { webContentContractFixtureSchema, webContentDocumentSchema } from '@vmsh/contracts'
@@ -419,4 +420,46 @@ describe('browser math content renderer', () => {
     expect(screen.getByText('Рисунок недоступен.')).not.toBeNull()
     expect(screen.getByText('Рис. 2. Подпись остаётся доступной.')).not.toBeNull()
   })
+})
+
+it('localizes subpart labels when locale changes without changing action keys', () => {
+  const base = webContentContractFixtureSchema.parse(webDocumentFixture).document
+  const actions = vi.fn<(problem: unknown, label: string) => null>(() => null)
+  const after = vi.fn<(problem: unknown, label: string) => null>(() => null)
+  const labels = ['а', 'б)', 'в', 'c', '7', 'custom', 'э']
+  render(
+    <SemanticMathDocument
+      document={{
+        ...base,
+        introduction: [],
+        problems: [
+          {
+            ...base.problems[0]!,
+            taskReference: '1.2',
+            blocks: labels.map((label) => ({
+              type: 'subpart' as const,
+              label,
+              blocks: [
+                {
+                  type: 'paragraph' as const,
+                  children: [{ type: 'text' as const, value: 'Text' }],
+                },
+              ],
+            })),
+          },
+        ],
+      }}
+      renderSubpartActions={actions}
+      renderAfterSubpart={after}
+    />,
+  )
+  const visible = () =>
+    Array.from(globalThis.document.querySelectorAll('.vmsh-subpart-label'), (n) => n.textContent)
+  expect(visible()).toEqual(['2а)', '2б)', '2в)', '2в)', '27)', '2custom)', '2э)'])
+  act(() => i18n.activate('en'))
+  expect(visible()).toEqual(['2a)', '2b)', '2c)', '2c)', '27)', '2custom)', '2ac)'])
+  expect(actions.mock.calls.slice(-labels.length).map((call) => call[1])).toEqual(labels)
+  expect(after.mock.calls.slice(-labels.length).map((call) => call[1])).toEqual(labels)
+  act(() => i18n.activate('ru'))
+  expect(visible()[0]).toBe('2а)')
 })

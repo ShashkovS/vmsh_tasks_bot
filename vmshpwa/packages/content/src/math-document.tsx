@@ -1,4 +1,5 @@
 import { t } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
   createContext,
@@ -130,8 +131,18 @@ function shortProblemReference(problem: WebContentProblem): string {
 function subpartReference(
   block: Extract<WebContentBlock, { type: 'subpart' }>,
   problem: WebContentProblem | undefined,
+  locale: string,
 ): string {
-  const normalizedLabel = block.label.replace(/[.)]+$/u, '') || block.label
+  const rawLabel = block.label.replace(/[.)]+$/u, '') || block.label
+  // docs/task-titles.md: display alphabet follows UI locale; action keys stay canonical.
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- canonical parser alphabet, not product copy
+  const russian = 'абвгдежзиклмнопрстуфхцчшщъыьэюя'
+  const english = [...'abcdefghijklmnopqrstuvwxyz', 'aa', 'ab', 'ac', 'ad', 'ae']
+  const sourceAlphabet =
+    rawLabel.length === 1 && russian.includes(rawLabel) ? [...russian] : english
+  const targetAlphabet = locale.startsWith('en') ? english : [...russian]
+  const index = sourceAlphabet.indexOf(rawLabel)
+  const normalizedLabel = index >= 0 ? (targetAlphabet[index] ?? rawLabel) : rawLabel
   return problem ? `${shortProblemReference(problem)}${normalizedLabel})` : `${normalizedLabel})`
 }
 
@@ -155,6 +166,7 @@ function ContentBlocks({
   renderAfterSubpart,
   renderSubpartActions,
 }: ContentBlocksProps) {
+  const { i18n } = useLingui()
   const hideHeadings = useContext(HideMaterialHeadings)
   return blocks.map((block, index) => {
     const key = `${path}-${index}`
@@ -238,7 +250,9 @@ function ContentBlocks({
               }
             >
               <div className="vmsh-figure-missing" role="status">
-                <strong><Trans>Рисунок пока недоступен.</Trans></strong>
+                <strong>
+                  <Trans>Рисунок пока недоступен.</Trans>
+                </strong>
                 <span>{block.alt}</span>
               </div>
               {block.caption ? (
@@ -275,7 +289,7 @@ function ContentBlocks({
             {!hideHeadings ? (
               <div className="vmsh-subpart-header">
                 <strong className="vmsh-subpart-label">
-                  {subpartReference(block, problem)}
+                  {subpartReference(block, problem, i18n.locale)}
                   {block.title ? <span> «{block.title}»</span> : null}
                 </strong>
                 {problem ? renderSubpartActions?.(problem, block.label) : null}

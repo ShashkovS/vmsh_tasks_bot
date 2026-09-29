@@ -57,9 +57,10 @@ revision ID. Совместная синтетическая fixture наход�
 и одновременно проверяется Python и Zod tests. Raw/generated HTML остаётся
 диагностическим preview, а не основным browser wire contract.
 
-Объявления распознаются только по русским парным командам
+Объявления распознаются по русским и английским эквивалентным парным командам
 `\объявление…\кобъявление` и
-`\важноеОбъявление…\кважноеОбъявление`. Незакрытые, несовпадающие, пустые,
+`\важноеОбъявление…\кважноеОбъявление`, `\announcement…\endannouncement`,
+`\impAnnouncement…\endimpAnnouncement`, включая смешанные пары. Незакрытые, несовпадающие, пустые,
 вложенные и лишние завершающие команды дают blocking positional diagnostic;
 TeX-определения из `newlistok.sty` compiler не исполняет.
 
@@ -140,3 +141,9 @@ registers) не исполняются и не дублируют semantic probl
 - independent group publication windows и historical lessons 1–38 backfill;
 - opt-in real Telegram Rich Message lifecycle;
 - representative PDF comparison, Storybook visual approval и browser E2E.
+
+
+Диалекты newlistok/newlistokutf: [реестр и границы поддержки](latex-content-pipeline.md#диалекты-newlistok-и-newlistokutf--29-сентября-2026).
+Парные определения используют существующий note/callout; section/subsection
+сохраняют иерархию заголовков. Проверка обоих примеров владельца и всех
+зарегистрированных семантических aliases — `pwa_tests/domain/test_content_dialects.py`.

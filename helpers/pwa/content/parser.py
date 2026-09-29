@@ -7,6 +7,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from .dialect import DECLARATIONS, declaration_end, read_command, scan_commands
 from .model import (
     AnnouncementKind,
     AnnouncementNode,
@@ -43,11 +44,9 @@ from .scanner import (
     is_escaped,
     is_safe_link,
     normalize_asset_reference,
-    read_command,
     read_group,
     read_math,
     read_optional_group,
-    scan_commands,
     skip_comment,
     skip_space_and_comments,
     syntax_diagnostic,
@@ -57,46 +56,33 @@ from .tikz import scan_tikz_sources
 
 AST_SCHEMA_VERSION = 3
 
-_PROBLEM_STARTS = {
-    "задача",
-    "задачабк",
-    "задачан",
-    "problem",
-    "problemn",
-    "сзадача",
-}
-_PROBLEM_ENDS = {"кзадача", "eproblem"}
-_FIELD_STARTS = {
-    "ответ": "answer",
-    "answer": "answer",
-    "указание": "hint",
-    "подсказка": "hint",
-    "hint": "hint",
-    "решение": "solution",
-    "solution": "solution",
-}
+# Canonical names from dialect.py; spelling never chooses document language.
+_PROBLEM_STARTS = {"problem", "problemn"}
+_PROBLEM_ENDS = {"eproblem"}
+_FIELD_STARTS = {"answer": "answer", "hint": "hint", "solution": "solution"}
 _FIELD_ENDS = {
-    "answer": {"кответ", "eanswer"},
-    "hint": {"куказание", "кподсказка", "ehint"},
-    "solution": {"крешение", "esolution"},
+    "answer": {"eanswer"},
+    "hint": {"ehint"},
+    "solution": {"esolution"},
 }
 _ANNOUNCEMENT_STARTS = {
     "объявление": AnnouncementKind.REGULAR,
+    "definition": AnnouncementKind.REGULAR,
     "важноеОбъявление": AnnouncementKind.IMPORTANT,
 }
 _ANNOUNCEMENT_ENDS = {
     "кобъявление": AnnouncementKind.REGULAR,
+    "edefinition": AnnouncementKind.REGULAR,
     "кважноеОбъявление": AnnouncementKind.IMPORTANT,
 }
 _ANNOUNCEMENT_COMMANDS = set(_ANNOUNCEMENT_STARTS) | set(_ANNOUNCEMENT_ENDS)
-_SUBPART_COMMANDS = {"пункт", "пунктн", "спункт", "сспункт"}
+_SUBPART_COMMANDS = {"пункт", "пунктн"}
 _SINGLE_GROUP_FIELDS = {"answ": "answer"}
 
 _FORMATTING_COMMANDS = {
     "textbf": StrongNode,
-    "выд": EmphasisNode,
-    "выдж": EmphasisNode,
-    "выдд": EmphasisNode,
+    "mark": EmphasisNode,
+    "markB": StrongNode,
     "emph": EmphasisNode,
     "textit": EmphasisNode,
     "it": EmphasisNode,
@@ -307,6 +293,12 @@ _STRUCTURAL_COMMANDS = (
         "righttikzw",
         "lefttikzw",
         "begin",
+        "section",
+        "section*",
+        "subsection",
+        "subsection*",
+        "subsubsection",
+        "subsubsection*",
         "раздел",
         "допраздел",
         "resizebox",
@@ -634,7 +626,7 @@ class LatexAstParser:
         header_end = command.end
         source_item: str | None = None
         source_title: str | None = None
-        if command.name in {"problemn", "задачан"}:
+        if command.name == "problemn":
             item_group = read_group(
                 self.text,
                 header_end,
@@ -646,6 +638,8 @@ class LatexAstParser:
                     item_group.content_start : item_group.content_end
                 ].strip()
                 header_end = item_group.end
+            else:
+                self._missing_argument(command)
         optional = read_optional_group(
             self.text,
             header_end,
@@ -795,6 +789,8 @@ class LatexAstParser:
         raw: str, source_item: str | None
     ) -> tuple[str | None, str | None]:
         title = None
+        if not re.search(r"(?:^|,)\s*(?:name|title)\s*=", raw):
+            return source_item, raw.strip() or None
         item = source_item
         for part in raw.split(","):
             if "=" not in part:
@@ -856,6 +852,8 @@ class LatexAstParser:
                     if command.name == "пунктн"
                     else None
                 )
+                if command.name == "пунктн" and explicit_label is None:
+                    self._missing_argument(command)
                 if explicit_label is not None:
                     label = self.text[
                         explicit_label.content_start : explicit_label.content_end
@@ -865,12 +863,36 @@ class LatexAstParser:
                     label = self._subpart_label(
                         sum(isinstance(node, SubpartNode) for node in nodes) + 1
                     )
+                description = read_optional_group(
+                    self.text,
+                    content_start,
+                    subpart_end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                prefix = ()
+                if description is not None:
+                    prefix = (
+                        self._count(
+                            ParagraphNode(
+                                self.source_map.span(
+                                    description.start, description.end
+                                ),
+                                self._parse_inline(
+                                    description.content_start, description.content_end
+                                ),
+                            )
+                        ),
+                    )
+                    content_start = description.end
                 nodes.append(
                     self._count(
                         SubpartNode(
                             span=self.source_map.span(command.start, subpart_end),
                             label=label,
-                            children=self._parse_blocks(content_start, subpart_end),
+                            children=(
+                                *prefix,
+                                *self._parse_blocks(content_start, subpart_end),
+                            ),
                         )
                     )
                 )
@@ -887,7 +909,16 @@ class LatexAstParser:
                 figure, cursor = self._parse_figure_command(command, end)
                 if figure is not None:
                     nodes.append(figure)
-            elif command.name in {"раздел", "допраздел"}:
+            elif command.name in {
+                "раздел",
+                "допраздел",
+                "section",
+                "section*",
+                "subsection",
+                "subsection*",
+                "subsubsection",
+                "subsubsection*",
+            }:
                 heading, cursor = self._parse_heading(command, end)
                 if heading is not None:
                     nodes.append(heading)
@@ -1142,7 +1173,9 @@ class LatexAstParser:
             outer_end = boundary.start
         else:
             closing_kind = _ANNOUNCEMENT_ENDS[boundary.name]
-            if closing_kind is not kind:
+            if closing_kind is not kind or (
+                (command.name == "definition") != (boundary.name == "edefinition")
+            ):
                 self._diagnose(
                     "latex.announcement_end_mismatch",
                     (
@@ -1164,6 +1197,28 @@ class LatexAstParser:
                 command.start,
                 outer_end,
                 recovery="Добавьте текст объявления или удалите пустой блок.",
+            )
+        if command.name == "definition":
+            label = (
+                "Определение"
+                if "определение" in self.text[command.start : command.end]
+                else "Definition"
+            )
+            span = self.source_map.span(command.start, command.end)
+            children = (
+                self._count(
+                    ParagraphNode(
+                        span,
+                        (
+                            self._count(
+                                StrongNode(
+                                    span, (self._count(TextNode(span, label + ".")),)
+                                )
+                            ),
+                        ),
+                    )
+                ),
+                *children,
             )
         return (
             self._count(
@@ -1349,7 +1404,7 @@ class LatexAstParser:
                 cursor = group.end
                 text_start = cursor
                 continue
-            command = read_command(self.text, cursor, end)
+            command = read_command(self.text, cursor, end, limits=self.limits)
             if command is None:
                 cursor += 1
                 continue
@@ -1383,6 +1438,32 @@ class LatexAstParser:
                 )
             )
             return command.end
+        if command.name in {"mark", "markB"}:
+            group = read_group(
+                self.text, command.end, end, max_depth=self.limits.max_group_depth
+            )
+            start = skip_space_and_comments(self.text, command.end, end)
+            if group is not None:
+                content_start, content_end, outer_end = (
+                    group.content_start,
+                    group.content_end,
+                    group.end,
+                )
+            else:
+                match = re.search(r"\s", self.text[start:end])
+                content_start = start
+                content_end = start + match.start() if match else end
+                outer_end = content_end
+            formatter = StrongNode if command.name == "markB" else EmphasisNode
+            nodes.append(
+                self._count(
+                    formatter(
+                        self.source_map.span(command.start, outer_end),
+                        self._parse_inline(content_start, content_end, depth=depth + 1),
+                    )
+                )
+            )
+            return outer_end
         formatter = _FORMATTING_COMMANDS.get(command.name)
         if formatter is not None:
             group = read_group(
@@ -1392,7 +1473,7 @@ class LatexAstParser:
                 max_depth=self.limits.max_group_depth,
             )
             if group is None:
-                if command.name in {"it", "выд", "выдж"}:
+                if command.name == "it":
                     nodes.append(
                         self._count(
                             EmphasisNode(
@@ -1882,7 +1963,7 @@ class LatexAstParser:
             return self._skip_groups(command, end, 5)
         if command.name == "newdimen":
             next_cursor = skip_space_and_comments(self.text, command.end, end)
-            declared = read_command(self.text, next_cursor, end)
+            declared = read_command(self.text, next_cursor, end, limits=self.limits)
             return declared.end if declared is not None else command.end
         if command.name in {"DotStep", "DotSize"}:
             newline = self.text.find("\n", command.end, end)
@@ -1939,6 +2020,12 @@ class LatexAstParser:
                     )
                 )
             )
+            if optional is not None:
+                nodes.extend(
+                    self._parse_inline(
+                        optional.content_start, optional.content_end, depth=depth + 1
+                    )
+                )
             if command.name == "пунктн":
                 explicit = read_group(
                     self.text,
@@ -2051,7 +2138,13 @@ class LatexAstParser:
                 self._count(
                     HeadingNode(
                         span=self.source_map.span(command.start, command.end),
-                        level=2,
+                        level=(
+                            3
+                            if command.name.startswith("subsection")
+                            else 4
+                            if command.name.startswith("subsubsection")
+                            else 2
+                        ),
                         children=(
                             self._count(
                                 TextNode(
@@ -2077,7 +2170,13 @@ class LatexAstParser:
             self._count(
                 HeadingNode(
                     span=self.source_map.span(command.start, group.end),
-                    level=2,
+                    level=(
+                        3
+                        if command.name.startswith("subsection")
+                        else 4
+                        if command.name.startswith("subsubsection")
+                        else 2
+                    ),
                     children=self._parse_inline(group.content_start, group.content_end),
                 )
             ),
@@ -2748,7 +2847,7 @@ class LatexAstParser:
                 brace_depth = max(0, brace_depth - 1)
                 cursor += 1
                 continue
-            command = read_command(self.text, cursor, end)
+            command = read_command(self.text, cursor, end, limits=self.limits)
             is_row_boundary = (
                 row_mode
                 and brace_depth == 0
@@ -2809,9 +2908,12 @@ class LatexAstParser:
                 brace_depth = max(0, brace_depth - 1)
                 cursor += 1
                 continue
-            command = read_command(self.text, cursor, end)
+            command = read_command(self.text, cursor, end, limits=self.limits)
             if command is None:
                 cursor += 1
+                continue
+            if command.name in DECLARATIONS:
+                cursor = self._local_macro_declaration_end(command, end) or command.end
                 continue
             if brace_depth == 0 and environment_depth == 0 and command.name in names:
                 result.append(command)
@@ -2836,7 +2938,7 @@ class LatexAstParser:
                 cursor = math.end
                 continue
             if self.text[cursor] != "{" or is_escaped(self.text, cursor):
-                command = read_command(self.text, cursor, end)
+                command = read_command(self.text, cursor, end, limits=self.limits)
                 if command is not None and command.name in {
                     "newcommand",
                     "newcommand*",
@@ -2909,49 +3011,7 @@ class LatexAstParser:
         can be mistaken for visible document blocks.
         """
 
-        if command.name == "def":
-            declared = read_command(
-                self.text,
-                skip_space_and_comments(self.text, command.end, end),
-                end,
-            )
-            if declared is None:
-                return None
-            body_start = self.text.find("{", declared.end, end)
-            if body_start < 0:
-                return None
-            body_group = read_group(
-                self.text,
-                body_start,
-                end,
-                max_depth=self.limits.max_group_depth,
-            )
-            return body_group.end if body_group is not None else None
-
-        cursor = command.end
-        name_group = read_group(
-            self.text, cursor, end, max_depth=self.limits.max_group_depth
-        )
-        if name_group is None:
-            name_command = read_command(
-                self.text, skip_space_and_comments(self.text, cursor, end), end
-            )
-            if name_command is None:
-                return None
-            cursor = name_command.end
-        else:
-            cursor = name_group.end
-        for _ in range(2):
-            optional = read_optional_group(
-                self.text, cursor, end, max_depth=self.limits.max_group_depth
-            )
-            if optional is None:
-                break
-            cursor = optional.end
-        body_group = read_group(
-            self.text, cursor, end, max_depth=self.limits.max_group_depth
-        )
-        return body_group.end if body_group is not None else None
+        return declaration_end(self.text, command, end, self.limits)
 
 
 class PureAssetName:

@@ -41,3 +41,19 @@ Student/Family/Staff и отдельных экранов задачи; см. [�
 документа; исходные идентификаторы и номера для маршрутизации не меняются.
 См. [требования и реализацию](task-interaction-polish.md) и
 [проверку](../../pwa_tests/reports/task-interaction-polish/README.md).
+
+
+## Алфавит подпунктов
+
+С 29 сентября 2026 `SemanticMathDocument` в
+[`math-document.tsx`](../packages/content/src/math-document.tsx) отображает
+стандартные буквенные метки в алфавите текущей локали Lingui: а), б), в)
+для ru и a), b), c) для en, независимо от языка LaTeX-команд. Для букв
+после z используются aa–ae по порядковому соответствию существующему
+31-буквенному алфавиту parser. Числовые и нестандартные метки сохраняются.
+Короткий префикс номера задачи остаётся прежним.
+
+Смена языка обновляет подписи без перекомпиляции. Поля label/taskReference,
+маршруты и аргументы renderSubpartActions/renderAfterSubpart не меняются.
+Проверки обеих локалей и callback keys:
+[`math-document.test.tsx`](../packages/content/src/math-document.test.tsx).

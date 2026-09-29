@@ -979,10 +979,11 @@ def test_unexpected_announcement_end_has_exact_position() -> None:
     "command",
     ["announcement", "endannouncement", "impAnnouncement", "endimpAnnouncement"],
 )
-def test_english_announcement_commands_remain_unsupported(command: str) -> None:
+def test_english_announcement_commands_are_recognized(command: str) -> None:
     result = _compile(rf"\задача \{command} текст \кзадача")
 
-    assert "latex.unknown_macro" in _codes(result)
+    assert "latex.unknown_macro" not in _codes(result)
+    assert result.has_errors  # A lone boundary remains invalid.
 
 
 def test_compilation_and_all_derivative_hashes_are_deterministic() -> None:
