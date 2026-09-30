@@ -64,7 +64,11 @@ async def on_startup(bot: Bot, **_kwargs):
     setup_trace_middlewares()
 
     # Настраиваем загрузчик из гугль-таблиц
-    google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
+    # Independent integration switches; see docs/optional-telegram-bot.md.
+    if config.google_sheets_key:
+        google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
+    else:
+        logger.info('Google Sheets imports disabled: google_sheets_key is empty')
     # A clean PWA database must stay clean. Importing the legacy Google sheet is
     # now an explicit operator action, never an implicit bot-start side effect.
     register_group_switch_commands()

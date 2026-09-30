@@ -8,7 +8,10 @@ from typing import List
 from helpers.consts import *
 from helpers.config import config, logger
 from helpers.features import SYNONYMS_MODE, FEATURES
-from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
+from helpers.loader_from_google_spreadsheets import (
+    GoogleSheetsDisabled,
+    google_spreadsheet_loader,
+)
 import db_methods as db
 from .state import State
 from .user import User
@@ -20,6 +23,13 @@ class GoogleBulkUpdateDisabled(RuntimeError):
 
 
 class FromGoogleSpreadsheet:
+    @staticmethod
+    def _require_google_sheets():
+        # Config takes precedence over any previously configured loader.
+        # See docs/optional-telegram-bot.md and handlers/admin_handlers.py.
+        if not config.google_sheets_key:
+            raise GoogleSheetsDisabled('Google Sheets imports are disabled')
+
     @staticmethod
     def _normalize_sheet_text(value: str):
         if value is None:
@@ -37,6 +47,7 @@ class FromGoogleSpreadsheet:
         # update_* methods; see google-loader-inventory-and-cutover.md.
         if not config.allow_google_update_all:
             raise GoogleBulkUpdateDisabled
+        FromGoogleSpreadsheet._require_google_sheets()
         groups, problems, students, teachers, ui_messages, bot_settings = google_spreadsheet_loader.get_all_from_spreadsheet()
         errors = []
         errors += FromGoogleSpreadsheet.groups_to_db(groups)
@@ -49,32 +60,38 @@ class FromGoogleSpreadsheet:
 
     @staticmethod
     def update_problems() -> List[str]:
+        FromGoogleSpreadsheet._require_google_sheets()
         problems = google_spreadsheet_loader.get_problems()
         errors = FromGoogleSpreadsheet.problems_to_db(problems)
         return errors
 
     @staticmethod
     def update_students():
+        FromGoogleSpreadsheet._require_google_sheets()
         students = google_spreadsheet_loader.get_students()
         FromGoogleSpreadsheet.students_to_db(students)
 
     @staticmethod
     def update_teachers():
+        FromGoogleSpreadsheet._require_google_sheets()
         teachers = google_spreadsheet_loader.get_teachers()
         FromGoogleSpreadsheet.teachers_to_db(teachers)
 
     @staticmethod
     def update_ui_messages():
+        FromGoogleSpreadsheet._require_google_sheets()
         ui_messages = google_spreadsheet_loader.get_ui_messages()
         FromGoogleSpreadsheet.ui_messages_to_db(ui_messages)
 
     @staticmethod
     def update_bot_settings():
+        FromGoogleSpreadsheet._require_google_sheets()
         bot_settings = google_spreadsheet_loader.get_bot_settings()
         FromGoogleSpreadsheet.bot_settings_to_db(bot_settings)
 
     @staticmethod
     def update_groups() -> List[str]:
+        FromGoogleSpreadsheet._require_google_sheets()
         groups = google_spreadsheet_loader.get_groups()
         return FromGoogleSpreadsheet.groups_to_db(groups)
 
@@ -321,6 +338,8 @@ class FromGoogleSpreadsheet:
 
 
 def update_from_google_if_db_is_empty():
+    if not config.google_sheets_key:
+        return
     # Если в базе нет ни одного учителя, то принудительно грузим всё из таблицы (иначе даже админ не сможет залогиниться)
     all_teachers = list(User.all_teachers())
     if len(all_teachers) == 0:

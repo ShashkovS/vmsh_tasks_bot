@@ -313,14 +313,6 @@ def _setup(*, force_production=False):
         )
 
     try:
-        with open(config.google_cred_json, "r") as f:
-            cred = json.load(f)
-        logging.info(f"Google service email: {cred['client_email']}")
-    except:
-        logging.critical(f"Запишите гугл-креды в {config.google_cred_json}")
-        raise
-
-    try:
         with open(config_filename, "r") as f:
             config_from_json = json.load(f)
     except:
@@ -335,6 +327,16 @@ def _setup(*, force_production=False):
 
     # Обновляем настройки
     config.update_from_dict(config_from_json)
+    # Google credentials are required only for configured Sheets imports.
+    # See docs/optional-telegram-bot.md and apps/tg_bot.py:on_startup.
+    if config.google_sheets_key:
+        try:
+            with open(config.google_cred_json, "r") as f:
+                cred = json.load(f)
+            logging.info(f"Google service email: {cred['client_email']}")
+        except Exception:
+            logging.critical(f"Запишите гугл-креды в {config.google_cred_json}")
+            raise
     assert config.config_name != "", (
         f"{config.config_name=}, but needs to be meanfull string"
     )

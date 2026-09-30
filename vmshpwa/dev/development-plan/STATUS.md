@@ -1,5 +1,17 @@
 # Статус плана разработки
 
+## Optional legacy integrations — 2026-09-30
+
+Implemented: an empty `telegram_bot_token` disables legacy bot imports, client
+creation, polling and webhooks; other configured web adapters stay available.
+Independently, an empty `google_sheets_key` disables Google imports and their
+Telegram commands, and removes the Google credentials requirement at startup.
+[Requirement, implementation and validation](../../../docs/optional-telegram-bot.md).
+Validation: 33 focused backend checks and 18 historical Google/admin tests
+passed using synthetic credentials and temporary databases without external
+API calls. Real legacy aiohttp startup/shutdown and Telegram startup without
+Google verified; the `apps="zoom_events_parser"` case excludes Telegram even
+with a configured token. Focused Ruff and changed-file whitespace checks pass.
 
 ## Staff violin correction — 27 September 2026
 

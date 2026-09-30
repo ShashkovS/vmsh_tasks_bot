@@ -185,7 +185,7 @@ async def post_game_chest(request):
     db.game.add_student_chest(user.id, command_id, x, y, bonus)
     # Отправляем всем уведомление, что у студента появились новые «деньги»
     await vmsh_nats.publish(NATS_GAME_STUDENT_UPDATE, user.id)
-    if SEND_OPEN_CHEST_TO_BOT:
+    if SEND_OPEN_CHEST_TO_BOT and bot is not None:
         if bonus % 10 == 1 and bonus % 100 != 11:
             suffix = f'{bonus} балл'
         elif 2 <= bonus % 10 <= 4 and not 11 <= bonus % 100 <= 14:

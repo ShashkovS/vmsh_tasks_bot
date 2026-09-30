@@ -232,7 +232,10 @@ app = create_app()
 if __name__ == "__main__":
     # Start aiohttp server
     async def dev_main():
-        telegram_enabled = hasattr(apps, "tg_bot")
+        telegram_enabled = (
+            bool(app[RUNTIME_CONFIG].telegram_bot_token)
+            and getattr(apps, "tg_bot", None) in app[ENABLED_ADAPTERS]
+        )
         if telegram_enabled:
             apps.tg_bot.start_bot_in_polling_mode()
 

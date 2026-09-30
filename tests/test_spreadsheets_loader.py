@@ -10,6 +10,7 @@ class SpreadsheetGroupsTest(TestCase):
     def test_update_all_is_blocked_before_google_read_after_partial_cutover(self):
         with (
             patch.object(spreadsheets.config, "allow_google_update_all", False),
+            patch.object(spreadsheets.config, "google_sheets_key", "synthetic-sheet"),
             patch.object(
                 spreadsheets.google_spreadsheet_loader,
                 "get_all_from_spreadsheet",
@@ -24,6 +25,7 @@ class SpreadsheetGroupsTest(TestCase):
         problems = [{"group_id": "n", "lesson": 1}]
         with (
             patch.object(spreadsheets.config, "allow_google_update_all", False),
+            patch.object(spreadsheets.config, "google_sheets_key", "synthetic-sheet"),
             patch.object(
                 spreadsheets.google_spreadsheet_loader,
                 "get_problems",

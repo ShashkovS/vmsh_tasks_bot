@@ -16,15 +16,18 @@ production cutover. Общий план отказа находится в
 
 Google может быть вызван только legacy Telegram-контуром:
 
-- startup [`apps/tg_bot.py`](../../apps/tg_bot.py) настраивает loader и вызывает
-  `update_from_google_if_db_is_empty`; автоматическая загрузка происходит только
-  если в SQLite нет ни одного преподавателя;
+- startup [`apps/tg_bot.py`](../../apps/tg_bot.py) настраивает loader только при
+  непустом `google_sheets_key`; автоматическая загрузка пустой базы отключена;
 - Telegram-команды из
   [`handlers/admin_handlers.py`](../../handlers/admin_handlers.py) запускают
   полное либо доменное обновление вручную;
 - прямой запуск
   [`helpers/loader_from_google_spreadsheets.py`](../../helpers/loader_from_google_spreadsheets.py)
   только читает таблицу и печатает количества строк.
+
+Пустой `google_sheets_key` отключает все команды импорта и Google credentials
+на startup. Прямые вызовы импорта защищены до чтения Google или записи SQLite;
+см. [требование, реализацию и проверки optional integrations](../../docs/optional-telegram-bot.md).
 
 PWA app factory, unit-тесты и E2E этот модуль не импортируют и credentials не
 читают. `update_all` выполняет листы последовательно в порядке «Группы»,

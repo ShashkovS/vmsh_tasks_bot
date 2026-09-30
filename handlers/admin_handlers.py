@@ -41,7 +41,12 @@ def _resolve_group_ids(group_tokens):
     return group_ids, unknown
 
 
-@router.message(Command('update_all_quaLtzPE', 'update_all'))
+def _google_import_enabled(_message: types.Message) -> bool:
+    """Gate import commands; see docs/optional-telegram-bot.md."""
+    return bool(config.google_sheets_key)
+
+
+@router.message(Command('update_all_quaLtzPE', 'update_all'), _google_import_enabled)
 async def update_all_internal_data(message: types.Message):
     logger.debug('update_all_internal_data')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -81,7 +86,7 @@ async def update_all_internal_data(message: types.Message):
     )
 
 
-@router.message(Command('update_teachers', 'ut'))
+@router.message(Command('update_teachers', 'ut'), _google_import_enabled)
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -95,7 +100,7 @@ async def update_teachers(message: types.Message):
     )
 
 
-@router.message(Command('update_students', 'us'))
+@router.message(Command('update_students', 'us'), _google_import_enabled)
 async def update_students(message: types.Message):
     logger.debug('update_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -109,7 +114,7 @@ async def update_students(message: types.Message):
     )
 
 
-@router.message(Command('update_bot_settings'))
+@router.message(Command('update_bot_settings'), _google_import_enabled)
 async def update_bot_settings(message: types.Message):
     logger.debug('update_bot_settings')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -127,7 +132,7 @@ async def update_bot_settings(message: types.Message):
     )
 
 
-@router.message(Command('update_ui_messages'))
+@router.message(Command('update_ui_messages'), _google_import_enabled)
 async def update_ui_messages(message: types.Message):
     logger.debug('update_ui_messages')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -142,7 +147,7 @@ async def update_ui_messages(message: types.Message):
     )
 
 
-@router.message(Command('update_problems', 'up'))
+@router.message(Command('update_problems', 'up'), _google_import_enabled)
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -166,7 +171,7 @@ async def update_problems(message: types.Message):
     )
 
 
-@router.message(Command('update_groups', 'ug'))
+@router.message(Command('update_groups', 'ug'), _google_import_enabled)
 async def update_groups(message: types.Message):
     logger.debug('update_groups')
     teacher = User.get_by_chat_id(message.chat.id)

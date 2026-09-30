@@ -40,6 +40,10 @@ def _dict_factory(rows, column_names):
     return res_rows
 
 
+class GoogleSheetsDisabled(RuntimeError):
+    """Raised before external access when Google Sheets imports are disabled."""
+
+
 class SpreadsheetLoader:
     def __init__(self, sheets_key: str = None, google_cred_json: str = None):
         self.sheets_key = sheets_key
@@ -51,6 +55,9 @@ class SpreadsheetLoader:
         self.google_cred_json = google_cred_json
 
     def _connect_to_google_sheets(self):
+        # See docs/optional-telegram-bot.md; standalone callers are guarded too.
+        if not self.sheets_key:
+            raise GoogleSheetsDisabled('Google Sheets imports are disabled')
         logger.info('Setting reload: using google')
         import gspread
         from oauth2client.service_account import ServiceAccountCredentials
