@@ -55,7 +55,7 @@ const grid: ProblemMetadataGrid = {
   })),
 }
 
-function mount() {
+function mount(reviewed = false) {
   const client = createContentApiClient(
     parseRuntimeConfigForAudience('staff', runtimeFixture.response),
   )
@@ -78,7 +78,10 @@ function mount() {
       })),
     },
   })
-  vi.spyOn(client, 'metadataGrid').mockResolvedValue({ etag, data: grid })
+  vi.spyOn(client, 'metadataGrid').mockResolvedValue({
+    etag,
+    data: { ...grid, rows: grid.rows.map((row) => ({ ...row, reviewed })) },
+  })
   const generate = vi.spyOn(client, 'generateMetadata').mockImplementation((input) =>
     Promise.resolve({
       revisionId: grid.revisionId,
@@ -184,4 +187,39 @@ it('preserves selected types and the local draft when generation fails', async (
     ),
   ).toContain('"problemType":"3"')
   expect(save).not.toHaveBeenCalled()
+})
+
+it('restores unsaved types after reload even when server metadata is already reviewed', async () => {
+  const key = 'vmshpwa:staff:content:test-types:metadata:v1:lesson-types:revision-types'
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      schemaVersion: 1,
+      etag,
+      rows: grid.rows.map((row, index) =>
+        Object.fromEntries(
+          Object.entries({ ...row, problemType: index === 1 ? 3 : 2 })
+            .filter(([name]) => name !== 'reviewed')
+            .map(([name, value]) => [name, value === null ? '' : String(value)]),
+        ),
+      ),
+    }),
+  )
+  const { generate } = mount(true)
+  vi.spyOn(globalThis, 'confirm').mockReturnValue(true)
+  const button = await screen.findByRole('button', { name: 'Сгенерировать с типами из таблицы' })
+  expect(screen.getByRole('gridcell', { name: 'Тип задачи, строка 2' }).textContent).toContain(
+    'Устная',
+  )
+  expect(localStorage.getItem(key)).not.toBeNull()
+  fireEvent.click(button)
+  await screen.findByText('Черновик metadata обновлён')
+  expect(generate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      problemTypes: [
+        { problemId: 101, problemType: 2 },
+        { problemId: 102, problemType: 3 },
+      ],
+    }),
+  )
 })

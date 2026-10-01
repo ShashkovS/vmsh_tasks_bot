@@ -173,6 +173,19 @@ revision. Отсутствие поля сохраняет совместимо�
 типы, scope, полнота, дубли, недопустимые коды и неизменность сохранённых данных;
 `problem-review-generation.test.tsx` — реальная таблица, несохранённые правки,
 недоступный localStorage, повторная генерация и отмена; contract/client tests.
-Проверены 31 domain-сценарий, 2 HTTP-сценария, 39 UI/contract/client tests,
+Проверены 31 domain-сценарий, 2 HTTP-сценария, 40 UI/contract/client tests,
 typecheck contracts/content/Staff, ESLint/Ruff, i18n sync/coverage и Staff build.
 Production-выпуск в работе.
+
+
+Дополнение: восстановление local draft в `ProblemReviewWorkflow.acceptMetadata`
+имеет приоритет над переходом в «metadata подтверждены». Уже проверенная серверная
+таблица не удаляет несохранённые типы и остальные поля при reload; старый ETag
+по-прежнему отмечает черновик как stale. Отдельный interaction-тест проверяет
+восстановление и передачу этих типов после перезагрузки.
+
+Основной `de054345` выложен на VMSH webhook (frontend/backend, no migrations)
+и TLF SSH release `tlfprep-20261001-explicit-types-de054345c13a`. TLF прошёл 25
+read-only HTTP checks; все product rows, credentials и NATS PID сохранились.
+Backup: `20261001T150339.467376Z` / `20261001T150405.605579Z`, integrity ok.
+Выпуск дополнения и финальная браузерная проверка в работе.

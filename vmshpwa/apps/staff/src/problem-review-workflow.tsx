@@ -339,18 +339,16 @@ export function ProblemReviewWorkflow({
   const acceptMetadata = useCallback(
     (resource: MetadataResource) => {
       setMetadataResource(resource)
-      metadataRowsRef.current =
-        storedMetadataRows(metadataDraftKey, resource.data)?.rows ??
-        resource.data.rows.map(metadataRow)
+      const draft = storedMetadataRows(metadataDraftKey, resource.data)
+      metadataRowsRef.current = draft?.rows ?? resource.data.rows.map(metadataRow)
       setGeneratedRows(undefined)
       setMetadataDirty(false)
       setGenerationWarnings([])
-      if (resource.data.rows.every((row) => row.reviewed)) {
+      if (!draft && resource.data.rows.every((row) => row.reviewed)) {
         clearStoredObject(metadataDraftKey)
         setPhase('ready')
         return
       }
-      const draft = storedMetadataRows(metadataDraftKey, resource.data)
       setStaleDraft(draft !== undefined && draft.etag !== resource.etag)
       setPhase('metadata')
     },
