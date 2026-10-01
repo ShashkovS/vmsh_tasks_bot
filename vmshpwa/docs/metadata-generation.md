@@ -44,6 +44,40 @@
 - [Stories редактора](../apps/staff/src/course-catalog-editors.stories.tsx): Chromium,
   русский/английский интерфейс, светлая/тёмная тема, валидный и неверный ID модели.
   Скриншоты локально в `.runtime/vmshpwa/metadata-settings-proof/`; pageerror нет.
-- Настоящие OpenRouter-запросы и production-выкладка не запускались. При выкладке
-  применяется миграция 0104. Сохранённые ранее metadata меняются только при
+- Настоящие OpenRouter-запросы в проверках не запускались. Production-выкладка
+  завершена ниже. Сохранённые ранее metadata меняются только при
   явно запущенной пользователем перегенерации и последующем сохранении черновика.
+
+
+## Production — 1 октября 2026
+
+Релиз `a13c01ba3f7fe60c691cfd04d37faf55f04ec8a3` отправлен в `vmshpwa` и
+установлен на обоих серверах по запросу владельца. VMSH использовал штатный
+webhook; TLF — подготовленный SSH-скрипт с отдельной frozen-сборкой и репетицией
+миграции на серверной копии перед остановкой PWA/Zoom/analytics writers.
+Зависимости и runtime-конфигурация не менялись. Миграция 0104 применена на обоих
+серверах; каждая база содержит 77 migrations.
+
+- VMSH: static release `a13c01ba3f7f-20261001122046`; before/after backups
+  `vmsh-before-deploy-20261001122152.sqlite3` /
+  `vmsh-after-deploy-20261001122220.sqlite3`, integrity ok. Сравнение подтвердило
+  неизменность course/attendance flags и всех 1519 enrollment rows. PWA, Telegram
+  и analytics timer active; webhook подтвердил frontend/backend/migrations.
+- TLF: static release `tlfprep-20261001-metadata-a13c01ba3f7f`; retained script,
+  rollback и проверки в `/web/vmsh_tasks_bot/deploy/releases/` с тем же release ID.
+  Before/after backups `20261001T122056.638841Z` /
+  `20261001T122125.045072Z`, integrity ok. Все прежние product-table rows,
+  секретная конфигурация и NATS PID совпали; три raw Zoom receipts сохранены.
+  Оба курса остаются online-only. PWA 2 workers, Zoom 1 worker, analytics active.
+- На каждом портале прошли 25 публичных read-only HTTP checks и backend health.
+  В существующих owner-authenticated браузерных сессиях проверен каталог и
+  открыта живая форма Course settings: поле `OpenRouter model for metadata`
+  отображает `openai/gpt-5.6-luna`. Настройки через UI не сохранялись.
+- TLF brand `default_locale=en`, VMSH `default_locale=ru`; для всех существующих
+  курсов сохранён текущий default model. Переход на другую модель выполняется
+  владельцем через поле настройки курса после её тестирования.
+
+Откат TLF использует только rollback миграции `0104.course_metadata_model` через
+yoyo при остановленных writers, затем retained source SHA и прежний static
+symlink. Production DB snapshot не подменяется. Сборки и проверки не создавали
+metadata, submissions или synthetic Zoom events в production.

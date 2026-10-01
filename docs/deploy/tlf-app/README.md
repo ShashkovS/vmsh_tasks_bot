@@ -231,3 +231,22 @@ Zoom receipts preserved). Both hosts have 76 migrations; the VMSh historical
 lookup selects 714 answers in 15 ms using the new index. Shared NATS and the
 existing frontend releases are unchanged. Documentation-only source updates
 need no worker restart or frontend build. [Migration, regression and verification](../../../vmshpwa/docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
+
+
+## Course metadata language/model — 2026-10-01
+
+Both portals run metadata release `a13c01ba`; VMSH deployed through the existing
+webhook, TLF through the reviewed SSH script retained at
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261001-metadata-a13c01ba3f7f/deploy.sh`.
+The TLF script builds in a separate source directory, rehearses migration 0104
+on a copy, retains verified backups and compares all pre-existing product rows
+while PWA/Zoom/analytics writers are stopped. Runtime configuration and
+credentials remain unchanged. Current TLF static release:
+`tlfprep-20261001-metadata-a13c01ba3f7f`; both databases have 77 migrations.
+
+Both portals pass 25 public read-only HTTP checks and live authenticated course
+settings show the OpenRouter model field. TLF branding is English; VMSH is
+Russian. Existing course models stay `openai/gpt-5.6-luna`, TLF courses stay
+online-only, and the three Zoom receipts are preserved. TLF retains two PWA
+workers and one Zoom worker; shared NATS was not restarted. Detailed backups,
+rollback and verification: [metadata production record](../../../vmshpwa/docs/metadata-generation.md#production--1-октября-2026).

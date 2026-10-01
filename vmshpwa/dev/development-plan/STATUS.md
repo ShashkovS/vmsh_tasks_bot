@@ -3728,7 +3728,7 @@ is retained in the TLF deployment script. Independent figure work stays outside
 this release. [Requirement, implementation and operational proof](../../docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
 
 
-## 2026-10-01 — язык и модель генерации metadata (готово)
+## 2026-10-01 — язык и модель генерации metadata (в production)
 
 [Решение](../../docs/metadata-generation.md): язык контента из branding, модель
 в настройках курса; оба прохода OpenRouter и локальные сообщения учитывают язык.
@@ -3739,5 +3739,8 @@ TypeScript, ESLint, Ruff, оба i18n gate и production build Staff — PASS.
 Форма проверена в Chromium на русском/английском и в тёмной теме, включая
 HTML-валидацию идентификатора модели; pageerror отсутствуют. Скриншоты:
 `.runtime/vmshpwa/metadata-settings-proof/`. Реальные OpenRouter-вызовы не запускались.
-Выкладка на оба production-сервера одобрена владельцем; применяется
-миграция `0104.course_metadata_model`. Результат rollout будет записан отдельно.
+Релиз `a13c01ba` выложен на VMSH через webhook и на TLF через SSH-скрипт;
+миграция `0104.course_metadata_model` применена на обоих серверах (77 migrations).
+По 25 публичных HTTP-проверок, health и живые формы настройки курсов — PASS.
+TLF использует английский язык бренда, VMSH — русский; прежние модели курсов
+и attendance-настройки сохранены. [Production proof](../../docs/metadata-generation.md#production--1-октября-2026).
