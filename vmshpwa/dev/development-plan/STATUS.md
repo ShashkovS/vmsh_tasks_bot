@@ -1,6 +1,6 @@
 # Статус плана разработки
 
-## 2026-10-01 — редактор картинок реализован и проверен
+## 2026-10-01 — редактор картинок в production на обоих порталах
 
 [Редактор на рисунке](../../docs/figure-layout.md) доступен для условий, подсказок
 и решений: две кнопки, ширина 0,5–80 rem, перенос/скрытие/восстановление, независимые
@@ -8,18 +8,19 @@
 пользователя включено: `center-source` сохраняет рисунок между исходными абзацами
 без обтекания. Student/Family и offline различают публикации одной revision.
 
-Проверено: 107 backend, 974 frontend unit, Storybook accessibility/interactions,
-изолированный Chromium/Firefox/WebKit E2E, typecheck/lint/i18n, четыре production
-build и актуальность schema inventory. [Команды, снимки и границы проверки](../figure-layout-report.md).
+Проверено после интеграции metadata: 138 backend, 107 seed/deploy guards,
+975 frontend unit, Storybook accessibility/interactions, 12 изолированных
+Chromium/Firefox/WebKit E2E, typecheck/lint/i18n, четыре production build и schema
+inventory. [Команды, снимки и границы проверки](../figure-layout-report.md).
 Миграция 0106 фиксирует исторические масштабы. Владелец разрешил выпуск на оба
-production-сервера 1 октября; начаты commit/integration и rollout.
+production-сервера 1 октября; выпуск завершён.
 Golden snapshots не изменены.
 
-Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
-107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
-обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
-[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
-Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
+Runtime source `3bb20281`: VMSh обновлён webhook, TLF — проверенным
+[SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh). На обоих
+порталах 78 миграций, 25 публичных HTTP checks; 182 прежних JS/CSS URL сохранили
+SHA256/MIME. Старые product data сохранены; NATS не перезапускался.
+[Релизы, backup и границы live-проверки](../figure-layout-report.md#production--2026-10-01).
 
 ## TLF application rollout — 2026-09-30
 

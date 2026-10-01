@@ -1,6 +1,6 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
-## 2026-10-01 — редактор картинок реализован и проверен
+## 2026-10-01 — редактор картинок в production на обоих порталах
 
 Принятый [редактор на рисунке](../../docs/figure-layout.md) реализован в
 [FigureLayoutEditor](../../apps/staff/src/figure-layout-editor.tsx), общем
@@ -16,17 +16,18 @@
 Миграция [0106](../../../migrations/0106.pwa_figure_presentation.sql) замораживает
 старые масштабы. Student/Family и offline обновляются по publicationId.
 
-107 backend, 974 frontend unit, Storybook и изолированный Chromium/Firefox/WebKit
-E2E проходят; typecheck/lint/i18n/build и schema inventory проверены.
+После интеграции проходят 138 backend, 107 seed/deploy guards, 975 frontend unit,
+Storybook и 12 изолированных Chromium/Firefox/WebKit E2E;
+typecheck/lint/i18n/build и schema inventory проверены.
 [Отчёт с командами и browser captures](../figure-layout-report.md).
 Генерация PDF и картинки в Markdown вне итерации. Владелец разрешил
-production-выпуск на оба сервера 1 октября; integration/rollout начат.
+production-выпуск на оба сервера 1 октября; выпуск завершён.
 
-Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
-107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
-обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
-[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
-Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
+Runtime source `3bb20281` опубликован на VMSh через webhook, на TLF через
+[SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh). На обоих
+порталах применена 0106, теперь 78 миграций; frozen legacy scales проверены,
+immutable trigger установлен. Прошли по 25 публичных HTTP checks и проверка
+182 прежних ресурсов. [Production proof](../figure-layout-report.md#production--2026-10-01).
 
 ## Результат
 
