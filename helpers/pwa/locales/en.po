@@ -2946,6 +2946,10 @@ msgstr "Specify exactly one groupLesson"
 msgid "Укажите существующее однозначное местное время занятия с точностью до минуты"
 msgstr "Enter a valid, unambiguous local class time with minute precision"
 
+#: apps/pwa_api/content_routes.py
+msgid "Укажите тестовый, письменный или устный тип для каждой задачи ровно один раз"
+msgstr "Specify test, written, or oral for every problem exactly once"
+
 #: apps/pwa_api/oral_window_routes.py
 msgid "Укажите часовой пояс времени"
 msgstr "Specify the time zone"

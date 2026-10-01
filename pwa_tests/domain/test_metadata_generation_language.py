@@ -8,6 +8,7 @@ import pytest
 
 from helpers.pwa.content import metadata_generation as adapter
 from pwa_tests.domain.test_metadata_generation import _request
+from helpers.pwa.content.metadata_generation import MetadataGenerationTarget
 from vmsh_openrouter_tools_fixed_v2 import vmsh_openrouter_contract as contract
 
 
@@ -63,6 +64,79 @@ def _descriptions(value):
     elif isinstance(value, list):
         for child in value:
             yield from _descriptions(child)
+
+
+@pytest.mark.parametrize("locale", ["ru", "en"])
+async def test_staff_types_override_sections_and_embedded_metadata_for_each_subpart(
+    monkeypatch, locale
+):
+    source = r"\раздел{Письменно}\задача\пункт Find six.\пункт Explain.\пункт Prove.\bptype{Письменно}\ответ\пункт 6\пункт Reason\пункт Proof\кответ\кзадача"
+    calls = []
+
+    async def chat(**kwargs):
+        calls.append(kwargs)
+        if kwargs["schema_name"] == contract.LESSON_SCHEMA_NAME:
+            return (
+                _markup()
+                .model_copy(
+                    update={
+                        "rows": [
+                            contract.LessonRow.model_validate(
+                                _row(
+                                    row_id=f"0н.1{item}",
+                                    item=item,
+                                    title=f"Task {item}",
+                                    prob_type="Письменно",
+                                )
+                            )
+                            for item in "абв"
+                        ]
+                    }
+                )
+                .model_dump(mode="json")
+            )
+        facts = json.loads(kwargs["messages"][1]["content"].split("DRAFT_FACTS:\n")[1])
+        return {
+            "schema_version": "vmsh-lesson-fact-review-v1",
+            "rows": [{**row, "verdict": "confirmed", "reason": ""} for row in facts],
+            "warnings": [],
+        }
+
+    monkeypatch.setattr(contract, "_openrouter_chat", chat)
+    request = replace(
+        _request(),
+        latex_text=source,
+        content_locale=locale,
+        targets=tuple(
+            MetadataGenerationTarget(
+                1, item, f"1{item}", None, 101 + index, problem_type
+            )
+            for index, (item, problem_type) in enumerate(
+                zip("abc" if locale == "en" else "абв", (1, 2, 3))
+            )
+        ),
+    )
+    result = await adapter.OpenRouterMetadataGenerator(api_key="test-key").generate(
+        request
+    )
+    assert [row["problemType"] for row in result.rows] == [1, 2, 3]
+    assert result.rows[0]["correctAnswer"] == "6"
+    assert all(
+        row["answerType"] is None and row["correctAnswer"] is None
+        for row in result.rows[1:]
+    )
+    assert len(calls) == 2
+    for call in calls:
+        machine_parse = json.loads(
+            call["messages"][1]["content"].split("MACHINE_PARSE:\n")[1].split("\n\n")[0]
+        )
+        assert [row["prob_type"] for row in machine_parse["expected_rows"]] == [
+            "Тест",
+            "Письменно",
+            "Письменно<-Устно",
+        ]
+        assert all(row["type_is_explicit"] for row in machine_parse["expected_rows"])
+        assert machine_parse["tasks"][0]["prob_type"] is None
 
 
 @pytest.mark.parametrize("locale", ["ru", "en"])

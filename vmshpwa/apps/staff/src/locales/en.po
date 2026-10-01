@@ -4244,6 +4244,10 @@ msgstr "The first completed calculation will appear here automatically. Original
 msgid "Первый пароль"
 msgstr "Initial password"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Перегенерировать metadata с типами из таблицы? Типы задач сохранятся, остальные поля черновика будут заменены. Результат нужно проверить и сохранить вручную."
+msgstr "Regenerate metadata using the table types? Problem types will be preserved; the other draft fields will be replaced. Review and save the result manually."
+
 #. placeholder {0}: item.movedTo
 #: apps/staff/src/review-series-page.tsx
 msgid "Перенесено в {0}"
@@ -5675,6 +5679,10 @@ msgstr "The student link was removed. The parent account was kept."
 msgid "Сгенерировать metadata"
 msgstr "Generate metadata"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Сгенерировать с типами из таблицы"
+msgstr "Generate using table types"
+
 #. placeholder {0}: fullName(selected)
 #: apps/staff/src/staff-access-page.tsx
 msgid "Сделать {0} администратором? Он получит доступ ко всем данным и настройкам."
@@ -6651,6 +6659,10 @@ msgstr "Enter the publication time in the class time zone."
 #: apps/staff/src/content-page.tsx
 msgid "Укажите корректные дату и время публикации."
 msgstr "Enter a valid publication date and time."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Укажите тестовый, письменный или устный тип для каждой задачи."
+msgstr "Choose test, written, or oral for every problem."
 
 #: apps/staff/src/account-provisioning-tsv.ts
 msgid "укажите хотя бы один логин ребёнка"

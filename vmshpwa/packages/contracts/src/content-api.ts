@@ -982,8 +982,29 @@ export const problemMetadataMutationRequestSchema = z
   })
 export type ProblemMetadataMutationRequest = z.infer<typeof problemMetadataMutationRequestSchema>
 
+// docs/metadata-generation.md: explicit types cover the current revision grid.
+export const problemMetadataGenerationTypesSchema = z
+  .array(
+    z
+      .object({
+        problemId: legacyProblemIdSchema,
+        problemType: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+      })
+      .strict(),
+  )
+  .min(1)
+  .max(2_000)
+  .refine(
+    (rows) => new Set(rows.map((row) => row.problemId)).size === rows.length,
+    'Problem IDs must be unique',
+  )
+
 export const problemMetadataGenerationRequestSchema = z
-  .object({ revisionId: publicIdSchema, confirmedOverwrite: z.boolean() })
+  .object({
+    revisionId: publicIdSchema,
+    confirmedOverwrite: z.boolean(),
+    problemTypes: problemMetadataGenerationTypesSchema.optional(),
+  })
   .strict()
 export type ProblemMetadataGenerationRequest = z.infer<
   typeof problemMetadataGenerationRequestSchema

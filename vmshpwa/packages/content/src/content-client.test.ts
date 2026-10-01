@@ -117,6 +117,35 @@ function requestUrl(input: RequestInfo | URL): string {
 }
 
 describe('Content API client', () => {
+  it('sends only explicit row types for generation without saving metadata', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        revisionId: revision.revisionId,
+        groupLessonId: revision.groupLessonId,
+        rows: metadataGrid.rows.map((row) =>
+          Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'reviewed')),
+        ),
+        warnings: [],
+        requestId: 'generated',
+      }),
+    )
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation: fetcher })
+    await client.generateMetadata!({
+      groupLessonId: revision.groupLessonId,
+      revisionId: revision.revisionId,
+      problemTypes: [{ problemId: -41, problemType: 1 }],
+    })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    const [url, init] = fetcher.mock.calls[0]!
+    expect(requestUrl(url)).toContain('/metadata-grid/generate')
+    const body = init?.body
+    if (typeof body !== 'string') throw new Error('Expected a JSON request body')
+    expect(JSON.parse(body)).toEqual({
+      revisionId: revision.revisionId,
+      confirmedOverwrite: false,
+      problemTypes: [{ problemId: -41, problemType: 1 }],
+    })
+  })
   it('loads and updates the independent lesson cutoff', async () => {
     const requests: Array<{ url: string; init: RequestInit | undefined }> = []
     const window = {

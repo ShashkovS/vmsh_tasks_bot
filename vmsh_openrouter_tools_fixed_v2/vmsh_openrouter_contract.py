@@ -594,6 +594,7 @@ class ExpectedRow:
     prob_type: ProblemType
     task_index: int
     item_index: int
+    type_is_explicit: bool = False
 
 
 @dataclass(slots=True)
@@ -606,6 +607,10 @@ class ParsedLesson:
     warnings: list[str] = field(default_factory=list)
 
     def prompt_payload(self) -> dict[str, Any]:
+        # Per-row Staff types can differ within one task; metadata-generation.md.
+        task_types: dict[int, set[ProblemType]] = {}
+        for row in self.rows:
+            task_types.setdefault(row.task_index, set()).add(row.prob_type)
         return {
             "lesson_number": self.lesson_number,
             "lesson_group": self.lesson_group,
@@ -615,6 +620,7 @@ class ParsedLesson:
                     "prob": row.prob,
                     "item": row.item,
                     "prob_type": row.prob_type,
+                    "type_is_explicit": row.type_is_explicit,
                 }
                 for row in self.rows
             ],
@@ -623,7 +629,10 @@ class ParsedLesson:
             "tasks": [
                 {
                     "prob": task.prob,
-                    "prob_type": task.prob_type,
+                    "prob_type": (
+                        next(iter(task_types[index]))
+                        if len(task_types[index]) == 1 else None
+                    ),
                     "statement_parts": task.statement_parts,
                     "answer_parts": task.answer_parts,
                     "explicit_answer_latex": task.answer,
@@ -633,9 +642,40 @@ class ParsedLesson:
                     "external_image_references": task.external_images,
                     "inline_tikz_available": task.has_inline_tikz,
                 }
-                for task in self.tasks
+                for index, task in enumerate(self.tasks)
             ],
         }
+
+
+def _apply_problem_type_overrides(
+    parsed: ParsedLesson,
+    overrides: Mapping[tuple[int, str], ProblemType] | None,
+) -> None:
+    """Apply the complete Staff row-type map before either model pass.
+
+    See vmshpwa/docs/metadata-generation.md. Exact subpart identities preserve
+    independently selected types within a single source problem.
+    """
+    if overrides is None:
+        return
+    expected = {(row.prob, row.item) for row in parsed.rows}
+    if set(overrides) != expected or any(
+        value not in {"Тест", "Письменно", "Письменно<-Устно"}
+        for value in overrides.values()
+    ):
+        raise ValueError("Staff problem types must cover every parsed row exactly once")
+    for row in parsed.rows:
+        row.prob_type = overrides[(row.prob, row.item)]
+        row.type_is_explicit = True
+    parsed.warnings = [
+        warning
+        for warning in parsed.warnings
+        if not re.fullmatch(
+            r"Problem \d+ has no section; using written submission|"
+            r"Для задачи \d+ не найден раздел; использовано Письменно",
+            warning,
+        )
+    ]
 
 
 _STRUCTURE_TOKEN = re.compile(
@@ -949,6 +989,8 @@ LESSON_SYSTEM_PROMPT = rf"""
 СТРУКТУРА
 1. Машинный структурный парсер является источником истины для row_id, prob, item,
    количества и порядка строк, а также prob_type. Не создавай и не удаляй строки.
+   Для строк с type_is_explicit тип выбран Staff и имеет приоритет над разделами
+   и встроенным bptype. Сохраняй тип каждого подпункта независимо от остальных.
 2. Если у задачи есть подпункты в условии, создай строки только для подпунктов; родительской
    строки нет. Подпункты в ответе, решении и указании не создают структуру.
 3. prob_text почти всегда "". Не копируй туда исходное условие.
@@ -1379,7 +1421,7 @@ def canonicalize_with_source(
         if metadata.get("btitle") and locale != "en":
             data["source_title"] = metadata["btitle"]
             data["title"] = metadata["btitle"]
-        if metadata.get("bptype"):
+        if metadata.get("bptype") and not expected.type_is_explicit:
             mapped = _map_section(metadata["bptype"])
             if mapped:
                 data["prob_type"] = mapped
@@ -2060,6 +2102,7 @@ def build_lesson_request_preview(
     *,
     model: str = DEFAULT_MODEL,
     locale: Literal["ru", "en"] = "ru",
+    problem_type_overrides: Mapping[tuple[int, str], ProblemType] | None = None,
     reasoning_effort: str | None = "low",
     existing_titles: Sequence[str] = (),
     max_output_tokens: int = 32000,
@@ -2070,6 +2113,7 @@ def build_lesson_request_preview(
 
     cleaned = clean_latex_document(lesson_latex)
     parsed = parse_lesson_structure(cleaned, lesson_number, lesson_group, locale=locale)
+    _apply_problem_type_overrides(parsed, problem_type_overrides)
     request: dict[str, Any] = {
         "model": model,
         "messages": _apply_prompt_cache_breakpoint(
@@ -2119,6 +2163,7 @@ async def generate_lesson_json(
     *,
     model: str = DEFAULT_MODEL,
     locale: Literal["ru", "en"] = "ru",
+    problem_type_overrides: Mapping[tuple[int, str], ProblemType] | None = None,
     api_key: str | None = None,
     proxy: str | None = None,
     reasoning_effort: str | None = "low",
@@ -2150,6 +2195,7 @@ async def generate_lesson_json(
 
     cleaned = clean_latex_document(lesson_latex)
     parsed = parse_lesson_structure(cleaned, lesson_number, lesson_group, locale=locale)
+    _apply_problem_type_overrides(parsed, problem_type_overrides)
     user_prompt = _lesson_user_prompt(cleaned, parsed, existing_titles, locale=locale)
 
     if diagnostics is not None:

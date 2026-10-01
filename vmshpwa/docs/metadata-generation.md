@@ -142,3 +142,37 @@ Local screenshot proof:
 `.runtime/vmshpwa/metadata-recovery-proof/tlf-success.jpg`. Focused verification
 total: 29 domain tests, 2 HTTP scenarios and 13 transport tests (all pass),
 plus types/lint/i18n/build and parsing the actual English worksheet.
+
+
+## Типы задач из таблицы — 1 октября 2026
+
+Требование владельца: смешанный листок может содержать письменные, устные
+и тестовые задачи без разделов, позволяющих парсеру определить способ сдачи.
+В Staff измените столбец «Тип задачи» и нажмите «Сгенерировать с типами из
+таблицы» / «Generate using table types». До генерации сохранять таблицу не
+нужно. Обычная кнопка сохраняет автоматический выбор типов из исходника.
+Все остальные поля перегенерируются; результат проверяется и сохраняется
+обычным действием. Отмена подтверждения и ошибка запроса сохраняют черновик.
+
+`ProblemReviewWorkflow` читает текущие строки, в том числе изменения после
+генерации и без доступного localStorage. `ContentApiClient.generateMetadata`
+передаёт необязательный `problemTypes: [{problemId, problemType}]`; Zod контракт
+и HTTP-граница проверяют типы 1/2/3, уникальность и полное покрытие текущей
+revision. Отсутствие поля сохраняет совместимость со старым клиентом.
+
+`MetadataGenerationTarget.problem_type` связывает выбранный тип с canonical
+строкой. `generate_lesson_json` применяет полный `problem_type_overrides` до
+построения первого prompt и использует его же в фактологической проверке и
+нормализации. Разделы и встроенный `bptype` не отменяют явно выбранный тип;
+каждый подпункт независим. Для смешанного родительского условия machine parse
+не передаёт противоречащий общий тип. Генерация не пишет конфигурацию задач
+и не требует миграции или изменения настройки модели.
+
+Проверки: `test_metadata_generation_language.py` — оба прохода и смешанные
+подпункты вопреки разделу/bptype; `test_content_http_api.py` — необязательные
+типы, scope, полнота, дубли, недопустимые коды и неизменность сохранённых данных;
+`problem-review-generation.test.tsx` — реальная таблица, несохранённые правки,
+недоступный localStorage, повторная генерация и отмена; contract/client tests.
+Проверены 31 domain-сценарий, 2 HTTP-сценария, 39 UI/contract/client tests,
+typecheck contracts/content/Staff, ESLint/Ruff, i18n sync/coverage и Staff build.
+Production-выпуск в работе.

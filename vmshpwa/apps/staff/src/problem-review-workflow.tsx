@@ -10,6 +10,7 @@ import {
   ApiResponseError,
   answerTypeSchema,
   problemTypeSchema,
+  problemMetadataGenerationTypesSchema,
   type ContentMaterialKind,
   type ProblemMatchReview,
   type ProblemMetadataGrid,
@@ -303,6 +304,7 @@ export function ProblemReviewWorkflow({
   const [message, setMessage] = useState<string>()
   const [staleDraft, setStaleDraft] = useState(false)
   const [generatedRows, setGeneratedRows] = useState<MetadataRow[]>()
+  const metadataRowsRef = useRef<MetadataRow[]>([])
   const [metadataDirty, setMetadataDirty] = useState(false)
   const [generationWarnings, setGenerationWarnings] = useState<string[]>([])
   const [metadataGridEpoch, setMetadataGridEpoch] = useState(0)
@@ -337,6 +339,9 @@ export function ProblemReviewWorkflow({
   const acceptMetadata = useCallback(
     (resource: MetadataResource) => {
       setMetadataResource(resource)
+      metadataRowsRef.current =
+        storedMetadataRows(metadataDraftKey, resource.data)?.rows ??
+        resource.data.rows.map(metadataRow)
       setGeneratedRows(undefined)
       setMetadataDirty(false)
       setGenerationWarnings([])
@@ -515,6 +520,9 @@ export function ProblemReviewWorkflow({
     try {
       const current = await client.metadataGrid(groupLessonId, revisionId)
       setMetadataResource(current)
+      metadataRowsRef.current =
+        storedMetadataRows(metadataDraftKey, current.data)?.rows ??
+        current.data.rows.map(metadataRow)
       setStaleDraft(false)
       setPhase('metadata')
     } catch (error) {
@@ -523,14 +531,30 @@ export function ProblemReviewWorkflow({
     }
   }
 
-  const generateMetadata = async () => {
+  const generateMetadata = async (useTableTypes = false) => {
     if (!metadataResource || !client.generateMetadata) return
+    // metadata-generation.md: read the live grid, including unsaved subpart
+    // edits and sessions where localStorage is unavailable.
+    const selectedTypes = useTableTypes
+      ? problemMetadataGenerationTypesSchema.safeParse(
+          metadataRowsRef.current.map((row) => ({
+            problemId: Number(row.problemId),
+            problemType: Number(row.problemType),
+          })),
+        )
+      : undefined
+    if (selectedTypes && !selectedTypes.success) {
+      setMessage(t`Укажите тестовый, письменный или устный тип для каждой задачи.`)
+      return
+    }
     const confirmedOverwrite =
       metadataResource.data.metadataGenerationRequiresConfirmation === true || metadataDirty
     if (
       confirmedOverwrite &&
       !globalThis.confirm(
-        t`Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач.`,
+        useTableTypes
+          ? t`Перегенерировать metadata с типами из таблицы? Типы задач сохранятся, остальные поля черновика будут заменены. Результат нужно проверить и сохранить вручную.`
+          : t`Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач.`,
       )
     ) {
       return
@@ -544,8 +568,10 @@ export function ProblemReviewWorkflow({
         groupLessonId,
         revisionId,
         ...(confirmedOverwrite ? { confirmedOverwrite: true } : {}),
+        ...(selectedTypes?.success ? { problemTypes: selectedTypes.data } : {}),
       })
       const rows = generated.rows.map(generatedMetadataRow)
+      metadataRowsRef.current = rows
       writeStoredObject(metadataDraftKey, {
         schemaVersion: 1,
         etag: metadataResource.etag,
@@ -644,6 +670,14 @@ export function ProblemReviewWorkflow({
               {metadataGenerationStartedAt === undefined
                 ? t`Сгенерировать metadata`
                 : t`Генерируем metadata…`}
+            </Button>
+            <Button
+              disabled={pending}
+              onClick={() => void generateMetadata(true)}
+              size="xs"
+              variant="outline"
+            >
+              <Trans>Сгенерировать с типами из таблицы</Trans>
             </Button>
             {metadataGenerationStartedAt === undefined ? (
               <span className="text-caption text-muted-foreground">
@@ -761,19 +795,21 @@ export function ProblemReviewWorkflow({
           }}
           onDiscard={() => {
             clearStoredObject(metadataDraftKey)
+            metadataRowsRef.current = baseline
             setGeneratedRows(undefined)
             setGenerationWarnings([])
             setMetadataDirty(false)
             setMetadataGridEpoch((epoch) => epoch + 1)
           }}
           onDirtyChange={setMetadataDirty}
-          onRowsChange={(rows) =>
+          onRowsChange={(rows) => {
+            metadataRowsRef.current = rows
             writeStoredObject(metadataDraftKey, {
               schemaVersion: 1,
               etag: metadataResource.etag,
               rows,
             } satisfies StoredMetadataDraft)
-          }
+          }}
           validate={validateMetadataRows}
         />
       </section>

@@ -10,6 +10,7 @@ import {
   problemMatchReviewSchema,
   problemMetadataGridSchema,
   problemMetadataMutationRequestSchema,
+  problemMetadataGenerationRequestSchema,
   publishContentRequestSchema,
   publishedContentSchema,
   rollbackContentRequestSchema,
@@ -26,6 +27,32 @@ import {
 const document = contentFixture.document
 
 describe('Phase-2 content HTTP contracts', () => {
+  it('accepts optional explicit types and rejects duplicate IDs or unsupported types', () => {
+    const request = { revisionId: document.revisionId, confirmedOverwrite: true }
+    expect(problemMetadataGenerationRequestSchema.parse(request)).toEqual(request)
+    expect(
+      problemMetadataGenerationRequestSchema.parse({
+        ...request,
+        problemTypes: [
+          { problemId: 101, problemType: 2 },
+          { problemId: 102, problemType: 3 },
+        ],
+      }).problemTypes,
+    ).toHaveLength(2)
+    for (const problemTypes of [
+      [],
+      [{ problemId: 101, problemType: 4 }],
+      [{ problemId: 101, problemType: true }],
+      [
+        { problemId: 101, problemType: 2 },
+        { problemId: 101, problemType: 3 },
+      ],
+    ]) {
+      expect(() =>
+        problemMetadataGenerationRequestSchema.parse({ ...request, problemTypes }),
+      ).toThrow()
+    }
+  })
   it('accepts the bounded Staff revision projection', () => {
     const revision = staffContentRevisionSchema.parse({
       revisionId: document.revisionId,

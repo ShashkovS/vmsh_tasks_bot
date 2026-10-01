@@ -41,6 +41,9 @@ _REFERENCE_TO_PWA_PROBLEM_TYPE = {
     "Письменно": 2,
     "Письменно<-Устно": 3,
 }
+_PWA_TO_REFERENCE_PROBLEM_TYPE = {
+    value: name for name, value in _REFERENCE_TO_PWA_PROBLEM_TYPE.items()
+}
 _LATIN_TO_CYRILLIC_ITEM = str.maketrans({"a": "а", "b": "б", "c": "в", "d": "г"})
 
 
@@ -177,6 +180,7 @@ class MetadataGenerationTarget:
     display_number: str
     source_title: str | None
     problem_id: int
+    problem_type: Literal[1, 2, 3] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -354,6 +358,16 @@ class OpenRouterMetadataGenerator:
             # canonical PWA problem IDs/numbers remain authoritative.
             lesson_number, lesson_group = 0, "н"
         timeout_seconds = min(GENERATION_TIMEOUT_SECONDS, self._timeout_ms / 1_000)
+        problem_type_overrides = None
+        if any(target.problem_type is not None for target in request.targets):
+            if any(target.problem_type is None for target in request.targets):
+                raise MetadataGenerationError("Staff types must cover every target")
+            problem_type_overrides = {
+                _target_identity(target): _PWA_TO_REFERENCE_PROBLEM_TYPE[
+                    target.problem_type
+                ]
+                for target in request.targets
+            }
         try:
             # The contract can retry the generation and fact-review phases.
             # Limit the complete Staff operation, not every individual retry.
@@ -366,6 +380,7 @@ class OpenRouterMetadataGenerator:
                     proxy=self._proxy or None,
                     model=request.model or self._model,
                     locale=request.content_locale,
+                    problem_type_overrides=problem_type_overrides,
                     reasoning_effort=GENERATION_REASONING_EFFORT,
                     max_attempts=2,
                     max_output_tokens=GENERATION_MAX_OUTPUT_TOKENS,
@@ -492,6 +507,10 @@ def _normalize_reference_markup(
         if title is None or problem_type is None:
             raise MetadataGenerationError(
                 "VMSh markup row has invalid title or task type"
+            )
+        if target.problem_type is not None and problem_type != target.problem_type:
+            raise MetadataGenerationError(
+                "Generated task type differs from the Staff override"
             )
         if problem_type == 1:
             raw_answer_type = generated_row.get("ans_type")
