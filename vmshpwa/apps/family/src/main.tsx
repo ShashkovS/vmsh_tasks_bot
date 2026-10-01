@@ -96,7 +96,7 @@ export function FamilyAuthenticatedApplication({ runtime }: { runtime: RuntimeCo
 
 // The catalog is activated before the first render: startup, update and
 // offline fallback screens are translated too. See `docs/i18n.md`.
-void bootstrapBranding('family', catalogLoaders).then(
+void bootstrapBranding('family', catalogLoaders, rootElement).then(
   (profile) => {
     const brandName = profile.name
     document.title = t`${brandName} — кабинет родителя`

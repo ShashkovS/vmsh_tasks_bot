@@ -7,10 +7,12 @@
     "typecheck": "tsc --noEmit"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./locales/*": "./src/locales/*"
   },
   "dependencies": {
     "@vmsh/contracts": "workspace:*",
-    "@vmsh/i18n": "workspace:*"
+    "@vmsh/i18n": "workspace:*",
+    "@lingui/core": "catalog:"
   }
 }

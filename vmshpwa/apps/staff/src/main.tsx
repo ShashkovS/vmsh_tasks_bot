@@ -45,7 +45,7 @@ if (!rootElement) throw new Error('Root element is missing')
 
 // The catalog is activated before the first render, so the runtime startup
 // screen is translated too. See `docs/i18n.md`.
-void bootstrapBranding('staff', catalogLoaders).then(
+void bootstrapBranding('staff', catalogLoaders, rootElement).then(
   (profile) => {
     const brandName = profile.name
     document.title = t`${brandName} — учитель и администратор`

@@ -795,6 +795,9 @@ importers:
 
   packages/branding:
     dependencies:
+      '@lingui/core':
+        specifier: 'catalog:'
+        version: 6.7.0(@babel/core@7.29.7(supports-color@8.1.1))(@babel/types@7.29.7)
       '@vmsh/contracts':
         specifier: workspace:*
         version: link:../contracts

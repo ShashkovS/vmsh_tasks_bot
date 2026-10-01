@@ -15,7 +15,7 @@ const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element is missing')
 
 // The landing page follows the language last chosen on this device.
-void bootstrapBranding('landing', catalogLoaders).then(
+void bootstrapBranding('landing', catalogLoaders, rootElement).then(
   (profile) => {
     const brandName = profile.name
     document.title = t`${brandName} — математический кружок`

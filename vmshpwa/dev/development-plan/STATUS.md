@@ -3657,3 +3657,16 @@ retained under deploy/releases/tlfprep-20261001-consolidated-a7bccbc1. Isolated
 TLF migration/performance rehearsal passed: 75 migrations, integrity ok, both
 courses remain disabled for in-person attendance and all three Zoom receipts
 preserved. No portal has been switched to the candidate yet.
+
+Pre-cutover integration found a real branding regression: cold starts during
+nginx 502/maintenance 503 bypassed the existing recovery boundary and displayed
+the catalog failure screen. Rollout remains held while branding GETs join the
+shared service transport, with a translated pre-brand waiting screen and
+prolonged recovery. No fallback/default identity mounts before validation.
+Implementation: packages/branding/src/index.ts and startup.ts; regression:
+e2e/smooth-redeploy.spec.ts. Rebuild both host candidates after this fix.
+
+Branding recovery fix passes focused transport/bootstrap/locale tests (20 cases),
+three startup Storybook scenarios, complete TypeScript checks and catalog checks.
+Chromium/WebKit real maintenance, form, mark and photo-outbox scenarios pass;
+the final Firefox gate remains in progress before cutover.

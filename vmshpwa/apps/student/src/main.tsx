@@ -97,7 +97,7 @@ export function StudentAuthenticatedApplication({ runtime }: { runtime: RuntimeC
 
 // The catalog is activated before the first render: startup, update and
 // offline fallback screens are translated too. See `docs/i18n.md`.
-void bootstrapBranding('student', catalogLoaders).then(
+void bootstrapBranding('student', catalogLoaders, rootElement).then(
   (profile) => {
     const brandName = profile.name
     document.title = t`${brandName} — школьник`

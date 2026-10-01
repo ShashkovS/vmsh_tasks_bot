@@ -9,6 +9,7 @@ import { formatter } from '@lingui/format-po'
  */
 export const catalogOwners = [
   'packages/ui',
+  'packages/branding',
   'packages/content',
   'packages/product',
   'packages/app-shell',

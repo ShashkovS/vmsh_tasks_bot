@@ -25,6 +25,12 @@ identity lives in the repository; global administrators select a profile at
   [Manifest generator](../../helpers/pwa/branding.py) and
   [push icons](../packages/offline/src/push-branding.ts) use the selected profile.
 
+Startup branding uses the shared [service transport](../packages/contracts/src/service-availability.ts)
+and [translated waiting screen](../packages/branding/src/startup.ts). During a
+502/503/504 or declared maintenance it retries automatically, including cold
+starts and prolonged updates, before mounting a validated identity. The same
+[real outage scenarios](../e2e/smooth-redeploy.spec.ts) cover runtime and branding.
+
 Selection is revalidated on page load and cached locally for offline startup.
 Changes apply on the next page load. Installed PWA name/icon refresh timing is
 controlled by the browser; manifest URLs, application IDs and scopes stay stable.

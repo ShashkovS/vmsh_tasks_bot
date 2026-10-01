@@ -3,10 +3,14 @@ import {
   brandingCacheName,
   brandAssetBase,
   brandingSelectionSchema,
+  pwaOfflineReadFetch,
+  serviceAvailabilitySnapshot,
+  subscribeServiceAvailability,
   type BrandProfile,
   type BrandingSelection,
 } from '@vmsh/contracts'
 import { bootstrapLocale, type CatalogLoaders } from '@vmsh/i18n'
+import { renderBrandingWaiting } from './startup'
 
 const cacheKey = 'vmsh:branding:v1'
 
@@ -14,7 +18,7 @@ export async function fetchBranding(
   audience: string,
   signal?: AbortSignal,
 ): Promise<BrandingSelection> {
-  const response = await fetch(`/${audience}/api/v1/branding`, {
+  const response = await pwaOfflineReadFetch(`/${audience}/api/v1/branding`, {
     credentials: 'same-origin',
     cache: 'no-store',
     ...(signal ? { signal } : {}),
@@ -29,13 +33,34 @@ export async function fetchBranding(
 export async function bootstrapBranding(
   audience: string,
   loaders: CatalogLoaders,
+  startupRoot?: HTMLElement,
 ): Promise<BrandProfile> {
+  let cachedSelection: BrandingSelection | undefined
+  try {
+    const parsed = brandingSelectionSchema.safeParse(
+      JSON.parse(window.localStorage.getItem(cacheKey) ?? 'null'),
+    )
+    if (parsed.success) cachedSelection = parsed.data
+  } catch {
+    /* Storage is optional. */
+  }
+  if (startupRoot) {
+    await bootstrapLocale(
+      loaders,
+      cachedSelection ? brandProfile(cachedSelection.profileId).defaultLocale : 'ru',
+    )
+  }
+  // docs/smooth-redeploy.md: public identity participates in the same recovery
+  // loop as runtime/auth, before any protected content or default brand mounts.
+  const showWaiting = () => {
+    const state = serviceAvailabilitySnapshot()
+    if (startupRoot && state.state !== 'ready') renderBrandingWaiting(startupRoot, state)
+  }
+  const stopWaiting = startupRoot ? subscribeServiceAvailability(showWaiting) : () => {}
+  showWaiting()
   let selection: BrandingSelection
   try {
-    selection = await fetchBranding(
-      audience === 'landing' ? 'student' : audience,
-      AbortSignal.timeout(5000),
-    )
+    selection = await fetchBranding(audience === 'landing' ? 'student' : audience)
     try {
       window.localStorage.setItem(cacheKey, JSON.stringify(selection))
     } catch {
@@ -48,15 +73,10 @@ export async function bootstrapBranding(
       (error instanceof DOMException && ['TimeoutError', 'AbortError'].includes(error.name))
     ))
       throw error
-    let value: unknown = null
-    try {
-      value = JSON.parse(window.localStorage.getItem(cacheKey) ?? 'null')
-    } catch {
-      /* No usable offline copy. */
-    }
-    const cached = brandingSelectionSchema.safeParse(value)
-    if (!cached.success) throw error
-    selection = cached.data
+    if (!cachedSelection) throw error
+    selection = cachedSelection
+  } finally {
+    stopWaiting()
   }
   // Make the same public selection available to offline push notifications.
   const cacheAudience = audience === 'landing' ? 'student' : audience
