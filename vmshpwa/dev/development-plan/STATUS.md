@@ -15,6 +15,12 @@ build и актуальность schema inventory. [Команды, снимк�
 production-сервера 1 октября; начаты commit/integration и rollout.
 Golden snapshots не изменены.
 
+Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
+107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
+обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
+[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
+Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
+
 ## TLF application rollout — 2026-09-30
 
 Deployed: prep.leaders.tech, fresh independent DB/admin, TLF identity/English,
@@ -3740,7 +3746,6 @@ post-cutover minute. PWA, VMSh Telegram and TLF Zoom are active; shared NATS
 PIDs are unchanged. Index rollback was rehearsed on a server-resident copy and
 is retained in the TLF deployment script. Independent figure work stays outside
 this release. [Requirement, implementation and operational proof](../../docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
-
 
 ## 2026-10-01 — язык и модель генерации metadata (в production)
 

@@ -82,6 +82,36 @@ integration и rollout: VMSh через webhook, TLF через SSH-скрипт
 перенумерована в 0106 после параллельного выпуска 0104.course_metadata_model.
 Генерация PDF и редактор Markdown-картинок вне этой итерации.
 
+## Подготовка production-выпуска — 1 октября 2026
+
+Редактор объединён с выпущенными изменениями метаданных `e8c3edf4`;
+feature commit — `6835cbe5`. Миграция перенумерована в
+`0106.pwa_figure_presentation`, после 0105, сохраняя выпущенную
+`0104.course_metadata_model`. Schema inventory перегенерирован для обеих
+доработок: 498 product objects.
+
+После объединения прошли **138** backend/schema/metadata проверок,
+**107** seed и deploy-data guard проверок, **975** frontend unit и **12** E2E
+в Chromium/Firefox/WebKit (3 минуты), typecheck/lint/i18n и четыре сборки.
+Первый интеграционный E2E обнаружил устаревший digest baseline-v1 после
+миграции метаданных. Отдельное сравнение canonical rows без нового
+`courses.metadata_model` подтвердило прежний digest; изменён только
+ожидаемый digest фикстуры, её прежние данные сохранены.
+
+TLF использует адаптированный предыдущий SSH cutover:
+[deploy_figure_layout.sh](../../docs/deploy/tlf-app/deploy_figure_layout.sh) и
+[figure_layout_data_check.py](../../docs/deploy/tlf-app/figure_layout_data_check.py).
+Скрипт принимает проверенный полный SHA, собирает отдельный frozen release,
+репетирует миграцию на копии, сохраняет backup, останавливает PWA/Zoom/analytics
+writers и сравнивает все прежние product columns. Новый frozen scale проверяется
+отдельно. Runtime/credentials/NATS сохраняются. При ошибке откатываются только
+0106/source/static, без замены БД; поздние правки рисунков блокируют этот откат.
+[Регрессия проверки сохранности](../../pwa_tests/integration/test_tlf_figure_release_guard.py).
+
+Перед переключением сохранены SHA256/MIME **182** прежних публичных JS/CSS
+URL (по 91 на портал) для проверки сохранности открытых вкладок после выпуска.
+Владелец разрешил push/autodeploy VMSh и SSH-выпуск TLF; rollout начинается.
+
 ## Исторический отчёт 15 сентября 2026
 
 Реализован [контракт](../docs/figure-layout.md), с исключённой пользователем

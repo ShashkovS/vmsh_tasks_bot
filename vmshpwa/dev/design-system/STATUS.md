@@ -15,6 +15,12 @@ Popover: размер и размещение слева, действия сп�
 Владелец разрешил production-выпуск на оба сервера 1 октября; rollout начат.
 Golden snapshots не обновлены.
 
+Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
+107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
+обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
+[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
+Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
+
 ## Instance branding — 2026-09-29
 
 Implemented: repository-owned VMSh/TLF profiles, admin selection, persisted
@@ -1926,7 +1932,6 @@ This completes consolidation and the two-portal rollout. Physical-device push,
 external Zoom subscriptions, actual Telegram sends and the cumulative i18n
 performance budget remain their existing separate follow-ups; this rollout does
 not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
-
 
 ## 2026-10-01 — язык и модель генерации metadata (в production)
 

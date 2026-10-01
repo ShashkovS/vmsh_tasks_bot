@@ -22,6 +22,12 @@ E2E проходят; typecheck/lint/i18n/build и schema inventory провер
 Генерация PDF и картинки в Markdown вне итерации. Владелец разрешил
 production-выпуск на оба сервера 1 октября; integration/rollout начат.
 
+Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
+107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
+обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
+[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
+Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
+
 ## Результат
 
 Admin загружает условия либо общий файл подсказок и решений одного уровня или пакет урока, получает diagnostics и missing-assets flow, проверяет настоящий PWA/Telegram preview и публикует либо планирует конкретную revision по уровню. Первичная загрузка создаёт все найденные задачи автоматически; сопоставление появляется только при несовместимом изменении структуры уже существующего листка. Print-раздел откладывается во вторую версию.
@@ -658,7 +664,6 @@ pass; scoped ESLint, content TypeScript, i18n catalog check and diff check pass.
 Frontend commands used installed node_modules/.bin to avoid pnpm registry
 verification. No backend/compiler changes or deployment are needed for the
 source fix; the running application receives it with its next frontend build.
-
 
 ### 2026-10-01 — язык и модель metadata
 
