@@ -3764,3 +3764,16 @@ HTML-валидацию идентификатора модели; pageerror о�
 По 25 публичных HTTP-проверок, health и живые формы настройки курсов — PASS.
 TLF использует английский язык бренда, VMSH — русский; прежние модели курсов
 и attendance-настройки сохранены. [Production proof](../../docs/metadata-generation.md#production--1-октября-2026).
+
+
+## 2026-10-01 — TLF metadata generation recovery
+
+[Incident and implementation](../../docs/metadata-generation.md#english-tex-generation-failure--1-october-2026):
+English TeX aliases/sections and inline teacher fields now reach the legacy
+OpenRouter contract; missing Russian lesson/group markers no longer block PWA
+generation. Canonical problem identities and stored source remain intact.
+Structured API failures keep their translated explanation; real ambiguous
+network failures use the active UI language instead of a bilingual string.
+29 domain tests, 13 transport tests, types, lint, i18n and Staff build PASS;
+actual TLF source recognized all five problems and teacher fields. Deployment
+and a real owner-requested generation on `gl-1` are pending verification.

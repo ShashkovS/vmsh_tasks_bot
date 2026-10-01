@@ -16,6 +16,8 @@ from typing import Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from helpers.consts import ANS_TYPES_DECODER
+from helpers.pwa.content import dialect
+from helpers.pwa.content.scanner import ParserLimits
 from helpers.pwa.i18n import N_, translate
 from models.pwa.content import ANSWER_TYPE_VALUES
 from models.pwa.metadata_generation import DEFAULT_METADATA_MODEL
@@ -225,6 +227,61 @@ def _optional_text(value: str | None) -> str | None:
     return stripped or None
 
 
+def _contract_latex(source: str) -> str:
+    """Adapt PWA dialect tokens to the legacy markup contract, never stored TeX.
+
+    See docs/metadata-generation.md. The compiler's vocabulary/scanner handles
+    aliases and paired environments without touching math, comments or macros.
+    """
+
+    commands = {
+        "problem": "задача",
+        "eproblem": "кзадача",
+        "answer": "ответ",
+        "eanswer": "кответ",
+        "solution": "решение",
+        "esolution": "крешение",
+        "hint": "указание",
+        "ehint": "куказание",
+        "пункт": "пункт",
+        "раздел": "раздел",
+        "НомерЛистка": "НомерЛистка",
+    }
+    tokens = dialect.scan_commands(
+        source,
+        start=0,
+        end=len(source),
+        limits=ParserLimits(),
+        skip_environments=frozenset(
+            {
+                "align",
+                "align*",
+                "comment",
+                "equation",
+                "equation*",
+                "gather",
+                "gather*",
+                "picture",
+                "tikzpicture",
+                "verbatim",
+                "Verbatim",
+                "lstlisting",
+                "minted",
+            }
+        ),
+    )
+    parts: list[str] = []
+    cursor = 0
+    for token in tokens:
+        replacement = commands.get(token.name)
+        if replacement is None:
+            continue
+        parts.extend((source[cursor : token.start], "\\" + replacement + " "))
+        cursor = token.end
+    parts.append(source[cursor:])
+    return "".join(parts)
+
+
 def _user_prompt(request: MetadataGenerationRequest) -> str:
     """Keep the long TeX prefix before the small variable target table.
 
@@ -287,16 +344,22 @@ class OpenRouterMetadataGenerator:
                 "LaTeX source is too large for metadata generation"
             )
 
+        latex_text = _contract_latex(request.latex_text)
         try:
             lesson_number, lesson_group = infer_lesson_identity(
-                request.latex_text, request.source_filename
+                latex_text, request.source_filename
             )
-            timeout_seconds = min(GENERATION_TIMEOUT_SECONDS, self._timeout_ms / 1_000)
+        except ValueError:
+            # Legacy row IDs are discarded by _normalize_reference_markup;
+            # canonical PWA problem IDs/numbers remain authoritative.
+            lesson_number, lesson_group = 0, "н"
+        timeout_seconds = min(GENERATION_TIMEOUT_SECONDS, self._timeout_ms / 1_000)
+        try:
             # The contract can retry the generation and fact-review phases.
             # Limit the complete Staff operation, not every individual retry.
             async with asyncio.timeout(timeout_seconds):
                 generated = await generate_lesson_json(
-                    request.latex_text,
+                    latex_text,
                     lesson_number,
                     lesson_group,
                     api_key=key,

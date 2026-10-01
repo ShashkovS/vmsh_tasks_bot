@@ -8,6 +8,13 @@ export type ServiceAvailability = {
 const ready: ServiceAvailability = { state: 'ready', since: 0, prolonged: false }
 const statusSchema = z.object({ state: z.enum(['ready', 'updating']) })
 const updatingErrorSchema = z.object({ error: z.object({ code: z.literal('service_updating') }) })
+const applicationErrorSchema = z.object({
+  error: z.object({
+    code: z.string().min(1),
+    message: z.string().min(1),
+    requestId: z.string().min(1),
+  }),
+})
 
 /** docs/smooth-redeploy.md: one recovery loop, never replay an ambiguous write. */
 export function createServiceTransport(options: {
@@ -15,6 +22,7 @@ export function createServiceTransport(options: {
   origin: string
   random?: () => number
   now?: () => number
+  unconfirmedMessage?: () => string
   onEpisode?: (event: { state: string; durationMs: number; prolonged: boolean }) => void
 }) {
   let snapshot = ready
@@ -147,8 +155,8 @@ export function createServiceTransport(options: {
         error: {
           code: 'request_not_confirmed',
           message:
-            // eslint-disable-next-line lingui/no-unlocalized-strings -- transport can recover before catalogs load; P8 bilingual fallback
-            'Сервер не подтвердил действие. Проверьте результат перед повтором; черновик не нужно удалять. · The server did not confirm the action. Check the result before retrying; keep your draft.',
+            options.unconfirmedMessage?.() ??
+            'The server did not confirm the action. Check the result before retrying; keep your draft.',
           requestId: 'service-recovery',
         },
       }),
@@ -225,6 +233,15 @@ export function createServiceTransport(options: {
       }
       if (![502, 503, 504].includes(response.status)) return response
       const updating = await markedUpdating(response)
+      if (!updating) {
+        // docs/smooth-redeploy.md: a typed API rejection confirms the outcome;
+        // keep its localized explanation and never replay the request.
+        const payload: unknown = await response
+          .clone()
+          .json()
+          .catch(() => null)
+        if (applicationErrorSchema.safeParse(payload).success) return response
+      }
       await response.body?.cancel()
       const pending = recover(runtimePath, updating)
       if (!read && !updating && !idempotent) return unconfirmed()
@@ -242,6 +259,10 @@ export function createServiceTransport(options: {
 }
 
 let browserTransport: ReturnType<typeof createServiceTransport> | undefined
+let unconfirmedMessage: (() => string) | undefined
+export function setServiceUnconfirmedMessage(message: typeof unconfirmedMessage) {
+  unconfirmedMessage = message
+}
 let episodeReporter:
   ((event: { state: string; durationMs: number; prolonged: boolean }) => void) | undefined
 export function setServiceEpisodeReporter(reporter: typeof episodeReporter) {
@@ -255,6 +276,9 @@ export function getServiceTransport() {
         ? location.origin
         : 'http://localhost',
     onEpisode: (event) => episodeReporter?.(event),
+    unconfirmedMessage: () =>
+      unconfirmedMessage?.() ??
+      'The server did not confirm the action. Check the result before retrying; keep your draft.',
   })
   return browserTransport
 }

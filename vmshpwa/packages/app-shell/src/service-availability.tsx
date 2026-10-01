@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   serviceAvailabilitySnapshot,
   subscribeServiceAvailability,
+  setServiceUnconfirmedMessage,
   type ServiceAvailability,
 } from '@vmsh/contracts'
 
@@ -29,6 +30,13 @@ export function ServiceAvailabilityBanner() {
   const state = useServiceAvailability()
   const client = useQueryClient()
   const previous = useRef(state.state)
+  useEffect(() => {
+    setServiceUnconfirmedMessage(
+      () =>
+        t`Сервер не подтвердил действие. Проверьте результат перед повтором; черновик не нужно удалять.`,
+    )
+    return () => setServiceUnconfirmedMessage(undefined)
+  }, [])
   useEffect(() => {
     if (previous.current !== 'ready' && state.state === 'ready')
       void client.invalidateQueries({ type: 'active' })

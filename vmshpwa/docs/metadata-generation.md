@@ -81,3 +81,37 @@ webhook; TLF — подготовленный SSH-скрипт с отдельн
 yoyo при остановленных writers, затем retained source SHA и прежний static
 symlink. Production DB snapshot не подменяется. Сборки и проверки не создавали
 metadata, submissions или synthetic Zoom events в production.
+
+
+## English TeX generation failure — 1 October 2026
+
+The TLF worksheet `gl-1` / `cr-3` failed before calling OpenRouter: the adapter
+required a Russian worksheet/group identifier and the legacy parser only knew
+Russian structural commands. The worksheet uses `problem/eproblem`,
+`answer/eanswer`, `solution/esolution`, `suggestion/esuggestion` and English
+`Sect` headings, with teacher fields inside each problem.
+
+[`_contract_latex`](../../helpers/pwa/content/metadata_generation.py) now reuses
+the compiler's [dialect vocabulary/scanner](../../helpers/pwa/content/dialect.py)
+to adapt semantic tokens for the markup contract. Math, comments, declarations
+and drawings stay intact; stored TeX is unchanged. A worksheet without legacy
+number/group uses a private contract identity: `_normalize_reference_markup`
+still validates and returns only canonical server problem IDs and numbers.
+[The contract parser](../../vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py)
+recognizes English section types and extracts teacher fields inside or after
+the problem without counting answer subitems as separate tasks. The actual TLF
+source parses to five tasks, all answers/hints/solutions, and zero warnings.
+
+[Service transport](../packages/contracts/src/service-availability.ts) now
+returns validated application error envelopes unchanged, including 502/503/504,
+instead of swallowing their localized explanation or replaying a generation
+request. Marked maintenance and ambiguous gateway/network failures retain
+existing recovery behavior. [App-shell](../packages/app-shell/src/service-availability.tsx)
+provides the current Lingui translation for `request_not_confirmed`; the old
+Russian/English concatenated text is removed.
+
+Verification: 29 metadata/domain tests, 13 transport tests, affected TypeScript,
+ESLint/Ruff, i18n sync/coverage and Staff build pass; both HTTP metadata
+regression scenarios pass. A real production generation is checked before
+marking this incident closed.
+No database migration or course model changes are required.

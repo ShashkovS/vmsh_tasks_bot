@@ -137,3 +137,16 @@ Chromium/WebKit/Firefox, включая реальные 20 и 60+ секунд 
 `pwa_tests/test_smooth_redeploy.py`, включая фактическую сборку argv curl
 для всех пяти вариантов. Скрипт требует установки от root по разделу выше;
 push исходника не заменяет установленную копию.
+
+
+## Structured application errors — 1 October 2026
+
+`createServiceTransport` preserves a validated API error envelope with code,
+message and request ID, even for HTTP 502/503/504. A confirmed metadata/provider
+failure must keep its translated explanation and must not enter deploy
+recovery or replay a generation request. Marked `service_updating` still takes
+precedence. HTML/malformed gateway responses and network exceptions keep the
+existing ambiguous-write policy. `ServiceAvailabilityBanner` supplies the
+active Lingui translation for that message; before catalogs are ready the
+transport uses a single English fallback. See [TLF metadata incident](metadata-generation.md#english-tex-generation-failure--1-october-2026)
+and `packages/contracts/src/service-availability.test.ts`.

@@ -514,12 +514,12 @@ def _mask_structure_ignored(text: str) -> str:
 
 
 def _map_section(raw: str) -> ProblemType | None:
-    lowered = re.sub(r"[^а-яёa-z]", "", raw.lower())
-    if "тест" in lowered:
+    lowered = raw.lower()
+    if "тест" in lowered or re.search(r"\b(?:tests?|quiz(?:zes)?)\b", lowered):
         return "Тест"
-    if "письм" in lowered:
+    if "письм" in lowered or re.search(r"\b(?:written|writing)\b", lowered):
         return "Письменно"
-    if "устн" in lowered or "доп" in lowered:
+    if "устн" in lowered or "доп" in lowered or re.search(r"\b(?:oral|spoken|verbal)\b", lowered):
         return "Письменно<-Устно"
     return None
 
@@ -732,9 +732,19 @@ def parse_lesson_structure(
         tail_end = close_end + section_after.start() if section_after else next_start
         tail = cleaned_latex[close_end:tail_end]
 
-        answer = _extract_named_block(tail, "ответ")
-        solution = _extract_named_block(tail, "решение")
-        hint = _extract_named_block(tail, "указание")
+        # PWA worksheets allow teacher fields inside the problem, as well as
+        # the historical placement after its closing token (metadata-generation.md).
+        teacher_fields = statement + "\n" + tail
+        answer = _extract_named_block(teacher_fields, "ответ")
+        solution = _extract_named_block(teacher_fields, "решение")
+        hint = _extract_named_block(teacher_fields, "указание")
+        for field_name in ("ответ", "решение", "указание"):
+            statement = re.sub(
+                rf"\\{field_name}\b.*?\\к{field_name}\b",
+                "",
+                statement,
+                flags=re.DOTALL | re.IGNORECASE,
+            ).strip()
         statement_parts = _split_puncts(statement)
         answer_parts = _split_puncts(answer) if answer else []
         if len(statement_parts) > len(PUNCTS):

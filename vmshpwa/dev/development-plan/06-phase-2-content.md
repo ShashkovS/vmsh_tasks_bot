@@ -673,3 +673,12 @@ reviewable draft: язык бренда для двух проходов, мод
 Реализовано в `apps/pwa_api/content_routes.py`,
 `helpers/pwa/content/metadata_generation.py`, OpenRouter-контракте и редакторе курса.
 Проверки и ограничения записаны в [STATUS.md](STATUS.md) и документации настройки.
+
+
+### Metadata generation: English TeX compatibility — 1 October 2026
+
+[TLF incident](../../docs/metadata-generation.md#english-tex-generation-failure--1-october-2026):
+the generator reuses the PWA dialect vocabulary for English/mixed structural
+commands, recognizes English task-type headings and teacher fields inside the
+problem. Canonical server IDs remain authoritative even without a legacy
+worksheet/group marker. Structured API errors retain their localized messages.

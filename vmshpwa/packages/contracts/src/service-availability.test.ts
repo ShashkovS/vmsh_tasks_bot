@@ -105,6 +105,55 @@ it('does not intercept storage origins, business errors or invalid successful ru
   expect(t.getSnapshot().state).toBe('ready')
 })
 
+it.each([502, 503, 504])(
+  'preserves a structured API failure with HTTP %s without recovery or replay',
+  async (status) => {
+    const payload = {
+      error: {
+        code: 'metadata_generation_failed',
+        message: 'Could not generate metadata. Try again.',
+        requestId: 'request-123',
+      },
+    }
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(Response.json(payload, { status }))
+    const transport = createServiceTransport({ fetch, origin: 'https://school.test' })
+    const response = await transport.fetch(
+      '/staff/api/v1/group-lessons/gl-1/metadata-grid/generate',
+      { method: 'POST', body: '{}' },
+    )
+    expect(response.status).toBe(status)
+    expect(await response.json()).toEqual(payload)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(transport.getSnapshot().state).toBe('ready')
+  },
+)
+
+it('uses the current UI translation for ambiguous writes and keeps recovery running', async () => {
+  vi.useFakeTimers()
+  let message = 'The server did not confirm the action.'
+  const fetch = vi
+    .fn<typeof globalThis.fetch>()
+    .mockResolvedValueOnce(new Response('gateway', { status: 502 }))
+    .mockImplementation(() => Promise.resolve(Response.json({ state: 'ready' })))
+  const transport = createServiceTransport({
+    fetch,
+    origin: 'https://school.test',
+    random: () => 0,
+    unconfirmedMessage: () => message,
+  })
+  const first = await transport.fetch('/staff/api/v1/save', { method: 'POST' })
+  expect((await first.json()).error.message).toBe(message)
+  expect(transport.getSnapshot().state).toBe('reconnecting')
+  await vi.advanceTimersByTimeAsync(1000)
+  message = 'Сервер не подтвердил действие.'
+  fetch.mockResolvedValueOnce(new Response('gateway', { status: 502 }))
+  const second = await transport.fetch('/staff/api/v1/save', { method: 'POST' })
+  expect((await second.json()).error.message).toBe(message)
+  await vi.advanceTimersByTimeAsync(1000)
+})
+
 it.each([
   ['/student/api/v1/auth/me', undefined],
   [
