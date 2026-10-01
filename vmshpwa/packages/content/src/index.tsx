@@ -42,7 +42,11 @@ export type {
 export { sanitizeSemanticHtml, semanticHtmlTags } from './sanitizer'
 export { ZoomableAssetFigure } from './zoomable-asset-figure'
 export type { MathExpressionProps } from './katex-rendering'
-export type { MathDocumentProps, SemanticMathDocumentProps } from './math-document'
+export type {
+  FigureToolsRenderer,
+  MathDocumentProps,
+  SemanticMathDocumentProps,
+} from './math-document'
 export type { SemanticHtmlSanitizationResult } from './sanitizer'
 export type { ZoomableAssetFigureProps } from './zoomable-asset-figure'
 

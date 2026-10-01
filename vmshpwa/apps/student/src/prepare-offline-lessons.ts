@@ -133,7 +133,13 @@ async function prepareLocked(options: PrepareOfflineLessonsOptions): Promise<Les
       problems,
       problems.conditionRevisionId,
     )
-    add('published-content', [lesson.groupLessonId, 'condition'], condition, condition.revisionId)
+    // Same-source figure publications have distinct identities; docs/figure-layout.md.
+    add(
+      'published-content',
+      [lesson.groupLessonId, 'condition'],
+      condition,
+      `${condition.revisionId}:${condition.publicationId}`,
+    )
   }
   const previous = await readLessonBundle(database, ownerId)
   const prefix = lessonAssetCachePrefix(database.name, ownerId)

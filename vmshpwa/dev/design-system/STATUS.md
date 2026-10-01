@@ -1,5 +1,20 @@
 # Design-system status
 
+## 2026-10-01 — редактор картинок реализован и проверен
+
+[Редактор на рисунке](../../docs/figure-layout.md) использует общие Button/Input/
+Popover: размер и размещение слева, действия справа, у маленьких исходных рисунков
+кнопки под изображением. Есть отдельный центрированный рисунок между исходными
+абзацами (`center-source`), четыре остальных размещения и список скрытых вхождений.
+Проверены доступность и interactions в Storybook, мышь/клавиатура и возврат фокуса,
+320/390/1280 px, light/dark и 200% в Chromium/Firefox/WebKit. Ошибка сохранения
+оставляет предпросмотр и доступную команду обновления данных.
+
+107 backend и 974 frontend unit проходят; typecheck/lint/i18n/build и browser gates
+зелёные. [Stories, снимки и доказательства](../figure-layout-report.md).
+Владелец разрешил production-выпуск на оба сервера 1 октября; rollout начат.
+Golden snapshots не обновлены.
+
 ## Instance branding — 2026-09-29
 
 Implemented: repository-owned VMSh/TLF profiles, admin selection, persisted

@@ -2,6 +2,8 @@ import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import {
   useContext,
+  useEffect,
+  useRef,
   useMemo,
   useState,
   type CSSProperties,
@@ -9,7 +11,7 @@ import {
   type ReactNode,
 } from 'react'
 
-import type { WebFigureAvailableAsset } from '@vmsh/contracts'
+import type { FigurePlacement, WebFigureAvailableAsset } from '@vmsh/contracts'
 
 import { FigureLoadingContext } from './figure-loading'
 
@@ -28,6 +30,9 @@ export interface ZoomableAssetFigureProps {
   floatHint?: 'left' | 'right'
   widthHint?: string
   scale?: number
+  widthRem?: number
+  placement?: FigurePlacement
+  tools?: ReactNode
   onScaleCycle?: (nextScale: number) => void
 }
 
@@ -51,9 +56,9 @@ function canFloat(
 }
 
 /**
- * A figure has no scroll viewport or auxiliary zoom controls. A Staff click
- * writes the next editorial scale; a Student click only changes local reading
- * scale and is never sent to the server.
+ * Shared responsive image canvas. Staff injects occurrence-scoped controls;
+ * readers change only local scale. The optional legacy scale callback remains
+ * compatible; see docs/figure-layout.md and Staff FigureLayoutEditor.
  */
 export function ZoomableAssetFigure({
   asset,
@@ -63,21 +68,70 @@ export function ZoomableAssetFigure({
   floatHint,
   widthHint,
   scale,
+  widthRem,
+  placement,
+  tools,
   onScaleCycle,
 }: ZoomableAssetFigureProps) {
   const imageLoading = useContext(FigureLoadingContext)
+  const figureRef = useRef<HTMLElement>(null)
+  const [space, setSpace] = useState({ width: 0, figureWidth: 0, rem: 16 })
+  useEffect(() => {
+    const figure = figureRef.current
+    const parent = figure?.parentElement
+    if (!parent) return
+    const measure = () => {
+      const style = getComputedStyle(parent)
+      setSpace({
+        width: Math.max(
+          0,
+          parent.clientWidth -
+            (Number.parseFloat(style.paddingLeft) || 0) -
+            (Number.parseFloat(style.paddingRight) || 0),
+        ),
+        figureWidth: figure.getBoundingClientRect().width,
+        rem: Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16,
+      })
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(parent)
+    observer.observe(figure)
+    return () => observer.disconnect()
+  }, [])
   const [studentScale, setStudentScale] = useState<number>()
   const [failedSource, setFailedSource] = useState<string | null>(null)
-  const savedScale = normalizedScale(scale)
+  const savedScale = widthRem === undefined ? normalizedScale(scale) : 1
   const displayedScale = studentScale ?? savedScale
   const imageFailed = failedSource === asset.src
-  const floats = useMemo(
-    () => canFloat(floatHint, widthHint, displayedScale),
-    [displayedScale, floatHint, widthHint],
-  )
+  // Explicit editor placement is container-aware, including nested parts.
+  // Legacy source hints retain their original behavior; docs/figure-layout.md.
+  const floats = useMemo(() => {
+    if (placement?.startsWith('float-')) {
+      const desired =
+        widthRem === undefined
+          ? widthHint?.endsWith('%')
+            ? (Number.parseFloat(widthHint) / 100) * space.width * displayedScale
+            : widthHint?.endsWith('px')
+              ? Number.parseFloat(widthHint) * displayedScale
+              : space.width * displayedScale
+          : widthRem * space.rem * displayedScale
+      return (
+        space.width >= 32 * space.rem &&
+        space.width - Math.min(desired, space.width) - 1.25 * space.rem >= 16 * space.rem
+      )
+    }
+    return placement?.startsWith('center-') ? false : canFloat(floatHint, widthHint, displayedScale)
+  }, [placement, floatHint, widthHint, widthRem, displayedScale, space])
+  const centered = placement?.startsWith('center-') || (placement?.startsWith('float-') && !floats)
+  const small =
+    widthRem === undefined
+      ? space.figureWidth > 0 && space.figureWidth < 6 * space.rem
+      : Math.min(widthRem * space.rem * displayedScale, space.width || Infinity) < 6 * space.rem
 
   const cycleScale = () => {
-    if (imageFailed) return
+    if (imageFailed || tools) return
     if (onScaleCycle) {
       onScaleCycle(nextScale(savedScale, STAFF_SCALE_LADDER))
       return
@@ -97,45 +151,53 @@ export function ZoomableAssetFigure({
 
   return (
     <figure
+      ref={figureRef}
       className={['vmsh-asset-figure', className].filter(Boolean).join(' ')}
+      data-placement={placement}
+      data-centered={centered || undefined}
+      data-editor-small={small || undefined}
       data-float-hint={floats ? floatHint : undefined}
       data-testid="asset-figure"
       style={
         {
-          '--vmsh-source-width': widthHint ?? '100%',
+          '--vmsh-source-width': widthRem === undefined ? (widthHint ?? '100%') : `${widthRem}rem`,
           '--vmsh-figure-scale': String(displayedScale),
           '--vmsh-print-figure-scale': String(savedScale),
         } as CSSProperties
       }
     >
-      <div
-        aria-label={instruction}
-        className="vmsh-figure-canvas"
-        data-testid="figure-canvas"
-        onClick={cycleScale}
-        onKeyDown={handleKeyDown}
-        role="button"
-        tabIndex={0}
-      >
-        {imageFailed ? (
-          <div className="vmsh-figure-missing" role="status">
-            <strong>
-              <Trans>Рисунок недоступен.</Trans>
-            </strong>
-            <span>{alt}</span>
-          </div>
-        ) : (
-          <img
-            alt={alt}
-            decoding="async"
-            draggable={false}
-            height={asset.height}
-            loading={imageLoading}
-            onError={() => setFailedSource(asset.src)}
-            src={asset.src}
-            width={asset.width}
-          />
-        )}
+      <div className="vmsh-figure-image">
+        <div
+          aria-label={instruction}
+          className="vmsh-figure-canvas"
+          data-testid="figure-canvas"
+          onClick={tools ? undefined : cycleScale}
+          onKeyDown={tools ? undefined : handleKeyDown}
+          role={tools ? undefined : 'button'}
+          tabIndex={tools ? undefined : 0}
+          data-editing={tools ? true : undefined}
+        >
+          {imageFailed ? (
+            <div className="vmsh-figure-missing" role="status">
+              <strong>
+                <Trans>Рисунок недоступен.</Trans>
+              </strong>
+              <span>{alt}</span>
+            </div>
+          ) : (
+            <img
+              alt={alt}
+              decoding="async"
+              draggable={false}
+              height={asset.height}
+              loading={imageLoading}
+              onError={() => setFailedSource(asset.src)}
+              src={asset.src}
+              width={asset.width}
+            />
+          )}
+        </div>
+        {tools ? <div className="vmsh-figure-tools">{tools}</div> : null}
       </div>
       {caption ? <figcaption>{caption}</figcaption> : null}
     </figure>

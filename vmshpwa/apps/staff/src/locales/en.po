@@ -837,6 +837,18 @@ msgstr "Multiple titles match in one group. Select one problem before merging."
 msgid "В первой версии пароли хранятся для внешней почтовой рассылки. Не вставляйте сюда production-данные на общем устройстве."
 msgstr "In the first version, passwords are retained for external email delivery. Do not paste production credentials here on a shared device."
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "В предыдущую задачу"
+msgstr "Move to previous problem"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "В следующую задачу"
+msgstr "Move to next problem"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "В тексте без обтекания"
+msgstr "In text without wrapping"
+
 #: apps/staff/src/live-marking-grid.tsx
 msgid "В этом списке пока нет школьников."
 msgstr "There are no students in this list yet."
@@ -862,7 +874,7 @@ msgid "Введите фамилию школьника."
 msgstr "Enter the student’s surname."
 
 #: apps/staff/src/figure-layout-editor.tsx
-msgid "Вернуть исходное расположение"
+msgid "Вернуть исходное оформление"
 msgstr "Restore original layout"
 
 #. placeholder {0}: rollbackRevision?.data.revisionNumber ?? '—'
@@ -883,8 +895,10 @@ msgstr "Version"
 msgid "версия {0}"
 msgstr "version {0}"
 
+#. placeholder {0}: revision?.data.revisionNumber ?? '—'
 #. placeholder {0}: selected.version
 #: apps/staff/src/classroom-event-page.tsx
+#: apps/staff/src/content-page.tsx
 msgid "Версия {0}"
 msgstr "Version {0}"
 
@@ -1187,6 +1201,10 @@ msgstr "Paste rows from a table"
 #: apps/staff/src/teacher-batch-tsv.ts
 msgid "вставьте хотя бы одну строку"
 msgstr "paste at least one row"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Вступление"
+msgstr "Introduction"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Вся посылка будет перенесена в целевую очередь. Вы перейдёте к следующей работе."
@@ -1501,6 +1519,15 @@ msgstr "This action will change the visible published version."
 msgid "Действие не выполнено"
 msgstr "Action failed"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Действия с рисунком"
+msgstr "Figure actions"
+
+#. placeholder {0}: figure.alt
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Действия с рисунком: {0}"
+msgstr "Figure actions: {0}"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "День недели"
 msgstr "Day of the week"
@@ -1616,6 +1643,10 @@ msgstr "Share"
 msgid "Доля решённых задач"
 msgstr "Share of problems solved"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Дополнительные настройки"
+msgstr "Advanced settings"
+
 #: apps/staff/src/staff-student-directory-page.tsx
 msgid "Доступ в кабинеты"
 msgstr "Account access"
@@ -1666,6 +1697,10 @@ msgstr "Their global access is determined by the role and cannot be edited here.
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Есть изменения"
 msgstr "Unsaved changes"
+
+#: apps/staff/src/content-page.tsx
+msgid "Есть неопубликованные изменения оформления рисунков."
+msgstr "There are unpublished changes to figure layout."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Есть несохранённые изменения."
@@ -1787,6 +1822,10 @@ msgstr "Loading activity feed"
 msgid "Загружаем название…"
 msgstr "Loading title…"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Загружаем настройки рисунков…"
+msgstr "Loading figure settings…"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем посылки…"
 msgstr "Loading submissions…"
@@ -1803,10 +1842,6 @@ msgstr "Loading room assignments…"
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Загружаем редактор…"
 msgstr "Loading editor…"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Загружаем рисунки…"
-msgstr "Loading figures…"
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем сводку…"
@@ -2658,10 +2693,6 @@ msgstr "The route is included in the first-version information architecture."
 msgid "Массовая загрузка"
 msgstr "Bulk upload"
 
-#: apps/staff/src/staff-worksheet-preview.tsx
-msgid "Масштаб рисунков для публикации"
-msgstr "Figure scale for publication"
-
 #: apps/staff/src/content-page.tsx
 msgid "Материал уже изменён. Обновляем версии и публикации…"
 msgstr "The material has changed. Refreshing versions and publications…"
@@ -2718,6 +2749,10 @@ msgstr "Confusing"
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "На сервере временно недоступен инструмент обработки рисунков."
 msgstr "The figure processing tool is temporarily unavailable on the server."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "На узком экране рисунок уменьшится до доступной ширины."
+msgstr "On narrow screens the figure fits the available width."
 
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "На устройстве есть изменения от другой версии. Они сохранены; сравните схему перед подтверждением."
@@ -3218,8 +3253,8 @@ msgid "Не удалось создать преподавателей. Пров
 msgstr "Could not create teachers. Check the connection and try again."
 
 #: apps/staff/src/figure-layout-editor.tsx
-msgid "Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие."
-msgstr "Could not save or load the layout. Refresh the data and try again."
+msgid "Не удалось сохранить или загрузить оформление рисунков."
+msgstr "Could not save or load figure layout."
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Не удалось сохранить окно."
@@ -3588,6 +3623,14 @@ msgstr "Processing…"
 #: apps/staff/src/pages.tsx
 msgid "Обсуждение"
 msgstr "Discussion"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Обтекание слева"
+msgstr "Float left"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Обтекание справа"
+msgstr "Float right"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Общее окно связано со всеми выбранными группами. Изменения времени, ссылки и отмена применяются ко всем этим группам."
@@ -4045,9 +4088,21 @@ msgstr "Branding"
 msgid "Оформление применяется ко всем кабинетам этого проекта после обновления страницы. Выбранный пользователем язык сохраняется."
 msgstr "Branding applies to every account area in this project after reloading. Each user’s chosen language is preserved."
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Оформление рисунка"
+msgstr "Figure layout"
+
+#: apps/staff/src/content-page.tsx
+msgid "Оформление сохранено, но не удалось обновить Telegram-превью."
+msgstr "Layout saved, but the Telegram preview could not be refreshed."
+
 #: apps/staff/src/branding-page.tsx
 msgid "Оформление уже изменено. Обновите страницу."
 msgstr "Branding has already changed. Reload the page."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Оформление уже изменилось. Обновите данные и повторите действие."
+msgstr "The layout has changed. Refresh and try again."
 
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/student-results-history.tsx
@@ -4189,10 +4244,6 @@ msgstr "The first completed calculation will appear here automatically. Original
 msgid "Первый пароль"
 msgstr "Initial password"
 
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Перед ответом и решением"
-msgstr "Before the answer and solution"
-
 #. placeholder {0}: item.movedTo
 #: apps/staff/src/review-series-page.tsx
 msgid "Перенесено в {0}"
@@ -4223,6 +4274,10 @@ msgstr "Move"
 #: apps/staff/src/live-marking-page.tsx
 msgid "Перенос в аудиторию {0}"
 msgstr "Move to room {0}"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Перенос и скрытие"
+msgstr "Move and hide"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Перенос материалов"
@@ -4372,12 +4427,24 @@ msgstr "By group"
 msgid "По задачам"
 msgstr "By problem"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "По исходнику"
+msgstr "Original position"
+
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "По расписанию"
 msgstr "Scheduled"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "По центру перед текстом"
+msgstr "Centered before text"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "По центру после текста"
+msgstr "Centered after text"
 
 #: apps/staff/src/branding-page.tsx
 #: apps/staff/src/bulk-content-upload.tsx
@@ -4748,10 +4815,6 @@ msgstr "Looks like AI"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Правильный ответ"
 msgstr "Correct answer"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Правки появятся у школьников после публикации."
-msgstr "Students will see the changes after publication."
 
 #. placeholder {0}: usernameSuggestion.username
 #: apps/staff/src/student-account-creator.tsx
@@ -5260,6 +5323,19 @@ msgstr "Statistics sections"
 msgid "Разделы устного приёма"
 msgstr "Oral-session sections"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Размер и размещение"
+msgstr "Size and placement"
+
+#. placeholder {0}: figure.alt
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Размер и размещение: {0}"
+msgstr "Size and placement: {0}"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Размещение"
+msgstr "Placement"
+
 #: apps/staff/src/family-digest-panel.tsx
 msgid "Разослано"
 msgstr "Sent"
@@ -5295,18 +5371,6 @@ msgstr "group schedule v2"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Расписание не изменено"
 msgstr "Schedule unchanged"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Расположение рисунков"
-msgstr "Figure layout"
-
-#: apps/staff/src/content-page.tsx
-msgid "Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала."
-msgstr "Layout saved, but some previews could not be refreshed. Open the material again."
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Расположение уже изменилось. Обновите данные и повторите действие."
-msgstr "The layout has changed. Refresh the data and try again."
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Распределение обезличено: график не содержит маркера или позиции отдельного школьника."
@@ -5446,20 +5510,6 @@ msgstr "Solved"
 msgid "Решили"
 msgstr "Solved"
 
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Рисунки"
-msgstr "Figures"
-
-#: apps/staff/src/figure-layout-editor.tsx
-#: apps/staff/src/staff-worksheet-preview.tsx
-msgid "Рисунок"
-msgstr "Figure"
-
-#. placeholder {0}: index + 1
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Рисунок {0}"
-msgstr "Figure {0}"
-
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/revision-assets-recovery.tsx
 msgid "Рисунок TikZ"
@@ -5477,7 +5527,6 @@ msgstr "TikZ figure {logicalAsset}"
 msgid "Рисунок не загрузился"
 msgstr "Figure did not load"
 
-#: apps/staff/src/figure-layout-editor.tsx
 #: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Рисунок недоступен"
 msgstr "Figure unavailable"
@@ -5672,10 +5721,6 @@ msgid "Сервер вернул несовместимый PDF preview"
 msgstr "The server returned an incompatible PDF preview"
 
 #: apps/staff/src/content-page.tsx
-msgid "Сервер вернул несовместимый preview"
-msgstr "The server returned an incompatible preview"
-
-#: apps/staff/src/content-page.tsx
 msgid "Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу."
 msgstr "The server does not support automatic TikZ preparation. Refresh the page."
 
@@ -5763,7 +5808,6 @@ msgstr "Hidden in PWA"
 msgid "Скрытые рисунки"
 msgstr "Hidden figures"
 
-#: apps/staff/src/figure-layout-editor.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Скрыть"
 msgstr "Hide"
@@ -5786,8 +5830,8 @@ msgid "Скрыть пароль"
 msgstr "Hide password"
 
 #: apps/staff/src/figure-layout-editor.tsx
-msgid "Слева"
-msgstr "Left"
+msgid "Скрыть рисунок"
+msgstr "Hide figure"
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Следующая работа подготовлена"
@@ -6248,10 +6292,6 @@ msgstr "Saving…"
 msgid "Список школьников"
 msgstr "Student directory"
 
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Справа"
-msgstr "Right"
-
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Среднее число решённых"
 msgstr "Average number solved"
@@ -6293,10 +6333,6 @@ msgstr "Status"
 #: apps/staff/src/student-results-history.tsx
 msgid "Статус проверки неизвестен"
 msgstr "Review status is unknown"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Сторона"
-msgstr "Side"
 
 #. placeholder {0}: attachment.ordinal + 1
 #: apps/staff/src/review-reaction-inbox-page.tsx
@@ -6558,6 +6594,10 @@ msgstr "This group has no published classes yet. Choose a different problem leve
 msgid "Убрать файл {0}"
 msgstr "Remove file {0}"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Увеличить ширину"
+msgstr "Increase width"
+
 #: apps/staff/src/product-analytics-page.tsx
 msgid "удалён"
 msgstr "deleted"
@@ -6619,6 +6659,10 @@ msgstr "specify at least one child login"
 #: apps/staff/src/account-provisioning-tsv.ts
 msgid "укажите хотя бы одну доступную группу"
 msgstr "specify at least one available group"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Уменьшить ширину"
+msgstr "Decrease width"
 
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
@@ -6999,6 +7043,14 @@ msgstr "Course template"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Шаблон курса и переопределения групп. Уже созданные занятия не сдвигаются автоматически."
 msgstr "Course template and group overrides. Classes already created are not moved automatically."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Ширина рисунка"
+msgstr "Figure width"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Ширина, rem"
+msgstr "Width, rem"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "шк."

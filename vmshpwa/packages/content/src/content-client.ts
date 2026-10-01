@@ -120,6 +120,7 @@ export interface PublicationSlotVersion {
 }
 
 export interface PublishContentInput {
+  expectedLayoutVersion?: number
   groupLessonId: string
   kind: ContentMaterialKind
   revisionId: string
@@ -273,6 +274,7 @@ export interface ContentApiClient {
     revisionId: string,
     scheduled?: PublicationSlotVersion,
     options?: ContentRequestOptions,
+    targetPublicationId?: string,
   ): Promise<VersionedContentResource<ContentPublication>>
   cancelScheduled(
     current: PublicationSlotVersion,
@@ -799,6 +801,9 @@ class BrowserContentApiClient implements ContentApiClient {
       kind: contentMaterialKindSchema.parse(input.kind),
       revisionId: publicIdSchema.parse(input.revisionId),
       mode,
+      ...(input.expectedLayoutVersion === undefined
+        ? {}
+        : { expectedLayoutVersion: input.expectedLayoutVersion }),
       scheduledLocalTime: scheduledLocalTime ?? null,
       businessTimezone: businessTimezone ?? null,
       expectedCurrentPublicationId: current ? publicIdSchema.parse(current.publicationId) : null,
@@ -821,6 +826,7 @@ class BrowserContentApiClient implements ContentApiClient {
     revisionId: string,
     scheduled?: PublicationSlotVersion,
     options: ContentRequestOptions = {},
+    targetPublicationId?: string,
   ): Promise<VersionedContentResource<ContentPublication>> {
     this.#requireStaff()
     const validatedCurrent = validatedPublicationSlot(current)!
@@ -831,6 +837,9 @@ class BrowserContentApiClient implements ContentApiClient {
         method: 'POST',
         body: JSON.stringify(
           rollbackContentRequestSchema.parse({
+            ...(targetPublicationId === undefined
+              ? {}
+              : { targetPublicationId: publicIdSchema.parse(targetPublicationId) }),
             revisionId: publicIdSchema.parse(revisionId),
             expectedScheduledPublicationId: validatedScheduled
               ? validatedScheduled.publicationId

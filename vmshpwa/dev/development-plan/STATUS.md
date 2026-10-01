@@ -1,5 +1,20 @@
 # Статус плана разработки
 
+## 2026-10-01 — редактор картинок реализован и проверен
+
+[Редактор на рисунке](../../docs/figure-layout.md) доступен для условий, подсказок
+и решений: две кнопки, ширина 0,5–80 rem, перенос/скрытие/восстановление, независимые
+вхождения, черновик и публикация/откат оформления одного исходника. Уточнение
+пользователя включено: `center-source` сохраняет рисунок между исходными абзацами
+без обтекания. Student/Family и offline различают публикации одной revision.
+
+Проверено: 107 backend, 974 frontend unit, Storybook accessibility/interactions,
+изолированный Chromium/Firefox/WebKit E2E, typecheck/lint/i18n, четыре production
+build и актуальность schema inventory. [Команды, снимки и границы проверки](../figure-layout-report.md).
+Миграция 0106 фиксирует исторические масштабы. Владелец разрешил выпуск на оба
+production-сервера 1 октября; начаты commit/integration и rollout.
+Golden snapshots не изменены.
+
 ## TLF application rollout — 2026-09-30
 
 Deployed: prep.leaders.tech, fresh independent DB/admin, TLF identity/English,
@@ -3705,7 +3720,6 @@ This completes consolidation and the two-portal rollout. Physical-device push,
 external Zoom subscriptions, actual Telegram sends and the cumulative i18n
 performance budget remain their existing separate follow-ups; this rollout does
 not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
-
 
 ### 2026-10-01 — Recheck receipt lookup index (complete)
 

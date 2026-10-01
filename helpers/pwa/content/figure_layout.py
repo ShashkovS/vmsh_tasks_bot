@@ -128,72 +128,141 @@ def figure_catalog(document: dict) -> list[dict]:
 
 
 def apply_figure_layout(document: dict, entries: list[dict]) -> dict:
-    """Move/remove whole occurrences without changing the original document."""
+    """Compose occurrence-scoped drafts; see vmshpwa/docs/figure-layout.md.
+
+    ``source`` updates presentation in place. Entries without placement retain
+    the previous side-based insertion semantics for saved legacy drafts.
+    """
+    import math
+
     result = copy.deepcopy(document)
     if not isinstance(entries, list) or len(entries) > 2000:
         raise FigureLayoutError("invalid_entries")
     if not entries:
         return result
-    catalog = {row["occurrenceId"]: row["figure"] for row in figure_catalog(document)}
+    rows = {row["occurrenceId"]: row for row in figure_catalog(document)}
     problems = {p["ordinal"]: p for p in result["problems"]}
-    ids = set()
+    by_id = {}
+    required = {
+        "occurrenceId",
+        "targetOrdinal",
+        "targetPart",
+        "section",
+        "order",
+        "hidden",
+    }
+    optional = {"side", "placement", "widthRem", "scale"}
+    placements = {
+        "source",
+        "center-source",
+        "center-before",
+        "center-after",
+        "float-left",
+        "float-right",
+    }
     for entry in entries:
-        if not isinstance(entry, dict) or set(entry) != {
-            "occurrenceId",
-            "targetOrdinal",
-            "targetPart",
-            "section",
-            "order",
-            "side",
-            "hidden",
-        }:
-            raise FigureLayoutError("invalid_entry")
         if (
-            not isinstance(entry["occurrenceId"], str)
-            or type(entry["targetOrdinal"]) is not int
-            or not isinstance(entry["side"], str)
+            not isinstance(entry, dict)
+            or not required <= set(entry)
+            or set(entry) - required - optional
+        ):
+            raise FigureLayoutError("invalid_entry")
+        identity = entry["occurrenceId"]
+        if not isinstance(identity, str) or identity not in rows or identity in by_id:
+            raise FigureLayoutError("invalid_occurrence")
+        if (
+            type(entry["targetOrdinal"]) is not int
+            or type(entry["hidden"]) is not bool
+            or type(entry["order"]) is not int
+            or not 0 <= entry["order"] <= 2000
             or not isinstance(entry["section"], str)
+            or not isinstance(entry.get("side", "right"), str)
+            or not isinstance(entry.get("placement", "float-right"), str)
+            or entry.get("side", "right") not in {"left", "right"}
+            or entry.get("placement", "float-right") not in placements
             or (
                 entry["targetPart"] is not None
                 and not isinstance(entry["targetPart"], str)
             )
         ):
-            raise FigureLayoutError("invalid_entry")
-        identity = entry["occurrenceId"]
-        if identity not in catalog or identity in ids:
-            raise FigureLayoutError("invalid_occurrence")
-        ids.add(identity)
-        target = problems.get(entry["targetOrdinal"])
-        if target is None:
-            raise FigureLayoutError("invalid_target")
-        if (
-            entry["side"] not in {"left", "right"}
-            or type(entry["hidden"]) is not bool
-            or type(entry["order"]) is not int
-            or not 0 <= entry["order"] <= 2000
-        ):
             raise FigureLayoutError("invalid_placement")
+        for field, lower, upper in (("widthRem", 0.5, 80), ("scale", 0.25, 2.5)):
+            if field in entry:
+                value = entry[field]
+                if (
+                    type(value) not in {int, float}
+                    or not math.isfinite(value)
+                    or not lower <= value <= upper
+                ):
+                    raise FigureLayoutError("invalid_size")
+        if "widthRem" in entry and entry["widthRem"] * 2 != round(
+            entry["widthRem"] * 2
+        ):
+            raise FigureLayoutError("invalid_size")
+        source = rows[identity]
+        if entry.get("placement") in {"source", "center-source"}:
+            if (entry["targetOrdinal"], entry["targetPart"], entry["section"]) != (
+                source["sourceOrdinal"],
+                source["sourcePart"],
+                source["sourceSection"],
+            ):
+                raise FigureLayoutError("invalid_target")
+        else:
+            target = problems.get(entry["targetOrdinal"])
+            if target is None and not (
+                entry["targetOrdinal"] == 0
+                and source["sourceOrdinal"] == 0
+                and entry["targetPart"] is None
+            ):
+                raise FigureLayoutError("invalid_target")
+            if entry["targetPart"] is not None and entry[
+                "targetPart"
+            ] not in target.get("partLabels", []):
+                raise FigureLayoutError("invalid_part")
         if entry["section"] not in (
             {"common", "answer", "solution"}
             if document["materialKind"] == "solution"
             else {"common"}
         ):
             raise FigureLayoutError("invalid_section")
-        part = entry["targetPart"]
-        # Allowed labels are supplied by the compiler, including empty parts.
-        labels = target.get("partLabels", [])
-        if part is not None and part not in labels:
-            raise FigureLayoutError("invalid_part")
+        by_id[identity] = entry
+
+    def presentation(figure, entry):
+        for field in ("widthRem", "scale"):
+            if field in entry:
+                figure[field] = entry[field]
+        placement = entry.get("placement")
+        if placement and placement != "source":
+            figure["placement"] = placement
+            if placement.startswith("float-"):
+                figure["floatHint"] = placement.removeprefix("float-")
+            else:
+                figure.pop("floatHint", None)
+        elif placement is None:
+            figure["floatHint"] = entry.get("side", "right")
+        return figure
 
     def remove(blocks):
         kept = []
         for block in blocks:
-            if block.get("occurrenceId") in ids:
-                continue
+            entry = by_id.get(block.get("occurrenceId"))
+            if entry:
+                if entry["hidden"] or entry.get("placement") not in {
+                    "source",
+                    "center-source",
+                }:
+                    continue
+                presentation(block, entry)
             if "blocks" in block:
                 block["blocks"] = remove(block["blocks"])
+                if not block["blocks"]:
+                    continue
             if "items" in block:
-                block["items"] = [remove(item) for item in block["items"]]
+                block["items"] = [
+                    value for item in block["items"] if (value := remove(item))
+                ]
+                if not block["items"]:
+                    continue
             kept.append(block)
         return kept
 
@@ -202,19 +271,25 @@ def apply_figure_layout(document: dict, entries: list[dict]) -> dict:
         for field in ("preambleBlocks", "blocks", "trailingBlocks"):
             if field in problem:
                 problem[field] = remove(problem[field])
-    for entry in sorted(
-        entries, key=lambda e: (e["order"], e["occurrenceId"]), reverse=True
-    ):
-        if entry["hidden"]:
-            continue
-        target = problems[entry["targetOrdinal"]]["blocks"]
-        figure = copy.deepcopy(catalog[entry["occurrenceId"]])
-        figure["floatHint"] = entry["side"]
-        label = {"answer": "Ответ", "solution": "Решение"}.get(entry["section"])
+
+    # Group each destination so appending and prepending share stable ordering.
+    groups = {}
+    for entry in entries:
+        if not entry["hidden"] and entry.get("placement") not in {
+            "source",
+            "center-source",
+        }:
+            key = (
+                entry["targetOrdinal"],
+                entry["section"],
+                entry["targetPart"],
+                entry.get("placement") == "center-after",
+            )
+            groups.setdefault(key, []).append(entry)
+    for (ordinal, section, part_label, after), values in groups.items():
+        target = problems[ordinal]["blocks"] if ordinal else result["introduction"]
+        label = {"answer": "Ответ", "solution": "Решение"}.get(section)
         start = 0
-        end = next(
-            (i for i, b in enumerate(target) if b.get("type") == "heading"), len(target)
-        )
         if label:
             start = next(
                 (
@@ -226,40 +301,80 @@ def apply_figure_layout(document: dict, entries: list[dict]) -> dict:
                 -1,
             )
             if start < 0:
-                target.extend(
-                    [
-                        {
-                            "type": "heading",
-                            "level": 3,
-                            "children": [{"type": "text", "value": label}],
-                        }
-                    ]
+                target.append(
+                    {
+                        "type": "heading",
+                        "level": 3,
+                        "children": [{"type": "text", "value": label}],
+                    }
                 )
                 start = len(target)
-            end = next(
-                (
-                    i
-                    for i in range(start, len(target))
-                    if target[i].get("type") == "heading"
-                ),
-                len(target),
-            )
-        if entry["targetPart"] is not None:
+        end = next(
+            (
+                i
+                for i in range(start, len(target))
+                if target[i].get("type") == "heading"
+            ),
+            len(target),
+        )
+        if part_label is not None:
             part = next(
                 (
                     b
                     for b in target[start:end]
-                    if b.get("type") == "subpart" and b["label"] == entry["targetPart"]
+                    if b.get("type") == "subpart" and b["label"] == part_label
                 ),
                 None,
             )
             if part is None:
-                part = {"type": "subpart", "label": entry["targetPart"], "blocks": []}
-                target.insert(start, part)
-            part["blocks"].insert(0, figure)
-        else:
-            target.insert(start, figure)
+                part = {"type": "subpart", "label": part_label, "blocks": []}
+                target.insert(end, part)
+            target = part["blocks"]
+            start, end = 0, len(target)
+        figures = [
+            presentation(copy.deepcopy(rows[e["occurrenceId"]]["figure"]), e)
+            for e in sorted(values, key=lambda e: (e["order"], e["occurrenceId"]))
+        ]
+        at = end if after else start
+        target[at:at] = figures
     return result
+
+
+def figure_presentation(document: dict) -> list[dict]:
+    """Compare figure composition, ignoring titles and other editorial text."""
+    output = []
+
+    def visit(blocks, path):
+        for index, block in enumerate(blocks):
+            here = [*path, index]
+            if block.get("type") == "figure":
+                output.append(
+                    {
+                        "path": here,
+                        **{
+                            key: block[key]
+                            for key in (
+                                "occurrenceId",
+                                "asset",
+                                "widthHint",
+                                "widthRem",
+                                "scale",
+                                "floatHint",
+                                "placement",
+                            )
+                            if key in block
+                        },
+                    }
+                )
+            visit(block.get("blocks", []), [*here, "blocks"])
+            for item_index, item in enumerate(block.get("items", [])):
+                visit(item, [*here, "items", item_index])
+
+    visit(document.get("introduction", []), ["introduction"])
+    for problem in document["problems"]:
+        for field in ("preambleBlocks", "blocks", "trailingBlocks"):
+            visit(problem.get(field, []), [problem["ordinal"], field])
+    return output
 
 
 def render_layout_telegram(document: dict) -> str:

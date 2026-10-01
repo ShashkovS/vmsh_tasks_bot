@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 7a0108f653e4980ee06865065a96da43d8090a197bc285080406e73f1261c897
+-- Product schema SHA-256: dd71ab432bf845ad07ee3efda0a7175e29067a8d74b357f44b20e91fd99a548a
 
 CREATE TABLE achievement_definitions
 (
@@ -1903,7 +1903,7 @@ CREATE TABLE publication_figure_layouts (
  telegram_html TEXT,
  telegram_sha256 TEXT,
  entries_json TEXT NOT NULL
-);
+, legacy_scales_json TEXT NOT NULL DEFAULT '{}');
 
 CREATE TABLE push_subscriptions
 (

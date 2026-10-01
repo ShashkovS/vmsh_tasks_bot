@@ -1881,6 +1881,10 @@ msgstr "Check the entered answer"
 msgid "Проверьте версию импорта"
 msgstr "Check the import version"
 
+#: apps/pwa_api/content_routes.py
+msgid "Проверьте версию оформления"
+msgstr "Check the layout version"
+
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте версию письменного решения"
 msgstr "Check the written-solution version"
@@ -2266,6 +2270,10 @@ msgstr "Check the submission"
 msgid "Проверьте причину переноса"
 msgstr "Check the move reason"
 
+#: apps/pwa_api/content_routes.py
+msgid "Проверьте публикацию для отката"
+msgstr "Check the publication to restore"
+
 #: apps/pwa_api/audit_routes.py
 msgid "Проверьте размер страницы"
 msgstr "Check the page size"
@@ -2414,6 +2422,10 @@ msgstr "The child's profile is unavailable"
 #: apps/pwa_api/news_routes.py
 msgid "Публикация не найдена"
 msgstr "Post not found"
+
+#: apps/pwa_api/content_routes.py
+msgid "Публикация относится к другому материалу"
+msgstr "This publication belongs to another material"
 
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Публикация уже изменилась. Обновите список."

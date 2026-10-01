@@ -200,7 +200,7 @@ it('retains the complete previous copy when a later level fails, then replaces i
   expect(
     next.documents
       .filter((entry) => entry.kind === 'published-content')
-      .every((entry) => entry.version === 'revision-fixed-condition'),
+      .every((entry) => entry.version === 'revision-fixed-condition:publication-copy'),
   ).toBe(true)
   expect(await readLessonBundle(options.database, options.ownerId)).toEqual(next)
 })
@@ -250,4 +250,24 @@ it('resumes downloaded images when the connection fails before the final manifes
   const firstUrl = options.fetchAsset.mock.calls[0]![0]
   await prepareOfflineLessons(options)
   expect(options.fetchAsset.mock.calls.filter(([url]) => url === firstUrl)).toHaveLength(1)
+})
+
+it('refreshes a figure publication with the same source revision in the offline copy', async () => {
+  const { options } = await setup()
+  const first = await prepareOfflineLessons(options)
+  const original = await options.contentClient.published({
+    groupLessonId: 'lesson-level-0',
+    kind: 'condition',
+  })
+  options.contentClient.published.mockImplementation(async (input) => ({
+    ...original,
+    groupLessonId: input.groupLessonId,
+    publicationId: 'publication-resized',
+    document: { ...original.document, title: 'Новый снимок оформления' },
+  }))
+  const next = await prepareOfflineLessons(options)
+  const copies = next.documents.filter((entry) => entry.kind === 'published-content')
+  expect(copies.every((entry) => entry.version.endsWith(':publication-resized'))).toBe(true)
+  expect(await readLessonBundle(options.database, options.ownerId)).toEqual(next)
+  expect(next).not.toEqual(first)
 })

@@ -4335,6 +4335,19 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
         headers=_headers(unsafe=True, if_match=attached.headers["ETag"]),
     )
     assert compiled.status == 200, await compiled.text()
+    await _review_compiled_problem_metadata(fixture, revision_public_id=revision_id)
+    published = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision_id,
+    )
+    assert published.status == 201, await published.text()
+    public_before = await (
+        await _student_read(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+        )
+    ).json()
     updated = await fixture.client.put(
         f"/staff/api/v1/content/revisions/{revision_id}/figure-scale",
         json={"assetId": asset_id, "scale": 1.5},
@@ -4366,10 +4379,11 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
     assert updated_again_figure["scale"] == 1.75
     scale_rows = fixture.factory.run_read(
         lambda connection: connection.execute(
-            "SELECT asset_id, scale FROM content_figure_scales"
+            "SELECT entries_json FROM content_figure_layouts"
         ).fetchall()
     )
-    assert [(row["asset_id"], row["scale"]) for row in scale_rows] == [(asset_id, 1.75)]
+    assert len(scale_rows) == 1
+    assert json.loads(scale_rows[0]["entries_json"])[0]["scale"] == 1.75
     web_derivative_count = fixture.factory.run_read(
         lambda connection: connection.execute(
             "SELECT count(*) AS count FROM content_derivatives AS derivative "
@@ -4392,6 +4406,14 @@ async def test_staff_figure_scale_is_persisted_in_the_web_derivative(
         if block["type"] == "figure"
     )
     assert persisted_figure["scale"] == 1.75
+    assert (
+        await (
+            await _student_read(
+                fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+            )
+        ).json()
+        == public_before
+    )
 
 async def test_upload_compile_preview_and_three_material_publications_are_independent(
     content_http: ContentHttpFixture,
@@ -6017,3 +6039,157 @@ async def test_student_offline_lessons_include_allowed_groups_without_switching(
     assert forbidden_selector.status == 422
     anonymous = await fixture.client.get("/student/api/v1/offline-lessons", headers=_headers())
     assert anonymous.status == 401
+
+
+async def test_figure_presentation_only_draft_publish_conflict_and_exact_rollback(
+    content_http,
+):
+    """docs/figure-layout.md: same-source publication is a new immutable snapshot."""
+    fixture = content_http
+    compiled, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="presentation.tex",
+        source=r"\задача До.\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}После.\кзадача",
+    )
+    revision = compiled["revisionId"]
+    published = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision,
+    )
+    assert published.status == 201, await published.text()
+    first = await published.json()
+    public_before = await (
+        await _student_read(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+        )
+    ).json()
+    route = f"/staff/api/v1/content/revisions/{revision}/figure-layout"
+
+    async def layout():
+        response = await fixture.client.get(
+            route, cookies=_cookie(fixture, "admin"), headers=_headers()
+        )
+        assert response.status == 200, await response.text()
+        return await response.json()
+
+    async def family_content():
+        response = await fixture.client.get(
+            f"/family/api/v1/children/u-903101/group-lessons/{fixture.group_lesson_a}/content/condition",
+            cookies=_cookie(fixture, "family"),
+            headers=_headers(),
+        )
+        assert response.status == 200, await response.text()
+        return await response.json()
+
+    base = await layout()
+    assert base["hasUnpublishedChanges"] is False and base["canPublish"] is True
+    assert (await family_content())["document"] == public_before["document"]
+    row = base["figures"][0]
+    entry = dict(
+        occurrenceId=row["occurrenceId"],
+        targetOrdinal=row["sourceOrdinal"],
+        targetPart=row["sourcePart"],
+        section=row["sourceSection"],
+        order=0,
+        side="right",
+        hidden=False,
+        placement="source",
+        widthRem=12,
+    )
+
+    async def save(version, entries):
+        return await fixture.client.put(
+            route,
+            json=dict(version=version, entries=entries),
+            cookies=_cookie(fixture, "admin"),
+            headers=_headers(unsafe=True),
+        )
+
+    saved = await save(0, [entry])
+    assert saved.status == 200, await saved.text()
+    draft = await saved.json()
+    assert draft["hasUnpublishedChanges"] and draft == await layout()
+    assert (
+        await (
+            await _student_read(
+                fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+            )
+        ).json()
+        == public_before
+    )
+    assert (await family_content())["document"] == public_before["document"]
+    reverted = await save(1, [])
+    assert (await reverted.json())["hasUnpublishedChanges"] is False
+    saved = await save(2, [entry])
+    draft = await saved.json()
+    payload = dict(
+        groupLessonId=fixture.group_lesson_a,
+        kind="condition",
+        revisionId=revision,
+        mode="publish",
+        scheduledLocalTime=None,
+        businessTimezone=None,
+        expectedCurrentPublicationId=first["publicationId"],
+        expectedCurrentVersion=first["version"],
+        expectedScheduledPublicationId=None,
+        expectedScheduledVersion=None,
+        expectedLayoutVersion=2,
+    )
+    conflict = await fixture.client.post(
+        "/staff/api/v1/publications",
+        json=payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=published.headers["ETag"]),
+    )
+    assert conflict.status == 409, await conflict.text()
+    payload["expectedLayoutVersion"] = draft["version"]
+    second_response = await fixture.client.post(
+        "/staff/api/v1/publications",
+        json=payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=published.headers["ETag"]),
+    )
+    assert second_response.status == 201, await second_response.text()
+    second = await second_response.json()
+    assert (
+        second["revisionId"] == revision
+        and second["publicationId"] != first["publicationId"]
+    )
+    assert (await layout())["hasUnpublishedChanges"] is False
+    public_after = await (
+        await _student_read(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+        )
+    ).json()
+    figure = next(
+        b
+        for b in public_after["document"]["problems"][0]["blocks"]
+        if b["type"] == "figure"
+    )
+    assert figure["widthRem"] == 12
+    family_after = await family_content()
+    assert family_after["document"] == public_after["document"]
+    assert family_after["publicationId"] == second["publicationId"]
+    rollback = await fixture.client.post(
+        f"/staff/api/v1/publications/{second['publicationId']}/rollback",
+        json=dict(
+            revisionId=revision,
+            targetPublicationId=first["publicationId"],
+            expectedScheduledPublicationId=None,
+            expectedScheduledVersion=None,
+        ),
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=second_response.headers["ETag"]),
+    )
+    assert rollback.status == 201, await rollback.text()
+    rolled_back = await (
+        await _student_read(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+        )
+    ).json()
+    assert rolled_back["document"] == public_before["document"]
+    assert (await layout())["hasUnpublishedChanges"] is True

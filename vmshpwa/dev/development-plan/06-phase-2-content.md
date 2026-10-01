@@ -1,5 +1,27 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+## 2026-10-01 — редактор картинок реализован и проверен
+
+Принятый [редактор на рисунке](../../docs/figure-layout.md) реализован в
+[FigureLayoutEditor](../../apps/staff/src/figure-layout-editor.tsx), общем
+[renderer](../../packages/content/src/zoomable-asset-figure.tsx),
+[domain composition](../../../helpers/pwa/content/figure_layout.py) и
+[publication API](../../../apps/pwa_api/content_routes.py). Ширина 0,5–80 rem,
+центрирование перед/после и между исходными абзацами без обтекания, float слева/
+справа, перенос/скрытие/восстановление работают для конкретного occurrenceId.
+
+Серверный dirty flag переживает reload и исчезает при возврате к опубликованной
+композиции. Публикация/планирование проверяют expectedLayoutVersion и фиксируют
+снимок атомарно; targetPublicationId позволяет откат оформления той же revision.
+Миграция [0106](../../../migrations/0106.pwa_figure_presentation.sql) замораживает
+старые масштабы. Student/Family и offline обновляются по publicationId.
+
+107 backend, 974 frontend unit, Storybook и изолированный Chromium/Firefox/WebKit
+E2E проходят; typecheck/lint/i18n/build и schema inventory проверены.
+[Отчёт с командами и browser captures](../figure-layout-report.md).
+Генерация PDF и картинки в Markdown вне итерации. Владелец разрешил
+production-выпуск на оба сервера 1 октября; integration/rollout начат.
+
 ## Результат
 
 Admin загружает условия либо общий файл подсказок и решений одного уровня или пакет урока, получает diagnostics и missing-assets flow, проверяет настоящий PWA/Telegram preview и публикует либо планирует конкретную revision по уровню. Первичная загрузка создаёт все найденные задачи автоматически; сопоставление появляется только при несовместимом изменении структуры уже существующего листка. Print-раздел откладывается во вторую версию.

@@ -1,4 +1,88 @@
-# Рисунки в материалах — отчёт, 15 сентября 2026
+# Рисунки в материалах — реализация и проверка
+
+## Инкремент 1 октября 2026
+
+Реализован [принятый план](../docs/figure-layout.md): редактор на самом рисунке,
+общий для условий, подсказок и решений. Левая кнопка задаёт rem-ширину и размещение,
+правая переносит/скрывает рисунок и открывает дополнительные настройки. Старые
+отдельные панели убраны. Маленькие изображения, включая узкие рисунки исходника,
+сохраняют читаемый размер и получают кнопки под изображением. Открытие/закрытие
+меню без изменения поля не создаёт override ширины.
+
+Дополнение пользователя включено: «В тексте без обтекания» (`center-source`)
+оставляет рисунок между исходными абзацами, центрирует и снимает float. Переход
+из этого режима в конкретный пункт или раздел явно меняет размещение. Изменение
+только ширины сохраняет исходное место. Повторы одного файла остаются независимыми.
+
+Правки автоматически сохраняются в версионируемый черновик. После reload Staff
+видит неопубликованное оформление и может опубликовать его без повторной загрузки/
+review. До публикации Student/Family получают прежний снимок; после публикации
+того же TeX меняется publicationId и обновляются web/офлайн-данные. Публикация
+и планирование проверяют версию черновика внутри транзакции. История и rollback
+поддерживают несколько снимков одной revision.
+
+### Проверки текущего инкремента
+
+| Gate                                   | Команда и результат                                                                                                                                                                                                                                                                      |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain / HTTP / repository / migration | `VMSH_RUNTIME_PROFILE=pwa-e2e NATS_SERVER= .venv/bin/python -m pytest -q pwa_tests/domain/test_figure_layout.py pwa_tests/integration/test_content_http_api.py pwa_tests/integration/test_content_repository.py pwa_tests/integration/test_figure_layout_migration.py` — **107 passed**. |
+| Frontend unit                          | Из `vmshpwa`: `vitest run --project unit --maxWorkers=2 --testTimeout=20000` — **974 passed**, 192 файла. После финального уточнения маленьких исходных рисунков дополнительно проходят **21** проверка затронутых renderer/editor.                                                      |
+| Storybook / axe                        | `vitest run --config vitest.storybook.config.ts apps/staff/src/figure-layout-editor.stories.tsx packages/content/src/math-document.stories.tsx` — **18 passed**: width/placement, save failure, tiny source, абсолютные размеры и mobile; без исключений accessibility.                  |
+| Реальные браузеры                      | `make pwa-e2e-figure-layout` — **12 passed**, 2,6 минуты, Chromium, Firefox, WebKit; редактор, печать и PNG/ZIP в ru/en. Runner собирает все четыре приложения и использует изолированную БД/порты/media.                                                                                |
+| Статические проверки                   | `make pwa-typecheck pwa-lint pwa-i18n-check`, отдельный tools TypeScript, scoped Prettier и Ruff — проходят. После изменения текста выполнен `make pwa-i18n-extract`.                                                                                                                    |
+| Schema                                 | `python -m vmshpwa.scripts.schema_inventory check` — 498 product objects, fixtures/`docs/db_structure.sql` синхронизированы. Миграция 0106: up/down/up, frozen legacy scales и immutable trigger.                                                                                        |
+
+Использован установленный pnpm 11.15.1 из локального package-manager-store:
+системный bootstrap пытался обращаться к registry. Frontend unit ограничен двумя
+workers из-за нагрузки машины; timeouts не изменены в конфигурации проекта.
+Python выдаёт предупреждения сторонних библиотек; тесты проходят.
+
+Ключевые доказательства:
+
+- Публикация → width 12 rem → неизменность Student/Family → reload Staff и dirty
+  flag → повторная публикация того же исходника → 192 px у школьника без reload.
+- Все пять размещений, ширины 0,5/12/80 rem, обе границы листка, перенос в обе
+  стороны с общим блоком, пункт, hide/restore и независимость повторного asset.
+- Domain/HTTP проверяют разделы решений, исчезновение dirty при возврате,
+  stale layout/publication 409, точный rollback по targetPublicationId и сохранение
+  отложенной ширины 12 rem после последующей правки черновика до 80 rem.
+- Старый figure-scale API тоже оставляет опубликованное содержимое неизменным.
+- Offline unit заменяет содержимое при новом publicationId той же revision;
+  общий replacement hook проверяется для Student/Family.
+- Viewport 320/390/1280 px, обе темы и root font-size 200%; keyboard Enter/Escape
+  и возврат фокуса. Storybook проверяет расположение кнопок под узким исходным
+  рисунком и отсутствие изменения ширины при открытии меню.
+- PNG экспорт: ZIP содержит две задачи шириной 1600 px, красный рисунок есть
+  только во второй. Telegram projection сохраняет порядок/подписи/скрытие.
+
+### Снимки и границы проверки
+
+Выбранные снимки сохранены в `figure-layout-2026-10-01/`; анимации меню завершены
+до съёмки. Это артефакты отчёта, golden snapshots не обновлялись.
+
+- [Chromium desktop light](figure-layout-2026-10-01/chromium/editor-1280-light.png),
+  [320 px dark](figure-layout-2026-10-01/chromium/editor-320-dark.png),
+  [200%](figure-layout-2026-10-01/chromium/editor-200-percent.png).
+- [WebKit 390 px light](figure-layout-2026-10-01/webkit/editor-390-light.png),
+  [320 px dark](figure-layout-2026-10-01/webkit/editor-320-dark.png).
+- [Firefox desktop dark](figure-layout-2026-10-01/firefox/editor-1280-dark.png),
+  [390 px light](figure-layout-2026-10-01/firefox/editor-390-light.png).
+- [Student до правок](figure-layout-2026-10-01/chromium/student-before.png),
+  [после публикации](figure-layout-2026-10-01/chromium/student-print.png),
+  [PNG ZIP](figure-layout-2026-10-01/chromium/figures.zip).
+
+Полный набор captures всех браузеров находится в ignored `vmshpwa/test-results/`.
+В мобильных кадрах при прокрутке видна закреплённая шапка приложения. WebKit
+использует DPR 2. Физические устройства/касания не проверялись: pointer API и
+доступная клавиатура проверены в браузерах. Family payload проверен HTTP, offline
+обновление — unit; отдельный offline/Family E2E в этом gate не запускался.
+
+Владелец разрешил production-выпуск на оба сервера 1 октября. Начаты commit/
+integration и rollout: VMSh через webhook, TLF через SSH-скрипт. Миграция рисунков
+перенумерована в 0106 после параллельного выпуска 0104.course_metadata_model.
+Генерация PDF и редактор Markdown-картинок вне этой итерации.
+
+## Исторический отчёт 15 сентября 2026
 
 Реализован [контракт](../docs/figure-layout.md), с исключённой пользователем
 генерацией PDF. Изменения находятся в рабочей копии; commit/push и production

@@ -766,6 +766,7 @@ async def _json_object(
     *,
     allowed_fields: frozenset[str],
     max_bytes: int = CONTENT_JSON_BODY_LIMIT_BYTES,
+    optional_fields: frozenset[str] = frozenset(),
 ) -> dict[str, object]:
     if request.content_length is not None and request.content_length > max_bytes:
         raise PwaApiError(
@@ -801,7 +802,11 @@ async def _json_object(
             code="validation_error",
             message="Тело запроса должно быть корректным JSON-объектом",
         ) from error
-    if not isinstance(payload, dict) or set(payload) != allowed_fields:
+    if (
+        not isinstance(payload, dict)
+        or not allowed_fields <= set(payload)
+        or set(payload) - allowed_fields - optional_fields
+    ):
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -2558,6 +2563,8 @@ async def content_figure_layout(request: web.Request) -> web.Response:
             )
         else:
             layout = await repository.get_figure_layout(revision_id=context.revision.id)
+        if request.method == "PUT":
+            layout = await repository.get_figure_layout(revision_id=context.revision.id)
         preview = apply_figure_layout(document, layout["entries"])
     except FigureLayoutError as error:
         raise PwaApiError(
@@ -2565,10 +2572,27 @@ async def content_figure_layout(request: web.Request) -> web.Response:
             code=str(error),
             message="Расположение рисунков недоступно: повторите обработку материала или проверьте выбранные пункты.",
         ) from error
+    readiness = await repository.get_revision_publication_readiness(
+        revision_id=context.revision.id
+    )
+    can_publish = (
+        readiness.is_ready
+        if context.source.kind is ContentKind.CONDITION
+        else readiness.is_structurally_ready
+    )
+    if context.source.kind is ContentKind.SOLUTION:
+        can_publish = (
+            can_publish
+            and await repository.get_lesson_window(
+                group_lesson_id=context.scope.group_lesson_id
+            )
+            is not None
+        )
     return web.json_response(
         {
             "revisionId": context.revision.public_id,
             **layout,
+            "canPublish": can_publish,
             "figures": catalog,
             "document": preview,
         }
@@ -2607,7 +2631,7 @@ async def put_content_figure_scale(request: web.Request) -> web.Response:
     scale = float(raw_scale)
     repository = _repository(request)
     context = await repository.get_revision_context(request.match_info["revision_id"])
-    _staff_actor(request, context.scope)
+    _, actor_user_id = _staff_actor(request, context.scope)
     expected_version = _revision_if_match_version(
         request, public_id=context.revision.public_id
     )
@@ -2657,13 +2681,12 @@ async def put_content_figure_scale(request: web.Request) -> web.Response:
         expected_version=expected_version,
         asset_id=asset_id,
         scale=scale,
+        actor_user_id=actor_user_id,
     )
-    await _invalidate_after_commit(
-        request,
-        scope=context.scope,
-        kind=context.source.kind,
-        reason="staff_figure_scale",
-    )
+    from helpers.pwa.content.figure_layout import apply_figure_layout
+
+    layout = await repository.get_figure_layout(revision_id=context.revision.id)
+    document = apply_figure_layout(document, layout["entries"])
     response = web.json_response(
         {
             "revisionId": context.revision.public_id,
@@ -3013,7 +3036,18 @@ async def update_submission_cutoff(request: web.Request) -> web.Response:
 @content_routes.post("/staff/api/v1/publications")
 @_translate_content_errors
 async def publish_content_revision(request: web.Request) -> web.Response:
-    payload = await _json_object(request, allowed_fields=_PUBLISH_FIELDS)
+    payload = await _json_object(
+        request,
+        allowed_fields=_PUBLISH_FIELDS,
+        optional_fields=frozenset({"expectedLayoutVersion"}),
+    )
+    expected_layout_version = payload.get("expectedLayoutVersion")
+    if expected_layout_version is not None and (
+        type(expected_layout_version) is not int or expected_layout_version < 0
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте версию оформления"
+        )
     group_lesson_public_id = payload["groupLessonId"]
     revision_public_id = payload["revisionId"]
     if not isinstance(group_lesson_public_id, str) or not isinstance(
@@ -3146,6 +3180,7 @@ async def publish_content_revision(request: web.Request) -> web.Response:
         cancel_scheduled=state is PublicationState.PUBLISHED,
         expected_scheduled_public_id=expected_scheduled_id,
         expected_scheduled_version=expected_scheduled_version,
+        expected_layout_version=expected_layout_version,
     )
     await _invalidate_after_commit(
         request,
@@ -3240,7 +3275,11 @@ async def staff_content_history(request: web.Request) -> web.Response:
 @content_routes.post("/staff/api/v1/publications/{publication_id}/rollback")
 @_translate_content_errors
 async def rollback_publication(request: web.Request) -> web.Response:
-    payload = await _json_object(request, allowed_fields=_ROLLBACK_FIELDS)
+    payload = await _json_object(
+        request,
+        allowed_fields=_ROLLBACK_FIELDS,
+        optional_fields=frozenset({"targetPublicationId"}),
+    )
     target_revision_public_id = payload["revisionId"]
     expected_scheduled_id, expected_scheduled_version = _expected_scheduled(payload)
     if not isinstance(target_revision_public_id, str):
@@ -3293,6 +3332,28 @@ async def rollback_publication(request: web.Request) -> web.Response:
             code="version_conflict",
             message="Отложенная публикация уже изменилась. Обновите страницу.",
         )
+    target_publication_id = None
+    target_public_id = payload.get("targetPublicationId")
+    if target_public_id is not None:
+        if not isinstance(target_public_id, str):
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте публикацию для отката",
+            )
+        snapshot = await repository.get_publication_context(target_public_id)
+        if (
+            snapshot.scope.group_lesson_id != current_context.scope.group_lesson_id
+            or snapshot.publication.kind is not current_context.publication.kind
+            or snapshot.revision_public_id != target_revision_public_id
+            or snapshot.publication.published_at is None
+        ):
+            raise PwaApiError(
+                status=422,
+                code="revision_scope_mismatch",
+                message="Публикация относится к другому материалу",
+            )
+        target_publication_id = snapshot.publication.id
     target = await repository.get_revision_context(target_revision_public_id)
     if (
         target.scope.group_lesson_id != current_context.scope.group_lesson_id
@@ -3315,7 +3376,10 @@ async def rollback_publication(request: web.Request) -> web.Response:
         scope=target.scope,
         kind=current_context.publication.kind,
     )
-    if target.revision.id == current_context.publication.revision_id:
+    if target_publication_id == current_context.publication.id or (
+        target_publication_id is None
+        and target.revision.id == current_context.publication.revision_id
+    ):
         raise PwaApiError(
             status=422,
             code="publication_no_change",
@@ -3324,6 +3388,7 @@ async def rollback_publication(request: web.Request) -> web.Response:
     publication = await repository.replace_publication(
         public_id=_public_id("publication-rollback"),
         rollback=True,
+        target_publication_id=target_publication_id,
         group_lesson_id=current_context.scope.group_lesson_id,
         kind=current_context.publication.kind,
         revision_id=target.revision.id,

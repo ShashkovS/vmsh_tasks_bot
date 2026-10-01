@@ -156,6 +156,11 @@ interface ContentBlocksProps {
   renderSubpartActions?: (problem: WebContentProblem, label: string) => ReactNode
 }
 
+export type FigureToolsRenderer = (
+  figure: Extract<WebContentBlock, { type: 'figure' }>,
+) => ReactNode
+const FigureTools = createContext<FigureToolsRenderer | undefined>(undefined)
+
 const HideMaterialHeadings = createContext(false)
 
 function ContentBlocks({
@@ -168,6 +173,7 @@ function ContentBlocks({
 }: ContentBlocksProps) {
   const { i18n } = useLingui()
   const hideHeadings = useContext(HideMaterialHeadings)
+  const renderFigureTools = useContext(FigureTools)
   return blocks.map((block, index) => {
     const key = `${path}-${index}`
     switch (block.type) {
@@ -260,6 +266,9 @@ function ContentBlocks({
                   <InlineNodes nodes={block.caption} path={`${key}-caption`} />
                 </figcaption>
               ) : null}
+              {renderFigureTools ? (
+                <div className="vmsh-figure-tools">{renderFigureTools(block)}</div>
+              ) : null}
             </figure>
           )
         }
@@ -279,7 +288,10 @@ function ContentBlocks({
             {...(onFigureScaleCycle === undefined
               ? {}
               : { onScaleCycle: (nextScale: number) => onFigureScaleCycle(asset, nextScale) })}
-            key={`${key}-${block.asset.assetId}`}
+            {...(block.widthRem === undefined ? {} : { widthRem: block.widthRem })}
+            {...(block.placement === undefined ? {} : { placement: block.placement })}
+            tools={renderFigureTools?.(block)}
+            key={block.occurrenceId ?? `${key}-${block.asset.assetId}`}
           />
         )
       }
@@ -330,6 +342,8 @@ function ContentBlocks({
 /* eslint-enable jsx-a11y/no-noninteractive-tabindex */
 
 export interface SemanticMathDocumentProps {
+  /** Staff-only render slot; docs/figure-layout.md. */
+  renderFigureTools?: FigureToolsRenderer | undefined
   imageLoading?: 'eager' | 'lazy'
   hideProblemHeadings?: boolean
   document: WebContentDocument
@@ -343,6 +357,7 @@ export interface SemanticMathDocumentProps {
 
 /** Renders only an already runtime-validated WebContentDocument v1. */
 export function SemanticMathDocument({
+  renderFigureTools,
   imageLoading = 'lazy',
   hideProblemHeadings = false,
   document,
@@ -355,60 +370,62 @@ export function SemanticMathDocument({
 }: SemanticMathDocumentProps) {
   const documentId = useId()
   return (
-    <FigureLoadingContext.Provider value={imageLoading}>
-      <HideMaterialHeadings.Provider value={hideProblemHeadings}>
-        <MathDocument
-          {...(className === undefined ? {} : { className })}
-          {...(document.title === null || hideProblemHeadings ? {} : { title: document.title })}
-        >
-          <ContentBlocks
-            blocks={document.introduction}
-            path="introduction"
-            {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-          />
-          {document.problems.map((problem) => {
-            const headingId = `${documentId}-problem-${problem.ordinal}`
-            return (
-              <Fragment key={problem.ordinal}>
-                <section
-                  aria-labelledby={hideProblemHeadings ? undefined : headingId}
-                  className="vmsh-problem"
-                >
+    <FigureTools.Provider value={renderFigureTools}>
+      <FigureLoadingContext.Provider value={imageLoading}>
+        <HideMaterialHeadings.Provider value={hideProblemHeadings}>
+          <MathDocument
+            {...(className === undefined ? {} : { className })}
+            {...(document.title === null || hideProblemHeadings ? {} : { title: document.title })}
+          >
+            <ContentBlocks
+              blocks={document.introduction}
+              path="introduction"
+              {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+            />
+            {document.problems.map((problem) => {
+              const headingId = `${documentId}-problem-${problem.ordinal}`
+              return (
+                <Fragment key={problem.ordinal}>
+                  <section
+                    aria-labelledby={hideProblemHeadings ? undefined : headingId}
+                    className="vmsh-problem"
+                  >
+                    <ContentBlocks
+                      blocks={problem.preambleBlocks ?? []}
+                      path={`problem-${problem.ordinal}-preamble`}
+                      {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+                    />
+                    {!hideProblemHeadings ? (
+                      <div className="vmsh-problem-header">
+                        <h2 id={headingId}>
+                          {/* docs/task-titles.md: UI label follows locale; reference/title remain source content. */}
+                          <Trans>Задача {problemReference(problem)}.</Trans>
+                          {problem.title ? <span>«{problem.title}»</span> : null}
+                        </h2>
+                        {renderProblemActions?.(problem)}
+                      </div>
+                    ) : null}
+                    <ContentBlocks
+                      blocks={problem.blocks}
+                      path={`problem-${problem.ordinal}`}
+                      problem={problem}
+                      {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+                      {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+                      {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+                    />
+                    {renderAfterProblem?.(problem)}
+                  </section>
                   <ContentBlocks
-                    blocks={problem.preambleBlocks ?? []}
-                    path={`problem-${problem.ordinal}-preamble`}
+                    blocks={problem.trailingBlocks ?? []}
+                    path={`problem-${problem.ordinal}-trailing`}
                     {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
                   />
-                  {!hideProblemHeadings ? (
-                    <div className="vmsh-problem-header">
-                      <h2 id={headingId}>
-                        {/* docs/task-titles.md: UI label follows locale; reference/title remain source content. */}
-                        <Trans>Задача {problemReference(problem)}.</Trans>
-                        {problem.title ? <span>«{problem.title}»</span> : null}
-                      </h2>
-                      {renderProblemActions?.(problem)}
-                    </div>
-                  ) : null}
-                  <ContentBlocks
-                    blocks={problem.blocks}
-                    path={`problem-${problem.ordinal}`}
-                    problem={problem}
-                    {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
-                    {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
-                    {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-                  />
-                  {renderAfterProblem?.(problem)}
-                </section>
-                <ContentBlocks
-                  blocks={problem.trailingBlocks ?? []}
-                  path={`problem-${problem.ordinal}-trailing`}
-                  {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-                />
-              </Fragment>
-            )
-          })}
-        </MathDocument>
-      </HideMaterialHeadings.Provider>
-    </FigureLoadingContext.Provider>
+                </Fragment>
+              )
+            })}
+          </MathDocument>
+        </HideMaterialHeadings.Provider>
+      </FigureLoadingContext.Provider>
+    </FigureTools.Provider>
   )
 }

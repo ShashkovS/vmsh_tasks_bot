@@ -353,6 +353,10 @@
       {
         "id": "0105.pwa_recheck_receipt_lookup",
         "sha256": "bdb0f20cc579d33c114a369c4721c3da59dad2860c43ed02b455a4b64b19f43b"
+      },
+      {
+        "id": "0106.pwa_figure_presentation",
+        "sha256": "c905ef419e889a89ba3e20371f84d0832d9770b7991a4c0145477fd5e8b3e4c1"
       }
     ],
     "repository_head_status": {
@@ -19327,6 +19331,15 @@
             "name": "entries_json",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": "'{}'",
+            "hidden": 0,
+            "name": "legacy_scales_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -19345,8 +19358,8 @@
         ],
         "indexes": [],
         "name": "publication_figure_layouts",
-        "object_sha256": "2ef841e8a9b9703248793faa43eeddabaa22eeac4201dae36a16c43e309fbed6",
-        "sql": "CREATE TABLE publication_figure_layouts (\n publication_id INTEGER PRIMARY KEY REFERENCES lesson_publications(id),\n layout_version INTEGER NOT NULL,\n document_json TEXT,\n telegram_html TEXT,\n telegram_sha256 TEXT,\n entries_json TEXT NOT NULL\n);",
+        "object_sha256": "9f1072901119845e1f91620f60c96ee78dbda164f494681b0b9ee2323a3d25b9",
+        "sql": "CREATE TABLE publication_figure_layouts (\n publication_id INTEGER PRIMARY KEY REFERENCES lesson_publications(id),\n layout_version INTEGER NOT NULL,\n document_json TEXT,\n telegram_html TEXT,\n telegram_sha256 TEXT,\n entries_json TEXT NOT NULL\n, legacy_scales_json TEXT NOT NULL DEFAULT '{}');",
         "table_name": "publication_figure_layouts",
         "type": "table"
       },
@@ -31577,8 +31590,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "0e0883c37d40086072c568759b1dd92c972ea30206fb3be2fd192d3a859d3e97",
-    "sha256": "7a0108f653e4980ee06865065a96da43d8090a197bc285080406e73f1261c897"
+    "pragma_structure_sha256": "c0ae2a4f31416ead32a4f00e6077a002b791d006824b151d695188c8b427b469",
+    "sha256": "dd71ab432bf845ad07ee3efda0a7175e29067a8d74b357f44b20e91fd99a548a"
   },
   "source_kind": "repository-migration-head"
 }

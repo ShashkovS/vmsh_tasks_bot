@@ -110,3 +110,94 @@ def test_repeated_asset_occurrences_and_telegram_projection():
     assert html.count("Рисунок пока недоступен") == 1
     with pytest.raises(FigureLayoutError):
         apply_figure_layout(doc, [{**entry, "targetOrdinal": []}])
+
+
+def presentation_document():
+    return json.loads(
+        compile_latex(
+            r"\задача До.\includegraphics{same.png}После.\includegraphics{same.png}\кзадача\задача Соседняя.\кзадача".encode(),
+            source_name="presentation.tex",
+            role=ContentRole.CONDITION,
+        ).web_document.content
+    )
+
+
+def source_entry(doc, index=0, **changes):
+    row = figure_catalog(doc)[index]
+    return dict(
+        occurrenceId=row["occurrenceId"],
+        targetOrdinal=row["sourceOrdinal"],
+        targetPart=row["sourcePart"],
+        section=row["sourceSection"],
+        order=index,
+        side="right",
+        hidden=False,
+        placement="source",
+        **changes,
+    )
+
+
+def test_width_draft_preserves_source_position_and_other_asset_occurrences():
+    doc = presentation_document()
+    changed = apply_figure_layout(doc, [source_entry(doc, widthRem=0.5)])
+    assert [b["type"] for b in changed["problems"][0]["blocks"]] == [
+        b["type"] for b in doc["problems"][0]["blocks"]
+    ]
+    figures = figure_catalog(changed)
+    assert figures[0]["figure"]["widthRem"] == 0.5
+    assert "widthRem" not in figures[1]["figure"]
+    assert "widthRem" not in figure_catalog(doc)[0]["figure"]
+
+
+@pytest.mark.parametrize("placement", ["center-before", "center-after", "float-left", "float-right"])
+def test_explicit_placement_at_target_boundaries(placement):
+    doc = presentation_document()
+    entry = {
+        **source_entry(doc, widthRem=12),
+        "targetOrdinal": 2,
+        "placement": placement,
+    }
+    result = apply_figure_layout(doc, [entry])
+    blocks = result["problems"][1]["blocks"]
+    figure = blocks[-1] if placement == "center-after" else blocks[0]
+    assert figure["type"] == "figure" and figure["widthRem"] == 12
+    assert figure["placement"] == placement
+    assert figure.get("floatHint") == (
+        placement.removeprefix("float-") if placement.startswith("float-") else None
+    )
+
+
+@pytest.mark.parametrize("value", [0, 0.4, 80.5, 2.25, True, "12", float("nan"), float("inf")])
+def test_invalid_editor_width(value):
+    with pytest.raises(FigureLayoutError):
+        apply_figure_layout(
+            presentation_document(),
+            [source_entry(presentation_document(), widthRem=value)],
+        )
+
+
+def test_hide_only_figure_in_part_and_restore_source():
+    doc = json.loads(
+        compile_latex(
+            r"\задача\пункт\includegraphics{x.png}\кзадача".encode(),
+            source_name="part.tex",
+            role=ContentRole.CONDITION,
+        ).web_document.content
+    )
+    hidden = apply_figure_layout(doc, [{**source_entry(doc), "hidden": True}])
+    assert figure_catalog(hidden) == []
+    assert apply_figure_layout(doc, []) == doc
+
+
+def test_center_source_preserves_original_paragraphs_without_float():
+    document = presentation_document()
+    original = document["problems"][0]["blocks"]
+    figure = next(b for b in original if b["type"] == "figure")
+    figure["floatHint"] = "right"
+    entry = {**source_entry(document, widthRem=12), "placement": "center-source"}
+    result = apply_figure_layout(document, [entry])
+    blocks = result["problems"][0]["blocks"]
+    assert [b["type"] for b in blocks] == [b["type"] for b in original]
+    edited = next(b for b in blocks if b["type"] == "figure")
+    assert edited["placement"] == "center-source" and edited["widthRem"] == 12
+    assert "floatHint" not in edited

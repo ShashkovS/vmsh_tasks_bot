@@ -2043,7 +2043,12 @@ def _overlay_problem_titles(
 
 
 def _snapshot_figure_layout(
-    connection, publication_id: int, revision_id: int, *, rollback: bool = False
+    connection,
+    publication_id: int,
+    revision_id: int,
+    *,
+    rollback: bool = False,
+    target_publication_id: int | None = None,
 ) -> None:
     # Freeze derivative + draft in the publication transaction. Recompilation
     # cannot mutate this snapshot; see vmshpwa/docs/figure-layout.md.
@@ -2053,16 +2058,26 @@ def _snapshot_figure_layout(
     )
 
     if rollback:
-        previous = connection.execute(
-            "SELECT layout.* FROM publication_figure_layouts AS layout "
-            "JOIN lesson_publications AS publication ON publication.id = layout.publication_id "
-            "WHERE publication.revision_id = ? AND publication.id != ? AND publication.published_at IS NOT NULL "
-            "ORDER BY publication.id DESC LIMIT 1",
-            (revision_id, publication_id),
-        ).fetchone()
+        if target_publication_id is not None:
+            previous = connection.execute(
+                "SELECT layout.* FROM publication_figure_layouts layout "
+                "JOIN lesson_publications publication ON publication.id = layout.publication_id "
+                "WHERE publication.id = ? AND publication.revision_id = ? AND publication.published_at IS NOT NULL",
+                (target_publication_id, revision_id),
+            ).fetchone()
+            if previous is None:
+                raise ContentNotFound("publication snapshot does not exist")
+        else:
+            previous = connection.execute(
+                "SELECT layout.* FROM publication_figure_layouts AS layout "
+                "JOIN lesson_publications AS publication ON publication.id = layout.publication_id "
+                "WHERE publication.revision_id = ? AND publication.id != ? AND publication.published_at IS NOT NULL "
+                "ORDER BY publication.id DESC LIMIT 1",
+                (revision_id, publication_id),
+            ).fetchone()
         if previous:
             connection.execute(
-                "INSERT INTO publication_figure_layouts (publication_id, layout_version, entries_json, document_json, telegram_html, telegram_sha256) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO publication_figure_layouts (publication_id, layout_version, entries_json, document_json, telegram_html, telegram_sha256, legacy_scales_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     publication_id,
                     previous["layout_version"],
@@ -2070,6 +2085,7 @@ def _snapshot_figure_layout(
                     previous["document_json"],
                     previous["telegram_html"],
                     previous["telegram_sha256"],
+                    previous["legacy_scales_json"],
                 ),
             )
             return
@@ -2114,15 +2130,15 @@ def _snapshot_figure_layout(
 
 def _copy_publication_layout(connection, source_id: int, target_id: int) -> None:
     connection.execute(
-        "INSERT INTO publication_figure_layouts (publication_id, layout_version, entries_json, document_json, telegram_html, telegram_sha256) "
-        "SELECT ?, layout_version, entries_json, document_json, telegram_html, telegram_sha256 FROM publication_figure_layouts WHERE publication_id = ?",
+        "INSERT INTO publication_figure_layouts (publication_id, layout_version, entries_json, document_json, telegram_html, telegram_sha256, legacy_scales_json) "
+        "SELECT ?, layout_version, entries_json, document_json, telegram_html, telegram_sha256, legacy_scales_json FROM publication_figure_layouts WHERE publication_id = ?",
         (target_id, source_id),
     )
 
 
 def _published_figure_layout(connection, document: dict, publication_id: int) -> dict:
     row = connection.execute(
-        "SELECT layout.document_json, layout.layout_version, publication.revision_id "
+        "SELECT layout.document_json, layout.layout_version, layout.legacy_scales_json, publication.revision_id "
         "FROM publication_figure_layouts layout "
         "JOIN lesson_publications publication ON publication.id = layout.publication_id "
         "WHERE publication_id = ?",
@@ -2134,13 +2150,7 @@ def _published_figure_layout(connection, document: dict, publication_id: int) ->
     if row["layout_version"] < 0:
         # Backfilled publications keep their prior overlay behaviour.
         _overlay_problem_titles(connection, frozen, int(row["revision_id"]))
-        scales = connection.execute(
-            "SELECT asset_id, scale FROM content_figure_scales WHERE revision_id = ?",
-            (row["revision_id"],),
-        ).fetchall()
-        _overlay_figure_scales(
-            frozen, {str(r["asset_id"]): float(r["scale"]) for r in scales}
-        )
+        _overlay_figure_scales(frozen, json.loads(row["legacy_scales_json"]))
     return frozen
 
 
@@ -3965,6 +3975,8 @@ class PwaContentRepository:
         expected_scheduled_public_id: str | None = None,
         expected_scheduled_version: int | None = None,
         rollback: bool = False,
+        target_publication_id: int | None = None,
+        expected_layout_version: int | None = None,
     ) -> PublicationRecord:
         """Atomically supersede the current slot and append its replacement.
 
@@ -4022,6 +4034,29 @@ class PwaContentRepository:
             raise ContentInvariantError("scheduled publication requires a timestamp")
 
         def write(connection):
+            if expected_layout_version is not None:
+                layout = connection.execute(
+                    "SELECT version FROM content_figure_layouts WHERE revision_id = ?",
+                    (revision_id,),
+                ).fetchone()
+                if (int(layout["version"]) if layout else 0) != expected_layout_version:
+                    raise ContentVersionConflict("figure layout changed before publication")
+            if target_publication_id is not None:
+                target = connection.execute(
+                    "SELECT * FROM lesson_publications WHERE id = ?",
+                    (target_publication_id,),
+                ).fetchone()
+                if (
+                    target is None
+                    or target["group_lesson_id"] != group_lesson_id
+                    or target["kind"] != kind.value
+                    or target["revision_id"] != revision_id
+                    or target["published_at"] is None
+                ):
+                    raise ContentInvariantError(
+                        "rollback snapshot belongs to another material"
+                    )
+
             current = connection.execute(
                 "SELECT * FROM lesson_publications WHERE group_lesson_id = ? "
                 "AND kind = ? AND state = ?",
@@ -4104,9 +4139,19 @@ class PwaContentRepository:
                 raise _translate_integrity(
                     error, action="publication replacement"
                 ) from error
-            _snapshot_figure_layout(connection, int(row["id"]), revision_id, rollback=rollback)
+            _snapshot_figure_layout(
+                connection,
+                int(row["id"]),
+                revision_id,
+                rollback=rollback,
+                target_publication_id=target_publication_id,
+            )
             _activate_waiting_blocks_for_condition(
-                connection, group_lesson_id=group_lesson_id, kind=kind, state=state, timestamp=timestamp
+                connection,
+                group_lesson_id=group_lesson_id,
+                kind=kind,
+                state=state,
+                timestamp=timestamp,
             )
             return _publication(row)
 
@@ -5536,16 +5581,50 @@ class PwaContentRepository:
 
 
     async def get_figure_layout(self, *, revision_id: int) -> dict:
+        from helpers.pwa.content.figure_layout import (
+            apply_figure_layout,
+            figure_presentation,
+        )
+
         def read(connection):
             row = connection.execute(
                 "SELECT version, entries_json FROM content_figure_layouts WHERE revision_id = ?",
                 (revision_id,),
             ).fetchone()
-            return (
+            layout = (
                 {"version": int(row["version"]), "entries": json.loads(row["entries_json"])}
                 if row
                 else {"version": 0, "entries": []}
             )
+            published = connection.execute(
+                "SELECT publication.id, publication.revision_id FROM content_revisions revision "
+                "JOIN content_sources source ON source.id = revision.source_id "
+                "JOIN lesson_publications publication ON publication.group_lesson_id = source.group_lesson_id AND publication.kind = source.kind AND publication.state = 'published' "
+                "WHERE revision.id = ?",
+                (revision_id,),
+            ).fetchone()
+            layout["hasUnpublishedChanges"] = bool(layout["entries"])
+            if published and int(published["revision_id"]) == revision_id:
+                derivative = connection.execute(
+                    "SELECT content_text FROM content_derivatives WHERE revision_id = ? AND kind = 'web_ast' AND invalidated_at IS NULL ORDER BY id DESC LIMIT 1",
+                    (revision_id,),
+                ).fetchone()
+                if derivative:
+                    document = json.loads(derivative["content_text"])
+                    scales = connection.execute(
+                        "SELECT asset_id, scale FROM content_figure_scales WHERE revision_id = ?",
+                        (revision_id,),
+                    ).fetchall()
+                    _overlay_figure_scales(
+                        document, {str(r["asset_id"]): float(r["scale"]) for r in scales}
+                    )
+                    frozen = _published_figure_layout(
+                        connection, document, int(published["id"])
+                    )
+                    layout["hasUnpublishedChanges"] = figure_presentation(
+                        apply_figure_layout(document, layout["entries"])
+                    ) != figure_presentation(frozen)
+            return layout
 
         return await self._factory.run_read_async(read)
 
@@ -5614,8 +5693,9 @@ class PwaContentRepository:
         expected_version: int,
         asset_id: str,
         scale: float,
+        actor_user_id: int | None = None,
     ) -> None:
-        """Upsert one current figure scale without creating content history."""
+        """Save a legacy asset-wide size edit in the versioned presentation draft."""
 
         _require_public_id(revision_public_id)
         asset_id = _required_text(asset_id, label="figure asset ID")
@@ -5635,12 +5715,55 @@ class PwaContentRepository:
                 raise ContentVersionConflict("content revision version changed")
             if RevisionStatus(str(revision["status"])) is not RevisionStatus.READY:
                 raise ContentConflict("figure scale can only be edited after compilation")
+            # Legacy callers edit all uses of an asset, but still only the draft.
+            # New Staff controls use occurrenceId; docs/figure-layout.md.
+            from helpers.pwa.content.figure_layout import (
+                apply_figure_layout,
+                figure_catalog,
+            )
+
+            derivative = connection.execute(
+                "SELECT content_text FROM content_derivatives WHERE revision_id = ? AND kind = 'web_ast' AND invalidated_at IS NULL ORDER BY id DESC LIMIT 1",
+                (revision["id"],),
+            ).fetchone()
+            if derivative is None:
+                raise ContentConflict("recompile_required")
+            document = json.loads(derivative["content_text"])
+            layout = connection.execute(
+                "SELECT version, entries_json FROM content_figure_layouts WHERE revision_id = ?",
+                (revision["id"],),
+            ).fetchone()
+            entries = json.loads(layout["entries_json"]) if layout else []
+            by_id = {e["occurrenceId"]: e for e in entries}
+            for index, row in enumerate(figure_catalog(document)):
+                if row["figure"].get("asset", {}).get("assetId") != asset_id:
+                    continue
+                entry = by_id.get(row["occurrenceId"])
+                if entry is None:
+                    entry = dict(
+                        occurrenceId=row["occurrenceId"],
+                        targetOrdinal=row["sourceOrdinal"],
+                        targetPart=row["sourcePart"],
+                        section=row["sourceSection"],
+                        order=index,
+                        side=row["figure"].get("floatHint", "right"),
+                        placement="source",
+                        hidden=False,
+                    )
+                    entries.append(entry)
+                entry.pop("widthRem", None)
+                entry["scale"] = scale
+            apply_figure_layout(document, entries)
             connection.execute(
-                "INSERT INTO content_figure_scales (revision_id, asset_id, scale, updated_at) "
-                "VALUES (?, ?, ?, ?) "
-                "ON CONFLICT(revision_id, asset_id) DO UPDATE SET "
-                "scale = excluded.scale, updated_at = excluded.updated_at",
-                (revision["id"], asset_id, scale, timestamp),
+                "INSERT INTO content_figure_layouts (revision_id, version, entries_json, updated_by_user_id, updated_at) VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(revision_id) DO UPDATE SET version=excluded.version, entries_json=excluded.entries_json, updated_by_user_id=excluded.updated_by_user_id, updated_at=excluded.updated_at",
+                (
+                    revision["id"],
+                    (int(layout["version"]) if layout else 0) + 1,
+                    json.dumps(entries, ensure_ascii=False),
+                    actor_user_id,
+                    timestamp,
+                ),
             )
 
         await self._factory.run_write_async(write)
