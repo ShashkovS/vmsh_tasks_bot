@@ -2737,7 +2737,7 @@ async def test_figure_layout_conflict_and_immutable_publication(content_fixture)
         )
     assert (
         await fixture.repository.get_figure_layout(revision_id=revision.id)
-    ) == layout
+    ) == {**layout, "hasUnpublishedChanges": True}
     publication = await fixture.repository.create_publication(
         public_id="publication-layout",
         group_lesson_id=lesson.id,
@@ -2862,6 +2862,11 @@ async def test_figure_layout_conflict_and_immutable_publication(content_fixture)
         lambda c: _published_figure_layout(c, doc, rollback.id)
     )
     assert figure_catalog(rolled_back) == []  # original snapshot, despite visible draft
+    sizing = {**entry, "hidden": False, "placement": "source", "widthRem": 12}
+    await fixture.repository.set_figure_layout(
+        revision_id=revision.id, expected_version=4, entries=[sizing],
+        actor_user_id=fixture.actor_user_id,
+    )
     scheduled = await fixture.repository.create_publication(
         public_id="layout-scheduled",
         group_lesson_id=lesson.id,
@@ -2873,8 +2878,8 @@ async def test_figure_layout_conflict_and_immutable_publication(content_fixture)
     )
     await fixture.repository.set_figure_layout(
         revision_id=revision.id,
-        expected_version=4,
-        entries=[entry],
+        expected_version=5,
+        entries=[{**sizing, "widthRem": 80}],
         actor_user_id=fixture.actor_user_id,
     )
     activated = await fixture.repository.activate_scheduled_publication(
@@ -2889,3 +2894,5 @@ async def test_figure_layout_conflict_and_immutable_publication(content_fixture)
     assert (
         len(figure_catalog(visible)) == 1
     )  # the scheduled snapshot, not the newer draft
+
+    assert figure_catalog(visible)[0]["figure"]["widthRem"] == 12

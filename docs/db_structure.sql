@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: d266b331dc31ffb2a6aaa3ee1a39261e9528c1d2ee0eab106864376c57f9ef65
+-- Product schema SHA-256: b230d4e593e93bfe23917d55b1aaef78fa440829ca4fa34c17f64d01758b3f6a
 
 CREATE TABLE achievement_definitions
 (
@@ -870,7 +870,8 @@ CREATE TABLE courses
     updated_by   integer references users (id),
     version      integer not null default 1
         check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1
-    CHECK (has_in_person_classes IN (0, 1)),
+    CHECK (has_in_person_classes IN (0, 1)), metadata_model TEXT NOT NULL DEFAULT 'openai/gpt-5.6-luna'
+    CHECK (length(trim(metadata_model)) BETWEEN 3 AND 200),
     unique (season_id, code)
 );
 
@@ -1922,7 +1923,7 @@ CREATE TABLE publication_figure_layouts (
  telegram_html TEXT,
  telegram_sha256 TEXT,
  entries_json TEXT NOT NULL
-);
+, legacy_scales_json TEXT NOT NULL DEFAULT '{}');
 
 CREATE TABLE push_subscriptions
 (
@@ -3124,6 +3125,10 @@ CREATE UNIQUE INDEX groups_course_short_code_uq
 
 CREATE INDEX hint_reveals_student_timeline_idx
     on hint_reveals (student_user_id, revealed_at, id);
+
+CREATE INDEX idempotency_records_completed_receipt_lookup_idx
+    ON idempotency_records (account_id, operation, idempotency_key, payload_sha256, id DESC)
+    WHERE state = 'completed';
 
 CREATE INDEX idempotency_records_expiry_idx
     on idempotency_records (expires_at, id)

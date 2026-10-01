@@ -90,3 +90,36 @@ it('retains confirmed On after a failed toggle and refetches the authority', asy
   await waitFor(() => expect(client.get).toHaveBeenCalledTimes(2))
   expect(switches[0]!.getAttribute('aria-checked')).toBe('true')
 }, 15_000)
+
+it('keeps figure editing available beside release switches after closing the task', async () => {
+  const user = userEvent.setup()
+  const editFigure = vi.fn()
+  const client = {
+    get: vi.fn().mockResolvedValue(initial),
+    save: vi.fn().mockResolvedValue({
+      ...initial,
+      version: 2,
+      problems: initial.problems.map((problem) => ({ ...problem, isOpen: false })),
+    }),
+  }
+  renderWithI18n(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <ProblemReleasePreview
+        client={client}
+        groupLessonId="gl-1"
+        revisionId={document.revisionId}
+        document={document}
+        condition={undefined}
+        submissionClosed={false}
+        renderFigureTools={() => <button onClick={editFigure}>Edit figure</button>}
+      />
+    </QueryClientProvider>,
+  )
+  await screen.findAllByRole('switch')
+  await user.click(screen.getByRole('button', { name: 'Закрыть все' }))
+  await waitFor(() => expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('false'))
+  await user.click(screen.getByRole('button', { name: 'Edit figure' }))
+  expect(editFigure).toHaveBeenCalledOnce()
+}, 15_000)

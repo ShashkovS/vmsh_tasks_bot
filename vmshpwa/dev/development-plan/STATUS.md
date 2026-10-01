@@ -1,5 +1,13 @@
 # Статус плана разработки
 
+
+## 2026-10-01 — интеграция позадачной публикации
+
+В работе merge `vmshpwa` (`3bb20281`) в `codex/problem-release`.
+Редактор рисунков и переключатели объединяются в одном превью; миграция
+доступности становится 0107 после upstream 0106. Проверки конфликтов,
+schema и общего UI проходят повторно; [протокол](../../docs/problem-release.md).
+
 ## Позадачная публикация — 1 октября 2026
 
 Реализовано и проверено в отдельном worktree `codex/problem-release` от `vmshpwa`.
@@ -14,6 +22,26 @@ scoped lint и четыре production-сборки проходят. Выдач
 Светлые, тёмные и мобильные снимки просмотрены; baselines не менялись.
 Развёртывание и публикация в remote не выполнялись.
 
+## 2026-10-01 — редактор картинок реализован и проверен
+
+[Редактор на рисунке](../../docs/figure-layout.md) доступен для условий, подсказок
+и решений: две кнопки, ширина 0,5–80 rem, перенос/скрытие/восстановление, независимые
+вхождения, черновик и публикация/откат оформления одного исходника. Уточнение
+пользователя включено: `center-source` сохраняет рисунок между исходными абзацами
+без обтекания. Student/Family и offline различают публикации одной revision.
+
+Проверено: 107 backend, 974 frontend unit, Storybook accessibility/interactions,
+изолированный Chromium/Firefox/WebKit E2E, typecheck/lint/i18n, четыре production
+build и актуальность schema inventory. [Команды, снимки и границы проверки](../figure-layout-report.md).
+Миграция 0106 фиксирует исторические масштабы. Владелец разрешил выпуск на оба
+production-сервера 1 октября; начаты commit/integration и rollout.
+Golden snapshots не изменены.
+
+Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
+107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
+обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
+[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
+Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
 
 ## TLF application rollout — 2026-09-30
 
@@ -3720,3 +3748,40 @@ This completes consolidation and the two-portal rollout. Physical-device push,
 external Zoom subscriptions, actual Telegram sends and the cumulative i18n
 performance budget remain their existing separate follow-ups; this rollout does
 not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
+
+### 2026-10-01 — Recheck receipt lookup index (complete)
+
+Migration 0105 is committed/pushed as `0a05b685` and installed on both portals:
+VMSh automatic webhook; TLF guarded manual script. Both databases have 76
+migrations, the completed-receipt index, no unrelated figure migration 0104 and
+integrity ok. The actual VMSh query selects 714 answers in 15 ms using the index.
+The isolated release passes 36 focused migration/recheck/idempotency/schema
+checks, schema-inventory CLI check, Ruff and staged diff validation.
+
+Fresh VMSh before/after backups have identical full-row digests for 44016
+idempotency receipts, 20676 attempts, 34536 results and 1519 enrollments. TLF
+compared all product tables with writers stopped; all rows, credentials and
+static release remained identical, including the three raw Zoom receipts.
+Both portals pass 25 read-only HTTP checks each. All nine Prometheus targets
+are up, backend 5xx increase and SQLite waiting queues are zero in the checked
+post-cutover minute. PWA, VMSh Telegram and TLF Zoom are active; shared NATS
+PIDs are unchanged. Index rollback was rehearsed on a server-resident copy and
+is retained in the TLF deployment script. Independent figure work stays outside
+this release. [Requirement, implementation and operational proof](../../docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
+
+## 2026-10-01 — язык и модель генерации metadata (в production)
+
+[Решение](../../docs/metadata-generation.md): язык контента из branding, модель
+в настройках курса; оба прохода OpenRouter и локальные сообщения учитывают язык.
+Проверки: 90 backend-тестов metadata и 21 тест схемы — PASS, включая
+up/down/up миграции и актуальные canonical artifacts после интеграции 0105.
+Frontend: 24 Vitest PASS, Staff и tools
+TypeScript, ESLint, Ruff, оба i18n gate и production build Staff — PASS.
+Форма проверена в Chromium на русском/английском и в тёмной теме, включая
+HTML-валидацию идентификатора модели; pageerror отсутствуют. Скриншоты:
+`.runtime/vmshpwa/metadata-settings-proof/`. Реальные OpenRouter-вызовы не запускались.
+Релиз `a13c01ba` выложен на VMSH через webhook и на TLF через SSH-скрипт;
+миграция `0104.course_metadata_model` применена на обоих серверах (77 migrations).
+По 25 публичных HTTP-проверок, health и живые формы настройки курсов — PASS.
+TLF использует английский язык бренда, VMSH — русский; прежние модели курсов
+и attendance-настройки сохранены. [Production proof](../../docs/metadata-generation.md#production--1-октября-2026).

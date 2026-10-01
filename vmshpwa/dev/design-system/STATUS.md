@@ -1,5 +1,13 @@
 # Design-system status
 
+
+## 2026-10-01 — интеграция позадачной публикации
+
+В работе merge `vmshpwa` (`3bb20281`) в `codex/problem-release`.
+Редактор рисунков и переключатели объединяются в одном превью; миграция
+доступности становится 0107 после upstream 0106. Проверки конфликтов,
+schema и общего UI проходят повторно; [протокол](../../docs/problem-release.md).
+
 ## Позадачная публикация — 1 октября 2026
 
 Реализовано и проверено в отдельном worktree `codex/problem-release` от `vmshpwa`.
@@ -14,6 +22,26 @@ scoped lint и четыре production-сборки проходят. Выдач
 Светлые, тёмные и мобильные снимки просмотрены; baselines не менялись.
 Развёртывание и публикация в remote не выполнялись.
 
+## 2026-10-01 — редактор картинок реализован и проверен
+
+[Редактор на рисунке](../../docs/figure-layout.md) использует общие Button/Input/
+Popover: размер и размещение слева, действия справа, у маленьких исходных рисунков
+кнопки под изображением. Есть отдельный центрированный рисунок между исходными
+абзацами (`center-source`), четыре остальных размещения и список скрытых вхождений.
+Проверены доступность и interactions в Storybook, мышь/клавиатура и возврат фокуса,
+320/390/1280 px, light/dark и 200% в Chromium/Firefox/WebKit. Ошибка сохранения
+оставляет предпросмотр и доступную команду обновления данных.
+
+107 backend и 974 frontend unit проходят; typecheck/lint/i18n/build и browser gates
+зелёные. [Stories, снимки и доказательства](../figure-layout-report.md).
+Владелец разрешил production-выпуск на оба сервера 1 октября; rollout начат.
+Golden snapshots не обновлены.
+
+Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
+107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
+обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
+[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
+Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
 
 ## Instance branding — 2026-09-29
 
@@ -1926,3 +1954,20 @@ This completes consolidation and the two-portal rollout. Physical-device push,
 external Zoom subscriptions, actual Telegram sends and the cumulative i18n
 performance budget remain their existing separate follow-ups; this rollout does
 not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
+
+## 2026-10-01 — язык и модель генерации metadata (в production)
+
+[Решение](../../docs/metadata-generation.md): язык контента из branding, модель
+в настройках курса; оба прохода OpenRouter и локальные сообщения учитывают язык.
+Проверки: 90 backend-тестов metadata и 21 тест схемы — PASS, включая
+up/down/up миграции и актуальные canonical artifacts после интеграции 0105.
+Frontend: 24 Vitest PASS, Staff и tools
+TypeScript, ESLint, Ruff, оба i18n gate и production build Staff — PASS.
+Форма проверена в Chromium на русском/английском и в тёмной теме, включая
+HTML-валидацию идентификатора модели; pageerror отсутствуют. Скриншоты:
+`.runtime/vmshpwa/metadata-settings-proof/`. Реальные OpenRouter-вызовы не запускались.
+Релиз `a13c01ba` выложен на VMSH через webhook и на TLF через SSH-скрипт;
+миграция `0104.course_metadata_model` применена на обоих серверах (77 migrations).
+По 25 публичных HTTP-проверок, health и живые формы настройки курсов — PASS.
+TLF использует английский язык бренда, VMSH — русский; прежние модели курсов
+и attendance-настройки сохранены. [Production proof](../../docs/metadata-generation.md#production--1-октября-2026).

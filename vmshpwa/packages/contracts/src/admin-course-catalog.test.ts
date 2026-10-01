@@ -5,6 +5,7 @@ import {
   createAdminCourseRequestSchema,
   createAdminGroupLessonRequestSchema,
   saveAdminGroupRequestSchema,
+  metadataModelSchema,
 } from './admin-course-catalog'
 
 describe('Staff course catalog contract', () => {
@@ -49,6 +50,15 @@ describe('Staff course catalog contract', () => {
       requestId: 'request-1',
     })
     expect(parsed.courses[0]?.groups[0]?.shortCode).toBe('н')
+    expect(parsed.courses[0]?.metadataModel).toBe('openai/gpt-5.6-luna')
+  })
+
+  it('accepts new provider model IDs and rejects malformed IDs', () => {
+    expect(metadataModelSchema.parse(' openai/gpt-6-luna ')).toBe('openai/gpt-6-luna')
+    expect(metadataModelSchema.parse('provider/model:free')).toBe('provider/model:free')
+    for (const value of ['', 'no-provider', 'provider/', 'provider/model name', null, 3]) {
+      expect(metadataModelSchema.safeParse(value).success).toBe(false)
+    }
   })
 
   it('normalizes editable codes and rejects unknown fields', () => {

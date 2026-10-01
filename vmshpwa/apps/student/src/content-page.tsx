@@ -98,7 +98,7 @@ export function StudentPublishedContentPage({
   )
   const contentWasReplaced = usePublishedContentReplacement(
     groupLessonId ? `student:${groupLessonId}:${kind}` : undefined,
-    query.data?.revisionId,
+    query.data?.publicationId,
   )
 
   if (!groupLessonId) {

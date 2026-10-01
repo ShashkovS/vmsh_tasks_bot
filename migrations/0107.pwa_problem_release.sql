@@ -1,4 +1,4 @@
--- depends: 0103.course_in_person_classes
+-- depends: 0106.pwa_figure_presentation
 -- vmshpwa/docs/problem-release.md: independent, group-owned PWA visibility.
 alter table group_lessons add column problem_release_version integer not null default 1
     check (problem_release_version > 0);

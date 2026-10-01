@@ -211,3 +211,42 @@ minute. NATS PIDs are unchanged. No synthetic Zoom receipts or submissions were
 written into production by these checks. All 15 maintenance recovery scenarios
 and 6 Family context scenarios passed in three browsers without retries before
 cutover; see [integration evidence](../../../vmshpwa/dev/development-plan/23-pilot-deployment.md#2026-10-01--consolidation-and-two-portal-rollout-complete).
+
+
+## Receipt lookup index — 2026-10-01
+
+Migration `0105.pwa_recheck_receipt_lookup` is deployed from `0a05b685` on
+both portals; independent figure migration 0104 is excluded. VMSh used its
+main-branch webhook. TLF used a reviewed manual script with a fresh verified
+backup, stopped PWA/Zoom/analytics writers, explicit production migration and
+performance guard, exact all-product-table digest comparison, unchanged
+credentials/static/NATS, health checks and 25 public read-only HTTP checks.
+
+TLF deployment record and executable rollback script:
+`/web/vmsh_tasks_bot/deploy/releases/recheck-index-0a05b685c044-20261001T120604Z/`.
+The script drops only 0105 through yoyo before restoring the previous source;
+it never replaces a production DB. Backups before/after:
+`20261001T120604.531651Z` / `20261001T120612.278270Z` (integrity ok, three raw
+Zoom receipts preserved). Both hosts have 76 migrations; the VMSh historical
+lookup selects 714 answers in 15 ms using the new index. Shared NATS and the
+existing frontend releases are unchanged. Documentation-only source updates
+need no worker restart or frontend build. [Migration, regression and verification](../../../vmshpwa/docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
+
+
+## Course metadata language/model — 2026-10-01
+
+Both portals run metadata release `a13c01ba`; VMSH deployed through the existing
+webhook, TLF through the reviewed SSH script retained at
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261001-metadata-a13c01ba3f7f/deploy.sh`.
+The TLF script builds in a separate source directory, rehearses migration 0104
+on a copy, retains verified backups and compares all pre-existing product rows
+while PWA/Zoom/analytics writers are stopped. Runtime configuration and
+credentials remain unchanged. Current TLF static release:
+`tlfprep-20261001-metadata-a13c01ba3f7f`; both databases have 77 migrations.
+
+Both portals pass 25 public read-only HTTP checks and live authenticated course
+settings show the OpenRouter model field. TLF branding is English; VMSH is
+Russian. Existing course models stay `openai/gpt-5.6-luna`, TLF courses stay
+online-only, and the three Zoom receipts are preserved. TLF retains two PWA
+workers and one Zoom worker; shared NATS was not restarted. Detailed backups,
+rollback and verification: [metadata production record](../../../vmshpwa/docs/metadata-generation.md#production--1-октября-2026).

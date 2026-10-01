@@ -1,6 +1,7 @@
 /* Shared paper typography: docs/whiteboard-export.md and worksheet-print.md. */
 :is([data-print-lesson], .vmsh-export-paper) [data-print-hide],
 :is([data-print-lesson], .vmsh-export-paper) button,
+:is([data-print-lesson], .vmsh-export-paper) .vmsh-figure-tools,
 :is([data-print-lesson], .vmsh-export-paper) .vmsh-problem-actions-row,
 :is([data-print-lesson], .vmsh-export-paper) .vmsh-material-reveal .vmsh-problem-header {
   display: none !important;

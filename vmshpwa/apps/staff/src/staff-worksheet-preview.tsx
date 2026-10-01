@@ -1,13 +1,8 @@
 import { Trans } from '@lingui/react/macro'
 import { ChevronDown, ChevronRight, MessageCircleQuestion, PencilLine } from 'lucide-react'
-import { SemanticMathDocument, WorksheetDocument } from '@vmsh/content'
+import { SemanticMathDocument, WorksheetDocument, type FigureToolsRenderer } from '@vmsh/content'
 import type { ReactNode } from 'react'
-import type {
-  WebContentBlock,
-  WebContentDocument,
-  WebContentProblem,
-  WebFigureAvailableAsset,
-} from '@vmsh/contracts'
+import type { WebContentBlock, WebContentDocument, WebContentProblem } from '@vmsh/contracts'
 import { WorksheetMaterials } from '@vmsh/product'
 import { Badge, Button } from '@vmsh/ui'
 
@@ -27,6 +22,7 @@ export function StaffWorksheetPreview({
   solutionDocument,
   submissionClosed,
   renderReleaseControl,
+  renderFigureTools,
 }: {
   document: WebContentDocument
   hintDocument?: WebContentDocument | undefined
@@ -34,6 +30,7 @@ export function StaffWorksheetPreview({
   condition: WebContentDocument | undefined
   submissionClosed: boolean
   renderReleaseControl?: (problem: WebContentProblem) => ReactNode
+  renderFigureTools?: FigureToolsRenderer | undefined
 }) {
   const materialKind = document.materialKind
   const paper = materialKind === 'condition' ? document : condition
@@ -85,6 +82,7 @@ export function StaffWorksheetPreview({
             introduction: [],
             problems: [{ ...matching, blocks: selectBlocks(matching.blocks) }],
           }}
+          renderFigureTools={source === document ? renderFigureTools : undefined}
           hideProblemHeadings
           imageLoading="eager"
         />
@@ -140,6 +138,7 @@ export function StaffWorksheetPreview({
       >
         <WorksheetDocument
           document={paper}
+          renderFigureTools={materialKind === 'condition' ? renderFigureTools : undefined}
           renderProblemActions={(problem) => (
             <span className="vmsh-problem-actions-row font-sans">
               {renderReleaseControl?.(problem)}
@@ -152,75 +151,5 @@ export function StaffWorksheetPreview({
         />
       </div>
     </>
-  )
-}
-
-export function FigureScaleTools({
-  document,
-  onScale,
-}: {
-  document: WebContentDocument
-  onScale: (asset: WebFigureAvailableAsset, scale: number) => void
-}) {
-  const figures = new Map<string, { asset: WebFigureAvailableAsset; scale: number }>()
-  const visit = (blocks: WebContentBlock[]) =>
-    blocks.forEach((block) => {
-      if (block.type === 'figure' && block.asset.status === 'available')
-        figures.set(block.asset.assetId, { asset: block.asset, scale: block.scale ?? 1 })
-      if (block.type === 'callout' || block.type === 'subpart') visit(block.blocks)
-      if (block.type === 'list') block.items.forEach(visit)
-    })
-  visit(document.introduction)
-  document.problems.forEach((problem) => {
-    visit(problem.blocks)
-    visit(problem.preambleBlocks ?? [])
-    visit(problem.trailingBlocks ?? [])
-  })
-  if (!figures.size) return null
-  return (
-    <details className="mt-4">
-      <summary className="cursor-pointer text-small">
-        <Trans>Масштаб рисунков для публикации</Trans>
-      </summary>
-      <div className="mt-2 flex flex-wrap gap-3">
-        {[...figures.values()].map(({ asset, scale }, index) => (
-          <label key={asset.assetId} className="flex items-center gap-2 text-small">
-            <Trans>Рисунок</Trans> {index + 1}
-            <select
-              className="rounded border border-border bg-surface p-2"
-              value={scale}
-              onChange={(event) => onScale(asset, Number(event.target.value))}
-            >
-              {[
-                ...new Set([
-                  0.25,
-                  0.5,
-                  0.6,
-                  0.7,
-                  0.8,
-                  0.9,
-                  1,
-                  1.1,
-                  1.2,
-                  1.3,
-                  1.4,
-                  1.5,
-                  1.75,
-                  2,
-                  2.5,
-                  scale,
-                ]),
-              ]
-                .sort((a, b) => a - b)
-                .map((value) => (
-                  <option key={value} value={value}>
-                    {Math.round(value * 100)}%
-                  </option>
-                ))}
-            </select>
-          </label>
-        ))}
-      </div>
-    </details>
   )
 }

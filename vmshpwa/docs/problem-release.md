@@ -24,7 +24,7 @@
 
 ## Реализация и границы
 
-- [Миграция](../../migrations/0104.pwa_problem_release.sql), механическое
+- [Миграция](../../migrations/0107.pwa_problem_release.sql), механическое
   [хранилище](../../db_methods/pwa/problem_release.py) и
   [доменный сервис](../../models/pwa/problem_release.py).
 - [Staff API](../../apps/pwa_api/problem_release_routes.py):
@@ -83,3 +83,13 @@ WebKit и Firefox. Reconnect без reload также прошёл во всех
 конфигурация не изменяется. MSW и внешние сервисы в E2E не используются.
 Светлые, тёмные и мобильные снимки сохраняются в `vmshpwa/test-results`;
 visual baselines не обновлялись. Развёртывание не выполнялось.
+
+## Интеграция с актуальной vmshpwa
+
+1 октября начато вливание `vmshpwa` (`3bb20281`) в `codex/problem-release`.
+Сохраняются новые настройки metadata, индекс receipt и редактор рисунков.
+[Content workspace](../apps/staff/src/content-page.tsx) объединяет редактор рисунков
+и переключатели в одном PWA-превью; фильтрация доступности применяется после
+замороженного оформления публикации. Миграция доступности перенумерована в 0107
+после 0106 рисунков; schema artifacts генерируются из общей цепочки миграций.
+Проверки объединённой реализации в работе.

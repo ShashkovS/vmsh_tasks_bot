@@ -447,11 +447,55 @@
 }
 
 .vmsh-asset-figure {
+  position: relative;
   display: grid;
   gap: 0.375rem;
   width: min(100%, calc(var(--vmsh-source-width, 100%) * var(--vmsh-figure-scale, 1)));
   max-width: 100%;
   margin-block: 0.875rem 1.125rem;
+}
+
+.vmsh-asset-figure[data-centered] {
+  clear: both;
+  margin-inline: auto;
+}
+
+.vmsh-problem,
+.vmsh-subpart {
+  display: flow-root;
+}
+
+.vmsh-figure-image {
+  position: relative;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.vmsh-figure-tools {
+  position: absolute;
+  inset-inline: 0.375rem;
+  bottom: 0.375rem;
+  z-index: 1;
+  font-family: var(--font-sans);
+}
+
+.vmsh-asset-figure[data-editor-small] .vmsh-figure-tools {
+  position: static;
+  min-width: 5.5rem;
+}
+
+.vmsh-asset-figure[data-editor-small]:has(.vmsh-figure-tools) {
+  min-width: min(100%, 5.5rem);
+}
+
+.vmsh-asset-figure[data-editor-small]:has(.vmsh-figure-tools) .vmsh-figure-canvas {
+  width: min(100%, calc(var(--vmsh-source-width, 100%) * var(--vmsh-figure-scale, 1)));
+  justify-self: center;
+  padding: 0;
+}
+
+.vmsh-figure-canvas[data-editing] {
+  cursor: default;
 }
 
 /* The React renderer sets data-float-hint only while the effective source
@@ -473,6 +517,22 @@
     float: left;
     margin-inline: 0 1.25rem;
   }
+}
+
+/* Explicit floats depend on measured text space, not viewport width. */
+.vmsh-asset-figure[data-placement^='float-'][data-float-hint] {
+  width: min(100%, calc(var(--vmsh-source-width, 100%) * var(--vmsh-figure-scale, 1)));
+  max-width: 100%;
+}
+
+.vmsh-asset-figure[data-placement^='float-'][data-float-hint='right'] {
+  float: right;
+  margin: 0.25rem 0 1rem 1.25rem;
+}
+
+.vmsh-asset-figure[data-placement^='float-'][data-float-hint='left'] {
+  float: left;
+  margin: 0.25rem 1.25rem 1rem 0;
 }
 
 .vmsh-figure-canvas {

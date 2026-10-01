@@ -5,6 +5,13 @@ import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './a
 export const catalogStatusSchema = z.enum(['draft', 'active', 'archived'])
 export type CatalogStatus = z.infer<typeof catalogStatusSchema>
 
+// docs/metadata-generation.md: extensible OpenRouter ID, shared by reads/writes.
+export const metadataModelSchema = z
+  .string()
+  .trim()
+  .max(200)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._:/-]*$/)
+
 export const adminGroupSchema = z
   .object({
     groupId: publicIdSchema,
@@ -33,6 +40,7 @@ export const adminCourseSchema = z
     sortOrder: z.number().int().min(-10_000).max(10_000),
     accentKey: z.string().trim().min(1).max(32),
     hasInPersonClasses: z.boolean().default(true),
+    metadataModel: metadataModelSchema.default('openai/gpt-5.6-luna'),
     activeStudents: z.number().int().nonnegative(),
     groups: z.array(adminGroupSchema),
     version: z.number().int().positive(),
@@ -141,6 +149,7 @@ const codeSchema = z
 
 const courseFields = {
   hasInPersonClasses: z.boolean().optional(),
+  metadataModel: metadataModelSchema.optional(),
   schemaVersion: z.literal(1),
   code: codeSchema,
   name: z.string().trim().min(1).max(200),

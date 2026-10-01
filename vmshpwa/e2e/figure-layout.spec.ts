@@ -39,7 +39,7 @@ test('figure placement survives reload and publishes only after confirmation', a
   page,
   secondaryContext,
 }, testInfo) => {
-  test.setTimeout(120_000)
+  test.setTimeout(180_000)
   page.setDefaultTimeout(15_000)
   const target = contentFixture.targets.find((t) => t.project === testInfo.project.name)!
   await loginThroughUi(page, AUTH_PERSONAS.admin, `/staff/lessons/${target.groupLessonPublicId}`)
@@ -101,67 +101,144 @@ test('figure placement survives reload and publishes only after confirmation', a
   await expect(student.locator('article img')).toHaveCount(2)
   await student.screenshot({ path: testInfo.outputPath('student-before.png'), fullPage: true })
   await workflow.getByRole('button', { name: 'Показать PWA и Telegram' }).click()
-  const editor = workflow
-    .locator('details')
-    .filter({ has: page.locator('summary', { hasText: 'Расположение рисунков' }) })
-  await editor.locator('summary').click()
-  const row = editor.getByRole('group', { name: 'Рисунок 1', exact: true })
-  await expect(row).toBeVisible()
-  await row.getByLabel('Пункт', { exact: true }).selectOption('б')
-  await expect
-    .poll(
-      async () =>
-        figureLayoutSchema.parse(
-          await (
-            await page.request.get(`/staff/api/v1/content/revisions/${revisionId}/figure-layout`)
-          ).json(),
-        ).entries[0]?.targetPart,
-    )
-    .toBe('б')
-  await row.getByRole('button', { name: 'Скрыть', exact: true }).click()
-  await expect(row.getByRole('button', { name: 'Восстановить', exact: true })).toBeVisible()
-  await page.reload()
-  await workflow.getByRole('button', { name: 'Показать PWA и Telegram' }).click()
-  await editor.locator('summary').click()
-  await expect(row.getByRole('button', { name: 'Восстановить', exact: true })).toBeVisible()
+  const layoutRoute = `/staff/api/v1/content/revisions/${revisionId}/figure-layout`
+  const layout = async () =>
+    figureLayoutSchema.parse(await (await page.request.get(layoutRoute)).json())
+  const firstId = (await layout()).figures[0]!.occurrenceId
+  const controls = workflow.locator(`[data-figure-controls="${firstId}"]`)
+  const figure = controls.locator('xpath=ancestor::figure')
+  const open = async (name: string) => {
+    await page.keyboard.press('Escape')
+    await controls.getByRole('button', { name: new RegExp(`^${name}:`) }).click()
+    const dialog = page.getByRole('dialog', { name, exact: true })
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toHaveCSS('opacity', '1')
+    return dialog
+  }
+  const sizingButton = controls.getByRole('button', { name: /^Размер и размещение:/ })
+  await sizingButton.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('dialog', { name: 'Размер и размещение', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(sizingButton).toBeFocused()
+  expect((await layout()).entries).toEqual([])
+  const size = await open('Размер и размещение')
+  await size.getByRole('spinbutton', { name: 'Ширина, rem' }).fill('12')
+  await size.getByRole('spinbutton', { name: 'Ширина, rem' }).blur()
+  await expect.poll(async () => (await layout()).entries[0]?.widthRem).toBe(12)
+  await page.keyboard.press('Escape')
   expect(await (await student.request.get(publicRoute)).json()).toEqual(original)
-  await row.getByRole('button', { name: 'Восстановить', exact: true }).click()
-  await expect(row.getByRole('button', { name: 'Скрыть', exact: true })).toBeVisible()
-  await expect(row.getByLabel('Задача', { exact: true })).toBeEnabled()
-  await row.getByLabel('Задача', { exact: true }).selectOption('2')
-  await expect(row.getByLabel('Задача', { exact: true })).toHaveValue('2')
-  await row.getByRole('button', { name: 'Ниже', exact: true }).click()
-  await expect
-    .poll(
-      async () =>
-        figureLayoutSchema.parse(
-          await (
-            await page.request.get(`/staff/api/v1/content/revisions/${revisionId}/figure-layout`)
-          ).json(),
-        ).entries.length,
-    )
-    .toBe(2)
-  // Keep only one of the two repeated uses; the file remains available.
-  await row.getByRole('button', { name: 'Скрыть', exact: true }).click()
-  await expect(row.getByRole('button', { name: 'Восстановить', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(
+    workflow.getByText('Есть неопубликованные изменения оформления рисунков.', { exact: true }),
+  ).toBeVisible()
+  await publish(page)
+  const resized = (await (await student.request.get(publicRoute)).json()) as {
+    publicationId: string
+    revisionId: string
+  }
+  expect(resized.revisionId).toBe(revisionId)
+  await expect(student.locator('article figure').first()).toHaveCSS('width', '192px')
+  await student.reload()
+  await expect(student.locator('article figure').first()).toHaveCSS('width', '192px')
+  await expect(
+    workflow.getByText('Есть неопубликованные изменения оформления рисунков.', { exact: true }),
+  ).toHaveCount(0)
+  await workflow.getByRole('button', { name: 'Показать PWA и Telegram' }).click()
+  for (const placement of [
+    'center-source',
+    'center-before',
+    'center-after',
+    'float-right',
+    'float-left',
+  ]) {
+    const dialog = await open('Размер и размещение')
+    await dialog.getByLabel('Размещение', { exact: true }).selectOption(placement)
+    await expect.poll(async () => (await layout()).entries[0]?.placement).toBe(placement)
+    await page.keyboard.press('Escape')
+    if (placement.startsWith('float-'))
+      await expect(figure).toHaveAttribute('data-float-hint', placement.slice(6))
+    else await expect(figure).toHaveAttribute('data-centered', 'true')
+  }
+  // Absolute sizing: huge figures fit the available area, tiny figures keep usable controls below.
+  for (const widthRem of [80, 0.5, 12]) {
+    const dialog = await open('Размер и размещение')
+    await dialog.getByRole('spinbutton', { name: 'Ширина, rem' }).fill(String(widthRem))
+    await dialog.getByRole('spinbutton', { name: 'Ширина, rem' }).blur()
+    await expect.poll(async () => (await layout()).entries[0]?.widthRem).toBe(widthRem)
+    await page.keyboard.press('Escape')
+    if (widthRem === 0.5) await expect(figure).toHaveAttribute('data-editor-small', 'true')
+    expect(
+      await figure.evaluate(
+        (el) => el.getBoundingClientRect().width <= el.parentElement!.clientWidth + 2,
+      ),
+    ).toBe(true)
+  }
   for (const width of [1280, 320, 390]) {
     await page.setViewportSize({ width, height: 850 })
     for (const theme of ['light', 'dark']) {
-      await page.emulateMedia({ colorScheme: theme as 'light' | 'dark' })
       await page.evaluate(
         (t) => document.documentElement.classList.toggle('dark', t === 'dark'),
         theme,
       )
-      await row.getByRole('button', { name: 'Восстановить', exact: true }).scrollIntoViewIfNeeded()
-      await expect(row.getByRole('button', { name: 'Восстановить', exact: true })).toBeInViewport()
-      expect(await editor.evaluate((e) => e.scrollWidth <= e.clientWidth + 2)).toBe(true)
-      await editor.screenshot({ path: testInfo.outputPath(`editor-${width}-${theme}.png`) })
+      const dialog = await open('Размер и размещение')
+      expect(await dialog.evaluate((e) => e.scrollWidth <= e.clientWidth + 2)).toBe(true)
+      await page.screenshot({
+        path: testInfo.outputPath(`editor-${width}-${theme}.png`),
+        animations: 'disabled',
+      })
+      await page.keyboard.press('Escape')
+      if (width < 512) await expect(figure).not.toHaveAttribute('data-float-hint')
     }
   }
-  await row.getByRole('button', { name: 'Восстановить', exact: true }).focus()
+  await page.setViewportSize({ width: 1280, height: 850 })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+  const zoomDialog = await open('Размер и размещение')
+  expect(await zoomDialog.evaluate((e) => e.scrollWidth <= e.clientWidth + 2)).toBe(true)
+  await page.screenshot({
+    path: testInfo.outputPath('editor-200-percent.png'),
+    animations: 'disabled',
+  })
+  await page.keyboard.press('Escape')
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = ''
+  })
+  const sourcePosition = await open('Размер и размещение')
+  await sourcePosition.getByLabel('Размещение', { exact: true }).selectOption('center-source')
+  await expect.poll(async () => (await layout()).entries[0]?.placement).toBe('center-source')
+  await page.keyboard.press('Escape')
+  let actions = await open('Действия с рисунком')
+  await expect(actions.getByRole('button', { name: 'В предыдущую задачу' })).toBeDisabled()
+  await actions.locator('summary').click()
+  await actions.getByLabel('Пункт', { exact: true }).selectOption('б')
+  await expect.poll(async () => (await layout()).entries[0]?.targetPart).toBe('б')
+  expect((await layout()).entries[0]?.placement).toBe('center-before')
+  actions = await open('Действия с рисунком')
+  await actions.getByRole('button', { name: 'В следующую задачу' }).click()
+  await expect.poll(async () => (await layout()).entries[0]?.targetOrdinal).toBe(2)
+  expect((await layout()).entries[0]?.targetPart).toBeNull()
+  actions = await open('Действия с рисунком')
+  await expect(actions.getByRole('button', { name: 'В следующую задачу' })).toBeDisabled()
+  await actions.getByRole('button', { name: 'В предыдущую задачу' }).click()
+  await expect.poll(async () => (await layout()).entries[0]?.targetOrdinal).toBe(1)
+  actions = await open('Действия с рисунком')
+  await actions.getByRole('button', { name: 'В следующую задачу' }).click()
+  await expect.poll(async () => (await layout()).entries[0]?.targetOrdinal).toBe(2)
+  actions = await open('Действия с рисунком')
+  await actions.getByRole('button', { name: 'Скрыть рисунок' }).click()
+  const restore = workflow.getByRole('button', { name: 'Восстановить', exact: true })
+  await expect(restore).toBeVisible()
+  await restore.focus()
   await page.keyboard.press('Enter')
-  await expect(row.getByRole('button', { name: 'Скрыть', exact: true })).toBeVisible()
-  await row.getByRole('button', { name: 'Скрыть', exact: true }).click()
+  await expect(controls).toBeVisible()
+  actions = await open('Действия с рисунком')
+  await actions.getByRole('button', { name: 'Скрыть рисунок' }).click()
+  await expect(restore).toBeVisible()
+  // The other occurrence of the same SVG is still visible and unchanged.
+  expect((await layout()).entries).toHaveLength(1)
+  expect(await (await student.request.get(publicRoute)).json()).toEqual(resized)
   await publish(page)
   expect(await (await student.request.get(publicRoute)).json()).not.toEqual(original)
   await student.reload()

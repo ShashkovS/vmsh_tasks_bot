@@ -99,6 +99,7 @@ export const publishContentRequestSchema = z
     kind: contentMaterialKindSchema,
     revisionId: publicIdSchema,
     mode: z.enum(['publish', 'schedule']),
+    expectedLayoutVersion: z.number().int().nonnegative().optional(),
     scheduledLocalTime: localPublicationTimeSchema.nullable(),
     businessTimezone: businessTimezoneSchema.nullable(),
     ...optionalPublicationPairShape,
@@ -161,6 +162,7 @@ export type PublishContentRequest = z.infer<typeof publishContentRequestSchema>
 export const rollbackContentRequestSchema = z
   .object({
     revisionId: publicIdSchema,
+    targetPublicationId: publicIdSchema.optional(),
     expectedScheduledPublicationId: publicIdSchema.nullable(),
     expectedScheduledVersion: z.number().int().positive().nullable(),
   })

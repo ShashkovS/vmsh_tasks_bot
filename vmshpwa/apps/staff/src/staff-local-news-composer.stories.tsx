@@ -15,6 +15,7 @@ const courses: AdminCourse[] = [
     sortOrder: 10,
     accentKey: 'math',
     hasInPersonClasses: true,
+    metadataModel: 'openai/gpt-5.6-luna',
     activeStudents: 120,
     version: 1,
     groups: [

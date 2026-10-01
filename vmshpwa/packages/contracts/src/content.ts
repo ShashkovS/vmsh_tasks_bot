@@ -157,6 +157,8 @@ export type WebContentBlock =
       floatHint?: 'left' | 'right' | undefined
       widthHint?: string | undefined
       scale?: number | undefined
+      widthRem?: number | undefined
+      placement?: FigurePlacement | undefined
       asset: WebFigureAvailableAsset | WebFigureMissingAsset
     }
   | {
@@ -257,6 +259,8 @@ export const webContentBlockSchema: z.ZodType<WebContentBlock> = z.lazy(() =>
           .regex(/^(?:\d+(?:\.\d+)?%|\d+(?:\.\d+)?px)$/u)
           .optional(),
         scale: z.number().min(0.25).max(2.5).optional(),
+        widthRem: z.number().min(0.5).max(80).multipleOf(0.5).optional(),
+        placement: figurePlacementSchema.optional(),
         asset: z.discriminatedUnion('status', [
           webFigureAvailableAssetSchema,
           webFigureMissingAssetSchema,
@@ -511,14 +515,26 @@ export const goldenContentComparisonFixtureSchema = z
 export type GoldenContentComparisonFixture = z.infer<typeof goldenContentComparisonFixtureSchema>
 
 /** Draft figure occurrence placement; docs/figure-layout.md. */
+export const figurePlacementSchema = z.enum([
+  'source',
+  'center-source',
+  'center-before',
+  'center-after',
+  'float-left',
+  'float-right',
+])
+export type FigurePlacement = z.infer<typeof figurePlacementSchema>
 export const figureLayoutEntrySchema = z
   .object({
     occurrenceId: z.string().regex(/^figure-[a-f0-9]{24}$/),
-    targetOrdinal: z.number().int().positive(),
+    targetOrdinal: z.number().int().nonnegative(),
     targetPart: z.string().max(2000).nullable(),
     section: z.enum(['common', 'answer', 'solution']),
     order: z.number().int().min(0).max(2000),
     side: z.enum(['left', 'right']),
+    placement: figurePlacementSchema.optional(),
+    widthRem: z.number().min(0.5).max(80).multipleOf(0.5).optional(),
+    scale: z.number().min(0.25).max(2.5).optional(),
     hidden: z.boolean(),
   })
   .strict()
@@ -531,6 +547,8 @@ export const figureLayoutMutationSchema = z
 export const figureLayoutSchema = z.object({
   revisionId: publicIdSchema,
   version: z.number().int().nonnegative(),
+  hasUnpublishedChanges: z.boolean().optional(),
+  canPublish: z.boolean().optional(),
   entries: z.array(figureLayoutEntrySchema).max(2000),
   figures: z
     .array(

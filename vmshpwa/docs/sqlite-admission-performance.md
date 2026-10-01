@@ -204,3 +204,57 @@ guard. Поэтому плохая миграция прекращает deploy 
 (или `make pwa-performance-guard` для human-профиля). Регрессии находятся в
 `pwa_tests/test_database_performance_guard.py` и
 `pwa_tests/integration/test_test_attempt_projection_migration.py`.
+
+## Receipt lookup index — 1 October 2026
+
+Owner authorized committing/pushing an index migration and deploying it to
+VMSh and TLF. Incident metrics show long test-answer rechecks coinciding with
+interactive SQLite reader queues. In `_stored_attempts`, the correlated receipt
+lookup scans `idempotency_records` once per answer: its original unique index
+starts with `audience`, which this historical lookup does not constrain.
+
+[Migration 0105](../../migrations/0105.pwa_recheck_receipt_lookup.sql) adds a
+partial lookup index on `(account_id, operation, idempotency_key,
+payload_sha256, id DESC)` for `state = 'completed'`. It directly serves the
+existing account-scoped receipt lookup in
+[`submissions.py:_stored_attempts`](../../db_methods/pwa/submissions.py),
+including its newest-receipt ordering, without altering query semantics,
+answer payloads, verdicts or replay responses. The existing audience-scoped
+unique constraint and all identity/state triggers remain intact.
+
+Its dependency is the published `0103.course_in_person_classes`; independent
+in-progress figure migration 0104 is excluded from this release. Rollback drops
+only the new index. Regression:
+[`test_recheck_receipt_lookup_migration.py`](../../pwa_tests/integration/test_recheck_receipt_lookup_migration.py)
+checks the actual repository query plan, identical stored rows/previews and
+up/down/up. The new regression and 14 existing recheck/idempotency checks
+passed. A server-resident production-backup rehearsal created the index in
+112 ms and read 714 historical answers in 26 ms using the original query.
+Up/down/up preserved complete receipt/attempt/result/enrollment row digests
+and SQLite integrity. The isolated index-only release passes 36 focused migration/recheck/idempotency/
+schema checks, including the two updated schema expectations; the inventory CLI
+check and Ruff pass.
+
+Release `0a05b685` is deployed on both hosts: VMSh automatically by the main
+branch webhook; TLF by the guarded manual script retained at
+`/web/vmsh_tasks_bot/deploy/releases/recheck-index-0a05b685c044-20261001T120604Z/deploy.sh`.
+Both live databases contain 76 migrations and the new index, exclude 0104,
+and pass integrity checks. The actual live VMSh query reads 714 answers in
+15 ms with an indexed receipt lookup; TLF has no test attempts yet, but the
+same query plan uses the new index.
+
+VMSh fresh backups `vmsh-before-deploy-20261001120529.sqlite3` and
+`vmsh-after-deploy-20261001120600.sqlite3` pass integrity and have identical
+complete-row digests for 44016 receipts, 20676 attempts, 34536 results and 1519
+enrollments. TLF backups `20261001T120604.531651Z` and
+`20261001T120612.278270Z` pass integrity; every product table was compared with
+writers stopped and remained identical. Three raw Zoom receipts, existing
+credentials and both static artifacts are preserved. No production test
+submission/recheck was performed by validation.
+
+Both portals pass 25 read-only public HTTP checks each. All five VMSh and four
+TLF Prometheus targets are up; the observed post-cutover one-minute backend
+5xx increase and current read/write admission queues are zero. PWA, VMSh
+Telegram and TLF Zoom are active. Shared NATS PIDs remain 3018 and 1936264.
+Documentation-only follow-ups need source synchronization, without service
+restart or rebuilding the unchanged frontend. [TLF operations](../../docs/deploy/tlf-app/README.md#receipt-lookup-index--2026-10-01).

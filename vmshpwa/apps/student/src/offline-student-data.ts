@@ -356,7 +356,8 @@ export function createOfflineStudentPublishedContentClient(
         descriptor: descriptor(ownerId, 'published-content', input.groupLessonId, input.kind),
         parser: publishedContentSchema,
         request: () => online.published(input, options),
-        version: (payload) => `${payload.revisionId}:release:${payload.problemReleaseVersion ?? 1}`,
+        version: (payload) =>
+          `${payload.revisionId}:${payload.publicationId}:release:${payload.problemReleaseVersion ?? 1}`,
         isNetworkError: (error) => error instanceof ContentNetworkError,
       })
     },

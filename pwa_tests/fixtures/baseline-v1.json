@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
   "schemaVersion": 3,
-  "expectedCanonicalDigest": "662fa3416b9b3a368821a0148042215e4f1f64aa0befb70d0ed0d1a381c01802",
+  "expectedCanonicalDigest": "e5e94a90b6c23ef2e8e153e8d77389bfd8dbea5ce90b894edce6889082bf57d9",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",
@@ -13,10 +13,7 @@
     "familyPersona": {
       "fixtureKey": "fixture-family-1",
       "accountPublicId": "a-1101",
-      "studentUserIds": [
-        101,
-        102
-      ],
+      "studentUserIds": [101, 102],
       "materializeInPhase": 1
     }
   },

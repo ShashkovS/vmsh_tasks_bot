@@ -347,8 +347,20 @@
         "sha256": "c2e36785cf1c728c4296c2d07ed930f4949c909bb3c04fd5d4282b0b326e4397"
       },
       {
-        "id": "0104.pwa_problem_release",
-        "sha256": "f580d7ad2f7427cbc04c83d3b23e73f6a1acfcf9e797fa5f2fe2b96dc0fc744d"
+        "id": "0104.course_metadata_model",
+        "sha256": "377a4fab0c6a434e9dcdd7f0f0ced7ffc148eb7e0d1c3a1207551fdaeab27171"
+      },
+      {
+        "id": "0105.pwa_recheck_receipt_lookup",
+        "sha256": "bdb0f20cc579d33c114a369c4721c3da59dad2860c43ed02b455a4b64b19f43b"
+      },
+      {
+        "id": "0106.pwa_figure_presentation",
+        "sha256": "c905ef419e889a89ba3e20371f84d0832d9770b7991a4c0145477fd5e8b3e4c1"
+      },
+      {
+        "id": "0107.pwa_problem_release",
+        "sha256": "f7976b4b64235e47809bde531f97260ce5a64c052bd682acb78fe4338108c383"
       }
     ],
     "repository_head_status": {
@@ -359,7 +371,7 @@
     }
   },
   "product": {
-    "object_count": 501,
+    "object_count": 502,
     "objects": [
       {
         "columns": [
@@ -8340,6 +8352,15 @@
             "name": "has_in_person_classes",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": "'openai/gpt-5.6-luna'",
+            "hidden": 0,
+            "name": "metadata_model",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -8463,8 +8484,8 @@
           }
         ],
         "name": "courses",
-        "object_sha256": "6ebb0705c0708813ac5ac41b004fd151fe2c80d3228257b57685c7f05ce617b2",
-        "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id text generated always as ('c-' || id) virtual,\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1\n    CHECK (has_in_person_classes IN (0, 1)),\n    unique (season_id, code)\n);",
+        "object_sha256": "9f669ee6d2e18df3264e6347b5b1584c2d07d573c1e017a788a04a6bad7ef091",
+        "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id text generated always as ('c-' || id) virtual,\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1\n    CHECK (has_in_person_classes IN (0, 1)), metadata_model TEXT NOT NULL DEFAULT 'openai/gpt-5.6-luna'\n    CHECK (length(trim(metadata_model)) BETWEEN 3 AND 200),\n    unique (season_id, code)\n);",
         "table_name": "courses",
         "type": "table"
       },
@@ -11300,6 +11321,62 @@
           }
         ],
         "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "operation",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 2
+              },
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "payload_sha256",
+                "seqno": 3
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 4
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 5
+              }
+            ],
+            "name": "idempotency_records_completed_receipt_lookup_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
           {
             "columns": [
               {
@@ -19492,6 +19569,15 @@
             "name": "entries_json",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": "'{}'",
+            "hidden": 0,
+            "name": "legacy_scales_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -19510,8 +19596,8 @@
         ],
         "indexes": [],
         "name": "publication_figure_layouts",
-        "object_sha256": "2ef841e8a9b9703248793faa43eeddabaa22eeac4201dae36a16c43e309fbed6",
-        "sql": "CREATE TABLE publication_figure_layouts (\n publication_id INTEGER PRIMARY KEY REFERENCES lesson_publications(id),\n layout_version INTEGER NOT NULL,\n document_json TEXT,\n telegram_html TEXT,\n telegram_sha256 TEXT,\n entries_json TEXT NOT NULL\n);",
+        "object_sha256": "9f1072901119845e1f91620f60c96ee78dbda164f494681b0b9ee2323a3d25b9",
+        "sql": "CREATE TABLE publication_figure_layouts (\n publication_id INTEGER PRIMARY KEY REFERENCES lesson_publications(id),\n layout_version INTEGER NOT NULL,\n document_json TEXT,\n telegram_html TEXT,\n telegram_sha256 TEXT,\n entries_json TEXT NOT NULL\n, legacy_scales_json TEXT NOT NULL DEFAULT '{}');",
         "table_name": "publication_figure_layouts",
         "type": "table"
       },
@@ -29775,6 +29861,13 @@
         "type": "index"
       },
       {
+        "name": "idempotency_records_completed_receipt_lookup_idx",
+        "object_sha256": "52d1cbb4d71fd6729f32cc23aea987b66ddb3c005c19237e283d246a61793ac2",
+        "sql": "CREATE INDEX idempotency_records_completed_receipt_lookup_idx\n    ON idempotency_records (account_id, operation, idempotency_key, payload_sha256, id DESC)\n    WHERE state = 'completed';",
+        "table_name": "idempotency_records",
+        "type": "index"
+      },
+      {
         "name": "idempotency_records_expiry_idx",
         "object_sha256": "288fd13ca4c0ab558c0768eefbd3472030dccfc9b8546757b36479d7b8b7e8ce",
         "sql": "CREATE INDEX idempotency_records_expiry_idx\n    on idempotency_records (expires_at, id)\n    where expires_at is not null;",
@@ -31749,8 +31842,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "c10e16cc10fb80a8311757def89dd09a3e532644da9ec5de766266b93d547221",
-    "sha256": "d266b331dc31ffb2a6aaa3ee1a39261e9528c1d2ee0eab106864376c57f9ef65"
+    "pragma_structure_sha256": "2678724b3e5f7bc8d7da4e312c4201331f3440de1ba6d34b85b64b1d3da627ae",
+    "sha256": "b230d4e593e93bfe23917d55b1aaef78fa440829ca4fa34c17f64d01758b3f6a"
   },
   "source_kind": "repository-migration-head"
 }

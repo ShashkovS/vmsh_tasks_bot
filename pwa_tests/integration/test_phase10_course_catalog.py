@@ -99,6 +99,7 @@ async def test_course_catalog_is_admin_only_and_reports_real_counts(classroom_ht
             "sortOrder": 1,
             "accentKey": "math",
             "hasInPersonClasses": True,
+            "metadataModel": "openai/gpt-5.6-luna",
             "activeStudents": 1,
             "groups": [
                 {

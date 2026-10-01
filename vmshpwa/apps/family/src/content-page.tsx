@@ -104,7 +104,7 @@ export function FamilyPublishedContentPage({
     groupLessonId && studentPublicId
       ? `family:${studentPublicId}:${groupLessonId}:${kind}`
       : undefined,
-    query.data?.revisionId,
+    query.data?.publicationId,
   )
 
   if (!groupLessonId || !studentPublicId) {

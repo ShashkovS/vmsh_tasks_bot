@@ -479,3 +479,55 @@ export const EnglishWorksheetHeading: Story = {
     await expect(canvas.queryByRole('heading', { name: /Задача/u })).toBeNull()
   },
 }
+
+// docs/figure-layout.md: shared renderer displays absolute widths in all audiences.
+const sampleFigure = semanticDocument.problems
+  .flatMap((p) => p.blocks)
+  .find((block) => block.type === 'figure' && block.asset.status === 'available')!
+function presentationDocument(widths: number[]): WebContentDocument {
+  return {
+    ...semanticDocument,
+    introduction: [],
+    problems: widths.map((widthRem, i) => ({
+      ordinal: i + 1,
+      sourceItem: String(i + 1),
+      title: null,
+      blocks: [
+        {
+          ...sampleFigure,
+          type: 'figure',
+          widthRem,
+          placement: i % 2 ? 'float-right' : 'center-before',
+          floatHint: 'right',
+        } as Extract<WebContentDocument['problems'][number]['blocks'][number], { type: 'figure' }>,
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                'Объясните, как найти площадь фигуры, и запишите решение. На узком экране рисунок помещается перед текстом задачи.',
+            },
+          ],
+        },
+      ],
+    })),
+  }
+}
+export const AbsoluteFigureWidths: Story = {
+  args: { document: presentationDocument([12, 12, 0.5, 80]) },
+  play: async ({ canvasElement }) => {
+    const figures = within(canvasElement).getAllByTestId('asset-figure')
+    await expect(figures[0]!.style.getPropertyValue('--vmsh-source-width')).toBe('12rem')
+    await expect(figures[2]!).toHaveAttribute('data-editor-small', 'true')
+    for (const figure of figures) {
+      await expect(figure.getBoundingClientRect().width).toBeLessThanOrEqual(
+        figure.parentElement!.clientWidth + 2,
+      )
+    }
+  },
+}
+export const AbsoluteFigureWidthsMobile: Story = {
+  args: { document: presentationDocument([12, 12, 0.5, 80]) },
+  parameters: { viewport: { defaultViewport: 'mobile2' } },
+}

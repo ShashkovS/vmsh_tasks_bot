@@ -176,6 +176,91 @@ async def test_conflict_and_revision_replacement_preserve_off(content_http):
     assert (await change(fixture, old, True)).status == 409
 
 
+async def test_figure_republication_and_rollback_preserve_off(content_http):
+    """problem-release.md and figure-layout.md share the publication boundary."""
+    fixture = content_http
+    compiled, _ = await support._upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="release/figure.tex",
+        source=r"\задача До.\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}После.\кзадача",
+    )
+    revision = compiled["revisionId"]
+    published = await support._publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision,
+    )
+    assert published.status == 201, await published.text()
+    first = await published.json()
+    assert (await change(fixture, await release_state(fixture, revision), False)).status == 200
+    route = f"/staff/api/v1/content/revisions/{revision}/figure-layout"
+    layout = await fixture.client.get(
+        route, cookies=support._cookie(fixture, "admin"), headers=support._headers()
+    )
+    assert layout.status == 200, await layout.text()
+    row = (await layout.json())["figures"][0]
+    saved = await fixture.client.put(
+        route,
+        json={
+            "version": 0,
+            "entries": [{
+                "occurrenceId": row["occurrenceId"],
+                "targetOrdinal": row["sourceOrdinal"],
+                "targetPart": row["sourcePart"],
+                "section": row["sourceSection"],
+                "order": 0,
+                "side": "right",
+                "hidden": False,
+                "placement": "source",
+                "widthRem": 12,
+            }],
+        },
+        cookies=support._cookie(fixture, "admin"),
+        headers=support._headers(unsafe=True),
+    )
+    assert saved.status == 200, await saved.text()
+    republished = await support._publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision,
+        expected_id=first["publicationId"],
+        expected_version=first["version"],
+        if_match=published.headers["ETag"],
+    )
+    assert republished.status == 201, await republished.text()
+    second = await republished.json()
+    rollback = await fixture.client.post(
+        f"/staff/api/v1/publications/{second['publicationId']}/rollback",
+        json={
+            "revisionId": revision,
+            "targetPublicationId": first["publicationId"],
+            "expectedScheduledPublicationId": None,
+            "expectedScheduledVersion": None,
+        },
+        cookies=support._cookie(fixture, "admin"),
+        headers=support._headers(unsafe=True, if_match=republished.headers["ETag"]),
+    )
+    assert rollback.status == 201, await rollback.text()
+    assert (await release_state(fixture, revision))["problems"] == [
+        {"sourceOrdinal": 1, "isOpen": False}
+    ]
+    student = await support._student_read(
+        fixture, group_lesson=fixture.group_lesson_a, kind="condition"
+    )
+    assert (await student.json())["document"]["problems"] == []
+    family = await fixture.client.get(
+        f"/family/api/v1/children/u-903101/group-lessons/{fixture.group_lesson_a}/content/condition",
+        cookies=support._cookie(fixture, "family"),
+        headers=support._headers(),
+    )
+    assert family.status == 200, await family.text()
+    assert (await family.json())["document"]["problems"] == []
+
+
 @pytest.mark.parametrize(
     ("known", "new_open", "expected"),
     [

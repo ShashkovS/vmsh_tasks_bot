@@ -1,7 +1,7 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
-import { FigureLayoutEditor } from './figure-layout-editor'
+import { currentLocale, dateTimeFormat, formatDateTime } from '@vmsh/i18n'
+import { FigureLayoutEditor, type FigureDraftState } from './figure-layout-editor'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, FileCode2, Mic, RefreshCw, Send, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -40,12 +40,11 @@ import {
   type StaffContentRevision,
   type StaffLessonWindow,
   type StaffPdfContentPreview,
-  type WebFigureAvailableAsset,
   type WebContentDocument,
 } from '@vmsh/contracts'
 import { LatexUpload } from '@vmsh/product'
 import { StaffProblemReleasePreview } from './staff-problem-release-preview'
-import { StaffWorksheetPreview, FigureScaleTools } from './staff-worksheet-preview'
+import { StaffWorksheetPreview } from './staff-worksheet-preview'
 import {
   Alert,
   AlertContent,
@@ -124,7 +123,7 @@ interface MaterialWorkflowState {
   previewLoading: boolean
   selectedRevisionId: string | undefined
   reviewReadyRevisionId: string | undefined
-  rollbackRevisionId: string | undefined
+  rollbackPublicationId: string | undefined
   currentPublication: VersionedPublicationView | undefined
   scheduledPublication: VersionedPublicationView | undefined
   scheduleAt: string
@@ -199,10 +198,13 @@ function initialMaterialState(history?: StaffContentMaterialHistory): MaterialWo
   const revisions = revisionsFromHistory(history)
   const readyRevisions = revisions.filter((revision) => revision.data.status === 'ready')
   const selectedRevisionId = readyRevisions.at(-1)?.data.revisionId
-  const currentRevisionId = history?.currentPublished?.revisionId
-  const rollbackRevisionId = [...readyRevisions]
+  const rollbackPublicationId = [...(history?.publicationHistory ?? [])]
     .reverse()
-    .find((revision) => revision.data.revisionId !== currentRevisionId)?.data.revisionId
+    .find(
+      (publication) =>
+        publication.publishedAt !== null &&
+        publication.publicationId !== history?.currentPublished?.publicationId,
+    )?.publicationId
   return {
     file: undefined,
     phase: 'idle',
@@ -221,7 +223,7 @@ function initialMaterialState(history?: StaffContentMaterialHistory): MaterialWo
     previewLoading: false,
     selectedRevisionId,
     reviewReadyRevisionId: undefined,
-    rollbackRevisionId,
+    rollbackPublicationId,
     currentPublication: history?.currentPublished
       ? publicationView(history.currentPublished)
       : undefined,
@@ -362,6 +364,15 @@ function MaterialWorkflowCard({
     enabled: typeof client.lessonWindow === 'function',
   })
   const [confirmation, setConfirmation] = useState<ConfirmationAction | null>(null)
+  const [figureDraft, setFigureDraft] = useState<FigureDraftState | undefined>()
+  const handleFigureState = useCallback((draft: FigureDraftState) => setFigureDraft(draft), [])
+  const handleFigurePreview = useCallback(
+    (document: WebContentDocument) =>
+      setState((current) =>
+        current.webDocument === document ? current : { ...current, webDocument: document },
+      ),
+    [],
+  )
   // Button disabled state is applied on the next React render. Keep one
   // synchronous guard too: otherwise a double click can recompile a revision
   // after its first request has already made it terminal.
@@ -373,9 +384,23 @@ function MaterialWorkflowCard({
   const selectedRevision = readyRevisions.find(
     (revision) => revision.data.revisionId === state.selectedRevisionId,
   )
-  const rollbackRevision = readyRevisions.find(
-    (revision) => revision.data.revisionId === state.rollbackRevisionId,
+  const rollbackTargets = history.publicationHistory.filter(
+    (publication) =>
+      publication.publishedAt !== null &&
+      publication.publicationId !== state.currentPublication?.data.publicationId,
   )
+  const rollbackTarget = rollbackTargets.find(
+    (publication) => publication.publicationId === state.rollbackPublicationId,
+  )
+  const rollbackRevision = readyRevisions.find(
+    (revision) => revision.data.revisionId === rollbackTarget?.revisionId,
+  )
+  const figureLayoutQuery = useQuery({
+    queryKey: ['staff-figure-layout', selectedRevision?.data.revisionId],
+    queryFn: () => client.figureLayout!(selectedRevision!.data.revisionId),
+    enabled: !!selectedRevision && !!client.figureLayout,
+    meta: { realtimeResources: [] },
+  })
   const publishedRevision = state.currentPublication
     ? state.revisions.find(
         (revision) => revision.data.revisionId === state.currentPublication?.data.revisionId,
@@ -383,7 +408,8 @@ function MaterialWorkflowCard({
     : undefined
   const readyForPublication =
     selectedRevision !== undefined &&
-    state.reviewReadyRevisionId === selectedRevision.data.revisionId
+    (state.reviewReadyRevisionId === selectedRevision.data.revisionId ||
+      figureLayoutQuery.data?.canPublish === true)
   const recoverableRevisions = state.revisions.filter((revision) =>
     isRecoverableRevision(revision.data),
   )
@@ -422,7 +448,6 @@ function MaterialWorkflowCard({
         (left, right) => left.data.revisionNumber - right.data.revisionNumber,
       )
       const ready = revisions.filter((revision) => revision.data.status === 'ready')
-      const currentRevisionId = history.currentPublished?.revisionId
       const previousLatestNumber = current.revisions.at(-1)?.data.revisionNumber ?? 0
       const latestReady = ready.at(-1)
       const selectedRevisionId =
@@ -431,12 +456,16 @@ function MaterialWorkflowCard({
           : ready.some((revision) => revision.data.revisionId === current.selectedRevisionId)
             ? current.selectedRevisionId
             : latestReady?.data.revisionId
-      const rollbackRevisionId = ready.some(
-        (revision) => revision.data.revisionId === current.rollbackRevisionId,
+      const pastPublications = history.publicationHistory.filter(
+        (publication) =>
+          publication.publishedAt !== null &&
+          publication.publicationId !== history.currentPublished?.publicationId,
       )
-        ? current.rollbackRevisionId
-        : [...ready].reverse().find((revision) => revision.data.revisionId !== currentRevisionId)
-            ?.data.revisionId
+      const rollbackPublicationId = pastPublications.some(
+        (publication) => publication.publicationId === current.rollbackPublicationId,
+      )
+        ? current.rollbackPublicationId
+        : pastPublications.at(-1)?.publicationId
       return {
         ...current,
         revisions,
@@ -445,7 +474,7 @@ function MaterialWorkflowCard({
           selectedRevisionId === current.selectedRevisionId
             ? current.reviewReadyRevisionId
             : undefined,
-        rollbackRevisionId,
+        rollbackPublicationId,
         currentPublication: history.currentPublished
           ? publicationView(history.currentPublished)
           : undefined,
@@ -779,29 +808,6 @@ function MaterialWorkflowCard({
     }
   }
 
-  const updateFigureScale = async (asset: WebFigureAvailableAsset, scale: number) => {
-    if (!selectedRevision || !client.updateFigureScale || state.mutationPending) return
-    patchState({ errorMessage: undefined, mutationPending: true })
-    try {
-      const preview = await client.updateFigureScale({
-        revisionId: selectedRevision.data.revisionId,
-        etag: selectedRevision.etag,
-        assetId: asset.assetId,
-        scale,
-      })
-      if (preview.kind !== 'web') throw new Error(t`Сервер вернул несовместимый preview`)
-      setState((current) => ({
-        ...current,
-        webDocument: preview.document,
-        previewRevisionId: preview.revisionId,
-        mutationPending: false,
-      }))
-    } catch (error) {
-      patchState({ mutationPending: false })
-      handleMutationError(error)
-    }
-  }
-
   const publish = async (mode: 'publish' | 'schedule') => {
     if (!selectedRevision) return
     // The confirmation was reachable only after the review became ready. A
@@ -827,6 +833,9 @@ function MaterialWorkflowCard({
         kind,
         revisionId: selectedRevision.data.revisionId,
         mode,
+        ...(figureLayoutQuery.data
+          ? { expectedLayoutVersion: figureLayoutQuery.data.version }
+          : {}),
         ...(mode === 'schedule'
           ? {
               scheduledLocalTime: parsedLocalTime!.data,
@@ -836,6 +845,10 @@ function MaterialWorkflowCard({
         ...(current ? { current } : {}),
         ...(scheduled ? { scheduled } : {}),
       })
+      await queryClient.invalidateQueries({
+        queryKey: ['staff-figure-layout', selectedRevision.data.revisionId],
+      })
+      await onConflict()
       setConfirmation(null)
       patchState(
         mode === 'publish'
@@ -861,7 +874,11 @@ function MaterialWorkflowCard({
         current,
         rollbackRevision.data.revisionId,
         publicationSlot(state.scheduledPublication),
+        {},
+        rollbackTarget?.publicationId,
       )
+      await onConflict()
+      await queryClient.invalidateQueries({ queryKey: ['staff-figure-layout'] })
       patchState({
         currentPublication: publicationView(publication),
         scheduledPublication: undefined,
@@ -1229,37 +1246,60 @@ function MaterialWorkflowCard({
                 <TabsTrigger value="pdf">PDF</TabsTrigger>
               </TabsList>
               <TabsContent className="min-w-0" value="pwa">
-                <Preview
-                  groupLessonId={groupLessonId}
-                  revisionId={state.webDocument.revisionId}
-                  key={`${state.previewRevisionId}:${kind}`}
-                  document={state.webDocument}
-                  condition={state.conditionDocument}
-                  hintDocument={state.hintDocument}
-                  solutionDocument={state.solutionDocument}
-                  submissionClosed={
-                    previewWindow.data
-                      ? Date.now() >= Date.parse(previewWindow.data.data.submissionClosesAt)
-                      : kind === 'solution'
-                  }
-                />
                 {client.figureLayout && client.saveFigureLayout && selectedRevision ? (
                   <FigureLayoutEditor
                     client={client}
                     revisionId={selectedRevision.data.revisionId}
-                    onPreview={(document) => {
-                      patchState({ webDocument: document, pdfPreview: undefined })
-                      void inspectCompiledRevision(selectedRevision.data.revisionId).catch(() => {
-                        patchState({
-                          errorMessage: t`Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала.`,
+                    onPreview={handleFigurePreview}
+                    onState={handleFigureState}
+                    onSaved={() => {
+                      void client
+                        .preview(selectedRevision.data.revisionId, 'telegram')
+                        .then((preview) => {
+                          if (preview.kind === 'telegram')
+                            patchState({ telegramHtml: preview.html })
                         })
-                      })
+                        .catch(() =>
+                          patchState({
+                            errorMessage: t`Оформление сохранено, но не удалось обновить Telegram-превью.`,
+                          }),
+                        )
                     }}
+                  >
+                    {(tools) => (
+                      <Preview
+                        groupLessonId={groupLessonId}
+                        revisionId={state.webDocument!.revisionId}
+                        key={`${state.previewRevisionId}:${kind}`}
+                        document={state.webDocument!}
+                        renderFigureTools={tools}
+                        condition={state.conditionDocument}
+                        hintDocument={state.hintDocument}
+                        solutionDocument={state.solutionDocument}
+                        submissionClosed={
+                          previewWindow.data
+                            ? Date.now() >= Date.parse(previewWindow.data.data.submissionClosesAt)
+                            : kind === 'solution'
+                        }
+                      />
+                    )}
+                  </FigureLayoutEditor>
+                ) : (
+                  <Preview
+                    groupLessonId={groupLessonId}
+                    revisionId={state.webDocument.revisionId}
+                    key={`${state.previewRevisionId}:${kind}`}
+                    document={state.webDocument}
+                    condition={state.conditionDocument}
+                    hintDocument={state.hintDocument}
+                    solutionDocument={state.solutionDocument}
+                    submissionClosed={
+                      previewWindow.data
+                        ? Date.now() >= Date.parse(previewWindow.data.data.submissionClosesAt)
+                        : kind === 'solution'
+                    }
                   />
-                ) : null}
-                {client.updateFigureScale ? (
-                  <FigureScaleTools document={state.webDocument} onScale={updateFigureScale} />
-                ) : null}
+                )}
               </TabsContent>
               <TabsContent className="min-w-0" value="telegram">
                 <div className="mx-auto max-w-[42rem] rounded-md border border-border bg-surface p-4 sm:p-5">
@@ -1300,12 +1340,17 @@ function MaterialWorkflowCard({
           </section>
         ) : null}
 
+        {figureLayoutQuery.data?.hasUnpublishedChanges ? (
+          <p role="status" className="text-small text-muted-foreground">
+            <Trans>Есть неопубликованные изменения оформления рисунков.</Trans>
+          </p>
+        ) : null}
         {readyForPublication || state.currentPublication || state.scheduledPublication ? (
           <div className="space-y-3 rounded-md border border-border bg-surface-subtle p-3">
             <div className="flex flex-wrap items-center gap-2">
               {readyForPublication ? (
                 <Button
-                  disabled={state.mutationPending}
+                  disabled={state.mutationPending || figureDraft?.saving === true}
                   onClick={() => setConfirmation('publish')}
                   size="sm"
                 >
@@ -1314,7 +1359,7 @@ function MaterialWorkflowCard({
               ) : null}
               {state.currentPublication ? (
                 <Button
-                  disabled={state.mutationPending}
+                  disabled={state.mutationPending || figureDraft?.saving === true}
                   onClick={() => setConfirmation('hide')}
                   size="sm"
                   variant="outline"
@@ -1343,7 +1388,9 @@ function MaterialWorkflowCard({
                   </p>
                 </div>
                 <Button
-                  disabled={!state.scheduleAt || state.mutationPending}
+                  disabled={
+                    !state.scheduleAt || state.mutationPending || figureDraft?.saving === true
+                  }
                   onClick={() => {
                     if (localPublicationTimeSchema.safeParse(state.scheduleAt).success) {
                       setConfirmation('schedule')
@@ -1359,44 +1406,48 @@ function MaterialWorkflowCard({
                 </Button>
               </div>
             ) : null}
-            {state.currentPublication &&
-            readyRevisions.some(
-              (revision) => revision.data.revisionId !== state.currentPublication?.data.revisionId,
-            ) ? (
+            {state.currentPublication && rollbackTargets.length > 0 ? (
               <div className="grid max-w-xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="space-y-1">
                   <Label htmlFor={`rollback-revision-${kind}`}>
                     <Trans>Версия для отката</Trans>
                   </Label>
                   <UiSelect
-                    onValueChange={(value) => value && patchState({ rollbackRevisionId: value })}
-                    value={state.rollbackRevisionId}
+                    onValueChange={(value) => value && patchState({ rollbackPublicationId: value })}
+                    value={state.rollbackPublicationId}
                   >
                     <SelectTrigger className="w-full" id={`rollback-revision-${kind}`}>
                       <SelectValue>
-                        {rollbackRevision
-                          ? t`Версия ${rollbackRevision.data.revisionNumber} · ${rollbackRevision.data.logicalFilename}`
-                          : t`Выберите версию`}
+                        {rollbackRevision ? (
+                          <>
+                            {t`Версия ${rollbackRevision.data.revisionNumber} · ${rollbackRevision.data.logicalFilename}`}{' '}
+                            ·{' '}
+                            {rollbackTarget?.publishedAt
+                              ? formatDateTime(rollbackTarget.publishedAt)
+                              : ''}
+                          </>
+                        ) : (
+                          t`Выберите версию`
+                        )}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent aria-label={t`Версия для отката`}>
-                      {[...readyRevisions]
-                        .reverse()
-                        .filter(
-                          (revision) =>
-                            revision.data.revisionId !== state.currentPublication?.data.revisionId,
+                      {[...rollbackTargets].reverse().map((publication) => {
+                        const revision = readyRevisions.find(
+                          (r) => r.data.revisionId === publication.revisionId,
                         )
-                        .map((revision) => (
+                        return (
                           <SelectItem
-                            key={revision.data.revisionId}
-                            value={revision.data.revisionId}
+                            key={publication.publicationId}
+                            value={publication.publicationId}
                           >
-                            <Trans>
-                              Версия {revision.data.revisionNumber} ·{' '}
-                              {revision.data.logicalFilename}
-                            </Trans>
+                            <Trans>Версия {revision?.data.revisionNumber ?? '—'}</Trans> ·{' '}
+                            {publication.publishedAt
+                              ? formatInBusinessTimezone(publication.publishedAt, businessTimezone)
+                              : publication.publicationId}
                           </SelectItem>
-                        ))}
+                        )
+                      })}
                     </SelectContent>
                   </UiSelect>
                 </div>
@@ -1434,7 +1485,7 @@ function MaterialWorkflowCard({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    disabled={state.mutationPending}
+                    disabled={state.mutationPending || figureDraft?.saving === true}
                     onClick={() => {
                       if (confirmation === 'publish') void publish('publish')
                       else if (confirmation === 'schedule') void publish('schedule')
@@ -1446,7 +1497,7 @@ function MaterialWorkflowCard({
                     {state.mutationPending ? t`Сохраняем…` : t`Подтвердить`}
                   </Button>
                   <Button
-                    disabled={state.mutationPending}
+                    disabled={state.mutationPending || figureDraft?.saving === true}
                     onClick={() => setConfirmation(null)}
                     size="sm"
                     variant="ghost"
@@ -1476,7 +1527,7 @@ function MaterialWorkflowCard({
                   ({businessTimezone})
                 </p>
                 <Button
-                  disabled={state.mutationPending}
+                  disabled={state.mutationPending || figureDraft?.saving === true}
                   onClick={() => void cancelSchedule()}
                   size="xs"
                   variant="ghost"

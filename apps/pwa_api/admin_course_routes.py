@@ -41,6 +41,7 @@ from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.family_enrollment import mark_working_classroom_plans_stale
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.metadata_generation import normalize_metadata_model
 from models.pwa.course_runtime_settings import (
     DEFAULT_COURSE_RUNTIME_SETTINGS,
     InvalidCourseRuntimeSettings,
@@ -298,6 +299,20 @@ def _course_values(payload: dict[str, object]) -> dict[str, object]:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте поля курса"
         )
+    # docs/metadata-generation.md: optional field preserves older catalog clients.
+    model_values = {}
+    if "metadataModel" in payload:
+        try:
+            model_values["metadata_model"] = normalize_metadata_model(
+                payload["metadataModel"]
+            )
+        except ValueError as error:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Укажите модель OpenRouter в формате provider/model",
+                details={"field": "metadataModel"},
+            ) from error
     code = _code(payload["code"], maximum=20)
     name = _text(payload["name"], maximum=200)
     subject_code = _code(payload["subjectCode"], maximum=50)
@@ -325,6 +340,7 @@ def _course_values(payload: dict[str, object]) -> dict[str, object]:
         "status": status,
         "sort_order": sort_order,
         "accent_key": accent_key,
+        **model_values,
         **(
             {"has_in_person_classes": payload["hasInPersonClasses"]}
             if "hasInPersonClasses" in payload
@@ -398,6 +414,7 @@ def _course_payload(
         "sortOrder": row["sort_order"],
         "accentKey": row["accent_key"],
         "hasInPersonClasses": bool(row["has_in_person_classes"]),
+        "metadataModel": row["metadata_model"],
         "activeStudents": row.get("active_students", 0),
         "groups": [_group_payload(group) for group in groups],
         "version": row["version"],
@@ -413,6 +430,7 @@ def _course_audit_values(row: dict[str, object]) -> dict[str, object]:
         "sortOrder": row["sort_order"],
         "accentKey": row["accent_key"],
         "hasInPersonClasses": bool(row["has_in_person_classes"]),
+        "metadataModel": row["metadata_model"],
         "version": row["version"],
     }
 
@@ -735,7 +753,7 @@ async def create_course(request: web.Request) -> web.Response:
             status=422, code="validation_error", message="Этот запрос без параметров"
         )
     payload = await _read_json(
-        request, _COURSE_FIELDS | {"seasonId"}, {"hasInPersonClasses"}
+        request, _COURSE_FIELDS | {"seasonId"}, {"hasInPersonClasses", "metadataModel"}
     )
     values = _course_values(payload)
     season_public_id = payload["seasonId"]
@@ -808,7 +826,9 @@ async def edit_course(request: web.Request) -> web.Response:
         )
     public_id = _path_public_id(request, "course_public_id", code="course_not_found")
     expected_version = _expected_version(request, public_id)
-    payload = await _read_json(request, _COURSE_FIELDS, {"hasInPersonClasses"})
+    payload = await _read_json(
+        request, _COURSE_FIELDS, {"hasInPersonClasses", "metadataModel"}
+    )
     values = _course_values(payload)
     now = _now()
 

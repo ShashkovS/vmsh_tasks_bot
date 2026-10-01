@@ -837,6 +837,18 @@ msgstr "В одной группе совпали несколько назва�
 msgid "В первой версии пароли хранятся для внешней почтовой рассылки. Не вставляйте сюда production-данные на общем устройстве."
 msgstr "В первой версии пароли хранятся для внешней почтовой рассылки. Не вставляйте сюда production-данные на общем устройстве."
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "В предыдущую задачу"
+msgstr "В предыдущую задачу"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "В следующую задачу"
+msgstr "В следующую задачу"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "В тексте без обтекания"
+msgstr "В тексте без обтекания"
+
 #: apps/staff/src/live-marking-grid.tsx
 msgid "В этом списке пока нет школьников."
 msgstr "В этом списке пока нет школьников."
@@ -862,8 +874,8 @@ msgid "Введите фамилию школьника."
 msgstr "Введите фамилию школьника."
 
 #: apps/staff/src/figure-layout-editor.tsx
-msgid "Вернуть исходное расположение"
-msgstr "Вернуть исходное расположение"
+msgid "Вернуть исходное оформление"
+msgstr "Вернуть исходное оформление"
 
 #. placeholder {0}: rollbackRevision?.data.revisionNumber ?? '—'
 #: apps/staff/src/content-page.tsx
@@ -883,8 +895,10 @@ msgstr "Версия"
 msgid "версия {0}"
 msgstr "версия {0}"
 
+#. placeholder {0}: revision?.data.revisionNumber ?? '—'
 #. placeholder {0}: selected.version
 #: apps/staff/src/classroom-event-page.tsx
+#: apps/staff/src/content-page.tsx
 msgid "Версия {0}"
 msgstr "Версия {0}"
 
@@ -1187,6 +1201,10 @@ msgstr "Вставьте строки из таблицы"
 #: apps/staff/src/teacher-batch-tsv.ts
 msgid "вставьте хотя бы одну строку"
 msgstr "вставьте хотя бы одну строку"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Вступление"
+msgstr "Вступление"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Вся посылка будет перенесена в целевую очередь. Вы перейдёте к следующей работе."
@@ -1501,6 +1519,15 @@ msgstr "Действие изменит видимую опубликованн�
 msgid "Действие не выполнено"
 msgstr "Действие не выполнено"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Действия с рисунком"
+msgstr "Действия с рисунком"
+
+#. placeholder {0}: figure.alt
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Действия с рисунком: {0}"
+msgstr "Действия с рисунком: {0}"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "День недели"
 msgstr "День недели"
@@ -1616,6 +1643,10 @@ msgstr "Доля"
 msgid "Доля решённых задач"
 msgstr "Доля решённых задач"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Дополнительные настройки"
+msgstr "Дополнительные настройки"
+
 #: apps/staff/src/staff-student-directory-page.tsx
 msgid "Доступ в кабинеты"
 msgstr "Доступ в кабинеты"
@@ -1666,6 +1697,10 @@ msgstr "Его глобальный доступ определяется рол
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Есть изменения"
 msgstr "Есть изменения"
+
+#: apps/staff/src/content-page.tsx
+msgid "Есть неопубликованные изменения оформления рисунков."
+msgstr "Есть неопубликованные изменения оформления рисунков."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Есть несохранённые изменения."
@@ -1787,6 +1822,10 @@ msgstr "Загружаем ленту"
 msgid "Загружаем название…"
 msgstr "Загружаем название…"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Загружаем настройки рисунков…"
+msgstr "Загружаем настройки рисунков…"
+
 #: apps/staff/src/staff-problem-release-preview.tsx
 msgid "Загружаем переключатели…"
 msgstr "Загружаем переключатели…"
@@ -1807,10 +1846,6 @@ msgstr "Загружаем распределение по аудиториям�
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Загружаем редактор…"
 msgstr "Загружаем редактор…"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Загружаем рисунки…"
-msgstr "Загружаем рисунки…"
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем сводку…"
@@ -2120,6 +2155,10 @@ msgstr "Здесь настраивается только область дан
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
 msgstr "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
+
+#: apps/staff/src/course-catalog-editors.tsx
+msgid "Идентификатор provider/model. Используется для генерации и проверки metadata со следующего запроса, без перезапуска."
+msgstr "Идентификатор provider/model. Используется для генерации и проверки metadata со следующего запроса, без перезапуска."
 
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Идентификатор занятия курса"
@@ -2662,10 +2701,6 @@ msgstr "Маршрут включён в информационную архит
 msgid "Массовая загрузка"
 msgstr "Массовая загрузка"
 
-#: apps/staff/src/staff-worksheet-preview.tsx
-msgid "Масштаб рисунков для публикации"
-msgstr "Масштаб рисунков для публикации"
-
 #: apps/staff/src/content-page.tsx
 msgid "Материал уже изменён. Обновляем версии и публикации…"
 msgstr "Материал уже изменён. Обновляем версии и публикации…"
@@ -2690,6 +2725,10 @@ msgstr "Многочлен"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Множество целых"
 msgstr "Множество целых"
+
+#: apps/staff/src/course-catalog-editors.tsx
+msgid "Модель OpenRouter для metadata"
+msgstr "Модель OpenRouter для metadata"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Можно вернуться и исправить оценки"
@@ -2718,6 +2757,10 @@ msgstr "Мутно"
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "На сервере временно недоступен инструмент обработки рисунков."
 msgstr "На сервере временно недоступен инструмент обработки рисунков."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "На узком экране рисунок уменьшится до доступной ширины."
+msgstr "На узком экране рисунок уменьшится до доступной ширины."
 
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "На устройстве есть изменения от другой версии. Они сохранены; сравните схему перед подтверждением."
@@ -3222,8 +3265,8 @@ msgid "Не удалось сохранить или загрузить дост
 msgstr "Не удалось сохранить или загрузить доступность задач. Обновите переключатели и повторите действие."
 
 #: apps/staff/src/figure-layout-editor.tsx
-msgid "Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие."
-msgstr "Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие."
+msgid "Не удалось сохранить или загрузить оформление рисунков."
+msgstr "Не удалось сохранить или загрузить оформление рисунков."
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Не удалось сохранить окно."
@@ -3596,6 +3639,14 @@ msgstr "Обрабатываем…"
 #: apps/staff/src/pages.tsx
 msgid "Обсуждение"
 msgstr "Обсуждение"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Обтекание слева"
+msgstr "Обтекание слева"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Обтекание справа"
+msgstr "Обтекание справа"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Общее окно связано со всеми выбранными группами. Изменения времени, ссылки и отмена применяются ко всем этим группам."
@@ -4071,9 +4122,21 @@ msgstr "Оформление"
 msgid "Оформление применяется ко всем кабинетам этого проекта после обновления страницы. Выбранный пользователем язык сохраняется."
 msgstr "Оформление применяется ко всем кабинетам этого проекта после обновления страницы. Выбранный пользователем язык сохраняется."
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Оформление рисунка"
+msgstr "Оформление рисунка"
+
+#: apps/staff/src/content-page.tsx
+msgid "Оформление сохранено, но не удалось обновить Telegram-превью."
+msgstr "Оформление сохранено, но не удалось обновить Telegram-превью."
+
 #: apps/staff/src/branding-page.tsx
 msgid "Оформление уже изменено. Обновите страницу."
 msgstr "Оформление уже изменено. Обновите страницу."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Оформление уже изменилось. Обновите данные и повторите действие."
+msgstr "Оформление уже изменилось. Обновите данные и повторите действие."
 
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/student-results-history.tsx
@@ -4215,10 +4278,6 @@ msgstr "Первый завершённый расчёт появится зде
 msgid "Первый пароль"
 msgstr "Первый пароль"
 
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Перед ответом и решением"
-msgstr "Перед ответом и решением"
-
 #. placeholder {0}: item.movedTo
 #: apps/staff/src/review-series-page.tsx
 msgid "Перенесено в {0}"
@@ -4249,6 +4308,10 @@ msgstr "Перенос"
 #: apps/staff/src/live-marking-page.tsx
 msgid "Перенос в аудиторию {0}"
 msgstr "Перенос в аудиторию {0}"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Перенос и скрытие"
+msgstr "Перенос и скрытие"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Перенос материалов"
@@ -4398,12 +4461,24 @@ msgstr "По группам"
 msgid "По задачам"
 msgstr "По задачам"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "По исходнику"
+msgstr "По исходнику"
+
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "По расписанию"
 msgstr "По расписанию"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "По центру перед текстом"
+msgstr "По центру перед текстом"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "По центру после текста"
+msgstr "По центру после текста"
 
 #: apps/staff/src/branding-page.tsx
 #: apps/staff/src/bulk-content-upload.tsx
@@ -4778,10 +4853,6 @@ msgstr "Похоже на ИИ"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Правильный ответ"
 msgstr "Правильный ответ"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Правки появятся у школьников после публикации."
-msgstr "Правки появятся у школьников после публикации."
 
 #. placeholder {0}: usernameSuggestion.username
 #: apps/staff/src/student-account-creator.tsx
@@ -5294,6 +5365,19 @@ msgstr "Разделы статистики"
 msgid "Разделы устного приёма"
 msgstr "Разделы устного приёма"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Размер и размещение"
+msgstr "Размер и размещение"
+
+#. placeholder {0}: figure.alt
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Размер и размещение: {0}"
+msgstr "Размер и размещение: {0}"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Размещение"
+msgstr "Размещение"
+
 #: apps/staff/src/family-digest-panel.tsx
 msgid "Разослано"
 msgstr "Разослано"
@@ -5329,18 +5413,6 @@ msgstr "расписание группы v2"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Расписание не изменено"
 msgstr "Расписание не изменено"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Расположение рисунков"
-msgstr "Расположение рисунков"
-
-#: apps/staff/src/content-page.tsx
-msgid "Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала."
-msgstr "Расположение сохранено, но не удалось обновить все превью. Повторите открытие материала."
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Расположение уже изменилось. Обновите данные и повторите действие."
-msgstr "Расположение уже изменилось. Обновите данные и повторите действие."
 
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Распределение обезличено: график не содержит маркера или позиции отдельного школьника."
@@ -5480,20 +5552,6 @@ msgstr "Решено"
 msgid "Решили"
 msgstr "Решили"
 
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Рисунки"
-msgstr "Рисунки"
-
-#: apps/staff/src/figure-layout-editor.tsx
-#: apps/staff/src/staff-worksheet-preview.tsx
-msgid "Рисунок"
-msgstr "Рисунок"
-
-#. placeholder {0}: index + 1
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Рисунок {0}"
-msgstr "Рисунок {0}"
-
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/revision-assets-recovery.tsx
 msgid "Рисунок TikZ"
@@ -5511,7 +5569,6 @@ msgstr "Рисунок TikZ {logicalAsset}"
 msgid "Рисунок не загрузился"
 msgstr "Рисунок не загрузился"
 
-#: apps/staff/src/figure-layout-editor.tsx
 #: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Рисунок недоступен"
 msgstr "Рисунок недоступен"
@@ -5706,10 +5763,6 @@ msgid "Сервер вернул несовместимый PDF preview"
 msgstr "Сервер вернул несовместимый PDF preview"
 
 #: apps/staff/src/content-page.tsx
-msgid "Сервер вернул несовместимый preview"
-msgstr "Сервер вернул несовместимый preview"
-
-#: apps/staff/src/content-page.tsx
 msgid "Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу."
 msgstr "Сервер не поддерживает автоматическую подготовку TikZ. Обновите страницу."
 
@@ -5797,7 +5850,6 @@ msgstr "Скрыты в PWA"
 msgid "Скрытые рисунки"
 msgstr "Скрытые рисунки"
 
-#: apps/staff/src/figure-layout-editor.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Скрыть"
 msgstr "Скрыть"
@@ -5820,8 +5872,8 @@ msgid "Скрыть пароль"
 msgstr "Скрыть пароль"
 
 #: apps/staff/src/figure-layout-editor.tsx
-msgid "Слева"
-msgstr "Слева"
+msgid "Скрыть рисунок"
+msgstr "Скрыть рисунок"
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Следующая работа подготовлена"
@@ -6286,10 +6338,6 @@ msgstr "Сохраняем…"
 msgid "Список школьников"
 msgstr "Список школьников"
 
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Справа"
-msgstr "Справа"
-
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Среднее число решённых"
 msgstr "Среднее число решённых"
@@ -6331,10 +6379,6 @@ msgstr "Статус"
 #: apps/staff/src/student-results-history.tsx
 msgid "Статус проверки неизвестен"
 msgstr "Статус проверки неизвестен"
-
-#: apps/staff/src/figure-layout-editor.tsx
-msgid "Сторона"
-msgstr "Сторона"
 
 #. placeholder {0}: attachment.ordinal + 1
 #: apps/staff/src/review-reaction-inbox-page.tsx
@@ -6596,6 +6640,10 @@ msgstr "У этой группы пока нет опубликованных з
 msgid "Убрать файл {0}"
 msgstr "Убрать файл {0}"
 
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Увеличить ширину"
+msgstr "Увеличить ширину"
+
 #: apps/staff/src/product-analytics-page.tsx
 msgid "удалён"
 msgstr "удалён"
@@ -6657,6 +6705,10 @@ msgstr "укажите хотя бы один логин ребёнка"
 #: apps/staff/src/account-provisioning-tsv.ts
 msgid "укажите хотя бы одну доступную группу"
 msgstr "укажите хотя бы одну доступную группу"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Уменьшить ширину"
+msgstr "Уменьшить ширину"
 
 #: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
@@ -7037,6 +7089,14 @@ msgstr "Шаблон курса"
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "Шаблон курса и переопределения групп. Уже созданные занятия не сдвигаются автоматически."
 msgstr "Шаблон курса и переопределения групп. Уже созданные занятия не сдвигаются автоматически."
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Ширина рисунка"
+msgstr "Ширина рисунка"
+
+#: apps/staff/src/figure-layout-editor.tsx
+msgid "Ширина, rem"
+msgstr "Ширина, rem"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "шк."
