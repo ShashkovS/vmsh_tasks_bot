@@ -227,3 +227,39 @@ AST schema и WebContentDocument v1 не меняются.
 
 Алфавит видимых меток зависит только от языка интерфейса:
 [правило и renderer](task-titles.md#алфавит-подпунктов).
+
+
+## English problem-type headings — 1 October 2026
+
+[`LatexAstParser._problem_type_at`](../../helpers/pwa/content/parser.py)
+recognizes type words in `\Sect{…}`, `\section{…}`, `\subsection{…}` and
+`\subsubsection{…}`, including the starred standard commands. Use, for example:
+
+```latex
+\Sect{Test problems}
+\problem Find the value. \eproblem
+\Sect{Written exercises}
+\problem Prove the claim. \eproblem
+\Sect{Oral questions}
+\problem Explain the idea. \eproblem
+```
+
+- Test (1): whole words `test`, `tests`, `quiz`, `quizzes`.
+- Written (2): whole words `written`, `writing`.
+- Oral (3): whole words `oral`, `spoken`, `verbal`.
+
+English matching ignores case and accepts punctuation, hyphens, formatting
+and arbitrary surrounding words: `TEST TASKS`, `Test-style exercises`,
+`Written work`, `Spoken questions`. It does not match fragments of words such
+as `contest`, `latest`, `coral` or `unwritten`. Legacy Russian stems
+`тест`, `устн`, `письм` remain supported, including mixed-language documents.
+
+The default is Written. A recognized heading applies to subsequent problems
+until another heading specifies a type; neutral headings such as `Examples`
+retain the current type. Comments and inert local macro definitions do not
+change it. Avoid headings with several type words: legacy precedence is
+Test, then Oral, then Written. Compiler version is now 8; existing immutable
+revisions retain their previous metadata until reimport/recompilation.
+Regression coverage: [`test_content_dialects.py`](../../pwa_tests/domain/test_content_dialects.py)
+and the existing Russian-section test in
+[`test_content_compiler.py`](../../pwa_tests/domain/test_content_compiler.py).

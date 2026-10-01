@@ -283,6 +283,24 @@ _BLOCK_GROUP_WRAPPERS = {
     "textit",
     "vbox",
 }
+_HEADING_COMMANDS = {
+    "раздел",
+    "допраздел",
+    "section",
+    "section*",
+    "subsection",
+    "subsection*",
+    "subsubsection",
+    "subsubsection*",
+}
+# latex-content-pipeline.md: explicit type words, case-insensitive English
+# word boundaries; preserve Russian stems and legacy test > oral > written priority.
+_PROBLEM_TYPE_HEADINGS = (
+    (1, re.compile(r"тест|\b(?:tests?|quiz(?:zes)?)\b")),
+    (3, re.compile(r"устн|\b(?:oral|spoken|verbal)\b")),
+    (2, re.compile(r"письм|\b(?:written|writing)\b")),
+)
+
 _STRUCTURAL_COMMANDS = (
     {
         "includegraphics",
@@ -293,14 +311,6 @@ _STRUCTURAL_COMMANDS = (
         "righttikzw",
         "lefttikzw",
         "begin",
-        "section",
-        "section*",
-        "subsection",
-        "subsection*",
-        "subsubsection",
-        "subsubsection*",
-        "раздел",
-        "допраздел",
         "resizebox",
         "putthere",
         "tikz",
@@ -308,6 +318,7 @@ _STRUCTURAL_COMMANDS = (
         "phantom",
         "raisebox",
     }
+    | _HEADING_COMMANDS
     | _ANNOUNCEMENT_COMMANDS
     | _SUBPART_COMMANDS
     | _BLOCK_GROUP_WRAPPERS
@@ -601,18 +612,16 @@ class LatexAstParser:
             end=problem_start,
             limits=self.limits,
         ):
-            if command.name not in {"раздел", "допраздел"}:
+            if command.name not in _HEADING_COMMANDS:
                 continue
             group = command_group(self.text, command, problem_start, limits=self.limits)
             if group is None:
                 continue
             heading = self.text[group.content_start : group.content_end].casefold()
-            if "тест" in heading:
-                problem_type = 1
-            elif "устн" in heading:
-                problem_type = 3
-            elif "письм" in heading:
-                problem_type = 2
+            for candidate_type, pattern in _PROBLEM_TYPE_HEADINGS:
+                if pattern.search(heading):
+                    problem_type = candidate_type
+                    break
         return problem_type
 
     def _parse_problem(
@@ -909,16 +918,7 @@ class LatexAstParser:
                 figure, cursor = self._parse_figure_command(command, end)
                 if figure is not None:
                     nodes.append(figure)
-            elif command.name in {
-                "раздел",
-                "допраздел",
-                "section",
-                "section*",
-                "subsection",
-                "subsection*",
-                "subsubsection",
-                "subsubsection*",
-            }:
+            elif command.name in _HEADING_COMMANDS:
                 heading, cursor = self._parse_heading(command, end)
                 if heading is not None:
                     nodes.append(heading)

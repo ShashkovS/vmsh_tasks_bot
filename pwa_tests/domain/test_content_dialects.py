@@ -167,3 +167,94 @@ def test_all_registered_closers_accept_equivalent_openers(name, canonical):
         body = r"\задача Public. " + body + r"\eproblem"
     result = compile_body(body)
     assert not result.has_errors, result.diagnostics
+
+
+@pytest.mark.parametrize(
+    "heading,expected",
+    [
+        ("Test problems", 1),
+        ("TEST TASKS", 1),
+        ("Tests", 1),
+        ("Test-style exercises", 1),
+        ("Quiz questions", 1),
+        ("Quizzes", 1),
+        ("Written problems", 2),
+        ("Written tasks", 2),
+        ("Writing exercises", 2),
+        ("Oral problems", 3),
+        ("Oral questions", 3),
+        ("Spoken exercises", 3),
+        ("Verbal tasks", 3),
+        (r"\textbf{Test} problems", 1),
+    ],
+)
+@pytest.mark.parametrize(
+    "command",
+    [
+        "Sect",
+        "section",
+        "section*",
+        "subsection",
+        "subsection*",
+        "subsubsection",
+        "subsubsection*",
+    ],
+)
+def test_english_heading_variants_set_problem_type(command, heading, expected):
+    result = compile_body(rf"\{command}{{{heading}}}\problem Task.\eproblem")
+    assert not result.has_errors, result.diagnostics
+    assert result.ast.problems[0].problem_type == expected
+
+
+@pytest.mark.parametrize(
+    "heading",
+    [
+        "Contest problems",
+        "Latest exercises",
+        "Testament",
+        "Untested ideas",
+        "Coral geometry",
+        "Unwritten rules",
+        "Examples",
+    ],
+)
+def test_unrelated_heading_does_not_change_current_type(heading):
+    result = compile_body(
+        rf"\Sect{{Oral tasks}}\problem First.\eproblem"
+        rf"\Sect{{{heading}}}\problem Second.\eproblem"
+    )
+    assert not result.has_errors, result.diagnostics
+    assert [p.problem_type for p in result.ast.problems] == [3, 3]
+
+
+def test_heading_types_switch_and_persist_across_mixed_languages():
+    result = compile_body(r"""
+\problem Default.\eproblem
+\Sect{Test problems}\problem Test one.\eproblem\problem Test two.\eproblem
+\subsection*{Examples}\problem Still test.\eproblem
+\Sect{Oral exercises}\problem Oral.\eproblem
+\раздел{Письменные задачи}\problem Written.\eproblem
+\Sect{Quiz}\задача Test again.\кзадача
+% \Sect{Oral problems}
+\begin{comment}\Sect{Written problems}\end{comment}
+\newcommand{\unused}{\Sect{Oral problems}}
+\problem Still test.\eproblem
+""")
+    assert not result.has_errors, result.diagnostics
+    assert [p.problem_type for p in result.ast.problems] == [2, 1, 1, 1, 3, 2, 1, 1]
+
+
+@pytest.mark.parametrize(
+    "heading,expected",
+    [
+        ("Тест-задачи", 1),
+        ("Письменные задачи", 2),
+        ("Устные задачи", 3),
+        ("Test and oral problems", 1),
+        ("Written and oral problems", 3),
+    ],
+)
+def test_heading_precedence_preserves_legacy_behavior(heading, expected):
+    result = compile_body(rf"\Sect{{{heading}}}\problem Task.\eproblem")
+    assert not result.has_errors, result.diagnostics
+    assert result.ast.problems[0].problem_type == expected

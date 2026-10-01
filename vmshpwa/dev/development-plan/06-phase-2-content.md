@@ -590,3 +590,25 @@ signature verification cannot reach npm registry in this environment. Full
 workspace build/E2E were not run for this bounded compiler/label increment.
 Requirements and implementation links: `vmshpwa/docs/latex-content-pipeline.md`
 (dialect section), `vmshpwa/docs/task-titles.md` (display alphabet).
+
+### 2026-10-01 — English problem-type headings (verified)
+
+Implemented case-insensitive whole-word English type recognition in
+`LatexAstParser._problem_type_at`: test/tests/quiz/quizzes → 1,
+written/writing → 2, oral/spoken/verbal → 3. Sect and standard section,
+subsection and subsubsection commands (including starred forms) share the
+heading registry. Neutral headings retain the current type; Russian stems
+and legacy Test > Oral > Written precedence remain compatible.
+
+Requirement and syntax: [English problem-type headings](../../docs/latex-content-pipeline.md#english-problem-type-headings--1-october-2026).
+Implementation: [parser.py](../../../helpers/pwa/content/parser.py).
+Regression: [test_content_dialects.py](../../../pwa_tests/domain/test_content_dialects.py).
+
+Verification: 370 compiler/dialect tests pass; scoped Ruff and diff checks pass.
+The 54 pinned golden entries retain their source hashes; all 30 TeX sources
+(334 tasks) keep identical report records, with only compiler version changing
+from 7 to 8. Report generation validated the pinned entries directly because
+the local corpus directory also contains owner-added guide/example files that
+the existing inventory validator rejects. Those files and the inventory policy
+were not changed. Existing revisions need reimport/recompilation to acquire the
+new inferred types; default remains Written.
