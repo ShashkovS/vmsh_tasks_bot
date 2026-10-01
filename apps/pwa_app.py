@@ -75,6 +75,7 @@ from apps.pwa_api.content_routes import (
 from apps.pwa_api.course_routes import course_routes
 from apps.pwa_api.family_course_routes import family_course_routes
 from apps.pwa_api.lesson_block_routes import lesson_block_routes
+from apps.pwa_api.problem_release_routes import problem_release_routes
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import (
     PWA_AUTH_STATE,
@@ -2169,6 +2170,7 @@ def configure(
 
             app[PWA_CONTENT_INVALIDATOR] = invalidate_content
             app.add_routes(content_routes)
+            app.add_routes(problem_release_routes)
             app.on_startup.append(on_content_startup)
         if (
             written_submissions_enabled

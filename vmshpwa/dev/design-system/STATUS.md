@@ -1,5 +1,20 @@
 # Design-system status
 
+## Позадачная публикация — 1 октября 2026
+
+Реализовано и проверено в отдельном worktree `codex/problem-release` от `vmshpwa`.
+[Решение, реализация и проверки](../../docs/problem-release.md).
+Состояния задач, Staff-переключатели, серверная фильтрация Student/Family
+и WebSocket-обновления; Telegram и готовый PDF сохраняют прежнее поведение.
+Проверены: 975 frontend unit, 2461 backend (полный прогон и повтор
+17 проверок после подготовки локальных fixtures/обновления schema count;
+6 skipped), 3 Storybook сценария. Schema, i18n, workspace typecheck,
+scoped lint и четыре production-сборки проходят. Выдача 15 → 0 → 2 → 5 → 15,
+обратное скрытие и reconnect без reload прошли в Chromium/WebKit/Firefox.
+Светлые, тёмные и мобильные снимки просмотрены; baselines не менялись.
+Развёртывание и публикация в remote не выполнялись.
+
+
 ## Instance branding — 2026-09-29
 
 Implemented: repository-owned VMSh/TLF profiles, admin selection, persisted

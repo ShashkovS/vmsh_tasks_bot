@@ -235,6 +235,7 @@ def _student_lesson_payload(
         "businessTimezone": lesson.business_timezone,
         "version": lesson.version,
         "problemCount": lesson.problem_count,
+        "problemReleaseVersion": lesson.problem_release_version,
         "window": (
             None
             if window is None
@@ -344,6 +345,7 @@ def _student_problem_list_payload(
         "groupId": record.group_public_id,
         "groupLessonId": record.group_lesson_public_id,
         "conditionRevisionId": record.condition_revision_public_id,
+        "problemReleaseVersion": record.problem_release_version,
         "problems": [_student_problem_payload(problem) for problem in record.problems],
     }
 

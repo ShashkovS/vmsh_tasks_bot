@@ -402,6 +402,7 @@ async def get_family_worksheet(request: web.Request) -> web.Response:
             content = await repository.get_published_content(
                 group_lesson_public_id=lesson.group_lesson_public_id,
                 kind=ContentKind.CONDITION,
+                released_only=True,
             )
         except ContentNotFound as error:
             raise PwaApiError(

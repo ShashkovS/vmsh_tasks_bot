@@ -3486,6 +3486,7 @@ async def _published_content_response(
     published = await repository.get_published_content(
         group_lesson_public_id=group_lesson_public_id,
         kind=kind,
+        released_only=True,
     )
     return web.json_response(
         {
@@ -3498,6 +3499,7 @@ async def _published_content_response(
             "publishedAt": _iso(published.publication.published_at),
             "revisionId": published.revision_public_id,
             "document": published.document,
+            "problemReleaseVersion": published.problem_release_version,
         }
     )
 

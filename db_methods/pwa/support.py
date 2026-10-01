@@ -831,8 +831,10 @@ class PwaSupportThreadRepository:
                 "ON revision.id = problem_revision.content_revision_id "
                 "JOIN content_sources AS source ON source.id = revision.source_id "
                 "WHERE problem_revision.problem_id = problem.id "
-                "AND source.group_lesson_id = ?) LIMIT 1",
-                (problem_public_id, target["group_lesson_id"]),
+                "AND source.group_lesson_id = ?) AND NOT EXISTS ("
+                "SELECT 1 FROM lesson_problem_release release WHERE release.group_lesson_id = ? "
+                "AND release.problem_id = problem.id AND release.is_open = 0) LIMIT 1",
+                (problem_public_id, target["group_lesson_id"], target["group_lesson_id"]),
             ).fetchone()
             if problem is None:
                 raise SupportNotFound("problem is outside the selected group lesson")

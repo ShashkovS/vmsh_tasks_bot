@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: e3adaf9500869700ce6e72b9b13ced3f5e0c11bbc7466245d1950565f70eccf5
+-- Product schema SHA-256: d266b331dc31ffb2a6aaa3ee1a39261e9528c1d2ee0eab106864376c57f9ef65
 
 CREATE TABLE achievement_definitions
 (
@@ -1029,7 +1029,8 @@ CREATE TABLE group_lessons
     updated_by_user_id integer references users (id),
     created_at         text    not null,
     updated_at         text    not null,
-    version            integer not null default 1 check (version > 0),
+    version            integer not null default 1 check (version > 0), problem_release_version integer not null default 1
+    check (problem_release_version > 0),
     unique (course_lesson_id, group_id),
     unique (id, course_lesson_id),
     foreign key (course_lesson_id, course_id)
@@ -1287,6 +1288,25 @@ CREATE TABLE lesson_blocks
     check ((pending_revision_id is null) = (pending_mode is null)),
     check ((pending_mode = 'scheduled') = (scheduled_at is not null)),
     check (pending_mode = 'scheduled' or scheduled_at is null)
+);
+
+CREATE TABLE lesson_problem_release (
+    group_lesson_id integer not null references group_lessons(id),
+    problem_id integer not null references problems(id),
+    is_open integer not null check (is_open in (0, 1)),
+    primary key (group_lesson_id, problem_id)
+);
+
+CREATE TABLE lesson_problem_release_events (
+    id integer primary key,
+    group_lesson_id integer not null references group_lessons(id),
+    condition_revision_id integer not null references content_revisions(id),
+    version integer not null,
+    before_json text not null check (json_valid(before_json)),
+    after_json text not null check (json_valid(after_json)),
+    actor_user_id integer not null references users(id),
+    request_id text not null,
+    ts text not null
 );
 
 CREATE TABLE lesson_publications
@@ -4098,6 +4118,16 @@ for each row when (
     ))
 ) begin
     select raise(abort, 'lesson block revision is outside its block');
+end;
+
+CREATE TRIGGER lesson_problem_release_events_no_delete
+before delete on lesson_problem_release_events begin
+    select raise(abort, 'problem release audit is immutable');
+end;
+
+CREATE TRIGGER lesson_problem_release_events_no_update
+before update on lesson_problem_release_events begin
+    select raise(abort, 'problem release audit is immutable');
 end;
 
 CREATE TRIGGER lesson_publications_activation_scope_insert

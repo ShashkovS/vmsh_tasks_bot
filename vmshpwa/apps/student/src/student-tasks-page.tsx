@@ -275,6 +275,11 @@ export function StudentLessonFeedItem({
                 {problemCountLabel(lesson.problemCount)}
               </p>
             </CardHeader>
+            {contentQuery.data.document.problems.length === 0 ? (
+              <p className="px-5 py-6 text-muted-foreground" role="status">
+                <Trans>Задачи скоро откроются.</Trans>
+              </p>
+            ) : null}
             <WorksheetDocument
               document={contentQuery.data.document}
               {...studentWorksheetBindings(

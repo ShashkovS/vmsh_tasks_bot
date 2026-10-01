@@ -351,3 +351,5 @@ export * from './statistics-recalculation'
 export * from './statistics-reports'
 
 export * from './branding'
+
+export * from './problem-release'

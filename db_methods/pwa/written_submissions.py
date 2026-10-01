@@ -1237,6 +1237,9 @@ WHERE account.id = :account_id
   AND account.audience = 'student'
   AND account.status = 'active'
   AND problem.public_id = :problem_public_id
+  AND NOT EXISTS (SELECT 1 FROM lesson_problem_release release
+      WHERE release.group_lesson_id = group_lesson.id
+        AND release.problem_id = problem.id AND release.is_open = 0)
   AND access.valid_from <= :now
   AND (access.valid_to IS NULL OR access.valid_to > :now)
   AND EXISTS (

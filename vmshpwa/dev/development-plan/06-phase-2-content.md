@@ -636,3 +636,13 @@ pass; scoped ESLint, content TypeScript, i18n catalog check and diff check pass.
 Frontend commands used installed node_modules/.bin to avoid pnpm registry
 verification. No backend/compiler changes or deployment are needed for the
 source fix; the running application receives it with its next frontend build.
+
+## Позадачная публикация — 1 октября 2026
+
+В работе: [решение и проверки](../../docs/problem-release.md).
+Доступность независима от revision/publication; пустое занятие остаётся видимым.
+
+Проверка increment завершена: 975 frontend, 2461 backend (полный прогон +
+повтор после подготовки локальных fixtures), 3 Storybook, 3 browser E2E без
+reload, включая reconnect. Подробные команды, локальные inputs и границы:
+[problem-release.md](../../docs/problem-release.md). Deployment не выполнялся.

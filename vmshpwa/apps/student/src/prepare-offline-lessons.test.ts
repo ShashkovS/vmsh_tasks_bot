@@ -24,6 +24,7 @@ import {
   readLessonBundle,
   pruneOfflineDocuments,
   verifyLessonBundle,
+  writeOfflineDocument,
 } from '@vmsh/offline'
 import { prepareOfflineLessons } from './prepare-offline-lessons'
 import {
@@ -251,3 +252,59 @@ it('resumes downloaded images when the connection fails before the final manifes
   await prepareOfflineLessons(options)
   expect(options.fetchAsset.mock.calls.filter(([url]) => url === firstUrl)).toHaveLength(1)
 })
+
+it.each([-1_000, 1_000])(
+  'keeps known Off hidden against an old bundle even with cache time offset %i',
+  async (offset) => {
+    const { options, lessons } = await setup()
+    const bundle = await prepareOfflineLessons(options)
+    const lesson = lessons[0]!
+    for (const kind of ['student-problem-list', 'published-content'] as const) {
+      const entry = bundle.documents.find((item) => item.kind === kind)!
+      const parser = {
+        parse: (payload: unknown) =>
+          kind === 'published-content'
+            ? publishedContentSchema.parse(payload)
+            : studentProblemListResponseSchema.parse(payload),
+      }
+      const payload =
+        kind === 'published-content'
+          ? {
+              ...publishedContentSchema.parse(entry.payload),
+              problemReleaseVersion: 2,
+              document: { ...publishedContentSchema.parse(entry.payload).document, problems: [] },
+            }
+          : {
+              ...studentProblemListResponseSchema.parse(entry.payload),
+              problemReleaseVersion: 2,
+              problems: [],
+            }
+      await writeOfflineDocument(
+        options.database,
+        entry,
+        `${entry.version}:release:2`,
+        parser.parse(payload),
+        parser,
+        {
+          now: () => new Date(Date.parse(entry.fetchedAt) + offset),
+        },
+      )
+    }
+    vi.stubGlobal('navigator', { onLine: false })
+    const client = createOfflineStudentCourseClient(
+      options.courseClient,
+      options.database,
+      options.ownerId,
+    )
+    const content = createOfflineStudentPublishedContentClient(
+      { ...options.contentClient, audience: 'student' },
+      options.database,
+      options.ownerId,
+    )
+    expect((await client.problems(lesson.courseId, lesson.groupLessonId)).problems).toEqual([])
+    expect(
+      (await content.published({ groupLessonId: lesson.groupLessonId, kind: 'condition' })).document
+        .problems,
+    ).toEqual([])
+  },
+)

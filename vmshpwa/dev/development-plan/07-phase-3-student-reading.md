@@ -342,3 +342,13 @@ for per-subpart statuses and answer panels. Standalone panels start expanded
 and collapse independently. Targeted Vitest: 7 tests passed; Student TypeScript
 and scoped ESLint passed. Browser visual verification and deployment not performed.
 Regression: [`student-worksheet-bindings.test.tsx`](../../apps/student/src/student-worksheet-bindings.test.tsx).
+
+## Позадачная публикация — 1 октября 2026
+
+В работе: [решение и проверки](../../docs/problem-release.md).
+Доступность независима от revision/publication; пустое занятие остаётся видимым.
+
+Проверка increment завершена: 975 frontend, 2461 backend (полный прогон +
+повтор после подготовки локальных fixtures), 3 Storybook, 3 browser E2E без
+reload, включая reconnect. Подробные команды, локальные inputs и границы:
+[problem-release.md](../../docs/problem-release.md). Deployment не выполнялся.

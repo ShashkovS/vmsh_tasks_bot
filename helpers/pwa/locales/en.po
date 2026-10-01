@@ -403,6 +403,10 @@ msgstr "Sign-in is temporarily unavailable"
 msgid "Выберите JPEG, PNG или WebP"
 msgstr "Select JPEG, PNG, or WebP"
 
+#: apps/pwa_api/problem_release_routes.py
+msgid "Выберите версию условий."
+msgstr "Select a condition revision."
+
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Выберите группу синонимов"
 msgstr "Select a synonym group"
@@ -598,6 +602,10 @@ msgstr "Add announcement text or remove the empty block."
 msgid "Документ превышает безопасный лимит структурных узлов."
 msgstr "The document exceeds the safe limit for structural nodes."
 
+#: apps/pwa_api/problem_release_routes.py
+msgid "Доступность задач уже изменилась. Повторите действие."
+msgstr "Task availability has changed. Try again."
+
 #: apps/pwa_api/staff_access_routes.py
 msgid "Доступы преподавателей временно недоступны"
 msgstr "Teacher access permissions are temporarily unavailable"
@@ -680,6 +688,10 @@ msgstr "The problems have changed since the preview"
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Задачи относятся к разным занятиям курса"
 msgstr "The problems belong to different course classes"
+
+#: apps/pwa_api/problem_release_routes.py
+msgid "Задачи этого листка пока недоступны."
+msgstr "Tasks in this worksheet are not available yet."
 
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Закройте document environment и повторите compile."
@@ -2064,6 +2076,10 @@ msgstr "Check the parent account login and role"
 #: apps/pwa_api/admin_account_routes.py
 msgid "Проверьте логин, имя, роль и пароль семейного аккаунта"
 msgstr "Check the parent account login, name, role, and password"
+
+#: apps/pwa_api/problem_release_routes.py
+msgid "Проверьте настройки задач."
+msgstr "Check the task settings."
 
 #: apps/pwa_api/admin_course_routes.py
 msgid "Проверьте настройки курса"

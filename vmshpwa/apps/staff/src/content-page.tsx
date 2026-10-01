@@ -44,6 +44,7 @@ import {
   type WebContentDocument,
 } from '@vmsh/contracts'
 import { LatexUpload } from '@vmsh/product'
+import { StaffProblemReleasePreview } from './staff-problem-release-preview'
 import { StaffWorksheetPreview, FigureScaleTools } from './staff-worksheet-preview'
 import {
   Alert,
@@ -352,6 +353,7 @@ function MaterialWorkflowCard({
   businessTimezone: BusinessTimezone
   onConflict: () => Promise<unknown>
 }) {
+  const Preview = kind === 'condition' ? StaffProblemReleasePreview : StaffWorksheetPreview
   const queryClient = useQueryClient()
   const [state, setState] = useState<MaterialWorkflowState>(() => initialMaterialState(history))
   const previewWindow = useQuery({
@@ -1227,7 +1229,9 @@ function MaterialWorkflowCard({
                 <TabsTrigger value="pdf">PDF</TabsTrigger>
               </TabsList>
               <TabsContent className="min-w-0" value="pwa">
-                <StaffWorksheetPreview
+                <Preview
+                  groupLessonId={groupLessonId}
+                  revisionId={state.webDocument.revisionId}
                   key={`${state.previewRevisionId}:${kind}`}
                   document={state.webDocument}
                   condition={state.conditionDocument}

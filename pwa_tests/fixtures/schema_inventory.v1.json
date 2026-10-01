@@ -345,6 +345,10 @@
       {
         "id": "0103.course_in_person_classes",
         "sha256": "c2e36785cf1c728c4296c2d07ed930f4949c909bb3c04fd5d4282b0b326e4397"
+      },
+      {
+        "id": "0104.pwa_problem_release",
+        "sha256": "f580d7ad2f7427cbc04c83d3b23e73f6a1acfcf9e797fa5f2fe2b96dc0fc744d"
       }
     ],
     "repository_head_status": {
@@ -355,7 +359,7 @@
     }
   },
   "product": {
-    "object_count": 497,
+    "object_count": 501,
     "objects": [
       {
         "columns": [
@@ -9969,6 +9973,15 @@
             "name": "version",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "problem_release_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -10152,8 +10165,8 @@
           }
         ],
         "name": "group_lessons",
-        "object_sha256": "d6f20343953b2e9f08759c4c94164845ffadfb4dcae5b162550ef90a5c3b962e",
-        "sql": "CREATE TABLE group_lessons\n(\n    id                 integer primary key,\n    public_id text generated always as ('gl-' || id) virtual,\n    course_lesson_id   integer not null,\n    course_id          integer not null references courses (id),\n    group_id           text    not null,\n    cycle_anchor_date  text    not null\n        check (\n            length(cycle_anchor_date) = 10\n            and date(cycle_anchor_date) is not null\n            and date(cycle_anchor_date) = cycle_anchor_date\n        ),\n    business_timezone text    not null check (length(trim(business_timezone)) > 0),\n    status             text    not null default 'draft'\n        check (status in ('draft', 'active', 'archived')),\n    created_by_user_id integer references users (id),\n    updated_by_user_id integer references users (id),\n    created_at         text    not null,\n    updated_at         text    not null,\n    version            integer not null default 1 check (version > 0),\n    unique (course_lesson_id, group_id),\n    unique (id, course_lesson_id),\n    foreign key (course_lesson_id, course_id)\n        references course_lessons (id, course_id),\n    foreign key (course_id, group_id)\n        references groups (course_id, group_id)\n);",
+        "object_sha256": "8fe1a1cb0e106ece2503877494fecbbf6714990fe268406eb93a5e782ea2ade9",
+        "sql": "CREATE TABLE group_lessons\n(\n    id                 integer primary key,\n    public_id text generated always as ('gl-' || id) virtual,\n    course_lesson_id   integer not null,\n    course_id          integer not null references courses (id),\n    group_id           text    not null,\n    cycle_anchor_date  text    not null\n        check (\n            length(cycle_anchor_date) = 10\n            and date(cycle_anchor_date) is not null\n            and date(cycle_anchor_date) = cycle_anchor_date\n        ),\n    business_timezone text    not null check (length(trim(business_timezone)) > 0),\n    status             text    not null default 'draft'\n        check (status in ('draft', 'active', 'archived')),\n    created_by_user_id integer references users (id),\n    updated_by_user_id integer references users (id),\n    created_at         text    not null,\n    updated_at         text    not null,\n    version            integer not null default 1 check (version > 0), problem_release_version integer not null default 1\n    check (problem_release_version > 0),\n    unique (course_lesson_id, group_id),\n    unique (id, course_lesson_id),\n    foreign key (course_lesson_id, course_id)\n        references course_lessons (id, course_id),\n    foreign key (course_id, group_id)\n        references groups (course_id, group_id)\n);",
         "table_name": "group_lessons",
         "type": "table"
       },
@@ -12636,6 +12649,231 @@
         "object_sha256": "fe944fd8b22689fbda5e8b8ed81a00f86b8b0df7af6e736318ec804680f14c34",
         "sql": "CREATE TABLE lesson_blocks\n(\n    id                    integer primary key,\n    public_id text generated always as ('lb-' || id) virtual unique,\n    group_lesson_id       integer not null references group_lessons (id),\n    position              text not null check (position in ('before', 'after')),\n    draft_revision_id     integer,\n    published_revision_id integer,\n    published_at          text,\n    pending_revision_id   integer,\n    pending_mode          text check (pending_mode in ('scheduled', 'with_lesson')),\n    scheduled_at          text,\n    version               integer not null default 1 check (version > 0),\n    created_at            text not null,\n    updated_at            text not null,\n    created_by_user_id    integer references users (id),\n    updated_by_user_id    integer references users (id),\n    unique (group_lesson_id, position),\n    check ((published_revision_id is null) = (published_at is null)),\n    check ((pending_revision_id is null) = (pending_mode is null)),\n    check ((pending_mode = 'scheduled') = (scheduled_at is not null)),\n    check (pending_mode = 'scheduled' or scheduled_at is null)\n);",
         "table_name": "lesson_blocks",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_lesson_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "is_open",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_lesson_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "group_lessons"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_lesson_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_lesson_problem_release_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "lesson_problem_release",
+        "object_sha256": "ffa3f99f71acb5000d534c33543723c12ceebe3bef8af2b1ce3401ab201525cd",
+        "sql": "CREATE TABLE lesson_problem_release (\n    group_lesson_id integer not null references group_lessons(id),\n    problem_id integer not null references problems(id),\n    is_open integer not null check (is_open in (0, 1)),\n    primary key (group_lesson_id, problem_id)\n);",
+        "table_name": "lesson_problem_release",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_lesson_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "condition_revision_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "before_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "after_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "condition_revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "content_revisions"
+          },
+          {
+            "from_columns": [
+              "group_lesson_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "group_lessons"
+          }
+        ],
+        "indexes": [],
+        "name": "lesson_problem_release_events",
+        "object_sha256": "2bdf972321ade08a9ecc5168927a317a569ddd65aab8a92ee6ce4f357b61a29a",
+        "sql": "CREATE TABLE lesson_problem_release_events (\n    id integer primary key,\n    group_lesson_id integer not null references group_lessons(id),\n    condition_revision_id integer not null references content_revisions(id),\n    version integer not null,\n    before_json text not null check (json_valid(before_json)),\n    after_json text not null check (json_valid(after_json)),\n    actor_user_id integer not null references users(id),\n    request_id text not null,\n    ts text not null\n);",
+        "table_name": "lesson_problem_release_events",
         "type": "table"
       },
       {
@@ -30664,6 +30902,20 @@
         "type": "trigger"
       },
       {
+        "name": "lesson_problem_release_events_no_delete",
+        "object_sha256": "4fcae73fceaca149f63114015366134239094e2f685107c08c13c51ac8da4aa8",
+        "sql": "CREATE TRIGGER lesson_problem_release_events_no_delete\nbefore delete on lesson_problem_release_events begin\n    select raise(abort, 'problem release audit is immutable');\nend;",
+        "table_name": "lesson_problem_release_events",
+        "type": "trigger"
+      },
+      {
+        "name": "lesson_problem_release_events_no_update",
+        "object_sha256": "ca9e69c323900956301ba6ee77924d14858a23a6453eb2420484125ba16b403b",
+        "sql": "CREATE TRIGGER lesson_problem_release_events_no_update\nbefore update on lesson_problem_release_events begin\n    select raise(abort, 'problem release audit is immutable');\nend;",
+        "table_name": "lesson_problem_release_events",
+        "type": "trigger"
+      },
+      {
         "name": "lesson_publications_activation_scope_insert",
         "object_sha256": "f7aa052002b4d6f1f0bb0f74d75b4fba26d0ad6159e16e58189db34d8bb7145d",
         "sql": "CREATE TRIGGER lesson_publications_activation_scope_insert\nbefore insert on lesson_publications\nfor each row\nwhen new.activated_from_schedule_id is not null and not exists (\n    select 1 from lesson_publications as scheduled\n    where scheduled.id = new.activated_from_schedule_id\n      and scheduled.group_lesson_id = new.group_lesson_id\n      and scheduled.kind = new.kind\n      and scheduled.revision_id = new.revision_id\n      and scheduled.state = 'superseded'\n      and scheduled.scheduled_at is not null\n      and scheduled.scheduled_at is new.scheduled_at\n      and scheduled.published_at is null\n)\nbegin\n    select raise(abort, 'activation schedule is outside group lesson or kind');\nend;",
@@ -31497,8 +31749,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "e5fa5eb63b944fabcef27d70f88dec349cb3f8eb2a64019f653217891467969b",
-    "sha256": "e3adaf9500869700ce6e72b9b13ced3f5e0c11bbc7466245d1950565f70eccf5"
+    "pragma_structure_sha256": "c10e16cc10fb80a8311757def89dd09a3e532644da9ec5de766266b93d547221",
+    "sha256": "d266b331dc31ffb2a6aaa3ee1a39261e9528c1d2ee0eab106864376c57f9ef65"
   },
   "source_kind": "repository-migration-head"
 }

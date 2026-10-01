@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { ChevronDown, ChevronRight, MessageCircleQuestion, PencilLine } from 'lucide-react'
 import { SemanticMathDocument, WorksheetDocument } from '@vmsh/content'
+import type { ReactNode } from 'react'
 import type {
   WebContentBlock,
   WebContentDocument,
@@ -25,12 +26,14 @@ export function StaffWorksheetPreview({
   hintDocument,
   solutionDocument,
   submissionClosed,
+  renderReleaseControl,
 }: {
   document: WebContentDocument
   hintDocument?: WebContentDocument | undefined
   solutionDocument?: WebContentDocument | undefined
   condition: WebContentDocument | undefined
   submissionClosed: boolean
+  renderReleaseControl?: (problem: WebContentProblem) => ReactNode
 }) {
   const materialKind = document.materialKind
   const paper = materialKind === 'condition' ? document : condition
@@ -137,7 +140,12 @@ export function StaffWorksheetPreview({
       >
         <WorksheetDocument
           document={paper}
-          renderProblemActions={(problem) => (hasSubpart(problem.blocks) ? null : actions())}
+          renderProblemActions={(problem) => (
+            <span className="vmsh-problem-actions-row font-sans">
+              {renderReleaseControl?.(problem)}
+              {hasSubpart(problem.blocks) ? null : actions()}
+            </span>
+          )}
           renderSubpartActions={actions}
           renderAfterProblem={(problem) => (hasSubpart(problem.blocks) ? null : workspace(problem))}
           renderAfterSubpart={workspace}

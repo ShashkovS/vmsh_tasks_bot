@@ -425,6 +425,10 @@ msgstr "Задачи ещё не опубликованы."
 msgid "задачи зачтено"
 msgstr "задачи зачтено"
 
+#: apps/student/src/student-tasks-page.tsx
+msgid "Задачи скоро откроются."
+msgstr "Задачи скоро откроются."
+
 #: apps/student/src/pwa-update.tsx
 msgid "Закрыть"
 msgstr "Закрыть"

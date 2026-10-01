@@ -105,6 +105,8 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         playwright.extend(
             ["e2e/offline-current-lessons.spec.ts", "e2e/content-publication.spec.ts"]
         )
+    elif mode == "problem-release":
+        playwright.extend(["e2e/problem-release.spec.ts", "--retries", "0"])
     elif mode == "content":
         playwright.append("e2e/content-publication.spec.ts")
     elif mode == "family":
@@ -244,6 +246,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "course-attendance",
             "portal-release",
             "content",
+            "problem-release",
             "offline-current",
             "figure-layout",
             "statistics",
@@ -280,6 +283,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 in {
                     "all",
                     "portal-release",
+                    "problem-release",
                     "oral",
                     "oral-windows",
                     "live-marking",

@@ -1026,6 +1026,7 @@ export const publishedContentSchema = z
     kind: contentMaterialKindSchema,
     publicationId: publicIdSchema,
     publicationVersion: z.number().int().positive(),
+    problemReleaseVersion: z.number().int().positive().optional(),
     publishedAt: z.iso.datetime(),
     revisionId: publicIdSchema,
     document: webContentDocumentSchema,

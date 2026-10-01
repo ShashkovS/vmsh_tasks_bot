@@ -425,6 +425,10 @@ msgstr "Problems have not been published yet."
 msgid "задачи зачтено"
 msgstr "problems accepted"
 
+#: apps/student/src/student-tasks-page.tsx
+msgid "Задачи скоро откроются."
+msgstr "Tasks will open soon."
+
 #: apps/student/src/pwa-update.tsx
 msgid "Закрыть"
 msgstr "Close"

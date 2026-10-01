@@ -190,6 +190,7 @@ export const studentLessonSummarySchema = z
     businessTimezone: z.string().trim().min(1).max(100),
     version: versionSchema,
     problemCount: z.number().int().nonnegative(),
+    problemReleaseVersion: z.number().int().positive().optional(),
     window: studentLessonWindowSchema.nullable(),
     materials: z
       .object({
@@ -326,6 +327,7 @@ export const studentProblemListResponseSchema = z
     groupId: publicIdSchema,
     groupLessonId: publicIdSchema,
     conditionRevisionId: publicIdSchema,
+    problemReleaseVersion: z.number().int().positive().optional(),
     problems: z.array(studentProblemSummarySchema).max(2_000),
   })
   .strip()

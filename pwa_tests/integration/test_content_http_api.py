@@ -5297,6 +5297,7 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
         "businessTimezone": "Europe/Moscow",
         "version": 1,
         "problemCount": 1,
+        "problemReleaseVersion": 2,
         "window": {
             "windowId": (await window.json())["lessonWindowId"],
             "opensAt": "2026-09-20T13:00:00.000000Z",

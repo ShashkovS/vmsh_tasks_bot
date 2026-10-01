@@ -343,6 +343,7 @@ class PublishedContentRecord:
     revision_public_id: str
     scope: GroupLessonContentScope
     document: Mapping[str, object]
+    problem_release_version: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -405,6 +406,7 @@ class StudentLessonSummaryRecord:
     hint: StudentLessonMaterialRecord | None
     solution: StudentLessonMaterialRecord | None
     problem_count: int
+    problem_release_version: int = 1
     blocks: tuple[StudentLessonBlockRecord, ...] = ()
 
 
@@ -460,6 +462,7 @@ class StudentProblemListRecord:
     group_public_id: str
     condition_revision_public_id: str
     problems: tuple[StudentProblemSummaryRecord, ...]
+    problem_release_version: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -1466,6 +1469,7 @@ def _student_lesson_summary(
             else None
         ),
         problem_count=int(row["problem_count"]),
+        problem_release_version=int(row["problem_release_version"]),
     )
 
 
@@ -1612,6 +1616,7 @@ _STUDENT_LESSON_SELECT = (
     "course_lesson.lesson_number, course_lesson.title AS lesson_title, "
     "group_lesson.cycle_anchor_date, group_lesson.business_timezone, "
     "group_lesson.version AS group_lesson_version, "
+    "group_lesson.problem_release_version, "
     "lesson_window.id AS window_id, lesson_window.public_id AS window_public_id, "
     "lesson_window.opens_at AS window_opens_at, "
     "lesson_window.submission_closes_at AS window_submission_closes_at, "
@@ -1632,6 +1637,9 @@ _STUDENT_LESSON_SELECT = (
     "CASE WHEN condition_revision.id IS NULL THEN 0 ELSE ("
     " SELECT count(*) FROM problem_revisions AS problem_revision "
     " WHERE problem_revision.content_revision_id = condition_publication.revision_id"
+    " AND NOT EXISTS (SELECT 1 FROM lesson_problem_release release "
+    " WHERE release.group_lesson_id = group_lesson.id "
+    " AND release.problem_id = problem_revision.problem_id AND release.is_open = 0)"
     ") END AS problem_count "
     "FROM group_lessons AS group_lesson "
     "JOIN course_lessons AS course_lesson "
@@ -1689,6 +1697,7 @@ WITH published_scope AS (
     SELECT group_lesson.course_lesson_id,
            group_lesson.course_id,
            group_lesson.id AS group_lesson_id,
+           group_lesson.problem_release_version,
            course_lesson.lesson_number,
            group_lesson.public_id AS group_lesson_public_id,
            course.public_id AS course_public_id,
@@ -1747,6 +1756,9 @@ visible_problem AS (
      AND problem_match.resolved_at IS NOT NULL
      AND problem_match.decision <> 'omit'
     JOIN problems AS problem ON problem.id = problem_revision.problem_id
+    WHERE NOT EXISTS (SELECT 1 FROM lesson_problem_release release
+        WHERE release.group_lesson_id = published_scope.group_lesson_id
+          AND release.problem_id = problem_revision.problem_id AND release.is_open = 0)
 ),
 hint_state AS (
     SELECT visible.problem_id,
@@ -1893,6 +1905,7 @@ SELECT published_scope.group_lesson_public_id,
        published_scope.course_public_id,
        published_scope.group_public_id,
        published_scope.condition_revision_public_id,
+       published_scope.problem_release_version,
        visible_problem.*,
        queue_state.checking AS queue_checking,
        queue_state.latest_queue_at,
@@ -2189,6 +2202,10 @@ class PwaContentRepository:
     ) -> None:
         self._factory = factory
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    @property
+    def factory(self) -> PwaConnectionFactory:
+        return self._factory
 
     def _timestamp(self) -> str:
         return format_utc_timestamp(self._clock())
@@ -2489,6 +2506,7 @@ class PwaContentRepository:
                 group_public_id=str(first["group_public_id"]),
                 condition_revision_public_id=str(first["condition_revision_public_id"]),
                 problems=problems,
+                problem_release_version=int(first["problem_release_version"]),
             )
 
         return await self._factory.run_read_async(read)
@@ -4041,6 +4059,16 @@ class PwaContentRepository:
                 expected_scheduled_version,
             ):
                 raise ContentVersionConflict("scheduled publication slot changed")
+            if kind is ContentKind.CONDITION and state is PublicationState.PUBLISHED:
+                from models.pwa.problem_release import reconcile_problem_release
+
+                reconcile_problem_release(
+                    connection,
+                    group_lesson_id=group_lesson_id,
+                    revision_id=revision_id,
+                    actor_user_id=actor_user_id,
+                    timestamp=timestamp,
+                )
             try:
                 if current is not None:
                     connection.execute(
@@ -4192,6 +4220,16 @@ class PwaContentRepository:
                 "AND kind = ? AND state = 'published'",
                 (scheduled["group_lesson_id"], scheduled["kind"]),
             ).fetchone()
+            if scheduled["kind"] == ContentKind.CONDITION.value:
+                from models.pwa.problem_release import reconcile_problem_release
+
+                reconcile_problem_release(
+                    connection,
+                    group_lesson_id=int(scheduled["group_lesson_id"]),
+                    revision_id=int(scheduled["revision_id"]),
+                    actor_user_id=actor_user_id,
+                    timestamp=timestamp,
+                )
             try:
                 if previous is not None:
                     connection.execute(
@@ -4280,6 +4318,16 @@ class PwaContentRepository:
                 "AND kind = ? AND state = 'published'",
                 (scheduled["group_lesson_id"], scheduled["kind"]),
             ).fetchone()
+            if scheduled["kind"] == ContentKind.CONDITION.value:
+                from models.pwa.problem_release import reconcile_problem_release
+
+                reconcile_problem_release(
+                    connection,
+                    group_lesson_id=int(scheduled["group_lesson_id"]),
+                    revision_id=int(scheduled["revision_id"]),
+                    actor_user_id=actor_user_id,
+                    timestamp=timestamp,
+                )
             try:
                 if previous is not None:
                     connection.execute(
@@ -4408,6 +4456,7 @@ class PwaContentRepository:
         *,
         group_lesson_public_id: str,
         kind: ContentKind,
+        released_only: bool = False,
     ) -> PublishedContentRecord:
         """Read the current typed browser derivative for Student/Family.
 
@@ -4468,6 +4517,16 @@ class PwaContentRepository:
             )
             _overlay_problem_titles(connection, document, int(row["revision_id"]))
             document = _published_figure_layout(connection, document, int(row["id"]))
+            from models.pwa.problem_release import filter_released_document
+            from db_methods.pwa.problem_release import version as release_version
+
+            if released_only:
+                document = filter_released_document(
+                    connection,
+                    group_lesson_id=int(row["group_lesson_id"]),
+                    revision_id=int(row["revision_id"]),
+                    document=document,
+                )
             return PublishedContentRecord(
                 publication=_publication(row),
                 revision_public_id=revision_public_id,
@@ -4475,6 +4534,9 @@ class PwaContentRepository:
                     connection, int(row["group_lesson_id"])
                 ),
                 document=document,
+                problem_release_version=release_version(
+                    connection, int(row["group_lesson_id"])
+                ),
             )
 
         return await self._factory.run_read_async(read)
@@ -4576,6 +4638,9 @@ class PwaContentRepository:
                 " AND derivative.kind = 'web_ast' "
                 " AND (derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = publication.id AND frozen.document_json IS NOT NULL)) "
                 "WHERE group_lesson.public_id = ? AND problem.public_id = ? "
+                "AND NOT EXISTS (SELECT 1 FROM lesson_problem_release release "
+                "WHERE release.group_lesson_id = group_lesson.id "
+                "AND release.problem_id = problem.id AND release.is_open = 0) "
                 "ORDER BY derivative.created_at DESC, derivative.id DESC LIMIT 1",
                 (kind.value, group_lesson_public_id, problem_public_id),
             ).fetchone()

@@ -111,10 +111,32 @@ async function readThroughCache<T>(input: {
     if (input.allowOfflineFallback === false) return null
     const bundled = await bundledDocument(input.database, input.descriptor)
     if (bundled) {
-      // A later audited reveal/status of this same condition is still valid.
+      // docs/problem-release.md: release versions outrank download timestamps,
+      // including a bundle assembled after an earlier On response arrived.
       const recent = await readOfflineDocument(input.database, input.descriptor, input.parser)
-      if (recent && recent.version === bundled.version && recent.fetchedAt > bundled.fetchedAt)
-        return recent
+      const releaseVersion = (payload: unknown): number =>
+        typeof payload === 'object' &&
+        payload !== null &&
+        'problemReleaseVersion' in payload &&
+        typeof payload.problemReleaseVersion === 'number'
+          ? payload.problemReleaseVersion
+          : 1
+      const usesReleaseVersion = [
+        'published-content',
+        'student-problem-list',
+        'student-lesson',
+      ].includes(input.descriptor.kind)
+      if (recent) {
+        const recentVersion = releaseVersion(recent.data)
+        const bundleVersion = releaseVersion(bundled.payload)
+        if (
+          usesReleaseVersion
+            ? recentVersion > bundleVersion ||
+              (recentVersion === bundleVersion && recent.fetchedAt > bundled.fetchedAt)
+            : recent.version === bundled.version && recent.fetchedAt > bundled.fetchedAt
+        )
+          return recent
+      }
       try {
         return {
           data: input.parser.parse(bundled.payload),
@@ -280,7 +302,8 @@ export function createOfflineStudentCourseClient(
         descriptor: descriptor(ownerId, 'student-problem-list', courseId, groupLessonId),
         parser: studentProblemListResponseSchema,
         request: () => online.problems(courseId, groupLessonId, options),
-        version: (payload) => payload.conditionRevisionId,
+        version: (payload) =>
+          `${payload.conditionRevisionId}:release:${payload.problemReleaseVersion ?? 1}`,
         isNetworkError: (error) => error instanceof CourseNetworkError,
       })
     },
@@ -333,7 +356,7 @@ export function createOfflineStudentPublishedContentClient(
         descriptor: descriptor(ownerId, 'published-content', input.groupLessonId, input.kind),
         parser: publishedContentSchema,
         request: () => online.published(input, options),
-        version: (payload) => payload.revisionId,
+        version: (payload) => `${payload.revisionId}:release:${payload.problemReleaseVersion ?? 1}`,
         isNetworkError: (error) => error instanceof ContentNetworkError,
       })
     },

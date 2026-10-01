@@ -1787,6 +1787,10 @@ msgstr "Loading activity feed"
 msgid "Загружаем название…"
 msgstr "Loading title…"
 
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Загружаем переключатели…"
+msgstr "Loading switches…"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем посылки…"
 msgstr "Loading submissions…"
@@ -1947,6 +1951,10 @@ msgstr "Closes"
 #: apps/staff/src/review-transfer.tsx
 msgid "Закрыть"
 msgstr "Close"
+
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Закрыть все"
+msgstr "Close all"
 
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Закрыть приём · Москва"
@@ -3209,6 +3217,10 @@ msgstr "could not create image"
 msgid "Не удалось создать преподавателей. Проверьте соединение и повторите попытку."
 msgstr "Could not create teachers. Check the connection and try again."
 
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Не удалось сохранить или загрузить доступность задач. Обновите переключатели и повторите действие."
+msgstr "Could not save or load task availability. Refresh the switches and try again."
+
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Не удалось сохранить или загрузить расположение. Обновите данные и повторите действие."
 msgstr "Could not save or load the layout. Refresh the data and try again."
@@ -3556,6 +3568,10 @@ msgstr "Refresh"
 msgid "Обновить данные"
 msgstr "Refresh data"
 
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Обновить переключатели"
+msgstr "Refresh switches"
+
 #: apps/staff/src/review-transfer.tsx
 msgid "Обновить предпросмотр"
 msgstr "Refresh preview"
@@ -3871,9 +3887,23 @@ msgstr "opening…"
 msgid "Открывается"
 msgstr "Opens"
 
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Открыта ученикам"
+msgstr "Open to students"
+
+#. placeholder {0}: problem.taskReference ?? problem.ordinal
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Открыта ученикам: задача {0}"
+msgstr "Open to students: task {0}"
+
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "открыто"
 msgstr "open"
+
+#. placeholder {0}: data.problems.length
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Открыто {openCount} из {0}"
+msgstr "Open: {openCount} of {0}"
 
 #: apps/staff/src/pages.tsx
 msgid "открытых вопросов"
@@ -3891,6 +3921,10 @@ msgstr "Open PDF"
 #: apps/staff/src/student-results-history.tsx
 msgid "Открыть вложение"
 msgstr "Open attachment"
+
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Открыть все"
+msgstr "Open all"
 
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Открыть занятие"
@@ -4509,6 +4543,10 @@ msgstr "There are no confirmed assignments yet."
 msgid "Подтверждённых связей на этом занятии пока нет."
 msgstr "There are no confirmed links in this class yet."
 
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Позадачная публикация"
+msgstr "Task release"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Поиск по всему курсу"
 msgstr "Search across the course"
@@ -5118,6 +5156,10 @@ msgstr "Checker"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Проверять подряд"
 msgstr "Review in sequence"
+
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Прогноз для выбранной версии. Переключать задачи можно в текущем опубликованном листке."
+msgstr "Preview for the selected revision. Task switches can be changed in the currently published worksheet."
 
 #: apps/staff/src/review-series-page.tsx
 msgid "Продолжить серию"
@@ -5884,6 +5926,10 @@ msgstr "First create an academic season, then add courses and groups to it."
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "Сначала создайте школьников, затем аккаунты родителей. Зачисление на курс выполняется отдельным действием."
 msgstr "Create students first, then parent accounts. Course enrolment is a separate action."
+
+#: apps/staff/src/staff-problem-release-preview.tsx
+msgid "Сначала сохраните сопоставление и метаданные задач, затем обновите переключатели."
+msgstr "Save task matching and metadata first, then refresh the switches."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Сначала сохраните черновик."
