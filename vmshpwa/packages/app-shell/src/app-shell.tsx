@@ -6,6 +6,8 @@ import { useState, type ReactNode } from 'react'
 
 import {
   Button,
+  Sign179,
+  useBrandIdentity,
   Drawer,
   DrawerContent,
   DrawerDescription,
@@ -42,6 +44,7 @@ export function AppShell({
   headerActions,
   compactHeader = false,
 }: AppShellProps) {
+  const brand = useBrandIdentity()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -52,7 +55,10 @@ export function AppShell({
         >
           <div className="flex min-w-0 items-baseline gap-2">
             <Link className="shrink-0 font-semibold tracking-tight" to="/">
-              <Trans>ВМШ 179</Trans>
+              <span className="inline-flex items-center gap-2">
+                <Sign179 size={24} />
+                <span>{brand.name}</span>
+              </span>
             </Link>
             {displayName || !compactHeader ? (
               <span
@@ -129,7 +135,7 @@ export function AppShell({
           <DrawerContent>
             <DrawerHeader>
               <DrawerTitle>
-                <Trans>ВМШ 179 ·</Trans> {displayName ?? title}
+                {brand.name} · {displayName ?? title}
               </DrawerTitle>
               <DrawerDescription>
                 <Trans>Разделы рабочего кабинета</Trans>

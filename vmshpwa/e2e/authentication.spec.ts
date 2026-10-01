@@ -195,7 +195,11 @@ test('Admin searches the real immutable audit timeline', async ({ page }) => {
 })
 
 test('Teacher reads only the scoped anonymous course statistics', async ({ page }) => {
-  await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/statistics?course=c-1&lesson=41')
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.teacher,
+    '/staff/statistics?view=analytics&course=c-1&lesson=41',
+  )
   await expect(page.getByRole('heading', { name: 'Статистика курса', level: 1 })).toBeVisible()
   await expect(page.getByLabel('Группа')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Занятие 41' })).toHaveAttribute(

@@ -124,7 +124,7 @@ export type NotificationPreference = z.infer<typeof notificationPreferenceSchema
 export const notificationPreferenceListResponseSchema = z
   .object({
     schemaVersion: versionSchema,
-    items: z.array(notificationPreferenceSchema).length(notificationCategorySchema.options.length),
+    items: z.array(notificationPreferenceSchema).max(notificationCategorySchema.options.length),
     requestId: z.string().trim().min(1),
   })
   .strip()
@@ -165,7 +165,7 @@ export const courseNotificationPreferenceListResponseSchema = z
     courseId: publicIdSchema,
     items: z
       .array(courseNotificationPreferenceSchema)
-      .length(notificationCategorySchema.options.length),
+      .max(notificationCategorySchema.options.length),
     requestId: z.string().trim().min(1),
   })
   .strip()

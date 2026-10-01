@@ -27,6 +27,7 @@ const response = {
         status: 'active',
         sortOrder: 1,
         accentKey: 'math',
+        hasInPersonClasses: true,
         version: 1,
       },
       activeGroupId: 'group.beginner',

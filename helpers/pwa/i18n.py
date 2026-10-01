@@ -34,10 +34,10 @@ def normalize_locale(value: object) -> str | None:
     return value if isinstance(value, str) and value in SUPPORTED_LOCALES else None
 
 
-def locale_from_cookies(cookies: Mapping[str, str]) -> str:
+def locale_from_cookies(cookies: Mapping[str, str], default_locale: str = DEFAULT_LOCALE) -> str:
     """Interface language of the device that sent a request."""
 
-    return normalize_locale(cookies.get(LOCALE_COOKIE_NAME)) or DEFAULT_LOCALE
+    return normalize_locale(cookies.get(LOCALE_COOKIE_NAME)) or default_locale
 
 
 @cache

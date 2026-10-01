@@ -34,7 +34,10 @@ from db_methods.pwa.progress import (
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
-from models.pwa.family_enrollment import change_family_enrollment
+from models.pwa.family_enrollment import (
+    change_family_enrollment,
+    AttendanceModeUnavailable,
+)
 from models.pwa.progress import summarize_course_results
 
 
@@ -106,6 +109,7 @@ def course_enrollment_payload(record: CourseEnrollmentRecord) -> dict[str, objec
             "sortOrder": record.course_sort_order,
             "accentKey": _token(record.course_accent_key, fallback="neutral"),
             "version": record.course_version,
+            "hasInPersonClasses": record.course_has_in_person_classes,
         },
         "activeGroupId": record.active_group_public_id,
         "allowedGroups": [_group_payload(group) for group in record.allowed_groups],
@@ -384,23 +388,21 @@ async def update_student_course_enrollment(request: web.Request) -> web.Response
             code="validation_error",
             message="Проверьте выбранную группу и режим",
         ) from error
-    if not isinstance(payload, dict) or set(payload) != {
-        "activeGroupId",
-        "attendanceMode",
-        "version",
-    }:
+    if not isinstance(payload, dict) or not {"activeGroupId", "version"} <= set(
+        payload
+    ) <= {"activeGroupId", "attendanceMode", "version"}:
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Проверьте выбранную группу и режим",
         )
     active_group_id = payload["activeGroupId"]
-    attendance_mode = payload["attendanceMode"]
+    attendance_mode = payload.get("attendanceMode")
     version = payload["version"]
     if (
         not isinstance(active_group_id, str)
         or _PUBLIC_ID.fullmatch(active_group_id) is None
-        or attendance_mode not in {"online", "in_person"}
+        or attendance_mode not in {None, "online", "in_person"}
         or not isinstance(version, int)
         or isinstance(version, bool)
         or version < 1
@@ -437,7 +439,14 @@ async def update_student_course_enrollment(request: web.Request) -> web.Response
             now=now,
         )
 
-    new_version = await database.factory.run_write_async(write)
+    try:
+        new_version = await database.factory.run_write_async(write)
+    except AttendanceModeUnavailable as error:
+        raise PwaApiError(
+            status=422,
+            code="attendance_mode_unavailable",
+            message="Изменение формата участия недоступно для этого курса",
+        ) from error
     if new_version is None:
         raise PwaApiError(
             status=409,
@@ -446,7 +455,7 @@ async def update_student_course_enrollment(request: web.Request) -> web.Response
         )
     response = course_enrollment_payload(enrollment)
     response["activeGroupId"] = group.group_public_id
-    response["attendanceMode"] = attendance_mode
+    response["attendanceMode"] = attendance_mode or enrollment.attendance_mode
     response["version"] = new_version
     return web.json_response(response, headers={"Cache-Control": "no-store"})
 

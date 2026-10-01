@@ -179,3 +179,26 @@ Rollback выполняется по
 - время начала пилота, ответственный и ссылка на журнал обратной связи;
 - каждый внешний пункт, который ещё не запускался, явно помечен `NOT RUN`, а не
   `PASS`.
+
+### 2026-10-01 — Consolidation and two-portal rollout (in progress)
+
+Owner requests consolidation into vmshpwa and sequential rollout to
+vmsh.shashkovs.ru and prep.leaders.tech. Current PWA branches (including
+codex/rich-markdown) are already ancestors. Owner explicitly excludes historical
+experimental branches; consolidation includes the current PWA source work only. Preserve and review all
+current source work; exclude local TeX build output and credentials. Run
+integration gates, retain verified host-specific DB/source/static rollback
+artifacts, rehearse migrations, then deploy and verify each independent portal.
+Implementation/runbooks: [deployment.md](../../docs/deployment.md),
+[production checklist](../../docs/production-rollout-checklist.md),
+[VMSh deploy](../../../docs/deploy/deploy-vmsh-tasks-bot.sh),
+[TLF operations](../../../docs/deploy/tlf-app/README.md).
+
+Consolidation gate update: owner excludes legacy experimental branches. VMSh
+SQLite online backup and migration 0101–0103 rehearsal passed, including rollback
+to 0100 and reapply. Integrity and counts preserved (1 course, 1451 enrollments,
+4021 accounts, 34402 results); existing courses stay enabled and account locales
+stay explicit. Query performance guard passed (~47 ms). Host evidence remains
+in /tmp/vmsh-consolidation-vaq_iyb3; no data rows or credentials copied into Git.
+All changed Python files pass Ruff; complete frontend type checks and RU/EN
+catalog checks pass. Full backend/frontend suites and rollout gates continue.

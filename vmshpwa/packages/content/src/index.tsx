@@ -142,7 +142,9 @@ export function MathHtml({ html, className }: MathHtmlProps) {
         <Trans>Материал не показан: его безопасный формат не прошёл проверку.</Trans>
       </div>
       <div className="vmsh-content-formula-warning" hidden ref={formulaWarningRef} role="status">
-        <Trans>Некоторые формулы не удалось отобразить. Их исходная запись оставлена в тексте.</Trans>
+        <Trans>
+          Некоторые формулы не удалось отобразить. Их исходная запись оставлена в тексте.
+        </Trans>
       </div>
       <div ref={containerRef} />
     </div>

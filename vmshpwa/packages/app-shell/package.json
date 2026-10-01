@@ -22,6 +22,7 @@
     "@vmsh/product": "workspace:*",
     "@vmsh/ui": "workspace:*",
     "lucide-react": "catalog:",
-    "react": "catalog:"
+    "react": "catalog:",
+    "@vmsh/branding": "workspace:*"
   }
 }

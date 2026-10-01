@@ -333,6 +333,18 @@
       {
         "id": "0100.pwa_lesson_blocks",
         "sha256": "4bbaf88ec279f5f6777d2afa4c94522304bd63c0833085fef4d9d1737975302c"
+      },
+      {
+        "id": "0101.pwa_branding",
+        "sha256": "4273bfb9472e4524b71955c51b64edb61c3237580f08c2adb5da50fe81eeda05"
+      },
+      {
+        "id": "0102.zoom_webhook_archive",
+        "sha256": "74d1d205448990c3c8cd9cd51268737898fe2f277e5b23c5bb89ace251e9f9f9"
+      },
+      {
+        "id": "0103.course_in_person_classes",
+        "sha256": "c2e36785cf1c728c4296c2d07ed930f4949c909bb3c04fd5d4282b0b326e4397"
       }
     ],
     "repository_head_status": {
@@ -343,7 +355,7 @@
     }
   },
   "product": {
-    "object_count": 494,
+    "object_count": 497,
     "objects": [
       {
         "columns": [
@@ -1059,6 +1071,15 @@
             "name": "locale",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 18,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "locale_explicit",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -1174,8 +1195,8 @@
           }
         ],
         "name": "auth_accounts",
-        "object_sha256": "38aa13af8fa1b98decfde03e5f2edb59f2383bbc2183540567219fb6d11f49ac",
-        "sql": "CREATE TABLE auth_accounts\n(\n    id                         integer primary key,\n    public_id text generated always as ('a-' || id) virtual,\n    audience                   text    not null\n        check (audience in ('student', 'family', 'staff')),\n    username                   text    not null\n        check (length(trim(username)) > 0),\n    username_normalized        text    not null\n        check (length(trim(username_normalized)) > 0),\n    username_algorithm_version integer\n        check (username_algorithm_version > 0),\n    provisioning_source        text    not null\n        check (length(trim(provisioning_source)) > 0),\n    display_name               text,\n    credential_kind            text    not null\n        check (credential_kind in ('telegram_token', 'password')),\n    credential_hash            text,\n    linked_user_id             integer references users (id),\n    status                     text    not null\n        check (status in ('active', 'blocked', 'disabled', 'archived')),\n    credential_version         integer not null default 1\n        check (credential_version > 0),\n    last_login_at              text,\n    created_at                 text    not null,\n    updated_at                 text    not null, provisioning_password_plaintext text\n    check (\n        provisioning_password_plaintext is null\n        or length(provisioning_password_plaintext) between 1 and 512\n    ), locale text not null default 'ru'\n        check (locale in ('ru', 'en')),\n    unique (audience, username_normalized),\n    check (credential_hash is null or length(trim(credential_hash)) > 0),\n    check (status <> 'active' or credential_hash is not null),\n    check (audience <> 'student' or username_algorithm_version is not null),\n    check (\n        (audience = 'student' and credential_kind = 'telegram_token' and linked_user_id is not null)\n        or (audience = 'family' and credential_kind = 'password' and linked_user_id is null)\n        or (audience = 'staff' and credential_kind = 'password' and linked_user_id is not null)\n    ),\n    check (\n        audience <> 'family'\n        or (display_name is not null and length(trim(display_name)) > 0)\n    )\n);",
+        "object_sha256": "3ac7cdb0dc8560635a85ea2a5e833d529a1e31d4e0e335064e4516edf55b4f85",
+        "sql": "CREATE TABLE auth_accounts\n(\n    id                         integer primary key,\n    public_id text generated always as ('a-' || id) virtual,\n    audience                   text    not null\n        check (audience in ('student', 'family', 'staff')),\n    username                   text    not null\n        check (length(trim(username)) > 0),\n    username_normalized        text    not null\n        check (length(trim(username_normalized)) > 0),\n    username_algorithm_version integer\n        check (username_algorithm_version > 0),\n    provisioning_source        text    not null\n        check (length(trim(provisioning_source)) > 0),\n    display_name               text,\n    credential_kind            text    not null\n        check (credential_kind in ('telegram_token', 'password')),\n    credential_hash            text,\n    linked_user_id             integer references users (id),\n    status                     text    not null\n        check (status in ('active', 'blocked', 'disabled', 'archived')),\n    credential_version         integer not null default 1\n        check (credential_version > 0),\n    last_login_at              text,\n    created_at                 text    not null,\n    updated_at                 text    not null, provisioning_password_plaintext text\n    check (\n        provisioning_password_plaintext is null\n        or length(provisioning_password_plaintext) between 1 and 512\n    ), locale text not null default 'ru'\n        check (locale in ('ru', 'en')), locale_explicit INTEGER NOT NULL DEFAULT 0\n    CHECK (locale_explicit IN (0, 1)),\n    unique (audience, username_normalized),\n    check (credential_hash is null or length(trim(credential_hash)) > 0),\n    check (status <> 'active' or credential_hash is not null),\n    check (audience <> 'student' or username_algorithm_version is not null),\n    check (\n        (audience = 'student' and credential_kind = 'telegram_token' and linked_user_id is not null)\n        or (audience = 'family' and credential_kind = 'password' and linked_user_id is null)\n        or (audience = 'staff' and credential_kind = 'password' and linked_user_id is not null)\n    ),\n    check (\n        audience <> 'family'\n        or (display_name is not null and length(trim(display_name)) > 0)\n    )\n);",
         "table_name": "auth_accounts",
         "type": "table"
       },
@@ -8306,6 +8327,15 @@
             "name": "version",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "has_in_person_classes",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -8429,8 +8459,8 @@
           }
         ],
         "name": "courses",
-        "object_sha256": "faf81dd9e12117b0de19928ec67954bfcea4293869e4d3c147a6823d358591a6",
-        "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id text generated always as ('c-' || id) virtual,\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0),\n    unique (season_id, code)\n);",
+        "object_sha256": "6ebb0705c0708813ac5ac41b004fd151fe2c80d3228257b57685c7f05ce617b2",
+        "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id text generated always as ('c-' || id) virtual,\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1\n    CHECK (has_in_person_classes IN (0, 1)),\n    unique (season_id, code)\n);",
         "table_name": "courses",
         "type": "table"
       },
@@ -19452,6 +19482,53 @@
           },
           {
             "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "profile_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "default_locale",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [],
+        "name": "pwa_branding",
+        "object_sha256": "51fc83477c7a7448d52d48f3f3a13fefeca109dda7ff444a1fc77ebbfe20d752",
+        "sql": "CREATE TABLE pwa_branding (\n    id INTEGER PRIMARY KEY CHECK (id = 1),\n    profile_id TEXT NOT NULL,\n    default_locale TEXT NOT NULL CHECK (default_locale IN ('ru', 'en')),\n    version INTEGER NOT NULL DEFAULT 1\n);",
+        "table_name": "pwa_branding",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
             "declared_type": "TIMESTAMP",
             "default_sql": null,
             "hidden": 0,
@@ -28912,6 +28989,113 @@
         "type": "table"
       },
       {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "received_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "meeting_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_timestamp",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "BLOB",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "raw_body",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "meeting_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "zoom_webhook_receipts_by_meeting",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "zoom_webhook_receipts",
+        "object_sha256": "f947ab9d8b60dd23a9976cb7da61cf681242a0d6aef73e70e7b0c0efb8cb975b",
+        "sql": "CREATE TABLE zoom_webhook_receipts (\n    id INTEGER PRIMARY KEY,\n    received_at TEXT NOT NULL,\n    event_type TEXT NOT NULL,\n    meeting_id TEXT,\n    request_id TEXT,\n    request_timestamp TEXT NOT NULL,\n    raw_body BLOB NOT NULL\n);",
+        "table_name": "zoom_webhook_receipts",
+        "type": "table"
+      },
+      {
         "name": "analytics_runs_course_latest_idx",
         "object_sha256": "b96fb48d9236a54a3fcb9bfeb28abf8b36751f2a4a696c36e7e2a3630202bc9b",
         "sql": "CREATE INDEX analytics_runs_course_latest_idx\n    on analytics_runs (course_id, state, completed_at desc, id desc);",
@@ -30050,6 +30234,13 @@
         "object_sha256": "b1224dc97407d8fac7e041777ed03c5b4b268eb25869ba509e7ac6e87785141d",
         "sql": "CREATE INDEX zoom_queue_by_ts\n    on zoom_queue (enter_ts);",
         "table_name": "zoom_queue",
+        "type": "index"
+      },
+      {
+        "name": "zoom_webhook_receipts_by_meeting",
+        "object_sha256": "64426b4b06d2a11a25171368f86e2fe8541457b7f3fc84cfb82eef53033c6c3e",
+        "sql": "CREATE INDEX zoom_webhook_receipts_by_meeting ON zoom_webhook_receipts(meeting_id, id);",
+        "table_name": "zoom_webhook_receipts",
         "type": "index"
       },
       {
@@ -31306,8 +31497,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "e34d6a8063a4b3e4f8e2e5a8f0116b06d17bb3c60c74722075ff019d9d39cfb2",
-    "sha256": "3a15a645f562810d21831e10d90ed336defefa5f504b0f3870d092bfdef7e71e"
+    "pragma_structure_sha256": "e5fa5eb63b944fabcef27d70f88dec349cb3f8eb2a64019f653217891467969b",
+    "sha256": "e3adaf9500869700ce6e72b9b13ced3f5e0c11bbc7466245d1950565f70eccf5"
   },
   "source_kind": "repository-migration-head"
 }

@@ -1,3 +1,4 @@
+import { useBrandIdentity } from '@vmsh/ui'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { Mail, Users } from 'lucide-react'
@@ -531,6 +532,7 @@ export function FamilyProfilePage({
   /** Interface language card; the routed page passes `InterfaceLanguageCard`. */
   languageSettings?: ReactNode
 }) {
+  const { supportEmail } = useBrandIdentity()
   return (
     <StatefulPage state={state} title={t`Профиль`}>
       <PageLayout title={displayName}>
@@ -579,9 +581,9 @@ export function FamilyProfilePage({
               {organizerLink}
               <a
                 className="inline-flex items-center gap-2 text-link underline"
-                href="mailto:vmsh@179.ru"
+                href={`mailto:${supportEmail}`}
               >
-                <Mail className="size-4" /> vmsh@179.ru
+                <Mail className="size-4" /> {supportEmail}
               </a>
             </CardContent>
           </Card>

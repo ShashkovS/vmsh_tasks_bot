@@ -36,7 +36,10 @@ from db_methods.pwa.progress import (
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.content import ContentKind
-from models.pwa.family_enrollment import change_family_enrollment
+from models.pwa.family_enrollment import (
+    change_family_enrollment,
+    AttendanceModeUnavailable,
+)
 from models.pwa.progress import summarize_course_results
 
 
@@ -113,11 +116,9 @@ async def _enrollment_change_payload(request: web.Request) -> dict[str, object]:
             code="validation_error",
             message="Проверьте выбранную группу и режим",
         ) from error
-    if not isinstance(payload, dict) or set(payload) != {
-        "activeGroupId",
-        "attendanceMode",
-        "version",
-    }:
+    if not isinstance(payload, dict) or not {"activeGroupId", "version"} <= set(
+        payload
+    ) <= {"activeGroupId", "attendanceMode", "version"}:
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -126,7 +127,7 @@ async def _enrollment_change_payload(request: web.Request) -> dict[str, object]:
     if (
         not isinstance(payload["activeGroupId"], str)
         or _PUBLIC_ID.fullmatch(payload["activeGroupId"]) is None
-        or payload["attendanceMode"] not in {"online", "in_person"}
+        or payload.get("attendanceMode") not in {None, "online", "in_person"}
         or not isinstance(payload["version"], int)
         or isinstance(payload["version"], bool)
         or payload["version"] < 1
@@ -224,12 +225,19 @@ async def update_family_child_enrollment(request: web.Request) -> web.Response:
             previous_group_id=enrollment.active_group_id,
             active_group_id=group.group_id,
             previous_attendance_mode=enrollment.attendance_mode,
-            attendance_mode=payload["attendanceMode"],
+            attendance_mode=payload.get("attendanceMode"),
             request_id=request["request_id"],
             now=now,
         )
 
-    new_version = await _factory(request).run_write_async(write)
+    try:
+        new_version = await _factory(request).run_write_async(write)
+    except AttendanceModeUnavailable as error:
+        raise PwaApiError(
+            status=422,
+            code="attendance_mode_unavailable",
+            message="Изменение формата участия недоступно для этого курса",
+        ) from error
     if new_version is None:
         raise PwaApiError(
             status=409,
@@ -238,7 +246,9 @@ async def update_family_child_enrollment(request: web.Request) -> web.Response:
         )
     response = course_enrollment_payload(enrollment)
     response["activeGroupId"] = group.group_public_id
-    response["attendanceMode"] = payload["attendanceMode"]
+    response["attendanceMode"] = (
+        payload.get("attendanceMode") or enrollment.attendance_mode
+    )
     response["version"] = new_version
     return web.json_response(response, headers={"Cache-Control": "no-store"})
 
@@ -340,7 +350,8 @@ async def get_family_worksheet(request: web.Request) -> web.Response:
     child = _linked_child(authenticated, request.match_info["student_public_id"])
     enrollment = next(
         (
-            item for item in authenticated.course_enrollments
+            item
+            for item in authenticated.course_enrollments
             if item.student_public_id == child.student_public_id
             and item.course_public_id == request.match_info["course_public_id"]
         ),
@@ -352,7 +363,9 @@ async def get_family_worksheet(request: web.Request) -> web.Response:
         )
     number = request.match_info["lesson_number"]
     if (
-        not number.isascii() or not number.isdigit() or len(number) > 8
+        not number.isascii()
+        or not number.isdigit()
+        or len(number) > 8
         or set(request.query) - {"group"}
         or len(request.query.getall("group", [])) > 1
     ):
@@ -371,7 +384,8 @@ async def get_family_worksheet(request: web.Request) -> web.Response:
     )
     if not lessons or lessons[0].lesson_number != int(number):
         raise PwaApiError(
-            status=404, code="not_found",
+            status=404,
+            code="not_found",
             message="Условие этого занятия ещё не опубликовано",
         )
     lesson = lessons[0]
@@ -397,7 +411,9 @@ async def get_family_worksheet(request: web.Request) -> web.Response:
         {
             "studentId": child.student_public_id,
             "lesson": _student_lesson_payload(lesson),
-            "problems": None if problems is None else _student_problem_list_payload(problems),
+            "problems": None
+            if problems is None
+            else _student_problem_list_payload(problems),
             "document": None if content is None else content.document,
         },
         headers={"Cache-Control": "no-store"},

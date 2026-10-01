@@ -70,6 +70,10 @@ def context(connection, principal, spec, *, writable=False):
         ),
         "forbidden",
     )
+    if writable:
+        # Course attendance settings: history stays readable, new room actions stop.
+        # vmshpwa/docs/course-attendance-settings.md, classroom operations.
+        require(room["has_in_person_classes"], "invalid")
     plan = require(db.plan(connection, event["id"]), "plan_unavailable")
     require(plan["layout_version_id"] == room["layout_id"], "plan_unavailable")
     return dict(

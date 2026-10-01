@@ -56,14 +56,6 @@ msgstr "Turn on notifications"
 msgid "Включить уведомления?"
 msgstr "Turn on notifications?"
 
-#: packages/app-shell/src/app-shell.tsx
-msgid "ВМШ 179"
-msgstr "VMSh 179"
-
-#: packages/app-shell/src/app-shell.tsx
-msgid "ВМШ 179 ·"
-msgstr "VMSh 179 ·"
-
 #: packages/app-shell/src/organizer-pages.tsx
 msgid "Вопросы организаторам"
 msgstr "Questions to the organizers"
@@ -383,8 +375,8 @@ msgid "Повторить"
 msgstr "Retry"
 
 #: packages/app-shell/src/runtime-bootstrap.tsx
-msgid "Подключаем личный кабинет к серверу ВМШ 179."
-msgstr "Connecting your account to the VMSh 179 server."
+msgid "Подключаем личный кабинет к серверу."
+msgstr "Connecting your account to the server."
 
 #: packages/app-shell/src/service-availability.tsx
 msgid "Подключение занимает больше времени. Мы продолжаем пробовать."

@@ -124,10 +124,23 @@ def _principal_payload(authenticated: AuthenticatedSession) -> dict[str, object]
     return common
 
 
+async def _support_email(request: web.Request) -> str:
+    from db_methods.pwa.branding import get_branding
+    from helpers.pwa.app_keys import PWA_DATABASE
+    from helpers.pwa.branding import PROFILES
+
+    state = request.app.get(PWA_DATABASE)
+    if state is None or state.factory is None:
+        return SUPPORT_EMAIL
+    branding = await state.factory.run_read_async(get_branding)
+    return PROFILES[branding["profile_id"]]["supportEmail"]
+
+
 def _auth_context_payload(
     authenticated: AuthenticatedSession,
     *,
     access_expires_at: datetime,
+    support_email: str = SUPPORT_EMAIL,
 ) -> dict[str, object]:
     current = authenticated.current.session
     return {
@@ -139,7 +152,7 @@ def _auth_context_payload(
         "policy": {
             "accessExpiresAt": _iso(access_expires_at),
             "sessionExpiresAt": _iso(current.expires_at),
-            "supportEmail": SUPPORT_EMAIL,
+            "supportEmail": support_email,
         },
     }
 
@@ -396,6 +409,7 @@ async def login(request: web.Request) -> web.Response:
         _auth_context_payload(
             issued.authenticated,
             access_expires_at=issued.access_expires_at,
+            support_email=await _support_email(request),
         )
     )
     _set_session_cookies_for_request(request, response, issued)
@@ -417,6 +431,7 @@ async def refresh(request: web.Request) -> web.Response:
         _auth_context_payload(
             issued.authenticated,
             access_expires_at=issued.access_expires_at,
+            support_email=await _support_email(request),
         )
     )
     _set_session_cookies_for_request(request, response, issued)
@@ -477,6 +492,7 @@ async def me(request: web.Request) -> web.Response:
         _auth_context_payload(
             authenticated,
             access_expires_at=authenticated.access_expires_at,
+            support_email=await _support_email(request),
         )
     )
 

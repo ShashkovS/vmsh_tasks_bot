@@ -14,6 +14,7 @@ const courses: AdminCourse[] = [
     status: 'active',
     sortOrder: 10,
     accentKey: 'math',
+    hasInPersonClasses: true,
     activeStudents: 120,
     version: 1,
     groups: [

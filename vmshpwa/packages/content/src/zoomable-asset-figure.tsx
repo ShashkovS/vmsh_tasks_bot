@@ -119,7 +119,9 @@ export function ZoomableAssetFigure({
       >
         {imageFailed ? (
           <div className="vmsh-figure-missing" role="status">
-            <strong><Trans>Рисунок недоступен.</Trans></strong>
+            <strong>
+              <Trans>Рисунок недоступен.</Trans>
+            </strong>
             <span>{alt}</span>
           </div>
         ) : (

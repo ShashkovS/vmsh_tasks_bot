@@ -528,6 +528,7 @@ Job публикует полный successful run атомарно и обно�
 затем legacy `group_id`.
 
 Точные поля, unique/invariant rules и миграционная граница зафиксированы в [`docs/courses-groups-and-lessons.md`](../../docs/courses-groups-and-lessons.md). Phase 11 backfill создаёт курс «Математика 5–7» и не переписывает problem/submission/result/Telegram IDs. Synonym membership versioned; физическое перемещение истории запрещено.
+
 # Lesson blocks addendum
 
 Implemented group-lesson reading blocks use `lesson_blocks`, immutable

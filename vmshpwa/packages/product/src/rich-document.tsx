@@ -123,7 +123,17 @@ function ImageBlock({
   )
 }
 
-function Block({ block, document, idPrefix, imageLoading }: { block: RichBlock; document: RichDocument; idPrefix: string; imageLoading: 'eager' | 'lazy' }): ReactNode {
+function Block({
+  block,
+  document,
+  idPrefix,
+  imageLoading,
+}: {
+  block: RichBlock
+  document: RichDocument
+  idPrefix: string
+  imageLoading: 'eager' | 'lazy'
+}): ReactNode {
   if (block.type === 'paragraph')
     return (
       <p className="whitespace-pre-wrap">
@@ -146,7 +156,12 @@ function Block({ block, document, idPrefix, imageLoading }: { block: RichBlock; 
       <blockquote className="space-y-2 border-l-2 border-border-strong pl-3 text-muted-foreground">
         {block.blocks.map((item, index) => (
           <Fragment key={index}>
-            <Block block={item} document={document} idPrefix={idPrefix} imageLoading={imageLoading} />
+            <Block
+              block={item}
+              document={document}
+              idPrefix={idPrefix}
+              imageLoading={imageLoading}
+            />
           </Fragment>
         ))}
       </blockquote>
@@ -200,7 +215,12 @@ function Block({ block, document, idPrefix, imageLoading }: { block: RichBlock; 
         <div className="mt-2 space-y-2">
           {block.blocks.map((item, index) => (
             <Fragment key={index}>
-              <Block block={item} document={document} idPrefix={idPrefix} imageLoading={imageLoading} />
+              <Block
+                block={item}
+                document={document}
+                idPrefix={idPrefix}
+                imageLoading={imageLoading}
+              />
             </Fragment>
           ))}
         </div>
@@ -230,7 +250,12 @@ export function RichDocumentView({
     <article className={cn('space-y-3', className)}>
       {document.blocks.map((block, index) => (
         <Fragment key={index}>
-          <Block block={block} document={document} idPrefix={idPrefix} imageLoading={imageLoading} />
+          <Block
+            block={block}
+            document={document}
+            idPrefix={idPrefix}
+            imageLoading={imageLoading}
+          />
         </Fragment>
       ))}
     </article>

@@ -311,6 +311,7 @@ Implemented [full references and worksheet interaction corrections](../../docs/t
 Проверено: 36 unit, 4 backend, 15 browser и 6 E2E в Chromium/Firefox/WebKit;
 320/390/1280 px, обе темы, печать, typecheck, production build. Снимки и известные
 baseline-падения старых Staff-тестов описаны в отчёте. Миграций нет.
+
 # Lesson blocks addendum
 
 Student lesson discovery accepts a published condition or a published lesson
@@ -332,7 +333,6 @@ API-disconnected coverage passed in all three engines).
 [Proof and screenshots](../../../pwa_tests/reports/offline-current-lessons/README.md).
 No deployment; full network-offline Safari/Firefox cold-start proof remains a
 manual-browser follow-up because of the documented automation limitation.
-
 
 ## Student task subparts — 2026-09-28
 

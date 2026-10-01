@@ -24,3 +24,5 @@ export * from './components/textarea'
 export * from './components/tooltip'
 export * from './brand/marks'
 export * from './lib/utils'
+
+export { BrandIdentityProvider, useBrandIdentity, type BrandIdentity } from './brand/identity'

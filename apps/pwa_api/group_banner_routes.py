@@ -83,7 +83,7 @@ def _audience_scope(
                 (
                     enrollment.course_id,
                     enrollment.active_group_id,
-                    enrollment.attendance_mode,
+                    enrollment.effective_attendance_mode,
                 )
                 for enrollment in authenticated.course_enrollments
                 if enrollment.enrollment_status == "active"

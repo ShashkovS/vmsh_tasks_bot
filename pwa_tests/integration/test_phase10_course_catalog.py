@@ -98,6 +98,7 @@ async def test_course_catalog_is_admin_only_and_reports_real_counts(classroom_ht
             "status": "active",
             "sortOrder": 1,
             "accentKey": "math",
+            "hasInPersonClasses": True,
             "activeStudents": 1,
             "groups": [
                 {

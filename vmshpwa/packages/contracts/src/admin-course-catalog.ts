@@ -32,6 +32,7 @@ export const adminCourseSchema = z
     status: catalogStatusSchema,
     sortOrder: z.number().int().min(-10_000).max(10_000),
     accentKey: z.string().trim().min(1).max(32),
+    hasInPersonClasses: z.boolean().default(true),
     activeStudents: z.number().int().nonnegative(),
     groups: z.array(adminGroupSchema),
     version: z.number().int().positive(),
@@ -139,6 +140,7 @@ const codeSchema = z
   .transform((value) => value.toLocaleLowerCase('ru-RU'))
 
 const courseFields = {
+  hasInPersonClasses: z.boolean().optional(),
   schemaVersion: z.literal(1),
   code: codeSchema,
   name: z.string().trim().min(1).max(200),

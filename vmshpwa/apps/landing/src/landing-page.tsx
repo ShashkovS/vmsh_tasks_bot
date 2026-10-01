@@ -3,6 +3,7 @@ import { Trans } from '@lingui/react/macro'
 import { ArrowRight } from 'lucide-react'
 
 import {
+  useBrandIdentity,
   Card,
   CardContent,
   CardHeader,
@@ -35,11 +36,12 @@ const destinations = [
 
 /** Public entry page; it intentionally has no session, API or audience state. */
 export function LandingPage() {
+  const { name: brandName } = useBrandIdentity()
   return (
     <main className="min-h-svh bg-background text-foreground">
       <div className="mx-auto flex min-h-svh w-full max-w-5xl flex-col px-4 py-5 sm:px-8 sm:py-8">
-        <header className="flex items-center gap-3" aria-label={t`ВМШ 179`}>
-          <Sign179 className="text-primary" size={34} title={t`Знак ВМШ 179`} />
+        <header className="flex items-center gap-3" aria-label={brandName}>
+          <Sign179 className="text-primary" size={34} title={brandName} />
           <Wordmark className="text-foreground" size={25} />
         </header>
 
@@ -52,8 +54,8 @@ export function LandingPage() {
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
             <Trans>
-              ВМШ 179 — математический кружок для школьников. Выберите нужный кабинет, чтобы открыть
-              задачи, результаты занятий и новости.
+              {brandName} — математический кружок для школьников. Выберите нужный кабинет, чтобы
+              открыть задачи, результаты занятий и новости.
             </Trans>
           </p>
 
@@ -82,7 +84,7 @@ export function LandingPage() {
         </section>
 
         <footer className="border-t border-border pt-4 text-sm text-muted-foreground">
-          <Trans>ВМШ 179 · математический кружок</Trans>
+          <Trans>{brandName} · математический кружок</Trans>
         </footer>
       </div>
     </main>

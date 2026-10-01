@@ -24,6 +24,9 @@ def list_events(
         f"WHERE event.account_id = ? AND event.deliver_after <= ? {unread_clause} "
         f"AND coalesce(preference.in_app_enabled, "
         f"CASE WHEN event.category = 'oral_window' THEN 0 ELSE 1 END) = 1 "
+        f"AND (event.category != 'classroom_assignment' OR EXISTS ("
+        f"SELECT 1 FROM courses c WHERE c.public_id = coalesce(json_extract(event.payload_json, '$.courseId'), json_extract(event.payload_json, '$.coursePublicId')) "
+        f"AND c.has_in_person_classes = 1)) "
         f"ORDER BY event.occurred_at DESC, event.id DESC LIMIT ?",
         (account_id, now, limit),
     ).fetchall()
@@ -53,6 +56,21 @@ def mark_event_read(
         )
         return {"public_id": row["public_id"], "read_at": read_at}
     return {"public_id": row["public_id"], "read_at": row["read_at"]}
+
+
+def account_has_in_person_courses(
+    connection: sqlite3.Connection, account_id: int
+) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM auth_accounts a JOIN course_enrollments e ON "
+        "(a.audience = 'student' AND e.student_user_id = a.linked_user_id) OR "
+        "(a.audience = 'family' AND EXISTS (SELECT 1 FROM family_student_links l "
+        "WHERE l.family_account_id = a.id AND l.student_user_id = e.student_user_id AND l.revoked_at IS NULL)) "
+        "JOIN courses c ON c.id = e.course_id WHERE a.id = ? AND e.status = 'active' "
+        "AND c.status = 'active' AND c.has_in_person_classes = 1 LIMIT 1",
+        (account_id,),
+    ).fetchone()
+    return row is not None
 
 
 def list_preferences(
@@ -113,7 +131,7 @@ def student_notification_course(
     course_public_id: str,
 ) -> dict[str, object] | None:
     row = connection.execute(
-        "SELECT course.id, course.public_id, course.name "
+        "SELECT course.id, course.public_id, course.name, course.has_in_person_classes "
         "FROM auth_accounts AS account "
         "JOIN course_enrollments AS enrollment "
         "ON enrollment.student_user_id = account.linked_user_id "
@@ -229,11 +247,12 @@ def active_online_student_accounts_for_group(
     rows = connection.execute(
         "SELECT account.id, account.public_id "
         "FROM course_enrollments AS enrollment "
+        "JOIN courses c ON c.id = enrollment.course_id "
         "JOIN auth_accounts AS account "
         "ON account.linked_user_id = enrollment.student_user_id "
         "AND account.audience = 'student' AND account.status = 'active' "
         "WHERE enrollment.course_id = ? AND enrollment.active_group_id = ? "
-        "AND enrollment.status = 'active' AND enrollment.attendance_mode = 'online' "
+        "AND enrollment.status = 'active' AND (enrollment.attendance_mode = 'online' OR c.has_in_person_classes = 0) "
         "ORDER BY account.id",
         (course_id, group_id),
     ).fetchall()
@@ -365,10 +384,11 @@ def targeted_notification_accounts(
         "WITH recipient_students AS ("
         "SELECT enrollment.student_user_id, student.public_id AS student_public_id "
         "FROM course_enrollments AS enrollment "
+        "JOIN courses c ON c.id = enrollment.course_id "
         "JOIN users AS student ON student.id = enrollment.student_user_id "
         "WHERE enrollment.course_id = ? AND enrollment.status = 'active' "
         "AND (? IS NULL OR enrollment.active_group_id = ?) "
-        "AND (? = 'all' OR enrollment.attendance_mode = ?)) "
+        "AND (? = 'all' OR CASE WHEN c.has_in_person_classes = 0 THEN 'online' ELSE enrollment.attendance_mode END = ?)) "
         "SELECT account.id AS account_id, account.public_id AS account_public_id, "
         "account.audience, student.student_public_id "
         "FROM recipient_students AS student "

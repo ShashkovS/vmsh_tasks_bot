@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sqlite3
 from datetime import UTC, date, datetime
@@ -34,7 +35,10 @@ from db_methods.pwa.course_runtime_settings import (
     insert_course_runtime_settings,
     update_course_runtime_settings,
 )
+from apps.pwa_api.admin_enrollment_routes import PWA_ENROLLMENT_INVALIDATOR
+from db_methods.pwa.classroom_assignments import list_assignment_owner_accounts
 from db_methods.pwa.audit import insert_audit_event
+from db_methods.pwa.family_enrollment import mark_working_classroom_plans_stale
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.course_runtime_settings import (
@@ -102,7 +106,9 @@ def _now() -> str:
 def _utc(value: datetime | None) -> str | None:
     if value is None:
         return None
-    return value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    return (
+        value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    )
 
 
 def _factory(request: web.Request):
@@ -180,7 +186,9 @@ def _expected_runtime_settings_version(request: web.Request, public_id: str) -> 
     return int(match.group(2))
 
 
-async def _read_json(request: web.Request, fields: set[str]) -> dict[str, object]:
+async def _read_json(
+    request: web.Request, fields: set[str], optional: set[str] = frozenset()
+) -> dict[str, object]:
     if request.content_type != "application/json":
         raise PwaApiError(
             status=422, code="validation_error", message="Тело запроса должно быть JSON"
@@ -195,7 +203,7 @@ async def _read_json(request: web.Request, fields: set[str]) -> dict[str, object
         ) from error
     if (
         not isinstance(payload, dict)
-        or set(payload) != fields
+        or not fields <= set(payload) <= fields | optional
         or payload.get("schemaVersion") != 1
         or isinstance(payload.get("schemaVersion"), bool)
     ):
@@ -229,9 +237,7 @@ def _code(value: object, *, maximum: int) -> str | None:
     return normalized
 
 
-def _local_time(
-    value: object, *, timezone: str, optional: bool
-) -> datetime | None:
+def _local_time(value: object, *, timezone: str, optional: bool) -> datetime | None:
     if optional and value is None:
         return None
     if not isinstance(value, str):
@@ -286,6 +292,12 @@ def _season_values(payload: dict[str, object]) -> dict[str, str]:
 
 
 def _course_values(payload: dict[str, object]) -> dict[str, object]:
+    if "hasInPersonClasses" in payload and not isinstance(
+        payload["hasInPersonClasses"], bool
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте поля курса"
+        )
     code = _code(payload["code"], maximum=20)
     name = _text(payload["name"], maximum=200)
     subject_code = _code(payload["subjectCode"], maximum=50)
@@ -313,6 +325,11 @@ def _course_values(payload: dict[str, object]) -> dict[str, object]:
         "status": status,
         "sort_order": sort_order,
         "accent_key": accent_key,
+        **(
+            {"has_in_person_classes": payload["hasInPersonClasses"]}
+            if "hasInPersonClasses" in payload
+            else {}
+        ),
     }
 
 
@@ -380,6 +397,7 @@ def _course_payload(
         "status": row["status"],
         "sortOrder": row["sort_order"],
         "accentKey": row["accent_key"],
+        "hasInPersonClasses": bool(row["has_in_person_classes"]),
         "activeStudents": row.get("active_students", 0),
         "groups": [_group_payload(group) for group in groups],
         "version": row["version"],
@@ -394,6 +412,7 @@ def _course_audit_values(row: dict[str, object]) -> dict[str, object]:
         "status": row["status"],
         "sortOrder": row["sort_order"],
         "accentKey": row["accent_key"],
+        "hasInPersonClasses": bool(row["has_in_person_classes"]),
         "version": row["version"],
     }
 
@@ -715,7 +734,9 @@ async def create_course(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
         )
-    payload = await _read_json(request, _COURSE_FIELDS | {"seasonId"})
+    payload = await _read_json(
+        request, _COURSE_FIELDS | {"seasonId"}, {"hasInPersonClasses"}
+    )
     values = _course_values(payload)
     season_public_id = payload["seasonId"]
     if (
@@ -787,7 +808,7 @@ async def edit_course(request: web.Request) -> web.Response:
         )
     public_id = _path_public_id(request, "course_public_id", code="course_not_found")
     expected_version = _expected_version(request, public_id)
-    payload = await _read_json(request, _COURSE_FIELDS)
+    payload = await _read_json(request, _COURSE_FIELDS, {"hasInPersonClasses"})
     values = _course_values(payload)
     now = _now()
 
@@ -807,6 +828,15 @@ async def edit_course(request: web.Request) -> web.Response:
         )
         if not changed:
             return "conflict", None
+        if (
+            "has_in_person_classes" in values
+            and bool(current["has_in_person_classes"])
+            != values["has_in_person_classes"]
+        ):
+            # docs/course-attendance-settings.md: confirmed history remains intact.
+            mark_working_classroom_plans_stale(
+                connection, course_id=int(current["id"]), now=now
+            )
         row = find_course(connection, public_id=public_id)
         assert row is not None
         insert_audit_event(
@@ -843,6 +873,39 @@ async def edit_course(request: web.Request) -> web.Response:
             message="Курс уже изменился. Обновите страницу.",
         )
     assert row is not None
+    if "hasInPersonClasses" in payload:
+
+        def read_owners(connection):
+            students = tuple(
+                int(item["student_user_id"])
+                for item in connection.execute(
+                    "SELECT DISTINCT student_user_id FROM course_enrollments WHERE course_id = ? AND status = 'active'",
+                    (row["id"],),
+                )
+            )
+            return list_assignment_owner_accounts(connection, students)
+
+        owners = await _factory(request).run_read_async(read_owners)
+        invalidator = request.app.get(PWA_ENROLLMENT_INVALIDATOR)
+        if invalidator is not None:
+            try:
+                await invalidator(
+                    tuple(
+                        str(owner["public_id"])
+                        for owner in owners
+                        if owner["audience"] == "student"
+                    ),
+                    tuple(
+                        str(owner["public_id"])
+                        for owner in owners
+                        if owner["audience"] == "family"
+                    ),
+                    "course-attendance-setting-updated",
+                )
+            except Exception:
+                logging.getLogger(__name__).warning(
+                    "Course setting invalidation failed after commit", exc_info=True
+                )
     version = int(row["version"])
     return web.json_response(
         {

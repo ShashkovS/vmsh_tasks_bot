@@ -237,6 +237,15 @@ class CourseEnrollmentRecord:
     attendance_mode: str
     enrollment_status: str
     allowed_groups: tuple[CourseGroupAccessRecord, ...]
+    course_has_in_person_classes: bool = True
+
+    @property
+    def effective_attendance_mode(self) -> str:
+        """Course availability governs targeting, never the stored preference.
+
+        See vmshpwa/docs/course-attendance-settings.md.
+        """
+        return self.attendance_mode if self.course_has_in_person_classes else "online"
 
 
 @dataclass(frozen=True, slots=True)
@@ -819,7 +828,9 @@ class PwaAuthRepository:
                 "SELECT s.*, a.public_id AS account_public_id, "
                 "a.status AS account_status, a.display_name, a.linked_user_id, "
                 "a.credential_version AS account_credential_version, "
-                "a.locale AS account_locale, "
+                "CASE WHEN a.locale_explicit = 1 THEN a.locale ELSE "
+                "(SELECT default_locale FROM pwa_branding WHERE id = 1) "
+                "END AS account_locale, "
                 "u.public_id AS linked_user_public_id, "
                 "u.type AS linked_user_type, u.name AS linked_user_name, "
                 "u.surname AS linked_user_surname "
@@ -846,7 +857,9 @@ class PwaAuthRepository:
             if linked_user_type == int(USER_TYPE.STAFF_TEST_STUDENT):
                 from db_methods.pwa.staff_testing import test_access_is_current
 
-                if not test_access_is_current(connection, linked_user_id, _format_timestamp(now)):
+                if not test_access_is_current(
+                    connection, linked_user_id, _format_timestamp(now)
+                ):
                     return None
             display_name = _optional_string(row["display_name"])
             if display_name is None and linked_user_id is not None:
@@ -863,7 +876,8 @@ class PwaAuthRepository:
                     audience is AuthAudience.STUDENT
                     and linked_user_id is not None
                     and linked_user_public_id_is_valid
-                    and linked_user_type in {int(USER_TYPE.STUDENT), int(USER_TYPE.STAFF_TEST_STUDENT)}
+                    and linked_user_type
+                    in {int(USER_TYPE.STUDENT), int(USER_TYPE.STAFF_TEST_STUDENT)}
                 )
                 or (
                     audience is AuthAudience.FAMILY
@@ -931,7 +945,7 @@ class PwaAuthRepository:
 
         def write(connection):
             updated = connection.execute(
-                "UPDATE auth_accounts SET locale = ?, updated_at = ? "
+                "UPDATE auth_accounts SET locale = ?, locale_explicit = 1, updated_at = ? "
                 "WHERE id = ? AND status = 'active'",
                 (locale, timestamp, account_id),
             )
@@ -1815,7 +1829,7 @@ class PwaAuthRepository:
                 "c.subject_code AS course_subject_code, "
                 "c.status AS course_status, c.sort_order AS course_sort_order, "
                 "c.accent_key AS course_accent_key, "
-                "c.version AS course_version, "
+                "c.version AS course_version, c.has_in_person_classes AS course_has_in_person_classes, "
                 "g.public_id AS active_group_public_id "
                 "FROM course_enrollments AS ce "
                 "JOIN users AS u ON u.id = ce.student_user_id "
@@ -1924,6 +1938,9 @@ class PwaAuthRepository:
                         course_sort_order=int(row["course_sort_order"]),
                         course_accent_key=str(row["course_accent_key"]),
                         course_version=int(row["course_version"]),
+                        course_has_in_person_classes=bool(
+                            row["course_has_in_person_classes"]
+                        ),
                         active_group_id=active_group_id,
                         active_group_public_id=active_group_public_id,
                         attendance_mode=str(row["attendance_mode"]),

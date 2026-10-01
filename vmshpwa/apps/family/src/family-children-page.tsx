@@ -93,7 +93,9 @@ export function FamilyEnrollmentSettings({
   const [groupId, setGroupId] = useState(enrollment.activeGroupId)
   const [mode, setMode] = useState<AttendanceMode>(enrollment.attendanceMode)
   const [reviewing, setReviewing] = useState(false)
-  const changed = groupId !== enrollment.activeGroupId || mode !== enrollment.attendanceMode
+  const changed =
+    groupId !== enrollment.activeGroupId ||
+    (enrollment.course.hasInPersonClasses && mode !== enrollment.attendanceMode)
 
   return (
     <div className="space-y-3 rounded-md border border-border bg-surface-subtle p-3">
@@ -119,30 +121,32 @@ export function FamilyEnrollmentSettings({
             ))}
           </select>
         </div>
-        <div className="space-y-1 text-small font-medium">
-          <span>
-            <Trans>Формат занятий</Trans>
-          </span>
-          <select
-            aria-label={t`Формат занятий`}
-            className="min-h-9 w-full rounded-md border border-input bg-surface px-3"
-            disabled={saving}
-            onChange={(event) => {
-              setMode(event.target.value as AttendanceMode)
-              setReviewing(false)
-            }}
-            value={mode}
-          >
-            <option value="online">
-              <Trans>Онлайн</Trans>
-            </option>
-            <option value="in_person">
-              <Trans>Очно в школе</Trans>
-            </option>
-          </select>
-        </div>
+        {enrollment.course.hasInPersonClasses ? (
+          <div className="space-y-1 text-small font-medium">
+            <span>
+              <Trans>Формат занятий</Trans>
+            </span>
+            <select
+              aria-label={t`Формат занятий`}
+              className="min-h-9 w-full rounded-md border border-input bg-surface px-3"
+              disabled={saving}
+              onChange={(event) => {
+                setMode(event.target.value as AttendanceMode)
+                setReviewing(false)
+              }}
+              value={mode}
+            >
+              <option value="online">
+                <Trans>Онлайн</Trans>
+              </option>
+              <option value="in_person">
+                <Trans>Очно в школе</Trans>
+              </option>
+            </select>
+          </div>
+        ) : null}
       </div>
-      {reviewing ? (
+      {reviewing && enrollment.course.hasInPersonClasses ? (
         <p className="text-small text-muted-foreground">
           <Trans>
             При очном формате организаторы резервируют место, печатают условия и распределяют
@@ -164,7 +168,7 @@ export function FamilyEnrollmentSettings({
           }
           void onSave({
             activeGroupId: groupId,
-            attendanceMode: mode,
+            ...(enrollment.course.hasInPersonClasses ? { attendanceMode: mode } : {}),
             version: enrollment.version,
           }).catch(() => undefined)
         }}
@@ -329,10 +333,12 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       </p>
                       <CardTitle>{enrollment.course.name}</CardTitle>
                     </div>
-                    <Badge variant={inPerson ? 'info' : 'neutral'}>
-                      {inPerson ? <MapPin aria-hidden="true" /> : <Radio aria-hidden="true" />}
-                      {inPerson ? t`Очно` : t`Онлайн`}
-                    </Badge>
+                    {enrollment.course.hasInPersonClasses ? (
+                      <Badge variant={inPerson ? 'info' : 'neutral'}>
+                        {inPerson ? <MapPin aria-hidden="true" /> : <Radio aria-hidden="true" />}
+                        {inPerson ? t`Очно` : t`Онлайн`}
+                      </Badge>
+                    ) : null}
                   </div>
                   {group ? <LevelChip level={group} /> : null}
                 </CardHeader>

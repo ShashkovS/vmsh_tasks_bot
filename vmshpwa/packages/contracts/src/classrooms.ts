@@ -408,6 +408,7 @@ export const publishedClassroomAssignmentListResponseSchema = z
   .object({
     schemaVersion: classroomContractVersionSchema,
     items: z.array(publishedClassroomAssignmentSchema),
+    hasInPersonCourses: z.boolean().default(true),
     requestId: z.string().trim().min(1),
   })
   .strip()

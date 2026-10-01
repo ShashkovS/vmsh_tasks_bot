@@ -8,6 +8,7 @@ import sqlite3
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from db_methods.pwa.notifications import (
+    account_has_in_person_courses,
     list_course_preferences,
     list_events,
     list_preferences,
@@ -68,6 +69,8 @@ def read_preferences(
     return [
         stored.get(category, _default_preference(category))
         for category in NOTIFICATION_CATEGORIES
+        if category != "classroom_assignment"
+        or account_has_in_person_courses(connection, account_id)
     ]
 
 
@@ -86,6 +89,10 @@ def update_preference(
 ) -> dict[str, object]:
     if category not in NOTIFICATION_CATEGORIES:
         raise InvalidNotificationPreference("unknown_category")
+    if category == "classroom_assignment" and not account_has_in_person_courses(
+        connection, account_id
+    ):
+        raise InvalidNotificationPreference("course_in_person_disabled")
     if not _TIME.fullmatch(quiet_starts_local) or not _TIME.fullmatch(quiet_ends_local):
         raise InvalidNotificationPreference("invalid_quiet_hours")
     try:
@@ -135,6 +142,8 @@ def read_course_preferences(
     items = []
     for global_preference in read_preferences(connection, account_id):
         category = str(global_preference["category"])
+        if category == "classroom_assignment" and not course["has_in_person_classes"]:
+            continue
         override = stored.get(category)
         items.append(
             {
@@ -167,6 +176,8 @@ def update_course_preference(
         account_id=account_id,
         course_public_id=course_public_id,
     )
+    if category == "classroom_assignment" and not course["has_in_person_classes"]:
+        raise InvalidNotificationPreference("course_in_person_disabled")
     save_course_preference(
         connection,
         account_id=account_id,

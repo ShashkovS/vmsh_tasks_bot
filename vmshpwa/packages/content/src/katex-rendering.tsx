@@ -61,7 +61,9 @@ export function MathExpression({ latex, display = false, className }: MathExpres
     >
       <span ref={outputRef} />
       <span className="vmsh-formula-fallback" hidden ref={fallbackRef} role="status">
-        <Trans>Формулу не удалось отобразить: <code>{latex}</code></Trans>
+        <Trans>
+          Формулу не удалось отобразить: <code>{latex}</code>
+        </Trans>
       </span>
     </span>
   )

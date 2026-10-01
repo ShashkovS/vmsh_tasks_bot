@@ -17,10 +17,6 @@ msgstr ""
 msgid "ВМШ"
 msgstr "ВМШ"
 
-#: packages/ui/src/brand/marks.tsx
-msgid "ВМШ 179"
-msgstr "ВМШ 179"
-
 #: packages/ui/src/components/drawer.tsx
 msgid "Закрыть панель"
 msgstr "Закрыть панель"

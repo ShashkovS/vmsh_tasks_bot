@@ -110,7 +110,7 @@ export type FamilyChildHomeResponse = z.infer<typeof familyChildHomeResponseSche
 export const familyEnrollmentUpdateRequestSchema = z
   .object({
     activeGroupId: publicIdSchema,
-    attendanceMode: attendanceModeSchema,
+    attendanceMode: attendanceModeSchema.optional(),
     version: z.number().int().positive(),
   })
   .strict()

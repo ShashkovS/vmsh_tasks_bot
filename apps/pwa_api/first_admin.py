@@ -12,6 +12,8 @@ from db_methods.pwa.first_admin import (
     global_admin_exists,
     insert_first_global_admin,
 )
+from db_methods.pwa.branding import get_branding
+from helpers.pwa.branding import PROFILES
 from helpers.config import Config
 from helpers.consts import USER_TYPE
 from models.pwa.auth import CredentialHasher
@@ -41,6 +43,8 @@ async def ensure_first_global_admin(
             "first_admin_password must not exceed 512 characters"
         )
 
+    brand = PROFILES[(await factory.run_read_async(get_branding))["profile_id"]]
+    is_tlf = brand["id"] == "tlf-prep-clubs"
     credential_hash = await asyncio.to_thread(credential_hasher.hash, password)
     occurred_at = datetime.now(UTC).isoformat(timespec="microseconds")
     return await factory.run_write_async(
@@ -48,9 +52,9 @@ async def ensure_first_global_admin(
             insert_first_global_admin,
             admin_user_type=admin_user_type,
             username="admin",
-            display_name="Администратор ВМШ 179",
-            user_name="Администратор",
-            user_surname="ВМШ 179",
+            display_name="TLF Prep Clubs administrator" if is_tlf else "Администратор ВМШ 179",
+            user_name="Administrator" if is_tlf else "Администратор",
+            user_surname=brand["name"] if is_tlf else "ВМШ 179",
             credential_hash=credential_hash,
             audit_action="auth.first_admin.created",
             audit_after_json=json.dumps(

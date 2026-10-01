@@ -12,12 +12,15 @@ import {
   initFrontendObservability,
 } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace, type RuntimeConfig } from '@vmsh/contracts'
-import { LocaleProvider, bootstrapLocale, renderCatalogFailure } from '@vmsh/i18n'
+import { LocaleProvider, renderCatalogFailure } from '@vmsh/i18n'
 import {
   OfflineDatabaseProvider,
   createOfflineAuthenticationStore,
   useOfflineDatabase,
 } from '@vmsh/offline'
+import { BrandIdentityProvider } from '@vmsh/ui'
+import { brandAssetBase } from '@vmsh/contracts'
+import { bootstrapBranding } from '@vmsh/branding'
 import '@vmsh/ui/styles.css'
 import '@vmsh/content/styles.css'
 import './student-worksheet-print.css'
@@ -94,19 +97,29 @@ export function StudentAuthenticatedApplication({ runtime }: { runtime: RuntimeC
 
 // The catalog is activated before the first render: startup, update and
 // offline fallback screens are translated too. See `docs/i18n.md`.
-void bootstrapLocale(catalogLoaders).then(
-  () => {
-    document.title = t`ВМШ 179 — школьник`
+void bootstrapBranding('student', catalogLoaders).then(
+  (profile) => {
+    const brandName = profile.name
+    document.title = t`${brandName} — школьник`
     createRoot(rootElement).render(
       <StrictMode>
-        <LocaleProvider loaders={catalogLoaders}>
-          {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
-          <PwaUpdateController router={router} />
-          {/* Phase 0: no protected Student route mounts before strict runtime validation. */}
-          <RuntimeBootstrap audience="student">
-            {(runtime) => studentApplication(runtime)}
-          </RuntimeBootstrap>
-        </LocaleProvider>
+        <BrandIdentityProvider
+          identity={{
+            name: profile.name,
+            supportEmail: profile.supportEmail,
+            logoUrl:
+              profile.id === 'vmsh' ? undefined : `${brandAssetBase(profile, 'student')}icon.svg`,
+          }}
+        >
+          <LocaleProvider loaders={catalogLoaders}>
+            {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
+            <PwaUpdateController router={router} />
+            {/* Phase 0: no protected Student route mounts before strict runtime validation. */}
+            <RuntimeBootstrap audience="student">
+              {(runtime) => studentApplication(runtime)}
+            </RuntimeBootstrap>
+          </LocaleProvider>
+        </BrandIdentityProvider>
       </StrictMode>,
     )
   },

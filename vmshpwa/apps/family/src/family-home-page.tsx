@@ -94,7 +94,9 @@ export function FamilyHomePage() {
       actions={
         principal.linkedChildren.length > 1 ? (
           <label className="flex items-center gap-2 text-small font-medium">
-            <span><Trans>Ребёнок</Trans></span>
+            <span>
+              <Trans>Ребёнок</Trans>
+            </span>
             <select
               className="min-h-9 rounded-md border border-input bg-surface px-3"
               onChange={(event) => setSelectedChildId(event.target.value)}
@@ -138,53 +140,55 @@ export function FamilyHomePage() {
             ))}
         </div>
       ) : null}
-      <PageSection title={t`Очные занятия`}>
-        {selectedChildId.length === 0 ? (
-          <PageStatePanel
-            description={t`Обратитесь к администратору кружка, чтобы связать аккаунт с ребёнком.`}
-            state="empty"
-            title={t`Нет доступного профиля ребёнка`}
-          />
-        ) : null}
-        {query.isPending && selectedChildId ? <PageStatePanel state="loading" /> : null}
-        {query.error ? (
-          <PageStatePanel
-            actionLabel={t`Повторить`}
-            onAction={() => void query.refetch()}
-            state={query.error instanceof PublishedClassroomNetworkError ? 'offline' : 'error'}
-          />
-        ) : null}
-        {query.data?.items.length === 0 ? (
-          <PageStatePanel
-            description={t`Когда администратор добавит группу в очное событие, оно появится здесь.`}
-            state="empty"
-            title={t`Очные занятия пока не запланированы`}
-          />
-        ) : null}
-        <div className="grid gap-3 lg:grid-cols-2">
-          {query.data?.items.map((item) => {
-            const announcedAt = formatMoment(item.announcedAt)
-            const confirmedAt = formatMoment(item.confirmedAt)
-            return (
-              <div className="space-y-2" key={`${item.eventPublicId}:${item.coursePublicId}`}>
-                <p className="text-small font-medium text-foreground">
-                  {item.courseName} · {item.eventName}
-                </p>
-                <ClassroomAssignmentStatus
-                  {...(announcedAt ? { announcedAt } : {})}
-                  audience="family"
-                  {...(item.classroomName ? { classroomName: item.classroomName } : {})}
-                  {...(confirmedAt ? { confirmedAt } : {})}
-                  endsAt={item.endsAt}
-                  startsAt={item.startsAt}
-                  status={item.status}
-                  {...(selectedChild ? { studentName: selectedChild.displayName } : {})}
-                />
-              </div>
-            )
-          })}
-        </div>
-      </PageSection>
+      {query.data?.hasInPersonCourses ? (
+        <PageSection title={t`Очные занятия`}>
+          {selectedChildId.length === 0 ? (
+            <PageStatePanel
+              description={t`Обратитесь к администратору кружка, чтобы связать аккаунт с ребёнком.`}
+              state="empty"
+              title={t`Нет доступного профиля ребёнка`}
+            />
+          ) : null}
+          {query.isPending && selectedChildId ? <PageStatePanel state="loading" /> : null}
+          {query.error ? (
+            <PageStatePanel
+              actionLabel={t`Повторить`}
+              onAction={() => void query.refetch()}
+              state={query.error instanceof PublishedClassroomNetworkError ? 'offline' : 'error'}
+            />
+          ) : null}
+          {query.data?.items.length === 0 ? (
+            <PageStatePanel
+              description={t`Когда администратор добавит группу в очное событие, оно появится здесь.`}
+              state="empty"
+              title={t`Очные занятия пока не запланированы`}
+            />
+          ) : null}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {query.data?.items.map((item) => {
+              const announcedAt = formatMoment(item.announcedAt)
+              const confirmedAt = formatMoment(item.confirmedAt)
+              return (
+                <div className="space-y-2" key={`${item.eventPublicId}:${item.coursePublicId}`}>
+                  <p className="text-small font-medium text-foreground">
+                    {item.courseName} · {item.eventName}
+                  </p>
+                  <ClassroomAssignmentStatus
+                    {...(announcedAt ? { announcedAt } : {})}
+                    audience="family"
+                    {...(item.classroomName ? { classroomName: item.classroomName } : {})}
+                    {...(confirmedAt ? { confirmedAt } : {})}
+                    endsAt={item.endsAt}
+                    startsAt={item.startsAt}
+                    status={item.status}
+                    {...(selectedChild ? { studentName: selectedChild.displayName } : {})}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </PageSection>
+      ) : null}
     </PageLayout>
   )
 }

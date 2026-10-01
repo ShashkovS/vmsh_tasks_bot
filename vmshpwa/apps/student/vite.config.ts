@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import { brandingAssets } from '../../vite-branding'
 import { i18nPlugins } from '../../vite-i18n'
 import { assertSafeProductionBuild, buildProvenancePlugin } from '../../vite-production-guard'
 
@@ -15,6 +16,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: '/student/',
     plugins: [
+      brandingAssets(),
       tanstackRouter({ target: 'react', autoCodeSplitting: true }),
       react(),
       ...i18nPlugins(),
@@ -69,6 +71,7 @@ export default defineConfig(({ command, mode }) => {
     ],
     server: {
       proxy: {
+        '/student/manifest.webmanifest': { target: apiOrigin, changeOrigin: false },
         '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
         '/student/api': { target: apiOrigin, changeOrigin: false },
         '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },
@@ -76,6 +79,7 @@ export default defineConfig(({ command, mode }) => {
     },
     preview: {
       proxy: {
+        '/student/manifest.webmanifest': { target: apiOrigin, changeOrigin: false },
         '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
         '/student/api': { target: apiOrigin, changeOrigin: false },
         '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },

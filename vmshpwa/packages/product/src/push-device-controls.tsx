@@ -51,16 +51,24 @@ export function PushDeviceControls({
       <Alert>
         <BellOff aria-hidden="true" />
         <AlertContent>
-          <AlertTitle><Trans>Уведомления на iPhone и iPad</Trans></AlertTitle>
+          <AlertTitle>
+            <Trans>Уведомления на iPhone и iPad</Trans>
+          </AlertTitle>
           <AlertDescription>
-            <Trans>Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося
-            значка. После этого здесь можно включить уведомления.</Trans>
+            <Trans>
+              Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося
+              значка. После этого здесь можно включить уведомления.
+            </Trans>
           </AlertDescription>
         </AlertContent>
       </Alert>
     )
   if (state === 'loading') {
-    return <p className="text-small text-muted-foreground"><Trans>Проверяем это устройство…</Trans></p>
+    return (
+      <p className="text-small text-muted-foreground">
+        <Trans>Проверяем это устройство…</Trans>
+      </p>
+    )
   }
   if (state === 'available') {
     return <PushPermissionCard categories={categories} onDismiss={onDismiss} onEnable={onEnable} />
@@ -71,8 +79,12 @@ export function PushDeviceControls({
       <Card>
         <CardContent className="flex items-center justify-between gap-4 py-4">
           <div>
-            <p className="text-small font-medium"><Trans>Push включены на этом устройстве</Trans></p>
-            <p className="text-caption text-muted-foreground"><Trans>Категории можно настроить ниже.</Trans></p>
+            <p className="text-small font-medium">
+              <Trans>Push включены на этом устройстве</Trans>
+            </p>
+            <p className="text-caption text-muted-foreground">
+              <Trans>Категории можно настроить ниже.</Trans>
+            </p>
           </div>
           <Button onClick={onDisable} size="sm" variant="outline">
             <Trans>Отключить</Trans>
@@ -101,30 +113,44 @@ export function PushDeviceControls({
         </AlertDescription>
         {state === 'denied' ? (
           <div className="mt-3 space-y-3 text-small">
-            <p><Trans>Кабинет не может отменить запрет браузера. Разрешите уведомления вручную:</Trans></p>
+            <p>
+              <Trans>
+                Кабинет не может отменить запрет браузера. Разрешите уведомления вручную:
+              </Trans>
+            </p>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <Trans><strong>Chrome и Edge:</strong> нажмите значок слева от адреса сайта → «Настройки
-                сайта» или «Разрешения» → «Уведомления» → «Разрешить».</Trans>
+                <Trans>
+                  <strong>Chrome и Edge:</strong> нажмите значок слева от адреса сайта → «Настройки
+                  сайта» или «Разрешения» → «Уведомления» → «Разрешить».
+                </Trans>
               </li>
               <li>
-                <Trans><strong>Firefox:</strong> откройте настройки браузера → «Приватность и защита» →
-                «Разрешения» → «Уведомления» → «Параметры». Найдите этот сайт и разрешите
-                уведомления.</Trans>
+                <Trans>
+                  <strong>Firefox:</strong> откройте настройки браузера → «Приватность и защита» →
+                  «Разрешения» → «Уведомления» → «Параметры». Найдите этот сайт и разрешите
+                  уведомления.
+                </Trans>
               </li>
               <li>
-                <Trans><strong>Safari на Mac:</strong> Safari → «Настройки» → «Веб-сайты» → «Уведомления».
-                Для этого сайта выберите «Разрешить».</Trans>
+                <Trans>
+                  <strong>Safari на Mac:</strong> Safari → «Настройки» → «Веб-сайты» →
+                  «Уведомления». Для этого сайта выберите «Разрешить».
+                </Trans>
               </li>
               <li>
-                <Trans><strong>iPhone и iPad:</strong> откройте системные «Настройки» → «Уведомления» →
-                кабинет ВМШ → «Допуск уведомлений». Кабинет должен быть добавлен на экран «Домой».</Trans>
+                <Trans>
+                  <strong>iPhone и iPad:</strong> откройте системные «Настройки» → «Уведомления» →
+                  кабинет ВМШ → «Допуск уведомлений». Кабинет должен быть добавлен на экран «Домой».
+                </Trans>
               </li>
             </ul>
             <p>
-              <Trans>После изменения вернитесь сюда и нажмите «Включить уведомления». Если кнопка не
-              появилась, обновите страницу. Также проверьте, разрешены ли уведомления для браузера в
-              настройках устройства.</Trans>
+              <Trans>
+                После изменения вернитесь сюда и нажмите «Включить уведомления». Если кнопка не
+                появилась, обновите страницу. Также проверьте, разрешены ли уведомления для браузера
+                в настройках устройства.
+              </Trans>
             </p>
           </div>
         ) : null}

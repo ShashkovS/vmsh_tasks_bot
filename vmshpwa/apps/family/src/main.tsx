@@ -12,12 +12,15 @@ import {
   initFrontendObservability,
 } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace, type RuntimeConfig } from '@vmsh/contracts'
-import { LocaleProvider, bootstrapLocale, renderCatalogFailure } from '@vmsh/i18n'
+import { LocaleProvider, renderCatalogFailure } from '@vmsh/i18n'
 import {
   OfflineDatabaseProvider,
   createOfflineAuthenticationStore,
   useOfflineDatabase,
 } from '@vmsh/offline'
+import { BrandIdentityProvider } from '@vmsh/ui'
+import { brandAssetBase } from '@vmsh/contracts'
+import { bootstrapBranding } from '@vmsh/branding'
 import '@vmsh/ui/styles.css'
 import '@vmsh/content/styles.css'
 
@@ -93,19 +96,29 @@ export function FamilyAuthenticatedApplication({ runtime }: { runtime: RuntimeCo
 
 // The catalog is activated before the first render: startup, update and
 // offline fallback screens are translated too. See `docs/i18n.md`.
-void bootstrapLocale(catalogLoaders).then(
-  () => {
-    document.title = t`ВМШ 179 — кабинет родителя`
+void bootstrapBranding('family', catalogLoaders).then(
+  (profile) => {
+    const brandName = profile.name
+    document.title = t`${brandName} — кабинет родителя`
     createRoot(rootElement).render(
       <StrictMode>
-        <LocaleProvider loaders={catalogLoaders}>
-          {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
-          <PwaUpdateController router={router} />
-          {/* Phase 0: no protected Family route mounts before strict runtime validation. */}
-          <RuntimeBootstrap audience="family">
-            {(runtime) => familyApplication(runtime)}
-          </RuntimeBootstrap>
-        </LocaleProvider>
+        <BrandIdentityProvider
+          identity={{
+            name: profile.name,
+            supportEmail: profile.supportEmail,
+            logoUrl:
+              profile.id === 'vmsh' ? undefined : `${brandAssetBase(profile, 'family')}icon.svg`,
+          }}
+        >
+          <LocaleProvider loaders={catalogLoaders}>
+            {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
+            <PwaUpdateController router={router} />
+            {/* Phase 0: no protected Family route mounts before strict runtime validation. */}
+            <RuntimeBootstrap audience="family">
+              {(runtime) => familyApplication(runtime)}
+            </RuntimeBootstrap>
+          </LocaleProvider>
+        </BrandIdentityProvider>
       </StrictMode>,
     )
   },

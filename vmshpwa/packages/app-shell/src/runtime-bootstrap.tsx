@@ -141,7 +141,7 @@ function RuntimeBootstrapRequest({
       <AppStartupScreen
         description={
           availability.state === 'ready'
-            ? t`Подключаем личный кабинет к серверу ВМШ 179.`
+            ? t`Подключаем личный кабинет к серверу.`
             : serviceWaitingText(availability)
         }
         state="loading"

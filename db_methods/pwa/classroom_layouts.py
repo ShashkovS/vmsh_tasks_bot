@@ -36,7 +36,7 @@ def list_group_lesson_candidates(
         """
         SELECT gl.id AS group_lesson_id, gl.public_id AS group_lesson_public_id,
                gl.course_id, gl.group_id, c.public_id AS course_public_id,
-               c.name AS course_name, g.public_id AS group_public_id,
+               c.name AS course_name, c.has_in_person_classes, g.public_id AS group_public_id,
                g.public_name AS group_name, g.short_code, g.color_key,
                cl.lesson_number,
                (
@@ -45,13 +45,13 @@ def list_group_lesson_candidates(
                    WHERE enrollment.course_id = gl.course_id
                      AND enrollment.active_group_id = gl.group_id
                      AND enrollment.status = 'active'
-                     AND enrollment.attendance_mode = 'in_person'
+                     AND enrollment.attendance_mode = 'in_person' AND c.has_in_person_classes = 1
                ) AS in_person_count
         FROM group_lessons gl
         JOIN course_lessons cl ON cl.id = gl.course_lesson_id
         JOIN courses c ON c.id = gl.course_id
         JOIN groups g ON g.course_id = gl.course_id AND g.group_id = gl.group_id
-        WHERE c.season_id = ?
+        WHERE c.season_id = ? AND c.has_in_person_classes = 1
           AND c.status = 'active'
           AND g.status = 'active'
           AND gl.status != 'archived'
@@ -82,6 +82,7 @@ def resolve_group_lesson_ids(
          AND group_record.group_id = gl.group_id
         WHERE course.season_id = ?
           AND course.status = 'active'
+          AND course.has_in_person_classes = 1
           AND group_record.status = 'active'
           AND gl.status != 'archived'
           AND gl.public_id IN ({placeholders})
@@ -89,7 +90,9 @@ def resolve_group_lesson_ids(
         (season_id, *public_ids),
     ).fetchall()
     by_public_id = {str(row["public_id"]): int(row["id"]) for row in rows}
-    return [by_public_id[public_id] for public_id in public_ids if public_id in by_public_id]
+    return [
+        by_public_id[public_id] for public_id in public_ids if public_id in by_public_id
+    ]
 
 
 def insert_in_person_event(
@@ -204,7 +207,7 @@ def list_event_group_lessons(
         """
         SELECT gl.id AS group_lesson_id, gl.public_id AS group_lesson_public_id,
                gl.course_id, gl.group_id, c.public_id AS course_public_id,
-               c.name AS course_name, g.public_id AS group_public_id,
+               c.name AS course_name, c.has_in_person_classes, g.public_id AS group_public_id,
                g.public_name AS group_name, g.short_code, g.color_key,
                cl.lesson_number,
                (
@@ -213,7 +216,7 @@ def list_event_group_lessons(
                    WHERE enrollment.course_id = gl.course_id
                      AND enrollment.active_group_id = gl.group_id
                      AND enrollment.status = 'active'
-                     AND enrollment.attendance_mode = 'in_person'
+                     AND enrollment.attendance_mode = 'in_person' AND c.has_in_person_classes = 1
                ) AS in_person_count
         FROM in_person_event_group_lessons ep
         JOIN group_lessons gl ON gl.id = ep.group_lesson_id
@@ -308,9 +311,11 @@ def list_layout_rooms(
         SELECT room.public_id AS classroom_public_id, room.name AS classroom_name,
                room.status AS classroom_status, room.version AS classroom_version,
                lr.classroom_id, lr.group_lesson_id, lr.source_layout_version_id,
-               source.public_id AS source_layout_public_id
+               source.public_id AS source_layout_public_id, course.has_in_person_classes
         FROM classroom_layout_rooms lr
         JOIN classrooms room ON room.id = lr.classroom_id
+        JOIN group_lessons lesson ON lesson.id = lr.group_lesson_id
+        JOIN courses course ON course.id = lesson.course_id
         LEFT JOIN classroom_layout_versions source
           ON source.id = lr.source_layout_version_id
         WHERE lr.layout_version_id = ?
@@ -338,6 +343,7 @@ def resolve_layout_room_input(
         JOIN in_person_event_group_lessons ep
           ON ep.group_lesson_id = gl.id AND ep.in_person_event_id = ?
         WHERE room.public_id = ?
+          AND EXISTS (SELECT 1 FROM courses c WHERE c.id = gl.course_id AND c.has_in_person_classes = 1)
         """,
         (group_lesson_public_id, event_id, classroom_public_id),
     ).fetchone()

@@ -32,6 +32,7 @@ map $uri $vmshpwa_release_cache_control {
     /staff/index.html "no-cache";
     / "no-cache";
     /landing/index.html "no-cache";
+    ~^/(landing|student|family|staff)/brands/ "public, max-age=31536000, immutable";
     ~^/landing/assets/ "public, max-age=31536000, immutable";
     ~^/(student|family|staff)/assets/ "public, max-age=31536000, immutable";
 }
@@ -142,6 +143,20 @@ server {
 
     location ^~ /landing/ {
         try_files $uri =404;
+    }
+
+    location = /student/manifest.webmanifest {
+        limit_except GET { deny all; }
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location = /family/manifest.webmanifest {
+        limit_except GET { deny all; }
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+        proxy_pass http://vmshpwa_backend;
     }
 
     # API locations are deliberately outside SPA fallback. The backend keeps

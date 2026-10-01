@@ -96,7 +96,9 @@ export function ActivityCalendar({ days, className }: ActivityCalendarProps) {
         </div>
       </div>
       <details className="text-caption text-muted-foreground">
-        <summary className="cursor-pointer"><Trans>Показать по датам</Trans></summary>
+        <summary className="cursor-pointer">
+          <Trans>Показать по датам</Trans>
+        </summary>
         <ul className="mt-2 space-y-1">
           {days.map((day) => (
             <li key={day.date}>

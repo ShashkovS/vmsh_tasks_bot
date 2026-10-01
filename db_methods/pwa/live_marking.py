@@ -104,7 +104,7 @@ def rooms(connection, event_id):
         """
         SELECT r.id,r.public_id,r.name,gl.id group_lesson_id,gl.public_id lesson_public_id,
                gl.group_id,gl.course_id,g.public_id group_public_id,g.public_name group_name,
-               c.public_id course_public_id,lv.id layout_id,
+               c.public_id course_public_id,c.has_in_person_classes,lv.id layout_id,
                count(a.course_enrollment_id) student_count
         FROM classroom_layout_versions lv
         JOIN classroom_layout_rooms lr ON lr.layout_version_id=lv.id

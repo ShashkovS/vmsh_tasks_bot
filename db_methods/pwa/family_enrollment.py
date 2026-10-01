@@ -5,6 +5,17 @@ from __future__ import annotations
 import sqlite3
 
 
+def read_enrollment_attendance(
+    connection: sqlite3.Connection, *, enrollment_id: int
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT e.version, e.status, e.active_group_id, e.attendance_mode, c.has_in_person_classes "
+        "FROM course_enrollments e JOIN courses c ON c.id = e.course_id WHERE e.id = ?",
+        (enrollment_id,),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
 def update_enrollment(
     connection: sqlite3.Connection,
     *,

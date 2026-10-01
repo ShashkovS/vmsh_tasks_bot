@@ -29,7 +29,11 @@ export function NotificationEventCard({
       <div className="min-w-0 flex-1 space-y-0.5">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-small font-medium text-foreground">{title}</p>
-          {unread ? <Badge variant="info"><Trans>Новое</Trans></Badge> : null}
+          {unread ? (
+            <Badge variant="info">
+              <Trans>Новое</Trans>
+            </Badge>
+          ) : null}
         </div>
         <p className="text-small text-muted-foreground">{description}</p>
         <time

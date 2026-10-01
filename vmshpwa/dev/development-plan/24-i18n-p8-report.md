@@ -24,7 +24,6 @@ The complete task took about five minutes, within the owner's ten-minute cap.
 No full-suite rerun, commit or push. The full P8 gate remains pending; these
 results supersede the earlier "unverified" status for these three repairs.
 
-
 Source revision: `c0c3df02`; initial worktree clean. Implementation follows
 [P8 of the execution plan](24-i18n-execution-plan.md#p8--complete-coverage-remaining-labels-landing-maintenance-and-final-audit).
 Implementation: 26–27 September 2026. Final broad verification is blocked by browser failures and extreme host load.
@@ -194,11 +193,9 @@ after the tests pass. Do not push. The owner's historical-feedback decision
 and the explicitly deferred cumulative performance gate remain separate open
 acceptance items.
 
-
 Verification resumed on 27 September after the owner removed machine load
 (initial load average 3.89). A fresh `make pwa-e2e` runs the complete isolated
 main, figure-layout, statistics and visual phases. Results pending.
-
 
 27 September rerun found a reproducible Firefox offline-write failure: an
 existing service recovery loop held a new offline answer in `sending`.
@@ -221,7 +218,6 @@ already said `sending`. It advertised a retryable queue before delivery settled.
 The bubble, status copy and retry button now share the in-flight state. The
 submission E2E holds the first real POST and asserts sending, no queued label
 and no retry button before releasing it; then it tests offline/reload/retry.
-
 
 ## Verification stopped after owner cost feedback — 27 September
 

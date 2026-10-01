@@ -70,6 +70,7 @@ const directoryCourse: AdminCourse = {
   status: 'active',
   sortOrder: 1,
   accentKey: 'math',
+  hasInPersonClasses: true,
   activeStudents: 2,
   groups: [
     {

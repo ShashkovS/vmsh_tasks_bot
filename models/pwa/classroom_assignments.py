@@ -189,9 +189,7 @@ def recalculate_assignment_plan(
                 group_lesson_id=int(student["group_lesson_id"]),
                 surname=str(student["surname"]),
                 name=str(student["name"]),
-                preferred_classroom_id=preferences.get(
-                    int(student["enrollment_id"])
-                ),
+                preferred_classroom_id=preferences.get(int(student["enrollment_id"])),
                 previous_classroom_id=find_previous_classroom(
                     connection,
                     enrollment_id=int(student["enrollment_id"]),
@@ -318,7 +316,9 @@ def confirm_assignment_plan(
         raise ClassroomAssignmentConflict
     confirmed_assignments = list_plan_assignments(connection, int(confirmed["id"]))
 
-    def assignment_state(rows: list[dict[str, object]]) -> tuple[tuple[object, ...], ...]:
+    def assignment_state(
+        rows: list[dict[str, object]],
+    ) -> tuple[tuple[object, ...], ...]:
         return tuple(
             sorted(
                 (
@@ -332,10 +332,9 @@ def confirm_assignment_plan(
             )
         )
 
-    unchanged = (
-        plan["layout_version_id"] == confirmed["layout_version_id"]
-        and assignment_state(assignments) == assignment_state(confirmed_assignments)
-    )
+    unchanged = plan["layout_version_id"] == confirmed[
+        "layout_version_id"
+    ] and assignment_state(assignments) == assignment_state(confirmed_assignments)
     if unchanged:
         if not discard_working_plan(
             connection,
@@ -410,6 +409,8 @@ def update_assignment_plan(
         if assignment is None or room is None:
             raise InvalidClassroomAssignment("unknown student or classroom")
         target_group = event_groups[int(room["group_lesson_id"])]
+        if not target_group["has_in_person_classes"]:
+            raise InvalidClassroomAssignment("course in-person classes are disabled")
         if int(assignment["group_lesson_id"]) == int(room["group_lesson_id"]):
             update_assignment_room(
                 connection,

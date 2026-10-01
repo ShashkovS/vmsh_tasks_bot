@@ -1,4 +1,4 @@
-import { t } from '@lingui/core/macro'
+import { useBrandIdentity } from './identity'
 import { Trans } from '@lingui/react/macro'
 /**
  * ВМШ 179 brand marks (art direction B, accepted 2026-07-23).
@@ -19,6 +19,21 @@ const decorative = { 'aria-hidden': true, focusable: 'false' } as const
 
 /** The «179» sign: a rounded token with a small stalk, number set in the UI sans. */
 export function Sign179({ size = 32, title, ...props }: MarkProps) {
+  const identity = useBrandIdentity()
+  if (identity.logoUrl) {
+    return (
+      <svg
+        height={size}
+        width={size}
+        viewBox="0 0 64 64"
+        role="img"
+        aria-label={identity.name}
+        {...props}
+      >
+        <image href={identity.logoUrl} width="64" height="64" />
+      </svg>
+    )
+  }
   const labelled = title ? { role: 'img', 'aria-label': title } : decorative
   return (
     <svg height={size} viewBox="0 0 32 32" width={size} {...labelled} {...props}>
@@ -52,14 +67,31 @@ export function Sign179({ size = 32, title, ...props }: MarkProps) {
 }
 
 /** Horizontal wordmark «ВМШ 179». */
-export function Wordmark({ size = 22, title = t`ВМШ 179`, ...props }: MarkProps) {
+export function Wordmark({ size = 22, title, ...props }: MarkProps) {
+  const identity = useBrandIdentity()
+  if (identity.logoUrl) {
+    return (
+      <svg
+        height={size}
+        width={size * 7.4}
+        viewBox="0 0 178 24"
+        role="img"
+        aria-label={identity.name}
+        {...props}
+      >
+        <text fill="currentColor" fontFamily="inherit" fontSize="20" fontWeight="600" x="0" y="19">
+          {identity.name}
+        </text>
+      </svg>
+    )
+  }
   return (
     <svg
       height={size}
       role="img"
       viewBox="0 0 118 24"
       width={(size * 118) / 24}
-      aria-label={title}
+      aria-label={title ?? identity.name}
       {...props}
     >
       <text

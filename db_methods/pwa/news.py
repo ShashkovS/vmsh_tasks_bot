@@ -310,10 +310,11 @@ def list_news_recipient_accounts(
     rows = connection.execute(
         "WITH recipient_students AS ("
         "SELECT DISTINCT enrollment.student_user_id FROM course_enrollments enrollment "
+        "JOIN courses c ON c.id = enrollment.course_id "
         "WHERE enrollment.status = 'active' "
         "AND ((? IS NOT NULL AND enrollment.course_id = ?) OR "
         "(? IS NOT NULL AND enrollment.active_group_id = ?)) "
-        "AND (? = 'all' OR enrollment.attendance_mode = ?)) "
+        "AND (? = 'all' OR CASE WHEN c.has_in_person_classes = 0 THEN 'online' ELSE enrollment.attendance_mode END = ?)) "
         "SELECT account.id, account.audience FROM auth_accounts account "
         "WHERE account.status = 'active' "
         "AND (? = 'both' OR account.audience = ?) AND ("

@@ -16,6 +16,7 @@ import {
   Newspaper,
   ScrollText,
   Users,
+  Palette,
 } from 'lucide-react'
 import { useCallback, useState, type ReactNode } from 'react'
 
@@ -41,6 +42,14 @@ interface StaffNavigationItem {
 }
 
 const navigation: StaffNavigationItem[] = [
+  {
+    get label() {
+      return t`Оформление`
+    },
+    to: '/branding',
+    icon: <Palette className="size-4" aria-hidden="true" />,
+    capability: 'staff.manage',
+  },
   {
     get label() {
       return t`Сводка`

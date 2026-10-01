@@ -7,11 +7,11 @@ Source language is Russian; English translations live in
 Staff source scope is enforced by [`i18n-scopes.json`](../../i18n-scopes.json),
 which makes a new raw user-facing Staff string fail the catalog gate.
 
-| Batch | Implementation | English UI coverage | Data that remains unchanged |
-| --- | --- | --- | --- |
-| P7.1 | `account-provisioning-*`, `student-account-*`, `family-account-manager`, `staff-student-directory-page`, `teacher-batch-*`, `users-section-tabs`; backend account, batch and enrolment routes | Account creation, batch previews/results, TSV validation, directory search, family links and course enrolment controls | Imported rows, usernames, passwords, names, TSV column protocol and copied credentials |
-| P7.2 | `staff-access-page`, `staff-audit-page`, `telegram-bindings-page`; backend access, audit and Telegram routes | Staff roles/scopes, known audit action and field labels, filters, binding errors and controls | Action IDs, object IDs, request IDs, actor names, audit before/after payload values, chat values and historical titles |
-| P7.3 | `staff-dashboard-page`, `product-analytics-page`, `staff-support-pages`, `staff-support-utils`, `family-digest-panel`, route shells and remaining `pages.tsx` sections; dashboard/analytics/support/organizer backend routes | Dashboard cards, filters, empty/error states, support actions and accessibility labels; numbers and dates use cached locale formatters | Course/group/room names, authored support messages, uploaded files, saved support captions and fixture/domain values |
+| Batch | Implementation                                                                                                                                                                                                               | English UI coverage                                                                                                                    | Data that remains unchanged                                                                                            |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| P7.1  | `account-provisioning-*`, `student-account-*`, `family-account-manager`, `staff-student-directory-page`, `teacher-batch-*`, `users-section-tabs`; backend account, batch and enrolment routes                                | Account creation, batch previews/results, TSV validation, directory search, family links and course enrolment controls                 | Imported rows, usernames, passwords, names, TSV column protocol and copied credentials                                 |
+| P7.2  | `staff-access-page`, `staff-audit-page`, `telegram-bindings-page`; backend access, audit and Telegram routes                                                                                                                 | Staff roles/scopes, known audit action and field labels, filters, binding errors and controls                                          | Action IDs, object IDs, request IDs, actor names, audit before/after payload values, chat values and historical titles |
+| P7.3  | `staff-dashboard-page`, `product-analytics-page`, `staff-support-pages`, `staff-support-utils`, `family-digest-panel`, route shells and remaining `pages.tsx` sections; dashboard/analytics/support/organizer backend routes | Dashboard cards, filters, empty/error states, support actions and accessibility labels; numbers and dates use cached locale formatters | Course/group/room names, authored support messages, uploaded files, saved support captions and fixture/domain values   |
 
 `student-directory-search.ts` continues to normalize Russian names using the
 Russian locale and treats `ё`/`е` as equivalent. Its narrow lint comments mark
@@ -42,7 +42,7 @@ The English regression tests cover the boundary deliberately:
 - The focused Staff regressions passed: 7 tests in `account-provisioning-page`,
   `teacher-batch-tsv`, `staff-audit-page` and `family-digest-panel`.
 - The complete frontend unit suite passed: **916 tests in 180 files**. `make
-  pwa-lint`, `make pwa-typecheck` and `make pwa-build` passed.
+pwa-lint`, `make pwa-typecheck` and `make pwa-build` passed.
 - `make pwa-python-test` passed: **2,095 passed, 6 skipped**. The command runs
   aiohttp integration tests on isolated loopback ports.
 - `make pwa-e2e-i18n` passed: **30 tests** across Chromium, WebKit and Firefox.

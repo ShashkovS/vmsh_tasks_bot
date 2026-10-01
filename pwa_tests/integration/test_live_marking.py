@@ -715,3 +715,50 @@ async def test_clear_restores_prior_written_result_and_rejects_external_changes(
         f, spec, problem_id, reset["state"]["version"] + 1, "clear"
     )
     assert response.status == 409
+
+
+async def test_disabled_course_preserves_room_history_and_rejects_pending_transfer(
+    content_http,
+):
+    from urllib.parse import urlencode
+
+    f = content_http
+    await support._prepare_published_test_problem(f, problem_type=3)
+    spec, plan_id = seed_room(f)
+    f.factory.run_write(
+        lambda c: c.execute("UPDATE courses SET has_in_person_classes=0 WHERE id=1")
+    )
+    response, body = await call(f, "get", "board?" + urlencode(spec))
+    assert response.status == 200, body
+    response, body = await call(
+        f,
+        "post",
+        "operations",
+        dict(
+            kind="transfer",
+            operationId=uuid4().hex,
+            context=spec,
+            studentId="u-903101",
+            enrollmentVersion=1,
+            planId=plan_id,
+        ),
+    )
+    assert response.status == 422, body
+    assert (
+        f.factory.run_read(
+            lambda c: c.execute(
+                "SELECT attendance_mode FROM course_enrollments WHERE student_user_id=?",
+                (support.STUDENT_USER_ID,),
+            ).fetchone()["attendance_mode"]
+        )
+        == "online"
+    )
+    assert (
+        f.factory.run_read(
+            lambda c: c.execute(
+                "SELECT count(*) AS n FROM classroom_assignment_plans WHERE public_id=?",
+                (plan_id,),
+            ).fetchone()["n"]
+        )
+        == 1
+    )

@@ -1,3 +1,4 @@
+import { useBrandIdentity } from '@vmsh/ui'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { Bell, CalendarClock, CircleHelp, Mail, MessageCircleQuestion, Video } from 'lucide-react'
@@ -917,6 +918,7 @@ export function StudentProfilePage({
   state?: PageDisplayState
   sessionManagement?: ReactNode
 }) {
+  const { supportEmail } = useBrandIdentity()
   return (
     <StatefulPage state={state} title={t`Профиль`}>
       <PageLayout
@@ -987,9 +989,9 @@ export function StudentProfilePage({
               </a>
               <a
                 className="inline-flex items-center gap-2 text-link underline-offset-2 hover:underline"
-                href="mailto:vmsh@179.ru"
+                href={`mailto:${supportEmail}`}
               >
-                <Mail aria-hidden="true" className="size-4" /> vmsh@179.ru
+                <Mail aria-hidden="true" className="size-4" /> {supportEmail}
               </a>
             </CardContent>
           </Card>

@@ -138,18 +138,22 @@ export function CourseCard({
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-caption text-muted-foreground">
-              <Trans>{enrollment.course.subjectCode} · занятие {lessonNumber} · {lessonDate}</Trans>
+              <Trans>
+                {enrollment.course.subjectCode} · занятие {lessonNumber} · {lessonDate}
+              </Trans>
             </p>
             <CardTitle>{enrollment.course.name}</CardTitle>
           </div>
-          <Badge variant={enrollment.attendanceMode === 'in-person' ? 'info' : 'neutral'}>
-            {enrollment.attendanceMode === 'in-person' ? (
-              <MapPin aria-hidden="true" />
-            ) : (
-              <Radio aria-hidden="true" />
-            )}
-            {enrollment.attendanceMode === 'in-person' ? t`Очно` : t`Онлайн`}
-          </Badge>
+          {enrollment.course.hasInPersonClasses !== false ? (
+            <Badge variant={enrollment.attendanceMode === 'in-person' ? 'info' : 'neutral'}>
+              {enrollment.attendanceMode === 'in-person' ? (
+                <MapPin aria-hidden="true" />
+              ) : (
+                <Radio aria-hidden="true" />
+              )}
+              {enrollment.attendanceMode === 'in-person' ? t`Очно` : t`Онлайн`}
+            </Badge>
+          ) : null}
         </div>
         {group ? <LevelChip level={group} /> : null}
       </CardHeader>
@@ -165,8 +169,10 @@ export function CourseCard({
               {progressLabel}
             </p>
           </div>
-          {classroomName ? (
-            <p className="text-small text-muted-foreground"><Trans>Аудитория: {classroomName}</Trans></p>
+          {enrollment.course.hasInPersonClasses !== false && classroomName ? (
+            <p className="text-small text-muted-foreground">
+              <Trans>Аудитория: {classroomName}</Trans>
+            </p>
           ) : null}
           {nextAction}
         </div>
@@ -210,7 +216,9 @@ export function CourseNotificationSettings({
           <Trans>Настройки по курсам</Trans>
         </h2>
         <p className="text-caption text-muted-foreground">
-          <Trans>Значение курса переопределяет общую настройку только для выбранной категории.</Trans>
+          <Trans>
+            Значение курса переопределяет общую настройку только для выбранной категории.
+          </Trans>
         </p>
       </div>
       <ul className="divide-y divide-border rounded-md border border-border bg-surface">

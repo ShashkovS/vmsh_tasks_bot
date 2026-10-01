@@ -3,6 +3,7 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+import { brandingAssets } from '../../vite-branding'
 import { i18nPlugins } from '../../vite-i18n'
 import { assertSafeProductionBuild, buildProvenancePlugin } from '../../vite-production-guard'
 
@@ -14,6 +15,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: '/staff/',
     plugins: [
+      brandingAssets(),
       tanstackRouter({ target: 'react', autoCodeSplitting: true }),
       react(),
       ...i18nPlugins(),

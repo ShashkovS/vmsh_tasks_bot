@@ -638,3 +638,34 @@
     outline-offset: 2px;
   }
 }
+
+/* Repository TLF palette; docs/branding.md. Fonts and verdict/status tokens are shared. */
+@media (forced-colors: none) {
+  :root[data-brand='tlf-prep-clubs'],
+  .brand-preview[data-brand='tlf-prep-clubs'] {
+    --primary: #17384a;
+    --primary-foreground: #fff;
+    --primary-soft: #e5f4fa;
+    --accent: var(--primary-soft);
+    --accent-foreground: #17384a;
+    --ring: #236484;
+    --focus-ring: #236484;
+    --border-interactive: #236484;
+    --selection: #bfe8f8;
+    --link: #236484;
+  }
+
+  :root.dark[data-brand='tlf-prep-clubs'],
+  .dark .brand-preview[data-brand='tlf-prep-clubs'] {
+    --primary: #71c5e8;
+    --primary-foreground: #17384a;
+    --primary-soft: #17384a;
+    --accent: var(--primary-soft);
+    --accent-foreground: #e5f4fa;
+    --ring: #71c5e8;
+    --focus-ring: #71c5e8;
+    --border-interactive: #71c5e8;
+    --selection: #24516a;
+    --link: #71c5e8;
+  }
+}

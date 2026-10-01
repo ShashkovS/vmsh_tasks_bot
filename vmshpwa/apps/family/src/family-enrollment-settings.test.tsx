@@ -14,6 +14,7 @@ const enrollment: CourseEnrollment = {
     code: 'math',
     name: 'Математика',
     subjectCode: 'math',
+    hasInPersonClasses: true,
     status: 'active',
     sortOrder: 1,
     accentKey: 'math',
@@ -81,4 +82,34 @@ describe('Family course enrollment settings', () => {
       }),
     )
   })
+})
+
+it('keeps group changes available without exposing or overwriting attendance', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  const onlineOnly = {
+    ...enrollment,
+    course: { ...enrollment.course, hasInPersonClasses: false },
+    attendanceMode: 'in_person' as const,
+  }
+  render(
+    <FamilyEnrollmentSettings
+      enrollment={onlineOnly}
+      error={false}
+      saving={false}
+      onSave={onSave}
+    />,
+  )
+  expect(screen.queryByLabelText('Формат занятий')).toBeNull()
+  fireEvent.change(screen.getByLabelText('Группа'), {
+    target: { value: enrollment.allowedGroups[1]!.groupId },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Изменить' }))
+  expect(screen.queryByText(/резервируют место/)).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить изменения' }))
+  await waitFor(() =>
+    expect(onSave).toHaveBeenCalledWith({
+      activeGroupId: enrollment.allowedGroups[1]!.groupId,
+      version: enrollment.version,
+    }),
+  )
 })

@@ -1,0 +1,162 @@
+# TLF Prep Clubs deployment
+
+Owner-approved 2026-09-30: current vmshpwa code plus TLF identity, empty database
+and first admin, two PWA workers, one separate Zoom archive worker, no automatic
+deployment. All signed Zoom events from every meeting must be durably archived
+before acknowledgement, including unknown event types and duplicate deliveries.
+Queue/lesson interpretation is deferred. Lessons start 2026-10-02.
+
+Implementation: [adapter](../../../apps/zoom_archive.py),
+[archive writes](../../../db_methods/pwa/zoom_archive.py),
+[migration 0102](../../../migrations/0102.zoom_webhook_archive.sql) and
+[tests](../../../pwa_tests/test_zoom_archive.py). The archive uses the clone's main DB,
+keeps exact request bodies, requires FULL synchronous writes, retains duplicates,
+and has no automatic retention. CRC follows Zoom's webhook protocol; ordinary
+requests require a valid signature. No participant payloads enter operational logs.
+
+## Deployed and verified — 2026-09-30
+
+Site: https://prep.leaders.tech/. Staff: https://prep.leaders.tech/staff/.
+Initial login `admin`, password from the host's `first_admin_password`.
+Identity selection is `/staff/branding` after login; see
+[branding implementation](../../../vmshpwa/docs/branding.md).
+
+Fresh `db/production_prep.db`, no database/accounts copied from vmshbeget.
+TLF identity and English selected before the initial administrator was created.
+`vmshpwa.service` runs two Gunicorn/uvloop workers on a Unix socket and loopback
+8000; `vmshzoom.service` runs one independent archive worker on a Unix socket.
+Both force `pwa-production`, disable prototype auth and start no Telegram/Google
+adapter. The legacy JSON `apps` value does not start the old Zoom parser.
+
+Webhook URL: https://prep.leaders.tech/zoomevents. Ordinary receipts go to
+`zoom_webhook_receipts`; CRC is handled separately. The owner's Zoom app still
+needs subscriptions pointed at this URL. Only synthetic deliveries are proven;
+queue/lesson interpretation is deferred.
+
+Shared NATS stays on `127.0.0.1:4222`, unchanged PID. The clone uses subject
+prefix `production_prep_hetzner`. NATS HTTP monitoring remains disabled because
+enabling it requires restarting the shared service. Prometheus discovers PWA
+metrics on loopback 8000; aiohttp, nginx, node and prometheus targets are `up`.
+Public `/metrics` returns 404. [Monitoring runbook](../tlf-monitoring/README.md).
+
+`vmsh-backup.timer` runs at 00:15/08:15/16:15 Europe/Moscow, retains 14 days.
+Online SQLite backups include the main DB/Zoom archive and independent analytics
+store. Each snapshot is copied to a temporary directory and verified using
+`PRAGMA integrity_check`; the rehearsal passed with all three synthetic receipts.
+Backups are local to this server. `vmsh-analytics.timer` runs every two hours;
+its first run completed with no active courses. No automatic deployment.
+
+Source is the local `vmshpwa` snapshot, base `b9ca44aa`, plus the uncommitted
+implementation recorded in `deployment-snapshot.json`. The base commit alone
+does not contain the deployed identity/archive code. Frontend provenance is
+`production`, release `tlfprep-20260930`, MSW/prototype disabled, with host Sentry
+and S3 origins. Node 26.9.0, pnpm 11.15.1, uv 0.12.18 are pinned under toolchains.
+The OS Python 3.14.4 segfaulted on a bare asyncio subprocess test; this clone
+uses isolated upstream CPython 3.14.4. OS Python and existing services unchanged.
+
+Verified: admin login/session/logout and secure cookies; TLF manifests/icons;
+English landing/Student/Staff browser pages; 25 public HTTP checks, nginx/systemd checks;
+real TikZ→PDF→SVG and raster→PNG→WebP; S3 put/private GET/public GET/delete of one
+temporary object; signed Zoom/CRC, invalid signature rejection, exact bodies,
+duplicates/unknown meeting; receipt IDs/body digest unchanged after restarting
+Zoom; restore integrity; two PWA workers/one Zoom worker; four healthy targets.
+Local focused suites passed, including 23 HTTP-smoke/archive tests and the
+schema/first-admin regression checks.
+
+## Host layout and operation
+
+All paths below are relative to `/web/vmsh_tasks_bot`. Use SSH alias
+`tlfprepagent` and `sudo`; the service account has no interactive login.
+
+| Path | Purpose |
+| --- | --- |
+| `vmsh_tasks_bot/` | Backend repository with nested frontend source |
+| `vmsh_tasks_bot/creds_prod/vmsh_bot_config_prod.json` | Canonical secrets, owner `vmsh_tasks_bot`, 0600; moved from temporary `/web` file |
+| `vmsh_tasks_bot/db/` | Independent product/analytics databases, WAL/locks |
+| `vmshpwa/current` | Symlink to the current release, four applications |
+| `vmshpwa/immutable-assets/` | Append-only hashed assets for open tabs |
+| `vmshpwa/runtime/` | Units, transport environment, nginx/TLS, sockets, media/write |
+| `deploy/bin/` | [build](build_source.sh), [renderer](render_server.py), [initializer](initialize.py), [backup](backup.py), [live probe](live_probe.py), [S3 probe](s3_probe.py) |
+| `deploy/reports/` | Build, migration, converters, nginx/systemd, HTTP/S3, live and restart proofs, no credentials |
+| `deploy/systemd/`, `deploy/config/` | Convenience pointers to installed runtime files |
+| `backups/<UTC timestamp>/` | Main/analytics snapshots and integrity report |
+| `toolchains/` | Pinned Python/Node/pnpm/uv |
+| `tls/`, `monitoring/` | Root-only pointers to certs, config, monitoring source/Grafana credentials |
+
+`/etc/systemd/system` and `/etc/nginx` link inside this tree. The immutable asset
+root is absolute: `current/..` would follow the symlink into the wrong release
+parent. Failed asset responses use `no-store`, preventing prolonged negative
+browser caching.
+Release entrypoint JS/CSS URLs carry a release query, recovering clients that
+cached a miss during the initial cutover while preserving fingerprinted bodies.
+Certbot's existing renewal timer now has an nginx reload deploy hook linked
+from `tls/reload-nginx.sh`; no certificate/private key was copied into the repo.
+
+As root on the server:
+
+```sh
+systemctl status vmshpwa vmshzoom
+journalctl -u vmshpwa -u vmshzoom
+systemctl list-timers vmsh-backup.timer vmsh-analytics.timer
+systemctl start vmsh-backup.service
+curl --unix-socket /web/vmsh_tasks_bot/vmshpwa/runtime/zoom.sock http://localhost/health
+cd /web/vmsh_tasks_bot/vmsh_tasks_bot
+.venv/bin/python -m vmshpwa.scripts.production_http_smoke --origin https://prep.leaders.tech --expected-instance production
+```
+
+Manual update: take a verified backup, build reviewed code with frozen locks and
+production frontend provenance, stop **both** workers before the maintenance
+migration, run `VMSH_RUNTIME_PROFILE=pwa-production .venv/bin/python -m vmshpwa.scripts.migrate_runtime`,
+publish a new release retaining old assets, check units/nginx, start both and
+rerun public HTTP checks. Preserve the host JSON and independent databases.
+Use the managed Python when recreating the venv, not `/usr/bin/python3.14`.
+`live_probe.py` is not a routine readiness check: it logs in and appends three
+synthetic receipts. HTTP smoke is read-only.
+
+Restore: stop both workers, take a safety snapshot, select a verified backup,
+restore both SQLite files while stopped, remove only their stale WAL/SHM files,
+check schema/integrity and ownership, restart and run HTTP smoke. Restoring an
+older backup rolls back newer receipts; never replace DB files under live writers.
+
+## Course attendance release (2026-10-01)
+
+Course metadata `hasInPersonClasses` is enabled by default (migration
+`0103.course_in_person_classes`). Staff course catalog → Configure →
+“This course has in-person classes” applies immediately; no restart is needed
+for later toggles. Enrollment preferences and all historical rows are preserved.
+Disabled scopes cannot change attendance or receive new classroom operations;
+ordinary material PDFs remain available. See
+[acceptance and implementation](../../../vmshpwa/docs/course-attendance-settings.md).
+
+For each manual release set `TLF_RELEASE_ID=tlfprep-YYYYMMDD-description`
+when running both `build_source.sh` and `render_server.py`. This selects
+a separate static release and matching Sentry/entrypoint cache version.
+Take a verified main+analytics backup and retain a source rollback archive,
+stop `vmshpwa` and `vmshzoom` before migration, then build from frozen locks,
+run the existing guarded production migration, publish the new static release,
+and start both services. Verify two PWA workers, one Zoom worker, public
+HTTP/asset smoke, SQLite integrity and unchanged counts/preferences.
+Do not automatically toggle any production course. Leave vmshbeget and
+autodeploy untouched.
+
+Roll back code/static to the retained source/current symlink while both services
+are stopped. The runtime schema guard rejects an unknown migration head: roll back only
+`0103` through yoyo while its migration source is still present, then restore
+the retained source and static symlink. Retain all other migrations/history.
+Avoid restoring a DB snapshot after new Zoom receipts have arrived.
+
+
+Attendance release deployed: `tlfprep-20261001-attendance`, 2026-10-01.
+Pre-release verified backup: `backups/20261001T091337.198003Z`.
+Proofs, source rollback archive and previous static target are retained in
+`deploy/releases/tlfprep-20261001-attendance/`. Migration preserved two courses,
+16 enrollments/preferences and three Zoom receipts; all existing courses were
+enabled at release time. Main DB integrity, two PWA workers, one Zoom worker, unchanged shared
+NATS PID and public HTTP smoke passed. Public landing and Staff sign-in render
+TLF identity in English. The maintenance build leaves the secret JSON untouched.
+Authenticated catalog verification passed for both courses; the live Staff
+course-settings dialog displayed the new checked checkbox. The browser admin
+session was supplied by the owner. After verification the owner explicitly
+requested all prep courses to have no in-person classes: TLF Math Club and
+TLF Physics Club were both disabled through the audited Staff UI. New course
+defaults stay enabled. Existing enrollment preferences/history remain intact.

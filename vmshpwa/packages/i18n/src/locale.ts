@@ -1,6 +1,6 @@
 /**
  * Interface languages of the VMSH PWAs. Russian is the source language of all
- * product copy and the default for every account; English is a translation.
+ * product copy; the instance brand supplies the default language. English is a translation.
  * See `adr/0004-pwa-internationalization.md` and `docs/i18n.md`.
  */
 export const SUPPORTED_LOCALES = ['ru', 'en'] as const

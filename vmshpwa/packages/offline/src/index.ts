@@ -15,3 +15,5 @@ export * from './live-marking-outbox'
 export * from './organizer-draft'
 
 export * from './lesson-bundle'
+
+export { notificationBrandIcon } from './push-branding'

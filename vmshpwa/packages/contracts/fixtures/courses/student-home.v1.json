@@ -16,7 +16,8 @@
             "status": "active",
             "sortOrder": 10,
             "accentKey": "accent_1",
-            "version": 2
+            "version": 2,
+            "hasInPersonClasses": true
           },
           "activeGroupId": "group-fixture-alpha-one",
           "allowedGroups": [
@@ -74,8 +75,12 @@
               "publishedAt": "2026-09-21T13:00:00.000000Z",
               "publicationVersion": 1
             },
-            "hint": { "status": "unavailable" },
-            "solution": { "status": "unavailable" }
+            "hint": {
+              "status": "unavailable"
+            },
+            "solution": {
+              "status": "unavailable"
+            }
           }
         }
       },
@@ -91,7 +96,8 @@
             "status": "active",
             "sortOrder": 20,
             "accentKey": "accent_2",
-            "version": 1
+            "version": 1,
+            "hasInPersonClasses": true
           },
           "activeGroupId": "group-fixture-beta-one",
           "allowedGroups": [

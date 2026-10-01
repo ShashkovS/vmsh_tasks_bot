@@ -46,9 +46,12 @@ export async function activateLocale(locale: Locale, loaders: CatalogLoaders): P
  * failed English catalog falls back to Russian; only a failed Russian catalog
  * rejects, and the caller shows the static reload screen.
  */
-export async function bootstrapLocale(loaders: CatalogLoaders): Promise<Locale> {
+export async function bootstrapLocale(
+  loaders: CatalogLoaders,
+  defaultLocale: Locale = DEFAULT_LOCALE,
+): Promise<Locale> {
   await enableDevelopmentCompiler()
-  const preferred = readLocaleCookie() ?? DEFAULT_LOCALE
+  const preferred = readLocaleCookie() ?? defaultLocale
   try {
     await activateLocale(preferred, loaders)
     return preferred

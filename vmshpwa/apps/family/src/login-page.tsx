@@ -5,6 +5,8 @@ import { useState, type FormEvent } from 'react'
 import { PageLayout } from '@vmsh/app-shell'
 import type { FamilyLoginRequest } from '@vmsh/contracts'
 import {
+  Sign179,
+  useBrandIdentity,
   Alert,
   AlertContent,
   AlertDescription,
@@ -28,6 +30,8 @@ export function FamilyLoginPage({
   loginState?: FamilyLoginState
   onSubmit?: (request: FamilyLoginRequest) => void | Promise<void>
 }) {
+  const brand = useBrandIdentity()
+  const supportEmail = brand.supportEmail
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -52,7 +56,12 @@ export function FamilyLoginPage({
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <PageLayout
         description={t`Аккаунт родителя не связан с Telegram и не использует пароль ребёнка.`}
-        eyebrow={t`ВМШ 179`}
+        eyebrow={
+          <span className="inline-flex items-center gap-2">
+            <Sign179 size={32} />
+            {brand.name}
+          </span>
+        }
         title={t`Кабинет родителя`}
         width="reading"
       >
@@ -126,8 +135,8 @@ export function FamilyLoginPage({
                 <Bell className="mr-1 inline size-3" />{' '}
                 <Trans>
                   Помощь:{' '}
-                  <a className="text-link underline" href="mailto:vmsh@179.ru">
-                    vmsh@179.ru
+                  <a className="text-link underline" href={`mailto:${supportEmail}`}>
+                    {supportEmail}
                   </a>
                 </Trans>
               </p>

@@ -11,7 +11,10 @@ import {
   initFrontendObservability,
 } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace } from '@vmsh/contracts'
-import { LocaleProvider, bootstrapLocale, renderCatalogFailure } from '@vmsh/i18n'
+import { LocaleProvider, renderCatalogFailure } from '@vmsh/i18n'
+import { BrandIdentityProvider } from '@vmsh/ui'
+import { brandAssetBase } from '@vmsh/contracts'
+import { bootstrapBranding } from '@vmsh/branding'
 import '@vmsh/ui/styles.css'
 
 import { catalogLoaders } from './i18n/catalogs'
@@ -42,25 +45,35 @@ if (!rootElement) throw new Error('Root element is missing')
 
 // The catalog is activated before the first render, so the runtime startup
 // screen is translated too. See `docs/i18n.md`.
-void bootstrapLocale(catalogLoaders).then(
-  () => {
-    document.title = t`ВМШ 179 — учитель и администратор`
+void bootstrapBranding('staff', catalogLoaders).then(
+  (profile) => {
+    const brandName = profile.name
+    document.title = t`${brandName} — учитель и администратор`
     createRoot(rootElement).render(
       <StrictMode>
-        <LocaleProvider loaders={catalogLoaders}>
-          {/* Staff validates its runtime too, but deliberately has no Dexie/offline database. */}
-          <RuntimeBootstrap audience="staff">
-            {(runtime) => (
-              <AppProviders storageNamespace={createBrowserStorageNamespace(runtime)}>
-                <AuthenticationProvider audience="staff" runtime={runtime}>
-                  <RealtimeProvider audience="staff" runtime={runtime}>
-                    <RouterProvider router={router} />
-                  </RealtimeProvider>
-                </AuthenticationProvider>
-              </AppProviders>
-            )}
-          </RuntimeBootstrap>
-        </LocaleProvider>
+        <BrandIdentityProvider
+          identity={{
+            name: profile.name,
+            supportEmail: profile.supportEmail,
+            logoUrl:
+              profile.id === 'vmsh' ? undefined : `${brandAssetBase(profile, 'staff')}icon.svg`,
+          }}
+        >
+          <LocaleProvider loaders={catalogLoaders}>
+            {/* Staff validates its runtime too, but deliberately has no Dexie/offline database. */}
+            <RuntimeBootstrap audience="staff">
+              {(runtime) => (
+                <AppProviders storageNamespace={createBrowserStorageNamespace(runtime)}>
+                  <AuthenticationProvider audience="staff" runtime={runtime}>
+                    <RealtimeProvider audience="staff" runtime={runtime}>
+                      <RouterProvider router={router} />
+                    </RealtimeProvider>
+                  </AuthenticationProvider>
+                </AppProviders>
+              )}
+            </RuntimeBootstrap>
+          </LocaleProvider>
+        </BrandIdentityProvider>
       </StrictMode>,
     )
   },

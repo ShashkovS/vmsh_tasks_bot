@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
@@ -308,14 +307,17 @@ def _response(request: web.Request, result: dict[str, object]) -> web.Response:
 
 
 async def _public_response(request: web.Request, student_user_id: int) -> web.Response:
-    items = await _factory(request).run_read_async(
-        lambda connection: read_student_classroom_assignments(
-            connection, student_user_id
+    from db_methods.pwa.classroom_assignments import has_student_in_person_courses
+    items, has_in_person_courses = await _factory(request).run_read_async(
+        lambda connection: (
+            read_student_classroom_assignments(connection, student_user_id),
+            has_student_in_person_courses(connection, student_user_id),
         )
     )
     return web.json_response(
         {
             "schemaVersion": 1,
+            "hasInPersonCourses": has_in_person_courses,
             "items": [
                 {
                     "eventPublicId": item["event_public_id"],

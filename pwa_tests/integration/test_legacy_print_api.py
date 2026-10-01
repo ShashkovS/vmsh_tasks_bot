@@ -217,12 +217,8 @@ async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
         history_url, headers=headers(**{"If-Match": history_etag})
     )
     assert same_history.status == 200
-    lesson_results_url = url.replace(
-        "/pupils?lesson=41", "/lesson-results?lesson=40"
-    )
-    lesson_results_response = await client.get(
-        lesson_results_url, headers=headers()
-    )
+    lesson_results_url = url.replace("/pupils?lesson=41", "/lesson-results?lesson=40")
+    lesson_results_response = await client.get(lesson_results_url, headers=headers())
     assert lesson_results_response.status == 200, await lesson_results_response.text()
     assert await lesson_results_response.json() == {
         "schemaVersion": 1,
@@ -486,3 +482,25 @@ async def test_new_enrollment_appears_only_after_a_new_plan_is_confirmed(print_a
     rows = await response.json()
     assert [row["ФИО"] for row in rows] == ["Ёлкин ПЁТР", "Иванов Иван"]
     assert [row["Строчка"] for row in rows] == [5, 6]
+
+
+async def test_online_only_course_is_excluded_from_print_scope_without_losing_plan(
+    print_api,
+):
+    client, factory, _, url = print_api
+    factory.run_write(lambda c: c.execute("UPDATE courses SET has_in_person_classes=0"))
+    blocked = await client.get(url, headers=headers())
+    assert blocked.status == 409
+    listing = await client.get(PREFIX + "/events", headers=headers())
+    assert (await listing.json())["events"] == []
+    assert (
+        factory.run_read(
+            lambda c: c.execute(
+                "SELECT count(*) AS n FROM classroom_assignments"
+            ).fetchone()["n"]
+        )
+        > 0
+    )
+    factory.run_write(lambda c: c.execute("UPDATE courses SET has_in_person_classes=1"))
+    restored = await client.get(url, headers=headers())
+    assert restored.status == 200

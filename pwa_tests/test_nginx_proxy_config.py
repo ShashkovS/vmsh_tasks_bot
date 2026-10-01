@@ -66,7 +66,7 @@ def test_template_has_one_host_and_separate_static_api_websocket_boundaries():
     assert "return 308 https://@@PUBLIC_HOST@@$request_uri;" in source
     assert "root @@STATIC_ROOT@@;" in source
     assert "server unix:@@BACKEND_UNIX_SOCKET@@ fail_timeout=0;" in source
-    assert source.count("include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;") == 7
+    assert source.count("include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;") == 9
 
     metrics = _location(source, "= /metrics")
     assert "access_log off;" in metrics
@@ -489,3 +489,12 @@ def test_image_origin_must_be_connectable_by_service_workers():
     assert "connect-src" in _validate_rendered_site(source, "pwa.example.org")
     fixed = source.replace("connect-src 'self' wss://pwa.example.org", f"connect-src 'self' wss://pwa.example.org {media}")
     assert _validate_rendered_site(fixed, "pwa.example.org") is None
+
+
+def test_stable_manifests_are_served_by_the_branding_backend():
+    source = TEMPLATE.read_text(encoding="utf-8")
+    for audience in ("student", "family"):
+        manifest = _location(source, f"= /{audience}/manifest.webmanifest")
+        assert "proxy_pass http://vmshpwa_backend;" in manifest
+        assert "limit_except GET { deny all; }" in manifest
+        assert "try_files" not in manifest

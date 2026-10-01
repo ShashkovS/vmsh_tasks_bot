@@ -54,11 +54,11 @@ Source colors blend the existing chart tokens with foreground for accessible
 contrast; letters and accessible cell descriptions also identify the source.
 The following final artifacts were inspected:
 
-| Browser | Desktop, light | Narrow, dark |
-| --- | --- | --- |
+| Browser  | Desktop, light                                                   | Narrow, dark                                                  |
+| -------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
 | Chromium | [1440px](assets/statistics-reports/chromium-plus-light-1440.png) | [390px](assets/statistics-reports/chromium-plus-dark-390.png) |
-| WebKit | [1440px](assets/statistics-reports/webkit-plus-light-1440.png) | [390px](assets/statistics-reports/webkit-plus-dark-390.png) |
-| Firefox | [1440px](assets/statistics-reports/firefox-plus-light-1440.png) | [390px](assets/statistics-reports/firefox-plus-dark-390.png) |
+| WebKit   | [1440px](assets/statistics-reports/webkit-plus-light-1440.png)   | [390px](assets/statistics-reports/webkit-plus-dark-390.png)   |
+| Firefox  | [1440px](assets/statistics-reports/firefox-plus-light-1440.png)  | [390px](assets/statistics-reports/firefox-plus-dark-390.png)  |
 
 ## Delivery
 

@@ -13,37 +13,29 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: apps/landing/src/main.tsx
+msgid "{brandName} — математический кружок"
+msgstr "{brandName} — math circle"
+
+#: apps/landing/src/main.tsx
+msgid "{brandName} — математический кружок для школьников и родителей"
+msgstr "{brandName} — a math club for students and parents"
+
+#: apps/landing/src/landing-page.tsx
+msgid "{brandName} — математический кружок для школьников. Выберите нужный кабинет, чтобы открыть задачи, результаты занятий и новости."
+msgstr "{brandName} is a math club for students. Choose your account to open problems, class results, and news."
+
+#: apps/landing/src/landing-page.tsx
+msgid "{brandName} · математический кружок"
+msgstr "{brandName} · Math Club"
+
 #: apps/landing/src/landing-page.tsx
 msgid "Активность ребёнка, результаты занятий и опубликованные новости."
 msgstr "Your child's activity, class results, and published news."
 
 #: apps/landing/src/landing-page.tsx
-msgid "ВМШ 179"
-msgstr "VMSh 179"
-
-#: apps/landing/src/main.tsx
-msgid "ВМШ 179 — математический кружок"
-msgstr "VMSh 179 — math circle"
-
-#: apps/landing/src/main.tsx
-msgid "ВМШ 179 — математический кружок для школьников и родителей"
-msgstr "VMSh 179 — a mathematics club for students and parents"
-
-#: apps/landing/src/landing-page.tsx
-msgid "ВМШ 179 — математический кружок для школьников. Выберите нужный кабинет, чтобы открыть задачи, результаты занятий и новости."
-msgstr "VMSh 179 is a mathematics club for school students. Choose your account area to view problems, class results, and news."
-
-#: apps/landing/src/landing-page.tsx
-msgid "ВМШ 179 · математический кружок"
-msgstr "VMSh 179 · mathematics club"
-
-#: apps/landing/src/landing-page.tsx
 msgid "Задачи, сдача решений, проверки, новости и личный прогресс."
 msgstr "Problems, solution submissions, reviews, news, and personal progress."
-
-#: apps/landing/src/landing-page.tsx
-msgid "Знак ВМШ 179"
-msgstr "VMSh 179 symbol"
 
 #: apps/landing/src/landing-page.tsx
 msgid "Кабинет родителя"

@@ -56,14 +56,6 @@ msgstr "Включить уведомления"
 msgid "Включить уведомления?"
 msgstr "Включить уведомления?"
 
-#: packages/app-shell/src/app-shell.tsx
-msgid "ВМШ 179"
-msgstr "ВМШ 179"
-
-#: packages/app-shell/src/app-shell.tsx
-msgid "ВМШ 179 ·"
-msgstr "ВМШ 179 ·"
-
 #: packages/app-shell/src/organizer-pages.tsx
 msgid "Вопросы организаторам"
 msgstr "Вопросы организаторам"
@@ -383,8 +375,8 @@ msgid "Повторить"
 msgstr "Повторить"
 
 #: packages/app-shell/src/runtime-bootstrap.tsx
-msgid "Подключаем личный кабинет к серверу ВМШ 179."
-msgstr "Подключаем личный кабинет к серверу ВМШ 179."
+msgid "Подключаем личный кабинет к серверу."
+msgstr "Подключаем личный кабинет к серверу."
 
 #: packages/app-shell/src/service-availability.tsx
 msgid "Подключение занимает больше времени. Мы продолжаем пробовать."

@@ -38,6 +38,7 @@
     "workbox-routing": "catalog:",
     "workbox-strategies": "catalog:",
     "workbox-window": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@vmsh/branding": "workspace:*"
   }
 }

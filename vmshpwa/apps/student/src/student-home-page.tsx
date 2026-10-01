@@ -60,14 +60,16 @@ function EmptyCourseCard({ course }: { course: StudentHomeCourse }) {
             <p className="text-caption text-muted-foreground">{enrollment.course.subjectCode}</p>
             <CardTitle>{enrollment.course.name}</CardTitle>
           </div>
-          <Badge variant={enrollment.attendanceMode === 'in-person' ? 'info' : 'neutral'}>
-            {enrollment.attendanceMode === 'in-person' ? (
-              <MapPin aria-hidden="true" />
-            ) : (
-              <Radio aria-hidden="true" />
-            )}
-            {enrollment.attendanceMode === 'in-person' ? t`Очно` : t`Онлайн`}
-          </Badge>
+          {enrollment.course.hasInPersonClasses !== false ? (
+            <Badge variant={enrollment.attendanceMode === 'in-person' ? 'info' : 'neutral'}>
+              {enrollment.attendanceMode === 'in-person' ? (
+                <MapPin aria-hidden="true" />
+              ) : (
+                <Radio aria-hidden="true" />
+              )}
+              {enrollment.attendanceMode === 'in-person' ? t`Очно` : t`Онлайн`}
+            </Badge>
+          ) : null}
         </div>
         {group ? <LevelChip level={group} /> : null}
       </CardHeader>
@@ -207,7 +209,9 @@ export function StudentHomePage() {
               const lesson = course.currentLesson
               return (
                 <CourseCard
-                  {...(classroom?.status === 'assigned' && classroom.classroomName
+                  {...(course.enrollment.course.hasInPersonClasses &&
+                  classroom?.status === 'assigned' &&
+                  classroom.classroomName
                     ? { classroomName: classroom.classroomName }
                     : {})}
                   enrollment={toCourseEnrollmentView(course.enrollment)}
@@ -234,50 +238,63 @@ export function StudentHomePage() {
           </div>
         )}
       </section>
-      <PageSection className="mt-8" title={t`Очные занятия`}>
-        {classroomQuery.isPending ? <PageStatePanel state="loading" /> : null}
-        {classroomQuery.error ? (
-          <PageStatePanel
-            actionLabel={t`Повторить`}
-            onAction={() => void classroomQuery.refetch()}
-            state={
-              classroomQuery.error instanceof PublishedClassroomNetworkError ? 'offline' : 'error'
-            }
-          />
-        ) : null}
-        {classroomQuery.data?.items.length === 0 ? (
-          <p className="text-small text-muted-foreground">
-            <Trans>Для ваших групп пока нет запланированных очных занятий.</Trans>
-          </p>
-        ) : null}
-        <div className="grid gap-3 lg:grid-cols-2">
-          {classroomQuery.data?.items.map((item) => {
-            const announcedAt = formatMoment(item.announcedAt)
-            const confirmedAt = formatMoment(item.confirmedAt)
-            return (
-              <div className="space-y-2" key={`${item.eventPublicId}:${item.coursePublicId}`}>
-                <p className="text-small font-medium text-foreground">
-                  {item.courseName} · {item.eventName}
-                </p>
-                <ClassroomAssignmentStatus
-                  {...(announcedAt ? { announcedAt } : {})}
-                  audience="student"
-                  {...(item.classroomName ? { classroomName: item.classroomName } : {})}
-                  {...(confirmedAt ? { confirmedAt } : {})}
-                  endsAt={item.endsAt}
-                  onlineModeAction={
-                    <Link className="text-link underline-offset-2 hover:underline" to="/profile">
-                      <Trans>Поменять</Trans>
-                    </Link>
-                  }
-                  startsAt={item.startsAt}
-                  status={item.status}
-                />
-              </div>
-            )
-          })}
-        </div>
-      </PageSection>
+      {query.data.courses.some((course) => course.enrollment.course.hasInPersonClasses) ? (
+        <PageSection className="mt-8" title={t`Очные занятия`}>
+          {classroomQuery.isPending ? <PageStatePanel state="loading" /> : null}
+          {classroomQuery.error ? (
+            <PageStatePanel
+              actionLabel={t`Повторить`}
+              onAction={() => void classroomQuery.refetch()}
+              state={
+                classroomQuery.error instanceof PublishedClassroomNetworkError ? 'offline' : 'error'
+              }
+            />
+          ) : null}
+          {classroomQuery.data?.items.length === 0 ? (
+            <p className="text-small text-muted-foreground">
+              <Trans>Для ваших групп пока нет запланированных очных занятий.</Trans>
+            </p>
+          ) : null}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {classroomQuery.data?.items
+              .filter((item) =>
+                query.data.courses.some(
+                  (course) =>
+                    course.enrollment.course.courseId === item.coursePublicId &&
+                    course.enrollment.course.hasInPersonClasses,
+                ),
+              )
+              .map((item) => {
+                const announcedAt = formatMoment(item.announcedAt)
+                const confirmedAt = formatMoment(item.confirmedAt)
+                return (
+                  <div className="space-y-2" key={`${item.eventPublicId}:${item.coursePublicId}`}>
+                    <p className="text-small font-medium text-foreground">
+                      {item.courseName} · {item.eventName}
+                    </p>
+                    <ClassroomAssignmentStatus
+                      {...(announcedAt ? { announcedAt } : {})}
+                      audience="student"
+                      {...(item.classroomName ? { classroomName: item.classroomName } : {})}
+                      {...(confirmedAt ? { confirmedAt } : {})}
+                      endsAt={item.endsAt}
+                      onlineModeAction={
+                        <Link
+                          className="text-link underline-offset-2 hover:underline"
+                          to="/profile"
+                        >
+                          <Trans>Поменять</Trans>
+                        </Link>
+                      }
+                      startsAt={item.startsAt}
+                      status={item.status}
+                    />
+                  </div>
+                )
+              })}
+          </div>
+        </PageSection>
+      ) : null}
     </PageLayout>
   )
 }

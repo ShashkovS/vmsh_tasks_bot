@@ -35,6 +35,7 @@ export const courseSummarySchema = z
     status: courseStatusSchema,
     sortOrder: z.number().int().nonnegative(),
     accentKey: canonicalTokenSchema,
+    hasInPersonClasses: z.boolean().default(true),
     version: versionSchema,
   })
   .strip()

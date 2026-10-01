@@ -36,6 +36,10 @@ _PUBLIC_ROUTES = frozenset(
     {
         ("GET", "health"),
         ("HEAD", "health"),
+        ("GET", "branding"),
+        ("HEAD", "branding"),
+        ("GET", "branding/manifest.webmanifest"),
+        ("HEAD", "branding/manifest.webmanifest"),
         ("GET", "runtime"),
         ("HEAD", "runtime"),
         ("POST", "auth/login"),
@@ -277,6 +281,10 @@ async def pwa_authentication_middleware(request: web.Request, handler):
     if route_key in {
         ("GET", "health"),
         ("HEAD", "health"),
+        ("GET", "branding"),
+        ("HEAD", "branding"),
+        ("GET", "branding/manifest.webmanifest"),
+        ("HEAD", "branding/manifest.webmanifest"),
         ("GET", "runtime"),
         ("HEAD", "runtime"),
     }:

@@ -54,3 +54,5 @@ export { PushOnboarding } from './push-onboarding'
 export * from './interface-language'
 export { syncDeviceLocale } from './device-locale'
 export * from './statistics-reports-client'
+
+export { fetchBranding } from '@vmsh/branding'

@@ -14,7 +14,9 @@ export function ContentUpdateMarker({ visible }: { visible: boolean }) {
       className="mb-4 flex flex-wrap items-center gap-2 text-small text-muted-foreground"
       role="status"
     >
-      <Badge variant="info"><Trans>Материал обновлён</Trans></Badge>
+      <Badge variant="info">
+        <Trans>Материал обновлён</Trans>
+      </Badge>
       <Trans>Открыта новая опубликованная версия.</Trans>
     </p>
   )

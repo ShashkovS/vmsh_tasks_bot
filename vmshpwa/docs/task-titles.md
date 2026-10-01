@@ -42,7 +42,6 @@ Student/Family/Staff и отдельных экранов задачи; см. [�
 См. [требования и реализацию](task-interaction-polish.md) и
 [проверку](../../pwa_tests/reports/task-interaction-polish/README.md).
 
-
 ## Алфавит подпунктов
 
 С 29 сентября 2026 `SemanticMathDocument` в
@@ -57,7 +56,6 @@ Student/Family/Staff и отдельных экранов задачи; см. [�
 маршруты и аргументы renderSubpartActions/renderAfterSubpart не меняются.
 Проверки обеих локалей и callback keys:
 [`math-document.test.tsx`](../packages/content/src/math-document.test.tsx).
-
 
 ## Язык подписи задачи — 1 октября 2026
 

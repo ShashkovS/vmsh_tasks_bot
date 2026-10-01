@@ -11,6 +11,7 @@ import { CacheFirst } from 'workbox-strategies'
 import {
   immutableContentAssetNavigationPattern,
   openPushNotification,
+  notificationBrandIcon,
   parseAudiencePushPayload,
   shouldCacheRecentMediaRequest,
 } from '@vmsh/offline'
@@ -118,7 +119,7 @@ self.addEventListener('push', (event) => {
       await self.registration.showNotification(payload.title, {
         body: payload.body,
         data: { route: payload.route },
-        icon: '/family/icon-192.png',
+        icon: await notificationBrandIcon('family'),
         tag: payload.eventId,
         silent: payload.silent,
       })

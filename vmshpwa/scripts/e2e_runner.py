@@ -115,6 +115,21 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         playwright.append("e2e/review-workspace.spec.ts")
     elif mode == "support":
         playwright.append("e2e/support-dialogue.spec.ts")
+    elif mode == "portal-release":
+        # production-rollout-checklist.md: consolidate current portal features
+        # under the same lock, build and real-backend three-browser boundary.
+        playwright.extend([
+            "e2e/branding.spec.ts",
+            "e2e/course-attendance.spec.ts",
+            "e2e/authentication.spec.ts",
+            "e2e/family-context.spec.ts",
+            "e2e/content-publication.spec.ts",
+            "e2e/i18n.spec.ts",
+            "e2e/smooth-redeploy.spec.ts",
+            "--grep-invert", "@visual",
+        ])
+    elif mode == "course-attendance":
+        playwright.append("e2e/course-attendance.spec.ts")
     elif mode == "classrooms":
         playwright.append("e2e/classroom-catalog.spec.ts")
     elif mode == "organizers":
@@ -219,6 +234,8 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "all",
             "authentication",
             "classrooms",
+            "course-attendance",
+            "portal-release",
             "content",
             "offline-current",
             "figure-layout",

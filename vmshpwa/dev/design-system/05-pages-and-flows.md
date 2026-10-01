@@ -194,6 +194,7 @@ Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`
 браузера: [требования и компоненты](../../docs/worksheet-print.md). Печатаются
 уже показанные занятия и только раскрытые учебные материалы. Ответы ученика,
 фотографии работ, проверки и переписка исключены; экранное состояние сохраняется.
+
 # Lesson blocks addendum
 
 Full lesson presentations place author-controlled blocks below the heading and
@@ -210,7 +211,6 @@ all submitters, full read-only 700 × 20 matrix, separate review workload and
 current credit, and no pooled means/distribution across levels. Visual and large
 fixture acceptance lives in `e2e/statistics-reports.spec.ts` and
 `staff-statistics-reports.stories.tsx`.
-
 
 ### Student standalone subparts — 2026-09-28
 

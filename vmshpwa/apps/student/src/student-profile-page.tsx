@@ -1,3 +1,4 @@
+import { useBrandIdentity } from '@vmsh/ui'
 import { t } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { OrganizerLink } from '@vmsh/app-shell'
@@ -46,7 +47,9 @@ export function StudentEnrollmentSettings({
   const [groupId, setGroupId] = useState(enrollment.activeGroupId)
   const [mode, setMode] = useState<AttendanceMode>(enrollment.attendanceMode)
   const [reviewing, setReviewing] = useState(false)
-  const changed = groupId !== enrollment.activeGroupId || mode !== enrollment.attendanceMode
+  const changed =
+    groupId !== enrollment.activeGroupId ||
+    (enrollment.course.hasInPersonClasses && mode !== enrollment.attendanceMode)
 
   return (
     <div className="space-y-3">
@@ -72,30 +75,32 @@ export function StudentEnrollmentSettings({
             ))}
           </select>
         </div>
-        <div className="space-y-1 text-small font-medium">
-          <span>
-            <Trans>Формат занятий</Trans>
-          </span>
-          <select
-            aria-label={t`Формат занятий`}
-            className="min-h-10 w-full rounded-md border border-input bg-surface px-3"
-            disabled={saving}
-            onChange={(event) => {
-              setMode(event.target.value as AttendanceMode)
-              setReviewing(false)
-            }}
-            value={mode}
-          >
-            <option value="online">
-              <Trans>Онлайн</Trans>
-            </option>
-            <option value="in_person">
-              <Trans>Очно в школе</Trans>
-            </option>
-          </select>
-        </div>
+        {enrollment.course.hasInPersonClasses ? (
+          <div className="space-y-1 text-small font-medium">
+            <span>
+              <Trans>Формат занятий</Trans>
+            </span>
+            <select
+              aria-label={t`Формат занятий`}
+              className="min-h-10 w-full rounded-md border border-input bg-surface px-3"
+              disabled={saving}
+              onChange={(event) => {
+                setMode(event.target.value as AttendanceMode)
+                setReviewing(false)
+              }}
+              value={mode}
+            >
+              <option value="online">
+                <Trans>Онлайн</Trans>
+              </option>
+              <option value="in_person">
+                <Trans>Очно в школе</Trans>
+              </option>
+            </select>
+          </div>
+        ) : null}
       </div>
-      {reviewing ? (
+      {reviewing && enrollment.course.hasInPersonClasses ? (
         <p className="text-small text-muted-foreground">
           <Trans>
             При очном формате для вас резервируют место, печатают условия и распределяют
@@ -117,7 +122,7 @@ export function StudentEnrollmentSettings({
           }
           void onSave({
             activeGroupId: groupId,
-            attendanceMode: mode,
+            ...(enrollment.course.hasInPersonClasses ? { attendanceMode: mode } : {}),
             version: enrollment.version,
           }).catch(() => undefined)
         }}
@@ -132,6 +137,7 @@ export function StudentEnrollmentSettings({
 
 /** Real Student profile for Phase 3 and Phase 9 course settings. */
 export function StudentProfilePage() {
+  const { supportEmail } = useBrandIdentity()
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'student') throw new Error('Student profile requires Student')
@@ -176,7 +182,11 @@ export function StudentProfilePage() {
 
   return (
     <PageLayout
-      description={t`Группа и формат задаются отдельно для каждого курса.`}
+      description={
+        courses.data.enrollments.some((item) => item.course.hasInPersonClasses)
+          ? t`Группа и формат задаются отдельно для каждого курса.`
+          : undefined
+      }
       title={principal.displayName}
     >
       <div className="grid gap-4 lg:grid-cols-2">
@@ -240,10 +250,10 @@ export function StudentProfilePage() {
             </a>
             <a
               className="inline-flex min-h-7 items-center gap-2 text-link underline-offset-2 hover:underline"
-              href="mailto:vmsh@179.ru"
+              href={`mailto:${supportEmail}`}
             >
               <Mail aria-hidden="true" className="size-4 shrink-0" />
-              vmsh@179.ru
+              {supportEmail}
             </a>
           </CardContent>
         </Card>

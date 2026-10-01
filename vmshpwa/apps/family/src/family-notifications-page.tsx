@@ -154,7 +154,9 @@ export function FamilyNotificationSettingsView({
         title={t`Категории`}
       >
         {loading ? <PageStatePanel state="loading" /> : null}
-        {error ? <PageStatePanel actionLabel={t`Повторить`} onAction={onRetry} state="error" /> : null}
+        {error ? (
+          <PageStatePanel actionLabel={t`Повторить`} onAction={onRetry} state="error" />
+        ) : null}
         {visiblePreferences ? (
           <Card>
             <CardContent className="divide-y divide-border pt-1">
@@ -184,7 +186,9 @@ export function FamilyNotificationSettingsView({
         <Alert tone="neutral">
           <Volume2 aria-hidden="true" />
           <AlertContent>
-            <AlertTitle><Trans>Звук только с 9:00 до 21:00</Trans></AlertTitle>
+            <AlertTitle>
+              <Trans>Звук только с 9:00 до 21:00</Trans>
+            </AlertTitle>
             <AlertDescription>
               <Trans>Ночью новые события остаются видны, но не будят вас.</Trans>
             </AlertDescription>
@@ -384,8 +388,12 @@ export function FamilyNotificationsPage() {
       <Alert tone="neutral">
         <Bell aria-hidden="true" />
         <AlertContent>
-          <AlertTitle><Trans>Push пока недоступны</Trans></AlertTitle>
-          <AlertDescription><Trans>Новые материалы всё равно будут видны в кабинете.</Trans></AlertDescription>
+          <AlertTitle>
+            <Trans>Push пока недоступны</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            <Trans>Новые материалы всё равно будут видны в кабинете.</Trans>
+          </AlertDescription>
         </AlertContent>
       </Alert>
     )

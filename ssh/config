@@ -6,3 +6,14 @@ Host vmshbegetagent
     IdentityFile /Users/sergeyshashkov/repos/vmsh_tasks_bot/ssh/id_ed25519_codex
     UseKeychain yes
     AddKeysToAgent yes
+
+
+
+Host tlfprepagent
+    User tlfprepagent
+    HostName 188.245.158.162
+    Port 22179
+    IdentitiesOnly yes
+    IdentityFile /Users/sergeyshashkov/repos/tlfpaas/ssh/id_ed25519_codex
+    UseKeychain yes
+    AddKeysToAgent yes

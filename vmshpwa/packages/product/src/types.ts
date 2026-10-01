@@ -9,6 +9,7 @@ export interface CourseView {
   code: string
   name: string
   subjectCode: string
+  hasInPersonClasses?: boolean
   /** Semantic course accent; never carries status or verdict meaning. */
   accentIndex: 0 | 1 | 2 | 3 | 4
 }

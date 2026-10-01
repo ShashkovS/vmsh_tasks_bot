@@ -6,6 +6,20 @@ import sqlite3
 from collections.abc import Iterable
 
 
+def has_student_in_person_courses(
+    connection: sqlite3.Connection, student_user_id: int
+) -> bool:
+    return (
+        connection.execute(
+            "SELECT 1 FROM course_enrollments e JOIN courses c ON c.id = e.course_id "
+            "WHERE e.student_user_id = ? AND e.status = 'active' AND c.status = 'active' "
+            "AND c.has_in_person_classes = 1 LIMIT 1",
+            (student_user_id,),
+        ).fetchone()
+        is not None
+    )
+
+
 def list_student_classroom_events(
     connection: sqlite3.Connection, student_user_id: int
 ) -> list[dict[str, object]]:
@@ -58,6 +72,7 @@ def list_student_classroom_events(
         WHERE enrollment.student_user_id = ?
           AND enrollment.status = 'active'
           AND event.status = 'scheduled'
+          AND course.has_in_person_classes = 1
         ORDER BY event.starts_at, course.sort_order, course.id, lesson.id
         """,
         (student_user_id,),
@@ -135,12 +150,14 @@ def list_eligible_students(
         JOIN course_enrollments enrollment
           ON enrollment.course_id = lesson.course_id
          AND enrollment.active_group_id = lesson.group_id
+        JOIN courses course ON course.id = enrollment.course_id
         JOIN users user ON user.id = enrollment.student_user_id
         LEFT JOIN student_strength strength
           ON strength.student_id = enrollment.student_user_id
         WHERE event_lesson.in_person_event_id = ?
           AND enrollment.status = 'active'
           AND enrollment.attendance_mode = 'in_person'
+          AND course.has_in_person_classes = 1
         ORDER BY user.surname, user.name, enrollment.id
         """,
         (event_id,),
@@ -188,9 +205,7 @@ def list_classroom_preferences(
         f"WHERE course_enrollment_id IN ({placeholders})",
         enrollment_ids,
     ).fetchall()
-    return {
-        int(row["course_enrollment_id"]): int(row["classroom_id"]) for row in rows
-    }
+    return {int(row["course_enrollment_id"]): int(row["classroom_id"]) for row in rows}
 
 
 def upsert_classroom_preference(
@@ -263,7 +278,9 @@ def discard_working_plan(
     ).fetchone()
     if current is None:
         return False
-    connection.execute("DELETE FROM classroom_assignments WHERE plan_id = ?", (plan_id,))
+    connection.execute(
+        "DELETE FROM classroom_assignments WHERE plan_id = ?", (plan_id,)
+    )
     return (
         connection.execute(
             "DELETE FROM classroom_assignment_plans "
@@ -495,7 +512,9 @@ def replace_confirmed_assignments(
     )
     if updated.rowcount != 1:
         return False
-    connection.execute("DELETE FROM classroom_assignments WHERE plan_id = ?", (plan_id,))
+    connection.execute(
+        "DELETE FROM classroom_assignments WHERE plan_id = ?", (plan_id,)
+    )
     connection.executemany(
         "INSERT INTO classroom_assignments "
         "(plan_id, course_enrollment_id, group_lesson_id, group_id, classroom_id, "

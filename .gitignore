@@ -62,3 +62,5 @@ db/.*.vmshpwa-lifecycle.lock
 **/.DS_Store
 **/.idea
 
+# Local LaTeX editor build artifacts
+/out/

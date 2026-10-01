@@ -423,6 +423,10 @@ msgstr "Choose an available internal note"
 msgid "Выберите доступную реакцию"
 msgstr "Choose an available reaction"
 
+#: apps/pwa_api/branding_routes.py
+msgid "Выберите доступный профиль оформления"
+msgstr "Choose an available brand profile"
+
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Выберите задачи без повторов"
 msgstr "Select problems without duplicates"
@@ -755,6 +759,15 @@ msgstr "The course ID must be text"
 msgid "Изменение конфликтует с текущим состоянием материала"
 msgstr "The change conflicts with the current material state"
 
+#: apps/pwa_api/course_routes.py
+#: apps/pwa_api/family_course_routes.py
+msgid "Изменение формата участия недоступно для этого курса"
+msgstr "Changing the attendance format is unavailable for this course"
+
+#: apps/pwa_api/branding_routes.py
+msgid "Изменять оформление может только администратор"
+msgstr "Only an administrator can change branding"
+
 #: apps/pwa_api/problem_import_routes.py
 msgid "Импорт задач временно недоступен"
 msgstr "Problem import is temporarily unavailable"
@@ -1031,6 +1044,10 @@ msgstr "Course settings are temporarily unavailable"
 #: apps/pwa_api/notification_routes.py
 msgid "Настройки курса доступны только школьнику"
 msgstr "Course settings are available only to the student"
+
+#: apps/pwa_api/branding_routes.py
+msgid "Настройки оформления временно недоступны"
+msgstr "Brand settings are temporarily unavailable"
 
 #: apps/pwa_api/admin_course_routes.py
 #: apps/pwa_api/course_routes.py
@@ -1647,6 +1664,10 @@ msgstr "Only an administrator can send a summary to the family"
 #: db_methods/pwa/written_submissions.py
 msgid "Отправленное решение уже начали проверять или проверили."
 msgstr "The submitted solution has already entered review or been reviewed."
+
+#: apps/pwa_api/branding_routes.py
+msgid "Оформление уже изменено. Обновите страницу."
+msgstr "Branding has already changed. Reload the page."
 
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/staff_dashboard_routes.py

@@ -23,6 +23,7 @@ def list_print_events(connection: sqlite3.Connection) -> list[dict]:
         LEFT JOIN course_lessons lesson
           ON lesson.id = group_lesson.course_lesson_id
         WHERE event.status != 'cancelled'
+          AND EXISTS (SELECT 1 FROM courses c WHERE c.id = group_lesson.course_id AND c.has_in_person_classes = 1)
           AND event.season_id = (
               SELECT id FROM seasons WHERE status = 'active'
               ORDER BY starts_on DESC, id DESC LIMIT 1
@@ -82,13 +83,14 @@ def list_confirmed_plan_print_assignments(
               ON enrollment.id = assignment.course_enrollment_id
             JOIN users student ON student.id = enrollment.student_user_id
             JOIN group_lessons lesson ON lesson.id = assignment.group_lesson_id
+            JOIN courses course ON course.id = lesson.course_id
             JOIN course_lessons course_lesson
               ON course_lesson.id = lesson.course_lesson_id
             JOIN groups group_record
               ON group_record.course_id = lesson.course_id
              AND group_record.group_id = lesson.group_id
             LEFT JOIN classrooms room ON room.id = assignment.classroom_id
-            WHERE assignment.plan_id = ?
+            WHERE assignment.plan_id = ? AND course.has_in_person_classes = 1
             ORDER BY student.surname, student.name, enrollment.id
             """,
             (plan_id,),

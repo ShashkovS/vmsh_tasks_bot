@@ -425,6 +425,10 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
                 or payload["status"] != current["enrollment_status"]
             ):
                 return {"state": "forbidden"}
+        from db_methods.pwa.family_enrollment import read_enrollment_attendance
+        attendance = read_enrollment_attendance(connection, enrollment_id=int(current["enrollment_id"]))
+        if not attendance["has_in_person_classes"] and payload["attendanceMode"] != current["attendance_mode"]:
+            return {"state": "invalid"}
         try:
             plan = plan_admin_enrollment_change(
                 current_active_group_id=str(current["active_group_id"]),

@@ -53,7 +53,7 @@ pwa-agent-api:
 	$(PWA_UV_ENV) $(PWA_AGENT_ENV) VMSH_API_PORT=8280 uv run python main.py
 
 pwa-agent-landing:
-	cd $(PWA_DIR) && CI=true VITE_PORT=5272 pnpm --filter @vmsh/landing dev
+	cd $(PWA_DIR) && CI=true VITE_PORT=5272 VMSH_API_ORIGIN=http://127.0.0.1:8280 pnpm --filter @vmsh/landing dev
 
 pwa-agent-student:
 	cd $(PWA_DIR) && CI=true VITE_PORT=5273 VMSH_API_ORIGIN=http://127.0.0.1:8280 pnpm --filter @vmsh/student dev
@@ -435,3 +435,12 @@ pwa-e2e-offline-current:
 .PHONY: pwa-e2e-statistics
 pwa-e2e-statistics:
 	cd $(PWA_DIR) && CI=true pnpm e2e --mode statistics
+
+.PHONY: pwa-e2e-course-attendance
+pwa-e2e-course-attendance:
+	cd vmshpwa && CI=true pnpm e2e --mode course-attendance
+
+# Consolidated current-PWA release gate; scripts/e2e_runner.py owns the lock.
+.PHONY: pwa-e2e-portal-release
+pwa-e2e-portal-release:
+	cd vmshpwa && CI=true pnpm e2e --mode portal-release

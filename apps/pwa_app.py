@@ -165,6 +165,7 @@ from helpers.pwa.content.metadata_generation import (
     OpenRouterMetadataGenerator,
 )
 from helpers.pwa.i18n import _, current_locale, locale_from_cookies, translate
+from apps.pwa_api.branding_routes import branding_routes, selected_branding
 from helpers.pwa.push_delivery import PushSender, deliver_web_push_once
 from helpers.pwa.live_news import ingest_live_news
 from helpers.pwa.storage_config import load_storage_config
@@ -263,7 +264,8 @@ def _runtime_config(app: web.Application):
 
 def _is_pwa_transport_path(path: str) -> bool:
     return any(
-        path == f"/{audience}/ws"
+        path == f"/{audience}/manifest.webmanifest"
+        or path == f"/{audience}/ws"
         or path == f"/{audience}/api"
         or path.startswith(f"/{audience}/api/")
         for audience in AUDIENCES
@@ -319,8 +321,22 @@ async def pwa_error_middleware(request: web.Request, handler):
     # The device language applies to every message built while this request
     # (or its WebSocket session) is handled. See helpers/pwa/i18n.py.
     locale_token = current_locale.set(locale_from_cookies(request.cookies))
+
+    async def localized_handler(current_request):
+        # Keep the profile lookup inside the normal error boundary. See
+        # vmshpwa/docs/branding.md and branding_routes.selected_branding.
+        database = current_request.app.get(PWA_DATABASE)
+        if (
+            current_request.cookies.get("vmsh-locale") not in {"ru", "en"}
+            and database is not None
+            and database.factory is not None
+        ):
+            selection = await selected_branding(current_request)
+            current_locale.set(selection["default_locale"])
+        return await handler(current_request)
+
     try:
-        return await _pwa_error_response(request, handler)
+        return await _pwa_error_response(request, localized_handler)
     finally:
         current_locale.reset(locale_token)
 
@@ -1093,7 +1109,7 @@ async def publish_enrollment_invalidation(
 
     messages = [
         {
-            "resources": ["courses", "home", "classroom-assignments"],
+            "resources": ["courses", "home", "classroom-assignments", "notification-events", "notification-preferences"],
             "reason": reason,
             "audience": audience.value,
             "accountId": account_public_id,
@@ -2162,6 +2178,7 @@ def configure(
             # Content startup owns construction of the shared storage and
             # converter. Written media is composed immediately afterwards.
             app.on_startup.append(on_written_attachment_startup)
+    app.add_routes(branding_routes)
     app.add_routes(pwa_routes)
     app.on_startup.append(on_startup)
     if auth_enabled:

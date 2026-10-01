@@ -19,11 +19,12 @@ def list_due_candidates(
         "AND ses.revoked_at IS NULL AND ses.expires_at > ? "
         "LEFT JOIN notification_preferences p "
         "ON p.account_id = e.account_id AND p.category = e.category "
-        "LEFT JOIN courses c ON c.public_id = json_extract(e.payload_json, '$.courseId') "
+        "LEFT JOIN courses c ON c.public_id = coalesce(json_extract(e.payload_json, '$.courseId'), json_extract(e.payload_json, '$.coursePublicId')) "
         "LEFT JOIN notification_course_preferences cp "
         "ON cp.account_id = e.account_id AND cp.course_id = c.id "
         "AND cp.category = e.category "
         "WHERE e.deliver_after <= ? AND e.read_at IS NULL "
+        "AND (e.category != 'classroom_assignment' OR c.has_in_person_classes = 1) "
         "AND (s.expiration_time IS NULL OR s.expiration_time > ?) "
         "AND NOT EXISTS (SELECT 1 FROM notification_deliveries d "
         "WHERE d.event_id = e.id AND d.subscription_id = s.id) "
@@ -97,7 +98,9 @@ def claim_deliveries(
     rows = connection.execute(
         "SELECT d.id, d.public_id, d.attempt_count, e.public_id AS event_public_id, "
         "e.category, e.route, e.payload_json, e.occurred_at, a.audience, "
-        "a.locale AS recipient_locale, "
+        "CASE WHEN a.locale_explicit = 1 THEN a.locale ELSE "
+        "(SELECT default_locale FROM pwa_branding WHERE id = 1) "
+        "END AS recipient_locale, "
         "s.id AS subscription_id, s.endpoint, s.p256dh, s.auth_secret, "
         "coalesce(cp.push_enabled, p.push_enabled) AS push_enabled, "
         "p.sound_enabled, p.quiet_starts_local, "
@@ -109,7 +112,7 @@ def claim_deliveries(
         "JOIN auth_sessions ses ON ses.id = s.session_id "
         "LEFT JOIN notification_preferences p "
         "ON p.account_id = e.account_id AND p.category = e.category "
-        "LEFT JOIN courses c ON c.public_id = json_extract(e.payload_json, '$.courseId') "
+        "LEFT JOIN courses c ON c.public_id = coalesce(json_extract(e.payload_json, '$.courseId'), json_extract(e.payload_json, '$.coursePublicId')) "
         "LEFT JOIN notification_course_preferences cp "
         "ON cp.account_id = e.account_id AND cp.course_id = c.id "
         "AND cp.category = e.category "
@@ -118,6 +121,18 @@ def claim_deliveries(
         (claim_token, now),
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+def classroom_delivery_available(
+    connection: sqlite3.Connection, delivery_id: int
+) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM notification_deliveries d JOIN notification_events e ON e.id = d.event_id "
+        "LEFT JOIN courses c ON c.public_id = coalesce(json_extract(e.payload_json, '$.courseId'), json_extract(e.payload_json, '$.coursePublicId')) "
+        "WHERE d.id = ? AND (e.category != 'classroom_assignment' OR c.has_in_person_classes = 1)",
+        (delivery_id,),
+    ).fetchone()
+    return row is not None
 
 
 def finish_delivery(

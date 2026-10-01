@@ -69,3 +69,27 @@ describe('course catalog editors', () => {
     )
   })
 })
+
+it('defaults the in-person checkbox on and saves its disabled state', async () => {
+  const user = userEvent.setup()
+  const onSave = vi.fn()
+  render(
+    <CourseCatalogEditor
+      course={null}
+      open
+      saving={false}
+      storageKey="attendance-new"
+      onOpenChange={vi.fn()}
+      onSave={onSave}
+    />,
+  )
+  expect(
+    screen.getByRole<HTMLInputElement>('checkbox', { name: 'В курсе есть очные занятия' }).checked,
+  ).toBe(true)
+  await user.click(screen.getByRole('checkbox', { name: 'В курсе есть очные занятия' }))
+  await user.type(screen.getByLabelText('Код'), 'test')
+  await user.type(screen.getByLabelText('Предмет'), 'math')
+  await user.type(screen.getByLabelText('Название'), 'Test')
+  await user.click(screen.getByRole('button', { name: 'Сохранить' }))
+  expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ hasInPersonClasses: false }))
+})

@@ -461,6 +461,9 @@ importers:
       '@vmsh/app-shell':
         specifier: workspace:*
         version: link:../../packages/app-shell
+      '@vmsh/branding':
+        specifier: workspace:*
+        version: link:../../packages/branding
       '@vmsh/content':
         specifier: workspace:*
         version: link:../../packages/content
@@ -530,6 +533,12 @@ importers:
       '@lingui/react':
         specifier: 'catalog:'
         version: 6.7.0(@babel/core@7.29.7(supports-color@8.1.1))(@babel/types@7.29.7)(react@19.2.8)
+      '@vmsh/branding':
+        specifier: workspace:*
+        version: link:../../packages/branding
+      '@vmsh/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@vmsh/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -599,6 +608,9 @@ importers:
       '@vmsh/app-shell':
         specifier: workspace:*
         version: link:../../packages/app-shell
+      '@vmsh/branding':
+        specifier: workspace:*
+        version: link:../../packages/branding
       '@vmsh/content':
         specifier: workspace:*
         version: link:../../packages/content
@@ -671,6 +683,9 @@ importers:
       '@vmsh/app-shell':
         specifier: workspace:*
         version: link:../../packages/app-shell
+      '@vmsh/branding':
+        specifier: workspace:*
+        version: link:../../packages/branding
       '@vmsh/content':
         specifier: workspace:*
         version: link:../../packages/content
@@ -753,6 +768,9 @@ importers:
       '@tanstack/react-router':
         specifier: 'catalog:'
         version: 1.170.18(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@vmsh/branding':
+        specifier: workspace:*
+        version: link:../branding
       '@vmsh/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -774,6 +792,15 @@ importers:
       react:
         specifier: 'catalog:'
         version: 19.2.8
+
+  packages/branding:
+    dependencies:
+      '@vmsh/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@vmsh/i18n':
+        specifier: workspace:*
+        version: link:../i18n
 
   packages/content:
     dependencies:

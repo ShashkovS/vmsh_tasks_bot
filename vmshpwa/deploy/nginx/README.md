@@ -96,6 +96,15 @@ installed `nginx -t`.
 If nginx or the config is absent, it exits non-zero and says the live proof is
 unavailable; structural unit tests do not masquerade as that production proof.
 
+## Brand manifests
+
+The exact `/student/manifest.webmanifest` and `/family/manifest.webmanifest`
+locations proxy to the backend so the administrator's selected profile controls
+installation names and icons. Deploy these locations with migration 0101 and the
+branding backend; static build manifests are fallback artifacts. Versioned
+`/brands/` assets use immutable caching. See [instance branding](../../docs/branding.md)
+for separate-instance setup and logo replacement.
+
 ## Stable release entrypoint headers
 
 `/student/sw.js` and `/family/sw.js` are stable URLs across releases. The

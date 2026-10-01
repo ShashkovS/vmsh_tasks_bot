@@ -74,7 +74,7 @@ def _scope(request: web.Request) -> tuple[str, tuple[tuple[int, str, str], ...]]
     targets = tuple(
         sorted(
             {
-                (item.course_id, item.active_group_id, item.attendance_mode)
+                (item.course_id, item.active_group_id, item.effective_attendance_mode)
                 for item in enrollments
             }
         )

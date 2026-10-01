@@ -67,3 +67,11 @@
   в production у обоих workers (после старта текущий lag 0.7–0.9 мс).
   Browser failure события появятся после обновления клиентов и реальных ошибок;
   их end-to-end приём проверен тестами, production ошибки не провоцировались.
+
+- 2026-09-28 evening audit: анализ окна 13:38–16:38 UTC по Prometheus,
+  новым media/loop metrics и Sentry; runtime не меняется. Уточняются короткие
+  DB queue spikes и клиентские TypeError; полный журнал окна пока недоступен.
+- Evening audit завершён: [отчёт](2026-09-28-peak-analysis.md), raw Prometheus сохранён.
+  93k HTTP, 0,294% >1s, 6 HTTP500; короткий admission burst, upload convert ~81%.
+  Sentry query errors массовые, их первопричина скрыта текущей sanitization.
+  Runtime не менялся; полный journal и transport classification остаются follow-up.

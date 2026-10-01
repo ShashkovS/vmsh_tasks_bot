@@ -98,6 +98,7 @@ describe('Family course client', () => {
         status: 'active',
         sortOrder: 1,
         accentKey: 'math',
+        hasInPersonClasses: true,
         version: 1,
       },
       activeGroupId: 'group.b',

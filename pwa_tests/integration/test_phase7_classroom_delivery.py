@@ -151,9 +151,7 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_delivery(connection)
 
-        preview = preview_classroom_delivery(
-            connection, plan_public_id="cap-1"
-        )
+        preview = preview_classroom_delivery(connection, plan_public_id="cap-1")
         assert (preview["recipient_count"], preview["changed_count"]) == (1, 1)
         assert preview["telegram_unavailable_count"] == 0
         assert preview["recipients"][0]["telegram_available"] is True
@@ -198,15 +196,13 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
         )
         assert repeated["batch"]["public_id"] == "cdb-1"
         assert (
-            read_latest_classroom_delivery_batch(connection, "cap-1")[
-                "batch"
-            ]["public_id"]
+            read_latest_classroom_delivery_batch(connection, "cap-1")["batch"][
+                "public_id"
+            ]
             == "cdb-1"
         )
 
-        next_preview = preview_classroom_delivery(
-            connection, plan_public_id="cap-1"
-        )
+        next_preview = preview_classroom_delivery(connection, plan_public_id="cap-1")
         assert next_preview["changed_count"] == 0
 
 
@@ -217,9 +213,7 @@ def test_latest_delivery_is_empty_before_first_send(tmp_path):
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_delivery(connection)
-        assert (
-            read_latest_classroom_delivery_batch(connection, "cap-1") is None
-        )
+        assert read_latest_classroom_delivery_batch(connection, "cap-1") is None
 
 
 def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path):
@@ -229,9 +223,7 @@ def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_delivery(connection)
-        preview = preview_classroom_delivery(
-            connection, plan_public_id="cap-1"
-        )
+        preview = preview_classroom_delivery(connection, plan_public_id="cap-1")
         create_classroom_delivery_batch(
             connection,
             plan_public_id="cap-1",
@@ -298,9 +290,7 @@ def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_delivery(connection)
-        preview = preview_classroom_delivery(
-            connection, plan_public_id="cap-1"
-        )
+        preview = preview_classroom_delivery(connection, plan_public_id="cap-1")
 
         with pytest.raises(ClassroomDeliveryConflict, match="preview_changed"):
             create_classroom_delivery_batch(
@@ -326,3 +316,48 @@ def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):
                 plan_public_id="cap-1",
                 expected_version=int(preview["plan_version"]),
             )
+
+
+def test_disabled_course_blocks_pending_room_delivery_without_losing_history(tmp_path):
+    database_path = tmp_path / "disabled-delivery.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys=ON")
+        _seed_delivery(connection)
+        preview = preview_classroom_delivery(connection, plan_public_id="cap-1")
+        result = create_classroom_delivery_batch(
+            connection,
+            plan_public_id="cap-1",
+            expected_plan_version=preview["plan_version"],
+            expected_snapshot_hash=preview["snapshot_hash"],
+            idempotency_key="disabled-room-test",
+            pwa_selected=True,
+            telegram_selected=True,
+            actor_user_id=2,
+            now=NOW,
+        )
+        connection.execute("UPDATE courses SET has_in_person_classes=0")
+        assert (
+            preview_classroom_delivery(connection, plan_public_id="cap-1")[
+                "recipient_count"
+            ]
+            == 0
+        )
+        assert (
+            claim_next_telegram_recipient(connection, result["batch"]["public_id"])
+            is None
+        )
+        assert (
+            connection.execute(
+                "SELECT telegram_state FROM classroom_assignment_delivery_recipients"
+            ).fetchone()[0]
+            == "suppressed"
+        )
+        assert (
+            connection.execute("SELECT count(*) FROM classroom_assignments").fetchone()[
+                0
+            ]
+            == 1
+        )
+        assert read_student_classroom_assignments(connection, 1) == []

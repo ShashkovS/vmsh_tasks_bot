@@ -65,7 +65,9 @@ export function ClassroomAssignmentStatus({
       <Alert className={className} role="status" tone="warning">
         <RefreshCw aria-hidden="true" />
         <AlertContent>
-          <AlertTitle><Trans>Аудитория переназначается</Trans></AlertTitle>
+          <AlertTitle>
+            <Trans>Аудитория переназначается</Trans>
+          </AlertTitle>
           <AlertDescription>
             {audience === 'student'
               ? t`Прежняя аудитория больше не действует. Новая появится здесь после подтверждения.`
@@ -109,7 +111,9 @@ export function ClassroomAssignmentStatus({
             </AlertDescription>
           ) : (
             <>
-              <AlertTitle><Trans>Очная аудитория не требуется</Trans></AlertTitle>
+              <AlertTitle>
+                <Trans>Очная аудитория не требуется</Trans>
+              </AlertTitle>
               <AlertDescription>
                 {studentName
                   ? t`${studentName}: сейчас онлайн-режим.`
@@ -166,7 +170,9 @@ export function ClassroomAssignmentStatus({
             </p>
           ) : null}
         </div>
-        <Badge variant="success"><Trans>Назначена</Trans></Badge>
+        <Badge variant="success">
+          <Trans>Назначена</Trans>
+        </Badge>
       </div>
       {audience === 'student' && onOpenNotificationSettings ? (
         <Button className="mt-3" onClick={onOpenNotificationSettings} size="xs" variant="ghost">

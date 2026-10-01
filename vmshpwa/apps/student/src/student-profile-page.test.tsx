@@ -42,3 +42,31 @@ describe('Student course settings', () => {
     )
   })
 })
+
+it('hides attendance for an online-only course while allowing a group change', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  const enrollment = courseEnrollmentSchema.parse(studentAccessFixture.response.enrollments[0])
+  enrollment.course.hasInPersonClasses = false
+  enrollment.attendanceMode = 'in_person'
+  render(
+    <StudentEnrollmentSettings
+      enrollment={enrollment}
+      error={false}
+      saving={false}
+      onSave={onSave}
+    />,
+  )
+  expect(screen.queryByLabelText('Формат занятий')).toBeNull()
+  fireEvent.change(screen.getByLabelText('Активная группа'), {
+    target: { value: enrollment.allowedGroups[1]!.groupId },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Изменить' }))
+  expect(screen.queryByText(/резервируют место/)).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить изменения' }))
+  await waitFor(() =>
+    expect(onSave).toHaveBeenCalledWith({
+      activeGroupId: enrollment.allowedGroups[1]!.groupId,
+      version: enrollment.version,
+    }),
+  )
+})

@@ -5,6 +5,8 @@ import { useState, type FormEvent } from 'react'
 import { PageLayout } from '@vmsh/app-shell'
 import type { StaffLoginRequest } from '@vmsh/contracts'
 import {
+  Sign179,
+  useBrandIdentity,
   Alert,
   AlertContent,
   AlertDescription,
@@ -28,6 +30,8 @@ export function StaffLoginPage({
   loginState?: StaffLoginState
   onSubmit?: (request: StaffLoginRequest) => void | Promise<void>
 }) {
+  const brand = useBrandIdentity()
+  const supportEmail = brand.supportEmail
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -52,7 +56,12 @@ export function StaffLoginPage({
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <PageLayout
         description={t`Учитель видит разрешённые группы; admin — административные разделы.`}
-        eyebrow={t`ВМШ 179`}
+        eyebrow={
+          <span className="inline-flex items-center gap-2">
+            <Sign179 size={32} />
+            {brand.name}
+          </span>
+        }
         title={t`Вход для преподавателя`}
         width="reading"
       >
@@ -125,8 +134,8 @@ export function StaffLoginPage({
               <p className="text-center text-caption text-muted-foreground">
                 <Trans>
                   Не помните доступ? Напишите на{' '}
-                  <a className="text-link underline" href="mailto:vmsh@179.ru">
-                    vmsh@179.ru
+                  <a className="text-link underline" href={`mailto:${supportEmail}`}>
+                    {supportEmail}
                   </a>
                   .
                 </Trans>

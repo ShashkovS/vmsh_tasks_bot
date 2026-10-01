@@ -349,3 +349,5 @@ export * from './organizer-questions'
 export * from './whiteboard-export'
 export * from './statistics-recalculation'
 export * from './statistics-reports'
+
+export * from './branding'

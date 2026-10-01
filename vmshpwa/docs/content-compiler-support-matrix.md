@@ -142,7 +142,6 @@ registers) не исполняются и не дублируют semantic probl
 - opt-in real Telegram Rich Message lifecycle;
 - representative PDF comparison, Storybook visual approval и browser E2E.
 
-
 Диалекты newlistok/newlistokutf: [реестр и границы поддержки](latex-content-pipeline.md#диалекты-newlistok-и-newlistokutf--29-сентября-2026).
 Парные определения используют существующий note/callout; section/subsection
 сохраняют иерархию заголовков. Проверка обоих примеров владельца и всех

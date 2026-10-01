@@ -64,6 +64,7 @@ def list_courses(
                course.status,
                course.sort_order,
                course.accent_key,
+               course.has_in_person_classes,
                course.version,
                count(DISTINCT enrollment.student_user_id) AS active_students
         FROM courses AS course
@@ -124,7 +125,7 @@ def find_course(
     row = connection.execute(
         "SELECT course.id, course.public_id, course.season_id, course.code, "
         "course.name, course.subject_code, course.status, course.sort_order, "
-        "course.accent_key, course.version, "
+        "course.accent_key, course.has_in_person_classes, course.version, "
         "(SELECT count(DISTINCT enrollment.student_user_id) "
         " FROM course_enrollments AS enrollment "
         " WHERE enrollment.course_id = course.id AND enrollment.status = 'active' "
@@ -147,12 +148,13 @@ def insert_course(
     accent_key: str,
     actor_user_id: int,
     now: str,
+    has_in_person_classes: bool = True,
 ) -> str:
     row = connection.execute(
         "INSERT INTO courses "
         "(season_id, code, name, subject_code, status, sort_order, "
-        "accent_key, created_at, updated_at, created_by, updated_by) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
+        "accent_key, has_in_person_classes, created_at, updated_at, created_by, updated_by) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
         (
             season_id,
             code,
@@ -161,6 +163,7 @@ def insert_course(
             status,
             sort_order,
             accent_key,
+            int(has_in_person_classes),
             now,
             now,
             actor_user_id,
@@ -183,10 +186,12 @@ def update_course(
     accent_key: str,
     actor_user_id: int,
     now: str,
+    has_in_person_classes: bool | None = None,
 ) -> bool:
     cursor = connection.execute(
         "UPDATE courses SET code = ?, name = ?, subject_code = ?, status = ?, "
-        "sort_order = ?, accent_key = ?, updated_at = ?, updated_by = ?, "
+        "sort_order = ?, accent_key = ?, has_in_person_classes = coalesce(?, has_in_person_classes), "
+        "updated_at = ?, updated_by = ?, "
         "version = version + 1 WHERE public_id = ? AND version = ?",
         (
             code,
@@ -195,6 +200,7 @@ def update_course(
             status,
             sort_order,
             accent_key,
+            None if has_in_person_classes is None else int(has_in_person_classes),
             now,
             actor_user_id,
             public_id,

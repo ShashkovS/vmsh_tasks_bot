@@ -29,7 +29,12 @@ export function GroupBanner({
         )}
       </AlertContent>
       {banner.dismissible && onDismiss ? (
-        <Button aria-label={t`Скрыть объявление`} onClick={onDismiss} size="icon-sm" variant="ghost">
+        <Button
+          aria-label={t`Скрыть объявление`}
+          onClick={onDismiss}
+          size="icon-sm"
+          variant="ghost"
+        >
           <X aria-hidden="true" />
         </Button>
       ) : null}

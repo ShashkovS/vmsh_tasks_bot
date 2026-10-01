@@ -1,5 +1,25 @@
 # Статус плана разработки
 
+## TLF application rollout — 2026-09-30
+
+Deployed: prep.leaders.tech, fresh independent DB/admin, TLF identity/English,
+two PWA workers and one signed durable Zoom archive worker. Admin/session,
+25 public HTTP checks, converters, S3 cleanup, archive restart persistence,
+backup restore and four scrape targets passed. Backups every eight hours with
+14-day retention, analytics every two hours; no automatic deploy.
+Real Zoom app subscriptions and queue/lesson interpretation remain follow-ups.
+[Scope, implementation, proofs and runbook](../../../docs/deploy/tlf-app/README.md).
+
+## TLF monitoring — 2026-09-30
+
+Deployed: vmshbeget monitoring adapted to grafprep.leaders.tech with local-only
+metrics, fresh owner-approved Grafana/Prometheus state and independent targets.
+Verified HTTPS/login, authenticated provisioned 18-panel dashboard, datasource
+health, three up targets, Promtool/nginx checks and preservation of live services.
+[Reviewed configuration and installer](../../../docs/deploy/tlf-monitoring/README.md).
+PWA discovery is active: four scrape targets up. Shared NATS unchanged;
+its exporter stays disabled because enabling monitoring requires a restart.
+
 ## Optional legacy integrations — 2026-09-30
 
 Implemented: an empty `telegram_bot_token` disables legacy bot imports, client
@@ -12,6 +32,26 @@ passed using synthetic credentials and temporary databases without external
 API calls. Real legacy aiohttp startup/shutdown and Telegram startup without
 Google verified; the `apps="zoom_events_parser"` case excludes Telegram even
 with a configured token. Focused Ruff and changed-file whitespace checks pass.
+
+## TLF certificate preparation — 2026-09-30
+
+Issued separate Let's Encrypt certificates for prep.leaders.tech and
+grafprep.leaders.tech on tlfprepagent, valid through 2026-12-29. Existing
+renewal timer active; OpenSSL SAN/expiry and nginx checks pass. Nginx file
+checksums unchanged. [Certificate paths and remaining deployment scope](../../docs/branding.md#certificate-preparation--2026-09-30).
+Application and Grafana TLS virtual hosts are now deployed and verified;
+renewal remains on the existing Certbot timer.
+
+## Instance branding — 2026-09-29
+
+Implemented: repository-owned VMSh/TLF profiles, admin selection, persisted
+instance setting, branded manifests/push icons and English default for TLF.
+[Decision, implementation and deployment steps](../../docs/branding.md).
+Validation: three-browser E2E, five Storybook scenarios, focused backend/unit
+tests, schema/nginx checks, typechecks, lint, catalogs and four production builds
+passed. Mobile and light/dark captures inspected. Separate prep.leaders.tech
+infrastructure, deployment and live production verification are complete;
+see the TLF application rollout above.
 
 ## Staff violin correction — 27 September 2026
 
@@ -60,7 +100,6 @@ in 3.9 minutes**, with no retries. Focused ESLint and Prettier checks passed.
 The complete task took about five minutes, within the owner's ten-minute cap.
 No full-suite rerun, commit or push. The full P8 gate remains pending; these
 results supersede the earlier "unverified" status for these three repairs.
-
 
 ## i18n P8 — 27 September 2026, implementation complete; final regression resumed
 
@@ -3440,7 +3479,6 @@ Storybook просмотрен в браузере, вставка ссылки 
 проверена через реальную кнопку. HTTP 200 провайдера не подтверждает playback;
 предыдущий вывод о необходимости VK Login не доказан проверкой внутри iframe.
 
-
 27 September rerun found a reproducible Firefox offline-write failure: an
 existing service recovery loop held a new offline answer in `sending`.
 `packages/contracts/src/service-availability.ts` now rejects offline writes
@@ -3477,7 +3515,6 @@ checks passed. Full lint/typecheck/build and i18n gates passed; no migration.
   [решение, стоимость и проверки](../../../docs/performance/2026-09-28-instrumentation.md).
   UI и поведение загрузки не меняются; alerts/export требуют администратора.
 
-
 ## Student task subparts — 2026-09-28
 
 Implemented: feed and standalone task reuse
@@ -3486,7 +3523,6 @@ for per-subpart statuses and answer panels. Standalone panels start expanded
 and collapse independently. Targeted Vitest: 7 tests passed; Student TypeScript
 and scoped ESLint passed. Browser visual verification and deployment not performed.
 Regression: [`student-worksheet-bindings.test.tsx`](../../apps/student/src/student-worksheet-bindings.test.tsx).
-
 
 ### 2026-09-29 — newlistok dialect parity (verified)
 
@@ -3508,6 +3544,38 @@ signature verification cannot reach npm registry in this environment. Full
 workspace build/E2E were not run for this bounded compiler/label increment.
 Requirements and implementation links: `vmshpwa/docs/latex-content-pipeline.md`
 (dialect section), `vmshpwa/docs/task-titles.md` (display alphabet).
+
+### 2026-09-30 — English worksheet author guide
+
+Added `_vmsh_examples/newlistokutf-pwa-guide.tex`, a short TLF companion to
+`newlistokutf.tex`: full private-material command pairs and hidesol, image
+placement/relative assets, TikZ, and the supported PWA subset. References:
+`helpers/pwa/content/dialect.py`, `parser.py`, and the compiler support matrix.
+All three embedded examples pass the actual compiler; private branches remain
+excluded from the condition derivative. English-only source verified.
+Built-in editor PDF compilation succeeded; the source is open in the editor.
+
+English author-guide correction: inspected `usl-21-*` and `usl-27-*` sources
+in `_vmsh_examples`. The open `newlistokutf-pwa-guide.tex` now documents
+`pictures/` + `graphicspath`, inline includegraphics versus side-picture/TikZ
+wrappers, SetIndents/DefaultIndents, and semantic image ownership. All three
+examples pass compile_latex; side hints right/left and 35mm widths verified.
+The built-in editor compiler confirms successful document compilation.
+
+### 2026-09-30 — TLF worksheet hints and solutions
+
+Added English suggestion/solution blocks in `_vmsh_examples/Class-ex-9.tex`
+and `_vmsh_examples/Prep-10.tex`: all 17 active problems, plus the existing
+commented-out problem (kept excluded, with its non-convex-order caveat).
+Problem statements, headers, existing figures and comment boundaries are
+unchanged. Actual compiler checks pass for condition/hint/solution roles;
+condition HTML is byte-for-byte identical before/after in both worksheets.
+Native editor PDF validation is blocked by its missing project dependency
+`newlistokutf.sty`; the original local style dependency is preserved.
+
+## 2026-10-01: course in-person setting
+
+Implemented: live `hasInPersonClasses`, preserved preferences/history, per-course Student/Family visibility and guarded in-person operations. Targeted UI tests and real-runtime Chromium/Firefox/WebKit acceptance passed. Deployed manually to prep as `tlfprep-20261001-attendance`: backup/restore integrity, migration preservation, two PWA workers + one Zoom worker and public HTTP checks passed. Existing courses remained enabled during migration; the owner subsequently requested all prep courses online-only, and both flags were disabled through Staff. RU/EN, schema artifacts, frontend type checks and scoped lint passed; backend checks cover pending deliveries/layout/live operations and print history. Requirement: [course attendance settings](../../docs/course-attendance-settings.md).
 
 ### 2026-10-01 — English problem-type headings (verified)
 
@@ -3531,7 +3599,6 @@ the existing inventory validator rejects. Those files and the inventory policy
 were not changed. Existing revisions need reimport/recompilation to acquire the
 new inferred types; default remains Written.
 
-
 ### 2026-10-01 — Worksheet heading locale (verified)
 
 The shared SemanticMathDocument problem label now uses Lingui: English Staff
@@ -3548,3 +3615,26 @@ pass; scoped ESLint, content TypeScript, i18n catalog check and diff check pass.
 Frontend commands used installed node_modules/.bin to avoid pnpm registry
 verification. No backend/compiler changes or deployment are needed for the
 source fix; the running application receives it with its next frontend build.
+
+### 2026-10-01 — Consolidation and two-portal rollout (in progress)
+
+Owner requests consolidation into vmshpwa and sequential rollout to
+vmsh.shashkovs.ru and prep.leaders.tech. Current PWA branches (including
+codex/rich-markdown) are already ancestors. Owner explicitly excludes historical
+experimental branches; consolidation includes the current PWA source work only. Preserve and review all
+current source work; exclude local TeX build output and credentials. Run
+integration gates, retain verified host-specific DB/source/static rollback
+artifacts, rehearse migrations, then deploy and verify each independent portal.
+Implementation/runbooks: [deployment.md](../../docs/deployment.md),
+[production checklist](../../docs/production-rollout-checklist.md),
+[VMSh deploy](../../../docs/deploy/deploy-vmsh-tasks-bot.sh),
+[TLF operations](../../../docs/deploy/tlf-app/README.md).
+
+Consolidation gate update: owner excludes legacy experimental branches. VMSh
+SQLite online backup and migration 0101–0103 rehearsal passed, including rollback
+to 0100 and reapply. Integrity and counts preserved (1 course, 1451 enrollments,
+4021 accounts, 34402 results); existing courses stay enabled and account locales
+stay explicit. Query performance guard passed (~47 ms). Host evidence remains
+in /tmp/vmsh-consolidation-vaq_iyb3; no data rows or credentials copied into Git.
+All changed Python files pass Ruff; complete frontend type checks and RU/EN
+catalog checks pass. Full backend/frontend suites and rollout gates continue.

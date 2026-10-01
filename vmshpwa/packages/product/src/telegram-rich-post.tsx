@@ -254,15 +254,29 @@ function StateNotice({
 }) {
   switch (state) {
     case 'source-revised':
-      return <Badge variant="info"><Trans>Изменено в источнике</Trans></Badge>
+      return (
+        <Badge variant="info">
+          <Trans>Изменено в источнике</Trans>
+        </Badge>
+      )
     case 'local-override':
-      return <Badge variant="warning"><Trans>Локальная правка редакции</Trans></Badge>
+      return (
+        <Badge variant="warning">
+          <Trans>Локальная правка редакции</Trans>
+        </Badge>
+      )
     case 'source-deleted':
-      return <Badge variant="neutral"><Trans>Удалено в источнике</Trans></Badge>
+      return (
+        <Badge variant="neutral">
+          <Trans>Удалено в источнике</Trans>
+        </Badge>
+      )
     case 'delivery-error':
       return (
         <div className="flex items-center gap-2">
-          <Badge variant="danger"><Trans>Ошибка доставки</Trans></Badge>
+          <Badge variant="danger">
+            <Trans>Ошибка доставки</Trans>
+          </Badge>
           {onRetryDelivery ? (
             <Button onClick={onRetryDelivery} size="xs" variant="outline">
               <Trans>Повторить</Trans>

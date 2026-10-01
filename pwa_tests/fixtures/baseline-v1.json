@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
   "schemaVersion": 3,
-  "expectedCanonicalDigest": "ad259428e5faf4b1caac1970fb76c756ee734c8754cf0bce01c5fb38be75b6d8",
+  "expectedCanonicalDigest": "662fa3416b9b3a368821a0148042215e4f1f64aa0befb70d0ed0d1a381c01802",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",
@@ -13,7 +13,10 @@
     "familyPersona": {
       "fixtureKey": "fixture-family-1",
       "accountPublicId": "a-1101",
-      "studentUserIds": [101, 102],
+      "studentUserIds": [
+        101,
+        102
+      ],
       "materializeInPhase": 1
     }
   },
@@ -489,15 +492,51 @@
       }
     ],
     "lessons": [
-      { "id": 3901, "group_id": "н", "lesson": 39 },
-      { "id": 3902, "group_id": "п", "lesson": 39 },
-      { "id": 3903, "group_id": "э", "lesson": 39 },
-      { "id": 4001, "group_id": "н", "lesson": 40 },
-      { "id": 4002, "group_id": "п", "lesson": 40 },
-      { "id": 4003, "group_id": "э", "lesson": 40 },
-      { "id": 4101, "group_id": "н", "lesson": 41 },
-      { "id": 4102, "group_id": "п", "lesson": 41 },
-      { "id": 4103, "group_id": "э", "lesson": 41 }
+      {
+        "id": 3901,
+        "group_id": "н",
+        "lesson": 39
+      },
+      {
+        "id": 3902,
+        "group_id": "п",
+        "lesson": 39
+      },
+      {
+        "id": 3903,
+        "group_id": "э",
+        "lesson": 39
+      },
+      {
+        "id": 4001,
+        "group_id": "н",
+        "lesson": 40
+      },
+      {
+        "id": 4002,
+        "group_id": "п",
+        "lesson": 40
+      },
+      {
+        "id": 4003,
+        "group_id": "э",
+        "lesson": 40
+      },
+      {
+        "id": 4101,
+        "group_id": "н",
+        "lesson": 41
+      },
+      {
+        "id": 4102,
+        "group_id": "п",
+        "lesson": 41
+      },
+      {
+        "id": 4103,
+        "group_id": "э",
+        "lesson": 41
+      }
     ],
     "problems": [
       {

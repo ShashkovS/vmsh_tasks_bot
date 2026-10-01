@@ -135,9 +135,8 @@ def _release_app(
     async def landing(_request: web.Request) -> web.Response:
         return web.Response(
             text=(
-                '<!doctype html><title>ВМШ 179</title>'
-                '<a href="/student/">Student</a>'
-                '<a href="/family/">Family</a>'
+                '<!doctype html><title>…</title><div id="root"></div>'
+                '<script type="module" crossorigin src="/landing/assets/index-test.js?release=test"></script>'
             ),
             content_type="text/html",
             headers={"Cache-Control": "no-cache"},
@@ -151,6 +150,10 @@ def _release_app(
     app.router.add_get("/{audience:student|family}/sw.js", worker)
     app.router.add_get("/{audience:student|family|staff}/{tail:.*}", static)
     app.router.add_get("/", landing)
+    app.router.add_get(
+        "/landing/assets/index-test.js",
+        lambda _: web.Response(text="export {};", content_type="text/javascript"),
+    )
     return app
 
 

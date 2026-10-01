@@ -50,7 +50,7 @@ def _prepare_database(
         connection.execute("PRAGMA journal_mode = WAL")
         account_id, session_id = _seed_account(connection)
         connection.execute(
-            "UPDATE auth_accounts SET locale = ? WHERE id = ?",
+            "UPDATE auth_accounts SET locale = ?, locale_explicit = 1 WHERE id = ?",
             (recipient_locale, account_id),
         )
         register_subscription(
@@ -226,7 +226,9 @@ async def test_group_announcement_push_uses_announcement_text(tmp_path):
 
     result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
     assert result["sent"] == 2
-    announcement = next(item for item in sent if item["category"] == "group_announcement")
+    announcement = next(
+        item for item in sent if item["category"] == "group_announcement"
+    )
     assert announcement["title"] == "Новое объявление"
     assert announcement["body"] == "Собираемся у главного входа в 16:50."
     assert announcement["route"] == "/student/"
@@ -287,9 +289,7 @@ async def test_family_digest_push_uses_one_lesson_summary(tmp_path):
 
     assert result["sent"] == 1
     assert sent[0]["title"] == "Итоги занятия готовы"
-    assert sent[0]["body"] == (
-        "Начинающие · занятие 41. Результаты уже в кабинете."
-    )
+    assert sent[0]["body"] == ("Начинающие · занятие 41. Результаты уже в кабинете.")
 
 
 async def test_english_family_digest_keeps_group_name_and_translates_template(tmp_path):
@@ -319,7 +319,9 @@ async def test_english_family_digest_keeps_group_name_and_translates_template(tm
 
     assert result["sent"] == 1
     assert sent[0]["title"] == "Lesson summary is ready"
-    assert sent[0]["body"] == "Начинающие · lesson 41. Results are already in the account."
+    assert (
+        sent[0]["body"] == "Начинающие · lesson 41. Results are already in the account."
+    )
 
 
 async def test_temporary_failure_retries_without_duplicate_row(tmp_path):
@@ -461,3 +463,53 @@ async def test_configured_scheduler_starts_and_stops(tmp_path):
 
     assert len(delivered) == 1
     assert app[pwa_app.PWA_PUSH_DELIVERY_TASK].done()
+
+
+async def test_course_disabled_after_claim_blocks_remaining_room_push(tmp_path):
+    # vmshpwa/docs/course-attendance-settings.md: pending deliveries recheck.
+    _, factory = _prepare_database(tmp_path)
+
+    def subscribe(c):
+        register_subscription(
+            c,
+            account_id=1,
+            session_id=1,
+            endpoint="https://push.example.test/second-device",
+            p256dh=_key(b"\x04" + b"q" * 64),
+            auth_secret=_key(b"b" * 16),
+            expiration_time=None,
+            user_agent="Synthetic Browser",
+            now=NOW,
+        )
+
+    factory.run_write(subscribe)
+    sent = []
+
+    async def sender(subscription, payload):
+        sent.append(payload)
+        factory.run_write(
+            lambda c: c.execute("UPDATE courses SET has_in_person_classes=0")
+        )
+
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+    assert result["claimed"] == 2 and result["sent"] == 1 and result["suppressed"] == 1
+    assert len(sent) == 1
+    assert (
+        factory.run_read(
+            lambda c: c.execute(
+                "SELECT count(*) AS n FROM notification_events"
+            ).fetchone()["n"]
+        )
+        == 1
+    )
+    assert (
+        factory.run_read(
+            lambda c: c.execute(
+                "SELECT last_error_code FROM notification_deliveries WHERE state='suppressed'"
+            ).fetchone()["last_error_code"]
+        )
+        == "course_in_person_disabled"
+    )
+    assert (await deliver_web_push_once(factory, sender, now=DELIVERY_TIME))[
+        "claimed"
+    ] == 0

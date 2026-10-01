@@ -5,6 +5,8 @@ import { useState, type FormEvent } from 'react'
 import { PageLayout } from '@vmsh/app-shell'
 import type { StudentLoginRequest } from '@vmsh/contracts'
 import {
+  Sign179,
+  useBrandIdentity,
   Alert,
   AlertContent,
   AlertDescription,
@@ -35,6 +37,8 @@ export function StudentLoginPage({
   loginState?: StudentLoginState
   onSubmit?: (request: StudentLoginRequest) => void | Promise<void>
 }) {
+  const brand = useBrandIdentity()
+  const supportEmail = brand.supportEmail
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState(initialUsername)
   const [telegramToken, setTelegramToken] = useState('')
@@ -59,7 +63,12 @@ export function StudentLoginPage({
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <PageLayout
         description={t`Используйте логин из письма после регистрации и текущий токен Telegram-бота как пароль.`}
-        eyebrow={t`ВМШ 179`}
+        eyebrow={
+          <span className="inline-flex items-center gap-2">
+            <Sign179 size={32} />
+            {brand.name}
+          </span>
+        }
         title={t`Личный кабинет школьника`}
         width="reading"
       >
@@ -134,8 +143,8 @@ export function StudentLoginPage({
               <p className="text-center text-caption text-muted-foreground">
                 <Trans>
                   Не помните доступ? Напишите на{' '}
-                  <a className="text-link underline" href="mailto:vmsh@179.ru">
-                    vmsh@179.ru
+                  <a className="text-link underline" href={`mailto:${supportEmail}`}>
+                    {supportEmail}
                   </a>
                   .
                 </Trans>

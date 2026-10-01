@@ -28,6 +28,7 @@ interface CourseDraft {
   status: CatalogStatus
   sortOrder: string
   accentKey: string
+  hasInPersonClasses: boolean
 }
 
 interface GroupDraft {
@@ -116,6 +117,7 @@ export function CourseCatalogEditor({
         status: course.status,
         sortOrder: String(course.sortOrder),
         accentKey: course.accentKey,
+        hasInPersonClasses: course.hasInPersonClasses ?? true,
       }
     : {
         code: '',
@@ -124,6 +126,7 @@ export function CourseCatalogEditor({
         status: 'draft',
         sortOrder: '0',
         accentKey: 'course',
+        hasInPersonClasses: true,
       }
   const [draft, setDraft] = useState(() => readDraft(storageKey, fallback))
   const [storageAvailable, setStorageAvailable] = useState(true)
@@ -144,6 +147,7 @@ export function CourseCatalogEditor({
       status: draft.status,
       sortOrder: Number(draft.sortOrder),
       accentKey: draft.accentKey,
+      hasInPersonClasses: draft.hasInPersonClasses,
     }
     onSave(common)
   }
@@ -207,6 +211,16 @@ export function CourseCatalogEditor({
               type="number"
               value={draft.sortOrder}
             />
+          </Label>
+          {/* docs/course-attendance-settings.md: live metadata, no restart required. */}
+          <Label className="flex items-center gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={draft.hasInPersonClasses}
+              disabled={saving}
+              onChange={(event) => updateDraft({ hasInPersonClasses: event.target.checked })}
+            />
+            <Trans>В курсе есть очные занятия</Trans>
           </Label>
           {!storageAvailable ? (
             <p className="text-small text-status-error sm:col-span-2" role="alert">

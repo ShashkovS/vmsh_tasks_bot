@@ -275,6 +275,7 @@ def _setup(*, force_production=False):
             pwa_throttle_pepper_b64=str(
                 profile_values.get("pwa_throttle_pepper_b64", "")
             ).strip(),
+            zoom_secret_token=str(profile_values.get("zoom_secret_token", "")).strip(),
             first_admin_password=configured_first_admin_password,
             legacy_print_api_token=profile_values.get("legacy_print_api_token", ""),
             openrouter_api_key=str(

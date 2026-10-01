@@ -162,3 +162,33 @@ export const CourseNotificationOverrides: Story = {
     await expect(mathNews).toBeChecked()
   },
 }
+
+export const MixedAttendanceAvailability: Story = {
+  name: 'One online-only course and one with in-person classes',
+  render: () => (
+    <div className="space-y-3">
+      <CourseCard
+        enrollment={{ ...mathEnrollment, course: { ...mathCourse, hasInPersonClasses: false } }}
+        classroomName="301"
+        lessonDate="26 января"
+        lessonNumber={41}
+        phase="Материалы опубликованы"
+        progressLabel="3 задачи зачтено"
+      />
+      <CourseCard
+        enrollment={physicsEnrollment}
+        lessonDate="29 января"
+        lessonNumber={7}
+        phase="Условие опубликовано"
+        progressLabel="Есть черновик"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByText('Очно', { exact: true })).not.toBeInTheDocument()
+    await expect(canvas.queryByText('Аудитория: 301')).not.toBeInTheDocument()
+    await expect(canvas.getByText('Онлайн', { exact: true })).toBeInTheDocument()
+    await expect(canvas.getByText('Материалы опубликованы')).toBeInTheDocument()
+  },
+}

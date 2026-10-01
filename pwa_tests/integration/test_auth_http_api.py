@@ -333,11 +333,16 @@ async def test_student_login_ignores_case_and_whitespace_in_both_credentials(
 
 
 @pytest.mark.asyncio
-async def test_first_admin_bootstrap_can_login_through_staff_http_route(auth_http_client):
+@pytest.mark.parametrize("profile", ["vmsh", "tlf-prep-clubs"])
+async def test_first_admin_bootstrap_can_login_through_staff_http_route(auth_http_client, profile):
     """A fresh install must make the configured bootstrap password usable."""
 
     password = "synthetic-first-admin-password"
     factory = auth_http_client.app[AUTH_HTTP_FACTORY]
+    if profile == "tlf-prep-clubs":
+        factory.run_write(lambda c: c.execute(
+            "UPDATE pwa_branding SET profile_id='tlf-prep-clubs', default_locale='en' WHERE id=1"
+        ))
     created = await ensure_first_global_admin(
         factory,
         Config(first_admin_password=password),
@@ -355,6 +360,10 @@ async def test_first_admin_bootstrap_can_login_through_staff_http_route(auth_htt
     payload = await response.json()
     assert payload["principal"]["accountId"] == "a-4"
     assert payload["principal"]["role"] == "admin"
+    if profile == "tlf-prep-clubs":
+        assert factory.run_read(lambda c: c.execute(
+            "SELECT display_name FROM auth_accounts WHERE username='admin'"
+        ).fetchone()["display_name"]) == "TLF Prep Clubs administrator"
     assert len(_set_cookie_values(response)) == 2
 
 
@@ -928,3 +937,65 @@ async def test_account_locale_requires_an_authenticated_same_origin_request(
         headers=_headers(),
     )
     assert cross_site.status == 403
+
+
+async def test_brand_default_applies_to_new_accounts_but_preserves_explicit_locale(
+    auth_http_client,
+):
+    # docs/branding.md: an inherited default is not an explicit account choice.
+    from db_methods.pwa.branding import update_branding
+
+    client = auth_http_client
+    factory = client.app[AUTH_HTTP_FACTORY]
+    await factory.run_write_async(
+        lambda connection: update_branding(
+            connection,
+            profile_id="tlf-prep-clubs",
+            default_locale="en",
+            expected_version=1,
+        )
+    )
+    login = await _student_login(client)
+    assert login.status == 200
+    assert (await login.json())["principal"]["locale"] == "en"
+    changed = await client.put(
+        "/student/api/v1/auth/locale",
+        json={"locale": "ru"},
+        headers=_headers(unsafe=True),
+    )
+    assert changed.status == 200
+    me = await client.get("/student/api/v1/auth/me", headers=_headers())
+    assert (await me.json())["principal"]["locale"] == "ru"
+    stored = await factory.run_read_async(
+        lambda connection: connection.execute(
+            "SELECT locale_explicit FROM auth_accounts WHERE id=1"
+        ).fetchone()
+    )
+    assert stored["locale_explicit"] == 1
+
+
+async def test_branding_write_uses_normal_authentication_and_origin_guards(
+    auth_http_client,
+):
+    client = auth_http_client
+    body = {"profileId": "tlf-prep-clubs", "version": 1}
+    anonymous = await client.put(
+        "/staff/api/v1/branding", json=body, headers=_headers(unsafe=True)
+    )
+    assert anonymous.status == 401
+    login = await client.post(
+        "/staff/api/v1/auth/login",
+        json=_login_body(AuthAudience.STAFF),
+        headers=_headers(unsafe=True),
+    )
+    assert login.status == 200
+    teacher = await client.put(
+        "/staff/api/v1/branding", json=body, headers=_headers(unsafe=True)
+    )
+    assert teacher.status == 403
+    cross_origin = await client.put(
+        "/staff/api/v1/branding",
+        json=body,
+        headers={**_headers(unsafe=True), "Origin": "https://untrusted.example"},
+    )
+    assert cross_origin.status == 403

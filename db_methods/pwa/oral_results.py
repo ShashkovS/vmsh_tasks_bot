@@ -41,7 +41,7 @@ def online_students(
         "AND group_record.group_id = enrollment.active_group_id "
         "JOIN users AS student ON student.id = enrollment.student_user_id "
         "WHERE course.public_id = ? AND group_record.public_id = ? "
-        "AND enrollment.status = 'active' AND enrollment.attendance_mode = 'online' "
+        "AND enrollment.status = 'active' AND (enrollment.attendance_mode = 'online' OR course.has_in_person_classes = 0) "
         "AND student.public_id IS NOT NULL "
         "ORDER BY student.surname COLLATE NOCASE, student.name COLLATE NOCASE, student.id",
         (course_public_id, group_public_id),
@@ -88,7 +88,7 @@ def online_student(
         "AND account.audience = 'student' AND account.status = 'active' "
         "WHERE student.public_id = ? AND course.public_id = ? "
         "AND group_record.public_id = ? AND enrollment.status = 'active' "
-        "AND enrollment.attendance_mode = 'online' LIMIT 1",
+        "AND (enrollment.attendance_mode = 'online' OR course.has_in_person_classes = 0) LIMIT 1",
         (student_public_id, course_public_id, group_public_id),
     ).fetchone()
     return None if row is None else dict(row)

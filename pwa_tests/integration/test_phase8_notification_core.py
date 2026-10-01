@@ -181,7 +181,7 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
             category="classroom_assignment",
             dedupe_key="classroom:one",
             route="/student/",
-            payload_json=json.dumps({"classroomName": "201"}),
+            payload_json=json.dumps({"classroomName": "201", "coursePublicId": "c-1"}),
             occurred_at=NOW,
             deliver_after=NOW,
             created_at=NOW,
@@ -201,7 +201,7 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
         items = read_events(
             connection, account_id=account_id, limit=10, unread_only=True, now=NOW
         )
-        assert items[0]["payload"] == {"classroomName": "201"}
+        assert items[0]["payload"] == {"classroomName": "201", "coursePublicId": "c-1"}
         first = acknowledge_event(
             connection,
             account_id=account_id,

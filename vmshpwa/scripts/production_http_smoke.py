@@ -315,9 +315,23 @@ async def _check_landing(session: aiohttp.ClientSession, origin: str) -> str:
     _require_cache(response, label, "no-cache")
     _require("text/html" in _header(response, "content-type"), label, "not HTML")
     html = response[2].decode("utf-8")
-    _require("ВМШ 179" in html, label, "brand is missing")
-    _require('href="/student/"' in html, label, "Student link is missing")
-    _require('href="/family/"' in html, label, "Family link is missing")
+    # Identity and links render after the repository-owned branding bootstrap;
+    # see docs/branding.md. Raw HTML is deliberately independent of the profile.
+    _require('<div id="root"></div>' in html, label, "application root is missing")
+    module = re.search(
+        r'<script\s+type="module"[^>]*\ssrc="(/landing/assets/[A-Za-z0-9_.-]+\.js'
+        r'(?:\?release=[a-z0-9._-]+)?)"',
+        html,
+    )
+    _require(module is not None, label, "landing module is missing")
+    script = await _read_response(session, origin, module[1], label="landing module")
+    _require_security(script, "landing module")
+    _require(bool(script[2]), "landing module", "body is empty")
+    _require(
+        "javascript" in _header(script, "content-type"),
+        "landing module",
+        "not JavaScript",
+    )
     _require("/staff/" not in html, label, "Staff link must not be public")
     return label
 

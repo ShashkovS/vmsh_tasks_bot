@@ -40,6 +40,10 @@ msgstr "{0} of {1} accepted"
 msgid "{0} класс"
 msgstr "Grade {0}"
 
+#: apps/family/src/main.tsx
+msgid "{brandName} — кабинет родителя"
+msgstr "{brandName} — Family"
+
 #: apps/family/src/family-notifications-page.tsx
 msgid "{group} · занятие {lesson}"
 msgstr "{group} · lesson {lesson}"
@@ -109,14 +113,9 @@ msgstr "Child's activity"
 msgid "Василий · последняя активность сегодня в 12:08"
 msgstr "Василий · last active today at 12:08 PM"
 
-#: apps/family/src/login-page.tsx
 #: apps/family/src/pages.tsx
 msgid "ВМШ 179"
 msgstr "VMSh 179"
-
-#: apps/family/src/main.tsx
-msgid "ВМШ 179 — кабинет родителя"
-msgstr "VMSh 179 — parent account"
 
 #: apps/family/src/login-page.tsx
 msgid "Войти"
@@ -581,8 +580,8 @@ msgid "Помощь"
 msgstr "Help"
 
 #: apps/family/src/login-page.tsx
-msgid "Помощь: <0>vmsh@179.ru</0>"
-msgstr "Help: <0>vmsh@179.ru</0>"
+msgid "Помощь: <0>{supportEmail}</0>"
+msgstr "Help: <0>{supportEmail}</0>"
 
 #: apps/family/src/family-notifications-page.tsx
 msgid "Последние события"

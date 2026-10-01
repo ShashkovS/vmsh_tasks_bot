@@ -6,14 +6,14 @@ import { t } from '@lingui/core/macro'
  */
 const COURSE_ACHIEVEMENT_LABELS: Readonly<Record<string, string>> = {
   get first_submission() {
- return t`Первая задача отправлена`
-},
+    return t`Первая задача отправлена`
+  },
   get first_accepted() {
- return t`Первая задача зачтена`
-},
+    return t`Первая задача зачтена`
+  },
   get first_written_submission() {
- return t`Первая письменная работа`
-},
+    return t`Первая письменная работа`
+  },
 }
 
 export function courseAchievementLabel(code: string): string | undefined {

@@ -562,13 +562,13 @@ TikZ extraction для условий, подсказок и решений: 12 
 Черновик публикуется снимком; повторная обработка старой revision не изменяет
 действующий листок. Генерация PDF исключена из этого изменения. Реализация: миграция
 0093, `figure_layout.py`, revision API и Staff `FigureLayoutEditor`.
+
 # Lesson blocks addendum
 
 The separate `LessonBlockService` composes with condition publication inside the
 same SQLite transaction for the `with_lesson` mode. It does not alter existing
 condition, hint, solution, news, or Telegram publication semantics. The
 implementation is documented in [lesson-blocks.md](../../docs/lesson-blocks.md).
-
 
 ### 2026-09-29 — newlistok dialect parity (verified)
 
@@ -591,6 +591,13 @@ workspace build/E2E were not run for this bounded compiler/label increment.
 Requirements and implementation links: `vmshpwa/docs/latex-content-pipeline.md`
 (dialect section), `vmshpwa/docs/task-titles.md` (display alphabet).
 
+### 2026-09-30 — Authoring handoff
+
+English-only TLF worksheet guidance is in
+`_vmsh_examples/newlistokutf-pwa-guide.tex` (paired private materials, student
+PDF switch, asset placement, supported subset). Its three examples have been
+validated with `compile_latex`; verification is recorded in STATUS.md.
+
 ### 2026-10-01 — English problem-type headings (verified)
 
 Implemented case-insensitive whole-word English type recognition in
@@ -612,7 +619,6 @@ the local corpus directory also contains owner-added guide/example files that
 the existing inventory validator rejects. Those files and the inventory policy
 were not changed. Existing revisions need reimport/recompilation to acquire the
 new inferred types; default remains Written.
-
 
 ### 2026-10-01 — Worksheet heading locale (verified)
 

@@ -18,6 +18,7 @@ export function toCourseEnrollmentView(enrollment: CourseEnrollment): CourseEnro
       code: enrollment.course.code,
       name: enrollment.course.name,
       subjectCode: enrollment.course.subjectCode,
+      hasInPersonClasses: enrollment.course.hasInPersonClasses,
       accentIndex: presentationIndex(enrollment.course.accentKey, enrollment.course.sortOrder),
     },
     activeGroupId: enrollment.activeGroupId,

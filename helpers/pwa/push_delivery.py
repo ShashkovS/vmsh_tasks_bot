@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from db_methods.pwa.connection import PwaConnectionFactory
 from db_methods.pwa.notification_deliveries import (
     claim_deliveries,
+    classroom_delivery_available,
     finish_delivery,
     insert_delivery,
     list_due_candidates,
@@ -222,7 +223,16 @@ async def deliver_web_push_once(
         delivered_at = _timestamp(current)
         next_attempt_at = delivered_at
         try:
-            if not _preference_enabled(item["push_enabled"], str(item["category"])):
+            available = await factory.run_read_async(
+                lambda connection: classroom_delivery_available(
+                    connection, int(item["id"])
+                )
+            )
+            if not available:
+                state = "suppressed"
+                error_code = "course_in_person_disabled"
+                delivered_at = None
+            elif not _preference_enabled(item["push_enabled"], str(item["category"])):
                 state = "suppressed"
                 error_code = "preference_disabled"
                 delivered_at = None

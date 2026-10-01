@@ -297,6 +297,10 @@ def confirm_layout(
     if any(room["classroom_status"] != "active" for room in rooms):
         raise InvalidClassroomLayout("archived room cannot be confirmed")
 
+    # Recheck pending confirmation after course toggles; historical reads remain.
+    # vmshpwa/docs/course-attendance-settings.md.
+    if any(not room["has_in_person_classes"] for room in rooms):
+        raise InvalidClassroomLayout("disabled course cannot be confirmed")
     supersede_confirmed_layout(connection, event_id=event_id, now=now)
     if not confirm_draft_layout(
         connection,

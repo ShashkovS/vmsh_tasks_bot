@@ -405,7 +405,8 @@ function transformFile(path) {
       if (!insideFunction(node)) {
         report.push(`${lineOf(sourceFile, node)}: MANUAL module-level formatter`)
       } else {
-        const helper = node.expression.name.text === 'DateTimeFormat' ? 'dateTimeFormat' : 'numberFormat'
+        const helper =
+          node.expression.name.text === 'DateTimeFormat' ? 'dateTimeFormat' : 'numberFormat'
         const locale = node.arguments[0]
         edits.push({
           start: node.getStart(sourceFile),
@@ -449,9 +450,7 @@ function transformFile(path) {
 
   const imports = []
   if (usesT && !/from '@lingui\/core\/macro'/.test(text)) {
-    imports.push(
-      `import { ${tName === 't' ? 't' : 't as translate'} } from '@lingui/core/macro'`,
-    )
+    imports.push(`import { ${tName === 't' ? 't' : 't as translate'} } from '@lingui/core/macro'`)
   }
   if (usesTrans && !/from '@lingui\/react\/macro'/.test(text)) {
     imports.push(`import { Trans } from '@lingui/react/macro'`)

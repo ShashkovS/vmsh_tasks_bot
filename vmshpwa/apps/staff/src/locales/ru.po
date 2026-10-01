@@ -338,6 +338,10 @@ msgstr "{0}{1} д."
 msgid "{0}{status}. Нажатия: плюс → минус → не трогать."
 msgstr "{0}{status}. Нажатия: плюс → минус → не трогать."
 
+#: apps/staff/src/main.tsx
+msgid "{brandName} — учитель и администратор"
+msgstr "{brandName} — учитель и администратор"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
 msgstr "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
@@ -805,6 +809,10 @@ msgstr "В архиве"
 msgid "в день цикла"
 msgstr "в день цикла"
 
+#: apps/staff/src/course-catalog-editors.tsx
+msgid "В курсе есть очные занятия"
+msgstr "В курсе есть очные занятия"
+
 #: apps/staff/src/staff-news-page.tsx
 msgid "В ленте"
 msgstr "В ленте"
@@ -979,14 +987,6 @@ msgstr "Вместе с аудиторией изменится активная
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Вместе с занятием"
 msgstr "Вместе с занятием"
-
-#: apps/staff/src/login-page.tsx
-msgid "ВМШ 179"
-msgstr "ВМШ 179"
-
-#: apps/staff/src/main.tsx
-msgid "ВМШ 179 — учитель и администратор"
-msgstr "ВМШ 179 — учитель и администратор"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Внутренние пометки"
@@ -1878,6 +1878,10 @@ msgstr "Загрузка сохранена, требуется исправле
 msgid "Загрузка списка ресурсов"
 msgstr "Загрузка списка ресурсов"
 
+#: apps/staff/src/branding-page.tsx
+msgid "Загрузка…"
+msgstr "Загрузка…"
+
 #: apps/staff/src/staff-worksheet-preview.tsx
 msgid "Задать вопрос"
 msgstr "Задать вопрос"
@@ -2221,6 +2225,10 @@ msgstr "Изменить состав задач"
 #: apps/staff/src/problem-import-page.tsx
 msgid "Изменятся"
 msgstr "Изменятся"
+
+#: apps/staff/src/branding-page.tsx
+msgid "Изменять оформление может только администратор"
+msgstr "Изменять оформление может только администратор"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "ИИ"
@@ -2966,8 +2974,8 @@ msgid "Не отправлено"
 msgstr "Не отправлено"
 
 #: apps/staff/src/login-page.tsx
-msgid "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
-msgstr "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
+msgid "Не помните доступ? Напишите на <0>{supportEmail}</0>."
+msgstr "Не помните доступ? Напишите на <0>{supportEmail}</0>."
 
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "не попадёт в черновик, пока администратор не выберет группу заново."
@@ -3038,6 +3046,10 @@ msgstr "Не удалось загрузить курсы"
 #: apps/staff/src/product-analytics-page.tsx
 msgid "Не удалось загрузить ленту"
 msgstr "Не удалось загрузить ленту"
+
+#: apps/staff/src/branding-page.tsx
+msgid "Не удалось загрузить оформление."
+msgstr "Не удалось загрузить оформление."
 
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Не удалось загрузить очные занятия"
@@ -3204,6 +3216,10 @@ msgstr "Не удалось сохранить или загрузить рас�
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Не удалось сохранить окно."
 msgstr "Не удалось сохранить окно."
+
+#: apps/staff/src/branding-page.tsx
+msgid "Не удалось сохранить оформление. Попробуйте снова."
+msgstr "Не удалось сохранить оформление. Попробуйте снова."
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Не удалось сохранить очередь на устройстве. Не закрывайте окно."
@@ -4012,6 +4028,19 @@ msgstr "Отчество"
 msgid "Отчество, дата рождения и класс могут быть пустыми. Дата: ДД.ММ.ГГГГ или ГГГГ-ММ-ДД."
 msgstr "Отчество, дата рождения и класс могут быть пустыми. Дата: ДД.ММ.ГГГГ или ГГГГ-ММ-ДД."
 
+#: apps/staff/src/branding-page.tsx
+#: apps/staff/src/routes/__root.tsx
+msgid "Оформление"
+msgstr "Оформление"
+
+#: apps/staff/src/branding-page.tsx
+msgid "Оформление применяется ко всем кабинетам этого проекта после обновления страницы. Выбранный пользователем язык сохраняется."
+msgstr "Оформление применяется ко всем кабинетам этого проекта после обновления страницы. Выбранный пользователем язык сохраняется."
+
+#: apps/staff/src/branding-page.tsx
+msgid "Оформление уже изменено. Обновите страницу."
+msgstr "Оформление уже изменено. Обновите страницу."
+
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Оценка"
@@ -4342,6 +4371,7 @@ msgstr "По задачам"
 msgid "По расписанию"
 msgstr "По расписанию"
 
+#: apps/staff/src/branding-page.tsx
 #: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/family-digest-panel.tsx
@@ -4838,6 +4868,10 @@ msgstr "Приложение"
 msgid "Применён импорт задач"
 msgstr "Применён импорт задач"
 
+#: apps/staff/src/branding-page.tsx
+msgid "Применить"
+msgstr "Применить"
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "Применить изменения · {changedRows}"
 msgstr "Применить изменения · {changedRows}"
@@ -5104,6 +5138,10 @@ msgstr "Просмотры"
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Простые"
 msgstr "Простые"
+
+#: apps/staff/src/branding-page.tsx
+msgid "Профиль оформления"
+msgstr "Профиль оформления"
 
 #: apps/staff/src/staff-audit-page.tsx
 msgid "Публикации"
@@ -6184,6 +6222,7 @@ msgstr "Сохранить шкалу"
 msgid "Сохраняем"
 msgstr "Сохраняем"
 
+#: apps/staff/src/branding-page.tsx
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/course-catalog-editors.tsx
 #: apps/staff/src/course-schedule-editor.tsx

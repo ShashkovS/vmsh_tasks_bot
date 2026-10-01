@@ -188,7 +188,6 @@ owner visual approval. Актуальные proofs:
 действующий листок. Генерация PDF исключена из этого изменения. Реализация: миграция
 0093, `figure_layout.py`, revision API и Staff `FigureLayoutEditor`.
 
-
 ## Диалекты newlistok и newlistokutf — 29 сентября 2026
 
 [`dialect.py`](../../helpers/pwa/content/dialect.py) задаёт явный реестр
@@ -227,7 +226,6 @@ AST schema и WebContentDocument v1 не меняются.
 
 Алфавит видимых меток зависит только от языка интерфейса:
 [правило и renderer](task-titles.md#алфавит-подпунктов).
-
 
 ## English problem-type headings — 1 October 2026
 

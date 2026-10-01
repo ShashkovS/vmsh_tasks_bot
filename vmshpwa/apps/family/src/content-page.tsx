@@ -279,7 +279,10 @@ export function FamilyReadableContentPage({
   if (!course || !group) {
     return (
       <PageLayout title={t`Листок`} width="content">
-        <PageStatePanel state="forbidden" description={t`Эта группа недоступна выбранному ребёнку.`} />
+        <PageStatePanel
+          state="forbidden"
+          description={t`Эта группа недоступна выбранному ребёнку.`}
+        />
       </PageLayout>
     )
   }
@@ -393,13 +396,27 @@ function FamilyWorksheet({
               className="vmsh-student-sheet rounded-xl border border-border bg-surface px-4 py-5 sm:px-7 sm:py-6"
               document={query.data.document}
               renderProblemActions={(problem) =>
-                mark(query.data.problems?.problems.find((item) => item.sourceOrdinal === problem.ordinal && !hasSubparts(problem.blocks)))
+                mark(
+                  query.data.problems?.problems.find(
+                    (item) =>
+                      item.sourceOrdinal === problem.ordinal && !hasSubparts(problem.blocks),
+                  ),
+                )
               }
               renderSubpartActions={(problem, label) =>
-                mark(query.data.problems?.problems.find((item) => item.sourceOrdinal === problem.ordinal && item.displayNumber.endsWith(label)))
+                mark(
+                  query.data.problems?.problems.find(
+                    (item) =>
+                      item.sourceOrdinal === problem.ordinal && item.displayNumber.endsWith(label),
+                  ),
+                )
               }
             />
-          ) : <p className="py-4 text-muted-foreground"><Trans>Задачи ещё не опубликованы.</Trans></p>}
+          ) : (
+            <p className="py-4 text-muted-foreground">
+              <Trans>Задачи ещё не опубликованы.</Trans>
+            </p>
+          )}
         </LessonBlocksLayout>
       )}
     </PageLayout>

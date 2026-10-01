@@ -28,6 +28,12 @@ describe('catalog activation', () => {
     expect(i18n._('test.activation')).toBe('Check')
   })
 
+  it('uses the instance default and preserves an explicit Russian choice', async () => {
+    await expect(bootstrapLocale(loaders(), 'en')).resolves.toBe('en')
+    writeLocaleCookie('ru')
+    await expect(bootstrapLocale(loaders(), 'en')).resolves.toBe('ru')
+  })
+
   it('uses Russian without a device choice', async () => {
     await expect(bootstrapLocale(loaders())).resolves.toBe('ru')
     expect(i18n._('test.activation')).toBe('Проверка')

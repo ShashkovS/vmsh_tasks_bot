@@ -194,12 +194,14 @@ def create_app(
     enabled_apps: Iterable[AppAdapter] | None = None,
     *,
     runtime_config: Config | None = None,
+    analytics_enabled: bool = True,
+    client_max_size: int = 1024 * 1024,
 ):
     """Compose aiohttp from an explicit adapter list and runtime config."""
 
     selected_adapters = tuple(apps.all_apps if enabled_apps is None else enabled_apps)
     selected_config = runtime_config or config
-    app = web.Application()
+    app = web.Application(client_max_size=client_max_size)
     # Installed before adapters append their middleware, so application-level
     # metrics observe their responses and failures without changing semantics.
     configure_prometheus(app)
@@ -211,7 +213,8 @@ def create_app(
     # Keeping the DB lifecycle lock here prevents maintenance from replacing
     # SQLite while a graceful-shutdown handler still owns a connection.
     app.cleanup_ctx.append(pwa_database_lifecycle)
-    app.cleanup_ctx.append(pwa_analytics_lifecycle)
+    if analytics_enabled:
+        app.cleanup_ctx.append(pwa_analytics_lifecycle)
     # Важно, что текущие on_startup и on_shutdown первые. Мы потом развернём список on_shutdown в обратном порядке
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)

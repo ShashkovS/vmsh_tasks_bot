@@ -1,6 +1,7 @@
 import type { StorybookConfig } from '@storybook/react-vite'
 import tailwindcss from '@tailwindcss/vite'
 
+import { brandingAssets } from '../vite-branding'
 import { i18nPlugins } from '../vite-i18n'
 
 const config: StorybookConfig = {
@@ -16,7 +17,7 @@ const config: StorybookConfig = {
   staticDirs: ['./public'],
   viteFinal(viteConfig) {
     viteConfig.plugins ??= []
-    viteConfig.plugins.push(...i18nPlugins(), tailwindcss())
+    viteConfig.plugins.push(...i18nPlugins(), tailwindcss(), brandingAssets())
     viteConfig.optimizeDeps ??= {}
     viteConfig.optimizeDeps.include = [
       ...(viteConfig.optimizeDeps.include ?? []),

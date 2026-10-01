@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 3a15a645f562810d21831e10d90ed336defefa5f504b0f3870d092bfdef7e71e
+-- Product schema SHA-256: e3adaf9500869700ce6e72b9b13ced3f5e0c11bbc7466245d1950565f70eccf5
 
 CREATE TABLE achievement_definitions
 (
@@ -87,7 +87,8 @@ CREATE TABLE auth_accounts
         provisioning_password_plaintext is null
         or length(provisioning_password_plaintext) between 1 and 512
     ), locale text not null default 'ru'
-        check (locale in ('ru', 'en')),
+        check (locale in ('ru', 'en')), locale_explicit INTEGER NOT NULL DEFAULT 0
+    CHECK (locale_explicit IN (0, 1)),
     unique (audience, username_normalized),
     check (credential_hash is null or length(trim(credential_hash)) > 0),
     check (status <> 'active' or credential_hash is not null),
@@ -868,7 +869,8 @@ CREATE TABLE courses
     created_by   integer references users (id),
     updated_by   integer references users (id),
     version      integer not null default 1
-        check (version > 0),
+        check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1
+    CHECK (has_in_person_classes IN (0, 1)),
     unique (season_id, code)
 );
 
@@ -1921,6 +1923,13 @@ CREATE TABLE push_subscriptions
     check (expiration_time is null or expiration_time > 0)
 );
 
+CREATE TABLE pwa_branding (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    profile_id TEXT NOT NULL,
+    default_locale TEXT NOT NULL CHECK (default_locale IN ('ru', 'en')),
+    version INTEGER NOT NULL DEFAULT 1
+);
+
 CREATE TABLE questions
 (
     id                   INTEGER primary key,
@@ -2878,6 +2887,16 @@ CREATE TABLE zoom_queue
     status         INTEGER   not null
 );
 
+CREATE TABLE zoom_webhook_receipts (
+    id INTEGER PRIMARY KEY,
+    received_at TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    meeting_id TEXT,
+    request_id TEXT,
+    request_timestamp TEXT NOT NULL,
+    raw_body BLOB NOT NULL
+);
+
 CREATE INDEX analytics_runs_course_latest_idx
     on analytics_runs (course_id, state, completed_at desc, id desc);
 
@@ -3407,6 +3426,8 @@ CREATE UNIQUE INDEX zoom_conversation_pwa_idempotency_uq
 
 CREATE INDEX zoom_queue_by_ts
     on zoom_queue (enter_ts);
+
+CREATE INDEX zoom_webhook_receipts_by_meeting ON zoom_webhook_receipts(meeting_id, id);
 
 CREATE VIEW effective_results as
     select r.* from results r

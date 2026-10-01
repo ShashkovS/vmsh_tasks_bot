@@ -58,7 +58,7 @@ def list_recipients(
           ON account.audience = 'student'
          AND account.linked_user_id = enrollment.student_user_id
          AND account.status = 'active'
-        WHERE assignment.plan_id = ?
+        WHERE assignment.plan_id = ? AND course.has_in_person_classes = 1
         ORDER BY student.surname, student.name, enrollment.id
         """,
         (plan_id,),
@@ -210,6 +210,15 @@ def list_batch_recipients(
 def claim_next_telegram_recipient(
     connection: sqlite3.Connection, batch_public_id: str
 ) -> dict[str, object] | None:
+    connection.execute(
+        "UPDATE classroom_assignment_delivery_recipients SET telegram_state = 'suppressed', "
+        "telegram_error_code = 'course_in_person_disabled' WHERE telegram_state = 'queued' "
+        "AND batch_id = (SELECT id FROM classroom_assignment_delivery_batches WHERE public_id = ?) "
+        "AND EXISTS (SELECT 1 FROM course_enrollments e JOIN courses c ON c.id = e.course_id "
+        "WHERE e.id = classroom_assignment_delivery_recipients.course_enrollment_id "
+        "AND c.has_in_person_classes = 0)",
+        (batch_public_id,),
+    )
     row = connection.execute(
         "SELECT recipient.batch_id, recipient.course_enrollment_id, "
         "recipient.telegram_chat_id, recipient.student_display_name, "

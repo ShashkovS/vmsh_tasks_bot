@@ -684,6 +684,7 @@ def create_gateway(
     )
     # Transport routes precede the SPA wildcard.  A missing API or malformed WS
     # path must never receive index.html from history fallback.
+    app.router.add_route("GET", "/{audience:student|family}/manifest.webmanifest", _proxy_content_asset)
     app.router.add_route("*", "/{audience:student|family|staff}/api", _proxy_http)
     app.router.add_route(
         "*", "/{audience:student|family|staff}/api/{tail:.*}", _proxy_http

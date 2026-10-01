@@ -14,7 +14,8 @@
           "status": "active",
           "sortOrder": 10,
           "accentKey": "accent_1",
-          "version": 2
+          "version": 2,
+          "hasInPersonClasses": true
         },
         "activeGroupId": "group-fixture-alpha-one",
         "allowedGroups": [
@@ -54,7 +55,8 @@
           "status": "active",
           "sortOrder": 20,
           "accentKey": "accent_2",
-          "version": 1
+          "version": 1,
+          "hasInPersonClasses": true
         },
         "activeGroupId": "group-fixture-beta-one",
         "allowedGroups": [

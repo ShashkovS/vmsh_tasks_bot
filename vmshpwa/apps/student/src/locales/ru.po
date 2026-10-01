@@ -41,6 +41,10 @@ msgstr "{0} КБ"
 msgid "{0} МБ"
 msgstr "{0} МБ"
 
+#: apps/student/src/main.tsx
+msgid "{brandName} — школьник"
+msgstr "{brandName} — школьник"
+
 #: apps/student/src/student-written-submission.tsx
 msgid "{bytes} Б"
 msgstr "{bytes} Б"
@@ -206,14 +210,9 @@ msgstr "Ваши курсы"
 msgid "Вложение"
 msgstr "Вложение"
 
-#: apps/student/src/login-page.tsx
 #: apps/student/src/pages.tsx
 msgid "ВМШ 179"
 msgstr "ВМШ 179"
-
-#: apps/student/src/main.tsx
-msgid "ВМШ 179 — школьник"
-msgstr "ВМШ 179 — школьник"
 
 #: apps/student/src/login-page.tsx
 msgid "Войти"
@@ -667,8 +666,8 @@ msgid "Не начаты"
 msgstr "Не начаты"
 
 #: apps/student/src/login-page.tsx
-msgid "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
-msgstr "Не помните доступ? Напишите на <0>vmsh@179.ru</0>."
+msgid "Не помните доступ? Напишите на <0>{supportEmail}</0>."
+msgstr "Не помните доступ? Напишите на <0>{supportEmail}</0>."
 
 #: apps/student/src/login-page.tsx
 msgid "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
