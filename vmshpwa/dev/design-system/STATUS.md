@@ -1,12 +1,17 @@
 # Design-system status
 
-
 ## 2026-10-01 — интеграция позадачной публикации
 
-В работе merge `vmshpwa` (`3bb20281`) в `codex/problem-release`.
-Редактор рисунков и переключатели объединяются в одном превью; миграция
-доступности становится 0107 после upstream 0106. Проверки конфликтов,
-schema и общего UI проходят повторно; [протокол](../../docs/problem-release.md).
+Merge кода `vmshpwa` сохранён в `188d97eb`, затем подлит отчёт `73d6730e`.
+Редактор рисунков и переключатели объединены в одном превью; миграция
+доступности — 0107 после upstream 0106. Прошли 2501 backend (5 skipped),
+980 frontend (978 в полном прогоне, 2 отдельно после timeout импорта),
+typecheck/i18n/schema, scoped lint и четыре сборки. Публикация задач —
+3 browser E2E без reload; рисунки/экспорт/печать — 12/12. Итого
+15 E2E в Chromium/WebKit/Firefox, без retries и обновления baselines.
+Временные порты/origins восстановлены; основной checkout чистый.
+Merge завершён локально; позадачная публикация не развёртывалась.
+[Команды и протокол](../../docs/problem-release.md).
 
 ## Позадачная публикация — 1 октября 2026
 
@@ -22,7 +27,7 @@ scoped lint и четыре production-сборки проходят. Выдач
 Светлые, тёмные и мобильные снимки просмотрены; baselines не менялись.
 Развёртывание и публикация в remote не выполнялись.
 
-## 2026-10-01 — редактор картинок реализован и проверен
+## 2026-10-01 — редактор картинок в production на обоих порталах
 
 [Редактор на рисунке](../../docs/figure-layout.md) использует общие Button/Input/
 Popover: размер и размещение слева, действия справа, у маленьких исходных рисунков
@@ -32,16 +37,17 @@ Popover: размер и размещение слева, действия сп�
 320/390/1280 px, light/dark и 200% в Chromium/Firefox/WebKit. Ошибка сохранения
 оставляет предпросмотр и доступную команду обновления данных.
 
-107 backend и 974 frontend unit проходят; typecheck/lint/i18n/build и browser gates
-зелёные. [Stories, снимки и доказательства](../figure-layout-report.md).
-Владелец разрешил production-выпуск на оба сервера 1 октября; rollout начат.
+После интеграции проходят 138 backend, 107 seed/deploy guards, 975 frontend unit
+и 12 E2E; typecheck/lint/i18n/build и Storybook gates зелёные.
+[Stories, снимки и доказательства](../figure-layout-report.md).
+Владелец разрешил production-выпуск на оба сервера 1 октября; выпуск завершён.
 Golden snapshots не обновлены.
 
-Интеграция с выпущенной metadata-доработкой завершена: 138 backend,
-107 seed/deploy guards, 975 unit и 12 E2E проходят. Миграция рисунков — 0106;
-обновлён только подтверждённый digest baseline-v1. Подготовлен проверенный
-[TLF SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh).
-Push и выпуск на обоих серверах разрешены владельцем; rollout начат.
+Runtime source `3bb20281` опубликован на VMSh через webhook, на TLF через
+[SSH cutover](../../../docs/deploy/tlf-app/deploy_figure_layout.sh). Публичные
+Staff bundles содержат новый редактор; production provenance всех четырёх
+приложений соответствует релизу. Прежние 182 JS/CSS URL сохранены.
+[Production proof и границы live-проверки](../figure-layout-report.md#production--2026-10-01).
 
 ## Instance branding — 2026-09-29
 

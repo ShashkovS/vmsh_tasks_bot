@@ -77,8 +77,8 @@ Python выдаёт предупреждения сторонних библио
 доступная клавиатура проверены в браузерах. Family payload проверен HTTP, offline
 обновление — unit; отдельный offline/Family E2E в этом gate не запускался.
 
-Владелец разрешил production-выпуск на оба сервера 1 октября. Начаты commit/
-integration и rollout: VMSh через webhook, TLF через SSH-скрипт. Миграция рисунков
+Владелец разрешил production-выпуск на оба сервера 1 октября. Commit/integration
+и rollout завершены: VMSh через webhook, TLF через SSH-скрипт. Миграция рисунков
 перенумерована в 0106 после параллельного выпуска 0104.course_metadata_model.
 Генерация PDF и редактор Markdown-картинок вне этой итерации.
 
@@ -110,7 +110,53 @@ writers и сравнивает все прежние product columns. Новы�
 
 Перед переключением сохранены SHA256/MIME **182** прежних публичных JS/CSS
 URL (по 91 на портал) для проверки сохранности открытых вкладок после выпуска.
-Владелец разрешил push/autodeploy VMSh и SSH-выпуск TLF; rollout начинается.
+Владелец разрешил push/autodeploy VMSh и SSH-выпуск TLF; rollout завершён.
+
+## Production — 2026-10-01
+
+На обоих порталах выпущен runtime source
+`3bb202815078d89c55c9a819ee3584f66fc6d8a1` (feature `6835cbe5`).
+VMSh обновлён штатным webhook после push в `vmshpwa`; TLF —
+`sudo bash /tmp/tlf-figures-3bb202815078.sh <full SHA>` через `tlfprepagent`.
+Оба выпуска завершились успешно около 13:21 UTC / 16:21 Asia/Nicosia.
+
+| Портал | Активный static release                 | Backup до / после                                                                        |
+| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| VMSh   | `3bb202815078-20261001131914`           | `vmsh-before-deploy-20261001132024.sqlite3` / `vmsh-after-deploy-20261001132124.sqlite3` |
+| TLF    | `tlfprep-20261001-figures-3bb202815078` | `20261001T132032.802773Z` / `20261001T132100.591519Z`                                    |
+
+Миграция 0106 применена на обеих базах, всего **78** миграций. VMSh сохраняет
+**23** исторических снимка с `layout_version=-1`; их frozen scales соответствуют
+старым scale overlays. На TLF исторических снимков этого типа нет. Immutable
+trigger присутствует в обеих базах; backup integrity — `ok`.
+
+TLF rehearsal и cutover сравнили все **154** прежние product tables/columns:
+контрольные суммы совпали, credentials не изменились, сохранены три raw Zoom
+receipts. VMSh before/after backup сохраняют содержимое **151** из 154 таблиц;
+изменились только `auth_events`, `auth_refresh_consumed_secrets`, `auth_sessions`
+при возобновлении авторизованных запросов после запуска. Предметные данные,
+публикации, draft layouts и старые масштабы совпадают. Проверка читала завершённые
+backup с `immutable=1`, без создания WAL/shm в каталоге backup.
+
+На каждом публичном портале прошли **25 read-only HTTP checks**. Все четыре
+`build-provenance.json` соответствуют новым release ID, production profile,
+MSW/prototype=false и прежним media origins. Новые публичные Staff bundles
+содержат `center-source` и `widthRem`. Все **182** прежних JS/CSS URL (91 на портал)
+возвращают HTTP 200 с прежними SHA256 и MIME: открытые вкладки сохраняют chunks.
+
+PWA и legacy Telegram на VMSh, PWA и Zoom на TLF активны. NATS не перезапускался:
+VMSh PID `3018`, TLF PID `1936264` сохранены. Runtime/nginx/systemd конфигурации
+не менялись; сообщение VMSh deploy про инфраструктуру относится к добавленному
+TLF cutover script в git, переустановка webhook не требуется.
+
+Полный retained TLF record:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261001-figures-3bb202815078/`:
+rehearsal, before/after digests, backup, health и `http-smoke.log`.
+[Операционный runbook](../../docs/deploy/tlf-app/README.md#inline-figure-editor--2026-10-01).
+Live-проверки были публичными/read-only; сценарий редактирования и публикации
+в авторизованном production Staff не повторялся. Он проверен до выпуска на
+изолированном E2E в трёх браузерах. Synthetic submissions/Zoom events или
+сообщения реальным адресатам для проверки не создавались.
 
 ## Исторический отчёт 15 сентября 2026
 

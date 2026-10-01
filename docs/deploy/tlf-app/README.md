@@ -250,3 +250,36 @@ Russian. Existing course models stay `openai/gpt-5.6-luna`, TLF courses stay
 online-only, and the three Zoom receipts are preserved. TLF retains two PWA
 workers and one Zoom worker; shared NATS was not restarted. Detailed backups,
 rollback and verification: [metadata production record](../../../vmshpwa/docs/metadata-generation.md#production--1-октября-2026).
+
+## Inline figure editor — 2026-10-01
+
+Both portals run figure release `3bb202815078d89c55c9a819ee3584f66fc6d8a1`.
+VMSh deployed through its existing `vmshpwa` webhook; TLF through the reviewed
+[SSH cutover](deploy_figure_layout.sh). Active static releases:
+VMSh `3bb202815078-20261001131914`,
+TLF `tlfprep-20261001-figures-3bb202815078`.
+Both databases now contain 78 migrations, including
+[0106](../../../migrations/0106.pwa_figure_presentation.sql).
+
+TLF retained record and executed script:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261001-figures-3bb202815078/`.
+Migration rehearsal passed on a copy before cutover. All 154 pre-existing
+product table digests matched while writers were stopped; frozen legacy scales
+are checked separately by [data guard](figure_layout_data_check.py).
+Backups `20261001T132032.802773Z` / `20261001T132100.591519Z` passed integrity,
+preserving all three raw Zoom receipts. Credentials, runtime configuration and
+shared NATS remain unchanged. PWA and Zoom are active, analytics timer restored.
+
+The script's failure handler rolls back only 0106/source/static, never replaces
+the DB, and rejects that rollback if late figure edits would be lost. After a
+successful rollout, any further operational rollback must inspect current drafts
+and publications before applying the guarded migration down; do not restore an
+old backup over current production data. Retained backups are recovery evidence.
+
+Each portal passed 25 public read-only HTTP checks. All four public production
+provenance records match the active release; Staff bundles contain the new
+editor. All 182 old JS/CSS URLs retain SHA256/MIME. Authenticated editing and
+publication were verified in isolated three-browser E2E before cutover; the live
+smoke did not write synthetic content/events. Detailed VMSh data comparison,
+backups and test results: [figure production record](../../../vmshpwa/dev/figure-layout-report.md#production--2026-10-01).
+Documentation-only follow-ups do not require a TLF runtime rebuild/restart.

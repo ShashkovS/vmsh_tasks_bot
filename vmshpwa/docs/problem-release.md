@@ -86,10 +86,40 @@ visual baselines не обновлялись. Развёртывание не в
 
 ## Интеграция с актуальной vmshpwa
 
-1 октября начато вливание `vmshpwa` (`3bb20281`) в `codex/problem-release`.
+1 октября начато вливание `vmshpwa` (`3bb20281`, затем `73d6730e`) в `codex/problem-release`.
 Сохраняются новые настройки metadata, индекс receipt и редактор рисунков.
 [Content workspace](../apps/staff/src/content-page.tsx) объединяет редактор рисунков
 и переключатели в одном PWA-превью; фильтрация доступности применяется после
 замороженного оформления публикации. Миграция доступности перенумерована в 0107
 после 0106 рисунков; schema artifacts генерируются из общей цепочки миграций.
-Проверки объединённой реализации в работе.
+Merge кода сохранён в `188d97eb`; второй merge включает только новые
+production-отчёты `73d6730e` и протокол этих проверок. Оба merge завершены
+локально; текущая `vmshpwa` полностью входит в историю feature-ветки.
+
+Проверки общей ветки:
+
+- `.venv/bin/python -m pytest pwa_tests -q`: **2501 passed, 5 skipped**,
+  полный прогон; 20 предупреждений зависимостей.
+- `pnpm exec vitest run --project unit --maxWorkers=2`: **978 passed**,
+  2 failures в неизменённом `media-diagnostics.test.ts` после timeout
+  холодного импорта 5 s; продолжение первого теста затронуло следующий.
+  Отдельно с `--maxWorkers=1 --testTimeout=15000`: **2 passed**.
+  Итого проверены все **980** unit cases. Неограниченный первый прогон
+  также прервался с timeout; ограничение workers применяется только в команде.
+- `make pwa-typecheck pwa-i18n-check pwa-schema-check`: проходят,
+  **502** schema objects. Каталоги пересобраны `make pwa-i18n-extract`.
+- ESLint для разрешённых TS-конфликтов и регрессии, Ruff для Python-тестов:
+  проходят. Исправлен только лишний non-null assertion в JSX merge.
+- Четыре production-сборки и **3/3** release E2E в Chromium/WebKit/Firefox:
+  проходят; 15 → 0 → 2 → 5 → 15, обратное скрытие и reconnect без reload.
+- Изолированный gate figure-layout/whiteboard-export/worksheet-print:
+  **12/12** в Chromium/WebKit/Firefox, с той же сборкой и отдельной свежей
+  E2E-базой. Итого **15 E2E**, без retries и обновления visual baselines.
+
+Повторно использованы независимые порты 5381/8381 и lock-aware
+`commands_for_mode` / `run_commands` из E2E runner. Добавлено только временное
+исправление test Origin в figure-layout fixture; все подстановки восстановлены
+после запуска. Desktop light и mobile dark показывают переключатели и
+редактор рисунков вместе без обрезания интерфейса. Runtime основной рабочей
+копии не затрагивался; production rollout рисунков сохранён как upstream proof,
+развёртывание позадачной публикации не выполнялось.
