@@ -2277,8 +2277,14 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
                 "Подтвердите полную перегенерацию metadata для этой версии условия"
             ),
         )
+    # docs/metadata-generation.md: brand language and model are read for each request.
+    settings = await repository.metadata_generation_settings(
+        course_public_id=context.scope.course_public_id
+    )
     generation_request = MetadataGenerationRequest(
         locale=current_locale.get(),
+        content_locale=settings["default_locale"],
+        model=settings["metadata_model"],
         revision_public_id=context.revision.public_id,
         source_filename=context.source.logical_filename,
         latex_text=context.revision.latex_text,

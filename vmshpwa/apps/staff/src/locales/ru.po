@@ -2113,6 +2113,10 @@ msgstr "Здесь настраивается только область дан
 msgid "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
 msgstr "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
 
+#: apps/staff/src/course-catalog-editors.tsx
+msgid "Идентификатор provider/model. Используется для генерации и проверки metadata со следующего запроса, без перезапуска."
+msgstr "Идентификатор provider/model. Используется для генерации и проверки metadata со следующего запроса, без перезапуска."
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Идентификатор занятия курса"
 msgstr "Идентификатор занятия курса"
@@ -2682,6 +2686,10 @@ msgstr "Многочлен"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Множество целых"
 msgstr "Множество целых"
+
+#: apps/staff/src/course-catalog-editors.tsx
+msgid "Модель OpenRouter для metadata"
+msgstr "Модель OpenRouter для metadata"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Можно вернуться и исправить оценки"

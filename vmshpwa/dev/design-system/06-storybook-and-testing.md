@@ -170,3 +170,13 @@ Storybook build и addon-vitest проходят, нет a11y errors, все о�
 - соответствующие `Pages/Student`, `Pages/Family`, `Pages/Staff` из [карты](../development-plan/18-design-implementation-map.md).
 
 Interaction assertions проверяют переключение course/group, snapshot/inheritance labels, merge/split identity notice, chronology provenance, combined review target, classroom inherited counts и отсутствие group comparison в Student/Family. Unit projection suite лежит в `packages/product/src/multi-course-projection.test.ts`. Visual snapshots не обновляются до ручного owner review нового mobile-light/desktop инкремента.
+
+
+### 2026-10-01 — модель metadata в настройках курса
+
+`Pages/Staff/Course settings` в
+[course-catalog-editors.stories.tsx](../../apps/staff/src/course-catalog-editors.stories.tsx)
+показывает новый курс, английский интерфейс, тёмную тему и состояние сохранения.
+Chromium: первые три состояния просмотрены; HTML-валидация model ID проверена,
+pageerror отсутствуют. Editor/contract/admin-client: 24 Vitest PASS.
+Решение и backend-проверки — [metadata-generation.md](../../docs/metadata-generation.md).

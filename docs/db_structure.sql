@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: d0565e3d9907cebe79544a4343cb7c78fba52cce2d2c9a8a8ed35e31c9dc34a3
+-- Product schema SHA-256: 7a0108f653e4980ee06865065a96da43d8090a197bc285080406e73f1261c897
 
 CREATE TABLE achievement_definitions
 (
@@ -870,7 +870,8 @@ CREATE TABLE courses
     updated_by   integer references users (id),
     version      integer not null default 1
         check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1
-    CHECK (has_in_person_classes IN (0, 1)),
+    CHECK (has_in_person_classes IN (0, 1)), metadata_model TEXT NOT NULL DEFAULT 'openai/gpt-5.6-luna'
+    CHECK (length(trim(metadata_model)) BETWEEN 3 AND 200),
     unique (season_id, code)
 );
 

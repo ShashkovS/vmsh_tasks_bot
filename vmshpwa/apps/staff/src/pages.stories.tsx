@@ -71,6 +71,7 @@ const directoryCourse: AdminCourse = {
   sortOrder: 1,
   accentKey: 'math',
   hasInPersonClasses: true,
+  metadataModel: 'openai/gpt-5.6-luna',
   activeStudents: 2,
   groups: [
     {

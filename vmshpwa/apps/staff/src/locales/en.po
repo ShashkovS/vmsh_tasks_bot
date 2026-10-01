@@ -2113,6 +2113,10 @@ msgstr "Only the data scope is configured here: a whole course or selected group
 msgid "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
 msgstr "Only classes and publications saved in the database are shown here."
 
+#: apps/staff/src/course-catalog-editors.tsx
+msgid "Идентификатор provider/model. Используется для генерации и проверки metadata со следующего запроса, без перезапуска."
+msgstr "A provider/model ID. Used for metadata generation and verification from the next request, without restarting."
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Идентификатор занятия курса"
 msgstr "Course class ID"
@@ -2682,6 +2686,10 @@ msgstr "Polynomial"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Множество целых"
 msgstr "Set of integers"
+
+#: apps/staff/src/course-catalog-editors.tsx
+msgid "Модель OpenRouter для metadata"
+msgstr "OpenRouter model for metadata"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Можно вернуться и исправить оценки"

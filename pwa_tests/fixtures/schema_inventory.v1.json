@@ -347,6 +347,10 @@
         "sha256": "c2e36785cf1c728c4296c2d07ed930f4949c909bb3c04fd5d4282b0b326e4397"
       },
       {
+        "id": "0104.course_metadata_model",
+        "sha256": "377a4fab0c6a434e9dcdd7f0f0ced7ffc148eb7e0d1c3a1207551fdaeab27171"
+      },
+      {
         "id": "0105.pwa_recheck_receipt_lookup",
         "sha256": "bdb0f20cc579d33c114a369c4721c3da59dad2860c43ed02b455a4b64b19f43b"
       }
@@ -8340,6 +8344,15 @@
             "name": "has_in_person_classes",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": "'openai/gpt-5.6-luna'",
+            "hidden": 0,
+            "name": "metadata_model",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -8463,8 +8476,8 @@
           }
         ],
         "name": "courses",
-        "object_sha256": "6ebb0705c0708813ac5ac41b004fd151fe2c80d3228257b57685c7f05ce617b2",
-        "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id text generated always as ('c-' || id) virtual,\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1\n    CHECK (has_in_person_classes IN (0, 1)),\n    unique (season_id, code)\n);",
+        "object_sha256": "9f669ee6d2e18df3264e6347b5b1584c2d07d573c1e017a788a04a6bad7ef091",
+        "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id text generated always as ('c-' || id) virtual,\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0), has_in_person_classes INTEGER NOT NULL DEFAULT 1\n    CHECK (has_in_person_classes IN (0, 1)), metadata_model TEXT NOT NULL DEFAULT 'openai/gpt-5.6-luna'\n    CHECK (length(trim(metadata_model)) BETWEEN 3 AND 200),\n    unique (season_id, code)\n);",
         "table_name": "courses",
         "type": "table"
       },
@@ -31564,8 +31577,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "30a5bcb5fcdb8bd94663abd4cc4ec965ee4e483fb5dfd65e985b6b6e1ac7de24",
-    "sha256": "d0565e3d9907cebe79544a4343cb7c78fba52cce2d2c9a8a8ed35e31c9dc34a3"
+    "pragma_structure_sha256": "0e0883c37d40086072c568759b1dd92c972ea30206fb3be2fd192d3a859d3e97",
+    "sha256": "7a0108f653e4980ee06865065a96da43d8090a197bc285080406e73f1261c897"
   },
   "source_kind": "repository-migration-head"
 }

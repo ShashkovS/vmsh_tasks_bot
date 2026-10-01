@@ -636,3 +636,12 @@ pass; scoped ESLint, content TypeScript, i18n catalog check and diff check pass.
 Frontend commands used installed node_modules/.bin to avoid pnpm registry
 verification. No backend/compiler changes or deployment are needed for the
 source fix; the running application receives it with its next frontend build.
+
+
+### 2026-10-01 — язык и модель metadata
+
+[Настройка генерации](../../docs/metadata-generation.md) расширяет существующий
+reviewable draft: язык бренда для двух проходов, модель курса с live-применением.
+Реализовано в `apps/pwa_api/content_routes.py`,
+`helpers/pwa/content/metadata_generation.py`, OpenRouter-контракте и редакторе курса.
+Проверки и ограничения записаны в [STATUS.md](STATUS.md) и документации настройки.

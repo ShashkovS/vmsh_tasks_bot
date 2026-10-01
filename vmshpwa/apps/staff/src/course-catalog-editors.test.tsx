@@ -34,11 +34,16 @@ describe('course catalog editors', () => {
     }
     const rendered = render(<CourseCatalogEditor {...props} />)
     await user.type(screen.getByLabelText('Название'), 'Физика 7')
+    await user.clear(screen.getByLabelText('Модель OpenRouter для metadata'))
+    await user.type(screen.getByLabelText('Модель OpenRouter для metadata'), 'openai/gpt-6-luna')
     rendered.unmount()
 
     render(<CourseCatalogEditor {...props} />)
     expect(screen.getByLabelText<HTMLInputElement>('Название').value).toBe('Физика 7')
     expect(storage.getItem(props.storageKey)).toContain('Физика 7')
+    expect(screen.getByLabelText<HTMLInputElement>('Модель OpenRouter для metadata').value).toBe(
+      'openai/gpt-6-luna',
+    )
   })
 
   it('submits all group fields in one compact request', async () => {
@@ -90,6 +95,13 @@ it('defaults the in-person checkbox on and saves its disabled state', async () =
   await user.type(screen.getByLabelText('Код'), 'test')
   await user.type(screen.getByLabelText('Предмет'), 'math')
   await user.type(screen.getByLabelText('Название'), 'Test')
+  expect(screen.getByLabelText<HTMLInputElement>('Модель OpenRouter для metadata').value).toBe(
+    'openai/gpt-5.6-luna',
+  )
+  await user.clear(screen.getByLabelText('Модель OpenRouter для metadata'))
+  await user.type(screen.getByLabelText('Модель OpenRouter для metadata'), 'openai/gpt-6-luna')
   await user.click(screen.getByRole('button', { name: 'Сохранить' }))
-  expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ hasInPersonClasses: false }))
+  expect(onSave).toHaveBeenCalledWith(
+    expect.objectContaining({ hasInPersonClasses: false, metadataModel: 'openai/gpt-6-luna' }),
+  )
 })

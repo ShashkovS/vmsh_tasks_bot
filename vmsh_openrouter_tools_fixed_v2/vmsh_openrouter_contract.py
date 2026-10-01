@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """VMSh LaTeX -> structured JSON and independent checker generation.
 
 Runtime dependencies::
@@ -18,6 +16,8 @@ creates checker source code.  The second function is intentionally independent:
 it receives only one task's LaTeX and produces one trusted checker snippet.
 """
 
+from __future__ import annotations
+
 import ast
 import asyncio
 import hashlib
@@ -35,6 +35,12 @@ from typing import Any, Literal, TypeAlias, TypeVar
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+
+from .prompts_en import (
+    FACT_REVIEW_SYSTEM_PROMPT_EN,
+    LESSON_SYSTEM_PROMPT_EN,
+    english_schema,
+)
 
 DEFAULT_MODEL = "openai/gpt-5.6-luna"
 LESSON_SCHEMA_NAME = "vmsh_lesson_markup"
@@ -429,6 +435,8 @@ def validate_openrouter_schema(schema: Mapping[str, Any]) -> None:
 LESSON_REMOTE_SCHEMA = openrouter_schema(LessonMarkup)
 FACT_REVIEW_REMOTE_SCHEMA = openrouter_schema(LessonFactReview)
 CHECKER_REMOTE_SCHEMA = openrouter_schema(PythonChecker)
+LESSON_REMOTE_SCHEMA_EN = english_schema(LESSON_REMOTE_SCHEMA)
+FACT_REVIEW_REMOTE_SCHEMA_EN = english_schema(FACT_REVIEW_REMOTE_SCHEMA)
 
 
 # ---------------------------------------------------------------------------
@@ -636,7 +644,13 @@ _STRUCTURE_TOKEN = re.compile(
 )
 
 
-def parse_lesson_structure(cleaned_latex: str, lesson_number: int, lesson_group: LessonGroup) -> ParsedLesson:
+def parse_lesson_structure(
+    cleaned_latex: str,
+    lesson_number: int,
+    lesson_group: LessonGroup,
+    *,
+    locale: str = "ru",
+) -> ParsedLesson:
     masked = _mask_structure_ignored(cleaned_latex)
     current_type: ProblemType | None = None
     current_start: re.Match[str] | None = None
@@ -651,7 +665,11 @@ def parse_lesson_structure(cleaned_latex: str, lesson_number: int, lesson_group:
         if section is not None:
             mapped = _map_section(section)
             if mapped is None:
-                warnings.append(f"Неизвестный раздел: {section.strip()}")
+                warnings.append(
+                    f"Unknown section: {section.strip()}"
+                    if locale == "en"
+                    else f"Неизвестный раздел: {section.strip()}"
+                )
                 trace.append("?")
             else:
                 current_type = mapped
@@ -662,7 +680,11 @@ def parse_lesson_structure(cleaned_latex: str, lesson_number: int, lesson_group:
         if command == "кзадача":
             trace.append("к")
             if current_start is None:
-                warnings.append("Найдено \\кзадача без открытой задачи")
+                warnings.append(
+                    "Found \\кзадача without an open problem"
+                    if locale == "en"
+                    else "Найдено \\кзадача без открытой задачи"
+                )
                 continue
             task_spans.append((current_start.start(), match.end(), task_num, current_prob_type or "Письменно"))
             current_start = None
@@ -671,15 +693,27 @@ def parse_lesson_structure(cleaned_latex: str, lesson_number: int, lesson_group:
 
         trace.append("з")
         if current_start is not None:
-            warnings.append(f"Задача {task_num} не закрыта перед следующей")
+            warnings.append(
+                f"Problem {task_num} is not closed before the next problem"
+                if locale == "en"
+                else f"Задача {task_num} не закрыта перед следующей"
+            )
         task_num += 1
         current_start = match
         current_prob_type = current_type or "Письменно"
         if current_type is None:
-            warnings.append(f"Для задачи {task_num} не найден раздел; использовано Письменно")
+            warnings.append(
+                f"Problem {task_num} has no section; using written submission"
+                if locale == "en"
+                else f"Для задачи {task_num} не найден раздел; использовано Письменно"
+            )
 
     if current_start is not None:
-        warnings.append(f"Задача {task_num} не закрыта \\кзадача")
+        warnings.append(
+            f"Problem {task_num} is not closed with \\кзадача"
+            if locale == "en"
+            else f"Задача {task_num} не закрыта \\кзадача"
+        )
 
     tasks: list[ParsedTask] = []
     rows: list[ExpectedRow] = []
@@ -1234,35 +1268,56 @@ def _append_note(row: LessonRow, note: str) -> LessonRow:
     return LessonRow.model_validate(data)
 
 
-def _format_choices_for_prompt(choices: Sequence[str]) -> str:
+def _format_choices_for_prompt(choices: Sequence[str], *, locale: str = "ru") -> str:
     clean = [choice.strip() for choice in choices if choice.strip()]
     if not clean:
         return ""
     if len(clean) == 1:
         return clean[0]
+    conjunction = "or" if locale == "en" else "или"
     if len(clean) == 2:
-        return f"{clean[0]} или {clean[1]}"
-    return ", ".join(clean[:-1]) + f" или {clean[-1]}"
+        return f"{clean[0]} {conjunction} {clean[1]}"
+    return ", ".join(clean[:-1]) + f" {conjunction} {clean[-1]}"
 
 
-def _ensure_choice_prompt(prompt: str, choices: Sequence[str]) -> str:
+def _ensure_choice_prompt(
+    prompt: str, choices: Sequence[str], *, locale: str = "ru"
+) -> str:
     clean = list(dict.fromkeys(choice.strip() for choice in choices if choice.strip()))
     if not clean:
         return prompt.strip()
     folded_prompt = prompt.casefold()
     if all(choice.casefold() in folded_prompt for choice in clean):
         return prompt.strip()
-    rendered = _format_choices_for_prompt(clean)
+    rendered = _format_choices_for_prompt(clean, locale=locale)
     base = prompt.strip()
     if not base:
-        return f"Выберите один вариант: {rendered}."
+        prefix = "Choose one option" if locale == "en" else "Выберите один вариант"
+        return f"{prefix}: {rendered}."
     if base.endswith(":"):
         return f"{base} {rendered}"
     separator = "" if base.endswith((".", "!", "?")) else "."
-    return f"{base}{separator} Варианты: {rendered}."
+    prefix = "Options" if locale == "en" else "Варианты"
+    return f"{base}{separator} {prefix}: {rendered}."
 
 
-def canonicalize_with_source(markup: LessonMarkup, parsed: ParsedLesson) -> LessonMarkup:
+def _image_placeholder(field: str, row_id: str, locale: str) -> str:
+    labels = {
+        "title": ("НАЗВАНИЯ", "TITLE"),
+        "answer": ("ОТВЕТА", "ANSWER"),
+        "answer_format": ("ФОРМАТА ОТВЕТА", "ANSWER FORMAT"),
+    }
+    ru, en = labels[field]
+    return (
+        f"[IMAGE NEEDED FOR {en}: {row_id}]"
+        if locale == "en"
+        else f"[НУЖНА КАРТИНКА ДЛЯ {ru}: {row_id}]"
+    )
+
+
+def canonicalize_with_source(
+    markup: LessonMarkup, parsed: ParsedLesson, *, locale: str = "ru"
+) -> LessonMarkup:
     expected_by_id = {row.row_id: row for row in parsed.rows}
     returned_by_id = {row.row_id: row for row in markup.rows}
     if set(returned_by_id) != set(expected_by_id):
@@ -1303,9 +1358,7 @@ def canonicalize_with_source(markup: LessonMarkup, parsed: ParsedLesson) -> Less
             if data["status"] == "needs_image":
                 data["image_dependency"]["references"] = list(task.external_images)
                 if "title" in data["image_dependency"]["required_for"]:
-                    data["title"] = (
-                        f"[НУЖНА КАРТИНКА ДЛЯ НАЗВАНИЯ: {expected.row_id}]"
-                    )
+                    data["title"] = _image_placeholder("title", expected.row_id, locale)
             else:
                 data["image_dependency"]["required_for"] = []
                 data["image_dependency"]["references"] = []
@@ -1313,7 +1366,7 @@ def canonicalize_with_source(markup: LessonMarkup, parsed: ParsedLesson) -> Less
             continue
 
         metadata = task.metadata
-        if metadata.get("btitle"):
+        if metadata.get("btitle") and locale != "en":
             data["source_title"] = metadata["btitle"]
             data["title"] = metadata["btitle"]
         if metadata.get("bptype"):
@@ -1340,20 +1393,28 @@ def canonicalize_with_source(markup: LessonMarkup, parsed: ParsedLesson) -> Less
             else:
                 data["correct_answers"] = []
                 data["needs_checker"] = True
-                data["checker_reason"] = "В LaTeX задано слишком много смысловых вариантов ответа."
+                data["checker_reason"] = (
+                    "The LaTeX specifies too many distinct answers."
+                    if locale == "en"
+                    else "В LaTeX задано слишком много смысловых вариантов ответа."
+                )
                 data["answer_source"] = "embedded_metadata"
                 data["status"] = "needs_checker"
         if metadata.get("bchecker"):
             data["correct_answers"] = []
             data["needs_checker"] = True
-            data["checker_reason"] = "В LaTeX задан нестандартный чекер."
+            data["checker_reason"] = (
+                "The LaTeX specifies a custom checker."
+                if locale == "en"
+                else "В LaTeX задан нестандартный чекер."
+            )
             data["answer_source"] = "embedded_metadata"
             data["status"] = "needs_checker"
-        if metadata.get("bwrong"):
+        if metadata.get("bwrong") and locale != "en":
             data["wrong_ans"] = metadata["bwrong"]
-        if metadata.get("bcongrat"):
+        if metadata.get("bcongrat") and locale != "en":
             data["congrat"] = metadata["bcongrat"]
-        if metadata.get("bvalerr"):
+        if metadata.get("bvalerr") and locale != "en":
             prescribed = metadata["bvalerr"].strip()
             generated = str(data.get("input_prompt") or "").strip()
             example = re.search(r"(?i)\bнапример\b.*$", generated)
@@ -1402,20 +1463,21 @@ def canonicalize_with_source(markup: LessonMarkup, parsed: ParsedLesson) -> Less
             data["input_prompt"] = _ensure_choice_prompt(
                 str(data.get("input_prompt") or ""),
                 choices,
+                locale=locale,
             )
 
         required_for = list(data["image_dependency"].get("required_for") or [])
         if data["status"] == "needs_image":
             data["image_dependency"]["references"] = list(task.external_images)
             if "title" in required_for:
-                data["title"] = f"[НУЖНА КАРТИНКА ДЛЯ НАЗВАНИЯ: {expected.row_id}]"
+                data["title"] = _image_placeholder("title", expected.row_id, locale)
             if "answer_format" in required_for:
-                data["input_prompt"] = (
-                    f"[НУЖНА КАРТИНКА ДЛЯ ФОРМАТА ОТВЕТА: {expected.row_id}]"
+                data["input_prompt"] = _image_placeholder(
+                    "answer_format", expected.row_id, locale
                 )
             if "answer" in required_for:
                 data["correct_answers"] = [
-                    f"[НУЖНА КАРТИНКА ДЛЯ ОТВЕТА: {expected.row_id}]"
+                    _image_placeholder("answer", expected.row_id, locale)
                 ]
                 data["needs_checker"] = False
                 data["checker_reason"] = ""
@@ -1445,6 +1507,7 @@ def audit_lesson_markup(
     parsed: ParsedLesson,
     *,
     existing_titles: Sequence[str] = (),
+    locale: str = "ru",
 ) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -1460,14 +1523,15 @@ def audit_lesson_markup(
     expected_map = {row.row_id: row for row in parsed.rows}
     for row in markup.rows:
         expected = expected_map.get(row.row_id)
-        task = parsed.tasks[expected.task_index] if expected else None
         if expected:
             if (row.prob, row.item, row.prob_type) != (expected.prob, expected.item, expected.prob_type):
                 errors.append(f"{row.row_id}: structural fields differ from parser")
         title_key = row.title.casefold().strip()
         if not row.title.strip():
             errors.append(f"{row.row_id}: empty title")
-        if len(row.title) > 40 and not row.title.startswith("[НУЖНА КАРТИНКА"):
+        if len(row.title) > 40 and not row.title.startswith(
+            ("[НУЖНА КАРТИНКА", "[IMAGE NEEDED")
+        ):
             errors.append(f"{row.row_id}: title longer than 40 characters")
         if title_key in seen_titles:
             errors.append(f"{row.row_id}: duplicate title {row.title!r}")
@@ -1504,15 +1568,15 @@ def audit_lesson_markup(
             if row.answer_source != "image_missing":
                 errors.append(f"{row.row_id}: needs_image requires answer_source=image_missing")
             if "title" in row.image_dependency.required_for:
-                placeholder = f"[НУЖНА КАРТИНКА ДЛЯ НАЗВАНИЯ: {row.row_id}]"
+                placeholder = _image_placeholder("title", row.row_id, locale)
                 if row.title != placeholder:
                     errors.append(f"{row.row_id}: wrong title image placeholder")
             if "answer_format" in row.image_dependency.required_for:
-                placeholder = f"[НУЖНА КАРТИНКА ДЛЯ ФОРМАТА ОТВЕТА: {row.row_id}]"
+                placeholder = _image_placeholder("answer_format", row.row_id, locale)
                 if row.input_prompt != placeholder:
                     errors.append(f"{row.row_id}: wrong answer-format image placeholder")
             if "answer" in row.image_dependency.required_for:
-                placeholder = f"[НУЖНА КАРТИНКА ДЛЯ ОТВЕТА: {row.row_id}]"
+                placeholder = _image_placeholder("answer", row.row_id, locale)
                 if row.correct_answers != [placeholder]:
                     errors.append(f"{row.row_id}: wrong answer image placeholder")
         elif row.image_dependency.required_for:
@@ -1538,7 +1602,11 @@ def audit_lesson_markup(
             errors.append(f"{row.row_id}: more than 24 enumerated answers")
 
         complex_types = {"ДваЦелых", "ТриЦелых", "ЧетыреЦелых", "ПоследЦелых", "МножЦелых", "ПоследДробей", "МультиМнож", "Время", "Дата"}
-        if row.ans_type in complex_types and "например" not in row.input_prompt.lower():
+        example_marker = "example" if locale == "en" else "например"
+        if (
+            row.ans_type in complex_types
+            and example_marker not in row.input_prompt.lower()
+        ):
             errors.append(f"{row.row_id}: nontrivial input_prompt has no example")
         if row.ans_type == "Выбор" and any(
             choice.casefold() not in row.input_prompt.casefold()
@@ -1565,11 +1633,17 @@ def _factual_fields(row: LessonRow) -> dict[str, Any]:
     }
 
 
-def _fact_review_user_prompt(parsed: ParsedLesson, draft: LessonMarkup) -> str:
+def _fact_review_user_prompt(
+    parsed: ParsedLesson, draft: LessonMarkup, *, locale: str = "ru"
+) -> str:
     return (
-        "Проверь фактологические поля DRAFT_FACTS по MACHINE_PARSE. "
-        "EXPECTED_ROWS задаёт точный состав и порядок строк.\n\n"
-        "EXPECTED_ROWS:\n"
+        (
+            "Verify DRAFT_FACTS against MACHINE_PARSE. EXPECTED_ROWS fixes the exact row set and order.\n\n"
+            if locale == "en"
+            else "Проверь фактологические поля DRAFT_FACTS по MACHINE_PARSE. "
+            "EXPECTED_ROWS задаёт точный состав и порядок строк.\n\n"
+        )
+        + "EXPECTED_ROWS:\n"
         + json.dumps(
             [
                 {
@@ -1657,6 +1731,8 @@ def apply_fact_review(
     draft: LessonMarkup,
     review: LessonFactReview,
     parsed: ParsedLesson,
+    *,
+    locale: str = "ru",
 ) -> LessonMarkup:
     errors, _ = _audit_fact_review(review, draft, parsed)
     if errors:
@@ -1680,7 +1756,15 @@ def apply_fact_review(
         if checked.verdict == "needs_review" and checked.reason.strip():
             data["notes"] = list(
                 dict.fromkeys(
-                    [*data.get("notes", []), f"Фактологическая проверка: {checked.reason.strip()}"]
+                    [
+                        *data.get("notes", []),
+                        (
+                            "Fact review: "
+                            if locale == "en"
+                            else "Фактологическая проверка: "
+                        )
+                        + checked.reason.strip(),
+                    ]
                 )
             )
         rows.append(LessonRow.model_validate(data))
@@ -1693,7 +1777,7 @@ def apply_fact_review(
         warnings=list(dict.fromkeys([*draft.warnings, *review.warnings])),
     )
     # Explicit source metadata and answers still outrank both model passes.
-    return canonicalize_with_source(merged, parsed)
+    return canonicalize_with_source(merged, parsed, locale=locale)
 
 
 # ---------------------------------------------------------------------------
@@ -1917,7 +2001,17 @@ async def _openrouter_chat(
     return parsed_output
 
 
-def _repair_message(previous: Mapping[str, Any] | None, errors: Sequence[str]) -> str:
+def _repair_message(
+    previous: Mapping[str, Any] | None, errors: Sequence[str], *, locale: str = "ru"
+) -> str:
+    if locale == "en":
+        return (
+            "The previous JSON failed local validation. Return the complete corrected object.\n"
+            "Errors:\n- "
+            + "\n- ".join(errors)
+            + "\nPrevious object:\n"
+            + json.dumps(previous or {}, ensure_ascii=False, indent=2)
+        )
     return (
         "Предыдущий JSON не прошёл локальную проверку. Верни весь исправленный объект заново.\n"
         "Ошибки:\n- "
@@ -1931,10 +2025,16 @@ def _lesson_user_prompt(
     cleaned_latex: str,
     parsed: ParsedLesson,
     existing_titles: Sequence[str],
+    *,
+    locale: str = "ru",
 ) -> str:
     return (
-        "Разметь занятие. existing_titles и машинный разбор ниже являются частью задания.\n\n"
-        "EXISTING_TITLES:\n"
+        (
+            "Prepare lesson metadata in English. existing_titles and the machine parse below are part of the task.\n\n"
+            if locale == "en"
+            else "Разметь занятие. existing_titles и машинный разбор ниже являются частью задания.\n\n"
+        )
+        + "EXISTING_TITLES:\n"
         + json.dumps(list(existing_titles), ensure_ascii=False, indent=2)
         + "\n\nMACHINE_PARSE:\n"
         + json.dumps(parsed.prompt_payload(), ensure_ascii=False, indent=2)
@@ -1949,6 +2049,7 @@ def build_lesson_request_preview(
     lesson_group: LessonGroup,
     *,
     model: str = DEFAULT_MODEL,
+    locale: Literal["ru", "en"] = "ru",
     reasoning_effort: str | None = "low",
     existing_titles: Sequence[str] = (),
     max_output_tokens: int = 32000,
@@ -1958,15 +2059,22 @@ def build_lesson_request_preview(
     """Build the first-pass request without the API key or HTTP-only fields."""
 
     cleaned = clean_latex_document(lesson_latex)
-    parsed = parse_lesson_structure(cleaned, lesson_number, lesson_group)
+    parsed = parse_lesson_structure(cleaned, lesson_number, lesson_group, locale=locale)
     request: dict[str, Any] = {
         "model": model,
         "messages": _apply_prompt_cache_breakpoint(
             [
-                {"role": "system", "content": LESSON_SYSTEM_PROMPT},
+                {
+                    "role": "system",
+                    "content": LESSON_SYSTEM_PROMPT_EN
+                    if locale == "en"
+                    else LESSON_SYSTEM_PROMPT,
+                },
                 {
                     "role": "user",
-                    "content": _lesson_user_prompt(cleaned, parsed, existing_titles),
+                    "content": _lesson_user_prompt(
+                        cleaned, parsed, existing_titles, locale=locale
+                    ),
                 },
             ],
             model=model,
@@ -1979,7 +2087,9 @@ def build_lesson_request_preview(
             "json_schema": {
                 "name": LESSON_SCHEMA_NAME,
                 "strict": True,
-                "schema": LESSON_REMOTE_SCHEMA,
+                "schema": LESSON_REMOTE_SCHEMA_EN
+                if locale == "en"
+                else LESSON_REMOTE_SCHEMA,
             },
         },
         "provider": {"require_parameters": True, "sort": "price"},
@@ -1998,6 +2108,7 @@ async def generate_lesson_json(
     lesson_group: LessonGroup,
     *,
     model: str = DEFAULT_MODEL,
+    locale: Literal["ru", "en"] = "ru",
     api_key: str | None = None,
     proxy: str | None = None,
     reasoning_effort: str | None = "low",
@@ -2028,8 +2139,8 @@ async def generate_lesson_json(
         raise RuntimeError("OPENROUTER_API_KEY is not set")
 
     cleaned = clean_latex_document(lesson_latex)
-    parsed = parse_lesson_structure(cleaned, lesson_number, lesson_group)
-    user_prompt = _lesson_user_prompt(cleaned, parsed, existing_titles)
+    parsed = parse_lesson_structure(cleaned, lesson_number, lesson_group, locale=locale)
+    user_prompt = _lesson_user_prompt(cleaned, parsed, existing_titles, locale=locale)
 
     if diagnostics is not None:
         diagnostics.clear()
@@ -2053,11 +2164,21 @@ async def generate_lesson_json(
     accepted_warnings: list[str] = []
     for attempt in range(1, max_attempts + 1):
         messages: list[dict[str, Any]] = [
-            {"role": "system", "content": LESSON_SYSTEM_PROMPT},
+            {
+                "role": "system",
+                "content": LESSON_SYSTEM_PROMPT_EN
+                if locale == "en"
+                else LESSON_SYSTEM_PROMPT,
+            },
             {"role": "user", "content": user_prompt},
         ]
         if previous is not None:
-            messages.append({"role": "user", "content": _repair_message(previous, last_errors)})
+            messages.append(
+                {
+                    "role": "user",
+                    "content": _repair_message(previous, last_errors, locale=locale),
+                }
+            )
         attempt_diag: dict[str, Any] = {"attempt": attempt, "phase": "generation"}
         if diagnostics is not None:
             diagnostics["attempts"].append(attempt_diag)
@@ -2067,7 +2188,9 @@ async def generate_lesson_json(
                 proxy=proxy,
                 model=model,
                 messages=messages,
-                response_schema=LESSON_REMOTE_SCHEMA,
+                response_schema=LESSON_REMOTE_SCHEMA_EN
+                if locale == "en"
+                else LESSON_REMOTE_SCHEMA,
                 schema_name=LESSON_SCHEMA_NAME,
                 reasoning_effort=reasoning_effort,
                 max_output_tokens=max_output_tokens,
@@ -2079,8 +2202,10 @@ async def generate_lesson_json(
             )
             previous = raw
             markup = LessonMarkup.model_validate(raw)
-            markup = canonicalize_with_source(markup, parsed)
-            errors, warnings = audit_lesson_markup(markup, parsed, existing_titles=existing_titles)
+            markup = canonicalize_with_source(markup, parsed, locale=locale)
+            errors, warnings = audit_lesson_markup(
+                markup, parsed, existing_titles=existing_titles, locale=locale
+            )
             attempt_diag["semantic_errors"] = errors
             attempt_diag["semantic_warnings"] = warnings
             if not errors:
@@ -2102,7 +2227,7 @@ async def generate_lesson_json(
         diagnostics["accepted_generation"] = accepted.model_dump(mode="json")
 
     if verify:
-        verification_prompt = _fact_review_user_prompt(parsed, accepted)
+        verification_prompt = _fact_review_user_prompt(parsed, accepted, locale=locale)
         previous_review: dict[str, Any] | None = None
         last_review_errors: list[str] = []
         review_applied = False
@@ -2114,14 +2239,21 @@ async def generate_lesson_json(
             if diagnostics is not None:
                 diagnostics["attempts"].append(verify_diag)
             messages: list[dict[str, Any]] = [
-                {"role": "system", "content": FACT_REVIEW_SYSTEM_PROMPT},
+                {
+                    "role": "system",
+                    "content": FACT_REVIEW_SYSTEM_PROMPT_EN
+                    if locale == "en"
+                    else FACT_REVIEW_SYSTEM_PROMPT,
+                },
                 {"role": "user", "content": verification_prompt},
             ]
             if previous_review is not None:
                 messages.append(
                     {
                         "role": "user",
-                        "content": _repair_message(previous_review, last_review_errors),
+                        "content": _repair_message(
+                            previous_review, last_review_errors, locale=locale
+                        ),
                     }
                 )
             try:
@@ -2130,7 +2262,9 @@ async def generate_lesson_json(
                     proxy=proxy,
                     model=verification_model or model,
                     messages=messages,
-                    response_schema=FACT_REVIEW_REMOTE_SCHEMA,
+                    response_schema=FACT_REVIEW_REMOTE_SCHEMA_EN
+                    if locale == "en"
+                    else FACT_REVIEW_REMOTE_SCHEMA,
                     schema_name=FACT_REVIEW_SCHEMA_NAME,
                     reasoning_effort=reasoning_effort,
                     max_output_tokens=min(max_output_tokens, 10000),
@@ -2151,11 +2285,12 @@ async def generate_lesson_json(
                     last_review_errors = review_errors
                     continue
 
-                verified = apply_fact_review(accepted, review, parsed)
+                verified = apply_fact_review(accepted, review, parsed, locale=locale)
                 verify_errors, verify_warnings = audit_lesson_markup(
                     verified,
                     parsed,
                     existing_titles=existing_titles,
+                    locale=locale,
                 )
                 verify_diag["semantic_errors"] = verify_errors
                 verify_diag["semantic_warnings"] = verify_warnings
@@ -2185,9 +2320,12 @@ async def generate_lesson_json(
 
         if not review_applied:
             message = (
-                "Фактологическая проверка не применена после "
-                f"{verification_attempts} попыток: "
-                + "; ".join(last_review_errors or ["неизвестная ошибка"])
+                f"Fact review was not applied after {verification_attempts} attempts: "
+                if locale == "en"
+                else f"Фактологическая проверка не применена после {verification_attempts} попыток: "
+            ) + "; ".join(
+                last_review_errors
+                or ["unknown error" if locale == "en" else "неизвестная ошибка"]
             )
             if diagnostics is not None:
                 diagnostics["verification_outcome"] = "fallback_to_valid_generation"

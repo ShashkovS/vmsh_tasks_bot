@@ -2902,6 +2902,10 @@ msgstr "Specify a revision for the metadata table"
 msgid "Укажите краткую причину"
 msgstr "Provide a brief reason"
 
+#: apps/pwa_api/admin_course_routes.py
+msgid "Укажите модель OpenRouter в формате provider/model"
+msgstr "Enter an OpenRouter model in provider/model format"
+
 #: apps/pwa_api/legacy_print_routes.py
 msgid "Укажите номер занятия в параметре lesson"
 msgstr "Specify the class number in the lesson parameter"

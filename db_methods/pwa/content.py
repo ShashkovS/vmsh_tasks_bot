@@ -2193,6 +2193,24 @@ class PwaContentRepository:
     def _timestamp(self) -> str:
         return format_utc_timestamp(self._clock())
 
+    async def metadata_generation_settings(
+        self, *, course_public_id: str
+    ) -> dict[str, str]:
+        """Read current course/brand values; see docs/metadata-generation.md."""
+
+        def read(connection):
+            row = connection.execute(
+                "SELECT course.metadata_model, branding.default_locale "
+                "FROM courses AS course CROSS JOIN pwa_branding AS branding "
+                "WHERE course.public_id = ? AND branding.id = 1",
+                (course_public_id,),
+            ).fetchone()
+            if row is None:
+                raise ContentNotFound("metadata generation settings not found")
+            return dict(row)
+
+        return await self._factory.run_read_async(read)
+
     async def create_course_lesson(
         self,
         *,

@@ -5660,10 +5660,18 @@ async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
     assert malformed_detail.status == 404
 
 
+@pytest.mark.parametrize("content_locale,ui_locale", [("ru", "en"), ("en", "ru")])
 async def test_staff_generates_metadata_draft_for_later_condition_after_confirmation(
-    content_http: ContentHttpFixture,
+    content_http: ContentHttpFixture, content_locale: str, ui_locale: str,
 ):
     fixture = content_http
+    fixture.factory.run_write(lambda connection: connection.execute(
+        "UPDATE pwa_branding SET default_locale = ?, profile_id = ? WHERE id = 1",
+        (content_locale, "tlf-prep-clubs" if content_locale == "en" else "vmsh"),
+    ))
+    fixture.factory.run_write(lambda connection: connection.execute(
+        "UPDATE courses SET metadata_model = 'provider/course-model:free'"
+    ))
     revision, _compile_etag = await _upload_and_compile(
         fixture,
         group_lesson=fixture.group_lesson_a,
@@ -5676,7 +5684,7 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
         f"/staff/api/v1/content/revisions/{revision['revisionId']}/problem-matches"
     )
     match_response = await fixture.client.get(
-        match_url, cookies=_cookie(fixture, "admin"), headers=_headers()
+        match_url, cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale}, headers=_headers()
     )
     match = await match_response.json()
     resolved = await fixture.client.put(
@@ -5691,7 +5699,7 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
                 }
             ]
         },
-        cookies=_cookie(fixture, "admin"),
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
         headers=_headers(unsafe=True, if_match=match_response.headers["ETag"]),
     )
     assert resolved.status == 200, await resolved.text()
@@ -5700,7 +5708,7 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
     initial_grid = await fixture.client.get(
         grid_url,
         params={"revisionId": revision["revisionId"]},
-        cookies=_cookie(fixture, "admin"),
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
         headers=_headers(),
     )
     assert initial_grid.status == 200, await initial_grid.text()
@@ -5711,7 +5719,7 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
     generated = await fixture.client.post(
         f"{grid_url}/generate",
         json={"revisionId": revision["revisionId"], "confirmedOverwrite": False},
-        cookies=_cookie(fixture, "admin"),
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
         headers=_headers(unsafe=True),
     )
     assert generated.status == 200, await generated.text()
@@ -5722,11 +5730,14 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
     assert isinstance(generator, SyntheticMetadataGenerator)
     assert generator.requests[0].latex_text == "\\задача Найдите 7. \\кзадача"
     assert generator.requests[0].targets[0].source_ordinal == 1
+    assert generator.requests[0].locale == ui_locale
+    assert generator.requests[0].content_locale == content_locale
+    assert generator.requests[0].model == "provider/course-model:free"
 
     unchanged_grid = await fixture.client.get(
         grid_url,
         params={"revisionId": revision["revisionId"]},
-        cookies=_cookie(fixture, "admin"),
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
         headers=_headers(),
     )
     assert not (await unchanged_grid.json())["rows"][0]["reviewed"]
@@ -5742,7 +5753,7 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
     later_grid = await fixture.client.get(
         grid_url,
         params={"revisionId": later_revision["revisionId"]},
-        cookies=_cookie(fixture, "admin"),
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
         headers=_headers(),
     )
     assert later_grid.status == 200, await later_grid.text()
@@ -5756,7 +5767,7 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
             "revisionId": later_revision["revisionId"],
             "confirmedOverwrite": False,
         },
-        cookies=_cookie(fixture, "admin"),
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
         headers=_headers(unsafe=True),
     )
     assert missing_confirmation.status == 409
@@ -5764,17 +5775,21 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
         "metadata_generation_confirmation_required"
     )
 
+    fixture.factory.run_write(lambda connection: connection.execute(
+        "UPDATE courses SET metadata_model = 'openai/gpt-6-luna'"
+    ))
     later = await fixture.client.post(
         f"{grid_url}/generate",
         json={
             "revisionId": later_revision["revisionId"],
             "confirmedOverwrite": True,
         },
-        cookies=_cookie(fixture, "admin"),
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
         headers=_headers(unsafe=True),
     )
     assert later.status == 200, await later.text()
     assert len(generator.requests) == 2
+    assert generator.requests[1].model == "openai/gpt-6-luna"
 
 
 async def test_figure_layout_api_checks_csrf_scope_and_conflicts(content_http):

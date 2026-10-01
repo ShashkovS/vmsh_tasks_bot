@@ -1911,3 +1911,18 @@ This completes consolidation and the two-portal rollout. Physical-device push,
 external Zoom subscriptions, actual Telegram sends and the cumulative i18n
 performance budget remain their existing separate follow-ups; this rollout does
 not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
+
+
+## 2026-10-01 — язык и модель генерации metadata (готово)
+
+[Решение](../../docs/metadata-generation.md): язык контента из branding, модель
+в настройках курса; оба прохода OpenRouter и локальные сообщения учитывают язык.
+Проверки: 90 backend-тестов metadata и 21 тест схемы — PASS, включая
+up/down/up миграции и актуальные canonical artifacts после интеграции 0105.
+Frontend: 24 Vitest PASS, Staff и tools
+TypeScript, ESLint, Ruff, оба i18n gate и production build Staff — PASS.
+Форма проверена в Chromium на русском/английском и в тёмной теме, включая
+HTML-валидацию идентификатора модели; pageerror отсутствуют. Скриншоты:
+`.runtime/vmshpwa/metadata-settings-proof/`. Реальные OpenRouter-вызовы не запускались.
+Выкладка на оба production-сервера одобрена владельцем; применяется
+миграция `0104.course_metadata_model`. Результат rollout будет записан отдельно.

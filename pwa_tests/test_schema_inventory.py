@@ -349,6 +349,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
                 "0101.pwa_branding",
                 "0102.zoom_webhook_archive",
                 "0103.course_in_person_classes",
+                "0104.course_metadata_model",
                 "0105.pwa_recheck_receipt_lookup",
             }
         )
@@ -378,6 +379,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
         "0101.pwa_branding",
         "0102.zoom_webhook_archive",
         "0103.course_in_person_classes",
+        "0104.course_metadata_model",
         "0105.pwa_recheck_receipt_lookup",
     ]
     assert {item["name"] for item in report["missing_product_objects"]} >= {

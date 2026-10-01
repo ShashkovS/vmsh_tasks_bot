@@ -29,6 +29,7 @@ interface CourseDraft {
   sortOrder: string
   accentKey: string
   hasInPersonClasses: boolean
+  metadataModel: string
 }
 
 interface GroupDraft {
@@ -118,6 +119,7 @@ export function CourseCatalogEditor({
         sortOrder: String(course.sortOrder),
         accentKey: course.accentKey,
         hasInPersonClasses: course.hasInPersonClasses ?? true,
+        metadataModel: course.metadataModel ?? 'openai/gpt-5.6-luna',
       }
     : {
         code: '',
@@ -127,6 +129,7 @@ export function CourseCatalogEditor({
         sortOrder: '0',
         accentKey: 'course',
         hasInPersonClasses: true,
+        metadataModel: 'openai/gpt-5.6-luna',
       }
   const [draft, setDraft] = useState(() => readDraft(storageKey, fallback))
   const [storageAvailable, setStorageAvailable] = useState(true)
@@ -148,6 +151,7 @@ export function CourseCatalogEditor({
       sortOrder: Number(draft.sortOrder),
       accentKey: draft.accentKey,
       hasInPersonClasses: draft.hasInPersonClasses,
+      metadataModel: draft.metadataModel,
     }
     onSave(common)
   }
@@ -222,6 +226,28 @@ export function CourseCatalogEditor({
             />
             <Trans>В курсе есть очные занятия</Trans>
           </Label>
+          {/* docs/metadata-generation.md; 05-pages-and-flows.md: course settings. */}
+          <div className="grid gap-1 sm:col-span-2">
+            <Label htmlFor="course-metadata-model">
+              <Trans>Модель OpenRouter для metadata</Trans>
+            </Label>
+            <Input
+              id="course-metadata-model"
+              aria-describedby="course-metadata-model-help"
+              disabled={saving}
+              maxLength={200}
+              pattern="[A-Za-z0-9][A-Za-z0-9._\-]*/[A-Za-z0-9][A-Za-z0-9._:\/\-]*"
+              onChange={(event) => updateDraft({ metadataModel: event.target.value })}
+              required
+              value={draft.metadataModel}
+            />
+            <p id="course-metadata-model-help" className="text-small text-muted-foreground">
+              <Trans>
+                Идентификатор provider/model. Используется для генерации и проверки metadata со
+                следующего запроса, без перезапуска.
+              </Trans>
+            </p>
+          </div>
           {!storageAvailable ? (
             <p className="text-small text-status-error sm:col-span-2" role="alert">
               <Trans>

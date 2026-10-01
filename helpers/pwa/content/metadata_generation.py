@@ -9,22 +9,23 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from helpers.consts import ANS_TYPES_DECODER
 from helpers.pwa.i18n import N_, translate
 from models.pwa.content import ANSWER_TYPE_VALUES
+from models.pwa.metadata_generation import DEFAULT_METADATA_MODEL
 from vmsh_openrouter_tools_fixed_v2.vmsh_openrouter_contract import (
     generate_lesson_json,
     infer_lesson_identity,
 )
 
 
-DEFAULT_MODEL = "openai/gpt-5.6-luna"
+DEFAULT_MODEL = DEFAULT_METADATA_MODEL
 MAX_LATEX_CHARS = 500_000
 GENERATION_REASONING_EFFORT = "medium"
 GENERATION_MAX_OUTPUT_TOKENS = 12_000
@@ -182,8 +183,10 @@ class MetadataGenerationRequest:
     source_filename: str
     latex_text: str
     targets: tuple[MetadataGenerationTarget, ...]
-    # P6: response-only warnings; model prompts and generated content stay unchanged.
+    # docs/metadata-generation.md: content follows branding, independently of UI locale.
     locale: str = "ru"
+    content_locale: str = "ru"
+    model: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -298,7 +301,8 @@ class OpenRouterMetadataGenerator:
                     lesson_group,
                     api_key=key,
                     proxy=self._proxy or None,
-                    model=self._model,
+                    model=request.model or self._model,
+                    locale=request.content_locale,
                     reasoning_effort=GENERATION_REASONING_EFFORT,
                     max_attempts=2,
                     max_output_tokens=GENERATION_MAX_OUTPUT_TOKENS,
