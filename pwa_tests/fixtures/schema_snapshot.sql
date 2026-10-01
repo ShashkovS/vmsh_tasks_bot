@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: e3adaf9500869700ce6e72b9b13ced3f5e0c11bbc7466245d1950565f70eccf5
+-- Product schema SHA-256: d0565e3d9907cebe79544a4343cb7c78fba52cce2d2c9a8a8ed35e31c9dc34a3
 
 CREATE TABLE achievement_definitions
 (
@@ -3104,6 +3104,10 @@ CREATE UNIQUE INDEX groups_course_short_code_uq
 
 CREATE INDEX hint_reveals_student_timeline_idx
     on hint_reveals (student_user_id, revealed_at, id);
+
+CREATE INDEX idempotency_records_completed_receipt_lookup_idx
+    ON idempotency_records (account_id, operation, idempotency_key, payload_sha256, id DESC)
+    WHERE state = 'completed';
 
 CREATE INDEX idempotency_records_expiry_idx
     on idempotency_records (expires_at, id)

@@ -345,6 +345,10 @@
       {
         "id": "0103.course_in_person_classes",
         "sha256": "c2e36785cf1c728c4296c2d07ed930f4949c909bb3c04fd5d4282b0b326e4397"
+      },
+      {
+        "id": "0105.pwa_recheck_receipt_lookup",
+        "sha256": "bdb0f20cc579d33c114a369c4721c3da59dad2860c43ed02b455a4b64b19f43b"
       }
     ],
     "repository_head_status": {
@@ -355,7 +359,7 @@
     }
   },
   "product": {
-    "object_count": 497,
+    "object_count": 498,
     "objects": [
       {
         "columns": [
@@ -11287,6 +11291,62 @@
           }
         ],
         "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "operation",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 2
+              },
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "payload_sha256",
+                "seqno": 3
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 4
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 5
+              }
+            ],
+            "name": "idempotency_records_completed_receipt_lookup_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
           {
             "columns": [
               {
@@ -29537,6 +29597,13 @@
         "type": "index"
       },
       {
+        "name": "idempotency_records_completed_receipt_lookup_idx",
+        "object_sha256": "52d1cbb4d71fd6729f32cc23aea987b66ddb3c005c19237e283d246a61793ac2",
+        "sql": "CREATE INDEX idempotency_records_completed_receipt_lookup_idx\n    ON idempotency_records (account_id, operation, idempotency_key, payload_sha256, id DESC)\n    WHERE state = 'completed';",
+        "table_name": "idempotency_records",
+        "type": "index"
+      },
+      {
         "name": "idempotency_records_expiry_idx",
         "object_sha256": "288fd13ca4c0ab558c0768eefbd3472030dccfc9b8546757b36479d7b8b7e8ce",
         "sql": "CREATE INDEX idempotency_records_expiry_idx\n    on idempotency_records (expires_at, id)\n    where expires_at is not null;",
@@ -31497,8 +31564,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "e5fa5eb63b944fabcef27d70f88dec349cb3f8eb2a64019f653217891467969b",
-    "sha256": "e3adaf9500869700ce6e72b9b13ced3f5e0c11bbc7466245d1950565f70eccf5"
+    "pragma_structure_sha256": "30a5bcb5fcdb8bd94663abd4cc4ec965ee4e483fb5dfd65e985b6b6e1ac7de24",
+    "sha256": "d0565e3d9907cebe79544a4343cb7c78fba52cce2d2c9a8a8ed35e31c9dc34a3"
   },
   "source_kind": "repository-migration-head"
 }

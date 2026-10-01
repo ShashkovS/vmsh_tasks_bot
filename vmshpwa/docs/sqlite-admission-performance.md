@@ -204,3 +204,34 @@ guard. Поэтому плохая миграция прекращает deploy 
 (или `make pwa-performance-guard` для human-профиля). Регрессии находятся в
 `pwa_tests/test_database_performance_guard.py` и
 `pwa_tests/integration/test_test_attempt_projection_migration.py`.
+
+## Receipt lookup index — 1 October 2026
+
+Owner authorized committing/pushing an index migration and deploying it to
+VMSh and TLF. Incident metrics show long test-answer rechecks coinciding with
+interactive SQLite reader queues. In `_stored_attempts`, the correlated receipt
+lookup scans `idempotency_records` once per answer: its original unique index
+starts with `audience`, which this historical lookup does not constrain.
+
+[Migration 0105](../../migrations/0105.pwa_recheck_receipt_lookup.sql) adds a
+partial lookup index on `(account_id, operation, idempotency_key,
+payload_sha256, id DESC)` for `state = 'completed'`. It directly serves the
+existing account-scoped receipt lookup in
+[`submissions.py:_stored_attempts`](../../db_methods/pwa/submissions.py),
+including its newest-receipt ordering, without altering query semantics,
+answer payloads, verdicts or replay responses. The existing audience-scoped
+unique constraint and all identity/state triggers remain intact.
+
+Its dependency is the published `0103.course_in_person_classes`; independent
+in-progress figure migration 0104 is excluded from this release. Rollback drops
+only the new index. Regression:
+[`test_recheck_receipt_lookup_migration.py`](../../pwa_tests/integration/test_recheck_receipt_lookup_migration.py)
+checks the actual repository query plan, identical stored rows/previews and
+up/down/up. The new regression and 14 existing recheck/idempotency checks
+passed. A server-resident production-backup rehearsal created the index in
+112 ms and read 714 historical answers in 26 ms using the original query.
+Up/down/up preserved complete receipt/attempt/result/enrollment row digests
+and SQLite integrity. The isolated index-only release passes 36 focused migration/recheck/idempotency/
+schema checks, including the two updated schema expectations; the inventory CLI
+check and Ruff pass. Both-host rollout is next; TLF has a guarded manual
+backup/migration/data-comparison/index-only rollback script.

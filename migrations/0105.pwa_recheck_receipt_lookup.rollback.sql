@@ -1,0 +1,1 @@
+DROP INDEX idempotency_records_completed_receipt_lookup_idx;

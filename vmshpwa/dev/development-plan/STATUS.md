@@ -3705,3 +3705,17 @@ This completes consolidation and the two-portal rollout. Physical-device push,
 external Zoom subscriptions, actual Telegram sends and the cumulative i18n
 performance budget remain their existing separate follow-ups; this rollout does
 not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
+
+
+### 2026-10-01 — Recheck receipt lookup index (rollout in progress)
+
+Owner authorized commit, push and deployment to both portals after the latency
+investigation. Migration 0105 adds a completed-receipt index for the existing
+`_stored_attempts` lookup; no payload/verdict/checker changes. Independent figure
+work and migration 0104 remain outside this release. The isolated release passes
+36 focused migration/recheck/idempotency/schema checks (including the two updated
+schema expectations), schema-inventory check, Ruff and staged diff validation.
+Server-resident backup rehearsal passed: index creation 112 ms, 714 historical
+answers read in 26 ms, preserved row digests and integrity ok. VMSh automatic
+and guarded manual TLF rollout are next; TLF has a prepared backup/data-comparison/
+index-only rollback script. [Requirement, implementation and proof](../../docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
