@@ -38,7 +38,19 @@ Staff-сессия остаётся отдельной. В Student видна п
 `pwa_tests/integration/test_staff_testing_http.py` проверяет English/Russian
 для одной сессии учителя и администратора вместе с повторным входом и отзывом
 доступа. Все 6 HTTP-сценариев, Ruff и синхронность/покрытие каталогов проходят.
-Выпуск и проверка production в работе.
+Выпуск завершён: `23c0a65451a55516aaa8ad2e87ed00ce69a009c4` на обоих серверах.
+VMSH webhook подтвердил backend-only deploy без миграций; PWA и Telegram active.
+TLF SSH release `tlfprep-20261001-teacher-label-23c0a65451a5-r2` прошёл 25
+публичных read-only HTTP checks, health и сравнение всех product rows с
+остановленными writers. Credentials и NATS PID сохранились. Backup до/после:
+`20261001T143017.592484Z` / `20261001T143047.564200Z`, оба integrity=ok.
+Первая подготовка остановилась до cutover из-за имени файла data-check;
+исправленный скрипт и обе записи выпуска сохранены на сервере.
+
+В штатном тестовом входе администратора проверена реальная страница
+`https://prep.leaders.tech/student/tasks?course=math`: шапка показывает
+«Teacher test: Administrator TLF Prep Clubs». Ответы и фото не отправлялись.
+Снимок: `.runtime/vmshpwa/teacher-label-proof/tlf-success.jpg`.
 
 - `migrations/0085.pwa_staff_testing.sql`: связь Staff account → тестовый user
   типа `STAFF_TEST_STUDENT` (512). История отправок остаётся в обычных таблицах.
