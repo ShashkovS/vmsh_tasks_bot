@@ -3707,15 +3707,22 @@ performance budget remain their existing separate follow-ups; this rollout does
 not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
 
 
-### 2026-10-01 — Recheck receipt lookup index (rollout in progress)
+### 2026-10-01 — Recheck receipt lookup index (complete)
 
-Owner authorized commit, push and deployment to both portals after the latency
-investigation. Migration 0105 adds a completed-receipt index for the existing
-`_stored_attempts` lookup; no payload/verdict/checker changes. Independent figure
-work and migration 0104 remain outside this release. The isolated release passes
-36 focused migration/recheck/idempotency/schema checks (including the two updated
-schema expectations), schema-inventory check, Ruff and staged diff validation.
-Server-resident backup rehearsal passed: index creation 112 ms, 714 historical
-answers read in 26 ms, preserved row digests and integrity ok. VMSh automatic
-and guarded manual TLF rollout are next; TLF has a prepared backup/data-comparison/
-index-only rollback script. [Requirement, implementation and proof](../../docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
+Migration 0105 is committed/pushed as `0a05b685` and installed on both portals:
+VMSh automatic webhook; TLF guarded manual script. Both databases have 76
+migrations, the completed-receipt index, no unrelated figure migration 0104 and
+integrity ok. The actual VMSh query selects 714 answers in 15 ms using the index.
+The isolated release passes 36 focused migration/recheck/idempotency/schema
+checks, schema-inventory CLI check, Ruff and staged diff validation.
+
+Fresh VMSh before/after backups have identical full-row digests for 44016
+idempotency receipts, 20676 attempts, 34536 results and 1519 enrollments. TLF
+compared all product tables with writers stopped; all rows, credentials and
+static release remained identical, including the three raw Zoom receipts.
+Both portals pass 25 read-only HTTP checks each. All nine Prometheus targets
+are up, backend 5xx increase and SQLite waiting queues are zero in the checked
+post-cutover minute. PWA, VMSh Telegram and TLF Zoom are active; shared NATS
+PIDs are unchanged. Index rollback was rehearsed on a server-resident copy and
+is retained in the TLF deployment script. Independent figure work stays outside
+this release. [Requirement, implementation and operational proof](../../docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
