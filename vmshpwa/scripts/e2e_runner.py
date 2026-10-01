@@ -102,7 +102,9 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
             ]
         )
     elif mode == "offline-current":
-        playwright.extend(["e2e/offline-current-lessons.spec.ts", "e2e/content-publication.spec.ts"])
+        playwright.extend(
+            ["e2e/offline-current-lessons.spec.ts", "e2e/content-publication.spec.ts"]
+        )
     elif mode == "content":
         playwright.append("e2e/content-publication.spec.ts")
     elif mode == "family":
@@ -116,18 +118,23 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     elif mode == "support":
         playwright.append("e2e/support-dialogue.spec.ts")
     elif mode == "portal-release":
-        # production-rollout-checklist.md: consolidate current portal features
-        # under the same lock, build and real-backend three-browser boundary.
-        playwright.extend([
-            "e2e/branding.spec.ts",
-            "e2e/course-attendance.spec.ts",
-            "e2e/authentication.spec.ts",
-            "e2e/family-context.spec.ts",
-            "e2e/content-publication.spec.ts",
-            "e2e/i18n.spec.ts",
-            "e2e/smooth-redeploy.spec.ts",
-            "--grep-invert", "@visual",
-        ])
+        # production-rollout-checklist.md: destructive fixture families receive
+        # fresh SQLite phases, just like the existing full release suite.
+        phases = (
+            (
+                "e2e/authentication.spec.ts",
+                "e2e/family-context.spec.ts",
+                "e2e/i18n.spec.ts",
+            ),
+            ("e2e/branding.spec.ts",),
+            ("e2e/course-attendance.spec.ts",),
+            ("e2e/content-publication.spec.ts",),
+            ("e2e/smooth-redeploy.spec.ts",),
+        )
+        return (
+            ("pnpm", "build"),
+            *((*playwright, *phase, "--grep-invert", "@visual") for phase in phases),
+        )
     elif mode == "course-attendance":
         playwright.append("e2e/course-attendance.spec.ts")
     elif mode == "classrooms":
@@ -270,7 +277,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_commands(
                 commands_for_mode(args.mode),
                 reset_database_between_commands=args.mode
-                in {"all", "oral", "oral-windows", "live-marking", "student-results", "organizers"},
+                in {
+                    "all",
+                    "portal-release",
+                    "oral",
+                    "oral-windows",
+                    "live-marking",
+                    "student-results",
+                    "organizers",
+                },
             )
     except E2eSuiteAlreadyRunning as error:
         print(error)

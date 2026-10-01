@@ -45,8 +45,9 @@ Branding does not translate lesson content or rename existing account data.
    **TLF Prep Clubs**, and save. Verify an anonymous device opens in English and
    manifest icons resolve on the new origin.
 
-This change has not been deployed to `prep.leaders.tech`; infrastructure and live
-production checks remain a deployment follow-up.
+TLF identity is deployed on `prep.leaders.tech`; see the
+[deployment and live evidence](../../docs/deploy/tlf-app/README.md).
+The VMSh instance retains its own default identity and explicit account locales.
 
 ## Certificate preparation — 2026-09-30
 

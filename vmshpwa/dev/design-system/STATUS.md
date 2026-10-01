@@ -1844,3 +1844,22 @@ stay explicit. Query performance guard passed (~47 ms). Host evidence remains
 in /tmp/vmsh-consolidation-vaq_iyb3; no data rows or credentials copied into Git.
 All changed Python files pass Ruff; complete frontend type checks and RU/EN
 catalog checks pass. Full backend/frontend suites and rollout gates continue.
+
+Integration gate update: bounded frontend suite ran 967 cases; four stale
+expectations/config-import failures were repaired and the affected 10 cases
+passed. All changed Storybook scenarios passed (49 Chromium cases). Full PWA
+backend ran 2458 cases (2441 passed, 6 skipped, 11 failures); all failed cases
+were resolved by focused reruns, including the unchanged performance tripwire.
+Golden corpus verification used only the 54 hash-pinned fixtures in an isolated
+copy; additional author examples remain untouched. Legacy Telegram suite passed
+124 cases, one skipped. TypeScript, ESLint/CSS, formatting and both catalog gates
+passed. The browser matrix continues with fresh database phases; navigation-safe
+locale cleanup and explicit analytics/group selection repair outdated test
+assumptions rather than weakening product checks.
+
+TLF candidate frozen backend and all four production frontend builds passed.
+Online backup 20261001T101510.578028Z and source/runtime rollback artifacts are
+retained under deploy/releases/tlfprep-20261001-consolidated-a7bccbc1. Isolated
+TLF migration/performance rehearsal passed: 75 migrations, integrity ok, both
+courses remain disabled for in-person attendance and all three Zoom receipts
+preserved. No portal has been switched to the candidate yet.

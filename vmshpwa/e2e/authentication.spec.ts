@@ -202,6 +202,7 @@ test('Teacher reads only the scoped anonymous course statistics', async ({ page 
   )
   await expect(page.getByRole('heading', { name: 'Статистика курса', level: 1 })).toBeVisible()
   await expect(page.getByLabel('Группа')).toHaveValue('')
+  await page.getByLabel('Группа').selectOption('g-1')
   await expect(page.getByRole('button', { name: 'Занятие 41' })).toHaveAttribute(
     'aria-current',
     'true',

@@ -55,19 +55,13 @@ test('Landing recovers from missing catalogs with a bilingual reload screen', as
 // accounts are shared by all specs, so every test restores Russian.
 
 async function saveAccountLocale(page: Page, audience: string, locale: 'ru' | 'en') {
-  const status = await page.evaluate(
-    async ({ audience, locale }) =>
-      (
-        await fetch(`/${audience}/api/v1/auth/locale`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ locale }),
-        })
-      ).status,
-    { audience, locale },
-  )
-  expect(status).toBe(200)
+  // Account changes can reload the document. Context-level cleanup survives
+  // that navigation and still uses the real audience session and origin check.
+  const response = await page.request.put(`/${audience}/api/v1/auth/locale`, {
+    headers: { Origin: new URL(page.url()).origin },
+    data: { locale },
+  })
+  expect(response.status()).toBe(200)
 }
 
 test('Student switches the account to English in the profile', async ({ page, browser }) => {

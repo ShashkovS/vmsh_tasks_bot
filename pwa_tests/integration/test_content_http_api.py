@@ -4866,7 +4866,7 @@ async def test_invalid_compile_is_terminal_and_cannot_publish_or_mutate(
         group_lesson=fixture.group_lesson_a,
         kind="condition",
         filename="invalid/condition.tex",
-        source=b"\\problem UNKNOWN \\endproblem",
+        source=b"\\problem \\unsupportedmacro{UNKNOWN} \\endproblem",
     )
     assert uploaded.status == 201
     uploaded_payload = await uploaded.json()
@@ -5177,6 +5177,7 @@ async def test_student_course_list_projects_checked_session_authority(
                     "status": "active",
                     "sortOrder": 1,
                     "accentKey": "math",
+                    "hasInPersonClasses": True,
                     "version": 1,
                 },
                 "activeGroupId": "g-1",
@@ -5347,6 +5348,7 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
                     "status": "active",
                     "sortOrder": 1,
                     "accentKey": "math",
+                    "hasInPersonClasses": True,
                     "version": 1,
                 },
                 "activeGroupId": "g-1",

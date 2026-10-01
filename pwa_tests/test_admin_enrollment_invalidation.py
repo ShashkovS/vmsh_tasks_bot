@@ -32,7 +32,13 @@ async def test_enrollment_change_invalidates_only_owners_and_staff_directory() -
         (
             "pwa_invalidate",
             {
-                "resources": ["courses", "home", "classroom-assignments"],
+                "resources": [
+                    "courses",
+                    "home",
+                    "classroom-assignments",
+                    "notification-events",
+                    "notification-preferences",
+                ],
                 "reason": "staff-enrollment-updated",
                 "audience": "student",
                 "accountId": "student-account",
@@ -41,7 +47,13 @@ async def test_enrollment_change_invalidates_only_owners_and_staff_directory() -
         (
             "pwa_invalidate",
             {
-                "resources": ["courses", "home", "classroom-assignments"],
+                "resources": [
+                    "courses",
+                    "home",
+                    "classroom-assignments",
+                    "notification-events",
+                    "notification-preferences",
+                ],
                 "reason": "staff-enrollment-updated",
                 "audience": "family",
                 "accountId": "family-account",

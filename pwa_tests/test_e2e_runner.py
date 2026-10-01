@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,6 +13,7 @@ from vmshpwa.scripts.e2e_runner import (
     E2eSuiteAlreadyRunning,
     commands_for_mode,
     exclusive_e2e_run,
+    main,
     run_commands,
     sanitized_e2e_environment,
 )
@@ -281,3 +283,18 @@ def test_every_browser_source_vite_input_has_an_explicit_safe_e2e_value():
 
     assert source_inputs
     assert source_inputs <= E2E_BROWSER_BUILD_ENVIRONMENT.keys()
+
+
+def test_portal_release_keeps_destructive_fixtures_in_fresh_database_phases(monkeypatch):
+    commands = commands_for_mode("portal-release")
+    for spec in ("branding", "course-attendance", "content-publication", "smooth-redeploy"):
+        phase = next(command for command in commands if f"e2e/{spec}.spec.ts" in command)
+        assert sum(argument.endswith(".spec.ts") for argument in phase) == 1
+    calls = []
+    monkeypatch.setattr("vmshpwa.scripts.e2e_runner.exclusive_e2e_run", nullcontext)
+    monkeypatch.setattr(
+        "vmshpwa.scripts.e2e_runner.run_commands",
+        lambda commands, **kwargs: calls.append(kwargs) or 0,
+    )
+    assert main(["--mode", "portal-release"]) == 0
+    assert calls == [{"reset_database_between_commands": True}]
