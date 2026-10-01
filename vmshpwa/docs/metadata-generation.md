@@ -175,7 +175,7 @@ revision. Отсутствие поля сохраняет совместимо�
 недоступный localStorage, повторная генерация и отмена; contract/client tests.
 Проверены 31 domain-сценарий, 2 HTTP-сценария, 40 UI/contract/client tests,
 typecheck contracts/content/Staff, ESLint/Ruff, i18n sync/coverage и Staff build.
-Production-выпуск в работе.
+Итоговый production-выпуск и проверка завершены ниже.
 
 
 Дополнение: восстановление local draft в `ProblemReviewWorkflow.acceptMetadata`
@@ -188,4 +188,20 @@ Production-выпуск в работе.
 и TLF SSH release `tlfprep-20261001-explicit-types-de054345c13a`. TLF прошёл 25
 read-only HTTP checks; все product rows, credentials и NATS PID сохранились.
 Backup: `20261001T150339.467376Z` / `20261001T150405.605579Z`, integrity ok.
-Выпуск дополнения и финальная браузерная проверка в работе.
+Дополнение `6e4b82f76f6366dce376bf977ac5f9ed07c9330d` выложено на оба сервера.
+TLF release: `tlfprep-20261001-explicit-types-6e4b82f76f63`; retained script
+и проверки сохранены под тем же именем в `/web/vmsh_tasks_bot/deploy/releases/`.
+Before/after backup: `20261001T151024.052471Z` / `20261001T151049.947421Z`,
+integrity ok, 3 raw Zoom receipts. Product rows, credentials и NATS PID совпали.
+Оба сервера — по 25 read-only HTTP checks. VMSH webhook подтвердил frontend
+deploy и health; static release `6e4b82f76f63-20261001150934`.
+Schema/runtime configuration/model selection не менялись.
+
+В существующем owner-authenticated Staff браузере реальная `gl-1`-страница
+перезагружена: новая кнопка «Generate using table types» доступна рядом с обычной
+генерацией; прежний локальный результат восстановлен, старый ETag сохранил
+правильную пометку stale. Изменения metadata в production не сохранялись и не
+публиковались; новая OpenRouter-генерация при браузерной проверке не запускалась.
+Смешанные типы и оба model-pass проверены изолированными тестами с SDK mock.
+Снимок: `.runtime/vmshpwa/metadata-explicit-types-proof/tlf-success.jpg`.
+Итог: 31 domain, 2 HTTP, 40 frontend tests PASS; types/lint/i18n/build PASS.
