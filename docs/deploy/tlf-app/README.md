@@ -68,20 +68,20 @@ schema/first-admin regression checks.
 All paths below are relative to `/web/vmsh_tasks_bot`. Use SSH alias
 `tlfprepagent` and `sudo`; the service account has no interactive login.
 
-| Path | Purpose |
-| --- | --- |
-| `vmsh_tasks_bot/` | Backend repository with nested frontend source |
-| `vmsh_tasks_bot/creds_prod/vmsh_bot_config_prod.json` | Canonical secrets, owner `vmsh_tasks_bot`, 0600; moved from temporary `/web` file |
-| `vmsh_tasks_bot/db/` | Independent product/analytics databases, WAL/locks |
-| `vmshpwa/current` | Symlink to the current release, four applications |
-| `vmshpwa/immutable-assets/` | Append-only hashed assets for open tabs |
-| `vmshpwa/runtime/` | Units, transport environment, nginx/TLS, sockets, media/write |
-| `deploy/bin/` | [build](build_source.sh), [renderer](render_server.py), [initializer](initialize.py), [backup](backup.py), [live probe](live_probe.py), [S3 probe](s3_probe.py) |
-| `deploy/reports/` | Build, migration, converters, nginx/systemd, HTTP/S3, live and restart proofs, no credentials |
-| `deploy/systemd/`, `deploy/config/` | Convenience pointers to installed runtime files |
-| `backups/<UTC timestamp>/` | Main/analytics snapshots and integrity report |
-| `toolchains/` | Pinned Python/Node/pnpm/uv |
-| `tls/`, `monitoring/` | Root-only pointers to certs, config, monitoring source/Grafana credentials |
+| Path                                                  | Purpose                                                                                                                                                         |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vmsh_tasks_bot/`                                     | Backend repository with nested frontend source                                                                                                                  |
+| `vmsh_tasks_bot/creds_prod/vmsh_bot_config_prod.json` | Canonical secrets, owner `vmsh_tasks_bot`, 0600; moved from temporary `/web` file                                                                               |
+| `vmsh_tasks_bot/db/`                                  | Independent product/analytics databases, WAL/locks                                                                                                              |
+| `vmshpwa/current`                                     | Symlink to the current release, four applications                                                                                                               |
+| `vmshpwa/immutable-assets/`                           | Append-only hashed assets for open tabs                                                                                                                         |
+| `vmshpwa/runtime/`                                    | Units, transport environment, nginx/TLS, sockets, media/write                                                                                                   |
+| `deploy/bin/`                                         | [build](build_source.sh), [renderer](render_server.py), [initializer](initialize.py), [backup](backup.py), [live probe](live_probe.py), [S3 probe](s3_probe.py) |
+| `deploy/reports/`                                     | Build, migration, converters, nginx/systemd, HTTP/S3, live and restart proofs, no credentials                                                                   |
+| `deploy/systemd/`, `deploy/config/`                   | Convenience pointers to installed runtime files                                                                                                                 |
+| `backups/<UTC timestamp>/`                            | Main/analytics snapshots and integrity report                                                                                                                   |
+| `toolchains/`                                         | Pinned Python/Node/pnpm/uv                                                                                                                                      |
+| `tls/`, `monitoring/`                                 | Root-only pointers to certs, config, monitoring source/Grafana credentials                                                                                      |
 
 `/etc/systemd/system` and `/etc/nginx` link inside this tree. The immutable asset
 root is absolute: `current/..` would follow the symlink into the wrong release
@@ -145,7 +145,6 @@ are stopped. The runtime schema guard rejects an unknown migration head: roll ba
 the retained source and static symlink. Retain all other migrations/history.
 Avoid restoring a DB snapshot after new Zoom receipts have arrived.
 
-
 Attendance release deployed: `tlfprep-20261001-attendance`, 2026-10-01.
 Pre-release verified backup: `backups/20261001T091337.198003Z`.
 Proofs, source rollback archive and previous static target are retained in
@@ -160,3 +159,55 @@ session was supplied by the owner. After verification the owner explicitly
 requested all prep courses to have no in-person classes: TLF Math Club and
 TLF Physics Club were both disabled through the audited Staff UI. New course
 defaults stay enabled. Existing enrollment preferences/history remain intact.
+
+## Current PWA consolidation — 2026-10-01
+
+Both production portals now use the current PWA code at `0926b9ea`, including
+English/mixed LaTeX, localized problem headings, branding, course attendance
+settings and the cold-start maintenance recovery fix. Current branches were
+already ancestors of `vmshpwa`; historical experimental branches were excluded
+at the owner's request. Documentation-only follow-ups do not require a TLF
+runtime restart or rebuilding this retained production artifact.
+
+TLF release: `tlfprep-20261001-consolidated-0926b9ea`. The guarded manual cutover
+retains the source/runtime snapshot under
+`deploy/releases/tlfprep-20261001-consolidated-a7bccbc1` (the directory records
+initial preparation; the activated artifact is from `0926b9ea`). Fresh backups
+`20261001T110948.589235Z` and `20261001T110957.296089Z` passed integrity. All
+course flags, enrollment rows and three raw Zoom receipts were compared while
+writers were stopped and remained identical. Both courses stay online-only.
+Existing secret configuration is preserved. Shared NATS was not restarted.
+
+An initial internal health probe lacked the required trusted proxy chain and
+triggered the prepared source/runtime/static rollback. Health checks through
+nginx passed; the corrected direct socket probe uses the same forwarding
+headers as nginx and does not weaken backend security:
+
+```sh
+curl --fail --unix-socket /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock \
+  -H 'X-Forwarded-For: 127.0.0.1' \
+  -H 'X-Forwarded-Host: prep.leaders.tech' \
+  -H 'X-Forwarded-Proto: https' \
+  http://localhost/student/api/v1/health
+```
+
+VMSh was updated by the main-branch webhook after TLF verification. Initial
+static release: `0926b9ea9c41-20261001111130`. Before/after backups
+`vmsh-before-deploy-20261001111229.sqlite3` and
+`vmsh-after-deploy-20261001111306.sqlite3` have identical enrollment digests,
+1519 enrollments and 34498 result rows; schema contains 75 migrations and the
+existing VMSh course remains enabled for in-person classes. Student/Family
+manifest proxy locations were added to the live nginx configuration with a
+retained copy and successful `nginx -t` before reload. Telegram remains active.
+
+Validation on both live portals: 25 read-only public HTTP checks each,
+authenticated Staff overview/catalog/settings, correct VMSh/TLF identities and
+English navigation. VMSh published PWA preview shows 11 English `Problem`
+headings and all six figures load; authored Russian content stays intact.
+All 182 JS/CSS URLs captured before cutover still return
+HTTP 200 with the correct MIME types. Five VMSh/four TLF Prometheus targets are
+up with empty scrape errors; post-cutover backend 5xx increase is zero over one
+minute. NATS PIDs are unchanged. No synthetic Zoom receipts or submissions were
+written into production by these checks. All 15 maintenance recovery scenarios
+and 6 Family context scenarios passed in three browsers without retries before
+cutover; see [integration evidence](../../../vmshpwa/dev/development-plan/23-pilot-deployment.md#2026-10-01--consolidation-and-two-portal-rollout-complete).

@@ -1822,7 +1822,7 @@ Frontend commands used installed node_modules/.bin to avoid pnpm registry
 verification. No backend/compiler changes or deployment are needed for the
 source fix; the running application receives it with its next frontend build.
 
-### 2026-10-01 — Consolidation and two-portal rollout (in progress)
+### 2026-10-01 — Consolidation and two-portal rollout (complete)
 
 Owner requests consolidation into vmshpwa and sequential rollout to
 vmsh.shashkovs.ru and prep.leaders.tech. Current PWA branches (including
@@ -1862,17 +1862,52 @@ Online backup 20261001T101510.578028Z and source/runtime rollback artifacts are
 retained under deploy/releases/tlfprep-20261001-consolidated-a7bccbc1. Isolated
 TLF migration/performance rehearsal passed: 75 migrations, integrity ok, both
 courses remain disabled for in-person attendance and all three Zoom receipts
-preserved. No portal has been switched to the candidate yet.
+preserved. Neither portal had been switched at this pre-cutover gate.
 
 Pre-cutover integration found a real branding regression: cold starts during
 nginx 502/maintenance 503 bypassed the existing recovery boundary and displayed
-the catalog failure screen. Rollout remains held while branding GETs join the
+the catalog failure screen. Rollout was held while branding GETs joined the
 shared service transport, with a translated pre-brand waiting screen and
 prolonged recovery. No fallback/default identity mounts before validation.
 Implementation: packages/branding/src/index.ts and startup.ts; regression:
-e2e/smooth-redeploy.spec.ts. Rebuild both host candidates after this fix.
+e2e/smooth-redeploy.spec.ts. Both host candidates were rebuilt after this fix.
 
 Branding recovery fix passes focused transport/bootstrap/locale tests (20 cases),
 three startup Storybook scenarios, complete TypeScript checks and catalog checks.
-Chromium/WebKit real maintenance, form, mark and photo-outbox scenarios pass;
-the final Firefox gate remains in progress before cutover.
+All 15 maintenance, form, mark and photo-outbox scenarios pass in Chromium,
+WebKit and Firefox without retries. Exact-source final branding matrix passed
+3/3; Family context matrix passed 6/6 with retries disabled after one earlier
+offline-ready notice overlap. Frozen TLF production artifacts use source
+0926b9ea. Sequential cutover started with TLF, with fresh backup and guarded
+source/runtime/static rollback; VMSh followed after live TLF checks passed.
+
+Cutover result: both independent portals run source **0926b9ea**. TLF static
+release is `tlfprep-20261001-consolidated-0926b9ea`; VMSh static release is
+`0926b9ea9c41-20261001111130`. Main branch push contains current PWA work only.
+Both 25-check public HTTP suites passed. Authenticated Staff overview, English
+navigation, catalog and course settings were inspected on both live portals:
+VMSh retains its enabled in-person course; both TLF courses remain online-only.
+VMSh published PWA preview renders 11 English `Problem` headings and all six
+figures load successfully, with authored Russian statements preserved.
+
+Fresh cutover backups passed integrity: TLF `20261001T110948.589235Z` before and
+`20261001T110957.296089Z` after; VMSh `vmsh-before-deploy-20261001111229.sqlite3`
+and `vmsh-after-deploy-20261001111306.sqlite3`. VMSh has 75 migrations, 1519
+unchanged enrollment rows (identical full-row digest) and 34498 result rows in
+both snapshots. TLF enrollment and three raw Zoom receipt digests are identical.
+Credentials are unchanged; source/runtime/static rollback artifacts are retained.
+The first TLF attempt rolled back because the deployment probe omitted trusted
+proxy headers. The corrected probe passed; no authentication policy was changed.
+
+Both PWA services and the independent TLF Zoom / VMSh Telegram adapters are
+active. Shared NATS was not restarted (VMSh PID 3018, TLF PID 1936264). Prometheus
+reports all five VMSh and four TLF targets up, with no scrape errors and zero
+backend HTTP 5xx increase over the post-cutover one-minute observation. All 182
+pre-cutover JS/CSS URLs return their original file types and HTTP 200, preserving
+open tabs. Dynamic Student/Family manifest proxy locations were installed on
+VMSh with nginx validation and retained configuration rollback.
+
+This completes consolidation and the two-portal rollout. Physical-device push,
+external Zoom subscriptions, actual Telegram sends and the cumulative i18n
+performance budget remain their existing separate follow-ups; this rollout does
+not claim them as passed. [Operational record](../../../docs/deploy/tlf-app/README.md#current-pwa-consolidation--2026-10-01).
