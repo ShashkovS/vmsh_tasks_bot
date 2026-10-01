@@ -463,3 +463,23 @@ it('localizes subpart labels when locale changes without changing action keys', 
   act(() => i18n.activate('ru'))
   expect(visible()[0]).toBe('2а)')
 })
+
+it('localizes worksheet headings in English previews and on locale changes', () => {
+  const base = webContentContractFixtureSchema.parse(webDocumentFixture).document
+  const document = {
+    ...base,
+    title: null,
+    introduction: [],
+    problems: [{ ...base.problems[0]!, taskReference: '0m.1', title: 'A big calculation?' }],
+  }
+  const original = JSON.stringify(document)
+  act(() => i18n.activate('en'))
+  render(<SemanticMathDocument document={document} />)
+  expect(screen.getByRole('heading', { name: 'Problem 0m.1. «A big calculation?»' })).not.toBeNull()
+  expect(screen.queryByRole('heading', { name: /Задача/u })).toBeNull()
+  act(() => i18n.activate('ru'))
+  expect(screen.getByRole('heading', { name: 'Задача 0m.1. «A big calculation?»' })).not.toBeNull()
+  act(() => i18n.activate('en'))
+  expect(screen.getByRole('heading', { name: 'Problem 0m.1. «A big calculation?»' })).not.toBeNull()
+  expect(JSON.stringify(document)).toBe(original)
+})

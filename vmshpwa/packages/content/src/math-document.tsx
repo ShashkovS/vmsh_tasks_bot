@@ -382,9 +382,8 @@ export function SemanticMathDocument({
                   {!hideProblemHeadings ? (
                     <div className="vmsh-problem-header">
                       <h2 id={headingId}>
-                        {/* The compiled worksheet heading is lesson content, not interface copy. */}
-                        {/* eslint-disable-next-line lingui/no-unlocalized-strings -- compiled worksheet label */}
-                        {`Задача ${problemReference(problem)}.`}
+                        {/* docs/task-titles.md: UI label follows locale; reference/title remain source content. */}
+                        <Trans>Задача {problemReference(problem)}.</Trans>
                         {problem.title ? <span>«{problem.title}»</span> : null}
                       </h2>
                       {renderProblemActions?.(problem)}

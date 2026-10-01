@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: problemReference(problem)
+#: packages/content/src/math-document.tsx
+msgid "Задача {0}."
+msgstr "Problem {0}."
+
 #: packages/content/src/index.tsx
 msgid "Материал не показан: его безопасный формат не прошёл проверку."
 msgstr "The material cannot be displayed because its safe format did not pass validation."

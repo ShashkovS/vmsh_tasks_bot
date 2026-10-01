@@ -446,3 +446,36 @@ export const EagerWorksheetImages: Story = {
     await expect(figure.style.getPropertyValue('--vmsh-print-figure-scale')).toBe('1')
   },
 }
+
+// docs/task-titles.md: Staff preview uses the same localized worksheet heading.
+export const EnglishWorksheetHeading: Story = {
+  globals: { locale: 'en' },
+  args: {
+    document: {
+      ...semanticDocument,
+      title: null,
+      introduction: [],
+      problems: [
+        {
+          ordinal: 1,
+          sourceItem: '1',
+          taskReference: '0m.1',
+          title: 'A big calculation?',
+          blocks: [
+            {
+              type: 'paragraph',
+              children: [{ type: 'text', value: 'Without using a calculator, find the value.' }],
+            },
+          ],
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('heading', { name: 'Problem 0m.1. «A big calculation?»' }),
+    ).toBeVisible()
+    await expect(canvas.queryByRole('heading', { name: /Задача/u })).toBeNull()
+  },
+}

@@ -57,3 +57,16 @@ Student/Family/Staff и отдельных экранов задачи; см. [�
 маршруты и аргументы renderSubpartActions/renderAfterSubpart не меняются.
 Проверки обеих локалей и callback keys:
 [`math-document.test.tsx`](../packages/content/src/math-document.test.tsx).
+
+
+## Язык подписи задачи — 1 октября 2026
+
+Служебная подпись `Задача {0}.` в
+[`SemanticMathDocument`](../packages/content/src/math-document.tsx) переводится
+через Lingui из каталога `packages/content/src/locales`: для английского
+интерфейса отображается `Problem {0}.`. Правило общее для Student, Family и
+Staff import preview. Номер и название задачи остаются исходными данными.
+Регрессия английского preview и переключения ru/en закреплена в
+[`math-document.test.tsx`](../packages/content/src/math-document.test.tsx);
+Storybook-сценарий `EnglishWorksheetHeading` воспроизводит подпись
+`Problem 0m.1. «A big calculation?»`.

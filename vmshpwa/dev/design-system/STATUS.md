@@ -1794,3 +1794,21 @@ signature verification cannot reach npm registry in this environment. Full
 workspace build/E2E were not run for this bounded compiler/label increment.
 Requirements and implementation links: `vmshpwa/docs/latex-content-pipeline.md`
 (dialect section), `vmshpwa/docs/task-titles.md` (display alphabet).
+
+
+### 2026-10-01 — Worksheet heading locale (verified)
+
+The shared SemanticMathDocument problem label now uses Lingui: English Staff
+import previews and Student/Family worksheets display Problem; Russian displays
+Задача. Source task references and titles are preserved. Implementation and
+regression links: [task-titles.md](../../docs/task-titles.md),
+[math-document.tsx](../../packages/content/src/math-document.tsx),
+[math-document.test.tsx](../../packages/content/src/math-document.test.tsx), and
+EnglishWorksheetHeading in
+[math-document.stories.tsx](../../packages/content/src/math-document.stories.tsx).
+
+Verification: 18 component tests and the targeted Chromium Storybook scenario
+pass; scoped ESLint, content TypeScript, i18n catalog check and diff check pass.
+Frontend commands used installed node_modules/.bin to avoid pnpm registry
+verification. No backend/compiler changes or deployment are needed for the
+source fix; the running application receives it with its next frontend build.
