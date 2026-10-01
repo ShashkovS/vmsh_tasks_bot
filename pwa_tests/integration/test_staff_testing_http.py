@@ -71,6 +71,29 @@ async def test_staff_testing_identity_reuse_and_scope_revocation(content_http, w
     )
     assert me.status == 200, await me.text()
     assert (await me.json())["principal"]["isStaffTesting"] is True
+    stored_name = f.factory.run_read(
+        lambda c: c.execute(
+            "SELECT u.name,u.surname FROM users u JOIN staff_test_students t "
+            "ON t.student_user_id=u.id"
+        ).fetchone()
+    )
+    full_name = " ".join(
+        part.strip()
+        for part in (stored_name["name"], stored_name["surname"])
+        if part and part.strip()
+    )
+    teacher_name = full_name.removeprefix("Тест учителя: ")
+    for locale, expected_name in (
+        ("en", f"Teacher test: {teacher_name}"),
+        ("ru", full_name),
+    ):
+        localized = await f.client.get(
+            "/student/api/v1/auth/me",
+            cookies={**cookie, "vmsh-locale": locale},
+            headers=_headers(),
+        )
+        assert localized.status == 200, await localized.text()
+        assert (await localized.json())["principal"]["displayName"] == expected_name
     news = await f.client.get(
         "/student/api/v1/news", cookies=cookie, headers=_headers()
     )

@@ -112,6 +112,33 @@ Russian/English concatenated text is removed.
 
 Verification: 29 metadata/domain tests, 13 transport tests, affected TypeScript,
 ESLint/Ruff, i18n sync/coverage and Staff build pass; both HTTP metadata
-regression scenarios pass. A real production generation is checked before
-marking this incident closed.
+regression scenarios pass. A real production generation passed as recorded below.
 No database migration or course model changes are required.
+
+
+### Verified production recovery
+
+Fix `662e3f036c9c32175d64d472d3616af6b4f8dc57` is deployed on both hosts.
+VMSH webhook completed with backend/frontend changes and no migration; static
+release `662e3f036c9c-20261001140928`. TLF used the reviewed SSH script retained
+in `/web/vmsh_tasks_bot/deploy/releases/` under release
+`tlfprep-20261001-metadata-recovery-662e3f036c9c`. Its before/after backups
+`20261001T140937.795222Z` / `20261001T141003.631368Z` passed integrity; all product
+rows (including course metadata models), credentials and NATS PID were identical
+with writers stopped. Both hosts pass 25 public read-only HTTP checks and health.
+No schema or service configuration changes were required.
+
+In the existing owner-authenticated Staff session, the actual `gl-1` / `cr-3`
+Generate metadata action succeeded with the currently selected
+`openai/gpt-6-luna`. Server request `ff381658d5cc4663865f5dfa0a136aa8` returned
+HTTP 200 in 47.13 seconds at 2026-10-01 17:12:36 Europe/Moscow. The UI showed
+“Metadata draft updated”, five English titles, English format prompts and
+wrong/correct-answer feedback. The remaining checker review note for problem 2
+is English and is an intentional manual-review requirement. Save metadata was
+not invoked: the generated result stays a local review draft and the server's
+problem configuration/publications are unchanged.
+
+Local screenshot proof:
+`.runtime/vmshpwa/metadata-recovery-proof/tlf-success.jpg`. Focused verification
+total: 29 domain tests, 2 HTTP scenarios and 13 transport tests (all pass),
+plus types/lint/i18n/build and parsing the actual English worksheet.

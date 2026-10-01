@@ -2841,6 +2841,10 @@ msgstr "The request body must be a valid JSON object"
 msgid "Тело запроса должно быть пустым JSON-объектом"
 msgstr "The request body must be an empty JSON object"
 
+#: apps/pwa_api/auth_routes.py
+msgid "Тест учителя: {name}"
+msgstr "Teacher test: {name}"
+
 #: db_methods/pwa/submissions.py
 msgid "Тестовая задача недоступна для перепроверки."
 msgstr "The test problem is unavailable for rechecking."

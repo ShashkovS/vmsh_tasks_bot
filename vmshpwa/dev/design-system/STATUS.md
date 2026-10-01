@@ -1,5 +1,12 @@
 # Design-system status
 
+## 2026-10-01 — локализация подписи тестового аккаунта
+
+В работе: служебная подпись в Student AppShell получает «Teacher test:»
+из локализованного auth principal. [Причина и реализация](../../docs/staff-testing.md#локализация-подписи-тестового-аккаунта--1-октября-2026).
+Имя учителя и существующие записи сохраняются. 6 HTTP-сценариев, Ruff
+и каталоги проходят; выпуск в работе.
+
 ## 2026-10-01 — редактор картинок в production на обоих порталах
 
 [Редактор на рисунке](../../docs/figure-layout.md) использует общие Button/Input/
@@ -1952,7 +1959,7 @@ TLF использует английский язык бренда, VMSH — р
 и attendance-настройки сохранены. [Production proof](../../docs/metadata-generation.md#production--1-октября-2026).
 
 
-## 2026-10-01 — TLF metadata generation recovery
+## 2026-10-01 — TLF metadata generation recovery (production verified)
 
 [Incident and implementation](../../docs/metadata-generation.md#english-tex-generation-failure--1-october-2026):
 English TeX aliases/sections and inline teacher fields now reach the legacy
@@ -1960,6 +1967,10 @@ OpenRouter contract; missing Russian lesson/group markers no longer block PWA
 generation. Canonical problem identities and stored source remain intact.
 Structured API failures keep their translated explanation; real ambiguous
 network failures use the active UI language instead of a bilingual string.
-29 domain tests, 13 transport tests, types, lint, i18n and Staff build PASS;
-actual TLF source recognized all five problems and teacher fields. Deployment
-and a real owner-requested generation on `gl-1` are pending verification.
+29 domain tests, 2 HTTP scenarios, 13 transport tests, types, lint, i18n and
+Staff build PASS; actual TLF source recognized all five problems/teacher fields.
+Fix `662e3f03` is live on both hosts with 25 public checks each. Actual generation
+on `gl-1` with `openai/gpt-6-luna` returned HTTP 200 in 47 seconds and showed five
+English metadata rows and feedback. Problem 2 retains its English checker review
+note. Save/publish was not invoked; the existing server configuration is intact.
+[Operational proof](../../docs/metadata-generation.md#verified-production-recovery).

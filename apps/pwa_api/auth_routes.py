@@ -21,7 +21,7 @@ from apps.pwa_api.middleware import (
 from apps.pwa_api.realtime_control import realtime_session_controller
 from db_methods.pwa.auth import AuthSessionRecord
 from helpers.pwa.auth_config import COOKIE_POLICY, AudienceCookiePolicy
-from helpers.pwa.i18n import normalize_locale
+from helpers.pwa.i18n import _, normalize_locale
 from models.pwa.auth import AuthAudience
 
 
@@ -86,6 +86,12 @@ def _principal_payload(authenticated: AuthenticatedSession) -> dict[str, object]
         common["userId"] = current.linked_user_public_id
         if current.linked_user_type == 512:
             common["isStaffTesting"] = True
+            # Stored test identities keep their legacy name; localize the UI
+            # marker here (vmshpwa/docs/staff-testing.md), including old sessions.
+            common["displayName"] = _(
+                "Тест учителя: {name}",
+                name=current.display_name.removeprefix("Тест учителя: "),
+            )
     elif principal.audience is AuthAudience.FAMILY:
         common["linkedChildren"] = [
             {
