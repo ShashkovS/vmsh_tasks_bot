@@ -21,6 +21,7 @@ from db_methods.pwa.group_banners import (
 )
 from helpers.pwa.rich_media import RichMediaCopyError, copy_rich_document_media
 from helpers.pwa.app_keys import PWA_DATABASE
+from helpers.pwa.i18n import _
 from models.pwa.auth import AuthAudience
 from models.pwa.group_banners import (
     GroupBannerConflict,
@@ -106,7 +107,11 @@ def _payload(item: dict[str, object], *, content_version: int = 1) -> dict[str, 
         "bannerId": item["public_id"],
         "group": {
             "groupId": item["group_public_id"] or item["course_public_id"],
-            "name": item["group_name"],
+            "name": (
+                _("Все группы")
+                if item["group_public_id"] is None
+                else item["group_name"]
+            ),
             "courseId": item["course_public_id"],
             "courseName": item["course_name"],
         },

@@ -177,6 +177,45 @@ async def test_student_and_family_only_receive_their_active_banners(classroom_ht
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "locale, all_groups", [("ru", "Все группы"), ("en", "All groups")]
+)
+async def test_banner_scope_label_uses_request_locale(
+    classroom_http, locale, all_groups
+):
+    for group_id in (None, "g-5"):
+        created = await classroom_http.client.post(
+            "/staff/api/v1/group-banners",
+            json=_targeted_body(group_id=group_id, attendance_mode="all"),
+            headers=_headers(unsafe=True),
+            cookies={**_cookies(classroom_http, "admin"), "vmsh-locale": locale},
+        )
+        assert created.status == 201, await created.text()
+        group = (await created.json())["item"]["group"]
+        assert group["name"] == (all_groups if group_id is None else "Начинающие")
+        assert group["courseName"] == "Математика"
+
+    visible = await classroom_http.client.get(
+        "/student/api/v1/banners/active?contentVersion=2",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[
+                AuthAudience.STUDENT
+            ].access_name: classroom_http.student_cookie,
+            "vmsh-locale": locale,
+        },
+    )
+    assert visible.status == 200, await visible.text()
+    items = (await visible.json())["items"]
+    assert len(items) == 2
+    for item in items:
+        assert item["group"]["name"] == (
+            all_groups if item["group"]["groupId"] == "c-1" else "Начинающие"
+        )
+        assert item["document"] == _rich_document()
+
+
+@pytest.mark.asyncio
 async def test_admin_targets_and_retargets_active_banner(classroom_http):
     created = await classroom_http.client.post(
         "/staff/api/v1/group-banners",

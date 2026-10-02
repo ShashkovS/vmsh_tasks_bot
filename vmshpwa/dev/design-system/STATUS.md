@@ -2058,3 +2058,11 @@ PWA, Telegram/Zoom и analytics активны, maintenance снят. Production
 Сценарий двух устройств — изолированный E2E; production-проверки read-only.
 [Полный release/backup record](../../docs/question-attention.md#production--2-октября-2026),
 [результаты и снимки](../../../pwa_tests/reports/question-attention/README.md).
+
+## 2026-10-02 — Перевод области объявления
+
+[Group banner API](../../../apps/pwa_api/group_banner_routes.py) переводит системную подпись «Все группы»
+в `All groups` по языку запроса; названия курсов, конкретных групп и контент
+сохраняются. [HTTP-проверка](../../../pwa_tests/integration/test_phase8_group_banner_http_api.py) покрывает русский и английский
+в Staff и на главной Student. Проверки: 29 backend tests PASS, backend i18n
+каталог синхронен и переведён. Изменение локальное, в production не выпущено.

@@ -394,6 +394,10 @@ msgstr "The time to change the reaction has expired"
 msgid "Время публикации некорректно"
 msgstr "Invalid publication time"
 
+#: apps/pwa_api/group_banner_routes.py
+msgid "Все группы"
+msgstr "All groups"
+
 #: apps/pwa_api/middleware.py
 msgid "Вход временно недоступен"
 msgstr "Sign-in is temporarily unavailable"
