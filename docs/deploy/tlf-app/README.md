@@ -323,3 +323,15 @@ Before restarting writers rollback removes only migration 0108 and restores
 prior source/static. After restarting writers it retains the new source/schema
 and restores compatible old static, preserving flags, audit, receipts and Zoom
 events. [Requirement, tests and release record](../../../vmshpwa/docs/problem-release.md#выпуск--2-октября-2026).
+
+Source `0b2964a80b6db6e94fa04f478848092a0f3dfdb6` is deployed on both
+portals. Active TLF static: `tlfprep-20261002-problem-release-0b2964a80b6d`;
+record: `/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-problem-release-0b2964a80b6d/`.
+All 155 prior product tables/columns and credentials are identical across the
+stopped-writer cutover. Migration 0108 up/down/up passed on a copy; runtime
+has 80 migrations, current schema, quick_check ok and default-On baseline.
+Backups `20261002T112938.930161Z` / `20261002T113019.363874Z` have integrity
+ok and preserve three raw Zoom receipts. A fourth receipt arrived after writers
+reopened. NATS PID 1936264 is unchanged; PWA, Zoom and analytics are active.
+All four production artifacts, 25 HTTP checks and 205 old hashed asset URLs
+passed; no synthetic production tasks/replies/Zoom events were created.

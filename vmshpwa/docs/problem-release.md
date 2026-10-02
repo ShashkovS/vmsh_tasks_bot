@@ -128,11 +128,11 @@ production-отчёты `73d6730e` и протокол этих проверок
 ## Выпуск — 2 октября 2026
 
 Владелец разрешил commit/push, VMSh autodeploy и ручной выпуск TLF.
-Перед выпуском подливается `e20bbed9`: новые типы metadata и внимание к ответам
+Перед выпуском подлит `e20bbed9`: новые типы metadata и внимание к ответам
 сохраняются. Миграция доступности перенумерована в 0108 после уже выпущенной 0107.
 Глобальная навигация по непрочитанным ответам исключает Off; переключения
-инвалидируют также Student questions. Идут локальные gates, подготовка
-TLF guarded cutover, migration rehearsal и проверка сохранности данных.
+инвалидируют также Student questions. Локальные gates, TLF cutover,
+migration rehearsal и проверка сохранности данных завершены.
 
 Ручной выпуск: [deploy_problem_release.sh](../../docs/deploy/tlf-app/deploy_problem_release.sh)
 с точным SHA, frozen deps и изолированной сборкой;
@@ -169,3 +169,46 @@ Browser gate выявил старый GET после успешного toggle 
 support cases; вместе с позадачной публикацией — **9** уникальных сценариев.
 До выпуска проверены 410 прежних публичных JS/CSS URL (205 на портал),
 их SHA256 и MIME сохранены для проверки после cutover.
+
+### Production подтверждён
+
+Merge-коммит `0b2964a80b6db6e94fa04f478848092a0f3dfdb6` отправлен в
+`origin/vmshpwa`. VMSh выпущен существующим webhook, TLF —
+закоммиченным `deploy_problem_release.sh` с этим точным SHA.
+
+| Портал | Активный frontend | Schema | HTTP |
+| --- | --- | --- | --- |
+| [VMSh](https://vmsh.shashkovs.ru) | `0b2964a80b6d-20261002112802` | 80 migrations, current, quick_check ok | 25 PASS |
+| [TLF](https://prep.leaders.tech) | `tlfprep-20261002-problem-release-0b2964a80b6d` | 80 migrations, current, quick_check ok | 25 PASS |
+
+Все четыре production artifacts каждого портала проверены: Sentry включён,
+MSW/prototype выключены, release/media origin корректны. Во всех 15 VMSh и
+3 TLF занятиях release version = 1; flags/events = 0: все существующие задачи
+открыты по умолчанию. Immutable audit guards присутствуют.
+Все **410** прежних публичных JS/CSS URL после cutover имеют прежние SHA256,
+MIME и HTTP 200; уже открытые вкладки сохраняют доступ к своим bundles.
+
+VMSh backups: `vmsh-before-deploy-20261002112858.sqlite3` /
+`vmsh-after-deploy-20261002112948.sqlite3`, integrity ok, default-On проверен
+в post-deploy snapshot. Из 155 прежних product tables 152 имеют одинаковые
+hash. Добавлена одна auth event и одна consumed-refresh запись; все прежние
+строки этих таблиц сохранены, сессии не удалены. В одной сессии изменены только
+`last_seen_at`, `refresh_secret_hash`, `updated_at`, `version`.
+Это совместимо с обычным refresh между двумя backup, первый из которых
+создан до остановки writers. Закрытые backups сравнивались на временных
+серверных копиях, чтобы SQLite мог создать WAL sidecars; оригиналы не менялись.
+
+TLF record:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-problem-release-0b2964a80b6d/`.
+Up/down/up на копии — PASS, все **155** старых product tables/columns
+и credentials идентичны при остановленных writers. Backups
+`20261002T112938.930161Z` / `20261002T113019.363874Z` имеют integrity ok и
+по 3 raw Zoom receipts. После открытия writers получен ещё один receipt
+(live count 4); тестовых production-событий не создавалось.
+
+PWA/Telegram VMSh, PWA/Zoom TLF, analytics timers и NATS активны; maintenance
+снят. NATS PID VMSh **1409**, TLF **1936264** прежние. Backend health прошёл
+до frontend activation. Предупреждение VMSh webhook о `docs/deploy` относится
+к новому TLF runbook/cutover: установленные VMSh webhook/nginx/systemd файлы
+не менялись, переустановка не требуется.
+[Машиночитаемый пруф](../../pwa_tests/reports/problem-release/production-proof.json).

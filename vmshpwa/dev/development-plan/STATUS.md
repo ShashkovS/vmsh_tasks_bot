@@ -8,7 +8,12 @@ auth/realtime/Staff unit-проверок, типы/i18n/schema (504), lint и �
 Исправлены delayed-GET гонка Staff и восстановление fresh offline cache.
 Публикация/reconnect — 3/3 browser E2E; support — 5 в матрице и 2 Firefox
 отдельно после одного timeout прокрутки. Итого все 9 уникальных сценариев
-проверены. Commit/push и оба деплоя разрешены; production smoke в работе.
+проверены. `0b2964a8` отправлен в vmshpwa и выпущен на обоих порталах.
+Миграция 0108/current schema/default-On и четыре production artifacts проверены;
+HTTP — 25 PASS на портал, все 410 старых assets сохранены. TLF: 155 прежних
+таблиц и credentials идентичны; VMSh: 152 идентичны, только один auth refresh
+между backups, без потери старых auth-записей. Backups integrity ok,
+NATS/Telegram/Zoom/analytics активны, maintenance снят.
 [Протокол](../../docs/problem-release.md#выпуск--2-октября-2026).
 
 ## 2026-10-01 — интеграция позадачной публикации
