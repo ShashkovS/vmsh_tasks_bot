@@ -28,6 +28,8 @@ from db_methods.pwa.support import (
     SupportThreadRecord,
     SupportThreadSummaryRecord,
 )
+from helpers.pwa.app_keys import PWA_DATABASE
+from models.pwa import support_attention
 from helpers.pwa.permissions import Capability
 from helpers.pwa.content import AssetConversionError
 from helpers.object_storage import ObjectStorageOperationError
@@ -272,8 +274,32 @@ def _timestamp(value: datetime) -> str:
     )
 
 
+def _attention_enabled(request: web.Request) -> bool:
+    return (
+        authenticated_session(request).principal.audience is AuthAudience.STUDENT
+        and request.headers.get("X-Vmsh-Support-Attention") == "1"
+    )
+
+
+def _strip_attention(payload):
+    for field in ("attentionState", "unreadReplyCount", "firstUnreadEntryId"):
+        payload.pop(field, None)
+
+
+def _attention_factory(request):
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="support_unavailable",
+            message="Вопросы временно недоступны",
+        )
+    return database.factory
+
+
 def _thread_payload(thread: SupportThreadRecord) -> dict[str, object]:
     return {
+        **support_attention.thread_attention(thread.entries),
         "threadId": thread.thread_public_id,
         "kind": thread.kind,
         "student": {
@@ -310,6 +336,7 @@ def _thread_payload(thread: SupportThreadRecord) -> dict[str, object]:
                     if entry.client_created_at is None
                     else _timestamp(entry.client_created_at)
                 ),
+                "readAt": None if entry.read_at is None else _timestamp(entry.read_at),
                 "receivedAt": _timestamp(entry.server_received_at),
             }
             for entry in thread.entries
@@ -319,6 +346,11 @@ def _thread_payload(thread: SupportThreadRecord) -> dict[str, object]:
 
 def _summary_payload(summary: SupportThreadSummaryRecord) -> dict[str, object]:
     return {
+        **support_attention.attention_payload(
+            last_human_author=summary.last_human_author_kind,
+            unread_count=summary.unread_reply_count,
+            first_unread_id=summary.first_unread_entry_id,
+        ),
         "threadId": summary.thread_public_id,
         "kind": summary.kind,
         "student": {
@@ -351,6 +383,9 @@ def _page_response(request: web.Request, page: SupportThreadPage) -> web.Respons
     if request.headers.get("X-Vmsh-Support-Context") != "1":
         for item in items:
             item["context"].pop("problemNumber", None)
+    if not _attention_enabled(request):
+        for item in items:
+            _strip_attention(item)
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -387,6 +422,10 @@ def _response(request: web.Request, thread: SupportThreadRecord) -> web.Response
     # Old installed PWA validates strict v1 objects; extensions require opt-in.
     # See vmshpwa/docs/support-problem-context.md.
     payload = _thread_payload(thread)
+    if not _attention_enabled(request):
+        _strip_attention(payload)
+        for entry in payload["entries"]:
+            entry.pop("readAt", None)
     if request.headers.get("X-Vmsh-Support-Context") != "1":
         payload["context"].pop("problemNumber", None)
         payload.pop("problemDocument", None)
@@ -491,6 +530,82 @@ async def list_student_questions(request: web.Request) -> web.Response:
     except SupportNotFound as error:
         raise _translate_error(error) from error
     return _page_response(request, page)
+
+
+# Register the literal route before the thread-id route. See question-attention.md.
+@support_routes.get("/student/api/v1/questions/attention")
+async def get_student_question_attention(request: web.Request) -> web.Response:
+    student_id = _student_user_id(request)
+    if set(request.query) - {"afterThreadId"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры списка вопросов",
+        )
+    after = _query_value(request, "afterThreadId")
+    if after is not None:
+        _public_id(after, field="afterThreadId")
+    result = await _attention_factory(request).run_read_async(
+        lambda c: support_attention.next_attention(
+            c,
+            student_user_id=student_id,
+            now=_timestamp(datetime.now(UTC)),
+            after_thread_id=after,
+        )
+    )
+    return web.json_response(
+        {"schemaVersion": 1, **result, "requestId": request["request_id"]}
+    )
+
+
+@support_routes.post("/student/api/v1/questions/{thread_public_id}/read")
+async def read_student_question_replies(request: web.Request) -> web.Response:
+    student_id = _student_user_id(request)
+    payload = await _json_object(
+        request, required_fields=frozenset({"schemaVersion", "entryIds"})
+    )
+    ids = payload["entryIds"]
+    if (
+        set(payload) != {"schemaVersion", "entryIds"}
+        or not isinstance(ids, list)
+        or not 1 <= len(ids) <= 100
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте поля вопроса"
+        )
+    parsed = tuple(_public_id(value, field="entryIds") for value in ids)
+    if len(set(parsed)) != len(parsed):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте поля вопроса"
+        )
+    thread_id = _thread_public_id(request)
+    try:
+        receipts = await _attention_factory(request).run_write_async(
+            lambda c: support_attention.acknowledge(
+                c,
+                student_user_id=student_id,
+                thread_public_id=thread_id,
+                entry_ids=parsed,
+                session_id=authenticated_session(request).current.session.id,
+                now=_timestamp(datetime.now(UTC)),
+            )
+        )
+    except (SupportNotFound, SupportForbidden) as error:
+        raise _translate_error(error) from error
+    except ValueError as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте поля вопроса"
+        ) from error
+    await _invalidate_after_commit(
+        request, thread_public_id=thread_id, reason="support-replies-read"
+    )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "readEntries": receipts,
+            "requestId": request["request_id"],
+        }
+    )
 
 
 @support_routes.get("/student/api/v1/questions/{thread_public_id}")

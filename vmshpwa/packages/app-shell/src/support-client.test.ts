@@ -85,6 +85,48 @@ function jsonResponse(payload: unknown, status = 200): Response {
 }
 
 describe('support client', () => {
+  it('loads attention without reading replies and sends explicit receipt requests', async () => {
+    const fetchImplementation = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          schemaVersion: 1,
+          unreadTaskCount: 0,
+          nextTarget: null,
+          requestId: 'attention',
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(response))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          schemaVersion: 1,
+          readEntries: [{ entryId: 'support-entry-two', readAt: '2026-10-05T12:03:00Z' }],
+          requestId: 'read',
+        }),
+      )
+    const client = createSupportClient(studentRuntime, { fetchImplementation })
+    await client.attention('support-thread-one')
+    await client.get('support-thread-one')
+    expect(fetchImplementation.mock.calls.every(([, init]) => init?.method === 'GET')).toBe(true)
+    await client.read('support-thread-one', ['support-entry-two'])
+    expect(fetchImplementation.mock.calls.map(([url]) => url)).toEqual([
+      '/student/api/v1/questions/attention?afterThreadId=support-thread-one',
+      '/student/api/v1/questions/support-thread-one',
+      '/student/api/v1/questions/support-thread-one/read',
+    ])
+    const init = fetchImplementation.mock.calls[2]![1]!
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({
+      schemaVersion: 1,
+      entryIds: ['support-entry-two'],
+    })
+    const staff = createSupportClient(staffRuntime, { fetchImplementation })
+    await expect(staff.attention()).rejects.toThrow('Only Student')
+    await expect(staff.read('support-thread-one', ['support-entry-two'])).rejects.toThrow(
+      'Only Student',
+    )
+  })
+
   it.each(['all', 'awaiting_student'] as const)(
     'loads %s with a 280-code-point admin excerpt containing emoji',
     async (state) => {

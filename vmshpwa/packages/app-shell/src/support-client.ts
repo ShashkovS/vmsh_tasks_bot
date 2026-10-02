@@ -2,6 +2,12 @@ import { pwaFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   supportPhotoUploadResponseSchema,
+  notificationQueryKeys,
+  supportAttentionResponseSchema,
+  readSupportRepliesRequestSchema,
+  readSupportRepliesResponseSchema,
+  type SupportAttentionResponse,
+  type ReadSupportRepliesResponse,
   ApiResponseError,
   apiErrorSchema,
   appendSupportEntryRequestSchema,
@@ -36,6 +42,11 @@ export interface SupportClientOptions {
 
 export interface SupportClient {
   readonly runtime: RuntimeConfig
+  attention(
+    afterThreadId?: string,
+    options?: SupportRequestOptions,
+  ): Promise<SupportAttentionResponse>
+  read(threadId: string, entryIds: string[]): Promise<ReadSupportRepliesResponse>
   uploadPhoto?(photo: Blob): Promise<string>
   listStudent(
     query?: StudentSupportListQuery,
@@ -108,6 +119,34 @@ class BrowserSupportClient implements SupportClient {
     }
     if (!response.ok) throw await this.#responseError(response)
     return supportPhotoUploadResponseSchema.parse(await response.json()).photoId
+  }
+
+  async attention(afterThreadId?: string, options: SupportRequestOptions = {}) {
+    if (this.runtime.audience !== 'student')
+      throw new TypeError('Only Student can read answer attention')
+    const search = afterThreadId
+      ? `?afterThreadId=${encodeURIComponent(publicIdSchema.parse(afterThreadId))}`
+      : ''
+    return this.#jsonRequest(
+      `/questions/attention${search}`,
+      'GET',
+      undefined,
+      options,
+      (payload) => supportAttentionResponseSchema.parse(payload),
+    )
+  }
+
+  async read(threadId: string, entryIds: string[]) {
+    if (this.runtime.audience !== 'student')
+      throw new TypeError('Only Student can acknowledge answers')
+    const body = readSupportRepliesRequestSchema.parse({ schemaVersion: 1, entryIds })
+    return this.#jsonRequest(
+      `/questions/${encodeURIComponent(publicIdSchema.parse(threadId))}/read`,
+      'POST',
+      JSON.stringify(body),
+      {},
+      (payload) => readSupportRepliesResponseSchema.parse(payload),
+    )
   }
 
   async listStudent(
@@ -245,6 +284,7 @@ class BrowserSupportClient implements SupportClient {
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'X-Vmsh-Support-Context': '1',
+      'X-Vmsh-Support-Attention': '1',
     }
     if (method === 'POST') headers['Content-Type'] = 'application/json'
     try {
@@ -288,8 +328,10 @@ export function useSupportThreadQuery(
   client: Pick<SupportClient, 'get'>,
   principal: PrincipalQueryScope,
   threadId: string,
+  enabled = true,
 ) {
   return useQuery({
+    enabled,
     queryKey: supportQueryKeys.thread(principal, threadId),
     queryFn: ({ signal }) => client.get(threadId, { signal }),
     meta: { realtimeResources: [`questions/${threadId}`] },
@@ -362,6 +404,68 @@ export function useAppendSupportEntryMutation(
           ? supportQueryKeys.staffLists(principal)
           : supportQueryKeys.studentLists(principal)
       void queryClient.invalidateQueries({ queryKey: listKey })
+    },
+  })
+}
+
+/** docs/question-attention.md: server counts every accessible worksheet, not just loaded pages. */
+export function useSupportAttentionQuery(
+  client: Pick<SupportClient, 'attention'>,
+  principal: PrincipalQueryScope,
+  afterThreadId?: string,
+) {
+  return useQuery({
+    queryKey: supportQueryKeys.attention(principal, afterThreadId ?? null),
+    queryFn: ({ signal }) => client.attention(afterThreadId, { signal }),
+    meta: { realtimeResources: ['questions'] },
+  })
+}
+
+export function useReadSupportRepliesMutation(
+  client: Pick<SupportClient, 'read'>,
+  principal: PrincipalQueryScope,
+  threadId: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (entryIds: string[]) => client.read(threadId, entryIds),
+    onSuccess: (response) => {
+      queryClient.setQueryData<SupportThreadResponse>(
+        supportQueryKeys.thread(principal, threadId),
+        (cached) => {
+          if (!cached) return cached
+          const receipts = new Map(
+            response.readEntries.map((entry) => [entry.entryId, entry.readAt]),
+          )
+          const entries = cached.thread.entries.map((entry) =>
+            receipts.has(entry.entryId)
+              ? { ...entry, readAt: receipts.get(entry.entryId)! }
+              : entry,
+          )
+          const unread = entries.filter(
+            (entry) => ['teacher', 'admin'].includes(entry.author.kind) && entry.readAt === null,
+          )
+          const lastHuman = entries.filter((entry) => entry.author.kind !== 'system').at(-1)
+          return {
+            ...cached,
+            thread: {
+              ...cached.thread,
+              entries,
+              unreadReplyCount: unread.length,
+              firstUnreadEntryId: unread[0]?.entryId ?? null,
+              attentionState: unread.length
+                ? 'unread_reply'
+                : lastHuman?.author.kind === 'student'
+                  ? 'awaiting_reply'
+                  : 'none',
+            },
+          }
+        },
+      )
+      void queryClient.invalidateQueries({ queryKey: supportQueryKeys.all(principal) })
+      void queryClient.invalidateQueries({
+        queryKey: notificationQueryKeys.events(principal).slice(0, -1),
+      })
     },
   })
 }

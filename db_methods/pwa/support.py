@@ -149,6 +149,7 @@ class SupportEntryRecord:
     client_created_at: datetime | None
     server_received_at: datetime
     photo_ids: tuple[str, ...] = ()
+    read_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,6 +192,9 @@ class SupportThreadSummaryRecord:
     entry_count: int
     version: int
     problem_number: str | None = None
+    last_human_author_kind: str | None = None
+    unread_reply_count: int = 0
+    first_unread_entry_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -332,6 +336,9 @@ def _summary_record(row: dict[str, object]) -> SupportThreadSummaryRecord:
             if row["latest_text_excerpt"] is None
             else str(row["latest_text_excerpt"])
         ),
+        last_human_author_kind=row.get("last_human_author_kind"),
+        unread_reply_count=int(row.get("unread_reply_count", 0)),
+        first_unread_entry_id=row.get("first_unread_entry_id"),
         reply_state=_reply_state(latest_author_kind),
         entry_count=entry_count,
         version=int(row["version"]),
@@ -382,12 +389,9 @@ class PwaSupportThreadRepository:
             ).fetchone()
             if photo is None:
                 raise SupportNotFound("photo not found")
-            if (
-                student_user_id is not None
-                and (
-                    photo["uploader_user_id"] == student_user_id
-                    or photo["thread_student_user_id"] == student_user_id
-                )
+            if student_user_id is not None and (
+                photo["uploader_user_id"] == student_user_id
+                or photo["thread_student_user_id"] == student_user_id
             ):
                 return photo
             if photo["thread_public_id"] is not None and scope is not None:
@@ -915,6 +919,11 @@ class PwaSupportThreadRepository:
                         (entry["id"],),
                     )
                 ),
+                read_at=(
+                    None
+                    if entry["read_at"] is None
+                    else _parse_timestamp(entry["read_at"], label="support read time")
+                ),
                 channel=str(entry["channel"]),
                 client_created_at=(
                     None
@@ -930,10 +939,11 @@ class PwaSupportThreadRepository:
             for entry in connection.execute(
                 "SELECT entry.*, author.public_id AS author_public_id, "
                 "author.name AS author_name, author.surname AS author_surname, "
-                "asset.public_id AS asset_public_id "
+                "asset.public_id AS asset_public_id, receipt.read_at AS read_at "
                 "FROM support_entries AS entry "
                 "LEFT JOIN users AS author ON author.id = entry.author_user_id "
                 "LEFT JOIN media_assets AS asset ON asset.id = entry.asset_id "
+                "LEFT JOIN support_entry_reads receipt ON receipt.entry_id = entry.id "
                 "WHERE entry.thread_id = ? "
                 "ORDER BY entry.server_received_at, entry.id",
                 (thread_id,),
@@ -1028,7 +1038,16 @@ class PwaSupportThreadRepository:
             "latest_entry.author_kind AS latest_author_kind, "
             "substr(latest_entry.text, 1, 280) AS latest_text_excerpt, "
             "(SELECT count(*) FROM support_entries AS counted_entry "
-            "WHERE counted_entry.thread_id = thread.id) AS entry_count "
+            "WHERE counted_entry.thread_id = thread.id) AS entry_count, "
+            "(SELECT human.author_kind FROM support_entries human WHERE human.thread_id=thread.id "
+            "AND human.author_kind<>'system' ORDER BY human.server_received_at DESC,human.id DESC LIMIT 1) AS last_human_author_kind, "
+            "(SELECT count(*) FROM support_entries reply WHERE reply.thread_id=thread.id "
+            "AND reply.author_kind IN ('teacher','admin') AND NOT EXISTS(SELECT 1 "
+            "FROM support_entry_reads receipt WHERE receipt.entry_id=reply.id)) AS unread_reply_count, "
+            "(SELECT reply.public_id FROM support_entries reply WHERE reply.thread_id=thread.id "
+            "AND reply.author_kind IN ('teacher','admin') AND NOT EXISTS(SELECT 1 "
+            "FROM support_entry_reads receipt WHERE receipt.entry_id=reply.id) "
+            "ORDER BY reply.server_received_at,reply.id LIMIT 1) AS first_unread_entry_id "
             "FROM support_threads AS thread "
             "JOIN users AS student ON student.id = thread.student_user_id "
             "LEFT JOIN group_lessons AS group_lesson "

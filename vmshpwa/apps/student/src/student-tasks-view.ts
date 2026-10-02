@@ -2,6 +2,7 @@ import { t } from '@lingui/core/macro'
 import { z } from 'zod'
 
 import {
+  publicIdSchema,
   type CourseEnrollment,
   type StudentCourseAccessResponse,
   type StudentLessonSummary,
@@ -31,6 +32,7 @@ export const studentTasksSearchSchema = z.object({
   course: courseContextCodeSchema.optional(),
   group: courseContextCodeSchema.optional(),
   lesson: z.coerce.number().int().nonnegative().optional(),
+  question: publicIdSchema.optional(),
   view: z.enum(['list', 'sheet']).optional().catch(undefined),
   topic: z.string().trim().min(1).max(100).optional(),
 })

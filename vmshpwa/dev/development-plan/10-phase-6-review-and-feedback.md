@@ -265,3 +265,17 @@ API и leases сохраняются; общие счётчики учитыва
 
 Реализовано локально: 22 unit, 2 browser stories, 9 E2E в трёх браузерах; после
 визуальных правок 3 сценария очереди повторно прошли. [Отчёт и снимки](../../docs/review-queue-report.md).
+
+## Внимание к вопросам — 2026-10-01
+
+Принят и реализован [контракт](../../docs/question-attention.md): точки warning/danger,
+поответное серверное прочтение и глобальный переход к первому непрочитанному ответу
+через `question=<threadId>`. Индикатор —
+[`QuestionAttentionDot`](../../packages/product/src/question-attention.tsx),
+[stories](../../packages/product/src/question-attention.stories.tsx); видимость —
+[`VisibleSupportReply`](../../apps/student/src/visible-support-reply.tsx).
+Лента и отдельный вопрос используют одну переписку; история и уведомления сохраняются.
+Backend/контракты и проверки связаны в документе требований. Целевые gates
+прошли, включая 6 E2E в трёх движках, оба устройства и RU/EN/reduced motion.
+[Результаты, снимки и ограничение общего backend gate](../../../pwa_tests/reports/question-attention/README.md).
+Визуальное принятие владельцем и production-выпуск пока не зафиксированы.

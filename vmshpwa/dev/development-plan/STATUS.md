@@ -3800,3 +3800,26 @@ on `gl-1` with `openai/gpt-6-luna` returned HTTP 200 in 47 seconds and showed fi
 English metadata rows and feedback. Problem 2 retains its English checker review
 note. Save/publish was not invoked; the existing server configuration is intact.
 [Operational proof](../../docs/metadata-generation.md#verified-production-recovery).
+
+## 2026-10-01 — Внимание к ответам на вопросы (реализовано локально)
+
+Принят [план](../../docs/question-attention.md): оранжевая/красная точка,
+поответные отметки просмотра и переход через «Новые ответы» по всем курсам/группам.
+Старые ответы — прочитанная база; история сохраняется. 38 целевых backend и
+11 проверок изоляции, 25 + 7 frontend, 6 E2E в Chromium/Firefox/WebKit — PASS.
+Миграция up/down/up, схема, Ruff, lint, TypeScript, i18n и build — PASS.
+Просмотрены light/dark, RU/EN, mobile 320 px, reduced motion; оба устройства
+получают серверное прочтение. Общий Python gate имеет четыре ошибки от
+постороннего `.DS_Store` в старом корпусе, который сохранён.
+[Отчёт и снимки](../../../pwa_tests/reports/question-attention/README.md).
+Визуальное принятие владельцем и production-выпуск не зафиксированы; порядок
+выпуска — миграция → backend → frontend.
+
+## 2026-10-02 — Выпуск внимания к вопросам (в работе)
+
+Владелец разрешил commit/push, штатный VMSH autodeploy и ручной выпуск на
+prep.leaders.tech. Сначала объединяются уже опубликованные metadata/i18n-коммиты.
+[Ручной cutover](../../../docs/deploy/tlf-app/deploy_support_attention.sh) строит
+изолированный production artifact, проверяет up/down/up на копии и hash всех
+старых таблиц при остановленных writers. Выпуск: 0107 → backend health → frontend.
+[Правила и результаты](../../docs/question-attention.md).

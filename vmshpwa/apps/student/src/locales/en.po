@@ -677,6 +677,10 @@ msgstr "Could not complete sign-in securely. Try again or contact the administra
 msgid "Не удалось войти"
 msgstr "Could not sign in"
 
+#: apps/student/src/student-tasks-page.tsx
+msgid "Не удалось загрузить новые ответы."
+msgstr "Could not load new replies."
+
 #: apps/student/src/student-oral-admission.tsx
 msgid "Не удалось загрузить окна устного приёма. Письменная сдача доступна ниже."
 msgstr "Could not load oral-submission slots. Written submission is available below."
@@ -784,6 +788,11 @@ msgstr "News"
 #: apps/student/src/student-notifications-page.tsx
 msgid "Новости кружка"
 msgstr "Club news"
+
+#. placeholder {0}: attention.data!.unreadTaskCount
+#: apps/student/src/student-tasks-page.tsx
+msgid "Новые ответы ({0})"
+msgstr "New replies ({0})"
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Новые события всегда остаются в кабинете. Push и звук можно настроить отдельно."

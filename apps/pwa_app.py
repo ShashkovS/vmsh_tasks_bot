@@ -1347,7 +1347,7 @@ async def publish_support_invalidation(
     """Refresh one private dialogue and matching owner/scope inboxes only."""
 
     resources = ["questions", f"questions/{targets.thread_public_id}"]
-    notification_created = False
+    notification_created = reason == "support-replies-read"
     if reason == "support-staff-entry-appended":
         database = app.get(PWA_DATABASE)
         if database is not None and database.factory is not None:
@@ -1384,6 +1384,7 @@ async def publish_support_invalidation(
             account_public_id,
         )
         for account_public_id in targets.staff_account_public_ids
+        if reason != "support-replies-read"
     ]
     await asyncio.gather(
         *(

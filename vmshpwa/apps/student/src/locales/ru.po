@@ -677,6 +677,10 @@ msgstr "Не удалось безопасно завершить вход. По
 msgid "Не удалось войти"
 msgstr "Не удалось войти"
 
+#: apps/student/src/student-tasks-page.tsx
+msgid "Не удалось загрузить новые ответы."
+msgstr "Не удалось загрузить новые ответы."
+
 #: apps/student/src/student-oral-admission.tsx
 msgid "Не удалось загрузить окна устного приёма. Письменная сдача доступна ниже."
 msgstr "Не удалось загрузить окна устного приёма. Письменная сдача доступна ниже."
@@ -784,6 +788,11 @@ msgstr "Новости"
 #: apps/student/src/student-notifications-page.tsx
 msgid "Новости кружка"
 msgstr "Новости кружка"
+
+#. placeholder {0}: attention.data!.unreadTaskCount
+#: apps/student/src/student-tasks-page.tsx
+msgid "Новые ответы ({0})"
+msgstr "Новые ответы ({0})"
 
 #: apps/student/src/student-notifications-page.tsx
 msgid "Новые события всегда остаются в кабинете. Push и звук можно настроить отдельно."

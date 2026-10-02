@@ -18,6 +18,53 @@ export type SupportThreadKind = z.infer<typeof supportThreadKindSchema>
 export const supportAuthorKindSchema = z.enum(['student', 'teacher', 'admin', 'system'])
 export const supportReplyStateSchema = z.enum(['awaiting_staff', 'awaiting_student', 'activity'])
 
+// docs/question-attention.md: additive fields remain optional for installed clients/caches.
+export const supportAttentionStateSchema = z.enum(['none', 'awaiting_reply', 'unread_reply'])
+export type SupportAttentionState = z.infer<typeof supportAttentionStateSchema>
+const attentionFields = {
+  attentionState: supportAttentionStateSchema.optional(),
+  unreadReplyCount: z.number().int().nonnegative().optional(),
+  firstUnreadEntryId: publicIdSchema.nullable().optional(),
+}
+export const readSupportRepliesRequestSchema = z
+  .object({
+    schemaVersion: supportContractVersionSchema,
+    entryIds: z
+      .array(publicIdSchema)
+      .min(1)
+      .max(100)
+      .refine((ids) => new Set(ids).size === ids.length),
+  })
+  .strict()
+export const readSupportRepliesResponseSchema = z
+  .object({
+    schemaVersion: supportContractVersionSchema,
+    readEntries: z.array(z.object({ entryId: publicIdSchema, readAt: z.iso.datetime() }).strip()),
+    requestId: z.string().trim().min(1),
+  })
+  .strip()
+export type ReadSupportRepliesResponse = z.infer<typeof readSupportRepliesResponseSchema>
+export const supportAttentionResponseSchema = z
+  .object({
+    schemaVersion: supportContractVersionSchema,
+    unreadTaskCount: z.number().int().nonnegative(),
+    nextTarget: z
+      .object({
+        threadId: publicIdSchema,
+        courseId: publicIdSchema,
+        groupId: publicIdSchema,
+        groupLessonId: publicIdSchema,
+        problemId: publicIdSchema,
+        firstUnreadEntryId: publicIdSchema,
+      })
+      .strip()
+      .nullable(),
+    requestId: z.string().trim().min(1),
+  })
+  .strip()
+  .refine((data) => (data.unreadTaskCount === 0) === (data.nextTarget === null))
+export type SupportAttentionResponse = z.infer<typeof supportAttentionResponseSchema>
+
 export const createSupportThreadRequestSchema = z
   .object({
     schemaVersion: supportContractVersionSchema,
@@ -75,6 +122,7 @@ export const supportEntrySchema = z
     channel: z.enum(['pwa', 'telegram', 'staff', 'system']),
     clientCreatedAt: z.iso.datetime().nullable(),
     receivedAt: z.iso.datetime(),
+    readAt: z.iso.datetime().nullable().optional(),
   })
   .strip()
   .superRefine((entry, context) => {
@@ -97,6 +145,7 @@ export type SupportEntry = z.infer<typeof supportEntrySchema>
 
 export const supportThreadSchema = z
   .object({
+    ...attentionFields,
     threadId: publicIdSchema,
     kind: supportThreadKindSchema,
     student: z
@@ -174,6 +223,7 @@ export type SupportThreadResponse = z.infer<typeof supportThreadResponseSchema>
 
 export const supportThreadSummarySchema = z
   .object({
+    ...attentionFields,
     threadId: publicIdSchema,
     kind: supportThreadKindSchema,
     student: z
@@ -286,6 +336,8 @@ export const supportQueryKeys = {
       parsed.cursor ?? 'first',
     ] as const
   },
+  attention: (principal: PrincipalQueryScope, afterThreadId: string | null = null) =>
+    [...supportQueryKeys.all(principal), 'attention', afterThreadId] as const,
   thread: (principal: PrincipalQueryScope, threadId: string) =>
     [...supportQueryKeys.all(principal), 'thread', publicIdSchema.parse(threadId)] as const,
 } as const

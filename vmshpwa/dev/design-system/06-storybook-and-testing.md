@@ -180,3 +180,17 @@ Interaction assertions проверяют переключение course/group,
 Chromium: первые три состояния просмотрены; HTML-валидация model ID проверена,
 pageerror отсутствуют. Editor/contract/admin-client: 24 Vitest PASS.
 Решение и backend-проверки — [metadata-generation.md](../../docs/metadata-generation.md).
+
+## Внимание к вопросам — 2026-10-01
+
+Принят и реализован [контракт](../../docs/question-attention.md): точки warning/danger,
+поответное серверное прочтение и глобальный переход к первому непрочитанному ответу
+через `question=<threadId>`. Индикатор —
+[`QuestionAttentionDot`](../../packages/product/src/question-attention.tsx),
+[stories](../../packages/product/src/question-attention.stories.tsx); видимость —
+[`VisibleSupportReply`](../../apps/student/src/visible-support-reply.tsx).
+Лента и отдельный вопрос используют одну переписку; история и уведомления сохраняются.
+Backend/контракты и проверки связаны в документе требований. Целевые gates
+прошли, включая 6 E2E в трёх движках, оба устройства и RU/EN/reduced motion.
+[Результаты, снимки и ограничение общего backend gate](../../../pwa_tests/reports/question-attention/README.md).
+Визуальное принятие владельцем и production-выпуск пока не зафиксированы.

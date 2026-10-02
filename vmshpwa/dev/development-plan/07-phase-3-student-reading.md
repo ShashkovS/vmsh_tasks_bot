@@ -342,3 +342,17 @@ for per-subpart statuses and answer panels. Standalone panels start expanded
 and collapse independently. Targeted Vitest: 7 tests passed; Student TypeScript
 and scoped ESLint passed. Browser visual verification and deployment not performed.
 Regression: [`student-worksheet-bindings.test.tsx`](../../apps/student/src/student-worksheet-bindings.test.tsx).
+
+## Внимание к вопросам — 2026-10-01
+
+Принят и реализован [контракт](../../docs/question-attention.md): точки warning/danger,
+поответное серверное прочтение и глобальный переход к первому непрочитанному ответу
+через `question=<threadId>`. Индикатор —
+[`QuestionAttentionDot`](../../packages/product/src/question-attention.tsx),
+[stories](../../packages/product/src/question-attention.stories.tsx); видимость —
+[`VisibleSupportReply`](../../apps/student/src/visible-support-reply.tsx).
+Лента и отдельный вопрос используют одну переписку; история и уведомления сохраняются.
+Backend/контракты и проверки связаны в документе требований. Целевые gates
+прошли, включая 6 E2E в трёх движках, оба устройства и RU/EN/reduced motion.
+[Результаты, снимки и ограничение общего backend gate](../../../pwa_tests/reports/question-attention/README.md).
+Визуальное принятие владельцем и production-выпуск пока не зафиксированы.

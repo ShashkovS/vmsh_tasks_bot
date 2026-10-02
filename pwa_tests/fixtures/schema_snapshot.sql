@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: dd71ab432bf845ad07ee3efda0a7175e29067a8d74b357f44b20e91fd99a548a
+-- Product schema SHA-256: 9a7b5fa26427d16aff03aad146448080acde73b6635bdd20f5313bf2536c39b8
 
 CREATE TABLE achievement_definitions
 (
@@ -2505,6 +2505,12 @@ CREATE TABLE support_entries
         or (author_kind = 'system' and channel = 'system')
     ),
     check (server_received_at >= created_at)
+);
+
+CREATE TABLE support_entry_reads (
+    entry_id integer primary key references support_entries(id),
+    student_user_id integer not null references users(id),
+    read_at text not null
 );
 
 CREATE TABLE support_photos (
@@ -5446,6 +5452,17 @@ before update on support_entries
 for each row
 begin
     select raise(abort, 'support entry is immutable');
+end;
+
+CREATE TRIGGER support_entry_reads_owner_insert
+before insert on support_entry_reads
+when not exists (
+    select 1 from support_entries e join support_threads t on t.id = e.thread_id
+    where e.id = new.entry_id and e.author_kind in ('teacher', 'admin')
+      and t.student_user_id = new.student_user_id and new.read_at >= e.server_received_at
+)
+begin
+    select raise(abort, 'support read must belong to the reply owner');
 end;
 
 CREATE TRIGGER support_threads_delete_forbidden

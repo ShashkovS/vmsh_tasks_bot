@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 
+from db_methods.pwa.support_attention import inherit_notification_read
 from db_methods.pwa.notifications import (
     active_student_accounts,
     insert_event,
@@ -48,6 +49,10 @@ def create_staff_reply_notifications(
             created_at=occurred_at,
         ):
             created += 1
+        # A reply may have been viewed before this post-commit event is created.
+        inherit_notification_read(
+            connection, entry_public_id=entry_public_id, account_id=int(account["id"])
+        )
     return created
 
 
