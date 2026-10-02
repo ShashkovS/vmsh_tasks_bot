@@ -1998,14 +1998,20 @@ note. Save/publish was not invoked; the existing server configuration is intact.
 получают серверное прочтение. Общий Python gate имеет четыре ошибки от
 постороннего `.DS_Store` в старом корпусе, который сохранён.
 [Отчёт и снимки](../../../pwa_tests/reports/question-attention/README.md).
-Визуальное принятие владельцем и production-выпуск не зафиксированы; порядок
-выпуска — миграция → backend → frontend.
+Production-выпуск завершён 2 октября; итоговая запись — ниже.
 
-## 2026-10-02 — Выпуск внимания к вопросам (в работе)
+## 2026-10-02 — Внимание к вопросам (в production на обоих порталах)
 
-Владелец разрешил commit/push, штатный VMSH autodeploy и ручной выпуск на
-prep.leaders.tech. Сначала объединяются уже опубликованные metadata/i18n-коммиты.
-[Ручной cutover](../../../docs/deploy/tlf-app/deploy_support_attention.sh) строит
-изолированный production artifact, проверяет up/down/up на копии и hash всех
-старых таблиц при остановленных writers. Выпуск: 0107 → backend health → frontend.
-[Правила и результаты](../../docs/question-attention.md).
+`5bb8d38227df` отправлен в `origin/vmshpwa` после сохранения шести новых
+metadata/i18n-коммитов. VMSH webhook и
+[ручной TLF cutover](../../../docs/deploy/tlf-app/deploy_support_attention.sh)
+прошли в порядке 0107 → backend health → frontend. Обе БД: 79 migrations, schema
+current, quick_check ok; по 25 публичных HTTP checks. VMSH сохранил hash 877
+сообщений и 383 тредов/версий и backfill 422 Staff-ответов; TLF — все 154 старые
+таблицы, credentials и три raw Zoom receipts, up/down/up на копии. NATS PID прежние,
+PWA, Telegram/Zoom и analytics активны, maintenance снят. Production provenance
+четырёх приложений и новая функция в публичных Student bundles проверены.
+После rebase 38 backend + 20 frontend, schema, types, lint и оба i18n — PASS.
+Сценарий двух устройств — изолированный E2E; production-проверки read-only.
+[Полный release/backup record](../../docs/question-attention.md#production--2-октября-2026),
+[результаты и снимки](../../../pwa_tests/reports/question-attention/README.md).

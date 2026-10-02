@@ -67,10 +67,10 @@ i18n и build проверены; ограничения общего backend ga
 Student access. Состояния Waiting/Unread/Read прошли Chromium Storybook/a11y gate.
 
 Оба STATUS.md и фазы Student reading / review / notifications и Product / flows /
-testing связывают это решение с реализацией. Production-выпуск не выполнялся.
-Порядок выпуска: миграция → backend → frontend; конкретные шаги — в отчёте.
+testing связывают это решение с реализацией. Production-выпуск завершён 2 октября
+2026: миграция → backend → frontend. Результаты — ниже и в отчёте.
 
-## Выпуск — 2 октября 2026 (в работе)
+## Production — 2 октября 2026
 
 Commit/push и оба деплоя разрешены владельцем. VMSH использует существующий
 webhook ветки `vmshpwa`; prep.leaders.tech —
@@ -80,4 +80,42 @@ webhook ветки `vmshpwa`; prep.leaders.tech —
 новых отметок и полноту baseline. Резервные копии сохраняются; NATS и credentials
 не меняются. Backend должен пройти health до активации frontend. После повторного
 открытия writers аварийный путь сохраняет новые receipts и Zoom-события, используя
-совместимый старый frontend. Результаты production будут записаны после выпуска.
+совместимый старый frontend.
+
+Релиз `5bb8d38227df59503cfcf45ec1c489726d9bb55d` отправлен в `origin/vmshpwa`
+после rebase поверх шести новых metadata/i18n-коммитов. Повторные gates: 38 backend,
+20 frontend, schema (500 объектов), TypeScript, lint и оба i18n — PASS.
+Ручной checker отдельно прошёл up/down/up и обнаружение изменения старой таблицы.
+
+| Портал                            | Способ               | Активный frontend                         | Миграции         | HTTP smoke |
+| --------------------------------- | -------------------- | ----------------------------------------- | ---------------- | ---------- |
+| [VMSH](https://vmsh.shashkovs.ru) | существующий webhook | `5bb8d38227df-20261002055653`             | 79, включая 0107 | 25 PASS    |
+| [TLF](https://prep.leaders.tech)  | reviewed SSH cutover | `tlfprep-20261002-questions-5bb8d38227df` | 79, включая 0107 | 25 PASS    |
+
+VMSH backups `vmsh-before-deploy-20261002055755.sqlite3` и
+`vmsh-after-deploy-20261002055822.sqlite3` подтверждают одинаковые hash всех
+877 support entries и 383 support threads, включая сообщения и версии. Baseline
+содержит 422 Staff-ответа и ровно 422 валидных receipt; backlog отсутствует.
+Runtime schema current, quick_check ok, NATS PID 1409 прежний; PWA, Telegram
+и analytics timer активны, maintenance снят. Предупреждение autodeploy о
+`docs/deploy` относится к новому TLF cutover; установленные webhook/nginx/systemd
+артефакты VMSH не менялись и переустановка не требуется.
+
+TLF record:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-questions-5bb8d38227df/`.
+Up/down/up на копии и сравнение всех 154 старых product tables при остановленных
+PWA/Zoom/analytics writers — PASS. В TLF ещё нет support entries/threads, receipts
+пусты; схема актуальна и quick_check ok. Credentials checksum совпал, NATS PID
+1936264 прежний. Backups `20261002T055732.874226Z` и `20261002T055913.981909Z`
+имеют integrity ok и сохраняют три raw Zoom receipts. PWA, Zoom и analytics timer
+активны; backend health проверен до активации frontend.
+
+Все четыре приложения на каждом портале имеют production provenance, MSW/prototype
+отключены, media origin прежний. Публичные Student bundles содержат attention API,
+capability header и глобальный счётчик. Неавторизованные запросы attention/read
+возвращают 401/403. [Машиночитаемое подтверждение](../../pwa_tests/reports/question-attention/production-proof.json).
+
+Production-проверки были read-only: новые ответы, посылки и Zoom-события не
+создавались. Полный сценарий ответа/перехода/прочтения на двух устройствах проверен
+в изолированном E2E во всех трёх движках. Documentation follow-up может обновить
+VMSH source HEAD; compiled release и backend сохраняют указанную feature-версию.

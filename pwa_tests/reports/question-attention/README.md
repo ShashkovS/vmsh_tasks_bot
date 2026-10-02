@@ -1,7 +1,7 @@
-# Индикаторы вопросов: проверка 1 октября 2026
+# Индикаторы вопросов: проверка 1–2 октября 2026
 
-Реализовано локально по [принятому плану](../../../vmshpwa/docs/question-attention.md).
-Production-выпуск не выполнялся. Существующие сообщения, версии переписки и история
+Реализовано и выпущено на обоих порталах по
+[принятому плану](../../../vmshpwa/docs/question-attention.md). Существующие сообщения, версии переписки и история
 сохраняются; серверные отметки индивидуальны для ответа и общие для устройств ученика.
 
 ## Проверки
@@ -46,11 +46,11 @@ Production-выпуск не выполнялся. Существующие со
 Вручную просмотрены danger в светлой теме и переписка в тёмной теме на 320 px
 во всех трёх движках. Снимки из успешного финального прогона:
 
-| Движок | RU, danger | RU, read, dark | EN, unread, dark, reduced motion |
-|---|---|---|---|
+| Движок   | RU, danger                                      | RU, read, dark                                   | EN, unread, dark, reduced motion                              |
+| -------- | ----------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------- |
 | Chromium | [точка](chromium/question-unread-indicator.png) | [переписка](chromium/question-read-dark-320.png) | [переписка](chromium/question-unread-dark-en-reduced-320.png) |
-| Firefox | [точка](firefox/question-unread-indicator.png) | [переписка](firefox/question-read-dark-320.png) | [переписка](firefox/question-unread-dark-en-reduced-320.png) |
-| WebKit | [точка](webkit/question-unread-indicator.png) | [переписка](webkit/question-read-dark-320.png) | [переписка](webkit/question-unread-dark-en-reduced-320.png) |
+| Firefox  | [точка](firefox/question-unread-indicator.png)  | [переписка](firefox/question-read-dark-320.png)  | [переписка](firefox/question-unread-dark-en-reduced-320.png)  |
+| WebKit   | [точка](webkit/question-unread-indicator.png)   | [переписка](webkit/question-read-dark-320.png)   | [переписка](webkit/question-unread-dark-en-reduced-320.png)   |
 
 ## Порядок выпуска
 
@@ -59,8 +59,25 @@ Production-выпуск не выполнялся. Существующие со
    переписки. Проверить schema inventory и integrity/FK gate штатного deploy.
 2. Выпустить backend с read/attention API и realtime-инвалидациями. Старые клиенты
    продолжают получать прежний payload, новые используют capability-header.
-3. Выпустить frontend и выполнить штатный production HTTP smoke и короткую
-   проверку нового ответа/прочтения на двух устройствах.
+3. Выпустить frontend и выполнить штатный production HTTP smoke. Полный сценарий
+   нового ответа/прочтения на двух устройствах проверяется в изолированном E2E.
 
-Этот отчёт подтверждает локальную реализацию и изолированный браузерный gate,
-а не применение миграции или работу нового кода на production.
+## Production — 2 октября 2026
+
+`5bb8d38227df` отправлен в `origin/vmshpwa`. VMSH autodeploy и ручной
+prep.leaders.tech cutover прошли: 79 migrations, включая 0107, backend перед
+frontend, по 25 read-only HTTP checks.
+
+VMSH: 877 сообщений и 383 треда, включая версии, имеют прежние hash в backups
+до/после; все 422 прежних Staff-ответа получили receipts. TLF: up/down/up на
+копии и одинаковые hash всех 154 старых product tables, credentials checksum
+прежний, три raw Zoom receipts сохранены. В TLF пока нет support threads.
+На обоих серверах schema current и quick_check ok; PWA, Telegram/Zoom и analytics
+активны, NATS PID прежние, maintenance снят. Production provenance всех приложений
+и наличие attention в публичных Student bundles проверены; auth boundary 401/403.
+
+После rebase повторно прошли 38 backend, 20 frontend, schema, lint, TypeScript
+и оба i18n gate. Скрипт сравнения БД отдельно проверен на up/down/up и на обнаружение
+изменения старой таблицы. Production-проверки не создавали ответы/посылки/Zoom-события.
+[Подробности, backup IDs и release paths](../../../vmshpwa/docs/question-attention.md#production--2-октября-2026),
+[машиночитаемое подтверждение](production-proof.json).

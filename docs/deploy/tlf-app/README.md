@@ -283,3 +283,28 @@ publication were verified in isolated three-browser E2E before cutover; the live
 smoke did not write synthetic content/events. Detailed VMSh data comparison,
 backups and test results: [figure production record](../../../vmshpwa/dev/figure-layout-report.md#production--2026-10-01).
 Documentation-only follow-ups do not require a TLF runtime rebuild/restart.
+
+## Question attention — 2026-10-02
+
+Source release `5bb8d38227df59503cfcf45ec1c489726d9bb55d` is live on both
+portals. VMSh used the existing webhook; TLF used
+[reviewed cutover](deploy_support_attention.sh) with
+[read-only data checker](support_attention_data_check.py). Active TLF static:
+`tlfprep-20261002-questions-5bb8d38227df`. Record:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-questions-5bb8d38227df/`.
+
+All 154 old product tables and credentials are identical across the stopped-writer
+cutover. Migration 0107 was rehearsed up/down/up on a copy; both databases have
+79 migrations, current schema and quick_check ok. Backup IDs
+`20261002T055732.874226Z` / `20261002T055913.981909Z` have integrity ok and preserve
+three raw Zoom receipts. NATS PID 1936264 is unchanged; PWA, Zoom and analytics
+are active. Backend health passed before frontend activation. Each portal passed
+25 public read-only HTTP checks; all four production artifacts and public Student
+attention code were verified. No synthetic production replies/submissions/Zoom
+events were created.
+
+Before reopening writers the script can roll back only 0107 and prior source/static.
+After reopening writers it retains the new source/schema and restores compatible
+old static, preserving all accepted receipts and Zoom events; it never restores
+a backup over live production data.
+[Requirement, exact releases and operational proof](../../../vmshpwa/docs/question-attention.md#production--2-октября-2026).

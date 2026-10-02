@@ -329,4 +329,6 @@ production build. Реальная доставка на устройстве п
 Backend/контракты и проверки связаны в документе требований. Целевые gates
 прошли, включая 6 E2E в трёх движках, оба устройства и RU/EN/reduced motion.
 [Результаты, снимки и ограничение общего backend gate](../../../pwa_tests/reports/question-attention/README.md).
-Визуальное принятие владельцем и production-выпуск пока не зафиксированы.
+Production-выпуск завершён 2 октября: `5bb8d38227df`, VMSH webhook и ручной TLF
+cutover, 0107 → backend → frontend, по 25 HTTP checks. Старые сообщения/версии
+сохранены; baseline заполнен. [Release proof](../../docs/question-attention.md#production--2-октября-2026).
