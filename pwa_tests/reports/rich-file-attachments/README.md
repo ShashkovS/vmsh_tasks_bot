@@ -1,10 +1,10 @@
 # Файловые вложения: проверка 2 октября 2026
 
-Реализован локально [принятый план](../../../vmshpwa/docs/rich-file-attachments.md):
+Реализован и выпущен [принятый план](../../../vmshpwa/docs/rich-file-attachments.md):
 «Прикрепить файл» в news, broadcasts/banners и блоках до/после задач;
 постоянная публичная ссылка, максимум 50 МиБ, все 15 разрешённых расширений.
 Файл сохраняется без преобразования в существующий ObjectStorage. SQLite
-миграция не нужна. Production-выпуск и live S3 не выполнялись.
+миграция не нужна. Production-выпуск и результаты S3-проверки — ниже.
 
 ## Выполненные проверки
 
@@ -106,3 +106,40 @@ attachment unit, 9 E2E без retries в трёх браузерах, production
 TypeScript и оба i18n gate — PASS. Тестовый профиль — пустой ignored JSON,
 без Telegram/Google/S3 credentials. Ручной data checker проверен на стабильных
 хешах и обнаружении изменения raw Zoom receipt; shell syntax и Ruff — PASS.
+
+## Production — 2 октября 2026
+
+Коммит [`9584efb7fd53`](https://github.com/ShashkovS/vmsh_tasks_bot/commit/9584efb7fd53da1eff41a1e60564d02fa7497fdc)
+отправлен в `origin/vmshpwa`. Перед push сохранены новые banner/i18n commits
+`c8af0dc2` / `8680f25c`; после rebase 38 backend attachment/banner tests и оба
+i18n gate — PASS. Параллельный fresh-problem-set инкремент не включён.
+
+- VMSH: штатный webhook выпустил backend и все четыре frontend, без миграций.
+  Статический release `9584efb7fd53-20261002153458`. 25 read-only HTTP checks —
+  PASS; SQLite quick_check ok, 80 migrations; PWA, Telegram, analytics и NATS
+  active, maintenance отсутствует, NATS PID 1409 прежний.
+- TLF: [ручной cutover](../../../docs/deploy/tlf-app/deploy_rich_files.sh),
+  release `tlfprep-20261002-rich-files-9584efb7fd53`. Record на сервере:
+  `/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-rich-files-9584efb7fd53/`.
+  Все 157 product tables, включая raw Zoom receipts, имеют одинаковые хеши
+  при остановленных writers. Credentials совпадают; schema current,
+  80 migrations, 25 read-only HTTP checks — PASS. PWA, Zoom, analytics и
+  NATS active, maintenance снят, NATS PID 1936264 прежний.
+- TLF backups `20261002T153530.870193Z` / `20261002T153708.227404Z`:
+  integrity ok, оба содержат 851 raw Zoom receipt. Обновление nginx добавило
+  только `/pwa-rich-files/`; nginx -t и reload прошли. На VMSH root-owned nginx
+  сохранён: production использует прямые S3-ссылки, filesystem proxy там
+  не требуется; обновлённый template находится в исходниках.
+- На обоих публичных порталах provenance четырёх приложений соответствует
+  release: production, prototype/MSW false. Публичный Staff chunk содержит оба
+  upload-клиента; оба новых API без входа отвечают 401 `authentication_required`.
+- Live S3 на TLF: один disposable TXT с кириллицей и скобками в имени;
+  новый `store_uploaded_rich_file`, постоянный HTTPS URL без query/fragment,
+  анонимный GET 200, server MIME text/plain и точное совпадение 61 байта.
+  Создан только этот объект, затем удалён. На VMSH S3 capability probe не
+  выполнен: агентский SSH-пользователь не читает production-конфигурацию;
+  объект не записывался.
+
+Production news/banner/lesson content, ответы, submissions и Zoom events
+проверки не создавали. Полные upload/save/publication сценарии — изолированный
+E2E выше. [Обезличенный machine-readable record](production-proof.json).

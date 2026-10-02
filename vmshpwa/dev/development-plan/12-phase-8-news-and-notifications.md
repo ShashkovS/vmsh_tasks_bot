@@ -1,6 +1,6 @@
 # Этап 8. Telegram-news, realtime, Web Push и баннеры
 
-## Файловые вложения — 2 октября 2026, реализовано локально
+## Файловые вложения — 2 октября 2026, в production на обоих порталах
 
 Новости, баннеры и lesson blocks получают загрузку документов/архивов до
 50 МиБ и постоянные Markdown-ссылки. Решение и реализация:
@@ -10,7 +10,12 @@ filesystem roundtrip прошёл во всех трёх браузерах бе
 74 backend, 1002 frontend unit с известным исключением, 6 Storybook/a11y и
 9 E2E без retries — PASS. Lint, TypeScript, оба i18n и production builds —
 PASS. Точная HTTP-граница 50 МиБ и снимки раскрытых редакторов проверены.
-Production-выпуск не выполнялся.
+Коммит `9584efb7fd53` выпущен VMSH webhook и ручным TLF cutover без миграций;
+по 25 публичных HTTP checks и production provenance — PASS. Схема — 80
+migrations; TLF сохранил все 157 product tables, credentials и raw Zoom
+receipts. Live TLF S3 probe прошёл, объект удалён; VMSH probe не выполнен
+из-за доступа агентского SSH-пользователя к production-конфигурации.
+[Production record](../../../pwa_tests/reports/rich-file-attachments/production-proof.json).
 [Результаты и известные сбои общей базы](../../../pwa_tests/reports/rich-file-attachments/README.md).
 
 ## Staff news Unicode excerpt fix — 27 September 2026

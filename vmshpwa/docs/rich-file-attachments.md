@@ -84,7 +84,7 @@ Python/TS разрешают только канонический относи�
 
 ## Проверки
 
-Реализовано локально 2 октября 2026. Проверки и снимки:
+Реализовано и выпущено на обоих порталах 2 октября 2026. Проверки и снимки:
 [`pwa_tests/reports/rich-file-attachments/README.md`](../../pwa_tests/reports/rich-file-attachments/README.md).
 
 - Backend:
@@ -104,8 +104,8 @@ Python/TS разрешают только канонический относи�
   изменение подписи, Student/Family, публичный GET исходных байтов;
   Chromium/WebKit/Firefox без S3/Telegram/Google credentials.
 
-SQLite migrations и новые настройки storage не требуются. Production-выпуск
-в этот инкремент не входил; S3 использует уже настроенный публичный bucket/prefix.
+SQLite migrations и новые настройки storage не требуются. S3 использует
+уже настроенный публичный bucket/prefix.
 
 ## Production — выпуск 2 октября 2026
 
@@ -120,4 +120,20 @@ SQLite migrations и новые настройки storage не требуютс
 [Read-only checker](../../docs/deploy/tlf-app/rich_files_data_check.py) сравнивает
 все product tables, включая support receipts и сырые Zoom events. Backend
 health предшествует переключению frontend; rollback сохраняет БД и S3.
-Production-результат будет добавлен после cutover и HTTP smoke.
+Коммит `9584efb7fd53da1eff41a1e60564d02fa7497fdc` отправлен в `origin/vmshpwa`.
+VMSH webhook: `9584efb7fd53-20261002153458`; ручной TLF:
+`tlfprep-20261002-rich-files-9584efb7fd53`. Оба портала прошли по 25 публичных
+HTTP checks и проверку production provenance всех четырёх приложений;
+публичный Staff bundle содержит оба upload-клиента, anonymous upload — 401.
+Схема осталась на 80 migrations, NATS PID прежние, maintenance снят.
+На TLF сохранены хеши всех 157 product tables и credentials; backups
+`20261002T153530.870193Z` / `20261002T153708.227404Z` имеют integrity ok,
+по 851 raw Zoom receipt. Добавлен только filesystem namespace в live nginx.
+VMSH использует прямые S3 URL; root-owned live nginx сохранён.
+
+TLF disposable S3 probe нового helper прошёл: постоянный публичный URL,
+кириллица/скобки в имени, MIME и исходные байты; тестовый объект удалён.
+На VMSH live S3 probe не выполнен из-за доступа агентского SSH-пользователя
+к production-конфигурации. Production-публикации не создавались; полный
+авторинг покрыт изолированным E2E. [Результаты](../../pwa_tests/reports/rich-file-attachments/README.md#production--2-октября-2026)
+и [machine-readable record](../../pwa_tests/reports/rich-file-attachments/production-proof.json).

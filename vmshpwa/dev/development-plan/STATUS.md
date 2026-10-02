@@ -3888,7 +3888,7 @@ Backups `20261002T140310.940858Z` / `20261002T140436.224617Z`: integrity ok,
 по 29 Zoom receipts. Статический release, Zoom/NATS PID и credentials
 сохранены; схема не менялась. Повторные 29 backend tests после rebase — PASS.
 
-## Файловые вложения — 2 октября 2026, реализовано локально
+## Файловые вложения — 2 октября 2026, в production на обоих порталах
 
 Реализован общий upload документов/архивов до 50 МиБ для news, banners и обоих
 lesson blocks. [Требование и реализация](../../docs/rich-file-attachments.md).
@@ -3897,9 +3897,16 @@ lesson blocks. [Требование и реализация](../../docs/rich-fi
 1002 frontend unit — PASS
 при исключении прежнего сбоя локализации StaffTestingPage. Общий backend имеет
 четыре прежних ошибки от `.DS_Store`. Точный HTTP limit и финальные снимки
-проверены. Production-выпуск не выполнялся.
+проверены. Production-выпуск завершён; результат ниже.
 [Проверки](../../../pwa_tests/reports/rich-file-attachments/README.md).
 
-Production-выпуск разрешён владельцем: commit поверх текущего origin/vmshpwa,
-VMSH webhook и ручной TLF cutover без миграций. Проверки точной release-версии
-и публикация выполняются; параллельный fresh-problem-set инкремент исключён.
+Коммит `9584efb7fd53` отправлен в `origin/vmshpwa` с сохранением новых
+banner/i18n commits. VMSH webhook и ручной TLF cutover прошли без миграций;
+по 25 HTTP checks, provenance четырёх приложений, новые Staff bundles и
+anonymous upload 401 — PASS. TLF: все 157 product tables и credentials
+сохранены, оба backups integrity ok, по 851 raw Zoom receipt. Обе схемы —
+80 migrations, maintenance снят, services active, NATS PID прежние.
+TLF disposable S3 probe прошёл, объект удалён; на VMSH такой probe не выполнен
+из-за доступа SSH-пользователя к production-конфигурации. После rebase:
+38 backend tests и оба i18n — PASS. Параллельный fresh-problem-set исключён.
+[Release proof](../../../pwa_tests/reports/rich-file-attachments/production-proof.json).

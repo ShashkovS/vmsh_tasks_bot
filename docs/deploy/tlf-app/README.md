@@ -335,3 +335,27 @@ ok and preserve three raw Zoom receipts. A fourth receipt arrived after writers
 reopened. NATS PID 1936264 is unchanged; PWA, Zoom and analytics are active.
 All four production artifacts, 25 HTTP checks and 205 old hashed asset URLs
 passed; no synthetic production tasks/replies/Zoom events were created.
+
+## File attachments — 2026-10-02
+
+Feature source `9584efb7fd53da1eff41a1e60564d02fa7497fdc` is live on both
+portals. VMSH used the existing webhook; TLF used [deploy_rich_files.sh](deploy_rich_files.sh)
+and [rich_files_data_check.py](rich_files_data_check.py), without migrations.
+Active TLF static: `tlfprep-20261002-rich-files-9584efb7fd53`; record:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-rich-files-9584efb7fd53/`.
+
+All 157 product tables and credentials are identical across the stopped-writer
+cutover; schema remains current with 80 migrations. Before/after backups
+`20261002T153530.870193Z` / `20261002T153708.227404Z` have integrity ok and
+851 raw Zoom receipts each. NATS PID 1936264 is unchanged; PWA, Zoom and
+analytics are active, maintenance cleared. Only the public filesystem location
+was added to the existing nginx configuration; nginx -t and reload passed.
+Backend health preceded frontend activation; rollback retains every DB row and S3
+object. Both portals passed 25 read-only HTTP checks, four-app production
+provenance, new Staff client bundle checks and anonymous upload rejection.
+
+A disposable TLF S3 attachment with a Unicode filename was fetched publicly
+with the original bytes/MIME, then deleted. No production posts/submissions/Zoom
+events were created. VMSH S3 probe was not run because the agent SSH user cannot
+read production configuration. [Requirements and release details](../../../vmshpwa/docs/rich-file-attachments.md#production--выпуск-2-октября-2026),
+[safe machine-readable proof](../../../pwa_tests/reports/rich-file-attachments/production-proof.json).
