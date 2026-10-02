@@ -2242,7 +2242,8 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
     payload = await _json_object(
         request,
         allowed_fields=_METADATA_GENERATION_FIELDS,
-        max_bytes=CONTENT_JSON_BODY_LIMIT_BYTES,
+        optional_fields=frozenset({"problemTypes"}),
+        max_bytes=CONTENT_METADATA_JSON_LIMIT_BYTES,
     )
     revision_public_id = payload["revisionId"]
     if not isinstance(revision_public_id, str):
@@ -2272,6 +2273,37 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
             code="metadata_generation_not_available",
             message="Сначала сопоставьте хотя бы одну задачу для генерации metadata",
         )
+    problem_types = None
+    if "problemTypes" in payload:
+        # docs/metadata-generation.md: current draft types are a complete,
+        # revision-scoped override, not a metadata save or a partial row batch.
+        raw_types = payload["problemTypes"]
+        problem_types = {}
+        valid_types = isinstance(raw_types, list) and len(raw_types) == len(grid.rows)
+        if valid_types:
+            for row in raw_types:
+                if (
+                    not isinstance(row, dict)
+                    or set(row) != {"problemId", "problemType"}
+                    or type(row["problemId"]) is not int
+                    or type(row["problemType"]) is not int
+                    or row["problemType"] not in {1, 2, 3}
+                    or row["problemId"] in problem_types
+                ):
+                    valid_types = False
+                    break
+                problem_types[row["problemId"]] = row["problemType"]
+        if not valid_types or set(problem_types) != {
+            row.problem.problem_id for row in grid.rows
+        }:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message=(
+                    "Укажите тестовый, письменный или устный тип для каждой задачи ровно один раз"
+                ),
+                details={"field": "problemTypes"},
+            )
     if (
         context.revision.revision_number != 1 or any(row.reviewed for row in grid.rows)
     ) and not confirmed_overwrite:
@@ -2300,12 +2332,21 @@ async def generate_metadata_grid(request: web.Request) -> web.Response:
                 display_number=row.source.display_number,
                 source_title=row.source.source_title,
                 problem_id=row.problem.problem_id,
+                problem_type=(
+                    None if problem_types is None
+                    else problem_types[row.problem.problem_id]
+                ),
             )
             for row in grid.rows
         ),
     )
     try:
         result = await _metadata_generator(request).generate(generation_request)
+        if problem_types is not None and any(
+            row.get("problemType") != problem_types.get(row.get("problemId"))
+            for row in result.rows
+        ):
+            raise MetadataGenerationError("Generator did not preserve Staff problem types")
         # Validate generated rows against the normal Staff write boundary.
         _metadata_drafts(list(result.rows))
     except MetadataGenerationUnavailable as error:

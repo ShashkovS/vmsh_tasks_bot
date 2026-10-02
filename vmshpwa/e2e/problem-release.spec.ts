@@ -40,6 +40,7 @@ test('teacher releases fifteen tasks progressively to Student and Family', async
   await family.screenshot({ path: testInfo.outputPath('family-waiting.png') })
   for (const index of [0, 1]) {
     await workflow.getByRole('switch').nth(index).click()
+    await expect(workflow.getByRole('switch').nth(index)).toBeChecked()
     await expect(workflow.getByRole('switch').nth(index)).toBeEnabled()
   }
   await expect(studentTasks).toHaveCount(2)
@@ -69,6 +70,7 @@ test('teacher releases fifteen tasks progressively to Student and Family', async
   }
   for (const index of [2, 3, 4]) {
     await workflow.getByRole('switch').nth(index).click()
+    await expect(workflow.getByRole('switch').nth(index)).toBeChecked()
     await expect(workflow.getByRole('switch').nth(index)).toBeEnabled()
   }
   await expect(studentTasks).toHaveCount(5)
@@ -92,8 +94,14 @@ test('teacher releases fifteen tasks progressively to Student and Family', async
       dispatchEvent(new Event('online'))
     })
   await student.bringToFront()
+  await expect.poll(() => student.evaluate(() => document.visibilityState)).toBe('visible')
+  // As in news-notifications.spec.ts, Playwright can foreground a tab without
+  // a visibilitychange; deliver that device event after proving visibility.
+  await student.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
   await expect(studentTasks).toHaveCount(15, { timeout: 30_000 })
   await family.bringToFront()
+  await expect.poll(() => family.evaluate(() => document.visibilityState)).toBe('visible')
+  await family.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
   await expect(familyTasks).toHaveCount(15, { timeout: 30_000 })
   // Retraction also reaches already open readers.
   await workflow.getByRole('switch').nth(0).click()

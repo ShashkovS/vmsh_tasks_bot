@@ -73,3 +73,5 @@ export * from './content-update-marker'
 export { WorksheetMaterials, type WorksheetMaterial } from './worksheet-materials'
 
 export * from './question-photos'
+
+export * from './question-attention'

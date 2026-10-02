@@ -352,3 +352,19 @@ Regression: [`student-worksheet-bindings.test.tsx`](../../apps/student/src/stude
 повтор после подготовки локальных fixtures), 3 Storybook, 3 browser E2E без
 reload, включая reconnect. Подробные команды, локальные inputs и границы:
 [problem-release.md](../../docs/problem-release.md). Deployment не выполнялся.
+
+## Внимание к вопросам — 2026-10-01
+
+Принят и реализован [контракт](../../docs/question-attention.md): точки warning/danger,
+поответное серверное прочтение и глобальный переход к первому непрочитанному ответу
+через `question=<threadId>`. Индикатор —
+[`QuestionAttentionDot`](../../packages/product/src/question-attention.tsx),
+[stories](../../packages/product/src/question-attention.stories.tsx); видимость —
+[`VisibleSupportReply`](../../apps/student/src/visible-support-reply.tsx).
+Лента и отдельный вопрос используют одну переписку; история и уведомления сохраняются.
+Backend/контракты и проверки связаны в документе требований. Целевые gates
+прошли, включая 6 E2E в трёх движках, оба устройства и RU/EN/reduced motion.
+[Результаты, снимки и ограничение общего backend gate](../../../pwa_tests/reports/question-attention/README.md).
+Production-выпуск завершён 2 октября: `5bb8d38227df`, VMSH webhook и ручной TLF
+cutover, 0107 → backend → frontend, по 25 HTTP checks. Старые сообщения/версии
+сохранены; baseline заполнен. [Release proof](../../docs/question-attention.md#production--2-октября-2026).

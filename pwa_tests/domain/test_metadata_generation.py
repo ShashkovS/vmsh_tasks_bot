@@ -14,6 +14,7 @@ from helpers.pwa.content.metadata_generation import (
     MetadataGenerationTarget,
     MetadataGenerationUnavailable,
     OpenRouterMetadataGenerator,
+    _contract_latex,
     _normalize_generated_rows,
     _normalize_reference_markup,
     _upstream_generation_error,
@@ -148,8 +149,32 @@ async def test_metadata_generation_rejects_the_checked_in_example_key():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "filename,source,expected_identity",
+    [
+        ("usl-00-n.tex", r"\задача Найдите 7. \кзадача", (0, "н")),
+        (
+            "number-theory.tex",
+            r"\Sect{Written problems}\problem Find 7.\eproblem\answer 7\eanswer",
+            (0, "н"),
+        ),
+        (
+            "worksheet.tex",
+            r"\ListNumber{12п}\раздел{Written problems}\problem Find 7.\eproblem",
+            (12, "п"),
+        ),
+        (
+            "worksheet.tex",
+            r"\Sect{Written problems}\begin{problem}Find 7.\end{problem}\begin{answer}7\end{answer}",
+            (0, "н"),
+        ),
+    ],
+)
 async def test_metadata_generation_uses_an_async_client_for_configured_proxy(
     monkeypatch: pytest.MonkeyPatch,
+    filename,
+    source,
+    expected_identity,
 ):
     calls: list[dict[str, object]] = []
 
@@ -183,13 +208,62 @@ async def test_metadata_generation_uses_an_async_client_for_configured_proxy(
     result = await OpenRouterMetadataGenerator(
         api_key="sk-or-v1-live-key",
         proxy="http://127.0.0.1:1080",
-    ).generate(_request())
+    ).generate(replace(_request(), source_filename=filename, latex_text=source))
 
     assert len(result.rows) == 1
     assert calls[0]["kwargs"]["proxy"] == "http://127.0.0.1:1080"
     assert calls[0]["kwargs"]["reasoning_effort"] == "medium"
     assert calls[0]["kwargs"]["timeout_seconds"] == GENERATION_TIMEOUT_SECONDS
     assert calls[0]["kwargs"]["prompt_cache"] is True
+    assert calls[0]["args"][1:3] == expected_identity
+    parsed = markup_contract.parse_lesson_structure(
+        markup_contract.clean_latex_document(calls[0]["args"][0]),
+        *expected_identity,
+        locale="en",
+    )
+    assert len(parsed.rows) == 1
+    assert parsed.rows[0].prob_type == "Письменно"
+    if "answer" in source:
+        assert parsed.tasks[0].answer == "7"
+
+
+def test_metadata_contract_dialect_preserves_math_comments_macros_and_drawings():
+    untouched = r"""% \problem commented out
+\renewcommand{\problem}{A macro body with \answer}
+$\problem + \answer$
+\begin{tikzpicture}\node {\problem};\end{tikzpicture}
+\begin{verbatim}\problem example\end{verbatim}
+"""
+    assert _contract_latex(untouched) == untouched
+
+
+@pytest.mark.parametrize(
+    "heading,expected",
+    [
+        ("Test problems", "Тест"),
+        ("Written problems", "Письменно"),
+        ("Oral problems", "Письменно<-Устно"),
+    ],
+)
+@pytest.mark.parametrize("fields_inside", [False, True])
+def test_metadata_contract_uses_english_section_types_and_subitems(
+    heading, expected, fields_inside
+):
+    teacher_fields = r"\answer\itm 1\itm 2\eanswer\suggestion Hint.\esuggestion\solution Explanation.\esolution"
+    source = rf"\Sect{{{heading}}}\problem\itm First.\itm Second."
+    source += (
+        teacher_fields + r"\eproblem"
+        if fields_inside
+        else r"\eproblem" + teacher_fields
+    )
+    parsed = markup_contract.parse_lesson_structure(
+        _contract_latex(source), 0, "н", locale="en"
+    )
+    assert [row.prob_type for row in parsed.rows] == [expected, expected]
+    assert parsed.tasks[0].answer_parts == ["1", "2"]
+    assert parsed.tasks[0].hint == "Hint."
+    assert parsed.tasks[0].solution == "Explanation."
+    assert parsed.tasks[0].statement_parts == ["First.", "Second."]
 
 
 @pytest.mark.asyncio

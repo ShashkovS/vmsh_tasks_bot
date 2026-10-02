@@ -10,12 +10,15 @@ import {
 } from './worksheet-return'
 
 import { useNavigate } from '@tanstack/react-router'
-import { BookOpen, ChevronRight } from 'lucide-react'
+import { BookOpen, ChevronRight, MessageCircleQuestion } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import {
   CourseNetworkError,
   createStudentCourseClient,
+  createSupportClient,
+  useSupportAttentionQuery,
+  useSupportThreadQuery,
   useAuthenticatedPrincipal,
   useAuthentication,
   useStudentCoursesQuery,
@@ -35,6 +38,7 @@ import {
   type PrincipalQueryScope,
   type StudentLessonSummary,
   type StudentProblemSummary,
+  type SupportThread,
 } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
 import { CourseContext, CourseGroupSwitcher, LessonBlocksLayout } from '@vmsh/product'
@@ -72,12 +76,16 @@ export function StudentLessonFeedItem({
   enrollment,
   groupId,
   lesson,
+  targetQuestion,
+  questionJumpAttempt,
 }: {
   client: StudentCourseClient
   principal: PrincipalQueryScope
   enrollment: CourseEnrollment
   groupId: string
   lesson: StudentLessonSummary
+  targetQuestion?: SupportThread | undefined
+  questionJumpAttempt?: number | undefined
 }) {
   const navigate = useNavigate({ from: '/tasks/' })
   const authentication = useAuthentication()
@@ -213,6 +221,12 @@ export function StudentLessonFeedItem({
       conditionRevisionId={problemsQuery.data.conditionRevisionId}
       courseId={enrollment.course.courseId}
       groupLessonId={lesson.groupLessonId}
+      targetQuestionId={
+        targetQuestion?.context.problemId === problem.problemId
+          ? targetQuestion.threadId
+          : undefined
+      }
+      questionJumpAttempt={questionJumpAttempt}
       onToggleAnswer={() => toggleProblem(problem.problemId)}
       problem={problem}
       submissionClosed={submissionClosed}
@@ -301,9 +315,13 @@ function StudentLessonArchive({
   enrollments,
   enrollment,
   groupId,
+  targetQuestion,
+  jumpAttempt,
 }: {
   client: StudentCourseClient
   principal: PrincipalQueryScope
+  targetQuestion?: SupportThread | undefined
+  jumpAttempt: number
   enrollments: CourseEnrollment[]
   enrollment: CourseEnrollment
   groupId: string
@@ -314,10 +332,25 @@ function StudentLessonArchive({
   const [visibleLessonCount, setVisibleLessonCount] = useState(
     () => worksheetPageSizes.get(archiveKey) ?? 5,
   )
+  const targetLessonIndex =
+    query.data?.pages
+      .flatMap((page) => page.lessons)
+      .findIndex((lesson) => lesson.groupLessonId === targetQuestion?.context.groupLessonId) ?? -1
+  const effectiveVisibleLessonCount = Math.max(visibleLessonCount, targetLessonIndex + 1)
   useEffect(() => {
-    worksheetPageSizes.set(archiveKey, visibleLessonCount)
-  }, [archiveKey, visibleLessonCount])
-  useWorksheetReturn()
+    worksheetPageSizes.set(archiveKey, effectiveVisibleLessonCount)
+  }, [archiveKey, effectiveVisibleLessonCount])
+  useWorksheetReturn(!targetQuestion)
+  useEffect(() => {
+    if (
+      targetQuestion?.context.groupId === groupId &&
+      targetLessonIndex < 0 &&
+      query.hasNextPage &&
+      !query.isFetchingNextPage
+    )
+      void query.fetchNextPage()
+  }, [targetQuestion, groupId, targetLessonIndex, query])
+  useQuestionAnswerScroll(targetQuestion, jumpAttempt)
   const enrollmentView = toCourseEnrollmentView(enrollment)
   const selectedGroup = enrollment.allowedGroups.find((candidate) => candidate.groupId === groupId)
 
@@ -336,7 +369,7 @@ function StudentLessonArchive({
   if (!selectedGroup) return <PageStatePanel state="forbidden" />
 
   const lessons = query.data.pages.flatMap((page) => page.lessons)
-  const visibleLessons = lessons.slice(0, visibleLessonCount)
+  const visibleLessons = lessons.slice(0, effectiveVisibleLessonCount)
 
   return (
     <div className="space-y-5">
@@ -388,20 +421,32 @@ function StudentLessonArchive({
                 key={lesson.groupLessonId}
                 lesson={lesson}
                 principal={principal}
+                questionJumpAttempt={jumpAttempt}
+                targetQuestion={
+                  targetQuestion?.context.groupLessonId === lesson.groupLessonId
+                    ? targetQuestion
+                    : undefined
+                }
               />
             ))}
           </div>
         )}
-        {visibleLessonCount < lessons.length || query.hasNextPage ? (
+        {effectiveVisibleLessonCount < lessons.length || query.hasNextPage ? (
           <Button
             disabled={query.isFetchingNextPage}
             onClick={() => {
-              if (visibleLessonCount < lessons.length) {
-                setVisibleLessonCount((current) => current + 5)
+              if (effectiveVisibleLessonCount < lessons.length) {
+                setVisibleLessonCount(
+                  (current) => Math.max(current, effectiveVisibleLessonCount) + 5,
+                )
               } else {
                 void query
                   .fetchNextPage()
-                  .then(() => setVisibleLessonCount((current) => current + 5))
+                  .then(() =>
+                    setVisibleLessonCount(
+                      (current) => Math.max(current, effectiveVisibleLessonCount) + 5,
+                    ),
+                  )
               }
             }}
             size="sm"
@@ -422,6 +467,30 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'student') throw new Error('Student tasks require a Student principal')
   const database = useOfflineDatabase()
+  const supportClient = useMemo(
+    () =>
+      createSupportClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const attention = useSupportAttentionQuery(supportClient, principal, search.question)
+  const targetQuestionQuery = useSupportThreadQuery(
+    supportClient,
+    principal,
+    search.question ?? 'none',
+    Boolean(search.question),
+  )
+  const [jumpAttempt, setJumpAttempt] = useState(0)
+  const [jumpBusy, setJumpBusy] = useState(false)
+  const [jumpError, setJumpError] = useState(false)
   const client = useMemo(() => {
     const online = createStudentCourseClient(authentication.client.runtime, {
       refreshSession: async () => {
@@ -439,6 +508,50 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
     audience: 'student',
     accountId: principal.accountId,
   })
+
+  useEffect(() => {
+    const thread = targetQuestionQuery.data?.thread
+    const enrollment = accessQuery.data?.enrollments.find(
+      (item) => item.course.courseId === thread?.context.courseId,
+    )
+    const group = enrollment?.allowedGroups.find((item) => item.groupId === thread?.context.groupId)
+    if (
+      thread &&
+      enrollment &&
+      group &&
+      (search.course !== enrollment.course.code || search.group !== group.code)
+    ) {
+      void navigate({
+        search: { ...search, course: enrollment.course.code, group: group.code },
+        replace: true,
+      })
+    }
+  }, [accessQuery.data, navigate, search, targetQuestionQuery.data])
+  const jumpToAnswer = async () => {
+    setJumpBusy(true)
+    setJumpError(false)
+    try {
+      const target = (await supportClient.attention(search.question)).nextTarget
+      if (!target) {
+        await attention.refetch()
+        return
+      }
+      const enrollment = accessQuery.data?.enrollments.find(
+        (item) => item.course.courseId === target.courseId,
+      )
+      const group = enrollment?.allowedGroups.find((item) => item.groupId === target.groupId)
+      if (!enrollment || !group) throw new Error('Question target is outside current course access')
+      await navigate({
+        search: { course: enrollment.course.code, group: group.code, question: target.threadId },
+      })
+      setJumpAttempt((attempt) => attempt + 1)
+    } catch (error) {
+      authentication.handleApiError(error)
+      setJumpError(true)
+    } finally {
+      setJumpBusy(false)
+    }
+  }
 
   const context = accessQuery.data
     ? resolveStudentTasksContext(accessQuery.data, search)
@@ -502,9 +615,82 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
           groupId={loadedContext.groupId}
           key={`${loadedContext.enrollment.course.courseId}:${loadedContext.groupId}`}
           principal={{ audience: 'student', accountId: principal.accountId }}
+          targetQuestion={targetQuestionQuery.data?.thread}
+          jumpAttempt={jumpAttempt}
         />
       )
   }
 
-  return <div className={STUDENT_SHEET_CONTAINER_CLASS}>{content}</div>
+  return (
+    <div className={STUDENT_SHEET_CONTAINER_CLASS}>
+      {(attention.data?.unreadTaskCount ?? 0) > 0 ? (
+        <div className="mb-4 font-sans" data-print-hide>
+          <Button
+            disabled={jumpBusy || attention.isError}
+            onClick={() => void jumpToAnswer()}
+            variant="outline"
+          >
+            <MessageCircleQuestion aria-hidden="true" className="size-4" />
+            <Trans>Новые ответы ({attention.data!.unreadTaskCount})</Trans>
+          </Button>
+        </div>
+      ) : null}
+      {jumpError || targetQuestionQuery.isError || attention.isError ? (
+        <p className="mb-3 font-sans text-small text-danger" role="alert">
+          <Trans>Не удалось загрузить новые ответы.</Trans>{' '}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setJumpError(false)
+              void attention.refetch()
+              if (search.question) void targetQuestionQuery.refetch()
+            }}
+          >
+            <Trans>Повторить</Trans>
+          </Button>
+        </p>
+      ) : null}
+      {content}
+    </div>
+  )
+}
+
+/** docs/question-attention.md: wait for archive loading and inline dialogue mounting. */
+function useQuestionAnswerScroll(thread: SupportThread | undefined, attempt: number) {
+  const [completed, setCompleted] = useState('')
+  useEffect(() => {
+    if (!thread) return
+    const key = `${thread.threadId}:${attempt}`
+    if (completed === key) return
+    const entryId =
+      thread.firstUnreadEntryId ??
+      thread.entries.filter((entry) => ['teacher', 'admin'].includes(entry.author.kind)).at(-1)
+        ?.entryId
+    if (!entryId) return
+    let frame = 0
+    const find = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const answer = document.querySelector<HTMLElement>(
+          `[data-support-entry-id="${CSS.escape(entryId)}"]`,
+        )
+        if (!answer) return
+        answer.scrollIntoView({
+          block: 'start',
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'instant'
+            : 'smooth',
+        })
+        setCompleted(key)
+      })
+    }
+    const observer = new MutationObserver(find)
+    observer.observe(document.body, { childList: true, subtree: true })
+    find()
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+    }
+  }, [thread, attempt, completed])
 }

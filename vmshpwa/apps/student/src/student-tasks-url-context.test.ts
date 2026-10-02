@@ -36,5 +36,7 @@ describe('Student task-list URL context', () => {
       group: 'н',
     })
     expect(studentTasksSearchSchema.safeParse({ course: '../staff' }).success).toBe(false)
+    expect(studentTasksSearchSchema.parse({ question: 'sup-42' }).question).toBe('sup-42')
+    expect(studentTasksSearchSchema.safeParse({ question: '../staff' }).success).toBe(false)
   })
 })

@@ -1,5 +1,16 @@
 # Этап 1. Вход, сессии, principal и права
 
+## Восстановление после offline — 2 октября 2026
+
+[Позадачная публикация](../../docs/problem-release.md#выпуск--2-октября-2026)
+выявила fresh offline cache и отложенный отказ старого `/auth/me`.
+[RealtimeProvider](../../packages/app-shell/src/realtime.tsx) по `online`
+отменяет старые активные чтения и сверяет HTTP-модели ранее подтверждённой
+вкладки. Cold offline snapshot не запускает этот путь; WS по-прежнему требует
+серверную авторизацию. [Provider regression](../../packages/app-shell/src/realtime-provider.test.tsx)
+и существующие auth/realtime tests проходят; итоговая browser/production
+проверка записана в связанном протоколе.
+
 ## Результат
 
 Student входит заданным batch login и текущим Telegram-токеном, Family —

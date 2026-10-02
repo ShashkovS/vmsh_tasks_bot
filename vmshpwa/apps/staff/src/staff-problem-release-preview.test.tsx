@@ -1,10 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, afterAll, expect, it, vi } from 'vitest'
 import { renderWithI18n } from '@vmsh/test-utils/i18n'
 import fixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
-import { problemReleaseResponseSchema, webContentDocumentSchema } from '@vmsh/contracts'
+import {
+  problemReleaseResponseSchema,
+  webContentDocumentSchema,
+  type ProblemReleaseResponse,
+} from '@vmsh/contracts'
 import { ProblemReleasePreview } from './staff-problem-release-preview'
 
 beforeAll(() => vi.stubGlobal('PointerEvent', MouseEvent))
@@ -122,4 +126,58 @@ it('keeps figure editing available beside release switches after closing the tas
   await waitFor(() => expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('false'))
   await user.click(screen.getByRole('button', { name: 'Edit figure' }))
   expect(editFigure).toHaveBeenCalledOnce()
+}, 15_000)
+
+it('cancels a delayed old refetch and uses the saved version for the next toggle', async () => {
+  const user = userEvent.setup()
+  let finishRefetch!: (response: ProblemReleaseResponse) => void
+  const delayed = new Promise<ProblemReleaseResponse>((resolve) => {
+    finishRefetch = resolve
+  })
+  const closed = {
+    ...initial,
+    version: 2,
+    etag: '"gl-1-release:v2"',
+    problems: initial.problems.map((problem) => ({ ...problem, isOpen: false })),
+  }
+  const client = {
+    get: vi.fn().mockResolvedValueOnce(initial).mockReturnValueOnce(delayed),
+    save: vi
+      .fn()
+      .mockResolvedValueOnce(closed)
+      .mockResolvedValueOnce({ ...initial, version: 3, etag: '"gl-1-release:v3"' }),
+  }
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const queryKey = ['staff-problem-release', 'gl-1', document.revisionId]
+  renderWithI18n(
+    <QueryClientProvider client={queryClient}>
+      <ProblemReleasePreview
+        client={client}
+        groupLessonId="gl-1"
+        revisionId={document.revisionId}
+        document={document}
+        condition={undefined}
+        submissionClosed={false}
+      />
+    </QueryClientProvider>,
+  )
+  await screen.findByRole('switch')
+  void queryClient.invalidateQueries({ queryKey })
+  await waitFor(() => expect(client.get).toHaveBeenCalledTimes(2))
+  await user.click(screen.getByRole('switch'))
+  await waitFor(() => expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('false'))
+  await act(async () => {
+    finishRefetch(initial)
+    await delayed
+  })
+  expect(queryClient.getQueryData<ProblemReleaseResponse>(queryKey)?.version).toBe(2)
+  expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('false')
+  await user.click(screen.getByRole('switch'))
+  await waitFor(() =>
+    expect(client.save).toHaveBeenLastCalledWith('gl-1', closed.etag, {
+      conditionRevisionId: document.revisionId,
+      changes: [{ sourceOrdinal: document.problems[0]!.ordinal, isOpen: true }],
+    }),
+  )
+  await waitFor(() => expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true'))
 }, 15_000)

@@ -116,7 +116,7 @@ class SyntheticMetadataGenerator:
                     "sourceItem": target.source_item,
                     "displayNumber": target.display_number,
                     "title": f"Черновик {target.display_number}",
-                    "problemType": 2,
+                    "problemType": target.problem_type or 2,
                     "answerType": None,
                     "answerValidation": None,
                     "validationError": None,
@@ -5756,6 +5756,32 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
     assert generator.requests[0].locale == ui_locale
     assert generator.requests[0].content_locale == content_locale
     assert generator.requests[0].model == "provider/course-model:free"
+    assert generator.requests[0].targets[0].problem_type is None
+    problem_id = initial_payload["rows"][0]["problemId"]
+    for invalid_types in (
+        [],
+        [{"problemId": problem_id, "problemType": True}],
+        [{"problemId": problem_id, "problemType": 4}],
+        [{"problemId": problem_id + 1000, "problemType": 3}],
+        [{"problemId": problem_id, "problemType": 3}] * 2,
+    ):
+        invalid = await fixture.client.post(
+            f"{grid_url}/generate",
+            json={"revisionId": revision["revisionId"], "confirmedOverwrite": False, "problemTypes": invalid_types},
+            cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
+            headers=_headers(unsafe=True),
+        )
+        assert invalid.status == 422, await invalid.text()
+    assert len(generator.requests) == 1
+    explicit = await fixture.client.post(
+        f"{grid_url}/generate",
+        json={"revisionId": revision["revisionId"], "confirmedOverwrite": False, "problemTypes": [{"problemId": problem_id, "problemType": 3}]},
+        cookies={**_cookie(fixture, "admin"), "vmsh-locale": ui_locale},
+        headers=_headers(unsafe=True),
+    )
+    assert explicit.status == 200, await explicit.text()
+    assert (await explicit.json())["rows"][0]["problemType"] == 3
+    assert generator.requests[1].targets[0].problem_type == 3
 
     unchanged_grid = await fixture.client.get(
         grid_url,
@@ -5811,8 +5837,8 @@ async def test_staff_generates_metadata_draft_for_later_condition_after_confirma
         headers=_headers(unsafe=True),
     )
     assert later.status == 200, await later.text()
-    assert len(generator.requests) == 2
-    assert generator.requests[1].model == "openai/gpt-6-luna"
+    assert len(generator.requests) == 3
+    assert generator.requests[2].model == "openai/gpt-6-luna"
 
 
 async def test_figure_layout_api_checks_csrf_scope_and_conflicts(content_http):

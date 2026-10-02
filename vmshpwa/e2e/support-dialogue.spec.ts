@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
+import { studentCourseAccessResponseSchema } from '../packages/contracts/src/courses'
 import { expect, test } from './fixtures'
 
 test.setTimeout(90_000)
@@ -116,4 +117,144 @@ test('Phase 6: private Student and Staff dialogue survives reload and syncs live
   await expect(staffPage.getByRole('heading', { name: 'Ваши вопросы' })).toBeVisible()
   await expect(staffPage.getByText(studentQuestion, { exact: true })).toHaveCount(0)
   await expect(staffPage.getByText('Вопросов пока нет')).toBeVisible()
+})
+
+// docs/question-attention.md: real replies, archive jump and two independent devices.
+test('new replies jump into an older worksheet and read state converges across devices', async ({
+  page,
+  context,
+  secondaryContext,
+}, testInfo) => {
+  test.setTimeout(120_000)
+  const lesson = ({ chromium: 32101, webkit: 32102, firefox: 32103 } as Record<string, number>)[
+    testInfo.project.name
+  ]!
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.student,
+    `/student/tasks/math-5-7/${encodeURIComponent('н')}/${lesson}`,
+  )
+  const question = page.getByRole('region', { name: 'Обсуждение задачи' }).first()
+  await question.getByRole('button', { name: /^(Задать вопрос|Вопросы по задаче)/ }).click()
+  await question
+    .getByRole('textbox', { name: 'Сообщение' })
+    .fill(`Вопрос attention ${testInfo.project.name} ${testInfo.retry}`)
+  const created = page.waitForResponse(
+    (r) =>
+      r.request().method() === 'POST' &&
+      /\/student\/api\/v1\/questions(?:\/sup-\d+\/entries)?$/.test(new URL(r.url()).pathname),
+  )
+  await question.getByRole('button', { name: /^(Отправить вопрос|Дополнить вопрос)$/ }).click()
+  const threadId = ((await (await created).json()) as { thread: { threadId: string } }).thread
+    .threadId
+  await expect(question.getByRole('button', { name: 'Дополнить вопрос', exact: true })).toBeVisible(
+    { timeout: 15_000 },
+  )
+  await expect(question.getByRole('button', { name: /Ждём ответа преподавателя/ })).toBeVisible({
+    timeout: 15_000,
+  })
+  await question.getByRole('button', { name: 'Скрыть вопросы' }).click()
+
+  const access = studentCourseAccessResponseSchema.parse(
+    await (await page.request.get('/student/api/v1/courses')).json(),
+  )
+  const contexts = access.enrollments.flatMap((enrollment) =>
+    enrollment.allowedGroups.map((group) => ({ enrollment, group })),
+  )
+  const another =
+    contexts.find(({ enrollment }) => enrollment.course.code !== 'math-5-7') ??
+    contexts.find(({ group }) => group.code !== 'н')
+  expect(another, 'Fixture must exercise switching course/group').toBeDefined()
+  if (process.env.VMSH_E2E_SUPPORT_NAVIGATION === '1')
+    expect(another!.enrollment.course.code).not.toBe('math-5-7')
+  await page.goto(
+    `/student/tasks?course=${encodeURIComponent(another!.enrollment.course.code)}&group=${encodeURIComponent(another!.group.code)}`,
+  )
+  const device = await secondaryContext.newPage()
+  await loginThroughUi(device, AUTH_PERSONAS.student, '/student/tasks')
+  const staff = await context.newPage()
+  await loginThroughUi(staff, AUTH_PERSONAS.teacher, `/staff/questions/${threadId}`)
+  const text = `Новый ответ attention ${testInfo.project.name} ${testInfo.retry}`
+  await staff.getByRole('textbox', { name: 'Сообщение' }).fill(text)
+  await staff.getByRole('button', { name: 'Ответить', exact: true }).click()
+  await expect(page.getByRole('button', { name: /Новые ответы \(/ })).toBeVisible()
+  await expect(device.getByRole('button', { name: /Новые ответы \(/ })).toBeVisible()
+  await page.bringToFront()
+  await page.getByRole('button', { name: /Новые ответы \(/ }).click()
+  await expect(page).toHaveURL(new RegExp(`question=${threadId}`))
+  await expect(page.getByText(text, { exact: true })).toBeInViewport()
+  const targetQuestion = page
+    .getByRole('region', { name: 'Обсуждение задачи' })
+    .filter({ hasText: text })
+  await expect(
+    targetQuestion.getByRole('button', { name: /Есть непрочитанный ответ/ }),
+  ).toBeVisible()
+  await targetQuestion
+    .getByRole('button', { name: /Есть непрочитанный ответ/ })
+    .screenshot({ path: testInfo.outputPath('question-unread-indicator.png') })
+  await targetQuestion
+    .locator('..')
+    .screenshot({ path: testInfo.outputPath('question-unread.png') })
+  await expect(page.getByRole('button', { name: /Новые ответы \(/ })).toHaveCount(0, {
+    timeout: 15_000,
+  })
+  await expect(device.getByRole('button', { name: /Новые ответы \(/ })).toHaveCount(0, {
+    timeout: 15_000,
+  })
+  await expect(
+    targetQuestion.getByRole('button', { name: /Есть непрочитанный ответ/ }),
+  ).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText(text, { exact: true })).toBeInViewport()
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
+  await expect(page.getByRole('button', { name: 'Переключить на светлую тему' })).toBeVisible()
+  await targetQuestion.locator('..').scrollIntoViewIfNeeded()
+  await targetQuestion
+    .locator('..')
+    .screenshot({ path: testInfo.outputPath('question-read-dark-320.png') })
+  const localeHeaders = { Origin: new URL(page.url()).origin }
+  const answerUrl = page.url()
+  try {
+    await page.goto('/student/profile')
+    await page.getByRole('radio', { name: 'English' }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await page.goto(answerUrl)
+    const englishQuestion = page
+      .getByRole('region', { name: 'Problem discussion', exact: true })
+      .filter({ hasText: text })
+    await englishQuestion.getByRole('button', { name: 'Hide questions', exact: true }).click()
+    await staff.getByRole('textbox', { name: 'Сообщение' }).fill(`${text} EN`)
+    await staff.getByRole('button', { name: 'Ответить', exact: true }).click()
+    await expect(page.getByRole('button', { name: /New replies \(/ })).toBeVisible()
+    await page.getByRole('button', { name: /New replies \(/ }).click()
+    await expect(page.getByText(`${text} EN`, { exact: true })).toBeInViewport()
+    const unreadQuestion = page
+      .getByRole('region', { name: 'Problem discussion', exact: true })
+      .filter({ hasText: `${text} EN` })
+    await expect(
+      unreadQuestion.getByRole('button', { name: /There is an unread reply/ }),
+    ).toBeVisible()
+    await expect(unreadQuestion.locator('.bg-status-danger')).toHaveCSS('animation-name', 'none')
+    await unreadQuestion
+      .getByRole('button', { name: /There is an unread reply/ })
+      .screenshot({ path: testInfo.outputPath('question-unread-en-indicator.png') })
+    await unreadQuestion
+      .locator('..')
+      .screenshot({ path: testInfo.outputPath('question-unread-dark-en-reduced-320.png') })
+    await expect(page.getByRole('button', { name: /New replies \(/ })).toHaveCount(0, {
+      timeout: 15_000,
+    })
+  } finally {
+    expect(
+      (
+        await page.request.put('/student/api/v1/auth/locale', {
+          headers: localeHeaders,
+          data: { locale: 'ru' },
+        })
+      ).status(),
+    ).toBe(200)
+  }
+  await staff.close()
 })

@@ -1,4 +1,4 @@
--- depends: 0106.pwa_figure_presentation
+-- depends: 0107.pwa_support_entry_reads
 -- vmshpwa/docs/problem-release.md: independent, group-owned PWA visibility.
 alter table group_lessons add column problem_release_version integer not null default 1
     check (problem_release_version > 0);

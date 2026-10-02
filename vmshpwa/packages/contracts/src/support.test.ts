@@ -7,6 +7,8 @@ import {
   supportThreadPageSchema,
   supportThreadSummarySchema,
   supportThreadResponseSchema,
+  readSupportRepliesRequestSchema,
+  supportAttentionResponseSchema,
 } from './support'
 
 const response = {
@@ -51,6 +53,34 @@ const response = {
 }
 
 describe('support contracts', () => {
+  it('validates receipt batches and a consistent global attention result', () => {
+    const batch = { schemaVersion: 1, entryIds: ['support-entry-one'] }
+    expect(readSupportRepliesRequestSchema.parse(batch)).toEqual(batch)
+    for (const entryIds of [
+      [],
+      ['support-entry-one', 'support-entry-one'],
+      Array.from({ length: 101 }, (_, n) => `entry-${n}`),
+    ]) {
+      expect(readSupportRepliesRequestSchema.safeParse({ ...batch, entryIds }).success).toBe(false)
+    }
+    expect(
+      supportAttentionResponseSchema.safeParse({
+        schemaVersion: 1,
+        unreadTaskCount: 1,
+        nextTarget: null,
+        requestId: 'attention',
+      }).success,
+    ).toBe(false)
+    expect(
+      supportAttentionResponseSchema.parse({
+        schemaVersion: 1,
+        unreadTaskCount: 0,
+        nextTarget: null,
+        requestId: 'attention',
+      }).unreadTaskCount,
+    ).toBe(0)
+  })
+
   it('limits excerpts by Unicode code points, matching SQLite substr', () => {
     const schema = supportThreadSummarySchema.shape.latestEntry.shape.textExcerpt
     for (const value of ['а'.repeat(280), '👍'.repeat(280), 'а'.repeat(279) + '👍', null]) {

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useAuthentication } from '@vmsh/app-shell'
 import { Button, Switch } from '@vmsh/ui'
-import type { ProblemReleaseRequest } from '@vmsh/contracts'
+import type { ProblemReleaseRequest, ProblemReleaseResponse } from '@vmsh/contracts'
 import { createProblemReleaseClient, type ProblemReleaseClient } from './problem-release-client'
 import { StaffWorksheetPreview } from './staff-worksheet-preview'
 import type { ComponentProps } from 'react'
@@ -46,8 +46,13 @@ export function ProblemReleasePreview({
     },
   })
   const mutation = useMutation({
+    // problem-release.md: a delayed pre-toggle GET must not replace the saved version.
+    onMutate: () => queryClient.cancelQueries({ queryKey }),
     mutationFn: (changes: ProblemReleaseRequest['changes']) =>
-      client.save(groupLessonId, query.data!.etag, { conditionRevisionId: revisionId, changes }),
+      client.save(groupLessonId, queryClient.getQueryData<ProblemReleaseResponse>(queryKey)!.etag, {
+        conditionRevisionId: revisionId,
+        changes,
+      }),
     onSuccess: (data) => queryClient.setQueryData(queryKey, data),
     onError: () => {
       void query.refetch()

@@ -1055,6 +1055,10 @@ msgstr "another teacher"
 msgid "Есть идеи, не доведено"
 msgstr "Ideas present, not completed"
 
+#: packages/product/src/question-attention.tsx
+msgid "Есть непрочитанный ответ"
+msgstr "There is an unread reply"
+
 #: packages/product/src/verdict-registry.ts
 msgid "Есть простая идея"
 msgstr "A simple idea is present"
@@ -1066,6 +1070,10 @@ msgstr "There is a hidden room"
 #: packages/product/src/classroom-planning.tsx
 msgid "Ещё не назначена"
 msgstr "Not assigned yet"
+
+#: packages/product/src/question-attention.tsx
+msgid "Ждём ответа преподавателя"
+msgstr "Waiting for a teacher’s reply"
 
 #: packages/product/src/review-queue.tsx
 msgid "Ждёт"

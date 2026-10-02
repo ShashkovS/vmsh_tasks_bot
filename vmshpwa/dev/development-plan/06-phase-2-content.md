@@ -1,5 +1,16 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+## 2026-10-01 — генерация metadata с заданными типами
+
+Выложено и проверено: [типы из локальной таблицы](../../docs/metadata-generation.md#типы-задач-из-таблицы--1-октября-2026)
+передаются отдельным действием без предварительного сохранения. Типы пунктов
+независимы и обязательны для генерации и фактологической проверки.
+Проходят 31 domain-сценарий, 2 HTTP-сценария и 40 UI/contract/client tests;
+typecheck, lint, каталоги и Staff build проверены. Итоговый `6e4b82f7` на обоих
+серверах; новая кнопка и сохранение старого черновика после reload проверены
+на живой TLF-странице. Сведения о release/backup и снимок — в linked doc.
+
+
 ## 2026-10-01 — редактор картинок в production на обоих порталах
 
 Принятый [редактор на рисунке](../../docs/figure-layout.md) реализован в
@@ -692,3 +703,11 @@ reviewable draft: язык бренда для двух проходов, мод
 2501 backend и 980 frontend сценариев проверены; typecheck/i18n/schema/lint,
 четыре сборки и 15 E2E в трёх браузерах проходят.
 [Точные команды, timeout/recheck и границы](../../docs/problem-release.md#интеграция-с-актуальной-vmshpwa).
+
+### Metadata generation: English TeX compatibility — 1 October 2026
+
+[TLF incident](../../docs/metadata-generation.md#english-tex-generation-failure--1-october-2026):
+the generator reuses the PWA dialect vocabulary for English/mixed structural
+commands, recognizes English task-type headings and teacher fields inside the
+problem. Canonical server IDs remain authoritative even without a legacy
+worksheet/group marker. Structured API errors retain their localized messages.

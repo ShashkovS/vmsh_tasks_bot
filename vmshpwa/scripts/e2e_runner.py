@@ -279,6 +279,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         with exclusive_e2e_run():
             return run_commands(
                 commands_for_mode(args.mode),
+                **(
+                    {"environment": {**os.environ, "VMSH_E2E_SUPPORT_NAVIGATION": "1"}}
+                    if args.mode == "support"
+                    else {}
+                ),
                 reset_database_between_commands=args.mode
                 in {
                     "all",

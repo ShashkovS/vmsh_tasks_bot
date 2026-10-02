@@ -200,6 +200,8 @@ function StudentProblemActions({
  * single-task page so both audiences see the same controls.
  */
 export function StudentProblemWorkspace({
+  targetQuestionId,
+  questionJumpAttempt,
   answerOpen,
   conditionRevisionId,
   courseId,
@@ -213,6 +215,8 @@ export function StudentProblemWorkspace({
   courseId: string
   groupLessonId: string
   onToggleAnswer: () => void
+  targetQuestionId?: string | undefined
+  questionJumpAttempt?: number | undefined
   problem: StudentProblemSummary
   submissionClosed?: boolean
 }) {
@@ -231,6 +235,8 @@ export function StudentProblemWorkspace({
       {!expiredReadOnly ? (
         <StudentProblemQuestionLink
           compact
+          targetQuestionId={targetQuestionId}
+          questionJumpAttempt={questionJumpAttempt}
           groupLessonId={groupLessonId}
           problemId={problem.problemId}
         />

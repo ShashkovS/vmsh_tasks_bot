@@ -1055,6 +1055,10 @@ msgstr "другой преподаватель"
 msgid "Есть идеи, не доведено"
 msgstr "Есть идеи, не доведено"
 
+#: packages/product/src/question-attention.tsx
+msgid "Есть непрочитанный ответ"
+msgstr "Есть непрочитанный ответ"
+
 #: packages/product/src/verdict-registry.ts
 msgid "Есть простая идея"
 msgstr "Есть простая идея"
@@ -1066,6 +1070,10 @@ msgstr "Есть скрытая аудитория"
 #: packages/product/src/classroom-planning.tsx
 msgid "Ещё не назначена"
 msgstr "Ещё не назначена"
+
+#: packages/product/src/question-attention.tsx
+msgid "Ждём ответа преподавателя"
+msgstr "Ждём ответа преподавателя"
 
 #: packages/product/src/review-queue.tsx
 msgid "Ждёт"

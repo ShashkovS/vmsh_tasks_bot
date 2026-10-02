@@ -18,6 +18,8 @@ Do not access the internet, execute TeX or generate Python checker code.
 STRUCTURE
 1. The machine parser is authoritative for row_id, prob, item, row count/order
    and prob_type. Never add or remove rows.
+   Rows marked type_is_explicit use Staff-selected types: they override section
+   headings and embedded bptype. Preserve each subpart's type independently.
 2. A problem with subparts in its statement has only subpart rows, no parent row.
    Subparts in an answer, solution or hint do not create new rows.
 3. prob_text is normally ""; do not copy the source statement into it.

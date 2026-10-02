@@ -715,3 +715,79 @@ async def test_committed_support_entry_survives_invalidation_failure(
 
     assert response.status == 200, await response.text()
     assert "Support invalidation failed after commit" in caplog.text
+
+
+async def test_attention_routes_are_owner_bound_strict_and_read_gets_are_side_effect_free(
+    support_http, tmp_path
+):
+    # question-attention.md: bind the real receipt database only in test wiring.
+    from helpers.pwa.app_keys import PWA_DATABASE, PwaDatabaseState
+
+    fixture = support_http
+    path = tmp_path / "attention-http.sqlite3"
+    apply_schema_migrations(path)
+    factory = PwaConnectionFactory(path)
+    _seed_auth(factory)
+    now = _timestamp()
+
+    def seed(c):
+        c.execute(
+            "INSERT INTO support_threads(student_user_id,kind,latest_entry_at,created_at,updated_at) VALUES(?,'sos',?,?,?)",
+            (STUDENT_ID, now, now, now),
+        )
+        c.execute(
+            "INSERT INTO support_entries(thread_id,author_kind,author_user_id,text,channel,server_received_at,created_at) VALUES(1,'teacher',?,'Ответ','staff',?,?)",
+            (TEACHER_ID, now, now),
+        )
+
+    factory.run_write(seed)
+    with pytest.warns(DeprecationWarning):
+        fixture.client.server.app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
+    cookies = _cookie(fixture, "student", AuthAudience.STUDENT)
+    attention = await fixture.client.get(
+        "/student/api/v1/questions/attention", cookies=cookies, headers=_headers()
+    )
+    assert attention.status == 200
+    assert (await attention.json())[
+        "unreadTaskCount"
+    ] == 0  # SOS has no worksheet target.
+    assert (
+        factory.run_read(
+            lambda c: c.execute(
+                "SELECT count(*) n FROM support_entry_reads"
+            ).fetchone()["n"]
+        )
+        == 0
+    )
+    headers = _headers(unsafe=True)
+    response = await fixture.client.post(
+        "/student/api/v1/questions/sup-1/read",
+        json={"schemaVersion": 1, "entryIds": ["sue-1"]},
+        cookies=cookies,
+        headers=headers,
+    )
+    assert response.status == 200, await response.text()
+    receipt = await response.json()
+    repeated = await fixture.client.post(
+        "/student/api/v1/questions/sup-1/read",
+        json={"schemaVersion": 1, "entryIds": ["sue-1"]},
+        cookies=cookies,
+        headers=headers,
+    )
+    assert (await repeated.json())["readEntries"] == receipt["readEntries"]
+    assert fixture.invalidations[-1][1] == "support-replies-read"
+    for ids in ([], ["sue-1", "sue-1"], ["sue-1"] * 101):
+        bad = await fixture.client.post(
+            "/student/api/v1/questions/sup-1/read",
+            json={"schemaVersion": 1, "entryIds": ids},
+            cookies=cookies,
+            headers=headers,
+        )
+        assert bad.status == 422
+    forbidden = await fixture.client.post(
+        "/student/api/v1/questions/sup-1/read",
+        json={"schemaVersion": 1, "entryIds": ["sue-1"]},
+        cookies=_cookie(fixture, "teacher", AuthAudience.STAFF),
+        headers=headers,
+    )
+    assert forbidden.status in (401, 403)

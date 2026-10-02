@@ -359,8 +359,12 @@
         "sha256": "c905ef419e889a89ba3e20371f84d0832d9770b7991a4c0145477fd5e8b3e4c1"
       },
       {
-        "id": "0107.pwa_problem_release",
-        "sha256": "f7976b4b64235e47809bde531f97260ce5a64c052bd682acb78fe4338108c383"
+        "id": "0107.pwa_support_entry_reads",
+        "sha256": "8adbf55113a24403dd7f7fc5f5d6d5e41a614bdf8b99cbdef40914ee240cbcda"
+      },
+      {
+        "id": "0108.pwa_problem_release",
+        "sha256": "3b5382d698dc0394f7c2ba5253c2696cbd2574f584bd948a21fbd7268ac898b8"
       }
     ],
     "repository_head_status": {
@@ -371,7 +375,7 @@
     }
   },
   "product": {
-    "object_count": 502,
+    "object_count": 504,
     "objects": [
       {
         "columns": [
@@ -25805,6 +25809,69 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "entry_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "read_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "support_entries"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "support_entry_reads",
+        "object_sha256": "a63df85f839dfbab6097a76e012c09006efcc32d69b48ca9a557f07135a78868",
+        "sql": "CREATE TABLE support_entry_reads (\n    entry_id integer primary key references support_entries(id),\n    student_user_id integer not null references users(id),\n    read_at text not null\n);",
+        "table_name": "support_entry_reads",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "id",
             "not_null": false,
             "primary_key_ordinal": 1
@@ -31765,6 +31832,13 @@
         "type": "trigger"
       },
       {
+        "name": "support_entry_reads_owner_insert",
+        "object_sha256": "a11e1fb96e7ff0a739de3f317cc2683f7f4f93db3c8eb5ef890fd70190a954f6",
+        "sql": "CREATE TRIGGER support_entry_reads_owner_insert\nbefore insert on support_entry_reads\nwhen not exists (\n    select 1 from support_entries e join support_threads t on t.id = e.thread_id\n    where e.id = new.entry_id and e.author_kind in ('teacher', 'admin')\n      and t.student_user_id = new.student_user_id and new.read_at >= e.server_received_at\n)\nbegin\n    select raise(abort, 'support read must belong to the reply owner');\nend;",
+        "table_name": "support_entry_reads",
+        "type": "trigger"
+      },
+      {
         "name": "support_threads_delete_forbidden",
         "object_sha256": "943ed425f9e6cccb0f542c9548b6dd2e1b923d7d2c12fa7a0e1b614d37cfc44c",
         "sql": "CREATE TRIGGER support_threads_delete_forbidden\nbefore delete on support_threads\nfor each row\nbegin\n    select raise(abort, 'support thread deletion is forbidden');\nend;",
@@ -31842,8 +31916,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "2678724b3e5f7bc8d7da4e312c4201331f3440de1ba6d34b85b64b1d3da627ae",
-    "sha256": "b230d4e593e93bfe23917d55b1aaef78fa440829ca4fa34c17f64d01758b3f6a"
+    "pragma_structure_sha256": "0a68dadf566423e1e7ec4cc6d8c4749344d19c02f5d0b11ee05eb772368f07d2",
+    "sha256": "fd92d2db59455aadf72928b97d1785f79a552a34c67b554ff13b76c6f844a8d7"
   },
   "source_kind": "repository-migration-head"
 }

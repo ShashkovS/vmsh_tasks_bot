@@ -2,6 +2,13 @@
 
 ## Foreground realtime
 
+При `online` [RealtimeProvider](../packages/app-shell/src/realtime.tsx) сверяет
+активные HTTP-модели ранее подтверждённой в этой вкладке сессии, отменяя старые
+чтения. Это необходимо, когда offline cache выглядит свежим в Query или
+ошибка проверки сессии остановила WS. Сервер повторно проверяет права; cold
+offline snapshot не считается авторизацией для WS. [Регрессия](../packages/app-shell/src/realtime-provider.test.tsx)
+и [протокол выпуска](problem-release.md#выпуск--2-октября-2026).
+
 Каждое приложение открывает свой WebSocket. Handshake до upgrade проходит тот
 же exact target/proxy/Origin boundary, что browser API, и требует действующую
 access-cookie именно этого audience. После `prepare()` соединение связывается с

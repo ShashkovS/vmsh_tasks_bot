@@ -60,6 +60,7 @@ import {
   type ProblemMatchReview,
   type ProblemMetadataGrid,
   type ProblemMetadataGeneration,
+  type ProblemMetadataGenerationRequest,
   type ProblemMetadataMutationRow,
   type PrincipalQueryScope,
   type StaffContentHistory,
@@ -160,6 +161,7 @@ export interface GenerateProblemMetadataInput {
   groupLessonId: string
   revisionId: string
   confirmedOverwrite?: boolean
+  problemTypes?: ProblemMetadataGenerationRequest['problemTypes']
 }
 
 export interface ContentRequestOptions {
@@ -592,6 +594,7 @@ class BrowserContentApiClient implements ContentApiClient {
     const request = problemMetadataGenerationRequestSchema.parse({
       revisionId: publicIdSchema.parse(input.revisionId),
       confirmedOverwrite: input.confirmedOverwrite ?? false,
+      ...(input.problemTypes === undefined ? {} : { problemTypes: input.problemTypes }),
     })
     return this.#json(
       `/group-lessons/${encodeURIComponent(groupLessonId)}/metadata-grid/generate`,

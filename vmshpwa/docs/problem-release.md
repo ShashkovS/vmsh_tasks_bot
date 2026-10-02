@@ -24,7 +24,7 @@
 
 ## Реализация и границы
 
-- [Миграция](../../migrations/0107.pwa_problem_release.sql), механическое
+- [Миграция](../../migrations/0108.pwa_problem_release.sql), механическое
   [хранилище](../../db_methods/pwa/problem_release.py) и
   [доменный сервис](../../models/pwa/problem_release.py).
 - [Staff API](../../apps/pwa_api/problem_release_routes.py):
@@ -123,3 +123,49 @@ production-отчёты `73d6730e` и протокол этих проверок
 редактор рисунков вместе без обрезания интерфейса. Runtime основной рабочей
 копии не затрагивался; production rollout рисунков сохранён как upstream proof,
 развёртывание позадачной публикации не выполнялось.
+
+
+## Выпуск — 2 октября 2026
+
+Владелец разрешил commit/push, VMSh autodeploy и ручной выпуск TLF.
+Перед выпуском подливается `e20bbed9`: новые типы metadata и внимание к ответам
+сохраняются. Миграция доступности перенумерована в 0108 после уже выпущенной 0107.
+Глобальная навигация по непрочитанным ответам исключает Off; переключения
+инвалидируют также Student questions. Идут локальные gates, подготовка
+TLF guarded cutover, migration rehearsal и проверка сохранности данных.
+
+Ручной выпуск: [deploy_problem_release.sh](../../docs/deploy/tlf-app/deploy_problem_release.sh)
+с точным SHA, frozen deps и изолированной сборкой;
+[checker](../../docs/deploy/tlf-app/problem_release_data_check.py) сравнивает все
+прежние product columns, проверяет default-On и append-only guards.
+Up/down/up репетируется на копии до остановки writers. До их повторного запуска
+можно откатить только 0108/source/static; после — source/schema остаются новыми,
+откатывается совместимый старый static, сохраняя новые flags/audit/Zoom.
+
+Локальные gates перед выпуском: 165 backend / 72 frontend, TypeScript,
+i18n, schema 504 objects, Ruff и cutover up/down/up проходят.
+Browser gate выявил старый GET после успешного toggle (Firefox: 4 вместо 5,
+409 на следующем If-Match). Staff теперь отменяет предыдущий refetch перед
+записью и читает ETag из подтверждённого Query cache.
+[Регрессия delayed GET](../apps/staff/src/staff-problem-release-preview.test.tsx)
+проходит. Ещё 40 auth/realtime/Staff unit-проверок проходят, включая отмену
+старого HTTP-запроса при восстановлении сети. [RealtimeProvider](../packages/app-shell/src/realtime.tsx)
+принудительно сверяет активные HTTP-модели по `online` для ранее подтверждённой
+в этой вкладке сессии: кешированный offline GET может считаться свежим в Query,
+а ошибка проверки сессии останавливает WS. Сервер повторно проверяет права;
+старая ошибка не перекрывает новую подтверждённую авторизацию.
+[Регрессия](../packages/app-shell/src/realtime-provider.test.tsx) сохраняет
+проверку отсутствия socket до авторизации. E2E после доказанного возврата
+вкладки в foreground дополнительно доставляет `visibilitychange`, как уже
+принято в `news-notifications.spec.ts`: Playwright может пропустить это событие.
+Финальная трёхбраузерная проверка: **3/3 за 52.6 s**, retries 0,
+15 → 0 → 2 → 5 → 15, reconnect и обратное скрытие без reload.
+Предыдущий запуск завершился ENOSPC при записи WebKit-артефакта; освобождён
+только собственный Python bytecode cache worktree, успешный запуск повторён
+на свежей базе без записи `.pyc`. Support с этой же сборкой и новой E2E-базой
+дал **5 passed, 1 failed** (Firefox: viewport ratio 0 после 5 s при переходе
+к старому ответу). Изолированный `support --project firefox` со свежей базой:
+**2/2 за 1.0 min**, без изменения source и retries. Проверены все **6**
+support cases; вместе с позадачной публикацией — **9** уникальных сценариев.
+До выпуска проверены 410 прежних публичных JS/CSS URL (205 на портал),
+их SHA256 и MIME сохранены для проверки после cutover.

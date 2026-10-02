@@ -4,7 +4,7 @@ import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { StudentPhotoSupportComposer } from './student-photo-support-composer'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { MessageCircleQuestion } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   PageLayout,
@@ -17,12 +17,19 @@ import {
   useCreateSupportThreadMutation,
   useStudentSupportThreadsInfiniteQuery,
   useSupportThreadQuery,
+  useReadSupportRepliesMutation,
 } from '@vmsh/app-shell'
 import { ApiResponseError, type SupportEntry, type SupportThreadSummary } from '@vmsh/contracts'
 import { useSupportDraftEditor, type SupportDraftDescriptor } from '@vmsh/offline'
-import { FeedbackThread, SupportPhotoBody, type ThreadMessageView } from '@vmsh/product'
+import {
+  FeedbackThread,
+  QuestionAttentionDot,
+  SupportPhotoBody,
+  type ThreadMessageView,
+} from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, buttonVariants } from '@vmsh/ui'
 
+import { VisibleSupportReply } from './visible-support-reply'
 import { StudentCollapseAction } from './student-collapse-action'
 
 /** Live Student questions UI; see Phase 6 Questions/SOS and support API proof. */
@@ -285,6 +292,9 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
   )
   const query = useSupportThreadQuery(client, principal, threadId)
   const mutation = useAppendSupportEntryMutation(client, principal, threadId)
+  const readMutation = useReadSupportRepliesMutation(client, principal, threadId)
+  const markReplyRead = readMutation.mutateAsync
+  const readReply = useCallback((entryId: string) => markReplyRead([entryId]), [markReplyRead])
   const descriptor = useMemo<SupportDraftDescriptor>(
     () => ({
       ownerAccountId: principal.accountId,
@@ -352,7 +362,9 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
     >
       <div className="space-y-5">
         <FeedbackThread
-          messages={thread.entries.map((entry) => studentMessage(entry, principal.userId))}
+          messages={thread.entries.map((entry) =>
+            studentMessage(entry, principal.userId, readReply),
+          )}
         />
         <Card>
           <CardContent className="pt-4">
@@ -378,12 +390,24 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
   )
 }
 
-function studentMessage(entry: SupportEntry, studentUserId: string): ThreadMessageView {
+function studentMessage(
+  entry: SupportEntry,
+  studentUserId: string,
+  onRead: (entryId: string) => Promise<unknown>,
+): ThreadMessageView {
   return {
     id: entry.entryId,
     author: { kind: entry.author.kind, name: entry.author.displayName },
     at: formatSupportTime(entry.receivedAt),
-    body: <SupportPhotoBody text={entry.text} photoIds={entry.photoIds ?? []} audience="student" />,
+    body: (
+      <VisibleSupportReply
+        entryId={entry.entryId}
+        unread={['teacher', 'admin'].includes(entry.author.kind) && entry.readAt === null}
+        onRead={onRead}
+      >
+        <SupportPhotoBody text={entry.text} photoIds={entry.photoIds ?? []} audience="student" />
+      </VisibleSupportReply>
+    ),
     own: entry.author.userId === studentUserId,
   }
 }
@@ -422,10 +446,14 @@ export function StudentProblemQuestionLink({
   groupLessonId,
   problemId,
   compact = false,
+  targetQuestionId,
+  questionJumpAttempt = 0,
 }: {
   groupLessonId: string
   problemId: string
   compact?: boolean
+  targetQuestionId?: string | undefined
+  questionJumpAttempt?: number | undefined
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -452,7 +480,11 @@ export function StudentProblemQuestionLink({
         thread.context.groupLessonId === groupLessonId && thread.context.problemId === problemId,
     )
   const [createdThreadId, setCreatedThreadId] = useState<string>()
-  const [open, setOpen] = useState(false)
+  const jumpKey = `${targetQuestionId ?? ''}:${questionJumpAttempt}`
+  const [manualOpen, setManualOpen] = useState<{ key: string; open: boolean }>()
+  const open = manualOpen?.key === jumpKey ? manualOpen.open : Boolean(targetQuestionId)
+  const setOpen = (value: boolean | ((previous: boolean) => boolean)) =>
+    setManualOpen({ key: jumpKey, open: typeof value === 'function' ? value(open) : value })
 
   useEffect(() => {
     if (!matchingThread && list.hasNextPage && !list.isFetchingNextPage) {
@@ -460,7 +492,7 @@ export function StudentProblemQuestionLink({
     }
   }, [list, matchingThread])
 
-  const threadId = createdThreadId ?? matchingThread?.threadId
+  const threadId = createdThreadId ?? matchingThread?.threadId ?? targetQuestionId
   return (
     <section
       aria-label={t`Обсуждение задачи`}
@@ -475,6 +507,7 @@ export function StudentProblemQuestionLink({
       >
         <MessageCircleQuestion aria-hidden="true" className="size-4" />
         {threadId || open ? t`Вопросы по задаче` : t`Задать вопрос`}
+        <QuestionAttentionDot state={matchingThread?.attentionState} />
       </Button>
       {open ? (
         <div className={compact ? 'order-2 mt-2 w-full basis-full' : 'mt-3'}>
@@ -577,6 +610,9 @@ function InlineStudentSupportThread({
   if (principal.audience !== 'student') throw new Error('Student questions require Student auth')
   const query = useSupportThreadQuery(client, principal, threadId)
   const mutation = useAppendSupportEntryMutation(client, principal, threadId)
+  const readMutation = useReadSupportRepliesMutation(client, principal, threadId)
+  const markReplyRead = readMutation.mutateAsync
+  const readReply = useCallback((entryId: string) => markReplyRead([entryId]), [markReplyRead])
   const descriptor = useMemo<SupportDraftDescriptor>(
     () => ({
       ownerAccountId: principal.accountId,
@@ -622,7 +658,9 @@ function InlineStudentSupportThread({
   return (
     <div className="space-y-4">
       <FeedbackThread
-        messages={query.data.thread.entries.map((entry) => studentMessage(entry, principal.userId))}
+        messages={query.data.thread.entries.map((entry) =>
+          studentMessage(entry, principal.userId, readReply),
+        )}
       />
       <StudentPhotoSupportComposer
         key={JSON.stringify(descriptor)}

@@ -1,5 +1,16 @@
 # Статус плана разработки
 
+## 2026-10-02 — выпуск позадачной публикации
+
+Интегрирован `e20bbed9`, миграция доступности — 0108 после support reads 0107.
+Новые ответы учитывают Off. Проходят 165 backend, 72 frontend и ещё 40
+auth/realtime/Staff unit-проверок, типы/i18n/schema (504), lint и четыре сборки.
+Исправлены delayed-GET гонка Staff и восстановление fresh offline cache.
+Публикация/reconnect — 3/3 browser E2E; support — 5 в матрице и 2 Firefox
+отдельно после одного timeout прокрутки. Итого все 9 уникальных сценариев
+проверены. Commit/push и оба деплоя разрешены; production smoke в работе.
+[Протокол](../../docs/problem-release.md#выпуск--2-октября-2026).
+
 ## 2026-10-01 — интеграция позадачной публикации
 
 Merge кода `vmshpwa` сохранён в `188d97eb`, затем подлит отчёт `73d6730e`.
@@ -26,6 +37,25 @@ scoped lint и четыре production-сборки проходят. Выдач
 обратное скрытие и reconnect без reload прошли в Chromium/WebKit/Firefox.
 Светлые, тёмные и мобильные снимки просмотрены; baselines не менялись.
 Развёртывание и публикация в remote не выполнялись.
+
+## 2026-10-01 — генерация metadata с заданными типами
+
+Выложено и проверено: [типы из локальной таблицы](../../docs/metadata-generation.md#типы-задач-из-таблицы--1-октября-2026)
+передаются отдельным действием без предварительного сохранения. Типы пунктов
+независимы и обязательны для генерации и фактологической проверки.
+Проходят 31 domain-сценарий, 2 HTTP-сценария и 40 UI/contract/client tests;
+typecheck, lint, каталоги и Staff build проверены. Итоговый `6e4b82f7` на обоих
+серверах; новая кнопка и сохранение старого черновика после reload проверены
+на живой TLF-странице. Сведения о release/backup и снимок — в linked doc.
+
+
+## 2026-10-01 — локализация подписи тестового аккаунта
+
+Выложено и проверено: [«Тест учителя» в английском Student](../../docs/staff-testing.md#локализация-подписи-тестового-аккаунта--1-октября-2026).
+Перевод на HTTP-границе охватывает существующие сессии; имя и схема сохраняются.
+Проверены 6 HTTP-сценариев и оба языка, Ruff и каталоги.
+Выпуск `23c0a654` завершён на обоих серверах; на реальной странице задач TLF
+подтверждено «Teacher test:». [Релиз и пруф](../../docs/staff-testing.md#локализация-подписи-тестового-аккаунта--1-октября-2026).
 
 ## 2026-10-01 — редактор картинок в production на обоих порталах
 
@@ -3791,3 +3821,49 @@ HTML-валидацию идентификатора модели; pageerror о�
 По 25 публичных HTTP-проверок, health и живые формы настройки курсов — PASS.
 TLF использует английский язык бренда, VMSH — русский; прежние модели курсов
 и attendance-настройки сохранены. [Production proof](../../docs/metadata-generation.md#production--1-октября-2026).
+
+
+## 2026-10-01 — TLF metadata generation recovery (production verified)
+
+[Incident and implementation](../../docs/metadata-generation.md#english-tex-generation-failure--1-october-2026):
+English TeX aliases/sections and inline teacher fields now reach the legacy
+OpenRouter contract; missing Russian lesson/group markers no longer block PWA
+generation. Canonical problem identities and stored source remain intact.
+Structured API failures keep their translated explanation; real ambiguous
+network failures use the active UI language instead of a bilingual string.
+29 domain tests, 2 HTTP scenarios, 13 transport tests, types, lint, i18n and
+Staff build PASS; actual TLF source recognized all five problems/teacher fields.
+Fix `662e3f03` is live on both hosts with 25 public checks each. Actual generation
+on `gl-1` with `openai/gpt-6-luna` returned HTTP 200 in 47 seconds and showed five
+English metadata rows and feedback. Problem 2 retains its English checker review
+note. Save/publish was not invoked; the existing server configuration is intact.
+[Operational proof](../../docs/metadata-generation.md#verified-production-recovery).
+
+## 2026-10-01 — Внимание к ответам на вопросы (реализовано локально)
+
+Принят [план](../../docs/question-attention.md): оранжевая/красная точка,
+поответные отметки просмотра и переход через «Новые ответы» по всем курсам/группам.
+Старые ответы — прочитанная база; история сохраняется. 38 целевых backend и
+11 проверок изоляции, 25 + 7 frontend, 6 E2E в Chromium/Firefox/WebKit — PASS.
+Миграция up/down/up, схема, Ruff, lint, TypeScript, i18n и build — PASS.
+Просмотрены light/dark, RU/EN, mobile 320 px, reduced motion; оба устройства
+получают серверное прочтение. Общий Python gate имеет четыре ошибки от
+постороннего `.DS_Store` в старом корпусе, который сохранён.
+[Отчёт и снимки](../../../pwa_tests/reports/question-attention/README.md).
+Production-выпуск завершён 2 октября; итоговая запись — ниже.
+
+## 2026-10-02 — Внимание к вопросам (в production на обоих порталах)
+
+`5bb8d38227df` отправлен в `origin/vmshpwa` после сохранения шести новых
+metadata/i18n-коммитов. VMSH webhook и
+[ручной TLF cutover](../../../docs/deploy/tlf-app/deploy_support_attention.sh)
+прошли в порядке 0107 → backend health → frontend. Обе БД: 79 migrations, schema
+current, quick_check ok; по 25 публичных HTTP checks. VMSH сохранил hash 877
+сообщений и 383 тредов/версий и backfill 422 Staff-ответов; TLF — все 154 старые
+таблицы, credentials и три raw Zoom receipts, up/down/up на копии. NATS PID прежние,
+PWA, Telegram/Zoom и analytics активны, maintenance снят. Production provenance
+четырёх приложений и новая функция в публичных Student bundles проверены.
+После rebase 38 backend + 20 frontend, schema, types, lint и оба i18n — PASS.
+Сценарий двух устройств — изолированный E2E; production-проверки read-only.
+[Полный release/backup record](../../docs/question-attention.md#production--2-октября-2026),
+[результаты и снимки](../../../pwa_tests/reports/question-attention/README.md).

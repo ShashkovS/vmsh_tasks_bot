@@ -133,6 +133,7 @@ async def change_problem_release(request: web.Request) -> web.Response:
                     ),
                     "student-course-lessons",
                     "family-worksheets",
+                    "questions",
                 ],
             },
         )
