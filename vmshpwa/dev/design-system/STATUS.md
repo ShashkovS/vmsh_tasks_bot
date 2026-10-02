@@ -2065,4 +2065,11 @@ PWA, Telegram/Zoom и analytics активны, maintenance снят. Production
 в `All groups` по языку запроса; названия курсов, конкретных групп и контент
 сохраняются. [HTTP-проверка](../../../pwa_tests/integration/test_phase8_group_banner_http_api.py) покрывает русский и английский
 в Staff и на главной Student. Проверки: 29 backend tests PASS, backend i18n
-каталог синхронен и переведён. Изменение локальное, в production не выпущено.
+каталог синхронен и переведён. Коммит `c8af0dc21f61` выпущен на обоих
+порталах: VMSH — штатным webhook, TLF — backend update под общим
+`metadata-deploy.lock`. Каждый портал прошёл 25 read-only HTTP checks;
+TLF runtime projection проверен на `All groups` / «Все группы».
+TLF record: `/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-banner-label-c8af0dc21f61/`.
+Backups `20261002T140310.940858Z` / `20261002T140436.224617Z`: integrity ok,
+по 29 Zoom receipts. Статический release, Zoom/NATS PID и credentials
+сохранены; схема не менялась. Повторные 29 backend tests после rebase — PASS.
