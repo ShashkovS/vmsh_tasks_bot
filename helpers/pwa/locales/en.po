@@ -451,6 +451,10 @@ msgstr "Choose a course"
 msgid "Выберите курс и XLSX-файл"
 msgstr "Select a course and an XLSX file"
 
+#: apps/pwa_api/rich_file_routes.py
+msgid "Выберите непустой документ или архив поддерживаемого формата с именем до 255 байт"
+msgstr "Choose a non-empty document or archive in a supported format with a filename up to 255 bytes"
+
 #: apps/pwa_api/written_submission_routes.py
 msgid "Выберите от одного до ста сообщений или фотографий"
 msgstr "Choose between one and one hundred messages or photos"
@@ -654,6 +658,10 @@ msgstr "Image upload is temporarily unavailable"
 #: apps/pwa_api/content_routes.py
 msgid "Загрузка рисунка должна использовать multipart/form-data"
 msgstr "The figure upload must use multipart/form-data"
+
+#: apps/pwa_api/rich_file_routes.py
+msgid "Загрузка файлов временно недоступна"
+msgstr "File uploads are temporarily unavailable"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Загрузка фотографии должна использовать multipart/form-data"
@@ -3054,6 +3062,10 @@ msgstr "File"
 #: apps/pwa_api/problem_import_routes.py
 msgid "Файл изменился после предпросмотра"
 msgstr "The file has changed since the preview"
+
+#: apps/pwa_api/rich_file_routes.py
+msgid "Файл не должен быть больше 50 МиБ"
+msgstr "The file must not exceed 50 MiB"
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Файл не сохранился"

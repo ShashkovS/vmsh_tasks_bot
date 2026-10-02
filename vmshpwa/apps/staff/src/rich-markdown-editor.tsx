@@ -7,11 +7,13 @@ import { EditorState } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import type { BlockContext, InlineContext, Line, MarkdownConfig } from '@lezer/markdown'
 import { EditorView } from '@codemirror/view'
-import type { RichDocument } from '@vmsh/contracts'
+import type { RichDocument, StaffRichFile } from '@vmsh/contracts'
 import { RichDocumentView, RichMarkdownDiagnostic, parseRichMarkdown } from '@vmsh/product'
 import { Button } from '@vmsh/ui'
 import { ImagePlus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+import { StaffFileUpload } from './staff-file-upload'
 
 /**
  * Phase-8 Rich Markdown v1 authoring surface. Custom Lezer nodes deliberately
@@ -247,12 +249,14 @@ export function RichMarkdownEditor({
   onChange,
   onDocumentChange,
   onImageUpload,
+  onFileUpload,
   value,
 }: {
   id?: string
   onChange: (value: string) => void
   onDocumentChange?: (document: RichDocument | null) => void
   onImageUpload?: (image: File) => Promise<{ url: string }>
+  onFileUpload?: (file: File) => Promise<StaffRichFile>
   value: string
 }) {
   const isEmpty = value.trim() === ''
@@ -376,6 +380,15 @@ export function RichMarkdownEditor({
           <p className="text-caption text-status-danger" role="alert">
             {imageError}
           </p>
+        ) : null}
+        {onFileUpload ? (
+          <StaffFileUpload
+            onUpload={onFileUpload}
+            onInsert={(markdown) => {
+              if (insertAtCursor) insertAtCursor(markdown)
+              else handleChange(`${value}${markdown}`)
+            }}
+          />
         ) : null}
         {error ? (
           <p className="text-caption text-status-danger" role="alert">

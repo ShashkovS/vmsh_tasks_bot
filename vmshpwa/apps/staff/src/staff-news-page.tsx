@@ -316,6 +316,7 @@ export function StaffNewsPage({
                   draft={localDraft}
                   onChange={setLocalDraft}
                   onImageUpload={(image) => richMediaClient.uploadImage(image)}
+                  onFileUpload={(file) => richMediaClient.uploadFile(file)}
                   onSubmit={(document, courseId) => {
                     const publishedAt = moscowDateTime(localDraft.publishedLocal)
                     if (publishedAt === null) return
@@ -373,6 +374,7 @@ export function StaffNewsPage({
                 draft={editDraft}
                 onChange={setEditDraft}
                 onImageUpload={(image) => richMediaClient.uploadImage(image)}
+                onFileUpload={(file) => richMediaClient.uploadFile(file)}
                 onSubmit={(document, courseId) => {
                   if (editingItem.isScheduled) {
                     const publishedAt = moscowDateTime(editDraft.publishedLocal)

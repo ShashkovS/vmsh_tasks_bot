@@ -1,5 +1,18 @@
 # Этап 8. Telegram-news, realtime, Web Push и баннеры
 
+## Файловые вложения — 2 октября 2026, реализовано локально
+
+Новости, баннеры и lesson blocks получают загрузку документов/архивов до
+50 МиБ и постоянные Markdown-ссылки. Решение и реализация:
+[rich-file-attachments](../../docs/rich-file-attachments.md). SQLite migration
+не требуется. Upload/URL/storage, оба клиента и редактора реализованы;
+filesystem roundtrip прошёл во всех трёх браузерах без внешних credentials.
+74 backend, 1002 frontend unit с известным исключением, 6 Storybook/a11y и
+9 E2E без retries — PASS. Lint, TypeScript, оба i18n и production builds —
+PASS. Точная HTTP-граница 50 МиБ и снимки раскрытых редакторов проверены.
+Production-выпуск не выполнялся.
+[Результаты и известные сбои общей базы](../../../pwa_tests/reports/rich-file-attachments/README.md).
+
 ## Staff news Unicode excerpt fix — 27 September 2026
 
 Implemented: align `staffNewsItemSchema.textExcerpt` in

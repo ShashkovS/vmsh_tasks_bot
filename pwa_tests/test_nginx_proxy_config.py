@@ -66,7 +66,7 @@ def test_template_has_one_host_and_separate_static_api_websocket_boundaries():
     assert "return 308 https://@@PUBLIC_HOST@@$request_uri;" in source
     assert "root @@STATIC_ROOT@@;" in source
     assert "server unix:@@BACKEND_UNIX_SOCKET@@ fail_timeout=0;" in source
-    assert source.count("include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;") == 9
+    assert source.count("include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;") == 10
 
     metrics = _location(source, "= /metrics")
     assert "access_log off;" in metrics
@@ -82,6 +82,11 @@ def test_template_has_one_host_and_separate_static_api_websocket_boundaries():
     assert "limit_except GET { deny all; }" in content_assets
     assert "client_max_body_size 1k;" in content_assets
     assert "proxy_pass http://vmshpwa_backend;" in content_assets
+
+    rich_files = _location(source, "^~ /pwa-rich-files/")
+    assert "limit_except GET { deny all; }" in rich_files
+    assert "client_max_body_size 1k;" in rich_files
+    assert "proxy_pass http://vmshpwa_backend;" in rich_files
 
     for audience in ("student", "family", "staff"):
         api = _location(source, f"^~ /{audience}/api/")

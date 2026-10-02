@@ -557,6 +557,10 @@ msgstr "Original source PDF, without layout changes · "
 msgid "PDF не удалось проверить: {0}"
 msgstr "Could not check the PDF: {0}"
 
+#: apps/staff/src/staff-file-upload.tsx
+msgid "PDF, документы, таблицы, презентации и архивы · до 50 МиБ"
+msgstr "PDF, documents, spreadsheets, presentations and archives · up to 50 MiB"
+
 #: apps/staff/src/rich-markdown-editor.tsx
 msgid "PNG, JPEG или WebP · до 10 МиБ"
 msgstr "PNG, JPEG, or WebP · up to 10 MiB"
@@ -1276,6 +1280,10 @@ msgstr "Select a problem"
 msgid "Выберите задачу для серийной проверки или откройте отдельную работу."
 msgstr "Choose a problem for a review series or open an individual work item."
 
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Выберите непустой документ или архив до 50 МиБ поддерживаемого формата."
+msgstr "Choose a non-empty document or archive in a supported format, up to 50 MiB."
+
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Выберите несколько файлов и укажите группу. По умолчанию это условия; при необходимости вид материала можно изменить. Загрузка ничего не публикует."
 msgstr "Select multiple files and a group. The default material type is statements; you can change it if needed. Uploading does not publish anything."
@@ -1630,6 +1638,10 @@ msgstr "Add"
 msgid "Добавлено задач"
 msgstr "Problems added"
 
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Дождитесь загрузки файла перед сохранением текста."
+msgstr "Wait for the file to finish uploading before saving the text."
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "Дольше ждут"
 msgstr "Waiting longer"
@@ -1872,6 +1884,10 @@ msgstr "Loading statement…"
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Загружаем условия…"
 msgstr "Loading statements…"
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Загружаем файл…"
+msgstr "Uploading file…"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем фотографию…"
@@ -3158,6 +3174,10 @@ msgstr "Could not load the table."
 #: apps/staff/src/student-results-history.tsx
 msgid "Не удалось загрузить условие."
 msgstr "Could not load the statement."
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Не удалось загрузить файл."
+msgstr "Could not upload the file."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Не удалось изменить блок занятия"
@@ -4972,6 +4992,10 @@ msgstr "Submissions open"
 #: apps/staff/src/course-schedule-draft.ts
 msgid "Приём решений до"
 msgstr "Solution submission deadline"
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Прикрепить файл"
+msgstr "Attach file"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Приложение"
@@ -6886,6 +6910,10 @@ msgstr "File “{0}” must have the .tex extension."
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "Файл «{0}» пуст."
 msgstr "File “{0}” is empty."
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Файл для прикрепления"
+msgstr "File to attach"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Файл и курс"

@@ -341,6 +341,10 @@ pwa-production-build:
 pwa-e2e:
 	cd $(PWA_DIR) && CI=true pnpm e2e
 
+.PHONY: pwa-e2e-rich-files
+pwa-e2e-rich-files:
+	cd $(PWA_DIR) && CI=true pnpm e2e --mode rich-files
+
 .PHONY: pwa-e2e-live-marking
 .PHONY: pwa-e2e-redeploy
 pwa-e2e-redeploy:

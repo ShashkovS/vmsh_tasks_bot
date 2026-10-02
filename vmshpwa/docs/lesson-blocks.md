@@ -23,6 +23,14 @@ requires the position ETag. Scheduled activation uses the existing content
 scheduler in [`apps/pwa_app.py`](../../apps/pwa_app.py) and never creates
 notifications.
 
+Since 2 October 2026, each block also offers “Прикрепить файл” for documents
+and archives up to 50 MiB. The group-scoped upload route in
+[`rich_file_routes.py`](../../apps/pwa_api/rich_file_routes.py) checks
+`content.manage` and returns a permanent public URL; it does not modify a
+revision or require a position ETag. The editor inserts an editable Markdown
+link, preserving edits made during upload. See
+[attachment policy and verification](rich-file-attachments.md).
+
 ## Markdown, images and videos
 
 Lesson documents use the normal Rich Markdown subset plus root-level video

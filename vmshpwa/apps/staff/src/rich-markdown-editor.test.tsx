@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { useState } from 'react'
 
 import { RichMarkdownEditor } from './rich-markdown-editor'
 import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
@@ -10,6 +11,61 @@ afterEach(() => {
 })
 
 describe('RichMarkdownEditor', () => {
+  it('inserts a file into the current text after editing during upload', async () => {
+    let resolve!: (value: {
+      url: string
+      filename: string
+      mimeType: string
+      byteSize: number
+    }) => void
+    const onFileUpload = vi.fn().mockReturnValue(
+      new Promise((done) => {
+        resolve = done
+      }),
+    )
+    const onChange = vi.fn()
+    function ControlledEditor() {
+      const [value, setValue] = useState('Начальный текст')
+      return (
+        <RichMarkdownEditor
+          value={value}
+          onFileUpload={onFileUpload}
+          onChange={(next) => {
+            onChange(next)
+            setValue(next)
+          }}
+        />
+      )
+    }
+    render(<ControlledEditor />)
+    fireEvent.change(screen.getByLabelText('Файл для прикрепления'), {
+      target: { files: [new File(['pdf'], 'Условия.pdf')] },
+    })
+    // A controlled update while the server is still receiving the attachment.
+    // CodeMirror owns input; exercise its normal editing transaction.
+    const { EditorView } = await import('@codemirror/view')
+    const view = EditorView.findFromDOM(screen.getByLabelText('Markdown публикации'))
+    expect(view).toBeTruthy()
+    act(() =>
+      view!.dispatch({
+        changes: { from: 0, to: view!.state.doc.length, insert: 'Текст после правки' },
+        selection: { anchor: 5 },
+      }),
+    )
+    resolve({
+      url: `/pwa-rich-files/${'a'.repeat(64)}/file.pdf`,
+      filename: 'Условия.pdf',
+      mimeType: 'application/pdf',
+      byteSize: 3,
+    })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('после правки')),
+    )
+    await waitFor(() =>
+      expect(screen.getByLabelText('Предпросмотр Markdown').textContent).toContain('Условия.pdf'),
+    )
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatch(/^Текст\n\n\[Условия.pdf\]/u)
+  })
   it('treats an empty publication as a neutral draft', () => {
     const onDocumentChange = vi.fn()
 

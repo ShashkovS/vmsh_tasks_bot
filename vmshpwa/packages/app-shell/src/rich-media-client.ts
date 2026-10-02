@@ -6,10 +6,14 @@ import {
   staffRichMediaUploadResponseSchema,
   type RuntimeConfig,
   type StaffRichMediaImage,
+  type StaffRichFile,
 } from '@vmsh/contracts'
+
+import { uploadRichFile } from './rich-file-upload'
 
 export interface StaffRichMediaClient {
   uploadImage(image: File): Promise<StaffRichMediaImage>
+  uploadFile(file: File): Promise<StaffRichFile>
 }
 
 /** Shared Staff transport for inserting a server-owned image into Rich Markdown. */
@@ -24,6 +28,8 @@ export function createStaffRichMediaClient(
   const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   return {
+    uploadFile: (file) =>
+      uploadRichFile(`${configured.apiBase}/rich-media/files/uploads`, file, options),
     async uploadImage(image) {
       const body = new FormData()
       body.append('image', image, image.name)

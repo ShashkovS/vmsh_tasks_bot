@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { t } from '@lingui/core/macro'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
 import {
   createLessonBlockClient,
@@ -14,6 +14,7 @@ import { LessonRichDocumentView, parseLessonRichMarkdown } from '@vmsh/product'
 import { Button, Card, CardContent, Input, Label } from '@vmsh/ui'
 
 import { LessonVideoDialog } from './lesson-video-dialog'
+import { StaffFileUpload } from './staff-file-upload'
 
 function formatPublishedAt(value: string | null): string {
   if (value === null) return t`не опубликован`
@@ -89,6 +90,7 @@ export function StaffLessonBlockEditor({
   const [message, setMessage] = useState<string | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isMutating, setIsMutating] = useState(false)
+  const textarea = useRef<HTMLTextAreaElement>(null)
   const value = markdown ?? block?.draft?.markdown ?? ''
   const parsed = useMemo(() => {
     if (!value.trim()) return { document: null, error: null }
@@ -193,6 +195,7 @@ export function StaffLessonBlockEditor({
               : ''}
           </p>
           <textarea
+            ref={textarea}
             aria-label={`${title}: Markdown`}
             className="min-h-32 w-full rounded-md border border-input bg-surface p-3 font-mono text-small"
             onChange={(event) => setMarkdown(event.target.value)}
@@ -220,6 +223,24 @@ export function StaffLessonBlockEditor({
             </Label>
             <LessonVideoDialog onInsert={insert} />
           </div>
+          <StaffFileUpload
+            disabled={isMutating}
+            onUpload={(file) => client.uploadFile(groupLessonId, file)}
+            onInsert={(attachment) => {
+              // Read the live textarea after upload; rich-file-attachments.md.
+              const current = textarea.current
+              if (!current) return
+              const start = current.selectionStart
+              const end = current.selectionEnd
+              setMarkdown(
+                `${current.value.slice(0, start)}${attachment}${current.value.slice(end)}`,
+              )
+              current.focus()
+              requestAnimationFrame(() =>
+                current.setSelectionRange(start + attachment.length, start + attachment.length),
+              )
+            }}
+          />
           {parsed.error ? (
             <p className="text-small text-status-error" role="alert">
               {parsed.error}

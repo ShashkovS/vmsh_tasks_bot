@@ -10,6 +10,11 @@ S3 с двумя источниками object keys в SQLite:
 
 Команда работает только на чтение. Она не меняет SQLite, не удаляет объекты и
 не превращает диагностическую эвристику в автоматическую retention policy.
+Файловые вложения `rich-files/sha256/…` хранят ссылки в Markdown/AST/revisions,
+а не в этих двух таблицах. Inventory пока не сканирует такие ссылки и может
+отнести используемый файл к `unreferencedKeys`; это не разрешает его удаление.
+Правила постоянных ссылок и реализации upload:
+[`rich-file-attachments.md`](rich-file-attachments.md).
 Точные ключи записываются в owner-local JSON с правами `0600` ниже
 `.runtime/vmshpwa/media-inventory`; stdout содержит только агрегированные числа.
 

@@ -76,6 +76,7 @@ from apps.pwa_api.course_routes import course_routes
 from apps.pwa_api.family_course_routes import family_course_routes
 from apps.pwa_api.lesson_block_routes import lesson_block_routes
 from apps.pwa_api.problem_release_routes import problem_release_routes
+from apps.pwa_api.rich_file_routes import rich_file_routes
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import (
     PWA_AUTH_STATE,
@@ -1935,6 +1936,7 @@ def configure(
         app.add_routes(course_routes)
         app.add_routes(family_course_routes)
         app.add_routes(lesson_block_routes)
+        app.add_routes(rich_file_routes)
         app.add_routes(classroom_routes)
         app.add_routes(classroom_layout_routes)
         app.add_routes(classroom_assignment_routes)

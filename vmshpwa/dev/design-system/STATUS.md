@@ -2073,3 +2073,19 @@ TLF record: `/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-banner-label-c
 Backups `20261002T140310.940858Z` / `20261002T140436.224617Z`: integrity ok,
 по 29 Zoom receipts. Статический release, Zoom/NATS PID и credentials
 сохранены; схема не менялась. Повторные 29 backend tests после rebase — PASS.
+
+## Файловые вложения — 2 октября 2026, реализовано локально
+
+Кнопка «Прикрепить файл», ожидание/ошибки и Markdown-ссылка для news,
+banners и обоих lesson blocks: [решение](../../docs/rich-file-attachments.md).
+Вставка учитывает текущий курсор и правки во время ожидания; сохранение и
+публикация остаются явными. 6 Storybook interaction/a11y состояний — PASS:
+обычное, ожидание, ошибка, disabled, EN/dark/reduced motion и lesson editor.
+9 browser roundtrip без retries — PASS; снимки раскрытых редакторов в трёх
+браузерах просмотрены. Lint, TypeScript, оба i18n и builds — PASS;
+известные сбои общей базы отмечены в отчёте. Production-выпуск не выполнялся.
+[Проверки и снимки](../../../pwa_tests/reports/rich-file-attachments/README.md).
+
+Production-выпуск разрешён владельцем: commit поверх текущего origin/vmshpwa,
+VMSH webhook и ручной TLF cutover без миграций. Проверки точной release-версии
+и публикация выполняются; параллельный fresh-problem-set инкремент исключён.

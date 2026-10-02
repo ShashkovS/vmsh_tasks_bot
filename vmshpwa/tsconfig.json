@@ -4,6 +4,7 @@
     "types": ["node", "vite/client"],
     "baseUrl": ".",
     "paths": {
+      "@vmsh/contracts": ["./packages/contracts/src/index.ts"],
       "@vmsh/app-shell": ["./packages/app-shell/src/index.ts"],
       "@vmsh/ui": ["./packages/ui/src/index.ts"],
       "@vmsh/ui/*": ["./packages/ui/src/*"]

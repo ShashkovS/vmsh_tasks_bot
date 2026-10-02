@@ -693,6 +693,7 @@ def create_gateway(
         "/pwa-content-assets/{asset_id:[a-z0-9][a-z0-9._:-]{0,127}}",
         _proxy_content_asset,
     )
+    app.router.add_get("/pwa-rich-files/{sha256}/{filename}", _proxy_content_asset)
     app.router.add_route("*", "/{audience:student|family|staff}/ws", _transport)
     app.router.add_get("/{audience:student|family|staff}", _redirect_application_root)
     app.router.add_get("/{audience:student|family|staff}/{tail:.*}", _serve_application)

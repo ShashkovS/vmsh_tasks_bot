@@ -2,6 +2,7 @@ import { t } from '@lingui/core/macro'
 import { RichParseError, parseMarkdown } from '@puregram/rich'
 import {
   isRichHttpsUrl,
+  isRichLinkUrl,
   richDocumentSchema,
   type RichBlock,
   type RichDocument,
@@ -69,7 +70,7 @@ function inline(value: NativeNode, source: string): RichInline[] {
     return [{ type: 'footnoteRef', id: node.reference_name }]
   }
   if (node.type === 'url') {
-    if (typeof node.url !== 'string' || !isRichHttpsUrl(node.url)) {
+    if (typeof node.url !== 'string' || !isRichLinkUrl(node.url)) {
       throw new RichMarkdownDiagnostic(
         t`Ссылка должна быть безопасным HTTPS URL`,
         sourcePosition(source, typeof node.url === 'string' ? node.url : ''),

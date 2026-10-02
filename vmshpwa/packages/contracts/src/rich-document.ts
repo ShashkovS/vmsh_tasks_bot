@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { isLocalRichFileUrl } from './rich-files'
+
 /**
  * RichDocument v1 is the persisted, renderer-safe representation of Staff-authored
  * Markdown. Its rollout is specified in Phase 8's Rich Markdown v1 increment.
@@ -37,6 +39,15 @@ export const richHttpsUrlSchema = z.string().max(4_096).refine(isRichHttpsUrl, {
   message: 'URL must be credential-free HTTPS',
 })
 
+/** Local attachments are the sole relative-link exception; images remain HTTPS. */
+export const richLinkUrlSchema = z.string().max(4_096).refine(isRichLinkUrl, {
+  message: 'URL must be credential-free HTTPS or a canonical attachment URL',
+})
+
+export function isRichLinkUrl(value: string): boolean {
+  return isRichHttpsUrl(value) || isLocalRichFileUrl(value)
+}
+
 export type RichInline =
   | { type: 'text'; text: string }
   | {
@@ -62,7 +73,7 @@ export const richInlineSchema: z.ZodType<RichInline> = z.lazy(() =>
     z
       .object({
         type: z.literal('link'),
-        href: richHttpsUrlSchema,
+        href: richLinkUrlSchema,
         children: z.array(richInlineSchema).min(1).max(1_000),
       })
       .strip(),

@@ -198,6 +198,15 @@ server {
         proxy_pass http://vmshpwa_backend;
     }
 
+    # Public filesystem attachments; docs/rich-file-attachments.md.
+    location ^~ /pwa-rich-files/ {
+        limit_except GET { deny all; }
+        client_max_body_size 1k;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+        proxy_pass http://vmshpwa_backend;
+    }
+
     # aiohttp sends a heartbeat every 25 seconds. A 75-second upstream read
     # window tolerates one delayed heartbeat without leaving dead tunnels open.
     location = /student/ws {

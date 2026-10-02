@@ -18,6 +18,13 @@ const meta = {
       hide: noop,
       cancel: noop,
       uploadImage: () => Promise.reject(new Error('Story does not upload')),
+      uploadFile: () =>
+        Promise.resolve({
+          url: `/pwa-rich-files/${'a'.repeat(64)}/document.pdf`,
+          filename: 'document.pdf',
+          mimeType: 'application/pdf',
+          byteSize: 10,
+        }),
     },
   },
 } satisfies Meta<typeof StaffLessonBlockEditor>

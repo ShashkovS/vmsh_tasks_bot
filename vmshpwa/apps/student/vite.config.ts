@@ -73,6 +73,7 @@ export default defineConfig(({ command, mode }) => {
       proxy: {
         '/student/manifest.webmanifest': { target: apiOrigin, changeOrigin: false },
         '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
+        '/pwa-rich-files': { target: apiOrigin, changeOrigin: false },
         '/student/api': { target: apiOrigin, changeOrigin: false },
         '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
@@ -81,6 +82,7 @@ export default defineConfig(({ command, mode }) => {
       proxy: {
         '/student/manifest.webmanifest': { target: apiOrigin, changeOrigin: false },
         '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
+        '/pwa-rich-files': { target: apiOrigin, changeOrigin: false },
         '/student/api': { target: apiOrigin, changeOrigin: false },
         '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },

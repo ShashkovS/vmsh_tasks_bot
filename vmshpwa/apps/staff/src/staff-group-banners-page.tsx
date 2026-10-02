@@ -355,6 +355,7 @@ export function StaffGroupBannersPage() {
                       onChange={(markdown) => setDraft((value) => ({ ...value, markdown }))}
                       onDocumentChange={setDocument}
                       onImageUpload={(image) => richMediaClient.uploadImage(image)}
+                      onFileUpload={(file) => richMediaClient.uploadFile(file)}
                       value={draft.markdown}
                     />
                   </Suspense>

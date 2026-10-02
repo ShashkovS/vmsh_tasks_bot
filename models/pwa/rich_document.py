@@ -12,6 +12,8 @@ import re
 from collections.abc import Iterable
 from urllib.parse import urlparse
 
+from models.pwa.rich_files import is_local_rich_file_url
+
 
 class InvalidRichDocument(ValueError):
     """A client supplied RichDocument does not satisfy the v1 contract."""
@@ -69,6 +71,12 @@ def is_rich_https_url(value: object) -> bool:
     )
 
 
+def is_rich_link_url(value: object) -> bool:
+    """Attachment-only local links; images keep HTTPS (rich-file-attachments.md)."""
+
+    return is_rich_https_url(value) or is_local_rich_file_url(value)
+
+
 def _identifier(value: object, path: str) -> str:
     if not isinstance(value, str) or _IDENTIFIER.fullmatch(value) is None:
         _fail(path, "must be a canonical identifier")
@@ -97,8 +105,8 @@ def _validate_inline(value: object, path: str, depth: int) -> dict[str, object]:
         _validate_inlines(node["children"], f"{path}.children", depth + 1)
     elif node_type == "link":
         _exact(node, {"type", "href", "children"}, path)
-        if not is_rich_https_url(node["href"]):
-            _fail(f"{path}.href", "must be credential-free HTTPS")
+        if not is_rich_link_url(node["href"]):
+            _fail(f"{path}.href", "must be credential-free HTTPS or a canonical attachment URL")
         _validate_inlines(node["children"], f"{path}.children", depth + 1)
     elif node_type == "math":
         _exact(node, {"type", "latex"}, path)

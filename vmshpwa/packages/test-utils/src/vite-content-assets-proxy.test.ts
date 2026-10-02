@@ -22,6 +22,8 @@ describe('immutable content asset development proxy', () => {
     for (const config of configs) {
       expect(config.server?.proxy).toHaveProperty('/pwa-content-assets')
       expect(config.preview?.proxy).toHaveProperty('/pwa-content-assets')
+      expect(config.server?.proxy).toHaveProperty('/pwa-rich-files')
+      expect(config.preview?.proxy).toHaveProperty('/pwa-rich-files')
     }
   })
 })

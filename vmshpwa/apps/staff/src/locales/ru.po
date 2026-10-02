@@ -557,6 +557,10 @@ msgstr "PDF исходного файла, без правок располож�
 msgid "PDF не удалось проверить: {0}"
 msgstr "PDF не удалось проверить: {0}"
 
+#: apps/staff/src/staff-file-upload.tsx
+msgid "PDF, документы, таблицы, презентации и архивы · до 50 МиБ"
+msgstr "PDF, документы, таблицы, презентации и архивы · до 50 МиБ"
+
 #: apps/staff/src/rich-markdown-editor.tsx
 msgid "PNG, JPEG или WebP · до 10 МиБ"
 msgstr "PNG, JPEG или WebP · до 10 МиБ"
@@ -1276,6 +1280,10 @@ msgstr "Выберите задачу"
 msgid "Выберите задачу для серийной проверки или откройте отдельную работу."
 msgstr "Выберите задачу для серийной проверки или откройте отдельную работу."
 
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Выберите непустой документ или архив до 50 МиБ поддерживаемого формата."
+msgstr "Выберите непустой документ или архив до 50 МиБ поддерживаемого формата."
+
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Выберите несколько файлов и укажите группу. По умолчанию это условия; при необходимости вид материала можно изменить. Загрузка ничего не публикует."
 msgstr "Выберите несколько файлов и укажите группу. По умолчанию это условия; при необходимости вид материала можно изменить. Загрузка ничего не публикует."
@@ -1630,6 +1638,10 @@ msgstr "Добавление"
 msgid "Добавлено задач"
 msgstr "Добавлено задач"
 
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Дождитесь загрузки файла перед сохранением текста."
+msgstr "Дождитесь загрузки файла перед сохранением текста."
+
 #: apps/staff/src/review-queue-page.tsx
 msgid "Дольше ждут"
 msgstr "Дольше ждут"
@@ -1872,6 +1884,10 @@ msgstr "Загружаем условие…"
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Загружаем условия…"
 msgstr "Загружаем условия…"
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Загружаем файл…"
+msgstr "Загружаем файл…"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем фотографию…"
@@ -3158,6 +3174,10 @@ msgstr "Не удалось загрузить таблицу."
 #: apps/staff/src/student-results-history.tsx
 msgid "Не удалось загрузить условие."
 msgstr "Не удалось загрузить условие."
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Не удалось загрузить файл."
+msgstr "Не удалось загрузить файл."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Не удалось изменить блок занятия"
@@ -4972,6 +4992,10 @@ msgstr "Приём идёт"
 #: apps/staff/src/course-schedule-draft.ts
 msgid "Приём решений до"
 msgstr "Приём решений до"
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Прикрепить файл"
+msgstr "Прикрепить файл"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Приложение"
@@ -6886,6 +6910,10 @@ msgstr "Файл «{0}» должен иметь расширение .tex."
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "Файл «{0}» пуст."
 msgstr "Файл «{0}» пуст."
+
+#: apps/staff/src/staff-file-upload.tsx
+msgid "Файл для прикрепления"
+msgstr "Файл для прикрепления"
 
 #: apps/staff/src/problem-import-page.tsx
 msgid "Файл и курс"

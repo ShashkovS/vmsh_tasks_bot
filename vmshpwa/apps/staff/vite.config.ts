@@ -25,6 +25,7 @@ export default defineConfig(({ command, mode }) => {
     server: {
       proxy: {
         '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
+        '/pwa-rich-files': { target: apiOrigin, changeOrigin: false },
         '/staff/api': { target: apiOrigin, changeOrigin: false },
         '/staff/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
@@ -32,6 +33,7 @@ export default defineConfig(({ command, mode }) => {
     preview: {
       proxy: {
         '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
+        '/pwa-rich-files': { target: apiOrigin, changeOrigin: false },
         '/staff/api': { target: apiOrigin, changeOrigin: false },
         '/staff/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },

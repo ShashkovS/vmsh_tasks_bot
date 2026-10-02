@@ -27,6 +27,7 @@ const twoWeeksInSeconds = 14 * 24 * 60 * 60
 const legacyUnscopedPrecacheName = 'vmsh-179-student-precache-v1'
 const legacyRecentMediaCacheName = 'vmsh-student-recent-media-v1'
 const reservedNavigationPaths = [
+  /^\/pwa-rich-files(?:\/|$)/,
   immutableContentAssetNavigationPattern,
   /^\/student\/(?:api|ws|assets|media)(?:\/|$)/,
   /^\/student\/(?:sw\.js|manifest\.webmanifest|icon[^/]*)$/,

@@ -1,6 +1,6 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import type { AdminCourse, RichDocument } from '@vmsh/contracts'
+import type { AdminCourse, RichDocument, StaffRichFile } from '@vmsh/contracts'
 import { lazy, Suspense, useState } from 'react'
 
 import { Button, Input, Label } from '@vmsh/ui'
@@ -35,6 +35,7 @@ export function StaffLocalNewsComposer({
   submitLabel = t`Запланировать публикацию`,
   onChange,
   onImageUpload,
+  onFileUpload,
   onSubmit,
 }: {
   courses: AdminCourse[]
@@ -45,6 +46,7 @@ export function StaffLocalNewsComposer({
   submitLabel?: string
   onChange: (draft: LocalNewsDraft) => void
   onImageUpload?: (image: File) => Promise<{ url: string }>
+  onFileUpload?: (file: File) => Promise<StaffRichFile>
   onSubmit: (document: RichDocument, courseId: string) => void
 }) {
   const [document, setDocument] = useState<RichDocument | null>(null)
@@ -169,6 +171,7 @@ export function StaffLocalNewsComposer({
             onChange={(text) => onChange({ ...draft, text })}
             onDocumentChange={setDocument}
             {...(onImageUpload === undefined ? {} : { onImageUpload })}
+            {...(onFileUpload === undefined ? {} : { onFileUpload })}
             value={draft.text}
           />
         </Suspense>

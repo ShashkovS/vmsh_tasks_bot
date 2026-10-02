@@ -157,6 +157,8 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         )
     elif mode == "news":
         playwright.append("e2e/news-notifications.spec.ts")
+    elif mode == "rich-files":
+        playwright.append("e2e/rich-file-attachments.spec.ts")
     elif mode == "runtime-isolation":
         playwright.append("e2e/runtime-isolation.spec.ts")
     elif mode == "realtime":
@@ -254,6 +256,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "i18n",
             "nonvisual",
             "news",
+            "rich-files",
             "oral",
             "oral-windows",
             "redeploy",

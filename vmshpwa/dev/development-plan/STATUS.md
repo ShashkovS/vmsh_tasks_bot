@@ -3887,3 +3887,19 @@ TLF record: `/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-banner-label-c
 Backups `20261002T140310.940858Z` / `20261002T140436.224617Z`: integrity ok,
 по 29 Zoom receipts. Статический release, Zoom/NATS PID и credentials
 сохранены; схема не менялась. Повторные 29 backend tests после rebase — PASS.
+
+## Файловые вложения — 2 октября 2026, реализовано локально
+
+Реализован общий upload документов/архивов до 50 МиБ для news, banners и обоих
+lesson blocks. [Требование и реализация](../../docs/rich-file-attachments.md).
+Постоянная S3/локальная ссылка, строгие права/URL, обычный Markdown без миграции.
+74 backend, 6 Storybook/a11y, lint, TypeScript, оба i18n, builds и 9 E2E — PASS;
+1002 frontend unit — PASS
+при исключении прежнего сбоя локализации StaffTestingPage. Общий backend имеет
+четыре прежних ошибки от `.DS_Store`. Точный HTTP limit и финальные снимки
+проверены. Production-выпуск не выполнялся.
+[Проверки](../../../pwa_tests/reports/rich-file-attachments/README.md).
+
+Production-выпуск разрешён владельцем: commit поверх текущего origin/vmshpwa,
+VMSH webhook и ручной TLF cutover без миграций. Проверки точной release-версии
+и публикация выполняются; параллельный fresh-problem-set инкремент исключён.

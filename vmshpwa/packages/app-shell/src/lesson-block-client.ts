@@ -16,7 +16,10 @@ import {
   type RuntimeConfig,
   type SaveLessonBlockDraftRequest,
   type StaffLessonBlocksResponse,
+  type StaffRichFile,
 } from '@vmsh/contracts'
+
+import { uploadRichFile } from './rich-file-upload'
 
 export interface LessonBlockClient {
   get(groupLessonId: string, signal?: AbortSignal): Promise<StaffLessonBlocksResponse>
@@ -35,6 +38,7 @@ export interface LessonBlockClient {
   hide(groupLessonId: string, position: LessonBlockPosition, etag: string): Promise<void>
   cancel(groupLessonId: string, position: LessonBlockPosition, etag: string): Promise<void>
   uploadImage(groupLessonId: string, image: File): Promise<{ url: string }>
+  uploadFile(groupLessonId: string, file: File): Promise<StaffRichFile>
 }
 
 export function createLessonBlockClient(
@@ -131,6 +135,8 @@ export function createLessonBlockClient(
     return { url: imageValue.url }
   }
   return {
+    uploadFile: (groupLessonId, file) =>
+      uploadRichFile(`${parsedRuntime.apiBase}${path(groupLessonId)}/files/uploads`, file, options),
     get: (groupLessonId, signal) =>
       request(
         path(groupLessonId),
