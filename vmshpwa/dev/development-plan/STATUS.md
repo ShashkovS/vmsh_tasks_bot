@@ -13,9 +13,14 @@
 510 schema objects, 9 browser scenarios без retries в Chromium/WebKit/Firefox.
 Прежние оценки больше не обнуляются при перепроверке и в старом oral API;
 дополнительные oral/live-marking regression — 19 passed. План fresh backup,
-cutover и контроля статусов готов. Владелец разрешил commit/push и выпуск:
-ВМШ через webhook, TLF вручную под deploy lock; выпуск начат с revision
-`7259ffd0` / schema 0109, итоговые production checks ожидаются.
+cutover и контроля статусов выполнен. Исправление `dbcde4e1` и deploy fix
+`56654543` отправлены в origin/vmshpwa. ВМШ обновлён webhook, TLF — вручную
+под deploy lock; обе схемы 0110 / 510 product objects. Fresh up/down/up
+rehearsal обоих snapshots проходит. На ВМШ восстановлены 22 зачёта; вся прежняя
+история и manual pointers сохранены, одна настоящая test оценка между backups
+проверена отдельно. TLF: все 156 product tables и 1 002 результата идентичны.
+Production guard 210 ms / 1.9 ms, по 25 public HTTP PASS; writers active,
+maintenance снят. [Доказательства выпуска](../../../pwa_tests/reports/written-result-precedence/production-proof.json).
 
 ## 2026-10-03 — общий выпуск на оба production-портала
 

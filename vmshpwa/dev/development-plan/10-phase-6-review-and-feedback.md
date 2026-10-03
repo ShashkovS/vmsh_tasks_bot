@@ -8,7 +8,8 @@ Migration 0110 и общие текущие чтения реализованы;
 История при перепроверке сохраняется. Up/down/up рабочего снимка, integrity,
 performance guard, указанные случаи и план выпуска —
 [в протоколе](../../../pwa_tests/reports/written-result-precedence/README.md).
-Production не менялся.
+Выпущено на ВМШ/TLF: `dbcde4e1`, migration 0110; backups, production guard
+и по 25 public HTTP checks проходят, writers active, maintenance снят.
 
 Превью вопросов ограничено 280 Unicode code points, как SQLite substr;
 эмодзи не должны блокировать список. [Исправление и тесты](../../docs/support-unicode-excerpts.md).

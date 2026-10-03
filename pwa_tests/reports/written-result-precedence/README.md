@@ -1,14 +1,12 @@
 # Итог письменной проверки — 3 октября 2026
 
 Реализовано по [решению владельца](../../../vmshpwa/docs/written-result-precedence.md).
-Production не менялся; выпуск подготовлен, но не выполнялся.
-
-Владелец затем разрешил commit/push, автоматический выпуск на ВМШ и ручной
-выпуск на TLF. Выпуск начат: исходный revision обоих порталов `7259ffd0`,
-schema head 0109. [Guarded TLF script](deploy_tlf.sh) выполняет backend-only
-cutover под общим deploy lock, fresh backup, up/down/up rehearsal и
-[проверку сохранности данных](verify_database.py) до возврата writers.
-Статический frontend не меняется. Итог выпуска будет записан после smoke.
+Выпущено на [ВМШ](https://vmsh.shashkovs.ru) штатным webhook и на
+[TLF](https://prep.leaders.tech) ручным guarded cutover по разрешению владельца.
+Исправление — [`dbcde4e1`](https://github.com/ShashkovS/vmsh_tasks_bot/commit/dbcde4e1fe94d10135df70053540bcdb15cd5959),
+исправление прав deploy report — `56654543`. Начальный revision обоих порталов
+`7259ffd0`, schema 0109; итог — schema 0110 / 82 migrations / 510 product objects.
+[Машинные доказательства выпуска](production-proof.json).
 
 ## Реализация
 
@@ -103,6 +101,8 @@ Student/Family, Telegram, архив, календарь и up/down/up.
 
 ## Подготовка выпуска
 
+Порядок ниже выполнен 3 октября. Итоговые доказательства — в следующем разделе.
+
 1. Выпустить backend и migration 0110 вместе по действующему
    [production checklist](../../../vmshpwa/docs/production-rollout-checklist.md),
    с остановкой приёма новых writes и завершением текущих транзакций.
@@ -133,3 +133,45 @@ VMSH_NATS_SERVER= .venv/bin/python -m pwa_tests.reports.written-result-precedenc
   --copy .runtime/written-precedence/rehearsal-next.sqlite3 \
   --report .runtime/written-precedence/rehearsal-next.json
 ```
+
+## Выпуск на оба портала
+
+Перед push свежий снимок ВМШ проверен up/down/up отдельно: все 156 product
+tables, 37 540 результатов и 5 567 manual pointers сохранены. Изменились 85
+текущих результатов, 22 перешли в зачёт; guard 83.192 ms. Source не менялся.
+Установленный webhook script пока старее репозиторного и не содержит guard;
+поэтому rehearsal выполнена вручную до push, production guard — отдельно
+после autodeploy: 209.774 ms при лимите 2 s, все 7 views проходят.
+
+ВМШ создал backups `vmsh-before-deploy-20261003192456.sqlite3` и
+`vmsh-after-deploy-20261003192530.sqlite3`. Все 37 544 исходных результатов
+сохранились без изменения; появилась одна настоящая automatic test оценка,
+связанная с активной попыткой и result event. Она объясняет дополнительный
+зачёт между snapshots. Собственно 0110 пересчитала 85 результатов и восстановила
+22 зачёта. Все manual pointers сохранены; integrity ok, FK baseline прежний.
+149 остальных таблиц идентичны; различия остальных семи соответствуют этой
+test попытке, idempotency и обновлению одной auth session между snapshots.
+Strict whole-database comparison running-service backups поэтому заменён
+проверкой сохранности всех прежних строк результатов и provenance новой оценки.
+Backups читались на отдельных writable temporary copies для SQLite WAL sidecars;
+производственные snapshots не изменялись.
+
+Все три указанных случая проверены в production projection: выбран прежний
+более поздний Zoom-плюс 18. Webhook собрал и активировал production frontend
+`dbcde4e1fe94-20261003192354`; четыре provenance artifacts без prototype/MSW.
+PWA и Telegram active, maintenance снят; public smoke — **25 PASS**.
+
+[TLF script](deploy_tlf.sh) работает под `metadata-deploy.lock`, сохраняет
+credentials, NATS PID и прежний static release. Fresh backup, up/down/up
+rehearsal и [сравнение данных](verify_database.py) до открытия writers проходят.
+В rehearsal было 1 001 результатов; в остановленной cutover-копии — 1 002.
+Все 156 product tables и все 1 002 результата сохранились, текущие зачёты
+не изменились; manual pointers в этой базе отсутствуют. Guard **1.873 ms**.
+Backups `20261003T192717.162838Z` / `20261003T192838.095736Z`: integrity ok,
+по 1 091 Zoom receipts. PWA/Zoom/analytics active, maintenance снят;
+public smoke — **25 PASS**. Record:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261003-written-precedence-56654543a830/`.
+
+Первый TLF запуск остановился до maintenance/DB changes из-за владельца файла
+backup report. Скрипт исправлен отдельным commit и повторён; failed record
+сохранён. Credentials, ключи и product data не заменялись.

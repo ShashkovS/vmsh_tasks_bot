@@ -7,7 +7,8 @@
 в `e2e/review-workspace.spec.ts` прошла: 9 scenarios в Chromium/WebKit/Firefox,
 без retries. 48 client/realtime tests, tools types и scoped lint проходят.
 [Решение и репетиция миграции](../../docs/written-result-precedence.md).
-Production не менялся.
+Выпущено на ВМШ/TLF: `dbcde4e1`, migration 0110. По 25 public HTTP checks
+проходят, maintenance снят. [Протокол выпуска](../../../pwa_tests/reports/written-result-precedence/README.md#выпуск-на-оба-портала).
 
 ## 2026-10-03 — общий выпуск на оба production-портала
 
