@@ -2,10 +2,9 @@
 
 ## 2026-10-03 — общий выпуск на оба production-портала
 
-Владелец явно разрешил довести накопленные доработки, прогнать все тесты и
-выпустить на ВМШ/TLF. В работе: общий Python/frontend/Storybook/E2E gate,
-локальные недочёты, migration 0109 rehearsal, проверенный backup и обновление
-обоих серверов с сохранением данных/старых assets. Состав: файловые вложения,
+Выпущен `26e2f7ee` на ВМШ/TLF после полного Python/frontend/Storybook/E2E gate,
+исправления недочётов и migration 0109 rehearsal. Backups проверены, данные
+и старые assets сохранены. Состав: файловые вложения,
 fresh problem sets, metadata reload, счётчики решений и переводы.
 [План и доказательства выпуска](../../../pwa_tests/reports/release-20261003/README.md).
 
@@ -17,8 +16,11 @@ production: up/down/up, integrity, query guard; 157 прежних таблиц 
 Вся browser inventory: 394 PASS + 20 штатных skips, Chromium/WebKit/Firefox;
 ошибки исправлены и проверены, visual baselines просмотрены и повторно
 проверены. Устранена гонка native history при worksheet scroll.
-Все gates пройдены. SSH-доступ восстановлен через существующий системный
-agent; начинается release commit и guarded rollout на оба production.
+Все gates и оба guarded rollout завершены. По 25 HTTP PASS на портал, schema
+507 и production provenance восьми app artifacts проверены. На каждом сервере
+157 прежних таблиц идентичны; все 6779/1940 старых immutable files сохранены.
+PWA/analytics, Telegram ВМШ и Zoom TLF активны; NATS не перезапускался.
+Maintenance снят. SSH agent использован без изменений ключей/config.
 
 ## 2026-10-03 — счётчики решений в письменной проверке
 

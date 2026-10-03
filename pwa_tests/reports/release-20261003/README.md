@@ -4,6 +4,12 @@
 выпуск всех текущих доработок на ВМШ и TLF. Публичные product data и рабочие
 credentials сохраняются. Runtime logs: `.runtime/release-20261003/`.
 
+**Выпущено на оба портала.** Код
+[`26e2f7ee`](https://github.com/ShashkovS/vmsh_tasks_bot/commit/26e2f7eeb8f689e7746274964a422962348f93b4)
+отправлен в `origin/vmshpwa` и выпущен на
+[ВМШ](https://vmsh.shashkovs.ru) и [TLF](https://prep.leaders.tech).
+Все gates и заключительные production checks проходят; данные сохранены.
+
 ## Состав
 
 - [Файловые вложения](../../../vmshpwa/docs/rich-file-attachments.md).
@@ -11,14 +17,13 @@ credentials сохраняются. Runtime logs: `.runtime/release-20261003/`.
 - [Metadata reload, METADATA-05](../../../vmshpwa/dev/development-plan/06-phase-2-content.md).
 - [Счётчики письменных решений и переводы](../../../vmshpwa/docs/review-queue-report.md).
 
-## План и текущий gate
+## Выполненный план
 
-В работе: Python (legacy/PWA), frontend unit, typecheck/lint/format/i18n,
-Storybook, все E2E/browser projects и production build. Исправить конкретные
-сбои, не скрывая их excludes/retries. Затем проверить migration/backup на
-копиях обоих production DB, опубликовать reviewed commit и выполнить
-guarded cutover. Проверить health, services, schema, provenance и assets;
-сохранить records и rollback-порядок.
+Завершены Python (legacy/PWA), frontend unit, typecheck/lint/format/i18n,
+Storybook, все E2E/browser projects и production build. Конкретные сбои
+исправлены без новых excludes/retries. Migration/backup проверены на копиях
+обоих production DB, commit опубликован, guarded cutover выполнен.
+Проверены health, services, schema, provenance и старые assets.
 
 ## Интеграция и текущие проверки
 
@@ -40,7 +45,7 @@ fingerprints по-прежнему отклоняются и локализац�
 эти прогоны остановлены. Frozen install восстановлен, полные suites перезапущены.
 Тестовые данные, ports и credentials изолированы от production.
 
-Все gates пройдены; release commit готовится. Production cutover ещё не выполнялся.
+Все gates пройдены; release commit и оба production cutover завершены.
 
 Frontend unit: **1021/1021**, все 201 файла. Workspace typecheck, frontend/backend
 i18n, schema inventory (507), full ESLint/Stylelint проходят. Prettier нашёл
@@ -75,11 +80,11 @@ Storybook: полный прогон **350 passed / 2 failures** из 352. Ис�
 Логи: `preflight-{vmsh,tlf}-final.log`; серверные before/after/performance JSON
 сохранены в каталоге репетиции.
 
-## E2E (в работе)
+## E2E — исходный прогон и исправления
 
 Стартовал lock-aware all runner: четыре build, 396 функциональных сценариев,
 затем отдельные fresh-db phases для figure/statistics/visual; три браузера,
-retries=0, baselines не обновляются. Найдены два тестовых недочёта:
+retries=0, исходный прогон без обновления baselines. Найдены два тестовых недочёта:
 recovery test удалял cookie до окончания initial authenticated reads и отменял
 собственный background refresh; добавлен wait конкретных успешных responses.
 Attendance test выбирал первую карточку вместо c-1 после создания другого курса
@@ -98,11 +103,11 @@ Production auth и file rendering не менялись. Повторный targ
 Print fixture проверяет оба допустимых названия: thread меняет подпись кнопки.
 
 Повторный полный Python run после устранения failures:
-**2687 passed, 7 skipped**, 798.40 s. Начат финальный полный frontend run
-после исправления scroll restoration. Исправленные auth/storage (12),
+**2687 passed, 7 skipped**, 798.40 s. Финальный полный frontend run
+после исправления scroll restoration: **1024 passed**. Исправленные auth/storage (12),
 attendance (3) и rich files (9) browser scenarios проходят во всех трёх projects.
 
-## Финальные gates перед выпуском
+## Финальные gates
 
 - Python: **2687 passed / 7 skipped**, полный общий suite после исправлений.
 - Frontend: **202 файла / 1024 passed**, полный повторный unit suite после scroll fix.
@@ -133,3 +138,49 @@ types + scoped lint/Ruff проходят.
 rehearsal и asset inventory, перестала работать на обоих aliases. Рабочие
 services/schema/static ещё не менялись; доступ восстановлен через существующий системный SSH-agent (launchd socket).
 Выпуск продолжен, ключи и SSH config не менялись.
+
+## Production cutover и заключительная проверка
+
+ВМШ обновлён установленным root-owned webhook deploy. TLF обновлён
+[проверенным deployment script](deploy_tlf.sh), который собирает отдельно
+все четыре production bundles и сохраняет credentials/данные/NATS.
+Source commit на обоих при проверке — `26e2f7eeb8f689e7746274964a422962348f93b4`.
+
+| Проверка               | ВМШ                               | TLF                                          |
+| ---------------------- | --------------------------------- | -------------------------------------------- |
+| Static release         | `26e2f7eeb8f6-20261003141241`     | `tlfprep-20261003-fresh-review-26e2f7eeb8f6` |
+| Public HTTP smoke      | 25 PASS                           | 25 PASS                                      |
+| Migration/schema       | 0109 / 507 objects                | 0109 / 507 objects                           |
+| Прежние таблицы        | 157 идентичны                     | 157 идентичны                                |
+| Старые immutable files | 6779, все bytes/digests сохранены | 1940, все bytes/digests сохранены            |
+| NATS PID               | 1409, не менялся                  | 1936264, не менялся                          |
+| Maintenance            | снят                              | снят                                         |
+
+Schema SHA-256 на обоих совпадает с committed inventory:
+`2483f27bdcee51e47a8c08f9ba175ed658c2773a0d936f589d6667ae8274a14c`.
+Public provenance всех восьми app artifacts: production profile, корректный
+media origin и Sentry; MSW/prototype=false. По одному старому JS каждого
+приложения дополнительно получено по HTTP: 200 и прежний SHA-256.
+
+PWA и analytics timer активны на обоих серверах; Telegram/gunicorn на ВМШ
+и Zoom на TLF активны. Zoom receipts TLF: 1090 до и после, credentials checksum
+не изменился. ВМШ NATS управляется прежним процессом, его unit не менялся.
+
+ВМШ before/after backups:
+`/web/vmsh_tasks_bot/backups/vmsh-before-deploy-20261003141345.sqlite3` и
+`vmsh-after-deploy-20261003141412.sqlite3`; integrity ok, 157 прежних таблиц
+полностью идентичны. Digests сохранены в server preflight record как
+`deployment-{before,after}.json`.
+TLF backup receipts: `20261003T141514.735770Z` и `20261003T141655.390428Z`,
+integrity ok. Record:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261003-fresh-review-26e2f7eeb8f6`.
+
+Локальные подтверждения: `proof-{vmshbeget,vmsh}-final.json`,
+`vmsh-backup-data-proof.json`, `provenance-final.json`,
+`assets-{vmsh,tlf}-{before,after}.json`, `old-assets-http-final.json`,
+`http-vmsh-final.log` и `deploy-tlf.log` в runtime logs.
+
+Rollback: прежние static releases и backups сохранены. После появления
+использованных fresh slots migration 0109 запрещает down, чтобы не потерять
+отображаемые исторические номера; сохраняются новый backend/schema и прежний
+совместимый frontend. Рабочая БД не подменяется старым snapshot.

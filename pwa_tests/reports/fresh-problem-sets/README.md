@@ -69,3 +69,9 @@ Storage: [repository](../../../db_methods/pwa/content.py),
 migration 0109 и новый Staff bundle; backend/schema устанавливаются перед UI.
 Rollback 0109 разрешён до первого использования. После появления slot-записей
 его guard запрещает удаление отображаемых идентичностей и архива.
+
+## Выпуск — 3 октября 2026
+
+Выпущено на ВМШ/TLF в `26e2f7ee` вместе с migration 0109 после уже выпущенной 0108. Актуальная schema — 507 объектов; production миграция сохранила
+все 157 прежних таблиц на каждом сервере. Полные tests, backups, services
+и rollout records: [общий протокол](../release-20261003/README.md).
