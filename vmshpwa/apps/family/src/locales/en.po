@@ -1,0 +1,776 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-18 22:22+0300\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. placeholder {0}: progress.summary.awaitingReview
+#: apps/family/src/family-children-page.tsx
+msgid " · ждут проверки: {0}"
+msgstr " · awaiting review: {0}"
+
+#. placeholder {0}: currentLesson.problemCount
+#: apps/family/src/family-children-page.tsx
+msgid "{0} задач в листке"
+msgstr "{0} problems in the worksheet"
+
+#. placeholder {0}: progress.summary.accepted
+#. placeholder {1}: progress.summary.attempted
+#: apps/family/src/family-children-page.tsx
+msgid "{0} зачтено из {1} задач"
+msgstr "{0} of {1} problems accepted"
+
+#. placeholder {0}: lesson.accepted
+#. placeholder {1}: lesson.attempted
+#: apps/family/src/family-children-page.tsx
+msgid "{0} из {1} зачтено"
+msgstr "{0} of {1} accepted"
+
+#. placeholder {0}: student.grade
+#: apps/family/src/family-children-page.tsx
+msgid "{0} класс"
+msgstr "Grade {0}"
+
+#: apps/family/src/main.tsx
+msgid "{brandName} — кабинет родителя"
+msgstr "{brandName} — Family"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "{group} · занятие {lesson}"
+msgstr "{group} · lesson {lesson}"
+
+#: apps/family/src/pages.tsx
+msgid "1 из 4 задач зачтена"
+msgstr "1 of 4 problems accepted"
+
+#: apps/family/src/pages.tsx
+msgid "25 января, 18:40"
+msgstr "January 25, 6:40 PM"
+
+#: apps/family/src/pages.tsx
+msgid "25 января, 21:04"
+msgstr "January 25, 9:04 PM"
+
+#: apps/family/src/pages.tsx
+msgid "26 января"
+msgstr "January 26"
+
+#: apps/family/src/pages.tsx
+msgid "26 января, 12:30"
+msgstr "January 26, 12:30 PM"
+
+#: apps/family/src/pages.tsx
+msgid "26 января, 16:30"
+msgstr "January 26, 4:30 PM"
+
+#: apps/family/src/pages.tsx
+msgid "29 января"
+msgstr "January 29"
+
+#: apps/family/src/pages.tsx
+msgid "3 задачи зачтено"
+msgstr "3 problems accepted"
+
+#: apps/family/src/pages.tsx
+msgid "3 из 12 задач зачтено"
+msgstr "3 of 12 problems accepted"
+
+#: apps/family/src/pages.tsx
+msgid "5 задач зачтено"
+msgstr "5 problems accepted"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Push пока недоступны"
+msgstr "Push is not available yet"
+
+#. placeholder {0}: copy.title
+#: apps/family/src/family-notifications-page.tsx
+msgid "Push: {0}"
+msgstr "Push: {0}"
+
+#: apps/family/src/pages.tsx
+msgid "Telegram-публикации и объявления для родителей."
+msgstr "Telegram posts and announcements for parents."
+
+#: apps/family/src/login-page.tsx
+msgid "Аккаунт родителя не связан с Telegram и не использует пароль ребёнка."
+msgstr "The parent account is not linked to Telegram and does not use the child's password."
+
+#: apps/family/src/pages.tsx
+msgid "Активность ребёнка"
+msgstr "Child's activity"
+
+#: apps/family/src/pages.tsx
+msgid "Василий · последняя активность сегодня в 12:08"
+msgstr "Василий · last active today at 12:08 PM"
+
+#: apps/family/src/pages.tsx
+msgid "ВМШ 179"
+msgstr "VMSh 179"
+
+#: apps/family/src/login-page.tsx
+msgid "Войти"
+msgstr "Sign in"
+
+#: apps/family/src/pages.tsx
+msgid "воскресенья, 13:00 МСК"
+msgstr "Sunday, 1:00 PM Moscow time"
+
+#: apps/family/src/login-page.tsx
+msgid "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
+msgstr "Sign-in for this account is unavailable right now. Please contact the administrators."
+
+#: apps/family/src/login-page.tsx
+msgid "Входим…"
+msgstr "Signing in…"
+
+#: apps/family/src/pages.tsx
+msgid "Выберите, какие уведомления получать, и подключите это устройство."
+msgstr "Choose which notifications to receive and connect this device."
+
+#: apps/family/src/main.tsx
+msgid "Готовим работу без сети"
+msgstr "Preparing offline mode"
+
+#: apps/family/src/content-page.tsx
+#: apps/family/src/family-children-page.tsx
+msgid "Группа"
+msgstr "Group"
+
+#: apps/family/src/content-page.tsx
+msgid "Группа листка"
+msgstr "Worksheet group"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Дедлайн"
+msgstr "Deadline"
+
+#: apps/family/src/family-children-page.tsx
+#: apps/family/src/pages.tsx
+#: apps/family/src/routes/__root.tsx
+msgid "Дети"
+msgstr "Children"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Достижения"
+msgstr "Achievements"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Достижения курса"
+msgstr "Course achievements"
+
+#. placeholder {0}: enrollment.allowedGroups.length
+#: apps/family/src/family-children-page.tsx
+msgid "Доступно групп: {0}"
+msgstr "Groups available: {0}"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Доступно обновление."
+msgstr "An update is available."
+
+#: apps/family/src/pages.tsx
+msgid "ждёт дополнения"
+msgstr "needs more work"
+
+#: apps/family/src/family-news-page.tsx
+msgid "Загружаем…"
+msgstr "Loading…"
+
+#: apps/family/src/family-home-page.tsx
+msgid "Задать вопрос организаторам"
+msgstr "Ask the organizers"
+
+#. placeholder {0}: selectedProblem.taskReference ?? selectedProblem.ordinal
+#. placeholder {1}: selectedProblem.title ? ` «${selectedProblem.title}»` : ''
+#: apps/family/src/content-page.tsx
+msgid "Задача {0}.{1}"
+msgstr "Problem {0}.{1}"
+
+#: apps/family/src/content-page.tsx
+#: apps/family/src/pages.tsx
+msgid "Задача {taskId}"
+msgstr "Problem {taskId}"
+
+#: apps/family/src/content-page.tsx
+msgid "Задача не найдена"
+msgstr "Problem not found"
+
+#: apps/family/src/content-page.tsx
+msgid "Задачи ещё не опубликованы."
+msgstr "Problems have not been published yet."
+
+#: apps/family/src/pages.tsx
+msgid "задачи зачтено"
+msgstr "problems accepted"
+
+#: apps/family/src/content-page.tsx
+msgid "Задачи скоро откроются."
+msgstr "Tasks will open soon."
+
+#: apps/family/src/pwa-update.tsx
+msgid "Закрыть"
+msgstr "Close"
+
+#. placeholder {0}: currentLesson.lessonNumber
+#. placeholder {0}: lesson.lessonNumber
+#: apps/family/src/family-children-page.tsx
+msgid "Занятие {0}"
+msgstr "Lesson {0}"
+
+#: apps/family/src/content-page.tsx
+msgid "Занятие {lessonNumber}"
+msgstr "Lesson {lessonNumber}"
+
+#: apps/family/src/pages.tsx
+msgid "Занятие 41"
+msgstr "Class 41"
+
+#: apps/family/src/pages.tsx
+msgid "Зачтено"
+msgstr "Accepted"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Звук только с 9:00 до 21:00"
+msgstr "Sound only from 9:00 to 21:00"
+
+#: apps/family/src/pages.tsx
+msgid "Здесь нельзя отвечать за ребёнка или влиять на его статистику."
+msgstr "You cannot submit answers for your child or change their statistics here."
+
+#: apps/family/src/family-children-page.tsx
+msgid "Изменить"
+msgstr "Change"
+
+#: apps/family/src/family-children-page.tsx
+msgid "История курса"
+msgstr "Course history"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Итоги занятия"
+msgstr "Lesson summary"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Итоги занятия готовы"
+msgstr "Lesson summary is ready"
+
+#: apps/family/src/family-home-page.tsx
+#: apps/family/src/login-page.tsx
+msgid "Кабинет родителя"
+msgstr "Parent account"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Категории"
+msgstr "Categories"
+
+#: apps/family/src/family-home-page.tsx
+msgid "Когда администратор добавит группу в очное событие, оно появится здесь."
+msgstr "When an administrator adds a group to an in-person event, it will appear here."
+
+#: apps/family/src/family-children-page.tsx
+msgid "Когда ребёнка добавят на курс, он появится здесь."
+msgstr "When the child is added to a course, it will appear here."
+
+#: apps/family/src/pages.tsx
+msgid "Курсы"
+msgstr "Courses"
+
+#: apps/family/src/content-page.tsx
+msgid "Листок"
+msgstr "Worksheet"
+
+#: apps/family/src/content-page.tsx
+msgid "Листок пока недоступен"
+msgstr "The worksheet is not available yet"
+
+#: apps/family/src/login-page.tsx
+msgid "Логин"
+msgstr "Login"
+
+#: apps/family/src/login-page.tsx
+msgid "Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз."
+msgstr "The login or password is incorrect. Check the keyboard layout and try again."
+
+#: apps/family/src/main.tsx
+msgid "Локальное хранилище сейчас недоступно. Чтобы не потерять сохранённые материалы, кабинет не открыт."
+msgstr "Local storage is unavailable right now. To avoid losing saved materials, your account is not opened."
+
+#: apps/family/src/content-page.tsx
+msgid "Материал пока закрыт"
+msgstr "The material is not available yet"
+
+#: apps/family/src/content-page.tsx
+msgid "На проверке"
+msgstr "Under review"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "На этом устройстве"
+msgstr "On this device"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Напоминание о публикации решений"
+msgstr "Reminder to publish solutions"
+
+#: apps/family/src/pages.tsx
+msgid "Настроить уведомления"
+msgstr "Notification settings"
+
+#: apps/family/src/pages.tsx
+msgid "Начинающие · очно"
+msgstr "Начинающие · in person"
+
+#: apps/family/src/content-page.tsx
+msgid "Не выбран ребёнок"
+msgstr "No child selected"
+
+#: apps/family/src/content-page.tsx
+msgid "Не начата"
+msgstr "Not started"
+
+#: apps/family/src/pages.tsx
+msgid "Не начато"
+msgstr "Not started"
+
+#: apps/family/src/login-page.tsx
+msgid "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
+msgstr "Could not complete sign-in securely. Try again or contact the administrators."
+
+#: apps/family/src/login-page.tsx
+msgid "Не удалось войти"
+msgstr "Could not sign in"
+
+#: apps/family/src/content-page.tsx
+msgid "Не удалось загрузить данные ребёнка. Попробуйте ещё раз."
+msgstr "Could not load the child's data. Please try again."
+
+#: apps/family/src/content-page.tsx
+msgid "Не удалось загрузить материал. Попробуйте ещё раз."
+msgstr "Could not load the material. Please try again."
+
+#: apps/family/src/content-page.tsx
+msgid "Не удалось загрузить условия и оценки. Попробуйте ещё раз."
+msgstr "Could not load the statements and grades. Please try again."
+
+#: apps/family/src/main.tsx
+msgid "Не удалось подготовить работу без сети"
+msgstr "Could not prepare offline mode"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Не удалось применить обновление. Попробуйте ещё раз."
+msgstr "Could not apply the update. Please try again."
+
+#: apps/family/src/login-page.tsx
+msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
+msgstr "Could not reach the server. Check the internet connection and try again."
+
+#: apps/family/src/family-children-page.tsx
+msgid "Не удалось сохранить. Обновите страницу и попробуйте ещё раз."
+msgstr "Could not save. Refresh the page and try again."
+
+#: apps/family/src/content-page.tsx
+msgid "Не указан опубликованный листок"
+msgstr "No published worksheet is specified"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Нет активных курсов"
+msgstr "No active courses"
+
+#: apps/family/src/family-home-page.tsx
+msgid "Нет доступного профиля ребёнка"
+msgstr "No child profile is available"
+
+#: apps/family/src/family-children-page.tsx
+#: apps/family/src/pages.tsx
+#: apps/family/src/routes/profile.index.tsx
+msgid "Нет связанных детей"
+msgstr "No linked children"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Новое занятие пока не опубликовано"
+msgstr "The new lesson has not been published yet"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Новое событие"
+msgstr "New event"
+
+#: apps/family/src/family-news-page.tsx
+#: apps/family/src/family-notifications-page.tsx
+#: apps/family/src/pages.tsx
+#: apps/family/src/routes/__root.tsx
+msgid "Новости"
+msgstr "News"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Новости и материалы всегда остаются в кабинете. Push можно настроить отдельно."
+msgstr "News and materials always remain in the account. Push can be configured separately."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Новости кружка"
+msgstr "Club news"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Новые материалы"
+msgstr "New materials"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Новые материалы всё равно будут видны в кабинете."
+msgstr "New materials will still be visible in the account."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Новые материалы, новости и итог занятия появятся здесь."
+msgstr "New materials, news, and the lesson summary will appear here."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Новый урок"
+msgstr "New lesson"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Ночью новые события остаются видны, но не будят вас."
+msgstr "New events remain visible at night, but they will not wake you."
+
+#: apps/family/src/pages.tsx
+msgid "Нужно дополнить"
+msgstr "Needs more work"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Обновить сейчас"
+msgstr "Update now"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Обновляем…"
+msgstr "Updating…"
+
+#: apps/family/src/family-children-page.tsx
+#: apps/family/src/family-home-page.tsx
+msgid "Обратитесь к администратору кружка, чтобы связать аккаунт с ребёнком."
+msgstr "Ask the club administrator to link this account to a child."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Объявление"
+msgstr "Announcement"
+
+#: apps/family/src/family-home-page.tsx
+msgid "Объявления"
+msgstr "Announcements"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Объявления группы"
+msgstr "Group announcements"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Один итог после завершения всей проверки"
+msgstr "One summary after all marking is complete"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Онлайн"
+msgstr "Online"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Опубликованы подсказки к задачам"
+msgstr "Problem hints have been published"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Опубликованы решения занятия"
+msgstr "Lesson solutions have been published"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Основной профиль"
+msgstr "Primary profile"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Ответ в вашем личном обращении"
+msgstr "A reply in your personal request"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Ответ организаторов"
+msgstr "Reply from the organizers"
+
+#: apps/family/src/pages.tsx
+msgid "ответа на проверке"
+msgstr "answers awaiting review"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Отдельные push о каждой проверенной задаче ребёнка родителю не отправляются."
+msgstr "Parents do not receive a separate push notification for every problem marked for their child."
+
+#: apps/family/src/content-page.tsx
+msgid "Откройте задачу из опубликованного листка ребёнка."
+msgstr "Open a problem from the child's published worksheet."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Откройте кабинет"
+msgstr "Open the account"
+
+#: apps/family/src/family-children-page.tsx
+#: apps/family/src/pages.tsx
+msgid "Открыть"
+msgstr "Open"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Открыть листок"
+msgstr "Open worksheet"
+
+#: apps/family/src/family-news-page.tsx
+msgid "Открыть публикацию"
+msgstr "Open post"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Очно"
+msgstr "In person"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Очно в школе"
+msgstr "In person at school"
+
+#: apps/family/src/pages.tsx
+msgid "Очное участие"
+msgstr "In-person attendance"
+
+#: apps/family/src/family-home-page.tsx
+msgid "Очные занятия"
+msgstr "In-person lessons"
+
+#: apps/family/src/family-home-page.tsx
+msgid "Очные занятия пока не запланированы"
+msgstr "No in-person lessons are scheduled yet"
+
+#: apps/family/src/login-page.tsx
+msgid "Пароль"
+msgstr "Password"
+
+#: apps/family/src/content-page.tsx
+#: apps/family/src/family-children-page.tsx
+#: apps/family/src/family-home-page.tsx
+#: apps/family/src/family-news-page.tsx
+#: apps/family/src/family-notifications-page.tsx
+#: apps/family/src/pages.tsx
+msgid "Повторить"
+msgstr "Try again"
+
+#: apps/family/src/content-page.tsx
+msgid "Подсказка"
+msgstr "Hint"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Подсказки"
+msgstr "Hints"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Подтвердить изменения"
+msgstr "Confirm changes"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Пока пусто"
+msgstr "Nothing here yet"
+
+#: apps/family/src/family-news-page.tsx
+msgid "Показать более ранние"
+msgstr "Show earlier"
+
+#: apps/family/src/login-page.tsx
+msgid "Показать пароль"
+msgstr "Show password"
+
+#: apps/family/src/pages.tsx
+msgid "Помощь"
+msgstr "Help"
+
+#: apps/family/src/login-page.tsx
+msgid "Помощь: <0>{supportEmail}</0>"
+msgstr "Help: <0>{supportEmail}</0>"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Последние события"
+msgstr "Recent events"
+
+#: apps/family/src/pages.tsx
+msgid "Последняя проверка"
+msgstr "Latest review"
+
+#: apps/family/src/pages.tsx
+msgid "Постоянный режим: очно"
+msgstr "Default mode: in person"
+
+#: apps/family/src/pages.tsx
+msgid "При изменении автор и время сохраняются. Если ребёнок не придёт, освободите место заранее."
+msgstr "Changes record the author and time. If your child cannot attend, release the seat in advance."
+
+#: apps/family/src/family-children-page.tsx
+msgid "При очном формате организаторы резервируют место, печатают условия и распределяют преподавателей. Если ребёнок не придёт, выберите онлайн."
+msgstr "For in-person attendance, the organizers reserve a place, print the statements, and assign teachers. If the child will not attend, select online."
+
+#: apps/family/src/pwa-update.tsx
+msgid "Приложение готово к работе без сети"
+msgstr "The app is ready to work offline"
+
+#: apps/family/src/routes/login.tsx
+msgid "Проверяем вход"
+msgstr "Checking sign-in"
+
+#: apps/family/src/main.tsx
+msgid "Проверяем сохранённые материалы на этом устройстве."
+msgstr "Checking saved materials on this device."
+
+#: apps/family/src/routes/login.tsx
+msgid "Проверяем, выполнен ли вход на этом устройстве."
+msgstr "Checking whether you are signed in on this device."
+
+#: apps/family/src/pages.tsx
+msgid "Продолжающие · online"
+msgstr "Продолжающие · online"
+
+#: apps/family/src/family-notifications-page.tsx
+#: apps/family/src/pages.tsx
+#: apps/family/src/routes/__root.tsx
+msgid "Профиль"
+msgstr "Profile"
+
+#: apps/family/src/pages.tsx
+msgid "Профиль {childId} · начинающие · очно"
+msgstr "Profile {childId} · начинающие · in person"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Публикации кружка"
+msgstr "Club posts"
+
+#: apps/family/src/family-news-page.tsx
+msgid "Публикации курсов и групп, доступных вашим детям."
+msgstr "Posts from courses and groups available to your children."
+
+#: apps/family/src/family-news-page.tsx
+#: apps/family/src/pages.tsx
+msgid "Публикация"
+msgstr "Post"
+
+#: apps/family/src/pages.tsx
+msgid "Публикация {postId}"
+msgstr "Post {postId}"
+
+#: apps/family/src/family-children-page.tsx
+#: apps/family/src/family-home-page.tsx
+#: apps/family/src/pages.tsx
+msgid "Ребёнок"
+msgstr "Child"
+
+#: apps/family/src/pages.tsx
+msgid "Режим просмотра родителя"
+msgstr "Parent viewing mode"
+
+#: apps/family/src/pages.tsx
+msgid "Режим, занятие и прогресс показаны отдельно для каждого курса."
+msgstr "Attendance mode, class, and progress are shown separately for each course."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Результаты ребёнка уже доступны в кабинете"
+msgstr "The child's results are already available in the account"
+
+#: apps/family/src/pages.tsx
+msgid "Решает задачи · до воскресенья, 13:00 МСК"
+msgstr "Solving problems · until Sunday, 1:00 PM Moscow time"
+
+#: apps/family/src/content-page.tsx
+msgid "Решение"
+msgstr "Solution"
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Решения"
+msgstr "Solutions"
+
+#: apps/family/src/routes/__root.tsx
+msgid "Родитель"
+msgstr "Parent"
+
+#: apps/family/src/pages.tsx
+msgid "Связанные дети"
+msgstr "Linked children"
+
+#: apps/family/src/pages.tsx
+#: apps/family/src/routes/__root.tsx
+msgid "Сейчас"
+msgstr "Now"
+
+#: apps/family/src/pwa-update.tsx
+msgid "Скрыть"
+msgstr "Hide"
+
+#: apps/family/src/login-page.tsx
+msgid "Скрыть пароль"
+msgstr "Hide password"
+
+#: apps/family/src/login-page.tsx
+msgid "Слишком много попыток. Подождите немного и попробуйте ещё раз."
+msgstr "Too many attempts. Wait a little and try again."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Сообщение для группы ребёнка"
+msgstr "Message for the child's group"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Сохраняем…"
+msgstr "Saving…"
+
+#: apps/family/src/routes/__root.tsx
+msgid "Страница не найдена"
+msgstr "Page not found"
+
+#: apps/family/src/family-home-page.tsx
+#: apps/family/src/pages.tsx
+msgid "Текущие занятия"
+msgstr "Current lessons"
+
+#: apps/family/src/pages.tsx
+msgid "Только чтение: сдача и реакции доступны в кабинете ребёнка."
+msgstr "Read-only: submissions and reactions are available in the child's account."
+
+#: apps/family/src/content-page.tsx
+msgid "У аккаунта родителя нет доступного профиля ребёнка."
+msgstr "The parent account has no available child profile."
+
+#: apps/family/src/family-notifications-page.tsx
+#: apps/family/src/pages.tsx
+msgid "Уведомления"
+msgstr "Notifications"
+
+#: apps/family/src/content-page.tsx
+msgid "Условие"
+msgstr "Statement"
+
+#: apps/family/src/pages.tsx
+msgid "Условие опубликовано"
+msgstr "Statement published"
+
+#: apps/family/src/content-page.tsx
+msgid "Условие этого занятия для выбранной группы ещё не опубликовано."
+msgstr "The statement for this lesson has not been published for the selected group yet."
+
+#: apps/family/src/family-notifications-page.tsx
+msgid "Условия нового занятия"
+msgstr "New lesson statements"
+
+#: apps/family/src/family-children-page.tsx
+msgid "Формат занятий"
+msgstr "Attendance format"
+
+#: apps/family/src/pages.tsx
+msgid "через 2 дня"
+msgstr "in 2 days"
+
+#: apps/family/src/content-page.tsx
+msgid "Эта группа недоступна выбранному ребёнку."
+msgstr "This group is not available to the selected child."
+
+#: apps/family/src/content-page.tsx
+msgid "Этот материал ещё не опубликован для выбранной группы ребёнка."
+msgstr "This material has not been published for the selected child's group yet."
+
+#: apps/family/src/family-children-page.tsx
+msgid "Этот профиль не связан с вашей учётной записью."
+msgstr "This profile is not linked to your account."

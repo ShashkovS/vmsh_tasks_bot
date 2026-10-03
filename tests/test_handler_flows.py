@@ -117,6 +117,41 @@ async def test_student_auth_selects_test_problem_and_submits_correct_answer(isol
 
 
 @pytest.mark.asyncio
+async def test_broken_test_checker_does_not_create_false_wrong_result(isolated_db, fake_bot):
+    student = User.get_by_id(isolated_db["students"][0]["id"])
+    problem = Problem(
+        group_id="н",
+        lesson=4,
+        prob=16,
+        item="",
+        title="Задача с временно сломанной проверкой",
+        prob_text="",
+        prob_type=1,
+        ans_type=99,
+        ans_validation="",
+        validation_error="Введите строку",
+        cor_ans="",
+        cor_ans_checker="def check(answer):\n    return missing_name(answer)",
+        wrong_ans="Нет",
+        congrat="Да",
+    )
+
+    await student_handlers.check_answer_and_react(student.chat_id, problem, student, "179")
+    await _flush_tasks()
+
+    rows = db.sql.conn.execute(
+        "select * from results where student_id = :student_id and problem_id = :problem_id",
+        {"student_id": student.id, "problem_id": problem.id},
+    ).fetchall()
+    student_messages = [
+        message.text for message in fake_bot.sent_messages if message.chat.id == student.chat_id
+    ]
+    assert rows == []
+    assert "Ответ принят и ожидает настройки проверки." in student_messages
+    assert State.get_by_user_id(student.id)["state"] == STATE.GET_TASK_INFO
+
+
+@pytest.mark.asyncio
 async def test_student_written_submission_creates_discussion_and_queue(isolated_db, fake_bot):
     student = User.get_by_id(isolated_db["students"][4]["id"])
     written_problem = Problem.get_by_key("н", 4, 11, "")

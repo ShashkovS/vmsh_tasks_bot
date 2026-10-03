@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-07-30",
+  "sourceDatabase": {
+    "path": "db/vmsh.db",
+    "bytes": 76075008,
+    "sha256": "a9cf42cb67e9d2d614b93a43e2f413be3c93fbaacec88f1988a9a03af6bb7dc3",
+    "access": "read-only"
+  },
+  "workbook": {
+    "path": "_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx",
+    "bytes": 257936,
+    "sha256": "6c79d4c0f4fd6090e58be67f961f5edc352d21ff8eb584f3e56dc5297dc00df5"
+  },
+  "disposableCopy": {
+    "migrationCount": 69,
+    "integrityCheck": "ok",
+    "course": "course-math-5-7",
+    "mappedGroups": 4,
+    "storedProblems": 1813
+  },
+  "comparison": {
+    "rows": 1813,
+    "create": 0,
+    "update": 0,
+    "unchanged": 1813,
+    "invalid": 0,
+    "diagnostics": 0
+  },
+  "containsStudentOrStaffData": false
+}

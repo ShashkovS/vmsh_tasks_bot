@@ -1,0 +1,1 @@
+drop table if exists classroom_assignment_delivery_retries;

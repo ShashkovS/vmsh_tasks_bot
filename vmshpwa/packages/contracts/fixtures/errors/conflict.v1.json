@@ -1,0 +1,16 @@
+{
+  "fixtureVersion": 1,
+  "httpStatus": 409,
+  "response": {
+    "error": {
+      "code": "version_conflict",
+      "message": "Данные изменились. Обновите страницу и повторите действие",
+      "requestId": "fixture-error-conflict-v1",
+      "details": {
+        "resource": "classroom-layout",
+        "expectedVersion": 7,
+        "actualVersion": 8
+      }
+    }
+  }
+}

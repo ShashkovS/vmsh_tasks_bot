@@ -1,0 +1,12 @@
+-- depends: 0053.pwa_submission_review_annotations
+
+drop trigger submission_review_internal_reaction_events_delete_forbidden;
+drop trigger submission_review_internal_reaction_events_immutable_update;
+drop trigger submission_review_internal_reaction_events_scope_insert;
+drop index submission_review_internal_reaction_events_review_idx;
+drop table submission_review_internal_reaction_events;
+
+drop trigger submission_review_internal_reactions_delete_forbidden;
+drop trigger submission_review_internal_reactions_update_guard;
+drop trigger submission_review_internal_reactions_scope_insert;
+drop table submission_review_internal_reactions;

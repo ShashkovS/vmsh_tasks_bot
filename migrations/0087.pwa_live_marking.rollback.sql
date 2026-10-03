@@ -1,0 +1,14 @@
+DROP VIEW effective_results;
+DROP TRIGGER live_results_delete;
+DROP TRIGGER live_results_update;
+DROP TRIGGER live_results_insert;
+DROP TABLE live_mark_operations;
+DROP TABLE live_attendance;
+DROP TABLE live_mark_results;
+DROP TRIGGER live_cell_update;
+DROP TRIGGER live_cell_insert;
+DROP TABLE live_mark_clock;
+DROP TABLE live_mark_cells;
+DROP TABLE live_mark_visits;
+DROP TABLE live_mark_sessions;
+DELETE FROM reaction_enum WHERE reaction_id IN (304,305);

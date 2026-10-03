@@ -1,0 +1,18 @@
+{
+  "name": "@vmsh/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@lingui/core": "catalog:",
+    "@lingui/message-utils": "catalog:",
+    "@lingui/react": "catalog:",
+    "react": "catalog:"
+  }
+}

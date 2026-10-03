@@ -1,0 +1,62 @@
+{
+  "fixtureVersion": 1,
+  "request": {
+    "schemaVersion": 1,
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-repaired",
+      "configVersion": 2
+    }
+  },
+  "preview": {
+    "schemaVersion": 1,
+    "problemId": "problem-fixture-test",
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-repaired",
+      "configVersion": 2
+    },
+    "pendingAttempts": 3,
+    "problem": {
+      "displayNumber": "1н.6",
+      "title": "Числа в ряд",
+      "correctAnswer": "29"
+    },
+    "students": 2,
+    "updatesRequired": 3,
+    "verdictChanges": 2,
+    "becameCorrect": 1,
+    "becameWrong": 1,
+    "formatChanges": 0,
+    "invalidFormat": 0,
+    "pendingConfiguration": 1,
+    "checkerFailed": 0,
+    "messageChanges": 3,
+    "requestId": "request-fixture-recheck-preview"
+  },
+  "response": {
+    "schemaVersion": 1,
+    "problemId": "problem-fixture-test",
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-repaired",
+      "configVersion": 2
+    },
+    "pendingBefore": 3,
+    "checked": 2,
+    "correct": 1,
+    "wrong": 1,
+    "stillPending": 1,
+    "skippedConcurrent": 0,
+    "scannedAttempts": 3,
+    "updatedAttempts": 2,
+    "unchangedAttempts": 1,
+    "verdictChanges": 2,
+    "becameCorrect": 1,
+    "becameWrong": 1,
+    "formatChanges": 0,
+    "invalidFormat": 0,
+    "pendingConfiguration": 1,
+    "checkerFailed": 0,
+    "messageChanges": 2,
+    "threadInvalidationKey": "problems/problem-fixture-test/test-attempts",
+    "requestId": "request-fixture-recheck"
+  }
+}

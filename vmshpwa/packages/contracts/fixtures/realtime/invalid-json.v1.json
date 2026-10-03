@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": 1,
+  "response": {
+    "type": "error",
+    "cursor": 0,
+    "serverTime": "2026-07-27T12:00:00Z",
+    "code": "invalid_json",
+    "message": "Сообщение WebSocket должно быть корректным JSON",
+    "requestId": "fixture-realtime-invalid-json-v1"
+  }
+}

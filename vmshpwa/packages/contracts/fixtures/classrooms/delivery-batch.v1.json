@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "batch": {
+    "publicId": "classroom-delivery.41",
+    "planPublicId": "classroom-plan.41",
+    "planVersion": 3,
+    "previewHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "channels": ["pwa", "telegram"],
+    "recipientCount": 3,
+    "changedCount": 1,
+    "state": "queued",
+    "createdAt": "2026-02-01T07:00:00Z",
+    "completedAt": null,
+    "version": 1,
+    "channelCounts": {
+      "pwa": { "sent": 3 },
+      "telegram": { "queued": 2, "suppressed": 1 }
+    },
+    "deliveryReport": {
+      "channels": {
+        "pwa": {
+          "selected": 3,
+          "eligible": 3,
+          "suppressed": 0,
+          "queued": 0,
+          "attempted": 3,
+          "succeeded": 3,
+          "failed": 0
+        },
+        "telegram": {
+          "selected": 3,
+          "eligible": 2,
+          "suppressed": 1,
+          "queued": 2,
+          "attempted": 0,
+          "succeeded": 0,
+          "failed": 0
+        }
+      },
+      "deliveredAny": 3,
+      "deliveredAll": 0,
+      "partial": 3
+    },
+    "recipients": [
+      {
+        "studentPublicId": "student.anna",
+        "studentName": "Белова Анна",
+        "coursePublicId": "course.math",
+        "courseName": "Математика 5–7",
+        "groupPublicId": "group.beginner",
+        "groupName": "Начинающие",
+        "classroomPublicId": "classroom.201",
+        "classroomName": "201",
+        "pwa": { "state": "sent", "errorCode": null, "sentAt": "2026-02-01T07:00:00Z" },
+        "telegram": { "state": "queued", "errorCode": null, "sentAt": null }
+      },
+      {
+        "studentPublicId": "student.boris",
+        "studentName": "Ветров Борис",
+        "coursePublicId": "course.math",
+        "courseName": "Математика 5–7",
+        "groupPublicId": "group.beginner",
+        "groupName": "Начинающие",
+        "classroomPublicId": "classroom.202",
+        "classroomName": "202",
+        "pwa": { "state": "sent", "errorCode": null, "sentAt": "2026-02-01T07:00:00Z" },
+        "telegram": { "state": "queued", "errorCode": null, "sentAt": null }
+      },
+      {
+        "studentPublicId": "student.vera",
+        "studentName": "Орлова Вера",
+        "coursePublicId": "course.physics",
+        "courseName": "Физика",
+        "groupPublicId": "group.physics-intro",
+        "groupName": "Вводная группа",
+        "classroomPublicId": "classroom.401",
+        "classroomName": "401",
+        "pwa": { "state": "sent", "errorCode": null, "sentAt": "2026-02-01T07:00:00Z" },
+        "telegram": { "state": "suppressed", "errorCode": "telegram_unavailable", "sentAt": null }
+      }
+    ]
+  },
+  "requestId": "delivery-batch-request"
+}

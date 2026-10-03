@@ -201,6 +201,10 @@ RU_TO_EN = str.maketrans('УКЕНХВАРОСМТукехаросЁё', 'YKEHXB
 
 
 def str_eq(x, y):
+    # vmshpwa/docs/answer-pattern-compatibility.md: compare case before the
+    # historical, case-asymmetric Cyrillic/Latin lookalike translation.
+    if x.strip().lower() == y.strip().lower():
+        return True
     return x.strip().translate(RU_TO_EN).lower() == y.strip().translate(RU_TO_EN).lower()
 
 

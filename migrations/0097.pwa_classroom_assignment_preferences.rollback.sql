@@ -1,0 +1,2 @@
+drop index classroom_assignment_preferences_room_idx;
+drop table classroom_assignment_preferences;

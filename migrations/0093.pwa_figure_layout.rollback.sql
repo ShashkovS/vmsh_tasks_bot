@@ -1,0 +1,4 @@
+DROP TRIGGER publication_figure_layouts_immutable_delete;
+DROP TRIGGER publication_figure_layouts_immutable_update;
+DROP TABLE publication_figure_layouts;
+DROP TABLE content_figure_layouts;

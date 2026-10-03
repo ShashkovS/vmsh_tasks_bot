@@ -1,0 +1,30 @@
+-- depends: 0051.pwa_review_queue_leases
+
+drop trigger submission_review_events_delete_forbidden;
+drop trigger submission_review_events_immutable_update;
+drop table submission_review_events;
+
+drop trigger media_assets_review_evidence_immutable;
+drop trigger submission_attachments_review_evidence_delete_forbidden;
+drop trigger submission_attachments_review_evidence_immutable;
+drop trigger submission_attachments_review_evidence_insert_forbidden;
+drop trigger submission_entries_review_evidence_immutable;
+
+drop trigger submission_review_evidence_attachments_delete_forbidden;
+drop trigger submission_review_evidence_attachments_immutable_update;
+drop trigger submission_review_evidence_attachments_scope_insert;
+drop index submission_review_evidence_attachments_asset_idx;
+drop index submission_review_evidence_attachments_attachment_idx;
+drop table submission_review_evidence_attachments;
+
+drop trigger submission_review_evidence_entries_delete_forbidden;
+drop trigger submission_review_evidence_entries_immutable_update;
+drop trigger submission_review_evidence_entries_scope_insert;
+drop index submission_review_evidence_entries_entry_idx;
+drop table submission_review_evidence_entries;
+
+drop trigger submission_reviews_delete_forbidden;
+drop trigger submission_reviews_immutable_update;
+drop trigger submission_reviews_scope_insert;
+drop index submission_reviews_thread_history_idx;
+drop table submission_reviews;

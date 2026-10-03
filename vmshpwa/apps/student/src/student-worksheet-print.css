@@ -1,0 +1,63 @@
+@import '@vmsh/content/worksheet-paper.css' print;
+
+/* Student worksheet contract: docs/worksheet-print.md; verified by
+ * e2e/worksheet-print.spec.ts. Physical paper/ink intentionally ignore theme. */
+
+@page student-worksheet {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  html:has([data-print-lesson]) {
+    color-scheme: light;
+    background: white;
+  }
+
+  body:has([data-print-lesson]) {
+    page: student-worksheet;
+    margin: 0;
+    background: white;
+    color: black;
+  }
+
+  /* Keep only worksheets and the ancestors needed to lay them out. This also
+   * excludes shell overlays and feed pagination without changing React state. */
+  body:has([data-print-lesson])
+    :not([data-print-lesson], [data-print-lesson] *, :has([data-print-lesson])) {
+    display: none !important;
+  }
+
+  body:has([data-print-lesson]),
+  body:has([data-print-lesson]) :has([data-print-lesson]),
+  [data-print-lesson] {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  [data-print-lesson] {
+    break-before: page;
+    font-size: 11pt;
+    line-height: 1.35;
+  }
+
+  body:has([data-print-lesson]) *,
+  body:has([data-print-lesson]) *::before,
+  body:has([data-print-lesson]) *::after {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}

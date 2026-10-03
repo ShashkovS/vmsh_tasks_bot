@@ -677,7 +677,8 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
         await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
         await bot.answer_callback_query_ig(query.id)
         return
-    # Помечаем решение как неверное и удаляем из очереди
+    # written-result-precedence.md: append the verdict; 0110 selects the latest
+    # written result without erasing prior checks.
     result_id = Result.add(student, problem, teacher, set_verdict, None, RES_TYPE.WRITTEN)
     emit_trace(
         "teacher.written_verdict.saved",
@@ -692,7 +693,6 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
         group_id=problem.group_id,
         verdict=int(set_verdict),
     )
-    db.result.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
     plus, minus = db.result.check_stat(problem.lesson, teacher.id)
     tot_checked = plus + minus
     milestone = CHECK_MILESTONES.get(tot_checked, '')
@@ -725,7 +725,8 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
         await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
         await bot.answer_callback_query_ig(query.id)
         return
-    # Помечаем решение как неверное и удаляем из очереди
+    # written-result-precedence.md: append the verdict; 0110 selects the latest
+    # written result without erasing prior checks.
     WrittenQueue.delete_from_queue(student.id, -problem.id)  # возвращаем минус SOS
     await bot.send_message(chat_id=query.message.chat.id,
                            text=msgs.t_answer_recorded,
@@ -1000,14 +1001,12 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         )
     else:
         zoom_conversation_id = None
-    # Заливаем плюсы и минусы в базу
+    # written-result-precedence.md: every oral decision appends a ledger row.
     for problem in pluses:
         Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type, zoom_conversation_id=zoom_conversation_id)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
         WrittenQueue.delete_from_queue(student_id, problem.id)
     for problem in minuses:
-        db.result.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
-        db.result.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
         Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type, zoom_conversation_id=zoom_conversation_id)
     emit_trace(
         "teacher.oral_round.finished",

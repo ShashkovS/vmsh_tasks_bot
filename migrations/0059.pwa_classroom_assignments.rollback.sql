@@ -1,0 +1,13 @@
+-- depends: 0058.pwa_classroom_layouts
+
+drop trigger classroom_assignments_delete_working_only;
+drop trigger classroom_assignments_update_working_only;
+drop trigger classroom_assignments_insert_working_only;
+drop index classroom_assignments_room_idx;
+drop index classroom_assignments_enrollment_history_idx;
+drop table classroom_assignments;
+
+drop index classroom_assignment_plans_event_timeline_idx;
+drop index classroom_assignment_plans_one_confirmed_uq;
+drop index classroom_assignment_plans_one_working_uq;
+drop table classroom_assignment_plans;

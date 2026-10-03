@@ -1,0 +1,2 @@
+DROP INDEX zoom_webhook_receipts_by_meeting;
+DROP TABLE zoom_webhook_receipts;
