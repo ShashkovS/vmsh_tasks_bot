@@ -95,7 +95,7 @@ def overview(c, student_public_id, course_public_id=None):
     if course is None:
         return result
     problems = db.problems(c, s["id"], course["id"])
-    results = {r["problem_id"]: r for r in db.current_results(c, s["id"])}
+    results = {r["projected_problem_id"]: r for r in db.current_results(c, s["id"])}
     active = {(p["lesson"], p["group_public_id"]) for p in problems if p["active"]}
     result["lessons"] = [
         dict(
@@ -404,7 +404,7 @@ def lesson(c, student_public_id, course_public_id, number, root):
         )
     )
     problems = db.problems(c, s["id"], course["id"], number)
-    results = {r["problem_id"]: r for r in db.current_results(c, s["id"])}
+    results = {r["projected_problem_id"]: r for r in db.current_results(c, s["id"])}
     active_groups = {p["group_public_id"] for p in problems if p["active"]}
     tables = group_rows(
         [

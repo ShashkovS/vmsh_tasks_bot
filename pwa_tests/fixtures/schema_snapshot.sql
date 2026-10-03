@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 2483f27bdcee51e47a8c08f9ba175ed658c2773a0d936f589d6667ae8274a14c
+-- Product schema SHA-256: 2769229b4b92f85759f2c4bc4a70dfd9b3aae9dada53cdc8a67812e97a862fb8
 
 CREATE TABLE achievement_definitions
 (
@@ -3286,6 +3286,9 @@ CREATE INDEX results_teacher_id_lesson_index
     on results (teacher_id, lesson)
     where res_type = 2;
 
+CREATE INDEX results_written_current_idx
+ON results(student_id, problem_id, id) WHERE res_type=2;
+
 CREATE INDEX solution_reveals_student_timeline_idx
     on solution_reveals (student_user_id, revealed_at, id);
 
@@ -3476,19 +3479,23 @@ WHERE NOT EXISTS (
     WHERE slot.problem_id = p.id AND slot.retired_by_revision_id IS NOT NULL
 );
 
-CREATE VIEW effective_results as
-    select r.* from results r
-    left join live_mark_cells c
-      on c.student_id=r.student_id and c.problem_id=r.problem_id
-    where ((c.result_id is not null and r.id=c.result_id)
-       or (c.result_id is null and not exists (
-           select 1 from live_mark_results m where m.result_id=r.id)))
-      and (r.res_type<>1 or not exists (
-           select 1 from test_attempt_result_events e
-           where e.result_id=r.id)
-       or exists (
-           select 1 from test_attempts a
-           where a.result_id=r.id));
+CREATE VIEW effective_results AS
+WITH choices AS MATERIALIZED (SELECT * FROM teacher_result_choices)
+SELECT r.* FROM choices JOIN results r ON r.id=choices.result_id
+UNION ALL
+SELECT r.* FROM results r
+LEFT JOIN result_problem_groups pg ON pg.problem_id=r.problem_id
+LEFT JOIN choices ON choices.student_id=r.student_id
+                 AND choices.logical_key=pg.logical_key
+LEFT JOIN live_mark_cells c ON c.student_id=r.student_id AND c.problem_id=r.problem_id
+WHERE (coalesce(r.res_type,0) NOT IN (2,3,4) OR choices.result_id IS NULL)
+  AND choices.manual_result_id IS NULL
+  AND ((c.result_id IS NOT NULL AND r.id=c.result_id)
+    OR (c.result_id IS NULL AND NOT EXISTS (
+      SELECT 1 FROM live_mark_results lm WHERE lm.result_id=r.id)))
+  AND (r.res_type<>1 OR NOT EXISTS (
+      SELECT 1 FROM test_attempt_result_events e WHERE e.result_id=r.id)
+    OR EXISTS (SELECT 1 FROM test_attempts a WHERE a.result_id=r.id));
 
 CREATE VIEW problem_catalog AS
 SELECT p.id, p.group_id, p.lesson, p.prob,
@@ -3522,6 +3529,54 @@ FROM reactions rct
          LEFT JOIN zoom_conversation zc on rct.zoom_conversation_id = zc.id
          LEFT JOIN users AS stud ON (stud.id = coalesce(r.student_id, zc.student_id))
          LEFT JOIN users AS teach ON (teach.id = coalesce(r.teacher_id, zc.teacher_id));
+
+CREATE VIEW result_problem_groups AS
+SELECT p.id AS problem_id,
+       CASE
+         WHEN sg.id IS NOT NULL THEN 'synonym:' || sg.id
+         WHEN trim(p.synonyms) <> '' THEN
+           'legacy:' || coalesce(cast(g.course_id AS text), 'unassigned')
+           || ':' || p.lesson || ':' || p.synonyms
+         ELSE 'problem:' || p.id
+       END AS logical_key
+FROM problems p
+LEFT JOIN groups g ON g.group_id=p.group_id
+LEFT JOIN problem_synonym_members sm
+  ON sm.problem_id=p.id AND sm.removed_at IS NULL
+LEFT JOIN problem_synonym_groups sg
+  ON sg.id=sm.synonym_group_id AND sg.status='active';
+
+CREATE VIEW teacher_result_choices AS
+WITH candidates AS (
+  SELECT r.student_id, pg.logical_key, max(r.id) AS written_result_id,
+         NULL AS manual_result_id
+  FROM results r JOIN result_problem_groups pg ON pg.problem_id=r.problem_id
+  WHERE r.res_type=2
+  GROUP BY r.student_id, pg.logical_key
+  UNION ALL
+  SELECT c.student_id, pg.logical_key, NULL, max(c.result_id)
+  FROM live_mark_cells c
+  JOIN result_problem_groups pg ON pg.problem_id=c.problem_id
+  JOIN results r ON r.id=c.result_id AND r.res_type IN (3,4)
+  GROUP BY c.student_id, pg.logical_key
+), latest AS (
+  SELECT student_id, logical_key, max(written_result_id) AS written_result_id,
+         max(manual_result_id) AS manual_result_id
+  FROM candidates GROUP BY student_id, logical_key
+)
+SELECT latest.*,
+       CASE
+         WHEN manual_result_id IS NULL THEN written_result_id
+         WHEN written_result_id IS NULL THEN manual_result_id
+         WHEN manual_result_id > written_result_id OR mv.val > wv.val
+           THEN manual_result_id
+         ELSE written_result_id
+       END AS result_id
+FROM latest
+LEFT JOIN results w ON w.id=written_result_id
+LEFT JOIN verdicts wv ON wv.id=w.verdict
+LEFT JOIN results m ON m.id=manual_result_id
+LEFT JOIN verdicts mv ON mv.id=m.verdict;
 
 CREATE TRIGGER audit_events_delete_forbidden
 before delete on audit_events
@@ -4421,42 +4476,55 @@ CREATE TRIGGER live_cell_update AFTER UPDATE OF version,result_id ON live_mark_c
 END;
 
 CREATE TRIGGER live_results_delete AFTER DELETE ON results BEGIN
-    UPDATE live_mark_cells SET version=version+1
-    WHERE student_id=old.student_id AND problem_id=old.problem_id;
+  UPDATE live_mark_cells SET version=version+1
+  WHERE student_id=old.student_id AND problem_id IN (
+    SELECT peer.problem_id
+    FROM result_problem_groups source JOIN result_problem_groups peer
+      ON peer.logical_key=source.logical_key
+    WHERE source.problem_id=old.problem_id
+  );
 END;
 
 CREATE TRIGGER live_results_insert AFTER INSERT ON results
 WHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)
  AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN
-    INSERT INTO live_mark_cells(student_id,problem_id,version,result_id)
-    VALUES(new.student_id,new.problem_id,1,
-           CASE WHEN new.res_type IN (3,4) THEN new.id END)
-    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,
-        result_id=CASE
-            WHEN new.res_type IN (3,4) THEN new.id
-            WHEN new.res_type=1
-             AND new.id>coalesce(live_mark_cells.result_id,0)
-             AND EXISTS(
-                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8
-            ) THEN NULL
-            ELSE live_mark_cells.result_id
-        END;
+  INSERT INTO live_mark_cells(student_id,problem_id,version,result_id)
+  VALUES(new.student_id,new.problem_id,1,
+         CASE WHEN new.res_type IN (3,4) THEN new.id END)
+  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,
+    result_id=CASE
+      WHEN new.res_type IN (3,4) THEN new.id
+      WHEN new.res_type=1 AND new.id>coalesce(live_mark_cells.result_id,0)
+       AND EXISTS(SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8)
+        THEN NULL
+      ELSE live_mark_cells.result_id
+    END;
+  INSERT INTO live_mark_cells(student_id,problem_id,version)
+  SELECT new.student_id, peer.problem_id, 1
+  FROM result_problem_groups source JOIN result_problem_groups peer
+    ON peer.logical_key=source.logical_key
+  WHERE source.problem_id=new.problem_id AND peer.problem_id<>new.problem_id
+  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1;
 END;
 
 CREATE TRIGGER live_results_update AFTER UPDATE OF verdict, teacher_id ON results
 WHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)
  AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN
-    INSERT INTO live_mark_cells(student_id,problem_id,version)
-    VALUES(new.student_id,new.problem_id,1)
-    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,
-        result_id=CASE
-            WHEN new.res_type=1
-             AND new.id>coalesce(live_mark_cells.result_id,0)
-             AND EXISTS(
-                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8
-             ) THEN NULL
-            ELSE live_mark_cells.result_id
-        END;
+  INSERT INTO live_mark_cells(student_id,problem_id,version)
+  VALUES(new.student_id,new.problem_id,1)
+  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,
+    result_id=CASE
+      WHEN new.res_type=1 AND new.id>coalesce(live_mark_cells.result_id,0)
+       AND EXISTS(SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8)
+        THEN NULL
+      ELSE live_mark_cells.result_id
+    END;
+  INSERT INTO live_mark_cells(student_id,problem_id,version)
+  SELECT new.student_id, peer.problem_id, 1
+  FROM result_problem_groups source JOIN result_problem_groups peer
+    ON peer.logical_key=source.logical_key
+  WHERE source.problem_id=new.problem_id AND peer.problem_id<>new.problem_id
+  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1;
 END;
 
 CREATE TRIGGER media_assets_locked_submission_immutable

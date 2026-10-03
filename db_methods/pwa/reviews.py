@@ -2009,17 +2009,8 @@ class PwaWrittenReviewQueueRepository:
                 else command.comment.strip()
             )
 
-            if VERDICT(command.verdict) not in VERDICTS_SOLVED:
-                connection.execute(
-                    "UPDATE results SET verdict = ? WHERE student_id = ? "
-                    "AND problem_id = ? AND res_type = ? AND verdict > 0",
-                    (
-                        int(VERDICT.REJECTED_ANSWER),
-                        target_thread["student_user_id"],
-                        target_problem["id"],
-                        int(RES_TYPE.WRITTEN),
-                    ),
-                )
+            # written-result-precedence.md / migration 0110 replaces the current
+            # written verdict by ID without rewriting earlier checks.
             result_id = int(
                 connection.execute(
                     "INSERT INTO results "

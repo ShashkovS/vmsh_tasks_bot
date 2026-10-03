@@ -191,19 +191,6 @@ def insert_result(
     )
 
 
-def reject_prior_positive_oral_result(
-    connection: sqlite3.Connection,
-    *,
-    student_user_id: int,
-    problem_id: int,
-) -> None:
-    connection.execute(
-        "UPDATE results SET verdict = -2 WHERE student_id = ? AND problem_id = ? "
-        "AND res_type IN (3, 4) AND verdict > 0",
-        (student_user_id, problem_id),
-    )
-
-
 def remove_written_queue_entry(
     connection: sqlite3.Connection,
     *,
@@ -244,6 +231,5 @@ __all__ = [
     "online_students",
     "oral_lesson",
     "oral_problems",
-    "reject_prior_positive_oral_result",
     "remove_written_queue_entry",
 ]

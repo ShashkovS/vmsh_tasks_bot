@@ -2,6 +2,14 @@
 
 ## Результат
 
+Дополнение 3 октября 2026: [приоритет письменной и Zoom/очной оценки](../../docs/written-result-precedence.md).
+Migration 0110 и общие текущие чтения реализованы; 352 backend/legacy,
+48 client/realtime и 9 Chromium/WebKit/Firefox scenarios проходят.
+История при перепроверке сохраняется. Up/down/up рабочего снимка, integrity,
+performance guard, указанные случаи и план выпуска —
+[в протоколе](../../../pwa_tests/reports/written-result-precedence/README.md).
+Production не менялся.
+
 Превью вопросов ограничено 280 Unicode code points, как SQLite substr;
 эмодзи не должны блокировать список. [Исправление и тесты](../../docs/support-unicode-excerpts.md).
 

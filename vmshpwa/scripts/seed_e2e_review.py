@@ -33,6 +33,9 @@ TARGETS = (
     ("series-chromium", 9751),
     ("series-webkit", 9752),
     ("series-firefox", 9753),
+    ("precedence-chromium", 9901),
+    ("precedence-webkit", 9902),
+    ("precedence-firefox", 9903),
 )
 
 
@@ -111,7 +114,7 @@ def _insert_review_cases(connection) -> int:
     )
 
     existing = connection.execute(
-        "SELECT id FROM written_tasks_queue WHERE id BETWEEN 9701 AND 9703 OR id BETWEEN 9751 AND 9753"
+        "SELECT id FROM written_tasks_queue WHERE id BETWEEN 9701 AND 9703 OR id BETWEEN 9751 AND 9753 OR id BETWEEN 9901 AND 9903"
     ).fetchall()
     expected_queue_ids = {fixture_id for _project, fixture_id in TARGETS}
     if existing:
@@ -317,6 +320,38 @@ def _insert_review_cases(connection) -> int:
             "(?, '2026-07-28T12:02:00Z', ?, ?, 0, ?)",
             (fixture_id, student_id, problem_id, TIMESTAMP),
         )
+        if project.startswith("precedence-"):
+            # written-result-precedence.md: published Student/Family case with
+            # an old Zoom minus and successive written requests for revision.
+            from vmshpwa.scripts.seed_e2e_oral import _web_document
+
+            connection.execute("UPDATE problem_revisions SET answer_type=NULL WHERE id=?", (problem_revision_id,))
+
+            document = _web_document(
+                revision_id=f"cr-{revision_id}",
+                source_sha256=f"{ordinal}" * 64,
+                title=f"E2E проверка {project}",
+            )
+            connection.execute(
+                """INSERT INTO content_derivatives(revision_id,kind,renderer_version,
+                content_text,sha256,diagnostics_json,provenance_json,created_at)
+                VALUES(?,'web_ast','written-precedence-e2e',?,?,'[]','{}',?)""",
+                (revision_id, document, hashlib.sha256(document.encode()).hexdigest(), TIMESTAMP),
+            )
+            connection.execute(
+                """INSERT INTO lesson_publications(group_lesson_id,kind,revision_id,state,
+                published_at,created_by_user_id,published_by_user_id,created_at,updated_at)
+                VALUES(?,'condition',?,'published',?,?,?,?,?)""",
+                (group_lesson_id, revision_id, TIMESTAMP, teacher_id, teacher_id, TIMESTAMP, TIMESTAMP),
+            )
+            for source, grade in ((3, -1), (2, 11), (2, 13)):
+                rid = connection.execute(
+                    """INSERT INTO results(student_id,problem_id,group_id,lesson,teacher_id,ts,verdict,res_type)
+                    VALUES(?,?,?,?,?,?,?,?) RETURNING id""",
+                    (student_id, problem_id, group_id, lesson_number, teacher_id, TIMESTAMP, grade, source),
+                ).fetchone()["id"]
+                if source == 3:
+                    connection.execute("INSERT INTO live_mark_results VALUES(?)", (rid,))
         inserted += 1
     # docs/serial-review-feed.md: two independent students plus an eligible
     # same-lesson target, with shared immutable media bytes.

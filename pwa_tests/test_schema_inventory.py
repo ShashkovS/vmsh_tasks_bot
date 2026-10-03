@@ -89,7 +89,7 @@ def test_inventory_is_deterministic_and_does_not_read_rows(tmp_path):
     assert not any(
         line.casefold().startswith("insert into") for line in rendered_sql.splitlines()
     )
-    assert second["product"]["object_count"] == 507
+    assert second["product"]["object_count"] == 510
     assert second["legacy_derived"]["object_count"] == 0
     assert all(
         not record["name"].startswith("sqlite_") and "yoyo" not in record["name"]
@@ -351,6 +351,8 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
                 "0103.course_in_person_classes",
                 "0104.course_metadata_model",
                 "0105.pwa_recheck_receipt_lookup",
+                # Written projection uses the omitted groups.course_id column.
+                "0110.pwa_written_result_precedence",
             }
         )
     )
@@ -381,6 +383,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
         "0103.course_in_person_classes",
         "0104.course_metadata_model",
         "0105.pwa_recheck_receipt_lookup",
+        "0110.pwa_written_result_precedence",
     ]
     assert {item["name"] for item in report["missing_product_objects"]} >= {
         "auth_accounts",

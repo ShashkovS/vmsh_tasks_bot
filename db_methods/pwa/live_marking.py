@@ -1,4 +1,4 @@
-"""SQLite primitives for vmshpwa/docs/live-marking.md and migration 0087."""
+"""SQLite primitives for live-marking.md and written-result-precedence.md."""
 
 from __future__ import annotations
 
@@ -181,27 +181,33 @@ def cells(connection, student_ids, problem_ids, after=None):
     return rows(
         connection,
         f"""
-        SELECT c.student_id,c.problem_id,c.version,c.result_id,
-               r.verdict,r.teacher_id,r.ts,u.public_id teacher_public_id
-        FROM live_mark_cells c LEFT JOIN effective_results r
-          ON r.student_id=c.student_id AND r.problem_id=c.problem_id
-          AND r.id=(SELECT er.id FROM effective_results er
-              JOIN verdicts v ON v.id=er.verdict
-              WHERE er.student_id=c.student_id AND er.problem_id=c.problem_id
-              ORDER BY v.val DESC,er.ts DESC,er.id DESC LIMIT 1)
-        LEFT JOIN users u ON u.id=r.teacher_id
-        WHERE c.student_id IN ({ss}) AND c.problem_id IN ({pp})
-          AND (? IS NULL OR c.change_seq>?)
-        UNION ALL
-        SELECT r.student_id,r.problem_id,0,NULL,r.verdict,r.teacher_id,r.ts,u.public_id
-        FROM results r LEFT JOIN users u ON u.id=r.teacher_id
-        WHERE r.student_id IN ({ss}) AND r.problem_id IN ({pp}) AND ? IS NULL
-          AND NOT EXISTS(SELECT 1 FROM live_mark_cells c WHERE c.student_id=r.student_id AND c.problem_id=r.problem_id)
-          AND r.id=(SELECT er.id FROM results er JOIN verdicts v ON v.id=er.verdict
-             WHERE er.student_id=r.student_id AND er.problem_id=r.problem_id
-             ORDER BY v.val DESC,er.ts DESC,er.id DESC LIMIT 1)
+        WITH scope AS (
+          SELECT student.id student_id,problem.id problem_id,
+                 coalesce(c.version,0) version,c.result_id,c.change_seq,
+                 c.student_id IS NOT NULL has_cell
+          FROM users student CROSS JOIN problems problem
+          LEFT JOIN live_mark_cells c ON c.student_id=student.id AND c.problem_id=problem.id
+          WHERE student.id IN ({ss}) AND problem.id IN ({pp})
+            AND (? IS NULL OR c.change_seq>?)
+        ), ranked AS (
+          SELECT scope.student_id,scope.problem_id,scope.version,scope.result_id,
+                 r.verdict,r.teacher_id,r.ts,u.public_id teacher_public_id,
+                 row_number() OVER (
+                   PARTITION BY scope.student_id,scope.problem_id
+                   ORDER BY v.val DESC,r.id DESC
+                 ) priority
+          FROM scope
+          JOIN result_problem_groups target ON target.problem_id=scope.problem_id
+          JOIN result_problem_groups member ON member.logical_key=target.logical_key
+          LEFT JOIN effective_results r ON r.student_id=scope.student_id AND r.problem_id=member.problem_id
+          LEFT JOIN verdicts v ON v.id=r.verdict
+          LEFT JOIN users u ON u.id=r.teacher_id
+          WHERE scope.has_cell OR r.id IS NOT NULL
+        )
+        SELECT student_id,problem_id,version,result_id,verdict,teacher_id,ts,teacher_public_id
+        FROM ranked WHERE priority=1
     """,
-        (*student_ids, *problem_ids, after, after, *student_ids, *problem_ids, after),
+        (*student_ids, *problem_ids, after, after),
     )
 
 
@@ -265,6 +271,17 @@ def restore_cell(connection, student_id, problem_id, result_id):
     connection.execute(
         "UPDATE live_mark_cells SET result_id=?,version=version+1 WHERE student_id=? AND problem_id=?",
         (result_id, student_id, problem_id),
+    )
+    # written-result-precedence.md: undo in one synonym changes all current
+    # readers and must invalidate another synonym's pending operation/undo.
+    connection.execute(
+        """INSERT INTO live_mark_cells(student_id,problem_id,version)
+        SELECT ?,peer.problem_id,1
+        FROM result_problem_groups source JOIN result_problem_groups peer
+          ON peer.logical_key=source.logical_key
+        WHERE source.problem_id=? AND peer.problem_id<>?
+        ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1""",
+        (student_id, problem_id, problem_id),
     )
 
 

@@ -30,6 +30,7 @@ from db_methods.pwa.family import latest_published_lesson
 from db_methods.pwa.course_achievements import list_student_course_achievements
 from db_methods.pwa.course_analytics import latest_student_course_metrics
 from db_methods.pwa.progress import (
+    list_course_activity_rows,
     list_course_pending_review_rows,
     list_course_result_rows,
 )
@@ -286,6 +287,11 @@ async def get_family_child_home(request: web.Request) -> web.Response:
                         course_id=enrollment.course_id,
                     ),
                     list_course_pending_review_rows(
+                        connection,
+                        student_user_id=child.student_user_id,
+                        course_id=enrollment.course_id,
+                    ),
+                    activity_rows=list_course_activity_rows(
                         connection,
                         student_user_id=child.student_user_id,
                         course_id=enrollment.course_id,

@@ -99,10 +99,13 @@ def problems(c, student_id, course_id, number=None):
 def current_results(c, student_id):
     return rows(
         c,
-        """SELECT * FROM (SELECT r.*,v.val,
+        """SELECT * FROM (SELECT r.*,target.problem_id AS projected_problem_id,v.val,
       trim(coalesce(u.surname,'')||' '||coalesce(u.name,'')) author,
-      row_number() OVER(PARTITION BY r.problem_id ORDER BY v.val DESC,r.ts DESC,r.id DESC) priority
-      FROM effective_results r JOIN verdicts v ON v.id=r.verdict LEFT JOIN users u ON u.id=r.teacher_id
+      row_number() OVER(PARTITION BY target.problem_id ORDER BY v.val DESC,r.id DESC) priority
+      FROM effective_results r
+      JOIN result_problem_groups source ON source.problem_id=r.problem_id
+      JOIN result_problem_groups target ON target.logical_key=source.logical_key
+      JOIN verdicts v ON v.id=r.verdict LEFT JOIN users u ON u.id=r.teacher_id
       WHERE r.student_id=?) WHERE priority=1""",
         (student_id,),
     )

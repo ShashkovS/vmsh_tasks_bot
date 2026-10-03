@@ -33,25 +33,47 @@ def list_course_result_rows(
                verdict.val AS verdict_weight,
                manual.result_id IS NOT NULL AS manual_override,
                problem_scope.lesson_number,
-               CASE
-                   WHEN synonym_group.id IS NULL
-                   THEN 'problem:' || result.problem_id
-                   ELSE 'synonym:' || synonym_group.id
-               END AS logical_problem_key
+               problem_group.logical_key AS logical_problem_key
         FROM effective_results AS result
         JOIN verdicts AS verdict ON verdict.id = result.verdict
         LEFT JOIN live_mark_cells AS manual ON manual.result_id = result.id
         JOIN problem_scope ON problem_scope.problem_id = result.problem_id
-        LEFT JOIN problem_synonym_members AS synonym_member
-          ON synonym_member.problem_id = result.problem_id
-         AND synonym_member.removed_at IS NULL
-        LEFT JOIN problem_synonym_groups AS synonym_group
-          ON synonym_group.id = synonym_member.synonym_group_id
-         AND synonym_group.status = 'active'
+        JOIN result_problem_groups AS problem_group
+          ON problem_group.problem_id = result.problem_id
         WHERE result.student_id = ?
           AND problem_scope.course_id = ?
         ORDER BY result.ts, result.id
         """,
+        (student_user_id, course_id),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_course_activity_rows(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+    course_id: int,
+) -> list[dict[str, object]]:
+    """Ledger activity survives current-result replacement (written-result-precedence.md)."""
+
+    rows = connection.execute(
+        """SELECT DISTINCT result.ts, scope.lesson_number,
+                  problem_group.logical_key AS logical_problem_key
+        FROM results AS result
+        JOIN result_problem_groups AS problem_group
+          ON problem_group.problem_id=result.problem_id
+        JOIN (
+          SELECT DISTINCT revision.problem_id, lesson.course_id,
+                          course_lesson.lesson_number
+          FROM problem_revisions revision
+          JOIN content_revisions content ON content.id=revision.content_revision_id
+          JOIN content_sources source ON source.id=content.source_id
+          JOIN group_lessons lesson ON lesson.id=source.group_lesson_id
+          JOIN course_lessons course_lesson ON course_lesson.id=lesson.course_lesson_id
+        ) scope ON scope.problem_id=result.problem_id
+        WHERE result.student_id=? AND scope.course_id=?
+        ORDER BY result.ts""",
         (student_user_id, course_id),
     ).fetchall()
     return [dict(row) for row in rows]
@@ -70,22 +92,14 @@ def list_course_pending_review_rows(
         SELECT queue.problem_id,
                queue.ts,
                problem.lesson AS lesson_number,
-               CASE
-                   WHEN synonym_group.id IS NULL
-                   THEN 'problem:' || queue.problem_id
-                   ELSE 'synonym:' || synonym_group.id
-               END AS logical_problem_key
+               problem_group.logical_key AS logical_problem_key
         FROM written_tasks_queue AS queue
         JOIN problems AS problem ON problem.id = queue.problem_id
         JOIN groups AS group_record
           ON group_record.group_id = problem.group_id
          AND group_record.course_id = ?
-        LEFT JOIN problem_synonym_members AS synonym_member
-          ON synonym_member.problem_id = queue.problem_id
-         AND synonym_member.removed_at IS NULL
-        LEFT JOIN problem_synonym_groups AS synonym_group
-          ON synonym_group.id = synonym_member.synonym_group_id
-         AND synonym_group.status = 'active'
+        JOIN result_problem_groups AS problem_group
+          ON problem_group.problem_id=queue.problem_id
         WHERE queue.student_id = ?
           AND queue.problem_id > 0
         ORDER BY queue.ts, queue.id
@@ -95,4 +109,4 @@ def list_course_pending_review_rows(
     return [dict(row) for row in rows]
 
 
-__all__ = ["list_course_pending_review_rows", "list_course_result_rows"]
+__all__ = ["list_course_activity_rows", "list_course_pending_review_rows", "list_course_result_rows"]

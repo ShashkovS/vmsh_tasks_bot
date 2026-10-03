@@ -1,5 +1,14 @@
 # Design-system status
 
+## 2026-10-03 — итог письменной проверки
+
+Общий backend-контракт списка задач и письменной проверки реализован без
+изменения UI/API. Browser acceptance Student/Family (realtime, reload, reconnect)
+в `e2e/review-workspace.spec.ts` прошла: 9 scenarios в Chromium/WebKit/Firefox,
+без retries. 48 client/realtime tests, tools types и scoped lint проходят.
+[Решение и репетиция миграции](../../docs/written-result-precedence.md).
+Production не менялся.
+
 ## 2026-10-03 — общий выпуск на оба production-портала
 
 Выпущен `26e2f7ee` на ВМШ/TLF после полного Python/frontend/Storybook/E2E gate,

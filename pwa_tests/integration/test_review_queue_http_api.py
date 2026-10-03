@@ -1208,7 +1208,7 @@ async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
             ],
         }
     )
-    assert stored == {"review_verdicts": [16, 13, 17], "result_verdicts": [-2, -2, 17]}
+    assert stored == {"review_verdicts": [16, 13, 17], "result_verdicts": [16, 13, 17]}
 
     def new_submission(connection):
         source = connection.execute(

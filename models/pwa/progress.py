@@ -9,11 +9,13 @@ from collections.abc import Iterable, Mapping
 def summarize_course_results(
     rows: Iterable[Mapping[str, object]],
     pending_review_rows: Iterable[Mapping[str, object]] = (),
+    *,
+    activity_rows: Iterable[Mapping[str, object]] | None = None,
 ) -> dict[str, object]:
-    """Collapse retries; live-marking.md gives manual corrections priority."""
+    """Aggregate the shared projection; written-result-precedence.md owns selection."""
 
     best_weight: dict[tuple[int, str], float] = {}
-    manual_weight: dict[tuple[int, str], tuple[str, int, float]] = {}
+    manual_keys: set[tuple[int, str]] = set()
     pending_review: set[tuple[int, str]] = set()
     activity: dict[str, set[tuple[int, str]]] = defaultdict(set)
 
@@ -24,17 +26,18 @@ def summarize_course_results(
         weight = float(row["verdict_weight"])
         best_weight[key] = max(weight, best_weight.get(key, 0.0))
         if row.get("manual_override"):
-            candidate = (str(row["ts"]), int(row["result_id"]), weight)
-            if candidate > manual_weight.get(key, ("", -1, 0.0)):
-                manual_weight[key] = candidate
-        result_date = str(row["ts"])[:10]
-        activity[result_date].add(key)
+            manual_keys.add(key)
+        if activity_rows is None:
+            activity[str(row["ts"])[:10]].add(key)
 
-    best_weight.update({key: value[2] for key, value in manual_weight.items()})
+    if activity_rows is not None:
+        for row in activity_rows:
+            key = (int(row["lesson_number"]), str(row["logical_problem_key"]))
+            activity[str(row["ts"])[:10]].add(key)
 
     for row in pending_review_rows:
         key = (int(row["lesson_number"]), str(row["logical_problem_key"]))
-        if key not in manual_weight:
+        if key not in manual_keys:
             pending_review.add(key)
         activity[str(row["ts"])[:10]].add(key)
 

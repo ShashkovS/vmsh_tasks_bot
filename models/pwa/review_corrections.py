@@ -21,7 +21,6 @@ from db_methods.pwa.review_corrections import (
     insert_event,
     insert_result,
     insert_review,
-    invalidate_current_written_results,
     latest_review_public_id,
     recipient_account_public_ids,
     update_thread_result,
@@ -220,15 +219,8 @@ async def correct_written_review(
             timespec="microseconds"
         ).replace("+00:00", "Z")
 
-        # Legacy result readers choose the best positive row. An explicit
-        # correction therefore retires every earlier positive written result
-        # before appending the replacement; immutable review history still
-        # preserves the exact former verdict shown to the Student.
-        invalidate_current_written_results(
-            connection,
-            student_user_id=int(source["student_user_id"]),
-            problem_id=int(source["problem_id"]),
-        )
+        # written-result-precedence.md / migration 0110 selects the latest
+        # written row; preserve the exact earlier ledger verdicts as history.
         result_id = insert_result(
             connection,
             student_user_id=int(source["student_user_id"]),

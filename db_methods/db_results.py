@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict
 
 from .db_problems import problem_read_table
 from .db_abc import DB_ABC, sql
-from .pwa.effective_results import result_source
+from .pwa.effective_results import result_source, result_problem_join
 
 
 # ██████  ███████ ███████ ██    ██ ██      ████████ ███████
@@ -55,12 +55,13 @@ class DB_RESULT(DB_ABC):
 
     def check_student_solved(self, student_id: int, lesson: int, group_id: str = None) -> Dict[int, int]:
         cur = self.db.conn.execute(f"""
-            select problem_id, max(verdict) verdict 
+            select p.id problem_id, max(r.verdict) verdict
             from {result_source(self.db.conn)} r
+            {result_problem_join(self.db.conn)}
             join verdicts v on r.verdict = v.id    
-            where student_id = :student_id and lesson = :lesson and v.val > 0
-              and (:group_id is null or group_id = :group_id)
-            group by problem_id
+            where student_id = :student_id and p.lesson = :lesson and v.val > 0
+              and (:group_id is null or p.group_id = :group_id)
+            group by p.id
         """, locals())
         rows = cur.fetchall()
         return {row['problem_id']: row['verdict'] for row in rows}
@@ -121,11 +122,11 @@ class DB_RESULT(DB_ABC):
         return self.db.conn.execute(f"""
             select min(ts) ts, p.title, p.group_id, coalesce(g.short_code, p.group_id) as group_code
             from {result_source(self.db.conn)} r
-            join problems p on r.problem_id = p.id
+            {result_problem_join(self.db.conn)}
             left join groups g on g.group_id = p.group_id
             join verdicts v on r.verdict = v.id
-            where student_id = :student_id and r.lesson = :lesson and v.val >= 0.8
-              and (:group_id is null or r.group_id = :group_id)
+            where student_id = :student_id and p.lesson = :lesson and v.val >= 0.8
+              and (:group_id is null or p.group_id = :group_id)
             group by p.title, p.group_id 
             order by 1
         """, locals()).fetchall()

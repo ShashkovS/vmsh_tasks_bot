@@ -206,3 +206,62 @@ async def test_invalid_or_in_person_oral_result_does_not_write(content_http):
         )
         == 0
     )
+
+
+async def test_new_oral_minus_preserves_old_plus_and_replaces_written_result(
+    content_http,
+):
+    # written-result-precedence.md: legacy oral adapter appends each decision.
+    from db_methods.pwa.live_marking import cell
+
+    f = content_http
+    pid, _ = await content_support._prepare_published_test_problem(f, problem_type=3)
+    path = f"/staff/api/v1/group-lessons/{f.group_lesson_a}/oral-results"
+    kwargs = dict(
+        headers=content_support._headers(unsafe=True),
+        cookies=content_support._cookie(f, "teacher"),
+    )
+    response = await f.client.post(path, json=_result_payload(pid), **kwargs)
+    assert response.status == 201, await response.text()
+
+    def written(c, grade):
+        c.execute(
+            """INSERT INTO results(student_id,problem_id,group_id,lesson,teacher_id,ts,verdict,res_type)
+            SELECT ?,id,group_id,lesson,?,'2026-10-03',?,2 FROM problems WHERE public_id=?""",
+            (
+                content_support.STUDENT_USER_ID,
+                content_support.ADMIN_USER_ID,
+                grade,
+                pid,
+            ),
+        )
+
+    def current(c):
+        internal = c.execute(
+            "SELECT id FROM problems WHERE public_id=?", (pid,)
+        ).fetchone()["id"]
+        return cell(c, content_support.STUDENT_USER_ID, internal)["verdict"]
+
+    f.factory.run_write(lambda c: written(c, 13))
+    assert f.factory.run_read(current) == 18
+    payload = _result_payload(
+        pid,
+        idempotencyKey="new-oral-minus",
+        marks=[dict(problemId=pid, outcome="rejected")],
+    )
+    response = await f.client.post(path, json=payload, **kwargs)
+    assert response.status == 201, await response.text()
+    response = await f.client.post(path, json=payload, **kwargs)
+    assert response.status == 200 and (await response.json())["replayed"]
+    assert f.factory.run_read(current) == -1
+    f.factory.run_write(lambda c: written(c, 17))
+    assert f.factory.run_read(current) == 17
+    assert f.factory.run_read(
+        lambda c: [
+            r["verdict"]
+            for r in c.execute(
+                "SELECT verdict FROM results WHERE student_id=? ORDER BY id",
+                (content_support.STUDENT_USER_ID,),
+            )
+        ]
+    ) == [18, 13, -1, 17]

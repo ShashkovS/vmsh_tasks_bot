@@ -528,7 +528,7 @@ async def test_live_cell_delta_scope_reset_and_tombstone(content_http):
     assert response.status == 200 and replay["replayed"]
 
 
-async def test_manual_mark_stays_current_after_later_written_result_and_pending(
+async def test_later_written_result_replaces_manual_minus_and_pending_remains_separate(
     content_http,
 ):
     f = content_http
@@ -556,7 +556,9 @@ async def test_manual_mark_stays_current_after_later_written_result_and_pending(
     )
     body = await response.json()
     assert response.status == 200, body
-    assert body["problems"][0]["status"] == "needs-work", body
+    # written-result-precedence.md: the later pending submission is separate
+    # from the latest accepted grade, and retains its normal "sent" display.
+    assert body["problems"][0]["status"] == "sent", body
     response = await f.client.get(
         "/student/api/v1/courses/c-1/progress",
         cookies=support._cookie(f, "student"),
@@ -564,9 +566,9 @@ async def test_manual_mark_stays_current_after_later_written_result_and_pending(
     )
     body = await response.json()
     assert response.status == 200, body
-    assert body["summary"]["accepted"] == 0, body
-    assert body["summary"]["needsWork"] == 1, body
-    assert body["summary"]["awaitingReview"] == 0, body
+    assert body["summary"]["accepted"] == 1, body
+    assert body["summary"]["needsWork"] == 0, body
+    assert body["summary"]["awaitingReview"] == 1, body
 
 
 async def test_legacy_oral_writer_is_a_new_manual_decision_and_recheck_skips_oral(

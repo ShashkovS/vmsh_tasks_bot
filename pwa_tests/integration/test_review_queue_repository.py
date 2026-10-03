@@ -745,7 +745,7 @@ async def test_review_correction_appends_history_and_replaces_legacy_result(
         }
     )
     assert [row["verdict"] for row in stored["reviews"]] == [16, 13]
-    assert [row["verdict"] for row in stored["results"]] == [-2, 13]
+    assert [row["verdict"] for row in stored["results"]] == [16, 13]
     assert [row["count"] for row in stored["evidence"]] == [2, 2]
     assert stored["thread"]["status"] == "needs_work"
     assert stored["thread"]["version"] == 5

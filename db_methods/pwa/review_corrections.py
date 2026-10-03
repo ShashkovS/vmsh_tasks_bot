@@ -70,16 +70,6 @@ def latest_review_public_id(
     return None if row is None else str(row["public_id"])
 
 
-def invalidate_current_written_results(
-    connection: sqlite3.Connection, *, student_user_id: int, problem_id: int
-) -> None:
-    connection.execute(
-        "UPDATE results SET verdict = -2 WHERE student_id = ? AND problem_id = ? "
-        "AND res_type = 2 AND verdict > 0",
-        (student_user_id, problem_id),
-    )
-
-
 def insert_result(
     connection: sqlite3.Connection,
     *,

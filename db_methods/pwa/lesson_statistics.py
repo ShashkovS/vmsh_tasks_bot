@@ -1,7 +1,8 @@
 """Current course facts for lesson statistics and the a53 step.
 
 See vmshpwa/docs/lesson-statistics.md. Publication membership, not old revisions,
-determines the task set. Result corrections already neutralize old verdicts.
+determines the task set. Migration 0110 selects current teacher results;
+vmshpwa/docs/written-result-precedence.md separates them from the ledger history.
 """
 
 import sqlite3

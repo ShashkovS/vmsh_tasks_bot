@@ -16,7 +16,6 @@ from db_methods.pwa.oral_results import (
     online_students,
     oral_lesson,
     oral_problems,
-    reject_prior_positive_oral_result,
     remove_written_queue_entry,
 )
 from helpers.consts import VERDICT
@@ -191,12 +190,8 @@ def record_round(
     )
     for problem_public_id, verdict in requested_marks.items():
         problem_id = int(available_problems[problem_public_id]["problem_id"])
-        if verdict == int(VERDICT.WRONG_ANSWER):
-            reject_prior_positive_oral_result(
-                connection,
-                student_user_id=int(student["student_user_id"]),
-                problem_id=problem_id,
-            )
+        # written-result-precedence.md / migration 0110 pins this new oral
+        # decision; previous manual values remain available as ledger history.
         insert_result(
             connection,
             student_user_id=int(student["student_user_id"]),

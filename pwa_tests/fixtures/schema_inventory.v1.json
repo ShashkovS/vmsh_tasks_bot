@@ -369,6 +369,10 @@
       {
         "id": "0109.pwa_fresh_problem_sets",
         "sha256": "63a593df88daabecf3a5ea6bfc4482e3390b46cc7ee93701aa8514d8deb2b231"
+      },
+      {
+        "id": "0110.pwa_written_result_precedence",
+        "sha256": "3e49fbde063a860df5d0a515abf8ee9a1fb0f86b941419d2de963d45ee29d549"
       }
     ],
     "repository_head_status": {
@@ -379,7 +383,7 @@
     }
   },
   "product": {
-    "object_count": 507,
+    "object_count": 510,
     "objects": [
       {
         "columns": [
@@ -20614,6 +20618,46 @@
             "origin": "c",
             "partial": true,
             "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "results_written_current_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
           }
         ],
         "name": "results",
@@ -30375,6 +30419,13 @@
         "type": "index"
       },
       {
+        "name": "results_written_current_idx",
+        "object_sha256": "33b23b35342551a21852bec9de1b4041d1b41d3d4aa359f43e7961a898fb2898",
+        "sql": "CREATE INDEX results_written_current_idx\nON results(student_id, problem_id, id) WHERE res_type=2;",
+        "table_name": "results",
+        "type": "index"
+      },
+      {
         "name": "solution_reveals_student_timeline_idx",
         "object_sha256": "caa6bd1b672a95e56a23a8d95a2299d06568b79531fe0fbb0897dbb074cc996c",
         "sql": "CREATE INDEX solution_reveals_student_timeline_idx\n    on solution_reveals (student_user_id, revealed_at, id);",
@@ -30768,8 +30819,8 @@
       },
       {
         "name": "effective_results",
-        "object_sha256": "d7e30dd256efd44068b9e978d55e9cdd475b65f9175f66aba5b923e7fceb80db",
-        "sql": "CREATE VIEW effective_results as\n    select r.* from results r\n    left join live_mark_cells c\n      on c.student_id=r.student_id and c.problem_id=r.problem_id\n    where ((c.result_id is not null and r.id=c.result_id)\n       or (c.result_id is null and not exists (\n           select 1 from live_mark_results m where m.result_id=r.id)))\n      and (r.res_type<>1 or not exists (\n           select 1 from test_attempt_result_events e\n           where e.result_id=r.id)\n       or exists (\n           select 1 from test_attempts a\n           where a.result_id=r.id));",
+        "object_sha256": "eae6898392727c910c75785ca7c813f335057e36ef2997ffb6512db74007b0d2",
+        "sql": "CREATE VIEW effective_results AS\nWITH choices AS MATERIALIZED (SELECT * FROM teacher_result_choices)\nSELECT r.* FROM choices JOIN results r ON r.id=choices.result_id\nUNION ALL\nSELECT r.* FROM results r\nLEFT JOIN result_problem_groups pg ON pg.problem_id=r.problem_id\nLEFT JOIN choices ON choices.student_id=r.student_id\n                 AND choices.logical_key=pg.logical_key\nLEFT JOIN live_mark_cells c ON c.student_id=r.student_id AND c.problem_id=r.problem_id\nWHERE (coalesce(r.res_type,0) NOT IN (2,3,4) OR choices.result_id IS NULL)\n  AND choices.manual_result_id IS NULL\n  AND ((c.result_id IS NOT NULL AND r.id=c.result_id)\n    OR (c.result_id IS NULL AND NOT EXISTS (\n      SELECT 1 FROM live_mark_results lm WHERE lm.result_id=r.id)))\n  AND (r.res_type<>1 OR NOT EXISTS (\n      SELECT 1 FROM test_attempt_result_events e WHERE e.result_id=r.id)\n    OR EXISTS (SELECT 1 FROM test_attempts a WHERE a.result_id=r.id));",
         "table_name": "effective_results",
         "type": "view"
       },
@@ -30792,6 +30843,20 @@
         "object_sha256": "3e6893a833eed61f9a5ccb7a6f016e3ec19585dc04d24ea16ed5a6051fe264ec",
         "sql": "CREATE VIEW reaction_view AS\nSELECT rct.ts,\n       reaction_type,\n       problem_id,\n       result_id,\n       stud.name || ' ' || stud.surname || ' ' || stud.middlename    AS student_name,\n       reaction_enum.reaction,\n       teach.name || ' ' || teach.surname || ' ' || teach.middlename AS teacher_name,\n       coalesce(r.lesson, zc.lesson)                                 as lesson,\n       coalesce(r.group_id, zc.group_id)                             as group_id,\n       verdict,\n       coalesce(r.check_time_spent_sec, zc.check_time_spent_sec)     as check_time_spent_sec\nFROM reactions rct\n         JOIN reaction_enum USING (reaction_id)\n         JOIN reaction_type_enum USING (reaction_type_id)\n         LEFT JOIN results r ON rct.result_id = r.id\n         LEFT JOIN zoom_conversation zc on rct.zoom_conversation_id = zc.id\n         LEFT JOIN users AS stud ON (stud.id = coalesce(r.student_id, zc.student_id))\n         LEFT JOIN users AS teach ON (teach.id = coalesce(r.teacher_id, zc.teacher_id));",
         "table_name": "reaction_view",
+        "type": "view"
+      },
+      {
+        "name": "result_problem_groups",
+        "object_sha256": "7ba53877702bea82eed41aabed17909f889f6b005c4dec17fbb0155a239d57b9",
+        "sql": "CREATE VIEW result_problem_groups AS\nSELECT p.id AS problem_id,\n       CASE\n         WHEN sg.id IS NOT NULL THEN 'synonym:' || sg.id\n         WHEN trim(p.synonyms) <> '' THEN\n           'legacy:' || coalesce(cast(g.course_id AS text), 'unassigned')\n           || ':' || p.lesson || ':' || p.synonyms\n         ELSE 'problem:' || p.id\n       END AS logical_key\nFROM problems p\nLEFT JOIN groups g ON g.group_id=p.group_id\nLEFT JOIN problem_synonym_members sm\n  ON sm.problem_id=p.id AND sm.removed_at IS NULL\nLEFT JOIN problem_synonym_groups sg\n  ON sg.id=sm.synonym_group_id AND sg.status='active';",
+        "table_name": "result_problem_groups",
+        "type": "view"
+      },
+      {
+        "name": "teacher_result_choices",
+        "object_sha256": "8a0ce935deb7cab859087afbc2549b900cb668eb316f8ab750853adf591ca0e8",
+        "sql": "CREATE VIEW teacher_result_choices AS\nWITH candidates AS (\n  SELECT r.student_id, pg.logical_key, max(r.id) AS written_result_id,\n         NULL AS manual_result_id\n  FROM results r JOIN result_problem_groups pg ON pg.problem_id=r.problem_id\n  WHERE r.res_type=2\n  GROUP BY r.student_id, pg.logical_key\n  UNION ALL\n  SELECT c.student_id, pg.logical_key, NULL, max(c.result_id)\n  FROM live_mark_cells c\n  JOIN result_problem_groups pg ON pg.problem_id=c.problem_id\n  JOIN results r ON r.id=c.result_id AND r.res_type IN (3,4)\n  GROUP BY c.student_id, pg.logical_key\n), latest AS (\n  SELECT student_id, logical_key, max(written_result_id) AS written_result_id,\n         max(manual_result_id) AS manual_result_id\n  FROM candidates GROUP BY student_id, logical_key\n)\nSELECT latest.*,\n       CASE\n         WHEN manual_result_id IS NULL THEN written_result_id\n         WHEN written_result_id IS NULL THEN manual_result_id\n         WHEN manual_result_id > written_result_id OR mv.val > wv.val\n           THEN manual_result_id\n         ELSE written_result_id\n       END AS result_id\nFROM latest\nLEFT JOIN results w ON w.id=written_result_id\nLEFT JOIN verdicts wv ON wv.id=w.verdict\nLEFT JOIN results m ON m.id=manual_result_id\nLEFT JOIN verdicts mv ON mv.id=m.verdict;",
+        "table_name": "teacher_result_choices",
         "type": "view"
       },
       {
@@ -31321,22 +31386,22 @@
       },
       {
         "name": "live_results_delete",
-        "object_sha256": "2fd290e8145eebca9e079fc1630e6e97fcf0b62db00b60edf10825acf7f71297",
-        "sql": "CREATE TRIGGER live_results_delete AFTER DELETE ON results BEGIN\n    UPDATE live_mark_cells SET version=version+1\n    WHERE student_id=old.student_id AND problem_id=old.problem_id;\nEND;",
+        "object_sha256": "f89797d387d00e8cff399ce023f4d3a2bc2fb97397da58ff0022d6636bb74307",
+        "sql": "CREATE TRIGGER live_results_delete AFTER DELETE ON results BEGIN\n  UPDATE live_mark_cells SET version=version+1\n  WHERE student_id=old.student_id AND problem_id IN (\n    SELECT peer.problem_id\n    FROM result_problem_groups source JOIN result_problem_groups peer\n      ON peer.logical_key=source.logical_key\n    WHERE source.problem_id=old.problem_id\n  );\nEND;",
         "table_name": "results",
         "type": "trigger"
       },
       {
         "name": "live_results_insert",
-        "object_sha256": "2224cf03f6d1aa580b0fbdf31e455560bd9adc95cffc07210ad1e04ef3c8d570",
-        "sql": "CREATE TRIGGER live_results_insert AFTER INSERT ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version,result_id)\n    VALUES(new.student_id,new.problem_id,1,\n           CASE WHEN new.res_type IN (3,4) THEN new.id END)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n        result_id=CASE\n            WHEN new.res_type IN (3,4) THEN new.id\n            WHEN new.res_type=1\n             AND new.id>coalesce(live_mark_cells.result_id,0)\n             AND EXISTS(\n                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8\n            ) THEN NULL\n            ELSE live_mark_cells.result_id\n        END;\nEND;",
+        "object_sha256": "dd79486ca583f9cc244d75ffd5b5b007a490d3877157f174354e9d592b47f47a",
+        "sql": "CREATE TRIGGER live_results_insert AFTER INSERT ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n  INSERT INTO live_mark_cells(student_id,problem_id,version,result_id)\n  VALUES(new.student_id,new.problem_id,1,\n         CASE WHEN new.res_type IN (3,4) THEN new.id END)\n  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n    result_id=CASE\n      WHEN new.res_type IN (3,4) THEN new.id\n      WHEN new.res_type=1 AND new.id>coalesce(live_mark_cells.result_id,0)\n       AND EXISTS(SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8)\n        THEN NULL\n      ELSE live_mark_cells.result_id\n    END;\n  INSERT INTO live_mark_cells(student_id,problem_id,version)\n  SELECT new.student_id, peer.problem_id, 1\n  FROM result_problem_groups source JOIN result_problem_groups peer\n    ON peer.logical_key=source.logical_key\n  WHERE source.problem_id=new.problem_id AND peer.problem_id<>new.problem_id\n  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1;\nEND;",
         "table_name": "results",
         "type": "trigger"
       },
       {
         "name": "live_results_update",
-        "object_sha256": "6fec74326fcecaf1a8893cfb3f22ee55142c10d42bbf1e74cabc45bc8f0ecd81",
-        "sql": "CREATE TRIGGER live_results_update AFTER UPDATE OF verdict, teacher_id ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n    INSERT INTO live_mark_cells(student_id,problem_id,version)\n    VALUES(new.student_id,new.problem_id,1)\n    ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n        result_id=CASE\n            WHEN new.res_type=1\n             AND new.id>coalesce(live_mark_cells.result_id,0)\n             AND EXISTS(\n                SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8\n             ) THEN NULL\n            ELSE live_mark_cells.result_id\n        END;\nEND;",
+        "object_sha256": "79c190f3ac09b7d09283bb19c32069d1126a226c1a94f9b3ce99b277424e970b",
+        "sql": "CREATE TRIGGER live_results_update AFTER UPDATE OF verdict, teacher_id ON results\nWHEN EXISTS(SELECT 1 FROM problems WHERE id=new.problem_id)\n AND EXISTS(SELECT 1 FROM users WHERE id=new.student_id) BEGIN\n  INSERT INTO live_mark_cells(student_id,problem_id,version)\n  VALUES(new.student_id,new.problem_id,1)\n  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1,\n    result_id=CASE\n      WHEN new.res_type=1 AND new.id>coalesce(live_mark_cells.result_id,0)\n       AND EXISTS(SELECT 1 FROM verdicts WHERE id=new.verdict AND val>=0.8)\n        THEN NULL\n      ELSE live_mark_cells.result_id\n    END;\n  INSERT INTO live_mark_cells(student_id,problem_id,version)\n  SELECT new.student_id, peer.problem_id, 1\n  FROM result_problem_groups source JOIN result_problem_groups peer\n    ON peer.logical_key=source.logical_key\n  WHERE source.problem_id=new.problem_id AND peer.problem_id<>new.problem_id\n  ON CONFLICT(student_id,problem_id) DO UPDATE SET version=version+1;\nEND;",
         "table_name": "results",
         "type": "trigger"
       },
@@ -32048,8 +32113,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "c406932de457bf315218de0e34dde07956766ad41e1e92c0079eef8c5a1fb222",
-    "sha256": "2483f27bdcee51e47a8c08f9ba175ed658c2773a0d936f589d6667ae8274a14c"
+    "pragma_structure_sha256": "a649dc8f97539b5c398d20de5285fd138743dfa6798616c077bc75754bbecbe1",
+    "sha256": "2769229b4b92f85759f2c4bc4a70dfd9b3aae9dada53cdc8a67812e97a862fb8"
   },
   "source_kind": "repository-migration-head"
 }

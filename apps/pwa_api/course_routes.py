@@ -29,6 +29,7 @@ from db_methods.pwa.content import (
     StudentLessonSummaryRecord,
 )
 from db_methods.pwa.progress import (
+    list_course_activity_rows,
     list_course_pending_review_rows,
     list_course_result_rows,
 )
@@ -499,6 +500,11 @@ async def get_student_course_progress(request: web.Request) -> web.Response:
                 course_id=enrollment.course_id,
                 student_user_id=student_user_id,
             ),
+            list_course_activity_rows(
+                connection,
+                student_user_id=student_user_id,
+                course_id=enrollment.course_id,
+            ),
         )
 
     (
@@ -506,11 +512,12 @@ async def get_student_course_progress(request: web.Request) -> web.Response:
         pending_review_rows,
         analytics_rows,
         achievement_rows,
+        activity_rows,
     ) = await database.factory.run_read_async(read)
     return web.json_response(
         {
             "courseId": enrollment.course_public_id,
-            **summarize_course_results(rows, pending_review_rows),
+            **summarize_course_results(rows, pending_review_rows, activity_rows=activity_rows),
             "analytics": course_analytics_payload(analytics_rows),
             "achievements": course_achievements_payload(achievement_rows),
         }

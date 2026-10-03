@@ -78,7 +78,9 @@ def test_migration_repairs_stale_pins_and_enforces_chronological_precedence(
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0090.pwa_support_photos"
     }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
+    # 0110 replaces the same triggers; this historical rehearsal must exercise
+    # 0091 against its predecessor, not the later written-result projection.
+    _apply(database_path, set(migrations) - {MIGRATION_ID, "0110.pwa_written_result_precedence"})
 
     with sqlite3.connect(database_path) as connection:
         connection.execute(

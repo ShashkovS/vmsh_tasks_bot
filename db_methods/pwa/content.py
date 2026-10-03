@@ -1819,47 +1819,12 @@ solution_state AS (
      AND reveal.publication_id = publication.id
     GROUP BY visible.problem_id, publication.id, reveal.id
 ),
+-- written-result-precedence.md: membership and the winner share migration 0110.
 logical_member AS (
-    SELECT problem_id AS visible_problem_id,
-           problem_id AS member_problem_id
-    FROM visible_problem
-    UNION
-    SELECT visible.problem_id,
-           peer.problem_id
+    SELECT visible.problem_id AS visible_problem_id, peer.problem_id AS member_problem_id
     FROM visible_problem AS visible
-    JOIN problem_synonym_members AS own
-      ON own.problem_id = visible.problem_id
-     AND own.removed_at IS NULL
-    JOIN problem_synonym_groups AS synonym_group
-      ON synonym_group.id = own.synonym_group_id
-     AND synonym_group.course_lesson_id = visible.course_lesson_id
-     AND synonym_group.status = 'active'
-    JOIN problem_synonym_members AS peer
-      ON peer.synonym_group_id = synonym_group.id
-     AND peer.removed_at IS NULL
-    UNION
-    SELECT visible.problem_id,
-           legacy_peer.id
-    FROM visible_problem AS visible
-    JOIN problems AS legacy_peer
-      ON legacy_peer.lesson = visible.lesson_number
-     AND instr(
-         ';' || visible.legacy_synonyms || ';',
-         ';' || cast(legacy_peer.id AS text) || ';'
-     ) > 0
-    JOIN groups AS legacy_group
-      ON legacy_group.group_id = legacy_peer.group_id
-     AND legacy_group.course_id = visible.course_id
-    WHERE trim(visible.legacy_synonyms) <> ''
-      AND NOT EXISTS (
-          SELECT 1
-          FROM problem_synonym_members AS current_member
-          JOIN problem_synonym_groups AS current_group
-            ON current_group.id = current_member.synonym_group_id
-           AND current_group.status = 'active'
-          WHERE current_member.problem_id = visible.problem_id
-            AND current_member.removed_at IS NULL
-      )
+    JOIN result_problem_groups AS own ON own.problem_id=visible.problem_id
+    JOIN result_problem_groups AS peer ON peer.logical_key=own.logical_key
 ),
 queue_state AS (
     SELECT logical_member.visible_problem_id,
@@ -1880,13 +1845,12 @@ ranked_result AS (
            verdict.val AS verdict_weight,
            row_number() OVER (
                PARTITION BY logical_member.visible_problem_id
-               ORDER BY (manual.result_id IS NOT NULL) DESC,
-                        CASE WHEN EXISTS (
+               ORDER BY CASE WHEN EXISTS (
                             SELECT 1 FROM test_attempts AS current_attempt
                             WHERE current_attempt.student_user_id = result.student_id
                               AND current_attempt.problem_id = result.problem_id
                         ) THEN verdict.val END DESC,
-                        result.ts DESC, result.id DESC
+                        result.id DESC
            ) AS result_rank
     FROM logical_member
     JOIN effective_results AS result

@@ -7,6 +7,8 @@ import {
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test } from './fixtures'
 
+test.describe.configure({ retries: 0 })
+
 function reviewFixtureId(project: string): number {
   const fixtureIds: Record<string, number> = {
     chromium: 9701,
@@ -17,6 +19,121 @@ function reviewFixtureId(project: string): number {
   if (fixtureId === undefined) throw new Error(`Unknown Playwright project: ${project}`)
   return fixtureId
 }
+
+// docs/written-result-precedence.md: live task lists, reload and reconnect
+// use the same winner as written review, Zoom and its undo.
+test('Written precedence: Student and Family follow review, reload and reconnect', async ({
+  page,
+  secondaryContext,
+}, info) => {
+  test.setTimeout(120_000)
+  const id = reviewFixtureId(info.project.name) + 200
+  const problemId = `p-${id}`
+  const worksheet = `/tasks/math-5-7/н/${id}`
+  const student = await secondaryContext.newPage()
+  const family = await secondaryContext.newPage()
+  await loginThroughUi(student, AUTH_PERSONAS.student, `/student${worksheet}`)
+  await loginThroughUi(family, AUTH_PERSONAS.family, `/family${worksheet}?child=1`)
+  const studentGrade = (symbol: string) =>
+    student.getByText(new RegExp(`${symbol}.*(?:Зачтено|Нужна доработка)`)).first()
+  const familyGrade = (symbol: string) => family.getByText(symbol, { exact: true }).first()
+  await expect(student.getByText('Отправлено', { exact: true })).toBeVisible()
+  await expect(family.getByText('На проверке', { exact: true }).first()).toBeVisible()
+  await loginThroughUi(page, AUTH_PERSONAS.teacher, `/staff/review/series/${problemId}`)
+  const comment = page
+    .getByRole('textbox', { name: 'Комментарий', exact: true })
+    .and(page.locator(':enabled'))
+  async function saveWritten(accepted: boolean, correction: boolean) {
+    if (correction) await page.getByRole('button', { name: 'Перепроверить', exact: true }).click()
+    await comment.fill(accepted ? 'Письменное решение принято.' : 'Нужно обосновать переход.')
+    await page
+      .getByRole('button', { name: accepted ? '1 Зачтено' : /Отклонено/, exact: accepted })
+      .click()
+    const receipt = page.waitForResponse(
+      (r) =>
+        r.request().method() === 'POST' &&
+        (r.url().endsWith('/complete') || r.url().endsWith('/correction')),
+    )
+    await comment.press('Control+Enter')
+    expect((await receipt).status()).toBe(200)
+    await expect(page.getByRole('button', { name: 'Перепроверить', exact: true })).toBeVisible()
+  }
+  await saveWritten(true, false)
+  await expect(studentGrade('✅\\+')).toBeVisible()
+  await expect(familyGrade('✅+')).toBeVisible()
+  await student.reload()
+  await family.reload()
+  await expect(studentGrade('✅\\+')).toBeVisible()
+  await expect(familyGrade('✅+')).toBeVisible()
+  await secondaryContext.setOffline(true)
+  await saveWritten(false, true)
+  await secondaryContext.setOffline(false)
+  await expect(studentGrade('🟥−')).toBeVisible()
+  await expect(familyGrade('🟥−')).toBeVisible()
+  await saveWritten(true, true)
+  await expect(studentGrade('✅\\+')).toBeVisible()
+  await expect(familyGrade('✅+')).toBeVisible()
+  const manual = await page.evaluate(
+    async ({ id, problemId }) => {
+      const post = async (path: string, body: unknown) => {
+        const response = await fetch(`/staff/api/v1/live-marking/${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        return { status: response.status, body: (await response.json()) as Record<string, unknown> }
+      }
+      const session = await post('sessions', { courseId: 'c-1', sessionId: crypto.randomUUID() })
+      if (session.status !== 200) throw new Error(JSON.stringify(session))
+      const context = {
+        mode: 'zoom',
+        contextId: session.body.sessionId,
+        studentId: 'u-101',
+        lessonId: `gl-${id}`,
+      }
+      const query = new URLSearchParams(context as Record<string, string>)
+      const response = await fetch(`/staff/api/v1/live-marking/cells?${query}`)
+      const cells = (await response.json()) as {
+        cells: Array<{ problemId: string; version: number }>
+      }
+      const cell = cells.cells.find((c) => c.problemId === problemId)
+      if (!cell) throw new Error('Written result missing from Zoom cell projection')
+      const mark = await post('operations', {
+        kind: 'mark',
+        operationId: crypto.randomUUID(),
+        context,
+        studentId: 'u-101',
+        problemId,
+        expectedVersion: cell.version,
+        value: 'minus',
+      })
+      return { ...mark, context }
+    },
+    { id, problemId },
+  )
+  expect(manual.status).toBe(200)
+  await expect(studentGrade('🟥−')).toBeVisible()
+  await expect(familyGrade('🟥−')).toBeVisible()
+  const undo = await page.evaluate(
+    async ({ context, targetOperationId }) => {
+      const response = await fetch('/staff/api/v1/live-marking/operations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'undo',
+          operationId: crypto.randomUUID(),
+          context,
+          targetOperationId,
+        }),
+      })
+      return response.status
+    },
+    { context: manual.context, targetOperationId: manual.body.operationId },
+  )
+  expect(undo).toBe(200)
+  await expect(studentGrade('✅\\+')).toBeVisible()
+  await expect(familyGrade('✅+')).toBeVisible()
+})
 
 test.describe('Series feed', () => {
   test.describe.configure({ retries: 0 })
