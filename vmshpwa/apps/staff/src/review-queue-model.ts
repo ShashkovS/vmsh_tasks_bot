@@ -48,14 +48,16 @@ export function filterReviewQueue(items: ReviewQueueItem[], search: ReviewQueueS
     )
     // This is a display projection, never an API payload: queueId still refers
     // to the original logical case, even when its first branch is filtered out.
-    if (branches.length && !unique.has(item.logicalCaseId))
-      unique.set(item.logicalCaseId, { ...item, branches })
+    if (branches.length && !unique.has(item.queueId))
+      unique.set(item.queueId, { ...item, branches })
   }
   return [...unique.values()]
 }
 
 export function reviewQueueCounts(items: ReviewQueueItem[]) {
-  const unique = [...new Map(items.map((item) => [item.logicalCaseId, item])).values()]
+  // logicalCaseId identifies the task/synonym group shared by students, while
+  // queueId anchors one student's work; see docs/serial-review.md.
+  const unique = [...new Map(items.map((item) => [item.queueId, item])).values()]
   const busy = unique.filter((item) => item.lock && !item.lock.isOwnedByCurrentStaff).length
   return { total: unique.length, available: unique.length - busy, busy }
 }

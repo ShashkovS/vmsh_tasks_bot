@@ -20,12 +20,12 @@ def history(connection, scope, actor, problem, before=None):
         + SIGNATURE
         + """ AS material_key
       FROM submission_reviews r JOIN submission_threads t ON t.id=r.thread_id
-      JOIN problems p ON p.id=t.problem_id JOIN groups g ON g.group_id=p.group_id
+      JOIN problem_catalog p ON p.id=t.problem_id JOIN groups g ON g.group_id=p.group_id
       JOIN courses c ON c.id=g.course_id WHERE """
         + clause
         + """
       AND EXISTS(SELECT 1 FROM submission_review_evidence_entries x
-        JOIN problems ep ON ep.id=x.problem_id WHERE x.review_id=r.id AND ep.public_id=?)
+        JOIN problem_catalog ep ON ep.id=x.problem_id WHERE x.review_id=r.id AND ep.public_id=?)
     ), roots AS (SELECT min(id) AS id,max(id) AS latest_id,material_key FROM eligible GROUP BY material_key)
     SELECT e.*, (SELECT public_id FROM eligible WHERE id=root.latest_id) AS own_review_id
     FROM eligible e JOIN roots root ON root.id=e.id
@@ -72,7 +72,7 @@ def condition(connection, scope, problem, entry=None):
     row = connection.execute(
         """SELECT p.id,p.lesson,p.prob,p.item,p.title,g.short_code,
       g.public_id AS group_public_id,c.public_id AS course_public_id
-      FROM problems p JOIN groups g ON g.group_id=p.group_id JOIN courses c ON c.id=g.course_id
+      FROM problem_catalog p JOIN groups g ON g.group_id=p.group_id JOIN courses c ON c.id=g.course_id
       WHERE p.public_id=?""",
         (problem,),
     ).fetchone()

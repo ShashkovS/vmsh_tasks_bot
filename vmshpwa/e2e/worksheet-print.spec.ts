@@ -82,7 +82,11 @@ test('worksheets print only mounted conditions and expanded learning materials',
     page.getByText('Отправленная работа не должна печататься', { exact: false }),
   ).toBeVisible()
   await draft.fill('Мой непечатаемый черновик')
-  await page.getByRole('button', { name: 'Задать вопрос', exact: true }).click()
+  // The caption changes once an earlier scenario has created a thread.
+  await page
+    .getByRole('region', { name: 'Обсуждение задачи', exact: true })
+    .getByRole('button', { name: /^(Задать вопрос|Вопросы по задаче)$/ })
+    .click()
   const question = page.getByRole('textbox', { name: 'Сообщение', exact: true })
   await question.fill('Вопрос, который не должен печататься')
   await page.getByRole('button', { name: 'Подсказка', exact: true }).click()

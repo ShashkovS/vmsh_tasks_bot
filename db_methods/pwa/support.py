@@ -828,7 +828,7 @@ class PwaSupportThreadRepository:
         result["problem_id"] = None
         if kind == "problem_question":
             problem = connection.execute(
-                "SELECT problem.id FROM problems AS problem "
+                "SELECT problem.id FROM problem_catalog AS problem "
                 "WHERE problem.public_id = ? AND EXISTS ("
                 "SELECT 1 FROM problem_revisions AS problem_revision "
                 "JOIN content_revisions AS revision "
@@ -867,7 +867,7 @@ class PwaSupportThreadRepository:
             "LEFT JOIN courses AS course ON course.id = group_lesson.course_id "
             "LEFT JOIN groups AS group_row ON group_row.course_id = group_lesson.course_id "
             "AND group_row.group_id = group_lesson.group_id "
-            "LEFT JOIN problems AS problem ON problem.id = thread.problem_id "
+            "LEFT JOIN problem_catalog AS problem ON problem.id = thread.problem_id "
             "WHERE thread.public_id = ?",
             (thread_public_id,),
         ).fetchone()
@@ -1058,7 +1058,7 @@ class PwaSupportThreadRepository:
             "LEFT JOIN groups AS group_row "
             "ON group_row.course_id = group_lesson.course_id "
             "AND group_row.group_id = group_lesson.group_id "
-            "LEFT JOIN problems AS problem ON problem.id = thread.problem_id "
+            "LEFT JOIN problem_catalog AS problem ON problem.id = thread.problem_id "
             "JOIN support_entries AS latest_entry ON latest_entry.id = ("
             "SELECT candidate.id FROM support_entries AS candidate "
             "WHERE candidate.thread_id = thread.id "

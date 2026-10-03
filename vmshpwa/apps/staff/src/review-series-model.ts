@@ -28,8 +28,7 @@ export function reviewProblemGroups(items: ReviewQueueItem[]) {
         items: [],
         oldest: item.submittedAt,
       }
-      if (!group.items.some((other) => other.logicalCaseId === item.logicalCaseId))
-        group.items.push(item)
+      if (!group.items.some((other) => other.queueId === item.queueId)) group.items.push(item)
       if (item.submittedAt < group.oldest) group.oldest = item.submittedAt
       groups.set(problem.problemId, group)
     }
@@ -46,7 +45,7 @@ export function seriesCandidates(
   const available = items.filter(
     (item) =>
       item.branches.some((branch) => branch.problemId === problemId) &&
-      !excluded.has(item.logicalCaseId) &&
+      !excluded.has(item.queueId) &&
       (!item.lock || item.lock.isOwnedByCurrentStaff),
   )
   // Shuffle a small oldest window so simultaneous reviewers do not all claim its head.

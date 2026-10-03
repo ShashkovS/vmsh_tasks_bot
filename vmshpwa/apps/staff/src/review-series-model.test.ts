@@ -5,8 +5,8 @@ import { allReviewItems, reviewProblemGroups, seriesCandidates } from './review-
 function item(id: string, problemId: string, day: string): ReviewQueueItem {
   return {
     queueId: id,
-    logicalCaseId: id,
-    student: { studentId: 'u-1', displayName: 'Ученик' },
+    logicalCaseId: problemId,
+    student: { studentId: `student-${id}`, displayName: 'Ученик' },
     submittedAt: day,
     lock: null,
     branches: [
@@ -56,5 +56,22 @@ describe('serial review selection', () => {
       .mockResolvedValueOnce({ items: [item('q-2', 'p-2', '2026-09-07')], nextCursor: null })
     expect(await allReviewItems({ list })).toHaveLength(2)
     expect(list).toHaveBeenLastCalledWith({ cursor: 'q-1' }, {})
+  })
+  it('counts solutions to the same task across pages without counting synonym branches twice', async () => {
+    const first = item('q-1', 'shared-synonym', '2026-09-07')
+    first.branches[0]!.problemId = 'p-1'
+    first.branches.push({ ...first.branches[0]!, queueId: 'q-1-peer', problemId: 'p-2' })
+    const second = item('q-2', 'shared-synonym', '2026-09-08')
+    second.branches[0]!.problemId = 'p-1'
+    const list = vi
+      .fn()
+      .mockResolvedValueOnce({ items: [first], nextCursor: 'q-1' })
+      .mockResolvedValueOnce({ items: [second], nextCursor: null })
+    const groups = reviewProblemGroups(await allReviewItems({ list }))
+    expect(groups.map((group) => [group.problem.problemId, group.items.length])).toEqual([
+      ['p-1', 2],
+      ['p-2', 1],
+    ])
+    expect(seriesCandidates([first, second], 'p-1', new Set(['q-1']))).toEqual([second])
   })
 })

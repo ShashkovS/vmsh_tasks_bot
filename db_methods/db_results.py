@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Tuple, Dict
 
+from .db_problems import problem_read_table
 from .db_abc import DB_ABC, sql
 from .pwa.effective_results import result_source
 
@@ -75,11 +76,11 @@ class DB_RESULT(DB_ABC):
         return tried_ids
 
     def list_student_results(self, student_id: int, lesson: int, group_id: str = None) -> List[dict]:
-        return self.db.conn.execute("""
+        return self.db.conn.execute(f"""
             select r.ts, p.group_id, coalesce(g.short_code, p.group_id) as group_code,
                    p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id
             from results r
-            join problems p on r.problem_id = p.id
+            join {problem_read_table(self.db.conn)} p on r.problem_id = p.id
             left join groups g on g.group_id = p.group_id
             where r.student_id = :student_id and r.lesson = :lesson
               and (:group_id is null or r.group_id = :group_id)
@@ -87,11 +88,11 @@ class DB_RESULT(DB_ABC):
         """, locals()).fetchall()
 
     def list_all_student_results(self, student_id: int, group_id: str = None) -> List[dict]:
-        return self.db.conn.execute("""
+        return self.db.conn.execute(f"""
             select r.ts, p.group_id, coalesce(g.short_code, p.group_id) as group_code,
                    p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id
             from results r
-            join problems p on r.problem_id = p.id
+            join {problem_read_table(self.db.conn)} p on r.problem_id = p.id
             left join groups g on g.group_id = p.group_id
             where r.student_id = :student_id
               and (:group_id is null or r.group_id = :group_id)

@@ -17,9 +17,9 @@ function work(
 ): ReviewQueueItem {
   return {
     queueId: id,
-    logicalCaseId: id,
+    logicalCaseId: problemId,
     submittedAt,
-    student: { studentId: 'u-1', displayName: 'Ученик' },
+    student: { studentId: `student-${id}`, displayName: 'Ученик' },
     lock: null,
     branches: [
       {
@@ -41,7 +41,7 @@ function work(
 }
 
 describe('queue summary and display filters (docs/serial-review.md)', () => {
-  it('counts logical cases once, including owned leases as available', () => {
+  it('counts each student work once, including owned leases as available', () => {
     const own = work('q-2'),
       other = work('q-3'),
       free = work('q-1')
@@ -57,6 +57,16 @@ describe('queue summary and display filters (docs/serial-review.md)', () => {
     expect(reviewQueueCounts([other])).toEqual({ total: 1, available: 0, busy: 1 })
     expect(reviewQueueCounts([])).toEqual({ total: 0, available: 0, busy: 0 })
   })
+  it('keeps every solution to one task, including legacy students without public IDs', () => {
+    const items = Array.from({ length: 80 }, (_, index) => work(`q-${index}`))
+    for (const item of items) item.student.studentId = null
+    const filtered = filterReviewQueue([...items, items[0]!], {})
+    expect(filtered).toHaveLength(80)
+    expect(reviewQueueCounts(filtered)).toEqual({ total: 80, available: 80, busy: 0 })
+    const groups = sortedReviewProblems(filtered, 'count')
+    expect(groups).toHaveLength(1)
+    expect(reviewQueueCounts(groups[0]!.items)).toEqual({ total: 80, available: 80, busy: 0 })
+  })
   it('projects matching synonym branches without changing claim identity or source data', () => {
     const original = work('q-1')
     original.branches.push({
@@ -67,13 +77,17 @@ describe('queue summary and display filters (docs/serial-review.md)', () => {
       groupId: 'g-2',
       groupName: 'Эксперты',
     })
-    const filtered = filterReviewQueue([original, original], {
+    const another = work('q-3')
+    another.logicalCaseId = original.logicalCaseId
+    another.branches = [{ ...original.branches[1]!, queueId: 'q-3' }]
+    const filtered = filterReviewQueue([original, another, original], {
       queueCourse: 'c-2',
       queueGroup: 'g-2',
     })
-    expect(filtered).toHaveLength(1)
+    expect(filtered).toHaveLength(2)
     expect(filtered[0]?.queueId).toBe('q-1')
     expect(filtered[0]?.branches.map((b) => b.problemId)).toEqual(['p-2'])
+    expect(reviewQueueCounts(filtered)).toEqual({ total: 2, available: 2, busy: 0 })
     expect(original.branches).toHaveLength(2)
     expect(filterReviewQueue([original], { queueCourse: 'c-1', queueGroup: 'g-2' })).toEqual([])
     expect(queueOptions([original], 'c-1').groups.map((g) => g.id)).toEqual(['g-1'])

@@ -34,6 +34,14 @@ Migrations: `0052.pwa_submission_reviews_evidence`,
 
 ## Queue/locking
 
+Исправление 3 октября 2026 реализовано локально: `logicalCaseId` wire-контракта обозначает
+задачу/группу синонимов и повторяется у разных учеников. Для сводки, карточек,
+фильтров и исключений серии используется исходный `queueId` решения;
+[реализация и регрессии](../../docs/review-queue-report.md#исправление-счётчиков--3-октября-2026).
+49 focused tests, профильные typecheck/lint/format проходят. После извлечения
+и перевода трёх подписей metadata reload frontend/backend i18n и Staff build
+также проходят. Новые E2E и production-выпуск не выполнены.
+
 - Problem group list показывает counts и allowed groups; candidate policy характеризуется нынешним «первые 8 старых, затем выбор» до согласования.
 - Claim — conditional update; lease 30 min и heartbeat. Потерянный token не завершает review.
 - Locked card показывает teacher и expiry другим staff без приватного draft comment.

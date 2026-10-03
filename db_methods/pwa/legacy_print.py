@@ -160,7 +160,7 @@ def list_print_lesson_problems(
                END AS logical_problem_key,
                coalesce(complexity.for_weak, 0.5) AS for_weak,
                coalesce(complexity.for_strong, 0.5) AS for_strong
-        FROM problems AS problem
+        FROM active_problems AS problem
         JOIN groups AS group_record
           ON group_record.group_id = problem.group_id
          AND group_record.course_id = ?
@@ -199,7 +199,7 @@ def list_print_previous_problems(
                problem.item,
                problem.prob || '<br>' || problem.item AS full_prob,
                problem.prob_type
-        FROM problems AS problem
+        FROM active_problems AS problem
         WHERE problem.lesson = ?
           AND problem.group_id IN ({placeholders})
         ORDER BY problem.group_id, problem.prob, problem.item, problem.id
@@ -226,7 +226,7 @@ def list_print_previous_results(
         f"""
         WITH target_problem AS (
             SELECT problem.id, problem.lesson, problem.group_id, problem.synonyms
-            FROM problems AS problem
+            FROM active_problems AS problem
             WHERE problem.lesson = ?
               AND problem.group_id IN ({placeholders})
         ),
@@ -253,7 +253,7 @@ def list_print_previous_results(
             FROM target_problem AS target
             JOIN groups AS target_group
               ON target_group.group_id = target.group_id
-            JOIN problems AS legacy_peer
+            JOIN active_problems AS legacy_peer
               ON legacy_peer.lesson = target.lesson
              AND instr(
                  ';' || target.synonyms || ';',

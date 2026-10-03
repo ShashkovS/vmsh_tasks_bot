@@ -168,7 +168,13 @@ def build_manifest() -> dict[str, Any]:
 
     if not CORPUS_ROOT.is_dir():
         raise GoldenCorpusError(f"Golden corpus root does not exist: {CORPUS_ROOT}")
-    entries = [_entry(path) for path in sorted(CORPUS_ROOT.iterdir())]
+    # Phase 0's approved corpus is usl-*. Adjacent imports and TeX support files
+    # in this local directory are outside that baseline (04-phase-0-baseline.md).
+    entries = [
+        _entry(path)
+        for path in sorted(CORPUS_ROOT.iterdir())
+        if path.name.startswith("usl-")
+    ]
     if not entries:
         raise GoldenCorpusError("Golden corpus is empty")
     return {

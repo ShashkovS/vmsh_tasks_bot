@@ -1592,6 +1592,10 @@ msgstr "Not used"
 msgid "Не меняет результат автоматически."
 msgstr "Does not change the result automatically."
 
+#: packages/product/src/problem-matching.tsx
+msgid "Не метчить, начать с нуля"
+msgstr "Skip matching, start fresh"
+
 #: packages/product/src/reaction.ts
 msgid "Не могу согласиться с проверкой!"
 msgstr "I disagree with the review!"

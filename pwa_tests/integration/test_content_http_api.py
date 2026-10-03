@@ -6220,3 +6220,75 @@ async def test_figure_presentation_only_draft_publish_conflict_and_exact_rollbac
     ).json()
     assert rolled_back["document"] == public_before["document"]
     assert (await layout())["hasUnpublishedChanges"] is True
+
+
+async def test_start_fresh_problem_set_http_creates_independent_ids(content_http):
+    fixture = content_http
+    first, _ = await _upload_and_compile(
+        fixture, group_lesson=fixture.group_lesson_a, kind="condition",
+        filename="fresh/first.tex", source="\\задача[title=Старая] Старый вопрос. \\кзадача",
+        review=True,
+    )
+    second, _ = await _upload_and_compile(
+        fixture, group_lesson=fixture.group_lesson_a, kind="condition",
+        filename="fresh/second.tex", source="\\задача[title=Новая] Новый вопрос. \\кзадача",
+        review=False,
+    )
+    url = f"/staff/api/v1/content/revisions/{second['revisionId']}/problem-matches"
+    initial_response = await fixture.client.get(url, cookies=_cookie(fixture, "admin"), headers=_headers())
+    initial = await initial_response.json()
+    old_ids = {candidate["problemId"] for candidate in initial["candidates"]}
+    body = {"startFresh": True, "matches": [{
+        "sourceOrdinal": row["sourceOrdinal"], "sourceItem": row["sourceItem"],
+        "decision": "insert_new", "problemId": None,
+    } for row in initial["items"]]}
+    bad = await fixture.client.put(url, json={**body, "startFresh": "yes"},
+        cookies=_cookie(fixture, "admin"), headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]))
+    assert bad.status == 422
+    response = await fixture.client.put(url, json=body, cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]))
+    assert response.status == 200, await response.text()
+    fresh = await response.json()
+    new_ids = {row["match"]["problemId"] for row in fresh["items"]}
+    assert new_ids.isdisjoint(old_ids)
+    repeated = await fixture.client.put(url, json=body, cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=response.headers["ETag"]))
+    assert repeated.status == 200
+    assert {row["match"]["problemId"] for row in (await repeated.json())["items"]} == new_ids
+    grid_response = await fixture.client.get(
+        f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/metadata-grid?revisionId={second['revisionId']}",
+        cookies=_cookie(fixture, "admin"), headers=_headers(),
+    )
+    # Use the same public grid route as the manual workflow below.
+    assert grid_response.status == 200, await grid_response.text()
+    grid = await grid_response.json()
+    assert all(not row["reviewed"] and row["correctAnswer"] is None for row in grid["rows"])
+    for row in grid["rows"]:
+        row.pop("reviewed")
+        row["problemType"] = 2
+    saved = await fixture.client.put(
+        f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/metadata-grid",
+        json={"revisionId": second["revisionId"], "rows": grid["rows"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
+    )
+    assert saved.status == 200, await saved.text()
+    assert all(row["reviewed"] for row in (await saved.json())["rows"])
+    old_response = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{first['revisionId']}/problem-matches",
+        cookies=_cookie(fixture, "admin"), headers=_headers(),
+    )
+    assert old_response.status == 200
+    old_review = await old_response.json()
+    assert {row["match"]["problemId"] for row in old_review["items"]} == old_ids
+    # The shortcut must not mutate metadata/history of an already reviewed revision.
+    blocked = await fixture.client.put(
+        f"/staff/api/v1/content/revisions/{first['revisionId']}/problem-matches",
+        json={"startFresh": True, "matches": [{
+            "sourceOrdinal": row["sourceOrdinal"], "sourceItem": row["sourceItem"],
+            "decision": "insert_new", "problemId": None,
+        } for row in old_review["items"]]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=old_response.headers["ETag"]),
+    )
+    assert blocked.status == 409

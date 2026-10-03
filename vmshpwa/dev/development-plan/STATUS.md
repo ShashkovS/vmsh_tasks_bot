@@ -1,5 +1,51 @@
 # Статус плана разработки
 
+## 2026-10-03 — общий выпуск на оба production-портала
+
+Владелец явно разрешил довести накопленные доработки, прогнать все тесты и
+выпустить на ВМШ/TLF. В работе: общий Python/frontend/Storybook/E2E gate,
+локальные недочёты, migration 0109 rehearsal, проверенный backup и обновление
+обоих серверов с сохранением данных/старых assets. Состав: файловые вложения,
+fresh problem sets, metadata reload, счётчики решений и переводы.
+[План и доказательства выпуска](../../../pwa_tests/reports/release-20261003/README.md).
+
+Gate: 1024 frontend unit, workspace types/i18n/schema (507), full lint/format,
+352 уникальных Storybook scenarios проверены (2 исправлены и повторены).
+Финальный полный Python — 2687 pass/7 skip. Репетиция 0109 на копиях обоих
+production: up/down/up, integrity, query guard; 157 прежних таблиц идентичны.
+Полный frontend: 1024 tests / 202 файла. Полный Storybook: 352 / 74 файла.
+Вся browser inventory: 394 PASS + 20 штатных skips, Chromium/WebKit/Firefox;
+ошибки исправлены и проверены, visual baselines просмотрены и повторно
+проверены. Устранена гонка native history при worksheet scroll.
+Все gates пройдены. SSH-доступ восстановлен через существующий системный
+agent; начинается release commit и guarded rollout на оба production.
+
+## 2026-10-03 — счётчики решений в письменной проверке
+
+Исправлено локально: сводка, карточки задач, таблица и исключения серийной
+проверки используют исходный `queueId` решения. Работы разных учеников одной
+задачи больше не объединяются по `logicalCaseId`; синонимы не удваивают сводку.
+49 unit/contract/client tests, Staff/contracts/tools typecheck, scoped ESLint,
+Prettier и diff-check проходят. По запросу владельца извлечены и переведены
+3 подписи сброса metadata-черновика в `apps/staff/src/locales/{ru,en}.po`.
+Frontend/backend i18n и повторный Staff build проходят; прежний build blocker
+снят. Production не менялся, новые browser E2E не выполнялись.
+[Причина, реализация, команды и границы проверки](../../docs/review-queue-report.md#исправление-счётчиков--3-октября-2026).
+
+## 2026-10-02 — начать загрузку задач с нуля
+
+Реализовано и проверено локально: кнопка в шапке неразрешённого сопоставления
+нового условия создаёт новый набор ID и открывает свежую metadata-таблицу.
+Старые записи и результаты остаются историей. Повторные запросы, конфликт ETag,
+сохранение новой таблицы, повторный reset и поздний retry проверены.
+Прошли 51 backend/schema/migration check, 143 проверки совместимости,
+полный новый HTTP-flow, 48 frontend tests, 5 Storybook/a11y scenarios;
+typecheck, scoped lint/Ruff, i18n и четыре app build проходят.
+[Решение, файлы, снимки и границы проверки](../../../pwa_tests/reports/fresh-problem-sets/README.md).
+Production ещё не менялся; выпуск требует backend + migration 0109 + frontend.
+Общие suites имеют отдельные blockers (golden corpus `.DS_Store`, ожидание языка
+в `staff-testing-page.test.tsx`); их файлы не менялись.
+
 ## 2026-10-02 — выпуск позадачной публикации
 
 Интегрирован `e20bbed9`, миграция доступности — 0108 после support reads 0107.
@@ -52,7 +98,6 @@ scoped lint и четыре production-сборки проходят. Выдач
 typecheck, lint, каталоги и Staff build проверены. Итоговый `6e4b82f7` на обоих
 серверах; новая кнопка и сохранение старого черновика после reload проверены
 на живой TLF-странице. Сведения о release/backup и снимок — в linked doc.
-
 
 ## 2026-10-01 — локализация подписи тестового аккаунта
 
@@ -3826,7 +3871,6 @@ HTML-валидацию идентификатора модели; pageerror о�
 По 25 публичных HTTP-проверок, health и живые формы настройки курсов — PASS.
 TLF использует английский язык бренда, VMSH — русский; прежние модели курсов
 и attendance-настройки сохранены. [Production proof](../../docs/metadata-generation.md#production--1-октября-2026).
-
 
 ## 2026-10-01 — TLF metadata generation recovery (production verified)
 

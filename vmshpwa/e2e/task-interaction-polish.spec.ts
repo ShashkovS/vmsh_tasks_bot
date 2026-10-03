@@ -23,6 +23,11 @@ test('task references, worksheet return, narrow composer and delayed sending', a
     0,
   )
   await page.goto(path)
+  // Wait for this worksheet after leaving the oral route before measuring
+  // scroll restoration; the shell can still contain the previous task list.
+  await expect(
+    page.getByRole('heading', { name: new RegExp(`Задача ${lesson}н\\.1\\.`) }),
+  ).toBeVisible()
   const open = page.getByRole('button', { name: /^Открыть задачу/ }).first()
   await page.evaluate(() => window.scrollTo(0, 100))
   const top = (await open.boundingBox())!.y
@@ -74,7 +79,14 @@ test('task references, worksheet return, narrow composer and delayed sending', a
   await expect(page.locator('[data-print-lesson]')).toHaveCount(5)
   await page.getByRole('button', { name: 'Показать более ранние занятия' }).click()
   await expect(page.locator('[data-print-lesson]')).toHaveCount(10)
-  const last = page.getByRole('button', { name: /^Открыть задачу/ }).last()
+  // Lesson cards finish loading independently. Keep the identity of the task
+  // we actually open instead of resolving a different .last() on return.
+  const lastId = await page
+    .getByRole('button', { name: /^Открыть задачу/ })
+    .last()
+    .getAttribute('data-task-return-id')
+  expect(lastId).not.toBeNull()
+  const last = page.locator(`[data-task-return-id="${lastId}"]`)
   await last.scrollIntoViewIfNeeded()
   const lastTop = (await last.boundingBox())!.y
   await last.click()

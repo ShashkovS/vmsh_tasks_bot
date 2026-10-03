@@ -162,7 +162,7 @@ def problems(connection, lesson_id):
         SELECT p.id,p.public_id,pr.display_number,pr.title,pr.problem_type,p.prob,p.item,
                p.lesson,g.short_code
         FROM lesson_publications lp JOIN problem_revisions pr ON pr.content_revision_id=lp.revision_id
-        JOIN problems p ON p.id=pr.problem_id
+        JOIN problem_catalog p ON p.id=pr.problem_id
         JOIN group_lessons gl ON gl.id=lp.group_lesson_id
         JOIN groups g ON g.group_id=gl.group_id AND g.course_id=gl.course_id
         WHERE lp.group_lesson_id=? AND lp.kind='condition' AND lp.state='published'

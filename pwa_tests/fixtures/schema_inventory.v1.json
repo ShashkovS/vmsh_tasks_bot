@@ -365,6 +365,10 @@
       {
         "id": "0108.pwa_problem_release",
         "sha256": "3b5382d698dc0394f7c2ba5253c2696cbd2574f584bd948a21fbd7268ac898b8"
+      },
+      {
+        "id": "0109.pwa_fresh_problem_sets",
+        "sha256": "63a593df88daabecf3a5ea6bfc4482e3390b46cc7ee93701aa8514d8deb2b231"
       }
     ],
     "repository_head_status": {
@@ -375,7 +379,7 @@
     }
   },
   "product": {
-    "object_count": 504,
+    "object_count": 507,
     "objects": [
       {
         "columns": [
@@ -5340,6 +5344,120 @@
         "object_sha256": "b769aee14bad661de4d95940c3d67123077271b280bd5dfef6dbd7cdc3346c72",
         "sql": "CREATE TABLE content_problem_matches\n(\n    id                  integer primary key,\n    content_revision_id integer not null references content_revisions (id),\n    source_ordinal      integer not null check (source_ordinal >= 0),\n    source_item         text    not null check (length(trim(source_item)) > 0),\n    problem_id          integer references problems (id),\n    decision            text    not null\n        check (decision in ('auto_position', 'manual_match', 'insert_new', 'omit')),\n    resolved_by_user_id integer references users (id),\n    resolved_at         text,\n    diagnostics_json    text    not null default '[]'\n        check (json_valid(diagnostics_json) = 1 and json_type(diagnostics_json) = 'array'),\n    created_at          text    not null,\n    unique (content_revision_id, source_ordinal, source_item),\n    check (\n        (decision = 'omit' and problem_id is null)\n        or (decision <> 'omit' and problem_id is not null)\n    ),\n    check (\n        (resolved_at is null and resolved_by_user_id is null)\n        or resolved_at is not null\n    )\n);",
         "table_name": "content_problem_matches",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "display_item",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_revision_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "retired_by_revision_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "created_by_revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "content_revisions"
+          },
+          {
+            "from_columns": [
+              "created_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "retired_by_revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "content_revisions"
+          }
+        ],
+        "indexes": [],
+        "name": "content_problem_slots",
+        "object_sha256": "f982924ff821dd5a784edb78273a3fb97092f97840c57e9f7f128d89e383fefd",
+        "sql": "CREATE TABLE content_problem_slots (\n    problem_id INTEGER PRIMARY KEY REFERENCES problems(id),\n    display_item TEXT NOT NULL,\n    created_by_revision_id INTEGER REFERENCES content_revisions(id),\n    retired_by_revision_id INTEGER REFERENCES content_revisions(id),\n    created_at TEXT NOT NULL,\n    created_by_user_id INTEGER REFERENCES users(id)\n);",
+        "table_name": "content_problem_slots",
         "type": "table"
       },
       {
@@ -30642,10 +30760,24 @@
         "type": "index"
       },
       {
+        "name": "active_problems",
+        "object_sha256": "0d01d312dda565e6b8a2bb6b39a099aea1a364a7e86230154b2b744367d0ae07",
+        "sql": "CREATE VIEW active_problems AS\nSELECT p.* FROM problem_catalog p\nWHERE NOT EXISTS (\n    SELECT 1 FROM content_problem_slots slot\n    WHERE slot.problem_id = p.id AND slot.retired_by_revision_id IS NOT NULL\n);",
+        "table_name": "active_problems",
+        "type": "view"
+      },
+      {
         "name": "effective_results",
         "object_sha256": "d7e30dd256efd44068b9e978d55e9cdd475b65f9175f66aba5b923e7fceb80db",
         "sql": "CREATE VIEW effective_results as\n    select r.* from results r\n    left join live_mark_cells c\n      on c.student_id=r.student_id and c.problem_id=r.problem_id\n    where ((c.result_id is not null and r.id=c.result_id)\n       or (c.result_id is null and not exists (\n           select 1 from live_mark_results m where m.result_id=r.id)))\n      and (r.res_type<>1 or not exists (\n           select 1 from test_attempt_result_events e\n           where e.result_id=r.id)\n       or exists (\n           select 1 from test_attempts a\n           where a.result_id=r.id));",
         "table_name": "effective_results",
+        "type": "view"
+      },
+      {
+        "name": "problem_catalog",
+        "object_sha256": "70a2d9d2bbf9212df2464ceab175f92c277eccc4476d62937ea72003adffdcd5",
+        "sql": "CREATE VIEW problem_catalog AS\nSELECT p.id, p.group_id, p.lesson, p.prob,\n       coalesce(slot.display_item, p.item) AS item,\n       p.title, p.prob_text, p.prob_type, p.ans_type, p.ans_validation,\n       p.validation_error, p.cor_ans, p.cor_ans_checker, p.wrong_ans,\n       p.congrat, p.synonyms, 'p-' || p.id AS public_id\nFROM problems p LEFT JOIN content_problem_slots slot ON slot.problem_id = p.id;",
+        "table_name": "problem_catalog",
         "type": "view"
       },
       {
@@ -31916,8 +32048,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "0a68dadf566423e1e7ec4cc6d8c4749344d19c02f5d0b11ee05eb772368f07d2",
-    "sha256": "fd92d2db59455aadf72928b97d1785f79a552a34c67b554ff13b76c6f844a8d7"
+    "pragma_structure_sha256": "c406932de457bf315218de0e34dde07956766ad41e1e92c0079eef8c5a1fb222",
+    "sha256": "2483f27bdcee51e47a8c08f9ba175ed658c2773a0d936f589d6667ae8274a14c"
   },
   "source_kind": "repository-migration-head"
 }

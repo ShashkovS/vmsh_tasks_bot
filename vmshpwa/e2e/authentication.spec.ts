@@ -24,6 +24,21 @@ const audienceCookieNames: Record<AuthAudience, [string, string]> = {
   staff: ['vmsh_staff_access', 'vmsh_staff_refresh'],
 }
 
+async function loginStudentBeforeCookieRemoval(page: Page): Promise<void> {
+  // Finish the first authenticated reads before removing their cookie; otherwise
+  // they start a refresh that reload aborts, exercising a different race.
+  const initialHome = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/student/api/v1/home' && response.ok(),
+  )
+  const initialLessons = page.waitForResponse(
+    (response) =>
+      /\/student\/api\/v1\/courses\/[^/]+\/lessons$/.test(new URL(response.url()).pathname) &&
+      response.ok(),
+  )
+  await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks?view=list')
+  await Promise.all([initialHome, initialLessons])
+}
+
 async function browserApi(
   page: Page,
   path: string,
@@ -858,9 +873,8 @@ test('a private reload recovers a missing access cookie through one automatic re
   page,
   context,
 }) => {
-  const persona = AUTH_PERSONAS.student
   const [accessCookieName, refreshCookieName] = audienceCookieNames.student
-  await loginThroughUi(page, persona, '/student/tasks?view=list')
+  await loginStudentBeforeCookieRemoval(page)
 
   const beforeCookies = await context.cookies()
   const oldAccessCookie = beforeCookies.find((cookie) => cookie.name === accessCookieName)
@@ -906,14 +920,17 @@ test('two tabs with one expired access cookie consume the shared refresh cookie 
   page,
   context,
 }) => {
-  const persona = AUTH_PERSONAS.student
   const [accessCookieName, refreshCookieName] = audienceCookieNames.student
-  await loginThroughUi(page, persona, '/student/tasks?view=list')
+  await loginStudentBeforeCookieRemoval(page)
 
   const secondPage = await context.newPage()
   await secondPage.emulateMedia({ reducedMotion: 'reduce' })
+  const initialNews = secondPage.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/student/api/v1/news' && response.ok(),
+  )
   await secondPage.goto('/student/news')
   await expect(secondPage.locator('[data-product="student"]')).toBeVisible()
+  await initialNews
 
   await context.clearCookies({ name: accessCookieName })
   const cookiesWithoutAccess = await context.cookies()

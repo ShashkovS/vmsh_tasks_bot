@@ -589,6 +589,23 @@ describe('Phase-2 content HTTP contracts', () => {
     expect(problemMatchMutationRequestSchema.parse({ matches: [row] })).toEqual({
       matches: [row],
     })
+    const freshRow = { ...row, decision: 'insert_new', problemId: null } as const
+    expect(
+      problemMatchMutationRequestSchema.parse({ matches: [freshRow], startFresh: true }),
+    ).toEqual({
+      matches: [freshRow],
+      startFresh: true,
+    })
+    expect(
+      problemMatchMutationRequestSchema.safeParse({ matches: [row], startFresh: true }).success,
+    ).toBe(false)
+    expect(
+      problemMatchMutationRequestSchema.safeParse({ matches: [], startFresh: true }).success,
+    ).toBe(false)
+    expect(
+      problemMatchMutationRequestSchema.safeParse({ matches: [freshRow], startFresh: 'yes' })
+        .success,
+    ).toBe(false)
     expect(() =>
       problemMatchMutationRequestSchema.parse({
         matches: [row, { ...row, sourceOrdinal: 2, sourceItem: '2' }],

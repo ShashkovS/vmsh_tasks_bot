@@ -75,12 +75,12 @@ import { historySearchSchema } from './review-history-search'
 import { lastCompletedReview, rememberCompletedReview } from './last-completed-review'
 
 function work(id: string) {
-  return { queueId: id, logicalCaseId: id, branches: [{ problemId: 'p-1' }], lock: null }
+  return { queueId: id, logicalCaseId: 'p-1', branches: [{ problemId: 'p-1' }], lock: null }
 }
 function lease(id: string): ReviewLease {
   return {
     claimToken: id,
-    logicalCaseId: id,
+    logicalCaseId: 'p-1',
     branches: [],
     evidenceBranches: [],
     student: { studentId: 'u-2', displayName: 'Ученик' },
@@ -273,4 +273,42 @@ it('releases an in-flight claim that arrives after leaving the series', async ()
   view.unmount()
   resolveClaim({ lease: lease('q-1') })
   await waitFor(() => expect(mocks.client.release).toHaveBeenCalledWith('q-1', 'q-1'))
+})
+
+it('continues to other students on the same task after completing and skipping works', async () => {
+  const random = vi.spyOn(Math, 'random').mockReturnValue(0.999)
+  mocks.client.list.mockResolvedValue({
+    items: ['q-1', 'q-2', 'q-3', 'q-4'].map(work),
+    nextCursor: null,
+  })
+  mocks.client.claim.mockImplementation((id: string) => Promise.resolve({ lease: lease(id) }))
+  mocks.client.release.mockResolvedValue({})
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  const view = render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <StaffReviewSeriesPage problemId="p-1" />
+    </QueryClientProvider>,
+  )
+  try {
+    await screen.findByRole('button', { name: 'q-1' })
+    await waitFor(() => expect(mocks.client.claim).toHaveBeenCalledTimes(2))
+    fireEvent.click(screen.getByRole('button', { name: 'q-1' }))
+    await screen.findByRole('button', { name: 'q-2' })
+    await waitFor(() => expect(mocks.client.claim).toHaveBeenCalledTimes(3))
+    fireEvent.keyDown(window, { code: 'ArrowRight', ctrlKey: true, altKey: true })
+    await screen.findByRole('button', { name: 'q-3' })
+    await waitFor(() => expect(mocks.client.claim).toHaveBeenCalledTimes(4))
+    expect(mocks.client.claim.mock.calls.map(([id]) => String(id))).toEqual([
+      'q-1',
+      'q-2',
+      'q-3',
+      'q-4',
+    ])
+    expect(mocks.client.release).toHaveBeenCalledWith('q-2', 'q-2')
+  } finally {
+    view.unmount()
+    random.mockRestore()
+  }
 })

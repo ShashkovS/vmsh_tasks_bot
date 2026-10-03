@@ -27,7 +27,7 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
         JOIN content_problem_matches pm ON pm.content_revision_id = pr.content_revision_id
           AND pm.source_ordinal = pr.source_ordinal AND pm.source_item = pr.source_item
           AND pm.problem_id = pr.problem_id AND pm.resolved_at IS NOT NULL AND pm.decision <> 'omit'
-        JOIN problems p ON p.id = pr.problem_id
+        JOIN problem_catalog p ON p.id = pr.problem_id
         LEFT JOIN problem_synonym_members sm ON sm.problem_id = p.id AND sm.removed_at IS NULL
         LEFT JOIN problem_synonym_groups sg ON sg.id = sm.synonym_group_id
           AND sg.status = 'active' AND sg.course_lesson_id = gl.course_lesson_id
@@ -47,7 +47,7 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
                trim(coalesce(u.surname, '') || ' ' || coalesce(u.name, '')) AS student_name
         FROM effective_results r JOIN verdicts v ON v.id = r.verdict
         JOIN users u ON u.id = r.student_id AND u.type IN (1, -2)
-        JOIN problems p ON p.id = r.problem_id
+        JOIN problem_catalog p ON p.id = r.problem_id
         JOIN groups g ON g.group_id = p.group_id
         WHERE g.course_id = ?
           AND (r.res_type <> 1 OR NOT EXISTS (
@@ -71,7 +71,7 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
                u.public_id AS student_public_id,
                trim(coalesce(u.surname, '') || ' ' || coalesce(u.name, '')) AS student_name
         FROM test_attempts ta JOIN users u ON u.id = ta.student_user_id AND u.type IN (1, -2)
-        JOIN problems p ON p.id = ta.problem_id JOIN groups g ON g.group_id = p.group_id
+        JOIN problem_catalog p ON p.id = ta.problem_id JOIN groups g ON g.group_id = p.group_id
         LEFT JOIN verdicts v ON v.id = ta.verdict AND ta.check_status = 'checked'
         LEFT JOIN results current_result ON current_result.id = ta.result_id
         WHERE g.course_id = ? AND ta.counts_as_attempt = 1
@@ -89,12 +89,12 @@ def course_facts(connection: sqlite3.Connection, course_id: int):
             """
         SELECT DISTINCT q.student_id AS student_user_id, q.problem_id
         FROM written_tasks_queue q JOIN users u ON u.id = q.student_id AND u.type IN (1, -2)
-        JOIN problems p ON p.id = q.problem_id
+        JOIN problem_catalog p ON p.id = q.problem_id
         JOIN groups g ON g.group_id = p.group_id WHERE g.course_id = ?
         UNION
         SELECT DISTINCT t.student_user_id, t.problem_id
         FROM submission_threads t JOIN users u ON u.id = t.student_user_id AND u.type IN (1, -2)
-        JOIN problems p ON p.id = t.problem_id JOIN groups g ON g.group_id = p.group_id
+        JOIN problem_catalog p ON p.id = t.problem_id JOIN groups g ON g.group_id = p.group_id
         JOIN submission_entries e ON e.thread_id = t.id
           AND e.author_kind = 'student' AND e.entry_kind = 'submission'
           AND e.state IN ('submitted', 'locked')

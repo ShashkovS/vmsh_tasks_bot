@@ -171,7 +171,6 @@ Storybook build и addon-vitest проходят, нет a11y errors, все о�
 
 Interaction assertions проверяют переключение course/group, snapshot/inheritance labels, merge/split identity notice, chronology provenance, combined review target, classroom inherited counts и отсутствие group comparison в Student/Family. Unit projection suite лежит в `packages/product/src/multi-course-projection.test.ts`. Visual snapshots не обновляются до ручного owner review нового mobile-light/desktop инкремента.
 
-
 ### 2026-10-01 — модель metadata в настройках курса
 
 `Pages/Staff/Course settings` в

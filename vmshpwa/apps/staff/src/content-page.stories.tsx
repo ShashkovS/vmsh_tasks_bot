@@ -460,7 +460,16 @@ function rollbackHistory(): StaffContentHistory {
         revisions,
         currentPublished: publication,
         currentScheduled: null,
-        publicationHistory: [publication],
+        publicationHistory: [
+          ...[1, 2].map((number) => ({
+            ...publication,
+            publicationId: `publication-past-${number}`,
+            revisionId: `revision-ready-${number}`,
+            version: 1,
+            etag: contentEtagSchema.parse(`"publication-past-${number}:v1"`),
+          })),
+          publication,
+        ],
       },
       ...(['hint', 'solution'] as const).map((kind) => ({
         kind,
@@ -491,6 +500,20 @@ const meta = {
     msw: {
       handlers: [
         http.get('/staff/api/v1/auth/me', () => HttpResponse.json(authFixture.authContext)),
+        // problem-release.md: publication previews also read task availability.
+        http.get('/staff/api/v1/group-lessons/:id/problem-release', ({ params, request }) =>
+          HttpResponse.json({
+            groupLessonId: params.id,
+            conditionRevisionId: new URL(request.url).searchParams.get('revisionId') ?? revisionId,
+            version: 1,
+            etag: '"storybook-release:v1"',
+            editable: false,
+            problems: webDocument.problems.map((problem) => ({
+              sourceOrdinal: problem.ordinal,
+              isOpen: true,
+            })),
+          }),
+        ),
         http.get('/staff/api/v1/group-lessons/:id/blocks', ({ params }) =>
           HttpResponse.json({
             groupLessonId: params.id,
@@ -903,7 +926,7 @@ export const AssetUploadErrorKeepsSelection: Story = {
 }
 
 export const RollbackReadyHistory: Story = {
-  name: 'Rollback → select any ready revision',
+  name: 'Rollback → select a previously published revision',
   render: () => {
     const client = storyClient({
       history: () => Promise.resolve(rollbackHistory()),

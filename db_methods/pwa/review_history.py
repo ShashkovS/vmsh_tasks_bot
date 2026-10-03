@@ -13,7 +13,7 @@ FROM submission_reviews r
 JOIN submission_threads t ON t.id = r.thread_id
 JOIN users s ON s.id = t.student_user_id
 JOIN users u ON u.id = r.reviewer_user_id
-JOIN problems p ON p.id = t.problem_id
+JOIN problem_catalog p ON p.id = t.problem_id
 JOIN groups g ON g.group_id = p.group_id
 JOIN courses c ON c.id = g.course_id
 LEFT JOIN submission_entries comment ON comment.id = r.comment_entry_id
@@ -40,7 +40,7 @@ def scope_clause(scope, reviewer_id, is_admin):
         values.extend(courses + groups)
         clauses.append(
             "NOT EXISTS (SELECT 1 FROM submission_review_evidence_entries evidence "
-            "JOIN problems ep ON ep.id = evidence.problem_id "
+            "JOIN problem_catalog ep ON ep.id = evidence.problem_id "
             "LEFT JOIN groups eg ON eg.group_id = ep.group_id "
             "LEFT JOIN courses ec ON ec.id = eg.course_id "
             "WHERE evidence.review_id = r.id AND NOT (coalesce(ec.public_id, '') IN ("
@@ -204,7 +204,7 @@ def history_detail(connection, scope, reviewer_id, is_admin, review_id):
         "JOIN content_sources source ON source.id = content.source_id AND source.kind = 'condition' "
         "JOIN content_derivatives derivative ON derivative.revision_id = content.id "
         "AND derivative.kind = 'web_ast' AND derivative.invalidated_at IS NULL "
-        "WHERE revision.problem_id = (SELECT id FROM problems WHERE public_id = ?) "
+        "WHERE revision.problem_id = (SELECT id FROM problem_catalog WHERE public_id = ?) "
         "ORDER BY (revision.id IN (SELECT entry.problem_revision_id FROM submission_review_evidence_entries evidence "
         "JOIN submission_entries entry ON entry.id = evidence.entry_id WHERE evidence.review_id = ?)) DESC, "
         "revision.id DESC, derivative.id DESC LIMIT 1",
@@ -221,7 +221,7 @@ def history_detail(connection, scope, reviewer_id, is_admin, review_id):
         ]
         document["introduction"] = []
     statement = connection.execute(
-        "SELECT prob_text FROM problems WHERE public_id = ?", (row["problem_id"],)
+        "SELECT prob_text FROM problem_catalog WHERE public_id = ?", (row["problem_id"],)
     ).fetchone()["prob_text"]
     settings = connection.execute(
         "SELECT values_json FROM course_runtime_settings WHERE course_id = (SELECT id FROM courses WHERE public_id = ?)",

@@ -10,7 +10,6 @@ typecheck, lint, каталоги и Staff build проверены. Итого�
 серверах; новая кнопка и сохранение старого черновика после reload проверены
 на живой TLF-странице. Сведения о release/backup и снимок — в linked doc.
 
-
 ## 2026-10-01 — редактор картинок в production на обоих порталах
 
 Принятый [редактор на рисунке](../../docs/figure-layout.md) реализован в
@@ -135,6 +134,23 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   batch применяются одной `BEGIN IMMEDIATE` транзакцией. Убраные строки и
   старые submissions сохраняются как артефакты, но не участвуют в текущей
   публикации или проверке.
+- **MATCH-04.** «Не метчить, начать с нуля» в неразрешённом matching новой revision
+  условия до metadata review отправляет полный
+  `insert_new` batch с `startFresh: true` и сразу открывает новую metadata-таблицу.
+  Старые задачи остаются историей с прежними ID, метаданными и результатами;
+  текущий набор и Telegram projection используют новые ID. Внутренний уникальный
+  slot новой задачи отделён от отображаемого пункта через migration
+  `0109.pwa_fresh_problem_sets.sql` и read view `problem_catalog`.
+  Повтор принятого запроса идемпотентен, включая поздний retry после следующего
+  reset; ETag защищает от чужого изменения. Уже reviewed revision сохраняет
+  позиционную metadata и не сбрасывается этим upload shortcut.
+  Реализация: `apps/staff/src/problem-review-workflow.tsx`,
+  `packages/product/src/problem-matching.tsx`,
+  [`content.py`](../../../db_methods/pwa/content.py),
+  [`content_routes.py`](../../../apps/pwa_api/content_routes.py);
+  проверки: `problem-review-fresh.test.tsx` и
+  `pwa_tests/integration/test_content_repository.py`.
+  [Проверки, снимки и выпуск](../../../pwa_tests/reports/fresh-problem-sets/README.md).
 - **METADATA-01.** Metadata-grid относится к revision **условия** и подтверждает
   все её non-omitted match одной транзакцией. Каждая строка задаёт текущую
   `problem_revisions`, а legacy `problems` обновляется только как текущая
@@ -160,6 +176,17 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   `packages/product/src/metadata-grid*.ts*`; composition и ETag/local-draft
   boundary: `apps/staff/src/problem-review-workflow.tsx`; доказательства:
   `metadata-grid*.test.*` и `e2e/content-publication.spec.ts`.
+- **METADATA-05.** «Отбросить черновик и загрузить с сервера» в редакторе
+  получает актуальный metadata grid отдельным GET, затем удаляет локальный
+  черновик этой revision и показывает серверные строки. Доступно и при
+  предупреждении об изменении серверной версии, и до обнаружения конфликта.
+  Сбой загрузки сохраняет локальные правки; действие не записывает данные на
+  сервер. Генерация и сохранение блокируют повторную загрузку.
+  Реализация: [ProblemReviewWorkflow](../../apps/staff/src/problem-review-workflow.tsx);
+  регрессии: [problem-review-reload.test.tsx](../../apps/staff/src/problem-review-reload.test.tsx).
+  3 октября 2026 переведены loading/action/error подписи в
+  [`Staff en.po`](../../apps/staff/src/locales/en.po), source ru.po извлечён Lingui.
+  Frontend/backend i18n и Staff build проходят; [команды проверки](../../docs/review-queue-report.md#исправление-счётчиков--3-октября-2026).
 - До появления `problems.public_id` в Phase 3 Staff-only reconciliation wire
   использует legacy integer `problemId` только как candidate/mutation token.
   Он не попадает в Student/Family URL или payload; Phase 3 заменяет эту
@@ -694,7 +721,6 @@ reviewable draft: язык бренда для двух проходов, мод
 Реализовано в `apps/pwa_api/content_routes.py`,
 `helpers/pwa/content/metadata_generation.py`, OpenRouter-контракте и редакторе курса.
 Проверки и ограничения записаны в [STATUS.md](STATUS.md) и документации настройки.
-
 
 ### Интеграция позадачной публикации с vmshpwa — 1 октября 2026
 

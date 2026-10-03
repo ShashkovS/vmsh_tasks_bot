@@ -35,6 +35,7 @@ export interface ProblemMatchingProps {
   selections: Readonly<Record<string, ProblemMatchingSelection | undefined>>
   onSelectionChange: (itemKey: string, selection: ProblemMatchingSelection | undefined) => void
   onCommit: () => void
+  onStartFresh?: () => void
   pending?: boolean
   error?: string
   staleDraft?: boolean
@@ -75,6 +76,7 @@ export function ProblemMatching({
   selections,
   onSelectionChange,
   onCommit,
+  onStartFresh,
   pending = false,
   error,
   staleDraft = false,
@@ -101,11 +103,23 @@ export function ProblemMatching({
             </Trans>
           </p>
         </div>
-        <Badge variant={allCompleted ? 'success' : 'neutral'}>
-          <Trans>
-            {completed} из {items.length}
-          </Trans>
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={allCompleted ? 'success' : 'neutral'}>
+            <Trans>
+              {completed} из {items.length}
+            </Trans>
+          </Badge>
+          {onStartFresh ? (
+            <Button
+              disabled={pending || items.length === 0}
+              onClick={onStartFresh}
+              size="sm"
+              variant="outline"
+            >
+              <Trans>Не метчить, начать с нуля</Trans>
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {staleDraft ? (

@@ -18,6 +18,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, time, timedelta
 from urllib.parse import urlsplit
+from uuid import uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from models.pwa.content import (
@@ -998,7 +999,7 @@ def _review_scope_row(
     row = connection.execute(
         "SELECT revision.id AS revision_id, revision.public_id AS revision_public_id, "
         "revision.status AS revision_status, revision.canonical_json, "
-        "source.group_lesson_id, group_lesson.public_id AS group_lesson_public_id, "
+        "source.kind AS source_kind, source.group_lesson_id, group_lesson.public_id AS group_lesson_public_id, "
         "group_lesson.group_id, course_lesson.lesson_number "
         "FROM content_revisions AS revision "
         "JOIN content_sources AS source ON source.id = revision.source_id "
@@ -1045,9 +1046,11 @@ def _problem_match_review_from_connection(
         ).fetchall()
     }
     candidate_rows = connection.execute(
-        "SELECT * FROM problems WHERE group_id = ? AND lesson = ? "
+        "SELECT * FROM problem_catalog WHERE group_id = ? AND lesson = ? "
+        "AND (id IN (SELECT id FROM active_problems) OR id IN "
+        "(SELECT problem_id FROM content_problem_matches WHERE content_revision_id = ?)) "
         "ORDER BY prob, item COLLATE NOCASE, id LIMIT 5001",
-        (scope["group_id"], scope["lesson_number"]),
+        (scope["group_id"], scope["lesson_number"], revision_id),
     ).fetchall()
     if len(candidate_rows) > 5_000:
         raise ContentRepositoryError("legacy problem candidate list exceeds limit")
@@ -5877,6 +5880,7 @@ class PwaContentRepository:
         expected_review_version: int,
         drafts: Sequence[ProblemMatchDraft],
         actor_user_id: int | None,
+        start_fresh: bool = False,
     ) -> ProblemMatchReview:
         """Replace the current positional reconciliation batch."""
 
@@ -5884,12 +5888,20 @@ class PwaContentRepository:
         if expected_review_version < 1:
             raise ContentInvariantError("expected review version must be positive")
         prepared = tuple(drafts)
+        if start_fresh and not prepared:
+            raise ContentInvariantError("a fresh problem set must not be empty")
+        if start_fresh and any(
+            draft.decision is not ProblemMatchDecision.INSERT_NEW for draft in prepared
+        ):
+            raise ContentInvariantError("a fresh problem set must contain only new problems")
         if len(prepared) > 2_000:
             raise ContentInvariantError("problem match batch is too large")
         timestamp = self._timestamp()
 
         def write(connection):
             scope = _review_scope_row(connection, revision_public_id)
+            if start_fresh and scope["source_kind"] != ContentKind.CONDITION.value:
+                raise ContentInvariantError("only conditions can start a fresh problem set")
             revision_id = int(scope["revision_id"])
             try:
                 document = json.loads(str(scope["canonical_json"]))
@@ -5947,10 +5959,40 @@ class PwaContentRepository:
                     elif stored_problem_id != draft.problem_id:
                         identical = False
                         break
+            if identical and start_fresh:
+                # A normal initial insert_new batch has no fresh-generation slots.
+                identical = all(
+                    connection.execute(
+                        "SELECT 1 FROM content_problem_slots "
+                        "WHERE problem_id = ? AND created_by_revision_id = ?",
+                        (row["problem_id"], revision_id),
+                    ).fetchone() is not None
+                    for row in existing
+                )
             if identical:
                 return _problem_match_review_from_connection(connection, revision_public_id)
             if _review_version(connection, revision_id) != expected_review_version:
                 raise ContentVersionConflict("problem review version changed")
+
+            if start_fresh:
+                # This upload shortcut precedes metadata review; a reviewed
+                # revision must retain its positional metadata history (MATCH-04).
+                if connection.execute(
+                    "SELECT 1 FROM problem_revisions WHERE content_revision_id = ? LIMIT 1",
+                    (revision_id,),
+                ).fetchone() is not None:
+                    raise ContentConflict(
+                        "a reviewed revision cannot start a fresh problem set; upload a new revision"
+                    )
+                # MATCH-04: retire the projection, never historical metadata/results.
+                connection.execute(
+                    "INSERT INTO content_problem_slots "
+                    "(problem_id, display_item, retired_by_revision_id, created_at, created_by_user_id) "
+                    "SELECT id, item, ?, ?, ? FROM active_problems "
+                    "WHERE group_id = ? AND lesson = ? "
+                    "ON CONFLICT(problem_id) DO UPDATE SET retired_by_revision_id = excluded.retired_by_revision_id",
+                    (revision_id, timestamp, actor_user_id, scope["group_id"], scope["lesson_number"]),
+                )
 
             changed = False
             for identity in sorted(draft_by_identity):
@@ -5961,6 +6003,7 @@ class PwaContentRepository:
                 if draft.decision is ProblemMatchDecision.INSERT_NEW:
                     if (
                         previous is not None
+                        and not start_fresh
                         and str(previous["decision"])
                         == ProblemMatchDecision.INSERT_NEW.value
                         and previous["problem_id"] is not None
@@ -5975,6 +6018,12 @@ class PwaContentRepository:
                             if source.source_item == str(source.source_ordinal)
                             else source.source_item
                         )
+                        use_fresh_slot = start_fresh or connection.execute(
+                            "SELECT 1 FROM problems p JOIN content_problem_slots slot ON slot.problem_id = p.id "
+                            "WHERE p.group_id = ? AND p.lesson = ? AND p.prob = ? AND p.item = ? "
+                            "AND slot.retired_by_revision_id IS NOT NULL",
+                            (scope["group_id"], scope["lesson_number"], source.source_ordinal, legacy_item),
+                        ).fetchone() is not None
                         try:
                             created = connection.execute(
                                 "INSERT INTO problems "
@@ -5987,7 +6036,7 @@ class PwaContentRepository:
                                     scope["group_id"],
                                     scope["lesson_number"],
                                     source.source_ordinal,
-                                    legacy_item,
+                                    f"__fresh__{uuid4().hex}" if use_fresh_slot else legacy_item,
                                     source.source_title
                                     or f"Задача {source.display_number}",
                                     source.problem_type,
@@ -5998,6 +6047,13 @@ class PwaContentRepository:
                                 "problem position already exists; choose an explicit match"
                             ) from error
                         problem_id = int(created["id"])
+                        if use_fresh_slot:
+                            connection.execute(
+                                "INSERT INTO content_problem_slots "
+                                "(problem_id, display_item, created_by_revision_id, created_at, created_by_user_id) "
+                                "VALUES (?, ?, ?, ?, ?)",
+                                (problem_id, legacy_item, revision_id if start_fresh else None, timestamp, actor_user_id),
+                            )
                 elif draft.decision is not ProblemMatchDecision.OMIT:
                     candidate = connection.execute(
                         "SELECT id, prob FROM problems WHERE id = ? "

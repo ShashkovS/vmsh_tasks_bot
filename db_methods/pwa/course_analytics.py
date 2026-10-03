@@ -26,7 +26,7 @@ def list_course_problem_rows(
                END AS logical_problem_key,
                coalesce(complexity.for_weak, 0.5) AS for_weak,
                coalesce(complexity.for_strong, 0.5) AS for_strong
-        FROM problems AS problem
+        FROM active_problems AS problem
         JOIN groups AS group_record ON group_record.group_id = problem.group_id
         LEFT JOIN problem_synonym_members AS synonym_member
           ON synonym_member.problem_id = problem.id AND synonym_member.removed_at IS NULL
@@ -66,7 +66,7 @@ def list_course_result_rows(
                END AS logical_problem_key
         FROM {result_source(connection)} AS result
         JOIN verdicts AS verdict ON verdict.id = result.verdict
-        JOIN problems AS problem ON problem.id = result.problem_id
+        JOIN active_problems AS problem ON problem.id = result.problem_id
         JOIN groups AS group_record ON group_record.group_id = problem.group_id
         LEFT JOIN problem_synonym_members AS synonym_member
           ON synonym_member.problem_id = problem.id AND synonym_member.removed_at IS NULL

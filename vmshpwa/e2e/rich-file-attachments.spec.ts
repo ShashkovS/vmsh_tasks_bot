@@ -29,6 +29,9 @@ async function attach(page: Page, editor: Locator, filename: string, endpoint: s
 }
 
 async function readLink(page: Page, caption: string, url: string) {
+  // WebKit requires the clicked document to be the foreground tab to open
+  // another popup after switching between Student and Family contexts.
+  await page.bringToFront()
   const link = page.getByRole('link', { name: caption, exact: true }).first()
   await expect(link).toHaveAttribute('href', url)
   const popupPromise = page.waitForEvent('popup')

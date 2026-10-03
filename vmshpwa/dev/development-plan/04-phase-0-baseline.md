@@ -10,7 +10,7 @@
 
 1. Зафиксировать schema inventory существующих таблиц/индексов из реально применённой цепочки migrations и согласованной БД; проверить/перегенерировать `docs/db_structure.sql`, но не считать старый snapshot самостоятельным источником истины.
 2. Создать characterization tests для правил, которые последующие этапы не должны случайно сломать: answer types, verdict weights, queue lease/selection, group/online log, Telegram discussion/result writes.
-3. Создать manifest `_vmsh_examples` с encoding/hash/expected structure, не создавая новый renderer.
+3. Создать manifest `_vmsh_examples` с encoding/hash/expected structure, не создавая новый renderer. Golden corpus ограничен именами `usl-*`; соседние пользовательские импорты, TeX support и Finder metadata не являются baseline. Неизвестные `usl-*` по-прежнему отклоняются, новые fingerprints требуют проверки manifest ([generator](../../scripts/golden_corpus.py), [regression](../../../pwa_tests/domain/test_legacy_golden_corpus.py)).
 4. Описать `_external_pipelines` inputs/outputs и выбрать parity samples.
 5. Проверить human/agent isolation: порты, DB, media, NATS prefixes, browser storage, PWA scopes.
 6. Зафиксировать contract/error/clock conventions и test data privacy.

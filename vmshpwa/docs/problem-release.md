@@ -124,7 +124,6 @@ production-отчёты `73d6730e` и протокол этих проверок
 копии не затрагивался; production rollout рисунков сохранён как upstream proof,
 развёртывание позадачной публикации не выполнялось.
 
-
 ## Выпуск — 2 октября 2026
 
 Владелец разрешил commit/push, VMSh autodeploy и ручной выпуск TLF.
@@ -176,10 +175,10 @@ Merge-коммит `0b2964a80b6db6e94fa04f478848092a0f3dfdb6` отправлен
 `origin/vmshpwa`. VMSh выпущен существующим webhook, TLF —
 закоммиченным `deploy_problem_release.sh` с этим точным SHA.
 
-| Портал | Активный frontend | Schema | HTTP |
-| --- | --- | --- | --- |
-| [VMSh](https://vmsh.shashkovs.ru) | `0b2964a80b6d-20261002112802` | 80 migrations, current, quick_check ok | 25 PASS |
-| [TLF](https://prep.leaders.tech) | `tlfprep-20261002-problem-release-0b2964a80b6d` | 80 migrations, current, quick_check ok | 25 PASS |
+| Портал                            | Активный frontend                               | Schema                                 | HTTP    |
+| --------------------------------- | ----------------------------------------------- | -------------------------------------- | ------- |
+| [VMSh](https://vmsh.shashkovs.ru) | `0b2964a80b6d-20261002112802`                   | 80 migrations, current, quick_check ok | 25 PASS |
+| [TLF](https://prep.leaders.tech)  | `tlfprep-20261002-problem-release-0b2964a80b6d` | 80 migrations, current, quick_check ok | 25 PASS |
 
 Все четыре production artifacts каждого портала проверены: Sentry включён,
 MSW/prototype выключены, release/media origin корректны. Во всех 15 VMSh и

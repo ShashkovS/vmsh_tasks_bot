@@ -47,6 +47,23 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             for_weak REAL NOT NULL,
             for_strong REAL NOT NULL
         );
+        -- MATCH-04: mirror the 0109 display/retirement projections in this
+        -- intentionally small performance schema, keeping real query plans.
+        CREATE TABLE content_problem_slots (
+            problem_id INTEGER PRIMARY KEY,
+            display_item TEXT NOT NULL,
+            retired_by_revision_id INTEGER
+        );
+        CREATE VIEW problem_catalog AS
+            SELECT p.id, p.lesson, p.group_id, p.prob,
+                   coalesce(slot.display_item, p.item) AS item,
+                   p.prob_type, p.synonyms
+            FROM problems p LEFT JOIN content_problem_slots slot ON slot.problem_id=p.id;
+        CREATE VIEW active_problems AS
+            SELECT p.* FROM problem_catalog p WHERE NOT EXISTS (
+                SELECT 1 FROM content_problem_slots slot
+                WHERE slot.problem_id=p.id AND slot.retired_by_revision_id IS NOT NULL
+            );
         CREATE TABLE verdicts (id INTEGER PRIMARY KEY, val REAL NOT NULL);
         CREATE TABLE results (
             id INTEGER PRIMARY KEY,
@@ -244,7 +261,7 @@ def test_course_analytics_handles_1500_students_and_38_lessons(tmp_path):
         assert elapsed < 15.0
 
         plan_markers = {
-            "problems": "FROM problems AS problem",
+            "problems": "FROM active_problems AS problem",
             "results": "FROM results AS result",
             "access": "FROM course_group_access AS access",
         }

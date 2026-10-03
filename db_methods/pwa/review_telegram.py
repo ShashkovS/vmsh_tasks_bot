@@ -25,7 +25,7 @@ def read_review_telegram_delivery(
         "problem.title, group_row.short_code "
         "FROM submission_review_evidence_entries AS evidence "
         "JOIN submission_reviews AS review ON review.id = evidence.review_id "
-        "JOIN problems AS problem ON problem.id = evidence.problem_id "
+        "JOIN problem_catalog AS problem ON problem.id = evidence.problem_id "
         "LEFT JOIN groups AS group_row ON group_row.group_id = problem.group_id "
         "WHERE review.public_id = ? "
         "ORDER BY problem.lesson, group_row.sort_order, problem.prob, problem.item, "

@@ -62,7 +62,7 @@ def courses(c, student_id):
         f"""WITH activity AS ({ACTIVITY})
       SELECT DISTINCT c.id,c.public_id,c.name,c.sort_order FROM courses c
       WHERE EXISTS(SELECT 1 FROM course_enrollments e WHERE e.course_id=c.id AND e.student_user_id=:student)
-        OR EXISTS(SELECT 1 FROM activity a JOIN problems p ON p.id=a.problem_id
+        OR EXISTS(SELECT 1 FROM activity a JOIN problem_catalog p ON p.id=a.problem_id
           JOIN groups g ON g.group_id=p.group_id WHERE g.course_id=c.id)
       ORDER BY c.sort_order,c.id""",
         {"student": student_id},
@@ -74,7 +74,7 @@ def lessons(c, course_id):
         c,
         """SELECT lesson_number number,max(title) title FROM (
       SELECT lesson_number,title FROM course_lessons WHERE course_id=?
-      UNION ALL SELECT p.lesson,NULL FROM problems p JOIN groups g ON g.group_id=p.group_id WHERE g.course_id=?
+      UNION ALL SELECT p.lesson,NULL FROM problem_catalog p JOIN groups g ON g.group_id=p.group_id WHERE g.course_id=?
       ) GROUP BY lesson_number ORDER BY lesson_number DESC""",
         (course_id, course_id),
     )
@@ -88,7 +88,7 @@ def problems(c, student_id, course_id, number=None):
         g.public_name group_name,g.short_code group_code,g.sort_order,
         EXISTS(SELECT 1 FROM activity a WHERE a.problem_id=p.id) active,
         EXISTS(SELECT 1 FROM submitted a WHERE a.problem_id=p.id) submitted
-      FROM problems p JOIN groups g ON g.group_id=p.group_id
+      FROM problem_catalog p JOIN groups g ON g.group_id=p.group_id
       WHERE g.course_id=:course AND p.id>0 AND p.public_id IS NOT NULL
         AND (:number IS NULL OR p.lesson=:number)
       ORDER BY p.lesson DESC,g.sort_order,g.group_id,p.prob,p.item,p.id""",
@@ -111,7 +111,7 @@ def current_results(c, student_id):
 def problem(c, public_id):
     return one(
         c,
-        "SELECT id,public_id,prob,item,title,lesson FROM problems WHERE public_id=? AND id>0",
+        "SELECT id,public_id,prob,item,title,lesson FROM problem_catalog WHERE public_id=? AND id>0",
         (public_id,),
     )
 
@@ -168,7 +168,7 @@ def event_index(c, student_id, problem_id):
       UNION ALL SELECT 'undo',o.id,o.undone_at FROM live_mark_operations o,s
         WHERE o.kind='mark' AND o.undone_at IS NOT NULL
           AND json_extract(o.after_json,'$.studentId')=(SELECT coalesce(public_id,'u-'||id) FROM users WHERE id=s.sid)
-          AND json_extract(o.after_json,'$.problemId')=(SELECT public_id FROM problems WHERE id=s.pid)
+          AND json_extract(o.after_json,'$.problemId')=(SELECT public_id FROM problem_catalog WHERE id=s.pid)
       ) SELECT DISTINCT kind,id,ts FROM events ORDER BY julianday(ts),ts,kind,id""",
         {"student": student_id, "problem": problem_id},
     )
@@ -235,14 +235,14 @@ def event_record(c, kind, event_id):
         "transfer": """SELECT x.*,u.name,u.surname,p1.public_id source_problem,p2.public_id target_problem,
           p1.prob source_number,p1.item source_item,p2.prob target_number,p2.item target_item
           FROM submission_entry_transfers x LEFT JOIN users u ON u.id=x.actor_user_id
-          JOIN submission_entries e1 ON e1.id=x.source_entry_id JOIN submission_threads t1 ON t1.id=e1.thread_id JOIN problems p1 ON p1.id=t1.problem_id
-          JOIN submission_entries e2 ON e2.id=x.target_entry_id JOIN submission_threads t2 ON t2.id=e2.thread_id JOIN problems p2 ON p2.id=t2.problem_id WHERE x.id=?""",
+          JOIN submission_entries e1 ON e1.id=x.source_entry_id JOIN submission_threads t1 ON t1.id=e1.thread_id JOIN problem_catalog p1 ON p1.id=t1.problem_id
+          JOIN submission_entries e2 ON e2.id=x.target_entry_id JOIN submission_threads t2 ON t2.id=e2.thread_id JOIN problem_catalog p2 ON p2.id=t2.problem_id WHERE x.id=?""",
         "reassignment": """SELECT x.*,u.name,u.surname,
           printf('%d%s.%d%s',p1.lesson,g1.short_code,p1.prob,coalesce(p1.item,'')) source_label,
           printf('%d%s.%d%s',p2.lesson,g2.short_code,p2.prob,coalesce(p2.item,'')) target_label
           FROM submission_material_reassignments x
-          JOIN problems p1 ON p1.id=x.source_problem_id JOIN groups g1 ON g1.group_id=p1.group_id
-          JOIN problems p2 ON p2.id=x.target_problem_id JOIN groups g2 ON g2.group_id=p2.group_id
+          JOIN problem_catalog p1 ON p1.id=x.source_problem_id JOIN groups g1 ON g1.group_id=p1.group_id
+          JOIN problem_catalog p2 ON p2.id=x.target_problem_id JOIN groups g2 ON g2.group_id=p2.group_id
           LEFT JOIN users u ON u.id=x.performed_by_user_id WHERE x.id=?""",
         "replacement": "SELECT * FROM submission_entry_replacements WHERE id=?",
         "undo": """SELECT o.*,u.name,u.surname FROM live_mark_operations o LEFT JOIN users u ON u.id=o.teacher_id WHERE o.id=?""",

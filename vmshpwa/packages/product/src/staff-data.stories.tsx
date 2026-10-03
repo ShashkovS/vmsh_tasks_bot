@@ -265,3 +265,51 @@ export const ProblemMatchingBatch: Story = {
     await expect(canvas.getByTestId('matching-readout')).toHaveTextContent('Batch сохранён')
   },
 }
+
+export const ProblemMatchingFresh: Story = {
+  name: 'Сопоставление: начать с нуля без выбора строк',
+  render: () => {
+    function Harness() {
+      const [saved, setSaved] = useState(false)
+      return (
+        <ProblemMatching
+          candidates={[]}
+          id="storybook-problem-fresh"
+          items={[
+            { key: 'new-1', displayNumber: '1а', sourceTitle: null, suggestedCandidateId: null },
+          ]}
+          onCommit={() => undefined}
+          onSelectionChange={() => undefined}
+          onStartFresh={() => setSaved(true)}
+          pending={saved}
+          selections={{}}
+        />
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button', { name: 'Не метчить, начать с нуля' })
+    await expect(button).toBeEnabled()
+    await expect(canvas.getByRole('button', { name: 'Подтвердить сопоставление' })).toBeDisabled()
+    await userEvent.click(button)
+    await expect(button).toBeDisabled()
+    await expect(canvas.getByRole('combobox')).toBeDisabled()
+  },
+}
+
+export const ProblemMatchingFreshAvailable: Story = {
+  name: 'Сопоставление: начать с нуля — доступное действие',
+  render: () => (
+    <ProblemMatching
+      candidates={[]}
+      id="storybook-problem-fresh-available"
+      items={[{ key: 'new-1', displayNumber: '1а', sourceTitle: null, suggestedCandidateId: null }]}
+      onCommit={() => undefined}
+      onSelectionChange={() => undefined}
+      onStartFresh={() => undefined}
+      selections={{}}
+    />
+  ),
+}

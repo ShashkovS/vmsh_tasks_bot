@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { StaffTestingPage } from './staff-testing-page'
+import { ServiceAvailabilityBanner } from '@vmsh/app-shell'
 import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 vi.mock('@vmsh/app-shell', async (original) => ({
@@ -23,6 +24,7 @@ function mount(view: 'tasks' | 'news' | 'courses' = 'tasks') {
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
+      <ServiceAvailabilityBanner />
       <StaffTestingPage view={view} />
     </QueryClientProvider>,
   )

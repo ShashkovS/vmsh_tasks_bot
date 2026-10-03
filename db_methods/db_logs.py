@@ -1,6 +1,7 @@
 from typing import List
 from datetime import datetime
 
+from .db_problems import problem_read_table
 from .db_abc import DB_ABC, sql
 
 
@@ -53,14 +54,14 @@ class DB_FEATURES(DB_ABC):
         """Посчитать статистику решаемости по последнему занятию.
         Возвращает список словарей с ключами prb, frac, perc, title
         """
-        cur = self.db.conn.execute("""
+        cur = self.db.conn.execute(f"""
             with pre as (
                 select r.lesson, r.group_id, p.prob, p.item,
                        p.title, r.student_id,
                        case when max(r.verdict) > 0 then 1 else 0 end verdict
                 from results r
-                         join problems p on r.problem_id = p.id
-                where p.lesson = (select max(lesson) as last_lesson from problems)
+                         join {problem_read_table(self.db.conn, active=True)} p on r.problem_id = p.id
+                where p.lesson = (select max(lesson) as last_lesson from {problem_read_table(self.db.conn, active=True)})
                 group by 1, 2, 3, 4, 5, 6
             ),
                  res as (

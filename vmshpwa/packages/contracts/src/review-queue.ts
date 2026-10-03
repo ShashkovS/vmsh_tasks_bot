@@ -118,6 +118,8 @@ const reviewQueueLockSchema = z
 export const reviewQueueItemSchema = z
   .object({
     queueId: publicIdSchema,
+    // Shared task/synonym identity, not a student work ID. Queue consumers use
+    // the original queueId for deduplication; see docs/serial-review.md.
     logicalCaseId: publicIdSchema,
     student: reviewStudentSchema,
     submittedAt: z.iso.datetime(),

@@ -1859,6 +1859,10 @@ msgstr "Загружаем распределение по аудиториям�
 msgid "Загружаем редактор…"
 msgstr "Загружаем редактор…"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Загружаем с сервера…"
+msgstr "Загружаем с сервера…"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем сводку…"
 msgstr "Загружаем сводку…"
@@ -3166,6 +3170,10 @@ msgstr "Не удалось загрузить страницу."
 msgid "Не удалось загрузить схему"
 msgstr "Не удалось загрузить схему"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Не удалось загрузить таблицу с сервера"
+msgstr "Не удалось загрузить таблицу с сервера"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Не удалось загрузить таблицу."
 msgstr "Не удалось загрузить таблицу."
@@ -3879,6 +3887,10 @@ msgstr "Основной родительский контакт"
 #: apps/staff/src/review-series-page.tsx
 msgid "Остальные работы могут проверять другие преподаватели."
 msgstr "Остальные работы могут проверять другие преподаватели."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Отбросить черновик и загрузить с сервера"
+msgstr "Отбросить черновик и загрузить с сервера"
 
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Ответ"
@@ -5813,6 +5825,10 @@ msgstr "Сервер уже принял другое изменение. Тек
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Серверная версия изменилась"
 msgstr "Серверная версия изменилась"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Серверная версия изменилась. Проверьте текущее состояние и нажмите «Не метчить, начать с нуля» ещё раз."
+msgstr "Серверная версия изменилась. Проверьте текущее состояние и нажмите «Не метчить, начать с нуля» ещё раз."
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сессии действуют до"

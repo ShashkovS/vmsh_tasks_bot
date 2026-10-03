@@ -2160,13 +2160,18 @@ async def put_problem_matches(request: web.Request) -> web.Response:
     payload = await _json_object(
         request,
         allowed_fields=_PROBLEM_MATCH_FIELDS,
+        optional_fields=frozenset({"startFresh"}),
         max_bytes=CONTENT_METADATA_JSON_LIMIT_BYTES,
     )
+    start_fresh = payload.get("startFresh", False)
+    if not isinstance(start_fresh, bool):
+        raise ContentInvariantError("startFresh must be a boolean")
     review = await repository.resolve_problem_matches(
         revision_public_id=revision_public_id,
         expected_review_version=current.review_version,
         drafts=_problem_match_drafts(payload["matches"]),
         actor_user_id=actor_user_id,
+        start_fresh=start_fresh,
     )
     response = web.json_response(
         _problem_match_payload(review, request_id=_request_id(request))

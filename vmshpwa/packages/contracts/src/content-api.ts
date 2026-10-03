@@ -811,9 +811,22 @@ export const problemMatchMutationRowSchema = z
 export type ProblemMatchMutationRow = z.infer<typeof problemMatchMutationRowSchema>
 
 export const problemMatchMutationRequestSchema = z
-  .object({ matches: z.array(problemMatchMutationRowSchema).max(2_000) })
+  .object({
+    matches: z.array(problemMatchMutationRowSchema).max(2_000),
+    startFresh: z.boolean().optional(),
+  })
   .strict()
   .superRefine((request, context) => {
+    if (
+      request.startFresh &&
+      (request.matches.length === 0 ||
+        request.matches.some((item) => item.decision !== 'insert_new'))
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A fresh problem set must contain only new problems',
+      })
+    }
     const identities = request.matches.map(
       (item) => `${item.sourceOrdinal}\u0000${item.sourceItem}`,
     )

@@ -245,6 +245,7 @@ async def _append_ready_revision(
     source_id: int,
     suffix: str,
     expected_previous_revision_number: int,
+    canonical_document: object | None = None,
 ):
     payload = SourceRevisionPayload.from_bytes(
         f"\\section*{{{suffix}}}".encode(),
@@ -269,7 +270,7 @@ async def _append_ready_revision(
         expected_version=compiling.version,
         target=RevisionStatus.READY,
         parser_version="fixture-parser-v1",
-        canonical_document={"children": [], "type": "document"},
+        canonical_document=({"children": [], "type": "document"} if canonical_document is None else canonical_document),
     )
 
 
@@ -2896,3 +2897,97 @@ async def test_figure_layout_conflict_and_immutable_publication(content_fixture)
     )  # the scheduled snapshot, not the newer draft
 
     assert figure_catalog(visible)[0]["figure"]["widthRem"] == 12
+
+
+async def test_start_fresh_creates_new_ids_at_occupied_positions_and_keeps_history(content_fixture):
+    fixture = content_fixture
+    _, lesson = await _create_group_lesson(
+        fixture, course_lesson_public_id="course-fresh", course_id=fixture.course_id,
+        lesson_number=41, group_id="content-a", group_lesson_public_id="lesson-fresh",
+    )
+    source, revision = await _create_source_revision(
+        fixture, group_lesson_id=lesson.id, suffix="fresh",
+        canonical_document={"problems": [
+            {"ordinal": 1, "source_item": None, "source_title": "Новая"},
+            {"ordinal": 2, "source_item": "а", "source_title": None},
+        ]},
+    )
+    initial = await fixture.repository.get_problem_match_review(revision_public_id=revision.public_id)
+    old_ids = {candidate.problem_id for candidate in initial.candidates}
+    old_rows = fixture.factory.run_read(lambda c: [dict(row) for row in c.execute(
+        "SELECT * FROM problems WHERE group_id='content-a' AND lesson=41 ORDER BY id"
+    )])
+    drafts = tuple(ProblemMatchDraft(
+        source_ordinal=item.source.source_ordinal, source_item=item.source.source_item,
+        decision=ProblemMatchDecision.INSERT_NEW, problem_id=None,
+    ) for item in initial.items)
+    with pytest.raises(ContentVersionConflict):
+        await fixture.repository.resolve_problem_matches(
+            revision_public_id=revision.public_id, expected_review_version=99,
+            drafts=drafts, actor_user_id=fixture.actor_user_id, start_fresh=True,
+        )
+    fresh = await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id, expected_review_version=initial.review_version,
+        drafts=drafts, actor_user_id=fixture.actor_user_id, start_fresh=True,
+    )
+    new_ids = {item.match.problem_id for item in fresh.items}
+    assert new_ids.isdisjoint(old_ids)
+    assert {candidate.problem_id for candidate in fresh.candidates} == new_ids
+    grid = await fixture.repository.get_problem_metadata_grid(revision_public_id=revision.public_id)
+    assert [row.problem.item for row in grid.rows] == ["", "а"]
+    assert all(not row.reviewed and row.problem.answer_type is None and row.problem.correct_answer is None for row in grid.rows)
+    assert fixture.factory.run_read(lambda c: [dict(row) for row in c.execute(
+        "SELECT * FROM problems WHERE group_id='content-a' AND lesson=41 AND id IN (?, ?) ORDER BY id",
+        tuple(sorted(old_ids)),
+    )]) == old_rows
+    assert fixture.factory.run_read(lambda c: {row["id"] for row in c.execute(
+        "SELECT id FROM active_problems WHERE group_id='content-a' AND lesson=41"
+    )}) == new_ids
+    # Retrying a committed batch creates no further IDs, even with its original version.
+    assert await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id, expected_review_version=initial.review_version,
+        drafts=drafts, actor_user_id=fixture.actor_user_id, start_fresh=True,
+    ) == fresh
+    # A later revision can match the new generation without seeing retired candidates.
+    later = await _append_ready_revision(
+        fixture, source_id=source.id, suffix="fresh-later", expected_previous_revision_number=1,
+        canonical_document={"problems": [{"ordinal": 1, "source_item": None}]},
+    )
+    later_review = await fixture.repository.get_problem_match_review(revision_public_id=later.public_id)
+    assert {candidate.problem_id for candidate in later_review.candidates} == new_ids
+    later_fresh = await fixture.repository.resolve_problem_matches(
+        revision_public_id=later.public_id, expected_review_version=later_review.review_version,
+        drafts=(ProblemMatchDraft(source_ordinal=1, source_item="1",
+            decision=ProblemMatchDecision.INSERT_NEW, problem_id=None),),
+        actor_user_id=fixture.actor_user_id, start_fresh=True,
+    )
+    latest_ids = {item.match.problem_id for item in later_fresh.items}
+    assert latest_ids.isdisjoint(new_ids | old_ids)
+    # A delayed retry of an older accepted reset must not retire the latest set.
+    await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id, expected_review_version=initial.review_version,
+        drafts=drafts, actor_user_id=fixture.actor_user_id, start_fresh=True,
+    )
+    assert fixture.factory.run_read(lambda c: {row["id"] for row in c.execute(
+        "SELECT id FROM active_problems WHERE group_id='content-a' AND lesson=41"
+    )}) == latest_ids
+
+    def check_legacy_and_import_projection(connection):
+        from types import SimpleNamespace
+        from db_methods.db_problems import DB_PROBLEM
+        from db_methods.pwa import problem_imports
+
+        legacy = DB_PROBLEM(SimpleNamespace(conn=connection))
+        assert {row["id"] for row in legacy.get_all_by_lesson("content-a", 41)} == latest_ids
+        row = legacy.get_by_text_number("content-a", 41, 1, "")
+        assert row["id"] in latest_ids
+        assert legacy.get_by_id(fixture.problem_a_id)["item"] == next(
+            row["item"] for row in old_rows if row["id"] == fixture.problem_a_id
+        )
+        projected = problem_imports.find_problem(connection, public_id=row["public_id"])
+        stored_item = connection.execute("SELECT item FROM problems WHERE id=?", (row["id"],)).fetchone()["item"]
+        problem_imports.update_problem(connection, problem_id=row["id"], values=projected)
+        assert connection.execute("SELECT item FROM problems WHERE id=?", (row["id"],)).fetchone()["item"] == stored_item
+        assert legacy.get_by_id(row["id"])["item"] == ""
+
+    fixture.factory.run_write(check_legacy_and_import_projection)

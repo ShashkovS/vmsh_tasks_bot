@@ -17,7 +17,7 @@ def source(connection, entry_id):
         EXISTS(SELECT 1 FROM submission_review_evidence_entries x WHERE x.entry_id=e.id) AS reviewed,
         EXISTS(SELECT 1 FROM submission_material_reassignment_items x WHERE x.source_entry_id=e.id) AS was_reassigned
         FROM submission_entries e JOIN submission_threads t ON t.id=e.thread_id
-        JOIN problems p ON p.id=t.problem_id JOIN groups g ON g.group_id=p.group_id
+        JOIN problem_catalog p ON p.id=t.problem_id JOIN groups g ON g.group_id=p.group_id
         JOIN courses c ON c.id=g.course_id JOIN users u ON u.id=t.student_user_id
         WHERE e.public_id=?
     """,
@@ -32,7 +32,7 @@ def targets(connection, src):
         revision.id AS revision_id, revision.content_revision_id,
         t.id AS thread_id, t.public_id AS thread_public_id, coalesce(t.version,0) AS thread_version,
         t.latest_result_id, t.status AS thread_status
-        FROM problems p JOIN groups g ON g.group_id=p.group_id
+        FROM active_problems p JOIN groups g ON g.group_id=p.group_id
         JOIN problem_revisions revision ON revision.id=(
           SELECT pr.id FROM problem_revisions pr JOIN content_revisions cr
           ON cr.id=pr.content_revision_id AND cr.status='ready'

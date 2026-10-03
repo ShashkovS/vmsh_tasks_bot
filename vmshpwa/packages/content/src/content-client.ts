@@ -148,6 +148,7 @@ export interface ResolveProblemMatchesInput {
   revisionId: string
   etag: ContentEtag
   matches: ProblemMatchMutationRow[]
+  startFresh?: boolean
 }
 
 export interface SaveProblemMetadataGridInput {
@@ -534,7 +535,10 @@ class BrowserContentApiClient implements ContentApiClient {
   ): Promise<VersionedContentResource<ProblemMatchReview>> {
     this.#requireStaff()
     const revisionId = publicIdSchema.parse(input.revisionId)
-    const request = problemMatchMutationRequestSchema.parse({ matches: input.matches })
+    const request = problemMatchMutationRequestSchema.parse({
+      matches: input.matches,
+      ...(input.startFresh === undefined ? {} : { startFresh: input.startFresh }),
+    })
     return this.#reviewResource(
       `/content/revisions/${encodeURIComponent(revisionId)}/problem-matches`,
       {

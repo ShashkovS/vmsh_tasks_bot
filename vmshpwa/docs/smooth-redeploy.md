@@ -138,7 +138,6 @@ Chromium/WebKit/Firefox, включая реальные 20 и 60+ секунд 
 для всех пяти вариантов. Скрипт требует установки от root по разделу выше;
 push исходника не заменяет установленную копию.
 
-
 ## Structured application errors — 1 October 2026
 
 `createServiceTransport` preserves a validated API error envelope with code,

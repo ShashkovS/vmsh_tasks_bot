@@ -48,7 +48,7 @@ def list_course_problems(
     connection: sqlite3.Connection, *, course_id: int
 ) -> list[dict[str, object]]:
     rows = connection.execute(
-        "SELECT problem.* FROM problems AS problem "
+        "SELECT problem.* FROM active_problems AS problem "
         "JOIN groups AS group_record ON group_record.group_id = problem.group_id "
         "WHERE group_record.course_id = ?",
         (course_id,),
@@ -60,7 +60,7 @@ def find_problem(
     connection: sqlite3.Connection, *, public_id: str
 ) -> dict[str, object] | None:
     row = connection.execute(
-        "SELECT * FROM problems WHERE public_id = ?", (public_id,)
+        "SELECT * FROM problem_catalog WHERE public_id = ?", (public_id,)
     ).fetchone()
     return None if row is None else dict(row)
 
@@ -74,7 +74,7 @@ def insert_problem(
         tuple(values[field] for field in PROBLEM_FIELDS),
     )
     row = connection.execute(
-        "SELECT * FROM problems WHERE id = ?", (cursor.lastrowid,)
+        "SELECT * FROM problem_catalog WHERE id = ?", (cursor.lastrowid,)
     ).fetchone()
     assert row is not None
     return dict(row)
@@ -86,10 +86,23 @@ def update_problem(
     problem_id: int,
     values: dict[str, object],
 ) -> None:
+    # MATCH-04 in 06-phase-2-content.md: imports edit the displayed suffix,
+    # while a fresh task retains its internal unique slot in problems.item.
+    stored = dict(values)
+    slot = connection.execute(
+        "SELECT p.item FROM problems p JOIN content_problem_slots s ON s.problem_id=p.id "
+        "WHERE p.id=?", (problem_id,),
+    ).fetchone()
+    if slot is not None:
+        connection.execute(
+            "UPDATE content_problem_slots SET display_item=? WHERE problem_id=?",
+            (values["item"], problem_id),
+        )
+        stored["item"] = slot["item"]
     assignments = ", ".join(f"{field} = ?" for field in PROBLEM_FIELDS)
     connection.execute(
         f"UPDATE problems SET {assignments} WHERE id = ?",
-        (*tuple(values[field] for field in PROBLEM_FIELDS), problem_id),
+        (*tuple(stored[field] for field in PROBLEM_FIELDS), problem_id),
     )
 
 

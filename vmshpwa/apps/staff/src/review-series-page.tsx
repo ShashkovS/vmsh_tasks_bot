@@ -165,10 +165,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
         queryFn: ({ signal }) => allReviewItems(client, signal),
         staleTime: 0,
       })
-      const excluded = new Set([
-        ...completed.current,
-        ...owned.current.map((item) => item.lease.logicalCaseId),
-      ])
+      const excluded = new Set([...completed.current, ...owned.current.map((item) => item.queueId)])
       for (const item of seriesCandidates(items, problemId, excluded)) {
         if (!alive.current || attempt !== generation.current || owned.current.length >= 2) break
         try {
@@ -224,7 +221,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     reviewedLease = work.lease,
   ) => {
     setSavingReview(false)
-    completed.current.add(work.lease.logicalCaseId)
+    completed.current.add(work.queueId)
     setPrevious(response.review.reviewId)
     setFeed((items) => [
       ...items.filter((i) => i.materialKey !== materialKey(reviewedLease)),
@@ -247,7 +244,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     transferredLease = work.lease,
   ) => {
     setSavingReview(false)
-    completed.current.add(work.lease.logicalCaseId)
+    completed.current.add(work.queueId)
     const lease = {
       ...transferredLease,
       evidenceBranches: transferredLease.evidenceBranches.map((b) =>
@@ -316,7 +313,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     } finally {
       skipBusy.current = false
     }
-    completed.current.add(current.lease.logicalCaseId)
+    completed.current.add(current.queueId)
     owned.current = owned.current.filter((work) => work.queueId !== current.queueId)
     setWorks(owned.current)
   }

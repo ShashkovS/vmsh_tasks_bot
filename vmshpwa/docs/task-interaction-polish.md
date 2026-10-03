@@ -22,3 +22,14 @@
 ## Проверка
 
 [Отчёт со снимками](../../pwa_tests/reports/task-interaction-polish/README.md). E2E использует настоящий изолированный backend; задерживается запрос, а не подменяется его ответ. Для этого теста Service Worker отключён, иначе WebKit обходит перехват задержки. Регрессия печати выполняется с обычным Service Worker.
+
+В общем выпуске 3 октября устранена гонка в
+[worksheet-return](../apps/student/src/worksheet-return.ts): native history
+иногда меняет прокрутку после первого layout. Пока действует окно восстановления,
+scroll/resize повторно сохраняют положение исходной задачи; при пользовательском
+вводе или unmount callbacks перестают вмешиваться. Нулевая коррекция не порождает
+цикл scroll events. [Регрессии](../apps/student/src/worksheet-return.test.tsx)
+проверяют поздний browser reset, изменение размеров и передачу управления пользователю.
+[Browser scenario](../e2e/task-interaction-polish.spec.ts) фиксирует ID реально
+открытой задачи вместо меняющегося `.last()` среди независимо загружающихся cards.
+[Общий gate и выпуск](../../pwa_tests/reports/release-20261003/README.md).

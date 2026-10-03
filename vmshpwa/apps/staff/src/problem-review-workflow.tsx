@@ -308,6 +308,8 @@ export function ProblemReviewWorkflow({
   const [metadataDirty, setMetadataDirty] = useState(false)
   const [generationWarnings, setGenerationWarnings] = useState<string[]>([])
   const [metadataGridEpoch, setMetadataGridEpoch] = useState(0)
+  const [metadataReloading, setMetadataReloading] = useState(false)
+  const [metadataReloadError, setMetadataReloadError] = useState<string>()
   const [metadataGenerationStartedAt, setMetadataGenerationStartedAt] = useState<number>()
   const [metadataGenerationElapsedSeconds, setMetadataGenerationElapsedSeconds] = useState(0)
 
@@ -354,6 +356,30 @@ export function ProblemReviewWorkflow({
     },
     [metadataDraftKey],
   )
+
+  const discardDraftAndReloadMetadata = async () => {
+    setPending(true)
+    setMetadataReloading(true)
+    setMetadataReloadError(undefined)
+    try {
+      // 06-phase-2-content.md METADATA-05: discard only after a successful read.
+      const current = await client.metadataGrid(groupLessonId, revisionId)
+      clearStoredObject(metadataDraftKey)
+      setMetadataResource(current)
+      metadataRowsRef.current = current.data.rows.map(metadataRow)
+      setGeneratedRows(undefined)
+      setGenerationWarnings([])
+      setMetadataDirty(false)
+      setStaleDraft(false)
+      setMessage(undefined)
+      setMetadataGridEpoch((epoch) => epoch + 1)
+    } catch (error) {
+      setMetadataReloadError(readableError(error))
+    } finally {
+      setMetadataReloading(false)
+      setPending(false)
+    }
+  }
 
   const advanceAfterMatching = useCallback(
     async (resource: MatchResource) => {
@@ -455,12 +481,20 @@ export function ProblemReviewWorkflow({
     [matchResource],
   )
 
-  const saveMatches = async () => {
+  const saveMatches = async (startFresh = false) => {
     if (!matchResource) return
     setPending(true)
     setMessage(undefined)
     try {
       const matches = matchResource.data.items.map((item) => {
+        // 06-phase-2-content.md MATCH-04: bypass every saved/local mapping.
+        if (startFresh)
+          return {
+            sourceOrdinal: item.sourceOrdinal,
+            sourceItem: item.sourceItem,
+            decision: 'insert_new' as const,
+            problemId: null,
+          }
         const selection = selections[problemKey(item.sourceOrdinal, item.sourceItem)]
         if (!selection) throw new Error(t`Выберите действие для каждой задачи`)
         return {
@@ -474,12 +508,24 @@ export function ProblemReviewWorkflow({
         revisionId,
         etag: matchResource.etag,
         matches,
+        ...(startFresh ? { startFresh: true } : {}),
       })
       clearStoredObject(matchDraftKey)
+      if (startFresh) clearStoredObject(metadataDraftKey)
       await advanceAfterMatching(saved)
     } catch (error) {
       if (error instanceof ApiResponseError && error.status === 409) {
         const current = await client.problemMatches(revisionId)
+        if (startFresh) {
+          setMatchResource(current)
+          setSelections(selectionsFromReview(current.data))
+          setStaleDraft(false)
+          setPhase('matching')
+          setMessage(
+            t`Серверная версия изменилась. Проверьте текущее состояние и нажмите «Не метчить, начать с нуля» ещё раз.`,
+          )
+          return
+        }
         clearStoredObject(matchDraftKey)
         setSelections({})
         setStaleDraft(false)
@@ -619,6 +665,9 @@ export function ProblemReviewWorkflow({
         id={`problem-matching-${kind}`}
         items={matchingItems}
         onCommit={() => void saveMatches()}
+        {...(kind === 'condition' && matchResource.data.items.some((item) => item.match === null)
+          ? { onStartFresh: () => void saveMatches(true) }
+          : {})}
         onSelectionChange={(itemKey, selection) => {
           const next = { ...selections }
           if (selection) next[itemKey] = selection
@@ -657,6 +706,27 @@ export function ProblemReviewWorkflow({
             </Trans>
           </p>
         </div>
+        <Button
+          disabled={pending}
+          onClick={() => void discardDraftAndReloadMetadata()}
+          size="xs"
+          variant="outline"
+        >
+          <RefreshCw aria-hidden="true" />
+          {metadataReloading
+            ? t`Загружаем с сервера…`
+            : t`Отбросить черновик и загрузить с сервера`}
+        </Button>
+        {metadataReloadError ? (
+          <Alert role="alert" tone="danger">
+            <AlertContent>
+              <AlertTitle>
+                <Trans>Не удалось загрузить таблицу с сервера</Trans>
+              </AlertTitle>
+              <AlertDescription>{metadataReloadError}</AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
         {metadataResource.data.canGenerateMetadata && client.generateMetadata ? (
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -769,6 +839,7 @@ export function ProblemReviewWorkflow({
           initialRows={baseline}
           key={`${metadataResource.etag}-${metadataGridEpoch}`}
           onCommit={async (rows) => {
+            setPending(true)
             try {
               const saved = await client.saveMetadataGrid({
                 groupLessonId,
@@ -789,6 +860,8 @@ export function ProblemReviewWorkflow({
                 )
               }
               throw new Error(readableError(error))
+            } finally {
+              setPending(false)
             }
           }}
           onDiscard={() => {
@@ -797,6 +870,7 @@ export function ProblemReviewWorkflow({
             setGeneratedRows(undefined)
             setGenerationWarnings([])
             setMetadataDirty(false)
+            setStaleDraft(false)
             setMetadataGridEpoch((epoch) => epoch + 1)
           }}
           onDirtyChange={setMetadataDirty}

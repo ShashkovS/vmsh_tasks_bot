@@ -27,14 +27,13 @@
 [OpenRouter-контракт](../../vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py),
 [редактор курса](../apps/staff/src/course-catalog-editors.tsx).
 
-
 ## Проверка 1 октября 2026
 
 - `pytest -o addopts='' pwa_tests/domain/test_metadata_generation.py
-  pwa_tests/domain/test_metadata_generation_language.py
-  pwa_tests/integration/test_course_metadata_model.py
-  pwa_tests/integration/test_phase10_course_catalog.py
-  pwa_tests/integration/test_content_http_api.py -q`: 90 PASS; отдельно
+pwa_tests/domain/test_metadata_generation_language.py
+pwa_tests/integration/test_course_metadata_model.py
+pwa_tests/integration/test_phase10_course_catalog.py
+pwa_tests/integration/test_content_http_api.py -q`: 90 PASS; отдельно
   `pwa_tests/test_schema_inventory.py`: 21 PASS на актуальной основе с 0105.
   Проверены default/stored model, независимость языка
   бренда от cookie, live-смена модели, права, конфликт версии, аудит, старые клиенты,
@@ -47,7 +46,6 @@
 - Настоящие OpenRouter-запросы в проверках не запускались. Production-выкладка
   завершена ниже. Сохранённые ранее metadata меняются только при
   явно запущенной пользователем перегенерации и последующем сохранении черновика.
-
 
 ## Production — 1 октября 2026
 
@@ -82,7 +80,6 @@ yoyo при остановленных writers, затем retained source SHA �
 symlink. Production DB snapshot не подменяется. Сборки и проверки не создавали
 metadata, submissions или synthetic Zoom events в production.
 
-
 ## English TeX generation failure — 1 October 2026
 
 The TLF worksheet `gl-1` / `cr-3` failed before calling OpenRouter: the adapter
@@ -115,7 +112,6 @@ ESLint/Ruff, i18n sync/coverage and Staff build pass; both HTTP metadata
 regression scenarios pass. A real production generation passed as recorded below.
 No database migration or course model changes are required.
 
-
 ### Verified production recovery
 
 Fix `662e3f036c9c32175d64d472d3616af6b4f8dc57` is deployed on both hosts.
@@ -142,7 +138,6 @@ Local screenshot proof:
 `.runtime/vmshpwa/metadata-recovery-proof/tlf-success.jpg`. Focused verification
 total: 29 domain tests, 2 HTTP scenarios and 13 transport tests (all pass),
 plus types/lint/i18n/build and parsing the actual English worksheet.
-
 
 ## Типы задач из таблицы — 1 октября 2026
 
@@ -176,7 +171,6 @@ revision. Отсутствие поля сохраняет совместимо�
 Проверены 31 domain-сценарий, 2 HTTP-сценария, 40 UI/contract/client tests,
 typecheck contracts/content/Staff, ESLint/Ruff, i18n sync/coverage и Staff build.
 Итоговый production-выпуск и проверка завершены ниже.
-
 
 Дополнение: восстановление local draft в `ProblemReviewWorkflow.acceptMetadata`
 имеет приоритет над переходом в «metadata подтверждены». Уже проверенная серверная

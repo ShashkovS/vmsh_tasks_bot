@@ -64,8 +64,17 @@ test('theme choice survives navigation within its application', async ({ page })
 
 test('@visual student current week', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
+  // docs/notification-activation.md: compare the account's dismissed invitation
+  // state across engines; push consent itself is covered by onboarding tests.
+  await page.addInitScript(
+    (key) => localStorage.setItem(key, 'dismissed'),
+    `vmsh-push-invitation:e2e:student:${AUTH_PERSONAS.student.accountPublicId}`,
+  )
   await loginThroughUi(page, AUTH_PERSONAS.student)
   await expect(page.getByRole('link', { name: 'ВМШ 179' }).first()).toBeVisible()
+  await expect(page.getByText('Задачи всех уровней сохранены', { exact: true })).toBeVisible({
+    timeout: 30_000,
+  })
   await page.evaluate(() => document.fonts.ready)
   const updateState = page.getByTestId('pwa-update-state')
   await updateState.waitFor({ state: 'visible', timeout: 2_000 }).catch(() => undefined)

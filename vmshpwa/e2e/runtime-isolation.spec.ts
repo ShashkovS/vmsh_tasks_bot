@@ -1,5 +1,6 @@
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test, type Page } from './fixtures'
+import { brandingSelectionSchema } from '../packages/contracts/src/branding'
 
 type Audience = 'student' | 'family' | 'staff'
 type PwaAudience = Exclude<Audience, 'staff'>
@@ -531,6 +532,14 @@ test('student and family workers own disjoint scopes and Cache Storage', async (
   expect(familyCaches).toContain(`vmsh-179-family-precache-${gatewayOrigin}/family/v1`)
   expect(studentCaches.filter((name) => familyCaches.includes(name))).toEqual([])
   for (const cache of state.cacheEntries) {
+    // branding.md: the public brand selection is the sole cached API read.
+    const publicBrandingAudience = pwaAudiences.find(
+      (audience) => cache.name === `vmsh-${audience}-branding-v1`,
+    )
+    if (publicBrandingAudience) {
+      expect(cache.urls).toEqual([`${gatewayOrigin}/${publicBrandingAudience}/api/v1/branding`])
+      continue
+    }
     expect(
       cache.urls.every((url) => !new URL(url).pathname.includes('/api/')),
       cache.name,
@@ -916,6 +925,7 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
         left.localeCompare(right),
       )
       return {
+        branding: JSON.parse(localStorage.getItem('vmsh:branding:v1') ?? 'null') as unknown,
         themes: Object.fromEntries(
           entries.filter(([key]) => key.startsWith(themePrefix) && key.endsWith(themeSuffix)),
         ),
@@ -931,7 +941,8 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
             (key) =>
               !(key.startsWith(themePrefix) && key.endsWith(themeSuffix)) &&
               !key.startsWith(authMarkerPrefix) &&
-              !key.startsWith(runtimeCachePrefix),
+              !key.startsWith(runtimeCachePrefix) &&
+              key !== 'vmsh:branding:v1',
           ),
       }
     })
@@ -965,6 +976,7 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
     'vmsh-179:runtime:v1:family',
     'vmsh-179:runtime:v1:student',
   ])
+  expect(brandingSelectionSchema.safeParse(initialStorage.branding).success).toBe(true)
   expect(initialStorage.otherKeys).toEqual([])
 
   await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
@@ -987,6 +999,7 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
     'vmsh-179:runtime:v1:family',
     'vmsh-179:runtime:v1:student',
   ])
+  expect(finalStorage.branding).toEqual(initialStorage.branding)
   expect(finalStorage.otherKeys).toEqual([])
 })
 

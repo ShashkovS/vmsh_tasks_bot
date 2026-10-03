@@ -33,7 +33,12 @@ test('course setting hides attendance and rooms, then restores the stored prefer
     expect(response.ok()).toBe(true)
   }
   try {
-    await page.getByRole('button', { name: 'Настроить', exact: true }).first().click()
+    // Other release scenarios create courses; select the fixture's course by
+    // its stable code rather than whichever card sorts first.
+    const courseCard = page
+      .locator('[data-slot="card"]')
+      .filter({ has: page.getByText(original.code, { exact: true }) })
+    await courseCard.getByRole('button', { name: 'Настроить', exact: true }).click()
     await expect(page.getByRole('checkbox', { name: 'В курсе есть очные занятия' })).toBeChecked()
     await page.getByRole('checkbox', { name: 'В курсе есть очные занятия' }).uncheck()
     const saved = page.waitForResponse(

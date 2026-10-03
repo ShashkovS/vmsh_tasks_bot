@@ -821,7 +821,7 @@ def _internal_reaction_review(
         "SELECT groups.public_id AS group_public_id, "
         "course.public_id AS course_public_id "
         "FROM submission_review_evidence_entries AS evidence "
-        "JOIN problems AS problem ON problem.id = evidence.problem_id "
+        "JOIN problem_catalog AS problem ON problem.id = evidence.problem_id "
         "LEFT JOIN groups ON groups.group_id = problem.group_id "
         "LEFT JOIN courses AS course ON course.id = groups.course_id "
         "WHERE evidence.review_id = ?",
@@ -898,7 +898,7 @@ def _student_reaction_receipt(
     )
     problem_rows = connection.execute(
         "SELECT problem.public_id FROM submission_review_evidence_entries AS evidence "
-        "JOIN problems AS problem ON problem.id = evidence.problem_id "
+        "JOIN problem_catalog AS problem ON problem.id = evidence.problem_id "
         "WHERE evidence.review_id = ? "
         "ORDER BY evidence.server_received_at, evidence.entry_id",
         (review["id"],),
@@ -942,7 +942,7 @@ def _case_rows(
         "SELECT queue.id, queue.student_id, problem.public_id AS problem_public_id, "
         "synonym.id AS synonym_group_id, synonym.public_id AS synonym_public_id "
         "FROM written_tasks_queue AS queue "
-        "JOIN problems AS problem ON problem.id = queue.problem_id "
+        "JOIN problem_catalog AS problem ON problem.id = queue.problem_id "
         "LEFT JOIN problem_synonym_members AS member "
         "ON member.problem_id = problem.id AND member.removed_at IS NULL "
         "LEFT JOIN problem_synonym_groups AS synonym "
@@ -962,7 +962,7 @@ def _case_rows(
         "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
         "course.public_id AS course_public_id, course.name AS course_name "
         "FROM written_tasks_queue AS queue "
-        "JOIN problems AS problem ON problem.id = queue.problem_id "
+        "JOIN problem_catalog AS problem ON problem.id = queue.problem_id "
         "JOIN users AS student ON student.id = queue.student_id "
         "LEFT JOIN groups ON groups.group_id = problem.group_id "
         "LEFT JOIN courses AS course ON course.id = groups.course_id "
@@ -1000,7 +1000,7 @@ _QUEUE_ROW_SELECT = (
     "teacher.public_id AS teacher_public_id, teacher.name AS teacher_name, "
     "teacher.surname AS teacher_surname "
     "FROM written_tasks_queue AS queue "
-    "JOIN problems AS problem ON problem.id = queue.problem_id "
+    "JOIN problem_catalog AS problem ON problem.id = queue.problem_id "
     "JOIN users AS student ON student.id = queue.student_id "
     "LEFT JOIN groups ON groups.group_id = problem.group_id "
     "LEFT JOIN courses AS course ON course.id = groups.course_id "
@@ -1317,7 +1317,7 @@ class PwaWrittenReviewQueueRepository:
                 "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
                 "course.public_id AS course_public_id, course.name AS course_name "
                 "FROM written_tasks_queue AS queue "
-                "JOIN problems AS problem ON problem.id = queue.problem_id "
+                "JOIN problem_catalog AS problem ON problem.id = queue.problem_id "
                 "JOIN users AS student ON student.id = queue.student_id "
                 "LEFT JOIN groups ON groups.group_id = problem.group_id "
                 "LEFT JOIN courses AS course ON course.id = groups.course_id "
@@ -1507,7 +1507,7 @@ class PwaWrittenReviewQueueRepository:
                 "JOIN submission_threads AS thread ON thread.id = review.thread_id "
                 "JOIN users AS student ON student.id = thread.student_user_id "
                 "JOIN users AS reviewer ON reviewer.id = review.reviewer_user_id "
-                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "JOIN problem_catalog AS problem ON problem.id = thread.problem_id "
                 "JOIN reaction_enum AS reaction ON reaction.reaction_id = state.reaction_id "
                 "LEFT JOIN groups ON groups.group_id = problem.group_id "
                 "LEFT JOIN courses AS course ON course.id = groups.course_id "
@@ -1683,7 +1683,7 @@ class PwaWrittenReviewQueueRepository:
                 "course.public_id AS course_public_id, course.name AS course_name, "
                 "synonym.public_id AS synonym_public_id "
                 "FROM written_tasks_queue AS queue "
-                "JOIN problems AS problem ON problem.id = queue.problem_id "
+                "JOIN problem_catalog AS problem ON problem.id = queue.problem_id "
                 "JOIN users AS student ON student.id = queue.student_id "
                 "LEFT JOIN groups ON groups.group_id = problem.group_id "
                 "LEFT JOIN courses AS course ON course.id = groups.course_id "
@@ -1725,7 +1725,7 @@ class PwaWrittenReviewQueueRepository:
                 "course.public_id AS course_public_id, course.name AS course_name, "
                 "synonym.public_id AS synonym_public_id "
                 "FROM written_tasks_queue AS queue "
-                "JOIN problems AS problem ON problem.id = queue.problem_id "
+                "JOIN problem_catalog AS problem ON problem.id = queue.problem_id "
                 "JOIN users AS student ON student.id = queue.student_id "
                 "LEFT JOIN groups ON groups.group_id = problem.group_id "
                 "LEFT JOIN courses AS course ON course.id = groups.course_id "
@@ -1765,7 +1765,7 @@ class PwaWrittenReviewQueueRepository:
                 "SELECT entry.public_id, problem.public_id AS problem_public_id "
                 "FROM submission_review_evidence_entries AS evidence "
                 "JOIN submission_entries AS entry ON entry.id = evidence.entry_id "
-                "JOIN problems AS problem ON problem.id = evidence.problem_id "
+                "JOIN problem_catalog AS problem ON problem.id = evidence.problem_id "
                 "WHERE evidence.review_id = ? "
                 "ORDER BY evidence.server_received_at, evidence.entry_id",
                 (row["id"],),
@@ -1862,7 +1862,7 @@ class PwaWrittenReviewQueueRepository:
                 "comment.public_id AS comment_public_id "
                 "FROM submission_reviews AS review "
                 "JOIN submission_threads AS thread ON thread.id = review.thread_id "
-                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "JOIN problem_catalog AS problem ON problem.id = thread.problem_id "
                 "LEFT JOIN submission_entries AS comment "
                 "ON comment.id = review.comment_entry_id "
                 "WHERE review.reviewer_user_id = ? AND review.idempotency_key = ?",
@@ -1877,7 +1877,7 @@ class PwaWrittenReviewQueueRepository:
                     "SELECT groups.public_id AS group_public_id, "
                     "course.public_id AS course_public_id "
                     "FROM submission_review_evidence_entries AS evidence "
-                    "JOIN problems AS problem ON problem.id = evidence.problem_id "
+                    "JOIN problem_catalog AS problem ON problem.id = evidence.problem_id "
                     "LEFT JOIN groups ON groups.group_id = problem.group_id "
                     "LEFT JOIN courses AS course ON course.id = groups.course_id "
                     "WHERE evidence.review_id = ?",
@@ -1961,7 +1961,7 @@ class PwaWrittenReviewQueueRepository:
                         "SELECT entry.*, thread.problem_id, problem.public_id AS problem_public_id "
                         "FROM submission_entries AS entry "
                         "JOIN submission_threads AS thread ON thread.id = entry.thread_id "
-                        "JOIN problems AS problem ON problem.id = thread.problem_id "
+                        "JOIN problem_catalog AS problem ON problem.id = thread.problem_id "
                         "WHERE entry.public_id = ? AND entry.thread_id = ? "
                         "AND entry.state = 'submitted'",
                         (entry.entry_public_id, thread["id"]),
@@ -1979,7 +1979,7 @@ class PwaWrittenReviewQueueRepository:
             )
             target_thread = thread_rows[int(target_entry["thread_id"])]
             target_problem = connection.execute(
-                "SELECT id, public_id, lesson, group_id FROM problems WHERE id = ?",
+                "SELECT id, public_id, lesson, group_id FROM problem_catalog WHERE id = ?",
                 (target_entry["problem_id"],),
             ).fetchone()
             if target_problem is None:  # pragma: no cover - protected by FK

@@ -1859,6 +1859,10 @@ msgstr "Loading room assignments…"
 msgid "Загружаем редактор…"
 msgstr "Loading editor…"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Загружаем с сервера…"
+msgstr "Loading from the server…"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем сводку…"
 msgstr "Loading summary…"
@@ -3166,6 +3170,10 @@ msgstr "Could not load the page."
 msgid "Не удалось загрузить схему"
 msgstr "Could not load the layout"
 
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Не удалось загрузить таблицу с сервера"
+msgstr "Could not load the table from the server"
+
 #: apps/staff/src/live-marking-page.tsx
 msgid "Не удалось загрузить таблицу."
 msgstr "Could not load the table."
@@ -3879,6 +3887,10 @@ msgstr "Primary parent contact"
 #: apps/staff/src/review-series-page.tsx
 msgid "Остальные работы могут проверять другие преподаватели."
 msgstr "Other work items may be reviewed by other teachers."
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Отбросить черновик и загрузить с сервера"
+msgstr "Discard draft and load from the server"
 
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Ответ"
@@ -5813,6 +5825,10 @@ msgstr "The server has already accepted another change. The current state has be
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Серверная версия изменилась"
 msgstr "Server version changed"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Серверная версия изменилась. Проверьте текущее состояние и нажмите «Не метчить, начать с нуля» ещё раз."
+msgstr "The server version changed. Review the current state and click “Skip matching, start fresh” again."
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сессии действуют до"

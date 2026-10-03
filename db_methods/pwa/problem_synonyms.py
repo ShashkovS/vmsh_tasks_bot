@@ -36,7 +36,7 @@ def _problem_rows(
                        PARTITION BY problem.id
                        ORDER BY content_revision.revision_number DESC, revision.id DESC
                    ) AS position
-            FROM problems AS problem
+            FROM problem_catalog AS problem
             JOIN problem_revisions AS revision ON revision.problem_id = problem.id
             JOIN content_revisions AS content_revision
               ON content_revision.id = revision.content_revision_id
@@ -132,7 +132,7 @@ def list_synonym_problem_ids(
 ) -> tuple[str, ...]:
     rows = connection.execute(
         "SELECT problem.public_id FROM problem_synonym_members AS member "
-        "JOIN problems AS problem ON problem.id = member.problem_id "
+        "JOIN problem_catalog AS problem ON problem.id = member.problem_id "
         "WHERE member.synonym_group_id = ? AND member.removed_at IS NULL "
         "ORDER BY member.id",
         (synonym_group_id,),

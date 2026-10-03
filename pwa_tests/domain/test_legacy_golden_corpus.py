@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from vmshpwa.scripts import golden_corpus
 
 from vmshpwa.scripts.golden_corpus import (
     CORPUS_ROOT,
@@ -62,6 +63,7 @@ def test_committed_manifest_matches_every_corpus_file():
     assert {entry["path"] for entry in committed["entries"]} == {
         path.relative_to(CORPUS_ROOT.parent).as_posix()
         for path in CORPUS_ROOT.iterdir()
+        if path.name.startswith("usl-")
     }
 
 
@@ -94,3 +96,21 @@ def test_validator_rejects_an_unreviewed_source_fingerprint(tmp_path):
 
     with pytest.raises(GoldenCorpusError, match="manifest is stale"):
         validate_manifest(stale_path)
+
+
+def test_manifest_ignores_adjacent_files_but_rejects_unknown_corpus_sources(
+    tmp_path, monkeypatch
+):
+    corpus = tmp_path / "_vmsh_examples"
+    corpus.mkdir()
+    (corpus / "usl-21-n.json").write_text('{"results": []}', encoding="utf-8")
+    monkeypatch.setattr(golden_corpus, "REPOSITORY_ROOT", tmp_path)
+    monkeypatch.setattr(golden_corpus, "CORPUS_ROOT", corpus)
+    expected = build_manifest()
+    (corpus / ".DS_Store").write_bytes(b"Finder metadata")
+    (corpus / "Class-ex-9.tex").write_text("Adjacent import", encoding="utf-8")
+    (corpus / "newlistok.sty").write_text("TeX support", encoding="utf-8")
+    assert build_manifest() == expected
+    (corpus / "usl-unreviewed.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(GoldenCorpusError, match="Unrecognised golden corpus filename"):
+        build_manifest()
