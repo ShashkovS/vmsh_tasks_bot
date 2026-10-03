@@ -38,6 +38,7 @@ ANALYTICS_ACTIVE=$(systemctl is-active vmsh-analytics.timer || true)
 cd "$CODE"
 sha256sum creds_prod/vmsh_bot_config_prod.json > "$RECORD/credentials-before.sha256"
 as_app .venv/bin/python "$BASE/deploy/bin/backup.py" > "$RECORD/backup-before.json"
+chown vmsh_tasks_bot:nginx "$RECORD/backup-before.json"
 as_app git archive "$TARGET" | as_app tar -x -C "$STAGE"
 as_app ln -s "$CODE/.venv" "$STAGE/.venv"
 cd "$STAGE"
