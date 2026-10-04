@@ -22,7 +22,15 @@ record the complete successful gate. The 320 px light/dark images are inspected.
 `story-copy-gate-failed.json` records stale login assertions updated for the
 new text. `pre-brand-gate-failed.json` found the separate pre-React startup
 screen; that component is now covered and the real cold-start case passes.
-Production evidence is pending. The owner-authorized
+`09bc16f1` is deployed on VMSh by webhook and on TLF Prep manually.
+Both portals pass 25 public read-only HTTP checks. `production-vmsh.json`,
+`production-tlf.json`, `http-vmsh.log` and `deploy-tlf.log` record the release.
+VMSh reports `frontend=true backend=false migrations=false`; PWA/Telegram
+PIDs match before and after. TLF PWA/Zoom/NATS PIDs are unchanged, credentials
+are unchanged and before/after backup integrity is `ok` (1593 Zoom receipts).
+`source-proof.json` confirms the released code matches the successful gate.
+The local push used the existing launchd SSH-agent socket after the shell
+failed to inherit it; no GitHub/SSH settings or keys were changed. The owner-authorized
 release uses VMSh autodeploy and `deploy-tlf.sh` for prep. The latter guards
 unchanged backend/dependencies/migrations, builds and verifies production
 static bundles before atomic activation, retains old tab assets, and requires

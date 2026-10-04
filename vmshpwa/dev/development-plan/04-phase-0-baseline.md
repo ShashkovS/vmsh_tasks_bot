@@ -3,6 +3,7 @@
 2026-10-04: [объяснение сбоя нашего сервера](../../docs/service-failure-copy-20261004.md)
 — Fast gate PASS: Python 2840 / 7 SKIP, frontend 1042, Storybook 362, Chromium 9;
 проверены recovery, startup/shared panels и login трёх кабинетов, 320 px light/dark.
+Выпущен `09bc16f1` на ВМШ/TLF, по 25 HTTP PASS, backend PIDs не менялись.
 
 2026-10-04: [graceful shutdown SymPy child](../../docs/graceful-shutdown.md)
 — выпущено на оба production; Linux shutdown 1,891 с, по 25 HTTP PASS.

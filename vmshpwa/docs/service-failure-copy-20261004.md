@@ -59,3 +59,11 @@ pass. Real gateway failure shows our server message at the first screen and
 automatically recovers. The form, photograph, outbox and receipt scenarios
 pass. The 320 px light/dark images were visually inspected with no overflow.
 [Gate and artifacts](../../pwa_tests/reports/service-failure-copy-20261004/README.md).
+
+Production release: `09bc16f185de5220d4c22d7d3c171238ce653dad`, VMSh webhook
+and TLF guarded manual deploy. Both portals pass 25 public read-only HTTP
+checks; all four bundles have production provenance and maintenance is clear.
+VMSh reports `frontend=true backend=false migrations=false`; PWA/Telegram
+PIDs are unchanged. TLF PWA/Zoom/NATS PIDs and credentials are unchanged;
+backup integrity is `ok` before and after, with 1593 Zoom receipts.
+[Release receipts](../../pwa_tests/reports/service-failure-copy-20261004/README.md).

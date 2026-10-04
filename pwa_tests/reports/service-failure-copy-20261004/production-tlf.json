@@ -1,0 +1,31 @@
+{
+  "host": "tlf",
+  "source_revision": "09bc16f185de5220d4c22d7d3c171238ce653dad",
+  "frontend_release": "tlfprep-20261004-service-copy-09bc16f185de",
+  "production_frontend": true,
+  "services": {
+    "vmshpwa.service": "active",
+    "vmsh-analytics.timer": "active",
+    "vmshzoom.service": "active",
+    "nats.service": "active"
+  },
+  "maintenance_cleared": true,
+  "service_pids_unchanged": {
+    "vmshpwa.service": "386644",
+    "vmshzoom.service": "364915",
+    "nats.service": "1936264"
+  },
+  "credentials_unchanged": true,
+  "backup_before": {
+    "backup": "20261004T133841.501340Z",
+    "createdAt": "2026-10-04T13:38:41.501340+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 1593
+  },
+  "backup_after": {
+    "backup": "20261004T133901.734020Z",
+    "createdAt": "2026-10-04T13:39:01.734020+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 1593
+  }
+}

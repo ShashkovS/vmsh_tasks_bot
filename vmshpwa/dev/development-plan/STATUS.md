@@ -2,14 +2,15 @@
 
 ## 2026-10-04 — Сообщения при сбое сервера
 
-Начат correction существующего recovery flow по просьбе владельца после CPU
+Выпущен correction существующего recovery flow по просьбе владельца после CPU
 инцидента: серверные ошибки объясняются как проблема сервиса; неизвестная
 причина получает нейтральный текст; отсутствие интернета — только при browser
 offline. [Правила, компоненты и gates](../../docs/service-failure-copy-20261004.md).
 
 Fast gate PASS: Python 2840 / 7 SKIP, frontend 1042, Storybook 362,
 Chromium redeploy/offline-current 9; 320 px light/dark проверены.
-Frontend-only выпуск подготовлен для ВМШ/TLF; backend/migrations не меняются.
+Выпущен `09bc16f1` на ВМШ/TLF: по 25 HTTP PASS, все PIDs сохранены,
+backend/migrations не меняются. [Release receipts](../../../pwa_tests/reports/service-failure-copy-20261004/README.md).
 
 ## 2026-10-04 — CPU incident: Student problem list
 

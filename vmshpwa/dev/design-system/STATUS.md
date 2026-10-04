@@ -9,7 +9,8 @@ Correction существующих status/startup/cache/login состояни�
 
 Fast gate PASS: Python 2840 / 7 SKIP, frontend 1042, Storybook 362,
 Chromium redeploy/offline-current 9; 320 px light/dark проверены.
-Frontend-only выпуск подготовлен для ВМШ/TLF; backend/migrations не меняются.
+Выпущен `09bc16f1` на ВМШ/TLF: по 25 HTTP PASS, все PIDs сохранены,
+backend/migrations не меняются. [Release receipts](../../../pwa_tests/reports/service-failure-copy-20261004/README.md).
 
 ## 2026-10-04 — CPU incident: Student problem list
 
