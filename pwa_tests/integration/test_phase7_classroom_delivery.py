@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import json
 import sqlite3
-from collections.abc import Collection
 from pathlib import Path
 
 import pytest
-import yoyo
 
 from db_methods.pwa.classroom_delivery import (
     claim_next_telegram_recipient,
     finish_telegram_batch,
     finish_telegram_recipient,
 )
-from db_methods.pwa.migrations import MIGRATIONS_ROOT
 from models.pwa.classroom_delivery import (
     ClassroomDeliveryConflict,
     InvalidClassroomDelivery,
@@ -26,32 +25,10 @@ from models.pwa.classroom_delivery import (
     retry_failed_classroom_delivery,
 )
 from models.pwa.classroom_public import read_student_classroom_assignments
-from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
+from pwa_tests.integration.test_classroom_assignment_schema import (
     NOW,
     _insert_parents,
 )
-
-
-MIGRATION_ID = "0061.pwa_classroom_assignment_delivery"
-RETRY_MIGRATION_ID = "0062.pwa_classroom_delivery_retries"
-
-
-def _migrations():
-    return yoyo.read_migrations(str(MIGRATIONS_ROOT))
-
-
-def _apply(database_path: Path, migration_ids: Collection[str]) -> None:
-    selected = _migrations().filter(lambda item: item.id in migration_ids)
-    with yoyo.get_backend(f"sqlite:///{database_path.resolve()}") as backend:
-        with backend.lock():
-            backend.apply_migrations(backend.to_apply(selected))
-
-
-def _rollback(database_path: Path, migration_ids: Collection[str]) -> None:
-    selected = _migrations().filter(lambda item: item.id in migration_ids)
-    with yoyo.get_backend(f"sqlite:///{database_path.resolve()}") as backend:
-        with backend.lock():
-            backend.rollback_migrations(backend.to_rollback(selected))
 
 
 def _objects(database_path: Path) -> set[str]:
@@ -64,63 +41,6 @@ def _objects(database_path: Path) -> set[str]:
                 "AND name NOT LIKE 'sqlite_%'"
             )
         }
-
-
-def test_delivery_migration_up_down_up_is_exact(tmp_path):
-    database_path = tmp_path / "phase7-delivery-schema.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0060.pwa_classroom_import_receipts"
-    }
-    _apply(
-        database_path,
-        {item.id for item in migrations.values()}
-        - {
-            MIGRATION_ID,
-            RETRY_MIGRATION_ID,
-            "0099.pwa_classroom_assignment_compaction",
-        },
-    )
-    assert _objects(database_path) == set()
-
-    expected = {
-        "classroom_assignment_delivery_batches",
-        "classroom_assignment_delivery_batches_plan_idx",
-        "classroom_assignment_delivery_recipients",
-        "classroom_assignment_delivery_recipients_student_idx",
-    }
-    _apply(database_path, {MIGRATION_ID})
-    assert _objects(database_path) == expected
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-
-    _rollback(database_path, {MIGRATION_ID})
-    assert _objects(database_path) == set()
-    _apply(database_path, {MIGRATION_ID})
-    assert _objects(database_path) == expected
-
-
-def test_delivery_retry_migration_up_down_up_is_exact(tmp_path):
-    database_path = tmp_path / "phase8-delivery-retry-schema.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[RETRY_MIGRATION_ID].depends} == {
-        MIGRATION_ID
-    }
-    _apply(
-        database_path,
-        {item.id for item in migrations.values()} - {RETRY_MIGRATION_ID},
-    )
-    assert "classroom_assignment_delivery_retries" not in _objects(database_path)
-
-    _apply(database_path, {RETRY_MIGRATION_ID})
-    assert "classroom_assignment_delivery_retries" in _objects(database_path)
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-
-    _rollback(database_path, {RETRY_MIGRATION_ID})
-    assert "classroom_assignment_delivery_retries" not in _objects(database_path)
-    _apply(database_path, {RETRY_MIGRATION_ID})
-    assert "classroom_assignment_delivery_retries" in _objects(database_path)
 
 
 def _seed_delivery(connection: sqlite3.Connection) -> None:
@@ -145,7 +65,7 @@ def _seed_delivery(connection: sqlite3.Connection) -> None:
 
 def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
     database_path = tmp_path / "phase7-delivery.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -208,7 +128,7 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
 
 def test_latest_delivery_is_empty_before_first_send(tmp_path):
     database_path = tmp_path / "phase7-delivery-empty.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -218,7 +138,7 @@ def test_latest_delivery_is_empty_before_first_send(tmp_path):
 
 def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path):
     database_path = tmp_path / "phase7-delivery-claim.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -285,7 +205,7 @@ def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path)
 
 def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):
     database_path = tmp_path / "phase7-delivery-conflicts.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -320,7 +240,7 @@ def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):
 
 def test_disabled_course_blocks_pending_room_delivery_without_losing_history(tmp_path):
     database_path = tmp_path / "disabled-delivery.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys=ON")

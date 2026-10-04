@@ -14,7 +14,8 @@ Unit и Storybook используют MSW 2. Main E2E никогда не ис�
 
 `make telegram-history-test` запускает только исторические handler-сценарии с `RecordingBot`, token-shaped заведомо фиктивным значением и без загрузки Telegram/Google credentials. Этот профиль не запускает polling/webhook и не является способом тестировать новый PWA API.
 
-E2E выполняется в Chromium, WebKit и Firefox. Критические mobile Student flows дополнительно получают device projects при появлении реальных submission endpoints. iOS baseline — 16.4, Android — 10. Перед первым production-выпуском обязательна ручная проверка на доступных реальных Android-устройствах; iPhone проверяется по возможности и не блокирует выпуск при отсутствии устройства.
+Для небольших правок владелец разрешил Chromium-only gate. Полный release gate
+сохраняет Chromium, WebKit и Firefox. Критические mobile Student flows дополнительно получают device projects при появлении реальных submission endpoints. iOS baseline — 16.4, Android — 10. Перед первым production-выпуском обязательна ручная проверка на доступных реальных Android-устройствах; iPhone проверяется по возможности и не блокирует выпуск при отсутствии устройства.
 
 Основной E2E идёт через lock-aware
 [`scripts/e2e_runner.py`](../scripts/e2e_runner.py): один `flock` охватывает
@@ -22,14 +23,15 @@ production build и Playwright и не даёт двум suite одноврем�
 `dist`, порты и seeded SQLite. `make pwa-e2e-runtime` запускает только
 runtime/isolation spec, `make pwa-e2e-auth` и `make pwa-e2e-realtime` —
 focused auth/realtime gates, `make pwa-e2e-functional` — весь non-visual набор,
-`make pwa-e2e` — полный suite. Runner сначала собирает все три production
-bundles с очищенным browser-build environment: все унаследованные `VITE_*`
+`make pwa-e2e` — полный suite. Runner проверяет кеш всех четырёх app bundles;
+при несовпадении исходников, toolchain, environment или SHA артефактов собирает
+их с профилем `verification` и очищенным browser-build environment: все унаследованные `VITE_*`
 удаляются, а полный текущий набор разрешённых ключей получает только
 безопасные E2E-значения (`Sentry` и внешний media origin отключены,
 MSW/prototype false). Это также перекрывает одноимённые значения из локальных
 Vite `.env` благодаря приоритету process environment. Затем runner запускает
 полный non-visual набор и visual-набор отдельными Playwright-процессами,
-сбрасывая между ними только воспроизводимую `db/vmshpwa_e2e.sqlite3`: изменения
+восстанавливая между ними чистые test DB/media snapshots: изменения
 functional-сценариев не могут менять baseline визуального smoke. Каждый процесс запускает
 настоящий aiohttp и test-only one-origin gateway
 [`scripts/e2e_gateway.py`](../scripts/e2e_gateway.py). Gateway отдаёт готовые
@@ -70,13 +72,12 @@ Sentry или загрузить media из внешнего бакета.
 
 Playwright запускает разные spec-файлы параллельно даже при
 `fullyParallel: false` ([официальная модель](https://playwright.dev/docs/test-parallel)).
-Поэтому конфигурация держит ровно три общих workers и не более одного worker в
-каждом browser project: Chromium, WebKit и Firefox идут одновременно, но один
-движок не создаёт несколько service-worker/visibility tabs против общей
-настоящей SQLite. Project-level `workers` поддерживается с Playwright 1.52
-([release notes](https://playwright.dev/docs/release-notes#version-152)). В CI
-retry сохраняет trace для диагностики, однако `failOnFlakyTests: true` делает
-любой такой retry ошибкой gate; flaky нельзя выдать за зелёный результат.
+Поэтому текущая конфигурация держит один общий worker: browser projects идут
+последовательно против общей настоящей SQLite. У каждого проекта также
+`workers: 1`; focused Chromium gate сохраняет эту изоляцию. Project-level `workers` поддерживается с Playwright 1.52
+([release notes](https://playwright.dev/docs/release-notes#version-152)). Runner передаёт `--retries 0`: падение видно сразу, без повторного выполнения
+сценария. Прямые Playwright-вызовы сохраняют CI trace/retry policy и
+`failOnFlakyTests: true`; retry не превращает flaky в зелёный gate.
 
 Контрольный production-build functional run 2 августа 2026 года: **228 total,
 216 passed, 12 intentional skips, 0 unexpected, 0 flaky**, три фактических
@@ -97,22 +98,85 @@ Update scenario также создаёт устаревший audience-owned pr
 [`cleanupOutdatedCaches()`](https://developer.chrome.com/docs/workbox/modules/workbox-precaching/#cleanupoutdatedcaches)
 распознаёт принадлежащие текущей регистрации precaches.
 
-Перед стартом настоящего aiohttp Playwright вызывает изолированный
-seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite
-создаёт мигрированную временную SQLite отдельно в каждом pytest worker; поэтому
-`make pwa-test` безопасно использует восемь xdist-процессов. Полный Python gate
-`make python-test` запускает legacy `tests` и PWA `pwa_tests` двумя
-последовательными pytest-командами: смешивать их при collection нельзя из-за
-разных import-time runtime profiles. Каждый набор внутри команды использует
-восемь workers. Контрольный прогон 2 августа 2026 года: legacy `121 passed, 1
-skipped` за 12,87 с; PWA `1542 passed, 5 skipped` за 69,55 с; общий wall time
-85,53 с. Подробный proof:
-[`python-xdist-gate-2026-08-02.md`](../../pwa_tests/reports/python-xdist-gate-2026-08-02.md).
-Тесты migration lifecycle дополнительно
-проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers
-и rollback после исключения. Guarded live-smoke targets остаются
-последовательными: они управляют общими внешними ресурсами и не входят в
-hermetic suite.
+## Единый быстрый и полный gate
+
+Рекомендуемый запуск маленькой правки очереди письменных работ:
+
+```sh
+make pwa-check-fast PWA_E2E_MODES="review submissions"
+```
+
+`make pwa-check-fast` без выбора modes запускает весь E2E в Chromium.
+`make pwa-check-release` запускает тот же конвейер с тремя браузерами.
+Оба выполняют format, workspace types, JS/CSS lint, оба i18n check,
+**один** полный Python `tests pwa_tests`, frontend unit и Storybook; затем
+выбранный E2E. Не нужно добавлять повторные `pwa-test`, `python-test`,
+`pwa-storybook-test` или `pwa-build` к этому же gate. После правки auth,
+service-worker/lifecycle, browser compatibility или общего окружения используйте
+полную матрицу. Для ограниченного gate в release receipt явно записывайте
+выбранные modes и браузер; Chromium не является проверкой Firefox/WebKit.
+
+[`check_runner.py`](../scripts/check_runner.py) запускает тяжёлые шаги
+последовательно, по умолчанию с 4 Python и 2 Vitest workers. Проверяет Node 26,
+pinned pnpm 11.15.1 и соответствие установленного dependency lockfile, без
+повторного install/sync; `uv sync --frozen --check` отдельно проверяет Python
+environment без изменений. Пишет времена, команды, исходный Git revision,
+SHA исходников с учётом незакомиченных файлов и полные логи каждого шага в
+`.runtime/vmshpwa/checks/<run>/`. Изменение исходников во время gate делает
+receipt непригодным для выпуска. Кешируются подготовка и инструменты;
+выбранные тесты исполняются **каждый раз**, старые PASS не переиспользуются.
+
+[`sqlite_template.py`](../../pwa_tests/sqlite_template.py) один раз строит
+шаблон текущей схемы из настоящих repository migrations, сохраняет их seed rows,
+WAL и yoyo history. Обычные DB fixtures получают независимые writable копии.
+Каждый новый процесс проверяет миграции, migrator, lockfile и версии Python/SQLite;
+изменение входов создаёт новый шаблон. Контроль checksum ловит порчу кеша.
+По [решению владельца от 2026-10-04](schema-baseline-20261004.md) текущая схема
+схлопнута в `0111.current_schema.sql`; старые chain/up/down/backfill tests удалены.
+Сохраняются текущие бизнес-сценарии, ограничения БД, concurrency и read-only
+startup checks. Совместимая схема 0110 принимает baseline без product DDL/DML. Для проверки пути без шаблона есть
+`VMSH_TEST_DB_TEMPLATE=0`.
+
+[`prepare_e2e.py`](../scripts/prepare_e2e.py) до старта aiohttp восстанавливает
+чистый снимок test DB/media. Холодный seed выполняется одним Python-процессом;
+кеш зависит от migrations, fixtures, domain/helper/seed code, dependencies,
+Python/SQLite и seed variants. Статистические и support варианты имеют отдельные
+ключи. После любого теста данные восстанавливаются, а не переиспользуются
+грязными. Lifecycle lock запрещает замену DB под работающим backend;
+небезопасные пути и symlinks отклоняются. Реальные production DB не читаются.
+
+Совместимые modes объединяются в один Playwright-процесс и используют один
+настоящий aiohttp/gateway. Figure-layout, statistics и прочие destructive families
+остаются отдельными фазами с чистым seed: кеш приложения и активные SQLite
+connections нельзя безопасно подменить новым файлом. Например:
+
+```sh
+uv run --frozen --no-sync python -m vmshpwa.scripts.e2e_runner \
+  --mode content --mode review --mode submissions --browser chromium
+```
+
+`--fresh-build --fresh-seed` принудительно пересоздаёт подготовку. Проверки
+инвалидации, копий, locks и batching: [test_check_optimization.py](../../pwa_tests/test_check_optimization.py),
+[test_sqlite_template.py](../../pwa_tests/test_sqlite_template.py),
+[test_e2e_runner.py](../../pwa_tests/test_e2e_runner.py).
+
+Чистые contracts выполняются в Node (`unit-contracts`), React/Dexie тесты —
+в jsdom (`unit`); `pnpm test` выбирает **оба** проекта. TypeScript сохраняет
+incremental build info в `node_modules/.cache/typecheck/`. Typed ESLint cache
+инвалидируется всем исходным TS/JS program, включая зависимые типы, а не только
+проверяемым файлом. Корневой pytest conftest настраивает Prometheus до импорта
+обоих адаптеров; исторический secrets-profile тест проверяет reload в отдельном
+процессе и не меняет `PROD`/Config остальных тестов.
+
+Сравнение до/после, ограничения замеров и план:
+[check-optimization-20261003](../../pwa_tests/reports/check-optimization-20261003/README.md).
+В runtime generation probe при worker handover polling допускает потерю ответа
+от сменяемого controller, затем всё равно требует точную generation с nonce.
+Это ожидание readiness, не повтор теста. Доказательство: 75 runtime scenarios
+в трёх браузерах без retries в отчёте выше.
+
+Guarded live-smoke и deployment checks остаются отдельными проверками внешних
+ресурсов; их нельзя заменить локальным cached build.
 
 ## Phase 1: browser-auth proof
 

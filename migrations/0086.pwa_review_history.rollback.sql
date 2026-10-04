@@ -1,2 +1,0 @@
-DROP INDEX problems_review_lesson_idx;
-DROP INDEX submission_reviews_reviewer_time_idx;

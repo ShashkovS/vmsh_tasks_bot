@@ -1,5 +1,7 @@
 """Isolated live-marking browser personas/events; vmshpwa/docs/live-marking.md."""
 
+from contextlib import closing
+
 import sqlite3
 import json
 import hashlib
@@ -65,7 +67,7 @@ def _dense_problems(c, lesson_id):
 
 def seed(config):
     path = _require_e2e_target(config)
-    with sqlite3.connect(path) as c:
+    with closing(sqlite3.connect(path)) as c, c:
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
         _seed(c, TARGETS)

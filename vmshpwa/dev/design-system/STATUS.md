@@ -1,5 +1,48 @@
 # Design-system status
 
+## 2026-10-04 — совместный выпуск рисунков и оптимизации
+
+Fast gate завершён: 2783 уникальных Python PASS / 7 SKIP (полный набор +
+повтор файла с исправленной датой), 1028 frontend, 355 Storybook, 7 Chromium.
+Сумма проверок — 210 с. Исправление live-превью, ускорение проверок и baseline
+0111 готовы к одному разрешённому выпуску на ВМШ/TLF.
+Исторические chain tests не повторяются.
+[План и доказательства](../../../pwa_tests/reports/combined-optimization-figures-20261004/README.md).
+
+## 2026-10-04 — схлопывание схемы SQLite
+
+Завершено локально: 82 миграции / 155 SQL файлов заменены одной исходной
+схемой 0111, 510 product objects сохранены. 66 исторических test функций
+удалены; действующие DB/business contracts сохранены. Полный Python —
+2782 PASS / 7 SKIP, 79 → 49 с; Chromium content/review/submissions — 8 PASS.
+Пустой bootstrap: 0,609 → 0,306 с; принятие baseline на рабочей копии —
+24 мс без изменений всех 158 product tables/rows и старой yoyo history.
+Production не менялся; direct readonly schema checks обоих порталов
+подтвердили 0110 / 510 и совпадение DDL/head hashes.
+[Решение и результаты](../../docs/schema-baseline-20261004.md).
+
+## 2026-10-03 — меню рисунков в подсказках
+
+Исправлено локально живое Staff-превью в `WorksheetMaterials`: инструменты
+появляются после загрузки оформления, открытые материалы получают правки.
+11 unit и 11 Chromium Storybook interaction/a11y проходят; workspace types,
+scoped lint/format, i18n и четыре app build проверены. Production не менялся.
+[Причина, файлы, команды и границы проверки](../../docs/figure-layout.md#исправление-превью-подсказок--3-октября-2026).
+
+## 2026-10-03 — оптимизация проверок
+
+Единый fast gate с `content review submissions` прошёл за 286 с: 2846 Python
+(7 прежних skips), 1028 frontend, 355 Storybook и 8 Chromium E2E. Шаблоны схемы,
+чистые DB/media snapshots, проверенный build cache и batching реализованы;
+проверки инвалидации/изоляции/locks зелёные. Fast — Chromium, release — три
+браузера. Сравнение Python: 694 → 79 с; frontend: 132 → 51 с.
+Вся Chromium инвентаризация — 139 уникальных cases по фазам; исправлен race
+в generation probe при worker handover, runtime matrix — 75 PASS в трёх
+браузерах без retries. Warm E2E — 41 с, warm typed lint — 1.4 с. Финальный
+cache/lock/receipt gate — 28 PASS; visual baselines не менялись.
+Production и история migrations не менялись.
+[План, измерения и gates](../../../pwa_tests/reports/check-optimization-20261003/README.md).
+
 ## 2026-10-03 — итог письменной проверки
 
 Общий backend-контракт списка задач и письменной проверки реализован без

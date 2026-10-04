@@ -26,11 +26,15 @@ privacy-safe report.
 
 ## До остановки writers
 
-- [ ] `make pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test
-pwa-build` завершены успешно на точном revision.
-- [ ] `make python-test telegram-history-test` завершены успешно.
-- [ ] Production-build Playwright matrix завершена в Chromium, Firefox и
-      WebKit; launcher failure не записывается как pass.
+- [ ] Один `make pwa-check-release` завершён на точных исходниках: Python,
+      frontend unit, Storybook, types/lint/i18n и E2E не запускаются повторно
+      отдельными командами. Receipt и времена записаны.
+- [ ] Для маленькой правки допустим `make pwa-check-fast PWA_E2E_MODES="..."`
+      по решению владельца от 3 октября 2026. В receipt явно записаны modes и
+      Chromium-only coverage. Auth, PWA lifecycle, общая инфраструктура и
+      browser compatibility проверяются полной матрицей.
+- [ ] Launcher failure и изменение исходников во время gate не записываются как
+      pass. [Профили и кеши](testing-strategy.md#единый-быстрый-и-полный-gate).
 - [ ] Изолированная migration rehearsal выполнена командой
       `make pwa-phase11-course-rehearsal`; source `db/vmsh.db` не изменён.
 - [ ] Автоматическая rehearsal целевой migration head на согласованной копии

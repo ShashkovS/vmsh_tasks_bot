@@ -18,7 +18,8 @@ from db_methods.pwa.support import PwaSupportThreadRepository
 from apps import pwa_app
 from apps.pwa_api import content_routes as content_routes_module
 from apps.pwa_api.auth_service import PwaAuthService
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import PwaContentRepository
 from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
@@ -365,7 +366,7 @@ def _seed_content_accounts(factory: PwaConnectionFactory) -> int:
 @pytest.fixture()
 async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
     database_path = tmp_path / "content-http.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     course_id = _seed_content_accounts(factory)
     content_repository = PwaContentRepository(factory, clock=lambda: NOW)

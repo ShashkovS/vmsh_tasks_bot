@@ -6,9 +6,9 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-import yoyo
 
-from db_methods.pwa.migrations import MIGRATIONS_ROOT, apply_schema_migrations
+from db_methods.pwa.migrations import BASELINE_ID
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.schema_inventory import (
     SchemaInventoryError,
     UnknownDerivedObjectError,
@@ -31,7 +31,7 @@ from vmshpwa.scripts.schema_inventory import (
 
 
 def _migrated_database(path: Path) -> Path:
-    apply_schema_migrations(path)
+    create_test_database(path)
     return path
 
 
@@ -271,7 +271,7 @@ def test_inventory_validation_rejects_false_migration_readiness():
     tampered = copy.deepcopy(inventory)
     tampered["migration"]["repository_head_status"] = {
         "is_current": True,
-        "missing": ["0039.pwa_auth_accounts_sessions"],
+        "missing": [BASELINE_ID],
         "changed": [],
         "unexpected": [],
     }
@@ -305,10 +305,7 @@ def test_committed_live_report_is_sanitized_and_documents_known_defects():
     assert len(report["legacy_derived_objects"]) == 12
     assert report["migration"]["repository_head_status"] == {
         "is_current": False,
-        "missing": [
-            "0039.pwa_auth_accounts_sessions",
-            "0040.pwa_courses_access",
-        ],
+        "missing": [BASELINE_ID],
         "changed": [],
         "unexpected": [],
     }
@@ -323,73 +320,20 @@ def test_committed_live_report_is_sanitized_and_documents_known_defects():
     assert render_drift_markdown(report) == markdown
 
 
-def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
-    database_path = tmp_path / "behind.sqlite3"
-    migrations = yoyo.read_migrations(str(MIGRATIONS_ROOT)).filter(
-        lambda migration: (
-            migration.id
-            not in {
-                "0039.pwa_auth_accounts_sessions",
-                "0040.pwa_courses_access",
-                # Rebuilding a legacy table makes SQLite reparse every trigger;
-                # this intentionally inconsistent lag fixture omits auth tables,
-                # so it must also stay behind the Phase-6 rebuild.
-                "0051.pwa_review_queue_leases",
-                # This migration adds the owner-only provisioning column
-                # and therefore cannot be applied to the no-auth lag fixture.
-                "0076.pwa_account_provisioning_batches",
-                # Communication targeting rebuilds group banners using the
-                # course columns introduced by the omitted auth/course branch.
-                "0089.pwa_communication_targeting",
-                "0090.pwa_support_photos",
-                # The account interface language alters auth_accounts.
-                "0098.pwa_account_locale",
-                # Assignment compaction depends on the current migration head.
-                "0099.pwa_classroom_assignment_compaction",
-                "0101.pwa_branding",
-                "0102.zoom_webhook_archive",
-                "0103.course_in_person_classes",
-                "0104.course_metadata_model",
-                "0105.pwa_recheck_receipt_lookup",
-                # Written projection uses the omitted groups.course_id column.
-                "0110.pwa_written_result_precedence",
-            }
-        )
-    )
-    with yoyo.get_backend(f"sqlite:///{database_path.resolve()}") as backend:
-        with backend.lock():
-            backend.apply_migrations(backend.to_apply(migrations))
+def test_live_report_records_missing_baseline_without_mutating_database(tmp_path):
+    database_path = _migrated_database(tmp_path / "behind.sqlite3")
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("DELETE FROM _yoyo_migration")
     before = database_path.read_bytes()
-
     expected = _inventory(_migrated_database(tmp_path / "head.sqlite3"))
     actual = capture_schema_inventory(
-        database_path,
-        source_kind="agreed-live-baseline",
-        require_migration_head=False,
+        database_path, source_kind="agreed-live-baseline", require_migration_head=False
     )
     report = compare_schema_inventories(expected, actual)
-
-    assert report["migration"]["repository_head_status"]["missing"] == [
-        "0039.pwa_auth_accounts_sessions",
-        "0040.pwa_courses_access",
-        "0051.pwa_review_queue_leases",
-        "0076.pwa_account_provisioning_batches",
-        "0089.pwa_communication_targeting",
-        "0090.pwa_support_photos",
-        "0098.pwa_account_locale",
-        "0099.pwa_classroom_assignment_compaction",
-        "0101.pwa_branding",
-        "0102.zoom_webhook_archive",
-        "0103.course_in_person_classes",
-        "0104.course_metadata_model",
-        "0105.pwa_recheck_receipt_lookup",
-        "0110.pwa_written_result_precedence",
-    ]
-    assert {item["name"] for item in report["missing_product_objects"]} >= {
-        "auth_accounts",
-        "courses",
-    }
+    assert report["migration"]["repository_head_status"]["missing"] == [BASELINE_ID]
+    assert report["missing_product_objects"] == []
     assert database_path.read_bytes() == before
+
 
 
 def test_generate_cli_requires_explicit_write_flag(tmp_path):

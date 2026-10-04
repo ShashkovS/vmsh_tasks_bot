@@ -8,21 +8,14 @@ from types import SimpleNamespace
 import pytest
 
 from db_methods.db_results import DB_RESULT
-from db_methods.pwa import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.live_marking import cell, restore_cell
-from db_methods.pwa.performance_guard import check_database_performance
 from db_methods.pwa.student_results import current_results
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 from pwa_tests.integration import test_review_queue_repository as review_support
 from pwa_tests.integration import test_live_marking as live_support
 from pwa_tests.integration import test_content_http_api as content_support
 
 
-MIGRATION = "0110.pwa_written_result_precedence"
 GRADES = [-32768, -2, -1, 11, 12, 13, 14, 15, 16, 17, 18]
 STUDENT = 1001
 TEACHER = 1002
@@ -35,7 +28,7 @@ content_http = content_support.content_http
 @pytest.fixture(scope="module")
 def projection_template(tmp_path_factory):
     path = tmp_path_factory.mktemp("written-projection-template") / "template.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     return path
 
 
@@ -201,41 +194,6 @@ def test_automatic_acceptance_and_wrong_attempt_keep_existing_rules(projection_d
     assert _current(c)["verdict"] == -1
 
 
-def test_migration_repairs_history_without_changing_ledger_or_pointers(tmp_path):
-    path = tmp_path / "migration.sqlite3"
-    ids = {m.id for m in _migrations()}
-    _apply(path, ids - {MIGRATION})
-    with sqlite3.connect(path) as c:
-        _seed(c)
-        manual = _add(c, -1, 3)
-        _add(c, 18, 2)
-        before = c.execute("SELECT * FROM results ORDER BY id").fetchall()
-        foreign_keys_before = c.execute("PRAGMA foreign_key_check").fetchall()
-        assert c.execute("SELECT verdict FROM effective_results").fetchall() == [(-1,)]
-    _apply(path, {MIGRATION})
-    with sqlite3.connect(path) as c:
-        assert c.execute("SELECT verdict FROM effective_results").fetchall() == [(18,)]
-        assert (
-            c.execute(
-                "SELECT result_id FROM live_mark_cells WHERE problem_id=?", (FIRST,)
-            ).fetchone()[0]
-            == manual
-        )
-        assert c.execute("SELECT * FROM results ORDER BY id").fetchall() == before
-        assert c.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        # Legacy bootstrap kv_logins already contains orphan references.
-        assert c.execute("PRAGMA foreign_key_check").fetchall() == foreign_keys_before
-    check_database_performance(path)
-    _rollback(path, {MIGRATION})
-    with sqlite3.connect(path) as c:
-        assert c.execute("SELECT * FROM results ORDER BY id").fetchall() == before
-        assert c.execute("SELECT verdict FROM effective_results").fetchall() == [(-1,)]
-    _apply(path, {MIGRATION})
-    with sqlite3.connect(path) as c:
-        assert c.execute("SELECT verdict FROM effective_results").fetchall() == [(18,)]
-        assert c.execute("SELECT * FROM results ORDER BY id").fetchall() == before
-
-
 async def test_modern_synonym_review_and_correction_use_the_shared_winner(
     review_queue_fixture,
 ):
@@ -285,7 +243,12 @@ async def test_modern_synonym_review_and_correction_use_the_shared_winner(
 
 async def test_synonym_write_blocks_stale_mark_and_undo_but_replay_is_safe(
     content_http,
+    monkeypatch,
 ):
+    from apps.pwa_api import live_marking_routes
+
+    # written-result-precedence.md: activity covers two distinct event days.
+    monkeypatch.setattr(live_marking_routes, "_now", lambda: "2026-10-03T12:00:00Z")
     f = content_http
     pid, spec = await live_support.setup(f)
 

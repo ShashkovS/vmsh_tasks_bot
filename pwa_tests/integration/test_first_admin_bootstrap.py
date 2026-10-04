@@ -7,7 +7,8 @@ from aiohttp import web
 
 from apps import pwa_app
 from apps.pwa_api.first_admin import ensure_first_global_admin
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from helpers.config import Config
 from helpers.consts import USER_TYPE
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
@@ -25,7 +26,7 @@ def _fast_hasher() -> CredentialHasher:
 @pytest.mark.asyncio
 async def test_empty_database_gets_one_loginable_global_admin(tmp_path):
     database_path = tmp_path / "first-admin.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     password = "synthetic-first-admin-password"
 
@@ -66,7 +67,7 @@ async def test_empty_database_gets_one_loginable_global_admin(tmp_path):
 @pytest.mark.asyncio
 async def test_bootstrap_is_idempotent_across_concurrent_workers(tmp_path):
     database_path = tmp_path / "first-admin-race.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     config = Config(first_admin_password="synthetic-concurrent-password")
 
@@ -95,7 +96,7 @@ async def test_bootstrap_is_idempotent_across_concurrent_workers(tmp_path):
 @pytest.mark.asyncio
 async def test_empty_database_without_bootstrap_password_fails_closed(tmp_path):
     database_path = tmp_path / "first-admin-missing-password.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
 
     with pytest.raises(RuntimeError, match="first_admin_password"):
@@ -111,7 +112,7 @@ async def test_empty_database_without_bootstrap_password_fails_closed(tmp_path):
 @pytest.mark.asyncio
 async def test_auth_startup_runs_first_admin_bootstrap(tmp_path, monkeypatch):
     database_path = tmp_path / "first-admin-startup.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     runtime = Config(
         runtime_profile="pwa-e2e",

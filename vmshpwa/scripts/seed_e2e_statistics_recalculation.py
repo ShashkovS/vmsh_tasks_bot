@@ -1,5 +1,7 @@
 """Published lesson observations for statistics UI acceptance, E2E only."""
 
+from contextlib import closing
+
 import sqlite3
 
 from vmshpwa.scripts.seed_e2e_statistics import _require_e2e_target
@@ -11,7 +13,7 @@ def main():
     from helpers.config import config
 
     path = _require_e2e_target(config)
-    with sqlite3.connect(path) as connection:
+    with closing(sqlite3.connect(path)) as connection, connection:
         for lesson in (931, 932, 933):
             for student, verdict in ((101, 17), (102, 16)):
                 problem = connection.execute(

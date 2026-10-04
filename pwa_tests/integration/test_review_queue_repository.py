@@ -14,7 +14,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.reviews import (
     CompleteReviewCommand,
     CompleteReviewReceipt,
@@ -114,7 +115,7 @@ def _claim_review_in_subprocess(
 @pytest.fixture()
 def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
     database_path = tmp_path / "review-queue.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock(NOW)
     tokens = (f"review-claim-test-{index}" for index in itertools.count(1))

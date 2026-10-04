@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import asyncio
 import base64
 import json
@@ -19,16 +21,9 @@ from helpers.pwa.web_push import WebPushTransportError
 from helpers.config import Config
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
 from models.pwa.push_subscriptions import register_subscription
-from pwa_tests.integration.test_phase8_notification_core import (
-    NOW,
-    _apply,
-    _migrations,
-    _rollback,
-    _seed_account,
-)
+from pwa_tests.integration.test_phase8_notification_core import NOW, _seed_account
 
 
-MIGRATION_ID = "0065.pwa_notification_deliveries"
 DELIVERY_TIME = datetime(2026, 10, 5, 20, 0, tzinfo=UTC)
 
 
@@ -43,7 +38,7 @@ def _prepare_database(
     recipient_locale: str = "ru",
 ):
     database_path = tmp_path / "push-delivery.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -83,45 +78,6 @@ def _prepare_database(
             created_at=NOW,
         )
     return database_path, PwaConnectionFactory(database_path)
-
-
-def test_notification_delivery_migration_up_down_up(tmp_path):
-    database_path = tmp_path / "push-delivery-schema.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0064.pwa_push_subscriptions"
-    }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name LIKE 'notification_deliveries%'"
-            ).fetchone()[0]
-            == 0
-        )
-
-    _apply(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name LIKE 'notification_deliveries%'"
-            ).fetchone()[0]
-            == 2
-        )
-
-    _rollback(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name LIKE 'notification_deliveries%'"
-            ).fetchone()[0]
-            == 0
-        )
-    _apply(database_path, {MIGRATION_ID})
 
 
 def test_vapid_configuration_fails_closed_in_production():

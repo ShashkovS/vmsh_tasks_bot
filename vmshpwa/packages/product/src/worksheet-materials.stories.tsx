@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
+import { Button } from '@vmsh/ui'
 import { WorksheetMaterials } from './worksheet-materials'
 const meta = {
   title: 'Product/Worksheet materials',
@@ -36,5 +38,36 @@ export const Solution: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Решение' }))
     await expect(canvas.getByText('Решение загружено')).toBeVisible()
     await expect(args.solution.load).toHaveBeenCalledOnce()
+  },
+}
+
+function LivePreview() {
+  const [updated, setUpdated] = useState(false)
+  return (
+    <>
+      <Button onClick={() => setUpdated(true)}>Обновить превью</Button>
+      <WorksheetMaterials
+        defaultOpen="hint"
+        hint={{
+          available: true,
+          preview: <p>{updated ? 'Оформление обновлено' : 'Исходное оформление'}</p>,
+          load: () => Promise.resolve(null),
+        }}
+        solution={{ available: false, load: () => Promise.resolve(null) }}
+      />
+    </>
+  )
+}
+export const EditorPreview: Story = {
+  render: () => <LivePreview />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Исходное оформление')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Обновить превью' }))
+    await expect(canvas.queryByText('Исходное оформление')).toBeNull()
+    await expect(canvas.getByText('Оформление обновлено')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Скрыть подсказку' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Подсказка' }))
+    await expect(canvas.getByText('Оформление обновлено')).toBeVisible()
   },
 }

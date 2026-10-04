@@ -1,7 +1,6 @@
 """Manual calculation shares CLI math, lock and atomic publication."""
 
 import asyncio
-import sqlite3
 import threading
 
 import pytest
@@ -13,11 +12,6 @@ from models.pwa.statistics_recalculation import (
 from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.auth import AuthAudience
 from pwa_tests.integration.test_classroom_catalog_http_api import _cookies, _headers
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 URL = "/staff/api/v1/statistics/recalculate"
@@ -130,22 +124,3 @@ def test_lock_failure_and_interrupted_recovery(classroom_http, monkeypatch):
     finally:
         release.set()
         service.close()
-
-
-def test_migration_roundtrip(tmp_path):
-    path = tmp_path / "migration.sqlite3"
-    current = "0092.pwa_statistics_recalculation"
-    _apply(path, {m.id for m in _migrations() if m.id <= current})
-    with sqlite3.connect(path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) AS n FROM statistics_recalculations"
-            ).fetchone()[0]
-            == 0
-        )
-    _rollback(path, {current})
-    with sqlite3.connect(path) as connection:
-        assert not connection.execute(
-            "SELECT name FROM sqlite_master WHERE name='statistics_recalculations'"
-        ).fetchall()
-    _apply(path, {current})

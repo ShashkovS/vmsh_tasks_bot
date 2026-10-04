@@ -6,7 +6,7 @@ import sqlite3
 import subprocess
 import sys
 
-from db_methods.pwa.migrations import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from helpers.consts import USER_TYPE
 from vmshpwa.scripts.family_link_import import preview_family_link_import
 
@@ -19,7 +19,7 @@ def _sha256(path) -> str:
 
 
 def _seed(database_path) -> None:
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
         for user_id in range(91_001, 91_005):

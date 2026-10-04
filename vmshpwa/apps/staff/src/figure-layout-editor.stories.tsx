@@ -11,6 +11,7 @@ import {
 } from '@vmsh/contracts'
 import fixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
 import { FigureLayoutEditor } from './figure-layout-editor'
+import { StaffWorksheetPreview } from './staff-worksheet-preview'
 
 const parsed = webContentContractFixtureSchema.parse(fixture).document
 const sourceFigure = parsed.problems.flatMap((p) => p.blocks).find((b) => b.type === 'figure')!
@@ -54,7 +55,15 @@ const baseDocument: WebContentDocument = {
 }
 
 /** Story-only API boundary; production implementation is docs/figure-layout.md. */
-function EditorPreview({ conflict = false, tiny = false }: { conflict?: boolean; tiny?: boolean }) {
+function EditorPreview({
+  conflict = false,
+  tiny = false,
+  materialKind = 'condition',
+}: {
+  conflict?: boolean
+  tiny?: boolean
+  materialKind?: 'condition' | 'hint' | 'solution'
+}) {
   const sourceDocument: WebContentDocument = tiny
     ? {
         ...baseDocument,
@@ -63,7 +72,7 @@ function EditorPreview({ conflict = false, tiny = false }: { conflict?: boolean;
           blocks: p.blocks.map((b) => (b.type === 'figure' ? { ...b, widthHint: '32px' } : b)),
         })),
       }
-    : baseDocument
+    : { ...baseDocument, materialKind }
   const [document, setDocument] = useState(sourceDocument)
   const [queryClient] = useState(
     () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
@@ -115,7 +124,18 @@ function EditorPreview({ conflict = false, tiny = false }: { conflict?: boolean;
         revisionId={sourceDocument.revisionId}
         onPreview={setDocument}
       >
-        {(tools) => <SemanticMathDocument document={document} renderFigureTools={tools} />}
+        {(tools) =>
+          materialKind === 'condition' ? (
+            <SemanticMathDocument document={document} renderFigureTools={tools} />
+          ) : (
+            <StaffWorksheetPreview
+              condition={baseDocument}
+              document={document}
+              renderFigureTools={tools}
+              submissionClosed={materialKind === 'solution'}
+            />
+          )
+        }
       </FigureLayoutEditor>
     </QueryClientProvider>
   )
@@ -180,3 +200,30 @@ export const TinySourceFigure: Story = {
     await expect(element.style.getPropertyValue('--vmsh-source-width')).toBe('32px')
   },
 }
+
+// docs/figure-layout.md: material disclosures must receive tools after query loading.
+const editMaterial: NonNullable<Story['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const popup = within(canvasElement.ownerDocument.body)
+  await userEvent.click(await canvas.findByRole('button', { name: 'Размер и размещение: Схема' }))
+  await userEvent.selectOptions(popup.getByLabelText('Размещение'), 'center-source')
+  await waitFor(() =>
+    expect(
+      canvasElement.querySelector('[data-material-kind] [data-testid="asset-figure"]'),
+    ).toHaveAttribute('data-placement', 'center-source'),
+  )
+  await userEvent.keyboard('{Escape}')
+  await userEvent.click(canvas.getByRole('button', { name: 'Действия с рисунком: Схема' }))
+  await userEvent.click(popup.getByRole('button', { name: 'Скрыть рисунок' }))
+  await waitFor(() =>
+    expect(canvas.queryByRole('button', { name: 'Действия с рисунком: Схема' })).toBeNull(),
+  )
+  await userEvent.click(await canvas.findByRole('button', { name: 'Восстановить' }))
+  await expect(
+    await canvas.findByRole('button', { name: 'Действия с рисунком: Схема' }),
+  ).toBeVisible()
+  await waitFor(() => expect(popup.queryByRole('dialog', { hidden: true })).toBeNull())
+}
+
+export const Hints: Story = { args: { materialKind: 'hint' }, play: editMaterial }
+export const Solutions: Story = { args: { materialKind: 'solution' }, play: editMaterial }

@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from argon2 import PasswordHasher
 
-from db_methods.pwa.migrations import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from models.pwa.auth import CredentialHasher, normalize_telegram_token
 from vmshpwa.scripts import auth_import
 from vmshpwa.scripts.auth_import import (
@@ -43,7 +43,7 @@ def _cheap_hasher() -> CredentialHasher:
 
 
 def _database(path: Path) -> Path:
-    apply_schema_migrations(path)
+    create_test_database(path)
     with sqlite3.connect(path, autocommit=True) as connection:
         connection.execute("PRAGMA journal_mode = DELETE")
         connection.executemany(
@@ -62,7 +62,7 @@ def _database(path: Path) -> Path:
 
 
 def _production_size_database(path: Path, *, student_count: int = 1617) -> Path:
-    apply_schema_migrations(path)
+    create_test_database(path)
     with sqlite3.connect(path, autocommit=True) as connection:
         connection.execute("PRAGMA journal_mode = DELETE")
         connection.executemany(

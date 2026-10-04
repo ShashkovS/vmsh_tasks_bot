@@ -1,6 +1,5 @@
 """Shared weekly drafts: membership, atomic receipt and legacy compatibility."""
 
-from pathlib import Path
 from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.auth import AuthAudience
 
@@ -154,7 +153,7 @@ async def test_atomic_validation_and_changed_idempotency_key(classroom_http):
     assert conflict.status == 409
 
 
-async def test_membership_backfill_and_secondary_group_student_join(
+async def test_secondary_group_student_can_join_shared_window(
     classroom_http, monkeypatch
 ):
     from apps.pwa_api import oral_window_routes
@@ -187,24 +186,3 @@ async def test_membership_backfill_and_secondary_group_student_join(
         },
     )
     assert joined.status == 200, await joined.text()
-
-    def rehearse(connection):
-        root = Path(__file__).resolve().parents[2] / "migrations"
-        existing_violations = connection.execute("PRAGMA foreign_key_check").fetchall()
-        # Rehearse on the same isolated fixture; legacy primary window IDs survive.
-        connection.executescript(
-            (root / "0094.pwa_shared_oral_windows.rollback.sql").read_text()
-        )
-        connection.executescript(
-            (root / "0094.pwa_shared_oral_windows.sql").read_text()
-        )
-        assert (
-            connection.execute("SELECT count(*) n FROM oral_window_lessons").fetchone()[
-                "n"
-            ]
-            == 1
-        )
-        assert connection.execute("PRAGMA foreign_key_check").fetchall() == existing_violations
-        assert connection.execute("PRAGMA foreign_key_check(oral_window_lessons)").fetchall() == []
-
-    fixture.factory.run_write(rehearse)

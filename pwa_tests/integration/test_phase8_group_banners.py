@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import json
 import sqlite3
 
@@ -13,51 +15,16 @@ from models.pwa.group_banners import (
     edit_group_banner,
 )
 from models.pwa.group_banner_notifications import sync_group_banner_notifications
-from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
+from pwa_tests.integration.test_classroom_assignment_schema import (
     NOW,
     _insert_parents,
 )
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-    _seed_account,
-)
-
-
-MIGRATION_ID = "0068.pwa_group_banners"
-RICH_MARKDOWN_MIGRATION_ID = "0081.pwa_rich_markdown"
-COMMUNICATION_TARGETING_MIGRATION_ID = "0089.pwa_communication_targeting"
-
-
-def test_group_banner_migration_roundtrip(tmp_path):
-    database_path = tmp_path / "banners.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    # Rich Markdown extends this table and is covered by its own migration
-    # round-trip. Exclude it while proving the historical 0068 boundary.
-    _apply(
-        database_path,
-        set(migrations)
-        - {
-            MIGRATION_ID,
-            RICH_MARKDOWN_MIGRATION_ID,
-            COMMUNICATION_TARGETING_MIGRATION_ID,
-        },
-    )
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute(
-            "SELECT count(*) FROM sqlite_schema WHERE name = 'group_banners'"
-        ).fetchone() == (0,)
-    _apply(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-    _rollback(database_path, {MIGRATION_ID})
-    _apply(database_path, {MIGRATION_ID})
+from pwa_tests.integration.test_phase8_notification_core import _seed_account
 
 
 def test_banner_sanitizing_window_and_optimistic_cancel(tmp_path):
     database_path = tmp_path / "banners.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     connection = sqlite3.connect(database_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -146,7 +113,7 @@ def test_banner_sanitizing_window_and_optimistic_cancel(tmp_path):
 
 def test_banner_visibility_matches_course_group_audience_and_attendance(tmp_path):
     database_path = tmp_path / "banner-targeting.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     connection = sqlite3.connect(database_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -214,7 +181,7 @@ def test_banner_visibility_matches_course_group_audience_and_attendance(tmp_path
 
 def test_future_banner_schedules_and_replaces_group_notifications(tmp_path):
     database_path = tmp_path / "banner-notifications.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -289,7 +256,10 @@ def test_future_banner_schedules_and_replaces_group_notifications(tmp_path):
             "SELECT payload_json, deliver_after FROM notification_events"
         ).fetchone()
         assert replacement["deliver_after"] == "2026-10-05T12:30:00Z"
-        assert json.loads(str(replacement["payload_json"]))["text"] == "Встречаемся у второго входа"
+        assert (
+            json.loads(str(replacement["payload_json"]))["text"]
+            == "Встречаемся у второго входа"
+        )
 
         cancelled = cancel_banner(
             connection,
@@ -298,5 +268,13 @@ def test_future_banner_schedules_and_replaces_group_notifications(tmp_path):
             actor_user_id=2,
             now="2026-10-05T11:10:00Z",
         )
-        assert sync_group_banner_notifications(connection, banner=cancelled, now="2026-10-05T11:10:00Z") == 0
-        assert connection.execute("SELECT count(*) FROM notification_events").fetchone()[0] == 0
+        assert (
+            sync_group_banner_notifications(
+                connection, banner=cancelled, now="2026-10-05T11:10:00Z"
+            )
+            == 0
+        )
+        assert (
+            connection.execute("SELECT count(*) FROM notification_events").fetchone()[0]
+            == 0
+        )

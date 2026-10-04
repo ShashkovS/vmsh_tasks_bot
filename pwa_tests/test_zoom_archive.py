@@ -9,14 +9,15 @@ import pytest
 from aiohttp import web
 
 from apps.zoom_archive import configure
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
 
 
 @pytest.fixture
 async def archive(tmp_path, aiohttp_client):
     path = tmp_path / "zoom.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     factory = PwaConnectionFactory(path)
     app = web.Application(client_max_size=8 * 1024 * 1024)
     app[RUNTIME_CONFIG] = SimpleNamespace(zoom_secret_token="test-secret")

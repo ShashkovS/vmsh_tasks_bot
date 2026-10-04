@@ -10,7 +10,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.submissions import (
     IdempotencyPayloadMismatch,
     PwaTestSubmissionRepository,
@@ -82,7 +83,7 @@ class SubmissionFixture:
 
 def build_submission_fixture(tmp_path) -> SubmissionFixture:
     database_path = tmp_path / "test-submissions.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock(NOW)
     repository = PwaTestSubmissionRepository(factory, clock=clock)

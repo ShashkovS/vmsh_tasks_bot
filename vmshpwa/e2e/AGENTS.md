@@ -2,7 +2,7 @@
 
 - Playwright starts real aiohttp with the isolated `pwa-e2e` SQLite, media root and NATS prefix. MSW is forbidden here.
 - Tests may not contact Telegram, Google, production services or human-runtime ports/state.
-- Build all three production bundles, then exercise them on the single loopback
+- Use the runner's verified four-app build (rebuild on cache miss), then exercise it on the single loopback
   origin provided by `scripts/e2e_gateway.py`. The gateway proxies exact
   audience API/WebSocket paths to the real aiohttp process; it must never be
   replaced by three unrelated Vite origins, because base paths, cookie paths,
@@ -29,7 +29,8 @@
   upstream `Host` is the API listener while browser `Origin` is the gateway.
   Phase-1 auth/CSRF tests must add an explicit public-origin/proxy contract and
   cover spoofed `Forwarded` and `X-Forwarded-*` headers.
-- Keep Chromium, WebKit and Firefox coverage. Make browser-specific baselines explicit rather than loosening a global pixel threshold.
+- Small changes may use Chromium only, as authorized by the owner on 3 October 2026; record selected modes/browser. Keep Chromium, WebKit and Firefox coverage for the full release gate and browser/lifecycle/infrastructure changes. Make browser-specific baselines explicit rather than loosening a global pixel threshold.
+- Compatible modes share one backend/gateway process. Always restore clean DB/media snapshots before the next process; never replace a live backend's database. See `../docs/testing-strategy.md` and `../scripts/prepare_e2e.py`.
 - Seed deterministic data and isolate browser contexts. Never depend on test order or a developer's existing local storage.
 - Visual baseline updates require inspection of diffs. A failed screenshot is evidence to review, not permission to overwrite.
 - Prefer stable roles/names/test IDs over CSS selectors; assert the user-visible result and backend receipt, not implementation timing.

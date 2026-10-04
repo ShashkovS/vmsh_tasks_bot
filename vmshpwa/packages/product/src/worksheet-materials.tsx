@@ -25,18 +25,21 @@ export function WorksheetMaterials({
 }) {
   const [opened, setOpened] = useState<Kind | null>(defaultOpen ?? null)
   const [confirming, setConfirming] = useState(false)
-  const [contents, setContents] = useState<Partial<Record<Kind, ReactNode>>>(() => ({
-    hint: hint.preview,
-    solution: solution.preview,
-  }))
+  const [contents, setContents] = useState<Partial<Record<Kind, ReactNode>>>({})
   const [loading, setLoading] = useState<Kind | null>(null)
   const [error, setError] = useState(false)
   const materials = { hint, solution }
+  // docs/figure-layout.md: StaffWorksheetPreview supplies a live editor preview.
+  // Cache student loads only; editor tools and figure drafts arrive after mount.
+  const visibleContents = {
+    hint: hint.preview ?? contents.hint,
+    solution: solution.preview ?? contents.solution,
+  }
   const open = async (kind: Kind) => {
     setConfirming(false)
     setOpened(kind)
     setError(false)
-    if (contents[kind] != null) return
+    if (visibleContents[kind] != null) return
     setLoading(kind)
     try {
       const content = await materials[kind].load()
@@ -54,7 +57,7 @@ export function WorksheetMaterials({
       setConfirming(false)
       return
     }
-    if (kind === 'hint' && hint.confirmationRequired && contents.hint == null) {
+    if (kind === 'hint' && hint.confirmationRequired && visibleContents.hint == null) {
       setOpened(null)
       setConfirming(true)
       setError(false)
@@ -130,7 +133,7 @@ export function WorksheetMaterials({
           </Button>
         </div>
       ) : null}
-      {opened && contents[opened] != null ? (
+      {opened && visibleContents[opened] != null ? (
         <div
           data-material-kind={opened}
           className="vmsh-material-reveal order-3 mt-2 w-full basis-full border-l-2 border-border pl-3"
@@ -145,7 +148,7 @@ export function WorksheetMaterials({
               <Trans>Решение</Trans>
             </p>
           )}
-          {contents[opened]}
+          {visibleContents[opened]}
           <div className="mt-2 font-sans" data-print-hide>
             <Button size="sm" variant="ghost" onClick={() => setOpened(null)}>
               <ChevronUp aria-hidden="true" />

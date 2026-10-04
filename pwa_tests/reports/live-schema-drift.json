@@ -31,6 +31,10 @@
       "type": "table"
     },
     {
+      "name": "lessons",
+      "type": "table"
+    },
+    {
       "name": "media_groups",
       "type": "table"
     },
@@ -43,6 +47,10 @@
       "type": "table"
     },
     {
+      "name": "problems",
+      "type": "table"
+    },
+    {
       "name": "reaction_enum",
       "type": "table"
     },
@@ -52,6 +60,10 @@
     },
     {
       "name": "reactions",
+      "type": "table"
+    },
+    {
+      "name": "results",
       "type": "table"
     },
     {
@@ -87,6 +99,10 @@
       "type": "table"
     },
     {
+      "name": "zoom_conversation",
+      "type": "table"
+    },
+    {
       "name": "zoom_events",
       "type": "table"
     },
@@ -111,8 +127,8 @@
       "type": "index"
     }
   ],
-  "expected_pragma_structure_sha256": "00bebc45b5f13776d4cf61dc8898073f231218364e447ba987d565636505bbe1",
-  "expected_product_sha256": "9c282f564858edf857901a2293d7ad5d1ef0356b265a2c858bb5e7750a619e08",
+  "expected_pragma_structure_sha256": "a649dc8f97539b5c398d20de5285fd138743dfa6798616c077bc75754bbecbe1",
+  "expected_product_sha256": "2769229b4b92f85759f2c4bc4a70dfd9b3aae9dada53cdc8a67812e97a862fb8",
   "format": "vmsh.sqlite-schema-drift/v1",
   "known_out_of_scope_data_risks": [
     {
@@ -255,67 +271,38 @@
       "sha256": "9d5f0fd33d7ccfd7253ad2bcbee6294307bc625c646839e5d4fb5edc1a8e6ec5"
     },
     "legacy_history": {
-      "count": 24,
-      "sha256": "bdc3316f062496dcd3c7905e73ba3de80e43cd789019fae5afd27d9d4144f254"
+      "count": 33,
+      "sha256": "ba9c1156519e4ed1fb3b5b201646717dfb220959b5d5bca899e38a0a95723099"
     },
-    "merged_boundary": "0030",
+    "merged_boundary": "0111",
     "repository_head": [
       {
-        "id": "0030.initial_merged",
-        "sha256": "59e38f885f3a30189ca48bff81d569984db1dd6bf8445dbbb3272ac8317bcc84"
-      },
-      {
-        "id": "0031.check_stat",
-        "sha256": "c8deb86239cd0157f0d8d198adb73c3f2916e0110e84e10394ed2f7012b435c3"
-      },
-      {
-        "id": "0032.sos_questions",
-        "sha256": "1c952f3e1a83715344c913f69835f9ebb275b748a8c74afbe512a2d95e18a434"
-      },
-      {
-        "id": "0033.verdicts",
-        "sha256": "a5525f13b07ca69a7a170656e4e0c6826cb5050bd9680663f0da3c766d53ba67"
-      },
-      {
-        "id": "0034.surveys",
-        "sha256": "53aa2d8eb672e86ef0dd218957afeeda403526a3b6881a941266a6733a448ef8"
-      },
-      {
-        "id": "0035.new_reation",
-        "sha256": "456b35cf93ae142c560f086a611311a82da86c771fbdaaff78f24f36d8e8532c"
-      },
-      {
-        "id": "0036.settings_and_texts_from_sheet",
-        "sha256": "ab2695131d5768aacf1f115f5206b6298747ca09b3a89f86286690d783365bff"
-      },
-      {
-        "id": "0037.groups",
-        "sha256": "2f97de4673f45d76639a614c907aa270304739ee2aeed3df8722e5c23a972bbc"
-      },
-      {
-        "id": "0038.kv_logins",
-        "sha256": "7f2e56e8509eee557f071f98ad494337793170bd96f033d17b96de49cbd8eba0"
-      },
-      {
-        "id": "0039.pwa_auth_accounts_sessions",
-        "sha256": "3bac6fbc66a723260584d1caec31caf54a448125ce79639668cb7c17eaaadace"
-      },
-      {
-        "id": "0040.pwa_courses_access",
-        "sha256": "ee9bc548ba48e8cee203597db81337bdeb5f6951ed399970930edebe551f023d"
+        "id": "0111.current_schema",
+        "sha256": "5e0878e05f67e71f291e0f3e7b187239904d44e545e03e5eaa7f4f6f9a504b50"
       }
     ],
     "repository_head_status": {
       "changed": [],
       "is_current": false,
       "missing": [
-        "0039.pwa_auth_accounts_sessions",
-        "0040.pwa_courses_access"
+        "0111.current_schema"
       ],
       "unexpected": []
     }
   },
   "missing_product_objects": [
+    {
+      "name": "achievement_definitions",
+      "type": "table"
+    },
+    {
+      "name": "analytics_runs",
+      "type": "table"
+    },
+    {
+      "name": "audit_events",
+      "type": "table"
+    },
     {
       "name": "auth_accounts",
       "type": "table"
@@ -337,6 +324,98 @@
       "type": "table"
     },
     {
+      "name": "classroom_assignment_delivery_batches",
+      "type": "table"
+    },
+    {
+      "name": "classroom_assignment_delivery_recipients",
+      "type": "table"
+    },
+    {
+      "name": "classroom_assignment_delivery_retries",
+      "type": "table"
+    },
+    {
+      "name": "classroom_assignment_plan_sequence",
+      "type": "table"
+    },
+    {
+      "name": "classroom_assignment_plans",
+      "type": "table"
+    },
+    {
+      "name": "classroom_assignment_preferences",
+      "type": "table"
+    },
+    {
+      "name": "classroom_assignments",
+      "type": "table"
+    },
+    {
+      "name": "classroom_events",
+      "type": "table"
+    },
+    {
+      "name": "classroom_import_receipts",
+      "type": "table"
+    },
+    {
+      "name": "classroom_layout_rooms",
+      "type": "table"
+    },
+    {
+      "name": "classroom_layout_versions",
+      "type": "table"
+    },
+    {
+      "name": "classrooms",
+      "type": "table"
+    },
+    {
+      "name": "content_asset_names",
+      "type": "table"
+    },
+    {
+      "name": "content_derivatives",
+      "type": "table"
+    },
+    {
+      "name": "content_figure_layouts",
+      "type": "table"
+    },
+    {
+      "name": "content_figure_scales",
+      "type": "table"
+    },
+    {
+      "name": "content_problem_matches",
+      "type": "table"
+    },
+    {
+      "name": "content_problem_slots",
+      "type": "table"
+    },
+    {
+      "name": "content_review_states",
+      "type": "table"
+    },
+    {
+      "name": "content_revision_assets",
+      "type": "table"
+    },
+    {
+      "name": "content_revisions",
+      "type": "table"
+    },
+    {
+      "name": "content_sources",
+      "type": "table"
+    },
+    {
+      "name": "content_tikz_cache",
+      "type": "table"
+    },
+    {
       "name": "course_enrollment_events",
       "type": "table"
     },
@@ -349,7 +428,31 @@
       "type": "table"
     },
     {
+      "name": "course_lessons",
+      "type": "table"
+    },
+    {
+      "name": "course_problem_difficulty",
+      "type": "table"
+    },
+    {
+      "name": "course_runtime_settings",
+      "type": "table"
+    },
+    {
+      "name": "course_schedule_rules",
+      "type": "table"
+    },
+    {
+      "name": "course_student_strength",
+      "type": "table"
+    },
+    {
       "name": "courses",
+      "type": "table"
+    },
+    {
+      "name": "family_account_emails",
       "type": "table"
     },
     {
@@ -357,12 +460,336 @@
       "type": "table"
     },
     {
+      "name": "group_banner_media",
+      "type": "table"
+    },
+    {
+      "name": "group_banners",
+      "type": "table"
+    },
+    {
+      "name": "group_lessons",
+      "type": "table"
+    },
+    {
+      "name": "group_schedule_overrides",
+      "type": "table"
+    },
+    {
+      "name": "hint_reveals",
+      "type": "table"
+    },
+    {
+      "name": "idempotency_records",
+      "type": "table"
+    },
+    {
+      "name": "in_person_event_group_lessons",
+      "type": "table"
+    },
+    {
+      "name": "in_person_events",
+      "type": "table"
+    },
+    {
+      "name": "lesson_block_events",
+      "type": "table"
+    },
+    {
+      "name": "lesson_block_revisions",
+      "type": "table"
+    },
+    {
+      "name": "lesson_blocks",
+      "type": "table"
+    },
+    {
+      "name": "lesson_problem_release",
+      "type": "table"
+    },
+    {
+      "name": "lesson_problem_release_events",
+      "type": "table"
+    },
+    {
+      "name": "lesson_publications",
+      "type": "table"
+    },
+    {
+      "name": "lesson_window_changes",
+      "type": "table"
+    },
+    {
+      "name": "lesson_window_schedule_sources",
+      "type": "table"
+    },
+    {
+      "name": "lesson_windows",
+      "type": "table"
+    },
+    {
+      "name": "live_attendance",
+      "type": "table"
+    },
+    {
+      "name": "live_mark_cells",
+      "type": "table"
+    },
+    {
+      "name": "live_mark_clock",
+      "type": "table"
+    },
+    {
+      "name": "live_mark_operations",
+      "type": "table"
+    },
+    {
+      "name": "live_mark_results",
+      "type": "table"
+    },
+    {
+      "name": "live_mark_sessions",
+      "type": "table"
+    },
+    {
+      "name": "live_mark_visits",
+      "type": "table"
+    },
+    {
+      "name": "media_assets",
+      "type": "table"
+    },
+    {
+      "name": "news_ingest_diagnostics",
+      "type": "table"
+    },
+    {
+      "name": "news_media",
+      "type": "table"
+    },
+    {
+      "name": "news_posts",
+      "type": "table"
+    },
+    {
+      "name": "news_revisions",
+      "type": "table"
+    },
+    {
+      "name": "news_visibility",
+      "type": "table"
+    },
+    {
+      "name": "notification_course_preferences",
+      "type": "table"
+    },
+    {
+      "name": "notification_deliveries",
+      "type": "table"
+    },
+    {
+      "name": "notification_events",
+      "type": "table"
+    },
+    {
+      "name": "notification_preferences",
+      "type": "table"
+    },
+    {
+      "name": "oral_window_batches",
+      "type": "table"
+    },
+    {
+      "name": "oral_window_lessons",
+      "type": "table"
+    },
+    {
+      "name": "oral_windows",
+      "type": "table"
+    },
+    {
+      "name": "organizer_question_entries",
+      "type": "table"
+    },
+    {
+      "name": "organizer_question_photos",
+      "type": "table"
+    },
+    {
+      "name": "organizer_questions",
+      "type": "table"
+    },
+    {
+      "name": "problem_import_receipts",
+      "type": "table"
+    },
+    {
+      "name": "problem_revisions",
+      "type": "table"
+    },
+    {
+      "name": "problem_synonym_groups",
+      "type": "table"
+    },
+    {
+      "name": "problem_synonym_members",
+      "type": "table"
+    },
+    {
+      "name": "publication_figure_layouts",
+      "type": "table"
+    },
+    {
+      "name": "push_subscriptions",
+      "type": "table"
+    },
+    {
+      "name": "pwa_branding",
+      "type": "table"
+    },
+    {
       "name": "seasons",
+      "type": "table"
+    },
+    {
+      "name": "solution_reveals",
       "type": "table"
     },
     {
       "name": "staff_scopes",
       "type": "table"
+    },
+    {
+      "name": "staff_test_students",
+      "type": "table"
+    },
+    {
+      "name": "statistics_recalculations",
+      "type": "table"
+    },
+    {
+      "name": "student_lesson_metrics",
+      "type": "table"
+    },
+    {
+      "name": "submission_attachments",
+      "type": "table"
+    },
+    {
+      "name": "submission_entries",
+      "type": "table"
+    },
+    {
+      "name": "submission_entry_replacements",
+      "type": "table"
+    },
+    {
+      "name": "submission_entry_transfers",
+      "type": "table"
+    },
+    {
+      "name": "submission_material_reassignment_items",
+      "type": "table"
+    },
+    {
+      "name": "submission_material_reassignments",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_annotations",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_events",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_evidence_attachments",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_evidence_entries",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_internal_reaction_events",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_internal_reactions",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_student_reaction_events",
+      "type": "table"
+    },
+    {
+      "name": "submission_review_student_reactions",
+      "type": "table"
+    },
+    {
+      "name": "submission_reviews",
+      "type": "table"
+    },
+    {
+      "name": "submission_threads",
+      "type": "table"
+    },
+    {
+      "name": "support_entries",
+      "type": "table"
+    },
+    {
+      "name": "support_entry_reads",
+      "type": "table"
+    },
+    {
+      "name": "support_photos",
+      "type": "table"
+    },
+    {
+      "name": "support_threads",
+      "type": "table"
+    },
+    {
+      "name": "telegram_bindings",
+      "type": "table"
+    },
+    {
+      "name": "test_attempt_result_events",
+      "type": "table"
+    },
+    {
+      "name": "test_attempts",
+      "type": "table"
+    },
+    {
+      "name": "user_achievements",
+      "type": "table"
+    },
+    {
+      "name": "zoom_webhook_receipts",
+      "type": "table"
+    },
+    {
+      "name": "analytics_runs_course_latest_idx",
+      "type": "index"
+    },
+    {
+      "name": "audit_events_action_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "audit_events_object_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "audit_events_request_idx",
+      "type": "index"
+    },
+    {
+      "name": "audit_events_timeline_idx",
+      "type": "index"
     },
     {
       "name": "auth_accounts_audience_status_idx",
@@ -413,6 +840,94 @@
       "type": "index"
     },
     {
+      "name": "classroom_assignment_delivery_batches_plan_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_assignment_delivery_recipients_student_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_assignment_plans_event_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_assignment_plans_one_confirmed_uq",
+      "type": "index"
+    },
+    {
+      "name": "classroom_assignment_plans_one_working_uq",
+      "type": "index"
+    },
+    {
+      "name": "classroom_assignment_preferences_room_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_assignments_enrollment_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_assignments_room_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_events_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_layout_rooms_group_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_layout_versions_event_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "classroom_layout_versions_one_confirmed_uq",
+      "type": "index"
+    },
+    {
+      "name": "classroom_layout_versions_one_draft_uq",
+      "type": "index"
+    },
+    {
+      "name": "classrooms_status_name_idx",
+      "type": "index"
+    },
+    {
+      "name": "content_asset_names_asset_idx",
+      "type": "index"
+    },
+    {
+      "name": "content_derivatives_asset_idx",
+      "type": "index"
+    },
+    {
+      "name": "content_problem_matches_problem_idx",
+      "type": "index"
+    },
+    {
+      "name": "content_revision_assets_asset_idx",
+      "type": "index"
+    },
+    {
+      "name": "content_revisions_source_created_idx",
+      "type": "index"
+    },
+    {
+      "name": "content_sources_group_kind_idx",
+      "type": "index"
+    },
+    {
+      "name": "content_sources_one_active_material_uq",
+      "type": "index"
+    },
+    {
+      "name": "content_tikz_cache_asset_idx",
+      "type": "index"
+    },
+    {
       "name": "course_enrollment_events_timeline_idx",
       "type": "index"
     },
@@ -441,11 +956,55 @@
       "type": "index"
     },
     {
+      "name": "course_lessons_course_number_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_schedule_rules_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_schedule_rules_one_active_uq",
+      "type": "index"
+    },
+    {
+      "name": "course_schedule_rules_one_draft_uq",
+      "type": "index"
+    },
+    {
       "name": "courses_season_status_order_idx",
       "type": "index"
     },
     {
+      "name": "family_account_emails_normalized_idx",
+      "type": "index"
+    },
+    {
       "name": "family_student_links_student_revoked_idx",
+      "type": "index"
+    },
+    {
+      "name": "group_banner_media_banner_idx",
+      "type": "index"
+    },
+    {
+      "name": "group_banners_window_idx",
+      "type": "index"
+    },
+    {
+      "name": "group_lessons_course_group_idx",
+      "type": "index"
+    },
+    {
+      "name": "group_schedule_overrides_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "group_schedule_overrides_one_active_uq",
+      "type": "index"
+    },
+    {
+      "name": "group_schedule_overrides_one_draft_uq",
       "type": "index"
     },
     {
@@ -461,7 +1020,191 @@
       "type": "index"
     },
     {
-      "name": "groups_public_id_uq",
+      "name": "hint_reveals_student_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "idempotency_records_completed_receipt_lookup_idx",
+      "type": "index"
+    },
+    {
+      "name": "idempotency_records_expiry_idx",
+      "type": "index"
+    },
+    {
+      "name": "in_person_event_group_lessons_lesson_idx",
+      "type": "index"
+    },
+    {
+      "name": "in_person_events_season_time_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_block_events_block_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_block_revisions_block_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_blocks_due_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_blocks_waiting_lesson_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_publications_one_published_uq",
+      "type": "index"
+    },
+    {
+      "name": "lesson_publications_one_scheduled_uq",
+      "type": "index"
+    },
+    {
+      "name": "lesson_publications_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_window_changes_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_window_schedule_sources_rule_idx",
+      "type": "index"
+    },
+    {
+      "name": "lesson_windows_close_idx",
+      "type": "index"
+    },
+    {
+      "name": "live_mark_operations_history",
+      "type": "index"
+    },
+    {
+      "name": "live_mark_sessions_active",
+      "type": "index"
+    },
+    {
+      "name": "media_assets_content_hash_version_uq",
+      "type": "index"
+    },
+    {
+      "name": "media_assets_namespace_created_idx",
+      "type": "index"
+    },
+    {
+      "name": "news_ingest_diagnostics_created_idx",
+      "type": "index"
+    },
+    {
+      "name": "news_posts_course_feed_idx",
+      "type": "index"
+    },
+    {
+      "name": "news_posts_course_target_feed_idx",
+      "type": "index"
+    },
+    {
+      "name": "news_posts_group_feed_idx",
+      "type": "index"
+    },
+    {
+      "name": "news_posts_group_target_feed_idx",
+      "type": "index"
+    },
+    {
+      "name": "news_posts_telegram_album_uq",
+      "type": "index"
+    },
+    {
+      "name": "news_posts_telegram_message_uq",
+      "type": "index"
+    },
+    {
+      "name": "news_revisions_latest_idx",
+      "type": "index"
+    },
+    {
+      "name": "news_visibility_state_idx",
+      "type": "index"
+    },
+    {
+      "name": "notification_deliveries_due_idx",
+      "type": "index"
+    },
+    {
+      "name": "notification_events_account_unread_idx",
+      "type": "index"
+    },
+    {
+      "name": "oral_window_lessons_lesson_idx",
+      "type": "index"
+    },
+    {
+      "name": "oral_windows_group_time_idx",
+      "type": "index"
+    },
+    {
+      "name": "organizer_entries_question_idx",
+      "type": "index"
+    },
+    {
+      "name": "organizer_photos_entry_idx",
+      "type": "index"
+    },
+    {
+      "name": "organizer_questions_owner_idx",
+      "type": "index"
+    },
+    {
+      "name": "problem_import_receipts_course_idx",
+      "type": "index"
+    },
+    {
+      "name": "problem_revisions_id_problem_uq",
+      "type": "index"
+    },
+    {
+      "name": "problem_revisions_title_idx",
+      "type": "index"
+    },
+    {
+      "name": "problem_synonym_groups_lesson_status_idx",
+      "type": "index"
+    },
+    {
+      "name": "problem_synonym_members_group_lesson_active_uq",
+      "type": "index"
+    },
+    {
+      "name": "problem_synonym_members_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "problem_synonym_members_problem_active_uq",
+      "type": "index"
+    },
+    {
+      "name": "problems_review_lesson_idx",
+      "type": "index"
+    },
+    {
+      "name": "push_subscriptions_account_idx",
+      "type": "index"
+    },
+    {
+      "name": "results_id_student_problem_uq",
+      "type": "index"
+    },
+    {
+      "name": "results_written_current_idx",
+      "type": "index"
+    },
+    {
+      "name": "solution_reveals_student_timeline_idx",
       "type": "index"
     },
     {
@@ -477,8 +1220,220 @@
       "type": "index"
     },
     {
-      "name": "users_public_id_uq",
+      "name": "statistics_recalculations_course",
       "type": "index"
+    },
+    {
+      "name": "student_lesson_metrics_student_run_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_attachments_asset_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_attachments_entry_order_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_attachments_id_entry_uq",
+      "type": "index"
+    },
+    {
+      "name": "submission_entries_author_idempotency_uq",
+      "type": "index"
+    },
+    {
+      "name": "submission_entries_id_thread_uq",
+      "type": "index"
+    },
+    {
+      "name": "submission_entries_legacy_group_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_entries_thread_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_entry_replacements_thread_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_entry_transfers_source_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_material_reassignment_items_projection_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_material_reassignments_student_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_review_annotations_attachment_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_review_evidence_attachments_asset_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_review_evidence_attachments_attachment_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_review_evidence_entries_entry_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_review_internal_reaction_events_review_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_review_student_reaction_events_review_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_reviews_reviewer_time_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_reviews_thread_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_threads_id_owner_problem_uq",
+      "type": "index"
+    },
+    {
+      "name": "submission_threads_one_active_uq",
+      "type": "index"
+    },
+    {
+      "name": "submission_threads_review_queue_idx",
+      "type": "index"
+    },
+    {
+      "name": "submission_threads_student_updated_idx",
+      "type": "index"
+    },
+    {
+      "name": "support_entries_author_idempotency_uq",
+      "type": "index"
+    },
+    {
+      "name": "support_entries_legacy_question_idx",
+      "type": "index"
+    },
+    {
+      "name": "support_entries_thread_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "support_photos_entry_idx",
+      "type": "index"
+    },
+    {
+      "name": "support_threads_general_question_uq",
+      "type": "index"
+    },
+    {
+      "name": "support_threads_problem_question_uq",
+      "type": "index"
+    },
+    {
+      "name": "support_threads_staff_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "support_threads_student_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "telegram_bindings_course_idx",
+      "type": "index"
+    },
+    {
+      "name": "telegram_bindings_group_idx",
+      "type": "index"
+    },
+    {
+      "name": "telegram_bindings_owner_destination_uq",
+      "type": "index"
+    },
+    {
+      "name": "test_attempts_pending_configuration_idx",
+      "type": "index"
+    },
+    {
+      "name": "test_attempts_problem_evaluation_idx",
+      "type": "index"
+    },
+    {
+      "name": "test_attempts_result_idx",
+      "type": "index"
+    },
+    {
+      "name": "test_attempts_student_problem_counted_idx",
+      "type": "index"
+    },
+    {
+      "name": "test_attempts_student_problem_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "user_achievements_user_course_idx",
+      "type": "index"
+    },
+    {
+      "name": "written_tasks_queue_claim_token_idx",
+      "type": "index"
+    },
+    {
+      "name": "written_tasks_queue_lease_expiry_idx",
+      "type": "index"
+    },
+    {
+      "name": "written_tasks_queue_problem_waiting_idx",
+      "type": "index"
+    },
+    {
+      "name": "zoom_conversation_pwa_idempotency_uq",
+      "type": "index"
+    },
+    {
+      "name": "zoom_webhook_receipts_by_meeting",
+      "type": "index"
+    },
+    {
+      "name": "active_problems",
+      "type": "view"
+    },
+    {
+      "name": "effective_results",
+      "type": "view"
+    },
+    {
+      "name": "problem_catalog",
+      "type": "view"
+    },
+    {
+      "name": "result_problem_groups",
+      "type": "view"
+    },
+    {
+      "name": "teacher_result_choices",
+      "type": "view"
+    },
+    {
+      "name": "audit_events_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "audit_events_immutable_update",
+      "type": "trigger"
     },
     {
       "name": "auth_accounts_audience_update",
@@ -497,15 +1452,911 @@
       "type": "trigger"
     },
     {
+      "name": "classroom_assignment_plan_sequence_advance",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_assignment_plans_base_insert_valid",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_assignment_plans_base_update_valid",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_assignments_delete_current_only",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_assignments_insert_current_only",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_assignments_update_current_only",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_events_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_events_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_layout_rooms_delete_draft_only",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_layout_rooms_insert_draft_only",
+      "type": "trigger"
+    },
+    {
+      "name": "classroom_layout_rooms_update_draft_only",
+      "type": "trigger"
+    },
+    {
+      "name": "classrooms_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_asset_names_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_asset_names_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "content_derivatives_asset_hash_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "content_derivatives_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_derivatives_invalidation_once",
+      "type": "trigger"
+    },
+    {
+      "name": "content_derivatives_payload_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "content_problem_matches_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_revision_assets_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_revision_assets_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "content_revisions_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_revisions_lineage_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "content_revisions_source_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "content_revisions_status_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "content_revisions_terminal_state_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "content_sources_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_sources_identity_archive_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "content_tikz_cache_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "content_tikz_cache_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "course_schedule_rules_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "course_schedule_rules_payload_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "course_schedule_rules_state_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "family_account_emails_family_only_insert",
+      "type": "trigger"
+    },
+    {
       "name": "family_student_links_family_account_insert",
       "type": "trigger"
     },
     {
       "name": "family_student_links_family_account_update",
       "type": "trigger"
+    },
+    {
+      "name": "group_schedule_overrides_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "group_schedule_overrides_payload_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "group_schedule_overrides_rule_active_confirm",
+      "type": "trigger"
+    },
+    {
+      "name": "group_schedule_overrides_rule_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "group_schedule_overrides_state_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "hint_reveals_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "hint_reveals_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "hint_reveals_publication_kind_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "idempotency_records_account_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "idempotency_records_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "idempotency_records_state_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_block_revisions_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_block_revisions_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_blocks_revision_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_blocks_revision_scope_update",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_problem_release_events_no_delete",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_problem_release_events_no_update",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_activation_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_revision_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_revision_scope_update",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_state_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_supersedes_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_terminal_audit_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_publications_terminal_insert_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_window_changes_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_window_changes_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_window_schedule_sources_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_window_schedule_sources_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "lesson_window_schedule_sources_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "live_cell_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "live_cell_update",
+      "type": "trigger"
+    },
+    {
+      "name": "live_results_delete",
+      "type": "trigger"
+    },
+    {
+      "name": "live_results_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "live_results_update",
+      "type": "trigger"
+    },
+    {
+      "name": "media_assets_locked_submission_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "media_assets_review_evidence_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "oral_window_primary_lesson",
+      "type": "trigger"
+    },
+    {
+      "name": "organizer_entry_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "organizer_entry_no_delete",
+      "type": "trigger"
+    },
+    {
+      "name": "problem_revisions_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "problem_revisions_match_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "problem_synonym_members_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "problem_synonym_members_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "problem_synonym_members_removed_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "problem_synonym_members_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "publication_figure_layouts_immutable_delete",
+      "type": "trigger"
+    },
+    {
+      "name": "publication_figure_layouts_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "solution_reveals_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "solution_reveals_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "solution_reveals_publication_kind_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_asset_contract_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_delete_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_entry_mutable_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_entry_mutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_lock_result_scope_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_locked_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_max_ten_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_review_evidence_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_review_evidence_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_review_evidence_insert_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_state_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_attachments_submitted_nonempty_delete",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_author_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_author_scope_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_lock_requires_attachments_locked",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_nonempty_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_nonempty_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_problem_revision_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_problem_revision_scope_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_review_evidence_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_state_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_terminal_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entries_version_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entry_replacements_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entry_replacements_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entry_replacements_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entry_transfers_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_entry_transfers_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_material_reassignment_items_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_material_reassignment_items_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_material_reassignment_items_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_material_reassignments_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_material_reassignments_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_annotations_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_annotations_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_annotations_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_events_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_events_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_evidence_attachments_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_evidence_attachments_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_evidence_attachments_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_evidence_entries_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_evidence_entries_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_evidence_entries_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_internal_reaction_events_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_internal_reaction_events_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_internal_reaction_events_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_internal_reactions_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_internal_reactions_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_internal_reactions_update_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_student_reaction_events_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_student_reaction_events_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_student_reaction_events_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_student_reactions_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_student_reactions_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_review_student_reactions_update_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_reviews_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_reviews_immutable_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_reviews_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_threads_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_threads_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_threads_problem_revision_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_threads_result_kind_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_threads_result_kind_update",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_threads_state_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "submission_threads_version_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "support_entries_asset_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "support_entries_author_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "support_entries_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "support_entries_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "support_entry_reads_owner_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "support_threads_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "support_threads_identity_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "support_threads_problem_scope_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "support_threads_version_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "test_attempt_result_events_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "test_attempt_result_events_update_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "test_attempts_check_transition_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "test_attempts_delete_forbidden",
+      "type": "trigger"
+    },
+    {
+      "name": "test_attempts_payload_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "test_attempts_result_contract_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "test_attempts_result_contract_update",
+      "type": "trigger"
     }
   ],
   "pragma_structure_differences": [
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "command_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "2f78d5447b8766fa6d998a159e664c874c6e7e4c7fd146015b2b49587a5b950f",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_game_students_commands_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "game_students_commands",
+        "table_name": "game_students_commands",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "command_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "2f78d5447b8766fa6d998a159e664c874c6e7e4c7fd146015b2b49587a5b950f",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_game_students_commands_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "game_students_commands",
+        "table_name": "game_students_commands",
+        "type": "table"
+      },
+      "name": "game_students_commands",
+      "type": "table"
+    },
     {
       "actual": {
         "columns": [
@@ -753,12 +2604,12 @@
         "columns": [
           {
             "cid": 0,
-            "declared_type": "TEXT",
+            "declared_type": "INTEGER",
             "default": {
               "present": false
             },
             "hidden": 0,
-            "name": "group_id",
+            "name": "id",
             "not_null": false,
             "primary_key_ordinal": 1
           },
@@ -769,7 +2620,7 @@
               "present": false
             },
             "hidden": 0,
-            "name": "short_code",
+            "name": "group_id",
             "not_null": true,
             "primary_key_ordinal": 0
           },
@@ -780,8 +2631,8 @@
               "present": false
             },
             "hidden": 0,
-            "name": "broadcast_code",
-            "not_null": false,
+            "name": "short_code",
+            "not_null": true,
             "primary_key_ordinal": 0
           },
           {
@@ -791,7 +2642,7 @@
               "present": false
             },
             "hidden": 0,
-            "name": "tg_command",
+            "name": "broadcast_code",
             "not_null": false,
             "primary_key_ordinal": 0
           },
@@ -802,12 +2653,23 @@
               "present": false
             },
             "hidden": 0,
+            "name": "tg_command",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
             "name": "public_name",
             "not_null": true,
             "primary_key_ordinal": 0
           },
           {
-            "cid": 5,
+            "cid": 6,
             "declared_type": "TEXT",
             "default": {
               "present": false
@@ -818,7 +2680,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 6,
+            "cid": 7,
             "declared_type": "TEXT",
             "default": {
               "present": false
@@ -829,7 +2691,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 7,
+            "cid": 8,
             "declared_type": "TEXT",
             "default": {
               "present": false
@@ -840,7 +2702,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 8,
+            "cid": 9,
             "declared_type": "INTEGER",
             "default": {
               "present": false
@@ -851,7 +2713,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 9,
+            "cid": 10,
             "declared_type": "INTEGER",
             "default": {
               "present": true,
@@ -863,7 +2725,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 10,
+            "cid": 11,
             "declared_type": "INTEGER",
             "default": {
               "present": true,
@@ -875,7 +2737,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 11,
+            "cid": 12,
             "declared_type": "INTEGER",
             "default": {
               "present": true,
@@ -887,7 +2749,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 12,
+            "cid": 13,
             "declared_type": "INTEGER",
             "default": {
               "present": true,
@@ -899,7 +2761,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 13,
+            "cid": 14,
             "declared_type": "REAL",
             "default": {
               "present": true,
@@ -911,18 +2773,18 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 14,
+            "cid": 15,
             "declared_type": "TEXT",
             "default": {
               "present": false
             },
-            "hidden": 0,
+            "hidden": 2,
             "name": "public_id",
             "not_null": false,
             "primary_key_ordinal": 0
           },
           {
-            "cid": 15,
+            "cid": 16,
             "declared_type": "INTEGER",
             "default": {
               "present": false
@@ -933,7 +2795,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 16,
+            "cid": 17,
             "declared_type": "TEXT",
             "default": {
               "present": true,
@@ -945,7 +2807,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 17,
+            "cid": 18,
             "declared_type": "TEXT",
             "default": {
               "present": false
@@ -956,7 +2818,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 18,
+            "cid": 19,
             "declared_type": "TEXT",
             "default": {
               "present": false
@@ -967,7 +2829,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 19,
+            "cid": 20,
             "declared_type": "TEXT",
             "default": {
               "present": false
@@ -978,7 +2840,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 20,
+            "cid": 21,
             "declared_type": "INTEGER",
             "default": {
               "present": true,
@@ -990,7 +2852,7 @@
             "primary_key_ordinal": 0
           }
         ],
-        "definition_sha256": "d53dea3a21b95c79c4099e32357152091e4b2391d61fd15671a2d0286832a408",
+        "definition_sha256": "ddb0dd93d69f41742419db3b5f237ad1e9d5dce5cef1c80034a7929024c44bc0",
         "foreign_keys": [
           {
             "from_columns": [
@@ -1009,7 +2871,7 @@
           {
             "columns": [
               {
-                "cid": 15,
+                "cid": 16,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1017,7 +2879,7 @@
                 "seqno": 0
               },
               {
-                "cid": 0,
+                "cid": 1,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1041,7 +2903,7 @@
           {
             "columns": [
               {
-                "cid": 15,
+                "cid": 16,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1049,7 +2911,7 @@
                 "seqno": 0
               },
               {
-                "cid": 4,
+                "cid": 5,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1073,7 +2935,7 @@
           {
             "columns": [
               {
-                "cid": 15,
+                "cid": 16,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1081,7 +2943,7 @@
                 "seqno": 0
               },
               {
-                "cid": 1,
+                "cid": 2,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1105,31 +2967,7 @@
           {
             "columns": [
               {
-                "cid": 14,
-                "collation": "BINARY",
-                "descending": false,
-                "key": true,
-                "name": "public_id",
-                "seqno": 0
-              },
-              {
-                "cid": -1,
-                "collation": "BINARY",
-                "descending": false,
-                "key": false,
-                "name": null,
-                "seqno": 1
-              }
-            ],
-            "name": "groups_public_id_uq",
-            "origin": "c",
-            "partial": true,
-            "unique": true
-          },
-          {
-            "columns": [
-              {
-                "cid": 0,
+                "cid": 1,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1146,14 +2984,14 @@
               }
             ],
             "name": "sqlite_autoindex_groups_1",
-            "origin": "pk",
+            "origin": "u",
             "partial": false,
             "unique": true
           },
           {
             "columns": [
               {
-                "cid": 2,
+                "cid": 3,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1177,7 +3015,7 @@
           {
             "columns": [
               {
-                "cid": 3,
+                "cid": 4,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -1204,6 +3042,607 @@
         "type": "table"
       },
       "name": "groups",
+      "type": "table"
+    },
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "prob",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "item",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "title",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "prob_text",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "prob_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ans_type",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ans_validation",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "validation_error",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "cor_ans",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "cor_ans_checker",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "wrong_ans",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "congrat",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default": {
+              "present": true,
+              "sha256": "6f49cdbd80e1b95d5e6427e1501fc217790daee87055fa5b4e71064288bddede"
+            },
+            "hidden": 0,
+            "name": "synonyms",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "08b924dee759e275f8a223eac905bdc4a3c1969b78a0e11de187686cbbcf49c2",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "synonyms",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "problems_by_synonyms",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "prob",
+                "seqno": 2
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "item",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "sqlite_autoindex_problems_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "problems",
+        "table_name": "problems",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "prob",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "item",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "title",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "prob_text",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "prob_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ans_type",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ans_validation",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "validation_error",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "cor_ans",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "cor_ans_checker",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "wrong_ans",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "congrat",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default": {
+              "present": true,
+              "sha256": "6f49cdbd80e1b95d5e6427e1501fc217790daee87055fa5b4e71064288bddede"
+            },
+            "hidden": 0,
+            "name": "synonyms",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 2,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "93c4bf9dbfb06a27c15e778e22d80275fb34ad41e0cbdc4955e4a81942bf8c3b",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "synonyms",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "problems_by_synonyms",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "problems_review_lesson_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "prob",
+                "seqno": 2
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "item",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "sqlite_autoindex_problems_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "problems",
+        "table_name": "problems",
+        "type": "table"
+      },
+      "name": "problems",
       "type": "table"
     },
     {
@@ -1584,6 +4023,628 @@
               "present": false
             },
             "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TIMESTAMP",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "verdict",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "answer",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "res_type",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INT",
+            "default": {
+              "present": true,
+              "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            },
+            "hidden": 0,
+            "name": "check_time_spent_sec",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "zoom_conversation_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "643919d4c6f267ea1a298b0e763a777eef759ac445c9d00b7e5c077f1bf986f3",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "zoom_conversation_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "zoom_conversation"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "results_by_student_problem",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "teacher_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "results_teacher_id_lesson_index",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          }
+        ],
+        "name": "results",
+        "table_name": "results",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TIMESTAMP",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "verdict",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "answer",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "res_type",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INT",
+            "default": {
+              "present": true,
+              "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            },
+            "hidden": 0,
+            "name": "check_time_spent_sec",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "zoom_conversation_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "24157240d153fd11b6df47ad3ff881be3aa5f8896c19dad997085eb3a20c0a0c",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "zoom_conversation_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "zoom_conversation"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "results_by_student_problem",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "results_id_student_problem_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "teacher_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "results_teacher_id_lesson_index",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "results_written_current_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          }
+        ],
+        "name": "results",
+        "table_name": "results",
+        "type": "table"
+      },
+      "name": "results",
+      "type": "table"
+    },
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
             "name": "chat_id",
             "not_null": false,
             "primary_key_ordinal": 0
@@ -1908,13 +4969,13 @@
             "default": {
               "present": false
             },
-            "hidden": 0,
+            "hidden": 2,
             "name": "public_id",
             "not_null": false,
             "primary_key_ordinal": 0
           }
         ],
-        "definition_sha256": "af23435b1cb7ecd2c2c00831a9e939706cf198c55da028b0d9c51f04e6d880ff",
+        "definition_sha256": "ecc9132fb0f71de58a3f4b803fd674c85d53351cac3dcb98762263916a9b4c86",
         "foreign_keys": [
           {
             "from_columns": [
@@ -1977,15 +5038,144 @@
             "origin": "u",
             "partial": false,
             "unique": true
+          }
+        ],
+        "name": "users",
+        "table_name": "users",
+        "type": "table"
+      },
+      "name": "users",
+      "type": "table"
+    },
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
           },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "cur_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TIMESTAMP",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_ts",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TIMESTAMP",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "f605598961187faa5d234a12141ed0f2e7df91cf030af368ac6e1ef28519b0ac",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
           {
             "columns": [
               {
-                "cid": 12,
+                "cid": 0,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
-                "name": "public_id",
+                "name": "id",
                 "seqno": 0
               },
               {
@@ -1997,17 +5187,738 @@
                 "seqno": 1
               }
             ],
-            "name": "users_public_id_uq",
+            "name": "sqlite_autoindex_written_tasks_queue_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_written_tasks_queue_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "ts",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "written_tasks_queue_by_tst",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "written_tasks_queue",
+        "table_name": "written_tasks_queue",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 2,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TIMESTAMP",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "cur_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TIMESTAMP",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_ts",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "claim_token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "claimed_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "lease_expires_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            "hidden": 0,
+            "name": "lease_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default": {
+              "present": true,
+              "sha256": "958f1d2ca258b233eda92200726fbdd960ca5298408c87f1db553bf5376f5630"
+            },
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "7e4933d7c7d89791fec04ceab6417e3ddd49070abfd5b08d9be2767436e88029",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_written_tasks_queue_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_written_tasks_queue_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "ts",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "written_tasks_queue_by_tst",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 8,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "claim_token",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "written_tasks_queue_claim_token_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lease_expires_at",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "written_tasks_queue_lease_expiry_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ts",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "written_tasks_queue_problem_waiting_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "written_tasks_queue",
+        "table_name": "written_tasks_queue",
+        "type": "table"
+      },
+      "name": "written_tasks_queue",
+      "type": "table"
+    },
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "check_time_spent_sec",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "e612e3688f8f5b8078a5018b18c337f166465f5127a44529a44d7e97cc5beb92",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "zoom_conversation",
+        "table_name": "zoom_conversation",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "check_time_spent_sec",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "pwa_idempotency_key",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "bd63a41cd11e2e48de47b2e62af467bac74d122c3e099757fe8fbe5c1a71fa7c",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "pwa_idempotency_key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "zoom_conversation_pwa_idempotency_uq",
             "origin": "c",
             "partial": true,
             "unique": true
           }
         ],
-        "name": "users",
-        "table_name": "users",
+        "name": "zoom_conversation",
+        "table_name": "zoom_conversation",
         "type": "table"
       },
-      "name": "users",
+      "name": "zoom_conversation",
       "type": "table"
     }
   ],

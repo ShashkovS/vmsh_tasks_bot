@@ -1,5 +1,7 @@
 """Hermetic archive acceptance fixture; docs/student-results.md. No external services."""
 
+from contextlib import closing
+
 import hashlib
 import json
 import sqlite3
@@ -15,7 +17,7 @@ STAMP = "2026-09-01T12:00:00Z"
 
 def seed(config):
     path = _require_e2e_target(config)
-    with sqlite3.connect(path) as c:
+    with closing(sqlite3.connect(path)) as c, c:
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
         if c.execute("SELECT 1 FROM users WHERE id=?", (STUDENT,)).fetchone():

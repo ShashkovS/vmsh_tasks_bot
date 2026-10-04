@@ -2,50 +2,11 @@
 
 from __future__ import annotations
 
-import sqlite3
 
 from pwa_tests.integration import test_content_http_api as content_support
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 
 
-MIGRATION_ID = "0071.pwa_oral_results_idempotency"
 content_http = content_support.content_http
-
-
-def test_oral_result_migration_up_down_up_is_exact(tmp_path):
-    database_path = tmp_path / "oral-results.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0070.pwa_oral_windows"
-    }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
-
-    _apply(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(zoom_conversation)")
-        }
-        assert "pwa_idempotency_key" in columns
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name = 'zoom_conversation_pwa_idempotency_uq'"
-            ).fetchone()[0]
-            == 1
-        )
-
-    _rollback(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(zoom_conversation)")
-        }
-        assert "pwa_idempotency_key" not in columns
-    _apply(database_path, {MIGRATION_ID})
 
 
 def _result_payload(problem_id: str, **changes) -> dict[str, object]:

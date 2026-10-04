@@ -273,41 +273,6 @@ async def test_mixed_courses_filter_room_items_and_each_courses_preferences(
     f.factory.run_write(check)
 
 
-def test_migration_keeps_existing_courses_and_rolls_back(tmp_path):
-    import sqlite3
-    from pwa_tests.integration.test_phase8_notification_core import (
-        _apply,
-        _migrations,
-        _rollback,
-    )
-    from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
-        _insert_parents,
-    )
-
-    path = tmp_path / "course-attendance.sqlite3"
-    migration_id = "0103.course_in_person_classes"
-    _apply(path, {m.id for m in _migrations()} - {migration_id})
-    with sqlite3.connect(path) as c:
-        c.row_factory = sqlite3.Row
-        _insert_parents(c)
-        before = [tuple(row) for row in c.execute("SELECT * FROM course_enrollments")]
-    _apply(path, {migration_id})
-    with sqlite3.connect(path) as c:
-        assert c.execute("SELECT has_in_person_classes FROM courses").fetchall() == [
-            (1,)
-        ]
-        assert [
-            tuple(row) for row in c.execute("SELECT * FROM course_enrollments")
-        ] == before
-        assert c.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-    _rollback(path, {migration_id})
-    _apply(path, {migration_id})
-    with sqlite3.connect(path) as c:
-        assert c.execute("SELECT has_in_person_classes FROM courses").fetchall() == [
-            (1,)
-        ]
-
-
 async def test_disabled_course_retains_online_targets_and_saved_preference(
     classroom_http,
 ):

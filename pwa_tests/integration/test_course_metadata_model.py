@@ -1,17 +1,11 @@
 """Model persistence/permissions/migration; see docs/metadata-generation.md."""
 
 import json
-import sqlite3
 
 import pytest
 
 from pwa_tests.integration.test_classroom_catalog_http_api import _cookies, _headers
 from pwa_tests.integration.test_phase10_course_catalog import _course
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
@@ -100,30 +94,3 @@ async def test_course_model_rejects_invalid_ids(classroom_http, model):
     )
     assert response.status == 422, await response.text()
     assert (await response.json())["error"]["details"]["field"] == "metadataModel"
-
-
-def test_metadata_model_migration_preserves_existing_courses_up_down_up(tmp_path):
-    path = tmp_path / "metadata-model.sqlite3"
-    migration = "0104.course_metadata_model"
-    all_migrations = {m.id: m for m in _migrations()}
-    assert {m.id for m in all_migrations[migration].depends} == {
-        "0103.course_in_person_classes"
-    }
-    _apply(path, set(all_migrations) - {migration})
-    with sqlite3.connect(path) as c:
-        c.execute(
-            "INSERT INTO seasons (code,title,starts_on,ends_on,session_expires_on,status,created_at,updated_at) "
-            "VALUES ('test','Test','2026-09-01','2027-06-01','2027-07-01','active','2026-10-01','2026-10-01')"
-        )
-        c.execute(
-            "INSERT INTO courses (season_id,code,name,subject_code,has_in_person_classes,status,accent_key,created_at,updated_at) "
-            "VALUES (1,'test','Test','math',0,'active','math','2026-10-01','2026-10-01')"
-        )
-    for _ in range(2):
-        _apply(path, {migration})
-        with sqlite3.connect(path) as c:
-            assert c.execute(
-                "SELECT name,has_in_person_classes,metadata_model FROM courses"
-            ).fetchone() == ("Test", 0, "openai/gpt-5.6-luna")
-            assert c.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        _rollback(path, {migration})

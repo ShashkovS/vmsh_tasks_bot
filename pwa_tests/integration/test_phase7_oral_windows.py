@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from datetime import UTC, datetime, timedelta
 
 from apps.pwa_api import oral_window_routes as oral_routes
@@ -11,52 +10,10 @@ from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.auth import AuthAudience
 from models.pwa.oral_windows import create_due_window_notifications
 from pwa_tests.integration import test_classroom_catalog_http_api as classroom_support
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 
 
-MIGRATION_ID = "0070.pwa_oral_windows"
 NOW = datetime(2026, 10, 5, 12, tzinfo=UTC)
 classroom_http = classroom_support.classroom_http
-
-
-def test_oral_window_migration_up_down_up_is_exact(tmp_path):
-    database_path = tmp_path / "oral-windows.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0069.pwa_course_notification_preferences"
-    }
-    _apply(database_path, {name for name in migrations if name < MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema WHERE name LIKE 'oral_windows%'"
-            ).fetchone()[0]
-            == 0
-        )
-
-    _apply(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema WHERE name LIKE 'oral_windows%'"
-            ).fetchone()[0]
-            == 2
-        )
-
-    _rollback(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema WHERE name LIKE 'oral_windows%'"
-            ).fetchone()[0]
-            == 0
-        )
-    _apply(database_path, {MIGRATION_ID})
 
 
 def _seed_group_lesson(fixture: classroom_support.ClassroomHttpFixture) -> None:
@@ -142,10 +99,7 @@ async def test_admin_configures_and_online_student_reveals_open_join(
     student_cookies = {
         COOKIE_POLICY[AuthAudience.STUDENT].access_name: fixture.student_cookie
     }
-    student_path = (
-        "/student/api/v1/courses/c-1/lessons/"
-        "gl-1/oral-windows"
-    )
+    student_path = "/student/api/v1/courses/c-1/lessons/gl-1/oral-windows"
     listed = await fixture.client.get(
         student_path,
         headers=classroom_support._headers(),
@@ -268,10 +222,7 @@ async def test_opening_window_notifies_current_online_student_once_without_secre
     row = rows[0]
     assert row["audience"] == "student"
     assert row["dedupe_key"] == window_id
-    assert row["route"] == (
-        "/student/tasks?course=c-1&group="
-        "g-5&lesson=41"
-    )
+    assert row["route"] == ("/student/tasks?course=c-1&group=g-5&lesson=41")
     payload = json.loads(row["payload_json"])
     assert payload["windowId"] == window_id
     assert payload["groupLessonId"] == "gl-1"

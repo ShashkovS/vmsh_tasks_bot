@@ -13,7 +13,8 @@ import pytest
 from multidict import CIMultiDict
 
 from apps.pwa_api import content_routes as content_routes_module
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.content import (
     ContentConflict,
     ContentNotFound,
@@ -61,7 +62,7 @@ class ContentFixture:
 @pytest.fixture()
 def content_fixture(tmp_path) -> ContentFixture:
     database_path = tmp_path / "content-repository.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     repository = PwaContentRepository(factory, clock=lambda: NOW)
     timestamp = NOW.isoformat(timespec="microseconds").replace("+00:00", "Z")

@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 import pytest
 
 from db_methods.pwa.connection import PwaConnectionFactory
-from db_methods.pwa.migrations import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from models.pwa.lesson_blocks import LessonBlockService, LessonBlockVersionConflict
 
 
@@ -23,7 +23,7 @@ DOCUMENT = {
 @pytest.fixture()
 def block_service(tmp_path):
     path = tmp_path / "lesson-blocks.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     # The service only needs the scoped lesson and Staff actor. These records
     # use SQLite's normal FK constraints in service transactions.
     with sqlite3.connect(path) as connection:

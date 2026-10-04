@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import asyncio
 import os
 from copy import deepcopy
@@ -31,6 +33,7 @@ def _get_worker_id():
 def isolated_db(tmp_path):
     db.sql.disconnect()
     db_file = tmp_path / f"handler_flows_{_get_worker_id()}.db"
+    create_test_database(db_file)
     db.sql.setup(str(db_file))
 
     students = deepcopy(test_students)

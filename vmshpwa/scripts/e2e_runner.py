@@ -11,12 +11,21 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import json
 import os
 import subprocess
+import time
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+
+from vmshpwa.scripts.check_toolchain import frontend_environment
+from vmshpwa.scripts.e2e_build_cache import (
+    build_input_digest,
+    cached_build_is_current,
+    record_build,
+)
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKSPACE = REPOSITORY_ROOT / "vmshpwa"
@@ -41,6 +50,7 @@ E2E_BROWSER_BUILD_ENVIRONMENT = {
 E2E_FRONTEND_TOOL_ENVIRONMENT = {
     "VMSH_API_ORIGIN": E2E_API_ORIGIN,
     "VMSH_PWA_DEV_SW": "0",
+    "VMSH_FRONTEND_BUILD_PROFILE": "verification",
 }
 
 
@@ -180,6 +190,70 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     return (("pnpm", "build"), tuple(playwright))
 
 
+def commands_for_request(
+    modes: Sequence[str], browser: str = "all"
+) -> tuple[tuple[str, ...], ...]:
+    """Batch compatible focused specs; preserve destructive fresh-seed phases.
+
+    testing-strategy.md: each batch has one real backend/gateway. Figure,
+    report, visual and explicitly destructive fixtures still get fresh state.
+    """
+
+    destructive = {
+        "all",
+        "portal-release",
+        "figure-layout",
+        "statistics",
+        "visual",
+        "visual-update",
+        "student-results",
+        "organizers",
+        "oral",
+        "oral-windows",
+        "live-marking",
+        "problem-release",
+    }
+    phases: list[tuple[str, ...]] = []
+    selectors: list[str] = []
+    playwright = ("pnpm", "exec", "playwright", "test")
+    if len(set(modes)) > 1 and set(modes) & {"all", "nonvisual", "portal-release"}:
+        raise ValueError(
+            "A broad E2E mode already includes focused specs; run it separately"
+        )
+
+    def flush() -> None:
+        if selectors:
+            phases.append((*playwright, *dict.fromkeys(selectors)))
+            selectors.clear()
+
+    for mode in dict.fromkeys(modes):
+        commands = commands_for_mode(mode)[1:]
+        arguments = commands[0][4:]
+        if (
+            mode not in destructive
+            and len(commands) == 1
+            and arguments
+            and all(
+                arg.startswith("e2e/") and arg.endswith(".spec.ts") for arg in arguments
+            )
+        ):
+            selectors.extend(arguments)
+        else:
+            flush()
+            phases.extend(commands)
+    flush()
+    browser_flags = () if browser == "all" else ("--project", browser)
+    return (
+        ("pnpm", "build"),
+        *(
+            tuple(phase)
+            + browser_flags
+            + (() if "--retries" in phase else ("--retries", "0"))
+            for phase in phases
+        ),
+    )
+
+
 def reset_e2e_database() -> None:
     """Reset only the reproducible E2E SQLite database between suite phases."""
 
@@ -221,9 +295,39 @@ def run_commands(
     workspace: Path = WORKSPACE,
     environment: Mapping[str, str] | None = None,
     reset_database_between_commands: bool = False,
+    reuse_build: bool = False,
+    force_build: bool = False,
+    timings: list[dict] | None = None,
 ) -> int:
     subprocess_environment = sanitized_e2e_environment(environment)
     for index, command in enumerate(commands):
+        started = time.monotonic()
+        is_build = tuple(command) == ("pnpm", "build")
+        if (
+            is_build
+            and reuse_build
+            and not force_build
+            and cached_build_is_current(workspace, subprocess_environment)
+        ):
+            print(
+                "E2E build: cache hit (source, environment and all artifact bytes match)",
+                flush=True,
+            )
+            if timings is not None:
+                timings.append(
+                    {
+                        "command": list(command),
+                        "seconds": round(time.monotonic() - started, 3),
+                        "cache_hit": True,
+                        "exit_code": 0,
+                    }
+                )
+            continue
+        build_key = (
+            build_input_digest(workspace, subprocess_environment)
+            if is_build and reuse_build
+            else None
+        )
         if reset_database_between_commands and index > 0:
             reset_e2e_database()
         result = subprocess.run(
@@ -232,8 +336,25 @@ def run_commands(
             env=subprocess_environment,
             check=False,
         )
+        if timings is not None:
+            entry = {
+                "command": list(command),
+                "seconds": round(time.monotonic() - started, 3),
+                "cache_hit": False,
+                "exit_code": result.returncode,
+            }
+            preparation = (
+                workspace.parent / ".runtime/vmshpwa/e2e-cache/preparation-latest.json"
+            )
+            if not is_build and result.returncode == 0 and preparation.is_file():
+                entry["preparation"] = json.loads(preparation.read_text())
+            timings.append(entry)
         if result.returncode != 0:
             return result.returncode
+        if is_build and reuse_build:
+            if build_key != build_input_digest(workspace, subprocess_environment):
+                raise RuntimeError("Frontend inputs changed during the build; rerun")
+            record_build(workspace, subprocess_environment)
     return 0
 
 
@@ -241,6 +362,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--mode",
+        action="append",
         choices=(
             "all",
             "authentication",
@@ -271,34 +393,62 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "visual",
             "visual-update",
         ),
-        default="all",
+    )
+    parser.add_argument(
+        "--browser", choices=("chromium", "webkit", "firefox", "all"), default="all"
+    )
+    parser.add_argument(
+        "--fresh-build",
+        action="store_true",
+        help="Rebuild even when verified artifacts match",
+    )
+    parser.add_argument(
+        "--fresh-seed",
+        action="store_true",
+        help="Recreate the seed snapshot from repository fixtures",
+    )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        default=REPOSITORY_ROOT / ".runtime/vmshpwa/checks/e2e-latest.json",
     )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
+    modes = args.mode or ["all"]
+    started = time.monotonic()
+    timings: list[dict] = []
     try:
         with exclusive_e2e_run():
-            return run_commands(
-                commands_for_mode(args.mode),
-                **(
-                    {"environment": {**os.environ, "VMSH_E2E_SUPPORT_NAVIGATION": "1"}}
-                    if args.mode == "support"
-                    else {}
-                ),
-                reset_database_between_commands=args.mode
-                in {
-                    "all",
-                    "portal-release",
-                    "problem-release",
-                    "oral",
-                    "oral-windows",
-                    "live-marking",
-                    "student-results",
-                    "organizers",
-                },
+            environment = frontend_environment(WORKSPACE, dict(os.environ))
+            environment["VMSH_E2E_FRESH_SEED"] = "1" if args.fresh_seed else "0"
+            environment["VMSH_E2E_SUPPORT_NAVIGATION"] = (
+                "1" if "support" in modes else "0"
             )
+            result = run_commands(
+                commands_for_request(modes, args.browser),
+                environment=environment,
+                reuse_build=True,
+                force_build=args.fresh_build,
+                timings=timings,
+            )
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(
+                json.dumps(
+                    {
+                        "modes": modes,
+                        "browser": args.browser,
+                        "seconds": round(time.monotonic() - started, 3),
+                        "exit_code": result,
+                        "phases": timings,
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
+            return result
     except E2eSuiteAlreadyRunning as error:
         print(error)
         return 73

@@ -12,6 +12,7 @@ from vmshpwa.scripts.e2e_runner import (
     E2E_BROWSER_BUILD_ENVIRONMENT,
     E2eSuiteAlreadyRunning,
     commands_for_mode,
+    commands_for_request,
     exclusive_e2e_run,
     main,
     run_commands,
@@ -301,4 +302,30 @@ def test_portal_release_keeps_destructive_fixtures_in_fresh_database_phases(monk
         lambda commands, **kwargs: calls.append(kwargs) or 0,
     )
     assert main(["--mode", "portal-release"]) == 0
-    assert calls == [{"reset_database_between_commands": True}]
+    assert len(calls) == 1
+    assert calls[0]["reuse_build"] is True
+    # prepare_e2e.py restores a pristine snapshot before each server starts.
+    assert "reset_database_between_commands" not in calls[0]
+
+
+def test_focused_modes_share_one_build_and_backend_and_keep_browser_explicit():
+    commands = commands_for_request(["content", "review", "submissions", "review"], "chromium")
+    assert len(commands) == 2
+    assert commands[0] == ("pnpm", "build")
+    assert commands[1][4:7] == (
+        "e2e/content-publication.spec.ts", "e2e/review-workspace.spec.ts", "e2e/test-submission.spec.ts",
+    )
+    assert commands[1][-4:] == ("--project", "chromium", "--retries", "0")
+
+
+def test_destructive_modes_still_receive_separate_backend_phases():
+    commands = commands_for_request(["review", "statistics", "figure-layout", "content"], "all")
+    assert len(commands) == 5
+    assert "playwright.statistics.config.ts" in commands[2]
+    assert "e2e/figure-layout.spec.ts" in commands[3]
+    assert all("--project" not in command for command in commands)
+
+
+def test_broad_and_focused_modes_cannot_silently_repeat_the_same_tests():
+    with pytest.raises(ValueError, match="already includes focused"):
+        commands_for_request(["all", "review"])

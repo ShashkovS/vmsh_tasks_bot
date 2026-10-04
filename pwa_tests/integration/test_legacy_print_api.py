@@ -7,7 +7,8 @@ from aiohttp import web
 
 from apps import pwa_app
 from apps.pwa_api.legacy_print_routes import PREFIX
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from helpers.config import Config
 from helpers.nats_brocker import InProcessBroker
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
@@ -19,7 +20,7 @@ from pwa_tests.integration.test_classroom_catalog_http_api import (
     HOST,
     TEST_HASHER,
 )
-from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
+from pwa_tests.integration.test_classroom_assignment_schema import (
     _insert_parents,
     NOW,
 )
@@ -31,7 +32,7 @@ TOKEN = "synthetic-legacy-print-token-for-tests-only"
 @pytest.fixture
 async def print_api(tmp_path, aiohttp_client):
     path = tmp_path / "print.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     factory = PwaConnectionFactory(path)
 
     def seed(connection):

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import closing
+
 import hashlib
 import json
 import os
@@ -291,7 +293,7 @@ def _seed(
 
 def seed_e2e_oral(runtime_config: PwaMaintenanceConfig) -> int:
     database_path = _require_e2e_target(runtime_config)
-    with sqlite3.connect(database_path) as connection:
+    with closing(sqlite3.connect(database_path)) as connection, connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         inserted = _seed(connection)

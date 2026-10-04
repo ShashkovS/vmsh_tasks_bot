@@ -18,12 +18,15 @@ from typing import Any, Iterator, Mapping
 
 import yoyo
 
-from .migrations import MIGRATIONS_ROOT
+from .migrations import (
+    MIGRATIONS_ROOT,
+    MERGED_MIGRATION_BOUNDARY,
+    inspect_connection_schema,
+)
 
 
 SCHEMA_INVENTORY_FORMAT = "vmsh.sqlite-schema-inventory/v1"
 SCHEMA_DRIFT_FORMAT = "vmsh.sqlite-schema-drift/v1"
-MERGED_MIGRATION_BOUNDARY = 30
 
 # Infrastructure tables are covered by a dedicated safe structural fingerprint,
 # not by the product schema hash. SQLite-owned objects (sqlite_*) are filtered
@@ -273,6 +276,22 @@ def _normalize_sql(sql: str) -> str:
     return normalized + ";"
 
 
+def product_ddl_sha256(connection: sqlite3.Connection) -> str:
+    """Fingerprint product DDL for baseline admission without reading rows."""
+
+    rows = [
+        (kind, name, table, _normalize_sql(sql))
+        for kind, name, table, sql in connection.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_schema "
+            "WHERE name NOT LIKE 'sqlite_%' AND sql IS NOT NULL ORDER BY type, name"
+        )
+        if name not in YOYO_SCHEMA_OBJECTS | KNOWN_LEGACY_DERIVED_OBJECTS
+    ]
+    return hashlib.sha256(
+        json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
 def _object_sort_key(record: Mapping[str, Any]) -> tuple[int, str, bytes]:
     name = str(record["name"])
     return (
@@ -360,27 +379,10 @@ def _migration_summary(
             raise SchemaInventoryError(f"duplicate yoyo migration id: {migration_id}")
         applied_by_id[migration_id] = migration_hash
 
-    expected_by_id = dict(expected)
-    missing = [
-        migration_id
-        for migration_id, _ in expected
-        if migration_id not in applied_by_id
-    ]
-    changed = [
-        migration_id
-        for migration_id, migration_hash in expected
-        if migration_id in applied_by_id
-        and applied_by_id[migration_id] != migration_hash
-    ]
-    unexpected = [
-        migration_id
-        for migration_id, _ in applied
-        if migration_id not in expected_by_id
-        and (
-            (number := _migration_number(migration_id)) is None
-            or number >= MERGED_MIGRATION_BOUNDARY
-        )
-    ]
+    state = inspect_connection_schema(connection)
+    missing = list(state.missing)
+    changed = list(state.hash_mismatches)
+    unexpected = list(state.unexpected_current_generation)
     if require_migration_head and (missing or changed or unexpected):
         details = []
         if missing:

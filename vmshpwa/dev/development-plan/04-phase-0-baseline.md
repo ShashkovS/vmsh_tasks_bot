@@ -1,5 +1,7 @@
 # Этап 0. Базовая линия, fixtures и наблюдаемая совместимость
 
+Актуализация 2026-10-04: [схлопывание схемы по решению владельца](../../docs/schema-baseline-20261004.md), 0030–0110 → 0111; исторические chain/rollback tests удаляются.
+
 ## Результат
 
 Один developer/agent может одной командой поднять три production-preview frontend, настоящий aiohttp API и отдельную seeded SQLite без Telegram/Google. Репозиторий знает точную исходную схему, исторические типы ответов и контентный golden corpus. Бизнес-функции ещё не добавляются.
@@ -217,3 +219,14 @@ Seed `baseline-v1` и первый release fixture:
       прежде всего network-only cold runtime bootstrap до этапа 3 и owner visual
       approval без обновления snapshots.
 - [ ] Accepted by/date: `<name/date>`.
+
+## Оптимизация проверок — 3 октября 2026
+
+Реализованы schema templates, чистые seed snapshots, verified build cache и
+один fast/release pipeline; compatible E2E modes используют один backend.
+Полный fast gate с восемью Chromium-сценариями — 286 с, все шаги PASS.
+Проверки cache invalidation и lifecycle locks PASS; production не меняется.
+[План и результаты](../../../pwa_tests/reports/check-optimization-20261003/README.md).
+
+Полная Chromium inventory проверена по фазам (139 unique cases), runtime matrix
+75 PASS / 3 engines, финальный cache/receipt gate 28 PASS. Warm focused E2E 41 с.

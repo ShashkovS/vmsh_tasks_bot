@@ -20,7 +20,7 @@ from pwa_tests.integration.test_classroom_catalog_http_api import (
     _cookies,
     _headers,
 )
-from pwa_tests.integration.test_phase7_classroom_assignment_migration import NOW
+from pwa_tests.integration.test_classroom_assignment_schema import NOW
 
 
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)

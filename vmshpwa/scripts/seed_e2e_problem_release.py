@@ -1,5 +1,7 @@
 """Fifteen real tasks for docs/problem-release.md; guarded E2E database only."""
 
+from contextlib import closing
+
 import hashlib
 import json
 import sqlite3
@@ -41,7 +43,7 @@ def document_factory(**kwargs):
 
 def seed(config):
     database = _require_e2e_target(config)
-    with sqlite3.connect(database) as connection:
+    with closing(sqlite3.connect(database)) as connection, connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         if not _seed(connection, TARGETS, document_factory=document_factory):

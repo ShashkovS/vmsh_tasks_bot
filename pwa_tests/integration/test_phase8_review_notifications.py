@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
@@ -9,8 +11,6 @@ from datetime import UTC, datetime, timedelta
 from models.pwa.review_notifications import record_review_notifications
 from pwa_tests.integration.test_phase8_notification_core import (
     ACCOUNT_PUBLIC_ID,
-    _apply,
-    _migrations,
     _seed_account,
 )
 
@@ -24,7 +24,7 @@ def _timestamp(value: datetime) -> str:
 
 def test_reviews_share_one_batch_for_thirty_minutes(tmp_path):
     database_path = tmp_path / "review-notifications.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -85,7 +85,7 @@ def test_reviews_share_one_batch_for_thirty_minutes(tmp_path):
 
 def test_review_after_batch_window_starts_a_new_event(tmp_path):
     database_path = tmp_path / "review-notifications-window.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -115,14 +115,13 @@ def test_review_after_batch_window_starts_a_new_event(tmp_path):
 
 def test_review_notifications_ignore_family_and_inactive_accounts(tmp_path):
     database_path = tmp_path / "review-notifications-scope.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         _seed_account(connection)
         connection.execute(
-            "UPDATE auth_accounts SET status = 'blocked' "
-            "WHERE public_id = ?",
+            "UPDATE auth_accounts SET status = 'blocked' WHERE public_id = ?",
             (ACCOUNT_PUBLIC_ID,),
         )
 

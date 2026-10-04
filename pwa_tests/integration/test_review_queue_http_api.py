@@ -16,7 +16,8 @@ from argon2 import PasswordHasher
 from apps import pwa_app
 from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
 from apps.pwa_api.auth_service import PwaAuthService
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
 from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
@@ -433,7 +434,7 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
 @pytest.fixture()
 async def review_http(tmp_path, aiohttp_client, monkeypatch) -> ReviewHttpFixture:
     database_path = tmp_path / "review-http.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     queue_public_ids = _seed_review_http(factory)
     auth_config = _auth_config()

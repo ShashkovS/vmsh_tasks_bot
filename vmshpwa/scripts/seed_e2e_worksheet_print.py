@@ -4,6 +4,8 @@ See docs/worksheet-print.md and e2e/worksheet-print.spec.ts. No HTTP mocking.
 """
 from __future__ import annotations
 
+from contextlib import closing
+
 import asyncio
 import hashlib
 import json
@@ -97,7 +99,7 @@ def seed(config):
         repository_root=Path(__file__).resolve().parents[2],
     ))
     asyncio.run(storage.put("worksheet-print/triangle.svg", SVG, "image/svg+xml"))
-    with sqlite3.connect(database) as c:
+    with closing(sqlite3.connect(database)) as c, c:
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
         # Separate closed, unanswered worksheets for task-interaction-polish.spec.ts.

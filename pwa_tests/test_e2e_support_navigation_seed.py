@@ -2,7 +2,8 @@
 
 import sqlite3
 
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.auth import PwaAuthRepository
 from pwa_tests.test_e2e_statistics_seed import _owners
 from vmshpwa.scripts.seed_e2e_support_navigation import _seed
@@ -10,7 +11,7 @@ from vmshpwa.scripts.seed_e2e_support_navigation import _seed
 
 async def test_support_course_seed_is_idempotent_and_accessible_to_student(tmp_path):
     path = tmp_path / "support.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     with sqlite3.connect(path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys=ON")

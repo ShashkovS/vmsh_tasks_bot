@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from db_methods.pwa import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from vmshpwa.scripts.seed_e2e_content import (
     EXPECTED_DATABASE,
     _insert_content_fixture,
@@ -74,7 +74,7 @@ def test_fixture_rejects_identity_reused_between_phase_targets():
 
 def test_fixture_insert_is_atomic_and_idempotent(tmp_path):
     database_path = tmp_path / "content-e2e.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     connection = sqlite3.connect(database_path, autocommit=False)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")

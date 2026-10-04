@@ -15,9 +15,10 @@
 - Run locally: `python main.py` (polling mode; aiohttp on `http://127.0.0.1:8179`).
 - Run tests: `pytest -vvs` (or `./run_tests.sh` if still using the legacy requirements).
 - Create migrations: `yoyo new --sql -m "short-description" migrations`.
+- SQLite baseline is `migrations/0111.current_schema.sql`; add future migrations from 0112. Historical 0030–0110 SQL and chain/rollback tests were removed by the owner’s decision; preserve current-schema business/constraint tests. See `vmshpwa/docs/schema-baseline-20261004.md`.
 - (Optional) Fetch prod DB snapshot: `make dbl` (uses `scp` to `db/`; requires access).
 - Human PWA runtime: `make pwa-dev`; agent runtime: `make pwa-agent-dev`. Agents must only use `pwa-agent-*` for long-running servers.
-- PWA checks: `make pwa-format pwa-lint pwa-typecheck pwa-test pwa-i18n-check pwa-build`; E2E: `make pwa-e2e`. After changing user-facing copy run `make pwa-i18n-extract` (see `vmshpwa/docs/i18n.md`).
+- PWA checks: `make pwa-check-fast PWA_E2E_MODES="review submissions"` for a small change (choose relevant modes); omit modes for all Chromium E2E. `make pwa-check-release` retains three browsers. These include Python/frontend/Storybook/types/lint/i18n/build; do not repeat the same suites separately. See `vmshpwa/docs/testing-strategy.md`. After changing user-facing copy run `make pwa-i18n-extract` (see `vmshpwa/docs/i18n.md`).
 
 ## Coding Style & Naming
 - Follow PEP 8/257; 4‑space indentation; prefer explicit names over abbreviations.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import json
 import sqlite3
 from pathlib import Path
@@ -22,20 +24,12 @@ from models.pwa.local_news import create_local_news
 from models.pwa.auth import AuthAudience
 from models.pwa.telegram_bindings import create_binding
 from pwa_tests.integration.test_classroom_catalog_http_api import _headers
-from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
+from pwa_tests.integration.test_classroom_assignment_schema import (
     NOW,
     _insert_parents,
 )
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 
 
-MIGRATION_ID = "0067.pwa_news_mirror"
-RICH_MARKDOWN_MIGRATION_ID = "0081.pwa_rich_markdown"
-COMMUNICATION_TARGETING_MIGRATION_ID = "0089.pwa_communication_targeting"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
@@ -51,53 +45,9 @@ def _objects(database_path: Path) -> set[str]:
         }
 
 
-def test_news_migration_up_down_up_is_exact(tmp_path):
-    database_path = tmp_path / "news.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0066.pwa_telegram_bindings"
-    }
-    # 0081 extends news_revisions and is tested independently; it cannot be
-    # applied while this historical table is intentionally absent.
-    _apply(
-        database_path,
-        set(migrations)
-        - {
-            MIGRATION_ID,
-            RICH_MARKDOWN_MIGRATION_ID,
-            COMMUNICATION_TARGETING_MIGRATION_ID,
-        },
-    )
-    assert _objects(database_path) == set()
-
-    expected = {
-        "news_posts",
-        "news_posts_telegram_message_uq",
-        "news_posts_telegram_album_uq",
-        "news_posts_course_feed_idx",
-        "news_posts_group_feed_idx",
-        "news_revisions",
-        "news_revisions_latest_idx",
-        "news_media",
-        "news_visibility",
-        "news_visibility_state_idx",
-        "news_ingest_diagnostics",
-        "news_ingest_diagnostics_created_idx",
-    }
-    _apply(database_path, {MIGRATION_ID})
-    assert _objects(database_path) == expected
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-
-    _rollback(database_path, {MIGRATION_ID})
-    assert _objects(database_path) == set()
-    _apply(database_path, {MIGRATION_ID})
-    assert _objects(database_path) == expected
-
-
 def _database(tmp_path: Path) -> sqlite3.Connection:
     database_path = tmp_path / "news-ingest.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     connection = sqlite3.connect(database_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")

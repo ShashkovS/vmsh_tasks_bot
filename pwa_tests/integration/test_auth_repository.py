@@ -12,7 +12,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from argon2 import PasswordHasher
 
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.auth import (
     AccountStateConflict,
     AuthEventType,
@@ -82,7 +83,7 @@ def _session_id(label: str) -> str:
 @pytest.fixture()
 def auth_fixture(tmp_path) -> AuthFixture:
     database_path = tmp_path / "auth-repository.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock()
     now = _timestamp(clock())

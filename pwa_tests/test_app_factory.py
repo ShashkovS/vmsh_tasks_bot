@@ -5,13 +5,8 @@ import pytest
 from aiohttp import web
 
 import main as main_module
-from db_methods.pwa import (
-    DatabaseLifecycleBusyError,
-    PwaConnectionFactory,
-    SchemaMismatchError,
-    apply_schema_migrations,
-    maintenance_database_lock,
-)
+from db_methods.pwa import DatabaseLifecycleBusyError, PwaConnectionFactory, SchemaMismatchError, maintenance_database_lock
+from pwa_tests.sqlite_template import create_test_database
 from helpers.config import Config
 from main import ENABLED_ADAPTERS, PWA_DATABASE, create_app
 
@@ -89,7 +84,7 @@ async def test_pwa_startup_refuses_to_create_or_migrate_database(tmp_path):
 @pytest.mark.asyncio
 async def test_pwa_startup_exposes_verified_connection_factory(tmp_path):
     database_path = tmp_path / "current.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     runtime = Config(
         runtime_profile="pwa-agent",
         config_name="factory-test",
@@ -144,7 +139,7 @@ async def test_pwa_startup_releases_lifecycle_lock_when_schema_check_fails(tmp_p
 @pytest.mark.asyncio
 async def test_cancelled_runtime_cleanup_keeps_lock_until_sqlite_drains(tmp_path):
     database_path = tmp_path / "draining.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     runtime = Config(
         runtime_profile="pwa-agent", config_name="factory-test",
         db_filename=str(database_path),
@@ -186,7 +181,7 @@ async def test_cancelled_runtime_cleanup_keeps_lock_until_sqlite_drains(tmp_path
 @pytest.mark.asyncio
 async def test_runner_cleanup_releases_lock_after_later_startup_failure(tmp_path):
     database_path = tmp_path / "current.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     runtime = Config(
         runtime_profile="pwa-agent",
         config_name="factory-test",

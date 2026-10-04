@@ -2,65 +2,17 @@
 
 from __future__ import annotations
 
-import sqlite3
 
 from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.auth import AuthAudience
 from pwa_tests.integration import test_classroom_catalog_http_api as classroom_support
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 
 
-MIGRATION_ID = "0069.pwa_course_notification_preferences"
 classroom_http = classroom_support.classroom_http
 
 
-def test_course_preference_migration_up_down_up_is_exact(tmp_path):
-    database_path = tmp_path / "course-notification-preferences.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0068.pwa_group_banners"
-    }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name = 'notification_course_preferences'"
-            ).fetchone()[0]
-            == 0
-        )
-
-    _apply(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name = 'notification_course_preferences'"
-            ).fetchone()[0]
-            == 1
-        )
-
-    _rollback(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name = 'notification_course_preferences'"
-            ).fetchone()[0]
-            == 0
-        )
-    _apply(database_path, {MIGRATION_ID})
-
-
 async def test_student_can_override_and_restore_course_push(classroom_http):
-    path = (
-        "/student/api/v1/courses/c-1/notifications/preferences"
-    )
+    path = "/student/api/v1/courses/c-1/notifications/preferences"
     cookies = {
         COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie
     }

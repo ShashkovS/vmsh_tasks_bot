@@ -1,5 +1,17 @@
 # Концептуальная модель данных и миграционные границы
 
+## Исходная точка с 2026-10-04
+
+По [решению владельца](schema-baseline-20261004.md) текущие 510 product objects
+зафиксированы в [`0111.current_schema.sql`](../../migrations/0111.current_schema.sql).
+SQL 0030–0110 и их up/down/backfill tests удалены; они доступны в Git до
+`dc808173`. Новые изменения добавляются обычными yoyo migrations с 0112.
+[`migrations.py`](../../db_methods/pwa/migrations.py) принимает текущую схему
+0110 по hash прежнего head и точному product DDL fingerprint. Runtime проверяет
+её read-only; явная migration command регистрирует 0111 через `mark`, не
+исполняет baseline DDL/DML и сохраняет все старые bookkeeping rows. Новая БД
+получает одну исходную миграцию и справочные defaults, без legacy login seeds.
+
 ## Контексты
 
 - Identity: user, student profile, family account/link, staff role, group permission, device session.
@@ -49,7 +61,7 @@ Schedule form передаёт серверу wall-clock минуту `scheduled
 `businessTimezone` authoritative `group_lesson`, а не UTC, вычисленный timezone
 браузера. Backend сверяет timezone и через `zoneinfo` отклоняет несуществующий
 или неоднозначный DST-момент, после чего сохраняет UTC. Миграция
-[`0043`](../../migrations/0043.pwa_lesson_window_audit.sql) добавляет
+`0043` (в Git до `dc808173`) добавляет
 append-only `lesson_window_changes`: `created|schedule_changed|submission_cutoff_changed`,
 actor, request ID и exact before/after. Cutoff никогда не меняется как побочный
 эффект schedule/publish решения.
@@ -91,12 +103,13 @@ One-time import текущего Excel-export использует `IDd`, `Ур�
 
 ## Канонический baseline схемы
 
-Точное состояние до первой бизнес-миграции воспроизводится из repository migrations и проверяется `db_methods/pwa/schema_inventory.py`. `pwa_tests/fixtures/schema_inventory.v1.json` содержит schema-only DDL, `table_xinfo`, foreign keys и index metadata; `schema_snapshot.sql` и `docs/db_structure.sql` генерируются из него и не используются для bootstrap. Значения product rows согласованной live-БД, включая исторические `kv_logins`, не выбираются и не попадают в artifacts. Live DDL и выражения `DEFAULT` читаются только в памяти для сравнения и сериализуются как безопасная структура/fingerprints; fresh snapshot содержит migration-authored DDL, но не DML-строки миграций.
+Текущая схема из `0111.current_schema.sql` и следующих repository migrations воспроизводится и проверяется `db_methods/pwa/schema_inventory.py`. `pwa_tests/fixtures/schema_inventory.v1.json` содержит schema-only DDL, `table_xinfo`, foreign keys и index metadata; `schema_snapshot.sql` и `docs/db_structure.sql` генерируются из него и не используются для bootstrap. Значения product rows согласованной live-БД, включая исторические `kv_logins`, не выбираются и не попадают в artifacts. Live DDL и выражения `DEFAULT` читаются только в памяти для сравнения и сериализуются как безопасная структура/fingerprints; fresh snapshot содержит migration-authored DDL, но не DML-строки миграций.
 
 Credential-like DML rows исторической migration `0038` по решению владельца
 игнорируются при activation/backfill PWA accounts. Они не становятся fixture,
-report или источником web credentials; новые migrations не повторяют этот
-паттерн. Текущий этап не переписывает Git history и не меняет сам файл `0038`.
+report или источником web credentials. Файл `0038` удалён вместе со старой
+цепочкой; baseline не содержит этих строк. Git history и существующие
+production rows сохраняются.
 
 `make pwa-schema-check` строит временную базу до migration head и сверяет committed artifacts; отдельный unit-test доказывает воспроизводимость на двух независимо созданных базах. `make pwa-schema-live-check` открывает согласованный `db/vmsh.db` через SQLite `mode=ro`, включает `query_only`, держит одну read transaction и сверяет обезличенный drift report; исходный файл не меняется. Пишущие `*-update` цели атомарно заменяют только пять заранее заданных repository-artifacts — inventory, два SQL snapshot и два live-report — и отвергают произвольный output path.
 
@@ -107,11 +120,10 @@ source path, а по изолированной временной копии `d
 переносятся в committed fixtures/reports. Source DB не открывается на запись и
 не заменяется результатом rehearsal.
 
-Migration-head baseline после добавочных миграций `0039`–`0043` содержит 192
-product schema objects и проходит `make pwa-schema-check`. Согласованная
-read-only `db/vmsh.db` намеренно остаётся на 0038 до отдельного production
-rehearsal: исторический live report явно показывает lag, не применяя миграции к
-файлу. В live-БД дополнительно находятся 12 явно перечисленных derived
+Текущий baseline `0111` содержит 510 product schema objects и проходит
+`make pwa-schema-check`. Согласованный read-only `db/vmsh.db` остаётся
+историческим снимком 0038; оба production уже обновлены до 0110. Исторический
+live report явно показывает отличие от baseline, не применяя миграции к файлу. В live-БД дополнительно находятся 12 явно перечисленных derived
 `temp_*` objects и два структурных дефекта: отсутствующий FK
 `reaction_enum → reaction_type_enum` и неверная FK-цель
 `reactions.zoom_conversation_id`. Они не нормализуются как «эквивалентный SQL»:
@@ -122,6 +134,6 @@ rehearsal: исторический live report явно показывает la
 
 ## Многокурсовое расширение
 
-Целевые таблицы `courses`, расширенная `groups`, `course_enrollments`, `course_group_access`, `course_enrollment_events`, `staff_scopes`, `course_lessons`, `group_lessons`, schedule rules/overrides, synonym groups/members, `telegram_bindings` и `in_person_events` описаны в [courses-groups-and-lessons.md](courses-groups-and-lessons.md). Миграции 0039/0040 реализуют auth/session и первый course/access слой; additive migration [`0041`](../../migrations/0041.pwa_content_lessons.sql) добавляет lesson/content/schedule/synonym persistence boundary без production backfill, [`0042`](../../migrations/0042.pwa_content_concurrency.sql) — конкурентные publication/source transitions, [`0043`](../../migrations/0043.pwa_lesson_window_audit.sql) — неизменяемый lesson-window audit. Telegram bindings и очные события появляются в своих последующих этапах.
+Целевые таблицы `courses`, расширенная `groups`, `course_enrollments`, `course_group_access`, `course_enrollment_events`, `staff_scopes`, `course_lessons`, `group_lessons`, schedule rules/overrides, synonym groups/members, `telegram_bindings` и `in_person_events` описаны в [courses-groups-and-lessons.md](courses-groups-and-lessons.md). Миграции 0039/0040 реализуют auth/session и первый course/access слой; additive migration `0041` (в Git до `dc808173`) добавляет lesson/content/schedule/synonym persistence boundary без production backfill, `0042` (в Git до `dc808173`) — конкурентные publication/source transitions, `0043` (в Git до `dc808173`) — неизменяемый lesson-window audit. Telegram bindings и очные события появляются в своих последующих этапах.
 
 Миграция сохраняет legacy `group_id`, `problem_id`, submission/result IDs и Telegram paths. Текущие группы сезона backfill-ятся в курс «Математика 5–7». Merge/split синонимов никогда не переносит исторические строки между задачами. Обязательный production-size rehearsal и сравнение read models входят в Phase 11.

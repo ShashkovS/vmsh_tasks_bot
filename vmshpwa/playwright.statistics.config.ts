@@ -8,9 +8,6 @@ export default defineConfig({
   testMatch: ['statistics-reports.spec.ts', 'statistics-recalculation.spec.ts'],
   webServer: (Array.isArray(base.webServer) ? base.webServer : []).map((server) => ({
     ...server,
-    command: server.command.replace(
-      'uv run python main.py',
-      'uv run python -m vmshpwa.scripts.seed_e2e_statistics_reports && uv run python main.py',
-    ),
+    env: { ...server.env, VMSH_E2E_LARGE_STATISTICS: '1' },
   })),
 })

@@ -305,9 +305,21 @@ pwa-lint:
 pwa-typecheck:
 	cd $(PWA_DIR) && CI=true pnpm typecheck
 
-pwa-test:
+pwa-unit-test:
 	cd $(PWA_DIR) && CI=true pnpm test
-	$(MAKE) pwa-python-test
+
+.PHONY: pwa-unit-test pwa-check-fast pwa-check-release
+pwa-test: pwa-unit-test pwa-python-test
+
+# One invocation, one suite per language, one heavy phase at a time.
+# Optional focused E2E: PWA_E2E_MODES="content review submissions".
+PWA_CHECK_WORKERS ?= 4
+PWA_E2E_MODES ?= all
+pwa-check-fast:
+	$(PWA_UV_ENV) uv run --frozen --no-sync python -m vmshpwa.scripts.check_runner --profile fast --python-workers $(PWA_CHECK_WORKERS) $(foreach mode,$(PWA_E2E_MODES),--e2e-mode $(mode))
+
+pwa-check-release:
+	$(PWA_UV_ENV) uv run --frozen --no-sync python -m vmshpwa.scripts.check_runner --profile release --python-workers $(PWA_CHECK_WORKERS) $(foreach mode,$(PWA_E2E_MODES),--e2e-mode $(mode))
 
 pwa-storybook-test:
 	cd $(PWA_DIR) && CI=true pnpm storybook:test

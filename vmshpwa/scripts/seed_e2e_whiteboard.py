@@ -1,5 +1,7 @@
 """Whiteboard assets are synthetic and confined to the guarded E2E profile."""
 
+from contextlib import closing
+
 import asyncio
 import hashlib
 import struct
@@ -68,7 +70,7 @@ def seed(config):
         )
     )
     asyncio.run(storage.put("whiteboard/color.png", PNG, "image/png"))
-    with sqlite3.connect(database) as c:
+    with closing(sqlite3.connect(database)) as c, c:
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
         if not _seed(c, TARGETS, document_factory=document):

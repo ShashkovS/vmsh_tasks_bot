@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import db_methods as db
 import pytest
 
@@ -12,6 +14,7 @@ def legacy_domain_db(tmp_path):
 
     db.sql.disconnect()
     database_path = tmp_path / "legacy-domain.sqlite3"
+    create_test_database(database_path)
     db.sql.setup(str(database_path))
     with db.sql.conn as connection:
         # Migration 0038 carries historical credential-shaped rows. They are

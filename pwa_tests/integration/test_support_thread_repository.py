@@ -10,7 +10,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.support import (
     AppendStaffSupportEntryCommand,
     AppendStudentSupportEntryCommand,
@@ -94,7 +95,7 @@ GROUP_B_SCOPE = SupportStaffScope(group_public_ids=frozenset({"g-6"}))
 @pytest.fixture()
 def support_fixture(tmp_path) -> SupportFixture:
     database_path = tmp_path / "support.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock(NOW)
     repository = PwaSupportThreadRepository(factory, clock=clock)

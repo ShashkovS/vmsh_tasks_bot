@@ -1,5 +1,0 @@
-drop trigger lesson_problem_release_events_no_delete;
-drop trigger lesson_problem_release_events_no_update;
-drop table lesson_problem_release_events;
-drop table lesson_problem_release;
-alter table group_lessons drop column problem_release_version;

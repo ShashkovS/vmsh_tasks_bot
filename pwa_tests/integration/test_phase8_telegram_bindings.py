@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 
 import pytest
 
@@ -13,53 +12,10 @@ from pwa_tests.integration.test_classroom_catalog_http_api import (
     _cookies,
     _headers,
 )
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _migrations,
-    _rollback,
-)
 
 
-MIGRATION_ID = "0066.pwa_telegram_bindings"
 NOW = "2026-10-05T12:00:00.000000Z"
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
-
-
-def test_telegram_binding_migration_up_down_up(tmp_path):
-    database_path = tmp_path / "telegram-bindings.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0065.pwa_notification_deliveries"
-    }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name LIKE 'telegram_bindings%'"
-            ).fetchone()[0]
-            == 0
-        )
-    _apply(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name LIKE 'telegram_bindings%'"
-            ).fetchone()[0]
-            == 4
-        )
-    _rollback(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT count(*) FROM sqlite_schema "
-                "WHERE name LIKE 'telegram_bindings%'"
-            ).fetchone()[0]
-            == 0
-        )
-    _apply(database_path, {MIGRATION_ID})
 
 
 @pytest.mark.asyncio
@@ -213,9 +169,7 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
         "telegram_binding.draft_restored",
         "telegram_binding.verified",
     ]
-    assert all(
-        event["actor_account_id"] == "a-1" for event in events
-    )
+    assert all(event["actor_account_id"] == "a-1" for event in events)
     assert json.loads(events[1]["before_json"])["titleCached"] == "Новости математики"
     assert json.loads(events[1]["after_json"])["titleCached"] == "Канал курса"
     assert json.loads(events[-1]["before_json"])["status"] == "draft"

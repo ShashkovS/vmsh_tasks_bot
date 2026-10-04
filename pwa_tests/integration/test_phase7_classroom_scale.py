@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import sqlite3
 from collections import Counter
 from time import perf_counter
@@ -15,12 +17,7 @@ from models.pwa.classroom_layouts import (
     materialize_layout,
     replace_draft_layout,
 )
-from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
-    NOW,
-    _apply,
-    _insert_parents,
-    _migrations,
-)
+from pwa_tests.integration.test_classroom_assignment_schema import NOW, _insert_parents
 
 
 STUDENT_COUNT = 1_500
@@ -33,7 +30,7 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
     """The deliberately pessimistic case is larger than current in-person use."""
 
     database_path = tmp_path / "phase7-classroom-scale.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
 
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
@@ -99,10 +96,7 @@ def test_worst_case_in_person_event_recalculates_and_confirms_1500_students(
             event_public_id="ipe-1",
             layout_public_id=str(draft["layout_public_id"]),
             expected_version=int(draft["version"]),
-            mappings=[
-                (room_public_id, "gl-1")
-                for room_public_id in room_public_ids
-            ],
+            mappings=[(room_public_id, "gl-1") for room_public_id in room_public_ids],
             now=NOW,
         )
         confirm_layout(

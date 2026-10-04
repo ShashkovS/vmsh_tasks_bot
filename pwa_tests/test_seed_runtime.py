@@ -334,17 +334,14 @@ def test_seed_rejects_production_and_authoritative_database(tmp_path):
         )
 
 
-def test_phase1_migrations_never_materialize_seed_accounts_or_credentials():
-    for migration_name in (
-        "0039.pwa_auth_accounts_sessions.sql",
-        "0040.pwa_courses_access.sql",
-    ):
-        migration_sql = (
-            seed_module.REPOSITORY_ROOT / "migrations" / migration_name
-        ).read_text(encoding="utf-8")
-        normalized_sql = " ".join(migration_sql.casefold().split())
-        assert "insert into auth_accounts" not in normalized_sql
-        assert "synthetic-" not in normalized_sql
+def test_baseline_never_materializes_accounts_or_credentials():
+    migration_sql = (
+        seed_module.REPOSITORY_ROOT / "migrations/0111.current_schema.sql"
+    ).read_text(encoding="utf-8")
+    normalized_sql = " ".join(migration_sql.casefold().replace('"', '').split())
+    assert "insert into auth_accounts" not in normalized_sql
+    assert "insert into kv_logins" not in normalized_sql
+    assert "synthetic-" not in normalized_sql
 
 
 def test_seed_rejects_a_hard_link_to_authoritative_database(tmp_path, monkeypatch):

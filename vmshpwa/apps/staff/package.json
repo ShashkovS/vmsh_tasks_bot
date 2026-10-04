@@ -8,7 +8,7 @@
     "preview": "vite preview --host 127.0.0.1 --port ${VITE_PORT:-5175} --strictPort",
     "routes:generate": "tsr generate",
     "build": "tsr generate && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile ../../node_modules/.cache/typecheck/staff.tsbuildinfo"
   },
   "dependencies": {
     "@codemirror/commands": "catalog:",

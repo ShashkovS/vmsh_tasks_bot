@@ -14,7 +14,8 @@ from aiohttp import WSMsgType, WSServerHandshakeError, web
 from apps import pwa_app
 from apps.pwa_api.first_admin import ensure_first_global_admin
 from apps.pwa_api.auth_service import PwaAuthService
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.auth import PwaAuthRepository
 from helpers.config import Config
 from helpers.consts import USER_TYPE
@@ -159,7 +160,7 @@ def _seed_accounts(factory: PwaConnectionFactory) -> None:
 @pytest.fixture()
 async def auth_http_client(tmp_path, aiohttp_client):
     database_path = tmp_path / "auth-http.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     _seed_accounts(factory)
     repository = PwaAuthRepository(factory, credential_hasher=TEST_HASHER)

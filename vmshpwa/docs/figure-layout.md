@@ -115,6 +115,37 @@ Telegram-превью и `TelegramRichPublisher.send_published` получают
 
 ## Реализация и доказательства
 
+### Исправление превью подсказок — 3 октября 2026
+
+Исправлено локально: [WorksheetMaterials](../packages/product/src/worksheet-materials.tsx)
+отображает актуальный `preview` из
+[StaffWorksheetPreview](../apps/staff/src/staff-worksheet-preview.tsx), а не
+запоминать первый React-элемент до загрузки `figure-layout`. Это возвращает
+кнопки по углам рисунка в подсказках и обновляет открытый материал при изменении
+размера, размещения, переносе, скрытии и восстановлении. Кеш успешных загрузок
+Student сохраняется отдельно; соседние материалы остаются читательским превью.
+Проверено на Node 26 / pnpm 11.15.1:
+
+- 11 unit: `pnpm test packages/product/src/worksheet-materials.test.tsx apps/staff/src/staff-worksheet-preview.test.tsx apps/staff/src/figure-layout-editor.test.tsx`.
+  [Staff regression](../apps/staff/src/staff-worksheet-preview.test.tsx) проверяет
+  позднюю загрузку инструментов, ширину, перенос в следующую задачу, скрытие/
+  восстановление и отсутствие инструментов у соседних материалов для hint/solution.
+  [Product regression](../packages/product/src/worksheet-materials.test.tsx)
+  проверяет обновление открытого/свёрнутого превью и прежний кеш Student.
+- 11 Chromium Storybook interaction/a11y: `pnpm storybook:test apps/staff/src/figure-layout-editor.stories.tsx apps/staff/src/staff-worksheet-preview.stories.tsx packages/product/src/worksheet-materials.stories.tsx`.
+  Новые `Hints`/`Solutions` в [figure-layout-editor.stories.tsx](../apps/staff/src/figure-layout-editor.stories.tsx)
+  проверяют размещение, скрытие и восстановление в открытом материале;
+  `EditorPreview` в [worksheet-materials.stories.tsx](../packages/product/src/worksheet-materials.stories.tsx)
+  проверяет живое обновление. Подсказка с открытым меню также просмотрена в
+  агентском Storybook на порту 6106.
+- Workspace `pnpm typecheck`, scoped ESLint/Prettier, `make pwa-i18n-check`,
+  `make pwa-build` (Landing/Student/Family/Staff) и `git diff --check` проходят.
+
+Миграция не нужна. Production не менялся; реальные API E2E и Firefox/WebKit
+в этой корректировке не запускались.
+
+### Общая реализация
+
 - Domain: [figure_layout.py](../../helpers/pwa/content/figure_layout.py); persistence/API:
   [content.py](../../db_methods/pwa/content.py), [content_routes.py](../../apps/pwa_api/content_routes.py).
 - Контракты: [content.ts](../packages/contracts/src/content.ts),

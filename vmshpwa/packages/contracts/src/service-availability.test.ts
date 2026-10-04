@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// testing-strategy.md: recovery depends on browser navigator.onLine.
 import { afterEach, expect, it, vi } from 'vitest'
 import { createServiceTransport } from './service-availability'
 

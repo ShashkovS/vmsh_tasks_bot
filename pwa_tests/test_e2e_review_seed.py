@@ -3,7 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from vmshpwa.scripts.seed_e2e_review import (
     TARGETS,
     _insert_review_cases,
@@ -13,7 +14,7 @@ from vmshpwa.scripts.seed_e2e_review import (
 
 def test_review_seed_creates_one_complete_case_per_browser(tmp_path):
     database_path = tmp_path / "review-seed.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     # The insertion helper intentionally depends on the stable Phase-1 baseline.
     with pytest.raises(RuntimeError, match="requires the baseline accounts"):

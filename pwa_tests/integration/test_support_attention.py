@@ -12,7 +12,6 @@ from db_methods.pwa.support import (
 )
 from models.pwa import support_attention as domain
 from pwa_tests.integration import test_support_thread_repository as support
-from pwa_tests.integration.test_phase6_support_thread_migration import _apply, _rollback
 
 support_fixture = support.support_fixture
 
@@ -113,34 +112,6 @@ async def test_system_entries_do_not_override_human_waiting_state(support_fixtur
     )
 
 
-async def test_migration_backfills_existing_replies_without_touching_dialogue(
-    support_fixture,
-):
-    f = support_fixture
-    thread = await f.repository.create_student_thread(support._create_problem_command())
-    answered = await reply(f, thread)
-    path = f.factory.database_path
-    migration = {"0107.pwa_support_entry_reads"}
-    _rollback(path, migration)
-    _apply(path, migration)
-    loaded = await f.repository.get_student_thread(
-        student_user_id=support.STUDENT_ID, thread_public_id=thread.thread_public_id
-    )
-    assert loaded.version == answered.version
-    assert loaded.entries[-1].read_at is not None
-    assert loaded.entries[0].read_at is None
-    _rollback(path, migration)
-    _apply(path, migration)
-    assert (
-        f.factory.run_read(
-            lambda c: c.execute("PRAGMA integrity_check").fetchone()["integrity_check"]
-        )
-        == "ok"
-    )
-    fresh = await reply(f, thread, "post-migration")
-    assert fresh.entries[-1].read_at is None
-
-
 def publish(c, lesson_id=1, revision_id=1):
     now = support._timestamp(support.NOW)
     c.execute(
@@ -196,7 +167,10 @@ async def test_global_attention_requires_current_access_and_published_problem(
         )
     )
     assert attention()["unreadTaskCount"] == 1
-    assert attention()["nextTarget"]["firstUnreadEntryId"] == answered.entries[-1].entry_public_id
+    assert (
+        attention()["nextTarget"]["firstUnreadEntryId"]
+        == answered.entries[-1].entry_public_id
+    )
     f.factory.run_write(
         lambda c: c.execute(
             "UPDATE course_enrollments SET status='paused', version=version+1 WHERE student_user_id=?",

@@ -1,8 +1,5 @@
-import atexit
 import os
-import shutil
 import sys
-import tempfile
 from pathlib import Path
 
 # aiogram 3.30 rebuilds recursive generated Bot API models during import. Load
@@ -30,24 +27,19 @@ os.environ["VMSH_NATS_SERVER"] = ""
 os.environ["VMSH_NATS_TOPIC_PREFIX"] = "vmshpwa_e2e_pytest"
 os.environ["VMSH_PWA_PROTOTYPE"] = "true"
 
-# prometheus_client selects its multiprocess value implementation when metric
-# objects are imported. Set one process-private temporary directory before any
-# application module is collected; production sets the same variable in
-# systemd before Gunicorn starts.
-_PROMETHEUS_MULTIPROC_DIR = tempfile.mkdtemp(prefix="vmsh-prometheus-tests-")
-os.environ["PROMETHEUS_MULTIPROC_DIR"] = _PROMETHEUS_MULTIPROC_DIR
-atexit.register(shutil.rmtree, _PROMETHEUS_MULTIPROC_DIR, ignore_errors=True)
+# Root conftest.py configures process-private Prometheus state before either
+# adapter imports metric objects; both suites can safely share one invocation.
 
 
 @pytest.fixture(scope="session", autouse=True)
 def isolated_pwa_database(tmp_path_factory):
     """Give every pytest worker a migrated DB instead of persistent E2E state."""
 
-    from db_methods.pwa import apply_schema_migrations
+    from pwa_tests.sqlite_template import create_test_database
     from helpers.config import config
 
     database_path = tmp_path_factory.mktemp("pwa-runtime") / "pwa.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     original_database_path = config.db_filename
     original_analytics_path = config.pwa_analytics_db_filename
     config.db_filename = str(database_path)

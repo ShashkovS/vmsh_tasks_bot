@@ -8,7 +8,8 @@ from aiohttp import web
 from apps.pwa_api.branding_routes import branding_routes
 from apps.pwa_api.middleware import PWA_AUTHENTICATED_SESSION
 from apps.pwa_app import pwa_error_middleware
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.branding import get_branding
 from helpers.pwa.app_keys import PWA_DATABASE, PwaDatabaseState
 from helpers.pwa.branding import brand_manifest
@@ -19,7 +20,7 @@ from models.pwa.auth import AuthAudience
 @pytest.fixture
 async def brand_client(tmp_path, aiohttp_client):
     path = tmp_path / "brand.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     factory = PwaConnectionFactory(path)
 
     @web.middleware
@@ -104,28 +105,3 @@ def test_locale_and_manifest_defaults():
     assert locale_from_cookies({"vmsh-locale": "ru"}, "en") == "ru"
     assert brand_manifest("vmsh", "family")["lang"] == "ru"
     assert brand_manifest("tlf-prep-clubs", "family")["lang"] == "en"
-
-
-def test_migration_preserves_existing_choices_and_rolls_back():
-    import sqlite3
-    from pathlib import Path
-
-    connection = sqlite3.connect(":memory:")
-    connection.executescript(
-        "CREATE TABLE auth_accounts (locale TEXT NOT NULL DEFAULT 'ru'); INSERT INTO auth_accounts VALUES ('en');"
-    )
-    connection.executescript(Path("migrations/0101.pwa_branding.sql").read_text())
-    assert connection.execute(
-        "SELECT locale, locale_explicit FROM auth_accounts"
-    ).fetchone() == ("en", 1)
-    connection.execute("INSERT INTO auth_accounts DEFAULT VALUES")
-    assert connection.execute(
-        "SELECT locale_explicit FROM auth_accounts ORDER BY rowid DESC"
-    ).fetchone() == (0,)
-    connection.executescript(
-        Path("migrations/0101.pwa_branding.rollback.sql").read_text()
-    )
-    assert connection.execute(
-        "SELECT locale FROM auth_accounts ORDER BY rowid LIMIT 1"
-    ).fetchone() == ("en",)
-    connection.close()

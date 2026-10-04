@@ -1,28 +1,11 @@
 """Owner acceptance: vmshpwa/docs/live-marking.md, real authenticated aiohttp."""
 
-import sqlite3
 from uuid import uuid4
 
 
 from pwa_tests.integration import test_content_http_api as support
-from pwa_tests.integration.test_phase8_notification_core import (
-    _apply,
-    _rollback,
-    _migrations,
-)
 
 content_http = support.content_http
-
-
-def test_migration_up_down_up(tmp_path):
-    path = tmp_path / "live.sqlite3"
-    ids = {m.id for m in _migrations()}
-    _apply(path, ids)
-    with sqlite3.connect(path) as c:
-        assert c.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        assert c.execute("SELECT count(*) FROM effective_results").fetchone() == (0,)
-    _rollback(path, {"0087.pwa_live_marking"})
-    _apply(path, {"0087.pwa_live_marking"})
 
 
 async def call(fixture, method, path, body=None, role="teacher"):

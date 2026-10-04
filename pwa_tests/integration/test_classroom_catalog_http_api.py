@@ -12,7 +12,8 @@ from argon2 import PasswordHasher
 
 from apps import pwa_app
 from apps.pwa_api.auth_service import PwaAuthService
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.auth import PwaAuthRepository
 from helpers.config import Config
 from helpers.consts import USER_TYPE
@@ -203,7 +204,7 @@ class ClassroomHttpFixture:
 @pytest.fixture()
 async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
     database_path = tmp_path / "classroom-http.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     _seed_auth(factory)
     auth_config = _auth_config()

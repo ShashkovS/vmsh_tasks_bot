@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import sqlite3
-from collections.abc import Collection
 from pathlib import Path
 
 import pytest
-import yoyo
 from openpyxl import Workbook
 
-from db_methods.pwa.migrations import MIGRATIONS_ROOT
 from helpers.pwa.classroom_import import (
     ClassroomImportSourceError,
     read_classroom_export,
@@ -22,26 +21,7 @@ from models.pwa.classroom_import import (
 )
 
 
-MIGRATION_ID = "0060.pwa_classroom_import_receipts"
 NOW = "2026-07-29T18:00:00+00:00"
-
-
-def _migrations():
-    return yoyo.read_migrations(str(MIGRATIONS_ROOT))
-
-
-def _apply(database_path: Path, migration_ids: Collection[str]) -> None:
-    selected = _migrations().filter(lambda item: item.id in migration_ids)
-    with yoyo.get_backend(f"sqlite:///{database_path.resolve()}") as backend:
-        with backend.lock():
-            backend.apply_migrations(backend.to_apply(selected))
-
-
-def _rollback(database_path: Path, migration_ids: Collection[str]) -> None:
-    selected = _migrations().filter(lambda item: item.id in migration_ids)
-    with yoyo.get_backend(f"sqlite:///{database_path.resolve()}") as backend:
-        with backend.lock():
-            backend.rollback_migrations(backend.to_rollback(selected))
 
 
 def _write_export(path: Path, rows: list[tuple[object, object, object]]) -> None:
@@ -128,42 +108,6 @@ def _seed_event(connection: sqlite3.Connection) -> None:
     )
 
 
-def test_classroom_import_receipt_migration_up_down_up(tmp_path):
-    database_path = tmp_path / "classroom-import-migration.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        "0059.pwa_classroom_assignments"
-    }
-    preceding = {
-        item.id
-        for item in migrations.values()
-        if item.id not in {MIGRATION_ID, "0099.pwa_classroom_assignment_compaction"}
-    }
-    _apply(database_path, preceding)
-
-    _apply(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        names = {
-            row[0]
-            for row in connection.execute(
-                "SELECT name FROM sqlite_schema "
-                "WHERE name LIKE 'classroom_import_receipts%'"
-            )
-        }
-        assert names == {"classroom_import_receipts"}
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-
-    _rollback(database_path, {MIGRATION_ID})
-    with sqlite3.connect(database_path) as connection:
-        assert (
-            connection.execute(
-                "SELECT name FROM sqlite_schema WHERE name = 'classroom_import_receipts'"
-            ).fetchone()
-            is None
-        )
-    _apply(database_path, {MIGRATION_ID})
-
-
 def test_export_reader_requires_exact_headers_and_normalizes_rooms(tmp_path):
     source = tmp_path / "classrooms.xlsx"
     _write_export(source, [(101, " н ", " Актовый зал ")])
@@ -195,7 +139,7 @@ def test_export_reader_requires_exact_headers_and_normalizes_rooms(tmp_path):
 
 def test_import_reports_blockers_without_writing(tmp_path):
     database_path = tmp_path / "classroom-import-blockers.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     source = tmp_path / "blockers.xlsx"
     _write_export(
         source,
@@ -230,7 +174,7 @@ def test_import_reports_blockers_without_writing(tmp_path):
 
 def test_reviewed_import_applies_atomically_and_replays(tmp_path):
     database_path = tmp_path / "classroom-import.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     source = tmp_path / "classrooms.xlsx"
     _write_export(source, [(101, "н", " 201 "), (102, "Начинающие", "Актовый зал")])
     source_hash, header_row, rows = read_classroom_export(source)

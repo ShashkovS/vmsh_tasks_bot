@@ -683,7 +683,23 @@ for (const { audience, activation } of pwaAudiences.flatMap((audience) => [
         if (!registration?.waiting) throw new Error('Expected waiting worker')
         registration.waiting.postMessage({ type: 'SKIP_WAITING' })
       }, audience)
-      await expect.poll(() => activeWorkerGeneration(page)).toBe(generation)
+      // testing-strategy.md: a controller can become redundant between the
+      // probe and its response. Poll readiness through that handover; the
+      // final assertion still requires the replacement worker's exact nonce.
+      await expect
+        .poll(async () => {
+          try {
+            return await activeWorkerGeneration(page)
+          } catch (error) {
+            if (
+              error instanceof Error &&
+              error.message.includes('Service Worker generation probe timed out')
+            )
+              return null
+            throw error
+          }
+        })
+        .toBe(generation)
       await expect(page.getByText('Доступно обновление.')).toBeVisible()
       await other.close()
     }

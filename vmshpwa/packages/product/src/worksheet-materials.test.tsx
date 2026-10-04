@@ -69,3 +69,28 @@ it('previews loaded material without loading or recording a student view', () =>
   expect(screen.getByText('Превью')).toBeTruthy()
   expect(load).not.toHaveBeenCalled()
 })
+
+it.each(['hint', 'solution'] as const)('keeps an open %s preview live without loading', (kind) => {
+  const load = vi.fn()
+  const preview = (text: string) => (
+    <WorksheetMaterials
+      defaultOpen={kind}
+      hint={kind === 'hint' ? { available: true, load, preview: <p>{text}</p> } : unavailable}
+      solution={
+        kind === 'solution' ? { available: true, load, preview: <p>{text}</p> } : unavailable
+      }
+    />
+  )
+  const view = render(preview('До загрузки оформления'))
+  view.rerender(preview('Меню рисунка загружено'))
+  expect(screen.queryByText('До загрузки оформления')).toBeNull()
+  expect(screen.getByText('Меню рисунка загружено')).toBeTruthy()
+  fireEvent.click(
+    screen.getByRole('button', { name: kind === 'hint' ? 'Скрыть подсказку' : 'Скрыть решение' }),
+  )
+  view.rerender(preview('Рисунок перенесён'))
+  expect(screen.queryByText('Рисунок перенесён')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: kind === 'hint' ? 'Подсказка' : 'Решение' }))
+  expect(screen.getByText('Рисунок перенесён')).toBeTruthy()
+  expect(load).not.toHaveBeenCalled()
+})

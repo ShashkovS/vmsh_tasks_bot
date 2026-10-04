@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import base64
 import sqlite3
 
@@ -16,17 +18,9 @@ from models.pwa.push_subscriptions import (
     unregister_subscription,
 )
 from pwa_tests.integration.test_classroom_catalog_http_api import _headers
-from pwa_tests.integration.test_phase8_notification_core import (
-    MIGRATION_ID as NOTIFICATION_MIGRATION_ID,
-    NOW,
-    _apply,
-    _migrations,
-    _rollback,
-    _seed_account,
-)
+from pwa_tests.integration.test_phase8_notification_core import NOW, _seed_account
 
 
-MIGRATION_ID = "0064.pwa_push_subscriptions"
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
@@ -39,40 +33,9 @@ AUTH_SECRET = _key(b"a" * 16)
 ENDPOINT = "https://push.example.test/subscriptions/device-one"
 
 
-def _push_objects(database_path) -> set[str]:
-    with sqlite3.connect(database_path) as connection:
-        return {
-            str(row[0])
-            for row in connection.execute(
-                "SELECT name FROM sqlite_schema WHERE name LIKE 'push_subscriptions%'"
-            )
-        }
-
-
-def test_push_subscription_migration_up_down_up(tmp_path):
-    database_path = tmp_path / "push-schema.sqlite3"
-    migrations = {item.id: item for item in _migrations()}
-    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
-        NOTIFICATION_MIGRATION_ID
-    }
-    _apply(database_path, set(migrations) - {MIGRATION_ID})
-    assert _push_objects(database_path) == set()
-
-    expected = {"push_subscriptions", "push_subscriptions_account_idx"}
-    _apply(database_path, {MIGRATION_ID})
-    assert _push_objects(database_path) == expected
-    with sqlite3.connect(database_path) as connection:
-        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-
-    _rollback(database_path, {MIGRATION_ID})
-    assert _push_objects(database_path) == set()
-    _apply(database_path, {MIGRATION_ID})
-    assert _push_objects(database_path) == expected
-
-
 def test_subscription_is_validated_upserted_and_deleted_by_account(tmp_path):
     database_path = tmp_path / "push-model.sqlite3"
-    _apply(database_path, {item.id for item in _migrations()})
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")

@@ -13,7 +13,8 @@ from argon2 import PasswordHasher
 from apps import pwa_app
 from apps.pwa_api import support_routes as support_routes_module
 from apps.pwa_api.auth_service import PwaAuthService
-from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
+from db_methods.pwa import PwaConnectionFactory
+from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.support import (
     SupportEntryRecord,
@@ -354,7 +355,7 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
 @pytest.fixture()
 async def support_http(tmp_path, aiohttp_client) -> SupportHttpFixture:
     database_path = tmp_path / "support-http.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)
     _seed_auth(factory)
     auth_config = _auth_config()
@@ -725,7 +726,7 @@ async def test_attention_routes_are_owner_bound_strict_and_read_gets_are_side_ef
 
     fixture = support_http
     path = tmp_path / "attention-http.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     factory = PwaConnectionFactory(path)
     _seed_auth(factory)
     now = _timestamp()

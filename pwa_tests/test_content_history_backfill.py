@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from db_methods.pwa.migrations import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from vmshpwa.scripts import content_history_backfill as backfill
 from vmshpwa.scripts.content_history_backfill import (
     ContentHistoryBackfillError,
@@ -38,7 +38,7 @@ def _write_tex(path: Path, *, problem_count: int = 2) -> None:
 
 
 def _seed_database(path: Path, *, include_second_group: bool = False) -> Path:
-    apply_schema_migrations(path)
+    create_test_database(path)
     with sqlite3.connect(path, autocommit=True) as connection:
         connection.execute("PRAGMA journal_mode = DELETE")
         connection.execute(

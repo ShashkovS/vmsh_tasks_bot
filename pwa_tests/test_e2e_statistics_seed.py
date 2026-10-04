@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from db_methods.pwa import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from vmshpwa.scripts.seed_e2e_statistics import (
     RUN_PUBLIC_ID,
     _require_e2e_target,
@@ -53,7 +53,7 @@ def _owners(connection: sqlite3.Connection) -> None:
 
 def test_statistics_seed_is_atomic_and_idempotent(tmp_path: Path) -> None:
     database_path = tmp_path / "statistics.sqlite3"
-    apply_schema_migrations(database_path)
+    create_test_database(database_path)
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")

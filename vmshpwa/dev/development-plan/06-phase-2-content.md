@@ -1,5 +1,15 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+2026-10-04: [совместный выпуск live-превью рисунков и оптимизации](../../../pwa_tests/reports/combined-optimization-figures-20261004/README.md) — общий fast gate и rollout обоих порталов в работе.
+
+## 2026-10-03 — меню рисунков в подсказках
+
+Исправлено локально живое Staff-превью в общем `WorksheetMaterials`: первый
+React-элемент больше не замораживает незагруженный renderer инструментов.
+11 unit и 11 Chromium Storybook interaction/a11y проходят; workspace types,
+scoped lint/format, i18n и четыре app build проверены. Production не менялся.
+[Причина, реализация, команды и границы проверки](../../docs/figure-layout.md#исправление-превью-подсказок--3-октября-2026).
+
 ## 2026-10-01 — генерация metadata с заданными типами
 
 Выложено и проверено: [типы из локальной таблицы](../../docs/metadata-generation.md#типы-задач-из-таблицы--1-октября-2026)

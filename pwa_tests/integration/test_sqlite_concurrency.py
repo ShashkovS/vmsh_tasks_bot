@@ -10,12 +10,8 @@ from prometheus_client import CollectorRegistry, multiprocess
 
 from helpers.pwa.request_trace import RequestTrace, current_trace
 
-from db_methods.pwa import (
-    BusyRetryExhausted,
-    PwaConnectionFactory,
-    SqliteConcurrencyPolicy,
-    apply_schema_migrations,
-)
+from db_methods.pwa import BusyRetryExhausted, PwaConnectionFactory, SqliteConcurrencyPolicy
+from pwa_tests.sqlite_template import create_test_database
 
 
 def _db_gauge(name, role):
@@ -28,7 +24,7 @@ def _db_gauge(name, role):
 @pytest.fixture()
 def database_path(tmp_path):
     path = tmp_path / "concurrency.sqlite3"
-    apply_schema_migrations(path)
+    create_test_database(path)
     return path
 
 

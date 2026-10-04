@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from db_methods.pwa.migrations import apply_schema_migrations
+from pwa_tests.sqlite_template import create_test_database
 from vmshpwa.scripts import legacy_course_rehearsal as rehearsal
 
 
@@ -15,7 +15,7 @@ RECORDED_AT = "2026-07-30T10:00:00Z"
 
 
 def _seed_source(path: Path) -> Path:
-    apply_schema_migrations(path)
+    create_test_database(path)
     with sqlite3.connect(path, autocommit=True) as connection:
         connection.executemany(
             "INSERT INTO users "

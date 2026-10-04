@@ -60,7 +60,7 @@ def _database(path: Path) -> Path:
     return path
 
 
-def test_migration_head_database_is_supported(isolated_pwa_database):
+def test_current_schema_database_is_supported(isolated_pwa_database):
     assert read_database_references(isolated_pwa_database) == []
 
 

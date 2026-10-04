@@ -1,5 +1,7 @@
 """Guarded 700 × 20 report fixture; e2e/statistics-reports.spec.ts."""
 
+from contextlib import closing
+
 import json
 import sqlite3
 
@@ -25,7 +27,7 @@ def main():
     from helpers.config import config
 
     path = _require_e2e_target(config)
-    with maintenance_database_lock(path), sqlite3.connect(path) as db:
+    with maintenance_database_lock(path), closing(sqlite3.connect(path)) as db, db:
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA foreign_keys=ON")
         if not _seed(db, TARGETS, document_factory=document_factory):
