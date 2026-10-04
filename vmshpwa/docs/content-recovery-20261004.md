@@ -1,5 +1,32 @@
 # Публикация и диагностика материалов — 4 октября 2026
 
+## Повторная загрузка после обновления конвертера — follow-up
+
+После первого выпуска владелец сообщил о конфликтах при загрузке условия и
+подсказок (`837cdf13005b43d99d67062348ac4dbb`, `5de368c8d81841759dd91b6a5894f38f`).
+SHA предоставленных CP1251 файлов совпадают с `gl-14` condition `cr-71`
+(ready / compiler 8) и hint `cr-75` (invalid / compiler 8).
+`resolve_source_and_append_revision` пытался перевести завершённую версию в
+uploaded при смене compiler 8 → 9; immutable/status guards запрещают это.
+Предыдущий тест покрывал только uploaded, поэтому пропустил оба случая.
+
+Исправление сохраняет terminal snapshots, их diagnostics, derivatives и
+публикации: [миграция 0113](../../migrations/0113.content_upload_compiler_generation.py)
+меняет cache unique key на `(source_id, source_sha256, parser_version)`.
+[Repository](../../db_methods/pwa/content.py) повторно использует только ту же
+compiler generation; иначе добавляет новый номер в прежнюю source lineage.
+Реальные HTTP upload → compile тесты покрывают опубликованное ready условие
+и invalid подсказку, CP1251 и рисунок только в решении. Baseline и 0112 не меняются.
+Миграция сохраняет все строки/зависимые DDL/FK-дефекты; rollback отказывает,
+если уже существует несколько compiler generations одного source hash.
+Проверки: Python 2832 / 7 SKIP, frontend 1028, Chromium content 2 и static
+gates PASS. Storybook 355 PASS / один Large Classroom performance FAIL
+(68 / 71.9 ms при лимите 50 ms); frontend не изменён, общий gate не объявляется
+PASS. Серверные репетиции обеих БД сохранили все строки; rollback cd18511e
+с 0113 проходит startup guard. Backend-only выпуск на обоих порталах разрешён
+владельцем; материалы агент не загружает и не публикует в production.
+[Доказательства, limitations и release script](../../pwa_tests/reports/content-upload-generation-20261004/README.md).
+
 ## Требования и причины
 
 На `gl-13` публикация нового условия падает при замене предыдущего условия,

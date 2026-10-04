@@ -53,6 +53,10 @@
       {
         "id": "0112.scheduled_publication_lifecycle",
         "sha256": "83e684f25b06c4e7e5c135bfa526552d5943f0ef3194572a9ff15f8cbc1f6cd5"
+      },
+      {
+        "id": "0113.content_upload_compiler_generation",
+        "sha256": "f6f2a5822a83057a6ed82c2f6a38f10548620fbc9e0ed81f5ca5ba8c12d12991"
       }
     ],
     "repository_head_status": {
@@ -5709,12 +5713,20 @@
                 "seqno": 1
               },
               {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "parser_version",
+                "seqno": 2
+              },
+              {
                 "cid": -1,
                 "collation": "BINARY",
                 "descending": false,
                 "key": false,
                 "name": null,
-                "seqno": 2
+                "seqno": 3
               }
             ],
             "name": "sqlite_autoindex_content_revisions_2",
@@ -5724,8 +5736,8 @@
           }
         ],
         "name": "content_revisions",
-        "object_sha256": "bdb3ccce70530494994dbf467ae4858a00685a5d8961aa17c447598222915547",
-        "sql": "CREATE TABLE content_revisions\n(\n    id                      integer primary key,\n    public_id text generated always as ('cr-' || id) virtual,\n    source_id               integer not null references content_sources (id),\n    revision_number         integer not null check (revision_number > 0),\n    source_sha256           text    not null\n        check (\n            length(source_sha256) = 64\n            and source_sha256 not glob '*[^0-9a-f]*'\n        ),\n    latex_text              text    not null,\n    parser_version          text    not null\n        check (length(trim(parser_version)) > 0),\n    status                  text    not null\n        check (status in ('uploaded', 'compiling', 'ready', 'invalid', 'superseded')),\n    canonical_json          text\n        check (\n            canonical_json is null\n            or (\n                json_valid(canonical_json) = 1\n                and json_type(canonical_json) in ('object', 'array')\n            )\n        ),\n    diagnostics_json        text    not null default '[]'\n        check (json_valid(diagnostics_json) = 1 and json_type(diagnostics_json) = 'array'),\n    provenance_json         text    not null\n        check (json_valid(provenance_json) = 1 and json_type(provenance_json) = 'object'),\n    created_by_user_id      integer references users (id),\n    created_at              text    not null,\n    supersedes_revision_id  integer references content_revisions (id),\n    version                 integer not null default 1 check (version > 0), compile_claim_token text\n    check (compile_claim_token is null or length(compile_claim_token) between 16 and 128), compile_claimed_at text, compile_lease_expires_at text, compile_attempt_count integer not null default 0\n    check (compile_attempt_count >= 0), compile_completed_at text,\n    unique (source_id, revision_number),\n    unique (source_id, source_sha256),\n    check (supersedes_revision_id is null or supersedes_revision_id <> id),\n    check (status <> 'ready' or canonical_json is not null)\n);",
+        "object_sha256": "5d0b4e7c51ca8e92186f0e3c9787d10ea50bf72d31b115e9b24f307043ab6910",
+        "sql": "CREATE TABLE \"content_revisions\"\n(\n    id                      integer primary key,\n    public_id text generated always as ('cr-' || id) virtual,\n    source_id               integer not null references content_sources (id),\n    revision_number         integer not null check (revision_number > 0),\n    source_sha256           text    not null\n        check (\n            length(source_sha256) = 64\n            and source_sha256 not glob '*[^0-9a-f]*'\n        ),\n    latex_text              text    not null,\n    parser_version          text    not null\n        check (length(trim(parser_version)) > 0),\n    status                  text    not null\n        check (status in ('uploaded', 'compiling', 'ready', 'invalid', 'superseded')),\n    canonical_json          text\n        check (\n            canonical_json is null\n            or (\n                json_valid(canonical_json) = 1\n                and json_type(canonical_json) in ('object', 'array')\n            )\n        ),\n    diagnostics_json        text    not null default '[]'\n        check (json_valid(diagnostics_json) = 1 and json_type(diagnostics_json) = 'array'),\n    provenance_json         text    not null\n        check (json_valid(provenance_json) = 1 and json_type(provenance_json) = 'object'),\n    created_by_user_id      integer references users (id),\n    created_at              text    not null,\n    supersedes_revision_id  integer references content_revisions (id),\n    version                 integer not null default 1 check (version > 0), compile_claim_token text\n    check (compile_claim_token is null or length(compile_claim_token) between 16 and 128), compile_claimed_at text, compile_lease_expires_at text, compile_attempt_count integer not null default 0\n    check (compile_attempt_count >= 0), compile_completed_at text,\n    unique (source_id, revision_number),\n    unique (source_id, source_sha256, parser_version),\n    check (supersedes_revision_id is null or supersedes_revision_id <> id),\n    check (status <> 'ready' or canonical_json is not null)\n);",
         "table_name": "content_revisions",
         "type": "table"
       },
@@ -31793,8 +31805,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "a649dc8f97539b5c398d20de5285fd138743dfa6798616c077bc75754bbecbe1",
-    "sha256": "5839d046e255c1fc521a0ff656ec9eff3e15021807e9a5614843c12d89e9b3da"
+    "pragma_structure_sha256": "b9108309d59cf866064f78bccf8efbffe3902202aca957db1be24e5de0e26c9c",
+    "sha256": "aff0238ffb4a4350b672a6999f6e350f838ec4b1c48effd2d3c4f7bb88148b15"
   },
   "source_kind": "repository-migration-head"
 }

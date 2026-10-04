@@ -2991,6 +2991,81 @@ async def test_identical_source_upload_is_idempotent(content_http: ContentHttpFi
     assert first_payload["uploadedAt"].endswith("Z")
 
 
+@pytest.mark.parametrize("kind,old_status", [("condition", "ready"), ("hint", "invalid")])
+async def test_identical_terminal_source_upload_after_compiler_upgrade(
+    content_http: ContentHttpFixture, monkeypatch: pytest.MonkeyPatch, kind: str, old_status: str,
+):
+    """The reported CP1251 uploads must create fresh generations, not reopen history."""
+    from helpers.pwa.content.compiler import ContentCompileError
+
+    fixture = content_http
+    repository = PwaContentRepository(fixture.factory, clock=lambda: NOW)
+    if kind == "hint":
+        condition, _condition_etag = await _upload_and_compile(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition",
+            filename="condition.tex", source=r"\задача Условие. \кзадача",
+        )
+        published = await _publish(
+            fixture, group_lesson=fixture.group_lesson_a, kind="condition",
+            revision_id=condition["revisionId"],
+        )
+        assert published.status == 201, await published.text()
+    source = (r"\задача Условие. \подсказка Подсказка. \кподсказка "
+              r"\решение \includegraphics{only-solution} \крешение \кзадача").encode("cp1251")
+    filename = "usl-04-p.tex" if kind == "condition" else "usl-04-p-sol.tex"
+    with monkeypatch.context() as previous_compiler:
+        previous_compiler.setattr(content_routes_module, "COMPILER_VERSION", "vmsh-latex-compiler/8")
+        old_upload = await _upload(
+            fixture, group_lesson=fixture.group_lesson_a, kind=kind,
+            filename=filename, source=source,
+        )
+        assert old_upload.status == 201, await old_upload.text()
+        old_payload = await old_upload.json()
+        if old_status == "invalid":
+            def previous_failure(*_args, **_kwargs):
+                raise ContentCompileError("Previous compiler rejected this material")
+            previous_compiler.setattr(content_routes_module, "compile_latex", previous_failure)
+        old_compile = await fixture.client.post(
+            f"/staff/api/v1/content/revisions/{old_payload['revisionId']}/compile",
+            cookies=_cookie(fixture, "admin"),
+            headers=_headers(unsafe=True, if_match=old_upload.headers["ETag"]),
+        )
+        assert old_compile.status == (200 if old_status == "ready" else 422), await old_compile.text()
+    old_context = await repository.get_revision_context(old_payload["revisionId"])
+    assert old_context.revision.status.value == old_status
+    if old_status == "ready":
+        await _review_compiled_problem_metadata(fixture, revision_public_id=old_payload["revisionId"])
+        published = await _publish(
+            fixture, group_lesson=fixture.group_lesson_a, kind=kind,
+            revision_id=old_payload["revisionId"],
+        )
+        assert published.status == 201, await published.text()
+    repeated = await _upload(
+        fixture, group_lesson=fixture.group_lesson_a, kind=kind,
+        filename=filename, source=source,
+    )
+    assert repeated.status == 201, await repeated.text()
+    new_payload = await repeated.json()
+    assert new_payload["revisionId"] != old_payload["revisionId"]
+    assert new_payload["sourceId"] == old_payload["sourceId"]
+    assert new_payload["sourceSha256"] == old_payload["sourceSha256"]
+    assert new_payload["revisionNumber"] == old_payload["revisionNumber"] + 1
+    compiled = await fixture.client.post(
+        f"/staff/api/v1/content/revisions/{new_payload['revisionId']}/compile",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=repeated.headers["ETag"]),
+    )
+    assert compiled.status == 200, await compiled.text()
+    assert (await compiled.json())["status"] == "ready"
+    assert await repository.get_revision_context(old_payload["revisionId"]) == old_context
+    current_upload = await _upload(
+        fixture, group_lesson=fixture.group_lesson_a, kind=kind,
+        filename=filename, source=source,
+    )
+    assert current_upload.status == 201, await current_upload.text()
+    assert (await current_upload.json())["revisionId"] == new_payload["revisionId"]
+
+
 async def test_failed_automatic_tikz_keeps_revision_and_returns_recovery_details(
     content_http: ContentHttpFixture,
     monkeypatch: pytest.MonkeyPatch,

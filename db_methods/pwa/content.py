@@ -2934,24 +2934,18 @@ class PwaContentRepository:
                 ).fetchone()
                 existing_revision = connection.execute(
                     "SELECT * FROM content_revisions "
-                    "WHERE source_id = ? AND source_sha256 = ?",
-                    (source.id, payload.source_sha256),
+                    "WHERE source_id = ? AND source_sha256 = ? AND parser_version = ?",
+                    (source.id, payload.source_sha256, parser_version),
                 ).fetchone()
                 if existing_revision is not None:
-                    if str(existing_revision["parser_version"]) != parser_version:
-                        existing_revision = connection.execute(
-                            "UPDATE content_revisions SET status = 'uploaded', "
-                            "parser_version = ?, diagnostics_json = '[]', canonical_json = NULL, "
-                            "compile_claim_token = NULL, compile_claimed_at = NULL, "
-                            "compile_lease_expires_at = NULL, compile_completed_at = NULL, "
-                            "version = version + 1 WHERE id = ? RETURNING *",
-                            (parser_version, existing_revision["id"]),
-                        ).fetchone()
                     return ContentRevisionContext(
                         revision=_content_revision(existing_revision),
                         source=source,
                         scope=_scope_by_group_lesson_id(connection, group_lesson_id),
                     )
+                # Migration 0113 permits a new compiler generation for unchanged
+                # bytes. Never reopen terminal/published snapshots; see
+                # vmshpwa/docs/content-recovery-20261004.md (repeat upload incident).
                 current_number = 0 if latest is None else int(latest["revision_number"])
                 revision_row = connection.execute(
                     "INSERT INTO content_revisions "
@@ -3017,6 +3011,14 @@ class PwaContentRepository:
                 and expected_previous_revision_number != current_number
             ):
                 raise ContentVersionConflict("content source revision changed")
+            # Legacy/import append remains strict about duplicate bytes. Staff
+            # compiler generations are explicitly resolved by the upload API;
+            # see content-recovery-20261004.md and migration 0113.
+            if connection.execute(
+                "SELECT 1 FROM content_revisions WHERE source_id = ? AND source_sha256 = ?",
+                (source_id, payload.source_sha256),
+            ).fetchone() is not None:
+                raise ContentConflict("content source revision already exists")
             try:
                 row = connection.execute(
                     "INSERT INTO content_revisions "
@@ -3119,6 +3121,16 @@ class PwaContentRepository:
                     raise ContentConflict("content compilation lease is still active")
             elif status is not RevisionStatus.UPLOADED:
                 raise ContentConflict("content revision is terminal")
+            # An older unfinished upload can be retried after a fresh generation
+            # exists. Preserve both snapshots and report a stale action instead
+            # of leaking a UNIQUE failure from migration 0113.
+            existing_generation = connection.execute(
+                "SELECT 1 FROM content_revisions WHERE source_id = ? "
+                "AND source_sha256 = ? AND parser_version = ? AND id <> ?",
+                (current["source_id"], current["source_sha256"], parser_version, current["id"]),
+            ).fetchone()
+            if existing_generation is not None:
+                raise ContentVersionConflict("compiler generation already has a revision")
             row = connection.execute(
                 "UPDATE content_revisions SET status = 'compiling', "
                 "parser_version = ?, compile_claim_token = ?, "

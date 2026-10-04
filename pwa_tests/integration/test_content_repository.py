@@ -2373,10 +2373,80 @@ async def test_repeated_identical_upload_reuses_revision(content_fixture):
         actor_user_id=fixture.actor_user_id,
         parser_version="compiler-v2",
     )
-    assert reopened.revision.id == first.revision.id
+    assert reopened.revision.id != first.revision.id
+    assert reopened.revision.source_id == first.source.id
+    assert reopened.revision.revision_number == 2
+    assert reopened.revision.supersedes_revision_id == first.revision.id
     assert reopened.revision.status is RevisionStatus.UPLOADED
     assert reopened.revision.parser_version == "compiler-v2"
-    assert reopened.revision.version == first.revision.version + 1
+    assert reopened.revision.version == 1
+    assert await fixture.repository.get_revision(first.revision.public_id) == first.revision
+    with pytest.raises(ContentVersionConflict, match="compiler generation already has"):
+        await fixture.repository.claim_revision_compilation(
+            public_id=first.revision.public_id, expected_version=first.revision.version,
+            claim_token="older-generation-claim-token", parser_version="compiler-v2",
+        )
+    assert await fixture.repository.get_revision(first.revision.public_id) == first.revision
+    assert await fixture.repository.get_revision(reopened.revision.public_id) == reopened.revision
+
+
+@pytest.mark.parametrize("status", [RevisionStatus.READY, RevisionStatus.INVALID, RevisionStatus.SUPERSEDED])
+async def test_identical_upload_after_compiler_upgrade_preserves_terminal_history(
+    content_fixture, status,
+):
+    fixture = content_fixture
+    _, lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="repeat-terminal-course",
+        course_id=fixture.course_id,
+        lesson_number=79,
+        group_id="content-a",
+        group_lesson_public_id="repeat-terminal-group",
+    )
+    payload = SourceRevisionPayload.from_bytes(
+        "\\задача Прежний файл. \\кзадача".encode('cp1251'),
+        encoding="cp1251", provenance={"logicalFilename": "same.tex"},
+    )
+    arguments = dict(
+        group_lesson_id=lesson.id, kind=ContentKind.CONDITION,
+        logical_filename="same.tex", payload=payload,
+        actor_user_id=fixture.actor_user_id,
+    )
+    first = await fixture.repository.resolve_source_and_append_revision(
+        source_public_id="repeat-terminal-source", revision_public_id="repeat-terminal-first",
+        parser_version="compiler-v1", **arguments,
+    )
+    compiling = await fixture.repository.transition_revision(
+        public_id=first.revision.public_id, expected_version=first.revision.version,
+        target=RevisionStatus.COMPILING, parser_version="compiler-v1",
+    )
+    finished = await fixture.repository.transition_revision(
+        public_id=compiling.public_id, expected_version=compiling.version,
+        target=RevisionStatus.INVALID if status is RevisionStatus.INVALID else RevisionStatus.READY,
+        parser_version="compiler-v1", canonical_document={"type": "document", "children": []},
+    )
+    if status is RevisionStatus.SUPERSEDED:
+        finished = await fixture.repository.transition_revision(
+            public_id=finished.public_id, expected_version=finished.version,
+            target=status, parser_version="compiler-v1",
+        )
+    upgraded, repeated = await asyncio.gather(
+        fixture.repository.resolve_source_and_append_revision(
+            source_public_id="unused-source", revision_public_id="repeat-terminal-upgraded",
+            parser_version="compiler-v2", **arguments,
+        ),
+        fixture.repository.resolve_source_and_append_revision(
+            source_public_id="unused-source-again", revision_public_id="unused-revision",
+            parser_version="compiler-v2", **arguments,
+        ),
+    )
+    assert upgraded.source == first.source
+    assert upgraded.revision.source_sha256 == first.revision.source_sha256
+    assert upgraded.revision.revision_number == 2
+    assert upgraded.revision.supersedes_revision_id == finished.id
+    assert upgraded.revision.status is RevisionStatus.UPLOADED
+    assert repeated.revision == upgraded.revision
+    assert await fixture.repository.get_revision(finished.public_id) == finished
 
 
 async def test_source_archive_and_publication_terminal_guards_block_sql_bypass(

@@ -1,5 +1,20 @@
 # Статус плана разработки
 
+## 2026-10-04 — повторная загрузка после compiler upgrade
+
+Выявлен follow-up: тот же SHA на compiler 8 → 9 пытался сбросить terminal
+ready/invalid revision; SQLite запрещает изменение immutable history.
+Исправлены cache key в 0113 и repository: новая generation создаёт
+отдельную revision в той же lineage. Старые snapshots/публикации сохраняются.
+Полный Python 2832 PASS / 7 SKIP, frontend 1028, Chromium content 2 PASS;
+static gates PASS. Storybook 355 PASS / один неизменённый Large Classroom
+performance FAIL (68 / 71.9 ms при 50 ms); общий gate не заявляется PASS.
+Rehearsal обеих БД сохранил все 158 product tables/rows, integrity ok;
+совместимый rollback cd18511e проверен. Backend-only выпуск ВМШ/TLF готов
+по предыдущему разрешению владельца; production frontend остаётся прежним.
+[Доказательства](../../../pwa_tests/reports/content-upload-generation-20261004/README.md).
+[Причина и компоненты](../../docs/content-recovery-20261004.md#повторная-загрузка-после-обновления-конвертера--follow-up).
+
 ## 2026-10-04 — публикация и диагностика материалов
 
 Код и регрессии готовы: отдельная 0112 для замены публикаций из расписания,
