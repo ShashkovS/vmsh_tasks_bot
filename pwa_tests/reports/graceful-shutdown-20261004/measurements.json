@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-04",
+  "baseline_tlf_production_stop_seconds": 75,
+  "local_probe": {
+    "gunicorn_shutdown_seconds": 1.169,
+    "workers": 2,
+    "symbolic_children": 2,
+    "exit_code": 0
+  },
+  "fast_gate": {
+    "seconds": 203.306,
+    "source_digest": "9f4048029c7c4d90f94519ae2901876722842bf6efefbf1f94eac6ce3138e286",
+    "exit_code": 0,
+    "steps": [
+      {
+        "name": "python-dependencies",
+        "seconds": 0.056,
+        "exit_code": 0
+      },
+      {
+        "name": "format",
+        "seconds": 5.423,
+        "exit_code": 0
+      },
+      {
+        "name": "types",
+        "seconds": 7.713,
+        "exit_code": 0
+      },
+      {
+        "name": "lint-js",
+        "seconds": 1.359,
+        "exit_code": 0
+      },
+      {
+        "name": "lint-css",
+        "seconds": 0.728,
+        "exit_code": 0
+      },
+      {
+        "name": "i18n-frontend",
+        "seconds": 1.56,
+        "exit_code": 0
+      },
+      {
+        "name": "i18n-backend",
+        "seconds": 0.417,
+        "exit_code": 0
+      },
+      {
+        "name": "python",
+        "seconds": 47.162,
+        "exit_code": 0
+      },
+      {
+        "name": "frontend",
+        "seconds": 45.745,
+        "exit_code": 0
+      },
+      {
+        "name": "storybook",
+        "seconds": 73.14,
+        "exit_code": 0
+      },
+      {
+        "name": "e2e",
+        "seconds": 18.663,
+        "exit_code": 0
+      }
+    ],
+    "python_passed": 2789,
+    "python_skipped": 7,
+    "frontend_passed": 1028,
+    "storybook_passed": 355,
+    "chromium_submissions_passed": 3
+  },
+  "final_backend": {
+    "source_digest": "26d4197be024f8d95dfd70ed18f3b3147cde569ddaa54a375da4de71001f00f5",
+    "unique_passed": 2791,
+    "skipped": 7,
+    "full_suite_seconds": 172.41,
+    "full_suite_passed": 2790,
+    "full_suite_failed": 1,
+    "failure": "Timing assertion: 3.160s exceeded arbitrary 3s; both children exited normally, master exit 0, no SIGKILL. Correctness remains bounded by 5s wait; speed recorded separately.",
+    "rerun_file_passed": 8,
+    "rerun_seconds": 14.01,
+    "source_changed_after_rerun": false
+  },
+  "production_status": "Linux preflight passed; release pending",
+  "linux_tlf_preflight": {
+    "probe": {
+      "gunicorn_shutdown_seconds": 1.891,
+      "workers": 2,
+      "symbolic_children": 2,
+      "exit_code": 0
+    },
+    "passed": 8,
+    "seconds": 10.65,
+    "runtime": "production Python/Gunicorn, private test-deps/PYTHONPATH, private schema/Unix socket/process group, empty fixture config",
+    "changed_python_sha256_verified_at_release": true
+  }
+}

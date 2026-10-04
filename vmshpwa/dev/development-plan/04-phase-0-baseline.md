@@ -1,5 +1,8 @@
 # Этап 0. Базовая линия, fixtures и наблюдаемая совместимость
 
+2026-10-04: [graceful shutdown SymPy child](../../docs/graceful-shutdown.md)
+— реализация и backend-проверки завершены; Linux preflight/rollout в работе.
+
 Актуализация 2026-10-04: [схлопывание схемы по решению владельца](../../docs/schema-baseline-20261004.md), 0030–0110 → 0111; исторические chain/rollback tests удаляются.
 
 ## Результат

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import os
+import sys
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
@@ -87,6 +88,29 @@ async def pwa_database_lifecycle(app: web.Application):
             state.factory = None
             state.lifecycle_lock = None
             lifecycle_lock.release()
+
+
+async def math_worker_lifecycle(app: web.Application):
+    """Close the checker only after HTTP handlers and DB workers have drained."""
+    checkers = sys.modules.get("helpers.checkers")
+    if checkers is not None:
+        checkers.resume_worker()
+    yield
+    # Registered first, cleaned up last; vmshpwa/docs/graceful-shutdown.md.
+    # Empty/Zoom-only apps must not import or start a checker during cleanup.
+    checkers = sys.modules.get("helpers.checkers")
+    if checkers is None:
+        return
+    cleanup = asyncio.create_task(asyncio.to_thread(checkers.shutdown_worker))
+    cancelled = False
+    while not cleanup.done():
+        try:
+            await asyncio.shield(cleanup)
+        except asyncio.CancelledError:
+            cancelled = True
+    cleanup.result()
+    if cancelled:
+        raise asyncio.CancelledError
 
 
 async def pwa_analytics_lifecycle(app: web.Application):
@@ -180,12 +204,6 @@ async def on_shutdown(app):
     logger.warning("on_shutdown")
     logger.warning("MainApp Shutting down..")
     await wait_for_valuable_tasks(logger, timeout=20)
-    # Останавливаем sympy-воркера (если он был запущен)
-    runtime_config = app[RUNTIME_CONFIG]
-    if runtime_config.runtime_profile == "legacy":
-        from helpers.checkers import worker
-
-        worker.shutdown()
     db.sql.disconnect()
     logger.warning("MainApp Bye!")
 
@@ -212,6 +230,7 @@ def create_app(
     # aiohttp runs cleanup contexts after on_shutdown and request draining.
     # Keeping the DB lifecycle lock here prevents maintenance from replacing
     # SQLite while a graceful-shutdown handler still owns a connection.
+    app.cleanup_ctx.append(math_worker_lifecycle)
     app.cleanup_ctx.append(pwa_database_lifecycle)
     if analytics_enabled:
         app.cleanup_ctx.append(pwa_analytics_lifecycle)

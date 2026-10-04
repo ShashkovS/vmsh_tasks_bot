@@ -1,5 +1,14 @@
 # Design-system status
 
+## 2026-10-04 — graceful shutdown SymPy worker
+
+Реализация и проверки завершены: MathWorker переведён на spawn, принятые
+проверки дожидаются результата, child/pipes закрываются после HTTP/DB drain.
+2791 уникальный Python PASS / 7 SKIP, 8 process regressions; единый fast gate
+203 с, 1028 frontend / 355 Storybook / 3 Chromium. Два Gunicorn/SymPy worker
+локально выходят за 1,169 с. Linux preflight и выпуск на оба production в работе.
+[Причина, решение и доказательства](../../docs/graceful-shutdown.md).
+
 ## 2026-10-04 — совместный выпуск рисунков и оптимизации
 
 Выпущено на ВМШ/TLF: `b5a7a6b3`, live-превью рисунков, оптимизация gate и
