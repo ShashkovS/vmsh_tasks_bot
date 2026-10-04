@@ -1,6 +1,6 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
-2026-10-04: [совместный выпуск live-превью рисунков и оптимизации](../../../pwa_tests/reports/combined-optimization-figures-20261004/README.md) — общий fast gate и rollout обоих порталов в работе.
+2026-10-04: [совместный выпуск live-превью рисунков и оптимизации](../../../pwa_tests/reports/combined-optimization-figures-20261004/README.md) — fast gate и rollout обоих порталов завершены; 210 с проверок, данные сохранены.
 
 ## 2026-10-03 — меню рисунков в подсказках
 

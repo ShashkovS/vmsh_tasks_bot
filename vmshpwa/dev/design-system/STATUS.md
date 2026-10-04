@@ -2,10 +2,13 @@
 
 ## 2026-10-04 — совместный выпуск рисунков и оптимизации
 
-Fast gate завершён: 2783 уникальных Python PASS / 7 SKIP (полный набор +
-повтор файла с исправленной датой), 1028 frontend, 355 Storybook, 7 Chromium.
-Сумма проверок — 210 с. Исправление live-превью, ускорение проверок и baseline
-0111 готовы к одному разрешённому выпуску на ВМШ/TLF.
+Выпущено на ВМШ/TLF: `b5a7a6b3`, live-превью рисунков, оптимизация gate и
+baseline 0111. Проверки — 210 с: 2783 уникальных Python PASS / 7 SKIP (полный
+набор + повтор файла с исправленной датой), 1028 frontend, 355 Storybook,
+7 Chromium. По 25 HTTP PASS, 158 product tables на каждом сервере неизменны,
+backups/integrity/provenance/assets проверены; writers active, maintenance снят.
+TLF rollout — 102 с; ВМШ build-to-revision — 110 с. Lifecycle follow-up:
+TLF PWA stop ждёт 75 с из-за двух дочерних ThreadPoolExecu процессов.
 Исторические chain tests не повторяются.
 [План и доказательства](../../../pwa_tests/reports/combined-optimization-figures-20261004/README.md).
 

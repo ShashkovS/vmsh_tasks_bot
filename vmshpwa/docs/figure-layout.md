@@ -157,3 +157,8 @@ Student сохраняется отдельно; соседние материа
   [zoomable-asset-figure.tsx](../packages/content/src/zoomable-asset-figure.tsx).
 - Offline: [prepare-offline-lessons.ts](../apps/student/src/prepare-offline-lessons.ts).
 - [Отчёт, команды, browser captures и ограничения](../dev/figure-layout-report.md).
+
+Совместный выпуск 2026-10-04: исправление live-превью подсказок/решений
+выпущено на ВМШ и TLF в `b5a7a6b3`. Полный frontend — 1028 PASS, Storybook —
+355 PASS, focused Chromium figure-layout/print/whiteboard/review — 7 PASS.
+[Gate, данные и время rollout](../../pwa_tests/reports/combined-optimization-figures-20261004/README.md).

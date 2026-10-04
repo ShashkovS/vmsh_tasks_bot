@@ -48,7 +48,9 @@ read-only. Явная команда под yoyo lock делает `mark` нов
 Live DDL обоих production прочитан read-only: 0110, 510 объектов, точное
 совпадение DDL и hash прежнего head с новой исходной точкой. Product rows
 не выбирались. [Обезличенное доказательство](production-schema-check.json).
-Production в этом шаге **не менялся**, изменения пока не закоммичены.
+На этапе этих измерений production не менялся. Затем baseline выпущена
+вместе с исправлением рисунков 2026-10-04 (`b5a7a6b3`): все product rows/DDL
+сохранены на обоих production. [Release proof](../combined-optimization-figures-20261004/production-proof.json).
 
 ## Проверки и исходные данные
 

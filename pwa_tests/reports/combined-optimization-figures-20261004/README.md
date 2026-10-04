@@ -22,7 +22,28 @@ production 0110 принимают её через yoyo mark. Current media inve
 
 ## Статус
 
-Локальные проверки завершены; оба production cutover — следующий шаг.
+Выпущено на оба production: код `b5a7a6b3`, baseline `0111.current_schema`.
+[Production proof](production-proof.json): ВМШ — все 597 611 строк в 158
+product tables идентичны между pre/post backups; TLF — все 16 054 строки
+в 158 tables идентичны при остановленных writers, 1091 Zoom receipts
+сохранены. На обоих servers прежние 82 yoyo entries сохранены и добавлена
+одна отметка baseline. DDL fingerprint одинаковый, 510 объектов.
+Verified static/provenance production всех восьми app artifacts, MSW/prototype
+выключены; сохранены 7028 старых ВМШ immutable files и все 588 assets прежнего
+TLF release. PWA, Telegram ВМШ, Zoom TLF, analytics active; maintenance снят.
+По 25 public HTTP PASS на портал, TLF config и NATS PID не менялись.
+Полные production row data остаются на серверах.
+
+TLF: backup/build/rehearsal/cutover/HTTP/backup — **101,822 с**. Frontend
+install/build — 20 с, остановка PWA — 75 с: workers завершились за 1 с,
+master через 30 с, два дочерних `ThreadPoolExecu` остались до systemd
+final-sigterm timeout 45 с. Это отдельный измеренный lifecycle follow-up;
+в этом выпуске настройки shutdown не изменялись. ВМШ: от начала frontend
+build до записи deployed revision — **110,052 с**; fetch/install перед build
+в эту цифру не включены. Эти deploy времена не сравниваются с отсутствующим
+исходным end-to-end измерением.
+
+Локальные проверки:
 Полный Python: 2782 PASS / 1 FAIL / 7 SKIP за 40,419 с. Единственное падение
 в тесте activity связано с совпадением сегодняшнего дня с датой фикстуры:
 manual event теперь фиксирован на 3 октября, written event — 4 октября.

@@ -1,7 +1,7 @@
 # Новая исходная схема SQLite — 4 октября 2026
 
 По решению владельца история 0030–0110 заменяется одной исходной миграцией
-`migrations/0111.current_schema.sql`. Оба production уже имеют схему 0110.
+`migrations/0111.current_schema.sql`. Оба production приняли baseline 0111 из прежней схемы 0110.
 Новые миграции начинаются с 0112; старые SQL и их up/down/backfill-тесты
 удаляются из рабочего дерева, история остаётся в Git (`dc808173`).
 
@@ -19,14 +19,14 @@
 5. Проверить свежую БД, неизменность product rows на рабочей копии production,
    полный Python gate и ограниченный Chromium E2E. Записать сравнение времени.
 
-Production пока не меняется. Старый локальный `db/vmsh.db` (0038) остаётся
+Production 2026-10-04 приняли baseline через yoyo mark. Старый локальный `db/vmsh.db` (0038) остаётся
 только read-only историческим снимком; автоматический upgrade с него больше
 не поддерживается. Старые deployment proof/rehearsal scripts относятся к
 Git revision своего выпуска, а не к новой схеме.
 
 ## Статус
 
-Завершено локально: одна исходная миграция, 510 неизменённых product objects;
+Выпущено на ВМШ/TLF (`b5a7a6b3`): одна исходная миграция, 510 неизменённых product objects;
 66 исторических test функций удалены, действующие DB/business contracts
 сохранены. Полный Python — 2782 PASS / 7 SKIP за 49 с (было 79 с); Chromium —
 8 PASS. Репетиция принятия baseline сохранила строки всех 158 таблиц и
@@ -34,5 +34,8 @@ Git revision своего выпуска, а не к новой схеме.
 
 Live схемы ВМШ и TLF прочитаны read-only: 0110, 510 объектов; DDL и hash
 прежнего head совпадают с новой исходной точкой. Product rows не выбирались.
-Production и исходные snapshots не менялись; изменения не закоммичены.
+При совместном выпуске все product rows сохранены: 597 611 на ВМШ,
+16 054 на TLF, по 158 таблиц. Прежние 82 yoyo entries остаются; добавлена
+одна отметка 0111, DDL unchanged. По 25 public HTTP PASS на портал.
+[Доказательства production](../../pwa_tests/reports/combined-optimization-figures-20261004/production-proof.json).
 [Полный отчёт и измерения](../../pwa_tests/reports/schema-baseline-20261004/README.md).
