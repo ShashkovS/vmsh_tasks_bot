@@ -49,6 +49,10 @@
       {
         "id": "0111.current_schema",
         "sha256": "5e0878e05f67e71f291e0f3e7b187239904d44e545e03e5eaa7f4f6f9a504b50"
+      },
+      {
+        "id": "0112.scheduled_publication_lifecycle",
+        "sha256": "83e684f25b06c4e7e5c135bfa526552d5943f0ef3194572a9ff15f8cbc1f6cd5"
       }
     ],
     "repository_head_status": {
@@ -13130,8 +13134,8 @@
           }
         ],
         "name": "lesson_publications",
-        "object_sha256": "bcf9b189fc330a202b3cfd4a8e99c0ee3e247528214f0c2ed3ca8fffd169011e",
-        "sql": "CREATE TABLE lesson_publications\n(\n    id                        integer primary key,\n    public_id text generated always as ('lp-' || id) virtual,\n    group_lesson_id           integer not null references group_lessons (id),\n    kind                      text    not null\n        check (kind in ('condition', 'hint', 'solution')),\n    revision_id               integer not null references content_revisions (id),\n    state                     text    not null\n        check (state in ('scheduled', 'published', 'superseded', 'hidden')),\n    scheduled_at              text,\n    published_at              text,\n    hidden_at                 text,\n    created_by_user_id        integer references users (id),\n    published_by_user_id      integer references users (id),\n    supersedes_publication_id integer references lesson_publications (id),\n    activated_from_schedule_id integer references lesson_publications (id),\n    created_at                text    not null,\n    updated_at                text    not null,\n    version                   integer not null default 1 check (version > 0), terminal_by_user_id integer references users (id), terminal_at text, provenance_kind text not null default 'interactive'\n    check (provenance_kind in ('interactive', 'legacy_backfill')),\n    check (supersedes_publication_id is null or supersedes_publication_id <> id),\n    check (activated_from_schedule_id is null or activated_from_schedule_id <> id),\n    check (activated_from_schedule_id is null or state = 'published'),\n    check (state <> 'scheduled' or scheduled_at is not null),\n    check (state <> 'published' or published_at is not null),\n    check (state <> 'hidden' or hidden_at is not null)\n);",
+        "object_sha256": "14462f2e6e99c1ac448c571b922aa688a07848dee4eae3cab4054637280c692e",
+        "sql": "CREATE TABLE \"lesson_publications\"\n(\n    id                        integer primary key,\n    public_id text generated always as ('lp-' || id) virtual,\n    group_lesson_id           integer not null references group_lessons (id),\n    kind                      text    not null\n        check (kind in ('condition', 'hint', 'solution')),\n    revision_id               integer not null references content_revisions (id),\n    state                     text    not null\n        check (state in ('scheduled', 'published', 'superseded', 'hidden')),\n    scheduled_at              text,\n    published_at              text,\n    hidden_at                 text,\n    created_by_user_id        integer references users (id),\n    published_by_user_id      integer references users (id),\n    supersedes_publication_id integer references lesson_publications (id),\n    activated_from_schedule_id integer references lesson_publications (id),\n    created_at                text    not null,\n    updated_at                text    not null,\n    version                   integer not null default 1 check (version > 0), terminal_by_user_id integer references users (id), terminal_at text, provenance_kind text not null default 'interactive'\n    check (provenance_kind in ('interactive', 'legacy_backfill')),\n    check (supersedes_publication_id is null or supersedes_publication_id <> id),\n    check (activated_from_schedule_id is null or activated_from_schedule_id <> id),\n    check (activated_from_schedule_id is null or (state in ('published', 'superseded', 'hidden') and published_at is not null)),\n    check (state <> 'scheduled' or scheduled_at is not null),\n    check (state <> 'published' or published_at is not null),\n    check (state <> 'hidden' or hidden_at is not null)\n);",
         "table_name": "lesson_publications",
         "type": "table"
       },
@@ -31790,7 +31794,7 @@
       }
     ],
     "pragma_structure_sha256": "a649dc8f97539b5c398d20de5285fd138743dfa6798616c077bc75754bbecbe1",
-    "sha256": "2769229b4b92f85759f2c4bc4a70dfd9b3aae9dada53cdc8a67812e97a862fb8"
+    "sha256": "5839d046e255c1fc521a0ff656ec9eff3e15021807e9a5614843c12d89e9b3da"
   },
   "source_kind": "repository-migration-head"
 }

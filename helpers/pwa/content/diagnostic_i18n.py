@@ -193,7 +193,15 @@ TEMPLATES = {
         "message": N_("Команда \\verb не имеет завершающего delimiter."),
     },
     "material.parts_mismatch": {
-        "message": N_("Задача {value0}: пункты материала не совпадают с условием."),
+        "message": (
+            N_("Задача {value0}: пункты материала не совпадают с условием."),
+            N_("Задача {value0}: в условиях нет пунктов, а в подсказках — {value1}."),
+            N_("Задача {value0}: в условиях пункты {value1}, а в подсказках — {value2}."),
+            N_("Задача {value0}: в условиях нет пунктов, а в ответе — {value1}."),
+            N_("Задача {value0}: в условиях пункты {value1}, а в ответе — {value2}."),
+            N_("Задача {value0}: в условиях нет пунктов, а в решении — {value1}."),
+            N_("Задача {value0}: в условиях пункты {value1}, а в решении — {value2}."),
+        ),
         "recovery": N_("Исправьте разметку пунктов перед публикацией."),
     },
     "source.replacement_character": {
@@ -258,15 +266,18 @@ def localize_diagnostics(items: list[object]) -> list[object]:
             result.append(item)
             continue
         translated = dict(item)
-        for field, template in TEMPLATES.get(item.get("code"), {}).items():
+        for field, templates in TEMPLATES.get(item.get("code"), {}).items():
             value = item.get(field)
             if not isinstance(value, str):
                 continue
-            pattern, dynamic = _pattern(template)
-            match = pattern.fullmatch(value)
-            if match:
-                translated[field] = (
-                    _(template, **match.groupdict()) if dynamic else _(template)
-                )
+            candidates = templates if isinstance(templates, tuple) else (templates,)
+            for template in candidates:
+                pattern, dynamic = _pattern(template)
+                match = pattern.fullmatch(value)
+                if match:
+                    translated[field] = (
+                        _(template, **match.groupdict()) if dynamic else _(template)
+                    )
+                    break
         result.append(translated)
     return result

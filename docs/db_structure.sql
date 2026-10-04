@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 2769229b4b92f85759f2c4bc4a70dfd9b3aae9dada53cdc8a67812e97a862fb8
+-- Product schema SHA-256: 5839d046e255c1fc521a0ff656ec9eff3e15021807e9a5614843c12d89e9b3da
 
 CREATE TABLE achievement_definitions
 (
@@ -1319,7 +1319,7 @@ CREATE TABLE lesson_problem_release_events (
     ts text not null
 );
 
-CREATE TABLE lesson_publications
+CREATE TABLE "lesson_publications"
 (
     id                        integer primary key,
     public_id text generated always as ('lp-' || id) virtual,
@@ -1342,7 +1342,7 @@ CREATE TABLE lesson_publications
     check (provenance_kind in ('interactive', 'legacy_backfill')),
     check (supersedes_publication_id is null or supersedes_publication_id <> id),
     check (activated_from_schedule_id is null or activated_from_schedule_id <> id),
-    check (activated_from_schedule_id is null or state = 'published'),
+    check (activated_from_schedule_id is null or (state in ('published', 'superseded', 'hidden') and published_at is not null)),
     check (state <> 'scheduled' or scheduled_at is not null),
     check (state <> 'published' or published_at is not null),
     check (state <> 'hidden' or hidden_at is not null)

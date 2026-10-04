@@ -273,7 +273,10 @@ function errorMessage(error: unknown): string {
     }
     return t`${subject} не удалось преобразовать в SVG${detail ? `: ${detail}` : '.'}`
   }
-  if (error instanceof ApiResponseError) return error.message
+  if (error instanceof ApiResponseError) {
+    const { message, requestId } = error
+    return error.code === 'content_conflict' ? t`${message} Код обращения: ${requestId}.` : message
+  }
   if (error instanceof Error) return error.message
   return t`Не удалось выполнить действие`
 }
@@ -330,6 +333,53 @@ function formatInBusinessTimezone(instant: string, timezone: BusinessTimezone): 
 
 function revisionLabel(revision: StaffContentRevision, timezone: BusinessTimezone): string {
   return t`Версия ${revision.revisionNumber} · ${revision.logicalFilename} · ${formatInBusinessTimezone(revision.uploadedAt, timezone)}`
+}
+
+// Phase-2 confirmation feedback: docs/content-recovery-20261004.md.
+function WorkflowActionError({
+  message,
+  conversionDebug,
+  announce = true,
+}: {
+  message: string
+  conversionDebug?: TikzConversionDebug | undefined
+  announce?: boolean
+}) {
+  return (
+    <Alert role={announce ? 'alert' : 'group'} tone="danger">
+      <AlertTriangle aria-hidden="true" />
+      <AlertContent>
+        <AlertTitle>
+          <Trans>Действие не выполнено</Trans>
+        </AlertTitle>
+        <div className="mt-0.5 space-y-3 text-muted-foreground">
+          <p>{message}</p>
+          {conversionDebug ? (
+            <details className="rounded-md border border-status-error/30 bg-surface p-3" open>
+              <summary className="cursor-pointer font-medium">
+                <Trans>Отладка конвертации TikZ: {conversionDebug.stage}</Trans>
+              </summary>
+              <p className="mt-3 text-small">
+                <Trans>Ниже точный standalone LaTeX, переданный конвертеру, и его вывод.</Trans>
+              </p>
+              <p className="mt-3 text-small font-medium">
+                <Trans>Сформированный content.tex</Trans>
+              </p>
+              <pre className="mt-1 max-h-80 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
+                {conversionDebug.generatedTex}
+              </pre>
+              <p className="mt-3 text-small font-medium">
+                <Trans>Вывод {conversionDebug.stage}</Trans>
+              </p>
+              <pre className="mt-1 max-h-64 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
+                {conversionDebug.toolOutput}
+              </pre>
+            </details>
+          ) : null}
+        </div>
+      </AlertContent>
+    </Alert>
+  )
 }
 
 function MaterialWorkflowCard({
@@ -486,12 +536,25 @@ function MaterialWorkflowCard({
   }, [history])
 
   const handleMutationError = (error: unknown) => {
-    if (error instanceof ApiResponseError && error.status === 409) {
+    if (error instanceof ApiResponseError && error.code === 'version_conflict') {
       patchState({
         errorMessage: t`Материал уже изменён. Обновляем версии и публикации…`,
         conversionDebug: undefined,
+        mutationPending: true,
       })
       void onConflict()
+        .then(() =>
+          patchState({
+            mutationPending: false,
+            errorMessage: t`Материал уже изменён. Данные обновлены; проверьте версию и повторите подтверждение.`,
+          }),
+        )
+        .catch(() =>
+          patchState({
+            mutationPending: false,
+            errorMessage: t`Материал уже изменён, но обновить данные не удалось. Обновите страницу перед повторным подтверждением.`,
+          }),
+        )
       return
     }
     patchState({
@@ -1158,41 +1221,11 @@ function MaterialWorkflowCard({
         ) : null}
 
         {state.errorMessage ? (
-          <Alert role="alert" tone="danger">
-            <AlertTriangle aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>
-                <Trans>Действие не выполнено</Trans>
-              </AlertTitle>
-              <div className="mt-0.5 space-y-3 text-muted-foreground">
-                <p>{state.errorMessage}</p>
-                {state.conversionDebug ? (
-                  <details className="rounded-md border border-status-error/30 bg-surface p-3" open>
-                    <summary className="cursor-pointer font-medium">
-                      <Trans>Отладка конвертации TikZ: {state.conversionDebug.stage}</Trans>
-                    </summary>
-                    <p className="mt-3 text-small">
-                      <Trans>
-                        Ниже точный standalone LaTeX, переданный конвертеру, и его вывод.
-                      </Trans>
-                    </p>
-                    <p className="mt-3 text-small font-medium">
-                      <Trans>Сформированный content.tex</Trans>
-                    </p>
-                    <pre className="mt-1 max-h-80 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
-                      {state.conversionDebug.generatedTex}
-                    </pre>
-                    <p className="mt-3 text-small font-medium">
-                      <Trans>Вывод {state.conversionDebug.stage}</Trans>
-                    </p>
-                    <pre className="mt-1 max-h-64 overflow-auto rounded bg-surface-subtle p-3 text-xs leading-relaxed text-foreground">
-                      {state.conversionDebug.toolOutput}
-                    </pre>
-                  </details>
-                ) : null}
-              </div>
-            </AlertContent>
-          </Alert>
+          <WorkflowActionError
+            announce={!confirmation}
+            conversionDebug={state.conversionDebug}
+            message={state.errorMessage}
+          />
         ) : null}
 
         {selectedRevision && client.reprocessRevision ? (
@@ -1505,6 +1538,7 @@ function MaterialWorkflowCard({
                     <Trans>Отмена</Trans>
                   </Button>
                 </div>
+                {state.errorMessage ? <WorkflowActionError message={state.errorMessage} /> : null}
               </div>
             ) : null}
             {state.currentPublication ? (

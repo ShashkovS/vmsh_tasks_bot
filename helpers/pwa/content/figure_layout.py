@@ -6,7 +6,7 @@ import copy
 import hashlib
 from collections.abc import Iterable
 
-from .model import DocumentAst, FigureNode
+from .model import ContentRole, DocumentAst, FigureNode
 
 
 def occurrence_id(figure: FigureNode) -> str:
@@ -39,6 +39,25 @@ def material_figures(document: DocumentAst) -> dict[int, tuple[FigureNode, ...]]
         last = document.problems[-1].ordinal
         result[last] += pending
     return result
+
+
+def selected_material_figures(
+    document: DocumentAst, role: ContentRole
+) -> tuple[FigureNode, ...]:
+    """Shared inventory/compiler selection; content-recovery-20261004.md.
+
+    Condition illustrations also appear in hint/solution renderers through
+    material_figures. Keep their source spans, including repeated occurrences.
+    """
+    result = list(figures(document.introduction))
+    for problem in document.problems:
+        blocks = problem.statement + problem.trailing
+        if role in {ContentRole.HINT, ContentRole.FULL_PREVIEW}:
+            blocks += problem.hint
+        if role in {ContentRole.SOLUTION, ContentRole.FULL_PREVIEW}:
+            blocks += problem.answer + problem.solution
+        result.extend(figures(blocks))
+    return tuple(result)
 
 
 def select_material_part(problem: dict, label: str) -> dict:

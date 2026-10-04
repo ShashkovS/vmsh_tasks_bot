@@ -330,7 +330,9 @@ def test_live_report_records_missing_baseline_without_mutating_database(tmp_path
         database_path, source_kind="agreed-live-baseline", require_migration_head=False
     )
     report = compare_schema_inventories(expected, actual)
-    assert report["migration"]["repository_head_status"]["missing"] == [BASELINE_ID]
+    assert report["migration"]["repository_head_status"]["missing"] == [
+        row["id"] for row in expected["migration"]["repository_head"]
+    ]
     assert report["missing_product_objects"] == []
     assert database_path.read_bytes() == before
 

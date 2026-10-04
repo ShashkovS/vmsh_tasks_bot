@@ -68,6 +68,96 @@ def _published_asset(
 
 
 @pytest.mark.parametrize(
+    "role", [ContentRole.CONDITION, ContentRole.HINT, ContentRole.SOLUTION]
+)
+def test_combined_source_only_requires_figures_in_selected_material(role):
+    # Regression for usl-04-p-sol.tex lines 125/128; content-recovery-20261004.md.
+    source = r"""\задача Условие.\кзадача
+\подсказка Совет.\кподсказка
+\решение
+\rightpicture{2mm}{0mm}{80mm}{cube-scan1-sol}
+\includegraphics[width=150mm]{cubes-sol}
+\крешение"""
+    result = _compile(source, role=role, known_assets={})
+    missing = [d for d in result.diagnostics if d.code == "asset.missing"]
+    if role is ContentRole.SOLUTION:
+        assert len(missing) == 2
+        assert [d.span.start.line for d in missing] == [5, 6]
+        assert [d.span.start.column for d in missing] == [30, 30]
+        descriptors = {
+            name: _published_asset(
+                asset_id=f"ma-{index}",
+                content_sha256=str(index) * 64,
+                media_type="image/png",
+            )
+            for index, name in enumerate(("cube-scan1-sol", "cubes-sol"), 1)
+        }
+        assert not _compile(source, role=role, known_assets=descriptors).has_errors
+    else:
+        assert not result.has_errors
+        assert "cube-scan1-sol" not in result.web.content
+
+
+def test_missing_figure_with_same_name_in_hint_and_solution_keeps_hint_span():
+    result = _compile(
+        "\\задача Условие.\\кзадача\n"
+        "\\подсказка \\includegraphics{shared}\\кподсказка\n"
+        "\\решение \\includegraphics{shared}\\крешение",
+        role=ContentRole.HINT,
+        known_assets={},
+    )
+    missing = [d for d in result.diagnostics if d.code == "asset.missing"]
+    assert len(missing) == 1 and missing[0].span.start.line == 3
+
+
+@pytest.mark.parametrize("role", [ContentRole.HINT, ContentRole.SOLUTION])
+def test_material_requires_statement_figures_but_keeps_hidden_branch_safety_checks(
+    role,
+):
+    result = _compile(
+        r"\rightpicture{0}{0}{30mm}{preamble}\задача Условие.\includegraphics{statement}\кзадача"
+        r"\подсказка Совет.\кподсказка\решение\input{secret}\крешение",
+        role=role,
+        known_assets={},
+    )
+    assert len([d for d in result.diagnostics if d.code == "asset.missing"]) == 2
+    assert "latex.command_forbidden" in _codes(result)
+
+
+@pytest.mark.parametrize(
+    "statement, material, expected",
+    [
+        ("Условие.", r"\пункт Совет.", "в условиях нет пунктов, а в подсказках — а)."),
+        (
+            r"\пункт Один.\пункт Два.\пункт Три.",
+            r"\пункт Один.\пункт Два.",
+            "в условиях пункты а), б), в), а в подсказках — а), б).",
+        ),
+    ],
+)
+def test_part_mismatch_names_both_lists_and_points_to_material(
+    statement, material, expected
+):
+    result = _compile(
+        f"\\задача {statement}\\кзадача\n\\подсказка {material}\\кподсказка",
+        role=ContentRole.HINT,
+    )
+    diagnostic = next(
+        d for d in result.diagnostics if d.code == "material.parts_mismatch"
+    )
+    assert diagnostic.message == f"Задача 1: {expected}"
+    assert diagnostic.span.start.line == 3
+
+
+def test_unlabelled_material_for_labelled_problem_remains_allowed():
+    result = _compile(
+        r"\задача\пункт Один.\пункт Два.\кзадача\подсказка Общий совет.\кподсказка",
+        role=ContentRole.HINT,
+    )
+    assert "material.parts_mismatch" not in _codes(result)
+
+
+@pytest.mark.parametrize(
     ("payload", "encoding"),
     [
         (_document("\\задача UTF-8 \\кзадача"), SourceEncoding.UTF8),

@@ -58,7 +58,7 @@ from helpers.pwa.content import (
     compile_latex,
 )
 from helpers.pwa.content.model import canonical_json
-from helpers.pwa.content.figure_layout import FigureLayoutError
+from helpers.pwa.content.figure_layout import FigureLayoutError, selected_material_figures
 from helpers.pwa.content.telegram import TelegramMarkupError
 from helpers.pwa.content.metadata_generation import (
     MetadataGenerationError,
@@ -429,6 +429,11 @@ def _translate_content_errors(
                 message="Материал уже изменился. Обновите страницу.",
             ) from error
         except ContentConflict as error:
+            # Keep the chained storage reason correlated with the public ID,
+            # without logging source/answers. See content-recovery-20261004.md.
+            logger.warning(
+                "Content state conflict request_id=%s", _request_id(request), exc_info=True
+            )
             raise PwaApiError(
                 status=409,
                 code="content_conflict",
@@ -1344,43 +1349,12 @@ async def _pdf_derivative_asset(
     return derivative, asset
 
 
-def _asset_reference_projection(value: DocumentAst, role: ContentRole) -> object:
-    """Keep only AST blocks rendered for the requested material kind.
-
-    Legacy condition files may contain hidden answers and solutions.  Their
-    figures must not block publication of the condition: those assets become
-    relevant only when the corresponding material is uploaded.  Keep this
-    projection aligned with ``helpers/pwa/content/renderers.py``.
-    """
-
-    problems = []
-    for problem in value.problems:
-        if role is ContentRole.CONDITION:
-            blocks = problem.statement + problem.trailing
-        elif role is ContentRole.HINT:
-            blocks = problem.statement + problem.trailing + problem.hint
-        elif role is ContentRole.SOLUTION:
-            blocks = (
-                problem.statement + problem.trailing + problem.answer + problem.solution
-            )
-        else:
-            blocks = (
-                problem.statement
-                + problem.trailing
-                + problem.hint
-                + problem.answer
-                + problem.solution
-            )
-        problems.append(blocks)
-    return {"introduction": value.introduction, "problems": problems}
-
-
 def _asset_references(
     value: DocumentAst, *, role: ContentRole
 ) -> dict[str, dict[str, object]]:
     """Extract exact figure identities from a bounded compiler AST."""
 
-    parsed = json.loads(canonical_json(_asset_reference_projection(value, role)))
+    parsed = json.loads(canonical_json(selected_material_figures(value, role)))
     discovered: list[dict[str, object]] = []
     stack = [parsed]
     visited = 0

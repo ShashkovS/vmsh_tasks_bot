@@ -674,6 +674,30 @@ msgid "Загрузка фотографий временно недоступн
 msgstr "Photo upload is temporarily unavailable"
 
 #: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача {value0}: в условиях нет пунктов, а в ответе — {value1}."
+msgstr "Problem {value0}: the statement has no parts, but the answer has {value1}."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача {value0}: в условиях нет пунктов, а в подсказках — {value1}."
+msgstr "Problem {value0}: the statement has no parts, but the hints has {value1}."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача {value0}: в условиях нет пунктов, а в решении — {value1}."
+msgstr "Problem {value0}: the statement has no parts, but the solution has {value1}."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача {value0}: в условиях пункты {value1}, а в ответе — {value2}."
+msgstr "Problem {value0}: the statement has parts {value1}, but the answer has {value2}."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача {value0}: в условиях пункты {value1}, а в подсказках — {value2}."
+msgstr "Problem {value0}: the statement has parts {value1}, but the hints has {value2}."
+
+#: helpers/pwa/content/diagnostic_i18n.py
+msgid "Задача {value0}: в условиях пункты {value1}, а в решении — {value2}."
+msgstr "Problem {value0}: the statement has parts {value1}, but the solution has {value2}."
+
+#: helpers/pwa/content/diagnostic_i18n.py
 msgid "Задача {value0}: пункты материала не совпадают с условием."
 msgstr "Problem {value0}: the material’s parts do not match the statement."
 

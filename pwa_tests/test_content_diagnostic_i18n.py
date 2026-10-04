@@ -3,6 +3,8 @@
 import json
 from copy import deepcopy
 
+import pytest
+
 from helpers.pwa.content.compiler import compile_latex
 from helpers.pwa.content.diagnostic_i18n import localize_diagnostics
 from helpers.pwa.content.model import ContentRole, canonical_json
@@ -47,3 +49,42 @@ def test_unknown_diagnostics_remain_unchanged():
         assert localize_diagnostics(items) == items
     finally:
         current_locale.reset(token)
+
+
+@pytest.mark.parametrize(
+    "section, english",
+    [("подсказках", "hints"), ("ответе", "answer"), ("решении", "solution")],
+)
+@pytest.mark.parametrize("labelled", [False, True])
+def test_part_mismatch_localizes_lists_and_preserves_labels(section, english, labelled):
+    condition = "пункты а), б), в)" if labelled else "нет пунктов"
+    original = [
+        {
+            "code": "material.parts_mismatch",
+            "message": f"Задача 8: в условиях {condition}, а в {section} — а), б).",
+        }
+    ]
+    token = current_locale.set("en")
+    try:
+        translated = localize_diagnostics(original)[0]["message"]
+    finally:
+        current_locale.reset(token)
+    assert english in translated and "8" in translated
+    assert "а), б)" in translated
+    assert ("а), б), в)" in translated) == labelled
+
+
+def test_old_part_mismatch_diagnostics_still_localize():
+    token = current_locale.set("en")
+    try:
+        result = localize_diagnostics(
+            [
+                {
+                    "code": "material.parts_mismatch",
+                    "message": "Задача 8: пункты материала не совпадают с условием.",
+                }
+            ]
+        )
+    finally:
+        current_locale.reset(token)
+    assert result[0]["message"] != "Задача 8: пункты материала не совпадают с условием."

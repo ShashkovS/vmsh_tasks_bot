@@ -367,6 +367,10 @@ msgstr "{error}. Попробуйте ещё раз."
 msgid "{hours} ч{0}"
 msgstr "{hours} ч{0}"
 
+#: apps/staff/src/content-page.tsx
+msgid "{message} Код обращения: {requestId}."
+msgstr "{message} Код обращения: {requestId}."
+
 #: apps/staff/src/review-queue-model.ts
 msgid "{minutes} мин"
 msgstr "{minutes} мин"
@@ -1347,7 +1351,7 @@ msgstr "Выбрать найденных · {0}"
 msgid "Выбрать школьников"
 msgstr "Выбрать школьников"
 
-#. placeholder {0}: state.conversionDebug.stage
+#. placeholder {0}: conversionDebug.stage
 #: apps/staff/src/content-page.tsx
 msgid "Вывод {0}"
 msgstr "Вывод {0}"
@@ -2722,6 +2726,14 @@ msgid "Массовая загрузка"
 msgstr "Массовая загрузка"
 
 #: apps/staff/src/content-page.tsx
+msgid "Материал уже изменён, но обновить данные не удалось. Обновите страницу перед повторным подтверждением."
+msgstr "Материал уже изменён, но обновить данные не удалось. Обновите страницу перед повторным подтверждением."
+
+#: apps/staff/src/content-page.tsx
+msgid "Материал уже изменён. Данные обновлены; проверьте версию и повторите подтверждение."
+msgstr "Материал уже изменён. Данные обновлены; проверьте версию и повторите подтверждение."
+
+#: apps/staff/src/content-page.tsx
 msgid "Материал уже изменён. Обновляем версии и публикации…"
 msgstr "Материал уже изменён. Обновляем версии и публикации…"
 
@@ -4038,7 +4050,7 @@ msgstr "Открыть приём · Москва (необязательно)"
 msgid "Открыть проверку"
 msgstr "Открыть проверку"
 
-#. placeholder {0}: state.conversionDebug.stage
+#. placeholder {0}: conversionDebug.stage
 #: apps/staff/src/content-page.tsx
 msgid "Отладка конвертации TikZ: {0}"
 msgstr "Отладка конвертации TikZ: {0}"

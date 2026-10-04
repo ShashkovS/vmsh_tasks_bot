@@ -4,6 +4,7 @@ import sqlite3
 from contextlib import closing
 
 import pytest
+import yoyo
 
 from db_methods.pwa import (
     JournalModeMismatchError,
@@ -30,14 +31,23 @@ def test_schema_bootstrap_is_explicit_and_repeatable(tmp_path):
     assert first.is_current
     assert second.is_current
     assert first.expected == second.expected
-    assert [item[0] for item in first.expected] == [BASELINE_ID]
+    assert [item[0] for item in first.expected] == [
+        BASELINE_ID,
+        "0112.scheduled_publication_lifecycle",
+    ]
     assert inspect_migration_state(database_path).is_current
     with sqlite3.connect(database_path) as connection:
         assert connection.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
 
 
 def _previous_current_database(path):
-    create_test_database(path)
+    # A pre-baseline DB retains 0111's DDL, not the latest fixture schema.
+    # See schema-baseline-20261004.md and content-recovery-20261004.md.
+    with yoyo.get_backend(f"sqlite:///{path.resolve()}") as backend:
+        baseline = yoyo.read_migrations(str(MIGRATIONS_ROOT)).filter(
+            lambda migration: migration.id == BASELINE_ID
+        )
+        backend.apply_migrations(baseline)
     previous = next(
         line.removeprefix("-- Previous head: ")
         for line in (MIGRATIONS_ROOT / f"{BASELINE_ID}.sql").read_text().splitlines()
@@ -52,17 +62,20 @@ def _previous_current_database(path):
         connection.execute("INSERT INTO kv VALUES ('baseline-probe', 'preserved')")
         connection.execute("UPDATE pwa_branding SET profile_id = 'tlf'")
         connection.commit()
+        connection.execute("PRAGMA journal_mode=WAL")
 
 
-def test_previous_current_schema_starts_read_only_and_adopts_without_product_writes(
+def test_previous_current_schema_adopts_baseline_and_applies_pending_migration(
     tmp_path,
 ):
     path = tmp_path / "previous.sqlite3"
     _previous_current_database(path)
     before = path.read_bytes()
-    state = require_current_schema(path)
+    state = inspect_migration_state(path)
     assert state.baseline_adoptable
-    PwaConnectionFactory(path)
+    assert state.missing == ("0112.scheduled_publication_lifecycle",)
+    with pytest.raises(SchemaMismatchError, match="0112"):
+        PwaConnectionFactory(path)
     assert path.read_bytes() == before
 
     state = apply_schema_migrations(path)
@@ -76,7 +89,7 @@ def test_previous_current_schema_starts_read_only_and_adopts_without_product_wri
         )
         assert (
             connection.execute("SELECT count(*) FROM _yoyo_migration").fetchone()[0]
-            == 2
+            == 3
         )
         assert (
             connection.execute(

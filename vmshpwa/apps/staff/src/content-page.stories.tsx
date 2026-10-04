@@ -1030,10 +1030,58 @@ export const OptimisticConflictRefetch: Story = {
     await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
 
-    await expect(
-      await canvas.findByText('Материал уже изменён. Обновляем версии и публикации…'),
-    ).toBeVisible()
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'Данные обновлены; проверьте версию и повторите подтверждение.',
+    )
+    await expect(canvas.getAllByText('Действие не выполнено')).toHaveLength(2)
     await expect(await canvas.findByText(/Опубликована версия/)).toBeVisible()
+  },
+}
+
+export const PublicationStateConflictAtConfirmation: Story = {
+  name: 'Publication state conflict → feedback below confirmation',
+  render: () => {
+    let historyCalls = 0
+    return (
+      <StaffContentWorkspace
+        client={storyClient({
+          history() {
+            historyCalls += 1
+            if (historyCalls > 1)
+              throw new Error('State conflict must not refetch as a version conflict')
+            return Promise.resolve(publishedHistory('publication-current', revisionId, 1))
+          },
+          publish() {
+            return Promise.reject(
+              new ApiResponseError(409, {
+                error: {
+                  code: 'content_conflict',
+                  message: 'Не удалось заменить текущую публикацию',
+                  requestId: 'publication-state-conflict',
+                },
+              }),
+            )
+          },
+        })}
+        draftNamespace={storyDraftNamespace}
+        groupLessonId={groupLessonId}
+      />
+    )
+  },
+  play: async ({ canvasElement }) => {
+    // Requirement and shared feedback: docs/content-recovery-20261004.md.
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
+    const confirmation = canvas.getByRole('group', { name: /Опубликовать условие версии/ })
+    await userEvent.click(within(confirmation).getByRole('button', { name: 'Подтвердить' }))
+    const alert = await within(confirmation).findByRole('alert')
+    await expect(alert).toHaveTextContent('Не удалось заменить текущую публикацию')
+    await expect(alert).toHaveTextContent('Код обращения: publication-state-conflict.')
+    await expect(canvas.getAllByText('Действие не выполнено')).toHaveLength(2)
+    await expect(canvas.getAllByRole('alert')).toHaveLength(1)
+    await expect(within(confirmation).getByRole('button', { name: 'Подтвердить' })).toBeEnabled()
+    await expect(canvas.queryByText(/Материал уже изменён/)).toBeNull()
+    await expect(canvas.getByText(/Опубликована версия/)).toBeVisible()
   },
 }
 

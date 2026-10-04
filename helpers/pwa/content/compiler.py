@@ -6,6 +6,7 @@ import unicodedata
 from collections.abc import Mapping
 from pathlib import PurePosixPath
 
+from .figure_layout import selected_material_figures
 from .model import (
     CompileResult,
     ContentDerivative,
@@ -44,7 +45,7 @@ from .web_document import (
 )
 
 
-COMPILER_VERSION = "vmsh-latex-compiler/8"
+COMPILER_VERSION = "vmsh-latex-compiler/9"
 _MAX_KNOWN_ASSETS = 20_000
 _FORBIDDEN_TEX_COMMANDS = {
     "catcode",
@@ -207,21 +208,56 @@ def compile_latex(
         known_assets=normalized_asset_hashes,
     )
     document = parser.parse()
-    diagnostics = list(parser.diagnostics)
+    selected_figures = selected_material_figures(document, role)
+    # A combined source retains every AST branch, but asset recovery only
+    # exposes the selected material. Match spans rather than logical names:
+    # the same missing file can occur in both visible and excluded sections.
+    # See vmshpwa/docs/content-recovery-20261004.md and content_routes inventory.
+    diagnostics = [
+        diagnostic
+        for diagnostic in parser.diagnostics
+        if diagnostic.code != "asset.missing" or any(
+            figure.span.start.offset <= diagnostic.span.start.offset
+            and diagnostic.span.end.offset <= figure.span.end.offset
+            for figure in selected_figures
+        )
+    ]
     # Independent material parts must agree with the condition's labels.
     # See vmshpwa/docs/figure-layout.md, per-part reveal contract.
     if role in {ContentRole.HINT, ContentRole.SOLUTION}:
         for problem in document.problems:
-            expected = [node.label for node in problem.statement if isinstance(node, SubpartNode)]
-            sections = (problem.hint,) if role is ContentRole.HINT else (problem.answer, problem.solution)
-            for section in sections:
+            expected = [
+                node.label for node in problem.statement if isinstance(node, SubpartNode)
+            ]
+            sections = (
+                (("подсказках", problem.hint),)
+                if role is ContentRole.HINT
+                else (("ответе", problem.answer), ("решении", problem.solution))
+            )
+            for section_name, section in sections:
                 actual = [node.label for node in section if isinstance(node, SubpartNode)]
                 if actual and actual != expected:
-                    diagnostics.append(Diagnostic(
-                        code="material.parts_mismatch", severity=DiagnosticSeverity.ERROR,
-                        message=f"Задача {problem.ordinal}: пункты материала не совпадают с условием.",
-                        span=problem.span, recovery="Исправьте разметку пунктов перед публикацией.",
-                    ))
+                    expected_text = (
+                        "пункты " + ", ".join(f"{label})" for label in expected)
+                        if expected
+                        else "нет пунктов"
+                    )
+                    actual_text = ", ".join(f"{label})" for label in actual)
+                    diagnostics.append(
+                        Diagnostic(
+                            code="material.parts_mismatch",
+                            severity=DiagnosticSeverity.ERROR,
+                            message=(
+                                f"Задача {problem.ordinal}: в условиях {expected_text}, "
+                                f"а в {section_name} — {actual_text}."
+                            ),
+                            span=next(
+                                node.span for node in section
+                                if isinstance(node, SubpartNode)
+                            ),
+                            recovery="Исправьте разметку пунктов перед публикацией.",
+                        )
+                    )
     diagnostics.extend(_forbidden_command_diagnostics(source.text, parser.source_map))
     for logical_name, _url in rejected_urls:
         diagnostics.append(

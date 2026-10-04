@@ -1,5 +1,14 @@
 # Design-system status
 
+## 2026-10-04 — публикация и диагностика материалов
+
+Готово исправление Phase 2: ошибка под подтверждением с одним live announcement,
+серверной причиной и request ID; подробная диагностика пунктов. Storybook
+и реальный E2E прошли fast gate `content figure-layout`: Storybook 356,
+Chromium 6, UI осмотрен в браузере. Начат выпуск только ВМШ;
+публикацию материалов выполняет владелец.
+[Требования, компоненты и проверки](../../docs/content-recovery-20261004.md).
+
 ## 2026-10-04 — graceful shutdown SymPy worker
 
 Выпущено на ВМШ/TLF: `a44e25c5`, MathWorker spawn, drain принятых проверок,

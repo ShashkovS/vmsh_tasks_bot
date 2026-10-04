@@ -3067,6 +3067,69 @@ async def test_condition_upload_ignores_tikz_from_hidden_answer(
     assert (await uploaded.json())["status"] == "uploaded"
 
 
+@pytest.mark.parametrize("kind", ["condition", "hint", "solution"])
+async def test_combined_source_asset_recovery_matches_selected_material(
+    content_http: ContentHttpFixture,
+    kind: str,
+):
+    # usl-04-p-sol.tex recovery contract: content-recovery-20261004.md.
+    fixture = content_http
+    uploaded = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind=kind,
+        filename="usl-04-p-sol.tex",
+        source=(
+            r"\задача Условие.\кзадача"
+            r"\подсказка Совет.\кподсказка"
+            r"\решение\rightpicture{2mm}{0mm}{80mm}{cube-scan1-sol}"
+            r"\includegraphics[width=150mm]{cubes-sol}\крешение"
+        ).encode("windows-1251"),
+    )
+    assert uploaded.status == 201, await uploaded.text()
+    revision_id = (await uploaded.json())["revisionId"]
+    etag = uploaded.headers["ETag"]
+    inventory = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{revision_id}/assets",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    inventory_payload = await inventory.json()
+    assert inventory.status == 200
+    if kind == "solution":
+        assert inventory_payload["missingAssets"] == ["cube-scan1-sol", "cubes-sol"]
+        blocked = await fixture.client.post(
+            f"/staff/api/v1/content/revisions/{revision_id}/compile",
+            cookies=_cookie(fixture, "admin"),
+            headers=_headers(unsafe=True, if_match=etag),
+        )
+        assert blocked.status == 422
+        assert (await blocked.json())["error"]["code"] == "content_assets_missing"
+        for name in inventory_payload["missingAssets"]:
+            attached = await _upload_asset(
+                fixture,
+                revision_id=revision_id,
+                logical_name=name,
+                kind="svg",
+                if_match=etag,
+                payload=SAFE_SVG,
+                filename=f"{name}.svg",
+            )
+            assert attached.status == 201, await attached.text()
+            etag = attached.headers["ETag"]
+    else:
+        assert inventory_payload["missingAssets"] == []
+        assert inventory_payload["assets"] == []
+
+    compiled = await fixture.client.post(
+        f"/staff/api/v1/content/revisions/{revision_id}/compile",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=etag),
+    )
+    assert compiled.status == 200, await compiled.text()
+    assert (await compiled.json())["status"] == "ready"
+
+
 async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     content_http: ContentHttpFixture,
 ):

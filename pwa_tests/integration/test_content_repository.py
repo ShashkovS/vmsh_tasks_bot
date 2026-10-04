@@ -1145,6 +1145,116 @@ async def test_uploaded_revision_asset_attach_is_versioned_idempotent_and_public
         )
 
 
+@pytest.mark.parametrize(
+    "kind", [ContentKind.CONDITION, ContentKind.HINT, ContentKind.SOLUTION]
+)
+@pytest.mark.parametrize("action", ["replace", "hide", "rollback"])
+async def test_scheduled_publication_can_be_replaced_hidden_or_rolled_back(
+    content_fixture, kind, action
+):
+    # Real scheduler lineage regression for gl-13; content-recovery-20261004.md.
+    fixture = content_fixture
+    _, lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="scheduled-terminal-course",
+        course_id=fixture.course_id,
+        lesson_number=77,
+        group_id="content-a",
+        group_lesson_public_id="scheduled-terminal-group",
+    )
+    source, first = await _create_source_revision(
+        fixture,
+        group_lesson_id=lesson.id,
+        suffix="scheduled-terminal-first",
+        kind=kind,
+    )
+    second = await _append_ready_revision(
+        fixture,
+        source_id=source.id,
+        suffix="scheduled-terminal-second",
+        expected_previous_revision_number=1,
+    )
+    scheduled = await fixture.repository.create_publication(
+        public_id="scheduled-terminal-pending",
+        group_lesson_id=lesson.id,
+        kind=kind,
+        revision_id=first.id,
+        state=PublicationState.SCHEDULED,
+        scheduled_at=NOW,
+        actor_user_id=fixture.actor_user_id,
+    )
+    activated = await fixture.repository.activate_scheduled_publication(
+        scheduled_public_id=scheduled.public_id,
+        expected_version=scheduled.version,
+        published_public_id="scheduled-terminal-active",
+        actor_user_id=fixture.actor_user_id,
+    )
+    if action == "hide":
+        hidden = await fixture.repository.transition_publication(
+            public_id=activated.public_id,
+            expected_version=activated.version,
+            target=PublicationState.HIDDEN,
+            actor_user_id=fixture.actor_user_id,
+        )
+        assert hidden.state is PublicationState.HIDDEN
+        assert hidden.activated_from_schedule_id == scheduled.id
+        assert hidden.version == activated.version + 1
+    else:
+        with pytest.raises(ContentConflict):
+            await fixture.repository.replace_publication(
+                public_id="scheduled-terminal-invalid",
+                group_lesson_id=lesson.id,
+                kind=kind,
+                revision_id=999_999,
+                state=PublicationState.PUBLISHED,
+                expected_current_public_id=activated.public_id,
+                expected_current_version=activated.version,
+                actor_user_id=fixture.actor_user_id,
+                cancel_scheduled=True,
+            )
+        current = await fixture.repository.get_current_publication(
+            group_lesson_id=lesson.id,
+            kind=kind,
+            state=PublicationState.PUBLISHED,
+        )
+        assert current.public_id == activated.public_id
+        replacement = await fixture.repository.replace_publication(
+            public_id="scheduled-terminal-new",
+            group_lesson_id=lesson.id,
+            kind=kind,
+            revision_id=second.id,
+            state=PublicationState.PUBLISHED,
+            expected_current_public_id=activated.public_id,
+            expected_current_version=activated.version,
+            actor_user_id=fixture.actor_user_id,
+            cancel_scheduled=True,
+        )
+        previous = await fixture.repository.get_publication_context(activated.public_id)
+        assert previous.publication.state is PublicationState.SUPERSEDED
+        assert previous.publication.activated_from_schedule_id == scheduled.id
+        if action == "rollback":
+            restored = await fixture.repository.replace_publication(
+                public_id="scheduled-terminal-restored",
+                group_lesson_id=lesson.id,
+                kind=kind,
+                revision_id=first.id,
+                state=PublicationState.PUBLISHED,
+                expected_current_public_id=replacement.public_id,
+                expected_current_version=replacement.version,
+                actor_user_id=fixture.actor_user_id,
+                cancel_scheduled=True,
+                rollback=True,
+                target_publication_id=activated.id,
+            )
+            assert restored.revision_id == first.id
+    assert (
+        fixture.factory.run_read(
+            lambda c: c.execute("PRAGMA foreign_key_check").fetchall()
+        )
+        == []
+    )
+
+
 async def test_publication_replace_activation_and_rollback_are_atomic(
     content_fixture,
 ):

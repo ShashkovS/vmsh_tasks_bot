@@ -61,6 +61,7 @@ async function uploadReviewAndPublish({
   metadataTitle,
   match,
   kind = 'condition',
+  scheduleFirst = false,
 }: {
   page: Page
   target: ContentTarget
@@ -68,6 +69,7 @@ async function uploadReviewAndPublish({
   metadataTitle?: string
   match: 'insert-new' | 'suggested'
   kind?: ContentKind
+  scheduleFirst?: boolean
 }): Promise<string> {
   const workflow = page.getByTestId(`content-workflow-${kind}`)
   await expect(workflow).toBeVisible()
@@ -144,7 +146,14 @@ async function uploadReviewAndPublish({
 
   // Phase 2 publication contract: an explicit confirmation changes only the
   // selected concrete group-lesson revision; upload/review never auto-publish.
-  await workflow.getByRole('button', { name: 'Опубликовать сейчас' }).click()
+  // content-recovery-20261004.md: replacing a scheduler-activated publication
+  // must retain its provenance and pass the real SQLite lifecycle constraint.
+  if (scheduleFirst) {
+    await workflow.getByLabel('Опубликовать по расписанию').fill('2026-01-01T00:00')
+    await workflow.getByRole('button', { name: 'Запланировать', exact: true }).click()
+  } else {
+    await workflow.getByRole('button', { name: 'Опубликовать сейчас' }).click()
+  }
   const publicationResponsePromise = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
@@ -156,15 +165,17 @@ async function uploadReviewAndPublish({
   const publication = (await publicationResponse.json()) as {
     groupLessonId: string
     revisionId: string
+    state: string
   }
   expect(publication).toMatchObject({
     groupLessonId: target.groupLessonPublicId,
     revisionId: uploadPayload.revisionId,
     kind,
+    state: scheduleFirst ? 'scheduled' : 'published',
   })
   await expect(
     workflow.getByText(new RegExp(`Опубликована версия \\d+ · ${kind}\\.tex`, 'u')),
-  ).toBeVisible()
+  ).toBeVisible({ timeout: 15_000 })
   return uploadPayload.revisionId
 }
 
@@ -321,6 +332,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
     source: latexSource('Первая версия', firstStatement),
     metadataTitle: firstTaskTitle,
     match: testInfo.retry === 0 ? 'insert-new' : 'suggested',
+    scheduleFirst: true,
   })
   const hintStatement = `Аудируемая подсказка для ${attempt}.`
   await uploadReviewAndPublish({
