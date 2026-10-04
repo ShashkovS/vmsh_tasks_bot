@@ -72,5 +72,32 @@ health/25 public checks, старый frontend и NATS PID. ВМШ — штат�
 
 ## Production
 
-Подготовлен backend release; результаты rollout будут добавлены после cutover.
-Учебные материалы агент не загружает и не публикует в production.
+`62e40a16` отправлен в `origin/vmshpwa` и выпущен на обоих порталах:
+ВМШ webhook (**frontend=false, backend=true, migrations=true**) и ручной TLF
+script. [Общий proof](production-proof.json), [ВМШ](production-vmsh.json),
+[TLF](production-tlf.json), [read-only verifier](production-probe.py).
+
+ВМШ backups `vmsh-before-deploy-20261004105308.sqlite3` /
+`vmsh-after-deploy-20261004105326.sqlite3`: 155 product tables идентичны,
+в трёх auth tables ровно один `session.rotated` в 10:53:27.340178 UTC после
+открытия writers. Проверен точный atomic refresh contract; старые auth history
+и остальные записи сохранены, секреты и session identifiers не экспортируются.
+Все публикации gl-13/gl-14 идентичны, cr-71 ready/8 и cr-75 invalid/8 сохранены.
+
+TLF backups `20261004T105350.455794Z` / `20261004T105357.370598Z`:
+**158 product tables / 23163 строки идентичны**, включая 1592 Zoom receipts.
+Credentials digest сохранён, NATS PID не менялся. Миграция на серверной копии
+в release script 0.149 s, только content_revisions DDL. Все writers активны.
+
+Оба портала: 0111/0112/0113 current, integrity ok; прежние 627 FK-дефектов
+сохранены, новых нет. Product DDL hash
+`e3866265c928a175dbb6e749e9a038baf6714e6e10cca41d99d6f3efd3a4ce88`
+совпадает с независимо построенной свежей схемой (inventory product hash
+`aff0238ffb4a4350b672a6999f6e350f838ec4b1c48effd2d3c4f7bb88148b15`
+использует другой формат fingerprint). Production frontend/его provenance
+остались от 9a14443f. По 25 public HTTP checks PASS, maintenance снят.
+Учебные материалы агент не загружал и не публиковал в production.
+
+Известный follow-up вне этого backend выпуска: прежний Large Classroom
+Storybook interaction budget выше 50 ms в текущем окружении; порог и UI
+не менялись, общий fast gate не объявляется полностью PASS.

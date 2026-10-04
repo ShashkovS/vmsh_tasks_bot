@@ -24,7 +24,11 @@ gates PASS. Storybook 355 PASS / один Large Classroom performance FAIL
 (68 / 71.9 ms при лимите 50 ms); frontend не изменён, общий gate не объявляется
 PASS. Серверные репетиции обеих БД сохранили все строки; rollback cd18511e
 с 0113 проходит startup guard. Backend-only выпуск на обоих порталах разрешён
-владельцем; материалы агент не загружает и не публикует в production.
+владельцем и завершён: `62e40a16`, webhook ВМШ и ручной TLF. Схема
+0111/0112/0113 current, integrity ok; по 25 HTTP PASS, сервисы активны.
+TLF — все 158 product tables/23163 строки идентичны; ВМШ — 155 таблиц
+идентичны, в auth tables один точно проверенный обычный refresh.
+Учебные материалы и публикации сохранены; frontend прежний.
 [Доказательства, limitations и release script](../../pwa_tests/reports/content-upload-generation-20261004/README.md).
 
 ## Требования и причины

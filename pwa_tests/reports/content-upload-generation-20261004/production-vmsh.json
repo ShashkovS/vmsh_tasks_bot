@@ -1,0 +1,129 @@
+{
+  "host": "vmsh",
+  "source_revision": "62e40a16de9d0a77e638d0fa262c9242eebbe90c",
+  "release": "9a14443fbc23-20261004093414",
+  "backup_before": "vmsh-before-deploy-20261004105308.sqlite3",
+  "backup_after": "vmsh-after-deploy-20261004105326.sqlite3",
+  "product_tables": 158,
+  "product_rows_before": 610431,
+  "product_rows_after": 610433,
+  "product_rows_identical": false,
+  "changed_product_tables": {
+    "auth_events": {
+      "before_count": 63857,
+      "after_count": 63858
+    },
+    "auth_refresh_consumed_secrets": {
+      "before_count": 52909,
+      "after_count": 52910
+    },
+    "auth_sessions": {
+      "before_count": 4107,
+      "after_count": 4107
+    }
+  },
+  "concurrent_writer_change": {
+    "event_type": "session.rotated",
+    "event_count": 1,
+    "occurred_at": "2026-10-04T10:53:27.340178Z",
+    "exact_atomic_refresh_contract": true,
+    "existing_auth_history_identical": true,
+    "all_other_155_product_tables_identical": true,
+    "exported_credentials_or_session_identifiers": false
+  },
+  "schema_current": true,
+  "ddl_sha256": "e3866265c928a175dbb6e749e9a038baf6714e6e10cca41d99d6f3efd3a4ce88",
+  "integrity": "ok",
+  "existing_fk_errors": 627,
+  "migration_ids": [
+    "0111.current_schema",
+    "0112.scheduled_publication_lifecycle",
+    "0113.content_upload_compiler_generation"
+  ],
+  "publications": [
+    [
+      13,
+      "condition",
+      51,
+      46,
+      "published",
+      1,
+      48
+    ],
+    [
+      13,
+      "hint",
+      60,
+      68,
+      "published",
+      1,
+      null
+    ],
+    [
+      13,
+      "solution",
+      59,
+      64,
+      "scheduled",
+      1,
+      null
+    ],
+    [
+      14,
+      "condition",
+      52,
+      47,
+      "published",
+      1,
+      49
+    ],
+    [
+      14,
+      "hint",
+      62,
+      76,
+      "published",
+      1,
+      null
+    ]
+  ],
+  "gl14_latest_hint": [
+    "cr-76",
+    6,
+    "ready",
+    3
+  ],
+  "cr71": [
+    "cr-71",
+    "ready",
+    7,
+    "vmsh-latex-compiler/8"
+  ],
+  "cr75": [
+    "cr-75",
+    "invalid",
+    7,
+    "vmsh-latex-compiler/8"
+  ],
+  "production_build": {
+    "schemaVersion": 1,
+    "profile": "production",
+    "releaseId": "9a14443fbc23-20261004093414",
+    "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+    "sentryConfigured": true,
+    "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+    "msw": false,
+    "prototype": false,
+    "application": "staff"
+  },
+  "frontend_unchanged": true,
+  "services": {
+    "vmshpwa.service": "active",
+    "gunicorn.vmsh_tasks_bot.service": "active",
+    "vmsh-analytics.timer": "active"
+  },
+  "maintenance_cleared": true,
+  "data_export": "Product rows stayed on server; only counts and digests exported.",
+  "public_http_checks": 25,
+  "deployment_mode": "webhook autodeploy"
+}

@@ -10,8 +10,13 @@ ready/invalid revision; SQLite запрещает изменение immutable h
 static gates PASS. Storybook 355 PASS / один неизменённый Large Classroom
 performance FAIL (68 / 71.9 ms при 50 ms); общий gate не заявляется PASS.
 Rehearsal обеих БД сохранил все 158 product tables/rows, integrity ok;
-совместимый rollback cd18511e проверен. Backend-only выпуск ВМШ/TLF готов
-по предыдущему разрешению владельца; production frontend остаётся прежним.
+совместимый rollback cd18511e проверен. `62e40a16` выпущен на ВМШ штатным
+webhook и на TLF вручную по предыдущему разрешению владельца. Схема
+0111/0112/0113 current, integrity ok, по 25 HTTP PASS, writers активны.
+TLF: все 158 таблиц / 23163 строки идентичны; ВМШ: 155 таблиц идентичны,
+в трёх auth tables один точно проверенный обычный refresh. Все учебные
+материалы/публикации сохранены; production frontend прежний. Единственный
+follow-up вне выпуска — прежний Storybook performance budget Large Classroom.
 [Доказательства](../../../pwa_tests/reports/content-upload-generation-20261004/README.md).
 [Причина и компоненты](../../docs/content-recovery-20261004.md#повторная-загрузка-после-обновления-конвертера--follow-up).
 
