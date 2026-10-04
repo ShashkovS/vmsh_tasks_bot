@@ -1,6 +1,11 @@
 import { Trans } from '@lingui/react/macro'
 import { ChevronDown, ChevronRight, MessageCircleQuestion, PencilLine } from 'lucide-react'
-import { SemanticMathDocument, WorksheetDocument, type FigureToolsRenderer } from '@vmsh/content'
+import {
+  materialProblemContent,
+  SemanticMathDocument,
+  WorksheetDocument,
+  type FigureToolsRenderer,
+} from '@vmsh/content'
 import type { ReactNode } from 'react'
 import type { WebContentBlock, WebContentDocument, WebContentProblem } from '@vmsh/contracts'
 import { WorksheetMaterials } from '@vmsh/product'
@@ -52,35 +57,16 @@ export function StaffWorksheetPreview({
     </span>
   )
   const workspace = (problem: WebContentProblem, selectedPart?: string) => {
-    const selectBlocks = (blocks: WebContentBlock[]): WebContentBlock[] =>
-      blocks
-        .flatMap((block): WebContentBlock[] => {
-          if (block.type === 'subpart')
-            return selectedPart === undefined
-              ? [block]
-              : block.label === selectedPart
-                ? selectBlocks(block.blocks)
-                : []
-          if (block.type === 'callout') return [{ ...block, blocks: selectBlocks(block.blocks) }]
-          if (block.type === 'list') return [{ ...block, items: block.items.map(selectBlocks) }]
-          return [block]
-        })
-        .filter(
-          (block, index, selected) =>
-            !(
-              block.type === 'heading' &&
-              (index + 1 === selected.length || selected[index + 1]?.type === 'heading')
-            ),
-        )
     const material = (source: WebContentDocument | undefined) => {
       const matching = source?.problems.find((item) => item.ordinal === problem.ordinal)
-      return source && matching ? (
+      const selected = matching && materialProblemContent(matching, selectedPart)
+      return source && selected ? (
         <SemanticMathDocument
           document={{
             ...source,
             title: null,
             introduction: [],
-            problems: [{ ...matching, blocks: selectBlocks(matching.blocks) }],
+            problems: [selected],
           }}
           renderFigureTools={source === document ? renderFigureTools : undefined}
           hideProblemHeadings

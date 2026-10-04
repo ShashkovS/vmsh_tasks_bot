@@ -276,4 +276,98 @@ test('figure placement survives reload and publishes only after confirmation', a
     else expect(redPixels).toBeGreaterThan(100)
     await writeFile(testInfo.outputPath(name), png)
   }
+  // hint-preview-empty-materials-20261004.md: exercise the actual file workflow,
+  // excluded solution assets, shared editor, and missing independent materials.
+  await page.goto(`/staff/lessons/${target.groupLessonPublicId}`)
+  const hintWorkflow = page.getByTestId('content-workflow-hint')
+  const hintSource = String.raw`\begin{document}
+\задача Первая задача $x^2=4$. \includegraphics{diagram.svg}
+\пункт Первый пункт. \пункт Второй пункт. \кзадача
+\подсказка \пунктн{а} Совет для первого пункта. \пунктн{б} \кподсказка
+\задача Вторая задача. \includegraphics{diagram.svg}\кзадача
+\решение \includegraphics{excluded-solution.svg}\крешение
+\end{document}`
+  await hintWorkflow.getByLabel('LaTeX-файл').setInputFiles({
+    name: 'hint-figures.tex',
+    mimeType: 'application/x-tex',
+    buffer: Buffer.from(hintSource),
+  })
+  const hintUpload = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/staff/api/v1/content/uploads',
+  )
+  await hintWorkflow.getByRole('button', { name: 'Загрузить и проверить' }).click()
+  const hintUploaded = await hintUpload
+  expect(hintUploaded.status()).toBe(201)
+  const { revisionId: hintRevisionId } = (await hintUploaded.json()) as { revisionId: string }
+  const hintMatching = hintWorkflow.getByRole('region', {
+    name: 'Сопоставление задач',
+    exact: true,
+  })
+  const hintReviewed = hintWorkflow.getByText(
+    'Сопоставление задач подтверждено; метаданные берутся из условия.',
+  )
+  await expect(hintMatching.or(hintReviewed).first()).toBeVisible()
+  if (await hintMatching.isVisible()) {
+    for (const select of await hintMatching.getByRole('combobox').all()) {
+      await select.selectOption({ index: 1 })
+    }
+    await hintMatching.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
+  }
+  await expect(
+    hintWorkflow.getByText('Сопоставление задач подтверждено; метаданные берутся из условия.'),
+  ).toBeVisible()
+  const showHintPreview = hintWorkflow.getByRole('button', { name: 'Показать PWA и Telegram' })
+  if (await showHintPreview.isVisible()) await showHintPreview.click()
+  await expect(hintWorkflow.getByText('Совет для первого пункта.', { exact: true })).toBeVisible()
+  await expect(hintWorkflow.getByRole('button', { name: 'Подсказка', exact: true })).toHaveCount(1)
+  await expect(hintWorkflow.getByRole('button', { name: 'Решение', exact: true })).toHaveCount(0)
+  const hintLayoutRoute = `/staff/api/v1/content/revisions/${hintRevisionId}/figure-layout`
+  const hintLayout = async () =>
+    figureLayoutSchema.parse(await (await page.request.get(hintLayoutRoute)).json())
+  const hintId = (await hintLayout()).figures[0]!.occurrenceId
+  const hintControls = hintWorkflow.locator(`[data-figure-controls="${hintId}"]`).first()
+  await hintControls.getByRole('button', { name: /^Размер и размещение:/ }).click()
+  const hintSize = page.getByRole('dialog', { name: 'Размер и размещение', exact: true })
+  await hintSize.getByRole('spinbutton', { name: 'Ширина, rem' }).fill('10')
+  await hintSize.getByRole('spinbutton', { name: 'Ширина, rem' }).blur()
+  await expect.poll(async () => (await hintLayout()).entries[0]?.widthRem).toBe(10)
+  await hintSize.getByLabel('Размещение', { exact: true }).selectOption('float-left')
+  await expect.poll(async () => (await hintLayout()).entries[0]?.placement).toBe('float-left')
+  await page.keyboard.press('Escape')
+  await hintControls.getByRole('button', { name: /^Действия с рисунком:/ }).click()
+  await page
+    .getByRole('dialog', { name: 'Действия с рисунком', exact: true })
+    .getByRole('button', { name: 'Скрыть рисунок' })
+    .click()
+  await hintWorkflow.getByRole('button', { name: 'Восстановить', exact: true }).click()
+  await expect(hintControls).toBeVisible()
+  await page.reload()
+  await hintWorkflow.getByRole('button', { name: 'Показать PWA и Telegram' }).click()
+  expect((await hintLayout()).entries[0]).toMatchObject({
+    widthRem: 10,
+    placement: 'float-left',
+    hidden: false,
+  })
+  for (const theme of ['light', 'dark']) {
+    await page.setViewportSize({ width: 320, height: 850 })
+    await page.evaluate(
+      (value) => document.documentElement.classList.toggle('dark', value === 'dark'),
+      theme,
+    )
+    await hintWorkflow.screenshot({ path: testInfo.outputPath(`hint-preview-320-${theme}.png`) })
+  }
+  await page.setViewportSize({ width: 1280, height: 850 })
+  await hintWorkflow.getByRole('button', { name: 'Опубликовать сейчас', exact: true }).click()
+  const hintPublishing = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/publications'),
+  )
+  await hintWorkflow.getByRole('button', { name: 'Подтвердить', exact: true }).click()
+  expect((await hintPublishing).status()).toBe(201)
+  await student.emulateMedia({ media: 'screen' })
+  await student.reload()
+  await expect(student.getByRole('button', { name: 'Подсказка', exact: true })).toHaveCount(1)
+  await expect(student.getByRole('button', { name: 'Решение', exact: true })).toHaveCount(0)
 })

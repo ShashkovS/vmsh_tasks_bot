@@ -7,6 +7,7 @@ import hashlib
 from collections.abc import Iterable
 
 from .model import ContentRole, DocumentAst, FigureNode
+from .material_selection import selected_material_nodes
 
 
 def occurrence_id(figure: FigureNode) -> str:
@@ -49,15 +50,7 @@ def selected_material_figures(
     Condition illustrations also appear in hint/solution renderers through
     material_figures. Keep their source spans, including repeated occurrences.
     """
-    result = list(figures(document.introduction))
-    for problem in document.problems:
-        blocks = problem.statement + problem.trailing
-        if role in {ContentRole.HINT, ContentRole.FULL_PREVIEW}:
-            blocks += problem.hint
-        if role in {ContentRole.SOLUTION, ContentRole.FULL_PREVIEW}:
-            blocks += problem.answer + problem.solution
-        result.extend(figures(blocks))
-    return tuple(result)
+    return figures(selected_material_nodes(document, role))
 
 
 def select_material_part(problem: dict, label: str) -> dict:
@@ -476,6 +469,8 @@ def render_layout_telegram(document: dict) -> str:
 
     result = blocks(document.get("introduction", []))
     for problem in document["problems"]:
+        if problem.get("materialAvailable") is False:
+            continue
         title = "Задача " + str(problem.get("taskReference") or problem["ordinal"])
         if problem.get("title"):
             title += ". «" + problem["title"] + "»"

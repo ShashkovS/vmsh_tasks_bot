@@ -185,3 +185,65 @@ it.each(['hint', 'solution'] as const)(
     queryClient.clear()
   },
 )
+
+// docs/hint-preview-empty-materials-20261004.md: condition figures do not create material.
+it('omits missing material buttons while keeping an answer-only solution', () => {
+  const paragraph = (text: string) => ({
+    type: 'paragraph' as const,
+    children: [{ type: 'text' as const, value: text }],
+  })
+  const base: WebContentDocument = {
+    contractVersion: 1,
+    sourceSha256: 'a'.repeat(64),
+    revisionId: 'cr-1',
+    materialKind: 'condition',
+    title: null,
+    introduction: [],
+    problems: [1, 2, 3].map((ordinal) => ({
+      ordinal,
+      sourceItem: String(ordinal),
+      title: null,
+      partLabels: [],
+      blocks: [paragraph(`Условие ${ordinal}`)],
+    })),
+  }
+  const hint: WebContentDocument = {
+    ...base,
+    revisionId: 'cr-2',
+    materialKind: 'hint',
+    problems: [
+      { ...base.problems[0]!, blocks: [paragraph('Совет')], materialAvailable: true },
+      { ...base.problems[1]!, blocks: [paragraph('Рисунок из условия')], materialAvailable: false },
+      { ...base.problems[2]!, blocks: [] },
+    ],
+  }
+  const solution: WebContentDocument = {
+    ...base,
+    revisionId: 'cr-3',
+    materialKind: 'solution',
+    problems: [
+      { ...base.problems[0]!, blocks: [paragraph('Ответ: 42')] },
+      {
+        ...base.problems[1]!,
+        blocks: [{ type: 'heading', level: 3, children: [{ type: 'text', value: 'Решение' }] }],
+      },
+    ],
+  }
+  render(
+    <StaffWorksheetPreview
+      document={base}
+      condition={base}
+      hintDocument={hint}
+      solutionDocument={solution}
+      submissionClosed={false}
+    />,
+  )
+  const first = screen.getByRole('heading', { name: 'Задача 1.' }).closest('section')!
+  expect(within(first).getByRole('button', { name: 'Подсказка' })).toBeTruthy()
+  expect(within(first).getByRole('button', { name: 'Решение' })).toBeTruthy()
+  for (const ordinal of [2, 3]) {
+    const task = screen.getByRole('heading', { name: `Задача ${ordinal}.` }).closest('section')!
+    expect(within(task).queryByRole('button', { name: 'Подсказка' })).toBeNull()
+    expect(within(task).queryByRole('button', { name: 'Решение' })).toBeNull()
+  }
+})

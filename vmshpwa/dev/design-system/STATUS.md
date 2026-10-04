@@ -1,5 +1,18 @@
 # Design-system status
 
+## 2026-10-04 — Превью подсказок и пустые материалы
+
+Начат согласованный владельцем correction существующего content flow: одинаковые
+preview/editor hints и solutions, без кнопок отсутствующих материалов у Student
+и в Staff preview. Ready hints скрывались из-за assets другого раздела.
+[Требования, причина, компоненты и проверки](../../docs/hint-preview-empty-materials-20261004.md).
+API source presence и общий Staff preview реализованы; focused regression проходит.
+Текущая фаза — исправление pages/flows; новая фаза дизайна не начинается.
+Gates: 2839 Python / 7 SKIP, 1032 frontend, 356 Storybook, 6 Chromium cases PASS.
+Исправлено ожидание auto-match в новой E2E фикстуре; повторён только её режим.
+[Receipts и narrow light/dark preview](../../../pwa_tests/reports/hint-preview-empty-materials-20261004/README.md).
+Подготовлен guarded выпуск на ВМШ/TLF; production пока не обновлён.
+
 ## 2026-10-04 — публикация и диагностика материалов
 
 Готово исправление Phase 2: ошибка под подтверждением с одним live announcement,

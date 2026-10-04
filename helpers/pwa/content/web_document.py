@@ -15,6 +15,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from .figure_layout import material_figures, occurrence_id
+from .material_selection import has_material
 
 from .model import (
     AnnouncementKind,
@@ -454,6 +455,8 @@ def render_web_document(
         else {}
     )
     for problem in document.problems:
+        if role in {ContentRole.HINT, ContentRole.SOLUTION} and not has_material(problem, role):
+            continue
         blocks = _problem_blocks(problem, role, assets=mapping)
         if problem.ordinal in detached:
             blocks = _blocks(detached[problem.ordinal], assets=mapping) + blocks
@@ -488,6 +491,13 @@ def render_web_document(
             ),
             "blocks": blocks,
         }
+        if role in {ContentRole.HINT, ContentRole.SOLUTION}:
+            rendered_problem["materialAvailable"] = True
+            if rendered_problem["partLabels"]:
+                rendered_problem["materialPartLabels"] = [
+                    label for label in rendered_problem["partLabels"]
+                    if has_material(problem, role, label)
+                ]
         if preamble_blocks:
             rendered_problem["preambleBlocks"] = preamble_blocks
         problems.append(rendered_problem)

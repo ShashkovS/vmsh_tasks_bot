@@ -11,6 +11,7 @@ import './content.css'
 export { katexRenderLimits, katexRenderOptions, MathExpression } from './katex-rendering'
 export { usePublishedContentReplacement } from './content-update'
 export { MathDocument, SemanticMathDocument } from './math-document'
+export { materialProblemContent } from './material-content'
 export {
   ContentNetworkError,
   ContentProtocolError,

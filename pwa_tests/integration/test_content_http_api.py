@@ -3057,6 +3057,19 @@ async def test_identical_terminal_source_upload_after_compiler_upgrade(
     )
     assert compiled.status == 200, await compiled.text()
     assert (await compiled.json())["status"] == "ready"
+    # The complete workflow uses diagnostics/history to decide whether to show
+    # previews. Excluded solution assets must not hide a ready hint again.
+    assert (await compiled.json())["missingAssets"] == []
+    diagnostics = await fixture.client.get(
+        f"/staff/api/v1/content/uploads/{new_payload['revisionId']}/diagnostics",
+        cookies=_cookie(fixture, "admin"), headers=_headers(),
+    )
+    assert (await diagnostics.json())["missingAssets"] == []
+    layout = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{new_payload['revisionId']}/figure-layout",
+        cookies=_cookie(fixture, "admin"), headers=_headers(),
+    )
+    assert layout.status == 200, await layout.text()
     assert await repository.get_revision_context(old_payload["revisionId"]) == old_context
     current_upload = await _upload(
         fixture, group_lesson=fixture.group_lesson_a, kind=kind,
@@ -3203,6 +3216,18 @@ async def test_combined_source_asset_recovery_matches_selected_material(
     )
     assert compiled.status == 200, await compiled.text()
     assert (await compiled.json())["status"] == "ready"
+
+    assert (await compiled.json())["missingAssets"] == []
+    diagnostics = await fixture.client.get(
+        f"/staff/api/v1/content/uploads/{revision_id}/diagnostics",
+        cookies=_cookie(fixture, "admin"), headers=_headers(),
+    )
+    assert (await diagnostics.json())["missingAssets"] == []
+    layout = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{revision_id}/figure-layout",
+        cookies=_cookie(fixture, "admin"), headers=_headers(),
+    )
+    assert layout.status == 200, await layout.text()
 
 
 async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
@@ -6431,3 +6456,81 @@ async def test_start_fresh_problem_set_http_creates_independent_ids(content_http
         headers=_headers(unsafe=True, if_match=old_response.headers["ETag"]),
     )
     assert blocked.status == 409
+
+
+@pytest.mark.parametrize("legacy_wire", [False, True])
+async def test_missing_hint_and_solution_are_unavailable_without_reveal_audit(
+    content_http: ContentHttpFixture, monkeypatch: pytest.MonkeyPatch, legacy_wire: bool,
+):
+    """New generations and old publications use the source presence contract."""
+    from helpers.pwa.content import compiler as compiler_module
+
+    fixture = content_http
+    window = await fixture.client.post(
+        f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/lesson-window",
+        json={"opensLocalTime": _local_time(NOW - timedelta(hours=1)),
+              "submissionClosesLocalTime": _local_time(NOW - timedelta(minutes=1)),
+              "businessTimezone": "Europe/Moscow", "confirmSubmissionCutoff": True,
+              "hintScheduledLocalTime": None, "solutionScheduledLocalTime": None},
+        cookies=_cookie(fixture, "admin"), headers=_headers(unsafe=True, if_match='"none"'),
+    )
+    assert window.status == 201, await window.text()
+    original_render = compiler_module.render_web_document
+
+    def render_legacy(document, **kwargs):
+        rendered = original_render(document, **kwargs)
+        if kwargs["role"] in {"hint", "solution"}:
+            for problem in rendered["problems"]:
+                problem.pop("materialAvailable", None)
+                problem.pop("materialPartLabels", None)
+            # Earlier renderers could prepend condition illustrations to empty material.
+            rendered["problems"].insert(1, {
+                "ordinal": 2, "sourceItem": "2", "title": None, "partLabels": [],
+                "blocks": [{"type": "paragraph", "children": [
+                    {"type": "text", "value": "Иллюстрация из условия"},
+                ]}],
+            })
+        return rendered
+
+    if legacy_wire:
+        monkeypatch.setattr(compiler_module, "render_web_document", render_legacy)
+    source = (
+        r"\задача Первая.\кзадача\подсказка Совет.\кподсказка\ответ 42\кответ"
+        r"\задача Вторая.\кзадача\подсказка % пусто" + "\n" + r"\кподсказка"
+        r"\задача Третья.\кзадача\решение Доказательство.\крешение"
+    )
+    for kind in ("condition", "hint", "solution"):
+        revision, _ = await _upload_and_compile(
+            fixture, group_lesson=fixture.group_lesson_a, kind=kind,
+            filename=f"empty/{kind}.tex", source=source,
+        )
+        publication = await _publish(
+            fixture, group_lesson=fixture.group_lesson_a, kind=kind,
+            revision_id=revision["revisionId"],
+        )
+        assert publication.status == 201, await publication.text()
+    listing = await fixture.client.get(
+        f"/student/api/v1/courses/c-1/lessons/{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"), headers=_headers(),
+    )
+    assert listing.status == 200, await listing.text()
+    problems = (await listing.json())["problems"]
+    assert len(problems) == 3
+    assert [p["materials"]["hint"]["status"] for p in problems] == ["available", "unavailable", "unavailable"]
+    assert [p["materials"]["solution"]["status"] for p in problems] == ["available", "unavailable", "available"]
+    for index, kind in ((1, "hint"), (1, "solution"), (2, "hint")):
+        denied = await _student_reveal(
+            fixture, group_lesson=fixture.group_lesson_a,
+            problem_id=problems[index]["problemId"], kind=kind,
+        )
+        assert denied.status == 404, await denied.text()
+    assert await fixture.factory.run_read_async(lambda db: (
+        db.execute("SELECT count(*) AS total FROM hint_reveals").fetchone()["total"],
+        db.execute("SELECT count(*) AS total FROM solution_reveals").fetchone()["total"],
+    )) == (0, 0)
+    answer_only = await _student_reveal(
+        fixture, group_lesson=fixture.group_lesson_a,
+        problem_id=problems[0]["problemId"], kind="solution",
+    )
+    assert answer_only.status == 200, await answer_only.text()
+    assert "42" in json.dumps(await answer_only.json())

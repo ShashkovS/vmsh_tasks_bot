@@ -58,6 +58,10 @@ from helpers.pwa.content import (
     compile_latex,
 )
 from helpers.pwa.content.model import canonical_json
+from helpers.pwa.content.material_selection import (
+    annotate_material_availability,
+    selected_material_nodes,
+)
 from helpers.pwa.content.figure_layout import FigureLayoutError, selected_material_figures
 from helpers.pwa.content.telegram import TelegramMarkupError
 from helpers.pwa.content.metadata_generation import (
@@ -862,9 +866,9 @@ def _canonical_ast(value: object) -> object:
         raise ContentRepositoryError("compiler AST is invalid") from error
 
 
-def _missing_assets(value: object) -> list[str]:
+def _missing_assets(value: object, *, role: ContentRole) -> list[str]:
     missing: set[str] = set()
-    stack = [value]
+    stack = [selected_material_nodes(value, role)] if isinstance(value, dict) else []
     visited = 0
     while stack:
         current = stack.pop()
@@ -903,7 +907,9 @@ def _revision_payload(context: ContentRevisionContext) -> dict[str, object]:
         "compileLeaseExpiresAt": _iso(revision.compile_lease_expires_at),
         "compileAttempt": revision.compile_attempt_count,
         "diagnostics": localize_diagnostics(list(revision.diagnostics)),
-        "missingAssets": _missing_assets(revision.canonical_document),
+        "missingAssets": _missing_assets(
+            revision.canonical_document, role=_content_role(context.source.kind),
+        ),
     }
 
 
@@ -1562,6 +1568,7 @@ def _web_document(
     *,
     revision_public_id: str,
     kind: ContentKind,
+    canonical: object = None,
 ) -> Mapping[str, object]:
     content = derivative.content_text
     if (
@@ -1580,7 +1587,7 @@ def _web_document(
         or document.get("materialKind") != kind.value
     ):
         raise ContentRepositoryError("stored web document is invalid")
-    return document
+    return annotate_material_availability(document, canonical, _content_role(kind))
 
 
 def _set_figure_scale(
@@ -2507,6 +2514,7 @@ async def content_preview(request: web.Request) -> web.Response:
             derivative,
             revision_public_id=context.revision.public_id,
             kind=context.source.kind,
+            canonical=context.revision.canonical_document,
         )
         _apply_figure_scales(
             document,
@@ -2525,7 +2533,10 @@ async def content_preview(request: web.Request) -> web.Response:
         }
     else:
         from helpers.pwa.content.figure_layout import apply_figure_layout, render_layout_telegram
-        document = _web_document(derivative, revision_public_id=context.revision.public_id, kind=context.source.kind)
+        document = _web_document(
+            derivative, revision_public_id=context.revision.public_id,
+            kind=context.source.kind, canonical=context.revision.canonical_document,
+        )
         _apply_figure_scales(document, await repository.get_figure_scales(revision_id=context.revision.id))
         await repository.apply_problem_titles(document=document, revision_id=context.revision.id)
         layout = await repository.get_figure_layout(revision_id=context.revision.id)
@@ -2556,6 +2567,7 @@ async def content_figure_layout(request: web.Request) -> web.Response:
         derivative,
         revision_public_id=context.revision.public_id,
         kind=context.source.kind,
+        canonical=context.revision.canonical_document,
     )
     _apply_figure_scales(
         document, await repository.get_figure_scales(revision_id=context.revision.id)
@@ -2668,6 +2680,7 @@ async def put_content_figure_scale(request: web.Request) -> web.Response:
         derivative,
         revision_public_id=context.revision.public_id,
         kind=context.source.kind,
+        canonical=context.revision.canonical_document,
     )
     _apply_figure_scales(
         document,

@@ -292,6 +292,10 @@ export const webContentProblemSchema = z
   .object({
     ordinal: z.number().int().positive(),
     partLabels: z.array(z.string().max(2000)).optional(),
+    // Source presence, including old publication read projections; see
+    // docs/hint-preview-empty-materials-20261004.md and StaffWorksheetPreview.
+    materialAvailable: z.boolean().optional(),
+    materialPartLabels: z.array(z.string().max(2000)).optional(),
     sourceItem: z.string().trim().min(1).max(80).nullable(),
     taskReference: z.string().trim().min(1).max(80).optional(),
     title: z.string().trim().min(1).max(500).nullable(),

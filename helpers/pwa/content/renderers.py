@@ -30,6 +30,7 @@ from .model import (
     TextNode,
 )
 from .figure_layout import material_figures
+from .material_selection import has_material
 from .telegram import TELEGRAM_BOT_API_DIALECT, sanitize_telegram_rich_html
 
 
@@ -307,6 +308,7 @@ def render_web_html(
         document = replace(document, introduction=(), problems=tuple(
             replace(problem, statement=detached[problem.ordinal], trailing=())
             for problem in document.problems
+            if has_material(problem, role)
         ))
     urls = asset_urls or {}
     return (
@@ -331,6 +333,7 @@ def render_telegram_rich_html(
         document = replace(document, introduction=(), problems=tuple(
             replace(problem, statement=detached[problem.ordinal], trailing=())
             for problem in document.problems
+            if has_material(problem, role)
         ))
     urls = asset_urls or {}
     generated = _blocks(document.introduction, target="telegram", asset_urls=urls)

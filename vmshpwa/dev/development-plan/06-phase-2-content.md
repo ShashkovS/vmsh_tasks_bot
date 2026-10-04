@@ -1,5 +1,7 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+2026-10-04: начато исправление [превью подсказок и пустых материалов](../../docs/hint-preview-empty-materials-20261004.md). Проверка включает полный upload/preview/edit/publish/read flow; assets только выбранного раздела, пустые hint/answer+solution не создают кнопок.
+
 2026-10-04: follow-up повторной загрузки после compiler upgrade выпущен на ВМШ/TLF (`62e40a16`, webhook/manual): 0113 сохраняет terminal revision, новая compiler generation создаёт новый номер. Python 2832, frontend 1028, Chromium content 2 PASS; отдельно зафиксирован неизменённый Storybook performance blocker. Rehearsal обеих БД и schema-compatible rollback PASS. По 25 HTTP PASS, 0113/current/integrity ok; учебные материалы сохранены. [Причина, migration 0113 и регрессии](../../docs/content-recovery-20261004.md#повторная-загрузка-после-обновления-конвертера--follow-up).
 
 2026-10-04: [исправление lifecycle публикаций, рисунков и diagnostics](../../docs/content-recovery-20261004.md) выпущено на ВМШ/TLF после fast gate и rehearsal. По 25 HTTP PASS и authenticated Staff smoke; публикации сохранены, материалы публикует пользователь.

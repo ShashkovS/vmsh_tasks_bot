@@ -1766,6 +1766,7 @@ visible_problem AS (
 hint_state AS (
     SELECT visible.problem_id,
            publication.public_id AS hint_publication_id,
+           problem_match.source_ordinal AS hint_source_ordinal,
            1 AS hint_available,
            CASE WHEN reveal.id IS NULL THEN 'available' ELSE 'revealed' END AS hint_state
     FROM visible_problem AS visible
@@ -1794,6 +1795,7 @@ hint_state AS (
 solution_state AS (
     SELECT visible.problem_id,
            publication.public_id AS solution_publication_id,
+           problem_match.source_ordinal AS solution_source_ordinal,
            1 AS solution_available,
            CASE WHEN reveal.id IS NULL THEN 'available' ELSE 'revealed' END AS solution_state
     FROM visible_problem AS visible
@@ -1907,7 +1909,9 @@ SELECT published_scope.group_lesson_public_id,
              AND previous_hint.problem_id = visible_problem.problem_id
        ) AS hint_confirmation_required,
        hint_state.hint_publication_id,
+       hint_state.hint_source_ordinal,
        solution_state.solution_publication_id,
+       solution_state.solution_source_ordinal,
        hint_state.hint_available,
        hint_state.hint_state,
        solution_state.solution_available,
@@ -2488,8 +2492,56 @@ class PwaContentRepository:
             if not rows:
                 raise ContentNotFound("published student problem list does not exist")
             first = rows[0]
+            # Source-based read projection also fixes existing publications.
+            # No recompile/audit is needed; see hint-preview-empty-materials-20261004.md.
+            from helpers.pwa.content.material_selection import (
+                annotate_material_availability, web_problem_has_material,
+            )
+            publication_ids = {
+                row[f"{kind}_publication_id"] for row in rows for kind in ("hint", "solution")
+                if row[f"{kind}_publication_id"] is not None
+            }
+            materials = {}
+            if publication_ids:
+                placeholders = ",".join("?" for _ in publication_ids)
+                material_rows = connection.execute(
+                    "SELECT publication.public_id, publication.kind, revision.canonical_json, "
+                    "COALESCE(frozen.document_json, derivative.content_text) AS document_json "
+                    "FROM lesson_publications publication "
+                    "JOIN content_revisions revision ON revision.id = publication.revision_id "
+                    "JOIN content_derivatives derivative ON derivative.revision_id = revision.id "
+                    "AND derivative.kind = 'web_ast' "
+                    "LEFT JOIN publication_figure_layouts frozen ON frozen.publication_id = publication.id "
+                    f"WHERE publication.public_id IN ({placeholders}) "
+                    "ORDER BY derivative.created_at, derivative.id",
+                    tuple(publication_ids),
+                ).fetchall()
+                for material_row in material_rows:
+                    try:
+                        document = json.loads(material_row["document_json"])
+                        canonical = json.loads(material_row["canonical_json"]) if material_row["canonical_json"] else None
+                    except (json.JSONDecodeError, RecursionError) as error:
+                        raise ContentRepositoryError("stored web document is invalid") from error
+                    if not isinstance(document, dict) or not isinstance(document.get("problems"), list):
+                        raise ContentRepositoryError("stored web document is invalid")
+                    annotate_material_availability(document, canonical, material_row["kind"])
+                    materials[material_row["public_id"]] = {
+                        problem["ordinal"]: problem for problem in document["problems"]
+                    }
+
+            def summary(row):
+                result = _student_problem_summary(row)
+                for kind in ("hint", "solution"):
+                    problem = materials.get(row[f"{kind}_publication_id"], {}).get(row[f"{kind}_source_ordinal"])
+                    if problem is None or not web_problem_has_material(problem, str(row["source_item"])):
+                        result = replace(result, **{
+                            f"{kind}_state": "unavailable", f"{kind}_publication_id": None,
+                            **({"hint_confirmation_required": False} if kind == "hint" else {}),
+                        })
+                return result
+
             problems = tuple(
-                _student_problem_summary(row)
+                summary(row)
                 for row in rows
                 if row["problem_id"] is not None
             )
@@ -4514,6 +4566,7 @@ class PwaContentRepository:
         def read(connection):
             row = connection.execute(
                 "SELECT publication.*, revision.public_id AS revision_public_id, "
+                "revision.canonical_json, "
                 "COALESCE((SELECT document_json FROM publication_figure_layouts WHERE publication_id = publication.id), derivative.content_text) AS web_document "
                 "FROM group_lessons AS group_lesson "
                 "JOIN lesson_publications AS publication "
@@ -4559,6 +4612,10 @@ class PwaContentRepository:
             )
             _overlay_problem_titles(connection, document, int(row["revision_id"]))
             document = _published_figure_layout(connection, document, int(row["id"]))
+            from helpers.pwa.content.material_selection import annotate_material_availability
+            annotate_material_availability(
+                document, json.loads(row["canonical_json"]) if row["canonical_json"] else None, kind,
+            )
             from models.pwa.problem_release import filter_released_document
             from db_methods.pwa.problem_release import version as release_version
 
@@ -4645,6 +4702,7 @@ class PwaContentRepository:
             row = connection.execute(
                 "SELECT publication.*, "
                 "material_revision.public_id AS revision_public_id, "
+                "material_revision.canonical_json, "
                 "COALESCE((SELECT document_json FROM publication_figure_layouts WHERE publication_id = publication.id), derivative.content_text) AS web_document, "
                 "material_problem.source_ordinal AS material_source_ordinal, "
                 "condition_problem.source_item AS selected_source_item, "
@@ -4724,6 +4782,8 @@ class PwaContentRepository:
                 if isinstance(problem, dict)
                 and problem.get("ordinal") == source_ordinal
             ]
+            if not selected:
+                raise ContentNotFound("published problem material is empty")
             if len(selected) != 1:
                 raise ContentRepositoryError("published problem material is ambiguous")
             selected_document = dict(document)
@@ -4731,6 +4791,14 @@ class PwaContentRepository:
             from helpers.pwa.content.figure_layout import select_material_part
 
             selected_document["problems"] = [select_material_part(selected[0], str(row["selected_source_item"]))]
+            from helpers.pwa.content.material_selection import (
+                annotate_material_availability, web_problem_has_material,
+            )
+            annotate_material_availability(
+                selected_document, json.loads(row["canonical_json"]) if row["canonical_json"] else None, kind,
+            )
+            if not web_problem_has_material(selected_document["problems"][0], str(row["selected_source_item"])):
+                raise ContentNotFound("published problem material is empty")
 
             publication = _publication(row)
             cursor = connection.execute(
