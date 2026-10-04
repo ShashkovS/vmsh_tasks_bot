@@ -47,4 +47,24 @@ Before release (12:25:30–12:25:36 UTC), CPU was 98.68–99.34%, read queue
 [Runtime sample](../../pwa_tests/reports/cpu-incident-20261004/runtime-before.json).
 
 The 15-case rehearsal median is 143.94 → 5.695 ms; VM steps 3,130,000 →
-158,000. Production rollout is the remaining verification step.
+158,000.
+
+## Production recovery
+
+`bdfcf9a2b523b37130af6fd11f3bb5070d568674` was pushed to `vmshpwa` and
+deployed on both hosts at 12:31 UTC. VMSh webhook reports
+`frontend=false backend=true migrations=false`; Student/Family/Staff runtime
+checks pass, PWA/Telegram/analytics services are active, maintenance is cleared.
+TLF's guarded manual release took four seconds, restarted only PWA, retained
+the frontend/credentials/schema and NATS/Zoom processes. Both portals pass 25
+read-only public HTTP checks. TLF backup integrity is `ok` before and after;
+1593 Zoom receipts remain present. No production educational mutation/reveal
+was used in validation.
+
+Immediately after restart, CPU was 24.13% during an 18 completed-request/s
+burst, then 3.52–8.01%; all read/write queues were zero. At 12:32:58–12:33:04
+UTC CPU remained 6.70–8.47%, both queues zero, 21 WebSockets connected.
+These are ordinary-traffic samples, not a controlled equal-throughput load
+test. The separate same-snapshot SQL comparison establishes the improvement
+at identical inputs.
+[Release proof and runtime receipts](../../pwa_tests/reports/cpu-incident-20261004/README.md).

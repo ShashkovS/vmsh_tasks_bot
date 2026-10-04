@@ -18,4 +18,20 @@ All dependency/format/types/lint/i18n checks passed, source digest unchanged.
 
 The initial focused command passed 181 checks with one HTTP fixture blocked by
 sandbox loopback restrictions; the full gate passed that fixture with the
-authorized isolated server. Production release results follow after execution.
+authorized isolated server.
+
+`bdfcf9a2` is deployed on VMSh by the webhook and TLF Prep manually. Both portals
+pass 25 public read-only HTTP checks. [VMSh proof](production-vmsh.json),
+[TLF proof](production-tlf.json), [TLF deploy log](deploy-tlf.log),
+[VMSh HTTP smoke](http-vmsh.log).
+
+VMSh [before](runtime-before.json): CPU 98.68–99.34%, read queue 178–361,
+write queue zero, completed HTTP rate 27–55/s. [After](runtime-after.json): CPU
+24.13% at an initial 18/s burst, then 3.52–8.01%; queues zero.
+[A later sample](runtime-after-steady.json): CPU 6.70–8.47%, queues zero,
+21 WebSockets connected. These ordinary-traffic samples have different request
+rates; the same-snapshot SQL rehearsal supplies the equal-input comparison.
+
+Frontend/dependencies/schema are unchanged. TLF restarts only PWA; NATS and Zoom
+PIDs are preserved. Before/after backup integrity is `ok`, with 1593 Zoom
+receipts. No production content/publication/grade mutation was performed.

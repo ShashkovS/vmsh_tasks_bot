@@ -9,7 +9,9 @@
 не меняются. [Причина, компоненты, gates](../../docs/cpu-incident-20261004.md).
 Fast gate PASS: Python 2840 / 7 SKIP, frontend 1032, Storybook 356,
 Chromium content/submissions 5; 15 production SQL comparisons identical.
-Исправление готово к backend rollout и повторному runtime замеру.
+Выпущен `bdfcf9a2`: ВМШ webhook, TLF manual backend-only. По 25 HTTP PASS;
+CPU до 99%, после 6.7–8.5%, read/write queues zero, 21 WebSocket connected.
+Frontend/schema/оценки/публикации сохранены; [receipts](../../../pwa_tests/reports/cpu-incident-20261004/README.md).
 
 ## 2026-10-04 — Превью подсказок и пустые материалы
 

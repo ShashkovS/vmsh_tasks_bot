@@ -7,7 +7,9 @@ Backend correction в текущем content flow; UI/design остаются п
 Read-only rehearsal сохраняет строки и сокращает 148–174 → 8–10 мс.
 Реализация и проверки начаты; [incident record](../../docs/cpu-incident-20261004.md).
 Fast gate PASS: Python 2840 / 7 SKIP, frontend 1032, Storybook 356,
-Chromium content/submissions 5. Выпуск и runtime proof — следующий шаг.
+Chromium content/submissions 5. Выпущен `bdfcf9a2` на ВМШ/TLF; по 25 HTTP PASS,
+последний CPU 6.7–8.5%, read/write queues zero, 21 WebSocket connected.
+Прежний production frontend сохранён; [release proof](../../../pwa_tests/reports/cpu-incident-20261004/README.md).
 
 ## 2026-10-04 — Превью подсказок и пустые материалы
 
