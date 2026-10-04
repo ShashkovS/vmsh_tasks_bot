@@ -5,9 +5,13 @@
 Готово исправление Phase 2: ошибка под подтверждением с одним live announcement,
 серверной причиной и request ID; подробная диагностика пунктов. Storybook
 и реальный E2E прошли fast gate `content figure-layout`: Storybook 356,
-Chromium 6, UI осмотрен в браузере. Начат выпуск только ВМШ;
-публикацию материалов выполняет владелец.
+Chromium 6, UI осмотрен в браузере. Коммит `9a14443f` отправлен в
+`origin/vmshpwa` после явного разрешения владельца и выпущен на ВМШ/TLF.
+Production provenance четырёх приложений и authenticated Staff pages
+проверены; по 25 публичных HTTP PASS, прежние hashed assets сохранены.
+Публикацию материалов выполняет владелец.
 [Требования, компоненты и проверки](../../docs/content-recovery-20261004.md).
+[Доказательства выпуска](../../../pwa_tests/reports/content-recovery-20261004/production-proof.json).
 
 ## 2026-10-04 — graceful shutdown SymPy worker
 

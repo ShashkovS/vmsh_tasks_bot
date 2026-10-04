@@ -35,8 +35,9 @@
 fast gate `content figure-layout`: реальный E2E сначала активирует условие
 расписанием, затем заменяет его и выполняет откат. Storybook проверяет ошибку
 под подтверждением, один live announcement и отсутствие ложного refetch.
-После PASS — выпуск ВМШ.
-TLF в этот выпуск не входит. Учебные материалы публикует пользователь; текущая
+После PASS владелец явно разрешил push, автодеплой ВМШ и ручной выпуск TLF
+на `prep.leaders.tech`. Основная deployment-ветка репозитория — `vmshpwa`.
+Учебные материалы публикует пользователь; текущая
 версия 6 подсказок на `gl-14` и старая invalid `cr-75` автоматически не меняются.
 Перед выпуском нужны backup, migration rehearsal, совместимый rollback source
 с сохранённой 0112, штатный guarded deploy и read-only browser/HTTP smoke.
@@ -55,3 +56,14 @@ Fast gate `content figure-layout` завершён: 2823 Python PASS / 7 SKIP,
 FK-дефектов совпали, новых нет. Зависимые триггеры и индексы сохранены.
 Совместимый rollback `43b7d2f` сохраняет 0112: прежний backend проходит
 startup guard и заменяет активированную расписанием публикацию.
+
+## Production
+
+`9a14443f` отправлен в `origin/vmshpwa` и выпущен на ВМШ штатным webhook,
+на TLF — [ручным script](../../pwa_tests/reports/content-recovery-20261004/deploy-tlf.sh).
+Migration 0112 current, integrity `ok`, все учебные материалы сохранены.
+TLF: 158 таблиц / 18 786 строк идентичны, включая 1421 Zoom receipt;
+ВМШ: 155 таблиц идентичны, в auth tables подтверждён ровно один обычный
+refresh после открытия writers. По 25 public HTTP checks и authenticated
+Staff browser smoke PASS, production bundles и старые assets проверены.
+[Backups, rollback и безопасные доказательства](../../pwa_tests/reports/content-recovery-20261004/README.md#production--4-октября-2026).

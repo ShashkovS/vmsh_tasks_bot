@@ -6,9 +6,18 @@
 согласованный выбор рисунков по виду материала, подробные списки пунктов и
 ошибка под подтверждением. Fast gate `content figure-layout` PASS: Python
 2823 / 7 SKIP, frontend 1028, Storybook 356, Chromium 6. Server rehearsal
-сохранила 158 таблиц / 606 819 строк; совместимый rollback проверен. Начат
-штатный выпуск только ВМШ. План проверок и границы выпуска:
+сохранила 158 таблиц / 606 819 строк; совместимый rollback проверен.
+Владелец явно разрешил GitHub push, автодеплой ВМШ и ручной деплой TLF.
+`9a14443f` выпущен на обоих порталах: штатный webhook ВМШ и ручной TLF
+cutover; совместимый rollback `43b7d2f` отправлен в отдельную ветку.
+По 25 HTTP PASS, authenticated Staff smoke PASS, схема current / integrity ok.
+TLF: 158 таблиц / 18 786 строк идентичны, включая 1421 Zoom receipt;
+ВМШ: 155 таблиц идентичны, в трёх auth tables ровно один подтверждённый
+атомарный refresh после открытия writers. Все публикации `gl-13`/`gl-14`
+сохранились; материалы публикует пользователь.
+План проверок и границы выпуска:
 [content-recovery-20261004.md](../../docs/content-recovery-20261004.md).
+[Доказательства выпуска](../../../pwa_tests/reports/content-recovery-20261004/production-proof.json).
 
 ## 2026-10-04 — graceful shutdown SymPy worker
 

@@ -1,6 +1,6 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
-2026-10-04: начато [исправление lifecycle публикаций, рисунков и diagnostics](../../docs/content-recovery-20261004.md). Выпуск только ВМШ; материалы публикует пользователь.
+2026-10-04: [исправление lifecycle публикаций, рисунков и diagnostics](../../docs/content-recovery-20261004.md) выпущено на ВМШ/TLF после fast gate и rehearsal. По 25 HTTP PASS и authenticated Staff smoke; публикации сохранены, материалы публикует пользователь.
 
 2026-10-04: [совместный выпуск live-превью рисунков и оптимизации](../../../pwa_tests/reports/combined-optimization-figures-20261004/README.md) — fast gate и rollout обоих порталов завершены; 210 с проверок, данные сохранены.
 

@@ -359,3 +359,22 @@ with the original bytes/MIME, then deleted. No production posts/submissions/Zoom
 events were created. VMSH S3 probe was not run because the agent SSH user cannot
 read production configuration. [Requirements and release details](../../../vmshpwa/docs/rich-file-attachments.md#production--выпуск-2-октября-2026),
 [safe machine-readable proof](../../../pwa_tests/reports/rich-file-attachments/production-proof.json).
+
+## Content publication and diagnostics — 2026-10-04
+
+Owner explicitly authorized manual TLF deployment alongside VMSh autodeploy.
+Source `9a14443fbc231617929536af3d5f17c3124eb7b9` and static
+`tlfprep-20261004-content-recovery-9a14443fbc23` are active. Migration 0112
+allows superseded/hidden publications to retain their schedule provenance.
+[Requirements and implementation](../../../vmshpwa/docs/content-recovery-20261004.md),
+[guarded manual deploy](../../../pwa_tests/reports/content-recovery-20261004/deploy-tlf.sh).
+
+Rehearsal and stopped-writer comparison preserved all 158 product tables /
+18,786 rows, including 1,421 raw Zoom receipts; only `lesson_publications` DDL
+changed. Backups `20261004T093736.871407Z` / `20261004T093804.117638Z` have
+integrity ok. Schema current, 25 public HTTP checks and authenticated Staff
+overview passed; four production artifacts and 588 prior assets verified.
+Credentials/NATS PID unchanged, PWA/Zoom/analytics active, maintenance cleared.
+Compatible code rollback `43b7d2f` retains 0112; never restore an older DB after
+writers reopen or remove migration history. Record and safe proof:
+[production-proof.json](../../../pwa_tests/reports/content-recovery-20261004/production-proof.json).
