@@ -1,5 +1,23 @@
 # SQLite: ограничение параллельной работы
 
+## Student problem list CPU — 4 October 2026
+
+Both VMSh interactive readers repeatedly materialized the global
+`teacher_result_choices` projection; more than 300 queued operations caused
+5–8 second API delays. The same query was slow before the hint-preview release.
+[`effective_results.py:STUDENT_EFFECTIVE_RESULTS_CTES`](../../db_methods/pwa/effective_results.py)
+restricts written/manual candidates to the current student before aggregation.
+[`content.py:_STUDENT_PROBLEM_LIST_SELECT`](../../db_methods/pwa/content.py)
+materializes its small published scope, visible tasks and logical membership
+once. No grade, publication or schema changes.
+
+The scoped projection follows the `teacher_result_choices` / `effective_results`
+views in `migrations/0111.current_schema.sql`. Changes to precedence must update
+both and pass the entire-grade parity matrix in
+[`test_written_result_precedence.py`](../../pwa_tests/integration/test_written_result_precedence.py).
+The actual problem-list plan also rejects global scans of result/manual rows.
+[Incident, read-only rehearsal and release progress](cpu-incident-20261004.md).
+
 ## Изоляция Staff statistics — 22 сентября 2026
 
 `PwaConnectionFactory.run_analytics_async` выполняет отчёт на отдельном

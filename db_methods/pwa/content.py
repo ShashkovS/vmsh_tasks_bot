@@ -60,6 +60,7 @@ from .lesson_blocks import (
 )
 
 from .connection import PwaConnectionFactory
+from .effective_results import STUDENT_EFFECTIVE_RESULTS_CTES
 
 
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
@@ -1695,8 +1696,9 @@ _STUDENT_LESSON_VISIBLE = (
 )
 
 
-_STUDENT_PROBLEM_LIST_SELECT = """
-WITH published_scope AS (
+# Bound the repeated lesson projection; docs/sqlite-admission-performance.md.
+_STUDENT_PROBLEM_LIST_SELECT = f"""
+WITH {STUDENT_EFFECTIVE_RESULTS_CTES}, published_scope AS MATERIALIZED (
     SELECT group_lesson.course_lesson_id,
            group_lesson.course_id,
            group_lesson.id AS group_lesson_id,
@@ -1733,7 +1735,7 @@ WITH published_scope AS (
             AND (derivative.invalidated_at IS NULL OR EXISTS (SELECT 1 FROM publication_figure_layouts frozen WHERE frozen.publication_id = condition_publication.id AND frozen.document_json IS NOT NULL))
       )
 ),
-visible_problem AS (
+visible_problem AS MATERIALIZED (
     SELECT problem_revision.problem_id,
            problem_revision.config_version,
            problem.public_id AS problem_public_id,
@@ -1822,7 +1824,7 @@ solution_state AS (
     GROUP BY visible.problem_id, publication.id, reveal.id
 ),
 -- written-result-precedence.md: membership and the winner share migration 0110.
-logical_member AS (
+logical_member AS MATERIALIZED (
     SELECT visible.problem_id AS visible_problem_id, peer.problem_id AS member_problem_id
     FROM visible_problem AS visible
     JOIN result_problem_groups AS own ON own.problem_id=visible.problem_id
@@ -1855,7 +1857,7 @@ ranked_result AS (
                         result.id DESC
            ) AS result_rank
     FROM logical_member
-    JOIN effective_results AS result
+    JOIN student_effective_results AS result
       ON result.problem_id = logical_member.member_problem_id
      AND result.student_id = :student_user_id
     JOIN verdicts AS verdict ON verdict.id = result.verdict

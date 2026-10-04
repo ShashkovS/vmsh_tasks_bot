@@ -1,5 +1,16 @@
 # Статус плана разработки
 
+## 2026-10-04 — CPU incident: Student problem list
+
+ВМШ CPU почти 100%: два read threads заняты глобальной проекцией результатов,
+очередь более 300 чтений. TLF idle. Ограниченный read-only SQL rehearsal
+подтвердил одинаковые строки и ускорение 148–174 → 8–10 мс. Начато ограничение
+кандидатов текущим учеником и materialization малого lesson scope; schema/UI
+не меняются. [Причина, компоненты, gates](../../docs/cpu-incident-20261004.md).
+Fast gate PASS: Python 2840 / 7 SKIP, frontend 1032, Storybook 356,
+Chromium content/submissions 5; 15 production SQL comparisons identical.
+Исправление готово к backend rollout и повторному runtime замеру.
+
 ## 2026-10-04 — Превью подсказок и пустые материалы
 
 Начат согласованный владельцем correction существующего content flow: одинаковые

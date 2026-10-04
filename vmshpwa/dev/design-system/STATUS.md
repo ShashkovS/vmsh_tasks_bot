@@ -1,5 +1,14 @@
 # Design-system status
 
+## 2026-10-04 — CPU incident: Student problem list
+
+Backend correction в текущем content flow; UI/design остаются прежними.
+Глобальные result scans занимают оба VMSh reader, более 300 reads ждут.
+Read-only rehearsal сохраняет строки и сокращает 148–174 → 8–10 мс.
+Реализация и проверки начаты; [incident record](../../docs/cpu-incident-20261004.md).
+Fast gate PASS: Python 2840 / 7 SKIP, frontend 1032, Storybook 356,
+Chromium content/submissions 5. Выпуск и runtime proof — следующий шаг.
+
 ## 2026-10-04 — Превью подсказок и пустые материалы
 
 Начат согласованный владельцем correction существующего content flow: одинаковые

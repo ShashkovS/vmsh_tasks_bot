@@ -11,6 +11,7 @@ from db_methods.db_results import DB_RESULT
 from pwa_tests.sqlite_template import create_test_database
 from db_methods.pwa.live_marking import cell, restore_cell
 from db_methods.pwa.student_results import current_results
+from db_methods.pwa.effective_results import STUDENT_EFFECTIVE_RESULTS_CTES
 from pwa_tests.integration import test_review_queue_repository as review_support
 from pwa_tests.integration import test_live_marking as live_support
 from pwa_tests.integration import test_content_http_api as content_support
@@ -77,6 +78,22 @@ def _current(c, problem=FIRST, student=STUDENT):
     return cell(c, student, problem)
 
 
+def _scoped_results(c, student=STUDENT):
+    return [tuple(row) for row in c.execute(
+        f"WITH {STUDENT_EFFECTIVE_RESULTS_CTES} "
+        "SELECT * FROM student_effective_results ORDER BY id",
+        {"student_user_id": student},
+    )]
+
+
+def _assert_scoped_parity(c, student=STUDENT):
+    expected = [tuple(row) for row in c.execute(
+        "SELECT * FROM effective_results WHERE student_id = ? ORDER BY id",
+        (student,),
+    )]
+    assert _scoped_results(c, student) == expected
+
+
 @pytest.mark.parametrize("manual", GRADES)
 @pytest.mark.parametrize("written", GRADES)
 def test_older_manual_is_retained_only_when_strictly_higher(
@@ -96,6 +113,7 @@ def test_older_manual_is_retained_only_when_strictly_higher(
     assert [(r[0], r[1]) for r in selected] == [
         (mid, 1003) if manual_wins else (wid, TEACHER)
     ]
+    _assert_scoped_parity(c)
 
 
 @pytest.mark.parametrize("manual", GRADES)
@@ -106,6 +124,7 @@ def test_newer_manual_always_wins_over_written_plus(projection_db, manual):
     assert _current(c)["verdict"] == manual
     assert _current(c)["teacher_id"] == 1003
     assert c.execute("SELECT id FROM effective_results").fetchall()[0][0] == mid
+    _assert_scoped_parity(c)
 
 
 def test_resubmission_correction_undo_and_all_current_readers(projection_db):
@@ -142,6 +161,7 @@ def test_resubmission_correction_undo_and_all_current_readers(projection_db):
         c.execute("SELECT verdict FROM results WHERE id=?", (original,)).fetchone()[0]
         == -1
     )
+    _assert_scoped_parity(c)
 
 
 def test_latest_written_replaces_higher_history_without_a_manual_mark(projection_db):
@@ -180,6 +200,9 @@ def test_latest_active_manual_not_the_best_or_another_students_grade(projection_
     _add(c, 18, 3, 1003)
     assert _current(c)["verdict"] == 13
     assert _current(c, 1003)["verdict"] == 18
+    _assert_scoped_parity(c)
+    _assert_scoped_parity(c, 1004)
+    assert _scoped_results(c, 1002) == []
 
 
 def test_automatic_acceptance_and_wrong_attempt_keep_existing_rules(projection_db):
@@ -187,11 +210,32 @@ def test_automatic_acceptance_and_wrong_attempt_keep_existing_rules(projection_d
     _add(c, -1, 3)
     _add(c, -1, 1)
     assert _current(c)["verdict"] == -1
+    _assert_scoped_parity(c)
     _add(c, 18, 1)
     assert _current(c)["verdict"] == 18
     assert _current(c)["result_id"] is None
+    _assert_scoped_parity(c)
     _add(c, -1, 4)
     assert _current(c)["verdict"] == -1
+    _assert_scoped_parity(c)
+
+
+def test_student_problem_query_does_not_scan_all_results_or_manual_cells(projection_db):
+    from db_methods.pwa.content import _STUDENT_PROBLEM_LIST_SELECT
+
+    params = {
+        "student_user_id": STUDENT,
+        "course_public_id": "c-1",
+        "group_public_id": "g-1",
+        "group_lesson_public_id": "gl-1",
+    }
+    plan = [row[3] for row in projection_db.execute(
+        "EXPLAIN QUERY PLAN " + _STUDENT_PROBLEM_LIST_SELECT, params,
+    )]
+    assert not any(detail.startswith(("SCAN r ", "SCAN c ")) for detail in plan)
+    assert any("results_by_student_problem (student_id=?)" in detail for detail in plan)
+    assert "MATERIALIZE visible_problem" in plan
+    assert "MATERIALIZE logical_member" in plan
 
 
 async def test_modern_synonym_review_and_correction_use_the_shared_winner(
