@@ -129,5 +129,7 @@ readable, while the pre-existing 200% page-header overlap/overflow is a separate
 follow-up. Receipts/screenshots: `.runtime/vmshpwa/violin-polish-20261005/`.
 The full gate is not green; performance limits/golden snapshots were not changed.
 Owner explicitly authorized both production deployments after disclosure of the
-performance failure. Frontend-only rollout is in progress;
+performance failure. `0d2d88e3` is deployed on VMSh/TLF frontend-only; both pass
+25 public HTTP checks, exact graph chunk/provenance checks and unchanged service
+PIDs. TLF before/after backups have integrity ok (1595 Zoom receipts);
 [release receipts](../../../pwa_tests/reports/staff-violin-polish-20261005/README.md).

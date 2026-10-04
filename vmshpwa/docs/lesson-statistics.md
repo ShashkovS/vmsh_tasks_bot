@@ -207,7 +207,9 @@ overlap/overflow is also present in
 `dev/assets/statistics-recalculation/chromium-statistics-200-percent.png` and is
 outside this graph correction. The owner explicitly authorized release to both
 production portals after disclosure of the journal performance failure.
-Frontend-only rollout is in progress;
+`0d2d88e3` is deployed frontend-only on VMSh/TLF: 25 public HTTP checks each,
+production provenance and exact public graph chunk SHA256 verified, all service
+PIDs unchanged. TLF backup integrity is ok before/after (1595 Zoom receipts);
 [release receipts](../../pwa_tests/reports/staff-violin-polish-20261005/README.md)
 retain the exception. This is not a successful full-release gate receipt.
 

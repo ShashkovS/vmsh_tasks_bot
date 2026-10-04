@@ -1,0 +1,10 @@
+Deploying 24ccc3d8db09 -> 0d2d88e3127e
+Python dependencies unchanged.
+Frontend dependencies unchanged.
+Backend unchanged.
+Health check passed: landing
+Health check passed: student
+Health check passed: family
+Health check passed: staff
+Student CSP allows the production media origin.
+Deploy finished: revision=0d2d88e3127e frontend=true backend=false migrations=false

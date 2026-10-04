@@ -20,7 +20,9 @@ Proof: `.runtime/vmshpwa/violin-polish-20261005/e2e.json`, `e2e-images/`;
 fast gate receipt: `.runtime/vmshpwa/checks/20261004T211430.420585Z/summary.json`.
 Golden snapshots и performance limits не менялись. Full gate не зелёный.
 Владелец разрешил выпуск на оба production после сообщения о performance FAIL.
-Начат frontend-only выпуск; сервисы и schema сохраняются.
+`0d2d88e3` выпущен на ВМШ webhook и TLF manual frontend-only. По 25 HTTP PASS;
+production provenance и SHA256 публичных graph chunks подтверждены на обоих.
+Все service PIDs сохранены; TLF backups integrity ok, 1595 Zoom receipts.
 [Release receipts](../../../pwa_tests/reports/staff-violin-polish-20261005/README.md).
 Новая design phase не начинается.
 
