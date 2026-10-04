@@ -42,6 +42,10 @@ test('Admin recalculates whole course and retains statistics filters', async ({ 
   const violin = page.getByRole('img', { name: /Число решённых задач.*Распределение/ }).first()
   await expect(violin).toBeVisible()
   expect((await violin.boundingBox())!.height).toBeCloseTo(260, 0)
+  const ticks = await violin.locator('text').allTextContents()
+  expect(ticks.length).toBeGreaterThan(0)
+  expect(ticks.every((tick) => Number.isInteger(Number(tick)))).toBe(true)
+  await expect(violin.locator('rect')).toHaveClass(/fill-chart-2\/25/)
   for (const theme of ['light', 'dark']) {
     if (theme === 'dark')
       await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
@@ -56,15 +60,21 @@ test('Admin recalculates whole course and retains statistics filters', async ({ 
         fullPage: true,
       })
     }
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.evaluate(() => {
+      document.documentElement.style.zoom = '2'
+    })
+    await expect(recalculate).toBeVisible()
+    await recalculate.focus()
+    await expect(recalculate).toBeFocused()
+    await page.screenshot({
+      path: info.outputPath(`statistics-${theme}-200-percent.png`),
+      fullPage: true,
+    })
+    await page.evaluate(() => {
+      document.documentElement.style.zoom = ''
+    })
   }
-  await page.setViewportSize({ width: 1280, height: 900 })
-  await page.evaluate(() => {
-    document.documentElement.style.zoom = '2'
-  })
-  await expect(recalculate).toBeVisible()
-  await recalculate.focus()
-  await expect(recalculate).toBeFocused()
-  await page.screenshot({ path: info.outputPath('statistics-200-percent.png'), fullPage: true })
 })
 
 test('Teacher sees dense statistics without administrative action', async ({ page }) => {

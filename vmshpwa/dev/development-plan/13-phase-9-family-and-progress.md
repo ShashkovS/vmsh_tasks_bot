@@ -111,3 +111,23 @@ support; constant results have no artificial spread. See
 [lesson statistics](../../docs/lesson-statistics.md#violin-density-correction-2026-09-27)
 and `packages/product/src/progress-charts.test.tsx`. Student/Family receive no
 group distributions. Focused unit and Chromium stories pass; deployment pending.
+
+## Staff violin polish — 2026-10-05
+
+Owner-approved correction of the existing Staff distributions: KDE 0.75,
+integer axis labels, narrower silhouettes, short medians and stable code-based
+colours. See [lesson statistics](../../docs/lesson-statistics.md#staff-violin-polish-2026-10-05)
+for the shared component, Staff consumers, stories and regression tests.
+Implemented; types/lint/i18n, 2840 Python (7 SKIP), 1048 frontend and 362 Storybook pass.
+The dense Storybook fixture has been
+inspected in both themes at 320/390/1280 CSS px without horizontal overflow.
+The fast statistics gate fails on the unchanged LargeClassroom performance test
+(60.1 ms vs 50 ms; isolated rerun 59.7 ms); all graph stories pass. The first run
+was sandbox-denied. Statistics E2E completed through the lock-aware runner:
+3 Chromium PASS. Both themes at 320/390/1280 and 200% inspected; graphs remain
+readable, while the pre-existing 200% page-header overlap/overflow is a separate
+follow-up. Receipts/screenshots: `.runtime/vmshpwa/violin-polish-20261005/`.
+The full gate is not green; performance limits/golden snapshots were not changed.
+Owner explicitly authorized both production deployments after disclosure of the
+performance failure. Frontend-only rollout is in progress;
+[release receipts](../../../pwa_tests/reports/staff-violin-polish-20261005/README.md).

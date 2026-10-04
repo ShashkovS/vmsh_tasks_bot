@@ -238,7 +238,8 @@ export const ViolinBoundaryCases: Story = {
           key={index}
           values={values}
           domain={[0, 15]}
-          bandwidth={0.5}
+          bandwidth={0.75}
+          integerTicks
           height={260}
         />
       ))}
@@ -250,5 +251,57 @@ export const ViolinBoundaryCases: Story = {
     await expect(canvasElement.querySelectorAll('path')).toHaveLength(3)
     await userEvent.click(canvas.getAllByText('Показать числами')[2]!)
     await expect(canvas.getAllByText('3.0–3.0')[0]).toBeVisible()
+  },
+}
+
+// docs/lesson-statistics.md#staff-violin-polish-2026-10-05: dense, fractional Staff observations.
+export const StaffDistributions: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-6">
+      {[
+        {
+          name: 'Начинающие',
+          colorIndex: 2,
+          counts: [12, 20, 27, 33, 14, 25, 25, 32, 28, 30, 30, 27, 32],
+        },
+        {
+          name: 'Продолжающие',
+          colorIndex: 3,
+          counts: [8, 12, 16, 16, 22, 28, 17, 15, 14, 10, 13, 13, 11, 9, 8, 6, 4, 3],
+        },
+        {
+          name: 'Эксперты',
+          colorIndex: 5,
+          counts: [13, 15, 8, 5, 4, 6, 12, 8, 7, 9, 7, 5, 4, 5, 3],
+        },
+      ].map(({ name, colorIndex, counts }) => {
+        const values = counts.flatMap((count, score) => Array.from({ length: count }, () => score))
+        values.push(0.5, 1.5, 2.5)
+        return (
+          <DistributionViolin
+            key={name}
+            values={values}
+            domain={[0, 21]}
+            bandwidth={0.75}
+            integerTicks
+            height={260}
+            colorIndex={colorIndex as 2 | 3 | 5}
+            className="w-55"
+            caption={`${name} · ${values.length} участников`}
+          />
+        )
+      })}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('img')).toHaveLength(3)
+    for (const chart of canvas.getAllByRole('img')) {
+      await expect(
+        [...chart.querySelectorAll('text')].map((tick) => Number(tick.textContent)),
+      ).toEqual([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+    }
+    await userEvent.click(canvas.getAllByText('Показать числами')[0]!)
+    await expect(canvas.getAllByText('Медиана')[0]).toBeVisible()
   },
 }

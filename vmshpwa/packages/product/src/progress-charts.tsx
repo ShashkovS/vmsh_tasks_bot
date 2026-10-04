@@ -65,11 +65,12 @@ export interface DistributionViolinProps {
   values: number[]
   domain?: [number, number] | undefined
   bandwidth?: number | undefined
+  integerTicks?: boolean | undefined
   width?: number | undefined
   height?: number | undefined
   caption?: string | undefined
   className?: string | undefined
-  colorIndex?: 1 | 2 | 3 | undefined
+  colorIndex?: 1 | 2 | 3 | 4 | 5 | undefined
 }
 
 /*
@@ -80,6 +81,7 @@ export function DistributionViolin({
   values,
   domain,
   bandwidth: requestedBandwidth,
+  integerTicks = false,
   width = 220,
   height = 200,
   valueLabel,
@@ -112,7 +114,11 @@ export function DistributionViolin({
   const maxDensity = Math.max(...densities, 1e-9)
 
   const yScale = scaleLinear({ domain: [lo, hi], range: [height - pad, pad] })
-  const halfScale = scaleLinear({ domain: [0, maxDensity], range: [0, (width - 36 - pad) / 2] })
+  // docs/lesson-statistics.md#staff-violin-polish-2026-10-05: Staff visual proportions.
+  const halfScale = scaleLinear({
+    domain: [0, maxDensity],
+    range: [0, ((width - 36 - pad) / 2) * 0.7],
+  })
   const cx = (36 + width - pad) / 2
 
   if (values.length === 0) return null
@@ -124,12 +130,13 @@ export function DistributionViolin({
     1: 'fill-chart-1/25 stroke-chart-1',
     2: 'fill-chart-2/25 stroke-chart-2',
     3: 'fill-chart-3/25 stroke-chart-3',
+    4: 'fill-chart-4/25 stroke-chart-4',
+    5: 'fill-chart-5/25 stroke-chart-5',
   }[colorIndex]
   const tickStep = Math.max(0.5, Math.ceil(((hi - lo) / 8) * 2) / 2)
-  const ticks = Array.from(
-    { length: Math.floor((hi - lo) / tickStep) + 1 },
-    (_, i) => lo + i * tickStep,
-  )
+  const ticks = integerTicks
+    ? yScale.ticks(8).filter(Number.isInteger)
+    : Array.from({ length: Math.floor((hi - lo) / tickStep) + 1 }, (_, i) => lo + i * tickStep)
 
   const label = t`${valueLabel ? `${valueLabel}. ` : ''}Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}.`
 
@@ -172,14 +179,8 @@ export function DistributionViolin({
         <line
           className={color}
           strokeWidth={2}
-          x1={
-            cx -
-            (minimum === maximum ? 10 : Math.max(10, halfScale(kde(values, median, bandwidth))))
-          }
-          x2={
-            cx +
-            (minimum === maximum ? 10 : Math.max(10, halfScale(kde(values, median, bandwidth))))
-          }
+          x1={cx - 10}
+          x2={cx + 10}
           y1={yScale(median)}
           y2={yScale(median)}
         />

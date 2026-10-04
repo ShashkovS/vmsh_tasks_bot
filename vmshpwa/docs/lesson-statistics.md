@@ -148,10 +148,10 @@ scheduler changes. Stop manual workers before rolling migration 0092 back. See
 
 ## Violin density correction (2026-09-27)
 
-Staff callers in `apps/staff/src/lesson-statistics.tsx` and
-`staff-statistics-page.tsx` use Gaussian KDE bandwidth 0.5 solved items, matching
-`web/trash_print_stats.py` and `_external_pipelines/a54_upd_report.py`. Automatic
-bandwidth previously smoothed away local peaks. Width is normalized separately
+The 2026-09-27 correction used Gaussian KDE bandwidth 0.5 solved items, matching
+`web/trash_print_stats.py` and `_external_pipelines/a54_upd_report.py`; the current
+Staff presentation is specified below. Automatic bandwidth previously smoothed
+away local peaks. Width is normalized separately
 per group (density, not participant count). In
 [`DistributionViolin`](../packages/product/src/progress-charts.tsx), the common
 axis is separate from observed support: the silhouette ends at the actual min/max.
@@ -159,6 +159,57 @@ Equal observations render a line, not invented spread. Median and Q1–Q3 use th
 original observations with linear interpolation. The axis reserves a label gutter.
 Regression tests: `packages/product/src/progress-charts.test.tsx`; visual cases:
 `ViolinBoundaryCases` in `progress.stories.tsx`.
+
+## Staff violin polish (2026-10-05)
+
+Owner-approved visual correction of the existing Staff graphs, superseding the
+0.5 bandwidth above: both [live lesson statistics](../apps/staff/src/lesson-statistics.tsx)
+and the [selected-group model aggregate](../apps/staff/src/staff-statistics-page.tsx)
+use a fixed Gaussian KDE bandwidth of 0.75 solved items and `integerTicks`.
+The shared [DistributionViolin](../packages/product/src/progress-charts.tsx)
+uses the scale's approximately eight-interval nice ticks, discarding fractional
+labels in integer mode: 0–3 → 0,1,2,3; 0–17 → 0,2,…16; 0–21 → 0,2,…20.
+The optional mode defaults off, retaining the existing fractional axis for other
+consumers. Observations and interpolated quartiles are never rounded to integers.
+
+The silhouette's maximum width is 70% of its previous available width; the axis
+gutter, figure size and Staff height of 260 px remain. Median lines are 20 px wide,
+aligned with the Q1–Q3 rectangle. Observed min/max support, per-group density
+normalization and constant-sample handling remain unchanged.
+
+[Staff colour selection](../apps/staff/src/staff-distribution-colors.ts) maps
+group codes н/п/э to semantic chart-2/chart-3/chart-5 (green/orange/red), including
+singleton points and the model aggregate. Reordering/filtering known codes never
+changes their colour; other codes retain the previous index-based palette.
+The public `colorIndex` accepts 1–5 without changing global colour tokens.
+
+Regression coverage: [chart tests](../packages/product/src/progress-charts.test.tsx),
+[live statistics tests](../apps/staff/src/lesson-statistics.test.tsx),
+`StaffDistributions` and `ViolinBoundaryCases` in
+[progress stories](../packages/product/src/progress.stories.tsx), and filter
+interaction in [Staff page stories](../apps/staff/src/staff-statistics-page.stories.tsx).
+The [statistics E2E](../e2e/statistics-recalculation.spec.ts) captures both themes
+at 320/390/1280 px and 200% zoom; its colour assertion uses the Q1–Q3 rectangle
+so constant samples without a silhouette are covered too.
+
+Verification: format/types/lint/i18n, 2840 Python (7 SKIP), 1048 frontend and all
+graph stories PASS. The requested fast gate stops at the unchanged
+`LargeClassroom` Storybook performance test in
+`apps/staff/src/live-marking-grid.stories.tsx`: 60.1 ms against 50 ms, isolated
+rerun 59.7 ms. The other 362 Storybook tests pass. Remaining statistics E2E was
+completed through the normal lock-aware runner in Chromium: 3 PASS, including
+both themes and 200% zoom. No golden snapshots or performance limits were changed.
+
+Dense `StaffDistributions` screenshots and exact CSS viewport/overflow proof are
+in `.runtime/vmshpwa/violin-polish-20261005/`; `e2e.json` and `e2e-images/` preserve
+the page proof. At 200% the graph remains readable; the pre-existing page-header
+overlap/overflow is also present in
+`dev/assets/statistics-recalculation/chromium-statistics-200-percent.png` and is
+outside this graph correction. The owner explicitly authorized release to both
+production portals after disclosure of the journal performance failure.
+Frontend-only rollout is in progress;
+[release receipts](../../pwa_tests/reports/staff-violin-polish-20261005/README.md)
+retain the exception. This is not a successful full-release gate receipt.
 
 ## Staff reporting: course summary and plus matrix (2026-09-28)
 

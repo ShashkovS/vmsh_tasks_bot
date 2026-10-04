@@ -6,6 +6,10 @@ import { DistributionViolin, StrengthTrend } from '@vmsh/product'
 import type { StaffStatisticsResponse } from '@vmsh/contracts'
 import { StatisticsStudentSearch } from './statistics-student-search'
 import {
+  staffDistributionColorIndex,
+  staffDistributionPointColors,
+} from './staff-distribution-colors'
+import {
   Button,
   Label,
   Table,
@@ -80,7 +84,9 @@ export function LessonStatistics({
                     cx="110"
                     cy={248 - ((group.distribution[0] ?? 0) / maximum) * 236}
                     r="4"
-                    className="fill-chart-1"
+                    className={
+                      staffDistributionPointColors[staffDistributionColorIndex(group.code, index)]
+                    }
                   />
                 </svg>
                 <figcaption>
@@ -89,10 +95,11 @@ export function LessonStatistics({
               </figure>
             ) : (
               <DistributionViolin
-                bandwidth={0.5}
+                bandwidth={0.75}
+                integerTicks
                 height={260}
                 valueLabel={t`Число решённых задач`}
-                colorIndex={index % 3 === 0 ? 1 : index % 3 === 1 ? 2 : 3}
+                colorIndex={staffDistributionColorIndex(group.code, index)}
                 values={group.distribution}
                 domain={[0, maximum]}
                 caption={t`${group.name} · ${group.participantCount} участников`}

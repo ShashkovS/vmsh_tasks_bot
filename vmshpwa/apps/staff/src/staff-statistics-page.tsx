@@ -6,6 +6,7 @@ import { StatisticsRecalculationControl } from './statistics-recalculation-contr
 import { BarChart3, CalendarDays, UsersRound } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { LessonStatistics } from './lesson-statistics'
+import { staffDistributionColorIndex } from './staff-distribution-colors'
 
 import {
   PageLayout,
@@ -333,7 +334,12 @@ export function StaffStatisticsView({
                   </CardHeader>
                   <CardContent>
                     <DistributionViolin
-                      bandwidth={0.5}
+                      bandwidth={0.75}
+                      integerTicks
+                      colorIndex={staffDistributionColorIndex(
+                        lesson.groups.find((group) => group.groupId === data.selectedGroupId)
+                          ?.code ?? '',
+                      )}
                       height={260}
                       valueLabel={t`Число решённых задач`}
                       caption={t`Распределение по ${lesson.studentCount} школьникам.`}

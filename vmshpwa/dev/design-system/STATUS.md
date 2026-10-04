@@ -1,5 +1,29 @@
 # Design-system status
 
+## 2026-10-05 — Спокойнее оформить Staff violin
+
+Реализован согласованный correction распределений Staff: окно KDE 0.75,
+целочисленные отметки, силуэт 70% прежней ширины, короткая медиана и
+стабильные зелёный/оранжевый/красный по коду группы.
+[Решение и компоненты](../../docs/lesson-statistics.md#staff-violin-polish-2026-10-05).
+Типы, lint, i18n, 2840 Python (7 SKIP), 1048 frontend и 362 Storybook PASS.
+Плотная Storybook-фикстура проверена в light/dark
+при точных CSS-ширинах 320/390/1280: overflow отсутствует, шрифты загружены.
+Снимки: `.runtime/vmshpwa/violin-polish-20261005/`.
+Первый fast gate остановлен sandbox-запретом localhost sockets; повторный —
+неизменённым `LargeClassroom` performance test (60.1 ms при лимите 50 ms),
+в изоляции также FAIL (59.7 ms). Graph stories PASS. E2E statistics отдельно
+через штатный lock-aware runner: 3 Chromium PASS. Снимки страницы в обеих темах
+при 320/390/1280 и 200% осмотрены; график читается. Прежний overlap/overflow
+шапки при 200% подтверждён старым screenshot и оставлен отдельным follow-up.
+Proof: `.runtime/vmshpwa/violin-polish-20261005/e2e.json`, `e2e-images/`;
+fast gate receipt: `.runtime/vmshpwa/checks/20261004T211430.420585Z/summary.json`.
+Golden snapshots и performance limits не менялись. Full gate не зелёный.
+Владелец разрешил выпуск на оба production после сообщения о performance FAIL.
+Начат frontend-only выпуск; сервисы и schema сохраняются.
+[Release receipts](../../../pwa_tests/reports/staff-violin-polish-20261005/README.md).
+Новая design phase не начинается.
+
 ## 2026-10-04 — Сообщения при сбое сервера
 
 Correction существующих status/startup/cache/login состояний по просьбе

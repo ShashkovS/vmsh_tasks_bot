@@ -182,7 +182,11 @@ export const HistoricalCourse: Story = {
     await userEvent.selectOptions(canvas.getByLabelText('Группа'), 'group.continuing')
     await expect(canvas.getByLabelText('Группа')).toHaveValue('group.continuing')
     await expect(canvas.getByRole('img')).toBeInTheDocument()
+    await expect(canvas.getByRole('img').querySelector('path')).toHaveClass('fill-chart-3/25')
     await expect(canvas.getByText('Состав агрегата')).toBeInTheDocument()
+
+    await userEvent.selectOptions(canvas.getByLabelText('Группа'), 'group.beginner')
+    await expect(canvas.getByRole('img').querySelector('path')).toHaveClass('fill-chart-2/25')
   },
 }
 
