@@ -39,7 +39,7 @@ Gunicorn sockets, signal handlers и SQLite lifecycle locks. В `main.py`
 Fast gate прошёл за 203 с: 1028 frontend, 355 Storybook, 3 Chromium submissions,
 types/lint/i18n/format/dependencies. После backend-дополнений frontend не менялся
 и повторно не проверялся. Локальный двухworker Gunicorn с двумя SymPy children
-выходит за 1,169 с без SIGKILL. Linux TLF preflight: 8 PASS за 10,65 с, shutdown — 1.891 с. Выпуск — следующий шаг.
+выходит за 1,169 с без SIGKILL. Linux TLF preflight: 8 PASS за 10,65 с, shutdown — 1.891 с. Выпущено на оба production (`a44e25c5`), по 25 public HTTP PASS; services active, maintenance снят, frontend/dependencies/schema переиспользованы.
 [Измерения, границы проверки и deploy script](../../pwa_tests/reports/graceful-shutdown-20261004/README.md).
 
 Child boundary: `helpers/math_worker_process.py` устанавливает TERM handler

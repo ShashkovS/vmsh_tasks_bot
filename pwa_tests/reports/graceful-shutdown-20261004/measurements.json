@@ -86,7 +86,7 @@
     "rerun_seconds": 14.01,
     "source_changed_after_rerun": false
   },
-  "production_status": "Linux preflight passed; release pending",
+  "production_status": "released on VMSh and TLF; 25 public HTTP PASS each",
   "linux_tlf_preflight": {
     "probe": {
       "gunicorn_shutdown_seconds": 1.891,
@@ -98,5 +98,6 @@
     "seconds": 10.65,
     "runtime": "production Python/Gunicorn, private test-deps/PYTHONPATH, private schema/Unix socket/process group, empty fixture config",
     "changed_python_sha256_verified_at_release": true
-  }
+  },
+  "production_proof": "production-proof.json"
 }

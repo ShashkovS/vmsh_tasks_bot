@@ -2,12 +2,15 @@
 
 ## 2026-10-04 — graceful shutdown SymPy worker
 
-Реализация и проверки завершены: MathWorker переведён на spawn, принятые
-проверки дожидаются результата, child/pipes закрываются после HTTP/DB drain.
-2791 уникальный Python PASS / 7 SKIP, 8 process regressions; единый fast gate
-203 с, 1028 frontend / 355 Storybook / 3 Chromium. Два Gunicorn/SymPy worker
-локально выходят за 1,169 с. Linux preflight и выпуск на оба production в работе.
-[Причина, решение и доказательства](../../docs/graceful-shutdown.md).
+Выпущено на ВМШ/TLF: `a44e25c5`, MathWorker spawn, drain принятых проверок,
+sentinel/join/reap, закрытие pipes после HTTP/DB cleanup. 2791 уникальный
+Python PASS / 7 SKIP; fast gate 203 с, frontend 1028 / Storybook 355 /
+Chromium submissions 3. Linux TLF: 8 process tests PASS, два Gunicorn worker
+с двумя SymPy children выходят за 1,891 с без SIGKILL (старый production stop
+75 с). По 25 public HTTP PASS, services active, maintenance снят;
+frontend/dependencies/schema переиспользованы, TLF Zoom/NATS не перезапускались.
+[Причина и компоненты](../../docs/graceful-shutdown.md),
+[замеры и доказательства](../../../pwa_tests/reports/graceful-shutdown-20261004/README.md).
 
 ## 2026-10-04 — совместный выпуск рисунков и оптимизации
 

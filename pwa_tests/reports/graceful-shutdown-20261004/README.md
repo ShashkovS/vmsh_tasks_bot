@@ -39,5 +39,12 @@ Production virtualenv, accounts, БД и сервисы не меняются. �
 файлов и переиспользует успешный preflight. Повторной сборки frontend,
 установки dependencies или применения migrations нет.
 
-Linux TLF: 8 PASS за 10,65 с, shutdown двухworker Gunicorn — **1.891 с**, exit 0, оба child исчезли без SIGKILL. Выпуск на оба production — в работе. Первый restart
+Linux TLF: 8 PASS за 10,65 с, shutdown двухworker Gunicorn — **1.891 с**, exit 0, оба child исчезли без SIGKILL. Выпущено на [ВМШ](https://vmsh.shashkovs.ru) и [TLF](https://prep.leaders.tech), source `a44e25c5`. По 25 public HTTP PASS, services active, maintenance снят; static/dependencies/schema сохранены, Zoom/NATS PID на TLF прежние. Backups/integrity PASS; Zoom продолжал принимать события (receipts 1093 → 1094). [Production evidence](production-proof.json). Первый restart
 ещё закрывает старый код; его время отдельно от shutdown новой версии.
+
+Последний production stop старой версии на TLF снова занял **75 с**;
+77 с общего cutover включают ожидание этого старого runtime. Показатель
+**1,891 с** относится к изолированному Gunicorn на том же Linux host с двумя
+настоящими SymPy children, а не к ещё одному рестарту живого production.
+После выпуска service cgroup содержит только master и два HTTP worker;
+старые orphan PID отсутствуют.
