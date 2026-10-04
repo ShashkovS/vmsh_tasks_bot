@@ -14,10 +14,6 @@ msgstr ""
 "Plural-Forms: \n"
 
 #: packages/branding/src/startup.ts
-msgid "Восстанавливаем соединение"
-msgstr "Restoring the connection"
-
-#: packages/branding/src/startup.ts
 msgid "Кабинет продолжит работу автоматически после подключения."
 msgstr "Your account will resume automatically when connected."
 
@@ -32,3 +28,19 @@ msgstr "Updating the service"
 #: packages/branding/src/startup.ts
 msgid "Подключение занимает больше времени. Мы продолжаем пробовать."
 msgstr "Connecting is taking longer. We keep trying."
+
+#: packages/branding/src/startup.ts
+msgid "Проблема на нашей стороне всё ещё сохраняется. Проверяем доступность автоматически."
+msgstr "The problem on our side is still ongoing. We are checking availability automatically."
+
+#: packages/branding/src/startup.ts
+msgid "Проблема на нашей стороне. Проверяем доступность автоматически."
+msgstr "The problem is on our side. We are checking availability automatically."
+
+#: packages/branding/src/startup.ts
+msgid "Сервер не отвечает"
+msgstr "The server is not responding"
+
+#: packages/branding/src/startup.ts
+msgid "Сервис временно недоступен"
+msgstr "The service is temporarily unavailable"

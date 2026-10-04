@@ -26,9 +26,17 @@ export const RuntimeRejected: Story = {
   args: {
     state: 'error',
     title: 'Не удалось безопасно открыть кабинет',
-    description:
-      'Сервер не подтвердил настройки этого раздела. Проверьте подключение и повторите попытку.',
+    description: 'Сервер не подтвердил настройки этого раздела. Повторите попытку.',
     requestId: 'fixture-runtime-error-v1',
+    onRetry: () => undefined,
+  },
+}
+
+export const ServerUnavailable: Story = {
+  args: {
+    state: 'error',
+    title: 'Сервис временно недоступен',
+    description: 'Проблема на нашей стороне. Попробуйте позже.',
     onRetry: () => undefined,
   },
 }

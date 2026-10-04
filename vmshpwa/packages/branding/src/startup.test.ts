@@ -18,6 +18,18 @@ it('translates connection recovery using the activated device language', async (
   const root = document.createElement('div')
   document.body.append(root)
   renderBrandingWaiting(root, { state: 'reconnecting', since: 1, prolonged: false })
-  expect(screen.getByRole('heading', { name: 'Restoring the connection' })).toBeTruthy()
+  expect(screen.getByRole('heading', { name: 'The server is not responding' })).toBeTruthy()
   expect(screen.getByRole('status').textContent).toContain('Your account will resume automatically')
 })
+
+it.each([false, true])(
+  'explains our server failure before the main interface mounts: %s',
+  (prolonged) => {
+    const root = document.createElement('div')
+    document.body.append(root)
+    renderBrandingWaiting(root, { state: 'reconnecting', cause: 'server', since: 1, prolonged })
+    expect(screen.getByRole('heading', { name: 'Сервис временно недоступен' })).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toContain('Проблема на нашей стороне')
+    expect(screen.getByRole('status').textContent).not.toContain('Проверьте интернет')
+  },
+)

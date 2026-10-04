@@ -7,6 +7,7 @@ import json
 import apps.pwa_api.review_routes as review_routes_module
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from functools import partial
 from types import MappingProxyType
 
 import pytest
@@ -433,6 +434,13 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
 
 @pytest.fixture()
 async def review_http(tmp_path, aiohttp_client, monkeypatch) -> ReviewHttpFixture:
+    # docs/service-failure-copy-20261004.md: correction, claim and resubmission
+    # share the fixture clock; real wall time would expire synthetic leases.
+    monkeypatch.setattr(
+        review_routes_module,
+        "correct_written_review",
+        partial(review_routes_module.correct_written_review, now=NOW),
+    )
     database_path = tmp_path / "review-http.sqlite3"
     create_test_database(database_path)
     factory = PwaConnectionFactory(database_path)

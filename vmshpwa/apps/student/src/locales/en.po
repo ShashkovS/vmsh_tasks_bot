@@ -713,10 +713,6 @@ msgstr "Could not get the link. Try again."
 msgid "Не удалось применить обновление. Попробуйте ещё раз."
 msgstr "Could not apply the update. Please try again."
 
-#: apps/student/src/login-page.tsx
-msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
-msgstr "Could not reach the server. Check the internet connection and try again."
-
 #: apps/student/src/student-written-submission.tsx
 msgid "Не удалось сохранить реакцию. Обновите проверку и попробуйте ещё раз."
 msgstr "Could not save the reaction. Refresh the review and try again."

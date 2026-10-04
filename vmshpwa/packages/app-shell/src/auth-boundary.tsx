@@ -2,12 +2,20 @@ import { t } from '@lingui/core/macro'
 import { LockKeyhole, TriangleAlert, WifiOff } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 
-import { staffCapabilitySchema, type StaffCapability } from '@vmsh/contracts'
+import { ApiResponseError, staffCapabilitySchema, type StaffCapability } from '@vmsh/contracts'
 import { Button, Card, CardContent } from '@vmsh/ui'
 
 import { authenticationStatePrincipal, useAuthentication } from './auth-context'
+import { AuthProtocolError } from './auth-client'
 import { AppStartupScreen } from './runtime-bootstrap'
-import { useServiceAvailability, serviceWaitingText } from './service-availability'
+import {
+  useServiceAvailability,
+  useBrowserOnline,
+  serviceWaitingText,
+  serviceAvailabilityTitle,
+  serviceUnavailableText,
+  connectionFailureText,
+} from './service-availability'
 
 export interface AuthenticationBoundaryProps {
   children: ReactNode
@@ -27,6 +35,7 @@ export function AuthenticationBoundary({
 }: AuthenticationBoundaryProps) {
   const authentication = useAuthentication()
   const availability = useServiceAvailability()
+  const online = useBrowserOnline()
   const { state } = authentication
   const retry = () => authentication.retry()
 
@@ -44,9 +53,7 @@ export function AuthenticationBoundary({
           title={
             availability.state === 'ready'
               ? t`Проверяем вход`
-              : availability.state === 'updating'
-                ? t`Обновляем сервис`
-                : t`Восстанавливаем соединение`
+              : serviceAvailabilityTitle(availability, online)
           }
         />
       )
@@ -70,22 +77,36 @@ export function AuthenticationBoundary({
       : (offlineFallback ?? (
           <AuthBoundaryPanel
             actionLabel={t`Повторить`}
-            description={t`Без связи сервер не может подтвердить сессию. Защищённые данные пока не открыты.`}
-            icon={<WifiOff aria-hidden="true" />}
+            description={
+              availability.cause === 'server' && online
+                ? serviceUnavailableText()
+                : connectionFailureText(online)
+            }
+            icon={online ? <TriangleAlert aria-hidden="true" /> : <WifiOff aria-hidden="true" />}
             onAction={() => void retry()}
             title={t`Не удалось проверить вход`}
           />
         ))
   }
+  const serverFailure =
+    (state.error instanceof ApiResponseError || state.error instanceof AuthProtocolError) &&
+    state.error.status !== undefined &&
+    state.error.status >= 500
   return typeof errorFallback === 'function'
     ? errorFallback(state.error, retry)
     : (errorFallback ?? (
         <AuthBoundaryPanel
           actionLabel={t`Повторить`}
-          description={t`Ответ сервера не прошёл безопасную проверку. Защищённые данные не открыты.`}
+          description={
+            serverFailure
+              ? serviceUnavailableText()
+              : t`Ответ сервера не прошёл безопасную проверку. Защищённые данные не открыты.`
+          }
           icon={<TriangleAlert aria-hidden="true" />}
           onAction={() => void retry()}
-          title={t`Не удалось безопасно открыть кабинет`}
+          title={
+            serverFailure ? t`Сервис временно недоступен` : t`Не удалось безопасно открыть кабинет`
+          }
           tone="danger"
         />
       ))

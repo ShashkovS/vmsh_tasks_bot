@@ -4,6 +4,11 @@ import { CircleAlert, Inbox, LockKeyhole, RefreshCw, WifiOff } from 'lucide-reac
 import type { ReactNode } from 'react'
 
 import { Button, Card, CardContent, Skeleton, cn } from '@vmsh/ui'
+import {
+  useBrowserOnline,
+  useServiceAvailability,
+  serviceAvailabilityTitle,
+} from './service-availability'
 
 /*
  * Page composition contract for dev/design-system/05-pages-and-flows.md.
@@ -113,6 +118,8 @@ export function PageStatePanel({
   actionLabel?: string | undefined
   onAction?: (() => void) | undefined
 }) {
+  const online = useBrowserOnline()
+  const availability = useServiceAvailability()
   if (state === 'loading') {
     return (
       <Card aria-label={t`Загрузка`} role="status">
@@ -128,14 +135,17 @@ export function PageStatePanel({
     )
   }
 
-  const Icon = stateIcon[state]
+  const Icon = state === 'offline' && online ? CircleAlert : stateIcon[state]
   const defaults = {
     empty: [t`Здесь пока ничего нет`, t`Новые материалы появятся здесь автоматически.`],
     error: [
       t`Не удалось загрузить данные`,
       t`Ваши локальные изменения сохранены. Попробуйте ещё раз.`,
     ],
-    offline: [t`Нет сети`, t`Доступно всё, что уже сохранено на этом устройстве.`],
+    offline: [
+      serviceAvailabilityTitle(availability, online),
+      t`Доступно всё, что уже сохранено на этом устройстве.`,
+    ],
     forbidden: [t`Нет доступа`, t`У вашей учётной записи нет права открывать этот раздел.`],
   } as const
 

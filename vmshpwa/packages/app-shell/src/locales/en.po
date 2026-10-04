@@ -36,10 +36,6 @@ msgstr "HTTP {0}, {1}; request {2}"
 msgid "Активные сессии"
 msgstr "Active sessions"
 
-#: packages/app-shell/src/auth-boundary.tsx
-msgid "Без связи сервер не может подтвердить сессию. Защищённые данные пока не открыты."
-msgstr "Without a connection the server cannot confirm the session. Protected data stays closed for now."
-
 #: packages/app-shell/src/page-layout.tsx
 msgid "Ваши локальные изменения сохранены. Попробуйте ещё раз."
 msgstr "Your local changes are saved. Please try again."
@@ -59,15 +55,6 @@ msgstr "Turn on notifications?"
 #: packages/app-shell/src/organizer-pages.tsx
 msgid "Вопросы организаторам"
 msgstr "Questions to the organizers"
-
-#: packages/app-shell/src/auth-boundary.tsx
-#: packages/app-shell/src/runtime-bootstrap.tsx
-msgid "Восстанавливаем соединение"
-msgstr "Restoring the connection"
-
-#: packages/app-shell/src/service-availability.tsx
-msgid "Восстанавливаем соединение. "
-msgstr "Restoring the connection. "
 
 #: packages/app-shell/src/organizer-pages.tsx
 msgid "Все"
@@ -195,6 +182,10 @@ msgstr "You have used all attempts on this problem for this hour. Come back to i
 msgid "Напишите ваш вопрос…"
 msgstr "Write your question…"
 
+#: packages/app-shell/src/service-availability.tsx
+msgid "Не получили ответ от сервера. Попробуйте позже."
+msgstr "We did not receive a response from the server. Please try again later."
+
 #: packages/app-shell/src/push-onboarding.tsx
 msgid "Не сейчас"
 msgstr "Not now"
@@ -261,9 +252,13 @@ msgstr "Unread"
 msgid "Нет доступа"
 msgstr "No access"
 
-#: packages/app-shell/src/page-layout.tsx
-msgid "Нет сети"
-msgstr "Offline"
+#: packages/app-shell/src/service-availability.tsx
+msgid "Нет подключения к интернету"
+msgstr "No internet connection"
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Нет подключения к интернету. Повторите попытку, когда связь появится."
+msgstr "There is no internet connection. Try again when your connection returns."
 
 #: packages/app-shell/src/page-layout.tsx
 msgid "Новые материалы появятся здесь автоматически."
@@ -286,14 +281,9 @@ msgstr "Refresh"
 msgid "Обновление занимает больше времени. Мы продолжаем подключаться."
 msgstr "The update is taking longer. We keep connecting."
 
-#: packages/app-shell/src/auth-boundary.tsx
-#: packages/app-shell/src/runtime-bootstrap.tsx
+#: packages/app-shell/src/service-availability.tsx
 msgid "Обновляем сервис"
 msgstr "Updating the service"
-
-#: packages/app-shell/src/service-availability.tsx
-msgid "Обновляем сервис. "
-msgstr "Updating the service. "
 
 #: packages/app-shell/src/observability.ts
 msgid "Обновляем сервис. Отправим после обновления."
@@ -403,6 +393,18 @@ msgid "Предыдущая отправка прервалась до подт�
 msgstr "The previous send was interrupted before confirmation. The answer is saved — press “Retry”."
 
 #: packages/app-shell/src/service-availability.tsx
+msgid "Проблема на нашей стороне всё ещё сохраняется. Проверяем доступность автоматически."
+msgstr "The problem on our side is still ongoing. We are checking availability automatically."
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Проблема на нашей стороне. Попробуйте позже."
+msgstr "The problem is on our side. Please try again later."
+
+#: packages/app-shell/src/service-availability.tsx
+msgid "Проблема на нашей стороне. Проверяем доступность автоматически."
+msgstr "The problem is on our side. We are checking availability automatically."
+
+#: packages/app-shell/src/service-availability.tsx
 msgid "Пробуем подключиться автоматически. Можно продолжать работу с черновиком."
 msgstr "Trying to reconnect automatically. You can keep working on your draft."
 
@@ -459,12 +461,16 @@ msgid "Сервер не ответил за 30 секунд. Ответ сох�
 msgstr "The server did not respond within 30 seconds. The answer is saved — send again. This does not mean the device is offline."
 
 #: packages/app-shell/src/service-availability.tsx
+msgid "Сервер не отвечает"
+msgstr "The server is not responding"
+
+#: packages/app-shell/src/service-availability.tsx
 msgid "Сервер не подтвердил действие. Проверьте результат перед повтором; черновик не нужно удалять."
 msgstr "The server did not confirm the action. Check the result before retrying; keep your draft."
 
 #: packages/app-shell/src/runtime-bootstrap.tsx
-msgid "Сервер не подтвердил настройки этого раздела. Проверьте подключение и повторите попытку."
-msgstr "The server did not confirm the settings of this section. Check the connection and try again."
+msgid "Сервер не подтвердил настройки этого раздела. Повторите попытку."
+msgstr "The server did not confirm the settings for this section. Please try again."
 
 #: packages/app-shell/src/observability.ts
 msgid "Сервер не подтвердил отправку. Ответ сохранён; проверьте результат перед повтором."
@@ -481,6 +487,11 @@ msgstr "The server rejected the submission. Refresh the problem and check the su
 #: packages/app-shell/src/session-management.tsx
 msgid "Сервер смешал сессии разных кабинетов."
 msgstr "The server mixed up sessions of different accounts."
+
+#: packages/app-shell/src/auth-boundary.tsx
+#: packages/app-shell/src/service-availability.tsx
+msgid "Сервис временно недоступен"
+msgstr "The service is temporarily unavailable"
 
 #: packages/app-shell/src/session-management.tsx
 msgid "Сессия завершена, но локальные данные не удалось очистить. Закройте приложение на общем устройстве."

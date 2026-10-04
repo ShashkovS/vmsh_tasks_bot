@@ -15,6 +15,7 @@ import {
   ProductPageView,
   PushOnboarding,
   useAuthentication,
+  useBrowserOnline,
 } from '@vmsh/app-shell'
 import { ConnectionBanner } from '@vmsh/product'
 
@@ -132,6 +133,7 @@ function StudentProtectedShell({
 
 function StudentOfflineSessionNotice() {
   const authentication = useAuthentication()
+  const online = useBrowserOnline()
   const offlineRead = useStudentOfflineReadStatus()
   const principal =
     authentication.state.status === 'authenticated' ||
@@ -156,7 +158,7 @@ function StudentOfflineSessionNotice() {
           : t`Показана последняя сохранённая копия. Новые публикации и изменения появятся после восстановления связи.`
       }
       className="mb-4"
-      state="offline"
+      state={online ? 'reconnecting' : 'offline'}
     />
   )
 }

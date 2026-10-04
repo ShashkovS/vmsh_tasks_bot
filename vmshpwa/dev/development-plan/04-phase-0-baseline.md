@@ -1,5 +1,9 @@
 # Этап 0. Базовая линия, fixtures и наблюдаемая совместимость
 
+2026-10-04: [объяснение сбоя нашего сервера](../../docs/service-failure-copy-20261004.md)
+— Fast gate PASS: Python 2840 / 7 SKIP, frontend 1042, Storybook 362, Chromium 9;
+проверены recovery, startup/shared panels и login трёх кабинетов, 320 px light/dark.
+
 2026-10-04: [graceful shutdown SymPy child](../../docs/graceful-shutdown.md)
 — выпущено на оба production; Linux shutdown 1,891 с, по 25 HTTP PASS.
 

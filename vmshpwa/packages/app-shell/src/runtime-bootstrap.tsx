@@ -13,7 +13,14 @@ import {
 } from '@vmsh/contracts'
 import { Button, Card, CardContent } from '@vmsh/ui'
 import { RequestDeadlineExceededError, withRequestDeadline } from './request-deadline'
-import { useServiceAvailability, serviceWaitingText } from './service-availability'
+import {
+  useServiceAvailability,
+  useBrowserOnline,
+  serviceWaitingText,
+  serviceAvailabilityTitle,
+  serviceUnavailableText,
+  connectionFailureText,
+} from './service-availability'
 
 const RuntimeConfigContext = createContext<RuntimeConfig | null>(null)
 export const DEFAULT_RUNTIME_BOOTSTRAP_TIMEOUT_MS = 10_000
@@ -60,7 +67,7 @@ export interface RuntimeBootstrapProps {
 type RuntimeBootstrapState =
   | { status: 'loading' }
   | { status: 'ready'; runtime: RuntimeConfig }
-  | { status: 'error'; requestId?: string }
+  | { status: 'error'; requestId?: string; serverFailure: boolean; connectionFailure: boolean }
 
 /**
  * This boundary is intentionally outside every router: Phase 0 requires a
@@ -97,6 +104,7 @@ function RuntimeBootstrapRequest({
 }: RuntimeBootstrapProps & { onRetry: () => void }) {
   const [state, setState] = useState<RuntimeBootstrapState>({ status: 'loading' })
   const availability = useServiceAvailability()
+  const online = useBrowserOnline()
 
   useEffect(() => {
     const abortController = new AbortController()
@@ -125,6 +133,8 @@ function RuntimeBootstrapRequest({
         }
         setState({
           status: 'error',
+          serverFailure: error instanceof ApiResponseError && error.status >= 500,
+          connectionFailure: isRuntimeNetworkFailure(error),
           ...(error instanceof ApiResponseError ? { requestId: error.requestId } : {}),
         })
       },
@@ -148,9 +158,7 @@ function RuntimeBootstrapRequest({
         title={
           availability.state === 'ready'
             ? t`Проверяем подключение`
-            : availability.state === 'updating'
-              ? t`Обновляем сервис`
-              : t`Восстанавливаем соединение`
+            : serviceAvailabilityTitle(availability, online)
         }
       />
     )
@@ -159,10 +167,24 @@ function RuntimeBootstrapRequest({
   if (state.status === 'error') {
     return (
       <AppStartupScreen
-        description={t`Сервер не подтвердил настройки этого раздела. Проверьте подключение и повторите попытку.`}
+        description={
+          state.serverFailure ||
+          (state.connectionFailure && availability.cause === 'server' && online)
+            ? serviceUnavailableText()
+            : state.connectionFailure
+              ? connectionFailureText(online)
+              : t`Сервер не подтвердил настройки этого раздела. Повторите попытку.`
+        }
         onRetry={onRetry}
         state="error"
-        title={t`Не удалось безопасно открыть кабинет`}
+        title={
+          state.serverFailure || state.connectionFailure
+            ? serviceAvailabilityTitle(
+                state.serverFailure ? { ...availability, cause: 'server' } : availability,
+                online,
+              )
+            : t`Не удалось безопасно открыть кабинет`
+        }
         {...(state.requestId ? { requestId: state.requestId } : {})}
       />
     )

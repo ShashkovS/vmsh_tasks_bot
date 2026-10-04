@@ -108,6 +108,24 @@ describe('browser authentication client', () => {
       'network',
     )
     expect(classifyAuthLoginError(apiFailure('unexpected'))).toBe('error')
+    expect(classifyAuthLoginError(new AuthProtocolError('Malformed', { status: 200 }))).toBe(
+      'error',
+    )
+    for (const status of [500, 502, 503, 504]) {
+      expect(classifyAuthLoginError(new AuthProtocolError('Gateway', { status }))).toBe(
+        'service-unavailable',
+      )
+      expect(
+        classifyAuthLoginError(
+          new ApiResponseError(
+            status,
+            apiErrorSchema.parse({
+              error: { code: 'internal_error', message: 'Internal detail', requestId: 'r-server' },
+            }),
+          ),
+        ),
+      ).toBe('service-unavailable')
+    }
   })
 
   it('uses only the validated audience URL and sends the audience-specific body with cookies', async () => {

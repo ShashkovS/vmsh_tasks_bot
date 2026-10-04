@@ -2,7 +2,12 @@ import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { Bell, Eye, EyeOff, Users } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
-import { PageLayout } from '@vmsh/app-shell'
+import {
+  PageLayout,
+  useBrowserOnline,
+  connectionFailureText,
+  serviceUnavailableText,
+} from '@vmsh/app-shell'
 import type { FamilyLoginRequest } from '@vmsh/contracts'
 import {
   Sign179,
@@ -19,7 +24,14 @@ import {
 } from '@vmsh/ui'
 
 export type FamilyLoginState =
-  'idle' | 'pending' | 'invalid' | 'rate-limited' | 'account-unavailable' | 'network' | 'error'
+  | 'idle'
+  | 'pending'
+  | 'invalid'
+  | 'rate-limited'
+  | 'account-unavailable'
+  | 'network'
+  | 'service-unavailable'
+  | 'error'
 
 export function FamilyLoginPage({
   invalid = false,
@@ -32,6 +44,7 @@ export function FamilyLoginPage({
 }) {
   const brand = useBrandIdentity()
   const supportEmail = brand.supportEmail
+  const online = useBrowserOnline()
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -41,7 +54,8 @@ export function FamilyLoginPage({
     invalid: t`Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз.`,
     'rate-limited': t`Слишком много попыток. Подождите немного и попробуйте ещё раз.`,
     'account-unavailable': t`Вход для этой учётной записи сейчас недоступен. Напишите администраторам.`,
-    network: t`Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз.`,
+    network: connectionFailureText(online),
+    'service-unavailable': serviceUnavailableText(),
     error: t`Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам.`,
   } as const
   const errorState = effectiveState === 'idle' || pending ? null : effectiveState

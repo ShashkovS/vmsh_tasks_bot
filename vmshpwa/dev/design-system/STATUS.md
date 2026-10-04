@@ -1,5 +1,16 @@
 # Design-system status
 
+## 2026-10-04 — Сообщения при сбое сервера
+
+Correction существующих status/startup/cache/login состояний по просьбе
+владельца: не обвинять интернет при сбое сервиса. Без новой фазы/art direction;
+известный server outage, неизвестная причина и browser offline получают
+раздельный текст. [Компоненты и проверки](../../docs/service-failure-copy-20261004.md).
+
+Fast gate PASS: Python 2840 / 7 SKIP, frontend 1042, Storybook 362,
+Chromium redeploy/offline-current 9; 320 px light/dark проверены.
+Frontend-only выпуск подготовлен для ВМШ/TLF; backend/migrations не меняются.
+
 ## 2026-10-04 — CPU incident: Student problem list
 
 Backend correction в текущем content flow; UI/design остаются прежними.

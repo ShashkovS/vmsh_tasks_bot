@@ -715,7 +715,8 @@ const staffLoginStates: Array<{ value: StaffLoginState; label: string }> = [
   { value: 'invalid', label: 'Неверные данные' },
   { value: 'rate-limited', label: 'Слишком много попыток' },
   { value: 'account-unavailable', label: 'Аккаунт недоступен' },
-  { value: 'network', label: 'Нет связи' },
+  { value: 'network', label: 'Сервер не отвечает' },
+  { value: 'service-unavailable', label: 'Сбой сервера' },
   { value: 'error', label: 'Небезопасный ответ' },
   { value: 'pending', label: 'Отправка' },
 ]
@@ -757,7 +758,8 @@ export const LoginStateMatrix: Story = {
       ['invalid', 'Логин или пароль не подошли'],
       ['rate-limited', 'Слишком много попыток'],
       ['account-unavailable', 'учётной записи сейчас недоступен'],
-      ['network', 'Не удалось связаться с сервером'],
+      ['network', 'Не получили ответ от сервера'],
+      ['service-unavailable', 'Проблема на нашей стороне'],
       ['error', 'Не удалось безопасно завершить вход'],
     ] as const
     for (const [value, copy] of cases) {

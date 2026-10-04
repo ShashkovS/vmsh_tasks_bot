@@ -1,7 +1,8 @@
 /**
  * Static last-resort screen for a failed Russian catalog. Without a catalog
  * React cannot render any product text, so this screen is plain DOM with a
- * fixed bilingual message. It only uses design-system utility classes.
+ * fixed bilingual message. See docs/service-failure-copy-20261004.md: a failed
+ * bootstrap does not prove a user's internet outage.
  */
 export function renderCatalogFailure(root: HTMLElement): void {
   const main = document.createElement('main')
@@ -19,7 +20,7 @@ export function renderCatalogFailure(root: HTMLElement): void {
   description.className = 'mt-1 leading-6 text-muted-foreground'
   description.textContent =
     // eslint-disable-next-line lingui/no-unlocalized-strings -- bilingual copy shown when no catalog could load
-    'Проверьте подключение и обновите страницу. · Check the connection and reload the page.'
+    'Попробуйте обновить страницу позже. · Please try reloading the page later.'
   const reload = document.createElement('button')
   reload.type = 'button'
   reload.className = 'mt-4 h-8 rounded-lg bg-primary px-3 text-primary-foreground'

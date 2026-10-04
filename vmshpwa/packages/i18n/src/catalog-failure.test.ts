@@ -19,6 +19,8 @@ describe('renderCatalogFailure', () => {
     const alert = root.querySelector('[role="alert"]')
     expect(alert?.textContent).toContain('Не удалось загрузить интерфейс')
     expect(alert?.textContent).toContain('Could not load the interface')
+    expect(alert?.textContent).not.toContain('Проверьте подключение')
+    expect(alert?.textContent).not.toContain('Check the connection')
     root.querySelector('button')?.click()
     expect(reload).toHaveBeenCalledOnce()
     expect(root.querySelector('span')).toBeNull()

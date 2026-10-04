@@ -10,10 +10,28 @@ async function mode(page: Page, value: string) {
 }
 
 // docs/smooth-redeploy.md: real HTTP gateway outage, no browser API mocks.
-test('cold start waits through nginx HTML failure without a security warning', async ({ page }) => {
+test('cold start explains our server failure and recovers without blaming the internet', async ({
+  page,
+}, info) => {
   await mode(page, 'bad-gateway')
   await page.goto('/student/')
-  await expect(page.getByRole('heading', { name: 'Восстанавливаем соединение' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Сервис временно недоступен' })).toBeVisible()
+  await expect(page.getByText(/Проблема на нашей стороне/)).toBeVisible()
+  await expect(page.getByText(/Проверьте интернет|Нет сети/)).toHaveCount(0)
+  await page.setViewportSize({ width: 320, height: 700 })
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(
+      (value) => document.documentElement.classList.toggle('dark', value === 'dark'),
+      theme,
+    )
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true)
+    await page.screenshot({
+      path: info.outputPath(`server-failure-320-${theme}.png`),
+      fullPage: true,
+    })
+  }
   await expect(page.getByText('Не удалось безопасно открыть кабинет')).toHaveCount(0)
   await mode(page, 'updating')
   await expect(page.getByRole('heading', { name: 'Обновляем сервис' })).toBeVisible({

@@ -2,7 +2,12 @@ import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { Eye, EyeOff, Send, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
-import { PageLayout } from '@vmsh/app-shell'
+import {
+  PageLayout,
+  useBrowserOnline,
+  connectionFailureText,
+  serviceUnavailableText,
+} from '@vmsh/app-shell'
 import type { StudentLoginRequest } from '@vmsh/contracts'
 import {
   Sign179,
@@ -26,6 +31,7 @@ export type StudentLoginState =
   | 'account-unavailable'
   | 'blocked'
   | 'network'
+  | 'service-unavailable'
   | 'error'
 
 export function StudentLoginPage({
@@ -39,6 +45,7 @@ export function StudentLoginPage({
 }) {
   const brand = useBrandIdentity()
   const supportEmail = brand.supportEmail
+  const online = useBrowserOnline()
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState(initialUsername)
   const [telegramToken, setTelegramToken] = useState('')
@@ -47,7 +54,8 @@ export function StudentLoginPage({
     'rate-limited': t`Слишком много попыток. Подождите немного и попробуйте ещё раз.`,
     'account-unavailable': t`Вход для этой учётной записи сейчас недоступен. Напишите администраторам.`,
     blocked: t`Доступ к аккаунту приостановлен. Напишите администраторам.`,
-    network: t`Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз.`,
+    network: connectionFailureText(online),
+    'service-unavailable': serviceUnavailableText(),
     error: t`Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам.`,
   } as const
   const pending = loginState === 'pending'

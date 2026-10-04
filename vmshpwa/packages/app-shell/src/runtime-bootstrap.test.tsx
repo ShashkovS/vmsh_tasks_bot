@@ -161,7 +161,10 @@ describe('RuntimeBootstrap', () => {
       </RuntimeBootstrap>,
     )
 
-    expect(await screen.findByRole('alert')).not.toBeNull()
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('Сервис временно недоступен')
+    expect(alert.textContent).toContain('Проблема на нашей стороне')
+    expect(alert.textContent).not.toContain('Проверьте интернет')
     expect(screen.queryByText('Открыт student')).toBeNull()
   })
 
@@ -242,7 +245,9 @@ describe('RuntimeBootstrap', () => {
 
     expect(screen.getByRole('status').textContent).toContain('Проверяем подключение')
     await act(() => vi.advanceTimersByTimeAsync(25))
-    expect(screen.getByRole('alert').textContent).toContain('Не удалось безопасно открыть кабинет')
+    expect(screen.getByRole('alert').textContent).toContain('Сервер не отвечает')
+    expect(screen.getByRole('alert').textContent).toContain('Не получили ответ от сервера')
+    expect(screen.getByRole('alert').textContent).not.toContain('Проверьте интернет')
     expect(screen.queryByText('Открыт student')).toBeNull()
   })
 })

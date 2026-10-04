@@ -27,3 +27,22 @@ export const Prolonged: Story = {
 export const Reconnecting: Story = {
   args: { state: { state: 'reconnecting', since: 1, prolonged: false } },
 }
+export const ServerUnavailable: Story = {
+  args: { state: { state: 'reconnecting', cause: 'server', since: 1, prolonged: false } },
+  play: async ({ canvasElement }) => {
+    const status = within(canvasElement).getByRole('status')
+    await expect(status).toHaveTextContent('Проблема на нашей стороне')
+    await expect(status).not.toHaveTextContent('Нет подключения к интернету')
+  },
+}
+export const ServerProlonged: Story = {
+  args: { state: { state: 'reconnecting', cause: 'server', since: 1, prolonged: true } },
+}
+export const BrowserOffline: Story = {
+  args: { state: { state: 'reconnecting', since: 1, prolonged: false }, online: false },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('status')).toHaveTextContent(
+      'Нет подключения к интернету',
+    )
+  },
+}

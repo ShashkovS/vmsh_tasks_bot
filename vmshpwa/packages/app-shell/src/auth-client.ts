@@ -77,7 +77,7 @@ export class AuthNetworkError extends Error {
 export type AuthApiAccessFailure = 'unauthenticated' | 'forbidden' | 'other'
 
 export type AuthLoginFailure =
-  'invalid' | 'rate-limited' | 'account-unavailable' | 'network' | 'error'
+  'invalid' | 'rate-limited' | 'account-unavailable' | 'network' | 'service-unavailable' | 'error'
 
 export function classifyAuthApiError(error: unknown): AuthApiAccessFailure {
   if (!(error instanceof ApiResponseError)) return 'other'
@@ -87,6 +87,13 @@ export function classifyAuthApiError(error: unknown): AuthApiAccessFailure {
 }
 
 export function classifyAuthLoginError(error: unknown): AuthLoginFailure {
+  if (
+    (error instanceof ApiResponseError || error instanceof AuthProtocolError) &&
+    error.status !== undefined &&
+    error.status >= 500 &&
+    error.status <= 599
+  )
+    return 'service-unavailable'
   if (error instanceof AuthNetworkError) return 'network'
   if (!(error instanceof ApiResponseError)) return 'error'
   if (error.code === 'invalid_credentials') return 'invalid'

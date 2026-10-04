@@ -4,6 +4,7 @@ export type ServiceAvailability = {
   state: 'ready' | 'updating' | 'reconnecting'
   since: number
   prolonged: boolean
+  cause?: 'server' | 'unknown'
 }
 const ready: ServiceAvailability = { state: 'ready', since: 0, prolonged: false }
 const statusSchema = z.object({ state: z.enum(['ready', 'updating']) })
@@ -61,12 +62,28 @@ export function createServiceTransport(options: {
       clearTimeout(timeout)
     }
   }
-  const recover = (runtimePath: string, updating: boolean): Promise<void> => {
+  // docs/service-failure-copy-20261004.md: gateway errors prove a service
+  // failure; a failed fetch alone does not identify the user's connection.
+  const markServerFailure = () => {
+    if (snapshot.state === 'reconnecting' && snapshot.cause !== 'server')
+      publish({ ...snapshot, cause: 'server' })
+  }
+  const recover = (
+    runtimePath: string,
+    updating: boolean,
+    cause: 'server' | 'unknown' = 'unknown',
+  ): Promise<void> => {
     if (recovery) {
       if (updating && snapshot.state !== 'updating') publish({ ...snapshot, state: 'updating' })
+      else if (cause === 'server') markServerFailure()
       return recovery
     }
-    publish({ state: updating ? 'updating' : 'reconnecting', since: now(), prolonged: false })
+    publish({
+      state: updating ? 'updating' : 'reconnecting',
+      since: now(),
+      prolonged: false,
+      cause,
+    })
     const prolonged = setTimeout(() => {
       publish({ ...snapshot, prolonged: true })
       options.onEpisode?.({
@@ -83,6 +100,7 @@ export function createServiceTransport(options: {
           await new Promise((resolve) =>
             setTimeout(resolve, delay + Math.floor((options.random ?? Math.random)() * 250)),
           )
+          let gatewayReady = false
           try {
             const status = await probe('/service-status')
             if (status.ok) {
@@ -91,6 +109,7 @@ export function createServiceTransport(options: {
                 if (snapshot.state !== 'updating') publish({ ...snapshot, state: 'updating' })
                 continue
               }
+              gatewayReady = parsed.success && parsed.data.state === 'ready'
             } else await status.body?.cancel()
             // Old installations may not have /service-status yet. A static
             // "ready" is not sufficient: confirm that Python can serve runtime.
@@ -100,10 +119,17 @@ export function createServiceTransport(options: {
               continue
             }
             await response.body?.cancel()
-            if ([502, 503, 504].includes(response.status)) continue
+            if ([502, 503, 504].includes(response.status)) {
+              markServerFailure()
+              continue
+            }
             // Let the real caller validate runtime / permission failures.
             break
           } catch {
+            // The same-origin edge replied, but Python's runtime probe failed.
+            // Do not label this as a missing internet connection.
+            if (gatewayReady && !(typeof navigator !== 'undefined' && navigator.onLine === false))
+              markServerFailure()
             /* One tab-wide loop also covers an unexpected outage. */
           }
         }
@@ -243,7 +269,7 @@ export function createServiceTransport(options: {
         if (applicationErrorSchema.safeParse(payload).success) return response
       }
       await response.body?.cancel()
-      const pending = recover(runtimePath, updating)
+      const pending = recover(runtimePath, updating, 'server')
       if (!read && !updating && !idempotent) return unconfirmed()
       // A marked nginx rejection was never forwarded, so even an unsafe
       // method can be sent once after recovery. Other writes never replay here.

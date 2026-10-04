@@ -367,10 +367,6 @@ msgstr "Could not prepare offline mode"
 msgid "Не удалось применить обновление. Попробуйте ещё раз."
 msgstr "Could not apply the update. Please try again."
 
-#: apps/family/src/login-page.tsx
-msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
-msgstr "Could not reach the server. Check the internet connection and try again."
-
 #: apps/family/src/family-children-page.tsx
 msgid "Не удалось сохранить. Обновите страницу и попробуйте ещё раз."
 msgstr "Could not save. Refresh the page and try again."

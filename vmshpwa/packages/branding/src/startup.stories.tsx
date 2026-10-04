@@ -29,6 +29,15 @@ export const Updating: Story = {
 export const Reconnecting: Story = {
   args: { state: { state: 'reconnecting', since: 1, prolonged: false } },
 }
+export const ServerUnavailable: Story = {
+  args: { state: { state: 'reconnecting', cause: 'server', since: 1, prolonged: false } },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole('status')).toHaveTextContent('Проблема на нашей стороне')
+  },
+}
+export const ServerProlonged: Story = {
+  args: { state: { state: 'reconnecting', cause: 'server', since: 1, prolonged: true } },
+}
 export const Prolonged: Story = {
   args: { state: { state: 'updating', since: 1, prolonged: true } },
   play: async ({ canvas }) => {

@@ -62,6 +62,7 @@ it('does not replay an ambiguous write, but resumes an explicit receipt-backed o
   f.setMode('bad-gateway')
   const result = await f.transport.fetch('/staff/api/v1/import', { method: 'POST', body: '{}' })
   expect((await result.json()).error.code).toBe('request_not_confirmed')
+  expect(f.transport.getSnapshot()).toMatchObject({ state: 'reconnecting', cause: 'server' })
   f.setMode('ready')
   await vi.advanceTimersByTimeAsync(1_000)
   expect(f.fetch.mock.calls.filter(([url]) => url === '/staff/api/v1/import')).toHaveLength(1)
@@ -72,6 +73,7 @@ it('does not replay an ambiguous write, but resumes an explicit receipt-backed o
   f.setMode('ready')
   await vi.advanceTimersByTimeAsync(2_000)
   expect((await saved).ok).toBe(true)
+  expect(f.transport.getSnapshot().cause).toBeUndefined()
   const writes = f.fetch.mock.calls.filter(
     ([url]) => url === '/staff/api/v1/live-marking/operations',
   )
@@ -199,11 +201,45 @@ it('lets cache-backed reads fall back when the browser reports online but the ne
     fetch: vi.fn(() => Promise.reject(new TypeError('unreachable'))),
   })
   await expect(transport.fetchOfflineRead('/student/api/v1/home')).rejects.toThrow('unreachable')
+  expect(transport.getSnapshot()).toMatchObject({ state: 'reconnecting', cause: 'unknown' })
   // Later cache-backed requests must not hang behind the background recovery loop.
   await expect(transport.fetchOfflineRead('/student/api/v1/courses')).rejects.toThrow(
     'Network recovery',
   )
 })
+
+// docs/service-failure-copy-20261004.md: the edge answers while Python is hung.
+it.each([true, false])(
+  'identifies a failed backend after a healthy edge only while online: %s',
+  async (online) => {
+    vi.useFakeTimers()
+    vi.stubGlobal('navigator', { onLine: true })
+    let runtimeReady = false
+    const transport = createServiceTransport({
+      origin: 'https://school.test',
+      random: () => 0,
+      fetch: vi.fn((input) =>
+        input === '/service-status'
+          ? Promise.resolve(Response.json({ state: 'ready' }))
+          : runtimeReady
+            ? Promise.resolve(Response.json({ ok: true }))
+            : Promise.reject(new TypeError('backend timeout')),
+      ),
+    })
+    await expect(transport.fetchOfflineRead('/student/api/v1/home')).rejects.toThrow(
+      'backend timeout',
+    )
+    expect(transport.getSnapshot().cause).toBe('unknown')
+    vi.stubGlobal('navigator', { onLine: online })
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(transport.getSnapshot().cause).toBe(online ? 'server' : 'unknown')
+    vi.stubGlobal('navigator', { onLine: true })
+    runtimeReady = true
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(transport.getSnapshot()).toMatchObject({ state: 'ready' })
+    expect(transport.getSnapshot().cause).toBeUndefined()
+  },
+)
 
 it('keeps explicit deploy recovery for cache-backed reads', async () => {
   const f = fixture()

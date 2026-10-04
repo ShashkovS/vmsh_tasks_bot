@@ -3276,10 +3276,6 @@ msgstr "Could not parse Markdown"
 msgid "Не удалось разобрать видео"
 msgstr "Could not parse video"
 
-#: apps/staff/src/login-page.tsx
-msgid "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз."
-msgstr "Could not reach the server. Check the internet connection and try again."
-
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Не удалось сгенерировать metadata"
 msgstr "Could not generate metadata"
