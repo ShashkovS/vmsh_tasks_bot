@@ -37,4 +37,8 @@ blocker фиксируется отдельно, если повторится. 
 прошли. Старые derivatives покрыты read-only source overlay. После исправления
 ожидания auto-match повторён только figure-layout E2E (4 PASS).
 [Точный отчёт, receipts, preview и guarded release](../../pwa_tests/reports/hint-preview-empty-materials-20261004/README.md).
-Выпуск на ВМШ/TLF подготовлен по разрешению владельца; ещё не выполнен.
+Выпущен `cc60df33` на ВМШ webhook и ручным TLF script по разрешению владельца.
+Readonly smoke gl-14 подтвердил ready v7, текст подсказок и инструменты всех
+четырёх рисунков. Учебные публикации не менялись. На TLF все 158 product tables
+и 23862 строки идентичны, включая 1593 raw Zoom receipts; по 25 public HTTP PASS.
+[Production proof](../../pwa_tests/reports/hint-preview-empty-materials-20261004/production-proof.json).

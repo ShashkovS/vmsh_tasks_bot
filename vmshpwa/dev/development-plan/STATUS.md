@@ -11,7 +11,11 @@ API source presence и общий Staff preview реализованы; focused 
 Gates: 2839 Python / 7 SKIP, 1032 frontend, 356 Storybook, 6 Chromium cases PASS.
 Исправлено ожидание auto-match в новой E2E фикстуре; повторён только её режим.
 [Receipts и narrow light/dark preview](../../../pwa_tests/reports/hint-preview-empty-materials-20261004/README.md).
-Подготовлен guarded выпуск на ВМШ/TLF; production пока не обновлён.
+Выпущен `cc60df33` на ВМШ autodeploy и ручным TLF script. По 25 HTTP PASS,
+production bundles/services/schema проверены; 158 TLF tables / 23862 rows
+идентичны, включая 1593 Zoom receipts. Readonly gl-14 показывает ready v7,
+текст и figure tools; учебные публикации не менялись.
+[Production proof](../../../pwa_tests/reports/hint-preview-empty-materials-20261004/production-proof.json).
 
 ## 2026-10-04 — повторная загрузка после compiler upgrade
 

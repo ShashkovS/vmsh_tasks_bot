@@ -1,6 +1,6 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
-2026-10-04: начато исправление [превью подсказок и пустых материалов](../../docs/hint-preview-empty-materials-20261004.md). Проверка включает полный upload/preview/edit/publish/read flow; assets только выбранного раздела, пустые hint/answer+solution не создают кнопок.
+2026-10-04: исправление [превью подсказок и пустых материалов](../../docs/hint-preview-empty-materials-20261004.md) выпущено на ВМШ/TLF (`cc60df33`, webhook/manual). Assets только выбранного раздела; отсутствие hint или обоих answer/solution скрывает кнопку, в том числе для старых публикаций. Python 2839 / 7 SKIP, frontend 1032, Storybook 356, Chromium 6 PASS. Readonly gl-14: ready v7, текст и figure tools. По 25 HTTP PASS; на TLF 158 таблиц / 23862 строки идентичны.
 
 2026-10-04: follow-up повторной загрузки после compiler upgrade выпущен на ВМШ/TLF (`62e40a16`, webhook/manual): 0113 сохраняет terminal revision, новая compiler generation создаёт новый номер. Python 2832, frontend 1028, Chromium content 2 PASS; отдельно зафиксирован неизменённый Storybook performance blocker. Rehearsal обеих БД и schema-compatible rollback PASS. По 25 HTTP PASS, 0113/current/integrity ok; учебные материалы сохранены. [Причина, migration 0113 и регрессии](../../docs/content-recovery-20261004.md#повторная-загрузка-после-обновления-конвертера--follow-up).
 

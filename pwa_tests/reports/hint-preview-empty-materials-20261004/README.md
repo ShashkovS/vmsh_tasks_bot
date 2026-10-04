@@ -44,4 +44,17 @@ production provenance, backup, остановка SQLite writers, noop schema gu
 сравнение всех product rows, сохранение credentials и shared NATS PID,
 health/25 public HTTP checks, сохранение старого static/source для отката.
 ВМШ — штатный webhook после разрешённого push в origin/vmshpwa.
-Выпуск пока не выполнен.
+Выпущен `cc60df33d01b29ae77476db0b43b711f79e5d370` на обоих порталах.
+ВМШ webhook: frontend=true/backend=true/migrations=false,
+release `cc60df33d01b-20261004115535`. Ручной TLF:
+`tlfprep-20261004-hint-preview-cc60df33d01b`; **158 tables / 23862 rows идентичны**,
+1593 raw Zoom receipts сохранены, credentials digest и NATS PID прежние.
+Схема 0111/0112/0113 и DDL hash прежние, integrity ok; прежние 627 legacy FK
+дефектов совпадают. По 25 public HTTP PASS, production provenance всех четырёх
+apps, службы active, maintenance снят. Source/static rollback сохранены на TLF.
+[Общий proof](production-proof.json), [ВМШ](production-vmsh.json), [TLF](production-tlf.json).
+
+Authenticated readonly smoke gl-14: ready selector v7/cr-79 восстановлен,
+PWA preview показывает текст подсказок, четыре рисунка и size/actions controls.
+Учебные публикации не менялись: опубликованной остаётся v6; версия v7
+доступна владельцу для просмотра/редактирования и отдельной публикации.
