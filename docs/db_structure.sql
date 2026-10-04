@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 5839d046e255c1fc521a0ff656ec9eff3e15021807e9a5614843c12d89e9b3da
+-- Product schema SHA-256: aff0238ffb4a4350b672a6999f6e350f838ec4b1c48effd2d3c4f7bb88148b15
 
 CREATE TABLE achievement_definitions
 (
@@ -569,7 +569,7 @@ CREATE TABLE content_revision_assets
     primary key (revision_id, logical_name, role)
 );
 
-CREATE TABLE content_revisions
+CREATE TABLE "content_revisions"
 (
     id                      integer primary key,
     public_id text generated always as ('cr-' || id) virtual,
@@ -604,7 +604,7 @@ CREATE TABLE content_revisions
     check (compile_claim_token is null or length(compile_claim_token) between 16 and 128), compile_claimed_at text, compile_lease_expires_at text, compile_attempt_count integer not null default 0
     check (compile_attempt_count >= 0), compile_completed_at text,
     unique (source_id, revision_number),
-    unique (source_id, source_sha256),
+    unique (source_id, source_sha256, parser_version),
     check (supersedes_revision_id is null or supersedes_revision_id <> id),
     check (status <> 'ready' or canonical_json is not null)
 );
