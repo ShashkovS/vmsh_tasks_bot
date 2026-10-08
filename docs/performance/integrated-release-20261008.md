@@ -111,3 +111,17 @@ teardown. Network boundary test открывает реальную Staff login 
 и release gate `PWA_E2E_MODES="i18n runtime-isolation figure-layout statistics visual"`.
 Они завершают затронутые сценарии и оставшиеся destructive/visual фазы;
 полный исходный FAIL/interrupt сохраняется в отчёте. Выпуск pending.
+
+## Ресурсы локального окружения и опубликованный результат
+
+Интеграция `d6eb7fa9` опубликована в `codex/integrated-release-20261008`;
+`origin/vmshpwa` и оба production остаются на прежних ревизиях. Во время
+повтора локальный Mac деградировал: [23/24 GiB, load average 125, 29 stuck processes](../../pwa_tests/reports/integrated-release-20261008/resource-degradation.json).
+Стали таймаутиться также ранее проходившие Chromium boot/preparation;
+изолированные test services 8380/5380 и тестовые браузеры остановлены.
+Изменений product code после `68eee3f6` нет; исходные completed non-browser
+PASS и 385/20/6 all-matrix receipt сохранены. Отдельные свежие phases и
+оставшиеся figure/statistics/visual не считаются PASS. Предварительный TLF
+deploy script скопирован в `/tmp`, SHA-256 совпадает; cutover не запускался.
+Следующий шаг: свободные ресурсы и финальный gate либо явно выбранный
+владельцем выпуск по уже завершённым проверкам.

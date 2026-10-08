@@ -24,3 +24,9 @@ Production deployment ещё не выполнялся. Direct upload для Beg
 [reconnect matrix](problem-release-replacement.json): 3 PASS. Временная
 диагностика удалена; network-loss assertions и snapshots сохранены. Финальный
 общий gate запускается заново.
+
+Интеграционная ветка `codex/integrated-release-20261008` запушена (`d6eb7fa9`).
+Финальный all-mode повтор корректно прерван с exit 130;
+[resource degradation](resource-degradation.json) и [полные traces](final-navigation-failures/interrupted-gate.json)
+не считаются PASS. Остановлены только принадлежащие прогону services/browsers.
+Production ветка и оба портала ещё не менялись; остаточный gate/выпуск pending.

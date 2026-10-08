@@ -7,6 +7,10 @@
 Selectors/SW flow исправлены. Повтор all-mode прерван после деградации
 WebKit newPage/cold navigation; свежие focused browser phases и оставшиеся
 figure/statistics/visual pending. Product source не менялся. [План и квитанции](integrated-release-20261008.md).
+Интеграция `d6eb7fa9` запушена в codex branch. Локальный Mac: 23/24 GiB,
+load average 125; test runtime остановлен после resource failures.
+Production branch и оба сервера ещё не изменены; финальная проверка/выпуск pending.
+
 
 - 2026-10-08, исправления: реализован [инкремент](2026-10-08-fixes.md).
   Индекс 0114 сократил пустую push selection 164–190 → 32–36 мс на одной
