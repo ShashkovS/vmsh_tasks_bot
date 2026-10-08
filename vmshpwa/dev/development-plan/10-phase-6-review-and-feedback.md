@@ -298,3 +298,15 @@ Backend/контракты и проверки связаны в докумен�
 Production-выпуск завершён 2 октября: `5bb8d38227df`, VMSH webhook и ручной TLF
 cutover, 0107 → backend → frontend, по 25 HTTP checks. Старые сообщения/версии
 сохранены; baseline заполнен. [Release proof](../../docs/question-attention.md#production--2-октября-2026).
+
+## Исправление полной переписки — 8 октября 2026
+
+Контекст старых проверок Teacher/Admin восстановлен: все сохранённые реплики,
+поздние ответы и scoped-вложения, без расширения immutable evidence.
+[Требования, API и проверки](../../docs/review-history.md#полная-переписка--8-октября-2026).
+Материалы исправляемого вердикта не расширяются поздними ответами.
+
+Proof: 30 связанных HTTP / 1053 frontend / 363 Storybook / 6 Chromium E2E
+PASS; типы/lint/i18n/build PASS, light/dark осмотрены. Полный fast gate остаётся
+красным на незатронутых Python fixtures/production-profile/clock failures.
+[Подробности и снимки](../../../pwa_tests/reports/review-conversation-20261008/README.md).

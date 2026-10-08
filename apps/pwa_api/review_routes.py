@@ -18,6 +18,11 @@ from aiohttp import web
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
+from apps.pwa_api.student_results_routes import (
+    archive_attachment_response,
+    legacy_attachment_response,
+    legacy_solutions_root,
+)
 from db_methods.pwa.review_telegram import read_review_telegram_delivery
 from db_methods.pwa.course_catalog import find_course
 from db_methods.pwa.course_runtime_settings import find_course_runtime_settings
@@ -64,6 +69,7 @@ from helpers.pwa.permissions import Capability
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.course_runtime_settings import DEFAULT_COURSE_RUNTIME_SETTINGS
+from models.pwa import review_conversation, student_results as archive
 from models.pwa.review_notifications import record_review_notifications
 from models.pwa.review_corrections import (
     ReviewCorrectionCommand,
@@ -1443,6 +1449,113 @@ async def completed_review_history(request: web.Request) -> web.Response:
         }
 
     return web.json_response(await database.factory.run_read_async(read))
+
+
+async def _read_conversation(request, read):
+    actor, scope = _require_review_write(request)
+    principal = authenticated_session(request).principal
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+    for key, value in request.match_info.items():
+        if not _PUBLIC_ID.fullmatch(value):
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Некорректный идентификатор",
+            )
+    try:
+        return await database.factory.run_read_async(
+            lambda c: read(
+                c,
+                scope,
+                actor,
+                principal.is_global_admin,
+                request.match_info["review_id"],
+            )
+        )
+    except archive.ArchiveNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="review_not_found",
+            message="Проверка или материал не найдены или недоступны",
+        ) from error
+
+
+@review_routes.get("/staff/api/v1/review/history/{review_id}/conversation")
+async def completed_review_conversation(request):
+    # docs/review-history.md: full dialogue is separate from correction evidence.
+    if set(request.query) - {"cursor"} or len(request.query.get("cursor", "")) > 128:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Некорректный курсор истории"
+        )
+    result = await _read_conversation(
+        request,
+        lambda c, scope, actor, admin, review: review_conversation.history(
+            c,
+            scope,
+            actor,
+            admin,
+            review,
+            legacy_solutions_root(request),
+            request.query.get("cursor"),
+        ),
+    )
+    return web.json_response(
+        {"schemaVersion": 1, "requestId": request["request_id"], **result},
+        headers={"Cache-Control": "private, no-store"},
+    )
+
+
+@review_routes.get(
+    "/staff/api/v1/review/history/{review_id}/attachments/{attachment_id}"
+)
+async def completed_review_attachment(request):
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    metadata = await _read_conversation(
+        request,
+        lambda c, scope, actor, admin, review: review_conversation.attachment(
+            c, scope, actor, admin, review, request.match_info["attachment_id"]
+        ),
+    )
+    return await archive_attachment_response(request, metadata)
+
+
+@review_routes.get(
+    "/staff/api/v1/review/history/{review_id}/legacy-attachments/{discussion_id}"
+)
+async def completed_review_legacy_attachment(request):
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+
+    def read(c, scope, actor, admin, review):
+        metadata = review_conversation.attachment(
+            c,
+            scope,
+            actor,
+            admin,
+            review,
+            request.match_info["discussion_id"],
+            legacy=True,
+        )
+        return archive.require(
+            archive.legacy_path(legacy_solutions_root(request), metadata["attach_path"])
+        )
+
+    return await legacy_attachment_response(await _read_conversation(request, read))
 
 
 @review_routes.get("/staff/api/v1/review/series/{problem_id}/{projection}")

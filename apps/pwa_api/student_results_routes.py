@@ -36,7 +36,7 @@ def _admin(request):
         )
 
 
-def _root(request):
+def legacy_solutions_root(request):
     if LEGACY_SOLUTIONS_ROOT in request.app:
         return request.app[LEGACY_SOLUTIONS_ROOT]
     runtime = request.app.get(RUNTIME_CONFIG)
@@ -106,7 +106,7 @@ async def lesson(request):
                 request.match_info["student"],
                 request.match_info["course"],
                 number,
-                _root(request),
+                legacy_solutions_root(request),
             ),
         ),
     )
@@ -122,7 +122,7 @@ async def history(request):
                 c,
                 request.match_info["student"],
                 request.match_info["problem"],
-                _root(request),
+                legacy_solutions_root(request),
                 request.query.get("cursor"),
             ),
         ),
@@ -152,6 +152,10 @@ async def attachment(request):
         )
 
     m = await _read(request, read)
+    return await archive_attachment_response(request, m)
+
+
+async def archive_attachment_response(request, m):
     try:
         body = await _attachment_service(request).storage.get(m["object_key"])
     except FileNotFoundError as error:
@@ -185,9 +189,13 @@ async def legacy_attachment(request):
         r = archive.require(
             db.legacy_attachment(c, s["id"], request.match_info["discussion"])
         )
-        return archive.require(archive.legacy_path(_root(request), r["attach_path"]))
+        return archive.require(archive.legacy_path(legacy_solutions_root(request), r["attach_path"]))
 
     path = await _read(request, read)
+    return await legacy_attachment_response(path)
+
+
+async def legacy_attachment_response(path):
     try:
         body = await asyncio.to_thread(path.read_bytes)
     except OSError as error:

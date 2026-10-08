@@ -33,6 +33,7 @@ import { ReviewAttachmentImage } from './review-workspace-page'
 import { createEmptyReviewDraft, reviewDraftSchema } from './review-draft'
 import { describeReviewError } from './review-errors'
 import { rememberCompletedReview } from './last-completed-review'
+import { ReviewConversation } from './review-conversation'
 import type { HistorySearch } from './review-history-search'
 
 function historyError(error: unknown): string {
@@ -367,7 +368,7 @@ export function CompletedReviewCard({
           onAction={() => void query.refetch()}
         />
       ) : readOnly ? (
-        <ReadOnlyReview detail={query.data.detail} />
+        <ReadOnlyReview detail={query.data.detail} reviewId={reviewId} />
       ) : (
         <CorrectionEditor
           detail={query.data.detail}
@@ -380,8 +381,19 @@ export function CompletedReviewCard({
   )
 }
 
-function ReadOnlyReview({ detail }: { detail: ReviewHistoryDetailResponse['detail'] }) {
+function ReadOnlyReview({
+  detail,
+  reviewId,
+}: {
+  detail: ReviewHistoryDetailResponse['detail']
+  reviewId: string
+}) {
   const auth = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  const client = useMemo(
+    () => createReviewQueueClient(auth.client.runtime, { refreshSession: () => auth.refresh() }),
+    [auth],
+  )
   const media = useMemo(
     () =>
       createWrittenMaterialReassignmentClient(auth.client.runtime, {
@@ -416,6 +428,13 @@ function ReadOnlyReview({ detail }: { detail: ReviewHistoryDetailResponse['detai
       {detail.comment && (
         <p className="whitespace-pre-wrap rounded-lg border border-border p-3">{detail.comment}</p>
       )}
+      <ReviewConversation
+        client={client}
+        reviewId={reviewId}
+        accountId={principal.accountId}
+        namespace={createBrowserStorageNamespace(auth.client.runtime)}
+        threadVersion={detail.threadVersion}
+      />
     </section>
   )
 }
@@ -522,6 +541,9 @@ function CorrectionEditor({
       void queryClient.invalidateQueries({
         queryKey: ['review-history-detail', principal.accountId],
       })
+      void queryClient.invalidateQueries({
+        queryKey: ['review-conversation', namespace, principal.accountId],
+      })
       try {
         window.localStorage.removeItem(key)
       } catch {
@@ -575,39 +597,38 @@ function CorrectionEditor({
           </p>
         )}
       </details>
-      {detail.entries.map((entry) => (
-        <article className="space-y-2" key={entry.entryId}>
-          {entry.text && <p className="whitespace-pre-wrap">{entry.text}</p>}
-          {entry.attachments.map((a) => (
-            <ReviewAttachmentImage
-              key={a.attachmentId}
-              attachmentId={a.attachmentId}
-              entryId={entry.entryId}
-              ordinal={a.ordinal}
-              annotation={
-                stored.draft.annotations.find((m) => m.attachmentId === a.attachmentId) ?? null
-              }
-              annotationDisabled={busy}
-              editable
-              mediaClient={media}
-              onAnnotationChange={annotations}
-            />
-          ))}
-        </article>
-      ))}
-      <details>
-        <summary>
-          <Trans>История вердиктов и комментариев</Trans>
-        </summary>
-        {detail.timeline.map((t) => (
-          <p className="whitespace-pre-wrap border-t border-border p-2" key={t.reviewId}>
-            {t.teacherName} · {formatDateTime(new Date(t.completedAt))} ·{' '}
-            {writtenReviewVerdict(t.verdict).label}
-            {'\n'}
-            {t.comment}
-          </p>
+      <section aria-label={translate`Материалы выбранной проверки`} className="space-y-3">
+        <h3>
+          <Trans>Материалы выбранной проверки</Trans>
+        </h3>
+        {detail.entries.map((entry) => (
+          <article className="space-y-2" key={entry.entryId}>
+            {entry.text && <p className="whitespace-pre-wrap">{entry.text}</p>}
+            {entry.attachments.map((a) => (
+              <ReviewAttachmentImage
+                key={a.attachmentId}
+                attachmentId={a.attachmentId}
+                entryId={entry.entryId}
+                ordinal={a.ordinal}
+                annotation={
+                  stored.draft.annotations.find((m) => m.attachmentId === a.attachmentId) ?? null
+                }
+                annotationDisabled={busy}
+                editable
+                mediaClient={media}
+                onAnnotationChange={annotations}
+              />
+            ))}
+          </article>
         ))}
-      </details>
+      </section>
+      <ReviewConversation
+        client={client}
+        reviewId={detail.review.reviewId}
+        accountId={principal.accountId}
+        namespace={namespace}
+        threadVersion={detail.threadVersion}
+      />
       {storageFailed && (
         <p role="alert">
           <Trans>Браузер не сохраняет черновик. Не закрывайте страницу до отправки.</Trans>

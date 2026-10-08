@@ -1,6 +1,7 @@
 """Archive composition; authoritative contract: vmshpwa/docs/student-results.md."""
 
 import json
+from functools import partial
 
 from db_methods.pwa.content import _overlay_problem_titles
 from pathlib import Path
@@ -167,18 +168,20 @@ def media(
     annotation=None,
     legacy=False,
     media_kind="image",
+    base=None,
 ):
     kind = "legacy-attachments" if legacy else "attachments"
     return dict(
         id=attachment_id,
-        url=f"/staff/api/v1/student-results/{student}/{kind}/{attachment_id}",
+        url=f"{base or f'/staff/api/v1/student-results/{student}'}/{kind}/{attachment_id}",
         available=available,
         kind=media_kind,
         annotation=annotation,
     )
 
 
-def event_payload(c, index, s, p, root):
+def event_payload(c, index, s, p, root, *, media_base=None):
+    event_media = partial(media, base=media_base)
     kind = index["kind"]
     r = db.event_record(c, kind, index["id"])
     event = dict(
@@ -210,7 +213,7 @@ def event_payload(c, index, s, p, root):
             authorKind=r["author_kind"],
         )
         event["attachments"] = [
-            media(
+            event_media(
                 s["public_id"],
                 a["public_id"],
                 a["upload_status"] in ("stored", "locked"),
@@ -237,7 +240,7 @@ def event_payload(c, index, s, p, root):
             authorKind="ai" if r["source"] == "ai" else "teacher",
         )
         event["attachments"] = [
-            media(
+            event_media(
                 s["public_id"],
                 a["attachment_id"],
                 annotation=dict(
@@ -264,7 +267,7 @@ def event_payload(c, index, s, p, root):
                 except OSError:
                     archived_text = None
                     event["attachments"] = [
-                        media(
+                        event_media(
                             s["public_id"],
                             str(r["id"]),
                             False,
@@ -283,7 +286,7 @@ def event_payload(c, index, s, p, root):
                 )
             else:
                 event["attachments"] = [
-                    media(
+                    event_media(
                         s["public_id"],
                         str(r["id"]),
                         bool(target),
@@ -345,7 +348,7 @@ def event_payload(c, index, s, p, root):
             or None
         )
         event["attachments"] = [
-            media(
+            event_media(
                 s["public_id"],
                 m["attachment_id"],
                 m["upload_status"] in ("stored", "locked"),

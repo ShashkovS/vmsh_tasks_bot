@@ -60,3 +60,30 @@
 Ruff, ESLint, Staff TypeScript и `make pwa-build` прошли.
 Полный исторический набор вне затронутых компонентов не переоценивался:
 ранее зафиксированные baseline-сбои этого репозитория не относятся к выпуску.
+
+## Полная переписка — 8 октября 2026
+
+Согласовано: старая проверка Teacher/Admin показывает всю сохранившуюся
+переписку по задаче, включая поздние ответы и связанные ветки объединённой
+проверки. Материалы выбранной проверки и исправление вердикта остаются
+привязаны к исходному immutable evidence.
+
+Реализовано: [проекция](../../models/pwa/review_conversation.py) использует
+дедупликацию и чтение PWA/Telegram из архива результатов. Новый GET
+`/staff/api/v1/review/history/{reviewId}/conversation?cursor=…` возвращает
+`schemaVersion`, `requestId`, `events`, `nextCursor`, `total`, по 50 событий
+в хронологическом порядке. Вложения доступны под тем же авторизованным review ID;
+внутренние реакции и аудит не входят в переписку. Миграция не нужна.
+
+[Общая карточка](../apps/staff/src/review-history-page.tsx) использует
+[ReviewConversation](../apps/staff/src/review-conversation.tsx) и тот же
+`HistoryEvents`, что админский архив. Материалы выбранной проверки показаны
+отдельно; поздние ответы не добавляются к evidence исправления. Read-only серия
+запрашивает диалог по исходному разрешённому review ID, даже если показывает
+более новый чужой вердикт для тех же материалов.
+
+Проверено: 30 связанных HTTP, 1053 frontend, 363 Storybook и 6 Chromium E2E
+PASS; четыре app bundles собраны. Типы, lint, format, i18n и Ruff PASS.
+Светлая/тёмная темы осмотрены. Полный fast gate остановлен незатронутыми
+Python failures из-за внешних fixtures, prod profile и тестовых часов;
+общий gate не заявляется зелёным. [Подробный proof и снимки](../../pwa_tests/reports/review-conversation-20261008/README.md).

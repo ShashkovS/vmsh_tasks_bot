@@ -1418,6 +1418,7 @@ msgstr "Invalid request"
 msgid "Некорректный запрос пересчёта"
 msgstr "Invalid recalculation request"
 
+#: apps/pwa_api/review_routes.py
 #: apps/pwa_api/student_results_routes.py
 msgid "Некорректный идентификатор"
 msgstr "Invalid identifier"
@@ -1425,6 +1426,10 @@ msgstr "Invalid identifier"
 #: apps/pwa_api/auth_routes.py
 msgid "Некорректный идентификатор сеанса"
 msgstr "Invalid session identifier"
+
+#: apps/pwa_api/review_routes.py
+msgid "Некорректный курсор истории"
+msgstr "Invalid history cursor"
 
 #: apps/pwa_api/student_results_routes.py
 msgid "Некорректный номер занятия"
@@ -1900,6 +1905,10 @@ msgstr "Review is temporarily unavailable"
 #: helpers/pwa/push_delivery.py
 msgid "Проверка завершена"
 msgstr "Review complete"
+
+#: apps/pwa_api/review_routes.py
+msgid "Проверка или материал не найдены или недоступны"
+msgstr "The review or material was not found or is unavailable"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверка не найдена"
@@ -3272,6 +3281,7 @@ msgstr "This request takes no parameters"
 #: apps/pwa_api/course_routes.py
 #: apps/pwa_api/family_course_routes.py
 #: apps/pwa_api/notification_routes.py
+#: apps/pwa_api/review_routes.py
 #: apps/pwa_api/submission_routes.py
 #: apps/pwa_api/written_submission_routes.py
 msgid "Этот запрос не принимает параметры"

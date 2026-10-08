@@ -2,6 +2,30 @@ import { z } from 'zod'
 import { publicIdSchema } from './auth'
 import { webContentDocumentSchema } from './content'
 import { reviewAnnotationManifestSchema, writtenReviewVerdictSchema } from './review-queue'
+import { studentResultEventSchema } from './student-results'
+
+// docs/review-history.md: same archive events, with review-scoped media authorization.
+export const reviewConversationEventSchema = studentResultEventSchema.extend({
+  problemNumber: z.string(),
+  internal: z.literal(false),
+  attachments: z.array(
+    studentResultEventSchema.shape.attachments.element.extend({
+      url: z
+        .string()
+        .regex(
+          /^\/staff\/api\/v1\/review\/history\/[a-z0-9._:-]+\/(?:attachments|legacy-attachments)\/[a-z0-9._:-]+$/,
+        ),
+    }),
+  ),
+})
+export const reviewConversationResponseSchema = z.object({
+  schemaVersion: z.literal(1),
+  requestId: z.string(),
+  events: z.array(reviewConversationEventSchema),
+  nextCursor: z.string().nullable(),
+  total: z.number().int().nonnegative(),
+})
+export type ReviewConversationResponse = z.infer<typeof reviewConversationResponseSchema>
 
 // Authoritative flow: docs/review-history.md.
 const named = z.object({ id: publicIdSchema, name: z.string() }).strip()
