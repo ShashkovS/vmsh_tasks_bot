@@ -15,7 +15,8 @@ LOCK_FILE=/web/vmsh_tasks_bot/deploy/runtime/deploy/vmsh-tasks-bot.lock
 RUN_LOG=/web/vmsh_tasks_bot/deploy/logs/runs/vmsh-tasks-bot.log
 MAINTENANCE_FILE=/web/vmsh_tasks_bot/vmshpwa/runtime/service-updating
 ANALYTICS_TIMER_STATE=/web/vmsh_tasks_bot/deploy/runtime/deploy/analytics-timer-before-maintenance
-PUBLIC_MEDIA_ORIGIN=https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud
+# vmshpwa/docs/public-media-domain-20261008.md: nginx retains both origins.
+PUBLIC_MEDIA_ORIGIN=https://vmshstor.shashkovs.ru
 
 export HOME=/home/vmsh_tasks_bot
 export PATH=/home/vmsh_tasks_bot/.local/bin:/usr/local/texlive/2026/bin/x86_64-linux:/usr/local/bin:/usr/bin:/bin

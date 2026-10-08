@@ -46,6 +46,7 @@
   "sep09": "====== s3 bucket ======",
   "s3_url": "https://s3.ru1.storage.beget.cloud",
   "s3_bucket_name": "asdf-images-bucket",
+  "s3_public_base_url": "",
   "s3_access_key": "asdf",
   "s3_secret_key": "asdf",
   "sep10": "====== PWA ======",

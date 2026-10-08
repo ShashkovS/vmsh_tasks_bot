@@ -57,6 +57,10 @@
       {
         "id": "0113.content_upload_compiler_generation",
         "sha256": "f6f2a5822a83057a6ed82c2f6a38f10548620fbc9e0ed81f5ca5ba8c12d12991"
+      },
+      {
+        "id": "0114.vmsh_public_media_domain",
+        "sha256": "47e4a10bee11a2c41967761ad602ae379d7d7f135a65ebad2d399a07d8b2e24d"
       }
     ],
     "repository_head_status": {

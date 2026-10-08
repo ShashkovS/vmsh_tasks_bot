@@ -35,6 +35,7 @@ def test_schema_bootstrap_is_explicit_and_repeatable(tmp_path):
         BASELINE_ID,
         "0112.scheduled_publication_lifecycle",
         "0113.content_upload_compiler_generation",
+        "0114.vmsh_public_media_domain",
     ]
     assert inspect_migration_state(database_path).is_current
     with sqlite3.connect(database_path) as connection:
@@ -77,6 +78,7 @@ def test_previous_current_schema_adopts_baseline_and_applies_pending_migration(
     assert state.missing == (
         "0112.scheduled_publication_lifecycle",
         "0113.content_upload_compiler_generation",
+        "0114.vmsh_public_media_domain",
     )
     with pytest.raises(SchemaMismatchError, match="0112"):
         PwaConnectionFactory(path)
@@ -93,7 +95,7 @@ def test_previous_current_schema_adopts_baseline_and_applies_pending_migration(
         )
         assert (
             connection.execute("SELECT count(*) FROM _yoyo_migration").fetchone()[0]
-            == 4
+            == 5
         )
         assert (
             connection.execute(

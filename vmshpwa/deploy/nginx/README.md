@@ -15,10 +15,12 @@ Before installation replace every marker in `vmshpwa.conf.template`:
   site's TLS policy;
 - `@@STATIC_ROOT@@`: atomic release root containing `landing/`, `student/`,
   `family/` and `staff/` production builds;
-- `@@CSP_MEDIA_ORIGIN@@`: exact public bucket origin that appears in generated
-  media URLs (for production:
-  `https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud`), without a
-  path; the S3 API endpoint is not sufficient for browser CSP;
+- `@@CSP_MEDIA_ORIGIN@@`: space-separated exact public media origins, without
+  paths or wildcards. VMSH uses `https://vmshstor.shashkovs.ru` and retains
+  `https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud` for compatibility
+  ([domain transition](../../docs/public-media-domain-20261008.md)); other
+  deployments use their own origins. The S3 API endpoint is not sufficient
+  for browser CSP. `VITE_PUBLIC_MEDIA_ORIGIN` remains a single current origin;
 - `@@CSP_SENTRY_ORIGIN@@`: one exact Sentry ingest origin or the empty string.
 
 Wildcards, unresolved markers and client-derived values are forbidden. Install
