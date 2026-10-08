@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -15,6 +16,42 @@ NGINX_DIR = ROOT / "vmshpwa" / "deploy" / "nginx"
 TEMPLATE = NGINX_DIR / "vmshpwa.conf.template"
 PROXY_HEADERS = NGINX_DIR / "vmshpwa-proxy-headers.conf"
 MAKEFILE = ROOT / "Makefile"
+
+
+def test_vmsh_domain_transition_preserves_both_origins_in_every_csp_policy():
+    # docs/public-media-domain-20261008.md: deployed legacy/PWA map and the
+    # generic renderer must permit old URLs and worker fetches after migration.
+    new_origin = "https://vmshstor.shashkovs.ru"
+    old_origin = "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud"
+    installation = (ROOT / "docs/deploy/vmsh_tasks_bot_v3_deploy.sh").read_text()
+    replacement = re.search(
+        r"'s#@@CSP_MEDIA_ORIGIN@@#([^#]+)#g'", installation
+    ).group(1)
+    assert set(replacement.split()) == {new_origin, old_origin}
+    deployed_map = installation.split("map $uri $vmshpwa_csp {", 1)[1].split("\n}", 1)[0]
+    policies = re.findall(r'"(default-src[^"\n]+)"', deployed_map)
+    assert len(policies) == 2
+    template = TEMPLATE.read_text()
+    policies.extend(re.findall(r'"(default-src[^"\n]+)"', template))
+    for policy in policies:
+        policy = policy.replace("@@CSP_MEDIA_ORIGIN@@", replacement)
+        directives = {
+            parts[0]: parts[1:]
+            for item in policy.split(";") if (parts := item.split())
+        }
+        for name in ("img-src", "media-src", "connect-src"):
+            assert {new_origin, old_origin}.issubset(directives[name])
+        assert set(directives["frame-src"]) == {
+            "https://www.youtube.com", "https://vkvideo.ru"
+        }
+    deploy = (ROOT / "docs/deploy/deploy-vmsh-tasks-bot.sh").read_text()
+    assert f"PUBLIC_MEDIA_ORIGIN={new_origin}\n" in deploy
+    assert f"VITE_PUBLIC_MEDIA_ORIGIN={new_origin}" in installation
+    # The v3 file is an operator runbook with raw nginx examples, not one
+    # executable shell script. Syntax-check only the actual webhook script.
+    subprocess.run(
+        ["bash", "-n", str(ROOT / "docs/deploy/deploy-vmsh-tasks-bot.sh")], check=True
+    )
 
 
 def _location(source: str, selector: str) -> str:

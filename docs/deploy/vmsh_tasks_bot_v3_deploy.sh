@@ -770,7 +770,7 @@ PWA_RELEASE_ID="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
 
 make pwa-production-build \
   PWA_RELEASE_ID="$PWA_RELEASE_ID" \
-  VITE_PUBLIC_MEDIA_ORIGIN=https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud \
+  VITE_PUBLIC_MEDIA_ORIGIN=https://vmshstor.shashkovs.ru \
   VITE_SENTRY_DSN=https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io/4511885728088064
 
 # nginx с brotli_static отдаст эти файлы без сжатия на каждом запросе.
@@ -1172,8 +1172,8 @@ map $uri $vmshpwa_service_worker_scope {
 # Legacy-сайт продолжает работать со своей прежней политикой.
 map $uri $vmshpwa_csp {
     default "";
-    / "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
-    ~^/(landing|student|family|staff)(/|$) "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+    / "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; frame-src https://www.youtube.com https://vkvideo.ru; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@ @@CSP_MEDIA_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+    ~^/(landing|student|family|staff)(/|$) "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; frame-src https://www.youtube.com https://vkvideo.ru; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@ @@CSP_MEDIA_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
 }
 
 map $uri $vmshpwa_referrer_policy {
@@ -1534,8 +1534,9 @@ server {
 }
 NGINX
 
+# vmshpwa/docs/public-media-domain-20261008.md: retain both public origins.
 sudo sed -i \
-  's#@@CSP_MEDIA_ORIGIN@@#https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud#g' \
+  's#@@CSP_MEDIA_ORIGIN@@#https://vmshstor.shashkovs.ru https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud#g' \
   /web/vmsh_tasks_bot/vmsh_tasks_bot.conf
 
 sudo sed -i \

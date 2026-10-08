@@ -1,5 +1,14 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+2026-10-08: реализована [миграция публичных URL ВМШ](../../docs/public-media-domain-20261008.md)
+в [`0114`](../../../migrations/0115.vmsh_public_media_domain.py), включая frozen
+publication documents, SHA-256 и immutable guards. 40 целевых тестов — PASS.
+Deploy/nginx синхронизированы с настройками владельца; оба домена остаются
+разрешёнными. Format/types/lint/i18n, 1048 frontend, 363 Storybook и 2 Chromium
+content — PASS. Три оставшихся сбоя общего Python воспроизведены на исходном
+HEAD; [отчёт](../../../pwa_tests/reports/public-media-domain-20261008/validation.json).
+Production data migration ещё не применена.
+
 2026-10-04: [CPU incident Student problem list](../../docs/cpu-incident-20261004.md) — выпущен `bdfcf9a2` на ВМШ/TLF. Раннее ограничение result candidates текущим учеником и materialization scope сохраняют все строки в 15 read-only production cases; 103–277 → 4–28 мс. Fast gate: Python 2840 / 7 SKIP, frontend 1032, Storybook 356, Chromium content/submissions 5 PASS. По 25 HTTP PASS; текущий CPU 6.7–8.5% вместо 99%, read/write queues zero, 21 WebSocket connected.
 
 2026-10-04: исправление [превью подсказок и пустых материалов](../../docs/hint-preview-empty-materials-20261004.md) выпущено на ВМШ/TLF (`cc60df33`, webhook/manual). Assets только выбранного раздела; отсутствие hint или обоих answer/solution скрывает кнопку, в том числе для старых публикаций. Python 2839 / 7 SKIP, frontend 1032, Storybook 356, Chromium 6 PASS. Readonly gl-14: ready v7, текст и figure tools. По 25 HTTP PASS; на TLF 158 таблиц / 23862 строки идентичны.
