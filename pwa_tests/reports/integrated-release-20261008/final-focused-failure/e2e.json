@@ -1,0 +1,37 @@
+{
+  "modes": [
+    "i18n",
+    "figure-layout",
+    "runtime-isolation",
+    "statistics",
+    "visual"
+  ],
+  "browser": "all",
+  "seconds": 679.786,
+  "exit_code": 1,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.276,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/i18n.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 678.869,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ]
+}

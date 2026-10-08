@@ -30,3 +30,9 @@ Production deployment ещё не выполнялся. Direct upload для Beg
 [resource degradation](resource-degradation.json) и [полные traces](final-navigation-failures/interrupted-gate.json)
 не считаются PASS. Остановлены только принадлежащие прогону services/browsers.
 Production ветка и оба портала ещё не менялись; остаточный gate/выпуск pending.
+
+Последний [focused gate](final-focused-failure/summary.json): non-browser
+PASS; i18n 24 PASS / 12 FAIL. Реальный locale reload теперь ожидается во
+всех восьми journeys; [повтор прерван](locale-reload-fixed-interrupted.json)
+после новых WebKit cold-boot/teardown failures. Release gate не зелёный;
+figure/runtime/statistics/visual и оба production deployments pending.

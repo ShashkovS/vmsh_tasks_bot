@@ -2,6 +2,10 @@
 
 ## 2026-10-08 — Объединённый выпуск
 
+Финальный focused gate: non-browser PASS, i18n 24 PASS / 12 FAIL. Locale
+reload harness исправлен; повтор вновь прерван после WebKit boot/teardown
+timeouts. **Gate не зелёный, оба production ещё не обновлены.**
+
 Четыре доработки объединены; migrations 0114–0116 согласованы. Preflight обоих production PASS. Offline resync исправлен; focused matrix 3 PASS. Последний общий gate: 2882 Python,
 1068 frontend, 364 Storybook PASS; основная E2E-фаза 385 PASS / 20 SKIP / 6 FAIL.
 Selectors/SW flow исправлены. Повтор all-mode прерван после деградации

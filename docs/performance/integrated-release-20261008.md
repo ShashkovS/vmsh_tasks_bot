@@ -125,3 +125,25 @@ PASS и 385/20/6 all-matrix receipt сохранены. Отдельные св�
 deploy script скопирован в `/tmp`, SHA-256 совпадает; cutover не запускался.
 Следующий шаг: свободные ресурсы и финальный gate либо явно выбранный
 владельцем выпуск по уже завершённым проверкам.
+
+## Текущее состояние перед handoff
+
+[Последний focused release receipt](../../pwa_tests/reports/integrated-release-20261008/final-focused-failure/summary.json):
+format/types/lint/i18n, 2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS;
+первая i18n browser phase 24 PASS / 12 FAIL, source_changed=false. Остальные
+phases не запущены. Часть FAIL — locale reload, начатый после изменения
+`html.lang` и одновременно с navigation. Все восемь journeys
+[i18n.spec.ts](../../vmshpwa/e2e/i18n.spec.ts) теперь ждут фактическую
+main-frame navigation, DOM и `lang=en`. Formatting/typed ESLint PASS;
+[повтор](../../pwa_tests/reports/integrated-release-20261008/locale-reload-fixed-interrupted.json)
+дал успешные Chromium journeys, но WebKit вновь зависал на cold boot/teardown
+и прерван со статусом 130. Эталонные снимки, assertions, timeout и retries
+не ослаблены. Все принадлежащие прогону браузеры и services 8380/5380 остановлены.
+
+**Release gate не зелёный. Оба production ещё не изменены.**
+Требуется свободное окружение и завершение финального gate либо отдельное
+решение владельца использовать уже выполненные проверки. После этого:
+ff-only `vmshpwa`, push через системный SSH-agent, штатный защищённый VMSH
+deploy и [подготовленный TLF script](../../pwa_tests/reports/integrated-release-20261008/deploy-tlf.sh)
+на том же SHA; затем migration/HTTP/runtime/static/backups verification.
+Direct S3 verified flag остаётся false.

@@ -64,17 +64,30 @@ async function saveAccountLocale(page: Page, audience: string, locale: 'ru' | 'e
   expect(response.status()).toBe(200)
 }
 
+// docs/i18n.md: the locale cookie changes before location.reload completes.
+// Observe the real reload before navigating to the next acceptance route.
+async function switchAccountToEnglish(page: Page): Promise<void> {
+  const href = page.url()
+  const staff = new URL(href).pathname.startsWith('/staff/')
+  if (staff) await page.getByRole('button', { name: 'Язык интерфейса' }).click()
+  const reload = page.waitForEvent('framenavigated', {
+    predicate: (frame) => frame === page.mainFrame() && frame.url() === href,
+  })
+  const choice = staff
+    ? page.getByRole('menuitem', { name: 'English' })
+    : page.getByRole('radio', { name: 'English' })
+  await Promise.all([reload, choice.click()])
+  await page.waitForLoadState('domcontentloaded')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+}
+
 test('Student switches the account to English in the profile', async ({
   page,
   secondaryContext,
 }) => {
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
   try {
-    await Promise.all([
-      page.waitForEvent('load'),
-      page.getByRole('radio', { name: 'English' }).click(),
-    ])
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
     await expect(page.getByRole('link', { name: 'Problems' }).first()).toBeVisible()
     await expect(page.getByText('Interface language').first()).toBeVisible()
 
@@ -97,8 +110,7 @@ test('Student switches the account to English in the profile', async ({
 test('Student sees English support, news, progress and notification chrome', async ({ page }) => {
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
   try {
-    await page.getByRole('radio', { name: 'English' }).click()
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
 
     await page.goto('/student/questions')
     await expect(page.getByRole('heading', { name: 'Your questions' })).toBeVisible()
@@ -123,9 +135,7 @@ test('Student sees English support, news, progress and notification chrome', asy
 test('Staff switches the language from the header menu', async ({ page }) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
   try {
-    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
-    await page.getByRole('menuitem', { name: 'English' }).click()
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
     await expect(page.getByRole('button', { name: 'Interface language' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Overview' }).first()).toBeVisible()
   } finally {
@@ -138,9 +148,7 @@ test('Staff switches the language from the header menu', async ({ page }) => {
 test('Staff sees English review, result and statistics controls', async ({ page }) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
   try {
-    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
-    await page.getByRole('menuitem', { name: 'English' }).click()
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
 
     await page.goto('/staff/review')
     await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
@@ -163,9 +171,7 @@ test('Staff sees English course, classroom, oral, and publishing administration'
 }) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
   try {
-    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
-    await page.getByRole('menuitem', { name: 'English' }).click()
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
 
     await page.goto('/staff/courses?tab=catalog')
     await expect(page.getByRole('heading', { level: 1, name: 'Courses and groups' })).toBeVisible()
@@ -197,8 +203,7 @@ test('Family sees English child progress and notification settings', async ({ pa
   await page.context().clearCookies()
   await loginThroughUi(page, AUTH_PERSONAS.family, '/family/profile')
   try {
-    await page.getByRole('radio', { name: 'English' }).click()
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
 
     await page.goto('/family/children')
     await expect(page.getByRole('heading', { name: 'Children' })).toBeVisible()
@@ -240,9 +245,7 @@ test('Staff sees English lesson, import, synonym, and whiteboard tools', async (
 }, testInfo) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
   try {
-    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
-    await page.getByRole('menuitem', { name: 'English' }).click()
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
     await page.goto('/staff/lessons')
     await expect(
       page.getByRole('heading', { name: 'Lessons and publications', exact: true }),
@@ -288,9 +291,7 @@ test('Staff sees English account, access, audit, analytics, binding, and support
 }) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/')
   try {
-    await page.getByRole('button', { name: 'Язык интерфейса' }).click()
-    await page.getByRole('menuitem', { name: 'English' }).click()
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await switchAccountToEnglish(page)
 
     await page.goto('/staff/users?tab=imports')
     await expect(page.getByRole('heading', { name: 'Batch account creation' })).toBeVisible()
