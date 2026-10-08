@@ -1,0 +1,178 @@
+{
+  "releaseCommit": "5bb8d38227df59503cfcf45ec1c489726d9bb55d",
+  "recordedDate": "2026-10-02",
+  "vmsh": {
+    "origin": "https://vmsh.shashkovs.ru",
+    "deployment": "existing vmshpwa webhook",
+    "database": {
+      "afterBackup": "vmsh-after-deploy-20261002055822.sqlite3",
+      "baselineBackfill": 422,
+      "beforeBackup": "vmsh-before-deploy-20261002055755.sqlite3",
+      "historyAndVersionsUnchanged": {
+        "support_entries": {
+          "count": 877,
+          "sha256": "c754cc884c7550db440523cb7f3d4bd23bf141360947dd67e78dac828c152ab4"
+        },
+        "support_threads": {
+          "count": 383,
+          "sha256": "07761b8663adf4150c851f0268ad3c742a254692f361a5c9efec96cc756dcae4"
+        }
+      },
+      "migrations": 79,
+      "quickCheck": "ok",
+      "receipts": 422,
+      "schemaCurrent": true,
+      "staffReplies": 422,
+      "unreadReplies": 0
+    },
+    "natsPidBefore": 1409,
+    "natsPidAfter": 1409,
+    "servicesActive": [
+      "vmshpwa",
+      "gunicorn.vmsh_tasks_bot",
+      "vmsh-analytics.timer",
+      "nats-server"
+    ],
+    "httpSmokeChecks": 25,
+    "public": {
+      "provenance": {
+        "landing": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "5bb8d38227df-20261002055653",
+          "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "landing"
+        },
+        "student": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "5bb8d38227df-20261002055653",
+          "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "student"
+        },
+        "family": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "5bb8d38227df-20261002055653",
+          "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "family"
+        },
+        "staff": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "5bb8d38227df-20261002055653",
+          "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "staff"
+        }
+      },
+      "studentAttentionBundle": true,
+      "authenticationBoundary": {
+        "attention": 401,
+        "read": 403
+      },
+      "loadedChunks": 49
+    }
+  },
+  "tlf": {
+    "origin": "https://prep.leaders.tech",
+    "deployment": "reviewed SSH cutover",
+    "database": {
+      "migrations": 79,
+      "quickCheck": "ok",
+      "receipts": 0,
+      "schemaCurrent": true,
+      "staffReplies": 0,
+      "unreadReplies": 0
+    },
+    "cutover": {
+      "oldTablesUnchanged": 154,
+      "rehearsalUpDownUp": "pass",
+      "supportEntries": 0,
+      "supportThreads": 0,
+      "credentialsCheck": "creds_prod/vmsh_bot_config_prod.json: OK",
+      "sourceBefore": "6e4b82f76f6366dce376bf977ac5f9ed07c9330d",
+      "staticBefore": "/web/vmsh_tasks_bot/vmshpwa/releases/tlfprep-20261001-offline-cors"
+    },
+    "natsPidBefore": 1936264,
+    "natsPidAfter": 1936264,
+    "servicesActive": ["vmshpwa", "vmshzoom", "vmsh-analytics.timer", "nats"],
+    "httpSmokeChecks": 25,
+    "backupBefore": "20261002T055732.874226Z",
+    "backupAfter": "20261002T055913.981909Z",
+    "backupIntegrity": "ok",
+    "zoomReceiptsBefore": 3,
+    "zoomReceiptsAfter": 3,
+    "releaseRecord": "/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-questions-5bb8d38227df",
+    "public": {
+      "provenance": {
+        "landing": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-questions-5bb8d38227df",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "landing"
+        },
+        "student": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-questions-5bb8d38227df",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "student"
+        },
+        "family": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-questions-5bb8d38227df",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "family"
+        },
+        "staff": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-questions-5bb8d38227df",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+          "msw": false,
+          "prototype": false,
+          "application": "staff"
+        }
+      },
+      "studentAttentionBundle": true,
+      "authenticationBoundary": {
+        "attention": 401,
+        "read": 403
+      },
+      "loadedChunks": 49
+    }
+  },
+  "productionActions": "Read-only verification; no synthetic replies, submissions or Zoom receipts created."
+}

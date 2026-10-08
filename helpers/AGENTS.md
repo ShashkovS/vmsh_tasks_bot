@@ -42,3 +42,8 @@ This folder contains shared infrastructure: bot wiring, config loading, feature 
 - Confirm app starts in both test and production config modes.
 - Confirm bot wrappers still handle common Telegram errors gracefully.
 - Confirm Sentry integration still initializes without breaking local development when DSN is absent.
+
+## Traceability And Progress
+
+- Non-trivial helper changes cite the governing requirement/decision and name related callers/tests; documentation links back to exact helper modules.
+- Keep the relevant development plan and status/proof sections current with implementation and verification progress.

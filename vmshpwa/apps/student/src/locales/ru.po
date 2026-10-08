@@ -1,0 +1,1583 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-18 22:22+0300\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ru\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: apps/student/src/student-tasks-view.ts
+msgid " и "
+msgstr " и "
+
+#: apps/student/src/routes/__root.tsx
+msgid " Срок свежести копии истёк."
+msgstr " Срок свежести копии истёк."
+
+#. placeholder {0}: item.entryCount
+#: apps/student/src/student-support-pages.tsx
+msgid "· сообщений: {0}"
+msgstr "· сообщений: {0}"
+
+#. placeholder {0}: attachments.length
+#: apps/student/src/student-written-submission.tsx
+msgid "{0} из 10 фотографий ·"
+msgstr "{0} из 10 фотографий ·"
+
+#. placeholder {0}: Math.round(bytes / 1024)
+#: apps/student/src/student-written-submission.tsx
+msgid "{0} КБ"
+msgstr "{0} КБ"
+
+#. placeholder {0}: formatNumber(bytes / (1024 * 1024), { maximumFractionDigits: 1 })
+#: apps/student/src/student-written-submission.tsx
+msgid "{0} МБ"
+msgstr "{0} МБ"
+
+#: apps/student/src/main.tsx
+msgid "{brandName} — школьник"
+msgstr "{brandName} — школьник"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "{bytes} Б"
+msgstr "{bytes} Б"
+
+#: apps/student/src/student-home-view.ts
+msgid "{count} {noun} в листке"
+msgstr "{count} {noun} в листке"
+
+#: apps/student/src/pages.tsx
+msgid "{count} отправок"
+msgstr "{count} отправок"
+
+#: apps/student/src/pages.tsx
+msgid "<0>Активная группа:</0> Начинающие"
+msgstr "<0>Активная группа:</0> Начинающие"
+
+#: apps/student/src/pages.tsx
+msgid "<0>Доступны:</0> Начинающие, Продолжающие"
+msgstr "<0>Доступны:</0> Начинающие, Продолжающие"
+
+#. placeholder {0}: lesson.lessonNumber
+#. placeholder {1}: lesson.accepted
+#. placeholder {2}: lesson.attempted
+#: apps/student/src/student-progress-page.tsx
+msgid "<0>Занятие {0}</0><1>{1} зачтено из {2}</1>"
+msgstr "<0>Занятие {0}</0><1>{1} зачтено из {2}</1>"
+
+#: apps/student/src/pages.tsx
+msgid "<0>Сейчас:</0> очно в школе"
+msgstr "<0>Сейчас:</0> очно в школе"
+
+#: apps/student/src/pages.tsx
+msgid "0 — пока трудно, 10 — получается почти любая задача."
+msgstr "0 — пока трудно, 10 — получается почти любая задача."
+
+#: apps/student/src/pages.tsx
+msgid "1 из 4 задач зачтена"
+msgstr "1 из 4 задач зачтена"
+
+#: apps/student/src/pages.tsx
+msgid "12 задач · 3 зачтено · 2 на проверке"
+msgstr "12 задач · 3 зачтено · 2 на проверке"
+
+#: apps/student/src/pages.tsx
+msgid "25 января, 18:40"
+msgstr "25 января, 18:40"
+
+#: apps/student/src/pages.tsx
+msgid "25 января, 21:04"
+msgstr "25 января, 21:04"
+
+#: apps/student/src/pages.tsx
+msgid "26 января"
+msgstr "26 января"
+
+#: apps/student/src/pages.tsx
+msgid "26 января, 12:30"
+msgstr "26 января, 12:30"
+
+#: apps/student/src/pages.tsx
+msgid "26 января, 16:30"
+msgstr "26 января, 16:30"
+
+#: apps/student/src/pages.tsx
+msgid "29 января"
+msgstr "29 января"
+
+#: apps/student/src/pages.tsx
+msgid "3 из 12"
+msgstr "3 из 12"
+
+#: apps/student/src/pages.tsx
+msgid "3 из 12 задач зачтено"
+msgstr "3 из 12 задач зачтено"
+
+#: apps/student/src/pages.tsx
+msgid "31 января, 12:00"
+msgstr "31 января, 12:00"
+
+#: apps/student/src/pages.tsx
+msgid "39 · 12 января"
+msgstr "39 · 12 января"
+
+#: apps/student/src/pages.tsx
+msgid "40 · 19 января"
+msgstr "40 · 19 января"
+
+#: apps/student/src/pages.tsx
+msgid "41 · 26 января"
+msgstr "41 · 26 января"
+
+#: apps/student/src/pages.tsx
+msgid "41н.6 · Расстановка ладей"
+msgstr "41н.6 · Расстановка ладей"
+
+#: apps/student/src/pages.tsx
+msgid "Push можно включать и отключать по категориям."
+msgstr "Push можно включать и отключать по категориям."
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Активная группа"
+msgstr "Активная группа"
+
+#: apps/student/src/pages.tsx
+msgid "Активность по дням"
+msgstr "Активность по дням"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Браузер не разрешил локальное хранение. Мы не открываем редактор, чтобы работа не потерялась при перезагрузке."
+msgstr "Браузер не разрешил локальное хранение. Мы не открываем редактор, чтобы работа не потерялась при перезагрузке."
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Браузер не разрешил надёжно сохранять введённый ответ."
+msgstr "Браузер не разрешил надёжно сохранять введённый ответ."
+
+#: apps/student/src/content-page.tsx
+msgid "В опубликованной версии листка такой задачи нет. Обновите ссылку из списка задач."
+msgstr "В опубликованной версии листка такой задачи нет. Обновите ссылку из списка задач."
+
+#: apps/student/src/pages.tsx
+msgid "В очереди"
+msgstr "В очереди"
+
+#: apps/student/src/student-task-detail-page.tsx
+msgid "В текущей опубликованной версии листка такой задачи нет. Откройте её заново из списка задач."
+msgstr "В текущей опубликованной версии листка такой задачи нет. Откройте её заново из списка задач."
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-test-answer.tsx
+msgid "Ваш ответ"
+msgstr "Ваш ответ"
+
+#: apps/student/src/student-progress-page.tsx
+msgid "Ваша личная динамика по занятиям. С другими школьниками здесь не сравниваем."
+msgstr "Ваша личная динамика по занятиям. С другими школьниками здесь не сравниваем."
+
+#: apps/student/src/pages.tsx
+msgid "Ваша личная динамика. Здесь нет рейтинга и сравнения с другими школьниками."
+msgstr "Ваша личная динамика. Здесь нет рейтинга и сравнения с другими школьниками."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Ваша реакция"
+msgstr "Ваша реакция"
+
+#: apps/student/src/pages.tsx
+msgid "Ваша реакция на проверку"
+msgstr "Ваша реакция на проверку"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Ваше решение"
+msgstr "Ваше решение"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Ваши вопросы"
+msgstr "Ваши вопросы"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-home-page.tsx
+msgid "Ваши курсы"
+msgstr "Ваши курсы"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Вложение"
+msgstr "Вложение"
+
+#: apps/student/src/pages.tsx
+msgid "ВМШ 179"
+msgstr "ВМШ 179"
+
+#: apps/student/src/login-page.tsx
+msgid "Войти"
+msgstr "Войти"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Вопрос"
+msgstr "Вопрос"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Вопрос к задаче"
+msgstr "Вопрос к задаче"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Вопрос к задаче можно задать прямо со страницы этой задачи. Переписка появится здесь."
+msgstr "Вопрос к задаче можно задать прямо со страницы этой задачи. Переписка появится здесь."
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Вопросов пока нет"
+msgstr "Вопросов пока нет"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Вопросы по задаче"
+msgstr "Вопросы по задаче"
+
+#: apps/student/src/pages.tsx
+msgid "воскресенья, 13:00 МСК"
+msgstr "воскресенья, 13:00 МСК"
+
+#: apps/student/src/pages.tsx
+msgid "Все"
+msgstr "Все"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Все вопросы"
+msgstr "Все вопросы"
+
+#: apps/student/src/login-page.tsx
+msgid "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
+msgstr "Вход для этой учётной записи сейчас недоступен. Напишите администраторам."
+
+#: apps/student/src/login-page.tsx
+msgid "Входим…"
+msgstr "Входим…"
+
+#: apps/student/src/pages.tsx
+msgid "Вы"
+msgstr "Вы"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Выберите курс и группу из тех, которые доступны вашей учётной записи."
+msgstr "Выберите курс и группу из тех, которые доступны вашей учётной записи."
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Выберите, какие уведомления получать, и подключите это устройство."
+msgstr "Выберите, какие уведомления получать, и подключите это устройство."
+
+#: apps/student/src/main.tsx
+msgid "Готовим работу без сети"
+msgstr "Готовим работу без сети"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Группа и формат задаются отдельно для каждого курса."
+msgstr "Группа и формат задаются отдельно для каждого курса."
+
+#: apps/student/src/student-test-answer-view.ts
+msgid "Да, ответ принят."
+msgstr "Да, ответ принят."
+
+#: apps/student/src/pages.tsx
+msgid "Данные конференции показываются только после вашего действия. Позиции в очереди нет."
+msgstr "Данные конференции показываются только после вашего действия. Позиции в очереди нет."
+
+#: apps/student/src/pages.tsx
+msgid "Дедлайн"
+msgstr "Дедлайн"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Дедлайн и новые материалы"
+msgstr "Дедлайн и новые материалы"
+
+#: apps/student/src/student-home-page.tsx
+msgid "Для ваших групп пока нет запланированных очных занятий."
+msgstr "Для ваших групп пока нет запланированных очных занятий."
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Для отправки ответов и других действий войдите снова при наличии интернета."
+msgstr "Для отправки ответов и других действий войдите снова при наличии интернета."
+
+#: apps/student/src/student-progress-page.tsx
+msgid "Дни работы"
+msgstr "Дни работы"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Дополнить вопрос"
+msgstr "Дополнить вопрос"
+
+#: apps/student/src/login-page.tsx
+msgid "Доступ к аккаунту приостановлен. Напишите администраторам."
+msgstr "Доступ к аккаунту приостановлен. Напишите администраторам."
+
+#: apps/student/src/pwa-update.tsx
+msgid "Доступно обновление."
+msgstr "Доступно обновление."
+
+#: apps/student/src/pages.tsx
+msgid "Если вы не придёте, переключитесь в online: для вас резервируют место и печатают листок."
+msgstr "Если вы не придёте, переключитесь в online: для вас резервируют место и печатают листок."
+
+#. placeholder {0}: available.join(t` и `)
+#: apps/student/src/student-tasks-view.ts
+msgid "Есть {0}"
+msgstr "Есть {0}"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Есть ответ"
+msgstr "Есть ответ"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Ждём преподавателя"
+msgstr "Ждём преподавателя"
+
+#: apps/student/src/pages.tsx
+msgid "Ждут вас"
+msgstr "Ждут вас"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Загружаем переписку…"
+msgstr "Загружаем переписку…"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Загружаем предыдущие вопросы…"
+msgstr "Загружаем предыдущие вопросы…"
+
+#: apps/student/src/student-news-page.tsx
+#: apps/student/src/student-support-pages.tsx
+#: apps/student/src/student-tasks-page.tsx
+#: apps/student/src/student-test-answer.tsx
+msgid "Загружаем…"
+msgstr "Загружаем…"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Загрузка письменного решения"
+msgstr "Загрузка письменного решения"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Загрузка поля ответа"
+msgstr "Загрузка поля ответа"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Задать вопрос"
+msgstr "Задать вопрос"
+
+#: apps/student/src/pages.tsx
+msgid "Задать вопрос по задаче"
+msgstr "Задать вопрос по задаче"
+
+#: apps/student/src/student-home-view.ts
+msgid "задач"
+msgstr "задач"
+
+#: apps/student/src/student-home-view.ts
+msgid "задача"
+msgstr "задача"
+
+#: apps/student/src/student-readable-task-page.tsx
+#: apps/student/src/student-task-detail-page.tsx
+msgid "Задача"
+msgstr "Задача"
+
+#. placeholder {0}: selectedProblem.taskReference ?? selectedProblem.ordinal
+#. placeholder {1}: selectedProblem.title ? ` «${selectedProblem.title}»` : ''
+#: apps/student/src/content-page.tsx
+msgid "Задача {0}.{1}"
+msgstr "Задача {0}.{1}"
+
+#: apps/student/src/content-page.tsx
+#: apps/student/src/pages.tsx
+msgid "Задача {taskId}"
+msgstr "Задача {taskId}"
+
+#: apps/student/src/content-page.tsx
+#: apps/student/src/student-readable-task-page.tsx
+#: apps/student/src/student-task-detail-page.tsx
+msgid "Задача не найдена"
+msgstr "Задача не найдена"
+
+#: apps/student/src/student-home-view.ts
+msgid "задачи"
+msgstr "задачи"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/routes/__root.tsx
+msgid "Задачи"
+msgstr "Задачи"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Задачи всех уровней сохранены"
+msgstr "Задачи всех уровней сохранены"
+
+#: apps/student/src/student-readable-task-page.tsx
+msgid "Задачи ещё не опубликованы"
+msgstr "Задачи ещё не опубликованы"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Задачи ещё не опубликованы."
+msgstr "Задачи ещё не опубликованы."
+
+#: apps/student/src/pages.tsx
+msgid "задачи зачтено"
+msgstr "задачи зачтено"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Задачи скоро откроются."
+msgstr "Задачи скоро откроются."
+
+#: apps/student/src/pwa-update.tsx
+msgid "Закрыть"
+msgstr "Закрыть"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Заменить ранее отправленное решение этой версией? Прежняя версия исчезнет из очереди проверки."
+msgstr "Заменить ранее отправленное решение этой версией? Прежняя версия исчезнет из очереди проверки."
+
+#: apps/student/src/pages.tsx
+msgid "Занятие"
+msgstr "Занятие"
+
+#. placeholder {0}: lesson.lessonNumber
+#: apps/student/src/student-tasks-view.ts
+msgid "Занятие {0}"
+msgstr "Занятие {0}"
+
+#. placeholder {0}: lesson.lessonNumber
+#: apps/student/src/student-tasks-page.tsx
+msgid "Занятие {0} ·"
+msgstr "Занятие {0} ·"
+
+#: apps/student/src/pages.tsx
+msgid "Занятие 41"
+msgstr "Занятие 41"
+
+#: apps/student/src/student-readable-task-page.tsx
+msgid "Занятие ещё не опубликовано"
+msgstr "Занятие ещё не опубликовано"
+
+#: apps/student/src/pages.tsx
+msgid "Запись {submissionId} · последнее обновление 26 января, 12:30"
+msgstr "Запись {submissionId} · последнее обновление 26 января, 12:30"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-task-detail-page.tsx
+#: apps/student/src/student-tasks-view.ts
+msgid "Зачтено"
+msgstr "Зачтено"
+
+#: apps/student/src/pages.tsx
+msgid "Зачтены"
+msgstr "Зачтены"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-notifications-page.tsx
+msgid "Звук только с 9:00 до 21:00"
+msgstr "Звук только с 9:00 до 21:00"
+
+#: apps/student/src/student-profile-page.tsx
+#: apps/student/src/student-written-submission.tsx
+msgid "Изменить"
+msgstr "Изменить"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Изменить решение"
+msgstr "Изменить решение"
+
+#: apps/student/src/pages.tsx
+msgid "Изменить уровень"
+msgstr "Изменить уровень"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Изменяете отправленное решение — оно заменится одной операцией."
+msgstr "Изменяете отправленное решение — оно заменится одной операцией."
+
+#: apps/student/src/login-page.tsx
+msgid "Используйте логин из письма после регистрации и текущий токен Telegram-бота как пароль."
+msgstr "Используйте логин из письма после регистрации и текущий токен Telegram-бота как пароль."
+
+#: apps/student/src/pages.tsx
+msgid "История"
+msgstr "История"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "История вопросов"
+msgstr "История вопросов"
+
+#: apps/student/src/student-task-detail-page.tsx
+msgid "К листку"
+msgstr "К листку"
+
+#: apps/student/src/pages.tsx
+msgid "Как меняется работа"
+msgstr "Как меняется работа"
+
+#: apps/student/src/student-progress-page.tsx
+msgid "Как получается решать задачи"
+msgstr "Как получается решать задачи"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Категории"
+msgstr "Категории"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Когда вас добавят на курс, здесь появятся опубликованные листки."
+msgstr "Когда вас добавят на курс, здесь появятся опубликованные листки."
+
+#: apps/student/src/student-home-page.tsx
+msgid "Когда вас добавят на курс, он появится здесь."
+msgstr "Когда вас добавят на курс, он появится здесь."
+
+#: apps/student/src/pages.tsx
+msgid "Когда материалы становятся доступны"
+msgstr "Когда материалы становятся доступны"
+
+#: apps/student/src/pages.tsx
+msgid "Комментарии"
+msgstr "Комментарии"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Копируем прежнее решение…"
+msgstr "Копируем прежнее решение…"
+
+#: apps/student/src/pages.tsx
+msgid "Курс и доступные группы"
+msgstr "Курс и доступные группы"
+
+#: apps/student/src/student-readable-task-page.tsx
+msgid "Листок"
+msgstr "Листок"
+
+#: apps/student/src/student-readable-task-page.tsx
+#: apps/student/src/student-task-detail-page.tsx
+msgid "Листок не найден"
+msgstr "Листок не найден"
+
+#. placeholder {0}: course.name
+#: apps/student/src/pages.tsx
+msgid "Личная динамика только по курсу «{0}»."
+msgstr "Личная динамика только по курсу «{0}»."
+
+#: apps/student/src/login-page.tsx
+msgid "Личный кабинет школьника"
+msgstr "Личный кабинет школьника"
+
+#: apps/student/src/login-page.tsx
+msgid "Логин"
+msgstr "Логин"
+
+#: apps/student/src/login-page.tsx
+msgid "Логин или токен не подошли. Проверьте раскладку и попробуйте ещё раз."
+msgstr "Логин или токен не подошли. Проверьте раскладку и попробуйте ещё раз."
+
+#: apps/student/src/main.tsx
+msgid "Локальное хранилище сейчас недоступно. Отправка без сети не будет надёжной, поэтому кабинет не открыт."
+msgstr "Локальное хранилище сейчас недоступно. Отправка без сети не будет надёжной, поэтому кабинет не открыт."
+
+#: apps/student/src/student-offline-preparation.tsx
+#: apps/student/src/student-read-state-panel.tsx
+msgid "Материал ещё не сохранён на устройстве"
+msgstr "Материал ещё не сохранён на устройстве"
+
+#: apps/student/src/content-page.tsx
+msgid "Материал пока закрыт"
+msgstr "Материал пока закрыт"
+
+#: apps/student/src/student-home-view.ts
+msgid "Материалы занятия уже опубликованы"
+msgstr "Материалы занятия уже опубликованы"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Можно сдать и устно на занятии."
+msgstr "Можно сдать и устно на занятии."
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-profile-page.tsx
+msgid "Мои вопросы"
+msgstr "Мои вопросы"
+
+#: apps/student/src/student-task-detail-page.tsx
+msgid "Мой ответ"
+msgstr "Мой ответ"
+
+#: apps/student/src/student-task-detail-page.tsx
+#: apps/student/src/student-tasks-view.ts
+msgid "На проверке"
+msgstr "На проверке"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "На этом устройстве"
+msgstr "На этом устройстве"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Назначена аудитория"
+msgstr "Назначена аудитория"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Напишите, какой переход или часть условия вызывает вопрос."
+msgstr "Напишите, какой переход или часть условия вызывает вопрос."
+
+#: apps/student/src/pages.tsx
+msgid "Напоминание до публикации решений"
+msgstr "Напоминание до публикации решений"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Напоминание о публикации решений"
+msgstr "Напоминание о публикации решений"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Настроить уведомления"
+msgstr "Настроить уведомления"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Настройка курса не сохранена"
+msgstr "Настройка курса не сохранена"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Настройка не сохранена"
+msgstr "Настройка не сохранена"
+
+#: apps/student/src/pages.tsx
+msgid "Начинающие · очный режим"
+msgstr "Начинающие · очный режим"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Не все задачи сохранены для просмотра без интернета"
+msgstr "Не все задачи сохранены для просмотра без интернета"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и измените ответ ещё раз."
+msgstr "Не закрывайте страницу до отправки. Если возможно, освободите место в браузере и измените ответ ещё раз."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Не закрывайте страницу. Освободите место в браузере и повторите изменение."
+msgstr "Не закрывайте страницу. Освободите место в браузере и повторите изменение."
+
+#: apps/student/src/student-task-detail-page.tsx
+#: apps/student/src/student-tasks-view.ts
+msgid "Не начата"
+msgstr "Не начата"
+
+#: apps/student/src/pages.tsx
+msgid "Не начато"
+msgstr "Не начато"
+
+#: apps/student/src/pages.tsx
+msgid "Не начаты"
+msgstr "Не начаты"
+
+#: apps/student/src/login-page.tsx
+msgid "Не помните доступ? Напишите на <0>{supportEmail}</0>."
+msgstr "Не помните доступ? Напишите на <0>{supportEmail}</0>."
+
+#: apps/student/src/login-page.tsx
+msgid "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
+msgstr "Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам."
+
+#: apps/student/src/login-page.tsx
+msgid "Не удалось войти"
+msgstr "Не удалось войти"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Не удалось загрузить новые ответы."
+msgstr "Не удалось загрузить новые ответы."
+
+#: apps/student/src/student-oral-admission.tsx
+msgid "Не удалось загрузить окна устного приёма. Письменная сдача доступна ниже."
+msgstr "Не удалось загрузить окна устного приёма. Письменная сдача доступна ниже."
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Не удалось обновить переписку. Набранный текст не удалён."
+msgstr "Не удалось обновить переписку. Набранный текст не удалён."
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Не удалось подготовить поле ответа"
+msgstr "Не удалось подготовить поле ответа"
+
+#: apps/student/src/main.tsx
+msgid "Не удалось подготовить работу без сети"
+msgstr "Не удалось подготовить работу без сети"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Не удалось полностью скопировать прежнюю версию. Уже сохранённые страницы не потеряны; проверьте черновик и добавьте недостающие."
+msgstr "Не удалось полностью скопировать прежнюю версию. Уже сохранённые страницы не потеряны; проверьте черновик и добавьте недостающие."
+
+#: apps/student/src/student-oral-admission.tsx
+msgid "Не удалось получить ссылку. Попробуйте ещё раз."
+msgstr "Не удалось получить ссылку. Попробуйте ещё раз."
+
+#: apps/student/src/pwa-update.tsx
+msgid "Не удалось применить обновление. Попробуйте ещё раз."
+msgstr "Не удалось применить обновление. Попробуйте ещё раз."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Не удалось сохранить реакцию. Обновите проверку и попробуйте ещё раз."
+msgstr "Не удалось сохранить реакцию. Обновите проверку и попробуйте ещё раз."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Не удалось сохранить фото"
+msgstr "Не удалось сохранить фото"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Не удалось сохранить. Обновите страницу и попробуйте ещё раз."
+msgstr "Не удалось сохранить. Обновите страницу и попробуйте ещё раз."
+
+#: apps/student/src/content-page.tsx
+msgid "Не указан опубликованный листок"
+msgstr "Не указан опубликованный листок"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Нельзя надёжно сохранить решение"
+msgstr "Нельзя надёжно сохранить решение"
+
+#: apps/student/src/student-home-page.tsx
+#: apps/student/src/student-progress-page.tsx
+msgid "Нет активных курсов"
+msgstr "Нет активных курсов"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Нет доступных курсов"
+msgstr "Нет доступных курсов"
+
+#: apps/student/src/student-tasks-view.ts
+msgid "Нет ответа"
+msgstr "Нет ответа"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Нет связи с сервером. Набранный текст остаётся на этом устройстве."
+msgstr "Нет связи с сервером. Набранный текст остаётся на этом устройстве."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Нет сети — отправим позже."
+msgstr "Нет сети — отправим позже."
+
+#: apps/student/src/pages.tsx
+msgid "Новая запись в обсуждении"
+msgstr "Новая запись в обсуждении"
+
+#: apps/student/src/pages.tsx
+msgid "Новая проверка"
+msgstr "Новая проверка"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Новая публикация"
+msgstr "Новая публикация"
+
+#: apps/student/src/student-home-page.tsx
+#: apps/student/src/student-home-view.ts
+msgid "Новое занятие пока не опубликовано"
+msgstr "Новое занятие пока не опубликовано"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Новое объявление"
+msgstr "Новое объявление"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Новое сообщение"
+msgstr "Новое сообщение"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/routes/__root.tsx
+#: apps/student/src/student-news-page.tsx
+msgid "Новости"
+msgstr "Новости"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Новости кружка"
+msgstr "Новости кружка"
+
+#. placeholder {0}: attention.data!.unreadTaskCount
+#: apps/student/src/student-tasks-page.tsx
+msgid "Новые ответы ({0})"
+msgstr "Новые ответы ({0})"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Новые события всегда остаются в кабинете. Push и звук можно настроить отдельно."
+msgstr "Новые события всегда остаются в кабинете. Push и звук можно настроить отдельно."
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Новые события появятся здесь."
+msgstr "Новые события появятся здесь."
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-notifications-page.tsx
+msgid "Новый урок"
+msgstr "Новый урок"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-notifications-page.tsx
+msgid "Ночью новые события видны в приложении, но не будят вас."
+msgstr "Ночью новые события видны в приложении, но не будят вас."
+
+#: apps/student/src/student-task-detail-page.tsx
+#: apps/student/src/student-tasks-view.ts
+msgid "Нужна доработка"
+msgstr "Нужна доработка"
+
+#: apps/student/src/pages.tsx
+msgid "Нужно дополнить"
+msgstr "Нужно дополнить"
+
+#: apps/student/src/pages.tsx
+msgid "Нужно дополнить решение"
+msgstr "Нужно дополнить решение"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Нужно обновить задачу"
+msgstr "Нужно обновить задачу"
+
+#: apps/student/src/pwa-update.tsx
+msgid "Обновить сейчас"
+msgstr "Обновить сейчас"
+
+#: apps/student/src/student-test-answer.tsx
+#: apps/student/src/student-written-submission.tsx
+msgid "Обновляем сервис. Отправим после обновления."
+msgstr "Обновляем сервис. Отправим после обновления."
+
+#: apps/student/src/pwa-update.tsx
+msgid "Обновляем…"
+msgstr "Обновляем…"
+
+#: apps/student/src/pages.tsx
+msgid "Обсуждение"
+msgstr "Обсуждение"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Обсуждение задачи"
+msgstr "Обсуждение задачи"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Обсуждение решения или вопроса"
+msgstr "Обсуждение решения или вопроса"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Общий вопрос"
+msgstr "Общий вопрос"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Общий вопрос по занятию"
+msgstr "Общий вопрос по занятию"
+
+#: apps/student/src/student-home-page.tsx
+msgid "Объявления"
+msgstr "Объявления"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Объявления группы"
+msgstr "Объявления группы"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Одна из сохранённых фотографий недоступна. Добавьте её заново."
+msgstr "Одна из сохранённых фотографий недоступна. Добавьте её заново."
+
+#: apps/student/src/student-home-page.tsx
+#: apps/student/src/student-profile-page.tsx
+msgid "Онлайн"
+msgstr "Онлайн"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Опубликована подсказка"
+msgstr "Опубликована подсказка"
+
+#. placeholder {0}: formatDateTime(new Date(query.data.publishedAt))
+#: apps/student/src/content-page.tsx
+msgid "Опубликовано {0}"
+msgstr "Опубликовано {0}"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Опубликованы решения"
+msgstr "Опубликованы решения"
+
+#: apps/student/src/pages.tsx
+msgid "Осталось 4 попытки."
+msgstr "Осталось 4 попытки."
+
+#. placeholder {0}: receipt.attempts.remainingThisHour ?? '—'
+#. placeholder {1}: receipt.attempts.remainingToday ?? '—'
+#: apps/student/src/student-test-answer.tsx
+msgid "Осталось попыток: {0} в этот час, {1} сегодня."
+msgstr "Осталось попыток: {0} в этот час, {1} сегодня."
+
+#: apps/student/src/pages.tsx
+msgid "Ответ и пересдача — продолжение этого же обсуждения."
+msgstr "Ответ и пересдача — продолжение этого же обсуждения."
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Ответ к предыдущей версии сохранён отдельно и не перенесён автоматически."
+msgstr "Ответ к предыдущей версии сохранён отдельно и не перенесён автоматически."
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Ответ не отправлен"
+msgstr "Ответ не отправлен"
+
+#: apps/student/src/student-task-detail-page.tsx
+#: apps/student/src/student-tasks-view.ts
+msgid "Ответ не принят"
+msgstr "Ответ не принят"
+
+#: apps/student/src/student-test-answer-view.ts
+msgid "Ответ пока неверный."
+msgstr "Ответ пока неверный."
+
+#: apps/student/src/student-test-answer-view.ts
+msgid "Ответ сохранён и ждёт настройки проверки."
+msgstr "Ответ сохранён и ждёт настройки проверки."
+
+#: apps/student/src/student-test-answer-view.ts
+msgid "Ответ сохранён, но проверка не завершилась."
+msgstr "Ответ сохранён, но проверка не завершилась."
+
+#: apps/student/src/student-task-detail-page.tsx
+msgid "Ответить"
+msgstr "Ответить"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Ответить на все задачи"
+msgstr "Ответить на все задачи"
+
+#: apps/student/src/pages.tsx
+msgid "откроется 1 февраля, 13:00"
+msgstr "откроется 1 февраля, 13:00"
+
+#: apps/student/src/content-page.tsx
+msgid "Откройте задачу из опубликованного листка: ссылка должна содержать занятие и вид материала."
+msgstr "Откройте задачу из опубликованного листка: ссылка должна содержать занятие и вид материала."
+
+#: apps/student/src/pages.tsx
+msgid "открыта 31 января"
+msgstr "открыта 31 января"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Открытие окна устной сдачи"
+msgstr "Открытие окна устной сдачи"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Открыть"
+msgstr "Открыть"
+
+#: apps/student/src/pages.tsx
+msgid "Открыть весь листок"
+msgstr "Открыть весь листок"
+
+#. placeholder {0}: problem.displayNumber
+#: apps/student/src/student-tasks-page.tsx
+msgid "Открыть задачу {0}"
+msgstr "Открыть задачу {0}"
+
+#: apps/student/src/pages.tsx
+msgid "Открыть объявление"
+msgstr "Открыть объявление"
+
+#: apps/student/src/student-news-page.tsx
+msgid "Открыть публикацию"
+msgstr "Открыть публикацию"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отменить"
+msgstr "Отменить"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отменить режим замены? Текст и фотографии останутся в черновике и смогут отправиться новым сообщением."
+msgstr "Отменить режим замены? Текст и фотографии останутся в черновике и смогут отправиться новым сообщением."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отправим, когда появится сеть."
+msgstr "Отправим, когда появится сеть."
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Отправить вопрос"
+msgstr "Отправить вопрос"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отправить новым сообщением"
+msgstr "Отправить новым сообщением"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отправка занимает больше времени, чем обычно. Ждём подтверждения…"
+msgstr "Отправка занимает больше времени, чем обычно. Ждём подтверждения…"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отправка не завершена"
+msgstr "Отправка не завершена"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отправленные решения"
+msgstr "Отправленные решения"
+
+#: apps/student/src/student-task-detail-page.tsx
+#: apps/student/src/student-tasks-view.ts
+msgid "Отправлено"
+msgstr "Отправлено"
+
+#: apps/student/src/student-test-answer.tsx
+#: apps/student/src/student-written-submission.tsx
+msgid "Отправляем…"
+msgstr "Отправляем…"
+
+#: apps/student/src/student-progress-page.tsx
+msgid "Отправок пока нет."
+msgstr "Отправок пока нет."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Отправьте исправление новым сообщением"
+msgstr "Отправьте исправление новым сообщением"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Отправьте ответ — проверка придёт сразу."
+msgstr "Отправьте ответ — проверка придёт сразу."
+
+#: apps/student/src/student-home-page.tsx
+msgid "Очно"
+msgstr "Очно"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Очно в школе"
+msgstr "Очно в школе"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Очное занятие"
+msgstr "Очное занятие"
+
+#: apps/student/src/student-home-page.tsx
+msgid "Очные занятия"
+msgstr "Очные занятия"
+
+#: apps/student/src/pages.tsx
+msgid "Первое письменное решение зачтено"
+msgstr "Первое письменное решение зачтено"
+
+#: apps/student/src/pages.tsx
+msgid "Первый физический эксперимент описан"
+msgstr "Первый физический эксперимент описан"
+
+#: apps/student/src/pages.tsx
+msgid "Переключить режим"
+msgstr "Переключить режим"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Перенести только текст ответа"
+msgstr "Перенести только текст ответа"
+
+#: apps/student/src/student-progress-page.tsx
+msgid "По занятиям"
+msgstr "По занятиям"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "По курсам"
+msgstr "По курсам"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Повторите загрузку. Уже сохранённые ответы не удалены."
+msgstr "Повторите загрузку. Уже сохранённые ответы не удалены."
+
+#: apps/student/src/content-page.tsx
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-home-page.tsx
+#: apps/student/src/student-news-page.tsx
+#: apps/student/src/student-notifications-page.tsx
+#: apps/student/src/student-offline-preparation.tsx
+#: apps/student/src/student-profile-page.tsx
+#: apps/student/src/student-progress-page.tsx
+#: apps/student/src/student-support-pages.tsx
+#: apps/student/src/student-task-detail-page.tsx
+#: apps/student/src/student-tasks-page.tsx
+#: apps/student/src/student-test-answer.tsx
+#: apps/student/src/student-written-submission.tsx
+msgid "Повторить"
+msgstr "Повторить"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений."
+msgstr "Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений."
+
+#: apps/student/src/student-read-state-panel.tsx
+msgid "Подключитесь к интернету, чтобы загрузить этот материал."
+msgstr "Подключитесь к интернету, чтобы загрузить этот материал."
+
+#: apps/student/src/student-tasks-view.ts
+msgid "подсказка"
+msgstr "подсказка"
+
+#: apps/student/src/content-page.tsx
+msgid "Подсказка"
+msgstr "Подсказка"
+
+#: apps/student/src/pages.tsx
+msgid "Подсказки и решения"
+msgstr "Подсказки и решения"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Подсказки к задачам"
+msgstr "Подсказки к задачам"
+
+#: apps/student/src/student-home-view.ts
+msgid "Подсказки опубликованы"
+msgstr "Подсказки опубликованы"
+
+#: apps/student/src/student-home-view.ts
+msgid "Подсказки опубликованы · до {deadline}"
+msgstr "Подсказки опубликованы · до {deadline}"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Подтвердить изменения"
+msgstr "Подтвердить изменения"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Пока нет опубликованных листков"
+msgstr "Пока нет опубликованных листков"
+
+#: apps/student/src/student-progress-page.tsx
+msgid "Пока нет проверенных задач"
+msgstr "Пока нет проверенных задач"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Пока ничего не отправлено."
+msgstr "Пока ничего не отправлено."
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Пока пусто"
+msgstr "Пока пусто"
+
+#. placeholder {0}: scopedOfflineRead?.stale ? t` Срок свежести копии истёк.` : ''
+#: apps/student/src/routes/__root.tsx
+msgid "Показана последняя сохранённая копия от {savedAt}.{0} Новые публикации и изменения появятся после восстановления связи."
+msgstr "Показана последняя сохранённая копия от {savedAt}.{0} Новые публикации и изменения появятся после восстановления связи."
+
+#: apps/student/src/routes/__root.tsx
+msgid "Показана последняя сохранённая копия. Новые публикации и изменения появятся после восстановления связи."
+msgstr "Показана последняя сохранённая копия. Новые публикации и изменения появятся после восстановления связи."
+
+#: apps/student/src/student-news-page.tsx
+#: apps/student/src/student-support-pages.tsx
+msgid "Показать более ранние"
+msgstr "Показать более ранние"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Показать более ранние занятия"
+msgstr "Показать более ранние занятия"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Показать более ранние ответы"
+msgstr "Показать более ранние ответы"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Показать все ответы"
+msgstr "Показать все ответы"
+
+#: apps/student/src/pages.tsx
+msgid "Показать данные для входа"
+msgstr "Показать данные для входа"
+
+#: apps/student/src/login-page.tsx
+msgid "Показать пароль"
+msgstr "Показать пароль"
+
+#: apps/student/src/student-home-page.tsx
+msgid "Поменять"
+msgstr "Поменять"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-profile-page.tsx
+#: apps/student/src/student-support-pages.tsx
+msgid "Помощь"
+msgstr "Помощь"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "После публикации условия листок появится здесь."
+msgstr "После публикации условия листок появится здесь."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Последнее изменение не сохранено"
+msgstr "Последнее изменение не сохранено"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Последние события"
+msgstr "Последние события"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Прежнее решение уже начали проверять или изменили. Текст и фотографии сохранены."
+msgstr "Прежнее решение уже начали проверять или изменили. Текст и фотографии сохранены."
+
+#: apps/student/src/student-profile-page.tsx
+msgid "При очном формате для вас резервируют место, печатают условия и распределяют преподавателей. Если вы не придёте, выберите онлайн."
+msgstr "При очном формате для вас резервируют место, печатают условия и распределяют преподавателей. Если вы не придёте, выберите онлайн."
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Приватная переписка"
+msgstr "Приватная переписка"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Приватная переписка видна только вам и преподавателям, у которых есть доступ к вашей группе."
+msgstr "Приватная переписка видна только вам и преподавателям, у которых есть доступ к вашей группе."
+
+#: apps/student/src/student-submission-deadline-notice.tsx
+msgid "Приём завершён"
+msgstr "Приём завершён"
+
+#: apps/student/src/student-home-view.ts
+msgid "Приём завершён · идёт проверка"
+msgstr "Приём завершён · идёт проверка"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Приём ответов завершён."
+msgstr "Приём ответов завершён."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Приём решений завершён, ничего не отправлено."
+msgstr "Приём решений завершён, ничего не отправлено."
+
+#: apps/student/src/pwa-update.tsx
+msgid "Приложение готово к работе без сети"
+msgstr "Приложение готово к работе без сети"
+
+#. placeholder {0}: index + 1
+#: apps/student/src/student-written-submission.tsx
+msgid "Проверенная страница решения {0}"
+msgstr "Проверенная страница решения {0}"
+
+#: apps/student/src/pages.tsx
+msgid "Проверено"
+msgstr "Проверено"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Проверено задач: {count}"
+msgstr "Проверено задач: {count}"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-test-answer.tsx
+msgid "Проверить"
+msgstr "Проверить"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-notifications-page.tsx
+msgid "Проверка завершена"
+msgstr "Проверка завершена"
+
+#: apps/student/src/routes/__root.tsx
+msgid "Проверьте адрес или вернитесь на текущую неделю."
+msgstr "Проверьте адрес или вернитесь на текущую неделю."
+
+#: apps/student/src/student-readable-task-page.tsx
+msgid "Проверьте код курса, группы и номер занятия в ссылке."
+msgstr "Проверьте код курса, группы и номер занятия в ссылке."
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Проверьте соединение и попробуйте ещё раз."
+msgstr "Проверьте соединение и попробуйте ещё раз."
+
+#: apps/student/src/student-test-answer-view.ts
+msgid "Проверьте формат ответа."
+msgstr "Проверьте формат ответа."
+
+#: apps/student/src/routes/login.tsx
+msgid "Проверяем вход"
+msgstr "Проверяем вход"
+
+#: apps/student/src/main.tsx
+msgid "Проверяем сохранённые задания и черновики на этом устройстве."
+msgstr "Проверяем сохранённые задания и черновики на этом устройстве."
+
+#: apps/student/src/routes/login.tsx
+msgid "Проверяем, выполнен ли вход на этом устройстве."
+msgstr "Проверяем, выполнен ли вход на этом устройстве."
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/routes/__root.tsx
+#: apps/student/src/student-progress-page.tsx
+msgid "Прогресс"
+msgstr "Прогресс"
+
+#: apps/student/src/pages.tsx
+msgid "Продолжить"
+msgstr "Продолжить"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/routes/__root.tsx
+#: apps/student/src/student-notifications-page.tsx
+#: apps/student/src/student-profile-page.tsx
+msgid "Профиль"
+msgstr "Профиль"
+
+#: apps/student/src/pages.tsx
+msgid "Публикации Telegram-канала и объявления кружка, сохранённые для чтения без сети."
+msgstr "Публикации Telegram-канала и объявления кружка, сохранённые для чтения без сети."
+
+#: apps/student/src/student-news-page.tsx
+msgid "Публикации Telegram-каналов и объявления кружка."
+msgstr "Публикации Telegram-каналов и объявления кружка."
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-news-page.tsx
+msgid "Публикация"
+msgstr "Публикация"
+
+#: apps/student/src/pages.tsx
+msgid "Публикация {postId}"
+msgstr "Публикация {postId}"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Пустой ответ"
+msgstr "Пустой ответ"
+
+#: apps/student/src/pages.tsx
+msgid "Работа в три разных дня недели"
+msgstr "Работа в три разных дня недели"
+
+#: apps/student/src/pages.tsx
+msgid "Режим участия"
+msgstr "Режим участия"
+
+#: apps/student/src/pages.tsx
+msgid "Результат и обсуждение"
+msgstr "Результат и обсуждение"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Результат проверки"
+msgstr "Результат проверки"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Результаты письменной проверки"
+msgstr "Результаты письменной проверки"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-home-view.ts
+msgid "Решаем задачи"
+msgstr "Решаем задачи"
+
+#: apps/student/src/student-home-view.ts
+msgid "Решаем задачи · до {deadline}"
+msgstr "Решаем задачи · до {deadline}"
+
+#: apps/student/src/pages.tsx
+msgid "Решаем задачи · до воскресенья, 13:00 МСК"
+msgstr "Решаем задачи · до воскресенья, 13:00 МСК"
+
+#: apps/student/src/student-tasks-view.ts
+msgid "решение"
+msgstr "решение"
+
+#: apps/student/src/content-page.tsx
+msgid "Решение"
+msgstr "Решение"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Решение или пояснение. Формулы можно приложить фотографией."
+msgstr "Решение или пояснение. Формулы можно приложить фотографией."
+
+#: apps/student/src/pages.tsx
+msgid "Решение отправлено"
+msgstr "Решение отправлено"
+
+#: apps/student/src/pages.tsx
+msgid "Решение появится после дедлайна."
+msgstr "Решение появится после дедлайна."
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Решения задач занятия"
+msgstr "Решения задач занятия"
+
+#: apps/student/src/student-home-view.ts
+msgid "Решения опубликованы"
+msgstr "Решения опубликованы"
+
+#: apps/student/src/student-task-detail-page.tsx
+msgid "Свернуть"
+msgstr "Свернуть"
+
+#: apps/student/src/student-tasks-page.tsx
+msgid "Свернуть всё"
+msgstr "Свернуть всё"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Сдать решение"
+msgstr "Сдать решение"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/routes/__root.tsx
+#: apps/student/src/student-home-page.tsx
+msgid "Сейчас"
+msgstr "Сейчас"
+
+#: apps/student/src/pages.tsx
+msgid "Сейчас по курсам"
+msgstr "Сейчас по курсам"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Скоро дедлайн"
+msgstr "Скоро дедлайн"
+
+#: apps/student/src/pwa-update.tsx
+msgid "Скрыть"
+msgstr "Скрыть"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Скрыть вопросы"
+msgstr "Скрыть вопросы"
+
+#: apps/student/src/login-page.tsx
+msgid "Скрыть пароль"
+msgstr "Скрыть пароль"
+
+#: apps/student/src/login-page.tsx
+msgid "Слишком много попыток. Подождите немного и попробуйте ещё раз."
+msgstr "Слишком много попыток. Подождите немного и попробуйте ещё раз."
+
+#: apps/student/src/pages.tsx
+msgid "Сначала показано то, где появилось новое или остался черновик."
+msgstr "Сначала показано то, где появилось новое или остался черновик."
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Событие по задаче"
+msgstr "Событие по задаче"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Сообщение для вашей группы"
+msgstr "Сообщение для вашей группы"
+
+#: apps/student/src/student-offline-preparation.tsx
+msgid "Сохраняем задачи для просмотра без интернета"
+msgstr "Сохраняем задачи для просмотра без интернета"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Сохраняем…"
+msgstr "Сохраняем…"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Спросить преподавателя"
+msgstr "Спросить преподавателя"
+
+#: apps/student/src/pages.tsx
+msgid "Ссылка и код конференции появятся после открытия объявления."
+msgstr "Ссылка и код конференции появятся после открытия объявления."
+
+#. placeholder {0}: index + 1
+#: apps/student/src/student-written-submission.tsx
+msgid "Страница {0}"
+msgstr "Страница {0}"
+
+#. placeholder {0}: index + 1
+#: apps/student/src/student-written-submission.tsx
+msgid "Страница {0}.webp"
+msgstr "Страница {0}.webp"
+
+#: apps/student/src/routes/__root.tsx
+msgid "Страница не найдена"
+msgstr "Страница не найдена"
+
+#: apps/student/src/pages.tsx
+msgid "Текущая фаза"
+msgstr "Текущая фаза"
+
+#: apps/student/src/pages.tsx
+msgid "Текущий листок и архив занятий. Внутри листка задачи всегда идут по номеру."
+msgstr "Текущий листок и архив занятий. Внутри листка задачи всегда идут по номеру."
+
+#: apps/student/src/routes/__root.tsx
+msgid "Тестирование учителем. Отправки не входят в общую статистику. <0>Вернуться в Staff</0>"
+msgstr "Тестирование учителем. Отправки не входят в общую статистику. <0>Вернуться в Staff</0>"
+
+#: apps/student/src/login-page.tsx
+msgid "Токен Telegram-бота"
+msgstr "Токен Telegram-бота"
+
+#: apps/student/src/student-tasks-view.ts
+msgid "Только условие"
+msgstr "Только условие"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-notifications-page.tsx
+#: apps/student/src/student-profile-page.tsx
+msgid "Уведомления"
+msgstr "Уведомления"
+
+#: apps/student/src/pages.tsx
+msgid "Уведомления объединяются в течение 30 минут"
+msgstr "Уведомления объединяются в течение 30 минут"
+
+#: apps/student/src/student-written-submission.tsx
+msgid "Удалить эту страницу из решения?"
+msgstr "Удалить эту страницу из решения?"
+
+#: apps/student/src/content-page.tsx
+msgid "Условие"
+msgstr "Условие"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Условие изменилось"
+msgstr "Условие изменилось"
+
+#: apps/student/src/student-home-view.ts
+msgid "Условие опубликовано · время сдачи уточняется"
+msgstr "Условие опубликовано · время сдачи уточняется"
+
+#: apps/student/src/pages.tsx
+msgid "Условие опубликовано · сдача до 5 февраля"
+msgstr "Условие опубликовано · сдача до 5 февраля"
+
+#: apps/student/src/pages.tsx
+#: apps/student/src/student-notifications-page.tsx
+msgid "Условия нового занятия"
+msgstr "Условия нового занятия"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Устный приём"
+msgstr "Устный приём"
+
+#: apps/student/src/pages.tsx
+msgid "Устный приём открыт до 19:30"
+msgstr "Устный приём открыт до 19:30"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Устройства и сеансы"
+msgstr "Устройства и сеансы"
+
+#: apps/student/src/pages.tsx
+msgid "Учёба"
+msgstr "Учёба"
+
+#: apps/student/src/pages.tsx
+msgid "Фильтр задач"
+msgstr "Фильтр задач"
+
+#: apps/student/src/student-profile-page.tsx
+msgid "Формат занятий"
+msgstr "Формат занятий"
+
+#. placeholder {0}: progress.data.summary.partial
+#. placeholder {1}: progress.data.summary.needsWork
+#. placeholder {2}: progress.data.summary.awaitingReview
+#: apps/student/src/student-progress-page.tsx
+msgid "Частично решено: {0} · нужно вернуться: {1} · ждут проверки: {2}"
+msgstr "Частично решено: {0} · нужно вернуться: {1} · ждут проверки: {2}"
+
+#: apps/student/src/pages.tsx
+msgid "через 2 дня"
+msgstr "через 2 дня"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Черновик сейчас не сохраняется"
+msgstr "Черновик сейчас не сохраняется"
+
+#: apps/student/src/pages.tsx
+msgid "Число отправок за последние четыре недели"
+msgstr "Число отправок за последние четыре недели"
+
+#: apps/student/src/pages.tsx
+msgid "Число способов"
+msgstr "Число способов"
+
+#: apps/student/src/routes/__root.tsx
+msgid "Школьник"
+msgstr "Школьник"
+
+#: apps/student/src/student-support-pages.tsx
+msgid "Этот вопрос относится к занятию целиком."
+msgstr "Этот вопрос относится к занятию целиком."
+
+#: apps/student/src/content-page.tsx
+msgid "Этот материал ещё не опубликован для вашей группы."
+msgstr "Этот материал ещё не опубликован для вашей группы."

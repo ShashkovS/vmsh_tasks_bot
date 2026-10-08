@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "seconds": 52.434248875128105,
+  "browser": "all",
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.211,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "e2e/runtime-isolation.spec.ts",
+        "--grep",
+        "clone, complete, compare|byte-different built worker",
+        "--retries",
+        "0"
+      ],
+      "seconds": 51.666,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ]
+}

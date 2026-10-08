@@ -1,0 +1,468 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { currentLocale, dateTimeFormat, formatNumber } from '@vmsh/i18n'
+import './staff-statistics.css'
+import { StatisticsRecalculationControl } from './statistics-recalculation-control'
+import { BarChart3, CalendarDays, UsersRound } from 'lucide-react'
+import { useMemo, type ReactNode } from 'react'
+import { LessonStatistics } from './lesson-statistics'
+import { staffDistributionColorIndex } from './staff-distribution-colors'
+
+import {
+  PageLayout,
+  PageSection,
+  PageStatePanel,
+  createStaffStatisticsClient,
+  useAuthenticatedPrincipal,
+  useAuthentication,
+  useStaffStatisticsQuery,
+} from '@vmsh/app-shell'
+import {
+  ApiResponseError,
+  type StaffStatisticsLesson,
+  type StaffStatisticsResponse,
+} from '@vmsh/contracts'
+import { DistributionViolin } from '@vmsh/product'
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Label,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@vmsh/ui'
+
+/*
+ * Staff aggregate reporting follows development-plan/14-phase-10-admin-and-google-exit.md.
+ * This page deliberately consumes an immutable analytics run: it never derives a pupil's
+ * position in a cohort and never exposes row-level student data. Contract coverage lives in
+ * packages/contracts/src/staff-statistics.test.ts; the real API is covered by
+ * pwa_tests/integration/test_phase10_staff_statistics.py.
+ */
+
+function formatMetric(value: number | null, suffix = ''): string {
+  return value === null ? '—' : `${formatNumber(value, { maximumFractionDigits: 1 })}${suffix}`
+}
+
+function formatRunDate(value: string): string {
+  return dateTimeFormat(currentLocale(), {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'Europe/Moscow',
+  }).format(new Date(value))
+}
+
+function selectedLesson(
+  lessons: StaffStatisticsLesson[],
+  lessonNumber: number | null,
+): StaffStatisticsLesson | null {
+  if (lessons.length === 0) return null
+  return lessonNumber === null
+    ? (lessons.at(-1) ?? null)
+    : (lessons.find((lesson) => lesson.lessonNumber === lessonNumber) ?? null)
+}
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof UsersRound
+  label: string
+  value: string
+}) {
+  return (
+    <Card size="sm">
+      <CardHeader className="grid grid-cols-[1fr_auto] items-center">
+        <CardTitle className="text-caption font-medium text-muted-foreground">{label}</CardTitle>
+        <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent className="font-num text-title font-semibold">{value}</CardContent>
+    </Card>
+  )
+}
+
+export function StaffStatisticsView({
+  data,
+  lessonNumber,
+  onCourseChange,
+  onGroupChange,
+  onLessonChange,
+  studentId = null,
+  onStudentChange = () => {},
+  onRefresh = () => {},
+  recalculationControl,
+}: {
+  data: StaffStatisticsResponse
+  lessonNumber: number | null
+  onCourseChange: (courseId: string) => void
+  onGroupChange: (groupId: string | null) => void
+  onLessonChange: (lessonNumber: number) => void
+  studentId?: string | null
+  onStudentChange?: (student: string | null) => void
+  onRefresh?: () => void
+  recalculationControl?: ReactNode
+}) {
+  const course = data.courses.find((item) => item.courseId === data.selectedCourseId) ?? null
+  const lesson = selectedLesson(
+    data.lessons,
+    lessonNumber ?? data.basicLesson?.lessonNumber ?? null,
+  )
+  const singleGroup = data.selectedGroupId !== null
+  const distributionMaximum = Math.max(1, ...(lesson?.solvedDistribution ?? [1]))
+
+  return (
+    <PageLayout
+      actions={
+        <div className="grid min-w-64 gap-2 sm:grid-cols-2">
+          <Label className="grid gap-1 text-caption">
+            <Trans>Курс</Trans>
+            <select
+              aria-label={t`Курс`}
+              className="min-h-9 rounded-md border border-input bg-surface px-3 text-small"
+              onChange={(event) => onCourseChange(event.currentTarget.value)}
+              value={data.selectedCourseId ?? ''}
+            >
+              {data.courses.length === 0 ? (
+                <option value="">
+                  <Trans>Нет доступных курсов</Trans>
+                </option>
+              ) : null}
+              {data.courses.map((item) => (
+                <option key={item.courseId} value={item.courseId}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </Label>
+          <Label className="grid gap-1 text-caption">
+            <Trans>Группа</Trans>
+            <select
+              aria-label={t`Группа`}
+              className="min-h-9 rounded-md border border-input bg-surface px-3 text-small"
+              disabled={course === null}
+              onChange={(event) => onGroupChange(event.currentTarget.value || null)}
+              value={data.selectedGroupId ?? ''}
+            >
+              <option value="">
+                <Trans>Все доступные</Trans>
+              </option>
+              {course?.groups.map((group) => (
+                <option key={group.groupId} value={group.groupId}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </Label>
+        </div>
+      }
+      className="staff-statistics"
+      title={t`Статистика курса`}
+      width="wide"
+    >
+      <LessonStatistics
+        data={data}
+        onLessonChange={onLessonChange}
+        studentId={studentId}
+        onStudentChange={onStudentChange}
+        onRefresh={onRefresh}
+        recalculationControl={recalculationControl}
+      />
+      {data.courses.length === 0 ? (
+        <PageStatePanel
+          description={t`Администратор ещё не выдал вам доступ к курсу со статистикой.`}
+          state="empty"
+          title={t`Нет доступных курсов`}
+        />
+      ) : data.run === null || data.lessons.length === 0 || lesson === null ? (
+        <PageStatePanel
+          description={t`Первый завершённый расчёт появится здесь автоматически. Исходные результаты при этом не изменяются.`}
+          state="empty"
+          title={t`Расчётов пока нет`}
+        />
+      ) : (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
+            <Badge variant="neutral">{course?.name ?? t`Курс`}</Badge>
+            <Trans>
+              <span>
+                Расчёт {data.run.algorithm} · версия {data.run.algorithmVersion}
+              </span>
+              <span aria-hidden="true">·</span>
+            </Trans>
+            <span>
+              {formatRunDate(data.run.completedAt)} <Trans>МСК</Trans>
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              icon={CalendarDays}
+              label={t`Выбрано занятие`}
+              value={`№ ${lesson.lessonNumber}`}
+            />
+            <MetricCard
+              icon={UsersRound}
+              label={t`Школьников в агрегате`}
+              value={String(lesson.studentCount)}
+            />
+            {singleGroup ? (
+              <>
+                <MetricCard
+                  icon={BarChart3}
+                  label={t`Среднее число решённых`}
+                  value={formatMetric(lesson.meanSolvedItems)}
+                />
+                <MetricCard
+                  icon={BarChart3}
+                  label={t`Доля решённых задач`}
+                  value={formatMetric(lesson.completionRate, '%')}
+                />
+              </>
+            ) : null}
+          </div>
+
+          <PageSection
+            description={t`Строки относятся к одному зафиксированному расчёту; выбор занятия сохраняется в адресе страницы.`}
+            title={t`Занятия`}
+          >
+            <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+              <Table className="min-w-[48rem]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <Trans>Занятие</Trans>
+                    </TableHead>
+                    <TableHead>
+                      <Trans>Группы</Trans>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Trans>Школьники</Trans>
+                    </TableHead>
+                    {singleGroup ? (
+                      <>
+                        <TableHead className="text-right">
+                          <Trans>Простые</Trans>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Trans>Сложные</Trans>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Trans>Решено</Trans>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Trans>Доля</Trans>
+                        </TableHead>
+                      </>
+                    ) : null}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.lessons.map((item) => {
+                    const active = item.lessonNumber === lesson.lessonNumber
+                    return (
+                      <TableRow
+                        data-state={active ? 'selected' : undefined}
+                        key={item.lessonNumber}
+                      >
+                        <TableCell>
+                          <Button
+                            aria-current={active ? 'true' : undefined}
+                            onClick={() => onLessonChange(item.lessonNumber)}
+                            size="sm"
+                            variant={active ? 'secondary' : 'ghost'}
+                          >
+                            <Trans>Занятие {item.lessonNumber}</Trans>
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {item.groups.map((group) => (
+                              <Badge key={group.groupId} variant="neutral">
+                                {group.code} · {group.studentCount}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-num">{item.studentCount}</TableCell>
+                        {singleGroup ? (
+                          <>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.meanSimpleStrength)}
+                            </TableCell>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.meanComplexStrength)}
+                            </TableCell>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.meanSolvedItems)}
+                            </TableCell>
+                            <TableCell className="text-right font-num">
+                              {formatMetric(item.completionRate, '%')}
+                            </TableCell>
+                          </>
+                        ) : null}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </PageSection>
+
+          <PageSection
+            description={t`Распределение обезличено: график не содержит маркера или позиции отдельного школьника.`}
+            title={t`Занятие ${lesson.lessonNumber}`}
+          >
+            <div
+              className={
+                singleGroup ? 'grid gap-4 lg:grid-cols-[minmax(15rem,22rem)_1fr]' : 'grid gap-4'
+              }
+            >
+              {singleGroup ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      <Trans>Сколько задач решено</Trans>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DistributionViolin
+                      bandwidth={0.75}
+                      integerTicks
+                      colorIndex={staffDistributionColorIndex(
+                        lesson.groups.find((group) => group.groupId === data.selectedGroupId)
+                          ?.code ?? '',
+                      )}
+                      height={260}
+                      valueLabel={t`Число решённых задач`}
+                      caption={t`Распределение по ${lesson.studentCount} школьникам.`}
+                      domain={[0, distributionMaximum]}
+                      values={lesson.solvedDistribution}
+                    />
+                  </CardContent>
+                </Card>
+              ) : null}
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <Trans>Состав агрегата</Trans>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {lesson.groups.map((group) => (
+                    <div
+                      className="flex items-center justify-between gap-4 border-b border-border py-2 last:border-0"
+                      key={group.groupId}
+                    >
+                      <div>
+                        <div className="font-medium">{group.name}</div>
+                        <div className="text-caption text-muted-foreground">
+                          <Trans>Код {group.code}</Trans>
+                        </div>
+                      </div>
+                      <span className="font-num text-small">{group.studentCount}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </PageSection>
+        </div>
+      )}
+    </PageLayout>
+  )
+}
+
+export function StaffStatisticsPage({
+  courseId,
+  groupId,
+  lessonNumber,
+  onCourseChange,
+  onGroupChange,
+  onLessonChange,
+  studentId = null,
+  onStudentChange = () => {},
+}: {
+  courseId: string | null
+  groupId: string | null
+  lessonNumber: number | null
+  onCourseChange: (courseId: string) => void
+  onGroupChange: (groupId: string | null) => void
+  onLessonChange: (lessonNumber: number) => void
+  studentId?: string | null
+  onStudentChange?: (student: string | null) => void
+}) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'staff') throw new Error('Statistics requires Staff auth')
+  const client = useMemo(
+    () =>
+      createStaffStatisticsClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const result = useStaffStatisticsQuery(
+    client,
+    { audience: 'staff', accountId: principal.accountId },
+    { courseId, groupId, lessonNumber, studentId },
+  )
+
+  if (result.isPending) {
+    return (
+      <PageLayout title={t`Статистика курса`} width="wide">
+        <PageStatePanel state="loading" />
+      </PageLayout>
+    )
+  }
+  if (result.error) {
+    return (
+      <PageLayout title={t`Статистика курса`} width="wide">
+        <PageStatePanel
+          actionLabel={t`Повторить`}
+          onAction={() => void result.refetch()}
+          state={
+            result.error instanceof ApiResponseError && result.error.status === 403
+              ? 'forbidden'
+              : 'error'
+          }
+        />
+      </PageLayout>
+    )
+  }
+  return (
+    <StaffStatisticsView
+      data={result.data}
+      lessonNumber={lessonNumber}
+      onCourseChange={onCourseChange}
+      onGroupChange={onGroupChange}
+      onLessonChange={onLessonChange}
+      studentId={studentId}
+      onStudentChange={onStudentChange}
+      onRefresh={() => void result.refetch()}
+      recalculationControl={
+        principal.role === 'admin' && result.data.selectedCourseId ? (
+          <StatisticsRecalculationControl
+            key={result.data.selectedCourseId}
+            courseId={result.data.selectedCourseId}
+            onRefresh={() => void result.refetch()}
+          />
+        ) : undefined
+      }
+    />
+  )
+}

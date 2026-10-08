@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "preview": {
+    "planPublicId": "classroom-plan.41",
+    "planVersion": 3,
+    "previewHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recipientCount": 3,
+    "changedCount": 1,
+    "pwaUnavailableCount": 0,
+    "telegramUnavailableCount": 1,
+    "recipients": [
+      {
+        "studentPublicId": "student.anna",
+        "studentName": "Белова Анна",
+        "coursePublicId": "course.math",
+        "courseName": "Математика 5–7",
+        "groupPublicId": "group.beginner",
+        "groupName": "Начинающие",
+        "classroomPublicId": "classroom.201",
+        "classroomName": "201",
+        "changed": false,
+        "pwaAvailable": true,
+        "telegramAvailable": true
+      },
+      {
+        "studentPublicId": "student.boris",
+        "studentName": "Ветров Борис",
+        "coursePublicId": "course.math",
+        "courseName": "Математика 5–7",
+        "groupPublicId": "group.beginner",
+        "groupName": "Начинающие",
+        "classroomPublicId": "classroom.202",
+        "classroomName": "202",
+        "changed": true,
+        "pwaAvailable": true,
+        "telegramAvailable": true
+      },
+      {
+        "studentPublicId": "student.vera",
+        "studentName": "Орлова Вера",
+        "coursePublicId": "course.physics",
+        "courseName": "Физика",
+        "groupPublicId": "group.physics-intro",
+        "groupName": "Вводная группа",
+        "classroomPublicId": "classroom.401",
+        "classroomName": "401",
+        "changed": false,
+        "pwaAvailable": true,
+        "telegramAvailable": false
+      }
+    ]
+  },
+  "requestId": "delivery-preview-request"
+}

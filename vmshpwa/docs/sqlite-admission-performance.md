@@ -1,0 +1,278 @@
+# SQLite: ограничение параллельной работы
+
+## Student problem list CPU — 4 October 2026
+
+Both VMSh interactive readers repeatedly materialized the global
+`teacher_result_choices` projection; more than 300 queued operations caused
+5–8 second API delays. The same query was slow before the hint-preview release.
+[`effective_results.py:STUDENT_EFFECTIVE_RESULTS_CTES`](../../db_methods/pwa/effective_results.py)
+restricts written/manual candidates to the current student before aggregation.
+[`content.py:_STUDENT_PROBLEM_LIST_SELECT`](../../db_methods/pwa/content.py)
+materializes its small published scope, visible tasks and logical membership
+once. No grade, publication or schema changes.
+
+The scoped projection follows the `teacher_result_choices` / `effective_results`
+views in `migrations/0111.current_schema.sql`. Changes to precedence must update
+both and pass the entire-grade parity matrix in
+[`test_written_result_precedence.py`](../../pwa_tests/integration/test_written_result_precedence.py).
+The actual problem-list plan also rejects global scans of result/manual rows.
+[Incident, read-only rehearsal and release progress](cpu-incident-20261004.md).
+
+## Изоляция Staff statistics — 22 сентября 2026
+
+`PwaConnectionFactory.run_analytics_async` выполняет отчёт на отдельном
+постоянном соединении и однопоточном executor с собственным admission gate.
+`staff_statistics_routes.get_staff_statistics` использует его для `read_run`;
+авторизация и каталог остаются на обычном reader. `BEGIN` внутри отчёта
+сохраняет согласованный снимок. `query_only` запрещает случайную запись,
+cleanup откатывает оставшийся snapshot, cancellation удерживает слот до
+завершения callback. Shutdown закрывает все три соединения на owner threads.
+
+В двух production workers теперь до шести соединений основной БД: два
+interactive reader, два analytics reader и два writer. SQLite по-прежнему
+допускает только одного writer на БД. Метрики/логи и существующие Grafana
+панели автоматически показывают роль `analytics`.
+Это изоляция очередей, не CPU/IO: долгий отчёт всё ещё конкурирует за ресурсы
+и может задерживать checkpoint. SQL-deadline и оптимизация самого отчёта
+не входят в это изменение. Проверки конкурентного snapshot/read/write,
+query_only, cancellation и shutdown: `test_sqlite_concurrency.py`.
+
+## Диагностика владельцев слотов — 21 сентября 2026
+
+`helpers/pwa/db_observability.py` инструментирует admission в
+`db_methods/pwa/connection.py`, сохраняя один runtime reader и writer на процесс.
+`vmsh_db_waiting` и `vmsh_db_active` — multiprocess liveall gauges по role;
+автоматический PID позволяет видеть неравномерность workers. Гистограммы
+`vmsh_db_admission_wait_seconds` и `vmsh_db_slot_hold_seconds` имеют только role.
+Первая включает отменённые ожидания, вторая — полный срок допуска, включая
+executor, connect, callback, commit и drain после отмены. Rate её count —
+число завершённых допущенных операций, а не HTTP RPS.
+
+INFO `pwa_db_operation` содержит PID, role, request_id, canonical route,
+callback, duration_ms и текущую локальную queue_depth. События admitted /
+wait_cancelled и released пишутся от 200 мс; holding — раз в секунду после
+секунды владения. Для фоновой работы request_id/route равны null. SQL, параметры
+и repr callback не записываются. Старый db.admission_queue сохранён, добавлены
+db.admission_queue.read/write; эти стадии вложенные, суммировать их нельзя.
+
+В обоих monitoring installer добавлены панели очередей по worker, p95 wait/hold
+и числа операций. Для существующей Grafana обновить только provisioned dashboard
+JSON, не перезапускать весь installer. Backend требует обычного выпуска;
+схема БД и HTTP API не меняются.
+
+После выпуска собрать нагруженный интервал journald с маркерами
+`pwa_db_operation|pwa_slow_request|pwa_event_loop_lag`. Группировать по PID/role,
+сопоставлять holding/released с очередью и числом операций. Долгий владелец
+называет callback для SQL EXPLAIN и анализа Python; при коротких владельцах
+искать избыток обращений/перезапросов. Сравнение 1/2 постоянных readers на
+изолированной копии с репрезентативной нагрузкой и конкретная оптимизация —
+следующий этап после данных. Критерий: меньшие HTTP p95 и admission wait при
+сопоставимом трафике без роста ошибок, write-lock ожидания и CPU pressure.
+Причинность по одной очереди не устанавливается.
+
+9 сентября 2026. Реализация: `db_methods/pwa/connection.py`, решение:
+`adr/0002-pwa-sqlite-concurrency-and-migrations.md`, регрессии:
+`pwa_tests/integration/test_sqlite_concurrency.py`.
+
+## Основание
+
+В архиве `vmsh-perf-20260907.2Ajc62.tar.gz` за 7 сентября 16–20 МСК
+обычные API действительно медленные: среднее около 228 мс у auth/me,
+429 мс у test-input, 567 мс у списка задач. При этом диск не насыщен.
+В Sentry у медленного test-input есть серверный span 8,8 с без дочерних
+DB spans: он подтверждает задержку, но не локализует её причину.
+
+Локально на пустой БД с полной схемой (548 объектов) даже `SELECT 1`
+деградирует при одновременном открытии множества новых соединений.
+24 клиента × 25 операций, замер включает ожидание:
+
+| Одновременно выполняемых операций | Среднее, мс | p95, мс | Всего, с |
+| --------------------------------- | ----------: | ------: | -------: |
+| 24 (прежний путь)                 |         323 |     407 |     8,19 |
+| 8                                 |         306 |     389 |     7,81 |
+| 4                                 |         228 |     258 |     5,81 |
+| 2                                 |         118 |     146 |     3,02 |
+| 1                                 |          69 |      81 |     1,78 |
+
+Это синтетический замер на macOS, а не production A/B и не доказательство,
+что все задержки вызваны этим. Наблюдаем конкуренцию на пути открытия/
+инициализации соединений; конкретный внутренний mutex SQLite не профилировали.
+
+Повторный запуск уже реализованной границы через committed benchmark
+(Python 3.14.3 / SQLite 3.50.4, без параллельного pytest): при 24 клиентах
+p95 **480 → 221 мс**, полное время **9,51 → 4,90 с**. Один клиент:
+p95 5,27 → 6,52 мс. Абсолютные числа плавают; улучшение относится к
+конкурентной нагрузке, а не к каждому одиночному запросу.
+
+## Изменение
+
+### Следующий шаг: два постоянных соединения
+
+После измерения переоткрытия runtime в `main.py:pwa_database_lifecycle`
+включает `start_async_workers()`: один reader и один writer, каждый со своим
+однопоточным executor и лениво открываемым соединением. Параллельных чтений
+на процесс теперь одно. PRAGMA выполняются при открытии, а не каждом callback.
+Синхронные maintenance-вызовы не меняются. Аналитическая БД и Telegram имеют
+собственные lifecycle и не входят в эти два соединения основной PWA-БД.
+
+`aclose()` запрещает новые операции, дожидается уже допущенных, закрывает
+соединения на потоках-владельцах и останавливает executor. Runtime только
+после этого освобождает flock. Отмена cleanup не освобождает lock раньше
+времени. Неполная транзакция откатывается до следующего callback, результаты
+и авторизация не кешируются. Миграции по-прежнему требуют остановки runtime.
+
+Benchmark ниже сравнивает три варианта: fresh-unbounded, fresh-admitted и
+persistent. Проверки повторяют сценарии отмены/конкуренции в обоих режимах;
+отдельно проверяют reuse, rollback, актуальность данных и остановку потоков.
+
+163 теста прошли после включения persistent-режима в auth/content/review HTTP
+фикстурах. Runtime cancellation-тест учитывает общий `on_shutdown`, который
+отменяет фоновые задачи: отправка SQL создаёт executor Future, а не отдельную
+asyncio Task, поэтому отмена вызывающей задачи не отменяет ожидание реального
+SQL. Проверены удержание flock до drain/close, повторный close и запрет
+операций после close. Ruff и diff-check также прошли.
+
+Локальный повтор на Python 3.14.3 / SQLite 3.50.4, 24 клиента × 25 `SELECT 1`:
+fresh-unbounded p95 548 мс / 9,48 с всего; fresh-admitted 230 мс / 4,72 с;
+persistent **5,47 мс / 0,10 с**. При одном клиенте persistent p95 0,12 мс.
+Первое открытие включено в измерение. Это микротест границы, не обещание
+аналогичного ускорения полного HTTP-запроса с бизнес-SQL.
+
+### Число процессов
+
+На текущих 2 vCPU оставляем 2 Gunicorn-процесса. Это четыре постоянных
+соединения основной БД суммарно, но по-прежнему один одновременно пишущий
+SQLite на БД. Увеличение до 3/4 процессов не меняет это ограничение, добавляет
+память, потоки и конкуренцию CPU. Сначала сравнить после/до при двух процессах;
+затем отдельный нагрузочный прогон с тремя и при необходимости четырьмя.
+Критерии: p95 обычных API при сопоставимом RPS, loop lag, admission_queue,
+write_lock, CPU pressure и RSS. Больше процессов оставлять только при
+устойчивом улучшении без роста ошибок и давления памяти.
+Это соответствует рекомендации [Gunicorn](https://gunicorn.org/design/)
+подбирать процессы измерениями: избыток может снижать throughput.
+
+### Предыдущий шаг: ограничение переоткрытий
+
+В существующей общей фабрике на процесс допускаются две async-операции
+чтения и одна записи. Две, а не одна: длинное чтение не должно полностью
+останавливать короткие. Записи имеют отдельную очередь, чтобы ожидание
+межпроцессной write-блокировки не занимало все слоты чтений.
+Ожидание асинхронное, потоки executor оно не занимает.
+
+Нет пула соединений, кеша авторизации/данных, изменений SQL, схемы, WAL,
+busy-policy или бизнес-правил. Синхронные maintenance-операции не ограничены
+этими asyncio-семафорами. Разные процессы по-прежнему координируются SQLite.
+Отмена во время очереди не запускает операцию; после dispatch дожидаемся
+закрытия соединения, затем распространяем отмену. Поэтому отмена запроса
+не означает отмену уже начатой записи — как и у прежнего `to_thread`.
+
+## Проверка и выпуск
+
+Воспроизводимый benchmark сам создаёт и удаляет временную пустую БД,
+не принимает путь к существующей и не запускает приложение:
+
+```sh
+.venv/bin/python -m pwa_tests.benchmark_sqlite_admission
+.venv/bin/python -m pytest pwa_tests/integration/test_sqlite_concurrency.py pwa_tests/domain/test_request_trace.py -q
+```
+
+Проверено: 136 тестов, включая перечисленные выше, auth HTTP/repository,
+test-submissions, app factory, migration lifecycle и runtime lifecycle lock;
+Ruff и `git diff --check`. Предупреждения тестов — существующая SymPy deprecation.
+
+Нужен обычный выпуск backend с перезапуском, без миграций и новых сервисов.
+До/после сравнить одинаковую нагрузку и количество запросов: p50/p95,
+ошибки, `db.connect`, `db.admission_queue`, `db.thread_queue`, `db.read`,
+`db.write_lock` и loop lag. Новый этап `db.admission_queue` — ожидание
+допуска; он не входит в `db.thread_queue`.
+
+Следующий шаг после выпуска: собрать `pwa_slow_request` за нагруженный
+интервал по инструкции `request-tracing.md`. Если преобладает admission_queue,
+найти длинные callback/SQL; connect в persistent-режиме ожидается только
+при первом открытии или восстановлении после ошибки очистки транзакции.
+Если latency
+ухудшится, откатить этот commit и сохранить сравнительные метрики.
+
+## Fail-closed защита миграций — 17 сентября 2026
+
+Инцидент с `effective_results` показал ограничение обычных schema и unit-тестов:
+коррелированный подзапрос был логически верен и проходил на маленькой fixture,
+но без индекса превращался в полный обход `test_attempts` для каждой строки
+`results`. Два долгих чтения заняли все read slots одного процесса, после чего
+`db.admission_queue` выросла до сотен секунд.
+
+[`performance_guard.py`](../../db_methods/pwa/performance_guard.py) теперь
+проверяет `EXPLAIN QUERY PLAN` каждого view и запрещает любой `SCAN` внутри
+коррелированного подзапроса. Дополнительно небольшой реестр общих fan-out
+проекций требует конкретные элементы плана и выполняет настоящий read с
+двухсекундным deadline через SQLite progress handler. Первый контракт —
+`effective_results`: план обязан использовать `test_attempts_result_idx`.
+Новые общие агрегаты и проекции должны добавляться в этот реестр; guard не
+пытается обещать автоматическое доказательство производительности произвольного
+SQL.
+
+Production deploy при любой новой миграции до включения maintenance делает
+согласованную SQLite-копию, применяет к ней целевую migration head и запускает
+guard. Поэтому плохая миграция прекращает deploy до пользовательской паузы.
+После миграции настоящей БД те же проверки повторяются до запуска backend.
+Ошибка оставляет maintenance включённым и writers остановленными для ручного
+разбора; частично проверенная схема не получает трафик.
+
+Локально после миграции можно выполнить `make pwa-agent-performance-guard`
+(или `make pwa-performance-guard` для human-профиля). Регрессии находятся в
+`pwa_tests/test_database_performance_guard.py` и
+`pwa_tests/integration/test_test_attempt_projection_migration.py`.
+
+## Receipt lookup index — 1 October 2026
+
+Owner authorized committing/pushing an index migration and deploying it to
+VMSh and TLF. Incident metrics show long test-answer rechecks coinciding with
+interactive SQLite reader queues. In `_stored_attempts`, the correlated receipt
+lookup scans `idempotency_records` once per answer: its original unique index
+starts with `audience`, which this historical lookup does not constrain.
+
+[Migration 0105](../../migrations/0105.pwa_recheck_receipt_lookup.sql) adds a
+partial lookup index on `(account_id, operation, idempotency_key,
+payload_sha256, id DESC)` for `state = 'completed'`. It directly serves the
+existing account-scoped receipt lookup in
+[`submissions.py:_stored_attempts`](../../db_methods/pwa/submissions.py),
+including its newest-receipt ordering, without altering query semantics,
+answer payloads, verdicts or replay responses. The existing audience-scoped
+unique constraint and all identity/state triggers remain intact.
+
+Its dependency is the published `0103.course_in_person_classes`; independent
+in-progress figure migration 0104 is excluded from this release. Rollback drops
+only the new index. Regression:
+[`test_recheck_receipt_lookup_migration.py`](../../pwa_tests/integration/test_recheck_receipt_lookup_migration.py)
+checks the actual repository query plan, identical stored rows/previews and
+up/down/up. The new regression and 14 existing recheck/idempotency checks
+passed. A server-resident production-backup rehearsal created the index in
+112 ms and read 714 historical answers in 26 ms using the original query.
+Up/down/up preserved complete receipt/attempt/result/enrollment row digests
+and SQLite integrity. The isolated index-only release passes 36 focused migration/recheck/idempotency/
+schema checks, including the two updated schema expectations; the inventory CLI
+check and Ruff pass.
+
+Release `0a05b685` is deployed on both hosts: VMSh automatically by the main
+branch webhook; TLF by the guarded manual script retained at
+`/web/vmsh_tasks_bot/deploy/releases/recheck-index-0a05b685c044-20261001T120604Z/deploy.sh`.
+Both live databases contain 76 migrations and the new index, exclude 0104,
+and pass integrity checks. The actual live VMSh query reads 714 answers in
+15 ms with an indexed receipt lookup; TLF has no test attempts yet, but the
+same query plan uses the new index.
+
+VMSh fresh backups `vmsh-before-deploy-20261001120529.sqlite3` and
+`vmsh-after-deploy-20261001120600.sqlite3` pass integrity and have identical
+complete-row digests for 44016 receipts, 20676 attempts, 34536 results and 1519
+enrollments. TLF backups `20261001T120604.531651Z` and
+`20261001T120612.278270Z` pass integrity; every product table was compared with
+writers stopped and remained identical. Three raw Zoom receipts, existing
+credentials and both static artifacts are preserved. No production test
+submission/recheck was performed by validation.
+
+Both portals pass 25 read-only public HTTP checks each. All five VMSh and four
+TLF Prometheus targets are up; the observed post-cutover one-minute backend
+5xx increase and current read/write admission queues are zero. PWA, VMSh
+Telegram and TLF Zoom are active. Shared NATS PIDs remain 3018 and 1936264.
+Documentation-only follow-ups need source synchronization, without service
+restart or rebuilding the unchanged frontend. [TLF operations](../../docs/deploy/tlf-app/README.md#receipt-lookup-index--2026-10-01).

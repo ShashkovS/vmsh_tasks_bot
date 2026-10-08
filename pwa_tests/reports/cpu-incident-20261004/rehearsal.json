@@ -1,0 +1,393 @@
+{
+  "sqlite_version": "3.46.1",
+  "database_mode": "read-only",
+  "snapshot": true,
+  "deadline_seconds_per_query": 2,
+  "cases": [
+    {
+      "case": 0,
+      "measurements": {
+        "original": {
+          "ms": 137.434,
+          "vm_steps": 2657000,
+          "rows": 16
+        },
+        "candidate": {
+          "ms": 10.571,
+          "vm_steps": 152000,
+          "rows": 16
+        }
+      }
+    },
+    {
+      "case": 1,
+      "measurements": {
+        "original": {
+          "ms": 141.955,
+          "vm_steps": 2865000,
+          "rows": 17
+        },
+        "candidate": {
+          "ms": 27.983,
+          "vm_steps": 313000,
+          "rows": 17
+        }
+      }
+    },
+    {
+      "case": 2,
+      "measurements": {
+        "original": {
+          "ms": 142.961,
+          "vm_steps": 2745000,
+          "rows": 12
+        },
+        "candidate": {
+          "ms": 4.833,
+          "vm_steps": 120000,
+          "rows": 12
+        }
+      }
+    },
+    {
+      "case": 3,
+      "measurements": {
+        "original": {
+          "ms": 135.22,
+          "vm_steps": 2675000,
+          "rows": 14
+        },
+        "candidate": {
+          "ms": 4.33,
+          "vm_steps": 139000,
+          "rows": 14
+        }
+      }
+    },
+    {
+      "case": 4,
+      "measurements": {
+        "original": {
+          "ms": 103.628,
+          "vm_steps": 2695000,
+          "rows": 15
+        },
+        "candidate": {
+          "ms": 5.242,
+          "vm_steps": 146000,
+          "rows": 15
+        }
+      }
+    },
+    {
+      "case": 5,
+      "measurements": {
+        "original": {
+          "ms": 122.111,
+          "vm_steps": 3020000,
+          "rows": 16
+        },
+        "candidate": {
+          "ms": 5.632,
+          "vm_steps": 165000,
+          "rows": 16
+        }
+      }
+    },
+    {
+      "case": 6,
+      "measurements": {
+        "original": {
+          "ms": 227.412,
+          "vm_steps": 3478000,
+          "rows": 17
+        },
+        "candidate": {
+          "ms": 8.869,
+          "vm_steps": 173000,
+          "rows": 17
+        }
+      }
+    },
+    {
+      "case": 7,
+      "measurements": {
+        "original": {
+          "ms": 277.076,
+          "vm_steps": 3656000,
+          "rows": 12
+        },
+        "candidate": {
+          "ms": 27.007,
+          "vm_steps": 285000,
+          "rows": 12
+        }
+      }
+    },
+    {
+      "case": 8,
+      "measurements": {
+        "original": {
+          "ms": 178.986,
+          "vm_steps": 3130000,
+          "rows": 14
+        },
+        "candidate": {
+          "ms": 5.325,
+          "vm_steps": 151000,
+          "rows": 14
+        }
+      }
+    },
+    {
+      "case": 9,
+      "measurements": {
+        "original": {
+          "ms": 166.299,
+          "vm_steps": 3238000,
+          "rows": 15
+        },
+        "candidate": {
+          "ms": 5.695,
+          "vm_steps": 158000,
+          "rows": 15
+        }
+      }
+    },
+    {
+      "case": 10,
+      "measurements": {
+        "original": {
+          "ms": 143.94,
+          "vm_steps": 3039000,
+          "rows": 16
+        },
+        "candidate": {
+          "ms": 5.722,
+          "vm_steps": 164000,
+          "rows": 16
+        }
+      }
+    },
+    {
+      "case": 11,
+      "measurements": {
+        "original": {
+          "ms": 217.063,
+          "vm_steps": 3641000,
+          "rows": 17
+        },
+        "candidate": {
+          "ms": 21.778,
+          "vm_steps": 326000,
+          "rows": 17
+        }
+      }
+    },
+    {
+      "case": 12,
+      "measurements": {
+        "original": {
+          "ms": 172.106,
+          "vm_steps": 3610000,
+          "rows": 12
+        },
+        "candidate": {
+          "ms": 5.093,
+          "vm_steps": 132000,
+          "rows": 12
+        }
+      }
+    },
+    {
+      "case": 13,
+      "measurements": {
+        "original": {
+          "ms": 136.862,
+          "vm_steps": 3168000,
+          "rows": 14
+        },
+        "candidate": {
+          "ms": 4.797,
+          "vm_steps": 150000,
+          "rows": 14
+        }
+      }
+    },
+    {
+      "case": 14,
+      "measurements": {
+        "original": {
+          "ms": 163.97,
+          "vm_steps": 3355000,
+          "rows": 15
+        },
+        "candidate": {
+          "ms": 21.133,
+          "vm_steps": 310000,
+          "rows": 15
+        }
+      }
+    }
+  ],
+  "all_rows_identical": true,
+  "global_result_cell_scans": false,
+  "candidate_plan": [
+    "MATERIALIZE published_scope",
+    "SCAN condition_publication USING INDEX lesson_publications_one_published_uq",
+    "SEARCH group_lesson USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH course USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH condition_revision USING INTEGER PRIMARY KEY (rowid=?)",
+    "CORRELATED SCALAR SUBQUERY 12",
+    "SEARCH derivative USING INDEX sqlite_autoindex_content_derivatives_1 (revision_id=? AND kind=?)",
+    "CORRELATED SCALAR SUBQUERY 11",
+    "SEARCH frozen USING INTEGER PRIMARY KEY (rowid=?)",
+    "CORRELATED SCALAR SUBQUERY 10",
+    "SEARCH frozen USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH group_record USING INDEX groups_course_group_uq (course_id=? AND group_id=?)",
+    "SEARCH course_lesson USING INTEGER PRIMARY KEY (rowid=?)",
+    "MATERIALIZE visible_problem",
+    "SCAN problem_match USING INDEX content_problem_matches_problem_idx",
+    "SEARCH problem_revision USING INDEX sqlite_autoindex_problem_revisions_1 (problem_id=? AND content_revision_id=?)",
+    "SEARCH problem USING INTEGER PRIMARY KEY (rowid=?)",
+    "BLOOM FILTER ON published_scope (condition_revision_id=?)",
+    "SEARCH published_scope USING AUTOMATIC COVERING INDEX (condition_revision_id=?)",
+    "CORRELATED SCALAR SUBQUERY 14",
+    "SEARCH release USING INDEX sqlite_autoindex_lesson_problem_release_1 (group_lesson_id=? AND problem_id=?)",
+    "MATERIALIZE hint_state",
+    "SCAN visible",
+    "SEARCH publication USING INDEX lesson_publications_one_published_uq (group_lesson_id=? AND kind=?)",
+    "SEARCH revision USING INTEGER PRIMARY KEY (rowid=?)",
+    "CORRELATED SCALAR SUBQUERY 16",
+    "SEARCH frozen USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH problem_match USING INDEX content_problem_matches_problem_idx (problem_id=? AND content_revision_id=?)",
+    "SEARCH derivative USING INDEX sqlite_autoindex_content_derivatives_1 (revision_id=? AND kind=?)",
+    "CORRELATED SCALAR SUBQUERY 17",
+    "SEARCH frozen USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH reveal USING COVERING INDEX sqlite_autoindex_hint_reveals_1 (student_user_id=? AND problem_id=? AND publication_id=?) LEFT-JOIN",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "MATERIALIZE solution_state",
+    "SCAN visible",
+    "SEARCH publication USING INDEX lesson_publications_one_published_uq (group_lesson_id=? AND kind=?)",
+    "SEARCH revision USING INTEGER PRIMARY KEY (rowid=?)",
+    "CORRELATED SCALAR SUBQUERY 19",
+    "SEARCH frozen USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH problem_match USING INDEX content_problem_matches_problem_idx (problem_id=? AND content_revision_id=?)",
+    "SEARCH derivative USING INDEX sqlite_autoindex_content_derivatives_1 (revision_id=? AND kind=?)",
+    "CORRELATED SCALAR SUBQUERY 20",
+    "SEARCH frozen USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH reveal USING COVERING INDEX sqlite_autoindex_solution_reveals_1 (student_user_id=? AND problem_id=? AND publication_id=?) LEFT-JOIN",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "MATERIALIZE queue_state",
+    "MATERIALIZE logical_member",
+    "SCAN visible",
+    "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+    "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+    "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SCAN p",
+    "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+    "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+    "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SEARCH queue USING INDEX sqlite_autoindex_written_tasks_queue_2 (student_id=?)",
+    "BLOOM FILTER ON logical_member (member_problem_id=?)",
+    "SEARCH logical_member USING AUTOMATIC COVERING INDEX (member_problem_id=?)",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "MATERIALIZE ranked_result",
+    "CO-ROUTINE (subquery-49)",
+    "MATERIALIZE student_effective_results",
+    "COMPOUND QUERY",
+    "LEFT-MOST SUBQUERY",
+    "MATERIALIZE student_teacher_choices",
+    "CO-ROUTINE latest",
+    "CO-ROUTINE candidates",
+    "COMPOUND QUERY",
+    "LEFT-MOST SUBQUERY",
+    "SEARCH r USING COVERING INDEX results_written_current_idx (student_id=?)",
+    "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+    "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+    "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "UNION ALL",
+    "SEARCH c USING INDEX sqlite_autoindex_live_mark_cells_1 (student_id=?)",
+    "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)",
+    "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+    "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+    "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SEARCH r USING INTEGER PRIMARY KEY (rowid=?)",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "SCAN candidates",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "SCAN latest",
+    "SEARCH w USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SEARCH wv USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SEARCH m USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SEARCH mv USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SCAN choices",
+    "SEARCH r USING INTEGER PRIMARY KEY (rowid=?)",
+    "UNION ALL",
+    "MATERIALIZE result_problem_groups",
+    "SCAN p",
+    "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+    "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+    "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+    "SEARCH r USING INDEX results_by_student_problem (student_id=?)",
+    "CORRELATED SCALAR SUBQUERY 7",
+    "SEARCH e USING COVERING INDEX sqlite_autoindex_test_attempt_result_events_1 (result_id=?)",
+    "CORRELATED SCALAR SUBQUERY 8",
+    "SEARCH a USING COVERING INDEX test_attempts_result_idx (result_id=?)",
+    "BLOOM FILTER ON pg (problem_id=?)",
+    "SEARCH pg USING AUTOMATIC COVERING INDEX (problem_id=?) LEFT-JOIN",
+    "BLOOM FILTER ON choices (student_id=? AND logical_key=?)",
+    "SEARCH choices USING AUTOMATIC COVERING INDEX (student_id=? AND logical_key=?) LEFT-JOIN",
+    "SEARCH c USING INDEX sqlite_autoindex_live_mark_cells_1 (student_id=? AND problem_id=?) LEFT-JOIN",
+    "CORRELATED SCALAR SUBQUERY 6",
+    "SEARCH lm USING INTEGER PRIMARY KEY (rowid=?)",
+    "SCAN result",
+    "SEARCH verdict USING INTEGER PRIMARY KEY (rowid=?)",
+    "BLOOM FILTER ON logical_member (member_problem_id=?)",
+    "SEARCH logical_member USING AUTOMATIC COVERING INDEX (member_problem_id=?)",
+    "BLOOM FILTER ON manual (result_id=?)",
+    "SEARCH manual USING AUTOMATIC COVERING INDEX (result_id=?) LEFT-JOIN",
+    "CORRELATED SCALAR SUBQUERY 24",
+    "SEARCH current_attempt USING COVERING INDEX test_attempts_student_problem_history_idx (student_user_id=? AND problem_id=?)",
+    "CORRELATED SCALAR SUBQUERY 24",
+    "SEARCH current_attempt USING COVERING INDEX test_attempts_student_problem_history_idx (student_user_id=? AND problem_id=?)",
+    "USE TEMP B-TREE FOR ORDER BY",
+    "SCAN (subquery-49)",
+    "MATERIALIZE discussion_state",
+    "SEARCH discussion USING COVERING INDEX written_tasks_discussions_by_task (student_id=?)",
+    "BLOOM FILTER ON logical_member (member_problem_id=?)",
+    "SEARCH logical_member USING AUTOMATIC COVERING INDEX (member_problem_id=?)",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "SCAN published_scope",
+    "SCAN visible_problem LEFT-JOIN",
+    "BLOOM FILTER ON hint_state (problem_id=?)",
+    "SEARCH hint_state USING AUTOMATIC COVERING INDEX (problem_id=?) LEFT-JOIN",
+    "BLOOM FILTER ON solution_state (problem_id=?)",
+    "SEARCH solution_state USING AUTOMATIC COVERING INDEX (problem_id=?) LEFT-JOIN",
+    "BLOOM FILTER ON queue_state (visible_problem_id=?)",
+    "SEARCH queue_state USING AUTOMATIC COVERING INDEX (visible_problem_id=?) LEFT-JOIN",
+    "BLOOM FILTER ON ranked_result (visible_problem_id=? AND result_rank=?)",
+    "SEARCH ranked_result USING AUTOMATIC PARTIAL COVERING INDEX (visible_problem_id=? AND result_rank=?) LEFT-JOIN",
+    "BLOOM FILTER ON discussion_state (visible_problem_id=?)",
+    "SEARCH discussion_state USING AUTOMATIC COVERING INDEX (visible_problem_id=?) LEFT-JOIN",
+    "CORRELATED SCALAR SUBQUERY 27",
+    "BLOOM FILTER ON member (visible_problem_id=?)",
+    "SEARCH member USING AUTOMATIC COVERING INDEX (visible_problem_id=?)",
+    "SEARCH attempt USING COVERING INDEX test_attempts_student_problem_history_idx (student_user_id=? AND problem_id=?)",
+    "CORRELATED SCALAR SUBQUERY 28",
+    "BLOOM FILTER ON member (visible_problem_id=?)",
+    "SEARCH member USING AUTOMATIC COVERING INDEX (visible_problem_id=?)",
+    "SEARCH thread USING INDEX submission_threads_student_updated_idx (student_user_id=?)",
+    "SEARCH entry USING INDEX submission_entries_thread_history_idx (thread_id=?)",
+    "CORRELATED SCALAR SUBQUERY 29",
+    "BLOOM FILTER ON member (visible_problem_id=?)",
+    "SEARCH member USING AUTOMATIC COVERING INDEX (visible_problem_id=?)",
+    "SEARCH result USING INDEX results_by_student_problem (student_id=? AND problem_id=?)",
+    "CORRELATED SCALAR SUBQUERY 30",
+    "SEARCH previous_hint USING COVERING INDEX sqlite_autoindex_hint_reveals_1 (student_user_id=? AND problem_id=?)",
+    "USE TEMP B-TREE FOR ORDER BY"
+  ]
+}

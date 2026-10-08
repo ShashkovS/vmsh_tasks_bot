@@ -1,0 +1,29 @@
+make pwa-e2e-live-marking
+apps/landing build: transforming...✓ 2128 modules transformed.
+apps/landing build: ✓ built in 1.35s
+apps/family build: transforming...✓ 3134 modules transformed.
+apps/student build: transforming...✓ 3165 modules transformed.
+apps/staff build: transforming...✓ 3279 modules transformed.
+apps/family build: ✓ built in 4.65s
+apps/student build: ✓ built in 5.00s
+apps/staff build: ✓ built in 5.53s
+apps/family build: transforming...✓ 234 modules transformed.
+apps/student build: transforming...✓ 234 modules transformed.
+apps/student build: ✓ built in 262ms
+apps/family build: ✓ built in 266ms
+  ✓   1 [chromium] › e2e/live-marking-confirmation.spec.ts:5:1 › Classroom marks wait for receipts and follow other teachers through reconnect (11.2s)
+  ✓   2 [chromium] › e2e/live-marking.spec.ts:16:1 › Live student search ignores patronymics and can match only surnames (1.9s)
+  ✓   3 [chromium] › e2e/live-marking.spec.ts:57:1 › Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions (15.2s)
+  ✓   4 [chromium] › e2e/live-marking.spec.ts:188:1 › Live classroom: teacher transfer, attendance and another teacher sees the saved mark (8.4s)
+  ✓   5 [chromium] › e2e/live-marking.spec.ts:250:1 › Live Zoom: two levels share one session without changing enrollment (6.1s)
+  ✓   6 [webkit] › e2e/live-marking-confirmation.spec.ts:5:1 › Classroom marks wait for receipts and follow other teachers through reconnect (13.5s)
+  ✓   7 [webkit] › e2e/live-marking.spec.ts:16:1 › Live student search ignores patronymics and can match only surnames (3.1s)
+  ✓   8 [webkit] › e2e/live-marking.spec.ts:57:1 › Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions (22.6s)
+  ✓   9 [webkit] › e2e/live-marking.spec.ts:188:1 › Live classroom: teacher transfer, attendance and another teacher sees the saved mark (19.0s)
+  ✓  10 [webkit] › e2e/live-marking.spec.ts:250:1 › Live Zoom: two levels share one session without changing enrollment (9.5s)
+  ✓  11 [firefox] › e2e/live-marking-confirmation.spec.ts:5:1 › Classroom marks wait for receipts and follow other teachers through reconnect (36.6s)
+  ✓  12 [firefox] › e2e/live-marking.spec.ts:16:1 › Live student search ignores patronymics and can match only surnames (3.1s)
+  ✓  13 [firefox] › e2e/live-marking.spec.ts:57:1 › Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions (39.2s)
+  ✓  14 [firefox] › e2e/live-marking.spec.ts:188:1 › Live classroom: teacher transfer, attendance and another teacher sees the saved mark (20.0s)
+  ✓  15 [firefox] › e2e/live-marking.spec.ts:250:1 › Live Zoom: two levels share one session without changing enrollment (17.2s)
+  15 passed (4.2m)

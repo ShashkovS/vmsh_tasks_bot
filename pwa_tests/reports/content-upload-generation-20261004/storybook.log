@@ -1,0 +1,54 @@
+$ vitest run --config vitest.storybook.config.ts
+(node:61259) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+│
+▲  One or more extensionless imports detected: "../vite-branding" in file
+│  "/Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/.storybook/main.ts".
+│  For more information on how to resolve the issue:
+│  ]8;;https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensionshttps://storybook.js.org/docs/faq#extensionless-imports-in-st...]8;;
+│
+▲  One or more extensionless imports detected: "../vite-i18n" in file
+│  "/Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/.storybook/main.ts".
+│  For more information on how to resolve the issue:
+│  ]8;;https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensionshttps://storybook.js.org/docs/faq#extensionless-imports-in-st...]8;;
+│
+▲  No story files found for the specified pattern:
+│  dev/design-system/**/*.stories.@(ts|tsx)
+
+ RUN  v4.1.10 /Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa
+
+stdout | apps/staff/src/live-marking-grid.stories.tsx > Large Classroom
+Live marking 200x50 click p95: 68.0ms
+ ❯ |storybook (chromium)| apps/staff/src/live-marking-grid.stories.tsx (10 tests | 1 failed) 5941ms
+   × Large Classroom 1317ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |storybook (chromium)| apps/staff/src/live-marking-grid.stories.tsx > Large Classroom
+AssertionError: 
+[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/pages-staff-live-marking--large-classroom&addonPanel=storybook/interactions/panel[39m
+
+expected 68 to be less than 50
+ ❯ Instrumenter.invoke node_modules/.pnpm/storybook@10.5.3_@types+react@19.2.17_prettier@3.9.6_react@19.2.8/node_modules/storybook/dist/instrumenter/index.js:322:22
+ ❯ Instrumenter.intercept node_modules/.pnpm/storybook@10.5.3_@types+react@19.2.17_prettier@3.9.6_react@19.2.8/node_modules/storybook/dist/instrumenter/index.js:243:139
+ ❯ Instrumenter.track node_modules/.pnpm/storybook@10.5.3_@types+react@19.2.17_prettier@3.9.6_react@19.2.8/node_modules/storybook/dist/instrumenter/index.js:238:378
+ ❯ Proxy.toBeLessThan node_modules/.pnpm/storybook@10.5.3_@types+react@19.2.17_prettier@3.9.6_react@19.2.8/node_modules/storybook/dist/instrumenter/index.js:224:263
+ ❯ toBeLessThan apps/staff/src/live-marking-grid.stories.tsx:214:30
+    212|     samples.sort((a, b) => a - b)
+    213|     console.info(`Live marking 200x50 click p95: ${samples[18]!.toFixe…
+    214|     await expect(samples[18]).toBeLessThan(50)
+       |                              ^
+    215|     await expect(canvas.getAllByRole('row').length).toBeLessThan(40)
+    216|     const names = Array.from({ length: 2000 }, (_, i) => `Петров${i} А…
+ ❯ runStory node_modules/.pnpm/storybook@10.5.3_@types+react@19.2.17_prettier@3.9.6_react@19.2.8/node_modules/storybook/dist/_browser-chunks/chunk-SNLGT2ZI.js:1242:6
+ ❯ node_modules/.pnpm/@storybook+addon-vitest@10.5.3_@vitest+browser-playwright@4.1.10_@vitest+browser@4.1.10_4aef618590b32b664c3039db51116f27/node_modules/@storybook/addon-vitest/dist/vitest-plugin/test-utils.js:120:184
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 73 passed (74)
+      Tests  1 failed | 355 passed (356)
+   Start at  13:41:19
+   Duration  267.27s (transform 0ms, setup 123.08s, import 12.79s, tests 100.76s, environment 0ms)
+
+[ELIFECYCLE] Command failed with exit code 1.

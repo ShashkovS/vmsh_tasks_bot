@@ -1,0 +1,3360 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-18 22:22+0300\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ru\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid " · изменено"
+msgstr " · изменено"
+
+#. placeholder {0}: post.editedAt
+#: packages/product/src/telegram-rich-post.tsx
+msgid " · изменено {0}"
+msgstr " · изменено {0}"
+
+#: packages/product/src/review-annotation-surface.tsx
+msgid " · можно прокрутить"
+msgstr " · можно прокрутить"
+
+#: packages/product/src/course-admin.tsx
+msgid " · наследуется"
+msgstr " · наследуется"
+
+#. placeholder {0}: formatMoment(item.editedAt)
+#: packages/product/src/news-moderation.tsx
+msgid " · обновлено {0}"
+msgstr " · обновлено {0}"
+
+#. placeholder {0}: result.pendingConfiguration
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · ожидают настройки: {0}"
+msgstr " · ожидают настройки: {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid " · опубликовано {publishedAt}"
+msgstr " · опубликовано {publishedAt}"
+
+#: packages/product/src/verdict-mark.tsx
+msgid " · оценка ИИ"
+msgstr " · оценка ИИ"
+
+#. placeholder {0}: result.checkerFailed
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · ошибок checker-а: {0}"
+msgstr " · ошибок checker-а: {0}"
+
+#. placeholder {0}: result.invalidFormat
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · ошибок формата: {0}"
+msgstr " · ошибок формата: {0}"
+
+#. placeholder {0}: result.formatChanges
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · переходов формата: {0}"
+msgstr " · переходов формата: {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid " · сменить группу"
+msgstr " · сменить группу"
+
+#. placeholder {0}: result.skippedConcurrent
+#: packages/product/src/test-attempt-recheck.tsx
+msgid " · уже обработаны параллельно: {0}"
+msgstr " · уже обработаны параллельно: {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid " очно · "
+msgstr " очно · "
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid " Проверка уже началась: зафиксированное evidence и прежний вердикт останутся неизменными."
+msgstr " Проверка уже началась: зафиксированное evidence и прежний вердикт останутся неизменными."
+
+#: packages/product/src/classroom-planning.tsx
+msgid " распределено"
+msgstr " распределено"
+
+#. placeholder {0}: Math.floor(oldest / 60)
+#. placeholder {1}: oldest % 60
+#: packages/product/src/review-queue.tsx
+msgid ", дольше всех ждёт {0} ч {1} мин"
+msgstr ", дольше всех ждёт {0} ч {1} мин"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "· класс "
+msgstr "· класс "
+
+#: packages/product/src/test-answer.tsx
+msgid "· например {example}"
+msgstr "· например {example}"
+
+#. placeholder {0}: item.revision
+#: packages/product/src/news-moderation.tsx
+msgid "· ревизия {0}"
+msgstr "· ревизия {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "· сила "
+msgstr "· сила "
+
+#. placeholder {0}: conflict.existingRoomName
+#: packages/product/src/classroom-planning.tsx
+msgid "» совпадает с «{0}» без учёта регистра и формы Unicode."
+msgstr "» совпадает с «{0}» без учёта регистра и формы Unicode."
+
+#. placeholder {0}: submissions.length
+#: packages/product/src/synonym-context.tsx
+msgid "{0, plural, one {# посылка объединена} few {# посылки объединены} many {# посылок объединены} other {# посылки объединены}}"
+msgstr "{0, plural, one {# посылка объединена} few {# посылки объединены} many {# посылок объединены} other {# посылки объединены}}"
+
+#. placeholder {0}: recipient.courseName
+#. placeholder {1}: recipient.groupName
+#. placeholder {2}: recipient.classroomName
+#: packages/product/src/classroom-delivery.tsx
+msgid "{0} · {1} · аудитория {2}"
+msgstr "{0} · {1} · аудитория {2}"
+
+#. placeholder {0}: problem.courseName
+#. placeholder {1}: problem.groupName
+#. placeholder {2}: problem.lessonNumber
+#: packages/product/src/synonym-context.tsx
+msgid "{0} · {1} · занятие {2}"
+msgstr "{0} · {1} · занятие {2}"
+
+#. placeholder {0}: groupLesson.course.name
+#. placeholder {1}: groupLesson.lessonNumber
+#: packages/product/src/in-person-event.tsx
+msgid "{0} · занятие {1}"
+msgstr "{0} · занятие {1}"
+
+#. placeholder {0}: course.name
+#: packages/product/src/course-admin.tsx
+msgid "{0} · занятие {lessonNumber}"
+msgstr "{0} · занятие {lessonNumber}"
+
+#. placeholder {0}: enrollment.course.subjectCode
+#: packages/product/src/course-context.tsx
+msgid "{0} · занятие {lessonNumber} · {lessonDate}"
+msgstr "{0} · занятие {lessonNumber} · {lessonDate}"
+
+#. placeholder {0}: groupRooms.length
+#: packages/product/src/classroom-planning.tsx
+msgid "{0} аудиторий ·"
+msgstr "{0} аудиторий ·"
+
+#. placeholder {0}: groupLesson.inPersonCount
+#: packages/product/src/in-person-event.tsx
+msgid "{0} очно"
+msgstr "{0} очно"
+
+#. placeholder {0}: group.inPersonCount
+#: packages/product/src/classroom-planning.tsx
+msgid "{0} очно ·"
+msgstr "{0} очно ·"
+
+#. placeholder {0}: item.isScheduled ? t`Изменить запланированную` : t`Исправить опубликованную`
+#. placeholder {1}: item.postId
+#: packages/product/src/news-moderation.tsx
+msgid "{0} публикацию {1}"
+msgstr "{0} публикацию {1}"
+
+#. placeholder {0}: groupLesson.assignedCount
+#: packages/product/src/in-person-event.tsx
+msgid "{0} уже назначены"
+msgstr "{0} уже назначены"
+
+#. placeholder {0}: roomStudents.length
+#: packages/product/src/classroom-planning.tsx
+msgid "{0} уч. · возраст "
+msgstr "{0} уч. · возраст "
+
+#. placeholder {0}: group.activeStudents
+#. placeholder {1}: group.scheduleLabel
+#: packages/product/src/course-admin.tsx
+msgid "{0} учеников · {1}"
+msgstr "{0} учеников · {1}"
+
+#. placeholder {0}: unresolved.length
+#: packages/product/src/classroom-planning.tsx
+msgid "{0} школьников требуют назначения до подтверждения плана."
+msgstr "{0} школьников требуют назначения до подтверждения плана."
+
+#. placeholder {0}: column.header
+#. placeholder {1}: rowIndex + 1
+#: packages/product/src/metadata-grid-table.tsx
+msgid "{0}, строка {1}"
+msgstr "{0}, строка {1}"
+
+#. placeholder {0}: item.student.displayName
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "{0}: {reactionLabel}"
+msgstr "{0}: {reactionLabel}"
+
+#. placeholder {0}: valueLabel ? `${valueLabel}. ` : ''
+#. placeholder {1}: median.toFixed(1)
+#. placeholder {2}: q1.toFixed(1)
+#. placeholder {3}: q3.toFixed(1)
+#: packages/product/src/progress-charts.tsx
+msgid "{0}Распределение по группе. Медиана {1}, разброс от {2} до {3}."
+msgstr "{0}Распределение по группе. Медиана {1}, разброс от {2} до {3}."
+
+#. placeholder {0}: items.length
+#: packages/product/src/problem-matching.tsx
+msgid "{completed} из {0}"
+msgstr "{completed} из {0}"
+
+#: packages/product/src/activity-calendar.tsx
+msgid "{count, plural, one {# день работы} few {# дня работы} many {# дней работы} other {# дня работы}}"
+msgstr "{count, plural, one {# день работы} few {# дня работы} many {# дней работы} other {# дня работы}}"
+
+#: packages/product/src/activity-calendar.tsx
+#: packages/product/src/synonym-context.tsx
+msgid "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
+msgstr "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
+
+#: packages/product/src/synonym-context.tsx
+msgid "{count, plural, one {# посылка} few {# посылки} many {# посылок} other {# посылки}}"
+msgstr "{count, plural, one {# посылка} few {# посылки} many {# посылок} other {# посылки}}"
+
+#: packages/product/src/synonym-context.tsx
+msgid "{count, plural, one {# проверка} few {# проверки} many {# проверок} other {# проверки}}"
+msgstr "{count, plural, one {# проверка} few {# проверки} many {# проверок} other {# проверки}}"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{count} материал будет показан"
+msgstr "{count} материал будет показан"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{count} материала будут показаны"
+msgstr "{count} материала будут показаны"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{count} материалов будут показаны"
+msgstr "{count} материалов будут показаны"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "{count} ответ"
+msgstr "{count} ответ"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "{count} ответа"
+msgstr "{count} ответа"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "{count} ответов"
+msgstr "{count} ответов"
+
+#: packages/product/src/review-annotation-surface.tsx
+msgid "{imageAlt}; область можно прокручивать после увеличения"
+msgstr "{imageAlt}; область можно прокручивать после увеличения"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "{lessonLabel} · версия {version}"
+msgstr "{lessonLabel} · версия {version}"
+
+#: packages/product/src/chat-composer.tsx
+msgid "{page}: позже"
+msgstr "{page}: позже"
+
+#: packages/product/src/chat-composer.tsx
+msgid "{page}: раньше"
+msgstr "{page}: раньше"
+
+#: packages/product/src/chat-composer.tsx
+msgid "{page}: удалить"
+msgstr "{page}: удалить"
+
+#: packages/product/src/attachment.tsx
+msgid "{pageLabel}: выше"
+msgstr "{pageLabel}: выше"
+
+#: packages/product/src/attachment.tsx
+msgid "{pageLabel}: ниже"
+msgstr "{pageLabel}: ниже"
+
+#: packages/product/src/attachment.tsx
+msgid "{pageLabel}: повернуть"
+msgstr "{pageLabel}: повернуть"
+
+#: packages/product/src/attachment.tsx
+msgid "{pageLabel}: удалить"
+msgstr "{pageLabel}: удалить"
+
+#: packages/product/src/student-progress.tsx
+msgid "{solvedCount, plural, one {задача зачтена} few {задачи зачтено} many {задач зачтено} other {задачи зачтено}}"
+msgstr "{solvedCount, plural, one {задача зачтена} few {задачи зачтено} many {задач зачтено} other {задачи зачтено}}"
+
+#: packages/product/src/student-progress.tsx
+msgid "{streakDays, plural, one {день} few {дня} many {дней} other {дня}}"
+msgstr "{streakDays, plural, one {день} few {дня} many {дней} other {дня}}"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "{studentName} · сейчас в {sourceLabel}"
+msgstr "{studentName} · сейчас в {sourceLabel}"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "{studentName}: сейчас онлайн-режим."
+msgstr "{studentName}: сейчас онлайн-режим."
+
+#. placeholder {0}: document.rotation
+#. placeholder {1}: document.marks.length
+#: packages/product/src/review-annotation-editor.tsx
+msgid "% · {0}° · {1} пометок"
+msgstr "% · {0}° · {1} пометок"
+
+#. placeholder {0}: item.problem.problemNumber
+#. placeholder {1}: item.problem.problemTitle
+#. placeholder {2}: item.problem.groupName
+#. placeholder {3}: item.reviewer.displayName
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "<0>{0}</0><1>{1}</1><2>·</2><3>{2}</3><4>·</4><5>проверил {3}</5>"
+msgstr "<0>{0}</0><1>{1}</1><2>·</2><3>{2}</3><4>·</4><5>проверил {3}</5>"
+
+#: packages/product/src/annotation-overlay.tsx
+msgid "<0><1/>перо</0><2><3/>выделение</2><4><5>1</5>комментарий</4>"
+msgstr "<0><1/>перо</0><2><3/>выделение</2><4><5>1</5>комментарий</4>"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "<0>Chrome и Edge:</0> нажмите значок слева от адреса сайта → «Настройки сайта» или «Разрешения» → «Уведомления» → «Разрешить»."
+msgstr "<0>Chrome и Edge:</0> нажмите значок слева от адреса сайта → «Настройки сайта» или «Разрешения» → «Уведомления» → «Разрешить»."
+
+#: packages/product/src/push-device-controls.tsx
+msgid "<0>Firefox:</0> откройте настройки браузера → «Приватность и защита» → «Разрешения» → «Уведомления» → «Параметры». Найдите этот сайт и разрешите уведомления."
+msgstr "<0>Firefox:</0> откройте настройки браузера → «Приватность и защита» → «Разрешения» → «Уведомления» → «Параметры». Найдите этот сайт и разрешите уведомления."
+
+#: packages/product/src/push-device-controls.tsx
+msgid "<0>iPhone и iPad:</0> откройте системные «Настройки» → «Уведомления» → кабинет ВМШ → «Допуск уведомлений». Кабинет должен быть добавлен на экран «Домой»."
+msgstr "<0>iPhone и iPad:</0> откройте системные «Настройки» → «Уведомления» → кабинет ВМШ → «Допуск уведомлений». Кабинет должен быть добавлен на экран «Домой»."
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "<0>PWA</0><1>Объявление в кабинете школьника. Родителю уведомление не отправляется.</1>"
+msgstr "<0>PWA</0><1>Объявление в кабинете школьника. Родителю уведомление не отправляется.</1>"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "<0>Safari на Mac:</0> Safari → «Настройки» → «Веб-сайты» → «Уведомления». Для этого сайта выберите «Разрешить»."
+msgstr "<0>Safari на Mac:</0> Safari → «Настройки» → «Веб-сайты» → «Уведомления». Для этого сайта выберите «Разрешить»."
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "<0>Telegram</0><1>Личное сообщение школьнику от существующего бота.</1>"
+msgstr "<0>Telegram</0><1>Личное сообщение школьнику от существующего бота.</1>"
+
+#. placeholder {0}: options.length
+#: packages/product/src/reaction-picker.tsx
+msgid "⌘/Ctrl + ⌥/Alt + 1–{0} · Работает и в комментарии; не видна ученику и родителю."
+msgstr "⌘/Ctrl + ⌥/Alt + 1–{0} · Работает и в комментарии; не видна ученику и родителю."
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии."
+msgstr "⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии."
+
+#: packages/product/src/lesson-video.ts
+msgid "Iframe должен содержать ровно один src"
+msgstr "Iframe должен содержать ровно один src"
+
+#: packages/product/src/lesson-video.ts
+msgid "Iframe не должен содержать вложенную разметку"
+msgstr "Iframe не должен содержать вложенную разметку"
+
+#: packages/product/src/lesson-video.ts
+msgid "Iframe содержит повторяющийся title"
+msgstr "Iframe содержит повторяющийся title"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Push включены на этом устройстве"
+msgstr "Push включены на этом устройстве"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Push запрещены в браузере"
+msgstr "Push запрещены в браузере"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Push не поддерживаются"
+msgstr "Push не поддерживаются"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "TikZ-фрагмент"
+msgstr "TikZ-фрагмент"
+
+#: packages/product/src/lesson-blocks.tsx
+msgid "VK Видео"
+msgstr "VK Видео"
+
+#: packages/product/src/feedback-thread.tsx
+#: packages/product/src/task-chat.tsx
+msgid "Администратор"
+msgstr "Администратор"
+
+#: packages/product/src/course-admin.tsx
+msgid "Активен"
+msgstr "Активен"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/course-admin.tsx
+msgid "Активна"
+msgstr "Активна"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Активные"
+msgstr "Активные"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Активных реакций нет"
+msgstr "Активных реакций нет"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Активных: {activeCount}"
+msgstr "Активных: {activeCount}"
+
+#: packages/product/src/review-lock.tsx
+msgid "Аренда истекла или досталась другому. Вердикт устарел — обновите работу, прежде чем продолжить."
+msgstr "Аренда истекла или досталась другому. Вердикт устарел — обновите работу, прежде чем продолжить."
+
+#: packages/product/src/in-person-event.tsx
+msgid "аудитории"
+msgstr "аудитории"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Аудитории не найдены"
+msgstr "Аудитории не найдены"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Аудитории по группам"
+msgstr "Аудитории по группам"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/in-person-event.tsx
+msgid "аудиторий"
+msgstr "аудиторий"
+
+#: packages/product/src/in-person-event.tsx
+msgid "аудитория"
+msgstr "аудитория"
+
+#. placeholder {0}: room.name
+#: packages/product/src/classroom-planning.tsx
+msgid "Аудитория {0}"
+msgstr "Аудитория {0}"
+
+#. placeholder {0}: student.name
+#: packages/product/src/classroom-planning.tsx
+msgid "Аудитория для {0}"
+msgstr "Аудитория для {0}"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Аудитория переназначается"
+msgstr "Аудитория переназначается"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Аудитория ребёнка"
+msgstr "Аудитория ребёнка"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Аудитория скрыта в каталоге"
+msgstr "Аудитория скрыта в каталоге"
+
+#: packages/product/src/course-context.tsx
+msgid "Аудитория: {classroomName}"
+msgstr "Аудитория: {classroomName}"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Аудитория: {familyStudentName}"
+msgstr "Аудитория: {familyStudentName}"
+
+#. placeholder {0}: preview.telegramUnavailableCount
+#: packages/product/src/classroom-delivery.tsx
+msgid "Без Telegram: {0}"
+msgstr "Без Telegram: {0}"
+
+#. placeholder {0}: result.unchangedAttempts
+#. placeholder {1}: result.correct
+#. placeholder {2}: result.wrong
+#. placeholder {3}: result.verdictChanges
+#. placeholder {4}: result.messageChanges
+#. placeholder {5}: result.becameCorrect
+#. placeholder {6}: result.becameWrong
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Без изменений: {0} · верных: {1} · неверных: {2} · вердиктов изменено: {3} · реплик изменено: {4} · − → +: {5} · + → −: {6}"
+msgstr "Без изменений: {0} · верных: {1} · неверных: {2} · вердиктов изменено: {3} · реплик изменено: {4} · − → +: {5} · + → −: {6}"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Без названия"
+msgstr "Без названия"
+
+#: packages/product/src/metadata-grid-cell-editor.tsx
+msgid "без номера"
+msgstr "без номера"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "без отдельной версии"
+msgstr "без отдельной версии"
+
+#. placeholder {0}: node.type
+#: packages/product/src/rich-markdown.ts
+msgid "Блок «{0}» пока не поддерживается"
+msgstr "Блок «{0}» пока не поддерживается"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Браузер не дал доступ к буферу. Выделите таблицу и нажмите Ctrl/Cmd+C."
+msgstr "Браузер не дал доступ к буферу. Выделите таблицу и нажмите Ctrl/Cmd+C."
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Будет обновлено"
+msgstr "Будет обновлено"
+
+#. placeholder {0}: inheritedRooms.size
+#: packages/product/src/in-person-event.tsx
+msgid "Будет перенесено {0} "
+msgstr "Будет перенесено {0} "
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Быстрый поиск"
+msgstr "Быстрый поиск"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Быстрый поиск школьника"
+msgstr "Быстрый поиск школьника"
+
+#: packages/product/src/lesson-video.ts
+msgid "В iframe нельзя использовать исполняемые атрибуты"
+msgstr "В iframe нельзя использовать исполняемые атрибуты"
+
+#: packages/product/src/course-admin.tsx
+msgid "В архив"
+msgstr "В архив"
+
+#: packages/product/src/course-admin.tsx
+msgid "В архиве"
+msgstr "В архиве"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "В буфере нет значений для вставки."
+msgstr "В буфере нет значений для вставки."
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "в другой задаче"
+msgstr "в другой задаче"
+
+#: packages/product/src/news-moderation.tsx
+msgid "В ленте"
+msgstr "В ленте"
+
+#: packages/product/src/chat-composer.tsx
+#: packages/product/src/classroom-delivery.tsx
+#: packages/product/src/staff-publishing.tsx
+msgid "в очереди"
+msgstr "в очереди"
+
+#: packages/product/src/submission-composer.tsx
+#: packages/product/src/task-chat.tsx
+msgid "В очереди"
+msgstr "В очереди"
+
+#: packages/product/src/attachment.tsx
+msgid "В очереди на отправку"
+msgstr "В очереди на отправку"
+
+#: packages/product/src/sync-indicator.tsx
+msgid "В очереди: {queuedCount}"
+msgstr "В очереди: {queuedCount}"
+
+#: packages/product/src/connection-banner.tsx
+msgid "В очереди: {queuedCount} — показать"
+msgstr "В очереди: {queuedCount} — показать"
+
+#. placeholder {0}: items.length
+#: packages/product/src/review-queue.tsx
+msgid "В очереди: <0>{0}</0>"
+msgstr "В очереди: <0>{0}</0>"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "в приложении"
+msgstr "в приложении"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "В приложении"
+msgstr "В приложении"
+
+#: packages/product/src/verdict-registry.ts
+msgid "В целом верно"
+msgstr "В целом верно"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Важное"
+msgstr "Важное"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Ваш локальный черновик сохранён. Проверьте решения перед повторной отправкой."
+msgstr "Ваш локальный черновик сохранён. Проверьте решения перед повторной отправкой."
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Ваша аудитория"
+msgstr "Ваша аудитория"
+
+#: packages/product/src/written-review-history.tsx
+msgid "Ваша реакция"
+msgstr "Ваша реакция"
+
+#: packages/product/src/written-review-history.tsx
+msgid "Ваша реакция на проверку"
+msgstr "Ваша реакция на проверку"
+
+#: packages/product/src/submission-composer.tsx
+msgid "Ваше решение"
+msgstr "Ваше решение"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите время"
+msgstr "Введите время"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите выражение от n"
+msgstr "Введите выражение от n"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите дату"
+msgstr "Введите дату"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите два целых числа"
+msgstr "Введите два целых числа"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите десятичную дробь"
+msgstr "Введите десятичную дробь"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите десятичную дробь (можно приближённо)"
+msgstr "Введите десятичную дробь (можно приближённо)"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите натуральное число"
+msgstr "Введите натуральное число"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите обыкновенную или десятичную дробь"
+msgstr "Введите обыкновенную или десятичную дробь"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите одну цифру"
+msgstr "Введите одну цифру"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите ответ"
+msgstr "Введите ответ"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите отношение"
+msgstr "Введите отношение"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите символьное выражение"
+msgstr "Введите символьное выражение"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите смешанную дробь"
+msgstr "Введите смешанную дробь"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Введите текст публикации"
+msgstr "Введите текст публикации"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите тождественно равное выражение"
+msgstr "Введите тождественно равное выражение"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите три целых числа"
+msgstr "Введите три целых числа"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите целое число"
+msgstr "Введите целое число"
+
+#: packages/product/src/answer-spec.ts
+msgid "Введите четыре целых числа"
+msgstr "Введите четыре целых числа"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Вердикт будет записан в"
+msgstr "Вердикт будет записан в"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Вердиктов изменится"
+msgstr "Вердиктов изменится"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Вернуть"
+msgstr "Вернуть"
+
+#: packages/product/src/course-admin.tsx
+msgid "Вернуть в черновик"
+msgstr "Вернуть в черновик"
+
+#. placeholder {0}: item.postId
+#: packages/product/src/news-moderation.tsx
+msgid "Вернуть публикацию {0} в PWA"
+msgstr "Вернуть публикацию {0} в PWA"
+
+#. placeholder {0}: room.version
+#: packages/product/src/classroom-planning.tsx
+msgid "Версия {0}"
+msgstr "Версия {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "версия {version}"
+msgstr "версия {version}"
+
+#: packages/product/src/three-pane-review.tsx
+msgid "Ветки задачи"
+msgstr "Ветки задачи"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Ветки показаны по времени; источник каждой записи остаётся видимым."
+msgstr "Ветки показаны по времени; источник каждой записи остаётся видимым."
+
+#: packages/product/src/lesson-video.ts
+msgid "Видео должно использовать HTTPS без учётных данных"
+msgstr "Видео должно использовать HTTPS без учётных данных"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Видео и аудио пока не поддерживаются"
+msgstr "Видео и аудио пока не поддерживаются"
+
+#: packages/product/src/lesson-rich-markdown.ts
+msgid "Видео не найдено"
+msgstr "Видео не найдено"
+
+#: packages/product/src/lesson-rich-markdown.ts
+msgid "Видео разрешено только отдельным корневым блоком"
+msgstr "Видео разрешено только отдельным корневым блоком"
+
+#: packages/product/src/reaction-picker.tsx
+msgid "Видно только преподавателям и администратору — ученик и родитель не увидят."
+msgstr "Видно только преподавателям и администратору — ученик и родитель не увидят."
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Включаем уведомления…"
+msgstr "Включаем уведомления…"
+
+#. placeholder {0}: groupLesson.course.name
+#. placeholder {1}: groupLesson.group.name
+#: packages/product/src/in-person-event.tsx
+msgid "Включить {0}, {1}"
+msgstr "Включить {0}, {1}"
+
+#: packages/product/src/push-device-controls.tsx
+#: packages/product/src/push-permission-card.tsx
+msgid "Включить уведомления"
+msgstr "Включить уведомления"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Вложенные списки пока не поддерживаются"
+msgstr "Вложенные списки пока не поддерживаются"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Внутренняя пометка"
+msgstr "Внутренняя пометка"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Внутренняя пометка (не видна ученику)"
+msgstr "Внутренняя пометка (не видна ученику)"
+
+#: packages/product/src/reaction.ts
+msgid "Внятно, уверенно."
+msgstr "Внятно, уверенно."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "возраст"
+msgstr "возраст"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Восстанавливаем связь…"
+msgstr "Восстанавливаем связь…"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/course-admin.tsx
+msgid "Восстановить"
+msgstr "Восстановить"
+
+#: packages/product/src/lesson-video.ts
+msgid "Время начала YouTube-видео некорректно"
+msgstr "Время начала YouTube-видео некорректно"
+
+#: packages/product/src/lesson-video.ts
+msgid "Время начала YouTube-видео слишком велико"
+msgstr "Время начала YouTube-видео слишком велико"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "вручную"
+msgstr "вручную"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Все"
+msgstr "Все"
+
+#: packages/product/src/sync-indicator.tsx
+msgid "Всё отправлено"
+msgstr "Всё отправлено"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Все ресурсы прикреплены"
+msgstr "Все ресурсы прикреплены"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Все события всё равно останутся в приложении."
+msgstr "Все события всё равно останутся в приложении."
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные посылки останутся неизменными, а прежний вердикт может измениться."
+msgstr "Все сохранённые ответы этой задачи будут оценены по текущей конфигурации. Исходные посылки останутся неизменными, а прежний вердикт может измениться."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Все строки заполнены"
+msgstr "Все строки заполнены"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Все формулировки"
+msgstr "Все формулировки"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Выберите действие…"
+msgstr "Выберите действие…"
+
+#: packages/product/src/answer-spec.ts
+msgid "Выберите день недели"
+msgstr "Выберите день недели"
+
+#. placeholder {0}: column.header
+#: packages/product/src/metadata-grid.tsx
+msgid "Выберите допустимое значение «{0}»"
+msgstr "Выберите допустимое значение «{0}»"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Выберите задачу"
+msgstr "Выберите задачу"
+
+#: packages/product/src/in-person-event.tsx
+msgid "Выберите конкретные занятия групп. Номера в одном событии могут различаться."
+msgstr "Выберите конкретные занятия групп. Номера в одном событии могут различаться."
+
+#: packages/product/src/answer-spec.ts
+msgid "Выберите один вариант"
+msgstr "Выберите один вариант"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Выберите школьника"
+msgstr "Выберите школьника"
+
+#. placeholder {0}: asset.fileName
+#: packages/product/src/staff-publishing.tsx
+msgid "Выбран: {0}"
+msgstr "Выбран: {0}"
+
+#: packages/product/src/question-photos.tsx
+msgid "Выбранная фотография"
+msgstr "Выбранная фотография"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "выбрано"
+msgstr "выбрано"
+
+#. placeholder {0}: selected.size
+#: packages/product/src/classroom-planning.tsx
+msgid "Выбрано: {0}"
+msgstr "Выбрано: {0}"
+
+#. placeholder {0}: selectedItems.length
+#. placeholder {1}: materials.length
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Выбрано: {0} из {1}"
+msgstr "Выбрано: {0} из {1}"
+
+#. placeholder {0}: student.name
+#: packages/product/src/classroom-planning.tsx
+msgid "Выбрать {0}"
+msgstr "Выбрать {0}"
+
+#: packages/product/src/dense-data-table.tsx
+msgid "Выбрать все строки"
+msgstr "Выбрать все строки"
+
+#: packages/product/src/dense-data-table.tsx
+msgid "Выбрать строку"
+msgstr "Выбрать строку"
+
+#: packages/product/src/question-photos.tsx
+msgid "Выбрать фотографии"
+msgstr "Выбрать фотографии"
+
+#. placeholder {0}: material.label
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Выбрать: {0}"
+msgstr "Выбрать: {0}"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Выделение"
+msgstr "Выделение"
+
+#. placeholder {0}: range.firstRow + 1
+#. placeholder {1}: range.lastRow + 1
+#. placeholder {2}: range.firstCol + 1
+#. placeholder {3}: range.lastCol + 1
+#: packages/product/src/metadata-grid-table.tsx
+msgid "Выделено строк {0}–{1}, столбцов {2}–{3}"
+msgstr "Выделено строк {0}–{1}, столбцов {2}–{3}"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Выделяйте диапазон мышью или Shift+стрелками. Можно вставить и скопировать TSV из таблицы."
+msgstr "Выделяйте диапазон мышью или Shift+стрелками. Можно вставить и скопировать TSV из таблицы."
+
+#: packages/product/src/rich-document.tsx
+msgid "Выполнено"
+msgstr "Выполнено"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Готовим рисунки из TikZ"
+msgstr "Готовим рисунки из TikZ"
+
+#: packages/product/src/question-photos.tsx
+msgid "Готовим фото…"
+msgstr "Готовим фото…"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Готовим…"
+msgstr "Готовим…"
+
+#: packages/product/src/chat-composer.tsx
+#: packages/product/src/staff-publishing.tsx
+msgid "готово"
+msgstr "готово"
+
+#: packages/product/src/attachment.tsx
+msgid "Готово к отправке"
+msgstr "Готово к отправке"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Графитовый"
+msgstr "Графитовый"
+
+#: packages/product/src/in-person-event.tsx
+msgid "групп участвуют"
+msgstr "групп участвуют"
+
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/review-queue.tsx
+msgid "Группа"
+msgstr "Группа"
+
+#. placeholder {0}: room.name
+#: packages/product/src/classroom-planning.tsx
+msgid "Группа для аудитории {0}"
+msgstr "Группа для аудитории {0}"
+
+#. placeholder {0}: course.name
+#: packages/product/src/course-context.tsx
+msgid "Группа курса «{0}»"
+msgstr "Группа курса «{0}»"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Группа пуста"
+msgstr "Группа пуста"
+
+#: packages/product/src/in-person-event.tsx
+msgid "группа участвует"
+msgstr "группа участвует"
+
+#: packages/product/src/in-person-event.tsx
+msgid "группы участвуют"
+msgstr "группы участвуют"
+
+#: packages/product/src/course-admin.tsx
+msgid "Даты материализованы для каждой группы. Изменение шаблона не сдвигает этот снимок."
+msgstr "Даты материализованы для каждой группы. Изменение шаблона не сдвигает этот снимок."
+
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/review-queue.tsx
+msgid "Действие"
+msgstr "Действие"
+
+#. placeholder {0}: points[0]?.value ?? 0
+#. placeholder {1}: points[points.length - 1]?.value ?? 0
+#: packages/product/src/progress-charts.tsx
+msgid "Динамика: от {0} до {1}, с доверительной полосой."
+msgstr "Динамика: от {0} до {1}, с доверительной полосой."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Для каждой задачи выберите существующую запись, создайте новую или явно пропустите её."
+msgstr "Для каждой задачи выберите существующую запись, создайте новую или явно пропустите её."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Для массового переноса выберите школьников одной группы."
+msgstr "Для массового переноса выберите школьников одной группы."
+
+#. placeholder {0}: timeLabel(window.closesAt, !sameDay)
+#: packages/product/src/oral-admission.tsx
+msgid "до {0}"
+msgstr "до {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Добавить"
+msgstr "Добавить"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Добавить комментарий"
+msgstr "Добавить комментарий"
+
+#: packages/product/src/course-admin.tsx
+msgid "Добавить курс"
+msgstr "Добавить курс"
+
+#: packages/product/src/course-admin.tsx
+msgid "Добавить привязку"
+msgstr "Добавить привязку"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Добавить текст"
+msgstr "Добавить текст"
+
+#: packages/product/src/chat-composer.tsx
+#: packages/product/src/submission-composer.tsx
+msgid "Добавить фото"
+msgstr "Добавить фото"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося значка. После этого здесь можно включить уведомления."
+msgstr "Добавьте кабинет на экран «Домой» через меню браузера и откройте его с появившегося значка. После этого здесь можно включить уведомления."
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "доставлено"
+msgstr "доставлено"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "доступно"
+msgstr "доступно"
+
+#: packages/product/src/update-prompt.tsx
+msgid "Доступно обновление"
+msgstr "Доступно обновление"
+
+#: packages/product/src/answer-spec.ts
+msgid "Дроби через запятую — порядок важен"
+msgstr "Дроби через запятую — порядок важен"
+
+#: packages/product/src/review-lock.tsx
+msgid "другой преподаватель"
+msgstr "другой преподаватель"
+
+#: packages/product/src/verdict-registry.ts
+msgid "Есть идеи, не доведено"
+msgstr "Есть идеи, не доведено"
+
+#: packages/product/src/question-attention.tsx
+msgid "Есть непрочитанный ответ"
+msgstr "Есть непрочитанный ответ"
+
+#: packages/product/src/verdict-registry.ts
+msgid "Есть простая идея"
+msgstr "Есть простая идея"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Есть скрытая аудитория"
+msgstr "Есть скрытая аудитория"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Ещё не назначена"
+msgstr "Ещё не назначена"
+
+#: packages/product/src/question-attention.tsx
+msgid "Ждём ответа преподавателя"
+msgstr "Ждём ответа преподавателя"
+
+#: packages/product/src/review-queue.tsx
+msgid "Ждёт"
+msgstr "Ждёт"
+
+#: packages/product/src/reaction.ts
+msgid "Жуткая муть."
+msgstr "Жуткая муть."
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Завершено с ошибками"
+msgstr "Завершено с ошибками"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Заголовок уровня 6 не поддерживается"
+msgstr "Заголовок уровня 6 не поддерживается"
+
+#: packages/product/src/chat-composer.tsx
+msgid "загружаем"
+msgstr "загружаем"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Загружаем сохранённые тестовые ответы"
+msgstr "Загружаем сохранённые тестовые ответы"
+
+#: packages/product/src/worksheet-materials.tsx
+msgid "Загружаем…"
+msgstr "Загружаем…"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Загрузить"
+msgstr "Загрузить"
+
+#: packages/product/src/lesson-blocks.tsx
+msgid "Загрузить видео"
+msgstr "Загрузить видео"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Загрузка тестовых ответов"
+msgstr "Загрузка тестовых ответов"
+
+#: packages/product/src/attachment.tsx
+msgid "Загрузка: {page}"
+msgstr "Загрузка: {page}"
+
+#: packages/product/src/attachment.tsx
+msgid "Загрузка…"
+msgstr "Загрузка…"
+
+#: packages/product/src/metadata-grid-cell-editor.tsx
+#: packages/product/src/review-queue.tsx
+msgid "Задача"
+msgstr "Задача"
+
+#. placeholder {0}: item.displayNumber
+#: packages/product/src/problem-matching.tsx
+msgid "Задача {0}"
+msgstr "Задача {0}"
+
+#. placeholder {0}: problem.displayNumber
+#. placeholder {0}: task.number
+#: packages/product/src/task-list-item.tsx
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Задача {0}."
+msgstr "Задача {0}."
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Задачи"
+msgstr "Задачи"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Занятие"
+msgstr "Занятие"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Запланировать"
+msgstr "Запланировать"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Запускаем…"
+msgstr "Запускаем…"
+
+#: packages/product/src/oral-result-form.tsx
+#: packages/product/src/verdict-registry.ts
+msgid "Зачтено"
+msgstr "Зачтено"
+
+#: packages/product/src/verdict-registry.ts
+msgid "Зачтено с недочётами"
+msgstr "Зачтено с недочётами"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Здесь появятся реакции учеников и внутренние пометки преподавателей."
+msgstr "Здесь появятся реакции учеников и внутренние пометки преподавателей."
+
+#: packages/product/src/progress-charts.tsx
+msgid "Значение"
+msgstr "Значение"
+
+#: packages/product/src/course-context.tsx
+msgid "Значение курса переопределяет общую настройку только для выбранной категории."
+msgstr "Значение курса переопределяет общую настройку только для выбранной категории."
+
+#: packages/product/src/in-person-event.tsx
+msgid "и {inheritedStudents} "
+msgstr "и {inheritedStudents} "
+
+#: packages/product/src/lesson-video.ts
+msgid "Идентификатор YouTube-видео некорректен"
+msgstr "Идентификатор YouTube-видео некорректен"
+
+#: packages/product/src/student-progress.tsx
+msgid "из <0>{attemptedCount}</0>, над которыми вы работали"
+msgstr "из <0>{attemptedCount}</0>, над которыми вы работали"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "из схемы перед подтверждением."
+msgstr "из схемы перед подтверждением."
+
+#: packages/product/src/task-chat.tsx
+msgid "изм."
+msgstr "изм."
+
+#: packages/product/src/telegram-rich-post.tsx
+msgid "Изменено в источнике"
+msgstr "Изменено в источнике"
+
+#: packages/product/src/course-admin.tsx
+msgid "Изменено для занятия"
+msgstr "Изменено для занятия"
+
+#. placeholder {0}: preview.changedCount
+#: packages/product/src/classroom-delivery.tsx
+msgid "Изменились: {0}"
+msgstr "Изменились: {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Измените поиск или фильтр. Данные каталога не удалены."
+msgstr "Измените поиск или фильтр. Данные каталога не удалены."
+
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/news-moderation.tsx
+msgid "Изменить"
+msgstr "Изменить"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Изменить выбор"
+msgstr "Изменить выбор"
+
+#. placeholder {0}: group.name
+#: packages/product/src/course-admin.tsx
+msgid "Изменить группу {0}"
+msgstr "Изменить группу {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Изменить для занятия"
+msgstr "Изменить для занятия"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Изменить запланированную"
+msgstr "Изменить запланированную"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Изменить схему"
+msgstr "Изменить схему"
+
+#. placeholder {0}: column.header
+#: packages/product/src/metadata-grid-table.tsx
+msgid "Изменить ширину столбца «{0}»"
+msgstr "Изменить ширину столбца «{0}»"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Изображение"
+msgstr "Изображение"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "ИИ"
+msgstr "ИИ"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "импорт"
+msgstr "импорт"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Инструменты разметки"
+msgstr "Инструменты разметки"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "исключено"
+msgstr "исключено"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Используется последняя подтверждённая схема"
+msgstr "Используется последняя подтверждённая схема"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Исправить опубликованную"
+msgstr "Исправить опубликованную"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Исправить привязку письменной работы"
+msgstr "Исправить привязку письменной работы"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Исправление привязки"
+msgstr "Исправление привязки"
+
+#: packages/product/src/problem-header.tsx
+msgid "История"
+msgstr "История"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "История аудиторий"
+msgstr "История аудиторий"
+
+#. placeholder {0}: student.name
+#: packages/product/src/classroom-planning.tsx
+msgid "История аудиторий: {0}"
+msgstr "История аудиторий: {0}"
+
+#: packages/product/src/written-review-history.tsx
+msgid "История проверок"
+msgstr "История проверок"
+
+#: packages/product/src/course-admin.tsx
+msgid "Источник"
+msgstr "Источник"
+
+#: packages/product/src/course-admin.tsx
+msgid "Источник новостей"
+msgstr "Источник новостей"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Источник реакции"
+msgstr "Источник реакции"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Исходник"
+msgstr "Исходник"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Исходные записи не изменятся:"
+msgstr "Исходные записи не изменятся:"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Исходные сообщения, фотографии и их байты останутся на месте. Вердикт не переносится."
+msgstr "Исходные сообщения, фотографии и их байты останутся на месте. Вердикт не переносится."
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Кабинет не может отменить запрет браузера. Разрешите уведомления вручную:"
+msgstr "Кабинет не может отменить запрет браузера. Разрешите уведомления вручную:"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Как получается решать простые и сложные задачи по занятиям, шкала от 0 до 10; выше — легче даётся."
+msgstr "Как получается решать простые и сложные задачи по занятиям, шкала от 0 до 10; выше — легче даётся."
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Карандаш"
+msgstr "Карандаш"
+
+#: packages/product/src/rich-document.tsx
+msgid "Картинка будет скопирована при сохранении"
+msgstr "Картинка будет скопирована при сохранении"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Картинка должна быть отдельным HTTPS URL"
+msgstr "Картинка должна быть отдельным HTTPS URL"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Карточки получат общий вычисляемый статус и хронологию, но каждая запись сохранит исходный problem_id."
+msgstr "Карточки получат общий вычисляемый статус и хронологию, но каждая запись сохранит исходный problem_id."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Каталог аудиторий"
+msgstr "Каталог аудиторий"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Категории можно настроить ниже."
+msgstr "Категории можно настроить ниже."
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Категория"
+msgstr "Категория"
+
+#. placeholder {0}: ordered.length
+#: packages/product/src/review-verdict-actions.tsx
+msgid "Клавиши 1–{0}: от лучшего к худшему, 1 — «+». Не срабатывают в поле ввода."
+msgstr "Клавиши 1–{0}: от лучшего к худшему, 1 — «+». Не срабатывают в поле ввода."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "класс"
+msgstr "класс"
+
+#. placeholder {0}: row.level.name
+#: packages/product/src/staff-publishing.tsx
+msgid "Когда опубликовать {label}, {0}"
+msgstr "Когда опубликовать {label}, {0}"
+
+#. placeholder {0}: join.joinCode
+#: packages/product/src/oral-admission.tsx
+msgid "Код: <0>{0}</0>"
+msgstr "Код: <0>{0}</0>"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Комментарий"
+msgstr "Комментарий"
+
+#: packages/product/src/annotation-overlay.tsx
+msgid "Комментарий {number}"
+msgstr "Комментарий {number}"
+
+#: packages/product/src/annotation-overlay.tsx
+msgid "Комментарий преподавателя"
+msgstr "Комментарий преподавателя"
+
+#. placeholder {0}: item.comment
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Комментарий: {0}"
+msgstr "Комментарий: {0}"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Кому"
+msgstr "Кому"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Конвертируем TikZ"
+msgstr "Конвертируем TikZ"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически."
+msgstr "Конвертируем TikZ в SVG на сервере. Страница продолжит сборку автоматически."
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Копировать всю таблицу"
+msgstr "Копировать всю таблицу"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Красный"
+msgstr "Красный"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Кто-то обновил эту работу. Сравните версии, чтобы ничего не потерять."
+msgstr "Кто-то обновил эту работу. Сравните версии, чтобы ничего не потерять."
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Куда доставить"
+msgstr "Куда доставить"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Куда отправить"
+msgstr "Куда отправить"
+
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/course-context.tsx
+msgid "Курс"
+msgstr "Курс"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Курс и номер занятия совпадают. Тип ответа и способ сдачи не блокируют действие."
+msgstr "Курс и номер занятия совпадают. Тип ответа и способ сдачи не блокируют действие."
+
+#: packages/product/src/course-admin.tsx
+msgid "Курсы и группы"
+msgstr "Курсы и группы"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Ластик"
+msgstr "Ластик"
+
+#: packages/product/src/telegram-rich-post.tsx
+msgid "Локальная правка редакции"
+msgstr "Локальная правка редакции"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Локальная публикация"
+msgstr "Локальная публикация"
+
+#: packages/product/src/content-update-marker.tsx
+msgid "Материал обновлён"
+msgstr "Материал обновлён"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Медиана"
+msgstr "Медиана"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Метаданные задач"
+msgstr "Метаданные задач"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Можно повторить сборку материала."
+msgstr "Можно повторить сборку материала."
+
+#: packages/product/src/question-photos.tsx
+msgid "Можно прикрепить до 10 фотографий JPEG, PNG, WebP или HEIC размером до 25 МиБ каждая."
+msgstr "Можно прикрепить до 10 фотографий JPEG, PNG, WebP или HEIC размером до 25 МиБ каждая."
+
+#: packages/product/src/submission-composer.tsx
+msgid "Можно сдать устно в конференции или отправить письменное решение здесь."
+msgstr "Можно сдать устно в конференции или отправить письменное решение здесь."
+
+#: packages/product/src/reaction.ts
+msgid "Мутно, много ошибок."
+msgstr "Мутно, много ошибок."
+
+#: packages/product/src/metadata-grid.tsx
+msgid "На весь экран"
+msgstr "На весь экран"
+
+#: packages/product/src/connection-banner.tsx
+msgid "На связи"
+msgstr "На связи"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Название аудитории"
+msgstr "Название аудитории"
+
+#: packages/product/src/lesson-video.ts
+msgid "Название видео не должно быть длиннее 200 символов"
+msgstr "Название видео не должно быть длиннее 200 символов"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Название не извлечено"
+msgstr "Название не извлечено"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Название уточняется"
+msgstr "Название уточняется"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Назначена"
+msgstr "Назначена"
+
+#: packages/product/src/in-person-event.tsx
+msgid "назначение"
+msgstr "назначение"
+
+#: packages/product/src/in-person-event.tsx
+msgid "назначений"
+msgstr "назначений"
+
+#: packages/product/src/in-person-event.tsx
+msgid "назначения"
+msgstr "назначения"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Назначено: {assignedCount}"
+msgstr "Назначено: {assignedCount}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Назначьте группе хотя бы одну активную аудиторию."
+msgstr "Назначьте группе хотя бы одну активную аудиторию."
+
+#. placeholder {0}: matches.length
+#: packages/product/src/classroom-planning.tsx
+msgid "Найдено: {0}"
+msgstr "Найдено: {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Например, 201 или Актовый зал"
+msgstr "Например, 201 или Актовый зал"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Например, выбран соседний номер"
+msgstr "Например, выбран соседний номер"
+
+#: packages/product/src/course-admin.tsx
+msgid "Настроить"
+msgstr "Настроить"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Настроить уведомления"
+msgstr "Настроить уведомления"
+
+#: packages/product/src/course-context.tsx
+msgid "настройка курса"
+msgstr "настройка курса"
+
+#: packages/product/src/course-context.tsx
+msgid "Настройки по курсам"
+msgstr "Настройки по курсам"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "начато"
+msgstr "начато"
+
+#: packages/product/src/reaction-picker.tsx
+msgid "Не видна ученику и родителю."
+msgstr "Не видна ученику и родителю."
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Не всем удалось отправить"
+msgstr "Не всем удалось отправить"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "не выбран"
+msgstr "не выбран"
+
+#: packages/product/src/rich-document.tsx
+msgid "Не выполнено"
+msgstr "Не выполнено"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Не зачтено"
+msgstr "Не зачтено"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Не используется"
+msgstr "Не используется"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Не используются"
+msgstr "Не используются"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Не меняет результат автоматически."
+msgstr "Не меняет результат автоматически."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Не метчить, начать с нуля"
+msgstr "Не метчить, начать с нуля"
+
+#: packages/product/src/reaction.ts
+msgid "Не могу согласиться с проверкой!"
+msgstr "Не могу согласиться с проверкой!"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Не назначена"
+msgstr "Не назначена"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "не настроен"
+msgstr "не настроен"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Не отмечено"
+msgstr "Не отмечено"
+
+#: packages/product/src/task-chat.tsx
+msgid "Не отправлено"
+msgstr "Не отправлено"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Не публиковать эту задачу"
+msgstr "Не публиковать эту задачу"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Не распределены / переназначаются"
+msgstr "Не распределены / переназначаются"
+
+#: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/push-permission-card.tsx
+msgid "Не сейчас"
+msgstr "Не сейчас"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось вставить таблицу: в данных незакрытая кавычка."
+msgstr "Не удалось вставить таблицу: в данных незакрытая кавычка."
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось вставить таблицу: все строки должны содержать одинаковое число ячеек."
+msgstr "Не удалось вставить таблицу: все строки должны содержать одинаковое число ячеек."
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось вставить таблицу."
+msgstr "Не удалось вставить таблицу."
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Не удалось выполнить перепроверку"
+msgstr "Не удалось выполнить перепроверку"
+
+#: packages/product/src/attachment.tsx
+msgid "Не удалось загрузить"
+msgstr "Не удалось загрузить"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Не удалось настроить push"
+msgstr "Не удалось настроить push"
+
+#: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/worksheet-materials.tsx
+msgid "Не удалось открыть материал. Проверьте соединение и повторите попытку."
+msgstr "Не удалось открыть материал. Проверьте соединение и повторите попытку."
+
+#: packages/product/src/question-photos.tsx
+msgid "Не удалось подготовить фотографию. Выберите её ещё раз."
+msgstr "Не удалось подготовить фотографию. Выберите её ещё раз."
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Не удалось сохранить изменения"
+msgstr "Не удалось сохранить изменения"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Не хватает ресурсов: {unresolvedCount}"
+msgstr "Не хватает ресурсов: {unresolvedCount}"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "недоступно"
+msgstr "недоступно"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Незакрытая inline-формула"
+msgstr "Незакрытая inline-формула"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Незачёт без комментария. Отправить всё равно?"
+msgstr "Незачёт без комментария. Отправить всё равно?"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Неиспользованные активные аудитории не мешают подтверждению."
+msgstr "Неиспользованные активные аудитории не мешают подтверждению."
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректная сноска"
+msgstr "Некорректная сноска"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректная цитата"
+msgstr "Некорректная цитата"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный details"
+msgstr "Некорректный details"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный inline code"
+msgstr "Некорректный inline code"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный блок кода"
+msgstr "Некорректный блок кода"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный список"
+msgstr "Некорректный список"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный узел rich Markdown"
+msgstr "Некорректный узел rich Markdown"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный упорядоченный список"
+msgstr "Некорректный упорядоченный список"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Некорректный элемент списка"
+msgstr "Некорректный элемент списка"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Нельзя смешивать обычные пункты и задачи в одном списке"
+msgstr "Нельзя смешивать обычные пункты и задачи в одном списке"
+
+#: packages/product/src/reaction.ts
+msgid "Непонятно, что не так…"
+msgstr "Непонятно, что не так…"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Нет в Telegram"
+msgstr "Нет в Telegram"
+
+#: packages/product/src/in-person-event.tsx
+msgid "нет комнат"
+msgstr "нет комнат"
+
+#: packages/product/src/verdict-mark.tsx
+msgid "Нет ответа"
+msgstr "Нет ответа"
+
+#: packages/product/src/connection-banner.tsx
+#: packages/product/src/submission-composer.tsx
+msgid "Нет сети"
+msgstr "Нет сети"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Нет сохранённых ответов"
+msgstr "Нет сохранённых ответов"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Новая аудитория"
+msgstr "Новая аудитория"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "Новая обратная связь"
+msgstr "Новая обратная связь"
+
+#: packages/product/src/task-list-item.tsx
+msgid "новое"
+msgstr "новое"
+
+#: packages/product/src/notification-event-card.tsx
+msgid "Новое"
+msgstr "Новое"
+
+#. placeholder {0}: room.name
+#: packages/product/src/classroom-planning.tsx
+msgid "Новое название: {0}"
+msgstr "Новое название: {0}"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Новости"
+msgstr "Новости"
+
+#: packages/product/src/course-admin.tsx
+msgid "Новости курса складываются с групповыми. Цели материалов группы заменяют настройки курса по умолчанию."
+msgstr "Новости курса складываются с групповыми. Цели материалов группы заменяют настройки курса по умолчанию."
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Новые аудитории ещё не отправлены. Подготовьте новый предпросмотр и запустите рассылку явно."
+msgstr "Новые аудитории ещё не отправлены. Подготовьте новый предпросмотр и запустите рассылку явно."
+
+#: packages/product/src/in-person-event.tsx
+msgid "Новый черновик полностью повторит последний подтверждённый план выбранных групп. Администратор скорректирует только изменения состава, режима или комнат."
+msgstr "Новый черновик полностью повторит последний подтверждённый план выбранных групп. Администратор скорректирует только изменения состава, режима или комнат."
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Нужен ресурс"
+msgstr "Нужен ресурс"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Нужно пересчитать"
+msgstr "Нужно пересчитать"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Область разметки фотографии"
+msgstr "Область разметки фотографии"
+
+#: packages/product/src/update-prompt.tsx
+msgid "Обновимся за секунду. Черновик и несохранённый текст останутся на месте."
+msgstr "Обновимся за секунду. Черновик и несохранённый текст останутся на месте."
+
+#: packages/product/src/update-prompt.tsx
+msgid "Обновить"
+msgstr "Обновить"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Обновить данные"
+msgstr "Обновить данные"
+
+#: packages/product/src/review-lock.tsx
+msgid "Обновить работу"
+msgstr "Обновить работу"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Обновлено {publishedAt}"
+msgstr "Обновлено {publishedAt}"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Обрабатываем"
+msgstr "Обрабатываем"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "обработка"
+msgstr "обработка"
+
+#. placeholder {0}: file.name
+#: packages/product/src/staff-publishing.tsx
+msgid "Обработка {0}"
+msgstr "Обработка {0}"
+
+#: packages/product/src/attachment.tsx
+msgid "Обработка: {page}"
+msgstr "Обработка: {page}"
+
+#: packages/product/src/course-context.tsx
+msgid "Общая"
+msgstr "Общая"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Общая история решения"
+msgstr "Общая история решения"
+
+#: packages/product/src/course-context.tsx
+msgid "общая настройка"
+msgstr "общая настройка"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Общий verdict останется у задачи последней включённой посылки; остальные ветки снова вычислят собственный статус."
+msgstr "Общий verdict останется у задачи последней включённой посылки; остальные ветки снова вычислят собственный статус."
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Общий результат доставки"
+msgstr "Общий результат доставки"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Объединить"
+msgstr "Объединить"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Объединить задачи логически"
+msgstr "Объединить задачи логически"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Один логический кейс"
+msgstr "Один логический кейс"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Один список для всех занятий. Скрытые аудитории можно восстановить."
+msgstr "Один список для всех занятий. Скрытые аудитории можно восстановить."
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ожидают настройки"
+msgstr "Ожидают настройки"
+
+#: packages/product/src/reaction.ts
+msgid "Ок. Всё ясно."
+msgstr "Ок. Всё ясно."
+
+#: packages/product/src/course-context.tsx
+msgid "Онлайн"
+msgstr "Онлайн"
+
+#: packages/product/src/submission-composer.tsx
+msgid "Опишите решение. Формулы можно приложить фотографией."
+msgstr "Опишите решение. Формулы можно приложить фотографией."
+
+#: packages/product/src/support-dialogue.tsx
+msgid "Опишите, что именно осталось непонятно…"
+msgstr "Опишите, что именно осталось непонятно…"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Опубликовано"
+msgstr "Опубликовано"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Опубликовано {publishedAt}"
+msgstr "Опубликовано {publishedAt}"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Опубликовать"
+msgstr "Опубликовать"
+
+#. placeholder {0}: row.level.name
+#: packages/product/src/staff-publishing.tsx
+msgid "Опубликовать по расписанию: {label}, {0}"
+msgstr "Опубликовать по расписанию: {label}, {0}"
+
+#. placeholder {0}: row.level.name
+#: packages/product/src/staff-publishing.tsx
+msgid "Опубликовать сейчас: {label}, {0}"
+msgstr "Опубликовать сейчас: {label}, {0}"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Оригинальный прикреплённый ресурс"
+msgstr "Оригинальный прикреплённый ресурс"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "От преподавателей"
+msgstr "От преподавателей"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "От учеников"
+msgstr "От учеников"
+
+#: packages/product/src/test-answer.tsx
+msgid "Ответ"
+msgstr "Ответ"
+
+#: packages/product/src/task-type.tsx
+msgid "Ответ вводится прямо в интерфейсе и проверяется автоматически."
+msgstr "Ответ вводится прямо в интерфейсе и проверяется автоматически."
+
+#. placeholder {0}: hint.toLocaleLowerCase('ru')
+#: packages/product/src/test-answer.tsx
+msgid "Ответ не соответствует формату: {0}."
+msgstr "Ответ не соответствует формату: {0}."
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Ответить"
+msgstr "Ответить"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ответов: {pendingAttempts}"
+msgstr "Ответов: {pendingAttempts}"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Отдельное действие после подтверждения плана. Черновые перестановки никому не отправляются."
+msgstr "Отдельное действие после подтверждения плана. Черновые перестановки никому не отправляются."
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Откатить"
+msgstr "Откатить"
+
+#: packages/product/src/verdict-registry.ts
+msgid "Отклонено"
+msgstr "Отклонено"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Отключаем уведомления…"
+msgstr "Отключаем уведомления…"
+
+#: packages/product/src/course-admin.tsx
+msgid "Отключена"
+msgstr "Отключена"
+
+#: packages/product/src/course-admin.tsx
+msgid "Отключено"
+msgstr "Отключено"
+
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/push-device-controls.tsx
+msgid "Отключить"
+msgstr "Отключить"
+
+#: packages/product/src/review-lock.tsx
+msgid "Откроется, когда освободится или через 30 минут."
+msgstr "Откроется, когда освободится или через 30 минут."
+
+#: packages/product/src/conscious-disclosure.tsx
+msgid "Открываем…"
+msgstr "Открываем…"
+
+#: packages/product/src/content-update-marker.tsx
+msgid "Открыта новая опубликованная версия."
+msgstr "Открыта новая опубликованная версия."
+
+#: packages/product/src/review-queue.tsx
+#: packages/product/src/staff-outreach.tsx
+msgid "Открыть"
+msgstr "Открыть"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Открыть изображение"
+msgstr "Открыть изображение"
+
+#: packages/product/src/course-context.tsx
+msgid "Открыть курс"
+msgstr "Открыть курс"
+
+#: packages/product/src/conscious-disclosure.tsx
+msgid "Открыть подсказку?"
+msgstr "Открыть подсказку?"
+
+#: packages/product/src/conscious-disclosure.tsx
+msgid "Открыть решение?"
+msgstr "Открыть решение?"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/metadata-grid-cell-editor.tsx
+#: packages/product/src/staff-outreach.tsx
+#: packages/product/src/staff-publishing.tsx
+#: packages/product/src/synonym-context.tsx
+#: packages/product/src/worksheet-materials.tsx
+msgid "Отмена"
+msgstr "Отмена"
+
+#: packages/product/src/metadata-grid.tsx
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/staff-publishing.tsx
+msgid "Отменить"
+msgstr "Отменить"
+
+#. placeholder {0}: index + 1
+#: packages/product/src/question-photos.tsx
+msgid "Отменить подготовку фотографии {0}"
+msgstr "Отменить подготовку фотографии {0}"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Отменить правки"
+msgstr "Отменить правки"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Отменить расписание"
+msgstr "Отменить расписание"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Отменить текст"
+msgstr "Отменить текст"
+
+#. placeholder {0}: item.postId
+#: packages/product/src/news-moderation.tsx
+msgid "Отметить публикацию {0} доступной в Telegram"
+msgstr "Отметить публикацию {0} доступной в Telegram"
+
+#. placeholder {0}: item.postId
+#: packages/product/src/news-moderation.tsx
+msgid "Отметить публикацию {0} удалённой в Telegram"
+msgstr "Отметить публикацию {0} удалённой в Telegram"
+
+#. placeholder {0}: problems.length
+#: packages/product/src/oral-result-form.tsx
+msgid "Отмечено: {markedCount} из {0}"
+msgstr "Отмечено: {markedCount} из {0}"
+
+#: packages/product/src/chat-composer.tsx
+#: packages/product/src/staff-outreach.tsx
+#: packages/product/src/submission-composer.tsx
+#: packages/product/src/support-dialogue.tsx
+msgid "Отправить"
+msgstr "Отправить"
+
+#: packages/product/src/submission-composer.tsx
+msgid "Отправить (Ctrl/Cmd+Enter)"
+msgstr "Отправить (Ctrl/Cmd+Enter)"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Отправить {count} получателям?"
+msgstr "Отправить {count} получателям?"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Отправить вердикт"
+msgstr "Отправить вердикт"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Отправить всё равно"
+msgstr "Отправить всё равно"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Отправить…"
+msgstr "Отправить…"
+
+#: packages/product/src/submission-composer.tsx
+msgid "Отправка…"
+msgstr "Отправка…"
+
+#: packages/product/src/task-chat.tsx
+msgid "Отправлено"
+msgstr "Отправлено"
+
+#: packages/product/src/chat-composer.tsx
+#: packages/product/src/support-dialogue.tsx
+msgid "Отправляем…"
+msgstr "Отправляем…"
+
+#: packages/product/src/task-chat.tsx
+msgid "Отправляется"
+msgstr "Отправляется"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Очистить разметку"
+msgstr "Очистить разметку"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Очная аудитория не требуется"
+msgstr "Очная аудитория не требуется"
+
+#: packages/product/src/course-context.tsx
+msgid "Очно"
+msgstr "Очно"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Очно и онлайн"
+msgstr "Очно и онлайн"
+
+#: packages/product/src/chat-composer.tsx
+#: packages/product/src/classroom-delivery.tsx
+msgid "ошибка"
+msgstr "ошибка"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Ошибка"
+msgstr "Ошибка"
+
+#: packages/product/src/telegram-rich-post.tsx
+msgid "Ошибка доставки"
+msgstr "Ошибка доставки"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "ошибок"
+msgstr "ошибок"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ошибок checker-а"
+msgstr "Ошибок checker-а"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Ошибок не найдено. Можно подтверждать метаданные."
+msgstr "Ошибок не найдено. Можно подтверждать метаданные."
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Ошибок формата после проверки"
+msgstr "Ошибок формата после проверки"
+
+#: packages/product/src/lesson-video.ts
+msgid "Параметр доступа VK Видео некорректен"
+msgstr "Параметр доступа VK Видео некорректен"
+
+#: packages/product/src/course-achievements.ts
+msgid "Первая задача зачтена"
+msgstr "Первая задача зачтена"
+
+#: packages/product/src/course-achievements.ts
+msgid "Первая задача отправлена"
+msgstr "Первая задача отправлена"
+
+#: packages/product/src/course-achievements.ts
+msgid "Первая письменная работа"
+msgstr "Первая письменная работа"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Переименовать"
+msgstr "Переименовать"
+
+#. placeholder {0}: room.name
+#: packages/product/src/classroom-planning.tsx
+msgid "Переименовать: {0}"
+msgstr "Переименовать: {0}"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Переиспользован"
+msgstr "Переиспользован"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Перенести выбранных в аудиторию"
+msgstr "Перенести выбранных в аудиторию"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Перенести выбранных…"
+msgstr "Перенести выбранных…"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Перенести материал в другую задачу"
+msgstr "Перенести материал в другую задачу"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Переносим…"
+msgstr "Переносим…"
+
+#: packages/product/src/course-admin.tsx
+msgid "Переопределено группой"
+msgstr "Переопределено группой"
+
+#: packages/product/src/task-chat.tsx
+msgid "Переписка по задаче"
+msgstr "Переписка по задаче"
+
+#: packages/product/src/review-queue.tsx
+msgid "Перепроверить"
+msgstr "Перепроверить"
+
+#. placeholder {0}: formatAttemptCount(pendingAttempts)
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Перепроверить все {0}"
+msgstr "Перепроверить все {0}"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Перепроверить результат"
+msgstr "Перепроверить результат"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Перепроверка тестовых ответов"
+msgstr "Перепроверка тестовых ответов"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Перепроверяем…"
+msgstr "Перепроверяем…"
+
+#: packages/product/src/in-person-event.tsx
+msgid "Пересечение курсов показывает предупреждение, но не создаёт отдельный процесс."
+msgstr "Пересечение курсов показывает предупреждение, но не создаёт отдельный процесс."
+
+#. placeholder {0}: post.attribution.forwardedFrom
+#: packages/product/src/telegram-rich-post.tsx
+msgid "Переслано из {0}"
+msgstr "Переслано из {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Пересчёт сначала сохраняет выбранную вручную аудиторию, затем прежнюю допустимую и дораспределяет остальных по фактической загрузке."
+msgstr "Пересчёт сначала сохраняет выбранную вручную аудиторию, затем прежнюю допустимую и дораспределяет остальных по фактической загрузке."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Пересчитать"
+msgstr "Пересчитать"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Переходов формата"
+msgstr "Переходов формата"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Период"
+msgstr "Период"
+
+#: packages/product/src/task-type.tsx
+msgid "Письменная задача"
+msgstr "Письменная задача"
+
+#. placeholder {0}: batch.planVersion
+#. placeholder {1}: batch.recipientCount
+#: packages/product/src/classroom-delivery.tsx
+msgid "План v{0} · {1} получателей"
+msgstr "План v{0} · {1} получателей"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "План устарел"
+msgstr "План устарел"
+
+#: packages/product/src/review-queue.tsx
+msgid "По одной"
+msgstr "По одной"
+
+#: packages/product/src/problem-matching.tsx
+msgid "По позиции:"
+msgstr "По позиции:"
+
+#: packages/product/src/news-moderation.tsx
+#: packages/product/src/staff-publishing.tsx
+msgid "По расписанию"
+msgstr "По расписанию"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "по фактической загрузке"
+msgstr "по фактической загрузке"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Повернуть по часовой стрелке"
+msgstr "Повернуть по часовой стрелке"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Повернуть против часовой стрелки"
+msgstr "Повернуть против часовой стрелки"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Повтор затронет только неуспешные пары «школьник — канал» и не продублирует уже доставленные сообщения."
+msgstr "Повтор затронет только неуспешные пары «школьник — канал» и не продублирует уже доставленные сообщения."
+
+#: packages/product/src/attachment.tsx
+#: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/metadata-grid.tsx
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/staff-publishing.tsx
+#: packages/product/src/telegram-rich-post.tsx
+#: packages/product/src/worksheet-materials.tsx
+msgid "Повторить"
+msgstr "Повторить"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Повторить только ошибки"
+msgstr "Повторить только ошибки"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Подготовить SVG"
+msgstr "Подготовить SVG"
+
+#: packages/product/src/in-person-event.tsx
+msgid "Подготовить план аудиторий"
+msgstr "Подготовить план аудиторий"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Подготовить предпросмотр"
+msgstr "Подготовить предпросмотр"
+
+#: packages/product/src/lesson-video.ts
+msgid "Поддерживаются только YouTube и VK Видео"
+msgstr "Поддерживаются только YouTube и VK Видео"
+
+#: packages/product/src/student-progress.tsx
+msgid "подряд с решениями — ваш личный рекорд"
+msgstr "подряд с решениями — ваш личный рекорд"
+
+#: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/staff-publishing.tsx
+#: packages/product/src/worksheet-materials.tsx
+msgid "Подсказка"
+msgstr "Подсказка"
+
+#: packages/product/src/worksheet-materials.tsx
+msgid "Подсказка и решение"
+msgstr "Подсказка и решение"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "подсказку"
+msgstr "подсказку"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Подтвердить"
+msgstr "Подтвердить"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Подтвердить перенос"
+msgstr "Подтвердить перенос"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Подтвердить план"
+msgstr "Подтвердить план"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Подтвердить сопоставление"
+msgstr "Подтвердить сопоставление"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Подтвердить схему"
+msgstr "Подтвердить схему"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Подтверждено"
+msgstr "Подтверждено"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Подтверждено {confirmedAt}"
+msgstr "Подтверждено {confirmedAt}"
+
+#: packages/product/src/update-prompt.tsx
+msgid "Позже"
+msgstr "Позже"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Поиск"
+msgstr "Поиск"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Пока вы ничего не меняете, отдельная копия для этого занятия не создаётся."
+msgstr "Пока вы ничего не меняете, отдельная копия для этого занятия не создаётся."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Пока никого нет"
+msgstr "Пока никого нет"
+
+#: packages/product/src/student-progress.tsx
+msgid "Пока пусто. Когда вы начнёте решать задачи, здесь появится ваш прогресс — без рейтингов и сравнений."
+msgstr "Пока пусто. Когда вы начнёте решать задачи, здесь появится ваш прогресс — без рейтингов и сравнений."
+
+#. placeholder {0}: items.length
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Показано: {0}"
+msgstr "Показано: {0}"
+
+#. placeholder {0}: rest.length
+#: packages/product/src/attempt-timeline.tsx
+msgid "Показать историю ({0})"
+msgstr "Показать историю ({0})"
+
+#: packages/product/src/activity-calendar.tsx
+msgid "Показать по датам"
+msgstr "Показать по датам"
+
+#: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/worksheet-materials.tsx
+msgid "Показать подсказку"
+msgstr "Показать подсказку"
+
+#: packages/product/src/worksheet-materials.tsx
+msgid "Показать подсказку? После открытия её уже не получится развидеть."
+msgstr "Показать подсказку? После открытия её уже не получится развидеть."
+
+#: packages/product/src/conscious-disclosure.tsx
+msgid "Показать решение"
+msgstr "Показать решение"
+
+#: packages/product/src/rich-document.tsx
+#: packages/product/src/telegram-rich-post.tsx
+msgid "Показать скрытый текст"
+msgstr "Показать скрытый текст"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Показать существующую"
+msgstr "Показать существующую"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Показать числами"
+msgstr "Показать числами"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Показывать"
+msgstr "Показывать"
+
+#: packages/product/src/verdict-registry.ts
+msgid "Половина"
+msgstr "Половина"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Полоса"
+msgstr "Полоса"
+
+#: packages/product/src/oral-admission.tsx
+msgid "Получаем ссылку…"
+msgstr "Получаем ссылку…"
+
+#: packages/product/src/push-permission-card.tsx
+msgid "Получайте важные сообщения, даже когда кабинет закрыт:"
+msgstr "Получайте важные сообщения, даже когда кабинет закрыт:"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Получат: <0>{count}</0>"
+msgstr "Получат: <0>{count}</0>"
+
+#. placeholder {0}: preview.recipientCount
+#: packages/product/src/classroom-delivery.tsx
+msgid "Получателей: {0}"
+msgstr "Получателей: {0}"
+
+#. placeholder {0}: batch.deliveryReport.deliveredAll
+#: packages/product/src/classroom-delivery.tsx
+msgid "Получили всё: {0}"
+msgstr "Получили всё: {0}"
+
+#. placeholder {0}: batch.deliveryReport.deliveredAny
+#: packages/product/src/classroom-delivery.tsx
+msgid "Получили хотя бы одно: {0}"
+msgstr "Получили хотя бы одно: {0}"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Пометка преподавателя"
+msgstr "Пометка преподавателя"
+
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Пометки преподавателя ·"
+msgstr "Пометки преподавателя ·"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "После изменения вернитесь сюда и нажмите «Включить уведомления». Если кнопка не появилась, обновите страницу. Также проверьте, разрешены ли уведомления для браузера в настройках устройства."
+msgstr "После изменения вернитесь сюда и нажмите «Включить уведомления». Если кнопка не появилась, обновите страницу. Также проверьте, разрешены ли уведомления для браузера в настройках устройства."
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "После проверки"
+msgstr "После проверки"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "После рассылки назначения изменились"
+msgstr "После рассылки назначения изменились"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "после смены группы"
+msgstr "после смены группы"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "после смены режима"
+msgstr "после смены режима"
+
+#. placeholder {0}: batch.planVersion
+#: packages/product/src/classroom-delivery.tsx
+msgid "Последняя версия: v{0}"
+msgstr "Последняя версия: v{0}"
+
+#: packages/product/src/written-review-history.tsx
+msgid "Последняя проверка"
+msgstr "Последняя проверка"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Пост доступен"
+msgstr "Пост доступен"
+
+#: packages/product/src/telegram-rich-post.tsx
+msgid "Пост скрыт редакцией."
+msgstr "Пост скрыт редакцией."
+
+#: packages/product/src/submission-composer.tsx
+msgid "Поставить в очередь"
+msgstr "Поставить в очередь"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Предпросмотр"
+msgstr "Предпросмотр"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Прежнее назначение сброшено"
+msgstr "Прежнее назначение сброшено"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "прежняя аудитория"
+msgstr "прежняя аудитория"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Прежняя аудитория больше не действует. Новая появится здесь после подтверждения."
+msgstr "Прежняя аудитория больше не действует. Новая появится здесь после подтверждения."
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Прежняя аудитория ребёнка больше не действует. Новая появится после подтверждения."
+msgstr "Прежняя аудитория ребёнка больше не действует. Новая появится после подтверждения."
+
+#: packages/product/src/feedback-thread.tsx
+#: packages/product/src/task-chat.tsx
+msgid "Преподаватель"
+msgstr "Преподаватель"
+
+#: packages/product/src/course-admin.tsx
+msgid "Приём до"
+msgstr "Приём до"
+
+#: packages/product/src/deadline-notice.tsx
+msgid "Приём до {absoluteLabel}"
+msgstr "Приём до {absoluteLabel}"
+
+#: packages/product/src/deadline-notice.tsx
+#: packages/product/src/submission-composer.tsx
+msgid "Приём закрыт"
+msgstr "Приём закрыт"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Прикреплён"
+msgstr "Прикреплён"
+
+#. placeholder {0}: asset.ref
+#: packages/product/src/staff-publishing.tsx
+msgid "Прикреплённый ресурс {0}"
+msgstr "Прикреплённый ресурс {0}"
+
+#: packages/product/src/metadata-grid-cell-editor.tsx
+msgid "Применить"
+msgstr "Применить"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Причина для журнала (необязательно)"
+msgstr "Причина для журнала (необязательно)"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Пробелы по краям уберутся; регистр не создаёт новую аудиторию."
+msgstr "Пробелы по краям уберутся; регистр не создаёт новую аудиторию."
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Пробный прогон"
+msgstr "Пробный прогон"
+
+#: packages/product/src/course-admin.tsx
+msgid "Проверена"
+msgstr "Проверена"
+
+#. placeholder {0}: annotationIndex + 1
+#: packages/product/src/written-review-history.tsx
+msgid "Проверенная страница решения {0}"
+msgstr "Проверенная страница решения {0}"
+
+#. placeholder {0}: result.scannedAttempts
+#. placeholder {1}: result.updatedAttempts
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Проверено {0}, обновлено {1}"
+msgstr "Проверено {0}, обновлено {1}"
+
+#: packages/product/src/task-chat.tsx
+msgid "Проверил ИИ"
+msgstr "Проверил ИИ"
+
+#: packages/product/src/verdict-panel.tsx
+msgid "Проверил ИИ. Если что-то не так — напишите, и работу посмотрит преподаватель."
+msgstr "Проверил ИИ. Если что-то не так — напишите, и работу посмотрит преподаватель."
+
+#: packages/product/src/course-admin.tsx
+msgid "Проверить"
+msgstr "Проверить"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Проверить перенос"
+msgstr "Проверить перенос"
+
+#. placeholder {0}: preview.recipientCount
+#: packages/product/src/classroom-delivery.tsx
+msgid "Проверить получателей ({0})"
+msgstr "Проверить получателей ({0})"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Проверить таблицу"
+msgstr "Проверить таблицу"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Проверка сохранит неизменяемый список всех увиденных посылок. При разделении задач ответ останется у последней посылки."
+msgstr "Проверка сохранит неизменяемый список всех увиденных посылок. При разделении задач ответ останется у последней посылки."
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Проверьте соединение и попробуйте ещё раз."
+msgstr "Проверьте соединение и попробуйте ещё раз."
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Проверяем это устройство…"
+msgstr "Проверяем это устройство…"
+
+#: packages/product/src/review-lock.tsx
+msgid "Проверяет"
+msgstr "Проверяет"
+
+#. placeholder {0}: item.busyBy
+#: packages/product/src/review-queue.tsx
+msgid "Проверяет {0}"
+msgstr "Проверяет {0}"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Простые"
+msgstr "Простые"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Простые задачи"
+msgstr "Простые задачи"
+
+#: packages/product/src/written-review-history.tsx
+msgid "Прошлая проверка"
+msgstr "Прошлая проверка"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Прямоугольник"
+msgstr "Прямоугольник"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Публикация без текста"
+msgstr "Публикация без текста"
+
+#: packages/product/src/course-admin.tsx
+msgid "Публикация материалов"
+msgstr "Публикация материалов"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Публикация недоступна, пока все ссылки не разрешены."
+msgstr "Публикация недоступна, пока все ссылки не разрешены."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Публикация останется недоступной до заполнения всех строк."
+msgstr "Публикация останется недоступной до заполнения всех строк."
+
+#: packages/product/src/review-lock.tsx
+msgid "Работа больше не за вами"
+msgstr "Работа больше не за вами"
+
+#: packages/product/src/review-lock.tsx
+msgid "Работа за вами"
+msgstr "Работа за вами"
+
+#: packages/product/src/three-pane-review.tsx
+msgid "Работа и обсуждение"
+msgstr "Работа и обсуждение"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Работа изменилась"
+msgstr "Работа изменилась"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Разброс (Q1–Q3)"
+msgstr "Разброс (Q1–Q3)"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Разделить"
+msgstr "Разделить"
+
+#: packages/product/src/synonym-context.tsx
+msgid "Разделить задачи"
+msgstr "Разделить задачи"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Разметка: {imageAlt}"
+msgstr "Разметка: {imageAlt}"
+
+#: packages/product/src/connection-banner.tsx
+msgid "Разобраться"
+msgstr "Разобраться"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Разослано {announcedAt}"
+msgstr "Разослано {announcedAt}"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Разослать аудитории"
+msgstr "Разослать аудитории"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Разрешение можно вернуть в настройках сайта."
+msgstr "Разрешение можно вернуть в настройках сайта."
+
+#: packages/product/src/test-answer.tsx
+msgid "Распознано:"
+msgstr "Распознано:"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "распределено"
+msgstr "распределено"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Рассылка выполняется"
+msgstr "Рассылка выполняется"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Рассылка завершена"
+msgstr "Рассылка завершена"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Рассылка не выполнена"
+msgstr "Рассылка не выполнена"
+
+#: packages/product/src/reaction-picker.tsx
+msgid "Реакция"
+msgstr "Реакция"
+
+#: packages/product/src/review-reaction-inbox.tsx
+#: packages/product/src/written-review-history.tsx
+msgid "Реакция ученика"
+msgstr "Реакция ученика"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "ребёнок"
+msgstr "ребёнок"
+
+#. placeholder {0}: problem.displayNumber
+#: packages/product/src/oral-result-form.tsx
+msgid "Результат задачи {0}"
+msgstr "Результат задачи {0}"
+
+#: packages/product/src/verdict-panel.tsx
+msgid "Результат проверки"
+msgstr "Результат проверки"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Реплик изменится"
+msgstr "Реплик изменится"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "решение"
+msgstr "решение"
+
+#: packages/product/src/conscious-disclosure.tsx
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/staff-publishing.tsx
+#: packages/product/src/worksheet-materials.tsx
+msgid "Решение"
+msgstr "Решение"
+
+#: packages/product/src/conscious-disclosure.tsx
+msgid "Решение нельзя «развидеть». Открывайте, только если действительно застряли."
+msgstr "Решение нельзя «развидеть». Открывайте, только если действительно застряли."
+
+#: packages/product/src/task-type.tsx
+msgid "Решение отправляется текстом и фотографиями, проверяет преподаватель."
+msgstr "Решение отправляется текстом и фотографиями, проверяет преподаватель."
+
+#: packages/product/src/submission-composer.tsx
+msgid "Решение сохранится и отправится автоматически, когда связь вернётся."
+msgstr "Решение сохранится и отправится автоматически, когда связь вернётся."
+
+#: packages/product/src/reaction.ts
+msgid "Решение, вероятно, несамостоятельно."
+msgstr "Решение, вероятно, несамостоятельно."
+
+#: packages/product/src/reaction.ts
+msgid "Решение, вероятно, от нейросети."
+msgstr "Решение, вероятно, от нейросети."
+
+#: packages/product/src/reaction.ts
+msgid "Решение, вероятно, списано."
+msgstr "Решение, вероятно, списано."
+
+#: packages/product/src/progress-charts.tsx
+msgid "Решено"
+msgstr "Решено"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Рисунок из LaTeX"
+msgstr "Рисунок из LaTeX"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "Родитель"
+msgstr "Родитель"
+
+#: packages/product/src/reaction.ts
+msgid "С устным приёмом всё ОК."
+msgstr "С устным приёмом всё ОК."
+
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/zoomable-figure.tsx
+msgid "Сбросить масштаб"
+msgstr "Сбросить масштаб"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Свернуть"
+msgstr "Свернуть"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Сводка каталога"
+msgstr "Сводка каталога"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Сводка плана"
+msgstr "Сводка плана"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "Сводка предпросмотра"
+msgstr "Сводка предпросмотра"
+
+#: packages/product/src/reaction.ts
+msgid "Связь прервалась."
+msgstr "Связь прервалась."
+
+#: packages/product/src/reaction.ts
+msgid "Сдавать не понравилось…"
+msgstr "Сдавать не понравилось…"
+
+#: packages/product/src/reaction.ts
+msgid "Сдавать понравилось!"
+msgstr "Сдавать понравилось!"
+
+#: packages/product/src/task-type.tsx
+msgid "Сдаётся устно в конференции; в окне приёма можно отправить и письменно."
+msgstr "Сдаётся устно в конференции; в окне приёма можно отправить и письменно."
+
+#: packages/product/src/chat-composer.tsx
+msgid "Сделать фото"
+msgstr "Сделать фото"
+
+#: packages/product/src/question-photos.tsx
+msgid "Сделать фотографию"
+msgstr "Сделать фотографию"
+
+#: packages/product/src/course-admin.tsx
+msgid "Сезон 2025–2026 · названия групп уникальны только внутри курса."
+msgstr "Сезон 2025–2026 · названия групп уникальны только внутри курса."
+
+#: packages/product/src/staff-publishing.tsx
+msgid "Сейчас"
+msgstr "Сейчас"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Сейчас у вас онлайн-режим."
+msgstr "Сейчас у вас онлайн-режим."
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Сейчас у ребёнка онлайн-режим."
+msgstr "Сейчас у ребёнка онлайн-режим."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Серверная версия изменилась"
+msgstr "Серверная версия изменилась"
+
+#: packages/product/src/attachment.tsx
+msgid "Сжатие…"
+msgstr "Сжатие…"
+
+#: packages/product/src/chat-composer.tsx
+msgid "сжимаем"
+msgstr "сжимаем"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "сила"
+msgstr "сила"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Синий"
+msgstr "Синий"
+
+#. placeholder {0}: node.type
+#: packages/product/src/rich-markdown.ts
+msgid "Синтаксис «{0}» пока не поддерживается"
+msgstr "Синтаксис «{0}» пока не поддерживается"
+
+#: packages/product/src/connection-banner.tsx
+#: packages/product/src/sync-indicator.tsx
+msgid "Синхронизация…"
+msgstr "Синхронизация…"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "Система"
+msgstr "Система"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "системное событие"
+msgstr "системное событие"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/course-admin.tsx
+msgid "Скрыта"
+msgstr "Скрыта"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Скрыто в PWA"
+msgstr "Скрыто в PWA"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Скрытые"
+msgstr "Скрытые"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Скрытых: {archivedCount}"
+msgstr "Скрытых: {archivedCount}"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/news-moderation.tsx
+msgid "Скрыть"
+msgstr "Скрыть"
+
+#: packages/product/src/attempt-timeline.tsx
+msgid "Скрыть историю"
+msgstr "Скрыть историю"
+
+#: packages/product/src/group-banner.tsx
+msgid "Скрыть объявление"
+msgstr "Скрыть объявление"
+
+#: packages/product/src/worksheet-materials.tsx
+msgid "Скрыть подсказку"
+msgstr "Скрыть подсказку"
+
+#. placeholder {0}: item.postId
+#: packages/product/src/news-moderation.tsx
+msgid "Скрыть публикацию {0} в PWA"
+msgstr "Скрыть публикацию {0} в PWA"
+
+#: packages/product/src/worksheet-materials.tsx
+msgid "Скрыть решение"
+msgstr "Скрыть решение"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Сложность занятия"
+msgstr "Сложность занятия"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Сложные"
+msgstr "Сложные"
+
+#: packages/product/src/progress-charts.tsx
+msgid "Сложные задачи"
+msgstr "Сложные задачи"
+
+#: packages/product/src/course-context.tsx
+msgid "Смена действует только внутри этого курса и требует подтверждения в приложении."
+msgstr "Смена действует только внутри этого курса и требует подтверждения в приложении."
+
+#: packages/product/src/conscious-disclosure.tsx
+msgid "Сначала попробуйте сами — так задача принесёт больше пользы."
+msgstr "Сначала попробуйте сами — так задача принесёт больше пользы."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Снять выбор"
+msgstr "Снять выбор"
+
+#: packages/product/src/problem-matching.tsx
+msgid "Создать новую задачу"
+msgstr "Создать новую задачу"
+
+#: packages/product/src/staff-outreach.tsx
+#: packages/product/src/support-dialogue.tsx
+msgid "Сообщение"
+msgstr "Сообщение"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "Сообщений пока нет."
+msgstr "Сообщений пока нет."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Сопоставление задач"
+msgstr "Сопоставление задач"
+
+#. placeholder {0}: item.displayNumber
+#: packages/product/src/problem-matching.tsx
+msgid "Сопоставление задачи {0}"
+msgstr "Сопоставление задачи {0}"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/metadata-grid.tsx
+msgid "Сохранить"
+msgstr "Сохранить"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Сохранить результаты"
+msgstr "Сохранить результаты"
+
+#: packages/product/src/metadata-grid.tsx
+#: packages/product/src/oral-result-form.tsx
+#: packages/product/src/problem-matching.tsx
+msgid "Сохраняем…"
+msgstr "Сохраняем…"
+
+#: packages/product/src/review-queue.tsx
+msgid "Список"
+msgstr "Список"
+
+#: packages/product/src/lesson-video.ts
+msgid "Ссылка VK Видео некорректна"
+msgstr "Ссылка VK Видео некорректна"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Ссылка должна быть безопасным HTTPS URL"
+msgstr "Ссылка должна быть безопасным HTTPS URL"
+
+#. placeholder {0}: index + 1
+#: packages/product/src/attachment.tsx
+#: packages/product/src/chat-composer.tsx
+msgid "Страница {0}"
+msgstr "Страница {0}"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Стрелка"
+msgstr "Стрелка"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Строка"
+msgstr "Строка"
+
+#: packages/product/src/reaction.ts
+msgid "Суперское решение."
+msgstr "Суперское решение."
+
+#: packages/product/src/problem-matching.tsx
+msgid "Существующая:"
+msgstr "Существующая:"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Схема аудиторий изменилась. Проверьте новый предпросмотр."
+msgstr "Схема аудиторий изменилась. Проверьте новый предпросмотр."
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Схема уже изменилась"
+msgstr "Схема уже изменилась"
+
+#: packages/product/src/metadata-grid-table.tsx
+msgid "Таблица метаданных задач"
+msgstr "Таблица метаданных задач"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Таблицы пока не поддерживаются"
+msgstr "Таблицы пока не поддерживаются"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Такая аудитория уже есть"
+msgstr "Такая аудитория уже есть"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Текст"
+msgstr "Текст"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Текст пометки"
+msgstr "Текст пометки"
+
+#. placeholder {0}: problemRevision.configVersion
+#. placeholder {1}: problemRevision.conditionRevisionId
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Текущая опубликованная версия: v{0} · {1}"
+msgstr "Текущая опубликованная версия: v{0} · {1}"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Текущий правильный ответ:"
+msgstr "Текущий правильный ответ:"
+
+#: packages/product/src/task-type.tsx
+msgid "Тестовая задача"
+msgstr "Тестовая задача"
+
+#: packages/product/src/reaction.ts
+msgid "Технические проблемы."
+msgstr "Технические проблемы."
+
+#: packages/product/src/news-moderation.tsx
+msgid "Только онлайн"
+msgstr "Только онлайн"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Только очные"
+msgstr "Только очные"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Только родитель"
+msgstr "Только родитель"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Только школьник"
+msgstr "Только школьник"
+
+#. placeholder {0}: unresolved.length
+#: packages/product/src/classroom-planning.tsx
+msgid "Требуют внимания: {0}"
+msgstr "Требуют внимания: {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "У группы нет аудитории"
+msgstr "У группы нет аудитории"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Уберите"
+msgstr "Уберите"
+
+#. placeholder {0}: index + 1
+#: packages/product/src/question-photos.tsx
+msgid "Убрать фотографию {0}"
+msgstr "Убрать фотографию {0}"
+
+#: packages/product/src/staff-outreach.tsx
+msgid "Уважать тихие часы"
+msgstr "Уважать тихие часы"
+
+#: packages/product/src/push-permission-card.tsx
+msgid "Уведомления"
+msgstr "Уведомления"
+
+#: packages/product/src/push-device-controls.tsx
+msgid "Уведомления на iPhone и iPad"
+msgstr "Уведомления на iPhone и iPad"
+
+#: packages/product/src/classroom-assignment-status.tsx
+msgid "Уведомления об изменениях"
+msgstr "Уведомления об изменениях"
+
+#: packages/product/src/staff-publishing.tsx
+#: packages/product/src/zoomable-figure.tsx
+msgid "Увеличить"
+msgstr "Увеличить"
+
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Увеличить масштаб"
+msgstr "Увеличить масштаб"
+
+#. placeholder {0}: asset.ref
+#: packages/product/src/staff-publishing.tsx
+msgid "Увеличить ресурс {0}"
+msgstr "Увеличить ресурс {0}"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Удалено в Telegram"
+msgstr "Удалено в Telegram"
+
+#: packages/product/src/telegram-rich-post.tsx
+msgid "Удалено в источнике"
+msgstr "Удалено в источнике"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Уже есть более новая проверка"
+msgstr "Уже есть более новая проверка"
+
+#: packages/product/src/lesson-video.ts
+msgid "Укажите корректную HTTPS-ссылку на YouTube или VK Видео"
+msgstr "Укажите корректную HTTPS-ссылку на YouTube или VK Видео"
+
+#: packages/product/src/zoomable-figure.tsx
+msgid "Уменьшить"
+msgstr "Уменьшить"
+
+#: packages/product/src/review-annotation-editor.tsx
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Уменьшить масштаб"
+msgstr "Уменьшить масштаб"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Унаследовано"
+msgstr "Унаследовано"
+
+#: packages/product/src/review-queue.tsx
+#: packages/product/src/staff-publishing.tsx
+msgid "Уровень"
+msgstr "Уровень"
+
+#: packages/product/src/staff-publishing.tsx
+msgid "условие"
+msgstr "условие"
+
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/staff-publishing.tsx
+msgid "Условие"
+msgstr "Условие"
+
+#: packages/product/src/classroom-delivery.tsx
+msgid "успешно"
+msgstr "успешно"
+
+#: packages/product/src/submission-composer.tsx
+#: packages/product/src/task-type.tsx
+msgid "Устная задача"
+msgstr "Устная задача"
+
+#: packages/product/src/oral-admission.tsx
+msgid "Устный приём"
+msgstr "Устный приём"
+
+#: packages/product/src/oral-admission.tsx
+msgid "Устный приём сейчас"
+msgstr "Устный приём сейчас"
+
+#: packages/product/src/feedback-thread.tsx
+#: packages/product/src/review-queue.tsx
+msgid "Ученик"
+msgstr "Ученик"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Фамилия или имя"
+msgstr "Фамилия или имя"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Фамилия, имя или примерное написание"
+msgstr "Фамилия, имя или примерное написание"
+
+#: packages/product/src/rich-markdown.ts
+msgid "Формула не должна быть пустой"
+msgstr "Формула не должна быть пустой"
+
+#: packages/product/src/review-reaction-inbox.tsx
+msgid "Формулировка реакции"
+msgstr "Формулировка реакции"
+
+#. placeholder {0}: attachments.length
+#: packages/product/src/submission-composer.tsx
+msgid "Фотографии <0>({0} из {maxPhotos})</0>"
+msgstr "Фотографии <0>({0} из {maxPhotos})</0>"
+
+#. placeholder {0}: index + 1
+#: packages/product/src/question-photos.tsx
+msgid "Фотография {0}"
+msgstr "Фотография {0}"
+
+#: packages/product/src/metadata-grid.tsx
+msgid "Фрагмент не помещается в таблицу. Данные не были изменены."
+msgstr "Фрагмент не помещается в таблицу. Данные не были изменены."
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Целевая задача"
+msgstr "Целевая задача"
+
+#: packages/product/src/answer-spec.ts
+msgid "Целые числа через запятую — порядок важен"
+msgstr "Целые числа через запятую — порядок важен"
+
+#: packages/product/src/answer-spec.ts
+msgid "Целые числа через запятую — порядок и повторы не важны"
+msgstr "Целые числа через запятую — порядок и повторы не важны"
+
+#. placeholder {0}: partialRecipients.length
+#: packages/product/src/classroom-delivery.tsx
+msgid "Частично доставлено ({0})"
+msgstr "Частично доставлено ({0})"
+
+#. placeholder {0}: batch.deliveryReport.partial
+#: packages/product/src/classroom-delivery.tsx
+msgid "Частично: {0}"
+msgstr "Частично: {0}"
+
+#: packages/product/src/feedback-thread.tsx
+msgid "через Telegram"
+msgstr "через Telegram"
+
+#: packages/product/src/classroom-planning.tsx
+#: packages/product/src/course-admin.tsx
+#: packages/product/src/staff-publishing.tsx
+msgid "Черновик"
+msgstr "Черновик"
+
+#: packages/product/src/support-dialogue.tsx
+msgid "Черновик не сохраняется. Не закрывайте страницу до отправки."
+msgstr "Черновик не сохраняется. Не закрывайте страницу до отправки."
+
+#: packages/product/src/support-dialogue.tsx
+msgid "Черновик сохранён на этом устройстве."
+msgstr "Черновик сохранён на этом устройстве."
+
+#: packages/product/src/answer-spec.ts
+msgid "Числа через запятую — повторы учитываются, порядок нет"
+msgstr "Числа через запятую — повторы учитываются, порядок нет"
+
+#. placeholder {0}: index + 1
+#: packages/product/src/test-answer.tsx
+msgid "Число {0}"
+msgstr "Число {0}"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Число аудиторий по группам"
+msgstr "Число аудиторий по группам"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Что нужно исправить"
+msgstr "Что нужно исправить"
+
+#: packages/product/src/written-material-reassignment.tsx
+msgid "Что переносим"
+msgstr "Что переносим"
+
+#: packages/product/src/review-feedback-form.tsx
+msgid "Что получилось, что стоит поправить…"
+msgstr "Что получилось, что стоит поправить…"
+
+#: packages/product/src/course-admin.tsx
+msgid "Шаблон курса"
+msgstr "Шаблон курса"
+
+#: packages/product/src/oral-result-form.tsx
+msgid "Школьник"
+msgstr "Школьник"
+
+#: packages/product/src/news-moderation.tsx
+msgid "Школьник и родитель"
+msgstr "Школьник и родитель"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Школьники по аудиториям"
+msgstr "Школьники по аудиториям"
+
+#: packages/product/src/test-attempt-recheck.tsx
+msgid "Школьников"
+msgstr "Школьников"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Это допустимо, пока в группе нет очных школьников."
+msgstr "Это допустимо, пока в группе нет очных школьников."
+
+#: packages/product/src/reaction.ts
+msgid "Это старые плюсики поставили…"
+msgstr "Это старые плюсики поставили…"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Янтарный"
+msgstr "Янтарный"

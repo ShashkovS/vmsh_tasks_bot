@@ -1,0 +1,16 @@
+{
+  "name": "@vmsh/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile ../../node_modules/.cache/typecheck/contracts.tsbuildinfo"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixtures/*": "./fixtures/*"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  }
+}

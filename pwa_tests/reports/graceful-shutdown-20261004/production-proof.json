@@ -1,0 +1,60 @@
+{
+  "code_revision": "a44e25c5fcdc081bc8796dfeeb7fdfc3ede0816d",
+  "date": "2026-10-04",
+  "vmsh": {
+    "origin": "https://vmsh.shashkovs.ru",
+    "source_revision": "a44e25c5fcdc081bc8796dfeeb7fdfc3ede0816d",
+    "deploy_revision": "a44e25c5fcdc081bc8796dfeeb7fdfc3ede0816d",
+    "frontend_release": "b5a7a6b347d8-20261004051229",
+    "frontend_unchanged": true,
+    "dependencies_unchanged": true,
+    "migrations_changed": false,
+    "services": {
+      "vmshpwa.service": "active",
+      "gunicorn.vmsh_tasks_bot.service": "active",
+      "vmsh-analytics.timer": "active"
+    },
+    "maintenance_cleared": true,
+    "public_http_checks": 25
+  },
+  "tlf": {
+    "origin": "https://prep.leaders.tech",
+    "source_revision": "a44e25c5fcdc081bc8796dfeeb7fdfc3ede0816d",
+    "frontend_release": "tlfprep-20261004-opt-figures-b5a7a6b347d8",
+    "frontend_unchanged": true,
+    "credentials_unchanged": true,
+    "dependencies_unchanged": true,
+    "migrations_changed": false,
+    "zoom_nats_pid_unchanged": true,
+    "services": {
+      "vmshpwa.service": "active",
+      "vmshzoom.service": "active",
+      "vmsh-analytics.timer": "active",
+      "nats.service": "active"
+    },
+    "maintenance_cleared": true,
+    "public_http_checks": 25,
+    "backup_before": {
+      "backup": "20261004T074915.079772Z",
+      "createdAt": "2026-10-04T07:49:15.079772+00:00",
+      "integrity": "ok",
+      "zoomReceipts": 1093
+    },
+    "backup_after": {
+      "backup": "20261004T075032.669128Z",
+      "createdAt": "2026-10-04T07:50:32.669128+00:00",
+      "integrity": "ok",
+      "zoomReceipts": 1094
+    },
+    "old_code_production_stop_seconds": 75,
+    "new_code_isolated_gunicorn_shutdown_seconds": 1.891,
+    "new_probe_workers": 2,
+    "new_probe_symbolic_children": 2,
+    "linux_preflight_passed": 8,
+    "linux_preflight_exact_code_sha256_verified": true,
+    "service_cgroup_process_count_after_release": 3,
+    "record": "/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261004-shutdown-a44e25c5fcdc"
+  },
+  "measurement_scope": "75s is old production service with leaked children; 1.891s is isolated new-code Gunicorn on the same Linux host with two real symbolic children. Initial release stops old code, so its 75s does not describe the new version.",
+  "data_export": "Production data and backup files remained on their servers. Only aggregate evidence was exported."
+}

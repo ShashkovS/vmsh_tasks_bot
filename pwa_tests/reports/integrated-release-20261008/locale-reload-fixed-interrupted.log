@@ -1,0 +1,106 @@
+$ cd .. && UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.e2e_runner --mode i18n --browser all --report /Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/integrate-20261008/locale-reload-fixed.json
+Toolchain: v26.9.0, pnpm@11.15.1, installed lockfile matches
+E2E build: cache hit (source, environment and all artifact bytes match)
+[WebServer] /Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning: 
+[WebServer] 
+[WebServer] gcd is deprecated in Rational, use nsimplify instead
+[WebServer] 
+[WebServer] See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+[WebServer] for details.
+[WebServer] 
+[WebServer] This has been deprecated since SymPy version 1.11. It
+[WebServer] will be removed in a future version of SymPy.
+[WebServer] 
+[WebServer]   dummy_two = sympy.core.Rational(2, 1, 1)
+[WebServer] 2026-08-10 18:26:27 MathBot : WARNING  MainApp Start up!
+
+Running 36 tests using 1 worker
+
+(node:78533) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › e2e/i18n.spec.ts:8:1 › Landing follows the device language and keeps Russian as the default (714ms)
+  ✓   2 [chromium] › e2e/i18n.spec.ts:32:1 › Landing recovers from missing catalogs with a bilingual reload screen (365ms)
+  ✓   3 [chromium] › e2e/i18n.spec.ts:84:1 › Student switches the account to English in the profile (1.5s)
+  ✓   4 [chromium] › e2e/i18n.spec.ts:110:1 › Student sees English support, news, progress and notification chrome (1.3s)
+  ✓   5 [chromium] › e2e/i18n.spec.ts:135:1 › Staff switches the language from the header menu (895ms)
+  ✓   6 [chromium] › e2e/i18n.spec.ts:148:1 › Staff sees English review, result and statistics controls (6.3s)
+  ✓   7 [chromium] › e2e/i18n.spec.ts:169:1 › Staff sees English course, classroom, oral, and publishing administration (1.9s)
+  ✓   8 [chromium] › e2e/i18n.spec.ts:202:1 › Family sees English child progress and notification settings (1.1s)
+  ✓   9 [chromium] › e2e/i18n.spec.ts:228:1 › English device language translates the sign-in page (287ms)
+  ✓  10 [chromium] › e2e/i18n.spec.ts:236:1 › Russian stays the default without a device choice (588ms)
+  ✓  11 [chromium] › e2e/i18n.spec.ts:243:1 › Staff sees English lesson, import, synonym, and whiteboard tools (2.5s)
+  ✓  12 [chromium] › e2e/i18n.spec.ts:289:1 › Staff sees English account, access, audit, analytics, binding, and support controls (1.8s)
+(node:78738) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  13 [webkit] › e2e/i18n.spec.ts:8:1 › Landing follows the device language and keeps Russian as the default (2.9s)
+  ✓  14 [webkit] › e2e/i18n.spec.ts:32:1 › Landing recovers from missing catalogs with a bilingual reload screen (479ms)
+  ✓  15 [webkit] › e2e/i18n.spec.ts:84:1 › Student switches the account to English in the profile (7.0s)
+[WebServer] 2026-08-10 18:27:12 helpers.pwa.request_trace: INFO     pwa_slow_request {"request_id":"01a0291e6ff046b7a444f3f4acbab612","route":"/{audience}/api/v1/auth/login","method":"POST","status":200,"total_ms":353.36,"stages":{"db.admission_queue.read":{"count":6,"ms":0.04},"db.admission_queue":{"count":8,"ms":0.11},"db.thread_queue":{"count":8,"ms":1.19},"db.read":{"count":6,"ms":8.65},"db.admission_queue.write":{"count":2,"ms":0.03},"db.write_lock":{"count":2,"ms":0.1},"db.write":{"count":2,"ms":4.67},"db.commit":{"count":2,"ms":1.31}}}
+[WebServer] 2026-08-10 18:27:19 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=196.45
+[WebServer] 2026-08-10 18:27:21 helpers.pwa.request_trace: INFO     pwa_slow_request {"request_id":"ca1de7e182f947dbb17091b86947b6b8","route":"/student/api/v1/offline-lessons","method":"GET","status":200,"total_ms":254.72,"stages":{"db.admission_queue.read":{"count":3,"ms":0.02},"db.admission_queue":{"count":3,"ms":0.05},"db.thread_queue":{"count":3,"ms":24.59},"db.read":{"count":3,"ms":36.34},"auth":{"count":1,"ms":176.44}}}
+[WebServer] 2026-08-10 18:27:31 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=138.98
+[WebServer] 2026-08-10 18:27:36 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=103.09
+  ✓  16 [webkit] › e2e/i18n.spec.ts:110:1 › Student sees English support, news, progress and notification chrome (37.0s)
+[WebServer] 2026-08-10 18:27:46 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=174.30
+[WebServer] 2026-08-10 18:27:58 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=344.41
+[WebServer] 2026-08-10 18:27:59 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"write","request_id":null,"route":null,"callback":"LessonBlockService.activate_due_blocks.<locals>.activate","event":"released","duration_ms":209.01,"queue_depth":0,"outcome":"completed"}
+[WebServer] 2026-08-10 18:28:03 helpers.pwa.request_trace: INFO     pwa_slow_request {"request_id":"e09077ed654a4c2db67259d773a93809","route":"/{audience}/api/v1/auth/login","method":"POST","status":200,"total_ms":894.31,"stages":{"db.admission_queue.read":{"count":6,"ms":0.25},"db.admission_queue":{"count":8,"ms":0.87},"db.thread_queue":{"count":8,"ms":1.19},"db.read":{"count":6,"ms":22.4},"db.admission_queue.write":{"count":2,"ms":0.04},"db.write_lock":{"count":2,"ms":0.23},"db.write":{"count":2,"ms":81.61},"db.commit":{"count":2,"ms":9.25}}}
+[WebServer] 2026-08-10 18:28:04 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=240.79
+[WebServer] 2026-08-10 18:28:06 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=343.79
+[WebServer] 2026-08-10 18:28:09 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=520.47
+[WebServer] 2026-08-10 18:28:14 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=163.11
+[WebServer] 2026-08-10 18:28:15 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"write","request_id":null,"route":null,"callback":"LessonBlockService.activate_due_blocks.<locals>.activate","event":"released","duration_ms":293.36,"queue_depth":0,"outcome":"completed"}
+  ✘  17 [webkit] › e2e/i18n.spec.ts:135:1 › Staff switches the language from the header menu (35.3s)
+[WebServer] 2026-08-10 18:28:17 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=166.84
+(node:79587) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  18 [webkit] › e2e/i18n.spec.ts:148:1 › Staff sees English review, result and statistics controls (1.2m)
+(node:80486) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 2026-08-10 18:29:36 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"write","request_id":null,"route":null,"callback":"PwaContentRepository.activate_next_due_publication.<locals>.write","event":"released","duration_ms":264.25,"queue_depth":0,"outcome":"completed"}
+[WebServer] 2026-08-10 18:29:48 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=194.41
+[WebServer] 2026-08-10 18:29:48 helpers.pwa.request_trace: INFO     pwa_slow_request {"request_id":"fd8769c8c8464872a7f2a88e728b4937","route":"/{audience}/api/v1/auth/login","method":"POST","status":200,"total_ms":1319.84,"stages":{"db.admission_queue.read":{"count":6,"ms":0.02},"db.admission_queue":{"count":8,"ms":0.23},"db.thread_queue":{"count":8,"ms":0.77},"db.read":{"count":6,"ms":2.03},"db.admission_queue.write":{"count":2,"ms":0.02},"db.write_lock":{"count":2,"ms":4.52},"db.write":{"count":2,"ms":5.18},"db.commit":{"count":2,"ms":0.53}}}
+[WebServer] 2026-08-10 18:29:53 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=192.07
+[WebServer] 2026-08-10 18:29:55 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=229.14
+[WebServer] 2026-08-10 18:30:02 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=692.93
+[WebServer] 2026-08-10 18:30:05 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=204.06
+  ✘  19 [webkit] › e2e/i18n.spec.ts:169:1 › Staff sees English course, classroom, oral, and publishing administration (31.4s)
+(node:81023) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 2026-08-10 18:30:08 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=130.27
+[WebServer] 2026-08-10 18:30:10 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=102.57
+[WebServer] 2026-08-10 18:30:17 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"write","request_id":null,"route":null,"callback":"PwaContentRepository.activate_next_due_publication.<locals>.write","event":"released","duration_ms":206.99,"queue_depth":0,"outcome":"completed"}
+[WebServer] 2026-08-10 18:30:37 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=193.69
+[WebServer] 2026-08-10 18:30:44 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=115.33
+[WebServer] 2026-08-10 18:30:50 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=324.24
+[WebServer] 2026-08-10 18:30:53 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"read","request_id":"008f4d1607be48e58da47882a4cc4cab","route":"/{audience}/api/v1/auth/login","callback":"get_branding","event":"released","duration_ms":380.08,"queue_depth":0,"outcome":"completed"}
+[WebServer] 2026-08-10 18:30:54 helpers.pwa.request_trace: INFO     pwa_slow_request {"request_id":"008f4d1607be48e58da47882a4cc4cab","route":"/{audience}/api/v1/auth/login","method":"POST","status":200,"total_ms":1542.01,"stages":{"db.admission_queue.read":{"count":8,"ms":0.03},"db.admission_queue":{"count":10,"ms":0.37},"db.thread_queue":{"count":10,"ms":35.41},"db.read":{"count":8,"ms":297.8},"db.admission_queue.write":{"count":2,"ms":0.02},"db.write_lock":{"count":2,"ms":5.52},"db.write":{"count":2,"ms":4.62},"db.commit":{"count":2,"ms":0.44}}}
+[WebServer] 2026-08-10 18:30:59 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"write","request_id":null,"route":null,"callback":"PwaContentRepository.activate_next_due_publication.<locals>.write","event":"released","duration_ms":421.57,"queue_depth":0,"outcome":"completed"}
+[WebServer] 2026-08-10 18:31:00 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=222.97
+[WebServer] 2026-08-10 18:31:05 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=381.24
+[WebServer] 2026-08-10 18:31:05 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"write","request_id":null,"route":null,"callback":"PwaContentRepository.activate_next_due_publication.<locals>.write","event":"released","duration_ms":320.98,"queue_depth":0,"outcome":"completed"}
+[WebServer] 2026-08-10 18:31:06 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=115.57
+[WebServer] 2026-08-10 18:31:06 helpers.pwa.db_observability: INFO     pwa_db_operation {"pid":78463,"role":"write","request_id":null,"route":null,"callback":"LessonBlockService.activate_due_blocks.<locals>.activate","event":"released","duration_ms":430.28,"queue_depth":0,"outcome":"completed"}
+  ✘  20 [webkit] › e2e/i18n.spec.ts:202:1 › Family sees English child progress and notification settings (57.7s)
+(node:81577) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 2026-08-10 18:31:14 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=148.68
+[WebServer] 2026-08-10 18:31:26 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=116.84
+[WebServer] 2026-08-10 18:31:34 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=146.77
+[WebServer] 2026-08-10 18:31:50 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=173.31
+[WebServer] 2026-08-10 18:31:54 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=121.08
+[WebServer] 2026-08-10 18:31:57 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=287.46
+[WebServer] 2026-08-10 18:31:59 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=157.73
+[WebServer] 2026-08-10 18:32:10 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=107.85
+[WebServer] 2026-08-10 18:32:13 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=116.11
+[WebServer] 2026-08-10 18:32:21 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=149.23
+  ✘  21 [webkit] › e2e/i18n.spec.ts:228:1 › English device language translates the sign-in page (1.2m)
+(node:82290) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 2026-08-10 18:32:40 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=208.94
+[WebServer] 2026-08-10 18:32:53 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=163.69
+[WebServer] 2026-08-10 18:32:54 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=128.39
+[WebServer] 2026-08-10 18:33:03 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=121.32
+[WebServer] 2026-08-10 18:33:05 helpers.pwa.request_trace: INFO     pwa_event_loop_lag lag_ms=128.71
+undefined
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command was killed with SIGTERM (Termination): playwright test e2e/i18n.spec.ts --retries 0

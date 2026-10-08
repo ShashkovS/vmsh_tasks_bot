@@ -1,0 +1,15 @@
+{
+  "base_revision": "c502cd4fa3b721e7de78b904f42bc6dca070f4b2",
+  "rollback_revision": "cd18511e2670f3d33f667954d4ccd19473012a56",
+  "rollback_branch": "codex/content-upload-generation-rollback-20261004",
+  "retained_files": [
+    "docs/db_structure.sql",
+    "migrations/0113.content_upload_compiler_generation.py",
+    "pwa_tests/fixtures/schema_inventory.v1.json",
+    "pwa_tests/fixtures/schema_snapshot.sql"
+  ],
+  "schema_head": "0113.content_upload_compiler_generation",
+  "startup_guard": "PASS",
+  "history_deleted": false,
+  "archive_symlinks": "not extracted or dereferenced"
+}

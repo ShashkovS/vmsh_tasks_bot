@@ -1,0 +1,26 @@
+{
+  "observed_at": "2026-10-08T14:21:58Z",
+  "host": "local development Mac",
+  "load_average": [
+    125.56,
+    115.03,
+    88.06
+  ],
+  "physical_memory_used": "23 GiB of 24 GiB",
+  "physical_memory_unused": "166 MiB",
+  "memory_compressor": "10 GiB",
+  "processes_stuck": 29,
+  "swap_used_at_1428_utc_mib": 12929.62,
+  "default_gate": "interrupted with exit 130, not PASS",
+  "focused_conversations": "interrupted with actual exit 130 after navigation/preparation timeouts; stale report belongs to earlier port-busy attempt",
+  "isolated_test_services_stopped": true,
+  "ports_released": [
+    8380,
+    5380
+  ],
+  "product_source_unchanged_since": "68eee3f67cc8e3f23aa0ca2df397aa9d9aa0aece",
+  "published_branch": "codex/integrated-release-20261008",
+  "published_commit": "d6eb7fa99bb702e0f0aa4d67fd4c1dfe45e2f069",
+  "production_changed": false,
+  "pending": "Fresh final release gate or owner decision to release using completed checks"
+}

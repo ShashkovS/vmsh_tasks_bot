@@ -118,6 +118,12 @@ class DB_CONNECTION:
         # self.conn.row_factory = sqlite3.Row
 
     def _run_migrations(self):
+        if self.db_file != ':memory:':
+            # Both adapters adopt the same baseline; see schema-baseline-20261004.md.
+            from db_methods.pwa.migrations import apply_schema_migrations
+
+            apply_schema_migrations(self.db_file)
+            return
         migrations = yoyo.read_migrations('migrations')
         with yoyo.get_backend(f'sqlite:///{self.db_file}') as backend:
             with backend.lock():
