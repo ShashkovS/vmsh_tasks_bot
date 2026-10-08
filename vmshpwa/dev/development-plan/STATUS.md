@@ -1,5 +1,17 @@
 # Статус плана разработки
 
+## 2026-10-08 — Полная переписка старых проверок
+
+Реализована полная сохранённая PWA/Telegram-переписка в общей карточке
+Teacher/Admin, включая поздние ответы и защищённые вложения. Immutable evidence
+и исправление оценки сохранены. [Требования](../../docs/review-history.md#полная-переписка--8-октября-2026).
+30 связанных HTTP / 1053 frontend / 363 Storybook / 6 Chromium E2E PASS.
+Типы, lint, format, i18n, Ruff и четыре app builds PASS; light/dark осмотрены.
+Полный fast gate не зелёный: незатронутые Python failures внешних fixtures,
+отсутствующего prod profile и тестовых часов; после исправления нового fixture
+связанные проверки прошли. [Proof и снимки](../../../pwa_tests/reports/review-conversation-20261008/README.md).
+Production deployment не выполнялся.
+
 ## 2026-10-05 — Спокойнее оформить Staff violin
 
 Реализован согласованный correction распределений Staff: окно KDE 0.75,

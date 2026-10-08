@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => {
     release: vi.fn(),
     correct: vi.fn(),
     historyDetail: vi.fn(),
+    conversation: vi.fn(),
     seriesCondition: vi.fn(),
     seriesHistory: vi.fn(),
     seriesCurrent: vi.fn(),
@@ -89,6 +90,7 @@ function lease(id: string): ReviewLease {
   }
 }
 beforeEach(() => {
+  mocks.client.conversation.mockResolvedValue({ events: [], nextCursor: null, total: 0 })
   mocks.client.seriesCondition.mockResolvedValue({ label: '1н.1 · Задача', document: null })
   mocks.client.seriesHistory.mockResolvedValue({ items: [], nextCursor: null })
   mocks.client.seriesCurrent.mockImplementation((): unknown => mocks.client.historyDetail())

@@ -1724,6 +1724,7 @@ msgstr "You have unsaved changes."
 
 #. placeholder {0}: events.length
 #. placeholder {1}: query.data?.pages[0]?.total
+#: apps/staff/src/review-conversation.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Ещё 50 событий ({0} из {1})"
 msgstr "50 more events ({0} of {1})"
@@ -1826,6 +1827,7 @@ msgid "Загружаем и проверяем LaTeX-файл…"
 msgstr "Uploading and checking the LaTeX file…"
 
 #: apps/staff/src/classroom-assignment-page.tsx
+#: apps/staff/src/review-conversation.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Загружаем историю…"
 msgstr "Loading history…"
@@ -2375,10 +2377,6 @@ msgstr "Fix the file if these {0} rows should also be imported. You can apply th
 msgid "История аудиторий: {0}"
 msgstr "Room history: {0}"
 
-#: apps/staff/src/review-history-page.tsx
-msgid "История вердиктов и комментариев"
-msgstr "Verdict and comment history"
-
 #: apps/staff/src/student-results-page.tsx
 msgid "История занятия"
 msgstr "Class history"
@@ -2397,6 +2395,10 @@ msgstr "Grade history · {0}"
 #: apps/staff/src/student-results-page.tsx
 msgid "История оценки · задача {0} · {1}"
 msgstr "Grade history · problem {0} · {1}"
+
+#: apps/staff/src/review-conversation.tsx
+msgid "История переписки и проверок"
+msgstr "Conversation and review history"
 
 #: apps/staff/src/content-page.tsx
 msgid "История сохранится, но материал перестанет быть доступен для чтения."
@@ -2736,6 +2738,10 @@ msgstr "The material has changed. Data refreshed; check the version and confirm 
 #: apps/staff/src/content-page.tsx
 msgid "Материал уже изменён. Обновляем версии и публикации…"
 msgstr "The material has changed. Refreshing versions and publications…"
+
+#: apps/staff/src/review-history-page.tsx
+msgid "Материалы выбранной проверки"
+msgstr "Materials of the selected review"
 
 #: apps/staff/src/routes/__root.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
@@ -3106,6 +3112,7 @@ msgstr "Could not load groups. "
 msgid "Не удалось загрузить занятия. "
 msgstr "Could not load classes. "
 
+#: apps/staff/src/review-conversation.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Не удалось загрузить историю. "
 msgstr "Could not load history. "
@@ -4534,6 +4541,7 @@ msgstr "Centered after text"
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/problem-review-workflow.tsx
 #: apps/staff/src/problem-synonym-page.tsx
+#: apps/staff/src/review-conversation.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-queue-page.tsx
 #: apps/staff/src/review-reaction-inbox-page.tsx
@@ -6315,6 +6323,7 @@ msgstr "Save not confirmed: waiting for the server response"
 msgid "Сохранённый текст условия · версия неизвестна"
 msgstr "Saved statement text · version unknown"
 
+#: apps/staff/src/review-conversation.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Сохранённых событий нет."
 msgstr "There are no saved events."

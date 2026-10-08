@@ -209,6 +209,86 @@ function ArchiveImage({ attachment }: { attachment: StudentResultEvent['attachme
   )
 }
 
+// docs/review-history.md and student-results.md share one chronological message view.
+export function HistoryEvents({
+  events,
+  onCondition,
+  openReviews = true,
+}: {
+  events: (StudentResultEvent & { problemNumber?: string })[]
+  onCondition?: (revision: string) => void
+  openReviews?: boolean
+}) {
+  return (
+    <ol className="space-y-2 break-words">
+      {events.map((e) => (
+        <ThreadMessage
+          key={e.id}
+          message={{
+            id: e.id,
+            author: {
+              kind: e.authorKind,
+              name: e.author ?? sources[e.source] ?? t`Архив`,
+            },
+            at: date(e.at),
+            body: (
+              <>
+                <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
+                  <span>
+                    {kinds[e.kind]} · {sources[e.source] ?? t`Архив`}
+                    {e.problemNumber && <> · {e.problemNumber}</>}
+                  </span>
+                  {e.internal && (
+                    <span className="font-semibold">
+                      <Trans>Внутренняя пометка</Trans>
+                    </span>
+                  )}
+                  {e.action === 'deleted' && (
+                    <span>
+                      <Trans>Удалена</Trans>
+                    </span>
+                  )}
+                  {e.verdict !== null && <ResultMark value={e.verdict} symbol={e.symbol} />}
+                </div>
+                {e.text && <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{e.text}</p>}
+                {e.checkStatus && (
+                  <p className="text-caption text-muted-foreground">
+                    {checks[e.checkStatus] ?? t`Статус проверки неизвестен`}
+                  </p>
+                )}
+                {e.transfer && (
+                  <p>
+                    {e.transfer.mode === 'clone' ? t`Копия` : t`Перенос`}
+                    <Trans>
+                      : задача {e.transfer.source} → {e.transfer.target}
+                    </Trans>
+                  </p>
+                )}
+                {e.attachments.map((a) => (
+                  <ArchiveImage key={a.id} attachment={a} />
+                ))}
+                {e.revisionId && onCondition && (
+                  <Button variant="ghost" size="sm" onClick={() => onCondition(e.revisionId!)}>
+                    <Trans>Условие на момент отправки</Trans>
+                  </Button>
+                )}
+                {e.reviewId && openReviews && (
+                  <a
+                    className="ml-2 text-small text-primary underline"
+                    href={`/staff/review/history?review=${encodeURIComponent(e.reviewId)}`}
+                  >
+                    <Trans>Открыть проверку</Trans>
+                  </a>
+                )}
+              </>
+            ),
+          }}
+        />
+      ))}
+    </ol>
+  )
+}
+
 // Full chronological archive (student-results.md), composed with shared feedback and annotations.
 export function ResultHistory({
   client,
@@ -258,73 +338,7 @@ export function ResultHistory({
           <Trans>Сохранённых событий нет.</Trans>
         </p>
       )}
-      <ol className="space-y-2 break-words">
-        {events.map((e) => (
-          <ThreadMessage
-            key={e.id}
-            message={{
-              id: e.id,
-              author: {
-                kind: e.authorKind,
-                name: e.author ?? sources[e.source] ?? t`Архив`,
-              },
-              at: date(e.at),
-              body: (
-                <>
-                  <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
-                    <span>
-                      {kinds[e.kind]} · {sources[e.source] ?? t`Архив`}
-                    </span>
-                    {e.internal && (
-                      <span className="font-semibold">
-                        <Trans>Внутренняя пометка</Trans>
-                      </span>
-                    )}
-                    {e.action === 'deleted' && (
-                      <span>
-                        <Trans>Удалена</Trans>
-                      </span>
-                    )}
-                    {e.verdict !== null && <ResultMark value={e.verdict} symbol={e.symbol} />}
-                  </div>
-                  {e.text && (
-                    <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{e.text}</p>
-                  )}
-                  {e.checkStatus && (
-                    <p className="text-caption text-muted-foreground">
-                      {checks[e.checkStatus] ?? t`Статус проверки неизвестен`}
-                    </p>
-                  )}
-                  {e.transfer && (
-                    <p>
-                      {e.transfer.mode === 'clone' ? t`Копия` : t`Перенос`}
-                      <Trans>
-                        : задача {e.transfer.source} → {e.transfer.target}
-                      </Trans>
-                    </p>
-                  )}
-                  {e.attachments.map((a) => (
-                    <ArchiveImage key={a.id} attachment={a} />
-                  ))}
-                  {e.revisionId && (
-                    <Button variant="ghost" size="sm" onClick={() => setRevision(e.revisionId)}>
-                      <Trans>Условие на момент отправки</Trans>
-                    </Button>
-                  )}
-                  {e.reviewId && (
-                    <a
-                      className="ml-2 text-small text-primary underline"
-                      href={`/staff/review/history?review=${encodeURIComponent(e.reviewId)}`}
-                    >
-                      <Trans>Открыть проверку</Trans>
-                    </a>
-                  )}
-                </>
-              ),
-            }}
-          />
-        ))}
-      </ol>
+      <HistoryEvents events={events} onCondition={setRevision} />
       {query.hasNextPage && (
         <Button
           variant="outline"

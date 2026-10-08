@@ -20,6 +20,24 @@ const runtime = runtimeConfigSchema.parse({
   features: { telegram: false, google: false, nats: false, prototype: false },
 })
 
+it('loads the review-authorized conversation with an encoded stable cursor', async () => {
+  const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json({
+      schemaVersion: 1,
+      requestId: 'conversation',
+      events: [],
+      nextCursor: null,
+      total: 0,
+    }),
+  )
+  const client = createReviewQueueClient(runtime, { fetchImplementation })
+  expect((await client.conversation('r-1', 'discussion:50')).events).toEqual([])
+  expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+    '/staff/api/v1/review/history/r-1/conversation?cursor=discussion%3A50',
+  )
+  expect(fetchImplementation.mock.calls[0]?.[1]?.credentials).toBe('include')
+})
+
 it('uses validated serial-history and condition contracts without implicit history loading', async () => {
   const fetchImplementation = vi
     .fn<typeof fetch>()

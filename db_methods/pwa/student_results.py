@@ -172,7 +172,7 @@ def event_index(c, student_id, problem_id):
         WHERE o.kind='mark' AND o.undone_at IS NOT NULL
           AND json_extract(o.after_json,'$.studentId')=(SELECT coalesce(public_id,'u-'||id) FROM users WHERE id=s.sid)
           AND json_extract(o.after_json,'$.problemId')=(SELECT public_id FROM problem_catalog WHERE id=s.pid)
-      ) SELECT DISTINCT kind,id,ts FROM events ORDER BY julianday(ts),ts,kind,id""",
+      ) SELECT DISTINCT kind,id,ts,julianday(ts) sort_ts FROM events ORDER BY julianday(ts),ts,kind,id""",
         {"student": student_id, "problem": problem_id},
     )
 

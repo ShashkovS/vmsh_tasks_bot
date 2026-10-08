@@ -14,6 +14,8 @@ import {
   ApiResponseError,
   reviewHistoryResponseSchema,
   reviewHistoryDetailResponseSchema,
+  reviewConversationResponseSchema,
+  type ReviewConversationResponse,
   type ReviewHistoryResponse,
   type ReviewHistoryDetailResponse,
   apiErrorSchema,
@@ -63,6 +65,11 @@ export interface ReviewQueueClientOptions {
 }
 
 export interface ReviewQueueClient {
+  conversation(
+    reviewId: string,
+    cursor?: string,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewConversationResponse>
   seriesHistory(problemId: string, cursor?: string): Promise<ReviewSeriesHistory>
   seriesCondition(problemId: string, entryId?: string): Promise<ReviewSeriesCondition>
   seriesCurrent(problemId: string, reviewId: string): Promise<ReviewHistoryDetailResponse>
@@ -216,6 +223,20 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
       undefined,
       options,
       reviewHistoryDetailResponseSchema,
+    )
+  }
+  async conversation(
+    reviewId: string,
+    cursor?: string,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewConversationResponse> {
+    const query = cursor ? `?${new URLSearchParams({ cursor })}` : ''
+    return this.#jsonRequest(
+      `/review/history/${encodeURIComponent(publicIdSchema.parse(reviewId))}/conversation${query}`,
+      'GET',
+      undefined,
+      options,
+      reviewConversationResponseSchema,
     )
   }
   readonly runtime: RuntimeConfig
