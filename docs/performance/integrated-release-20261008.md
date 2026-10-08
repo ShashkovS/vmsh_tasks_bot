@@ -24,8 +24,10 @@ Schema fixtures и ожидаемые heads обновляются из реал
 
 ## Проверка и выпуск
 
-Статус: объединение завершено; types/lint/i18n, 2880 Python / 7 SKIP,
-1066 frontend и 364 Storybook PASS. Полная E2E-матрица в работе. Production
+Статус: объединение завершено; последний общий gate на `68eee3f6`: types/lint/i18n,
+2882 Python / 7 SKIP, 1068 frontend и 364 Storybook PASS. Основная E2E-фаза:
+385 PASS / 20 SKIP / 6 FAIL. Исправляются test harness и selectors; production
+не менялся. Figure/statistics/visual фазы ещё не запускались в этом повторе. Production
 preflight подтвердил head 0113 на обоих серверах: на ВМШ 6486 старых media
 URL, на TLF — 0; настроенный TLF toolchain соответствует закреплённому.
 [Guarded TLF script](../../pwa_tests/reports/integrated-release-20261008/deploy-tlf.sh)
@@ -68,3 +70,26 @@ thresholds и golden snapshots не менялись.
 Focused reconnect: Chromium/WebKit/Firefox — 3 PASS. Дополнительно waiters
 следуют новой волне перед обработкой следующей invalidation. Полный повтор
 release gate на окончательных исходниках pending.
+
+## Синхронизация E2E после объединения
+
+[Полная квитанция FAIL](../../pwa_tests/reports/integrated-release-20261008/matrix-failures/release-gate.json)
+фиксирует неизменный source digest. В Chromium новый полный history повторяет
+комментарий preview: [review-workspace](../../vmshpwa/e2e/review-workspace.spec.ts)
+проверяет его в конкретном history region. Service worker test ранее принимал
+любой installed worker, включая baseline: [runtime-isolation](../../vmshpwa/e2e/runtime-isolation.spec.ts)
+теперь ждёт exact requested generation до активации из другой вкладки.
+Первое предположение о baseline waiting worker не объяснило Chromium FAIL:
+raw postMessage из другой вкладки оставлял worker installed. Сценарий использует
+настоящую кнопку «Обновить сейчас» во второй вкладке того же кабинета и ждёт
+её настоящую navigation; затем проверяет exact generation первой вкладки,
+её stale banner и navigation после собственного update click. Так проверяется
+полный пользовательский flow без test-side reload или обхода активации.
+WebKit traces показывают зависание холодной navigation на load и гонку
+profile reload после записи locale cookie: [auth-personas](../../vmshpwa/e2e/auth-personas.ts)
+ждёт DOM и прежние semantic login assertions, [support-dialogue](../../vmshpwa/e2e/support-dialogue.spec.ts)
+ждёт реальную main-frame navigation после переключения языка. Product code,
+network guard, exact generation assertions и screenshot baselines сохранены.
+Focused SW activation: 12 PASS, Chromium/WebKit/Firefox; review clone/correction/move: 3 PASS.
+Locale/network/support focused assertions также PASS во всех трёх engines.
+Финальный общий gate pending.

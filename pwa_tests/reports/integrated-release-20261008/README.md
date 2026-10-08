@@ -7,8 +7,11 @@
 service-specific credentials/runtime files retained. [TLF deploy script](deploy-tlf.sh)
 проверен синтаксически; [перечень controls](deploy-script-review.json).
 
-Общий release gate в работе. Пока PASS: format/types/lint/i18n, 2880 Python / 7 SKIP,
-1066 frontend, 364 Storybook. E2E Chromium/WebKit/Firefox ещё не завершён.
+Общий release gate в работе. Последний полный запуск: format/types/lint/i18n,
+2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS; основная E2E-фаза
+385 PASS / 20 SKIP / 6 FAIL. [Квитанция и contexts](matrix-failures/release-gate.json).
+Синхронизация тестов исправлена; [реальная SW активация](sw-real-button.json):
+12 PASS в трёх браузерах. Product code и golden snapshots сохранены.
 Текущие public smoke: [ВМШ](vmsh-http-before.log), [TLF](tlf-http-before.log).
 
 Production deployment ещё не выполнялся. Direct upload для Beget остаётся disabled.

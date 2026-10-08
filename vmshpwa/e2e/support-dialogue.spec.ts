@@ -217,10 +217,15 @@ test('new replies jump into an older worksheet and read state converges across d
   const localeHeaders = { Origin: new URL(page.url()).origin }
   const answerUrl = page.url()
   try {
-    await page.goto('/student/profile')
-    await page.getByRole('radio', { name: 'English' }).click()
+    await page.goto('/student/profile', { waitUntil: 'domcontentloaded' })
+    const profileUrl = page.url()
+    const localeReload = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame === page.mainFrame() && frame.url() === profileUrl,
+    })
+    await Promise.all([localeReload, page.getByRole('radio', { name: 'English' }).click()])
+    await page.waitForLoadState('domcontentloaded')
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-    await page.goto(answerUrl)
+    await page.goto(answerUrl, { waitUntil: 'domcontentloaded' })
     const englishQuestion = page
       .getByRole('region', { name: 'Problem discussion', exact: true })
       .filter({ hasText: text })

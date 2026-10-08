@@ -88,7 +88,7 @@ export async function loginThroughUi(
   intendedRoute = `/${persona.audience}/`,
 ): Promise<void> {
   const expectedDestination = new URL(intendedRoute, 'http://127.0.0.1:5380')
-  await page.goto(intendedRoute)
+  await page.goto(intendedRoute, { waitUntil: 'domcontentloaded' })
   await expect(page).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
   await submitLoginForm(page, persona)
 

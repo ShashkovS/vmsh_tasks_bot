@@ -212,41 +212,50 @@ async function ensureControlled(page: Page, audience: PwaAudience): Promise<void
     .toBe(expectedScript)
 }
 
-async function activeWorkerGeneration(page: Page): Promise<string> {
-  return page.evaluate(
-    () =>
-      new Promise<string>((resolve, reject) => {
-        const controller = navigator.serviceWorker.controller
-        if (!controller) {
-          reject(new Error('The page has no active Service Worker controller'))
+async function workerGeneration(page: Page, waitingScope: string | null = null): Promise<string> {
+  return page.evaluate(async (waitingScope) => {
+    const registration = waitingScope
+      ? (await navigator.serviceWorker.getRegistrations()).find(
+          (item) => item.scope === waitingScope,
+        )
+      : null
+    const worker = waitingScope ? registration?.waiting : navigator.serviceWorker.controller
+    if (!worker && waitingScope) return 'no-waiting-worker'
+    return await new Promise<string>((resolve, reject) => {
+      if (!worker) {
+        reject(new Error('The page has no active Service Worker controller'))
+        return
+      }
+      const nonce = crypto.randomUUID()
+      const timeout = window.setTimeout(() => {
+        navigator.serviceWorker.removeEventListener('message', onMessage)
+        reject(new Error('Service Worker generation probe timed out'))
+      }, 2_000)
+      function onMessage(event: MessageEvent<unknown>) {
+        if (
+          typeof event.data !== 'object' ||
+          event.data === null ||
+          !('type' in event.data) ||
+          event.data.type !== 'VMSH_E2E_GENERATION' ||
+          !('nonce' in event.data) ||
+          event.data.nonce !== nonce ||
+          !('generation' in event.data) ||
+          typeof event.data.generation !== 'string'
+        ) {
           return
         }
-        const nonce = crypto.randomUUID()
-        const timeout = window.setTimeout(() => {
-          navigator.serviceWorker.removeEventListener('message', onMessage)
-          reject(new Error('Service Worker generation probe timed out'))
-        }, 2_000)
-        function onMessage(event: MessageEvent<unknown>) {
-          if (
-            typeof event.data !== 'object' ||
-            event.data === null ||
-            !('type' in event.data) ||
-            event.data.type !== 'VMSH_E2E_GENERATION' ||
-            !('nonce' in event.data) ||
-            event.data.nonce !== nonce ||
-            !('generation' in event.data) ||
-            typeof event.data.generation !== 'string'
-          ) {
-            return
-          }
-          window.clearTimeout(timeout)
-          navigator.serviceWorker.removeEventListener('message', onMessage)
-          resolve(event.data.generation)
-        }
-        navigator.serviceWorker.addEventListener('message', onMessage)
-        controller.postMessage({ type: 'VMSH_E2E_PROBE_GENERATION', nonce })
-      }),
-  )
+        window.clearTimeout(timeout)
+        navigator.serviceWorker.removeEventListener('message', onMessage)
+        resolve(event.data.generation)
+      }
+      navigator.serviceWorker.addEventListener('message', onMessage)
+      worker.postMessage({ type: 'VMSH_E2E_PROBE_GENERATION', nonce })
+    })
+  }, waitingScope)
+}
+
+async function activeWorkerGeneration(page: Page): Promise<string> {
+  return workerGeneration(page)
 }
 
 test.beforeEach(async ({ page }) => {
@@ -361,7 +370,7 @@ test('browser HTTP and WebSocket traffic cannot leave the E2E loopback origin', 
   networkGuard.expectBlocked(externalHttpUrl)
   networkGuard.expectBlocked(externalWebSocketUrl)
 
-  await page.goto('/staff/')
+  await page.goto('/staff/', { waitUntil: 'domcontentloaded' })
   const fetchResult = await page.evaluate(async (rawUrl) => {
     try {
       await fetch(rawUrl)
@@ -664,25 +673,27 @@ for (const { audience, activation } of pwaAudiences.flatMap((audience) => [
     await expect(page.getByText('Доступно обновление.')).toBeVisible({
       timeout: 20_000,
     })
+    // runtime-isolation.md: an earlier baseline worker can also be installed.
+    // Activate only the byte-different generation requested by this test.
     await expect
-      .poll(() =>
-        page.evaluate(async (expectedScope) => {
-          const registration = (await navigator.serviceWorker.getRegistrations()).find(
-            (item) => item.scope === expectedScope,
-          )
-          return registration?.waiting?.state ?? null
-        }, `${gatewayOrigin}/${audience}/`),
-      )
-      .toBe('installed')
+      .poll(() => workerGeneration(page, `${gatewayOrigin}/${audience}/`), {
+        timeout: 20_000,
+      })
+      .toBe(generation)
     // Reproduce a stale banner: a different tab claims the already downloaded update.
     if (activation === 'another tab') {
       const other = await context.newPage()
-      await other.goto('/staff/login')
-      await other.evaluate(async (audience) => {
-        const registration = await navigator.serviceWorker.getRegistration(`/${audience}/`)
-        if (!registration?.waiting) throw new Error('Expected waiting worker')
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-      }, audience)
+      await other.goto(`/${audience}/login`, { waitUntil: 'domcontentloaded' })
+      expect(await workerGeneration(other, `${gatewayOrigin}/${audience}/`)).toBe(generation)
+      const otherUrl = other.url()
+      const otherReload = other.waitForEvent('framenavigated', {
+        predicate: (frame) => frame === other.mainFrame() && frame.url() === otherUrl,
+      })
+      await Promise.all([
+        otherReload,
+        other.getByRole('button', { name: 'Обновить сейчас', exact: true }).click(),
+      ])
+      await other.waitForLoadState('domcontentloaded')
       // testing-strategy.md: a controller can become redundant between the
       // probe and its response. Poll readiness through that handover; the
       // final assertion still requires the replacement worker's exact nonce.

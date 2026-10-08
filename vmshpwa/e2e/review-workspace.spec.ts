@@ -159,6 +159,10 @@ test.describe('Series feed', () => {
     await page.getByRole('button', { name: 'Клонировать посылку', exact: true }).click()
     expect((await clone).status()).toBe(200)
     const firstComment = `Сравниваем решения ${testInfo.project.name}`
+    const history = page.getByRole('region', {
+      name: 'История переписки и проверок',
+      exact: true,
+    })
     await comment.fill(firstComment)
     await page.getByRole('button', { name: '1 Зачтено', exact: true }).click()
     await comment.press('Control+Enter')
@@ -171,7 +175,7 @@ test.describe('Series feed', () => {
     await comment.fill('Уточнённый комментарий')
     await comment.press('Control+Enter')
     await expect(comment).toHaveValue('Черновик второй работы')
-    await expect(page.getByText('Уточнённый комментарий', { exact: true })).toBeVisible()
+    await expect(history.getByText('Уточнённый комментарий', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Перенести в другую задачу', exact: true }).click()
     await page.getByLabel('Целевая задача').selectOption(target)
     const move = page.waitForResponse(

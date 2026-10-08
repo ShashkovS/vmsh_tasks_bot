@@ -2,8 +2,9 @@
 
 ## 2026-10-08 — Объединённый выпуск
 
-Четыре доработки объединены; migrations 0114–0116 согласованы. Preflight обоих production PASS. Первый release gate выявил overlapping
-offline resync; исправление проверяется перед повтором общего gate. [План и квитанции](integrated-release-20261008.md).
+Четыре доработки объединены; migrations 0114–0116 согласованы. Preflight обоих production PASS. Offline resync исправлен; focused matrix 3 PASS. Последний общий gate: 2882 Python,
+1068 frontend, 364 Storybook PASS; основная E2E-фаза 385 PASS / 20 SKIP / 6 FAIL.
+Исправляются selectors и синхронизация тестов, затем повторяется gate. [План и квитанции](integrated-release-20261008.md).
 
 - 2026-10-08, исправления: реализован [инкремент](2026-10-08-fixes.md).
   Индекс 0114 сократил пустую push selection 164–190 → 32–36 мс на одной
