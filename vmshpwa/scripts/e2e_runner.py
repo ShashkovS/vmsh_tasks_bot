@@ -128,7 +128,12 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     elif mode == "review":
         playwright.append("e2e/review-workspace.spec.ts")
     elif mode == "support":
-        playwright.append("e2e/support-dialogue.spec.ts")
+        playwright.extend(
+            [
+                "e2e/support-dialogue.spec.ts",
+                "e2e/browser-image-upload.spec.ts",
+            ]
+        )
     elif mode == "portal-release":
         # production-rollout-checklist.md: destructive fixture families receive
         # fresh SQLite phases, just like the existing full release suite.

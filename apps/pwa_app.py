@@ -10,6 +10,8 @@ from pathlib import Path
 
 from aiohttp import WSCloseCode, WSMsgType, web
 
+from apps.pwa_api.image_upload_routes import routes as image_upload_routes, cleanup_lifecycle as image_upload_cleanup_lifecycle
+
 from apps.pwa_api.auth_routes import auth_routes
 from apps.pwa_api.admin_course_routes import admin_course_routes
 from apps.pwa_api.admin_account_routes import admin_account_routes
@@ -1639,8 +1641,20 @@ async def on_content_scheduler_shutdown(app: web.Application) -> None:
         raise
 
 
+async def on_image_upload_cleanup_startup(app: web.Application):
+    lifecycle = image_upload_cleanup_lifecycle(app)
+    await anext(lifecycle)
+    app[PWA_IMAGE_CLEANUP_LIFECYCLE] = lifecycle
+
+
+PWA_IMAGE_CLEANUP_LIFECYCLE = web.AppKey("pwa_image_cleanup_lifecycle", object)
+
+
 async def on_shutdown(app: web.Application):
     shutdown_errors: list[BaseException] = []
+    cleanup = app.get(PWA_IMAGE_CLEANUP_LIFECYCLE)
+    if cleanup is not None:
+        await cleanup.aclose()
     try:
         await on_push_delivery_shutdown(app)
     except BaseException as error:
@@ -1923,6 +1937,7 @@ def configure(
         app.add_routes(audit_routes)
         app.add_routes(student_results_routes)
         app.add_routes(organizer_question_routes)
+        app.add_routes(image_upload_routes)
         app.add_routes(staff_access_routes)
         app.add_routes(staff_dashboard_routes)
         app.add_routes(staff_statistics_routes)
@@ -2193,6 +2208,7 @@ def configure(
         # realtime/NATS second, and only then can the scheduler commit and fan
         # out its first due activation.
         app.on_startup.append(on_content_scheduler_startup)
+        app.on_startup.append(on_image_upload_cleanup_startup)
     app.on_shutdown.append(on_shutdown)
 
 

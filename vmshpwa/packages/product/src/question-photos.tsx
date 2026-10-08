@@ -10,16 +10,37 @@ export function QuestionPhotoPicker({
   onChange,
   disabled = false,
   action,
+  prepareFile,
+  onPreparingChange,
 }: {
   photos: Blob[]
   onChange: (photos: Blob[], removedIndex?: number) => void
   action?: ReactNode
+  prepareFile?: (file: File, signal: AbortSignal) => Promise<Blob>
+  onPreparingChange?: (preparing: boolean) => void
   disabled?: boolean
 }) {
   const gallery = useRef<HTMLInputElement>(null)
   const camera = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
-  const select = (input: HTMLInputElement) => {
+  const [pending, setPending] = useState<File[]>([])
+  const controllers = useRef(new Map<File, AbortController>())
+  const currentPhotos = useRef(photos)
+  const currentOnChange = useRef(onChange)
+  const active = useRef(true)
+  useEffect(() => {
+    currentPhotos.current = photos
+    currentOnChange.current = onChange
+  }, [photos, onChange])
+  useEffect(() => {
+    active.current = true
+    const processing = controllers.current
+    return () => {
+      active.current = false
+      for (const controller of processing.values()) controller.abort()
+    }
+  }, [])
+  const select = async (input: HTMLInputElement) => {
     const files = Array.from(input.files ?? [])
     input.value = ''
     if (
@@ -27,18 +48,78 @@ export function QuestionPhotoPicker({
       files.some(
         (file) =>
           file.size > 25 * 1024 * 1024 ||
-          !['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
+          (!['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(
+            file.type,
+          ) &&
+            !/\.hei[cf]$/i.test(file.name)),
       )
     ) {
-      setError(t`Можно прикрепить до 10 фотографий JPEG, PNG или WebP размером до 25 МиБ каждая.`)
+      setError(
+        t`Можно прикрепить до 10 фотографий JPEG, PNG, WebP или HEIC размером до 25 МиБ каждая.`,
+      )
       return
     }
     setError('')
-    onChange([...photos, ...files])
+    if (!prepareFile) {
+      onChange([...photos, ...files])
+      return
+    }
+    for (const file of files) controllers.current.set(file, new AbortController())
+    setPending(files)
+    onPreparingChange?.(true)
+    try {
+      for (const file of files) {
+        const controller = controllers.current.get(file)!
+        if (controller.signal.aborted) {
+          controllers.current.delete(file)
+          continue
+        }
+        try {
+          const prepared = await prepareFile(file, controller.signal)
+          if (!controller.signal.aborted && active.current) {
+            const next = [...currentPhotos.current, prepared]
+            currentPhotos.current = next
+            currentOnChange.current(next)
+          }
+        } catch (failure) {
+          if (active.current && !(failure instanceof Error && failure.name === 'AbortError'))
+            setError(t`Не удалось подготовить фотографию. Выберите её ещё раз.`)
+        } finally {
+          controllers.current.delete(file)
+          if (active.current) setPending((items) => items.filter((item) => item !== file))
+        }
+      }
+    } finally {
+      if (active.current) {
+        setPending([])
+        onPreparingChange?.(false)
+      }
+    }
   }
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 empty:hidden">
+        {pending.map((file, index) => (
+          <div className="relative" key={`${file.name}-${index}`}>
+            <QuestionPhotoPreview photo={file} />
+            <span
+              role="status"
+              className="text-caption text-muted-foreground"
+            >{t`Готовим фото…`}</span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon-sm"
+              aria-label={t`Отменить подготовку фотографии ${index + 1}`}
+              onClick={() => {
+                controllers.current.get(file)?.abort()
+                setPending((items) => items.filter((item) => item !== file))
+              }}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          </div>
+        ))}
         {photos.map((photo, index) => (
           <div className="relative" key={index}>
             <QuestionPhotoPreview photo={photo} />
@@ -47,7 +128,7 @@ export function QuestionPhotoPicker({
               variant="secondary"
               size="icon-sm"
               className="absolute right-0 top-0"
-              disabled={disabled}
+              disabled={disabled || pending.length > 0}
               aria-label={t`Убрать фотографию ${index + 1}`}
               onClick={() => {
                 setError('')
@@ -67,10 +148,10 @@ export function QuestionPhotoPicker({
         ref={gallery}
         aria-label={t`Выбрать фотографии`}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
         multiple
-        disabled={disabled}
-        onChange={(event) => select(event.currentTarget)}
+        disabled={disabled || pending.length > 0}
+        onChange={(event) => void select(event.currentTarget)}
       />
       <input
         hidden
@@ -79,8 +160,8 @@ export function QuestionPhotoPicker({
         type="file"
         accept="image/*"
         capture="environment"
-        disabled={disabled}
-        onChange={(event) => select(event.currentTarget)}
+        disabled={disabled || pending.length > 0}
+        onChange={(event) => void select(event.currentTarget)}
       />
       <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2">
         <Button

@@ -1,3 +1,5 @@
+import { ImageUploadClient, preparedImageMetadata } from './image-upload-client'
+import type { PreparedImage } from '@vmsh/contracts'
 import { pwaFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -47,7 +49,8 @@ export interface SupportClient {
     options?: SupportRequestOptions,
   ): Promise<SupportAttentionResponse>
   read(threadId: string, entryIds: string[]): Promise<ReadSupportRepliesResponse>
-  uploadPhoto?(photo: Blob): Promise<string>
+  preparePhoto?(photo: File, signal?: AbortSignal): Promise<Blob>
+  uploadPhoto?(photo: Blob, image?: PreparedImage): Promise<string>
   listStudent(
     query?: StudentSupportListQuery,
     options?: SupportRequestOptions,
@@ -88,6 +91,7 @@ export class SupportNetworkError extends Error {
 class BrowserSupportClient implements SupportClient {
   readonly runtime: RuntimeConfig
 
+  readonly #images: ImageUploadClient
   readonly #fetch: typeof globalThis.fetch
   readonly #refreshSession: (() => Promise<unknown>) | undefined
 
@@ -99,26 +103,46 @@ class BrowserSupportClient implements SupportClient {
     this.runtime = parseRuntimeConfigForAudience(parsed.audience, parsed)
     const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
+    this.#images = new ImageUploadClient(this.runtime, 'support', {}, options)
     this.#refreshSession = options.refreshSession
   }
 
-  async uploadPhoto(photo: Blob): Promise<string> {
-    const send = () =>
-      this.#fetch(`${this.runtime.apiBase}/questions/photos`, {
-        method: 'POST',
-        credentials: 'include',
-        redirect: 'error',
-        headers: { 'Content-Type': photo.type, 'X-Vmsh-Support-Context': '1' },
-        body: photo,
-      })
-    let response = await send()
-    if (response.status === 401 && this.#refreshSession) {
-      await response.body?.cancel()
-      await this.#refreshSession()
-      response = await send()
+  preparePhoto(photo: File, signal?: AbortSignal): Promise<Blob> {
+    return this.#images.preparePhoto(photo, signal)
+  }
+
+  async uploadPhoto(photo: Blob, image = preparedImageMetadata(photo)): Promise<string> {
+    const proxy = async (headers: Record<string, string> = {}) => {
+      const send = () =>
+        this.#fetch(`${this.runtime.apiBase}/questions/photos`, {
+          method: 'POST',
+          credentials: 'include',
+          redirect: 'error',
+          headers: {
+            'Content-Type': photo.type || 'application/octet-stream',
+            'X-Vmsh-Support-Context': '1',
+            ...headers,
+          },
+          body: photo,
+        })
+      let response = await send()
+      if (response.status === 401 && this.#refreshSession) {
+        await response.body?.cancel()
+        await this.#refreshSession()
+        response = await send()
+      }
+      if (!response.ok) throw await this.#responseError(response)
+      return supportPhotoUploadResponseSchema.parse(await response.json()).photoId
     }
-    if (!response.ok) throw await this.#responseError(response)
-    return supportPhotoUploadResponseSchema.parse(await response.json()).photoId
+    return image
+      ? this.#images.upload(
+          photo,
+          image,
+          '/questions/photos',
+          (payload) => supportPhotoUploadResponseSchema.parse(payload).photoId,
+          proxy,
+        )
+      : proxy()
   }
 
   async attention(afterThreadId?: string, options: SupportRequestOptions = {}) {

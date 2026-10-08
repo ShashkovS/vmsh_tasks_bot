@@ -926,6 +926,10 @@ msgstr "Выполнено"
 msgid "Готовим рисунки из TikZ"
 msgstr "Готовим рисунки из TikZ"
 
+#: packages/product/src/question-photos.tsx
+msgid "Готовим фото…"
+msgstr "Готовим фото…"
+
 #: packages/product/src/classroom-delivery.tsx
 msgid "Готовим…"
 msgstr "Готовим…"
@@ -1468,8 +1472,8 @@ msgid "Можно повторить сборку материала."
 msgstr "Можно повторить сборку материала."
 
 #: packages/product/src/question-photos.tsx
-msgid "Можно прикрепить до 10 фотографий JPEG, PNG или WebP размером до 25 МиБ каждая."
-msgstr "Можно прикрепить до 10 фотографий JPEG, PNG или WebP размером до 25 МиБ каждая."
+msgid "Можно прикрепить до 10 фотографий JPEG, PNG, WebP или HEIC размером до 25 МиБ каждая."
+msgstr "Можно прикрепить до 10 фотографий JPEG, PNG, WebP или HEIC размером до 25 МиБ каждая."
 
 #: packages/product/src/submission-composer.tsx
 msgid "Можно сдать устно в конференции или отправить письменное решение здесь."
@@ -1657,6 +1661,10 @@ msgstr "Не удалось настроить push"
 #: packages/product/src/worksheet-materials.tsx
 msgid "Не удалось открыть материал. Проверьте соединение и повторите попытку."
 msgstr "Не удалось открыть материал. Проверьте соединение и повторите попытку."
+
+#: packages/product/src/question-photos.tsx
+msgid "Не удалось подготовить фотографию. Выберите её ещё раз."
+msgstr "Не удалось подготовить фотографию. Выберите её ещё раз."
 
 #: packages/product/src/metadata-grid.tsx
 msgid "Не удалось сохранить изменения"
@@ -2020,6 +2028,11 @@ msgstr "Отмена"
 #: packages/product/src/staff-publishing.tsx
 msgid "Отменить"
 msgstr "Отменить"
+
+#. placeholder {0}: index + 1
+#: packages/product/src/question-photos.tsx
+msgid "Отменить подготовку фотографии {0}"
+msgstr "Отменить подготовку фотографии {0}"
 
 #: packages/product/src/metadata-grid.tsx
 msgid "Отменить правки"

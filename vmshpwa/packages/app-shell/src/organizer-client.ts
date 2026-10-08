@@ -1,3 +1,5 @@
+import { ImageUploadClient, preparedImageMetadata } from './image-upload-client'
+import type { PreparedImage } from '@vmsh/contracts'
 import { pwaFetch } from '@vmsh/contracts'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -16,7 +18,13 @@ import { useAuthentication } from './auth-context'
 
 export function createOrganizerClient(runtime: RuntimeConfig, refresh: () => Promise<unknown>) {
   const base = `${runtime.apiBase}/organizer-questions`
-  async function request(path: string, body?: unknown, photo?: Blob) {
+  const images = new ImageUploadClient(runtime, 'organizer', {}, { refreshSession: refresh })
+  async function request(
+    path: string,
+    body?: unknown,
+    photo?: Blob,
+    extraHeaders: Record<string, string> = {},
+  ) {
     const send = () =>
       pwaFetch(`${base}${path}`, {
         credentials: 'include',
@@ -24,7 +32,7 @@ export function createOrganizerClient(runtime: RuntimeConfig, refresh: () => Pro
         redirect: 'error',
         method: body !== undefined || photo ? 'POST' : 'GET',
         headers: photo
-          ? { 'Content-Type': photo.type }
+          ? { 'Content-Type': photo.type || 'application/octet-stream', ...extraHeaders }
           : body !== undefined
             ? { 'Content-Type': 'application/json' }
             : {},
@@ -58,8 +66,23 @@ export function createOrganizerClient(runtime: RuntimeConfig, refresh: () => Pro
           organizerSendSchema.parse(payload),
         ),
       ),
-    upload: async (photo: Blob) =>
-      organizerUploadedSchema.parse(await request('/photos', undefined, photo)),
+    preparePhoto: (photo: File, signal?: AbortSignal) => images.preparePhoto(photo, signal),
+    upload: async (
+      photo: Blob,
+      image: PreparedImage | undefined = preparedImageMetadata(photo),
+    ) => {
+      const proxy = async (headers: Record<string, string> = {}) =>
+        organizerUploadedSchema.parse(await request('/photos', undefined, photo, headers))
+      return image
+        ? images.upload(
+            photo,
+            image,
+            '/organizer-questions/photos',
+            (payload) => organizerUploadedSchema.parse(payload),
+            proxy,
+          )
+        : proxy()
+    },
     read: async (id: string, sequence: number) =>
       request(`/${encodeURIComponent(id)}/read`, { sequence }),
   }

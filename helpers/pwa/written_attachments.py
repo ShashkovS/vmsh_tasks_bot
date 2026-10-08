@@ -1,7 +1,9 @@
 """Phase-5 image conversion and durable attachment orchestration.
 
-The browser always uploads through aiohttp.  This service deliberately keeps
-the raw source only in memory and delegates bounded re-encoding to the shared
+Legacy/fallback uploads use aiohttp; prepared WebP skips re-encoding. Direct
+HEAD-only finalization lives in image_uploads.py (see
+docs/performance/browser-image-uploads.md). This service keeps raw sources
+only in memory and delegates bounded re-encoding to the shared
 Phase-2 converter.  The final object is written before SQLite metadata; every
 controlled database failure compensates that unique object immediately.
 See ``vmshpwa/dev/development-plan/09-phase-5-written-submissions.md``.
@@ -80,6 +82,7 @@ class WrittenAttachmentService:
         idempotency_key: str,
         payload: bytes,
         source_filename: str,
+        prepared_webp_source: bool = False,
     ) -> CreateWrittenAttachmentReceipt:
         if not isinstance(payload, bytes) or not payload:
             raise ValueError("attachment source must not be empty")
@@ -102,8 +105,13 @@ class WrittenAttachmentService:
             # Exact retries stop before conversion and object storage.
             return prepared
 
-        with media_stage("image.convert"):
-            converted = await self._converter.raster_to_webp(payload)
+        if prepared_webp_source:
+            from helpers.pwa.image_uploads import prepared_webp
+
+            converted = prepared_webp(payload)
+        else:
+            with media_stage("image.convert"):
+                converted = await self._converter.raster_to_webp(payload)
         _validate_converted(payload, source_sha256=source_sha256, converted=converted)
         object_key = self._object_key(prepared)
         with media_stage("storage.put"):
@@ -116,10 +124,11 @@ class WrittenAttachmentService:
                 byte_size=len(converted.data),
                 width=converted.width,
                 height=converted.height,
+                conversion_version="pwa-browser-image-v1"
+                if prepared_webp_source
+                else WRITTEN_IMAGE_CONVERSION_VERSION,
             )
-            receipt = await self._repository.complete_attachment_upload(
-                prepared, persisted
-            )
+            receipt = await self._repository.complete_attachment_upload(prepared, persisted)
             if receipt.replayed:
                 # A concurrent identical request committed another unique
                 # object first. Its ledger response is authoritative; this

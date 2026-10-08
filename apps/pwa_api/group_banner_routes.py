@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from apps.pwa_api.image_upload_routes import known_rich_images
+
 import json
 import re
 from collections.abc import Awaitable, Callable
@@ -184,8 +186,9 @@ async def _copy_document_media(
             code="rich_media_unavailable",
             message="Загрузка картинок временно недоступна",
         )
+    known = await known_rich_images(request, validated)
     return await copy_rich_document_media(
-        validated, storage=storage, converter=converter
+        validated, storage=storage, converter=converter, known_images=known
     )
 
 

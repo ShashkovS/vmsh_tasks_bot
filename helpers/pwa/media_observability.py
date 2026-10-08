@@ -10,7 +10,7 @@ from helpers.pwa.request_trace import trace_stage
 
 STAGES = frozenset({
     "upload.read", "image.normalize", "image.webp", "image.convert",
-    "storage.put", "storage.get", "media.sign",
+    "storage.put", "storage.get", "storage.head", "media.sign", "upload.sign", "upload.finalize",
 })
 MEDIA_STAGE_DURATION = Histogram(
     "vmsh_media_stage_duration_seconds",

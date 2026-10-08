@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 import {
+  preparedImageSchema,
+  type PreparedImage,
   browserStorageNamespaceSchema,
   createBrowserStorageNamespace,
   publicIdSchema,
@@ -85,6 +87,7 @@ export const writtenDraftPhotoSchema = z
     width: z.number().int().positive().max(100_000).nullable(),
     height: z.number().int().positive().max(100_000).nullable(),
     processing: writtenDraftPhotoProcessingSchema,
+    image: preparedImageSchema.optional(),
     syncState: writtenDraftPhotoSyncStateSchema,
     serverAttachmentId: publicIdSchema.nullable(),
     createdAt: z.iso.datetime(),
@@ -185,6 +188,7 @@ export interface AddWrittenDraftPhotoInput {
   width: number | null
   height: number | null
   processing: WrittenDraftPhotoProcessing
+  image?: PreparedImage
 }
 
 export interface UpdateWrittenDraftPhotoInput {
@@ -618,6 +622,7 @@ export function createWrittenSubmissionDraftStore(
         width: input.width,
         height: input.height,
         processing: input.processing,
+        ...(input.image ? { image: input.image } : {}),
         syncState: 'local',
         serverAttachmentId: null,
         createdAt: timestamp,

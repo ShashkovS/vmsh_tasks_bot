@@ -1,3 +1,8 @@
+import {
+  describePreparedImage,
+  recordImageTiming,
+  initializeImageCompression,
+} from '@vmsh/app-shell'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { formatNumber } from '@vmsh/i18n'
@@ -320,6 +325,9 @@ export function StudentWrittenSubmission({
     [conditionRevisionId, configVersion, ownerId, problemId],
   )
   const descriptorIdentity = `${ownerId}:${problemId}:${conditionRevisionId}:${configVersion}`
+  useEffect(() => {
+    void initializeImageCompression()
+  }, [])
   const client = useMemo(
     () =>
       createWrittenSubmissionClient(authentication.client.runtime, {
@@ -504,56 +512,60 @@ export function StudentWrittenSubmission({
     return () => window.clearTimeout(timer)
   }, [deliveryPending])
 
-  const deliver = useCallback(async () => {
-    if (!outbox || deliveryActive.current) return
-    deliveryActive.current = true
-    setIsDelivering(true)
-    setSendError(null)
-    let result: Awaited<ReturnType<typeof outbox.deliverNext>>
-    try {
-      result = await outbox.deliverNext(client)
-    } catch (error) {
-      const deadlinePassed = isSubmissionDeadlineFailure(error)
-      if (deadlinePassed) setDeadlineClosedIdentity(descriptorIdentity)
-      if (deadlinePassed) reportHandledError(error, 'written.submit')
-      setSendError(deadlinePassed ? null : deliveryMessage(error))
-      return
-    } finally {
-      // Release the single-flight guard before publishing a retrying queue
-      // item. Its effect may run immediately; keeping the guard until after
-      // setQueueItem would lose that reconnect retry until another event.
-      deliveryActive.current = false
-      setIsDelivering(false)
-    }
-    if (result.state === 'idle') return
-    if (
-      result.item.payload.descriptor.problemId !== descriptor.problemId ||
-      result.item.payload.descriptor.conditionRevisionId !== descriptor.conditionRevisionId ||
-      result.item.payload.descriptor.configVersion !== descriptor.configVersion
-    ) {
-      return
-    }
-    setQueueItem(result.item)
-    if (result.state !== 'synced') {
-      const deadlinePassed = isSubmissionDeadlineFailure(result.error, result.item.lastError)
-      if (deadlinePassed) setDeadlineClosedIdentity(descriptorIdentity)
-      reportHandledError(result.error, 'written.submit', {
-        accountId: ownerId,
-        problemId,
-        outboxId: result.item.id,
-        attempts: result.item.attempts,
-      })
-      setSendError(deadlinePassed ? null : deliveryMessage(result.error))
-      return
-    }
-    await outbox.acknowledge(result.item.id)
-    setQueueItem(null)
-    setText('')
-    setPhotos([])
-    setReplacementTarget(null)
-    await refetchThread()
-    announceSafePwaUpdateMoment()
-  }, [client, descriptor, descriptorIdentity, outbox, refetchThread, ownerId, problemId])
+  const deliver = useCallback(
+    async (started = performance.now()) => {
+      if (!outbox || deliveryActive.current) return
+      deliveryActive.current = true
+      setIsDelivering(true)
+      setSendError(null)
+      let result: Awaited<ReturnType<typeof outbox.deliverNext>>
+      try {
+        result = await outbox.deliverNext(client)
+      } catch (error) {
+        const deadlinePassed = isSubmissionDeadlineFailure(error)
+        if (deadlinePassed) setDeadlineClosedIdentity(descriptorIdentity)
+        if (deadlinePassed) reportHandledError(error, 'written.submit')
+        setSendError(deadlinePassed ? null : deliveryMessage(error))
+        return
+      } finally {
+        // Release the single-flight guard before publishing a retrying queue
+        // item. Its effect may run immediately; keeping the guard until after
+        // setQueueItem would lose that reconnect retry until another event.
+        deliveryActive.current = false
+        setIsDelivering(false)
+      }
+      if (result.state === 'idle') return
+      if (
+        result.item.payload.descriptor.problemId !== descriptor.problemId ||
+        result.item.payload.descriptor.conditionRevisionId !== descriptor.conditionRevisionId ||
+        result.item.payload.descriptor.configVersion !== descriptor.configVersion
+      ) {
+        return
+      }
+      setQueueItem(result.item)
+      if (result.state !== 'synced') {
+        const deadlinePassed = isSubmissionDeadlineFailure(result.error, result.item.lastError)
+        if (deadlinePassed) setDeadlineClosedIdentity(descriptorIdentity)
+        reportHandledError(result.error, 'written.submit', {
+          accountId: ownerId,
+          problemId,
+          outboxId: result.item.id,
+          attempts: result.item.attempts,
+        })
+        setSendError(deadlinePassed ? null : deliveryMessage(result.error))
+        return
+      }
+      recordImageTiming('send-to-solution-receipt', started)
+      await outbox.acknowledge(result.item.id)
+      setQueueItem(null)
+      setText('')
+      setPhotos([])
+      setReplacementTarget(null)
+      await refetchThread()
+      announceSafePwaUpdateMoment()
+    },
+    [client, descriptor, descriptorIdentity, outbox, refetchThread, ownerId, problemId],
+  )
 
   useEffect(() => {
     if (online && queueItem && ['queued', 'retrying'].includes(queueItem.status)) {
@@ -694,8 +706,19 @@ export function StudentWrittenSubmission({
       setPendingPhotos((current) => [...current, { id, name: file.name, status: 'processing' }])
       try {
         const result = await compressWrittenSubmissionImage(file, { signal: controller.signal })
+        const image =
+          result.status === 'ready'
+            ? await describePreparedImage(result.blob, {
+                clientId: id,
+                filename: result.fileName,
+                width: result.width,
+                height: result.height,
+              })
+            : undefined
+        if (image) client.prefetchImage?.(problemId, image)
         await draftStore.value.addPhoto(descriptor, {
           id,
+          ...(image ? { image } : {}),
           fileName: result.status === 'ready' ? result.fileName : file.name,
           blob: result.status === 'ready' ? result.blob : result.source,
           width: result.status === 'ready' ? result.width : null,
@@ -773,12 +796,13 @@ export function StudentWrittenSubmission({
       ) {
         return
       }
+      const started = performance.now()
       const item = await outbox.enqueue(descriptor)
       setQueueItem(item)
       // `online` is updated from the browser connectivity events.  It is the
       // same state the composer presents to the student, so an offline submit
       // stays queued instead of acquiring a delivery lease that cannot finish.
-      if (online) await deliver()
+      if (online) await deliver(started)
     } catch (error) {
       setSendError(deliveryMessage(error))
     }

@@ -73,3 +73,13 @@ readiness-сигнал. Ненулевые значения сначала ра�
 - unit/integration boundary: [`test_media_inventory.py`](../../pwa_tests/test_media_inventory.py);
 - Make-профили: [`Makefile`](../../Makefile);
 - proof: [`phase11-media-inventory-2026-08-03.md`](../../pwa_tests/reports/phase11-media-inventory-2026-08-03.md).
+
+## Исключение: незавершённые browser uploads
+
+Решением владельца 8 октября 2026 включена автоматическая очистка только
+нефинализированных `pwa_image_uploads`, через 24 часа после последнего expiry.
+SQLite claims и callback в транзакции доменного сохранения исключают удаление
+сохранённых материалов и серверных черновиков. Это не общая retention старых
+фото или rich-files. Finalized rich uploads имеют ссылки в intent receipts;
+старый inventory пока не учитывает их, поэтому `unreferencedKeys` по-прежнему
+не разрешает ручное удаление. [Реализация и тесты](../../docs/performance/browser-image-uploads.md).

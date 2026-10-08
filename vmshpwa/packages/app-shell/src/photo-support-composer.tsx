@@ -1,3 +1,4 @@
+import { preparedImageMetadata, recordImageTiming } from './image-upload-client'
 import { t } from '@lingui/core/macro'
 import { useRef, useState } from 'react'
 import { useAuthenticatedPrincipal, useAuthentication } from './auth-context'
@@ -13,7 +14,7 @@ export function PhotoSupportComposer({
   onSubmit,
   ...props
 }: Omit<SupportComposerProps, 'onSubmit'> & {
-  client: Pick<SupportClient, 'uploadPhoto'>
+  client: Pick<SupportClient, 'uploadPhoto' | 'preparePhoto'>
   photoDraftKey: string
   allowPhotoOnly?: boolean
   onSubmit: (photoIds: string[], clearPhotos: () => Promise<void>) => Promise<void>
@@ -25,10 +26,12 @@ export function PhotoSupportComposer({
     photoDraftKey,
   )
   const [uploading, setUploading] = useState(false)
+  const [preparing, setPreparing] = useState(false)
   const [error, setError] = useState('')
   const locked = useRef(false)
   const submit = async () => {
-    if (locked.current) return
+    if (locked.current || preparing) return
+    const started = performance.now()
     locked.current = true
     setUploading(true)
     setError('')
@@ -36,11 +39,14 @@ export function PhotoSupportComposer({
       const ids: string[] = []
       for (const [index, photo] of editor.draft.photos.entries()) {
         if (!client.uploadPhoto) throw new Error('Photo uploads unavailable')
-        const id = editor.draft.uploadedIds[index] ?? (await client.uploadPhoto(photo))
+        const id =
+          editor.draft.uploadedIds[index] ??
+          (await client.uploadPhoto(photo, editor.draft.imageMetadata?.[index] ?? undefined))
         ids.push(id)
         editor.update({ ...editor.draft, uploadedIds: [...ids] })
       }
       await onSubmit(ids, editor.clear)
+      recordImageTiming('send-to-message-receipt', started)
     } catch {
       setError(
         t`Не удалось отправить сообщение. Текст и фотографии сохранены в форме. Повторите отправку.`,
@@ -54,26 +60,41 @@ export function PhotoSupportComposer({
     <SupportComposer
       {...props}
       hasAttachments={allowPhotoOnly && editor.draft.photos.length > 0}
-      busy={props.busy || uploading}
+      busy={props.busy || uploading || preparing}
       disabled={props.disabled || !editor.ready}
       saveState={
-        editor.unavailable
-          ? 'unavailable'
-          : editor.draft.photos.length && !editor.saved
-            ? 'idle'
-            : (props.saveState ?? 'idle')
+        preparing
+          ? 'idle'
+          : editor.unavailable
+            ? 'unavailable'
+            : editor.draft.photos.length && !editor.saved
+              ? 'idle'
+              : (props.saveState ?? 'idle')
       }
       error={error || props.error || null}
       onSubmit={() => void submit()}
       attachments={(action) => (
         <QuestionPhotoPicker
           action={action}
+          {...(client.preparePhoto
+            ? {
+                prepareFile: (file: File, signal: AbortSignal) =>
+                  client.preparePhoto!(file, signal),
+              }
+            : {})}
+          onPreparingChange={setPreparing}
           photos={editor.draft.photos}
           disabled={props.busy || uploading || !editor.ready}
           onChange={(photos, removedIndex) =>
             editor.update({
               ...editor.draft,
               photos,
+              imageMetadata: photos.map(
+                (photo) =>
+                  preparedImageMetadata(photo) ??
+                  editor.draft.imageMetadata?.[editor.draft.photos.indexOf(photo)] ??
+                  null,
+              ),
               uploadedIds:
                 removedIndex === undefined
                   ? editor.draft.uploadedIds

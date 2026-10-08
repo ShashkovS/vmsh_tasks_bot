@@ -568,6 +568,21 @@ async def test_s3_signed_read_uses_real_signer_with_one_day_expiry_without_io():
 
 
 @pytest.mark.asyncio
+async def test_signed_image_put_binds_exact_length_type_and_sha256_without_io():
+    """docs/performance/browser-image-uploads.md: signatures bind browser bytes."""
+    from urllib.parse import parse_qs, urlsplit
+
+    storage = S3ObjectStorage(_synthetic_s3_config())
+    assert not storage.supports_signed_uploads
+    url = await storage.signed_write_url('image-uploads/probe.webp', byte_size=123,
+        sha256='a' * 64, expires_in=600)
+    query = parse_qs(urlsplit(url).query)
+    assert query['X-Amz-Expires'] == ['600']
+    assert query['X-Amz-SignedHeaders'] == ['content-length;content-type;host;x-amz-checksum-sha256']
+    assert 'synthetic-secret-key' not in url
+
+
+@pytest.mark.asyncio
 async def test_s3_adapter_contract_explicit_client_config_and_public_url():
     session = FakeSession()
     config = _synthetic_s3_config()

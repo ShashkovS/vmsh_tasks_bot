@@ -1,4 +1,3 @@
-import { mkdir } from 'node:fs/promises'
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test } from './fixtures'
 
@@ -56,10 +55,9 @@ test('Review queue: filters, summary, colleague lease and return navigation', as
   await expect(card.getByRole('link', { name: 'Проверять подряд' })).toBeDisabled()
   await expect(card).toContainText('Все работы уже взяты другими преподавателями')
 
-  const folder = 'docs/assets/review-queue'
-  await mkdir(folder, { recursive: true })
+  // testing-strategy.md: captures are outputs, not mutations of tracked docs.
   await page.setViewportSize({ width: 1280, height: 900 })
-  await page.screenshot({ path: `${folder}/${browser}-desktop.png`, fullPage: true })
+  await page.screenshot({ path: testInfo.outputPath(`${browser}-desktop.png`), fullPage: true })
   await page.evaluate(() => {
     document.documentElement.style.zoom = '2'
   })
@@ -67,7 +65,7 @@ test('Review queue: filters, summary, colleague lease and return navigation', as
     true,
   )
   await expect(courseSelect).toBeVisible()
-  await page.screenshot({ path: `${folder}/${browser}-zoom.png`, fullPage: true })
+  await page.screenshot({ path: testInfo.outputPath(`${browser}-zoom.png`), fullPage: true })
   await page.evaluate(() => {
     document.documentElement.style.zoom = ''
   })
@@ -90,7 +88,7 @@ test('Review queue: filters, summary, colleague lease and return navigation', as
     await expect(courseSelect).toBeFocused()
     await page.keyboard.press('Tab')
     await expect(groupSelect).toBeFocused()
-    await page.screenshot({ path: `${folder}/${browser}-${width}.png`, fullPage: true })
+    await page.screenshot({ path: testInfo.outputPath(`${browser}-${width}.png`), fullPage: true })
   }
   await admin.getByRole('button', { name: 'Отказаться от проверки', exact: true }).click()
   await expect(card.getByRole('link', { name: 'Проверять подряд' })).toBeEnabled()

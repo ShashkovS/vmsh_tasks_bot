@@ -38,6 +38,7 @@ _S3_FIELD_NAMES = frozenset(
         "s3_secret_key",
         "s3_prefix",
         "s3_public_base_url",
+        "s3_direct_image_uploads_verified",
     }
 )
 _REQUIRED_S3_FIELDS = (
@@ -149,10 +150,13 @@ class StorageConfig:
     prefix: str = ""
     public_base_url: str | None = None
     secret_source: Literal["none", "test", "production"] = "none"
+    direct_image_uploads_verified: bool = False
 
     def __post_init__(self) -> None:
         """Enforce invariants even when callers bypass the named constructors."""
 
+        if not isinstance(self.direct_image_uploads_verified, bool):
+            raise StorageConfigurationError("Direct image upload verification must be boolean")
         if self.adapter == "filesystem":
             if not isinstance(self.filesystem_root, Path):
                 raise StorageConfigurationError(
@@ -170,6 +174,7 @@ class StorageConfig:
                 any(value is not None for value in forbidden)
                 or self.prefix
                 or self.secret_source != "none"
+                or self.direct_image_uploads_verified
             ):
                 raise StorageConfigurationError(
                     "Filesystem storage cannot carry S3 settings"
@@ -254,6 +259,7 @@ class StorageConfig:
         prefix: str,
         public_base_url: str | None = None,
         secret_source: Literal["test", "production"],
+        direct_image_uploads_verified: bool = False,
     ) -> StorageConfig:
         missing = [
             name
@@ -289,6 +295,7 @@ class StorageConfig:
             prefix=_safe_prefix(prefix),
             public_base_url=public_origin,
             secret_source=secret_source,
+            direct_image_uploads_verified=direct_image_uploads_verified,
         )
 
     def safe_report(self) -> dict[str, str | bool | None]:
@@ -480,6 +487,7 @@ def _s3_from_overlay(
         prefix=prefix,
         public_base_url=_string_field(overlay, "s3_public_base_url") or None,
         secret_source=source,
+        direct_image_uploads_verified=overlay.get("s3_direct_image_uploads_verified", False),
     )
 
 

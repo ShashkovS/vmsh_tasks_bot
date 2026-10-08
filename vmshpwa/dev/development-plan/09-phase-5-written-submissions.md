@@ -170,3 +170,13 @@ Implemented [full references and worksheet interaction corrections](../../docs/t
 ## Written replacement recovery — 11 September 2026
 
 Implemented and verified: 18 unit tests, production build, targeted lint/typecheck and recovery E2E in Chromium/WebKit/Firefox (Firefox separate rerun after an auth safety-screen interruption). Mobile 320/390 screenshots: `pwa_tests/reports/written-replacement-recovery/`. Owner authorized commit and push. See [recovery contract](../../docs/written-replacement-recovery.md): restrict replacement to pending unlocked work; explicitly recover rejected snapshots without losing photographs or duplicating sends. No backend or migration change.
+
+## Browser image uploads — 8 October 2026
+
+The owner superseded the original browser-to-aiohttp-only decision with
+[checksum-bound S3 PUT and HEAD finalization](../../../docs/performance/browser-image-uploads.md).
+The shared worker replaces the Student-only worker; metadata is durable in
+written/organizer drafts. Prepared proxy WebP is not encoded twice. Direct
+formats/dimensions/EXIF are browser-validated. Migration 0114, atomic receipts
+and pending-intent-only cleanup preserve existing locks/versions/offline semantics.
+Implementation and release/provider proof status live in the linked decision.

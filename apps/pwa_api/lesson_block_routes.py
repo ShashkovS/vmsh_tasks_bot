@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from apps.pwa_api.image_upload_routes import known_rich_images
+
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -14,13 +16,15 @@ from apps.pwa_api.content_routes import (
     _none_etag,
     _require_if_match,
 )
+from apps.pwa_api.image_upload_routes import (
+    finalize_rich_image,
+)
 from apps.pwa_api.errors import PwaApiError
 from db_methods.pwa.content import ContentNotFound
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
 from helpers.pwa.rich_media import (
-    MAX_RICH_MEDIA_BYTES,
     RichMediaCopyError,
     copy_rich_document_media,
     store_uploaded_rich_image,
@@ -62,7 +66,9 @@ async def _json(request: web.Request, fields: set[str]) -> dict[str, object]:
     return value
 
 
-async def _copy_document_media(request: web.Request, document: object) -> dict[str, object]:
+async def _copy_document_media(
+    request: web.Request, document: object
+) -> dict[str, object]:
     checked = validate_lesson_rich_document(document)
     if not checked["media"]:
         return checked
@@ -71,11 +77,23 @@ async def _copy_document_media(request: web.Request, document: object) -> dict[s
     storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
     converter = request.app.get(PWA_CONTENT_ASSET_CONVERTER)
     if storage is None or converter is None:
-        raise PwaApiError(status=503, code="rich_media_unavailable", message="Загрузка картинок временно недоступна")
+        raise PwaApiError(
+            status=503,
+            code="rich_media_unavailable",
+            message="Загрузка картинок временно недоступна",
+        )
     try:
-        copied, _media = await copy_rich_document_media(checked, storage=storage, converter=converter)
+        known = await known_rich_images(request, checked)
+        copied, _media = await copy_rich_document_media(
+            checked, storage=storage, converter=converter, known_images=known
+        )
     except RichMediaCopyError as error:
-        raise PwaApiError(status=422, code="rich_media_invalid", message="Не удалось безопасно сохранить картинку", details={"diagnostic": str(error)}) from error
+        raise PwaApiError(
+            status=422,
+            code="rich_media_invalid",
+            message="Не удалось безопасно сохранить картинку",
+            details={"diagnostic": str(error)},
+        ) from error
     return copied
 
 
@@ -133,24 +151,52 @@ async def _authorized_staff_read_scope(request: web.Request):
 
 
 async def _uploaded_image(request: web.Request) -> bytes:
-    if request.content_type != "multipart/form-data" or (request.content_length is not None and request.content_length > MAX_RICH_MEDIA_BYTES + 16_384):
-        raise PwaApiError(status=422, code="validation_error", message="Загрузка должна содержать одну картинку не больше 10 МиБ")
+    image_limit = (
+        20 * 1024 * 1024
+        if request.headers.get("X-Vmsh-Prepared-WebP") == "1"
+        else 25 * 1024 * 1024
+    )
+    if request.content_type != "multipart/form-data" or (
+        request.content_length is not None
+        and request.content_length > image_limit + 16_384
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Загрузка должна содержать одну картинку не больше 25 МиБ",
+        )
     try:
         reader = await request.multipart()
     except (AssertionError, ValueError) as error:
-        raise PwaApiError(status=422, code="validation_error", message="Не удалось разобрать форму картинки") from error
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Не удалось разобрать форму картинки",
+        ) from error
     part = await reader.next()
     if part is None or part.name != "image" or part.filename is None:
-        raise PwaApiError(status=422, code="validation_error", message="Загрузите ровно один файл в поле image")
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Загрузите ровно один файл в поле image",
+        )
     chunks: list[bytes] = []
     size = 0
     while chunk := await part.read_chunk(64 * 1024):
         size += len(chunk)
-        if size > MAX_RICH_MEDIA_BYTES:
-            raise PwaApiError(status=413, code="payload_too_large", message="Картинка не должна быть больше 10 МиБ")
+        if size > image_limit:
+            raise PwaApiError(
+                status=413,
+                code="payload_too_large",
+                message="Картинка не должна быть больше 25 МиБ",
+            )
         chunks.append(chunk)
     if await reader.next() is not None:
-        raise PwaApiError(status=422, code="validation_error", message="Загрузите ровно один файл в поле image")
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Загрузите ровно один файл в поле image",
+        )
     return b"".join(chunks)
 
 
@@ -263,20 +309,54 @@ async def cancel_lesson_block_publication(request: web.Request) -> web.Response:
     return response
 
 
-@lesson_block_routes.post("/staff/api/v1/group-lessons/{group_lesson_id}/blocks/media/uploads")
+@lesson_block_routes.post(
+    "/staff/api/v1/group-lessons/{group_lesson_id}/blocks/media/uploads"
+)
 async def upload_lesson_block_image(request: web.Request) -> web.Response:
     _repository, _scope, _actor = await _authorized_lesson_window_scope(request)
+    if request.content_type == "application/json":
+        return await finalize_rich_image(
+            request,
+            purpose="lesson-block",
+            context={"groupLessonId": request.match_info["group_lesson_id"]},
+        )
     data = await _uploaded_image(request)
+    if request.headers.get("X-Vmsh-Image-Upload"):
+        return await finalize_rich_image(
+            request,
+            purpose="lesson-block",
+            context={"groupLessonId": request.match_info["group_lesson_id"]},
+            payload=data,
+        )
+
     from apps.pwa_app import PWA_CONTENT_ASSET_CONVERTER
+
     storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
     converter = request.app.get(PWA_CONTENT_ASSET_CONVERTER)
     if storage is None or converter is None:
-        raise PwaApiError(status=503, code="rich_media_unavailable", message="Загрузка картинок временно недоступна")
+        raise PwaApiError(
+            status=503,
+            code="rich_media_unavailable",
+            message="Загрузка картинок временно недоступна",
+        )
     try:
-        image = await store_uploaded_rich_image(data, storage=storage, converter=converter)
+        image = await store_uploaded_rich_image(
+            data,
+            storage=storage,
+            converter=converter,
+            prepared=request.headers.get("X-Vmsh-Prepared-WebP") == "1",
+        )
     except RichMediaCopyError as error:
-        raise PwaApiError(status=422, code="rich_media_upload_invalid", message="Картинка должна быть PNG, JPEG или WebP", details={"diagnostic": str(error)}) from error
-    return web.json_response({"schemaVersion": 1, "image": image, "requestId": request["request_id"]}, status=201)
+        raise PwaApiError(
+            status=422,
+            code="rich_media_upload_invalid",
+            message="Картинка должна быть PNG, JPEG или WebP",
+            details={"diagnostic": str(error)},
+        ) from error
+    return web.json_response(
+        {"schemaVersion": 1, "image": image, "requestId": request["request_id"]},
+        status=201,
+    )
 
 
 @lesson_block_routes.get("/staff/api/v1/group-lessons/{group_lesson_id}/blocks/published")

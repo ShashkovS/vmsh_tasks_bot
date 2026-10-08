@@ -20,6 +20,10 @@ from urllib.parse import unquote
 
 from aiohttp import web
 
+from apps.pwa_api.image_upload_routes import (
+    finalize_reference, is_image_reference, json_body, service as image_upload_service,
+)
+from helpers.pwa.image_uploads import ImageUploadRejected
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.written_submissions import (
@@ -1008,19 +1012,118 @@ async def create_written_attachment(request: web.Request) -> web.Response:
     entry_public_id = _public_id(
         request, "entry_public_id", error_code="written_entry_not_found"
     )
-    with media_stage("upload.read"):
-        values, filename = await _multipart_attachment(request)
+    if request.content_type == "application/json":
+        body = await json_body(request)
+        expected = {
+            "schemaVersion",
+            "uploadId",
+            "idempotencyKey",
+            "expectedEntryVersion",
+            "expectedThreadVersion",
+            "ordinal",
+        }
+        if set(body) != expected:
+            raise PwaApiError(
+                status=422, code="validation_error", message="Проверьте поля фотографии"
+            )
+        values = {
+            key: str(value).encode() for key, value in body.items() if key != "uploadId"
+        }
+        filename = None
+    else:
+        body = None
+        with media_stage("upload.read"):
+            values, filename = await _multipart_attachment(request)
     _schema_version(_form_int(values, "schemaVersion", minimum=1, maximum=1))
-    receipt = await _attachment_service(request).convert_and_attach(
+    arguments = dict(
         account_id=account_id,
         entry_public_id=entry_public_id,
         expected_entry_version=_form_int(values, "expectedEntryVersion", minimum=1),
         expected_thread_version=_form_int(values, "expectedThreadVersion", minimum=1),
         ordinal=_form_int(values, "ordinal", minimum=0, maximum=9),
         idempotency_key=_canonical_uuid(_form_text(values, "idempotencyKey")),
-        payload=values["asset"],
-        source_filename=_attachment_filename(filename),
     )
+    if is_image_reference(request):
+        from db_methods.pwa.written_submissions import (
+            CreateWrittenAttachmentCommand,
+            PersistWrittenAttachment,
+            CreateWrittenAttachmentReceipt,
+        )
+
+        upload_id = body["uploadId"] if body else request.headers["X-Vmsh-Image-Upload"]
+        uploader = image_upload_service(request)
+        try:
+            record = await uploader.owned(upload_id, account_id, "student")
+        except ImageUploadRejected as error:
+            from apps.pwa_api.image_upload_routes import translated
+
+            raise translated(error) from error
+        command = CreateWrittenAttachmentCommand(
+            **arguments,
+            client_filename=record["filename"],
+            source_sha256=record["sha256"],
+        )
+        prepared = await _repository(request).prepare_attachment_upload(command)
+        context = json.loads(record["context"])
+        expected_problem_id = (
+            prepared.problem_public_id
+            if isinstance(prepared, CreateWrittenAttachmentReceipt)
+            else prepared.scope.problem_public_id
+        )
+        if record["purpose"] != "written" or context != {
+            "problemId": expected_problem_id
+        }:
+            raise PwaApiError(
+                status=409,
+                code="image_upload_context_mismatch",
+                message="Фотография относится к другой задаче",
+            )
+
+        async def persist_image(item, on_saved):
+            if isinstance(prepared, CreateWrittenAttachmentReceipt):
+                result = prepared.response_payload()
+                await uploader.factory.run_write_async(lambda c: on_saved(c, result))
+                return result
+            receipt = await _repository(request).complete_attachment_upload(
+                prepared,
+                PersistWrittenAttachment(
+                    object_key=item["object_key"],
+                    public_url=uploader.storage.public_url(item["object_key"]),
+                    output_sha256=item["sha256"],
+                    byte_size=item["byte_size"],
+                    width=item["width"],
+                    height=item["height"],
+                    conversion_version="pwa-browser-image-v1",
+                ),
+                on_saved=on_saved,
+            )
+            return receipt.response_payload()
+
+        result = await finalize_reference(
+            request,
+            purpose="written",
+            context=context,
+            persist=persist_image,
+            payload=values.get("asset"),
+            body=body,
+            binding={
+                "path": request.path,
+                **{k: v for k, v in arguments.items() if k != "account_id"},
+            },
+        )
+        from dataclasses import replace
+
+        receipt = replace(
+            CreateWrittenAttachmentReceipt.from_response(result),
+            replayed=record["state"] == "completed",
+        )
+    else:
+        receipt = await _attachment_service(request).convert_and_attach(
+            **arguments,
+            payload=values["asset"],
+            source_filename=_attachment_filename(filename),
+            prepared_webp_source=request.headers.get("X-Vmsh-Prepared-WebP") == "1",
+        )
     if not receipt.replayed:
         await _invalidate_after_commit(
             request,

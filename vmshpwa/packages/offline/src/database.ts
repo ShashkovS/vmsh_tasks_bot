@@ -1,3 +1,4 @@
+import type { PreparedImage } from '@vmsh/contracts'
 import Dexie, { type EntityTable } from 'dexie'
 import { z } from 'zod'
 
@@ -70,6 +71,7 @@ export interface WrittenDraftPhotoRecord {
   width: number | null
   height: number | null
   processing: 'client-webp' | 'server-fallback-source'
+  image?: PreparedImage | undefined
   createdAt: string
   updatedAt: string
   /** Portable IndexedDB representation used by new writers. */

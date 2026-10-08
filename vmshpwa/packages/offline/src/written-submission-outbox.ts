@@ -1,3 +1,4 @@
+import { preparedImageSchema, type PreparedImage } from '@vmsh/contracts'
 import { z } from 'zod'
 
 import {
@@ -51,6 +52,7 @@ const writtenOutboxPhotoSchema = z
       .int()
       .positive()
       .max(25 * 1024 * 1024),
+    image: preparedImageSchema.optional(),
     ordinal: z.number().int().min(0).max(9),
     uploadIdempotencyKey: z.uuid(),
     serverAttachmentId: publicIdSchema.nullable(),
@@ -214,6 +216,9 @@ export interface WrittenSubmissionTransport {
     entryId: string,
     upload: {
       metadata: WrittenAttachmentUploadMetadata
+      image?: PreparedImage
+      problemId?: string
+      prepared?: boolean
       asset: Blob
       fileName: string
     },
@@ -527,6 +532,7 @@ export function createWrittenSubmissionOutbox(
         replacementTarget: draft.replacementTarget,
         photos: draft.photos.map((photo, ordinal) => ({
           localPhotoId: photo.id,
+          ...(photo.image ? { image: photo.image } : {}),
           fileName: photo.fileName,
           mediaType: photo.mediaType,
           byteSize: photo.byteSize,
@@ -621,6 +627,9 @@ export function createWrittenSubmissionOutbox(
               ordinal: photo.ordinal,
             },
             asset,
+            ...(photo.image ? { image: photo.image } : {}),
+            problemId: item.payload.descriptor.problemId,
+            prepared: local.processing === 'client-webp',
             fileName: photo.fileName,
           })
           assertResponseIdentity(item, response)

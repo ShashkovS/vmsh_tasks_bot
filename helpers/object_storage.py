@@ -1,13 +1,14 @@
 """Async object-storage adapters for PWA content and submission media.
 
-Browser uploads remain proxied by aiohttp.  This module is the server-side
-boundary and never generates write credentials or presigned upload URLs.  See
+Verified browser WebP uploads can use checksum-bound presigned PUT and HEAD.
+See ``docs/performance/browser-image-uploads.md`` and
 ``vmshpwa/docs/object-storage.md`` and ``helpers.pwa.storage_config``.
 """
 
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
 import inspect
 import os
@@ -78,6 +79,20 @@ class SignedReadStorage(Protocol):
     """Optional direct-download capability; local storage keeps proxy reads."""
 
     async def signed_read_url(self, key: str, *, expires_in: int) -> str: ...
+
+
+@runtime_checkable
+class SignedWriteStorage(Protocol):
+    """Optional, explicitly verified direct-image capability (no browser secrets)."""
+
+    @property
+    def supports_signed_uploads(self) -> bool: ...
+
+    async def signed_write_url(
+        self, key: str, *, byte_size: int, sha256: str, expires_in: int
+    ) -> str: ...
+
+    async def head(self, key: str) -> dict[str, object]: ...
 
 
 def canonical_object_key(key: str) -> str:
@@ -411,6 +426,66 @@ class S3ObjectStorage:
         if provider_failure is not None:
             raise provider_failure
         raise RuntimeError("unreachable object-storage get state")
+
+    @property
+    def supports_signed_uploads(self) -> bool:
+        return self.config.direct_image_uploads_verified
+
+    async def signed_write_url(
+        self, key: str, *, byte_size: int, sha256: str, expires_in: int
+    ) -> str:
+        """Bind every PUT to the exact prepared file; browser supplies Blob length."""
+        object_key = self._key(key)
+        if not 1 <= byte_size <= 20 * 1024 * 1024 or not re.fullmatch(
+            r"[0-9a-f]{64}", sha256
+        ):
+            raise ValueError("Invalid prepared image metadata")
+        if not 1 <= expires_in <= 600:
+            raise ValueError("Invalid upload expiry")
+        provider_failure = None
+        try:
+            async with self._client() as client:
+                return await client.generate_presigned_url(
+                    "put_object",
+                    Params={
+                        "Bucket": self.config.bucket_name,
+                        "Key": object_key,
+                        "ContentType": "image/webp",
+                        "ContentLength": byte_size,
+                        "ChecksumSHA256": base64.b64encode(bytes.fromhex(sha256)).decode(
+                            "ascii"
+                        ),
+                    },
+                    ExpiresIn=expires_in,
+                    HttpMethod="PUT",
+                )
+        except Exception as exc:
+            provider_failure = _redacted_provider_error("sign-write", exc)
+        raise provider_failure
+
+    async def head(self, key: str) -> dict[str, object]:
+        object_key = self._key(key)
+        provider_failure = None
+        try:
+            async with self._client() as client:
+                response = await client.head_object(
+                    Bucket=self.config.bucket_name,
+                    Key=object_key,
+                    ChecksumMode="ENABLED",
+                )
+                return {
+                    "byteSize": response["ContentLength"],
+                    "mimeType": response.get("ContentType"),
+                    "checksumSHA256": response.get("ChecksumSHA256"),
+                }
+        except Exception as exc:
+            provider_failure = _redacted_provider_error("head", exc)
+        if provider_failure.http_status == 404 or provider_failure.provider_code in {
+            "NoSuchKey",
+            "NotFound",
+        }:
+            raise FileNotFoundError("Image upload object is missing")
+        raise provider_failure
 
     async def signed_read_url(self, key: str, *, expires_in: int) -> str:
         """Sign locally without fetching bytes; docs/performance/photo-delivery.md."""

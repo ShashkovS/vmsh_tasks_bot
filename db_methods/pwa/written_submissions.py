@@ -767,8 +767,11 @@ class PersistWrittenAttachment:
     byte_size: int
     width: int
     height: int
+    conversion_version: str = "pwa-written-image-v1"
 
     def __post_init__(self) -> None:
+        if self.conversion_version not in {"pwa-written-image-v1", "pwa-browser-image-v1"}:
+            raise ValueError("image conversion version is invalid")
         if not _SHA256.fullmatch(self.output_sha256):
             raise ValueError("output SHA-256 is invalid")
         if not self.object_key or self.object_key != self.object_key.strip():
@@ -2429,6 +2432,11 @@ class PwaWrittenSubmissionRepository:
         )
         return receipt, None
 
+    async def authorize_image_upload(self, *, account_id: int, problem_public_id: str) -> None:
+        """Authorize early image preparation without creating a submission draft."""
+        await self._factory.run_read_async(lambda c: _resolve_context(
+            c, account_id=account_id, problem_public_id=problem_public_id, now=self._clock()))
+
     async def prepare_attachment_upload(
         self, command: CreateWrittenAttachmentCommand
     ) -> PreparedWrittenAttachmentUpload | CreateWrittenAttachmentReceipt:
@@ -2467,6 +2475,7 @@ class PwaWrittenSubmissionRepository:
         self,
         prepared: PreparedWrittenAttachmentUpload,
         asset: PersistWrittenAttachment,
+        on_saved=None,
     ) -> CreateWrittenAttachmentReceipt:
         """Atomically publish final media metadata and its entry attachment."""
 
@@ -2477,6 +2486,7 @@ class PwaWrittenSubmissionRepository:
                 prepared=prepared,
                 asset=asset,
                 now=now,
+                on_saved=on_saved,
             )
         )
         if error is not None:
@@ -2491,6 +2501,7 @@ class PwaWrittenSubmissionRepository:
         prepared: PreparedWrittenAttachmentUpload,
         asset: PersistWrittenAttachment,
         now: datetime,
+        on_saved=None,
     ) -> tuple[
         CreateWrittenAttachmentReceipt | None,
         WrittenSubmissionRejected | None,
@@ -2506,7 +2517,10 @@ class PwaWrittenSubmissionRepository:
         if replay is not None:
             if replay.state != "completed":
                 _raise_replay_failure(replay)
-            return CreateWrittenAttachmentReceipt.from_response(replay.response), None
+            receipt = CreateWrittenAttachmentReceipt.from_response(replay.response)
+            if on_saved is not None:
+                on_saved(connection, receipt.response_payload())
+            return receipt, None
         received_at = _timestamp(now)
         idempotency_id = int(
             connection.execute(
@@ -2535,7 +2549,7 @@ class PwaWrittenSubmissionRepository:
                     "media_type, byte_size, width, height, source_filename, "
                     "conversion_version, created_by_user_id, created_at) VALUES "
                     "(?, 'submission', ?, ?, 'image/webp', ?, ?, ?, ?, "
-                    "'pwa-written-image-v1', ?, ?) RETURNING id",
+                    "?, ?, ?) RETURNING id",
                     (
                         asset.output_sha256,
                         asset.object_key,
@@ -2544,6 +2558,7 @@ class PwaWrittenSubmissionRepository:
                         asset.width,
                         asset.height,
                         command.client_filename,
+                        asset.conversion_version,
                         target.context.student_user_id,
                         received_at,
                     ),
@@ -2597,6 +2612,8 @@ class PwaWrittenSubmissionRepository:
             response=receipt.response_payload(),
             completed_at=received_at,
         )
+        if on_saved is not None:
+            on_saved(connection, receipt.response_payload())
         return receipt, None
 
     async def reorder_attachments(

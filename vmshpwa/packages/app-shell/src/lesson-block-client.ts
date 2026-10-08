@@ -1,7 +1,9 @@
+import { ImageUploadClient, preparedImageMetadata } from './image-upload-client'
 import { pwaFetch } from '@vmsh/contracts'
 import { t } from '@lingui/core/macro'
 import { useQuery } from '@tanstack/react-query'
 import {
+  staffRichMediaUploadResponseSchema,
   ApiResponseError,
   apiErrorSchema,
   lessonBlockPositionSchema,
@@ -95,44 +97,61 @@ export function createLessonBlockClient(
     return `/group-lessons/${id}/blocks${position ? `/${lessonBlockPositionSchema.parse(position)}` : ''}`
   }
   const uploadImage = async (groupLessonId: string, image: File): Promise<{ url: string }> => {
+    const images = new ImageUploadClient(parsedRuntime, 'lesson-block', { groupLessonId }, options)
+    const prepared = await images.preparePhoto(image)
+    const metadata = preparedImageMetadata(prepared)
     const body = new FormData()
-    body.set('image', image)
-    const send = () =>
-      fetchImplementation(`${parsedRuntime.apiBase}${path(groupLessonId)}/media/uploads`, {
-        method: 'POST',
-        cache: 'no-store',
-        credentials: 'include',
-        redirect: 'error',
-        headers: { Accept: 'application/json' },
-        body,
-      })
-    let response = await send()
-    if (response.status === 401 && options.refreshSession) {
-      await response.body?.cancel()
-      await options.refreshSession()
-      response = await send()
-    }
-    if (!response.ok) {
-      let value: unknown = null
-      try {
-        value = await response.json()
-      } catch {
-        /* preserve a typed transport error */
+    body.set('image', prepared, metadata?.filename ?? image.name)
+    const proxy = async (headers: Record<string, string> = {}) => {
+      const send = () =>
+        fetchImplementation(`${parsedRuntime.apiBase}${path(groupLessonId)}/media/uploads`, {
+          method: 'POST',
+          cache: 'no-store',
+          credentials: 'include',
+          redirect: 'error',
+          headers: { Accept: 'application/json', ...headers },
+          body,
+        })
+      let response = await send()
+      if (response.status === 401 && options.refreshSession) {
+        await response.body?.cancel()
+        await options.refreshSession()
+        response = await send()
       }
-      throw new ApiResponseError(response.status, apiErrorSchema.parse(value))
+      if (!response.ok) {
+        let value: unknown = null
+        try {
+          value = await response.json()
+        } catch {
+          /* preserve a typed transport error */
+        }
+        throw new ApiResponseError(response.status, apiErrorSchema.parse(value))
+      }
+      const value: unknown = await response.json()
+      const imageValue =
+        value !== null && typeof value === 'object' && 'image' in value ? value.image : undefined
+      if (
+        !imageValue ||
+        typeof imageValue !== 'object' ||
+        !('url' in imageValue) ||
+        typeof imageValue.url !== 'string'
+      ) {
+        throw new Error(t`Сервер вернул некорректный адрес изображения`)
+      }
+      return { url: imageValue.url }
     }
-    const value: unknown = await response.json()
-    const imageValue =
-      value !== null && typeof value === 'object' && 'image' in value ? value.image : undefined
-    if (
-      !imageValue ||
-      typeof imageValue !== 'object' ||
-      !('url' in imageValue) ||
-      typeof imageValue.url !== 'string'
-    ) {
-      throw new Error(t`Сервер вернул некорректный адрес изображения`)
-    }
-    return { url: imageValue.url }
+    return metadata
+      ? images.upload(
+          prepared,
+          metadata,
+          `${path(groupLessonId)}/media/uploads`,
+          (payload) => {
+            const value = staffRichMediaUploadResponseSchema.parse(payload)
+            return { url: value.image.url }
+          },
+          proxy,
+        )
+      : proxy()
   }
   return {
     uploadFile: (groupLessonId, file) =>

@@ -646,8 +646,8 @@ msgstr "The upload must use multipart/form-data"
 
 #: apps/pwa_api/lesson_block_routes.py
 #: apps/pwa_api/news_moderation_routes.py
-msgid "Загрузка должна содержать одну картинку не больше 10 МиБ"
-msgstr "The upload must contain one image no larger than 10 MiB"
+msgid "Загрузка должна содержать одну картинку не больше 25 МиБ"
+msgstr "Upload one image no larger than 25 MiB"
 
 #: apps/pwa_api/group_banner_routes.py
 #: apps/pwa_api/lesson_block_routes.py
@@ -667,6 +667,7 @@ msgstr "File uploads are temporarily unavailable"
 msgid "Загрузка фотографии должна использовать multipart/form-data"
 msgstr "Photo upload must use multipart/form-data"
 
+#: apps/pwa_api/image_upload_routes.py
 #: apps/pwa_api/organizer_question_routes.py
 #: apps/pwa_api/support_routes.py
 #: apps/pwa_api/written_submission_routes.py
@@ -926,8 +927,8 @@ msgstr "The image must be PNG, JPEG, or WebP and must convert successfully"
 
 #: apps/pwa_api/lesson_block_routes.py
 #: apps/pwa_api/news_moderation_routes.py
-msgid "Картинка не должна быть больше 10 МиБ"
-msgstr "The image must not exceed 10 MiB"
+msgid "Картинка не должна быть больше 25 МиБ"
+msgstr "The image must be no larger than 25 MiB"
 
 #: apps/pwa_api/classroom_routes.py
 msgid "Каталог аудиторий временно недоступен"
@@ -1208,6 +1209,10 @@ msgstr "Could not generate metadata. Try again."
 #: apps/pwa_api/content_routes.py
 msgid "Не удалось сохранить рисунок. Повторите попытку."
 msgstr "Could not save the figure. Try again."
+
+#: apps/pwa_api/image_upload_routes.py
+msgid "Не удалось сохранить фотографию. Повторите отправку."
+msgstr "Could not save the photo. Try sending it again."
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Не удалось сохранить фотографию. Повторите попытку."
@@ -3137,6 +3142,7 @@ msgstr "The photo is larger than 25 MiB"
 msgid "Фотография не прошла безопасную обработку"
 msgstr "The photo did not pass safe processing"
 
+#: apps/pwa_api/image_upload_routes.py
 #: apps/pwa_api/organizer_question_routes.py
 #: apps/pwa_api/support_routes.py
 msgid "Фотография недоступна"
@@ -3145,6 +3151,10 @@ msgstr "Photo unavailable"
 #: apps/pwa_api/written_submission_routes.py
 msgid "Фотография недоступна из-за ошибки хранилища"
 msgstr "The photo is unavailable because of a storage error"
+
+#: apps/pwa_api/written_submission_routes.py
+msgid "Фотография относится к другой задаче"
+msgstr "The photo belongs to another problem"
 
 #: db_methods/pwa/written_submissions.py
 msgid "Фотография решения не найдена."

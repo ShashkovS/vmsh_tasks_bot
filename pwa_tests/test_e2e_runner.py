@@ -94,7 +94,14 @@ def test_diagnostic_modes_keep_the_same_exclusive_build_boundary():
     )
     assert commands_for_mode("support") == (
         ("pnpm", "build"),
-        ("pnpm", "exec", "playwright", "test", "e2e/support-dialogue.spec.ts"),
+        (
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/support-dialogue.spec.ts",
+            "e2e/browser-image-upload.spec.ts",
+        ),
     )
     assert commands_for_mode("i18n") == (
         ("pnpm", "build"),
@@ -290,10 +297,19 @@ def test_every_browser_source_vite_input_has_an_explicit_safe_e2e_value():
     assert source_inputs <= E2E_BROWSER_BUILD_ENVIRONMENT.keys()
 
 
-def test_portal_release_keeps_destructive_fixtures_in_fresh_database_phases(monkeypatch):
+def test_portal_release_keeps_destructive_fixtures_in_fresh_database_phases(
+    monkeypatch,
+):
     commands = commands_for_mode("portal-release")
-    for spec in ("branding", "course-attendance", "content-publication", "smooth-redeploy"):
-        phase = next(command for command in commands if f"e2e/{spec}.spec.ts" in command)
+    for spec in (
+        "branding",
+        "course-attendance",
+        "content-publication",
+        "smooth-redeploy",
+    ):
+        phase = next(
+            command for command in commands if f"e2e/{spec}.spec.ts" in command
+        )
         assert sum(argument.endswith(".spec.ts") for argument in phase) == 1
     calls = []
     monkeypatch.setattr("vmshpwa.scripts.e2e_runner.exclusive_e2e_run", nullcontext)
@@ -309,17 +325,23 @@ def test_portal_release_keeps_destructive_fixtures_in_fresh_database_phases(monk
 
 
 def test_focused_modes_share_one_build_and_backend_and_keep_browser_explicit():
-    commands = commands_for_request(["content", "review", "submissions", "review"], "chromium")
+    commands = commands_for_request(
+        ["content", "review", "submissions", "review"], "chromium"
+    )
     assert len(commands) == 2
     assert commands[0] == ("pnpm", "build")
     assert commands[1][4:7] == (
-        "e2e/content-publication.spec.ts", "e2e/review-workspace.spec.ts", "e2e/test-submission.spec.ts",
+        "e2e/content-publication.spec.ts",
+        "e2e/review-workspace.spec.ts",
+        "e2e/test-submission.spec.ts",
     )
     assert commands[1][-4:] == ("--project", "chromium", "--retries", "0")
 
 
 def test_destructive_modes_still_receive_separate_backend_phases():
-    commands = commands_for_request(["review", "statistics", "figure-layout", "content"], "all")
+    commands = commands_for_request(
+        ["review", "statistics", "figure-layout", "content"], "all"
+    )
     assert len(commands) == 5
     assert "playwright.statistics.config.ts" in commands[2]
     assert "e2e/figure-layout.spec.ts" in commands[3]

@@ -1,3 +1,4 @@
+import { ImageUploadClient, preparedImageMetadata } from './image-upload-client'
 import { pwaFetch } from '@vmsh/contracts'
 import {
   ApiResponseError,
@@ -26,32 +27,46 @@ export function createStaffRichMediaClient(
 ): StaffRichMediaClient {
   const configured = parseRuntimeConfigForAudience('staff', runtime)
   const fetchImplementation = options.fetchImplementation ?? pwaFetch
+  const images = new ImageUploadClient(runtime, 'rich', {}, options)
 
   return {
     uploadFile: (file) =>
       uploadRichFile(`${configured.apiBase}/rich-media/files/uploads`, file, options),
     async uploadImage(image) {
+      const prepared = await images.preparePhoto(image)
+      const metadata = preparedImageMetadata(prepared)
       const body = new FormData()
-      body.append('image', image, image.name)
-      const send = () =>
-        fetchImplementation(`${configured.apiBase}/rich-media/uploads`, {
-          method: 'POST',
-          body,
-          cache: 'no-store',
-          credentials: 'include',
-          redirect: 'error',
-          // Do not set Content-Type: the browser must add the multipart boundary.
-          headers: { Accept: 'application/json' },
-        })
-      let response = await send()
-      if (response.status === 401 && options.refreshSession) {
-        await response.body?.cancel()
-        await options.refreshSession()
-        response = await send()
+      body.append('image', prepared, metadata?.filename ?? image.name)
+      const proxy = async (headers: Record<string, string> = {}) => {
+        const send = () =>
+          fetchImplementation(`${configured.apiBase}/rich-media/uploads`, {
+            method: 'POST',
+            body,
+            cache: 'no-store',
+            credentials: 'include',
+            redirect: 'error',
+            // Do not set Content-Type: the browser must add the multipart boundary.
+            headers: { Accept: 'application/json', ...headers },
+          })
+        let response = await send()
+        if (response.status === 401 && options.refreshSession) {
+          await response.body?.cancel()
+          await options.refreshSession()
+          response = await send()
+        }
+        const payload: unknown = await response.json()
+        if (!response.ok) throw new ApiResponseError(response.status, apiErrorSchema.parse(payload))
+        return staffRichMediaUploadResponseSchema.parse(payload).image
       }
-      const payload: unknown = await response.json()
-      if (!response.ok) throw new ApiResponseError(response.status, apiErrorSchema.parse(payload))
-      return staffRichMediaUploadResponseSchema.parse(payload).image
+      return metadata
+        ? images.upload(
+            prepared,
+            metadata,
+            '/rich-media/uploads',
+            (payload) => staffRichMediaUploadResponseSchema.parse(payload).image,
+            proxy,
+          )
+        : proxy()
     },
   }
 }

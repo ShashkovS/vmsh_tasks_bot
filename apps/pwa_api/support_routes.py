@@ -12,6 +12,10 @@ from datetime import UTC, datetime
 
 from aiohttp import web
 
+from apps.pwa_api.image_upload_routes import (
+    finalize_reference,
+)
+from helpers.pwa.image_uploads import prepared_webp, ImageUploadRejected
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.support import (
@@ -772,7 +776,32 @@ async def upload_photo(request):
         if request.path.startswith("/staff/")
         else _student_user_id(request)
     )
-    if request.content_type not in ("image/jpeg", "image/png", "image/webp"):
+
+    async def persist_prepared(record, on_saved):
+        photo = await _repository(request).store_photo(
+            student_user_id=uploader_id,
+            object_key=record["object_key"],
+            sha256=record["sha256"],
+            byte_size=record["byte_size"],
+            width=record["width"],
+            height=record["height"],
+            on_saved=on_saved,
+        )
+        return {"photoId": photo}
+
+    if request.content_type == "application/json":
+        result = await finalize_reference(
+            request, purpose="support", context={}, persist=persist_prepared
+        )
+        return web.json_response(result, headers={"Cache-Control": "no-store"})
+    if request.content_type not in (
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "image/heif",
+        "application/octet-stream",
+    ):
         raise PwaApiError(
             status=422, code="validation_error", message="Выберите JPEG, PNG или WebP"
         )
@@ -783,10 +812,21 @@ async def upload_photo(request):
             raise PwaApiError(
                 status=413, code="payload_too_large", message="Фотография больше 25 МиБ"
             )
+    if request.headers.get("X-Vmsh-Image-Upload"):
+        result = await finalize_reference(
+            request,
+            purpose="support",
+            context={},
+            persist=persist_prepared,
+            payload=bytes(data),
+        )
+        return web.json_response(result, headers={"Cache-Control": "no-store"})
     signatures = (
         data.startswith(b"\xff\xd8\xff"),
         data.startswith(b"\x89PNG\r\n\x1a\n"),
         data[:4] == b"RIFF" and data[8:12] == b"WEBP",
+        data[4:8] == b"ftyp"
+        and data[8:12] in (b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1"),
     )
     if not any(signatures):
         raise PwaApiError(
@@ -803,8 +843,12 @@ async def upload_photo(request):
             message="Загрузка фотографий временно недоступна",
         )
     try:
-        converted = await converter.raster_to_webp(bytes(data))
-    except AssetConversionError as error:
+        converted = (
+            prepared_webp(bytes(data))
+            if request.headers.get("X-Vmsh-Prepared-WebP") == "1"
+            else await converter.raster_to_webp(bytes(data))
+        )
+    except (AssetConversionError, ImageUploadRejected) as error:
         raise PwaApiError(
             status=422,
             code="validation_error",

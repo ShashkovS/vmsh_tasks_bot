@@ -1,3 +1,5 @@
+import { ImageUploadClient } from './image-upload-client'
+import type { PreparedImage } from '@vmsh/contracts'
 import { observeMediaLoad } from './product-analytics'
 import { pwaFetch } from '@vmsh/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -61,6 +63,9 @@ export interface WrittenAttachmentUpload {
   metadata: WrittenAttachmentUploadMetadata
   asset: Blob
   fileName: string
+  image?: PreparedImage
+  problemId?: string
+  prepared?: boolean
 }
 
 export interface WrittenSubmissionClientOptions {
@@ -80,6 +85,7 @@ export interface WrittenSubmissionClient {
     request: CreateWrittenEntryRequest,
     options?: WrittenSubmissionRequestOptions,
   ): Promise<CreateWrittenEntryResponse>
+  prefetchImage?(problemId: string, image: PreparedImage): void
   upload(
     entryId: string,
     upload: WrittenAttachmentUpload,
@@ -159,16 +165,20 @@ interface WrittenRequest {
   body?: BodyInit
   contentType?: string
   accept?: string
+  headers?: Record<string, string>
 }
 
 class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
   readonly runtime: RuntimeConfig
 
+  readonly #images = new Map<string, ImageUploadClient>()
+  readonly #imageOptions: WrittenSubmissionClientOptions
   readonly #fetch: typeof globalThis.fetch
   readonly #refreshSession: (() => Promise<unknown>) | undefined
   readonly #requestTimeoutMilliseconds: number
 
   constructor(runtime: RuntimeConfig, options: WrittenSubmissionClientOptions) {
+    this.#imageOptions = options
     this.runtime = parseRuntimeConfigForAudience('student', runtime)
     const fetchImplementation = options.fetchImplementation ?? pwaFetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
@@ -213,6 +223,23 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
     )
   }
 
+  #imageClient(problemId: string): ImageUploadClient {
+    let imageClient = this.#images.get(problemId)
+    if (!imageClient) {
+      imageClient = new ImageUploadClient(
+        this.runtime,
+        'written',
+        { problemId },
+        this.#imageOptions,
+      )
+      this.#images.set(problemId, imageClient)
+    }
+    return imageClient
+  }
+  prefetchImage(problemId: string, image: PreparedImage): void {
+    this.#imageClient(problemId).prefetch(image)
+  }
+
   async upload(
     entryId: string,
     upload: WrittenAttachmentUpload,
@@ -230,13 +257,26 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
     body.set('expectedThreadVersion', String(metadata.expectedThreadVersion))
     body.set('ordinal', String(metadata.ordinal))
     body.set('asset', upload.asset, fileName)
-    const response = await this.#request(
-      `/thread-entries/${encodeURIComponent(parsedEntryId)}/attachments`,
-      { method: 'POST', body },
-      options,
-      201,
-      createWrittenAttachmentResponseSchema,
-    )
+    const endpoint = `/thread-entries/${encodeURIComponent(parsedEntryId)}/attachments`
+    const proxy = (headers: Record<string, string> = {}) =>
+      this.#request(
+        endpoint,
+        { method: 'POST', body, headers },
+        options,
+        201,
+        createWrittenAttachmentResponseSchema,
+      )
+    const response =
+      upload.image && upload.problemId
+        ? await this.#imageClient(upload.problemId).upload(
+            upload.asset,
+            upload.image,
+            endpoint,
+            (payload) => createWrittenAttachmentResponseSchema.parse(payload),
+            proxy,
+            metadata,
+          )
+        : await proxy(upload.prepared ? { 'X-Vmsh-Prepared-WebP': '1' } : {})
     recordProductAction('photo.attach', { type: 'submission', id: parsedEntryId })
     return response
   }
@@ -427,7 +467,10 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
     input: WrittenRequest,
     options: WrittenSubmissionRequestOptions,
   ): Promise<Response> {
-    const headers: Record<string, string> = { Accept: input.accept ?? 'application/json' }
+    const headers: Record<string, string> = {
+      Accept: input.accept ?? 'application/json',
+      ...input.headers,
+    }
     if (input.contentType) headers['Content-Type'] = input.contentType
     try {
       return await withRequestDeadline(

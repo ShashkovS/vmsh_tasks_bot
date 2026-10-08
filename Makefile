@@ -243,6 +243,12 @@ pwa-s3-live-smoke:
 	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.storage_smoke --run-id "$(PWA_S3_RUN_ID)"
 
+.PHONY: pwa-image-upload-live-smoke
+pwa-image-upload-live-smoke:
+	@test "$(VMSH_ENABLE_LIVE_S3_TEST)" = "true" || (echo "Set VMSH_ENABLE_LIVE_S3_TEST=true"; exit 2)
+	@test -n "$(PWA_S3_RUN_ID)" -a -n "$(PWA_S3_BROWSER_ORIGIN)" || (echo "Set disposable run id and browser origin"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.image_upload_storage_smoke --run-id "$(PWA_S3_RUN_ID)" --origin "$(PWA_S3_BROWSER_ORIGIN)"
+
 pwa-content-assets-live-smoke:
 	@test "$(VMSH_ENABLE_LIVE_S3_TEST)" = "true" || (echo "Set VMSH_ENABLE_LIVE_S3_TEST=true"; exit 2)
 	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)

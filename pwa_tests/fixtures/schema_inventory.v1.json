@@ -57,6 +57,10 @@
       {
         "id": "0113.content_upload_compiler_generation",
         "sha256": "f6f2a5822a83057a6ed82c2f6a38f10548620fbc9e0ed81f5ca5ba8c12d12991"
+      },
+      {
+        "id": "0114.browser_image_uploads",
+        "sha256": "b2d999825fea18486e68d8d90b4c58d54dd6f2501e10fc6e647278d20c062ee7"
       }
     ],
     "repository_head_status": {
@@ -67,7 +71,7 @@
     }
   },
   "product": {
-    "object_count": 510,
+    "object_count": 512,
     "objects": [
       {
         "columns": [
@@ -19662,6 +19666,331 @@
         "columns": [
           {
             "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "client_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "purpose",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "context",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "fingerprint",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "filename",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "byte_size",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "width",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "height",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "object_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": "'pending'",
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expires_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "claim_token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "claim_until",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 17,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "response",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 18,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "binding",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 19,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 13,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "state",
+                "seqno": 0
+              },
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "expires_at",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "pwa_image_uploads_cleanup",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_pwa_image_uploads_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 12,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "object_key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_pwa_image_uploads_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "client_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_pwa_image_uploads_3",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "pwa_image_uploads",
+        "object_sha256": "c85806ac873b35eda99577d30c6ba02e75d1dec467705cf30db40eb2078d8550",
+        "sql": "CREATE TABLE pwa_image_uploads (\n            id TEXT PRIMARY KEY,\n            account_id INTEGER NOT NULL REFERENCES auth_accounts(id),\n            audience TEXT NOT NULL CHECK(audience IN ('student','family','staff')),\n            client_id TEXT NOT NULL,\n            purpose TEXT NOT NULL CHECK(purpose IN ('written','support','organizer','rich','lesson-block')),\n            context TEXT NOT NULL,\n            fingerprint TEXT NOT NULL,\n            filename TEXT NOT NULL,\n            sha256 TEXT NOT NULL CHECK(length(sha256)=64),\n            byte_size INTEGER NOT NULL CHECK(byte_size BETWEEN 1 AND 20971520),\n            width INTEGER NOT NULL CHECK(width BETWEEN 1 AND 1920),\n            height INTEGER NOT NULL CHECK(height BETWEEN 1 AND 1920),\n            object_key TEXT NOT NULL UNIQUE,\n            state TEXT NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','finalizing','completed','deleting','deleted')),\n            expires_at TEXT NOT NULL,\n            claim_token TEXT,\n            claim_until TEXT,\n            response TEXT,\n            binding TEXT,\n            created_at TEXT NOT NULL,\n            UNIQUE(account_id, audience, client_id),\n            CHECK((state='completed') = (response IS NOT NULL))\n        );",
+        "table_name": "pwa_image_uploads",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -30090,6 +30419,13 @@
         "type": "index"
       },
       {
+        "name": "pwa_image_uploads_cleanup",
+        "object_sha256": "17bd1acb380262040c22e6f6713c01931d78546bcea6cc61df38dc4c17e919b7",
+        "sql": "CREATE INDEX pwa_image_uploads_cleanup ON pwa_image_uploads(state, expires_at);",
+        "table_name": "pwa_image_uploads",
+        "type": "index"
+      },
+      {
         "name": "results_by_student_problem",
         "object_sha256": "362c3ddad4e8595680d39d8eb4b1d3e3310ec27a47bf3992028f538f99200924",
         "sql": "CREATE INDEX results_by_student_problem\n    on results (student_id, problem_id);",
@@ -31805,8 +32141,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "b9108309d59cf866064f78bccf8efbffe3902202aca957db1be24e5de0e26c9c",
-    "sha256": "aff0238ffb4a4350b672a6999f6e350f838ec4b1c48effd2d3c4f7bb88148b15"
+    "pragma_structure_sha256": "ec1cc179d7e9d88af4e965e03efc73b4d39dd74839b0aca3e653baa107d0ac1e",
+    "sha256": "d7d3e668badc9061e452583ce81b87216d5cd6446f4ad647a72d8d408b808642"
   },
   "source_kind": "repository-migration-head"
 }

@@ -354,3 +354,5 @@ export * from './statistics-reports'
 export * from './branding'
 
 export * from './problem-release'
+
+export * from './image-uploads'

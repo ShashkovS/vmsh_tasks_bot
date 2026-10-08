@@ -90,3 +90,35 @@ it('removing the only photo disables an empty reply again', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Убрать фотографию 1' }))
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Отправить' }).disabled).toBe(true)
 })
+
+it('does not report a saved photo draft during preparation', async () => {
+  render(
+    <PhotoSupportComposer
+      client={{
+        preparePhoto: (_file, signal) =>
+          new Promise((_resolve, reject) => {
+            signal?.addEventListener('abort', () =>
+              reject(new DOMException('Cancelled', 'AbortError')),
+            )
+          }),
+      }}
+      photoDraftKey="thread:sup-2"
+      value="Текст сохранён"
+      saveState="saved"
+      onValueChange={() => {}}
+      onSubmit={vi.fn()}
+    />,
+  )
+  expect(screen.getByText('Черновик сохранён на этом устройстве.')).toBeTruthy()
+  fireEvent.change(screen.getByLabelText('Выбрать фотографии', { selector: 'input' }), {
+    target: { files: [new File(['image'], 'answer.png', { type: 'image/png' })] },
+  })
+  expect(screen.queryByText('Черновик сохранён на этом устройстве.')).toBeNull()
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Отправляем…' }).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Отменить подготовку фотографии 1' }))
+  await waitFor(() =>
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Отправить' }).disabled).toBe(
+      false,
+    ),
+  )
+})

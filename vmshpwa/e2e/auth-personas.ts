@@ -100,3 +100,26 @@ export async function loginThroughUi(
     .toBe(`${expectedDestination.pathname}${expectedDestination.search}${expectedDestination.hash}`)
   await expect(page.locator(`[data-product="${persona.audience}"]`)).toBeVisible()
 }
+
+/** runtime-isolation.md: settle initial notices before testing unrelated navigation.
+ * Firefox can report an already-active initial worker as an available update.
+ * Exercise its real update button while no user draft exists.
+ */
+export async function settleInitialPwaNotice(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    )
+  })
+  const notice = page.getByTestId('pwa-update-state')
+  const update = notice.getByRole('button', { name: 'Обновить сейчас', exact: true })
+  if (await update.isVisible()) {
+    const href = page.url()
+    await Promise.all([page.waitForEvent('load'), update.click()])
+    await expect(page).toHaveURL(href)
+    await expect(page.locator('[data-product="family"]')).toBeVisible()
+  }
+  const close = notice.getByRole('button', { name: /^(Скрыть|Закрыть)$/ })
+  if (await close.isVisible()) await close.click()
+}

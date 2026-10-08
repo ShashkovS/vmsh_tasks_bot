@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
+import { AUTH_PERSONAS, loginThroughUi, settleInitialPwaNotice } from './auth-personas'
 import { expect, test } from './fixtures'
 
 // docs/organizer-questions.md: real account privacy, photo drafts and live replies.
@@ -13,6 +13,7 @@ for (const audience of ['student', 'family'] as const) {
     const question = `Вопрос организаторам ${audience} ${info.project.name} ${info.retry}`
     const reply = `Ответ организаторов ${audience} ${info.project.name}`
     await loginThroughUi(page, AUTH_PERSONAS[audience], `/${audience}/`)
+    if (audience === 'family') await settleInitialPwaNotice(page)
     await page.getByRole('link', { name: 'Задать вопрос организаторам' }).click()
     const composer = page.getByLabel('Сообщение организаторам')
     await expect(composer).toBeEnabled()

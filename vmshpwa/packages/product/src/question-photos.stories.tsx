@@ -1,3 +1,4 @@
+import { Button } from '@vmsh/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { useState } from 'react'
@@ -69,5 +70,49 @@ export const Composer: Story = {
       await expect(cameraButton.right).toBeLessThanOrEqual(send.left)
       await expect(send.right).toBeLessThanOrEqual(form.getBoundingClientRect().right + 1)
     }
+  },
+}
+
+/** docs/performance/browser-image-uploads.md: visible preparation and cancellation. */
+export const Preparation: Story = {
+  args: { photos: [], onChange: () => {} },
+  render: function Example() {
+    const [photos, setPhotos] = useState<Blob[]>([])
+    const [preparing, setPreparing] = useState(false)
+    return (
+      <QuestionPhotoPicker
+        photos={photos}
+        onChange={setPhotos}
+        onPreparingChange={setPreparing}
+        action={<Button disabled={preparing}>Отправить</Button>}
+        prepareFile={(_file, signal) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener(
+              'abort',
+              () => reject(new DOMException('Cancelled', 'AbortError')),
+              { once: true },
+            )
+          })
+        }
+      />
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const image = document.createElement('canvas')
+    image.width = image.height = 10
+    image.getContext('2d')!.fillRect(0, 0, 10, 10)
+    const blob = await new Promise<Blob>((resolve) =>
+      image.toBlob((value) => resolve(value!), 'image/png'),
+    )
+    await userEvent.upload(
+      canvas.getByLabelText('Выбрать фотографии', { selector: 'input' }),
+      new File([blob], 'page.png', { type: 'image/png' }),
+    )
+    await expect(canvas.getByRole('status')).toHaveTextContent('Готовим фото')
+    await expect(canvas.getByRole('button', { name: 'Отправить' })).toBeDisabled()
+    await userEvent.click(canvas.getByRole('button', { name: 'Отменить подготовку фотографии 1' }))
+    await expect(canvas.getByRole('button', { name: 'Отправить' })).toBeEnabled()
+    await expect(canvas.queryByAltText('Выбранная фотография')).not.toBeInTheDocument()
   },
 }

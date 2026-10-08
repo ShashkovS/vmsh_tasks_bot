@@ -16,8 +16,11 @@
 `apps/pwa_api/support_routes.py` предоставляет загрузку Student/Staff и защищённое чтение
 Student/Staff: автор загрузки, школьник-участник или сотрудник с доступом к переписке. До отправки фото
 не доступно сотрудникам. Семья не получает доступ к учебной переписке ребёнка.
-JPEG/PNG/WebP, до 25 МиБ, до 10 фото; сервер нормализует в WebP существующим
-конвертером. Пути объектного хранилища не передаются клиенту.
+JPEG/PNG/WebP/HEIC, до 25 МиБ, до 10 фото. По
+[решению от 8 октября](../../docs/performance/browser-image-uploads.md) общий
+worker готовит WebP в браузере; неподдерживаемые фото нормализует существующий
+серверный конвертер. Подготовленный WebP сохраняется без повторного кодирования.
+Ключ хранилища создаёт сервер; клиент использует uploadId и подписанный PUT URL.
 
 ## Проверка
 
@@ -76,3 +79,13 @@ JPEG/PNG/WebP, до 25 МиБ, до 10 фото; сервер нормализу
 Chromium Storybook (галерея/камера, выбор/удаление и ширины 320/390/800), typecheck
 затронутых приложений/пакетов, сборки Staff/Student, Ruff, целевой ESLint и diff-check.
 Существующее предупреждение Fast Refresh в `staff-support-pages.tsx` не менялось.
+
+### Browser preparation/direct upload — 8 октября 2026
+
+Все три аудитории используют общий worker `packages/app-shell/src/image-compression.ts`
+и `ImageUploadClient`. `QuestionPhotoPicker` показывает подготовку и отмену;
+`useOrganizerDraft.imageMetadata` сохраняет checksum/stable ID рядом с Blob bytes.
+Решение и состояния cleanup: [browser-image-uploads](../../docs/performance/browser-image-uploads.md).
+`support_routes`/`organizer_question_routes` поддерживают uploadId и атомарную
+квитанцию. Legacy JPEG/PNG/WebP и HEIC fallback остаются server-converted;
+подготовленный WebP в proxy/direct путях повторно не кодируется.

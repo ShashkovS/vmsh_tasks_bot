@@ -358,10 +358,10 @@ class PwaSupportThreadRepository:
         self._clock = clock
 
     async def store_photo(
-        self, *, student_user_id, object_key, sha256, byte_size, width, height
+        self, *, student_user_id, object_key, sha256, byte_size, width, height, on_saved=None
     ):
         def write(connection):
-            return connection.execute(
+            photo_id = connection.execute(
                 "INSERT INTO support_photos (uploader_user_id, object_key, sha256, byte_size, width, height, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING public_id",
                 (
@@ -374,6 +374,9 @@ class PwaSupportThreadRepository:
                     _timestamp(self._clock()),
                 ),
             ).fetchone()["public_id"]
+            if on_saved is not None:
+                on_saved(connection, {"photoId": photo_id})
+            return photo_id
 
         return await self._factory.run_write_async(write)
 

@@ -1,3 +1,4 @@
+import { preparedImageMetadata, recordImageTiming } from './image-upload-client'
 import { formatDateTime } from '@vmsh/i18n'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
@@ -294,14 +295,18 @@ function OrganizerCompose({
   )
   const { draft } = editor
   const [error, setError] = useState('')
+  const [preparing, setPreparing] = useState(false)
   const mutation = useMutation({
     networkMode: 'always',
     mutationFn: async () => {
       if (!navigator.onLine) throw new Error('offline')
+      const started = performance.now()
       const photoIds = []
       for (let index = 0; index < draft.photos.length; index++) {
         const id =
-          draft.uploadedIds[index] ?? (await client.upload(draft.photos[index]!)).photo.photoId
+          draft.uploadedIds[index] ??
+          (await client.upload(draft.photos[index]!, draft.imageMetadata?.[index] ?? undefined))
+            .photo.photoId
         photoIds.push(id)
         editor.update({ ...draft, uploadedIds: [...photoIds] })
       }
@@ -311,6 +316,7 @@ function OrganizerCompose({
         idempotencyKey: draft.idempotencyKey,
         childId: threadId ? null : draft.childId,
       })
+      recordImageTiming('send-to-message-receipt', started)
       await editor.clear()
       await onSent(result.threadId)
     },
@@ -322,7 +328,12 @@ function OrganizerCompose({
       ),
   })
   const submit = () => {
-    if (!mutation.isPending && editor.ready && (draft.text.trim() || draft.photos.length)) {
+    if (
+      !preparing &&
+      !mutation.isPending &&
+      editor.ready &&
+      (draft.text.trim() || draft.photos.length)
+    ) {
       setError('')
       mutation.mutate()
     }
@@ -375,11 +386,14 @@ function OrganizerCompose({
             }}
           />
           <QuestionPhotoPicker
+            prepareFile={client.preparePhoto}
+            onPreparingChange={setPreparing}
             action={
               <Button
                 type="submit"
                 className="min-w-0 max-w-full"
                 disabled={
+                  preparing ||
                   mutation.isPending ||
                   !editor.ready ||
                   (!draft.text.trim() && !draft.photos.length)
@@ -394,6 +408,12 @@ function OrganizerCompose({
               editor.update({
                 ...draft,
                 photos,
+                imageMetadata: photos.map(
+                  (photo) =>
+                    preparedImageMetadata(photo) ??
+                    draft.imageMetadata?.[draft.photos.indexOf(photo)] ??
+                    null,
+                ),
                 uploadedIds:
                   removedIndex === undefined
                     ? draft.uploadedIds
@@ -405,7 +425,7 @@ function OrganizerCompose({
             <p role="status" className="text-caption text-muted-foreground">
               {editor.unavailable
                 ? t`Черновик не сохраняется. Не закрывайте страницу.`
-                : editor.saved
+                : !preparing && editor.saved
                   ? t`Черновик сохранён на устройстве.`
                   : ''}
             </p>

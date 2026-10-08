@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: aff0238ffb4a4350b672a6999f6e350f838ec4b1c48effd2d3c4f7bb88148b15
+-- Product schema SHA-256: d7d3e668badc9061e452583ce81b87216d5cd6446f4ad647a72d8d408b808642
 
 CREATE TABLE achievement_definitions
 (
@@ -1960,6 +1960,31 @@ CREATE TABLE pwa_branding (
     version INTEGER NOT NULL DEFAULT 1
 );
 
+CREATE TABLE pwa_image_uploads (
+            id TEXT PRIMARY KEY,
+            account_id INTEGER NOT NULL REFERENCES auth_accounts(id),
+            audience TEXT NOT NULL CHECK(audience IN ('student','family','staff')),
+            client_id TEXT NOT NULL,
+            purpose TEXT NOT NULL CHECK(purpose IN ('written','support','organizer','rich','lesson-block')),
+            context TEXT NOT NULL,
+            fingerprint TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            sha256 TEXT NOT NULL CHECK(length(sha256)=64),
+            byte_size INTEGER NOT NULL CHECK(byte_size BETWEEN 1 AND 20971520),
+            width INTEGER NOT NULL CHECK(width BETWEEN 1 AND 1920),
+            height INTEGER NOT NULL CHECK(height BETWEEN 1 AND 1920),
+            object_key TEXT NOT NULL UNIQUE,
+            state TEXT NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','finalizing','completed','deleting','deleted')),
+            expires_at TEXT NOT NULL,
+            claim_token TEXT,
+            claim_until TEXT,
+            response TEXT,
+            binding TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE(account_id, audience, client_id),
+            CHECK((state='completed') = (response IS NOT NULL))
+        );
+
 CREATE TABLE questions
 (
     id                   INTEGER primary key,
@@ -3275,6 +3300,8 @@ CREATE INDEX problems_review_lesson_idx ON problems (group_id, lesson, id);
 
 CREATE INDEX push_subscriptions_account_idx
     on push_subscriptions (account_id, updated_at desc);
+
+CREATE INDEX pwa_image_uploads_cleanup ON pwa_image_uploads(state, expires_at);
 
 CREATE INDEX results_by_student_problem
     on results (student_id, problem_id);

@@ -48,14 +48,26 @@ async def store_uploaded_rich_image(
     *,
     storage: ObjectStorage,
     converter: ContentAssetConverter | ConfiguredContentAssetConverter,
+    prepared: bool = False,
 ) -> dict[str, object]:
     """Convert one Staff-uploaded image and return its safe public Markdown URL."""
 
-    if not data or len(data) > MAX_RICH_MEDIA_BYTES:
-        raise RichMediaCopyError("image file is empty or exceeds 10 MiB")
-    if not _static_image_payload(data):
-        raise RichMediaCopyError("upload must be a PNG, JPEG or WebP image")
-    converted = await converter.raster_to_webp(data)
+    if not data or len(data) > (20 if prepared else 25) * 1024 * 1024:
+        raise RichMediaCopyError("image file is empty or exceeds the upload limit")
+    if not _static_image_payload(data) and not (
+        data[4:8] == b"ftyp"
+        and data[8:12] in {b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1"}
+    ):
+        raise RichMediaCopyError("upload must be a PNG, JPEG, WebP or HEIC image")
+    if prepared:
+        from helpers.pwa.image_uploads import prepared_webp, ImageUploadRejected
+
+        try:
+            converted = prepared_webp(data)
+        except ImageUploadRejected as error:
+            raise RichMediaCopyError("prepared WebP is invalid") from error
+    else:
+        converted = await converter.raster_to_webp(data)
     if (
         converted.source_sha256 != hashlib.sha256(data).hexdigest()
         or converted.media_type != "image/webp"
@@ -157,6 +169,7 @@ async def copy_rich_document_media(
     *,
     storage: ObjectStorage,
     converter: ContentAssetConverter | ConfiguredContentAssetConverter,
+    known_images: dict[str, dict[str, object]] | None = None,
 ) -> tuple[dict[str, object], list[dict[str, object]]]:
     """Copy manifest media before the caller opens its database transaction."""
 
@@ -170,13 +183,46 @@ async def copy_rich_document_media(
     connector = aiohttp.TCPConnector(resolver=resolver, use_dns_cache=False, limit=4)
     timeout = aiohttp.ClientTimeout(total=30, connect=8, sock_read=15)
     try:
-        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+        async with aiohttp.ClientSession(
+            connector=connector, timeout=timeout
+        ) as session:
             for raw_item in raw_media:
                 if not isinstance(raw_item, dict):
                     raise RichMediaCopyError("rich media item is invalid")
                 source_url = raw_item.get("sourceUrl")
                 if not is_rich_https_url(source_url):
                     raise RichMediaCopyError("media URL must be credential-free HTTPS")
+                # Browser-uploaded images are already immutable verified objects.
+                # See docs/performance/browser-image-uploads.md; never GET/convert them again.
+                known = (known_images or {}).get(source_url)
+                if known is not None:
+                    total += known["byteSize"]
+                    if total > MAX_RICH_MEDIA_TOTAL_BYTES:
+                        raise RichMediaCopyError("rich media exceeds 25 MiB in total")
+                    item = {
+                        "mediaId": raw_item["mediaId"],
+                        "sourceUrl": source_url,
+                        "alt": raw_item["alt"],
+                        "url": known["url"],
+                        "mimeType": "image/webp",
+                        "width": known["width"],
+                        "height": known["height"],
+                    }
+                    finalized_media.append(item)
+                    manifest.append(
+                        {
+                            "kind": "image",
+                            "media_id": item["mediaId"],
+                            "source_url": source_url,
+                            "storage_key": known["objectKey"],
+                            "public_url": known["url"],
+                            "mime_type": "image/webp",
+                            "width": known["width"],
+                            "height": known["height"],
+                            "storage_status": "stored",
+                        }
+                    )
+                    continue
                 data, content_type = await _fetch_image(session, str(source_url))
                 total += len(data)
                 if total > MAX_RICH_MEDIA_TOTAL_BYTES:
@@ -194,7 +240,9 @@ async def copy_rich_document_media(
                         or not 1 <= converted.width <= MAX_RICH_MEDIA_SIDE
                         or not 1 <= converted.height <= MAX_RICH_MEDIA_SIDE
                     ):
-                        raise RichMediaCopyError("image conversion returned invalid output")
+                        raise RichMediaCopyError(
+                            "image conversion returned invalid output"
+                        )
                     output = converted.data
                     mime_type = "image/webp"
                     extension = "webp"

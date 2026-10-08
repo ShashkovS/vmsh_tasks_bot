@@ -4,8 +4,11 @@
 
 `helpers/object_storage.py` — единственная server-side граница файловых/S3
 объектов. Домен и будущие aiohttp upload endpoints используют общий
-`ObjectStorage.put/get/delete/public_url`; браузер всегда отправляет файлы через
-aiohttp и не получает S3 write credentials или presigned upload URL.
+`ObjectStorage.put/get/delete/public_url`. С 8 октября 2026 подготовленный в
+браузере WebP может использовать checksum-bound presigned PUT и HEAD-only
+финализацию: [решение и протокол](../../docs/performance/browser-image-uploads.md).
+Браузер получает только короткоживущее разрешение на конкретные байты; S3
+credentials остаются на сервере. Legacy/unsupported uploads используют aiohttp.
 
 Метаданные, связи, версии attachment и audit остаются в SQLite. Сам object key
 не заменяет `media_assets.public_id` и не является правом доступа. Публичный GET
@@ -160,3 +163,29 @@ GET и delete acknowledgement — PASS. До фиксации `when_required` bo
 - opt-in command: `vmshpwa/scripts/storage_smoke.py`;
 - unit/hermetic integration: `pwa_tests/test_object_storage.py`;
 - reproducible proof: `pwa_tests/reports/object-storage-phase0.md`.
+
+## Browser image uploads — 8 октября 2026
+
+`SignedWriteStorage.signed_write_url/head` в `helpers/object_storage.py` —
+опциональная возможность. `s3_direct_image_uploads_verified` в storage config
+по умолчанию `false`; не включать до реального checksum/HEAD и browser-CORS
+proof конкретного bucket. Новый transport и runtime-контракты:
+`packages/app-shell/src/image-upload-client.ts`, `packages/contracts/src/image-uploads.ts`.
+Подготовка `/image-uploads/prepare` принимает schemaVersion, clientId, purpose,
+context, filename, sha256, byteSize, width, height. Ответ содержит uploadId,
+transport (`s3|proxy|completed`), expiresAt и для S3 URL/method/headers.
+`/{uploadId}/renew` обновляет только разрешение. Существующий photo endpoint
+принимает `{schemaVersion:1,uploadId}` (written также прежние версии/ordinal/key).
+Proxy несёт `X-Vmsh-Image-Upload`; `X-Vmsh-Prepared-WebP:1` убирает пересжатие.
+
+Опциональный pinned live test (не изменяет CORS/config):
+`VMSH_ENABLE_LIVE_S3_TEST=true PWA_S3_RUN_ID=<run> PWA_S3_BROWSER_ORIGIN=<origin> make pwa-image-upload-live-smoke`.
+Он проверяет exact length, SHA-256 enforcement, HEAD и HTTP CORS headers,
+удаляет disposable object. `browserProof:not-run` честно отличает protocol proof
+от настоящего browser upload. Final enable требует отдельного browser proof.
+
+CORS: добавить PUT и разрешённые Content-Type/x-amz-checksum-sha256 headers
+для точных portal origins, сохранив существующие GET/HEAD правила. Подписанный
+URL origin должен входить в CSP connect-src; он может отличаться от CDN origin.
+EXIF/dimensions на direct path проверяет browser worker, HEAD не проверяет формат.
+Rich images сохраняют существующее требование публичного HTTPS URL storage.

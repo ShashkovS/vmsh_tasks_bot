@@ -9,8 +9,21 @@ function respond(response: ImageCompressionResponse): void {
   self.postMessage(response)
 }
 
-self.onmessage = async (event: MessageEvent<ImageCompressionRequest>) => {
+self.onmessage = async (
+  event: MessageEvent<ImageCompressionRequest | { requestId: string; probe: true }>,
+) => {
   const { requestId } = event.data
+  if ('probe' in event.data) {
+    try {
+      const canvas = new OffscreenCanvas(1, 1)
+      canvas.getContext('2d')?.fillRect(0, 0, 1, 1)
+      const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.82 })
+      self.postMessage({ requestId, supported: blob.type === 'image/webp' && blob.size > 0 })
+    } catch {
+      self.postMessage({ requestId, supported: false })
+    }
+    return
+  }
   let bitmap: ImageBitmap
   try {
     bitmap = await createImageBitmap(event.data.file, { imageOrientation: 'from-image' })
@@ -50,7 +63,7 @@ self.onmessage = async (event: MessageEvent<ImageCompressionRequest>) => {
       })
       return
     }
-    if (blob.type !== 'image/webp' || blob.size === 0) {
+    if (blob.type !== 'image/webp' || blob.size === 0 || blob.size > 20 * 1024 * 1024) {
       respond({ requestId, status: 'server-fallback', reason: 'webp-unavailable' })
       return
     }

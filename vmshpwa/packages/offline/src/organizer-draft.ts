@@ -1,3 +1,4 @@
+import { preparedImageSchema, type PreparedImage } from '@vmsh/contracts'
 import { Dexie, type Table } from 'dexie'
 import { useEffect, useRef, useState } from 'react'
 
@@ -10,6 +11,7 @@ export interface OrganizerDraft {
   childId: string | null
   photos: Blob[]
   uploadedIds: (string | null)[]
+  imageMetadata?: (PreparedImage | null)[]
   idempotencyKey: string
 }
 type StoredDraft = Omit<OrganizerDraft, 'photos'> & { photos: { id: string; type: string }[] }
@@ -28,6 +30,7 @@ export function useOrganizerDraft(namespace: string, key: string) {
     childId: null,
     photos: [],
     uploadedIds: [],
+    imageMetadata: [],
     idempotencyKey: crypto.randomUUID(),
   })
   const [draft, setDraft] = useState<OrganizerDraft>(empty)
@@ -54,7 +57,10 @@ export function useOrganizerDraft(namespace: string, key: string) {
           photoIds.current.set(blob, item.id)
           photos.push(blob)
         }
-        if (active) setDraft({ ...value, photos })
+        const imageMetadata = (value.imageMetadata ?? []).map((image) =>
+          image ? preparedImageSchema.parse(image) : null,
+        )
+        if (active) setDraft({ ...value, photos, imageMetadata })
       })
       .catch(() => {
         if (active) setUnavailable(true)

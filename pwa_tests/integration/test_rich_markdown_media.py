@@ -39,6 +39,26 @@ class _RasterConverter:
         )
 
 
+async def test_known_browser_image_is_reused_without_fetch_conversion_or_put(monkeypatch):
+    """Saving Rich Markdown must retain the benefit of direct image upload."""
+    async def forbidden(*args, **kwargs):
+        raise AssertionError('Already finalized browser image must not be read or encoded')
+
+    monkeypatch.setattr(rich_media, '_fetch_image', forbidden)
+    url = 'https://cdn.example.test/image-uploads/rich/photo.webp'
+    document = {'schemaVersion': 1, 'blocks': [], 'media': [
+        {'mediaId': 'photo', 'sourceUrl': url, 'alt': 'Фото', 'mimeType': 'image/webp', 'width': 1, 'height': 1},
+    ]}
+    storage = _PublicStorage()
+    result, manifest = await rich_media.copy_rich_document_media(document, storage=storage,
+        converter=None, known_images={url: {'url': url, 'width': 1920, 'height': 1080,
+            'objectKey': 'image-uploads/rich/photo.webp', 'byteSize': 1234}})
+    assert result['media'][0]['width'] == 1920
+    assert result['media'][0]['url'] == url
+    assert manifest[0]['storage_key'] == 'image-uploads/rich/photo.webp'
+    assert storage.objects == []
+
+
 @pytest.mark.asyncio
 async def test_rich_media_copy_never_returns_client_hotlink_for_private_storage(
     monkeypatch: pytest.MonkeyPatch,
@@ -109,7 +129,7 @@ async def test_staff_uploaded_rich_image_is_converted_and_uses_public_s3_url() -
 
 @pytest.mark.asyncio
 async def test_staff_uploaded_rich_image_rejects_non_image_before_conversion() -> None:
-    with pytest.raises(rich_media.RichMediaCopyError, match="PNG, JPEG or WebP"):
+    with pytest.raises(rich_media.RichMediaCopyError, match="PNG, JPEG, WebP or HEIC"):
         await rich_media.store_uploaded_rich_image(
             b"not an image",
             storage=_PublicStorage(),

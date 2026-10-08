@@ -56,3 +56,6 @@ export { syncDeviceLocale } from './device-locale'
 export * from './statistics-reports-client'
 
 export { fetchBranding } from '@vmsh/branding'
+
+export * from './image-compression'
+export * from './image-upload-client'

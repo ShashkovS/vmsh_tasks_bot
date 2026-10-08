@@ -1,4 +1,9 @@
-import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
+import {
+  AUTH_PERSONAS,
+  loginThroughUi,
+  settleInitialPwaNotice,
+  type AuthPersona,
+} from './auth-personas'
 import { familyChildHomeResponseSchema } from '../packages/contracts/src/family-courses'
 
 import { expect, test, type Page } from './fixtures'
@@ -44,6 +49,7 @@ test('Phase 9: Family switches children and opens only their current course cont
   page,
 }) => {
   await loginThroughUi(page, AUTH_PERSONAS.family, '/family/children')
+  await settleInitialPwaNotice(page)
   await expect(page.getByRole('heading', { name: 'Дети' })).toBeVisible()
   await expect(page.getByText('Алексей Тестовый-Онлайн')).toBeVisible()
   await expect(page.getByText('Мария Тестовая-Очно')).toBeVisible()

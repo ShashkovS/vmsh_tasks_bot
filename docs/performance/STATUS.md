@@ -75,3 +75,12 @@
   93k HTTP, 0,294% >1s, 6 HTTP500; короткий admission burst, upload convert ~81%.
   Sentry query errors массовые, их первопричина скрыта текущей sanitization.
   Runtime не менялся; полный journal и transport classification остаются follow-up.
+
+- 2026-10-08: начата реализация браузерного WebP/direct-to-S3 для всех пользовательских фото; решение: [browser-image-uploads](browser-image-uploads.md). Протокол/миграция, черновики и release gate в работе.
+
+- 2026-10-08: протокол, все photo endpoints, общий worker и durable metadata подключены; initial 95 Python checks и workspace typecheck PASS. Убран повторный Rich Markdown GET/convert при сохранении. Release gate запускается; provider/browser proof ещё не подтверждён.
+
+- 2026-10-08: pinned live Beget probe подтвердил несовместимость SHA-256 (изменённый PUT принят, HEAD checksum отсутствует); cleanup ACK PASS. Direct flag остаётся выключенным; подготовленный WebP использует лёгкий proxy. Первый release gate остановился на format, исправлено; повтор в работе.
+- 2026-10-08: Python 2863/7 SKIP, frontend 1053, Storybook 364 PASS. E2E выявил преждевременный saved indicator при подготовке нового фото; исправлено, добавлена native-worker проверка EXIF/форматов и 1/2/10 фото. Незавершённый release run прерван для проверки исправления; финальная квитанция pending.
+- Окончательный код: 2867 Python / 7 SKIP, 1054 frontend, 364 Storybook PASS; целевые photo/dialogue E2E 15 PASS. В общем release gate Chromium/WebKit прошли основной прогон, Firefox и завершающие фазы в работе. [Браузерные замеры](../../pwa_tests/reports/browser-image-uploads-20261008/README.md).
+- Реализация завершена. Финальные relevant-mode проверки: все prep suites и 63 функциональных E2E в трёх браузерах PASS; Staff visual 3 PASS, Student visual 3 FAIL из-за добавленного курса в тестовой фикстуре. Различия осмотрены, эталонные снимки сохранены. Default all-mode gate не зелёный: 6 сбоев в сценариях navigation/refresh/SW. [Итоговый отчёт](../../pwa_tests/reports/browser-image-uploads-20261008/README.md). Direct flag выключен после несовместимого Beget proof; production не менялся.
