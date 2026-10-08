@@ -11,7 +11,6 @@ figure/statistics/visual pending. Product source не менялся. [План 
 load average 125; test runtime остановлен после resource failures.
 Production branch и оба сервера ещё не изменены; финальная проверка/выпуск pending.
 
-
 ## 2026-10-08 — Повторные задержки и клиентские сбои
 
 Дополнительный correction: refresh response переживает reload благодаря
