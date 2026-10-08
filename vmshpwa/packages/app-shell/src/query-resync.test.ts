@@ -6,7 +6,7 @@ import { createAppQueryClient } from './providers'
 it('skips a late recovery-ready event while offline and preserves the next online resync', async () => {
   const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
   const client = createAppQueryClient()
-  const read = vi.fn(async () => 'fresh')
+  const read = vi.fn(() => Promise.resolve('fresh'))
   const unsubscribe = new QueryObserver(client, {
     queryKey: ['auth', 'student', 'me'],
     queryFn: read,
