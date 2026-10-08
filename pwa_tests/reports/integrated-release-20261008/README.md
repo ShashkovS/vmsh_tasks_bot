@@ -1,0 +1,23 @@
+# Объединённый выпуск ВМШ / TLF — 2026-10-08
+
+[Авторизация, состав, миграции и текущий статус](../../../docs/performance/integrated-release-20261008.md).
+
+Исходные работы сохранены отдельными коммитами и merged в интеграционную ветку.
+[Production preflight](preflight.json): current schema 0113, tracked checkout clean,
+service-specific credentials/runtime files retained. [TLF deploy script](deploy-tlf.sh)
+проверен синтаксически; [перечень controls](deploy-script-review.json).
+
+Общий release gate в работе. Пока PASS: format/types/lint/i18n, 2880 Python / 7 SKIP,
+1066 frontend, 364 Storybook. E2E Chromium/WebKit/Firefox ещё не завершён.
+Текущие public smoke: [ВМШ](vmsh-http-before.log), [TLF](tlf-http-before.log).
+
+Production deployment ещё не выполнялся. Direct upload для Beget остаётся disabled.
+Квитанции проверки и фактического выпуска будут добавлены после завершения.
+
+Первый общий gate остановлен после подтверждённого reconnect FAIL. Его
+[квитанция](initial-release-gate.json) помечена invalid: обнаружена и исправлена
+ошибка записи статуса при interruption. Первое предположение о synthetic events
+не подтвердилось. После исправления замены старых waves
+[reconnect matrix](problem-release-replacement.json): 3 PASS. Временная
+диагностика удалена; network-loss assertions и snapshots сохранены. Финальный
+общий gate запускается заново.

@@ -1,7 +1,7 @@
 """Real cache invalidation/isolation and the measured release gate contract."""
 
 import json
-from contextlib import closing
+from contextlib import closing, nullcontext
 import sqlite3
 from types import SimpleNamespace
 
@@ -243,3 +243,33 @@ def test_receipt_tracks_configuration_and_untracked_code_but_not_test_reports(
     assert configured != original
     (tmp_path / "extra.py").write_text("new_code = True\n")
     assert check_runner.source_digest() != configured
+
+
+@pytest.mark.parametrize("failure", [KeyboardInterrupt, FileNotFoundError])
+def test_interrupted_or_failed_launcher_cannot_record_previous_pass(
+    tmp_path, monkeypatch, failure
+):
+    monkeypatch.setattr(check_runner, "exclusive_e2e_run", lambda _path: nullcontext())
+    monkeypatch.setattr(check_runner, "frontend_environment", lambda _path, env: env)
+    monkeypatch.setattr(check_runner, "source_digest", lambda: "tested-source")
+    monkeypatch.setattr(check_runner.subprocess, "check_output", lambda *a, **k: "a" * 40)
+    monkeypatch.setattr(
+        check_runner, "steps",
+        lambda *args: [("first", ["pass"], tmp_path), ("second", ["fail"], tmp_path)],
+    )
+
+    def run(command, **kwargs):
+        if command == ["fail"]:
+            raise failure()
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(check_runner.subprocess, "run", run)
+    arguments = ["--report-dir", str(tmp_path)]
+    if failure is KeyboardInterrupt:
+        assert check_runner.main(arguments) == 130
+    else:
+        with pytest.raises(FileNotFoundError):
+            check_runner.main(arguments)
+    receipt = json.loads((tmp_path / "summary.json").read_text())
+    assert receipt["steps"][0]["exit_code"] == 0
+    assert receipt["exit_code"] == (130 if failure is KeyboardInterrupt else 1)

@@ -2,8 +2,8 @@
 
 ## 2026-10-08 — Объединённый выпуск
 
-Четыре доработки объединены; migrations 0114–0116 согласованы. Общий release
-gate и preflight обоих production в работе. [План и квитанции](../../../docs/performance/integrated-release-20261008.md).
+Четыре доработки объединены; migrations 0114–0116 согласованы. Preflight обоих production PASS. Первый release gate выявил overlapping
+offline resync; исправление проверяется перед повтором общего gate. [План и квитанции](../../../docs/performance/integrated-release-20261008.md).
 
 ## 2026-10-08 — Повторные задержки и клиентские сбои
 

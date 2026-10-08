@@ -223,6 +223,8 @@ def main(argv=None) -> int:
                     flush=True,
                 )
                 phase = time.monotonic()
+                # A launcher exception cannot reuse the preceding phase's zero.
+                result = 1
                 with (report_dir / f"{name}.log").open("w") as log:
                     result = subprocess.run(
                         command,
@@ -256,6 +258,11 @@ def main(argv=None) -> int:
     except E2eSuiteAlreadyRunning as error:
         print(error, flush=True)
         result = 73
+    except KeyboardInterrupt:
+        # An interrupted phase must not inherit the preceding suite's PASS.
+        # See docs/performance/integrated-release-20261008.md and its first gate.
+        result = 130
+        record["interrupted"] = True
     finally:
         record.update(seconds=round(time.monotonic() - started, 3), exit_code=result)
         (report_dir / "summary.json").write_text(json.dumps(record, indent=2) + "\n")

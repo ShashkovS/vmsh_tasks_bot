@@ -691,7 +691,12 @@ export function RealtimeProvider({
       : null
 
   useEffect(() => {
+    let wasOffline = !window.navigator.onLine
+    const wentOffline = () => {
+      wasOffline = true
+    }
     const resyncAfterNetworkRecovery = () => {
+      if (!window.navigator.onLine) return
       const authority = authenticationRef.current.state
       if (
         authority.status !== 'authenticated' &&
@@ -701,10 +706,16 @@ export function RealtimeProvider({
       // docs/problem-release.md: an offline cache read can be fresh in Query,
       // while a failed authority refetch has stopped the socket. Cancel older
       // reads and recheck HTTP authority/data even before WS is mounted again.
-      void resyncActiveQueries(queryClient)
+      const restart = wasOffline
+      wasOffline = false
+      void resyncActiveQueries(queryClient, { restart })
     }
+    window.addEventListener('offline', wentOffline)
     window.addEventListener('online', resyncAfterNetworkRecovery)
-    return () => window.removeEventListener('online', resyncAfterNetworkRecovery)
+    return () => {
+      window.removeEventListener('offline', wentOffline)
+      window.removeEventListener('online', resyncAfterNetworkRecovery)
+    }
   }, [queryClient])
 
   useEffect(() => {
