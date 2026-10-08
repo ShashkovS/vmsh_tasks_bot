@@ -1,38 +1,35 @@
 # Объединённый выпуск ВМШ / TLF — 2026-10-08
 
-[Авторизация, состав, миграции и текущий статус](../../../docs/performance/integrated-release-20261008.md).
+Оба production обновлены до `d4bf4a30ce9ddee3723fd13ed22eec95f9670ef0`.
+[Deployment receipt](deployment.json), [решение владельца](owner-release-decision.json),
+[состав и ограничения](../../../docs/performance/integrated-release-20261008.md).
 
-Исходные работы сохранены отдельными коммитами и merged в интеграционную ветку.
-[Production preflight](preflight.json): current schema 0113, tracked checkout clean,
-service-specific credentials/runtime files retained. [TLF deploy script](deploy-tlf.sh)
-проверен синтаксически; [перечень controls](deploy-script-review.json).
+- [ВМШ runtime/schema/backups](production-vmsh.json), [deploy log](deploy-vmsh.log),
+  [25 HTTP checks](vmsh-http-after.log).
+- [TLF runtime/schema/credentials/data](production-tlf.json), [deploy log](deploy-tlf.log),
+  [rehearsal/guard/25 HTTP checks](tlf-verification.log).
+- [Внешние JS/CSS/worker bytes, provenance и CSP](public-release.json).
+- [Новый media domain: три объекта на обоих origins](vmsh-media-domain.json).
+- [Первый TLF attempt](deploy-tlf-attempt1.log) остановился до maintenance/cutover:
+  comparator не мог читать root-owned JSON. [Исправленный script](deploy-tlf.sh)
+  выполнил отдельный retry `r2` с SHA-256 из deployment receipt.
 
-Общий release gate в работе. Последний полный запуск: format/types/lint/i18n,
-2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS; основная E2E-фаза
-385 PASS / 20 SKIP / 6 FAIL. [Квитанция и contexts](matrix-failures/release-gate.json).
-Синхронизация тестов исправлена; [реальная SW активация](sw-real-button.json):
-12 PASS в трёх браузерах. Product code и golden snapshots сохранены.
-Текущие public smoke: [ВМШ](vmsh-http-before.log), [TLF](tlf-http-before.log).
+**Общий release gate не зелёный.** Владелец выбрал выпуск после сообщения об
+этом ограничении. Completed suites: format/types/lint/i18n, 2882 Python / 7 SKIP,
+1068 frontend, 364 Storybook PASS. [Основная матрица](matrix-failures/release-gate.json):
+385 PASS / 20 SKIP / 6 FAIL. Harness исправлен, focused reconnect 3 PASS и
+[реальная SW activation](sw-real-button.json) 12 PASS в трёх engines.
+Product code после `68eee3f6` не менялся. Figure/runtime/statistics/visual и
+полный locale replay остаются follow-up после освобождения ресурсов Mac;
+assertions/timeouts/retries/goldens не ослаблялись.
 
-Production deployment ещё не выполнялся. Direct upload для Beget остаётся disabled.
-Квитанции проверки и фактического выпуска будут добавлены после завершения.
+Исходные evidence сохранены: [невалидная квитанция первого interruption](initial-release-gate.json),
+[причина последующих interruptions](resource-degradation.json),
+[all-mode interruption](final-navigation-failures/interrupted-gate.json),
+[focused FAIL](final-focused-failure/summary.json), [locale replay interruption](locale-reload-fixed-interrupted.json).
+Невалидная zero-квитанция runner исправлена regression tests, не используется как PASS.
 
-Первый общий gate остановлен после подтверждённого reconnect FAIL. Его
-[квитанция](initial-release-gate.json) помечена invalid: обнаружена и исправлена
-ошибка записи статуса при interruption. Первое предположение о synthetic events
-не подтвердилось. После исправления замены старых waves
-[reconnect matrix](problem-release-replacement.json): 3 PASS. Временная
-диагностика удалена; network-loss assertions и snapshots сохранены. Финальный
-общий gate запускается заново.
-
-Интеграционная ветка `codex/integrated-release-20261008` запушена (`d6eb7fa9`).
-Финальный all-mode повтор корректно прерван с exit 130;
-[resource degradation](resource-degradation.json) и [полные traces](final-navigation-failures/interrupted-gate.json)
-не считаются PASS. Остановлены только принадлежащие прогону services/browsers.
-Production ветка и оба портала ещё не менялись; остаточный gate/выпуск pending.
-
-Последний [focused gate](final-focused-failure/summary.json): non-browser
-PASS; i18n 24 PASS / 12 FAIL. Реальный locale reload теперь ожидается во
-всех восьми journeys; [повтор прерван](locale-reload-fixed-interrupted.json)
-после новых WebKit cold-boot/teardown failures. Release gate не зелёный;
-figure/runtime/statistics/visual и оба production deployments pending.
+Direct S3 не включался: Beget не прошёл checksum/HEAD proof; browser WebP
+использует лёгкий backend proxy без повторного кодирования. Ускорение на
+production ещё не измерено. Runtime/credentials/production rows не переносятся
+между порталами или из тестового контура.

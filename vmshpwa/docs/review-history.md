@@ -87,3 +87,11 @@ PASS; четыре app bundles собраны. Типы, lint, format, i18n и R
 Светлая/тёмная темы осмотрены. Полный fast gate остановлен незатронутыми
 Python failures из-за внешних fixtures, prod profile и тестовых часов;
 общий gate не заявляется зелёным. [Подробный proof и снимки](../../pwa_tests/reports/review-conversation-20261008/README.md).
+
+## Production release — 2026-10-08
+
+Выпущено на ВМШ и TLF в объединённой ревизии `d4bf4a30`.
+[Решение владельца, миграции, фактические runtime/static/backups proofs и
+остаточная браузерная проверка](../../docs/performance/integrated-release-20261008.md). Оба public smoke — 25 PASS;
+схема current на 0116, сервисы active, maintenance снят. Direct S3 не включался;
+production speedup пока не измерен. Исторические ограничения gate выше сохранены.

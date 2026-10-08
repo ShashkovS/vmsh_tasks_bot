@@ -78,3 +78,11 @@ content 2 PASS. [Структурированный отчёт](../../pwa_tests/
 services. После выпуска и следующего online запроса материалов Student/Family
 получат новые URL. Офлайн сохранённые документы сохраняют прежние ссылки до
 следующего online обновления; storage/черновики браузера очищать не требуется.
+
+## Production release — 2026-10-08
+
+Выпущено на ВМШ и TLF в объединённой ревизии `d4bf4a30`.
+[Решение владельца, миграции, фактические runtime/static/backups proofs и
+остаточная браузерная проверка](../../docs/performance/integrated-release-20261008.md). Оба public smoke — 25 PASS;
+схема current на 0116, сервисы active, maintenance снят. Direct S3 не включался;
+production speedup пока не измерен. Исторические ограничения gate выше сохранены.

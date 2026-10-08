@@ -24,24 +24,33 @@ Schema fixtures и ожидаемые heads обновляются из реал
 
 ## Проверка и выпуск
 
-Статус: объединение завершено; последний общий gate на `68eee3f6`: types/lint/i18n,
-2882 Python / 7 SKIP, 1068 frontend и 364 Storybook PASS. Основная E2E-фаза:
-385 PASS / 20 SKIP / 6 FAIL. Исправляются test harness и selectors; production
-не менялся. Figure/statistics/visual фазы ещё не запускались в этом повторе. Production
-preflight подтвердил head 0113 на обоих серверах: на ВМШ 6486 старых media
-URL, на TLF — 0; настроенный TLF toolchain соответствует закреплённому.
-[Guarded TLF script](../../pwa_tests/reports/integrated-release-20261008/deploy-tlf.sh)
-подготовлен с online-copy up/down/up rehearsal, проверкой всех product rows,
-backups, health, atomic static activation и сохранением credentials/NATS.
-Он ещё не запускался.
-Точная квитанция общего gate, source digest, public smoke, backups и runtime
-heads будут добавлены после фактических проверок. Прежние отдельные PASS/FAIL
-не заменяют проверку объединённого результата.
+Оба production обновлены 8 октября до `d4bf4a30`: все четыре работы,
+миграции 0114–0116 и исправление offline resync выпущены вместе.
+На каждом портале 25 публичных HTTP проверок PASS; схема current, сервисы active,
+maintenance снят, резервные копии проверены. Внешние JS/CSS/worker bytes и
+production provenance совпадают со сборками; CSP разрешает нужные media origins.
+На ВМШ старых URL в presentation fields осталось 0; SHA-256 обновлённых
+228 derivatives и 41 publication HTML корректны. На TLF все прежние product
+rows и credentials сохранены, NATS не перезапускался; migrations up/down/up PASS.
 
-Direct upload остаётся disabled для Beget: провайдер не доказал SHA-256/HEAD
-checksum. Современные браузеры используют подготовленный WebP через лёгкий
-proxy без повторного кодирования. Production credentials, course settings,
-личные ответы и материалы не переносятся из тестовой среды.
+Владелец явно выбрал выпуск по завершённым проверкам после сообщения об
+оставшихся browser failures. **Общий release gate не считается зелёным**:
+2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS; основная E2E-фаза
+385 PASS / 20 SKIP / 6 FAIL, затем focused regressions PASS. Финальные
+figure/runtime/statistics/visual и полный locale replay остаются follow-up
+после разгрузки тестового Mac. Direct S3 не включён: browser WebP идёт через
+лёгкий backend proxy без повторного кодирования. Production ускорение ещё не измерено.
+
+Фактические сборки: ВМШ `d4bf4a30ce9d-20261008155618`,
+TLF `tlfprep-20261008-integrated-d4bf4a30ce9d-r2`.
+[Deployment receipt](../../pwa_tests/reports/integrated-release-20261008/deployment.json),
+[ВМШ](../../pwa_tests/reports/integrated-release-20261008/production-vmsh.json),
+[TLF](../../pwa_tests/reports/integrated-release-20261008/production-tlf.json),
+[публичные bytes/CSP](../../pwa_tests/reports/integrated-release-20261008/public-release.json),
+[media HEAD](../../pwa_tests/reports/integrated-release-20261008/vmsh-media-domain.json).
+
+Ниже сохранена история проверок до решения владельца и фактического cutover;
+исторические FAIL/interrupt не переобозначены как PASS.
 
 ## Исходный E2E FAIL и восстановление связи
 
@@ -126,7 +135,7 @@ deploy script скопирован в `/tmp`, SHA-256 совпадает; cutove
 Следующий шаг: свободные ресурсы и финальный gate либо явно выбранный
 владельцем выпуск по уже завершённым проверкам.
 
-## Текущее состояние перед handoff
+## Состояние до решения владельца о выпуске
 
 [Последний focused release receipt](../../pwa_tests/reports/integrated-release-20261008/final-focused-failure/summary.json):
 format/types/lint/i18n, 2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS;
@@ -140,7 +149,7 @@ main-frame navigation, DOM и `lang=en`. Formatting/typed ESLint PASS;
 и прерван со статусом 130. Эталонные снимки, assertions, timeout и retries
 не ослаблены. Все принадлежащие прогону браузеры и services 8380/5380 остановлены.
 
-**Release gate не зелёный. Оба production ещё не изменены.**
+**На тот момент release gate не был зелёным, оба production ещё не изменены.**
 Требуется свободное окружение и завершение финального gate либо отдельное
 решение владельца использовать уже выполненные проверки. После этого:
 ff-only `vmshpwa`, push через системный SSH-agent, штатный защищённый VMSH
@@ -160,3 +169,25 @@ Direct S3 verified flag остаётся false; browser WebP отправляе�
 ревизия `419e450a`; дополнительные изменения — E2E harness и документация.
 Предварительные проверки обоих серверов повторены: прежние heads и все сервисы active.
 Cutover использует штатный VMSH deploy и подготовленный guarded TLF script.
+
+TLF первая подготовка остановилась до maintenance/cutover: root-owned JSON
+receipts были недоступны service user при сравнении. Исправлен только JSON
+comparator deploy script; повтор использует отдельный release `-r2`. Рабочая
+база и сервисы первой попыткой не изменены; [лог сохранён](../../pwa_tests/reports/integrated-release-20261008/deploy-tlf-attempt1.log).
+
+## Фактический cutover и проверка
+
+ВМШ штатный push-deploy завершился в 15:57:34 UTC, TLF guarded retry —
+в 15:59:07 UTC. Обе рабочие базы current на 0116; before/after backups integrity OK.
+ВМШ сохранил старый и новый origin в CSP; три сохранённых файла (SVG/WebP)
+дают HTTP 200 на обоих доменах с одинаковыми size/MIME/ETag. Триггеры
+immutable evidence восстановлены; cleanup и notification indexes присутствуют.
+TLF rehearsal и live comparison подтвердили все старые product rows;
+Zoom receipts до/после cutover — 1956. Конфигурации клиентов из тестового
+контура не переносились. Сервисы PWA, Telegram/Zoom, analytics и NATS active;
+NRestarts=0. Direct verified flag не включался, provider proof остаётся обязательным.
+
+Фактические runtime/static результаты сохранены в [общем отчёте](../../pwa_tests/reports/integrated-release-20261008/README.md).
+После cutover публикуется только документация и квитанции; runtime product code
+остаётся кодом `d4bf4a30`. Незавершённые browser phases и real-device/performance
+замеры сохранены как follow-up, без обещания конкретного ускорения.

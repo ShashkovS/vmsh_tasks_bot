@@ -19,5 +19,9 @@
     "credentials_checksum_unchanged",
     "nats_pid_unchanged",
     "fail_closed_after_writers_reopen"
-  ]
+  ],
+  "successful_retry": "r2",
+  "script_sha256": "88b32a51724e51af3ed4c29300d85148a3fcb2baec8c7f1c93d2e3ef94410085",
+  "json_receipts_compared_as_root": true,
+  "executed_status": 0
 }

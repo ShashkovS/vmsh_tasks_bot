@@ -119,3 +119,11 @@ direct PUT, HEAD/finalize и send-to-receipt, без URL/payload в telemetry.
   [guarded provider probe](../../vmshpwa/scripts/image_upload_storage_smoke.py).
 - Provider contract: [S3 HeadObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html)
   and [presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html).
+
+## Production release — 2026-10-08
+
+Выпущено на ВМШ и TLF в объединённой ревизии `d4bf4a30`.
+[Решение владельца, миграции, фактические runtime/static/backups proofs и
+остаточная браузерная проверка](integrated-release-20261008.md). Оба public smoke — 25 PASS;
+схема current на 0116, сервисы active, maintenance снят. Direct S3 не включался;
+production speedup пока не измерен. Исторические ограничения gate выше сохранены.

@@ -2,16 +2,24 @@
 
 ## 2026-10-08 — Объединённый выпуск
 
-Владелец 8 октября явно выбрал «Давай обновлять оба продакшена» после
-сообщения о незелёном browser gate. Выпуск по завершённым проверкам разрешён;
-FAIL/interrupt receipts сохранены, оставшиеся browser phases остаются follow-up.
-Начат cutover обоих порталов одной объединённой ревизией; результат ещё проверяется.
-Direct S3 verified flag остаётся false; browser WebP отправляется через лёгкий backend proxy.
+Оба production обновлены 8 октября до `d4bf4a30`: все четыре работы,
+миграции 0114–0116 и исправление offline resync выпущены вместе.
+На каждом портале 25 публичных HTTP проверок PASS; схема current, сервисы active,
+maintenance снят, резервные копии проверены. Внешние JS/CSS/worker bytes и
+production provenance совпадают со сборками; CSP разрешает нужные media origins.
+На ВМШ старых URL в presentation fields осталось 0; SHA-256 обновлённых
+228 derivatives и 41 publication HTML корректны. На TLF все прежние product
+rows и credentials сохранены, NATS не перезапускался; migrations up/down/up PASS.
 
-Завершённые проверки: 2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS;
-основная E2E-фаза 385 PASS / 20 SKIP / 6 FAIL с последующими focused regressions.
-Четыре работы и migrations 0114–0116 объединены. [План, ограничения и квитанции](integrated-release-20261008.md).
+Владелец явно выбрал выпуск по завершённым проверкам после сообщения об
+оставшихся browser failures. **Общий release gate не считается зелёным**:
+2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS; основная E2E-фаза
+385 PASS / 20 SKIP / 6 FAIL, затем focused regressions PASS. Финальные
+figure/runtime/statistics/visual и полный locale replay остаются follow-up
+после разгрузки тестового Mac. Direct S3 не включён: browser WebP идёт через
+лёгкий backend proxy без повторного кодирования. Production ускорение ещё не измерено.
 
+[Состав, решение владельца и квитанции](integrated-release-20261008.md).
 
 - 2026-10-08, исправления: реализован [инкремент](2026-10-08-fixes.md).
   Индекс 0114 сократил пустую push selection 164–190 → 32–36 мс на одной

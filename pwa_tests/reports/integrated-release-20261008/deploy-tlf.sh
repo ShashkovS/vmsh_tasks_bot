@@ -8,7 +8,7 @@ CODE=$BASE/vmsh_tasks_bot
 TARGET=${1:?Pass the reviewed full commit SHA}
 [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]
 [[ $(hostname) == vmsh-nbg ]]
-RELEASE=tlfprep-20261008-integrated-${TARGET:0:12}
+RELEASE=tlfprep-20261008-integrated-${TARGET:0:12}-r2
 RECORD=$BASE/deploy/releases/$RELEASE
 STAGE=$RECORD/source
 DB=$CODE/db/production_prep.db
@@ -93,7 +93,9 @@ as_app env PROD=true VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=fals
 as_app env PROD=true VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false VMSH_INSTANCE=migration-rehearsal VMSH_DB_FILENAME="$RECORD/rehearsal.sqlite3" .venv/bin/python -m vmshpwa.scripts.database_performance_guard > "$RECORD/rehearsal-guard.json" 2>&1
 as_app .venv/bin/python "$RECORD/data-check.py" "$RECORD/rehearsal.sqlite3" > "$RECORD/rehearsal-after.json"
 check_rows() {
-    as_app .venv/bin/python - "$1" "$2" <<'PY'
+    # Shell redirections create root-owned receipts. Compare them as root;
+    # this interpreter only reads JSON and never opens the application database.
+    .venv/bin/python - "$1" "$2" <<'PY'
 import json,sys
 before=json.load(open(sys.argv[1])); after=json.load(open(sys.argv[2]))
 assert after.pop('pwa_image_uploads')['count']==0
