@@ -3874,6 +3874,15 @@ async def test_staff_problem_matching_and_metadata_grid_http_workflow(
         row.pop("reviewed")
     metadata_request = {"revisionId": revision["revisionId"], "rows": [first, second]}
 
+    empty_choice = json.loads(json.dumps(metadata_request))
+    empty_choice["rows"][0]["answerType"] = 98
+    rejected_choice = await fixture.client.put(
+        grid_url, json=empty_choice, cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
+    )
+    assert rejected_choice.status == 422
+    assert (await rejected_choice.json())["error"]["code"] == "content_validation_failed"
+
     invalid_request = json.loads(json.dumps(metadata_request))
     invalid_request["rows"][1]["correctAnswer"] = "скрытое старое значение"
     invalid = await fixture.client.put(

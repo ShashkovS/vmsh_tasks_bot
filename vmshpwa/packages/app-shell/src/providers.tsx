@@ -1,6 +1,7 @@
 import { t } from '@lingui/core/macro'
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query'
 import { reportHandledError } from './observability'
+import { queryFamily, retryQuery } from './query-errors'
 import { ServiceAvailabilityBanner } from './service-availability'
 import { Moon, Sun } from 'lucide-react'
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -72,10 +73,20 @@ export function AppProviders({
 
 export function createAppQueryClient(): QueryClient {
   return new QueryClient({
-    queryCache: new QueryCache({ onError: (error) => reportHandledError(error, 'query') }),
+    queryCache: new QueryCache({
+      onError: (error, query) =>
+        reportHandledError(error, 'query', { queryFamily: queryFamily(query.queryKey) }),
+    }),
     mutationCache: new MutationCache({ onError: (error) => reportHandledError(error, 'mutation') }),
     defaultOptions: {
-      queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
+      queries: {
+        staleTime: 30_000,
+        retry: retryQuery,
+        refetchOnWindowFocus: false,
+        // RealtimeProvider owns the bounded online/WS wave. Auth can opt in
+        // separately before authentication; see 2026-10-08-fixes.md.
+        refetchOnReconnect: false,
+      },
       mutations: { retry: 0 },
     },
   })

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // testing-strategy.md: recovery depends on browser navigator.onLine.
 import { afterEach, expect, it, vi } from 'vitest'
-import { createServiceTransport } from './service-availability'
+import { createServiceTransport, ServiceTransportError } from './service-availability'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -200,12 +200,42 @@ it('lets cache-backed reads fall back when the browser reports online but the ne
     origin: 'https://school.test',
     fetch: vi.fn(() => Promise.reject(new TypeError('unreachable'))),
   })
-  await expect(transport.fetchOfflineRead('/student/api/v1/home')).rejects.toThrow('unreachable')
+  await expect(transport.fetchOfflineRead('/student/api/v1/home')).rejects.toMatchObject({
+    name: 'ServiceTransportError',
+    kind: 'network',
+    cause: new TypeError('unreachable'),
+  })
   expect(transport.getSnapshot()).toMatchObject({ state: 'reconnecting', cause: 'unknown' })
   // Later cache-backed requests must not hang behind the background recovery loop.
   await expect(transport.fetchOfflineRead('/student/api/v1/courses')).rejects.toThrow(
     'Network recovery',
   )
+})
+
+it('distinguishes the read deadline from cancellation by the caller', async () => {
+  vi.useFakeTimers()
+  const fetch = vi.fn<typeof globalThis.fetch>(
+    (_input, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener(
+          'abort',
+          () => reject(new Error('Aborted', { cause: init.signal?.reason })),
+          { once: true },
+        )
+      }),
+  )
+  const transport = createServiceTransport({ fetch, origin: 'https://school.test' })
+  const pending = transport.fetchOfflineRead('/student/api/v1/home')
+  const deadline = expect(pending).rejects.toMatchObject({ kind: 'deadline' })
+  await vi.advanceTimersByTimeAsync(5_000)
+  await deadline
+  const offline = new ServiceTransportError('offline')
+  expect(offline).toBeInstanceOf(TypeError)
+  const controller = new AbortController()
+  controller.abort()
+  await expect(
+    transport.fetchOfflineRead('/student/api/v1/home', { signal: controller.signal }),
+  ).rejects.toMatchObject({ name: 'AbortError' })
 })
 
 // docs/service-failure-copy-20261004.md: the edge answers while Python is hung.
@@ -226,9 +256,10 @@ it.each([true, false])(
             : Promise.reject(new TypeError('backend timeout')),
       ),
     })
-    await expect(transport.fetchOfflineRead('/student/api/v1/home')).rejects.toThrow(
-      'backend timeout',
-    )
+    await expect(transport.fetchOfflineRead('/student/api/v1/home')).rejects.toMatchObject({
+      kind: 'network',
+      cause: new TypeError('backend timeout'),
+    })
     expect(transport.getSnapshot().cause).toBe('unknown')
     vi.stubGlobal('navigator', { onLine: online })
     await vi.advanceTimersByTimeAsync(1_000)

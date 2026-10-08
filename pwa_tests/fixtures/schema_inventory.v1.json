@@ -61,6 +61,14 @@
       {
         "id": "0114.browser_image_uploads",
         "sha256": "b2d999825fea18486e68d8d90b4c58d54dd6f2501e10fc6e647278d20c062ee7"
+      },
+      {
+        "id": "0115.vmsh_public_media_domain",
+        "sha256": "dc387bc9f0039bb00165db586b584e2a87f8f2b007ee8d5c67b7acbbc4db7180"
+      },
+      {
+        "id": "0116.notification_push_candidate_index",
+        "sha256": "37ce80e24489f9f002c4a704194f0bec7ffee4a9021c364b21d4562f7143e245"
       }
     ],
     "repository_head_status": {
@@ -71,7 +79,7 @@
     }
   },
   "product": {
-    "object_count": 512,
+    "object_count": 513,
     "objects": [
       {
         "columns": [
@@ -16763,6 +16771,54 @@
                 "seqno": 0
               },
               {
+                "cid": 8,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "deliver_after",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "category",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "notification_events_push_due_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
                 "cid": 3,
                 "collation": "BINARY",
                 "descending": false,
@@ -30314,6 +30370,13 @@
         "type": "index"
       },
       {
+        "name": "notification_events_push_due_idx",
+        "object_sha256": "041280e798118ce3c2fe0a145a12a82a678938ec148acf44b45a3ac28ade2903",
+        "sql": "CREATE INDEX notification_events_push_due_idx ON notification_events (account_id, deliver_after, id, category) WHERE read_at IS NULL;",
+        "table_name": "notification_events",
+        "type": "index"
+      },
+      {
         "name": "oral_window_lessons_lesson_idx",
         "object_sha256": "200ba4d312d2c7cdb8795950e147bd48a2225efdbebffd01b0a3bc6ce473dd3e",
         "sql": "CREATE INDEX oral_window_lessons_lesson_idx ON oral_window_lessons(group_lesson_id, window_id);",
@@ -32141,8 +32204,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "ec1cc179d7e9d88af4e965e03efc73b4d39dd74839b0aca3e653baa107d0ac1e",
-    "sha256": "d7d3e668badc9061e452583ce81b87216d5cd6446f4ad647a72d8d408b808642"
+    "pragma_structure_sha256": "84c9c03900c88e69137648b7b7b90f7ee260bc5ceb6c97ee916a2b33ac9ed667",
+    "sha256": "48763043b6595824c90fb9d1e145a4d3e7ec5cd78bc697e73d139e91739a0f45"
   },
   "source_kind": "repository-migration-head"
 }

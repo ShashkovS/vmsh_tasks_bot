@@ -46,6 +46,19 @@ def answer_config(
     )
 
 
+@pytest.mark.parametrize("validation", [None, "", " ; ; "])
+def test_choice_input_requires_options_while_text_input_does_not(validation):
+    with pytest.raises(SubmissionConfigurationError, match="no visible options"):
+        answer_config(ANS_TYPE.SELECT_ONE, correct="7", validation=validation).input_options()
+    assert answer_config(ANS_TYPE.STRING, correct="7", validation=validation).input_options() == ()
+
+
+def test_choice_input_retains_visible_options_and_order():
+    assert answer_config(
+        ANS_TYPE.SELECT_ONE, correct="7", validation=" 7 ; ; 8 ; 9 "
+    ).input_options() == ("7", "8", "9")
+
+
 @pytest.mark.parametrize(
     ("answer_type", "student_answer", "correct_answer"),
     (

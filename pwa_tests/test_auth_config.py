@@ -4,6 +4,7 @@ import json
 import pytest
 
 from helpers.config import Config, _setup
+import helpers.config as config_module
 from helpers.pwa.auth_config import (
     COOKIE_POLICY,
     AuthConfigurationError,
@@ -98,9 +99,19 @@ def test_production_refuses_prototype_defaults_and_missing_secrets():
 )
 def test_pwa_startup_production_markers_enable_secure_auth_policy(
     monkeypatch,
+    tmp_path,
     runtime_profile,
     prod_marker,
 ):
+    # Production policy is tested with synthetic config, never real credentials.
+    profile = tmp_path / "profile.json"
+    profile.write_text("{}", encoding="utf-8")
+    absolute_path = config_module._absolute_path
+    monkeypatch.setattr(
+        config_module, "_absolute_path",
+        lambda path: profile if str(path) == "creds_prod/vmsh_bot_config_prod.json"
+        else absolute_path(path),
+    )
     monkeypatch.setenv("VMSH_RUNTIME_PROFILE", runtime_profile)
     monkeypatch.setenv("VMSH_PWA_PROTOTYPE", "false")
     if prod_marker is None:

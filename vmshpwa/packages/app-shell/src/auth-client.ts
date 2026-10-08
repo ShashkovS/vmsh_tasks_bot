@@ -364,6 +364,9 @@ class BrowserAuthClient<A extends Audience> implements AuthClient<A> {
         credentials: 'include',
         headers,
         redirect: 'error',
+        // A reload must not discard the response rotating a single-use cookie.
+        // See docs/performance/2026-10-08-fixes.md and authentication.spec.ts.
+        ...(path === '/refresh' ? { keepalive: true } : {}),
         ...(request.body === undefined ? {} : { body: request.body }),
         ...(request.signal === undefined ? {} : { signal: request.signal }),
       })

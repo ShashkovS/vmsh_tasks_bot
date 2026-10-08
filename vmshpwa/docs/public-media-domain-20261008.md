@@ -15,7 +15,7 @@ build provenance содержит новый `publicMediaOrigin`. Это не о
 
 ## Реализация
 
-- [`Миграция 0114`](../../migrations/0115.vmsh_public_media_domain.py) заменяет
+- [`Миграция 0115`](../../migrations/0115.vmsh_public_media_domain.py) заменяет
   точные HTTPS URL этого бакета в virtual-hosted и path-style форме, включая
   JSON с escaped slashes. Префикс включает `/`, поэтому другой бакет или похожее
   имя хоста не совпадают. Уже новые URL и Hetzner/TLF не меняются.
@@ -72,7 +72,7 @@ clock с реальным временем записи grants. Эти тест�
 golden-corpus test после восстановления PDF, verification build и Chromium
 content 2 PASS. [Структурированный отчёт](../../pwa_tests/reports/public-media-domain-20261008/validation.json).
 
-Применение 0114 на production **ещё не выполнено**. Оно входит в обычный
+Применение 0115 на production **ещё не выполнено**. Оно входит в обычный
 [`deploy`](../../docs/deploy/deploy-vmsh-tasks-bot.sh): backup и репетиция на
 копии, maintenance, остановка writers, `migrate_runtime`, health и восстановление
 services. После выпуска и следующего online запроса материалов Student/Family

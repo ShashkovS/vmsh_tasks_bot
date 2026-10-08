@@ -1247,6 +1247,8 @@ async def _require_publication_readiness(
             "reviewedProblems": readiness.reviewed_problem_count,
             "omittedProblems": readiness.omitted_problem_count,
             "structureMatches": readiness.structure_matches,
+            **({"invalidTestInputs": readiness.invalid_test_input_count}
+               if readiness.invalid_test_input_count else {}),
         },
     )
 

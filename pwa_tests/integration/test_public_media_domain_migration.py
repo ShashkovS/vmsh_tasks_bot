@@ -1,4 +1,4 @@
-"""Stored URLs, frozen publications and immutable guards survive migration 0114.
+"""Stored URLs, frozen publications and immutable guards survive migration 0115.
 
 See vmshpwa/docs/public-media-domain-20261008.md; no external storage is used.
 """

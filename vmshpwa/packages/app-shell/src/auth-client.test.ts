@@ -187,6 +187,10 @@ describe('browser authentication client', () => {
 
     await expect(Promise.all([first, second])).resolves.toHaveLength(2)
     expect(refreshCalls).toBe(1)
+    const rotation = fetchImplementation.mock.calls.find(([input]) =>
+      requestUrl(input).endsWith('/auth/refresh'),
+    )
+    expect(rotation?.[1]).toMatchObject({ keepalive: true })
     expect(meCalls).toBe(5)
   })
 

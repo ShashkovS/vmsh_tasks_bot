@@ -7,6 +7,7 @@ import {
   setServiceUnconfirmedMessage,
   type ServiceAvailability,
 } from '@vmsh/contracts'
+import { resyncActiveQueries } from './query-resync'
 
 export function useServiceAvailability() {
   return useSyncExternalStore(
@@ -72,8 +73,7 @@ export function ServiceAvailabilityBanner() {
     return () => setServiceUnconfirmedMessage(undefined)
   }, [])
   useEffect(() => {
-    if (previous.current !== 'ready' && state.state === 'ready')
-      void client.invalidateQueries({ type: 'active' })
+    if (previous.current !== 'ready' && state.state === 'ready') void resyncActiveQueries(client)
     previous.current = state.state
   }, [client, state.state])
   return <ServiceAvailabilityBannerView state={state} online={online} />
