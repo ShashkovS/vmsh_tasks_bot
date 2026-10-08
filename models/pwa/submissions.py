@@ -69,6 +69,25 @@ class TestProblemAnswerConfig:
     wrong_answer: str | None
     congratulation: str | None
 
+    def input_options(self) -> tuple[str, ...]:
+        """Validate the same input used by review and Student test-input.
+
+        See docs/performance/2026-10-08-fixes.md (TLF select-one forms).
+        Text answers may deliberately have no validation pattern.
+        """
+        if self.answer_type is not ANS_TYPE.SELECT_ONE:
+            return ()
+        options = tuple(
+            option.strip()
+            for option in (self.answer_validation or "").split(";")
+            if option.strip()
+        )
+        if not options:
+            raise SubmissionConfigurationError(
+                "select-one problem has no visible options"
+            )
+        return options
+
     @classmethod
     def from_revision(
         cls,

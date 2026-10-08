@@ -7,6 +7,27 @@ export type ServiceAvailability = {
   cause?: 'server' | 'unknown'
 }
 const ready: ServiceAvailability = { state: 'ready', since: 0, prolonged: false }
+
+export type ServiceTransportFailure = 'offline' | 'recovering' | 'deadline' | 'network'
+
+/** docs/performance/2026-10-08-fixes.md: intentional cache fallback is typed. */
+export class ServiceTransportError extends TypeError {
+  constructor(
+    readonly kind: ServiceTransportFailure,
+    cause?: unknown,
+  ) {
+    super(
+      {
+        offline: 'Network is offline',
+        recovering: 'Network recovery in progress',
+        deadline: 'Network read deadline exceeded',
+        network: 'Network request failed',
+      }[kind],
+      { cause },
+    )
+    this.name = 'ServiceTransportError'
+  }
+}
 const statusSchema = z.object({ state: z.enum(['ready', 'updating']) })
 const updatingErrorSchema = z.object({ error: z.object({ code: z.literal('service_updating') }) })
 const applicationErrorSchema = z.object({
@@ -218,13 +239,14 @@ export function createServiceTransport(options: {
       }
     }
     for (;;) {
+      signal?.throwIfAborted()
       // docs/smooth-redeploy.md: offline writes must return to their durable
       // outbox too, instead of waiting behind another request's recovery loop.
       if (typeof navigator !== 'undefined' && !navigator.onLine)
-        throw new TypeError('Network is offline')
+        throw new ServiceTransportError('offline')
       if (recovery) {
         if (read && allowOfflineRead && snapshot.state === 'reconnecting')
-          throw new TypeError('Network recovery in progress')
+          throw new ServiceTransportError('recovering')
         await wait(recovery, signal)
       }
       signal?.throwIfAborted()
@@ -250,7 +272,7 @@ export function createServiceTransport(options: {
         if (!read && !idempotent) return unconfirmed()
         // Preserve the existing explicit offline cache boundary.
         if ((read && allowOfflineRead) || (typeof navigator !== 'undefined' && !navigator.onLine))
-          throw error
+          throw new ServiceTransportError(deadline.signal.aborted ? 'deadline' : 'network', error)
         await wait(pending, signal)
         continue
       } finally {

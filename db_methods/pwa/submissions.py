@@ -1396,19 +1396,10 @@ class PwaTestSubmissionRepository:
             )
         )
         config = context.answer_config
+        options = config.input_options()
         if config.answer_type is ANS_TYPE.SELECT_ONE:
-            options = tuple(
-                option.strip()
-                for option in (config.answer_validation or "").split(";")
-                if option.strip()
-            )
-            if not options:
-                raise SubmissionConfigurationError(
-                    "select-one problem has no visible options"
-                )
             validation_pattern = None
         else:
-            options = ()
             validation_pattern = config.answer_validation
         return TestAnswerInputRecord(
             problem_public_id=context.problem_public_id,

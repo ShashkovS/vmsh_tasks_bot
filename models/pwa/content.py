@@ -642,6 +642,21 @@ class ProblemMetadataDraft:
         }
 
     def as_revision_draft(self) -> ProblemRevisionDraft:
+        # Validate on save, not on loading a legacy draft: Staff must still be
+        # able to repair it. See docs/performance/2026-10-08-fixes.md.
+        if self.problem_type == 1:
+            from models.pwa.submissions import (
+                SubmissionConfigurationError,
+                TestProblemAnswerConfig,
+            )
+
+            try:
+                TestProblemAnswerConfig.from_revision(
+                    answer_type=self.answer_type,
+                    answer_config=self.answer_config,
+                ).input_options()
+            except SubmissionConfigurationError as error:
+                raise ContentInvariantError(str(error)) from error
         return ProblemRevisionDraft(
             problem_id=self.problem_id,
             source_ordinal=self.source_ordinal,

@@ -498,3 +498,11 @@ Course enrollment proof:
 Создать course enrollment/access/event и Staff scope migrations/contracts. Student session получает доступ к нескольким курсам, но active group и mode меняются только внутри одного enrollment. Teacher scope допускает весь курс либо отдельные группы; прямой запрос вне scope возвращает `403`.
 
 Дополнительный proof: backfill «Математика 5–7», один active + несколько allowed groups, per-course mode history, revoked-access history visibility, course/group permission matrix и Storybook `Product/Courses--student-multiple-courses`, `--active-and-allowed-groups`, `Pages/Staff--teacher-forbidden`.
+
+### 2026-10-08 — bounded network resync
+
+Correction существующего flow; [причина, реализация и регрессии](../../../docs/performance/2026-10-08-fixes.md).
+Python 2847 PASS / 6 SKIP, frontend 1055 PASS, Storybook 363 PASS;
+format/types/lint/i18n PASS. Браузерная матрица 139 PASS / 20 штатных SKIP, три движка, retries=0;
+[точные receipts и corrected test probe](../../../docs/performance/2026-10-08-fixes.md#verification).
+Production не изменён.

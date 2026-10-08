@@ -20,6 +20,7 @@ import {
 } from 'react'
 
 import { useAuthentication } from './auth-context'
+import { resyncActiveQueries, waitForQueryResync } from './query-resync'
 
 const SOCKET_OPEN = 1
 const CLOSE_NORMAL = 1000
@@ -700,7 +701,7 @@ export function RealtimeProvider({
       // docs/problem-release.md: an offline cache read can be fresh in Query,
       // while a failed authority refetch has stopped the socket. Cancel older
       // reads and recheck HTTP authority/data even before WS is mounted again.
-      void queryClient.refetchQueries({ type: 'active' })
+      void resyncActiveQueries(queryClient)
     }
     window.addEventListener('online', resyncAfterNetworkRecovery)
     return () => window.removeEventListener('online', resyncAfterNetworkRecovery)
@@ -714,9 +715,11 @@ export function RealtimeProvider({
       runtime,
       queries: {
         refetchActiveQueries: async () => {
-          await queryClient.refetchQueries({ type: 'active' })
+          await resyncActiveQueries(queryClient)
         },
         invalidateActiveQueries: async (resources) => {
+          // Changes arriving during a full resync still require a newer read.
+          await waitForQueryResync(queryClient)
           await queryClient.invalidateQueries({
             predicate: (query) => shouldInvalidateRealtimeQuery(query.meta, resources),
             refetchType: 'active',

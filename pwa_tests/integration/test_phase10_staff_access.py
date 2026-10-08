@@ -7,6 +7,7 @@ import json
 from pwa_tests.integration.test_classroom_catalog_http_api import (
     ADMIN_ID,
     TEACHER_ID,
+    NOW,
     ClassroomHttpFixture,
     _cookies,
     _headers,
@@ -249,9 +250,13 @@ async def test_only_admin_lists_staff_access(
 
 async def test_admin_replaces_scope_and_teacher_sees_it_on_next_request(
     classroom_http: ClassroomHttpFixture,
+    monkeypatch,
 ) -> None:
-    # The shared auth fixture deliberately freezes its clock in October. Scope
-    # writes use real UTC, so make this row an ordinary already-active grant.
+    from apps.pwa_api import staff_access_routes
+
+    # The write and auth fixture must share a clock after the calendar advances.
+    monkeypatch.setattr(staff_access_routes, "_now", lambda: NOW.isoformat())
+    # The existing grant predates the shared fixed auth/write fixture clock.
     classroom_http.factory.run_write(
         lambda connection: connection.execute(
             "UPDATE staff_scopes SET valid_from = '2026-01-05T12:00:00.000000Z' "

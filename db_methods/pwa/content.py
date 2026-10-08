@@ -485,6 +485,7 @@ class RevisionPublicationReadiness:
     reviewed_problem_count: int
     omitted_problem_count: int
     structure_matches: bool
+    invalid_test_input_count: int = 0
 
     @property
     def is_structurally_ready(self) -> bool:
@@ -497,6 +498,7 @@ class RevisionPublicationReadiness:
     def is_ready(self) -> bool:
         return (
             self.is_structurally_ready
+            and self.invalid_test_input_count == 0
             and self.reviewed_problem_count + self.omitted_problem_count
             == self.expected_problem_count
         )
@@ -3920,12 +3922,43 @@ class PwaContentRepository:
                 "WHERE match.content_revision_id = ?",
                 (revision_id,),
             ).fetchone()
+            # A historical/imported review is not proof that Student can open
+            # its input. Use the same rule as submissions.get_test_answer_input;
+            # see docs/performance/2026-10-08-fixes.md (TLF p-45/46/49).
+            from models.pwa.submissions import (
+                SubmissionConfigurationError,
+                TestProblemAnswerConfig,
+            )
+
+            invalid_inputs = 0
+            for row in connection.execute(
+                "SELECT pr.answer_type, pr.answer_config_json FROM problem_revisions pr "
+                "JOIN content_problem_matches match "
+                "ON match.content_revision_id = pr.content_revision_id "
+                "AND match.problem_id = pr.problem_id "
+                "AND match.source_ordinal = pr.source_ordinal "
+                "AND match.source_item = pr.source_item "
+                "WHERE pr.content_revision_id = ? AND pr.problem_type = 1 "
+                "AND pr.answer_type IS NOT NULL "
+                "AND match.decision <> 'omit' AND match.resolved_at IS NOT NULL",
+                (revision_id,),
+            ):
+                try:
+                    config = json.loads(row["answer_config_json"])
+                    if not isinstance(config, dict):
+                        raise SubmissionConfigurationError("answer config is not an object")
+                    TestProblemAnswerConfig.from_revision(
+                        answer_type=row["answer_type"], answer_config=config
+                    ).input_options()
+                except (SubmissionConfigurationError, json.JSONDecodeError, TypeError):
+                    invalid_inputs += 1
             return RevisionPublicationReadiness(
                 expected_problem_count=len(problems),
                 resolved_match_count=int(counts["resolved_match_count"]),
                 reviewed_problem_count=int(counts["reviewed_problem_count"]),
                 omitted_problem_count=int(counts["omitted_problem_count"]),
                 structure_matches=resolved_keys == expected_keys,
+                invalid_test_input_count=invalid_inputs,
             )
 
         return await self._factory.run_read_async(read)

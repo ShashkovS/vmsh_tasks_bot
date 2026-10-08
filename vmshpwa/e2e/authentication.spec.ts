@@ -768,7 +768,12 @@ for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONA
     })
     expect(logout.status).toBe(204)
 
-    expect((await browserApi(page, `/${persona.audience}/api/v1/auth/me`)).status).toBe(401)
+    // Logout can reload this document before a probe resolves. Keep the HTTP
+    // assertion on its browser cookie jar, independently of that navigation.
+    // See docs/performance/2026-10-08-fixes.md (logout regression).
+    expect(
+      (await context.request.get(`${gatewayOrigin}/${persona.audience}/api/v1/auth/me`)).status(),
+    ).toBe(401)
     // Firefox can expose the just-expired deletion cookie for one event-loop
     // turn even though the following authenticated request is already rejected.
     await expect

@@ -95,3 +95,11 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 Тестовые попытки/checker/rate limit остаются per concrete problem. Confirmed synonym-group одного course lesson вычисляет общий status и засчитывает результат в каждый доступный group sheet; merge/split не меняет attempt/result IDs.
 
 Дополнительный proof: candidate/merge/split impact fixtures для разных task/answer types, identity assertions до/после, split recomputation и `Product/Staff-data--synonym-merge-and-split`.
+
+### 2026-10-08 — TLF формы без вариантов
+
+Correction существующего flow; [причина, реализация и регрессии](../../../docs/performance/2026-10-08-fixes.md).
+Python 2847 PASS / 6 SKIP, frontend 1055 PASS, Storybook 363 PASS;
+format/types/lint/i18n PASS. Браузерная матрица 139 PASS / 20 штатных SKIP, три движка, retries=0;
+[точные receipts и corrected test probe](../../../docs/performance/2026-10-08-fixes.md#verification).
+Production не изменён.

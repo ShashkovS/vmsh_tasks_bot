@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: aff0238ffb4a4350b672a6999f6e350f838ec4b1c48effd2d3c4f7bb88148b15
+-- Product schema SHA-256: 9db88a672659567971a34ca58924aa8de9a1e506e968fc6b4e24ff24f70a486b
 
 CREATE TABLE achievement_definitions
 (
@@ -3233,6 +3233,8 @@ CREATE INDEX notification_deliveries_due_idx
 
 CREATE INDEX notification_events_account_unread_idx
     on notification_events (account_id, read_at, occurred_at desc, id desc);
+
+CREATE INDEX notification_events_push_due_idx ON notification_events (account_id, deliver_after, id, category) WHERE read_at IS NULL;
 
 CREATE INDEX oral_window_lessons_lesson_idx ON oral_window_lessons(group_lesson_id, window_id);
 

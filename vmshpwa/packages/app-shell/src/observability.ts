@@ -6,6 +6,7 @@ import {
   setServiceEpisodeReporter,
   serviceAvailabilitySnapshot,
 } from '@vmsh/contracts'
+import { queryFailure, queryFamily } from './query-errors'
 
 export interface FrontendObservabilityOptions {
   audience: 'student' | 'family' | 'staff'
@@ -118,13 +119,17 @@ export function reportHandledError(
     problemId?: string
     outboxId?: string
     attempts?: number
+    queryFamily?: string
   } = {},
 ) {
+  const failure = queryFailure(error)
+  const family = queryFamily([context.queryFamily])
+  if (operation === 'query' && failure.expected) return
   if (error !== null && typeof error === 'object') {
     if (reportedErrors.has(error)) return
     reportedErrors.add(error)
   }
-  const api = error instanceof ApiResponseError ? error : null
+  const api = failure.api ?? null
   if (api?.code === 'service_updating' || api?.code === 'request_not_confirmed') return
   // Do not forward original messages, causes, details or mutation variables: these can contain answers.
   try {
@@ -136,10 +141,12 @@ export function reportHandledError(
         ...(context.accountId ? { user: { id: context.accountId } } : {}),
         tags: {
           operation,
+          ...(operation === 'query' ? { query_family: family, transport_kind: failure.kind } : {}),
           ...(api ? { http_status: String(api.status), api_code: api.code } : {}),
         },
         extra: {
           ...context,
+          ...(context.queryFamily ? { queryFamily: family } : {}),
           requestId: api?.requestId,
           online: typeof navigator === 'undefined' ? null : navigator.onLine,
         },

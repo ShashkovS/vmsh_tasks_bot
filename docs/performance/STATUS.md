@@ -1,5 +1,39 @@
 # Анализ производительности
 
+- 2026-10-08, исправления: реализован [инкремент](2026-10-08-fixes.md).
+  Индекс 0114 сократил пустую push selection 164–190 → 32–36 мс на одной
+  временной копии production DB; VM-step regression и rollback/apply проходят.
+  TLF: 1114/1120 nginx503 относятся к p-45/46/49 с SELECT_ONE без вариантов;
+  metadata review и publication gate теперь проверяют тот же input, что Student.
+  Клиентские online/WS resync объединены, bounded до четырёх active queries;
+  controlled offline/recovery query errors не повторяются и не попадают
+  в Sentry; необъяснённый AbortError остаётся видимым, реальные failures имеют
+  безопасные family/kind. Python 2847 PASS / 6 SKIP, frontend 1055 PASS, Storybook 363 PASS;
+  format/types/lint/i18n PASS. Auth/realtime/redeploy/offline-current/content/
+  submissions: 139 PASS / 20 штатных SKIP в трёх браузерах; retries=0. CPU correction и photo flow
+  исключены. Production не изменён.
+
+Дополнительный correction: refresh response переживает reload благодаря
+keepalive на auth/refresh. Private-reload regression: 9/9 (три повтора в
+Chromium/WebKit/Firefox); общая браузерная матрица: 139 PASS / 20 штатных SKIP в трёх браузерах.
+
+- 2026-10-08: завершён read-only аудит обоих production порталов и Telegram с
+  03.10 00:00 до 08.10 10:05 (Asia/Nicosia). [Отчёт](2026-10-08-analysis.md),
+  [ВМШ metrics](2026-10-08-vmsh-prometheus.json),
+  [TLF metrics](2026-10-08-tlf-prometheus.json), [Sentry](2026-10-08-sentry.json).
+  CPU correction `bdfcf9a2` снизил p95 задач 9,66 с → 429 мс, однако read
+  bursts 6–7 октября достигают 161/102 queued reads у одного worker и
+  3,7–4,4 с локального p95. Media: 135 ВМШ HTTP503 преимущественно 04.10;
+  TLF: ≈1111 test-input HTTP503 04.10 10–11 UTC. Sentry: 22 929 принятых
+  PWA событий и существенный backoff/spike-protection; counts не означают
+  потерянные ответы. Старый `client:UnknownError` 26.09 разобран как отдельная
+  гипотеза local outbox/IndexedDB, без установленной первопричины.
+  Все Prometheus queries успешны, дневные Sentry totals сверены с общим;
+  raw journals остаются вне Git. Follow-up: владельцы read slots, media
+  transport classification, TLF configuration/repository failure, client
+  stage diagnostics и alert rules. Runtime/production данные не менялись;
+  исторический journal ВМШ закрыт, TLF journal покрывает только 7–8 октября.
+
 - 2026-09-27: read-only аудит завершён. [Отчёт](2026-09-27-analysis.md),
   [агрегаты Prometheus](2026-09-27-prometheus.json),
   [маршруты](2026-09-27-routes.csv),

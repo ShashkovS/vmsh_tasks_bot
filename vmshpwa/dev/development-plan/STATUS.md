@@ -1,5 +1,22 @@
 # Статус плана разработки
 
+## 2026-10-08 — Повторные задержки и клиентские сбои
+
+Дополнительный correction: refresh response переживает reload благодаря
+keepalive на auth/refresh. Private-reload regression: 9/9 (три повтора в
+Chromium/WebKit/Firefox); общая браузерная матрица: 139 PASS / 20 штатных SKIP в трёх браузерах.
+
+Реализованы индекс фоновой push selection, проверка видимых вариантов тестового
+ответа до metadata review/publication и bounded/coalesced online/WS resync.
+Ожидаемые transport fallback отделены от настоящих query failures без передачи
+messages/causes/query keys в Sentry. [Причина, код и регрессии](../../../docs/performance/2026-10-08-fixes.md).
+Python 2847 PASS / 6 SKIP, frontend 1055 PASS, Storybook 363 PASS;
+format/types/lint/i18n PASS. E2E 139 PASS / 20 штатных SKIP в трёх браузерах,
+retries=0. Product source совпадает с non-browser receipt; изменена только
+проверка post-logout HTTP вне уходящего документа, дополнительно format/lint/types PASS.
+Исходные FAIL receipts сохранены; [финальные proofs](../../../docs/performance/2026-10-08-fixes.md#verification). CPU correction 4 октября и media delivery вне scope; production
+не изменён.
+
 ## 2026-10-05 — Спокойнее оформить Staff violin
 
 Реализован согласованный correction распределений Staff: окно KDE 0.75,
