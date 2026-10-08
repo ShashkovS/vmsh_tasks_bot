@@ -147,3 +147,16 @@ ff-only `vmshpwa`, push через системный SSH-agent, штатный 
 deploy и [подготовленный TLF script](../../pwa_tests/reports/integrated-release-20261008/deploy-tlf.sh)
 на том же SHA; затем migration/HTTP/runtime/static/backups verification.
 Direct S3 verified flag остаётся false.
+
+## Решение владельца о выпуске
+
+Владелец 8 октября явно выбрал «Давай обновлять оба продакшена» после
+сообщения о незелёном browser gate. Выпуск по завершённым проверкам разрешён;
+FAIL/interrupt receipts сохранены, оставшиеся browser phases остаются follow-up.
+Начат cutover обоих порталов одной объединённой ревизией; результат ещё проверяется.
+Direct S3 verified flag остаётся false; browser WebP отправляется через лёгкий backend proxy.
+
+На момент решения product source совпадает с `68eee3f6`, последняя интеграционная
+ревизия `419e450a`; дополнительные изменения — E2E harness и документация.
+Предварительные проверки обоих серверов повторены: прежние heads и все сервисы active.
+Cutover использует штатный VMSH deploy и подготовленный guarded TLF script.

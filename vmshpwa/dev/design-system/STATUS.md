@@ -2,18 +2,15 @@
 
 ## 2026-10-08 — Объединённый выпуск
 
-Финальный focused gate: non-browser PASS, i18n 24 PASS / 12 FAIL. Locale
-reload harness исправлен; повтор вновь прерван после WebKit boot/teardown
-timeouts. **Gate не зелёный, оба production ещё не обновлены.**
+Владелец 8 октября явно выбрал «Давай обновлять оба продакшена» после
+сообщения о незелёном browser gate. Выпуск по завершённым проверкам разрешён;
+FAIL/interrupt receipts сохранены, оставшиеся browser phases остаются follow-up.
+Начат cutover обоих порталов одной объединённой ревизией; результат ещё проверяется.
+Direct S3 verified flag остаётся false; browser WebP отправляется через лёгкий backend proxy.
 
-Четыре доработки объединены; migrations 0114–0116 согласованы. Preflight обоих production PASS. Offline resync исправлен; focused matrix 3 PASS. Последний общий gate: 2882 Python,
-1068 frontend, 364 Storybook PASS; основная E2E-фаза 385 PASS / 20 SKIP / 6 FAIL.
-Selectors/SW flow исправлены. Повтор all-mode прерван после деградации
-WebKit newPage/cold navigation; свежие focused browser phases и оставшиеся
-figure/statistics/visual pending. Product source не менялся. [План и квитанции](../../../docs/performance/integrated-release-20261008.md).
-Интеграция `d6eb7fa9` запушена в codex branch. Локальный Mac: 23/24 GiB,
-load average 125; test runtime остановлен после resource failures.
-Production branch и оба сервера ещё не изменены; финальная проверка/выпуск pending.
+Завершённые проверки: 2882 Python / 7 SKIP, 1068 frontend, 364 Storybook PASS;
+основная E2E-фаза 385 PASS / 20 SKIP / 6 FAIL с последующими focused regressions.
+Четыре работы и migrations 0114–0116 объединены. [План, ограничения и квитанции](../../../docs/performance/integrated-release-20261008.md).
 
 ## 2026-10-08 — Повторные задержки и клиентские сбои
 
