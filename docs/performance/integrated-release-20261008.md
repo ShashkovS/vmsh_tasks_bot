@@ -93,3 +93,21 @@ network guard, exact generation assertions и screenshot baselines сохран�
 Focused SW activation: 12 PASS, Chromium/WebKit/Firefox; review clone/correction/move: 3 PASS.
 Locale/network/support focused assertions также PASS во всех трёх engines.
 Финальный общий gate pending.
+
+## Финальный browser harness и границы квитанции
+
+Повтор default all-mode остановлен со статусом 130 после повторного WebKit
+cold-navigation timeout и последующих ошибок `browserContext.newPage` ещё
+до выполнения product assertions. [Квитанция и traces](../../pwa_tests/reports/integrated-release-20261008/final-navigation-failures/interrupted-gate.json).
+Это не PASS общего all-mode. Non-browser suites вновь PASS.
+В [i18n.spec.ts](../../vmshpwa/e2e/i18n.spec.ts) второй device использует общую
+secondaryContext fixture с loopback guard, явным baseURL и гарантированным
+teardown. Network boundary test открывает реальную Staff login page и ждёт
+видимое поле логина перед прежними foreign HTTP/WS probes. Cold root shell
+остаётся покрыт shells/authentication tests. Product source после `68eee3f6`
+не менялся; timeouts, retries и golden snapshots не ослаблены.
+
+Повтор выполняется отдельными свежими browser phases: support/review/student-results
+и release gate `PWA_E2E_MODES="i18n runtime-isolation figure-layout statistics visual"`.
+Они завершают затронутые сценарии и оставшиеся destructive/visual фазы;
+полный исходный FAIL/interrupt сохраняется в отчёте. Выпуск pending.

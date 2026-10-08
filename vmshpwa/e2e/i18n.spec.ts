@@ -64,7 +64,10 @@ async function saveAccountLocale(page: Page, audience: string, locale: 'ru' | 'e
   expect(response.status()).toBe(200)
 }
 
-test('Student switches the account to English in the profile', async ({ page, browser }) => {
+test('Student switches the account to English in the profile', async ({
+  page,
+  secondaryContext,
+}) => {
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
   try {
     await Promise.all([
@@ -79,11 +82,10 @@ test('Student switches the account to English in the profile', async ({ page, br
     await expect(page.getByRole('link', { name: 'Profile' }).first()).toBeVisible()
 
     // A second device gets the account language right after sign-in.
-    const otherDevice = await browser.newContext()
-    const otherPage = await otherDevice.newPage()
+    const otherPage = await secondaryContext.newPage()
     await loginThroughUi(otherPage, AUTH_PERSONAS.student, '/student/')
     await expect(otherPage.locator('html')).toHaveAttribute('lang', 'en')
-    await otherDevice.close()
+    await otherPage.close()
   } finally {
     await saveAccountLocale(page, 'student', 'ru')
   }

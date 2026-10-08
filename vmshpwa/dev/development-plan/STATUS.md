@@ -4,7 +4,9 @@
 
 Четыре доработки объединены; migrations 0114–0116 согласованы. Preflight обоих production PASS. Offline resync исправлен; focused matrix 3 PASS. Последний общий gate: 2882 Python,
 1068 frontend, 364 Storybook PASS; основная E2E-фаза 385 PASS / 20 SKIP / 6 FAIL.
-Исправляются selectors и синхронизация тестов, затем повторяется gate. [План и квитанции](../../../docs/performance/integrated-release-20261008.md).
+Selectors/SW flow исправлены. Повтор all-mode прерван после деградации
+WebKit newPage/cold navigation; свежие focused browser phases и оставшиеся
+figure/statistics/visual pending. Product source не менялся. [План и квитанции](../../../docs/performance/integrated-release-20261008.md).
 
 ## 2026-10-08 — Повторные задержки и клиентские сбои
 

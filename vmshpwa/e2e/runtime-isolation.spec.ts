@@ -370,7 +370,8 @@ test('browser HTTP and WebSocket traffic cannot leave the E2E loopback origin', 
   networkGuard.expectBlocked(externalHttpUrl)
   networkGuard.expectBlocked(externalWebSocketUrl)
 
-  await page.goto('/staff/', { waitUntil: 'domcontentloaded' })
+  await page.goto('/staff/login', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByLabel('Логин')).toBeVisible()
   const fetchResult = await page.evaluate(async (rawUrl) => {
     try {
       await fetch(rawUrl)
