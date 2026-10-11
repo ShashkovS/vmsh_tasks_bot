@@ -47,16 +47,16 @@ Backend принимает прежние запросы без нового п�
 замену entry, перенос и старые данные. Unit/Storybook плюс E2E на настоящем
 aiohttp; gate: `make pwa-check-fast PWA_E2E_MODES="review submissions"`.
 
-Статус: готово локально. Миграция, совместимость, Family и immutable review
-проверены; 2965 Python, 1106 frontend, 376 Storybook и 6 Chromium E2E прошли.
-Format/types/lint/i18n/build прошли. [Receipt и скриншот](../../pwa_tests/reports/paste-evidence-20261011/README.md).
-Production-выпуск не выполнялся.
+Статус: интегрировано в актуальную `vmshpwa`, включая проверку простынёй и просмотр фото.
+Общий `make pwa-check-fast PWA_E2E_MODES="review submissions student-results"`
+прошёл без исключений: 2997 Python / 6 SKIP, 1117 frontend, 378 Storybook,
+10 Chromium E2E. Корпуса уже находились в основном checkout; копирования не было.
+[Квитанции интеграции и выпуска](../../pwa_tests/reports/paste-evidence-20261011/README.md).
 
-Шесть существующих проверок справочного корпуса не входят в текущий запуск:
-containment-проверки golden corpus/characterization и две проверки external
-process register требуют копий `_vmsh_examples` / `_external_pipelines`
-внутри worktree. Symlink отвергается самими тестами; копирование отклонено
-автоматической проверкой разрешений из-за возможных приватных данных.
-Остальные тесты использовали временные ссылки (после проверки удалены); ни корпус, ни test-profile,
-ни зависимости не входят в commit. Полный gate требует разрешения владельца
-на локальные копии корпуса; это отдельный известный follow-up.
+`ReviewSheetCard` передаёт оценку в временное сообщение, пока подгружается история;
+[регрессия](../apps/staff/src/review-sheet-page.test.tsx) проверяет одну плашку до и
+после загрузки. Миграция 0119 применяется до frontend. Второй production использует
+[guarded deploy](../../docs/deploy/tlf-app/deploy_paste_evidence.sh) и
+[private check](../../docs/deploy/tlf-app/paste_evidence_check.py): backup, up/down/up
+на серверной копии, остановка writers, сравнение существующих строк и сохранение
+конфигурации/NATS. Владелец разрешил оба production-выпуска 11 октября 2026.

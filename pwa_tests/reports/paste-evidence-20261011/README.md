@@ -39,7 +39,7 @@ pnpm 11.15.1, зависимости строго из lock-файлов. Пус
 `creds_test/vmsh_bot_config_test.json` не содержит credentials. TeX доступен
 через PATH; тесты не запускают Telegram polling и не используют production.
 
-## Ограничение полного gate
+## Ограничение первоначального worktree gate
 
 Исключены только:
 
@@ -54,7 +54,28 @@ pnpm 11.15.1, зависимости строго из lock-файлов. Пус
 Временные ссылки позволили остальные read-only проверки, но нарушают строгий
 containment этих шести тестов. Автоматическая проверка разрешений отклонила
 копирование возможных приватных материалов из основного репозитория.
-Полный gate без исключений требует явного разрешения владельца на эти копии.
+В том worktree для этих проверок потребовались бы локальные копии; владелец
+уточнил, что копировать незатронутые корпуса не нужно.
 Это ограничение окружения, а не отключение тестов фичи.
 
 Временные ссылки корпуса удалены после проверки; исходные файлы не менялись.
+
+## Интеграция в основную ветку
+
+Коммит фичи `d3e9085a` объединён с актуальной проверкой простынёй/просмотром фото.
+Merge `67d3c229`; deployment preparation `1cdb91a5`; плашка до загрузки истории
+исправлена в `155e5a2d`. Основной checkout содержит необходимые корпуса,
+их не копировали. Общий fast gate на `1cdb91a5` полностью PASS,
+`source_changed=false`: **2997 Python / 6 SKIP, 1117 frontend, 378 Storybook,
+10 Chromium E2E**, retries=0. Format/types/JS/CSS/i18n/build PASS.
+[Gate](integrated-gate.json), [E2E](integrated-e2e.json).
+
+После отдельной правки fallback-карточки static gates повторно PASS, 6 тестов
+карточки и 4 Chromium review E2E PASS; backend/Storybook не менялись.
+[Followup](sheet-followup.json), [браузер](sheet-followup-e2e.json): source unchanged.
+Deployment обоих production и cleanup worktree разрешены владельцем.
+Незакоммиченная параллельная работа исходного checkout сохранена в
+`refs/archive/paste-evidence-worktree-20261011` (`2a6526422c87`), ignored логи —
+`.runtime/paste-evidence-worktree-archive-20261011/validation-logs.tar.gz`
+в основном checkout. Два завершённых чистых worktree и исходный checkout удалены;
+временный integration checkout удаляется после выпуска.

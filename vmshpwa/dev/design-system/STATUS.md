@@ -2507,3 +2507,5 @@ Evidence и CAS сохраняются. Fast gate PASS: 2981 Python / 12 SKIP,
 ## Интеграция и выпуск доли вставок — 11 октября 2026
 
 Владелец разрешил merge в `vmshpwa`, очистку лишних worktree и deployment обоих production. Сохраняем новую проверку простынёй и просмотр фото; проверяем объединённый source перед push. Миграция 0119 требует backup и rehearsal; TLF получает отдельный ручной release. Справочные корпуса не копируем. [План и доказательства](../../../pwa_tests/reports/paste-evidence-20261011/README.md).
+
+Интеграционный gate перед выпуском PASS без исключений: 2997 Python / 6 SKIP, 1117 frontend, 378 Storybook, 10 Chromium E2E. После правки процента в временной карточке простыни: static gates, 6 unit и 4 Chromium review PASS. [Квитанции](../../../pwa_tests/reports/paste-evidence-20261011/README.md#интеграция-в-основную-ветку). Корпуса не копировались. Начинается owner-authorized push/deployment; pre-push backup ВМШ integrity ok.

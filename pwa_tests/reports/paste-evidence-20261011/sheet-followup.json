@@ -1,0 +1,48 @@
+{
+  "revision": "155e5a2d0bd9323b23ab64426b9e3ad895e86b53",
+  "source_digest": "eedb9d22863bd03da84c122c4e549fba50e30ae4b9153e3017200436417928af",
+  "steps": [
+    {
+      "name": "format",
+      "exit_code": 0,
+      "seconds": 7.884
+    },
+    {
+      "name": "types",
+      "exit_code": 0,
+      "seconds": 15.153
+    },
+    {
+      "name": "lint-js",
+      "exit_code": 0,
+      "seconds": 52.611
+    },
+    {
+      "name": "lint-css",
+      "exit_code": 0,
+      "seconds": 0.948
+    },
+    {
+      "name": "i18n-frontend",
+      "exit_code": 0,
+      "seconds": 2.728
+    },
+    {
+      "name": "i18n-backend",
+      "exit_code": 0,
+      "seconds": 0.935
+    },
+    {
+      "name": "sheet-regression",
+      "exit_code": 0,
+      "seconds": 4.604
+    },
+    {
+      "name": "e2e",
+      "exit_code": 0,
+      "seconds": 38.112
+    }
+  ],
+  "source_changed": false,
+  "exit_code": 0
+}
