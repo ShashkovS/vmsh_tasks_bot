@@ -11,6 +11,7 @@ import {
   ApiResponseError,
   type ReviewSheetCollection,
   type ReviewSheetDetail,
+  type ReviewSheetConversation,
   type BrowserStorageNamespace,
   writtenTeacherReactionIdSchema,
 } from '@vmsh/contracts'
@@ -34,7 +35,7 @@ import {
   type ReviewDraft,
 } from './review-draft'
 import { HistoryEvents } from './student-results-history'
-import { ReviewEvidenceThread } from './review-workspace-page'
+import { ReviewEvidenceEntry } from './review-workspace-page'
 import { describeReviewError } from './review-errors'
 import { rememberCompletedReview } from './last-completed-review'
 import { ReviewTransfer } from './review-transfer'
@@ -205,6 +206,44 @@ function LoadedSheetCard({
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) void fetchNextPage()
   }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage])
+  // Join by public entry ID, including evidence while history pages load (review-sheet.md).
+  const evidence = new Map(
+    detail.workspace.evidenceBranches.flatMap((branch) =>
+      (branch.thread?.timelineEntries ?? []).map((entry) => [entry.entryId, entry] as const),
+    ),
+  )
+  const events = conversation.data?.pages.flatMap((page) => page.events) ?? []
+  const loadedEntryIds = new Set(events.map((event) => event.entryId))
+  const messages: ReviewSheetConversation['events'] = [
+    ...events,
+    ...detail.workspace.evidenceBranches.flatMap((branch) => {
+      const origin = detail.workspace.branches.find((item) => item.queueId === branch.queueId)
+      return (branch.thread?.timelineEntries ?? [])
+        .filter((entry) => !loadedEntryIds.has(entry.entryId))
+        .map((entry) => ({
+          id: `evidence:${entry.entryId}`,
+          entryId: entry.entryId,
+          kind: 'entry' as const,
+          at: entry.submittedAt,
+          author: detail.workspace.student.displayName,
+          authorKind: entry.authorKind,
+          source: 'pwa',
+          text: entry.text,
+          attachments: [],
+          problemNumber: origin?.problemNumber ?? '',
+          verdict: null,
+          symbol: '',
+          revisionId: null,
+          reviewId: null,
+          internal: false as const,
+          action: null,
+          transfer: null,
+          checkStatus: null,
+        }))
+    }),
+  ]
+    .map((event) => ({ ...event, id: event.entryId ? `sheet-entry:${event.entryId}` : event.id }))
+    .sort((left, right) => Date.parse(left.at) - Date.parse(right.at))
   const attachmentIds = new Set(
     detail.workspace.evidenceBranches.flatMap(
       (branch) =>
@@ -404,12 +443,22 @@ function LoadedSheetCard({
         evidence={
           <div className="space-y-4">
             <section aria-label={t`Полная переписка`} className="space-y-2">
-              <h4 className="font-semibold">
-                <Trans>Полная переписка</Trans>
-              </h4>
               <HistoryEvents
-                events={conversation.data?.pages.flatMap((page) => page.events) ?? []}
+                events={messages}
                 openReviews={false}
+                renderBody={(event) => {
+                  const entry = event.entryId ? evidence.get(event.entryId) : undefined
+                  return entry ? (
+                    <ReviewEvidenceEntry
+                      entry={entry}
+                      mediaClient={mediaClient}
+                      annotations={draft.annotations}
+                      onAnnotationChange={annotate}
+                      disabled={disabled}
+                      entryActions={entryActions}
+                    />
+                  ) : undefined
+                }}
               />
               {conversation.isFetching && (
                 <p role="status">
@@ -431,20 +480,6 @@ function LoadedSheetCard({
                   </Button>
                 </>
               )}
-            </section>
-            <section aria-label={t`Материалы оценки`} className="space-y-2">
-              <h4 className="font-semibold">
-                <Trans>Материалы оценки</Trans>
-              </h4>
-              <ReviewEvidenceThread
-                workspace={detail.workspace}
-                mediaClient={mediaClient}
-                annotations={draft.annotations}
-                onAnnotationChange={annotate}
-                disabled={disabled}
-                entryActions={entryActions}
-                deferEditors
-              />
             </section>
           </div>
         }

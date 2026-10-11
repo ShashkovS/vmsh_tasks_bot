@@ -1,7 +1,7 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { formatDateTime } from '@vmsh/i18n'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { StudentResultsClient } from '@vmsh/app-shell'
 import type { StudentResultEvent, StudentResultHistory, WebContentDocument } from '@vmsh/contracts'
@@ -202,14 +202,16 @@ function ArchiveImage({ attachment }: { attachment: StudentResultEvent['attachme
 }
 
 // docs/review-history.md and student-results.md share one chronological message view.
-export function HistoryEvents({
+export function HistoryEvents<T extends StudentResultEvent & { problemNumber?: string }>({
   events,
   onCondition,
   openReviews = true,
+  renderBody,
 }: {
-  events: (StudentResultEvent & { problemNumber?: string })[]
+  events: T[]
   onCondition?: (revision: string) => void
   openReviews?: boolean
+  renderBody?: (event: T) => ReactNode | undefined
 }) {
   return (
     <ol className="space-y-2 break-words">
@@ -223,7 +225,7 @@ export function HistoryEvents({
               name: e.author ?? sources[e.source] ?? t`Архив`,
             },
             at: date(e.at),
-            body: (
+            body: renderBody?.(e) ?? (
               <>
                 <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
                   <span>

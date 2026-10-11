@@ -356,3 +356,12 @@ Student visual 3 FAIL из-за существующих подсказок по
 по 25 HTTP checks и 116 Staff asset hashes PASS; службы active, maintenance off.
 Данные/настройки/backup integrity сохранены;
 [операционный record](../../../docs/deploy/review-sheet-20261011.md).
+
+## 2026-10-11 — простыня: убрать повтор сообщений
+
+По замечанию владельца объединяем общий диалог и материалы проверки: каждое
+сообщение один раз, перенос/клонирование/разметка непосредственно при нём.
+Evidence и CAS сохраняются. Fast gate PASS: 2981 Python / 12 SKIP,
+1102 frontend, 375 Storybook, 10 Chromium E2E (review/submissions/student-results).
+Выпуск ожидается; [proof](../../../pwa_tests/reports/review-sheet-conversation-20261011/README.md).
+[Решение и компоненты](../../docs/review-sheet.md#11-октября--единая-переписка-без-повторов).

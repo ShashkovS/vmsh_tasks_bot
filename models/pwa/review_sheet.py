@@ -393,6 +393,12 @@ def conversation(connection, scope, case_id, root, cursor=None):
             root,
             media_base=f"/staff/api/v1/review/sheet/{case_id}",
         )
+        # review-sheet.md: join editable evidence into the one conversation view.
+        payload["entryId"] = (
+            archive_db.event_record(connection, "entry", event["id"])["public_id"]
+            if event["kind"] == "entry"
+            else None
+        )
         payload["problemNumber"] = _label(problem).split(" · ")[0]
         payloads.append(payload)
     return {

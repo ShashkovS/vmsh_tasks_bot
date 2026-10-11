@@ -6,6 +6,7 @@ import {
   ApiResponseError,
   type ReviewSheetDetail,
   type ReviewSheetCollection,
+  type ReviewSheetConversation,
 } from '@vmsh/contracts'
 import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
@@ -273,4 +274,85 @@ it('blocks a 301-card lesson while offering task selection and the all toggle', 
   expect(change).toHaveBeenCalledWith({ lesson: 'gl-1', problem: 'p-1', mode: 'pending' })
   fireEvent.click(screen.getByRole('button', { name: 'Все' }))
   expect(change).toHaveBeenCalledWith({ lesson: 'gl-1', mode: 'all' })
+})
+
+// review-sheet.md: the history and editable evidence occupy the same message.
+it('shows each submission once with transfer controls and keeps earlier replies in order', async () => {
+  const event = (
+    id: string,
+    text: string,
+    entryId: string | null,
+  ): ReviewSheetConversation['events'][number] => ({
+    id,
+    text,
+    entryId,
+    kind: 'entry',
+    at: '2026-10-11T12:00:00Z',
+    author: 'Анна',
+    authorKind: 'student',
+    source: 'pwa',
+    attachments: [],
+    problemNumber: '1н.1',
+    verdict: null,
+    symbol: '',
+    revisionId: null,
+    reviewId: null,
+    internal: false,
+    action: null,
+    transfer: null,
+    checkStatus: null,
+  })
+  let finishPage!: (page: {
+    events: ReviewSheetConversation['events']
+    nextCursor: null
+    total: number
+  }) => void
+  const nextPage = new Promise<{
+    events: ReviewSheetConversation['events']
+    nextCursor: null
+    total: number
+  }>((resolve) => {
+    finishPage = resolve
+  })
+  mocks.client.sheetConversation.mockImplementation((id: string, cursor?: string) => {
+    if (id !== 'st-1') return Promise.resolve({ events: [], nextCursor: null, total: 0 })
+    if (cursor) return nextPage
+    return Promise.resolve({
+      events: [event('entry:100', 'Предыдущее решение', 'old-entry')],
+      nextCursor: 'entry:100',
+      total: 2,
+    })
+  })
+  mount()
+  const anna = await screen.findByRole('article', { name: 'Проверка работы: Анна' })
+  await within(anna).findByText('Предыдущее решение')
+  expect(within(anna).getAllByText('Анна: решение')).toHaveLength(1)
+  const move = within(anna).getByRole('button', { name: 'Перенести в другую задачу' })
+  expect(move.closest('li')?.textContent).toContain('Анна: решение')
+  expect(within(anna).queryByText('Материалы оценки')).toBeNull()
+  await act(async () => {
+    finishPage({
+      events: [event('entry:201', 'Анна: решение', 'se-st-1')],
+      nextCursor: null,
+      total: 2,
+    })
+    await nextPage
+  })
+  await waitFor(() =>
+    expect(mocks.client.sheetConversation).toHaveBeenCalledWith(
+      'st-1',
+      'entry:100',
+      expect.anything(),
+    ),
+  )
+  expect(within(anna).getAllByText('Анна: решение')).toHaveLength(1)
+  expect(within(anna).getByRole('button', { name: 'Перенести в другую задачу' })).toBe(move)
+  expect(
+    within(anna)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent),
+  ).toEqual([
+    expect.stringContaining('Предыдущее решение'),
+    expect.stringContaining('Анна: решение'),
+  ])
 })

@@ -129,6 +129,8 @@ async def test_sheet_conflict_refresh_resend_replay_and_student_projection(revie
         stored["reviewId"],
     }
     assert any(e["text"] == "Мой сохранённый комментарий" for e in events)
+    assert any(e["entryId"] == "se-1" for e in events if e["kind"] == "entry")
+    assert all(e["entryId"] is None for e in events if e["kind"] != "entry")
     assert len(f.telegram_calls) == 2
     assert (
         f.factory.run_read(

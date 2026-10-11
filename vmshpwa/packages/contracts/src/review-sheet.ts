@@ -113,6 +113,7 @@ export const reviewSheetConversationSchema = z
     events: z.array(
       studentResultEventSchema.extend({
         problemNumber: z.string(),
+        entryId: publicIdSchema.nullable(),
         internal: z.literal(false),
         attachments: z.array(
           studentResultEventSchema.shape.attachments.element.extend({

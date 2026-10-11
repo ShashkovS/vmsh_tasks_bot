@@ -453,37 +453,35 @@ export function ReviewReadOnlyEvidence({
   )
 }
 
-/** Shared evidence/photos for lease and sheet cards; docs/review-sheet.md. */
-export function ReviewEvidenceThread({
-  workspace,
+/** Editable evidence inside one sheet conversation; docs/review-sheet.md. */
+export function ReviewEvidenceEntry({
+  entry,
   mediaClient,
   annotations,
   onAnnotationChange,
   disabled,
   entryActions,
-  deferEditors = false,
 }: {
-  workspace: ReviewWorkspaceEvidence
+  entry: ReviewTimelineEntry
   mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>
   annotations: ReviewAnnotationManifest[]
   onAnnotationChange: (attachmentId: string, annotation: ReviewAnnotationManifest | null) => void
   disabled: boolean
   entryActions?: ((entryId: string) => ReactNode) | undefined
-  deferEditors?: boolean
 }) {
   return (
-    <FeedbackThread
-      messages={reviewTimelineMessages(
-        workspace,
-        mediaClient,
-        annotations,
-        onAnnotationChange,
-        disabled,
-        false,
-        entryActions,
-        deferEditors,
-      )}
-    />
+    <>
+      <TimelineEntryBody
+        deferEditor
+        annotationByAttachment={new Map(annotations.map((item) => [item.attachmentId, item]))}
+        annotationDisabled={disabled}
+        editableAttachmentIds={new Set(entry.attachments.map((item) => item.attachmentId))}
+        entry={entry}
+        mediaClient={mediaClient}
+        onAnnotationChange={onAnnotationChange}
+      />
+      {entryActions?.(entry.entryId)}
+    </>
   )
 }
 

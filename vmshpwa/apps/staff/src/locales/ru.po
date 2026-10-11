@@ -2919,10 +2919,6 @@ msgstr "Материалы выбранной проверки"
 msgid "Материалы для разбора"
 msgstr "Материалы для разбора"
 
-#: apps/staff/src/review-sheet-card.tsx
-msgid "Материалы оценки"
-msgstr "Материалы оценки"
-
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Метаданные задач"
 msgstr "Метаданные задач"

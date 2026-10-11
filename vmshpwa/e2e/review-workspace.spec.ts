@@ -34,6 +34,11 @@ test('Sheet review: independent cards, foreign verdict conflict and explicit res
     name: 'Проверка работы: Алексей Тестовый-Онлайн',
     exact: true,
   })
+  await expect(first.getByText('Второе решение для сравнения', { exact: true })).toHaveCount(1)
+  await expect(first.getByText('Материалы оценки', { exact: true })).toHaveCount(0)
+  await expect(
+    first.getByRole('button', { name: 'Перенести в другую задачу', exact: true }),
+  ).toHaveCount(1)
   const comment = first.getByRole('textbox', { name: 'Комментарий', exact: true })
   await comment.fill('Сохранённый комментарий простыни')
   await first.getByRole('button', { name: '1 Зачтено', exact: true }).click()

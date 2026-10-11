@@ -48,3 +48,14 @@ SSH восстановлен через штатный launchd agent, секре
 webhook, TLF — fast-forward без пересборки/перезапуска. Static release остаётся
 на проверенном feature commit. Общие ограничения E2E/visual gate из отчёта
 сохраняются; authenticated browser acceptance на production не заявляется.
+
+## Исправление повторных сообщений
+
+После замечания владельца убран повторный блок «Материалы оценки». Решения
+отображаются один раз в общем диалоге; перенос/клонирование/разметка находятся
+при сообщении. Evidence/CAS не меняются, миграций/изменений зависимостей нет.
+[Проверки и новые снимки](../../pwa_tests/reports/review-sheet-conversation-20261011/README.md):
+fast gate PASS (2981 Python / 12 SKIP, 1102 frontend, 375 Storybook,
+10 Chromium E2E), дополнительный review для сохранения снимков 4 PASS.
+Выпуск исправления начат в ранее авторизованном scope; используется тот же
+webhook ВМШ и [TLF script](tlf-app/deploy_review_sheet.sh).
