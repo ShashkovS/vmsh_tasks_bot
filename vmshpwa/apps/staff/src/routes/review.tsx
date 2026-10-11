@@ -13,9 +13,11 @@ export const Route = createFileRoute('/review')({
   component: ReviewNavigation,
 })
 function ReviewNavigation() {
-  const inHistory = useRouterState({
-    select: (state) => state.location.pathname.includes('/review/history'),
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
   })
+  const inHistory = pathname.includes('/review/history')
+  const inSheet = pathname.includes('/review/sheet')
   const auth = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   const namespace = createBrowserStorageNamespace(auth.client.runtime)
@@ -33,8 +35,11 @@ function ReviewNavigation() {
         className="mx-4 mb-3 flex flex-wrap items-center gap-2 border-b border-border py-3"
       >
         <Link
-          className={buttonVariants({ variant: inHistory ? 'outline' : 'default', size: 'sm' })}
-          aria-current={!inHistory ? 'page' : undefined}
+          className={buttonVariants({
+            variant: inHistory || inSheet ? 'outline' : 'default',
+            size: 'sm',
+          })}
+          aria-current={!inHistory && !inSheet ? 'page' : undefined}
           activeProps={{ 'aria-current': 'page' }}
           activeOptions={{ exact: true }}
           to="/review"
@@ -48,6 +53,15 @@ function ReviewNavigation() {
           to="/review/history"
         >
           <Trans>Проверено</Trans>
+        </Link>
+        <Link
+          className={buttonVariants({ variant: inSheet ? 'default' : 'outline', size: 'sm' })}
+          aria-current={inSheet ? 'page' : undefined}
+          activeProps={{ 'aria-current': 'page' }}
+          to="/review/sheet"
+          search={{ mode: 'pending' }}
+        >
+          <Trans>Простыня</Trans>
         </Link>
         {last && (
           <Link

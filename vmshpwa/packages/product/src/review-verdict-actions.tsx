@@ -17,6 +17,7 @@ export interface VerdictActionsProps {
   onPick: (verdict: VerdictView) => void
   selectedValue?: string | undefined
   disabled?: boolean | undefined
+  hotkeys?: boolean | undefined
   className?: string | undefined
 }
 
@@ -31,12 +32,13 @@ export function VerdictActions({
   onPick,
   selectedValue,
   disabled,
+  hotkeys = true,
   className,
 }: VerdictActionsProps) {
   const ordered = [...verdicts].sort((a, b) => b.weight - a.weight)
 
   useEffect(() => {
-    if (disabled) return
+    if (disabled || !hotkeys) return
     function onKeyDown(event: KeyboardEvent) {
       if (event.altKey || event.ctrlKey || event.metaKey) return
       if (isEditableTarget(document.activeElement)) return
@@ -47,7 +49,7 @@ export function VerdictActions({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [ordered, onPick, disabled])
+  }, [ordered, onPick, disabled, hotkeys])
 
   return (
     <div className={cn('space-y-1.5', className)}>

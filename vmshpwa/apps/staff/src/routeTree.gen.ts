@@ -41,6 +41,7 @@ import { Route as QuestionsOrganizersRouteImport } from './routes/questions.orga
 import { Route as ReviewIndexRouteImport } from './routes/review.index'
 import { Route as ReviewSubmissionIdRouteImport } from './routes/review.$submissionId'
 import { Route as ReviewHistoryRouteImport } from './routes/review.history'
+import { Route as ReviewSheetRouteImport } from './routes/review.sheet'
 import { Route as QuestionsOrganizersIndexRouteImport } from './routes/questions.organizers.index'
 import { Route as QuestionsOrganizersThreadIdRouteImport } from './routes/questions.organizers.$threadId'
 import { Route as ReviewSeriesProblemIdRouteImport } from './routes/review.series.$problemId'
@@ -205,6 +206,11 @@ const ReviewHistoryRoute = ReviewHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => ReviewRoute,
 } as any)
+const ReviewSheetRoute = ReviewSheetRouteImport.update({
+  id: '/sheet',
+  path: '/sheet',
+  getParentRoute: () => ReviewRoute,
+} as any)
 const QuestionsOrganizersIndexRoute =
   QuestionsOrganizersIndexRouteImport.update({
     id: '/',
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/questions/organizers': typeof QuestionsOrganizersRouteWithChildren
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/review/history': typeof ReviewHistoryRoute
+  '/review/sheet': typeof ReviewSheetRoute
   '/lessons/': typeof LessonsIndexRoute
   '/problems/': typeof ProblemsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
@@ -284,6 +291,7 @@ export interface FileRoutesByTo {
   '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/review/history': typeof ReviewHistoryRoute
+  '/review/sheet': typeof ReviewSheetRoute
   '/lessons': typeof LessonsIndexRoute
   '/problems': typeof ProblemsIndexRoute
   '/questions': typeof QuestionsIndexRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   '/questions/organizers': typeof QuestionsOrganizersRouteWithChildren
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/review/history': typeof ReviewHistoryRoute
+  '/review/sheet': typeof ReviewSheetRoute
   '/lessons/': typeof LessonsIndexRoute
   '/problems/': typeof ProblemsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/questions/organizers'
     | '/review/$submissionId'
     | '/review/history'
+    | '/review/sheet'
     | '/lessons/'
     | '/problems/'
     | '/questions/'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/questions/$threadId'
     | '/review/$submissionId'
     | '/review/history'
+    | '/review/sheet'
     | '/lessons'
     | '/problems'
     | '/questions'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/questions/organizers'
     | '/review/$submissionId'
     | '/review/history'
+    | '/review/sheet'
     | '/lessons/'
     | '/problems/'
     | '/questions/'
@@ -689,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewHistoryRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/review/sheet': {
+      id: '/review/sheet'
+      path: '/sheet'
+      fullPath: '/review/sheet'
+      preLoaderRoute: typeof ReviewSheetRouteImport
+      parentRoute: typeof ReviewRoute
+    }
     '/questions/organizers/': {
       id: '/questions/organizers/'
       path: '/'
@@ -774,6 +793,7 @@ const QuestionsRouteWithChildren = QuestionsRoute._addFileChildren(
 interface ReviewRouteChildren {
   ReviewSubmissionIdRoute: typeof ReviewSubmissionIdRoute
   ReviewHistoryRoute: typeof ReviewHistoryRoute
+  ReviewSheetRoute: typeof ReviewSheetRoute
   ReviewIndexRoute: typeof ReviewIndexRoute
   ReviewSeriesProblemIdRoute: typeof ReviewSeriesProblemIdRoute
 }
@@ -781,6 +801,7 @@ interface ReviewRouteChildren {
 const ReviewRouteChildren: ReviewRouteChildren = {
   ReviewSubmissionIdRoute: ReviewSubmissionIdRoute,
   ReviewHistoryRoute: ReviewHistoryRoute,
+  ReviewSheetRoute: ReviewSheetRoute,
   ReviewIndexRoute: ReviewIndexRoute,
   ReviewSeriesProblemIdRoute: ReviewSeriesProblemIdRoute,
 }

@@ -21,7 +21,7 @@ export function ReviewTransfer({
   onBusy,
   onDone,
 }: {
-  client: ReviewQueueClient
+  client: Pick<ReviewQueueClient, 'transferPreview' | 'transfer'>
   queueId: string
   entryId: string
   claimToken: string

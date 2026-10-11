@@ -860,7 +860,9 @@ def _complete_annotations(value: object) -> tuple[ReviewAnnotationManifest, ...]
                     not isinstance(mark, dict)
                     or not {"markId", "kind", "data"}.issubset(mark)
                     or set(mark) - {"markId", "kind", "data", "coordinateSpace"}
-                    or ("coordinateSpace" in mark and mark["coordinateSpace"] != "image")
+                    or (
+                        "coordinateSpace" in mark and mark["coordinateSpace"] != "image"
+                    )
                 ):
                     raise PwaApiError(
                         status=422,
@@ -1279,6 +1281,11 @@ async def complete_review_item(request: web.Request) -> web.Response:
             code="validation_error",
             message="Проверьте данные завершения проверки",
         ) from error
+    return await _completed_review_response(request, receipt, comment=comment)
+
+
+async def _completed_review_response(request, receipt, *, comment):
+    """Shared post-commit delivery for leased reviews and docs/review-sheet.md."""
     if not receipt.replayed:
         database = request.app.get(PWA_DATABASE)
         if database is not None and database.factory is not None:
@@ -2050,6 +2057,398 @@ async def delete_review_student_reaction(request: web.Request) -> web.Response:
             "requestId": request["request_id"],
         }
     )
+
+
+def _sheet_database(request):
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+    return database.factory
+
+
+def _sheet_case_id(request):
+    value = request.match_info["case_id"]
+    if re.fullmatch(r"st-[1-9][0-9]*", value) is None:
+        raise PwaApiError(
+            status=404, code="review_not_found", message="Работа не найдена"
+        )
+    return value
+
+
+def _sheet_error(error):
+    if isinstance(error, ReviewThreadChanged):
+        return PwaApiError(
+            status=409,
+            code="review_sheet_changed",
+            message="Работа уже проверена или её материалы изменились. Переписка обновлена; проверьте изменения перед отправкой.",
+        )
+    if isinstance(error, archive.ArchiveNotFound):
+        return PwaApiError(
+            status=404, code="review_not_found", message="Работа не найдена"
+        )
+    return _translate_queue_error(error)
+
+
+async def _sheet_read(request, operation):
+    _, scope = _require_review_write(request)
+    try:
+        return await _sheet_database(request).run_read_async(
+            lambda c: operation(c, scope)
+        )
+    except (
+        ReviewQueueNotFound,
+        ReviewQueueForbidden,
+        ReviewThreadChanged,
+        archive.ArchiveNotFound,
+    ) as error:
+        raise _sheet_error(error) from error
+
+
+def _sheet_json(request, result):
+    return web.json_response(
+        {**result, "requestId": request["request_id"]},
+        headers={"Cache-Control": "private, no-store"},
+    )
+
+
+@review_routes.get("/staff/api/v1/review/sheet/options")
+async def review_sheet_options(request):
+    from models.pwa import review_sheet
+
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    return _sheet_json(request, await _sheet_read(request, review_sheet.directory))
+
+
+@review_routes.get("/staff/api/v1/review/sheet")
+async def review_sheet_collection(request):
+    from models.pwa import review_sheet
+
+    if set(request.query) - {"lesson", "problem", "mode"} or request.query.get(
+        "mode", "pending"
+    ) not in ("pending", "all"):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте параметры простыни"
+        )
+    lesson = _optional_public_id(request.query.get("lesson"), field="lesson")
+    problem = _optional_public_id(request.query.get("problem"), field="problem")
+    if lesson is None and problem is None:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Выберите занятие или задачу"
+        )
+    result = await _sheet_read(
+        request,
+        lambda c, scope: review_sheet.collection(
+            c,
+            scope,
+            lesson_id=lesson,
+            problem_id=problem,
+            mode=request.query.get("mode", "pending"),
+        ),
+    )
+    return _sheet_json(request, result)
+
+
+@review_routes.get("/staff/api/v1/review/sheet/{case_id}")
+async def review_sheet_detail(request):
+    from models.pwa import review_sheet
+
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    case_id = _sheet_case_id(request)
+    return _sheet_json(
+        request,
+        await _sheet_read(
+            request, lambda c, scope: review_sheet.detail(c, scope, case_id)
+        ),
+    )
+
+
+@review_routes.get("/staff/api/v1/review/sheet/{case_id}/conversation")
+async def review_sheet_conversation(request):
+    from models.pwa import review_sheet
+
+    if set(request.query) - {"cursor"} or len(request.query.get("cursor", "")) > 128:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Некорректный курсор истории"
+        )
+    case_id = _sheet_case_id(request)
+    result = await _sheet_read(
+        request,
+        lambda c, scope: review_sheet.conversation(
+            c,
+            scope,
+            case_id,
+            legacy_solutions_root(request),
+            request.query.get("cursor"),
+        ),
+    )
+    return _sheet_json(request, result)
+
+
+@review_routes.get("/staff/api/v1/review/sheet/{case_id}/attachments/{attachment_id}")
+async def review_sheet_attachment(request):
+    from models.pwa import review_sheet
+
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    case_id = _sheet_case_id(request)
+    attachment_id = _required_public_id(
+        request.match_info["attachment_id"], field="attachmentId"
+    )
+    metadata = await _sheet_read(
+        request,
+        lambda c, scope: review_sheet.attachment(c, scope, case_id, attachment_id),
+    )
+    return await archive_attachment_response(request, metadata)
+
+
+@review_routes.get(
+    "/staff/api/v1/review/sheet/{case_id}/legacy-attachments/{attachment_id}"
+)
+async def review_sheet_legacy_attachment(request):
+    from models.pwa import review_sheet
+
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    case_id = _sheet_case_id(request)
+    attachment_id = _required_public_id(
+        request.match_info["attachment_id"], field="attachmentId"
+    )
+    metadata = await _sheet_read(
+        request,
+        lambda c, scope: review_sheet.attachment(
+            c, scope, case_id, attachment_id, legacy=True
+        ),
+    )
+    path = archive.require(
+        archive.legacy_path(legacy_solutions_root(request), metadata["attach_path"])
+    )
+    return await legacy_attachment_response(path)
+
+
+@review_routes.post("/staff/api/v1/review/sheet/{case_id}/complete")
+async def complete_review_sheet(request):
+    from models.pwa import review_sheet
+
+    actor, scope = _require_review_write(request)
+    case_id = _sheet_case_id(request)
+    payload = await _json_object(
+        request,
+        required_fields=frozenset(
+            {
+                "schemaVersion",
+                "snapshot",
+                "idempotencyKey",
+                "verdict",
+                "comment",
+                "confirmWithoutComment",
+                "annotations",
+                "internalReactionId",
+            }
+        ),
+    )
+    if (
+        not isinstance(payload["snapshot"], str)
+        or re.fullmatch(r"[0-9a-f]{64}", payload["snapshot"]) is None
+        or type(payload["verdict"]) is not int
+        or not 11 <= payload["verdict"] <= 17
+        or type(payload["confirmWithoutComment"]) is not bool
+        or (
+            payload["comment"] is not None
+            and (
+                not isinstance(payload["comment"], str)
+                or len(payload["comment"]) > 100_000
+            )
+        )
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте данные завершения проверки",
+        )
+    _required_public_id(payload["idempotencyKey"], field="idempotencyKey")
+    if payload["internalReactionId"] is not None:
+        _positive_integer(payload["internalReactionId"], field="internalReactionId")
+    annotations = _complete_annotations(payload["annotations"])
+    try:
+        receipt = await _sheet_database(request).run_write_async(
+            lambda c: review_sheet.complete(
+                c,
+                scope=scope,
+                actor=actor,
+                case_id=case_id,
+                payload=payload,
+                annotations=annotations,
+            )
+        )
+    except (
+        ReviewQueueNotFound,
+        ReviewQueueForbidden,
+        ReviewThreadChanged,
+        ReviewCompletionInvalid,
+        ReviewIdempotencyConflict,
+    ) as error:
+        raise _sheet_error(error) from error
+    return await _completed_review_response(
+        request, receipt, comment=payload["comment"]
+    )
+
+
+@review_routes.post("/staff/api/v1/review/sheet/{case_id}/transfer-preview")
+async def preview_review_sheet_transfer(request):
+    from models.pwa import review_transfers, review_sheet
+    from db_methods.pwa import review_transfers as storage
+
+    actor, scope = _require_review_write(request)
+    case_id = _sheet_case_id(request)
+    body = await _json_object(
+        request, required_fields=frozenset({"schemaVersion", "entryId", "snapshot"})
+    )
+    entry_id = _required_public_id(body["entryId"], field="entryId")
+    snapshot = _claim_token(body["snapshot"])
+
+    def read(c):
+        value = review_sheet.context(c, scope, case_id)
+        if value["snapshot"] != snapshot or not value["queues"]:
+            raise ReviewThreadChanged("sheet transfer source changed")
+        src = storage.source(c, entry_id)
+        if src is None or not any(
+            t["id"] == src["thread_id"] for t in value["threads"]
+        ):
+            raise ReviewQueueForbidden("entry is outside sheet case")
+        return review_transfers.preview(
+            c,
+            entry_id=entry_id,
+            queue_id=value["queues"][0]["public_id"],
+            claim_token=snapshot,
+            actor=actor,
+            scope=scope,
+            sheet_case_id=case_id,
+        )
+
+    try:
+        result = await _sheet_database(request).run_read_async(read)
+    except (
+        ReviewQueueNotFound,
+        ReviewQueueForbidden,
+        ReviewThreadChanged,
+        ReviewLeaseConflict,
+    ) as error:
+        raise _sheet_error(error) from error
+    return _sheet_json(request, result)
+
+
+@review_routes.post("/staff/api/v1/review/sheet/{case_id}/transfer")
+async def transfer_review_sheet_entry(request):
+    from models.pwa import review_transfers
+    from db_methods.pwa import review_transfers as storage
+    from db_methods.pwa.reviews import _review_recipient_account_public_ids
+
+    actor, scope = _require_review_write(request)
+    case_id = _sheet_case_id(request)
+    body = await _json_object(
+        request,
+        required_fields=frozenset(
+            {
+                "schemaVersion",
+                "entryId",
+                "snapshot",
+                "targetProblemId",
+                "sourceVersion",
+                "entryVersion",
+                "targetVersion",
+                "targetThreadId",
+                "mode",
+                "idempotencyKey",
+            }
+        ),
+    )
+    if body["mode"] not in ("move", "clone") or any(
+        type(body[k]) is not int or body[k] < 0
+        for k in ("sourceVersion", "entryVersion", "targetVersion")
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте параметры переноса"
+        )
+    for field in ("entryId", "snapshot", "targetProblemId", "idempotencyKey"):
+        _required_public_id(body[field], field=field)
+    if body["targetThreadId"] is not None:
+        _required_public_id(body["targetThreadId"], field="targetThreadId")
+    payload = {k: v for k, v in body.items() if k != "snapshot"}
+    payload["claimToken"] = body["snapshot"]
+
+    def write(c):
+        src = storage.source(c, body["entryId"])
+        if src is None:
+            raise ReviewQueueNotFound("source entry not found")
+        queue = storage.queued_target_case(c, src["student_user_id"], src["problem_id"])
+        verb = "Перенесено" if body["mode"] == "move" else "Скопировано"
+        result = review_transfers.execute(
+            c,
+            payload=payload,
+            queue_id=queue["public_id"] if queue else "none",
+            actor=actor,
+            scope=scope,
+            sheet_case_id=case_id,
+            notices=(
+                verb + " преподавателем в задачу {target}.",
+                verb + " преподавателем из задачи {source}.",
+            ),
+        )
+        owners, families = _review_recipient_account_public_ids(
+            c, student_user_id=src["student_user_id"]
+        )
+        return (
+            result,
+            owners,
+            families,
+            (src["problem_public_id"], result["targetProblemId"]),
+        )
+
+    try:
+        result, owners, families, problems = await _sheet_database(
+            request
+        ).run_write_async(write)
+    except (
+        ReviewQueueNotFound,
+        ReviewQueueForbidden,
+        ReviewThreadChanged,
+        ReviewLeaseConflict,
+    ) as error:
+        raise _sheet_error(error) from error
+    await _invalidate_review_queue(request, reason="review-sheet-entry-transferred")
+    invalidator = request.app.get(PWA_REVIEW_COMPLETION_INVALIDATOR)
+    if invalidator:
+        try:
+            await invalidator(
+                owners, families, problems, "review-sheet-entry-transferred"
+            )
+        except Exception:
+            logger.warning(
+                "Sheet transfer invalidation failed after commit", exc_info=True
+            )
+    return _sheet_json(request, result)
 
 
 __all__ = [

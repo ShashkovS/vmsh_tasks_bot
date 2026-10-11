@@ -1,3 +1,5 @@
+import { reviewSheetCollectionSchema } from '../packages/contracts/src/review-sheet'
+import { completeReviewResponseSchema } from '../packages/contracts/src/review-queue'
 import { authContextSchema } from '../packages/contracts/src/auth'
 import {
   familyWrittenThreadResponseSchema,
@@ -8,6 +10,152 @@ import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test, type Locator } from './fixtures'
 
 test.describe.configure({ retries: 0 })
+
+// docs/review-sheet.md: two independent sessions, scoped drafts, source CAS and
+// latest-result projections. Dedicated fixtures never share a review with series.
+test('Sheet review: independent cards, foreign verdict conflict and explicit resend', async ({
+  page,
+  secondaryContext,
+}, info) => {
+  test.setTimeout(120_000)
+  const fixtureIds: Record<string, number> = { chromium: 9971, webkit: 9972, firefox: 9973 }
+  const id = fixtureIds[info.project.name]
+  if (!id) throw new Error('Unknown browser project')
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.teacher,
+    `/staff/review/sheet?lesson=gl-${id}&mode=pending`,
+  )
+  await expect(page.getByRole('heading', { name: 'Проверка простынёй' })).toBeVisible()
+  const cards = page.getByRole('article', { name: /^Проверка работы:/ })
+  await expect(cards).toHaveCount(2)
+  const first = cards.filter({ hasText: `Второй sheet-${info.project.name}` })
+  const second = page.getByRole('article', {
+    name: 'Проверка работы: Алексей Тестовый-Онлайн',
+    exact: true,
+  })
+  const comment = first.getByRole('textbox', { name: 'Комментарий', exact: true })
+  await comment.fill('Сохранённый комментарий простыни')
+  await first.getByRole('button', { name: '1 Зачтено', exact: true }).click()
+  await second.scrollIntoViewIfNeeded()
+  await second
+    .getByRole('textbox', { name: 'Комментарий', exact: true })
+    .fill('Независимый второй черновик')
+  await page.reload()
+  await expect(comment).toHaveValue('Сохранённый комментарий простыни')
+  await second.scrollIntoViewIfNeeded()
+  await expect(second.getByRole('textbox', { name: 'Комментарий', exact: true })).toHaveValue(
+    'Независимый второй черновик',
+  )
+  const collection = reviewSheetCollectionSchema.parse(
+    await (
+      await page.request.get(`/staff/api/v1/review/sheet?lesson=gl-${id}&mode=pending`)
+    ).json(),
+  )
+  const caseId = collection.tasks[0]?.cases.find((item) =>
+    item.studentName.startsWith('Второй'),
+  )?.caseId
+  if (!caseId) throw new Error('Sheet fixture not found')
+  const admin = await secondaryContext.newPage()
+  await loginThroughUi(
+    admin,
+    AUTH_PERSONAS.admin,
+    `/staff/review/sheet?problem=p-${id}&mode=pending`,
+  )
+  const other = admin
+    .getByRole('article', { name: /^Проверка работы:/ })
+    .filter({ hasText: `Второй sheet-${info.project.name}` })
+  await other.getByRole('textbox', { name: 'Комментарий', exact: true }).fill('Результат коллеги')
+  await other.getByRole('button', { name: /Половина/ }).click()
+  const adminReceipt = admin.waitForResponse(
+    (r) => r.request().method() === 'POST' && r.url().endsWith(`/sheet/${caseId}/complete`),
+  )
+  await other.getByRole('button', { name: 'Отправить вердикт', exact: true }).click()
+  expect((await adminReceipt).status()).toBe(200)
+  await other.getByText('Результат отправлен', { exact: true }).waitFor()
+  const conflict = page.waitForResponse(
+    (r) => r.request().method() === 'POST' && r.url().endsWith(`/sheet/${caseId}/complete`),
+  )
+  await first.getByRole('button', { name: 'Отправить вердикт', exact: true }).click()
+  expect((await conflict).status()).toBe(409)
+  await expect(first.getByRole('alert')).toContainText('Ваш черновик сохранён')
+  await expect(comment).toHaveValue('Сохранённый комментарий простыни')
+  await expect(second.getByRole('textbox', { name: 'Комментарий', exact: true })).toHaveValue(
+    'Независимый второй черновик',
+  )
+  await expect(first.getByText('Результат коллеги', { exact: true }).first()).toBeVisible()
+  await expect(
+    first.getByRole('button', { name: 'Отправить мой результат', exact: true }),
+  ).toBeEnabled()
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(
+      (dark) => document.documentElement.classList.toggle('dark', dark),
+      theme === 'dark',
+    )
+    await first.screenshot({
+      path: info.outputPath(`sheet-conflict-${theme}.png`),
+      style: 'header { visibility: hidden; }',
+    })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.screenshot({ path: info.outputPath(`sheet-page-${theme}.png`), fullPage: true })
+    const viewport = page.viewportSize()
+    if (!viewport) throw new Error('Expected a viewport')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+      .toBe(true)
+    await page.screenshot({ path: info.outputPath(`sheet-mobile-${theme}.png`), fullPage: true })
+    await page.setViewportSize(viewport)
+  }
+  await page.evaluate(() => document.documentElement.classList.remove('dark'))
+  const resend = page.waitForResponse(
+    (r) => r.request().method() === 'POST' && r.url().endsWith(`/sheet/${caseId}/complete`),
+  )
+  await first.getByRole('button', { name: 'Отправить мой результат', exact: true }).click()
+  expect((await resend).status()).toBe(200)
+  await expect(first.getByText('Результат отправлен', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Все', exact: true }).click()
+  await expect(cards).toHaveCount(2)
+  await expect(page).toHaveURL(/mode=all/)
+  await second.scrollIntoViewIfNeeded()
+  const photo = second.getByRole('button', { name: 'На весь экран', exact: true }).first()
+  await photo.scrollIntoViewIfNeeded()
+  await photo.click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.getByRole('button', { name: 'Увеличить масштаб', exact: true }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(
+    second.getByRole('link', { name: 'Открыть оригинал', exact: true }).first(),
+  ).toHaveAttribute('href', /\/staff\/api\/v1\//)
+  await second.getByRole('button', { name: 'Добавить или изменить пометки', exact: true }).click()
+  await second.getByRole('button', { name: 'Карандаш', exact: true }).click()
+  const canvas = second.getByRole('application', { name: 'Область разметки фотографии' })
+  await canvas.scrollIntoViewIfNeeded()
+  const bounds = await canvas.boundingBox()
+  if (!bounds) throw new Error('Annotation canvas is not visible')
+  await page.mouse.move(bounds.x + bounds.width * 0.2, bounds.y + bounds.height * 0.2)
+  await page.mouse.down()
+  await page.mouse.move(bounds.x + bounds.width * 0.5, bounds.y + bounds.height * 0.5)
+  await page.mouse.up()
+  await second.getByRole('button', { name: '1 Зачтено', exact: true }).click()
+  const ownReceipt = page.waitForResponse(
+    (r) => r.request().method() === 'POST' && /\/review\/sheet\/st-[0-9]+\/complete$/.test(r.url()),
+  )
+  await second.getByRole('textbox', { name: 'Комментарий', exact: true }).press('Control+Enter')
+  const ownResponse = await ownReceipt
+  expect(ownResponse.status()).toBe(200)
+  expect(
+    completeReviewResponseSchema.parse(await ownResponse.json()).review.annotations,
+  ).toHaveLength(1)
+  const student = await secondaryContext.newPage()
+  const family = await secondaryContext.newPage()
+  await loginThroughUi(student, AUTH_PERSONAS.student, `/student/tasks/math-5-7/н/${id}`)
+  await loginThroughUi(family, AUTH_PERSONAS.family, `/family/tasks/math-5-7/н/${id}?child=1`)
+  await expect(student.getByText(/✅\+.*Зачтено/).first()).toBeVisible()
+  await expect(family.getByText('✅+', { exact: true }).first()).toBeVisible()
+})
 
 function reviewFixtureId(project: string): number {
   const fixtureIds: Record<string, number> = {

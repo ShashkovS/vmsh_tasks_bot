@@ -63,4 +63,7 @@ def test_review_seed_target_guard_is_exact():
         "precedence-chromium",
         "precedence-webkit",
         "precedence-firefox",
+        "sheet-chromium",
+        "sheet-webkit",
+        "sheet-firefox",
     }

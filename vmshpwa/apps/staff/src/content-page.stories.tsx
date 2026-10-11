@@ -548,6 +548,13 @@ export const OralWindowsNavigation: Story = {
       `/staff/oral?groupLesson=${groupLessonId}&tab=windows`,
     )
     await userEvent.tab()
+    const sheet = canvas.getByRole('link', { name: 'Показать все решения' })
+    await expect(sheet).toHaveFocus()
+    await expect(sheet).toHaveAttribute(
+      'href',
+      `/staff/review/sheet?lesson=${groupLessonId}&mode=pending`,
+    )
+    await userEvent.tab()
     await expect(link).toHaveFocus()
   },
 }

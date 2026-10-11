@@ -20,7 +20,17 @@ class ReviewTransferChanged(ReviewLeaseConflict):
     """The preview, pending material or source lease no longer matches."""
 
 
-def context(connection, *, entry_id, queue_id, claim_token, actor, scope, now):
+def context(
+    connection,
+    *,
+    entry_id,
+    queue_id,
+    claim_token,
+    actor,
+    scope,
+    now,
+    sheet_case_id=None,
+):
     src = storage.source(connection, entry_id)
     if src is None or not scope.allows(src):
         raise ReviewQueueForbidden("entry is outside scope")
@@ -33,7 +43,15 @@ def context(connection, *, entry_id, queue_id, claim_token, actor, scope, now):
         raise ReviewQueueForbidden("entry does not belong to claimed case")
     if any(not scope.allows(r) for r in rows):
         raise ReviewQueueForbidden("case is outside scope")
-    if any(
+    if sheet_case_id is not None:
+        # docs/review-sheet.md: this server-only path replaces the source lease
+        # with the same snapshot CAS as grading; ordinary transfer stays leased.
+        from models.pwa.review_sheet import context as sheet_context
+
+        current = sheet_context(connection, scope, sheet_case_id)
+        if current["snapshot"] != claim_token:
+            raise ReviewTransferChanged("sheet source changed")
+    elif any(
         not _active_pwa_claim(r, now=now)
         or r["claim_token"] != claim_token
         or r["teacher_id"] != actor
@@ -58,7 +76,17 @@ def context(connection, *, entry_id, queue_id, claim_token, actor, scope, now):
     return src, photos, storage.targets(connection, src)
 
 
-def preview(connection, *, entry_id, queue_id, claim_token, actor, scope, now=None):
+def preview(
+    connection,
+    *,
+    entry_id,
+    queue_id,
+    claim_token,
+    actor,
+    scope,
+    now=None,
+    sheet_case_id=None,
+):
     src, photos, targets = context(
         connection,
         entry_id=entry_id,
@@ -67,6 +95,7 @@ def preview(connection, *, entry_id, queue_id, claim_token, actor, scope, now=No
         actor=actor,
         scope=scope,
         now=now or datetime.now(UTC),
+        sheet_case_id=sheet_case_id,
     )
     return {
         "schemaVersion": 1,
@@ -88,15 +117,37 @@ def preview(connection, *, entry_id, queue_id, claim_token, actor, scope, now=No
     }
 
 
-def execute(connection, *, payload, queue_id, actor, scope, notices, now=None):
+def execute(
+    connection,
+    *,
+    payload,
+    queue_id,
+    actor,
+    scope,
+    notices,
+    now=None,
+    sheet_case_id=None,
+):
     now = now or datetime.now(UTC)
     digest = hashlib.sha256(
-        json.dumps({"queue": queue_id, **payload}, sort_keys=True).encode()
+        json.dumps(
+            {"queue": sheet_case_id or queue_id, **payload}, sort_keys=True
+        ).encode()
     ).hexdigest()
     # Check current source scope even on replay; revoked assignments stay revoked.
     src = storage.source(connection, payload["entryId"])
     if src is None or not scope.allows(src):
         raise ReviewQueueForbidden("entry is outside scope")
+    if sheet_case_id is not None:
+        from db_methods.pwa.review_sheet import case_threads
+
+        threads = case_threads(connection, sheet_case_id)
+        if (
+            not threads
+            or any(not scope.allows(t) for t in threads)
+            or not any(t["id"] == src["thread_id"] for t in threads)
+        ):
+            raise ReviewQueueForbidden("entry is outside sheet case")
     replay = storage.replay(connection, actor, payload["idempotencyKey"])
     if replay:
         if replay["payload_sha256"] != digest:
@@ -110,6 +161,7 @@ def execute(connection, *, payload, queue_id, actor, scope, notices, now=None):
         actor=actor,
         scope=scope,
         now=now,
+        sheet_case_id=sheet_case_id,
     )
     target = next(
         (t for t in targets if t["public_id"] == payload["targetProblemId"]), None
@@ -159,7 +211,7 @@ def execute(connection, *, payload, queue_id, actor, scope, notices, now=None):
             else "needs_work"
         ),
     )
-    if payload["mode"] == "move":
+    if payload["mode"] == "move" and sheet_case_id is None:
         # A move advances the series. Release every surviving synonym branch,
         # including other pending entries, rather than abandoning its lease.
         storage.release_remaining(

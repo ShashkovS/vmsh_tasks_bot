@@ -20,6 +20,51 @@ const runtime = runtimeConfigSchema.parse({
   features: { telegram: false, google: false, nats: false, prototype: false },
 })
 
+it('reads lease-free sheet selection and sends snapshot instead of claim token', async () => {
+  const fetchImplementation = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      Response.json({
+        schemaVersion: 1,
+        requestId: 'sheet',
+        lessonId: 'gl-1',
+        total: 0,
+        limit: 300,
+        canOpenLesson: true,
+        tasks: [],
+      }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        schemaVersion: 1,
+        requestId: 'transfer',
+        entryId: 'se-1',
+        sourceVersion: 1,
+        entryVersion: 1,
+        studentName: 'Анна',
+        sourceLabel: '1н.1',
+        photoCount: 0,
+        targets: [],
+      }),
+    )
+  const client = createReviewQueueClient(runtime, { fetchImplementation })
+  await client.sheet({ lesson: 'gl-1', problem: 'p-1', mode: 'all' })
+  expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+    '/staff/api/v1/review/sheet?mode=all&lesson=gl-1&problem=p-1',
+  )
+  await client.sheetTransferPreview('st-1', 'se-1', 'a'.repeat(64))
+  const request = fetchImplementation.mock.calls[1]
+  expect(request?.[0]).toBe('/staff/api/v1/review/sheet/st-1/transfer-preview')
+  const body = request?.[1]?.body
+  if (typeof body !== 'string') throw new Error('Expected a JSON request body')
+  expect(JSON.parse(body)).toEqual({
+    schemaVersion: 1,
+    entryId: 'se-1',
+    snapshot: 'a'.repeat(64),
+  })
+  expect(request?.[1]?.credentials).toBe('include')
+})
+
 it('loads the review-authorized conversation with an encoded stable cursor', async () => {
   const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
     Response.json({

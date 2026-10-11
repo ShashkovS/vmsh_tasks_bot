@@ -289,6 +289,17 @@ export function StaffReviewQueuePage() {
                     >
                       <Trans>Проверять подряд</Trans>
                     </Button>
+                    <Button
+                      variant="outline"
+                      render={
+                        <Link
+                          to="/review/sheet"
+                          search={{ problem: problem.problemId, mode: 'pending' }}
+                        />
+                      }
+                    >
+                      <Trans>Показать все решения</Trans>
+                    </Button>
                   </article>
                 )
               },

@@ -38,6 +38,9 @@ TARGETS = (
     ("precedence-chromium", 9901),
     ("precedence-webkit", 9902),
     ("precedence-firefox", 9903),
+    ("sheet-chromium", 9971),
+    ("sheet-webkit", 9972),
+    ("sheet-firefox", 9973),
 )
 
 
@@ -115,10 +118,13 @@ def _insert_review_cases(connection) -> int:
         ),
     )
 
-    existing = connection.execute(
-        "SELECT id FROM written_tasks_queue WHERE id BETWEEN 9701 AND 9703 OR id BETWEEN 9751 AND 9753 OR id BETWEEN 9901 AND 9903"
-    ).fetchall()
     expected_queue_ids = {fixture_id for _project, fixture_id in TARGETS}
+    existing = connection.execute(
+        "SELECT id FROM written_tasks_queue WHERE id IN ("
+        + ",".join("?" for _ in expected_queue_ids)
+        + ")",
+        tuple(sorted(expected_queue_ids)),
+    ).fetchall()
     if existing:
         existing_ids = {int(row["id"]) for row in existing}
         if existing_ids == expected_queue_ids:
@@ -191,7 +197,7 @@ def _insert_review_cases(connection) -> int:
                 (
                     fixture_id,
                     source_id,
-                    f"{ordinal}" * 64,
+                    f"{ordinal:x}" * 64,
                     teacher_id,
                     TIMESTAMP,
                 ),
@@ -322,52 +328,93 @@ def _insert_review_cases(connection) -> int:
             "(?, '2026-07-28T12:02:00Z', ?, ?, 0, ?)",
             (fixture_id, student_id, problem_id, TIMESTAMP),
         )
-        if project.startswith("precedence-"):
+        if project.startswith(("precedence-", "sheet-")):
             # written-result-precedence.md: published Student/Family case with
             # an old Zoom minus and successive written requests for revision.
             from vmshpwa.scripts.seed_e2e_oral import _web_document
 
-            connection.execute("UPDATE problem_revisions SET answer_type=NULL WHERE id=?", (problem_revision_id,))
+            connection.execute(
+                "UPDATE problem_revisions SET answer_type=NULL WHERE id=?",
+                (problem_revision_id,),
+            )
 
             document = _web_document(
                 revision_id=f"cr-{revision_id}",
-                source_sha256=f"{ordinal}" * 64,
+                source_sha256=f"{ordinal:x}" * 64,
                 title=f"E2E проверка {project}",
             )
+            if project.startswith("sheet-"):
+                # review-sheet.md: the published worksheet also has the transfer target.
+                ast = json.loads(document)
+                ast["problems"].append(
+                    {
+                        **ast["problems"][0],
+                        "ordinal": 2,
+                        "sourceItem": "2",
+                        "title": "Цель серии",
+                        "taskReference": f"{fixture_id}н.2",
+                    }
+                )
+                document = json.dumps(ast, ensure_ascii=False)
             connection.execute(
                 """INSERT INTO content_derivatives(revision_id,kind,renderer_version,
                 content_text,sha256,diagnostics_json,provenance_json,created_at)
                 VALUES(?,'web_ast','written-precedence-e2e',?,?,'[]','{}',?)""",
-                (revision_id, document, hashlib.sha256(document.encode()).hexdigest(), TIMESTAMP),
+                (
+                    revision_id,
+                    document,
+                    hashlib.sha256(document.encode()).hexdigest(),
+                    TIMESTAMP,
+                ),
             )
             connection.execute(
                 """INSERT INTO lesson_publications(group_lesson_id,kind,revision_id,state,
                 published_at,created_by_user_id,published_by_user_id,created_at,updated_at)
                 VALUES(?,'condition',?,'published',?,?,?,?,?)""",
-                (group_lesson_id, revision_id, TIMESTAMP, teacher_id, teacher_id, TIMESTAMP, TIMESTAMP),
+                (
+                    group_lesson_id,
+                    revision_id,
+                    TIMESTAMP,
+                    teacher_id,
+                    teacher_id,
+                    TIMESTAMP,
+                    TIMESTAMP,
+                ),
             )
             for source, grade in ((3, -1), (2, 11), (2, 13)):
                 rid = connection.execute(
                     """INSERT INTO results(student_id,problem_id,group_id,lesson,teacher_id,ts,verdict,res_type)
                     VALUES(?,?,?,?,?,?,?,?) RETURNING id""",
-                    (student_id, problem_id, group_id, lesson_number, teacher_id, TIMESTAMP, grade, source),
+                    (
+                        student_id,
+                        problem_id,
+                        group_id,
+                        lesson_number,
+                        teacher_id,
+                        TIMESTAMP,
+                        grade,
+                        source,
+                    ),
                 ).fetchone()["id"]
                 if source == 3:
-                    connection.execute("INSERT INTO live_mark_results VALUES(?)", (rid,))
+                    connection.execute(
+                        "INSERT INTO live_mark_results VALUES(?)", (rid,)
+                    )
         inserted += 1
     # docs/serial-review-feed.md: two independent students plus an eligible
     # same-lesson target, with shared immutable media bytes.
     for project, fixture_id in TARGETS:
-        if not project.startswith("series-"):
+        if not project.startswith(("series-", "sheet-")):
             continue
         target_id = fixture_id + 100
+        target_answer_type = None if project.startswith("sheet-") else 0
         connection.execute(
             """INSERT INTO problems
           (id,group_id,lesson,prob,item,title,prob_text,prob_type,ans_type,ans_validation,
            validation_error,cor_ans,wrong_ans,congrat,synonyms)
-          SELECT ?,group_id,lesson,2,'','Цель серии','',2,0,'','','','','',''
+          SELECT ?,group_id,lesson,2,'','Цель серии','',2,?,'','','','','',''
           FROM problems WHERE id=?""",
-            (target_id, fixture_id),
+            (target_id, target_answer_type, fixture_id),
         )
         connection.execute(
             """INSERT INTO content_problem_matches
@@ -379,8 +426,8 @@ def _insert_review_cases(connection) -> int:
             """INSERT INTO problem_revisions
           (problem_id,content_revision_id,source_ordinal,source_item,display_number,title,normalized_title,
            problem_type,answer_type,answer_config_json,attempt_policy_json,config_version,created_at)
-          VALUES(?,?,2,'2',?,'Цель серии','цель серии',2,0,'{}','{}',1,?)""",
-            (target_id, fixture_id, f"{fixture_id}н.2", TIMESTAMP),
+          VALUES(?,?,2,'2',?,'Цель серии','цель серии',2,?,'{}','{}',1,?)""",
+            (target_id, fixture_id, f"{fixture_id}н.2", target_answer_type, TIMESTAMP),
         )
         second = connection.execute(
             "INSERT INTO users(type,name,surname) VALUES(1,'Второй',?) RETURNING id",

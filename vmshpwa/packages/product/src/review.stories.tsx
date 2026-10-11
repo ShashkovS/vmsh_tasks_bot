@@ -299,6 +299,73 @@ export const Workspace: Story = {
   ),
 }
 
+function SheetFormsHarness() {
+  const [active, setActive] = useState(0)
+  const [sent, setSent] = useState([false, false])
+  return (
+    <div className="space-y-6">
+      {['Анна', 'Борис'].map((name, index) => (
+        <section
+          key={name}
+          aria-label={`Работа: ${name}`}
+          onFocusCapture={() => setActive(index)}
+          className="rounded border border-border p-4"
+        >
+          <h2 className="font-semibold">{name}</h2>
+          <ReviewFeedbackForm
+            verdicts={fullVerdictScale}
+            hotkeys={active === index}
+            initialDraft={{ verdictValue: 'plus', comment: `Черновик: ${name}`, reactionId: null }}
+            onSubmit={() => setSent((current) => current.map((value, i) => i === index || value))}
+          />
+          <p role="status">{sent[index] ? `Отправлено: ${name}` : `Черновик сохранён: ${name}`}</p>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+/** docs/review-sheet.md: all forms stay usable; global shortcuts have one owner. */
+export const SheetIndependentForms: Story = {
+  name: 'Простыня — независимые формы и горячие клавиши',
+  render: () => <SheetFormsHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const anna = within(canvas.getByRole('region', { name: 'Работа: Анна' }))
+    const boris = within(canvas.getByRole('region', { name: 'Работа: Борис' }))
+    await userEvent.click(anna.getByRole('textbox'))
+    await userEvent.keyboard('{Control>}{Enter}{/Control}')
+    await expect(anna.getByRole('status')).toHaveTextContent('Отправлено: Анна')
+    await expect(boris.getByRole('status')).toHaveTextContent('Черновик сохранён: Борис')
+    await userEvent.click(boris.getByRole('button', { name: 'Отправить вердикт' }))
+    await expect(boris.getByRole('status')).toHaveTextContent('Отправлено: Борис')
+  },
+}
+
+export const SheetConflictDraft: Story = {
+  name: 'Простыня — сохранённый черновик после чужой проверки',
+  render: () => (
+    <div className="max-w-xl space-y-3">
+      <p
+        role="alert"
+        className="rounded border border-status-warning-border bg-status-warning-surface p-3"
+      >
+        Работа уже проверена. Переписка обновлена; ваш черновик сохранён.
+      </p>
+      <ReviewFeedbackForm
+        verdicts={fullVerdictScale}
+        submitLabel="Отправить мой результат"
+        initialDraft={{
+          verdictValue: 'half',
+          comment: 'Мой комментарий с пояснением.',
+          reactionId: null,
+        }}
+        onSubmit={() => undefined}
+      />
+    </div>
+  ),
+}
+
 // StaffReviewQueuePage supplies its own filtered summary; docs/serial-review.md.
 export const QueueWithExternalSummary: Story = {
   name: 'Очередь с внешней сводкой',

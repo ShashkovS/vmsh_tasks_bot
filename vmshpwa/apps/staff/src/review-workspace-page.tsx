@@ -27,6 +27,7 @@ import {
   type ReviewLease,
   type ReviewTimelineEntry,
   type CompleteReviewResponse,
+  type ReviewWorkspaceEvidence,
 } from '@vmsh/contracts'
 import {
   FeedbackThread,
@@ -309,7 +310,7 @@ export function LoadedReviewWorkspace({
     }
   }
 
-  const messages = timelineMessages(
+  const messages = reviewTimelineMessages(
     currentLease,
     mediaClient,
     draft.annotations,
@@ -447,19 +448,54 @@ export function ReviewReadOnlyEvidence({
 }) {
   return (
     <FeedbackThread
-      messages={timelineMessages(lease, mediaClient, annotations, () => undefined, true)}
+      messages={reviewTimelineMessages(lease, mediaClient, annotations, () => undefined, true)}
     />
   )
 }
 
-function timelineMessages(
-  lease: ReviewLease,
+/** Shared evidence/photos for lease and sheet cards; docs/review-sheet.md. */
+export function ReviewEvidenceThread({
+  workspace,
+  mediaClient,
+  annotations,
+  onAnnotationChange,
+  disabled,
+  entryActions,
+  deferEditors = false,
+}: {
+  workspace: ReviewWorkspaceEvidence
+  mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>
+  annotations: ReviewAnnotationManifest[]
+  onAnnotationChange: (attachmentId: string, annotation: ReviewAnnotationManifest | null) => void
+  disabled: boolean
+  entryActions?: ((entryId: string) => ReactNode) | undefined
+  deferEditors?: boolean
+}) {
+  return (
+    <FeedbackThread
+      messages={reviewTimelineMessages(
+        workspace,
+        mediaClient,
+        annotations,
+        onAnnotationChange,
+        disabled,
+        false,
+        entryActions,
+        deferEditors,
+      )}
+    />
+  )
+}
+
+function reviewTimelineMessages(
+  lease: ReviewWorkspaceEvidence,
   mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>,
   annotations: ReviewAnnotationManifest[],
   onAnnotationChange: (attachmentId: string, annotation: ReviewAnnotationManifest | null) => void,
   annotationDisabled: boolean,
   readOnly = false,
   entryActions?: (entryId: string) => ReactNode,
+  deferEditors = false,
 ): ThreadMessageView[] {
   const editableAttachmentIds = new Set(
     readOnly
@@ -503,6 +539,7 @@ function timelineMessages(
           body: (
             <>
               <TimelineEntryBody
+                deferEditor={deferEditors}
                 annotationByAttachment={annotationByAttachment}
                 annotationDisabled={annotationDisabled}
                 editableAttachmentIds={editableAttachmentIds}
@@ -526,6 +563,7 @@ function timelineMessages(
 }
 
 function TimelineEntryBody({
+  deferEditor = false,
   annotationByAttachment,
   annotationDisabled,
   editableAttachmentIds,
@@ -533,6 +571,7 @@ function TimelineEntryBody({
   mediaClient,
   onAnnotationChange,
 }: {
+  deferEditor?: boolean
   annotationByAttachment: Map<string, ReviewAnnotationManifest>
   annotationDisabled: boolean
   editableAttachmentIds: Set<string>
@@ -547,6 +586,7 @@ function TimelineEntryBody({
         <div className="grid gap-2 sm:grid-cols-2">
           {entry.attachments.map((attachment) => (
             <ReviewAttachmentImage
+              deferEditor={deferEditor}
               attachmentId={attachment.attachmentId}
               annotation={annotationByAttachment.get(attachment.attachmentId) ?? null}
               annotationDisabled={annotationDisabled}
@@ -565,6 +605,7 @@ function TimelineEntryBody({
 }
 
 export function ReviewAttachmentImage({
+  deferEditor = false,
   attachmentId,
   annotation,
   annotationDisabled,
@@ -574,6 +615,7 @@ export function ReviewAttachmentImage({
   ordinal,
   onAnnotationChange,
 }: {
+  deferEditor?: boolean
   attachmentId: string
   annotation: ReviewAnnotationManifest | null
   annotationDisabled: boolean
@@ -586,7 +628,10 @@ export function ReviewAttachmentImage({
   const [source, setSource] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
   const placeholder = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(editable || typeof IntersectionObserver === 'undefined')
+  const [editing, setEditing] = useState(!deferEditor)
+  const [visible, setVisible] = useState(
+    (editable && !deferEditor) || typeof IntersectionObserver === 'undefined',
+  )
   useEffect(() => {
     if (visible || !placeholder.current) return
     const observer = new IntersectionObserver(
@@ -635,7 +680,7 @@ export function ReviewAttachmentImage({
       />
     )
   const originalHref = mediaClient.attachmentMediaUrl(entryId, attachmentId)
-  if (editable) {
+  if (editable && editing) {
     return (
       <ReviewAnnotationEditor
         attachmentId={attachmentId}
@@ -648,21 +693,33 @@ export function ReviewAttachmentImage({
       />
     )
   }
-  if (annotation)
-    return (
-      <ReviewAnnotationViewer
-        imageAlt={t`Страница решения ${ordinal + 1}`}
-        imageSource={source}
-        manifest={annotation}
-        originalHref={originalHref}
-      />
-    )
   return (
-    <ReviewPhotoPreview
-      imageAlt={t`Страница решения ${ordinal + 1}`}
-      imageSource={source}
-      originalHref={originalHref}
-    />
+    <div className="space-y-2">
+      {annotation ? (
+        <ReviewAnnotationViewer
+          imageAlt={t`Страница решения ${ordinal + 1}`}
+          imageSource={source}
+          manifest={annotation}
+          originalHref={originalHref}
+        />
+      ) : (
+        <ReviewPhotoPreview
+          imageAlt={t`Страница решения ${ordinal + 1}`}
+          imageSource={source}
+          originalHref={originalHref}
+        />
+      )}
+      {editable && deferEditor && (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={annotationDisabled}
+          onClick={() => setEditing(true)}
+        >
+          <Trans>Добавить или изменить пометки</Trans>
+        </Button>
+      )}
+    </div>
   )
 }
 
@@ -686,7 +743,14 @@ export function ReviewedWorkSnapshot({
         {lease.student.displayName} · {verdict}
       </h2>
       <FeedbackThread
-        messages={timelineMessages(lease, mediaClient, annotations, () => undefined, true, true)}
+        messages={reviewTimelineMessages(
+          lease,
+          mediaClient,
+          annotations,
+          () => undefined,
+          true,
+          true,
+        )}
       />
       {comment && (
         <p className="whitespace-pre-wrap rounded-lg border border-border p-3">{comment}</p>

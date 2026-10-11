@@ -6,6 +6,30 @@ import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(cleanup)
 describe('review keyboard submission', () => {
+  it('keeps mouse controls enabled on another sheet form while disabling its global hotkeys', () => {
+    const active = vi.fn(),
+      other = vi.fn()
+    render(
+      <>
+        <ReviewFeedbackForm
+          verdicts={ternaryVerdictScale}
+          onSubmit={active}
+          initialDraft={{ verdictValue: 'plus', comment: '', reactionId: null }}
+        />
+        <ReviewFeedbackForm
+          hotkeys={false}
+          verdicts={ternaryVerdictScale}
+          onSubmit={other}
+          initialDraft={{ verdictValue: 'plus', comment: '', reactionId: null }}
+        />
+      </>,
+    )
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
+    expect(active).toHaveBeenCalledTimes(1)
+    expect(other).not.toHaveBeenCalled()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Отправить вердикт' })[1]!)
+    expect(other).toHaveBeenCalledTimes(1)
+  })
   it('sends from the comment field and ignores the prepared disabled form', () => {
     const active = vi.fn(),
       hidden = vi.fn()

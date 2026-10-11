@@ -1950,14 +1950,22 @@ export function StaffContentWorkspace({
   return (
     <PageLayout
       actions={
-        canManageOralWindows ? (
+        <div className="flex flex-wrap gap-2">
           <a
             className={buttonVariants({ variant: 'outline' })}
-            href={`/staff/oral?groupLesson=${encodeURIComponent(groupLessonId)}&tab=windows`}
+            href={`/staff/review/sheet?lesson=${encodeURIComponent(groupLessonId)}&mode=pending`}
           >
-            <Mic aria-hidden="true" /> <Trans>Окна устного приёма</Trans>
+            <Trans>Показать все решения</Trans>
           </a>
-        ) : undefined
+          {canManageOralWindows ? (
+            <a
+              className={buttonVariants({ variant: 'outline' })}
+              href={`/staff/oral?groupLesson=${encodeURIComponent(groupLessonId)}&tab=windows`}
+            >
+              <Mic aria-hidden="true" /> <Trans>Окна устного приёма</Trans>
+            </a>
+          ) : null}
+        </div>
       }
       description={t`Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации.`}
       eyebrow={t`Групповое занятие ${groupLessonId}`}

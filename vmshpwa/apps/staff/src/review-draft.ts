@@ -35,7 +35,9 @@ export interface ReviewDraftStorage {
   removeItem(key: string): void
 }
 
-export function createReviewEvidenceFingerprint(lease: ReviewLease): string {
+export function createReviewEvidenceFingerprint(
+  lease: Pick<ReviewLease, 'evidenceBranches'>,
+): string {
   return lease.evidenceBranches
     .map((branch) => {
       if (!branch.thread) return `${branch.queueId}:legacy`

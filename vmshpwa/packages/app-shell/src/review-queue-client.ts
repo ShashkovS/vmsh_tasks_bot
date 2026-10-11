@@ -1,6 +1,21 @@
 import { pwaFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  reviewSheetOptionsSchema,
+  reviewSheetCollectionSchema,
+  reviewSheetDetailSchema,
+  reviewSheetConversationSchema,
+  reviewSheetCompleteRequestSchema,
+  reviewSheetSearchSchema,
+  reviewSheetTransferRequestSchema,
+  reviewSheetTransferPreviewRequestSchema,
+  type ReviewSheetTransferRequest,
+  type ReviewSheetOptions,
+  type ReviewSheetCollection,
+  type ReviewSheetDetail,
+  type ReviewSheetConversation,
+  type ReviewSheetCompleteRequest,
+  type ReviewSheetSearch,
   reviewSeriesHistorySchema,
   reviewSeriesConditionSchema,
   type ReviewSeriesHistory,
@@ -65,6 +80,30 @@ export interface ReviewQueueClientOptions {
 }
 
 export interface ReviewQueueClient {
+  sheetOptions(options?: ReviewQueueRequestOptions): Promise<ReviewSheetOptions>
+  sheetTransferPreview(
+    caseId: string,
+    entryId: string,
+    snapshot: string,
+  ): Promise<ReviewTransferPreview>
+  sheetTransfer(
+    caseId: string,
+    request: ReviewSheetTransferRequest,
+  ): Promise<ReviewTransferResponse>
+  sheet(
+    query: ReviewSheetSearch,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewSheetCollection>
+  sheetDetail(caseId: string, options?: ReviewQueueRequestOptions): Promise<ReviewSheetDetail>
+  sheetConversation(
+    caseId: string,
+    cursor?: string,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewSheetConversation>
+  sheetComplete(
+    caseId: string,
+    request: ReviewSheetCompleteRequest,
+  ): Promise<CompleteReviewResponse>
   conversation(
     reviewId: string,
     cursor?: string,
@@ -148,6 +187,93 @@ interface ResponseParser<T> {
 }
 
 class BrowserReviewQueueClient implements ReviewQueueClient {
+  sheetTransferPreview(
+    caseId: string,
+    entryId: string,
+    snapshot: string,
+  ): Promise<ReviewTransferPreview> {
+    return this.#jsonRequest(
+      `/review/sheet/${encodeURIComponent(publicIdSchema.parse(caseId))}/transfer-preview`,
+      'POST',
+      JSON.stringify(
+        reviewSheetTransferPreviewRequestSchema.parse({ schemaVersion: 1, entryId, snapshot }),
+      ),
+      {},
+      reviewTransferPreviewSchema,
+    )
+  }
+  sheetTransfer(
+    caseId: string,
+    request: ReviewSheetTransferRequest,
+  ): Promise<ReviewTransferResponse> {
+    return this.#jsonRequest(
+      `/review/sheet/${encodeURIComponent(publicIdSchema.parse(caseId))}/transfer`,
+      'POST',
+      JSON.stringify(reviewSheetTransferRequestSchema.parse(request)),
+      {},
+      reviewTransferResponseSchema,
+    )
+  }
+  sheetOptions(options: ReviewQueueRequestOptions = {}): Promise<ReviewSheetOptions> {
+    return this.#jsonRequest(
+      '/review/sheet/options',
+      'GET',
+      undefined,
+      options,
+      reviewSheetOptionsSchema,
+    )
+  }
+  sheet(
+    query: ReviewSheetSearch,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewSheetCollection> {
+    const parsed = reviewSheetSearchSchema.parse(query)
+    const params = new URLSearchParams({ mode: parsed.mode })
+    if (parsed.lesson) params.set('lesson', parsed.lesson)
+    if (parsed.problem) params.set('problem', parsed.problem)
+    return this.#jsonRequest(
+      `/review/sheet?${params}`,
+      'GET',
+      undefined,
+      options,
+      reviewSheetCollectionSchema,
+    )
+  }
+  sheetDetail(caseId: string, options: ReviewQueueRequestOptions = {}): Promise<ReviewSheetDetail> {
+    return this.#jsonRequest(
+      `/review/sheet/${encodeURIComponent(publicIdSchema.parse(caseId))}`,
+      'GET',
+      undefined,
+      options,
+      reviewSheetDetailSchema,
+    )
+  }
+  sheetConversation(
+    caseId: string,
+    cursor?: string,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewSheetConversation> {
+    const query = cursor ? `?${new URLSearchParams({ cursor })}` : ''
+    return this.#jsonRequest(
+      `/review/sheet/${encodeURIComponent(publicIdSchema.parse(caseId))}/conversation${query}`,
+      'GET',
+      undefined,
+      options,
+      reviewSheetConversationSchema,
+    )
+  }
+  sheetComplete(
+    caseId: string,
+    request: ReviewSheetCompleteRequest,
+  ): Promise<CompleteReviewResponse> {
+    return this.#jsonRequest(
+      `/review/sheet/${encodeURIComponent(publicIdSchema.parse(caseId))}/complete`,
+      'POST',
+      JSON.stringify(reviewSheetCompleteRequestSchema.parse(request)),
+      {},
+      completeReviewResponseSchema,
+    )
+  }
   async seriesHistory(problemId: string, cursor?: string): Promise<ReviewSeriesHistory> {
     return this.#jsonRequest(
       `/review/series/${encodeURIComponent(publicIdSchema.parse(problemId))}/history${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,

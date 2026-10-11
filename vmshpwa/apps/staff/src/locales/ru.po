@@ -830,6 +830,10 @@ msgstr "В TikZ-фрагмент попали команды начала или
 msgid "В архиве"
 msgstr "В архиве"
 
+#: apps/staff/src/review-sheet-page.tsx
+msgid "В выбранном режиме работ нет"
+msgstr "В выбранном режиме работ нет"
+
 #: apps/staff/src/staff-course-schedule-page.tsx
 msgid "в день цикла"
 msgstr "в день цикла"
@@ -873,6 +877,11 @@ msgstr "В следующую задачу"
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "В тексте без обтекания"
 msgstr "В тексте без обтекания"
+
+#. placeholder {0}: data.total
+#: apps/staff/src/review-sheet-page.tsx
+msgid "В этом режиме у занятия {0} работ. Простыня занятия доступна до 300 включительно. Выберите задачу."
+msgstr "В этом режиме у занятия {0} работ. Простыня занятия доступна до 300 включительно. Выберите задачу."
 
 #: apps/staff/src/live-marking-grid.tsx
 msgid "В этом списке пока нет школьников."
@@ -1141,6 +1150,7 @@ msgstr "вс 16:00"
 
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/product-analytics-page.tsx
+#: apps/staff/src/review-sheet-page.tsx
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
 #: apps/staff/src/staff-news-page.tsx
@@ -1164,6 +1174,10 @@ msgstr "Все доступные"
 #: apps/staff/src/review-history-page.tsx
 msgid "Все задачи"
 msgstr "Все задачи"
+
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Всё занятие"
+msgstr "Всё занятие"
 
 #: apps/staff/src/review-queue-page.tsx
 msgid "Все курсы"
@@ -1287,6 +1301,10 @@ msgstr "Вы исправляете устаревшую проверку. Бо�
 msgid "Вы можете сменить активную группу школьника в пределах выданного доступа. Остальные поля изменяет администратор."
 msgstr "Вы можете сменить активную группу школьника в пределах выданного доступа. Остальные поля изменяет администратор."
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Вы отказались от этой проверки"
+msgstr "Вы отказались от этой проверки"
+
 #. placeholder {0}: course.name
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Вы уверены, что хотите {action} курс «{0}»?"
@@ -1317,6 +1335,7 @@ msgstr "Выберите действие для каждой задачи"
 msgid "Выберите действующую группу для файла «{0}»."
 msgstr "Выберите действующую группу для файла «{0}»."
 
+#: apps/staff/src/review-sheet-page.tsx
 #: apps/staff/src/review-transfer.tsx
 msgid "Выберите задачу"
 msgstr "Выберите задачу"
@@ -1324,6 +1343,10 @@ msgstr "Выберите задачу"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Выберите задачу для серийной проверки или откройте отдельную работу."
 msgstr "Выберите задачу для серийной проверки или откройте отдельную работу."
+
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Выберите занятие"
+msgstr "Выберите занятие"
 
 #: apps/staff/src/staff-file-upload.tsx
 msgid "Выберите непустой документ или архив до 50 МиБ поддерживаемого формата."
@@ -1676,6 +1699,10 @@ msgstr "Добавить видео"
 msgid "Добавить ещё окно"
 msgstr "Добавить ещё окно"
 
+#: apps/staff/src/review-workspace-page.tsx
+msgid "Добавить или изменить пометки"
+msgstr "Добавить или изменить пометки"
+
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Добавить окно"
 msgstr "Добавить окно"
@@ -1884,6 +1911,7 @@ msgstr "Загружаем группы занятия…"
 msgid "Загружаем доступные курсы…"
 msgstr "Загружаем доступные курсы…"
 
+#: apps/staff/src/review-sheet-page.tsx
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Загружаем занятия…"
 msgstr "Загружаем занятия…"
@@ -1914,6 +1942,10 @@ msgstr "Загружаем настройки рисунков…"
 msgid "Загружаем переключатели…"
 msgstr "Загружаем переключатели…"
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Загружаем переписку…"
+msgstr "Загружаем переписку…"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем посылки…"
 msgstr "Загружаем посылки…"
@@ -1921,6 +1953,10 @@ msgstr "Загружаем посылки…"
 #: apps/staff/src/content-page.tsx
 msgid "Загружаем предпросмотр…"
 msgstr "Загружаем предпросмотр…"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Загружаем работу…"
+msgstr "Загружаем работу…"
 
 #: apps/staff/src/classroom-event-page.tsx
 msgid "Загружаем распределение по аудиториям…"
@@ -2026,6 +2062,7 @@ msgstr "Задач в группе"
 #: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/review-sheet-page.tsx
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Задача"
 msgstr "Задача"
@@ -2116,6 +2153,7 @@ msgstr "Заменить черновик тремя окнами пн/вт/ср
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/review-history-page.tsx
+#: apps/staff/src/review-sheet-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/student-results-page.tsx
@@ -2578,6 +2616,10 @@ msgstr "Как в курсе"
 msgid "Какие группы участвуют"
 msgstr "Какие группы участвуют"
 
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Какие работы показать"
+msgstr "Какие работы показать"
+
 #. placeholder {0}: data.candidates.length
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Кандидаты · {0}"
@@ -2876,6 +2918,10 @@ msgstr "Материалы выбранной проверки"
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Материалы для разбора"
 msgstr "Материалы для разбора"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Материалы оценки"
+msgstr "Материалы оценки"
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Метаданные задач"
@@ -3489,6 +3535,10 @@ msgstr "Не удалось сохранить устные результаты
 msgid "Не удалось сохранить черновик на устройстве"
 msgstr "Не удалось сохранить черновик на устройстве"
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Не удалось сохранить черновик на устройстве. Не закрывайте страницу."
+msgstr "Не удалось сохранить черновик на устройстве. Не закрывайте страницу."
+
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "неверное число или название столбцов"
 msgstr "неверное число или название столбцов"
@@ -3556,6 +3606,10 @@ msgstr "Нет аккаунтов родителей для рассылки"
 #: apps/staff/src/staff-support-pages.tsx
 msgid "Нет вопросов без ответа"
 msgstr "Нет вопросов без ответа"
+
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Нет доступных занятий"
+msgstr "Нет доступных занятий"
 
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
@@ -3818,6 +3872,10 @@ msgstr "Обновить"
 msgid "Обновить данные"
 msgstr "Обновить данные"
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Обновить диалог"
+msgstr "Обновить диалог"
+
 #: apps/staff/src/staff-problem-release-preview.tsx
 msgid "Обновить переключатели"
 msgstr "Обновить переключатели"
@@ -3936,6 +3994,7 @@ msgstr "Ожидает настройки проверки"
 msgid "Ожидает отправки"
 msgstr "Ожидает отправки"
 
+#: apps/staff/src/review-sheet-card.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/student-results-history.tsx
 msgid "Ожидает проверки"
@@ -3949,6 +4008,10 @@ msgstr "Ожидают {0}"
 #: apps/staff/src/staff-dashboard-page.tsx
 msgid "Ожидают проверки"
 msgstr "Ожидают проверки"
+
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Ожидающие"
+msgstr "Ожидающие"
 
 #: apps/staff/src/review-history-page.tsx
 msgid "Ознакомился с обновлениями, продолжить"
@@ -4114,6 +4177,7 @@ msgstr "Отвязать от школьника"
 msgid "Отделить"
 msgstr "Отделить"
 
+#: apps/staff/src/review-sheet-card.tsx
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Отказаться от проверки"
 msgstr "Отказаться от проверки"
@@ -4317,6 +4381,10 @@ msgstr "Отправить"
 #: apps/staff/src/family-digest-panel.tsx
 msgid "Отправить итог {0} родителям?"
 msgstr "Отправить итог {0} родителям?"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Отправить мой результат"
+msgstr "Отправить мой результат"
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Отправленных решений и тестовых попыток в этом занятии нет."
@@ -4656,6 +4724,10 @@ msgstr "Письменные задачи"
 msgid "Письменные плюсы"
 msgstr "Письменные плюсы"
 
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Письменные работы"
+msgstr "Письменные работы"
+
 #: apps/staff/src/classroom-assignment-page.tsx
 msgid "План ещё не рассчитан"
 msgstr "План ещё не рассчитан"
@@ -4767,6 +4839,8 @@ msgstr "По центру после текста"
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-queue-page.tsx
 #: apps/staff/src/review-reaction-inbox-page.tsx
+#: apps/staff/src/review-sheet-card.tsx
+#: apps/staff/src/review-sheet-page.tsx
 #: apps/staff/src/review-workspace-page.tsx
 #: apps/staff/src/revision-assets-recovery.tsx
 #: apps/staff/src/staff-access-page.tsx
@@ -4788,6 +4862,10 @@ msgstr "По центру после текста"
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Повторить"
 msgstr "Повторить"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Повторить загрузку переписки"
+msgstr "Повторить загрузку переписки"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Повторить запрос"
@@ -4997,6 +5075,12 @@ msgstr "Показать"
 msgid "Показать PWA и Telegram"
 msgstr "Показать PWA и Telegram"
 
+#: apps/staff/src/content-page.tsx
+#: apps/staff/src/review-queue-page.tsx
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Показать все решения"
+msgstr "Показать все решения"
+
 #: apps/staff/src/review-reaction-inbox-page.tsx
 #: apps/staff/src/staff-support-pages.tsx
 msgid "Показать ещё"
@@ -5032,6 +5116,10 @@ msgstr "Показывать"
 #: apps/staff/src/staff-audit-page.tsx
 msgid "Поле"
 msgstr "Поле"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Полная переписка"
+msgstr "Полная переписка"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Полная шкала: +, +., ±, +/2, ∓, −., −"
@@ -5137,6 +5225,10 @@ msgstr "Посылка / сообщение"
 #: apps/staff/src/student-results-history.tsx
 msgid "Посылка заменена"
 msgstr "Посылка заменена"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Посылка перенесена в {movedTo}"
+msgstr "Посылка перенесена в {movedTo}"
 
 #: apps/staff/src/live-marking-page.tsx
 msgid "Похвала отправлена"
@@ -5373,6 +5465,10 @@ msgstr "Проблемы со связью"
 msgid "Пробовали"
 msgstr "Пробовали"
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Проверена"
+msgstr "Проверена"
+
 #: apps/staff/src/staff-audit-page.tsx
 msgid "Проверена привязка Telegram"
 msgstr "Проверена привязка Telegram"
@@ -5399,6 +5495,10 @@ msgstr "Проверить зачисление"
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "Проверить объединение"
 msgstr "Проверить объединение"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Проверить снова"
+msgstr "Проверить снова"
 
 #: apps/staff/src/account-provisioning-page.tsx
 #: apps/staff/src/teacher-batch-panel.tsx
@@ -5435,10 +5535,19 @@ msgstr "Проверка не сохранена"
 msgid "проверка прервалась"
 msgstr "проверка прервалась"
 
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Проверка простынёй"
+msgstr "Проверка простынёй"
+
 #: apps/staff/src/pages.tsx
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Проверка работы"
 msgstr "Проверка работы"
+
+#. placeholder {0}: item.studentName
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Проверка работы: {0}"
+msgstr "Проверка работы: {0}"
 
 #: apps/staff/src/routes/review.tsx
 msgid "Проверки"
@@ -5596,6 +5705,10 @@ msgstr "Просмотры"
 msgid "Простые"
 msgstr "Простые"
 
+#: apps/staff/src/routes/review.tsx
+msgid "Простыня"
+msgstr "Простыня"
+
 #: apps/staff/src/branding-page.tsx
 msgid "Профиль оформления"
 msgstr "Профиль оформления"
@@ -5672,6 +5785,10 @@ msgstr "Работа преподавателей по занятиям и ви�
 msgid "Работа уже исчезла из очереди или была проверена."
 msgstr "Работа уже исчезла из очереди или была проверена."
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Работа уже проверена или материалы изменились. Переписка обновлена. Ваш черновик сохранён; просмотрите изменения перед отправкой своего результата."
+msgstr "Работа уже проверена или материалы изменились. Переписка обновлена. Ваш черновик сохранён; просмотрите изменения перед отправкой своего результата."
+
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Работа ученика"
 msgstr "Работа ученика"
@@ -5683,6 +5800,10 @@ msgstr "работы"
 #: apps/staff/src/pages.tsx
 msgid "работы в очереди"
 msgstr "работы в очереди"
+
+#: apps/staff/src/review-sheet-page.tsx
+msgid "Работы открываются без блокировки. Договоритесь с коллегами, какие работы вы проверяете."
+msgstr "Работы открываются без блокировки. Договоритесь с коллегами, какие работы вы проверяете."
 
 #: apps/staff/src/pages.tsx
 #: apps/staff/src/staff-dashboard-page.tsx
@@ -5866,9 +5987,17 @@ msgstr "Результат"
 msgid "Результат генерации уже показан в таблице ниже. Проверьте его и нажмите «Сохранить метаданные», чтобы заменить текущую конфигурацию задач."
 msgstr "Результат генерации уже показан в таблице ниже. Проверьте его и нажмите «Сохранить метаданные», чтобы заменить текущую конфигурацию задач."
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Результат отправлен"
+msgstr "Результат отправлен"
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "Результат проверки"
 msgstr "Результат проверки"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Результат сохранён, но обновить диалог не удалось. Обновите его перед продолжением."
+msgstr "Результат сохранён, но обновить диалог не удалось. Обновите его перед продолжением."
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Результатов и посылок пока нет."
@@ -7142,6 +7271,10 @@ msgstr "Удалены в Telegram"
 msgid "Удалить"
 msgstr "Удалить"
 
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Удалить несовместимые пометки"
+msgstr "Удалить несовместимые пометки"
+
 #: apps/staff/src/staff-student-directory-page.tsx
 msgid "Удалить школьника"
 msgstr "Удалить школьника"
@@ -7238,6 +7371,7 @@ msgid "Условие не сохранено для этой работы."
 msgstr "Условие не сохранено для этой работы."
 
 #: apps/staff/src/live-marking-condition.tsx
+#: apps/staff/src/review-sheet-page.tsx
 msgid "Условие пока недоступно."
 msgstr "Условие пока недоступно."
 
@@ -7504,6 +7638,10 @@ msgstr "ЧасПисьм"
 #: apps/staff/src/teacher-work-page.tsx
 msgid "ЧасСум"
 msgstr "ЧасСум"
+
+#: apps/staff/src/review-sheet-card.tsx
+msgid "Часть пометок относится к материалам, которые изменились. Удалите эти пометки и проверьте текущие фотографии."
+msgstr "Часть пометок относится к материалам, которые изменились. Удалите эти пометки и проверьте текущие фотографии."
 
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Часы"

@@ -35,6 +35,8 @@ export interface ReviewFeedbackFormProps {
   initialDraft?: ReviewFeedbackDraft
   onDraftChange?: (draft: ReviewFeedbackDraft) => void
   disabled?: boolean
+  hotkeys?: boolean
+  submitLabel?: string | undefined
   showInternalReaction?: boolean
   className?: string
 }
@@ -45,6 +47,8 @@ export function ReviewFeedbackForm({
   initialDraft,
   onDraftChange,
   disabled,
+  hotkeys = true,
+  submitLabel,
   showInternalReaction = true,
   className,
 }: ReviewFeedbackFormProps) {
@@ -58,8 +62,9 @@ export function ReviewFeedbackForm({
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
+    if (disabled || !hotkeys) return
     const send = (event: KeyboardEvent) => {
-      if (disabled || event.repeat || event.isComposing) return
+      if (disabled || !hotkeys || event.repeat || event.isComposing) return
       if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault()
         formRef.current?.requestSubmit()
@@ -67,7 +72,7 @@ export function ReviewFeedbackForm({
     }
     window.addEventListener('keydown', send)
     return () => window.removeEventListener('keydown', send)
-  }, [disabled])
+  }, [disabled, hotkeys])
 
   const submit = () => {
     if (disabled || !verdict) return
@@ -96,7 +101,7 @@ export function ReviewFeedbackForm({
         </label>
         <Textarea
           className="min-h-16 text-small"
-          disabled={disabled}
+          disabled={Boolean(disabled)}
           id={commentId}
           onChange={(event) => {
             const nextComment = event.target.value
@@ -115,6 +120,7 @@ export function ReviewFeedbackForm({
 
       <VerdictActions
         disabled={disabled}
+        hotkeys={hotkeys}
         onPick={(picked) => {
           setVerdict(picked)
           onDraftChange?.({ verdictValue: picked.value, comment, reactionId })
@@ -127,7 +133,8 @@ export function ReviewFeedbackForm({
       {showInternalReaction ? (
         <ReactionPicker
           compact
-          hotkeys={!disabled}
+          disabled={Boolean(disabled)}
+          hotkeys={hotkeys && !disabled}
           legend={t`Внутренняя пометка (не видна ученику)`}
           onSelect={(nextReactionId) => {
             setReactionId(nextReactionId)
@@ -161,7 +168,7 @@ export function ReviewFeedbackForm({
         </div>
       ) : (
         <Button disabled={disabled || !verdict} size="lg" type="submit">
-          <Trans>Отправить вердикт</Trans>
+          {submitLabel ?? <Trans>Отправить вердикт</Trans>}
         </Button>
       )}
       <p className="text-caption text-muted-foreground">

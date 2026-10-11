@@ -444,6 +444,10 @@ msgid "Выберите задачи без повторов"
 msgstr "Select problems without duplicates"
 
 #: apps/pwa_api/review_routes.py
+msgid "Выберите занятие или задачу"
+msgstr "Choose a lesson or a problem"
+
+#: apps/pwa_api/review_routes.py
 msgid "Выберите корректный вердикт"
 msgstr "Choose a valid verdict"
 
@@ -2228,6 +2232,10 @@ msgstr "Check the search parameters"
 msgid "Проверьте параметры предпросмотра"
 msgstr "Check the preview parameters"
 
+#: apps/pwa_api/review_routes.py
+msgid "Проверьте параметры простыни"
+msgstr "Check the review sheet parameters"
+
 #: apps/pwa_api/news_routes.py
 msgid "Проверьте параметры публикации"
 msgstr "Check the post parameters"
@@ -2542,9 +2550,17 @@ msgstr "The work has changed. Refresh it before reviewing."
 msgid "Работа находится вне доступных групп"
 msgstr "The work is outside your available groups"
 
+#: apps/pwa_api/review_routes.py
+msgid "Работа не найдена"
+msgstr "Work not found"
+
 #: apps/pwa_api/content_routes.py
 msgid "Работа с материалами временно недоступна"
 msgstr "Material management is temporarily unavailable"
+
+#: apps/pwa_api/review_routes.py
+msgid "Работа уже проверена или её материалы изменились. Переписка обновлена; проверьте изменения перед отправкой."
+msgstr "This work has already been reviewed or its materials have changed. The conversation has been refreshed; check the changes before sending."
 
 #: apps/pwa_api/staff_dashboard_routes.py
 msgid "Рабочая сводка временно недоступна"

@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import type { ReviewQueueClient } from '@vmsh/app-shell'
 import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 import { ReviewTransfer } from './review-transfer'
 
@@ -27,7 +26,7 @@ it('confirms one complete entry and retries the exact same idempotency request a
   const onDone = vi.fn().mockResolvedValue(undefined)
   render(
     <ReviewTransfer
-      client={{ transferPreview: preview, transfer } as unknown as ReviewQueueClient}
+      client={{ transferPreview: preview, transfer }}
       queueId="wq-1"
       entryId="se-1"
       claimToken="claim-1"
