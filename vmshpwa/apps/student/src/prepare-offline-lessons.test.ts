@@ -161,6 +161,8 @@ it('prepares every allowed level without visiting tasks and reads it when actual
   const bundle = await prepareOfflineLessons(options)
   expect(options.courseClient.updateEnrollment).not.toHaveBeenCalled()
   expect(options.contentClient.published).toHaveBeenCalledTimes(2)
+  // Fresh downloads must recover HTTP responses cached before CORS was enabled.
+  for (const [, init] of options.fetchAsset.mock.calls) expect(init?.cache).toBe('reload')
   expect(await verifyLessonBundle(bundle)).toBe(true)
   await pruneOfflineDocuments(options.database, options.ownerId, { maxEntries: 1 })
   vi.stubGlobal('navigator', { onLine: false })

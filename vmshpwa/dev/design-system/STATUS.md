@@ -1,5 +1,13 @@
 # Design-system status
 
+## 2026-10-11 — Выпуск TikZ и восстановление offline fix
+
+Разрешён выпуск на оба портала: TikZ подписи и исходный `cache: reload` для
+недостающих offline-картинок. UI/copy/stories не меняются. Уже выложенный
+GlitchTip и готовые operations artifacts сохраняются; незавершённая страница
+учёта преподавателей вне выпуска. Gate в работе.
+[Аудит](../../../docs/deploy/release-audit-20261011.md).
+
 ## 2026-10-11 — Переключение GlitchTip
 
 Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks

@@ -1,4 +1,4 @@
-"""Online SQLite snapshots, 14-day retention, temporary restore verification.
+"""Online SQLite safety snapshots and temporary restore verification.
 
 See README.md. Includes the lossless Zoom table in the main database.
 """
@@ -7,7 +7,7 @@ import json
 import shutil
 import sqlite3
 import tempfile
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
 BASE = Path("/web/vmsh_tasks_bot")
@@ -29,9 +29,9 @@ def main():
             if not source.is_file():
                 raise RuntimeError(f"{label} database is missing")
             target = directory / f"{label}.sqlite3"
-            with sqlite3.connect(f"{source.as_uri()}?mode=ro", uri=True) as src:
-                with sqlite3.connect(target) as dst:
-                    src.backup(dst)
+            with (sqlite3.connect(f"{source.as_uri()}?mode=ro", uri=True) as src,
+                  sqlite3.connect(target) as dst):
+                src.backup(dst)
             with tempfile.TemporaryDirectory(prefix="tlf-restore-") as temporary:
                 restored = Path(temporary) / "restored.sqlite3"
                 shutil.copyfile(target, restored)
@@ -44,11 +44,8 @@ def main():
                         ).fetchone()[0]
         report = {"createdAt": now.isoformat(), "integrity": "ok", **counts}
         (directory / "report.json").write_text(json.dumps(report) + "\n")
-        for old in (BASE / "backups").iterdir():
-            if old.is_dir() and (old / "report.json").is_file():
-                created = json.loads((old / "report.json").read_text())["createdAt"]
-                if datetime.fromisoformat(created) < now - timedelta(days=14):
-                    shutil.rmtree(old)
+        # Owner decision: cross-backup/README.md. Existing/deployment archives
+        # stay separate; retention belongs only to the new cross-backup store.
         print(json.dumps({"backup": directory.name, **report}))
     except BaseException:
         # Failed, incomplete snapshots must not be mistaken for usable backups.

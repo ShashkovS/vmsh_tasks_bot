@@ -43,6 +43,7 @@
 - PRs should include: clear description, linked issue/ADR if relevant, config or migration notes, and how you validated the change (commands/output). Add screenshots for UI changes.
 
 ## Security & Configuration
+- When creating server-side files or directories outside `/web/vmsh_tasks_bot`, add discoverable symlinks under `/web/vmsh_tasks_bot`. Link each created systemd unit individually; include configuration, secrets, tooling, state and installation records. Preserve the target permissions.
 - Use `creds_test/*_json_ex` as templates; set `PROD=true` only for production runs.
 - Store service account JSON locally as described in `README.md`; do not add to git.
 - Webhook vs polling: prod uses `apps.tg_bot.setup_tgbot_webhook(app)` (gunicorn), dev uses `apps.tg_bot.run_tg_bot_in_polling_mode()` with aiohttp `AppRunner`.

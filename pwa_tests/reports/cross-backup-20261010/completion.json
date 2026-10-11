@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-10",
+  "firstCaptureProof": "verification.json",
+  "prep": {
+    "host": "prep.leaders.tech",
+    "status": {
+      "error": null,
+      "lastArchive": "prep-20261010T183701Z-33a9de2930cd.tar.7z",
+      "lastCrossSuccess": "2026-10-10T19:07:05.910448+00:00",
+      "lastFailure": "2026-10-10T18:50:17.467623+00:00",
+      "lastLocalSuccess": "2026-10-10T18:37:08.757857+00:00",
+      "lastVerificationSuccess": "2026-10-10T18:37:48.720307+00:00"
+    },
+    "outgoing": {
+      "prep-20261010T182051Z-2e452bc2d8cf.tar.7z": {
+        "sha256": "e6ca7844f791e3cb2328c7c97dc4867758f4a2c46e619a4f623d7716e7907989",
+        "size": 4979955
+      },
+      "prep-20261010T182416Z-8601b62248b2.tar.7z": {
+        "sha256": "cc452e2d84db05a1134493fbec41cca0ec2126dbde5f1b3784bb7928fc59f8da",
+        "size": 4979907
+      },
+      "prep-20261010T183701Z-33a9de2930cd.tar.7z": {
+        "sha256": "509e3199ff419d8248f15d43d11fc77ad595f07e660a04f32b3756dad07e4c19",
+        "size": 5009939
+      }
+    },
+    "incoming": {
+      "vmsh-20261010T183403Z-7f3d5a482bbe.tar.7z": {
+        "sha256": "fa4b304563d02cab8e2082ed7e4bde578099b91e0c94a9c797192418daf284d2",
+        "size": 50490067
+      }
+    },
+    "outgoingCopiesMatchPeer": true,
+    "legacyTimerRetired": true,
+    "legacyTimerProperties": {
+      "LoadState": "not-found",
+      "ActiveState": "failed"
+    },
+    "links": {
+      "status.json": "/var/lib/vmsh-cross-backup/status.json",
+      "state": "/var/lib/vmsh-cross-backup",
+      "outgoing": "/var/lib/vmsh-cross-backup/outgoing",
+      "README.md": "/usr/local/lib/vmsh-cross-backup/README.md",
+      "config": "/etc/vmsh-cross-backup",
+      "incoming": "/var/lib/vmsh-cross-backup/incoming",
+      "receiver": "/var/lib/vmsh-cross-backup/receiver",
+      "tools": "/usr/local/lib/vmsh-cross-backup",
+      "installations/vmsh-cross-backup-release-20261010": "/root/vmsh-cross-backup-release-20261010",
+      "systemd/vmsh-cross-backup.timer": "/etc/systemd/system/vmsh-cross-backup.timer",
+      "systemd/vmsh-cross-backup-verify.service": "/etc/systemd/system/vmsh-cross-backup-verify.service",
+      "systemd/vmsh-cross-backup-sync.timer": "/etc/systemd/system/vmsh-cross-backup-sync.timer",
+      "systemd/vmsh-cross-backup-sync.service": "/etc/systemd/system/vmsh-cross-backup-sync.service",
+      "systemd/vmsh-cross-backup-verify.timer": "/etc/systemd/system/vmsh-cross-backup-verify.timer",
+      "systemd/vmsh-cross-backup.service": "/etc/systemd/system/vmsh-cross-backup.service",
+      "systemd/enabled/vmsh-cross-backup.timer": "/etc/systemd/system/timers.target.wants/vmsh-cross-backup.timer",
+      "systemd/enabled/vmsh-cross-backup-sync.timer": "/etc/systemd/system/timers.target.wants/vmsh-cross-backup-sync.timer",
+      "systemd/enabled/vmsh-cross-backup-verify.timer": "/etc/systemd/system/timers.target.wants/vmsh-cross-backup-verify.timer"
+    },
+    "secretPermissions": "0600",
+    "activeServicePids": {
+      "vmshpwa": 1116995,
+      "vmshzoom": 1116997,
+      "nats": 1093
+    },
+    "installerSha256": "56bd1242e031ac11aacd199a17f236f1beadafaa2e57c9c4cd80edbe3d5c414f",
+    "backupToolSha256": "80462605505f3241912a3741e79811050f971dcd9a83382c76ceb278992beed9",
+    "hardenedSyncRepeat": "PASS",
+    "vmshOwnerLinkRepairPending": false,
+    "passwordPermissions": {
+      "archive-password": "0o600",
+      "peer-archive-password": "0o600"
+    }
+  },
+  "ownerReportedVmshBootstrap": {
+    "error": null,
+    "lastArchive": "vmsh-20261010T183403Z-7f3d5a482bbe.tar.7z",
+    "lastCrossSuccess": "2026-10-10T18:36:59.958456+00:00",
+    "lastLocalSuccess": "2026-10-10T18:36:55.460019+00:00",
+    "lastVerificationSuccess": "2026-10-10T18:37:37.975625+00:00"
+  },
+  "vmshReadOnlyAudit": {
+    "initialBackup": "success",
+    "initialRestoreVerification": "success",
+    "firstHourlySync": "exit-code",
+    "firstHourlySyncExitAt": "2026-10-10T18:45:03Z",
+    "linksPresent": true,
+    "rootJournalUnavailableToAgent": true,
+    "ownerRepairRequired": false,
+    "ownerCommand": "bash docs/deploy/cross-backup/install-vmsh.sh --links-only",
+    "ownerRepairCompleted": true,
+    "currentSyncResult": "success",
+    "units": {
+      "vmsh-cross-backup.service": {
+        "Id": "vmsh-cross-backup.service",
+        "ActiveState": "inactive",
+        "Result": "success",
+        "ExecMainExitTimestamp": "Sat 2026-10-10 18:37:00 UTC"
+      },
+      "vmsh-cross-backup-sync.service": {
+        "Id": "vmsh-cross-backup-sync.service",
+        "ActiveState": "inactive",
+        "Result": "success",
+        "ExecMainExitTimestamp": "Sat 2026-10-10 19:07:03 UTC"
+      },
+      "vmsh-cross-backup-verify.service": {
+        "Id": "vmsh-cross-backup-verify.service",
+        "ActiveState": "inactive",
+        "Result": "success",
+        "ExecMainExitTimestamp": "Sat 2026-10-10 18:37:38 UTC"
+      }
+    },
+    "links": {
+      "outgoing": "/var/lib/vmsh-cross-backup/outgoing",
+      "README.md": "/usr/local/lib/vmsh-cross-backup/README.md",
+      "config": "/etc/vmsh-cross-backup",
+      "incoming": "/var/lib/vmsh-cross-backup/incoming",
+      "status.json": "/var/lib/vmsh-cross-backup/status.json",
+      "receiver": "/var/lib/vmsh-cross-backup/receiver",
+      "tools": "/usr/local/lib/vmsh-cross-backup",
+      "state": "/var/lib/vmsh-cross-backup",
+      "systemd/vmsh-cross-backup-verify.timer": "/etc/systemd/system/vmsh-cross-backup-verify.timer",
+      "systemd/vmsh-cross-backup.service": "/etc/systemd/system/vmsh-cross-backup.service",
+      "systemd/vmsh-cross-backup-verify.service": "/etc/systemd/system/vmsh-cross-backup-verify.service",
+      "systemd/vmsh-cross-backup-sync.service": "/etc/systemd/system/vmsh-cross-backup-sync.service",
+      "systemd/vmsh-cross-backup.timer": "/etc/systemd/system/vmsh-cross-backup.timer",
+      "systemd/vmsh-cross-backup-sync.timer": "/etc/systemd/system/vmsh-cross-backup-sync.timer",
+      "systemd/enabled/vmsh-cross-backup-verify.timer": "/etc/systemd/system/timers.target.wants/vmsh-cross-backup-verify.timer",
+      "systemd/enabled/vmsh-cross-backup.timer": "/etc/systemd/system/timers.target.wants/vmsh-cross-backup.timer",
+      "systemd/enabled/vmsh-cross-backup-sync.timer": "/etc/systemd/system/timers.target.wants/vmsh-cross-backup-sync.timer"
+    },
+    "toolHashes": {
+      "backup.py": "80462605505f3241912a3741e79811050f971dcd9a83382c76ceb278992beed9",
+      "install.py": "56bd1242e031ac11aacd199a17f236f1beadafaa2e57c9c4cd80edbe3d5c414f"
+    }
+  },
+  "localTests": {
+    "pytestPassed": 22,
+    "ruff": "PASS",
+    "bashSyntax": "PASS",
+    "ownerBootstrapFullAndRepairDryRun": "PASS",
+    "ownerJobFailurePropagation": "PASS",
+    "indexIdempotenceConflictAndPermissionsSmoke": "PASS"
+  },
+  "serverProof": "/web/vmsh_tasks_bot/cross-backup/installations/vmsh-cross-backup-release-20261010/completion.json",
+  "complete": true
+}

@@ -1,0 +1,1123 @@
+{
+  "apiVersion": 1,
+  "contactPoints": [
+    {
+      "orgId": 1,
+      "name": "vmsh-telegram",
+      "receivers": [
+        {
+          "uid": "vmsh-health-telegram",
+          "type": "telegram",
+          "disableResolveMessage": false,
+          "settings": {
+            "bottoken": "$VMSH_ALERT_BOT_TOKEN",
+            "chatid": "$VMSH_ALERT_CHAT_ID",
+            "message": "ВМШ — {{ if eq .Status \"firing\" }}проблема{{ else }}восстановлено{{ end }}\n{{ range .Alerts.Firing }}⚠ {{ .Annotations.summary }}\n{{ if .Labels.route }}{{ .Labels.route }}\n{{ end }}{{ if .Labels.role }}SQLite: {{ .Labels.role }}\n{{ end }}{{ if .Labels.job }}Job: {{ .Labels.job }}\n{{ end }}{{ end }}{{ range .Alerts.Resolved }}✅ {{ .Annotations.summary }}\n{{ end }}Графики: https://grafvmsh.shashkovs.ru/"
+          }
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "orgId": 1,
+      "name": "vmsh-production",
+      "folder": "VMSh Alerts",
+      "interval": "30s",
+      "rules": [
+        {
+          "uid": "vmsh-health-webunavailable",
+          "title": "VmshWebUnavailable",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((max by(instance) ((1 - up{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\"}) or (1 - nginx_up{job=\"nginx\",instance=\"vmsh.shashkovs.ru\"})) > 0)\nor absent(up{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\"})) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "1m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "component": "availability",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Backend или nginx недоступен больше минуты",
+            "description": "Проверить vmsh service, nginx и последние ошибки; короткий перезапуск не вызывает алерт."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "10s",
+            "group_interval": "5m",
+            "repeat_interval": "1h"
+          }
+        },
+        {
+          "uid": "vmsh-health-monitoringunavailable",
+          "title": "VmshMonitoringUnavailable",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((up{job=\"prometheus\",instance=\"vmsh.shashkovs.ru\"} == 0)\nor absent(up{job=\"prometheus\",instance=\"vmsh.shashkovs.ru\"})) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "Alerting",
+          "for": "1m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "component": "monitoring",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Prometheus недоступен или перестал собирать собственные метрики",
+            "description": "Проверить prometheus service и доступ Grafana к datasource; остальные правила сохраняют состояние при ошибке запроса."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "10s",
+            "group_interval": "5m",
+            "repeat_interval": "1h"
+          }
+        },
+        {
+          "uid": "vmsh-health-exporterunavailable",
+          "title": "VmshExporterUnavailable",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((up{job=~\"node|nginx|nats\",instance=\"vmsh.shashkovs.ru\"} == 0)\nor absent(up{job=\"node\",instance=\"vmsh.shashkovs.ru\"})\nor absent(up{job=\"nginx\",instance=\"vmsh.shashkovs.ru\"})\nor absent(up{job=\"nats\",instance=\"vmsh.shashkovs.ru\"})) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "2m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "component": "monitoring",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Источник метрик недоступен больше двух минут",
+            "description": "Проверить указанный job; для NATS проверить также сам сервер, поскольку он нужен realtime."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "30s",
+            "group_interval": "5m",
+            "repeat_interval": "4h"
+          }
+        },
+        {
+          "uid": "vmsh-health-cpuhigh",
+          "title": "VmshCpuHigh",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job=\"node\",instance=\"vmsh.shashkovs.ru\",mode=\"idle\"}[1m]))) > 80)\nand on(instance) (100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job=\"node\",instance=\"vmsh.shashkovs.ru\",mode=\"idle\"}[1m]))) <= 95)) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "2m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "component": "cpu",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "CPU выше 80 процентов больше двух минут",
+            "description": "Проверить процессы, очереди SQLite и задержки API. При CPU выше 95 действует отдельное критическое правило."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "30s",
+            "group_interval": "5m",
+            "repeat_interval": "4h"
+          }
+        },
+        {
+          "uid": "vmsh-health-cpucritical",
+          "title": "VmshCpuCritical",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "(100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job=\"node\",instance=\"vmsh.shashkovs.ru\",mode=\"idle\"}[1m]))) > 95) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "2m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "component": "cpu",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "CPU выше 95 процентов больше двух минут",
+            "description": "Найти потребителя CPU и проверить доступность форм и очереди; не перезапускать вслепую."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "10s",
+            "group_interval": "5m",
+            "repeat_interval": "1h"
+          }
+        },
+        {
+          "uid": "vmsh-health-apierrors",
+          "title": "VmshApiErrors",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((sum by(instance,route) (increase(vmsh_http_requests_total{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",route=~\"/(student|family|staff)/api/v1/.*\",status=~\"5..\"}[5m])) >= 5)\nand on(instance,route)\n(sum by(instance,route) (increase(vmsh_http_requests_total{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",route=~\"/(student|family|staff)/api/v1/.*\",status=~\"5..\"}[5m])) / sum by(instance,route) (increase(vmsh_http_requests_total{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",route=~\"/(student|family|staff)/api/v1/.*\"}[5m])) > 0.05)) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "1m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "component": "api",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Повторяются ошибки API: минимум пять 5xx и больше пяти процентов за пять минут",
+            "description": "Проверить route и серверную причину. 401, ограничения попыток 422 и запросы сканеров вне PWA не учитываются."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "10s",
+            "group_interval": "5m",
+            "repeat_interval": "1h"
+          }
+        },
+        {
+          "uid": "vmsh-health-interactiveslow",
+          "title": "VmshInteractiveSlow",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((histogram_quantile(0.95, sum by(instance,route,le) (rate(vmsh_http_request_duration_seconds_bucket{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",method=\"GET\",route=~\"/(student|family|staff)/api/v1/.*\",route!~\".*(attachments|statistics|analytics|content/uploads|recheck|export|print|pdf).*\"}[5m]))) > 1)\nand on(instance,route) (sum by(instance,route) (increase(vmsh_http_request_duration_seconds_count{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",method=\"GET\"}[5m])) >= 30)) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "3m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "component": "latency",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Интерактивный API p95 дольше секунды в течение трёх минут",
+            "description": "Не менее 30 GET за пять минут; тяжёлые файлы и отчёты исключены. Проверить read queue и SQL владельцев слотов."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "30s",
+            "group_interval": "5m",
+            "repeat_interval": "4h"
+          }
+        },
+        {
+          "uid": "vmsh-health-dbqueue",
+          "title": "VmshDbQueue",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((max by(instance,role) (vmsh_db_waiting{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",role=\"read\"}) > 20)\nor (max by(instance,role) (vmsh_db_waiting{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",role=\"write\"}) > 5)) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "30s",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "component": "sqlite",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Очередь SQLite держится 30 секунд: чтение больше 20 или запись больше пяти",
+            "description": "PID агрегированы, чтобы смена worker не создавала отдельные уведомления. Найти callback, удерживающий слот."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "30s",
+            "group_interval": "5m",
+            "repeat_interval": "4h"
+          }
+        },
+        {
+          "uid": "vmsh-health-eventloopstalls",
+          "title": "VmshEventLoopStalls",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((sum by(instance) (increase(vmsh_event_loop_lag_seconds_count{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\"}[5m])) - sum by(instance) (increase(vmsh_event_loop_lag_seconds_bucket{job=\"aiohttp\",instance=\"vmsh.shashkovs.ru\",le=\"0.2\"}[5m]))) >= 5) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "1m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "component": "event-loop",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Повторные зависания event loop: минимум пять дольше 200 мс за пять минут",
+            "description": "Проверить синхронную работу в callbacks, writer и CPU. Единичный короткий скачок не вызывает алерт."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "30s",
+            "group_interval": "5m",
+            "repeat_interval": "4h"
+          }
+        },
+        {
+          "uid": "vmsh-health-memorylow",
+          "title": "VmshMemoryLow",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "(100 * node_memory_MemAvailable_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\"} / node_memory_MemTotal_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\"} < 10) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "5m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "component": "memory",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Доступно меньше десяти процентов RAM в течение пяти минут",
+            "description": "Используется MemAvailable, включая освобождаемый cache. Проверить RSS процессов и рост памяти."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "30s",
+            "group_interval": "5m",
+            "repeat_interval": "4h"
+          }
+        },
+        {
+          "uid": "vmsh-health-oomkill",
+          "title": "VmshOomKill",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "(increase(node_vmstat_oom_kill{job=\"node\",instance=\"vmsh.shashkovs.ru\"}[5m]) > 0) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "0s",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "component": "memory",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "OOM killer завершил процесс",
+            "description": "Проверить kernel journal, какой процесс убит и восстановилась ли его работа."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "10s",
+            "group_interval": "5m",
+            "repeat_interval": "1h"
+          }
+        },
+        {
+          "uid": "vmsh-health-disklow",
+          "title": "VmshDiskLow",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((100 * node_filesystem_avail_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} / node_filesystem_size_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} < 15)\nand on(instance,device,mountpoint) (100 * node_filesystem_avail_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} / node_filesystem_size_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} >= 5)) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "10m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "component": "disk",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Свободно меньше 15 процентов диска в течение десяти минут",
+            "description": "Проверить backup и release retention, логи и временные файлы. Данные учеников автоматически не удалять."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "30s",
+            "group_interval": "5m",
+            "repeat_interval": "4h"
+          }
+        },
+        {
+          "uid": "vmsh-health-diskcritical",
+          "title": "VmshDiskCritical",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "datasourceUid": "prometheus",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "model": {
+                "refId": "A",
+                "expr": "((100 * node_filesystem_avail_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} / node_filesystem_size_bytes{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} < 5)\nor (100 * node_filesystem_files_free{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} / node_filesystem_files{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} < 5)\nor (node_filesystem_readonly{job=\"node\",instance=\"vmsh.shashkovs.ru\",mountpoint=\"/\"} == 1)) * 0 + 1",
+                "instant": true,
+                "range": false,
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "model": {
+                "refId": "B",
+                "type": "threshold",
+                "expression": "A",
+                "conditions": [
+                  {
+                    "type": "query",
+                    "query": {
+                      "params": [
+                        "B"
+                      ]
+                    },
+                    "reducer": {
+                      "type": "last",
+                      "params": []
+                    },
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    },
+                    "operator": {
+                      "type": "and"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "KeepLast",
+          "for": "2m",
+          "keepFiringFor": "1m",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "component": "disk",
+            "instance": "vmsh.shashkovs.ru",
+            "service": "vmsh"
+          },
+          "annotations": {
+            "summary": "Диск: меньше пяти процентов места или inode, либо файловая система read-only",
+            "description": "Под угрозой запись ответов и SQLite. Проверить состояние файловой системы и безопасно освободить место."
+          },
+          "notification_settings": {
+            "receiver": "vmsh-telegram",
+            "group_by": [
+              "instance",
+              "severity"
+            ],
+            "group_wait": "10s",
+            "group_interval": "5m",
+            "repeat_interval": "1h"
+          }
+        }
+      ]
+    }
+  ]
+}

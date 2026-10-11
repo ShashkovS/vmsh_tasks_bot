@@ -43,6 +43,15 @@ rules are unchanged. Browser/site-storage deletion still requires downloading ag
 
 ## UI and acceptance
 
+Cross-origin public figure storage must allow browser GETs from the application
+origin. Offline preparation reads MIME and bytes before caching; an opaque
+response cannot satisfy those checks. The TLF configuration and browser-CORS
+deployment probe are documented in the
+[TLF deployment runbook](../../docs/deploy/tlf-app/README.md#public-media-cors--2026-10-01).
+Missing figures use `cache: 'reload'` to recover from browser HTTP entries saved
+before the storage CORS policy was corrected. Already validated offline images
+continue to be reused; MIME checks and the byte budget remain required.
+
 The shell reports saving, complete, incomplete/retry or no local copy. A complete
 status is conditional on all referenced figures being present. Offline pages show
 saved-at information; missing material has a finite explanatory state. Archive

@@ -162,7 +162,9 @@ async function prepareLocked(options: PrepareOfflineLessonsOptions): Promise<Les
       const response =
         (await cache.match(url)) ??
         (await oldCache?.match(url)) ??
-        (await (options.fetchAsset ?? fetch)(url, { signal }))
+        // Old HTTP entries can predate the bucket's CORS policy. Refresh only
+        // missing images; keep reusing validated copies above. offline-current-lessons.md.
+        (await (options.fetchAsset ?? fetch)(url, { signal, cache: 'reload' }))
       if (!response.ok || !response.headers.get('content-type')?.startsWith('image/'))
         throw new Error('Offline image unavailable')
       assetBytes += (await response.clone().arrayBuffer()).byteLength
