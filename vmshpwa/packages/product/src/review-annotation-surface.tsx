@@ -1,6 +1,4 @@
 import { t } from '@lingui/core/macro'
-import { Trans } from '@lingui/react/macro'
-import { Maximize2, Minus, Plus } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type CSSProperties, type SVGProps } from 'react'
 
 import type {
@@ -8,28 +6,13 @@ import type {
   ReviewAnnotationManifest,
   ReviewAnnotationMark,
 } from '@vmsh/contracts'
-import { Button, cn } from '@vmsh/ui'
+import { cn } from '@vmsh/ui'
 
 const strokeForColor: Record<ReviewAnnotationColor, string> = {
   red: 'var(--annotation-pen)',
   blue: 'var(--annotation-comment)',
   graphite: 'var(--foreground)',
   amber: 'var(--annotation-highlight)',
-}
-
-/*
- * Reading a checked page needs the same freedom as reading a drawing: a step
- * below the natural width lets a tall page stop dominating the conversation.
- */
-const ZOOM_LADDER = [0.25, 0.5, 0.75, 1, 1.5, 2, 3] as const
-const NATURAL_ZOOM = 1
-const MINIMUM_ZOOM = ZOOM_LADDER[0]
-const MAXIMUM_ZOOM = ZOOM_LADDER.at(-1) ?? NATURAL_ZOOM
-
-function stepZoom(current: number, direction: 1 | -1): number {
-  const found = ZOOM_LADDER.findIndex((step) => step >= current - 0.001)
-  const index = found === -1 ? ZOOM_LADDER.length - 1 : found
-  return ZOOM_LADDER[Math.min(ZOOM_LADDER.length - 1, Math.max(0, index + direction))] ?? current
 }
 
 function pathFromPoints(points: Array<{ x: number; y: number }>): string {
@@ -46,6 +29,8 @@ export interface ReviewAnnotationSurfaceProps {
   testId?: string
   /** Extra classes for the scroll region, e.g. a height bound when reading. */
   className?: string
+  onImageClick?: (() => void) | undefined
+  fitToViewport?: boolean
 }
 
 /** One geometry implementation shared by the Staff editor and read-only viewers. */
@@ -58,9 +43,21 @@ export function ReviewAnnotationSurface({
   overlayProps,
   testId,
   className,
+  onImageClick,
+  fitToViewport = false,
 }: ReviewAnnotationSurfaceProps) {
   const [dimensions, setDimensions] = useState({ width: 4, height: 3 })
   const scrollRegionRef = useRef<HTMLDivElement>(null)
+  const [viewport, setViewport] = useState({ width: 0, height: 0 })
+  useEffect(() => {
+    const region = scrollRegionRef.current
+    if (!fitToViewport || !region) return
+    const measure = () => setViewport({ width: region.clientWidth, height: region.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(region)
+    return () => observer.disconnect()
+  }, [fitToViewport])
   const maskId = `annotation-mask-${useId().replaceAll(':', '')}`
   const markerId = `annotation-arrow-${useId().replaceAll(':', '')}`
   const canvasRatio =
@@ -75,6 +72,24 @@ export function ReviewAnnotationSurface({
   useEffect(() => {
     if (zoom === 1) scrollRegionRef.current?.scrollTo({ left: 0, top: 0 })
   }, [zoom])
+
+  const image = (
+    <img
+      alt={imageAlt}
+      className={cn(
+        'absolute inset-0 size-full select-none object-contain',
+        overlayProps?.onPointerDown ? 'pointer-events-none' : onImageClick && 'cursor-zoom-in',
+      )}
+      draggable={false}
+      onLoad={(event) => {
+        const image = event.currentTarget
+        if (image.naturalWidth && image.naturalHeight) {
+          setDimensions({ width: image.naturalWidth, height: image.naturalHeight })
+        }
+      }}
+      src={imageSource}
+    />
+  )
 
   return (
     <div
@@ -94,7 +109,12 @@ export function ReviewAnnotationSurface({
         data-rotation={rotation}
         data-testid={testId}
         data-zoom={zoom}
-        style={{ aspectRatio: canvasRatio, width: `${zoom * 100}%` }}
+        style={{
+          aspectRatio: canvasRatio,
+          width: fitToViewport
+            ? `${Math.max(1, Math.min(viewport.width - 10, (viewport.height - 10) * canvasRatio)) * zoom}px`
+            : `${zoom * 100}%`,
+        }}
       >
         <div
           className="absolute left-1/2 top-1/2 aspect-(--evidence-ratio) -translate-x-1/2 -translate-y-1/2"
@@ -106,18 +126,19 @@ export function ReviewAnnotationSurface({
             } as CSSProperties
           }
         >
-          <img
-            alt={imageAlt}
-            className="pointer-events-none absolute inset-0 size-full select-none object-contain"
-            draggable={false}
-            onLoad={(event) => {
-              const image = event.currentTarget
-              if (image.naturalWidth && image.naturalHeight) {
-                setDimensions({ width: image.naturalWidth, height: image.naturalHeight })
-              }
-            }}
-            src={imageSource}
-          />
+          {onImageClick ? (
+            <button
+              aria-label={t`Открыть на весь экран: ${imageAlt}`}
+              className="absolute inset-0 block size-full cursor-zoom-in border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              type="button"
+              onClick={onImageClick}
+            >
+              {image}
+            </button>
+          ) : (
+            image
+          )}
+
           {marks.some((mark) => mark.coordinateSpace !== 'image') ? (
             <svg
               aria-hidden="true"
@@ -136,7 +157,11 @@ export function ReviewAnnotationSurface({
           ) : null}
           <svg
             {...overlayProps}
-            className={cn('absolute inset-0 size-full', overlayProps?.className)}
+            className={cn(
+              'absolute inset-0 size-full',
+              !overlayProps?.onPointerDown && 'pointer-events-none',
+              overlayProps?.className,
+            )}
             // Unit coordinates cover both image axes; see docs/review-annotation-geometry.md.
             data-coordinate-space="image"
             preserveAspectRatio="none"
@@ -153,88 +178,6 @@ export function ReviewAnnotationSurface({
         </div>
       </div>
     </div>
-  )
-}
-
-export interface ReviewAnnotationViewerProps {
-  imageAlt: string
-  imageSource: string
-  manifest: ReviewAnnotationManifest
-  className?: string
-}
-
-/** Canonical Student/Family read-only rendering of an immutable manifest. */
-export function ReviewAnnotationViewer({
-  imageAlt,
-  imageSource,
-  manifest,
-  className,
-}: ReviewAnnotationViewerProps) {
-  const [zoom, setZoom] = useState(NATURAL_ZOOM)
-  const textMarks = manifest.marks.filter((mark) => mark.kind === 'text')
-
-  return (
-    <figure className={cn('space-y-1', className)}>
-      <ReviewAnnotationSurface
-        className="max-h-[70vh]"
-        imageAlt={imageAlt}
-        imageSource={imageSource}
-        marks={manifest.marks}
-        overlayProps={{ 'aria-hidden': true, className: 'pointer-events-none' }}
-        rotation={manifest.rotation}
-        testId="review-annotation-viewer-canvas"
-        zoom={zoom}
-      />
-      <div className="flex flex-wrap items-center gap-1">
-        <Button
-          aria-label={t`Уменьшить масштаб`}
-          disabled={zoom <= MINIMUM_ZOOM}
-          onClick={() => setZoom((value) => stepZoom(value, -1))}
-          size="icon-xs"
-          type="button"
-          variant="outline"
-        >
-          <Minus aria-hidden="true" />
-        </Button>
-        <Button
-          aria-label={t`Увеличить масштаб`}
-          disabled={zoom >= MAXIMUM_ZOOM}
-          onClick={() => setZoom((value) => stepZoom(value, 1))}
-          size="icon-xs"
-          type="button"
-          variant="outline"
-        >
-          <Plus aria-hidden="true" />
-        </Button>
-        <Button
-          aria-label={t`Сбросить масштаб`}
-          disabled={zoom === NATURAL_ZOOM}
-          onClick={() => setZoom(NATURAL_ZOOM)}
-          size="icon-xs"
-          type="button"
-          variant="ghost"
-        >
-          <Maximize2 aria-hidden="true" />
-        </Button>
-        <figcaption className="text-caption text-muted-foreground">
-          <Trans>Пометки преподавателя ·</Trans>{' '}
-          <span className="font-num">{Math.round(zoom * 100)}%</span>
-          {zoom > NATURAL_ZOOM ? t` · можно прокрутить` : ''}
-        </figcaption>
-      </div>
-      {textMarks.length > 0 ? (
-        <ul className="space-y-1 text-small text-foreground">
-          {textMarks.map((mark) => (
-            <li
-              className="rounded-md border border-border bg-surface px-2.5 py-1.5"
-              key={mark.markId}
-            >
-              {mark.data.text}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </figure>
   )
 }
 

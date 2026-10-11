@@ -5,7 +5,7 @@ import {
   writtenThreadResponseSchema,
 } from '../packages/contracts/src/written-submissions'
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
-import { expect, test } from './fixtures'
+import { expect, test, type Locator } from './fixtures'
 
 test.describe.configure({ retries: 0 })
 
@@ -18,6 +18,36 @@ function reviewFixtureId(project: string): number {
   const fixtureId = fixtureIds[project]
   if (fixtureId === undefined) throw new Error(`Unknown Playwright project: ${project}`)
   return fixtureId
+}
+
+// Native OS menus consume subsequent mouse/keyboard events differently by engine.
+// docs/review-photo-preview.md: prove hit testing and an uncancelled image menu;
+// actual menu selection and external-editor paste remain a manual acceptance check.
+async function expectCopyableImage(photo: Locator) {
+  await photo.scrollIntoViewIfNeeded()
+  expect(
+    await photo.evaluate((image) => {
+      const bounds = image.getBoundingClientRect()
+      const region = image.closest('[role="region"]')!.getBoundingClientRect()
+      const x =
+        (Math.max(bounds.left, region.left, 0) +
+          Math.min(bounds.right, region.right, window.innerWidth)) /
+        2
+      const y =
+        (Math.max(bounds.top, region.top, 0) +
+          Math.min(bounds.bottom, region.bottom, window.innerHeight)) /
+        2
+      const target = document.elementFromPoint(x, y)
+      const event = new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        clientX: x,
+        clientY: y,
+      })
+      return { target: target?.tagName, allowed: target?.dispatchEvent(event) }
+    }),
+  ).toEqual({ target: 'IMG', allowed: true })
 }
 
 // docs/written-result-precedence.md: live task lists, reload and reconnect
@@ -214,7 +244,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   page,
   secondaryContext,
 }, testInfo) => {
-  test.setTimeout(90_000)
+  test.setTimeout(120_000)
   const project = testInfo.project.name
   const fixtureId = reviewFixtureId(project)
   const queueId = `wq-${fixtureId}`
@@ -250,9 +280,85 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     page.getByText('Я дописал объяснение перехода и проверил крайний случай.'),
   ).toBeVisible()
 
+  // docs/review-photo-preview.md: native image targeting, fit/zoom and a durable original.
+  const viewingPhoto = page
+    .getByRole('button', { name: 'Открыть на весь экран: Страница решения 1' })
+    .first()
+  await expect(viewingPhoto).toBeVisible()
+  const originalLink = page.getByRole('link', { name: 'Открыть оригинал', exact: true }).first()
+  const originalUrl = await originalLink.getAttribute('href')
+  expect(originalUrl).toBe(
+    `/staff/api/v1/thread-entries/${studentEntryId}/attachments/${attachmentId}/media`,
+  )
+  await page.bringToFront()
+  const popupPromise = page.waitForEvent('popup')
+  await originalLink.click()
+  const originalTab = await popupPromise
+  await expect(originalTab.locator('img')).toBeVisible()
+  await expect
+    .poll(() =>
+      originalTab.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0)
+  await page.bringToFront()
+  await expectCopyableImage(viewingPhoto.locator('img'))
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByText('100% · 0° · 0 пометок')).toBeVisible()
+  await viewingPhoto.click()
+  const preview = page.getByRole('dialog')
+  await expect(preview).toBeVisible()
+  const previewCanvas = preview.getByTestId('review-photo-preview-canvas')
+  for (const width of [1280, 320, 640]) {
+    // 640×400 also models the CSS viewport available at desktop 200% browser zoom.
+    await page.setViewportSize({ width, height: width === 640 ? 400 : 800 })
+    await preview.getByRole('button', { name: 'Вписать', exact: true }).click()
+    await expect
+      .poll(async () =>
+        previewCanvas.evaluate((canvas) => {
+          const region = canvas.parentElement!
+          return (
+            canvas.clientWidth <= region.clientWidth && canvas.clientHeight <= region.clientHeight
+          )
+        }),
+      )
+      .toBe(true)
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(
+        (dark) => document.documentElement.classList.toggle('dark', dark),
+        theme === 'dark',
+      )
+      await preview.screenshot({ path: testInfo.outputPath(`photo-preview-${width}-${theme}.png`) })
+    }
+  }
+  await page.evaluate(() => document.documentElement.classList.remove('dark'))
+  await page.setViewportSize({ width: 1280, height: 800 })
+  for (let index = 0; index < 12; index++)
+    await preview.getByRole('button', { name: 'Увеличить масштаб' }).click()
+  await expect(previewCanvas).toHaveAttribute('data-zoom', '4')
+  await expect(preview.getByRole('button', { name: 'Увеличить масштаб' })).toBeDisabled()
+  await expect
+    .poll(() =>
+      previewCanvas.evaluate(
+        (canvas) => canvas.parentElement!.scrollHeight > canvas.parentElement!.clientHeight,
+      ),
+    )
+    .toBe(true)
+  for (let index = 0; index < 15; index++)
+    await preview.getByRole('button', { name: 'Уменьшить масштаб' }).click()
+  await expect(previewCanvas).toHaveAttribute('data-zoom', '0.25')
+  await expect(preview.getByRole('button', { name: 'Уменьшить масштаб' })).toBeDisabled()
+  await preview.getByRole('button', { name: 'Вписать', exact: true }).click()
+  await expectCopyableImage(previewCanvas.locator('img'))
+  await page.keyboard.press('Escape')
+  await expect(preview).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'На весь экран', exact: true }).first(),
+  ).toBeFocused()
+  await expect(page.getByText('100% · 0° · 0 пометок')).toBeVisible()
+
   const drawing = page.getByRole('application', { name: 'Область разметки фотографии' })
-  await expect(drawing).toBeVisible()
   await page.getByRole('button', { name: 'Прямоугольник' }).click()
+  await expect(drawing).toBeVisible()
   await drawing.scrollIntoViewIfNeeded()
   const bounds = await drawing.boundingBox()
   if (!bounds) throw new Error('Review annotation canvas has no visible bounds')
@@ -266,6 +372,19 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   // Keyboard activation is stable after the SVG drag releases pointer capture.
   await page.getByRole('button', { name: 'Повернуть по часовой стрелке' }).focus()
   await page.keyboard.press('Enter')
+  await expect(page.getByText('100% · 90° · 1 пометок')).toBeVisible()
+
+  // Opening the viewer while a drawing tool is selected preserves the current draft.
+  await page.getByRole('button', { name: 'На весь экран', exact: true }).first().click()
+  const markedPreview = page.getByRole('dialog')
+  await expect(markedPreview.getByTestId('review-photo-preview-canvas')).toHaveAttribute(
+    'data-rotation',
+    '90',
+  )
+  await markedPreview.screenshot({
+    path: testInfo.outputPath('photo-preview-rotated-with-marks.png'),
+  })
+  await markedPreview.getByRole('button', { name: 'Закрыть', exact: true }).click()
   await expect(page.getByText('100% · 90° · 1 пометок')).toBeVisible()
 
   const comment = page.getByLabel('Комментарий')
@@ -351,6 +470,12 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   await expect(page).toHaveURL(/\/staff\/review\/?\?/)
   await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0)
   await expect(adminRow).toHaveCount(0)
+  await originalTab.reload()
+  await expect(originalTab.locator('img')).toBeVisible()
+  const originalResponse = await page.request.get(originalUrl!)
+  expect(originalResponse.status()).toBe(200)
+  expect(originalResponse.headers()['content-type']).toContain('image/webp')
+  await originalTab.close()
   const teacherReactionInboxStatus = await page.evaluate(async () => {
     const response = await fetch('/staff/api/v1/review/reactions')
     return response.status
@@ -652,9 +777,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   const historyRow = adminPage.getByRole('row').filter({ hasText: correctedComment })
   await expect(historyRow).toHaveCount(1)
   await historyRow.getByRole('button', { name: 'Перепроверить' }).click()
-  await expect(
-    adminPage.getByRole('application', { name: 'Область разметки фотографии' }),
-  ).toBeVisible()
+  await expect(adminPage.getByRole('button', { name: 'Просмотр', exact: true })).toBeVisible()
   await adminPage.getByRole('button', { name: 'Очистить разметку' }).click()
   await adminPage.getByLabel('Комментарий').fill(`История ${project}: половина.`)
   await adminPage.getByRole('button', { name: /Половина/ }).click()

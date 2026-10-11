@@ -310,3 +310,16 @@ Proof: 30 связанных HTTP / 1053 frontend / 363 Storybook / 6 Chromium E
 PASS; типы/lint/i18n/build PASS, light/dark осмотрены. Полный fast gate остаётся
 красным на незатронутых Python fixtures/production-profile/clock failures.
 [Подробности и снимки](../../../pwa_tests/reports/review-conversation-20261008/README.md).
+
+## Просмотр фотографий — 2026-10-11
+
+Реализован [просмотр и копирование фото](../../docs/review-photo-preview.md):
+полноэкранный просмотр 25–400%, отдельный оригинал и переключение просмотра/разметки.
+Сохранение manifest и геометрия прежних пометок не меняются.
+Firefox seed использует существующее валидное синтетическое фото 640×360;
+серверные заголовки, авторизация, API и БД сохраняются.
+
+Release gate `review submissions` PASS: 2955 Python / 12 SKIP, 1091 frontend,
+373 Storybook, 18 E2E в трёх браузерах. Source unchanged; 21 снимок осмотрен.
+[Отчёт](../../../pwa_tests/reports/review-photo-preview-20261011/README.md).
+Системная вставка в графредактор остаётся ручной проверкой (Mac заблокирован).

@@ -22,7 +22,7 @@ msgstr " · изменено"
 msgid " · изменено {0}"
 msgstr " · изменено {0}"
 
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
 msgid " · можно прокрутить"
 msgstr " · можно прокрутить"
 
@@ -786,6 +786,10 @@ msgstr "Восстанавливаем связь…"
 msgid "Восстановить"
 msgstr "Восстановить"
 
+#: packages/product/src/review-photo-preview.tsx
+msgid "Вписать"
+msgstr "Вписать"
+
 #: packages/product/src/lesson-video.ts
 msgid "Время начала YouTube-видео некорректно"
 msgstr "Время начала YouTube-видео некорректно"
@@ -1148,6 +1152,10 @@ msgstr "Задача {0}."
 msgid "Задачи"
 msgstr "Задачи"
 
+#: packages/product/src/review-photo-preview.tsx
+msgid "Закрыть"
+msgstr "Закрыть"
+
 #: packages/product/src/progress-charts.tsx
 msgid "Занятие"
 msgstr "Занятие"
@@ -1484,6 +1492,7 @@ msgid "Мутно, много ошибок."
 msgstr "Мутно, много ошибок."
 
 #: packages/product/src/metadata-grid.tsx
+#: packages/product/src/review-photo-preview.tsx
 msgid "На весь экран"
 msgstr "На весь экран"
 
@@ -2006,6 +2015,14 @@ msgstr "Открыть изображение"
 msgid "Открыть курс"
 msgstr "Открыть курс"
 
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Открыть на весь экран: {imageAlt}"
+msgstr "Открыть на весь экран: {imageAlt}"
+
+#: packages/product/src/review-photo-preview.tsx
+msgid "Открыть оригинал"
+msgstr "Открыть оригинал"
+
 #: packages/product/src/conscious-disclosure.tsx
 msgid "Открыть подсказку?"
 msgstr "Открыть подсказку?"
@@ -2472,7 +2489,7 @@ msgstr "Получили хотя бы одно: {0}"
 msgid "Пометка преподавателя"
 msgstr "Пометка преподавателя"
 
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
 msgid "Пометки преподавателя ·"
 msgstr "Пометки преподавателя ·"
 
@@ -2640,6 +2657,10 @@ msgstr "Проверяет"
 #: packages/product/src/review-queue.tsx
 msgid "Проверяет {0}"
 msgstr "Проверяет {0}"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Просмотр"
+msgstr "Просмотр"
 
 #: packages/product/src/progress-charts.tsx
 msgid "Простые"
@@ -2819,7 +2840,7 @@ msgid "С устным приёмом всё ОК."
 msgstr "С устным приёмом всё ОК."
 
 #: packages/product/src/review-annotation-editor.tsx
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
 #: packages/product/src/zoomable-figure.tsx
 msgid "Сбросить масштаб"
 msgstr "Сбросить масштаб"
@@ -3158,7 +3179,8 @@ msgid "Увеличить"
 msgstr "Увеличить"
 
 #: packages/product/src/review-annotation-editor.tsx
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
+#: packages/product/src/review-photo-preview.tsx
 msgid "Увеличить масштаб"
 msgstr "Увеличить масштаб"
 
@@ -3188,7 +3210,8 @@ msgid "Уменьшить"
 msgstr "Уменьшить"
 
 #: packages/product/src/review-annotation-editor.tsx
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
+#: packages/product/src/review-photo-preview.tsx
 msgid "Уменьшить масштаб"
 msgstr "Уменьшить масштаб"
 

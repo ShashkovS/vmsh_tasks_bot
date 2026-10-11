@@ -3,7 +3,7 @@ import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import type { WrittenReviewProjection } from '@vmsh/contracts'
 import { useState } from 'react'
 
-import { ReviewAnnotationViewer } from './review-annotation-surface'
+import { ReviewAnnotationViewer } from './review-annotation-viewer'
 import { findReaction, reactionsForScope } from './reaction'
 import { ReactionChip, ReactionPicker } from './reaction-picker'
 import { VerdictPanel } from './verdict-panel'

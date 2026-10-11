@@ -5,7 +5,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { StudentResultsClient } from '@vmsh/app-shell'
 import type { StudentResultEvent, StudentResultHistory, WebContentDocument } from '@vmsh/contracts'
-import { ThreadMessage, VerdictMark, writtenReviewVerdict } from '@vmsh/product'
+import { ThreadMessage, VerdictMark, writtenReviewVerdict, ReviewPhotoPreview } from '@vmsh/product'
 import {
   Button,
   Dialog,
@@ -182,23 +182,15 @@ function ArchiveImage({ attachment }: { attachment: StudentResultEvent['attachme
               imageAlt={t`Решение с отметками преподавателя`}
               imageSource={attachment.url}
               manifest={attachment.annotation}
+              originalHref={attachment.url}
             />
           </Suspense>
         ) : (
-          <a
-            href={attachment.url}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={t`Открыть вложение`}
-          >
-            <img
-              className="max-h-96 max-w-full rounded object-contain"
-              src={attachment.url}
-              alt={t`Вложение к посылке`}
-              loading="lazy"
-              onError={() => setMissing(true)}
-            />
-          </a>
+          <ReviewPhotoPreview
+            imageAlt={t`Вложение к посылке`}
+            imageSource={attachment.url}
+            originalHref={attachment.url}
+          />
         )
       ) : (
         <p className="text-small text-muted-foreground">

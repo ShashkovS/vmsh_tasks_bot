@@ -97,6 +97,20 @@ const reassignResponse = {
   requestId: 'request-commit',
 }
 
+// docs/review-photo-preview.md: the original is a stable authorized URL, not a Blob.
+describe('original photo URL', () => {
+  it('uses the configured Staff endpoint and rejects foreign path fragments', () => {
+    const fetchImplementation = vi.fn()
+    const client = createWrittenMaterialReassignmentClient(runtime, { fetchImplementation })
+    expect(client.attachmentMediaUrl(sourceEntry.entryId, sourceAttachment.attachmentId)).toBe(
+      sourceAttachment.mediaPath,
+    )
+    expect(() => client.attachmentMediaUrl('../foreign', sourceAttachment.attachmentId)).toThrow()
+    expect(() => client.attachmentMediaUrl(sourceEntry.entryId, '../foreign')).toThrow()
+    expect(fetchImplementation).not.toHaveBeenCalled()
+  })
+})
+
 describe('Staff written-material reassignment client', () => {
   it('posts strict preview and commit bodies to Staff endpoints', async () => {
     const fetchImplementation = vi

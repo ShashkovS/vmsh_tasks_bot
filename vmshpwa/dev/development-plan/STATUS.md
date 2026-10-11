@@ -1,5 +1,19 @@
 # Статус плана разработки
 
+## 2026-10-11 — Просмотр и копирование фотографий решений
+
+Реализованы оригинал в отдельной вкладке, полноэкранный просмотр 25–400%,
+начальный режим просмотра и обычная разметка. Черновик/геометрия сохраняются.
+[Требование и реализация](../../docs/review-photo-preview.md),
+[отчёт и снимки](../../../pwa_tests/reports/review-photo-preview-20261011/README.md).
+Release gate `review submissions` PASS: 2955 Python / 12 SKIP, 1091 frontend,
+373 Storybook, 18 E2E в Chromium/WebKit/Firefox; source unchanged.
+Firefox seed исправлен: существующая валидная синтетическая WebP 640×360.
+Осталось вручную проверить системное копирование/вставку в графредактор:
+Mac заблокирован, native apps недоступны. Владелец разрешил commit/push в
+production-ветку `vmshpwa` и выпуск на ВМШ/TLF; выпуск начат.
+[Порядок выпуска](../../../docs/deploy/review-photo-20261011.md).
+
 ## 2026-10-11 — Финальная сверка worktree и обоих production
 
 По запросу владельца проверены все checkout/stash/feature commits: источники

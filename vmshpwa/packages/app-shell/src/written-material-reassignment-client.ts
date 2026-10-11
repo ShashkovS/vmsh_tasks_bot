@@ -42,6 +42,7 @@ export interface WrittenMaterialReassignmentClient {
     request: ReassignWrittenMaterialRequest,
     options?: WrittenMaterialReassignmentRequestOptions,
   ): Promise<ReassignWrittenMaterialResponse>
+  attachmentMediaUrl(entryId: string, attachmentId: string): string
   attachmentMedia(
     entryId: string,
     attachmentId: string,
@@ -109,6 +110,13 @@ class BrowserWrittenMaterialReassignmentClient implements WrittenMaterialReassig
       options,
       reassignWrittenMaterialResponseSchema,
     )
+  }
+
+  // docs/review-photo-preview.md: navigation must survive the current Blob lifecycle.
+  attachmentMediaUrl(entryId: string, attachmentId: string): string {
+    const parsedEntryId = publicIdSchema.parse(entryId)
+    const parsedAttachmentId = publicIdSchema.parse(attachmentId)
+    return `${this.runtime.apiBase}/thread-entries/${encodeURIComponent(parsedEntryId)}/attachments/${encodeURIComponent(parsedAttachmentId)}/media`
   }
 
   async attachmentMedia(

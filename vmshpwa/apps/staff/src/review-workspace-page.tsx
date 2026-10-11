@@ -32,6 +32,7 @@ import {
   FeedbackThread,
   ReviewAnnotationEditor,
   ReviewAnnotationViewer,
+  ReviewPhotoPreview,
   ReviewFeedbackForm,
   ThreePaneReview,
   binaryVerdictScale,
@@ -633,6 +634,7 @@ export function ReviewAttachmentImage({
         className="h-48 animate-pulse rounded-md bg-surface-sunken"
       />
     )
+  const originalHref = mediaClient.attachmentMediaUrl(entryId, attachmentId)
   if (editable) {
     return (
       <ReviewAnnotationEditor
@@ -641,6 +643,7 @@ export function ReviewAttachmentImage({
         imageAlt={t`Страница решения ${ordinal + 1}`}
         imageSource={source}
         initialManifest={annotation}
+        originalHref={originalHref}
         onChange={(next) => onAnnotationChange(attachmentId, next)}
       />
     )
@@ -651,13 +654,14 @@ export function ReviewAttachmentImage({
         imageAlt={t`Страница решения ${ordinal + 1}`}
         imageSource={source}
         manifest={annotation}
+        originalHref={originalHref}
       />
     )
   return (
-    <img
-      alt={t`Страница решения ${ordinal + 1}`}
-      className="max-h-[42rem] w-full rounded-md border border-border bg-surface object-contain"
-      src={source}
+    <ReviewPhotoPreview
+      imageAlt={t`Страница решения ${ordinal + 1}`}
+      imageSource={source}
+      originalHref={originalHref}
     />
   )
 }

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import hashlib
 import json
 import os
@@ -23,9 +22,12 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_DATABASE = REPOSITORY_ROOT / "db/vmshpwa_e2e.sqlite3"
 EXPECTED_MEDIA_ROOT = REPOSITORY_ROOT / ".runtime/vmshpwa/e2e"
 TIMESTAMP = "2026-07-28T12:00:00Z"
-REVIEW_WEBP = base64.b64decode(
-    "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEALmk0mk0iIiIiIgBoSywA"
-)
+# docs/review-photo-preview.md: use real, cross-browser-decodable evidence;
+# the previous truncated 1px WebP was rejected by Firefox's image decoder.
+REVIEW_WEBP = (
+    REPOSITORY_ROOT / "pwa_tests/fixtures/student-results-photo.webp"
+).read_bytes()
+
 TARGETS = (
     ("chromium", 9701),
     ("webkit", 9702),
@@ -291,7 +293,7 @@ def _insert_review_cases(connection) -> int:
                 "(id, sha256, storage_namespace, object_key, media_type, "
                 "byte_size, width, height, source_filename, conversion_version, "
                 "created_by_user_id, created_at) VALUES (?, ?, 'submission', ?, "
-                "'image/webp', ?, 1, 1, 'e2e-review.webp', "
+                "'image/webp', ?, 640, 360, 'e2e-review.webp', "
                 "'pwa-written-image-v1', ?, ?) RETURNING id",
                 (
                     fixture_id,

@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Check,
   Eraser,
+  Eye,
   Highlighter,
   Maximize2,
   Minus,
@@ -29,6 +30,7 @@ import {
 import { Button, Input, Label, cn } from '@vmsh/ui'
 
 import { ReviewAnnotationSurface } from './review-annotation-surface'
+import { ReviewPhotoPreview } from './review-photo-preview'
 
 /**
  * Normalized, non-destructive photo editor for development-plan Phase 6.
@@ -62,6 +64,7 @@ export interface ReviewAnnotationEditorProps {
   attachmentId: string
   imageAlt: string
   imageSource: string
+  originalHref?: string
   initialManifest?: ReviewAnnotationManifest | null
   disabled?: boolean
   className?: string
@@ -209,6 +212,7 @@ export function ReviewAnnotationEditor({
   attachmentId,
   imageAlt,
   imageSource,
+  originalHref,
   initialManifest,
   disabled = false,
   className,
@@ -219,7 +223,7 @@ export function ReviewAnnotationEditor({
   )
   const [past, setPast] = useState<EditorDocument[]>([])
   const [future, setFuture] = useState<EditorDocument[]>([])
-  const [tool, setTool] = useState<AnnotationTool>('pencil')
+  const [tool, setTool] = useState<AnnotationTool | 'view'>('view')
   const [color, setColor] = useState<ReviewAnnotationColor>('red')
   const [gesture, setGesture] = useState<ActiveGesture | null>(null)
   const [pendingText, setPendingText] = useState<PendingText | null>(null)
@@ -268,7 +272,7 @@ export function ReviewAnnotationEditor({
   }
 
   const beginGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (disabled) return
+    if (disabled || tool === 'view' || event.button !== 0 || !event.isPrimary) return
     const point = pointFromEvent(event)
     if (!point) return
     if (tool === 'text') {
@@ -339,6 +343,16 @@ export function ReviewAnnotationEditor({
         role="toolbar"
         aria-label={t`Инструменты разметки`}
       >
+        <Button
+          aria-label={t`Просмотр`}
+          aria-pressed={tool === 'view'}
+          onClick={() => setTool('view')}
+          size="icon-sm"
+          type="button"
+          variant={tool === 'view' ? 'secondary' : 'ghost'}
+        >
+          <Eye aria-hidden="true" />
+        </Button>
         {toolOptions.map((option) => {
           const Icon = option.icon
           return (
@@ -427,24 +441,39 @@ export function ReviewAnnotationEditor({
         </Button>
       </div>
 
-      <ReviewAnnotationSurface
+      <ReviewPhotoPreview
         imageAlt={imageAlt}
         imageSource={imageSource}
-        marks={visibleMarks}
-        overlayProps={{
-          'aria-label': t`Область разметки фотографии`,
-          className: 'touch-none',
-          onPointerCancel: finishGesture,
-          onPointerDown: beginGesture,
-          onPointerMove: moveGesture,
-          onPointerUp: finishGesture,
-          role: 'application',
-          tabIndex: disabled ? -1 : 0,
-        }}
+        originalHref={originalHref}
+        marks={document.marks}
         rotation={document.rotation}
-        testId="annotation-canvas"
-        zoom={zoom}
-      />
+      >
+        {(open) => (
+          <ReviewAnnotationSurface
+            imageAlt={imageAlt}
+            imageSource={imageSource}
+            marks={visibleMarks}
+            onImageClick={tool === 'view' || disabled ? open : undefined}
+            overlayProps={
+              tool === 'view' || disabled
+                ? { 'aria-hidden': true }
+                : {
+                    'aria-label': t`Область разметки фотографии`,
+                    className: 'touch-none',
+                    onPointerCancel: finishGesture,
+                    onPointerDown: beginGesture,
+                    onPointerMove: moveGesture,
+                    onPointerUp: finishGesture,
+                    role: 'application',
+                    tabIndex: 0,
+                  }
+            }
+            rotation={document.rotation}
+            testId="annotation-canvas"
+            zoom={zoom}
+          />
+        )}
+      </ReviewPhotoPreview>
 
       <div className="flex flex-wrap items-center gap-1">
         <Button

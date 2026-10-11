@@ -22,7 +22,7 @@ msgstr " · changed"
 msgid " · изменено {0}"
 msgstr " · edited {0}"
 
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
 msgid " · можно прокрутить"
 msgstr " · scrollable"
 
@@ -786,6 +786,10 @@ msgstr "Reconnecting…"
 msgid "Восстановить"
 msgstr "Restore"
 
+#: packages/product/src/review-photo-preview.tsx
+msgid "Вписать"
+msgstr "Fit to window"
+
 #: packages/product/src/lesson-video.ts
 msgid "Время начала YouTube-видео некорректно"
 msgstr "The YouTube video start time is invalid"
@@ -1148,6 +1152,10 @@ msgstr "Problem {0}."
 msgid "Задачи"
 msgstr "Problems"
 
+#: packages/product/src/review-photo-preview.tsx
+msgid "Закрыть"
+msgstr "Close"
+
 #: packages/product/src/progress-charts.tsx
 msgid "Занятие"
 msgstr "Lesson"
@@ -1484,6 +1492,7 @@ msgid "Мутно, много ошибок."
 msgstr "Unclear, with many mistakes."
 
 #: packages/product/src/metadata-grid.tsx
+#: packages/product/src/review-photo-preview.tsx
 msgid "На весь экран"
 msgstr "Full screen"
 
@@ -2006,6 +2015,14 @@ msgstr "Open image"
 msgid "Открыть курс"
 msgstr "Open course"
 
+#: packages/product/src/review-annotation-surface.tsx
+msgid "Открыть на весь экран: {imageAlt}"
+msgstr "Open full screen: {imageAlt}"
+
+#: packages/product/src/review-photo-preview.tsx
+msgid "Открыть оригинал"
+msgstr "Open original"
+
 #: packages/product/src/conscious-disclosure.tsx
 msgid "Открыть подсказку?"
 msgstr "Open the hint?"
@@ -2472,7 +2489,7 @@ msgstr "Received at least one: {0}"
 msgid "Пометка преподавателя"
 msgstr "Teacher note"
 
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
 msgid "Пометки преподавателя ·"
 msgstr "Teacher annotations ·"
 
@@ -2640,6 +2657,10 @@ msgstr "Reviewing"
 #: packages/product/src/review-queue.tsx
 msgid "Проверяет {0}"
 msgstr "{0} is reviewing"
+
+#: packages/product/src/review-annotation-editor.tsx
+msgid "Просмотр"
+msgstr "View"
 
 #: packages/product/src/progress-charts.tsx
 msgid "Простые"
@@ -2819,7 +2840,7 @@ msgid "С устным приёмом всё ОК."
 msgstr "The oral submission went well."
 
 #: packages/product/src/review-annotation-editor.tsx
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
 #: packages/product/src/zoomable-figure.tsx
 msgid "Сбросить масштаб"
 msgstr "Reset zoom"
@@ -3158,7 +3179,8 @@ msgid "Увеличить"
 msgstr "Zoom in"
 
 #: packages/product/src/review-annotation-editor.tsx
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
+#: packages/product/src/review-photo-preview.tsx
 msgid "Увеличить масштаб"
 msgstr "Zoom in"
 
@@ -3188,7 +3210,8 @@ msgid "Уменьшить"
 msgstr "Zoom out"
 
 #: packages/product/src/review-annotation-editor.tsx
-#: packages/product/src/review-annotation-surface.tsx
+#: packages/product/src/review-annotation-viewer.tsx
+#: packages/product/src/review-photo-preview.tsx
 msgid "Уменьшить масштаб"
 msgstr "Zoom out"
 

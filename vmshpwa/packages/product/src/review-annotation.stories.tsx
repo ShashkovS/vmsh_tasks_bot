@@ -5,7 +5,8 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { reviewAnnotationManifestSchema, type ReviewAnnotationManifest } from '@vmsh/contracts'
 
 import { ReviewAnnotationEditor } from './review-annotation-editor'
-import { ReviewAnnotationSurface, ReviewAnnotationViewer } from './review-annotation-surface'
+import { ReviewAnnotationSurface } from './review-annotation-surface'
+import { ReviewAnnotationViewer } from './review-annotation-viewer'
 
 const meta = {
   title: 'Product/Review annotation',
@@ -119,6 +120,33 @@ export const Editor: Story = {
     const canvas = within(canvasElement)
     const surface = canvas.getByTestId('annotation-canvas')
     const readout = canvas.getByTestId('manifest-readout')
+
+    // docs/review-photo-preview.md: viewing and right clicks never edit the manifest.
+    await expect(canvas.getByRole('button', { name: 'Просмотр' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    const photo = surface.querySelector('img')!
+    await expect(getComputedStyle(photo).pointerEvents).toBe('auto')
+    await userEvent.click(photo)
+    const dialog = within(canvasElement.ownerDocument.body).getByRole('dialog')
+    const preview = within(dialog)
+    const expanded = preview.getByTestId('review-photo-preview-canvas')
+    await waitFor(async () => {
+      const viewport = expanded.parentElement!.getBoundingClientRect()
+      const image = expanded.getBoundingClientRect()
+      await expect(image.width).toBeLessThanOrEqual(viewport.width)
+      await expect(image.height).toBeLessThanOrEqual(viewport.height)
+    })
+    await userEvent.click(preview.getByRole('button', { name: 'Увеличить масштаб' }))
+    await expect(expanded).toHaveAttribute('data-zoom', '1.25')
+    await userEvent.click(preview.getByRole('button', { name: 'Уменьшить масштаб' }))
+    await expect(expanded).toHaveAttribute('data-zoom', '1')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(async () => {
+      await expect(dialog).not.toBeInTheDocument()
+    })
+    await expect(readout).toHaveTextContent('rotation=0; marks=2')
 
     await expectFullImageCoverage(surface)
     await expect(surface).toHaveAttribute('data-rotation', '0')
@@ -339,5 +367,41 @@ export const LegacyGeometry: Story = {
         reference.remove()
       }
     }
+  },
+}
+
+// docs/review-photo-preview.md: no teacher comment/manifest is needed to inspect a photo.
+export const UnreviewedPhoto: Story = {
+  render: () => (
+    <ReviewAnnotationEditor
+      attachmentId="attachment-unreviewed"
+      imageAlt="Решение без комментариев"
+      imageSource={evidenceImage}
+      originalHref="/staff/api/v1/thread-entries/entry-one/attachments/attachment-unreviewed/media"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('100% · 0° · 0 пометок')).toBeVisible()
+    const original = canvas.getByRole('link', { name: 'Открыть оригинал' })
+    await expect(original).toHaveAttribute('target', '_blank')
+    await expect(original).toHaveAttribute(
+      'href',
+      '/staff/api/v1/thread-entries/entry-one/attachments/attachment-unreviewed/media',
+    )
+    const photo = canvas.getByRole('button', {
+      name: 'Открыть на весь экран: Решение без комментариев',
+    })
+    await userEvent.click(photo)
+    const dialog = within(canvasElement.ownerDocument.body).getByRole('dialog')
+    await expect(within(dialog).getByRole('link', { name: 'Открыть оригинал' })).toHaveAttribute(
+      'href',
+      original.getAttribute('href')!,
+    )
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Закрыть' }))
+    await waitFor(async () => {
+      await expect(dialog).not.toBeInTheDocument()
+    })
+    await expect(canvas.getByText('100% · 0° · 0 пометок')).toBeVisible()
   },
 }

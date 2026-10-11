@@ -4190,10 +4190,6 @@ msgstr "Open"
 msgid "Открыть PDF"
 msgstr "Open PDF"
 
-#: apps/staff/src/student-results-history.tsx
-msgid "Открыть вложение"
-msgstr "Open attachment"
-
 #: apps/staff/src/staff-problem-release-preview.tsx
 msgid "Открыть все"
 msgstr "Open all"

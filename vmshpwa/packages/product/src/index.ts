@@ -75,3 +75,6 @@ export { WorksheetMaterials, type WorksheetMaterial } from './worksheet-material
 export * from './question-photos'
 
 export * from './question-attention'
+
+export * from './review-annotation-viewer'
+export * from './review-photo-preview'
