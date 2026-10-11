@@ -1,5 +1,12 @@
 # Статус плана разработки
 
+## 2026-10-11 — Переключение GlitchTip
+
+Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
+на каждом PASS. Stage 2 в работе: отдельные canonical DSN, private release
+sourcemaps/CSP и Telegram вместо SMTP. UI/copy/stories не меняются.
+[Операционный record](../../../docs/deploy/glitchtip/migration-20261011.md).
+
 ## 2026-10-11 — Квота frontend Sentry
 
 Владелец разрешил commit/push и выпуск текущего correction на оба production,

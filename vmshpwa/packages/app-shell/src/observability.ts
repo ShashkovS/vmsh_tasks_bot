@@ -93,9 +93,14 @@ export function initFrontendObservability(options: FrontendObservabilityOptions)
     environment: options.environment,
     ...(options.release ? { release: options.release } : {}),
     sendDefaultPii: false,
+    sendClientReports: false,
+    tracesSampleRate: 0,
+    enableLogs: false,
     attachStacktrace: true,
     // SDK Dedupe has no time window and runs before sampling; our filter owns repeats.
-    integrations: (defaults) => defaults.filter((integration) => integration.name !== 'Dedupe'),
+    // GlitchTip receives errors only; migration-20261011.md excludes session telemetry.
+    integrations: (defaults) =>
+      defaults.filter((integration) => !['Dedupe', 'BrowserSession'].includes(integration.name)),
     beforeSend: async (event) => {
       const filtered = filterEvent(event)
       if (!filtered) return null

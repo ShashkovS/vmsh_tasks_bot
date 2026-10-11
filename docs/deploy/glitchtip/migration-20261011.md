@@ -3,7 +3,7 @@
 The owner explicitly requested: commit/push the current verified changes to both
 production portals first, then switch DSNs and complete CSP/sourcemap wiring.
 
-## Stage 1, in progress
+## Stage 1, complete
 
 Base revision: `3af9ffb0`. All 23 product file hashes match the
 [quota validation receipt](../../../pwa_tests/reports/sentry-quota-20261011/validation.json).
@@ -17,7 +17,13 @@ backups, stop database writers for migration, then verify runtime/static/admissi
 Keep existing Sentry DSNs during this stage. Preserve untracked server data,
 credentials, existing immutable assets and shared NATS.
 
-## Stage 2, pending
+Commit `e0324272d535a146898a1fb8cd80b1ad48baa9df` pushed to `origin/vmshpwa`.
+VMSH release `e0324272d535-20261011084902`; TLF release
+`tlfprep-20261011-sentry-noise-e0324272d535`. Migration 0117, verified before/after
+backups and 25 HTTP smoke checks on each portal PASS; maintenance removed.
+TLF existing product rows/credentials and shared NATS preserved.
+
+## Stage 2, in progress
 
 Use the separate frontend/backend projects from [provisioning](README.md):
 VMSH 1/2 and TLF 3/4. Update canonical server configuration, persistent production
@@ -25,5 +31,30 @@ build configuration and CSP; generate private sourcemaps and upload them with th
 exact release ID. Confirm a production SDK event and readable original location
 in each correct organization. Keep source maps out of public static releases.
 
-SMTP relay details were requested from the owner. Mail transport can be configured
-independently; DSN/CSP/sourcemap work does not depend on that reply.
+The owner rejected email and explicitly requested Telegram notifications.
+An operator destination is being selected. A separate infrastructure webhook
+adapter will send bounded, metadata-only messages; portal business APIs stay intact.
+
+[production_frontend_build.py](../../../vmshpwa/scripts/production_frontend_build.py)
+consumes a private, explicitly staged portal configuration and preserves all
+other canonical settings with a 0600 backup. Each organization's upload token
+belongs to its own non-login member, with release permissions only. Subsequent
+builds prefer canonical frontend DSN over the older installed shell fallback.
+[Vite production guard](../../../vmshpwa/vite-production-guard.ts) generates hidden
+maps; the builder uploads release artifacts without injecting or changing hashed
+JS/SW bytes, confirms stored artifacts and removes maps before public packaging.
+Frontend sessions/client reports/traces and backend GlitchTip traces are disabled;
+existing filtering, privacy and durable admission budgets remain enabled.
+
+[Stage 2 verification receipt](../../../pwa_tests/reports/glitchtip-20261011/validation.json):
+static checks, 1088 frontend, 364 Storybook, 12 Chromium and 29 focused Python
+PASS. Full Python: 2896 PASS / 8 SKIP / six missing-private-input failures;
+the full gate remains not green. Real release artifact upload and original
+TypeScript resolution in GlitchTip PASS.
+
+[TLF switch script](deploy-tlf-switch.sh) builds an isolated Git archive, preserves
+unrelated canonical settings, backs up databases and switches only after private
+map upload and public packaging checks. Schema is unchanged from stage 1.
+Telegram adapter/unit are installed but inactive pending explicit approval to
+reuse/transfer the existing bot credential or provision a separate bot. Automatic
+approval review rejected an unapproved credential-sharing flag; it was removed.

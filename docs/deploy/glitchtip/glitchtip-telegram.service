@@ -1,0 +1,23 @@
+[Unit]
+Description=GlitchTip Telegram digest transport
+After=network-online.target glitchtip.service
+Wants=network-online.target
+
+[Service]
+DynamicUser=yes
+LoadCredential=config:/opt/glitchtip/telegram.json
+StateDirectory=glitchtip-telegram
+StateDirectoryMode=0700
+ExecStart=/usr/bin/python3 /opt/glitchtip/telegram-webhook.py --config ${CREDENTIALS_DIRECTORY}/config --state /var/lib/glitchtip-telegram/state.sqlite3
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=128M
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

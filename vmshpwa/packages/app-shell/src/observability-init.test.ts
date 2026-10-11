@@ -60,9 +60,15 @@ it('keeps disabled clients inert and wires all captures through filtering and pr
   expect(await config?.beforeSend?.({ ...event, fingerprint: ['different'] }, {})).toBeNull()
   expect(fetch).toHaveBeenCalledTimes(2)
   if (typeof config?.integrations !== 'function') throw new Error('Expected integration filter')
-  expect(config.integrations([{ name: 'Dedupe' }, { name: 'GlobalHandlers' }])).toEqual([
-    { name: 'GlobalHandlers' },
-  ])
+  expect(
+    config.integrations([
+      { name: 'Dedupe' },
+      { name: 'BrowserSession' },
+      { name: 'GlobalHandlers' },
+    ]),
+  ).toEqual([{ name: 'GlobalHandlers' }])
+  expect(config.sendClientReports).toBe(false)
+  expect(config.tracesSampleRate).toBe(0)
 })
 
 it('keeps all reconnects as breadcrumbs without spending error quota', async () => {
