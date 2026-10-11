@@ -235,3 +235,12 @@ Backend/контракты и проверки связаны в докумен�
 Production-выпуск завершён 2 октября: `5bb8d38227df`, VMSH webhook и ручной TLF
 cutover, 0107 → backend → frontend, по 25 HTTP checks. Старые сообщения/версии
 сохранены; baseline заполнен. [Release proof](../../docs/question-attention.md#production--2-октября-2026).
+
+## 2026-10-09 — Учёт работы преподавателей
+
+Согласованный владельцем инкремент существующей Staff-страницы `/users`: вкладка
+«Учёт работы» и вложенные «Отчёт / Очные смены / Zoom / Настройки», admin-only.
+[Правила](../../docs/teacher-work.md), [страница](../../apps/staff/src/teacher-work-page.tsx),
+[route](../../apps/staff/src/routes/users.tsx). Backend/миграция и интерфейс
+реализуются; domain/HTTP, Storybook, E2E и визуальная проверка в работе.
+Новая design phase не начинается, визуальная приёмка владельцем не заявляется.

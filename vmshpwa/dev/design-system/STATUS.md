@@ -2408,3 +2408,16 @@ TLF disposable S3 probe прошёл, объект удалён; на VMSH та�
 из-за доступа SSH-пользователя к production-конфигурации. После rebase:
 38 backend tests и оба i18n — PASS. Параллельный fresh-problem-set исключён.
 [Release proof](../../../pwa_tests/reports/rich-file-attachments/production-proof.json).
+
+## 2026-10-09 — Учёт работы преподавателей
+
+Согласованный владельцем инкремент существующей Staff-страницы `/users`: вкладка
+«Учёт работы» и вложенные «Отчёт / Очные смены / Zoom / Настройки», admin-only.
+[Правила](../../docs/teacher-work.md), [страница](../../apps/staff/src/teacher-work-page.tsx),
+[route](../../apps/staff/src/routes/users.tsx). Backend/миграция 0118 и интерфейс готовы к выпуску. 11 октября release gate
+PASS: 2925 Python / 7 SKIP, 1090 frontend, 372 Storybook, все static gates.
+Финальные 9 E2E PASS в трёх браузерах; снимки отчёта/импорта light/dark,
+1280/390 осмотрены, масштаб 200% проверен. Up/down/up на свежей серверной
+копии PASS; production не изменён.
+[Квитанции и снимки](../../../pwa_tests/reports/teacher-work-20261011/README.md).
+Новая design phase не начинается, визуальная приёмка владельцем не заявляется.

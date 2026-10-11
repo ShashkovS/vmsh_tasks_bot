@@ -398,6 +398,10 @@ msgstr "Invalid publication time"
 msgid "Все группы"
 msgstr "All groups"
 
+#: apps/pwa_api/teacher_work_routes.py
+msgid "Вставьте распределение преподавателей"
+msgstr "Paste the teacher roster"
+
 #: apps/pwa_api/middleware.py
 msgid "Вход временно недоступен"
 msgstr "Sign-in is temporarily unavailable"
@@ -535,6 +539,10 @@ msgstr "The data has changed since the preview"
 #: apps/pwa_api/account_batch_routes.py
 msgid "Данные изменились. Обновите предпросмотр."
 msgstr "Data changed. Refresh the preview."
+
+#: apps/pwa_api/teacher_work_routes.py
+msgid "Данные изменились. Обновите страницу и повторите правку"
+msgstr "Data changed. Refresh the page and try editing again"
 
 #: apps/pwa_api/family_course_routes.py
 msgid "Данные курсов временно недоступны"
@@ -1406,6 +1414,10 @@ msgstr "Unknown filter"
 msgid "Некорректная страница"
 msgstr "Invalid page"
 
+#: apps/pwa_api/teacher_work_routes.py
+msgid "Некорректная ячейка отчёта"
+msgstr "Invalid report cell"
+
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Некорректное аналитическое событие"
 msgstr "Invalid analytics event"
@@ -1415,8 +1427,13 @@ msgid "Некорректный запрос"
 msgstr "Invalid request"
 
 #: apps/pwa_api/statistics_recalculation_routes.py
+#: apps/pwa_api/teacher_work_routes.py
 msgid "Некорректный запрос пересчёта"
 msgstr "Invalid recalculation request"
+
+#: apps/pwa_api/teacher_work_routes.py
+msgid "Некорректный запрос учёта работы"
+msgstr "Invalid work accounting request"
 
 #: apps/pwa_api/review_routes.py
 #: apps/pwa_api/student_results_routes.py
@@ -2081,6 +2098,10 @@ msgstr "Check the in-person class date and time"
 msgid "Проверьте даты сезона"
 msgstr "Check the season dates"
 
+#: apps/pwa_api/teacher_work_routes.py
+msgid "Проверьте диапазон занятий"
+msgstr "Check the lesson range"
+
 #: apps/pwa_api/support_routes.py
 msgid "Проверьте задачу, к которой относится вопрос"
 msgstr "Check the problem the question is about"
@@ -2331,6 +2352,10 @@ msgstr "Check the submissions in the work boundary"
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте посылку"
 msgstr "Check the submission"
+
+#: apps/pwa_api/teacher_work_routes.py
+msgid "Проверьте преподавателей, время, комментарий и выбранное событие"
+msgstr "Check the teachers, times, comment and selected event"
 
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте причину переноса"
@@ -3092,6 +3117,10 @@ msgstr "The statement for this lesson has not been published yet"
 #: apps/pwa_api/oral_window_routes.py
 msgid "Устный приём временно недоступен"
 msgstr "Oral submission is temporarily unavailable"
+
+#: apps/pwa_api/teacher_work_routes.py
+msgid "Учёт работы доступен только администратору"
+msgstr "Work accounting is available only to administrators"
 
 #: apps/pwa_api/news_routes.py
 msgid "Файл"

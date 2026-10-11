@@ -14,6 +14,7 @@ from db_methods.pwa.course_achievements import (
 )
 from db_methods.pwa.migrations import require_current_schema
 from models.pwa.course_analytics_runner import calculate_course
+from models.pwa.teacher_work_runner import calculate_course_work
 from models.pwa.course_achievements import calculate_initial_course_achievements
 from vmshpwa.scripts.runtime_guard import (
     PwaMaintenanceConfig,
@@ -51,6 +52,11 @@ def calculate_active_courses(
                 achievements=calculate_initial_course_achievements(facts),
             )
             connection.commit()
+        # Same timer/lock, separate last-good accounting snapshot: docs/teacher-work.md.
+        try:
+            calculate_course_work(connection, course_id)
+        except Exception:
+            logging.getLogger(__name__).exception('Teacher work failed course=%s',course_id)
         calculated.append((course_public_id, point_count))
         connection.commit()
 
