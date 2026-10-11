@@ -167,6 +167,61 @@ async def test_real_content_asset_toolchain_produces_safe_svg_and_bounded_webp(
 
 
 @pytest.mark.asyncio
+async def test_real_triangle_dissection_tikz_with_legacy_part_counter(
+    tmp_path: Path,
+) -> None:
+    """The gl-16 report exercises extraction and the actual isolated TeX toolchain."""
+    from helpers.pwa.content import scan_tikz_sources
+
+    source = (
+        REPOSITORY_ROOT / "pwa_tests/fixtures/content/triangle-dissection.tex"
+    ).read_text()
+    scan = scan_tikz_sources(source)
+    assert not scan.issues
+    assert len(scan.sources) == 1
+    converter = ContentAssetConverter(
+        _local_tools(), temp_root=tmp_path, timeout_seconds=30
+    )
+
+    converted = await converter.tikz_to_svg(scan.sources[0].source)
+
+    assert converted.media_type == "image/svg+xml"
+    assert converted.width > converted.height > 0
+    assert b"<path" in converted.data
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "declaration", ["newcommand", "providecommand", "renewcommand", "def"]
+)
+async def test_real_tikz_keeps_legacy_part_macro_definitions(
+    tmp_path: Path,
+    declaration: str,
+) -> None:
+    from helpers.pwa.content import scan_tikz_sources
+
+    definition = (
+        r"\def\пункт{X}"
+        if declaration == "def"
+        else "\\" + declaration + r"{\пункт}{X}"
+    )
+    scan = scan_tikz_sources(
+        definition + r"\begin{tikzpicture}\node {\пункт};\end{tikzpicture}"
+    )
+    assert not scan.issues
+    converter = ContentAssetConverter(
+        _local_tools(), temp_root=tmp_path, timeout_seconds=30
+    )
+
+    converted = await converter.tikz_to_svg(scan.sources[0].source)
+
+    assert converted.media_type == "image/svg+xml"
+    assert converted.width > 0 and converted.height > 0
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.asyncio
 async def test_real_raster_corpus_normalizes_jpeg_and_heic_without_metadata(
     tmp_path: Path,
 ) -> None:

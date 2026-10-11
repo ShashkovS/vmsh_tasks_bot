@@ -11,7 +11,7 @@ from helpers.pwa.content import (
     prepare_tikz_standalone_document,
     scan_tikz_sources,
 )
-from helpers.pwa.content.model import FigureNode
+from helpers.pwa.content.model import FigureNode, SubpartNode
 from models.pwa.content_asset_names import tikz_source_sha256
 from vmshpwa.scripts.content_tikz_corpus import build_report
 
@@ -78,7 +78,60 @@ def test_tikz_scan_supplies_legacy_part_label_used_by_real_lessons() -> None:
     assert r"\newcommand{\vmshPartLabel}" in source.source
     assert r"\пункт" not in source.source
     assert r"\vmshPartLabel" in source.source
-    assert r"\alph{vmshpart})" in source.source
+    assert r"\stepcounter{itemnum}" in source.source
+    assert r"\or а\or б" in source.source
+    assert "legacy-part-compat" in source.context_kinds
+
+
+@pytest.mark.parametrize("encoding", ["utf-8", "cp1251"])
+def test_triangle_dissection_keeps_tikz_labels_out_of_ast_subparts(
+    encoding: str,
+) -> None:
+    source = (
+        Path(__file__).parents[1] / "fixtures/content/triangle-dissection.tex"
+    ).read_text()
+    result = compile_latex(
+        source.encode(encoding), source_name="usl-26-p-sol.tex", role=ContentRole.HINT
+    )
+
+    assert not result.has_errors
+    assert len(result.ast.problems) == 1
+    problem = result.ast.problems[0]
+    for blocks in (problem.statement, problem.hint):
+        assert [
+            node.label for node in blocks if isinstance(node, SubpartNode)
+        ] == ["а", "б"]
+    figures = [node for node in problem.trailing if isinstance(node, FigureNode)]
+    assert len(figures) == 1
+    tikz = figures[0].tikz_source
+    assert tikz is not None
+    assert tikz.count(r"\newcounter{itemnum}") == 1
+    assert r"\setcounter{itemnum}{0}" in tikz
+    assert tikz.count(r"{\vmshPartLabel};") == 2
+    assert r"\пункт" not in tikz
+    assert r"\usepackage[utf8]{inputenc}" in prepare_tikz_standalone_document(tikz)
+    assert source.count(r"{\пункт}") == 2
+
+
+@pytest.mark.parametrize("with_labels", [True, False])
+def test_tikz_legacy_counter_preserves_explicit_declaration_and_reset(
+    with_labels: bool,
+) -> None:
+    label = r"\пункт" if with_labels else r"\arabic{itemnum}"
+    scan = scan_tikz_sources(
+        "\\newcounter % preserve an explicit declaration\n {itemnum}\n"
+        r"\setcounter{itemnum}{2}"
+        r"\begin{tikzpicture}\node {" + label + r"};"
+        r"\setcounter{itemnum}{0}\node {" + label + r"};\end{tikzpicture}"
+    )
+
+    assert not scan.issues
+    assert len(scan.sources) == 1
+    tikz = scan.sources[0].source
+    assert tikz.count(r"\newcounter") == 1
+    assert r"\setcounter{itemnum}{2}" in tikz
+    assert r"\setcounter{itemnum}{0}" in tikz
+    assert (r"\newcommand{\vmshPartLabel}" in tikz) == with_labels
 
 
 def test_tikz_scan_excludes_comment_environment_and_groups_layout_wrapper() -> None:

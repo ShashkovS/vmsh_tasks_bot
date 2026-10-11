@@ -1,5 +1,15 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+2026-10-10: сбой legacy `\пункт`/`itemnum` в TikZ из `gl-16` воспроизведён
+и исправлен локально. Полный исходник закреплён fixture; UTF-8/CP1251,
+структура пунктов и реальный TeX→SVG с русскими `а)`, `б)` проходят.
+Compiler generation 11 позволяет повторную загрузку. Финальные content/HTTP
+проверки: 202 PASS / 1 SKIP; format/types/lint/i18n PASS. Общий gate остановился
+на отсутствующих архивных fixtures; stale characterization обновлена и
+проверена. Production не обновлён.
+[Отчёт](../../../pwa_tests/reports/tikz-itemnum-20261010/README.md).
+[Причина, контракт и проверки](../../docs/latex-content-pipeline.md#legacy-пункты-внутри-tikz--10-октября-2026).
+
 2026-10-08: реализована [миграция публичных URL ВМШ](../../docs/public-media-domain-20261008.md)
 в [`0114`](../../../migrations/0115.vmsh_public_media_domain.py), включая frozen
 publication documents, SHA-256 и immutable guards. 40 целевых тестов — PASS.

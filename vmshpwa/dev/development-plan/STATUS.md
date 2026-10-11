@@ -1,5 +1,17 @@
 # Статус плана разработки
 
+## 2026-10-10 — Legacy-счётчик пунктов в TikZ
+
+Сбой `gl-16` воспроизведён: `No counter 'itemnum' defined`. Compatibility
+`\пункт` теперь использует legacy `itemnum`, сохраняет объявление/сброс и
+русские метки. Compiler generation 11 позволяет повторную загрузку того же
+файла. Финальные content/compiler/HTTP проверки: **202 PASS / 1 SKIP**.
+Format/types/lint/i18n PASS; общий Python 2880 PASS / 7 SKIP / 7 FAIL.
+Stale characterization обновлена и проверена, шесть отсутствующих архивных
+fixtures остаются ограничением полного gate. Production не обновлён.
+[Отчёт и SVG](../../../pwa_tests/reports/tikz-itemnum-20261010/README.md).
+[Контракт и проверки](../../docs/latex-content-pipeline.md#legacy-пункты-внутри-tikz--10-октября-2026).
+
 ## 2026-10-08 — Объединённый выпуск
 
 Оба production обновлены 8 октября до `d4bf4a30`: все четыре работы,

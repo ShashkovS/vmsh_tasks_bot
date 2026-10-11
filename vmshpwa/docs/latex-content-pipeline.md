@@ -110,6 +110,34 @@ TikZ компилируется контролируемым toolchain в отд
 рисунок переиспользуется, но одинаковое тело с разными macro/color context не
 может ошибочно получить чужой SVG.
 
+### Legacy-пункты внутри TikZ — 10 октября 2026
+
+Сбой из `gl-16` воспроизведён реальным TeX: standalone source переносил
+`\setcounter{itemnum}{0}`, но compatibility-макрос `\пункт` определял другой
+счётчик, поэтому сборка завершалась с `No counter 'itemnum' defined`.
+Теперь общий legacy `itemnum` создаётся при необходимости; явно объявленный
+счётчик и его сброс сохраняются. Метки внутри SVG используют русский алфавит
+старого конвертера и parser, а содержимое TikZ не создаёт подпункты AST.
+Заменяются только точные command tokens `\пункт`; исходный TeX не меняется.
+Compiler generation повышена до `vmsh-latex-compiler/11`, чтобы повторная
+загрузка того же файла создала новую revision после прежней неудачной сборки.
+
+Реализация: [`tikz.py`](../../helpers/pwa/content/tikz.py),
+[`compiler.py`](../../helpers/pwa/content/compiler.py). Полный пример:
+[`triangle-dissection.tex`](../../pwa_tests/fixtures/content/triangle-dissection.tex);
+проверки: [`test_content_tikz.py`](../../pwa_tests/domain/test_content_tikz.py) и
+реальный TeX→SVG в
+[`test_content_assets_smoke.py`](../../pwa_tests/integration/test_content_assets_smoke.py).
+Регрессии UTF-8/CP1251, двух пунктов условия/подсказки и явного объявления
+счётчика прошли. Реальный TeX→SVG даёт рисунок 609×235; извлечение текста PDF
+подтверждает `а)` и `б)`. Финальные content/compiler/HTTP проверки:
+**202 PASS / 1 SKIP**, включая реальные macro definitions и повторную загрузку.
+Общий gate `content` прошёл format/types/lint/i18n и 2880 Python tests,
+но остановился на отсутствующих локальных архивных fixtures и устаревшей
+characterization. Characterization обновлена и проверена; шесть архивных
+FAIL остаются ограничением полного gate. Production не обновлён.
+[Отчёт и рисунок](../../pwa_tests/reports/tikz-itemnum-20261010/README.md).
+
 Воспроизводимый статический gate
 [`content_tikz_corpus.py`](../scripts/content_tikz_corpus.py) проходит обе
 owner-local архивные иерархии по точным lesson-маскам, запускает production AST

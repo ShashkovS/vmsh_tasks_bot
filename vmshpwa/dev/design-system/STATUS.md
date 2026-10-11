@@ -1,5 +1,16 @@
 # Design-system status
 
+## 2026-10-10 — Legacy-подписи в TikZ
+
+Исправлена standalone-конвертация рисунка `gl-16` с `\пункт` и сбросом
+`itemnum`. Реальный SVG 609×235 осмотрен на белом фоне; оба треугольника и
+русские подписи `а)`, `б)` сохранены. Финальные content/HTTP проверки:
+202 PASS / 1 SKIP; format/types/lint/i18n PASS. Общий gate ограничен
+отсутствующими архивными fixtures; frontend/Storybook/E2E не начинались.
+Компоненты UI не меняются, production не обновлён.
+[Отчёт и рисунок](../../../pwa_tests/reports/tikz-itemnum-20261010/README.md).
+[Контракт и реализация](../../docs/latex-content-pipeline.md#legacy-пункты-внутри-tikz--10-октября-2026).
+
 ## 2026-10-08 — Объединённый выпуск
 
 Оба production обновлены 8 октября до `d4bf4a30`: все четыре работы,
