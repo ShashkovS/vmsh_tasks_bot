@@ -1,5 +1,12 @@
 # Design-system status
 
+## 2026-10-11 — Worktree cleanup и production audit
+
+UI/copy/stories не меняются. Сверка текущего выпуска обоих production PASS;
+14 завершённых checkout удалены после verified backups, основной и текущий
+checkout чистые. Owner UI acceptance не заявляется.
+[Record](../../../docs/deploy/worktree-cleanup-20261011.md).
+
 ## 2026-10-11 — Учёт преподавателей выпущен на оба портала
 
 Согласованная admin-only вкладка Staff/Участников выпущена в `33f6c950` на

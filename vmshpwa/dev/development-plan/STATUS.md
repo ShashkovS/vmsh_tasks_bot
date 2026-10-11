@@ -1,5 +1,16 @@
 # Статус плана разработки
 
+## 2026-10-11 — Финальная сверка worktree и обоих production
+
+По запросу владельца проверены все checkout/stash/feature commits: источники
+15 worktree и два stash сохранены в verified private archive/Git refs, 14
+завершённых checkout удалены, stale registration pruned. Основной и текущий
+checkout чистые; текущий primary checkout защищён Codex от удаления.
+Оба production на актуальной `vmshpwa`, schema current, maintenance off,
+services/timers active, queued/running teacher-work операций нет.
+Текущих невыпущенных feature commits нет; legacy PR/branches сохранены отдельно.
+[Audit и восстановление](../../../docs/deploy/worktree-cleanup-20261011.md).
+
 ## 2026-10-11 — Учёт преподавателей выпущен на оба портала
 
 PR #103 влит в production-ветку `vmshpwa`: `33f6c950`. Повторный merged release
