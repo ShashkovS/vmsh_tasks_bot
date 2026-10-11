@@ -65,8 +65,8 @@ The earlier automatic approval rejection was resolved by this explicit approval.
 Full production uploads stored 402 artifacts per release. Initial confirmation
 failed before publication because ASGI header names were lowercase and the client
 looked for `Link`, so it read only the first 100 files. Header normalization and
-a pagination regression now verify all 402. Eight focused production-build
-tests PASS, including the explicit one-time Telegram credential handoff.
+a pagination regression now verify all 402. Seven focused production-build tests PASS; unused credential-export code
+and its temporary test were removed after the local-on-prep bot was verified.
 
 
 ## Activated releases and live proof
@@ -113,3 +113,12 @@ Final SDK hardening disables backend frame locals in addition to PII/client repo
 and GlitchTip traces. Eleven focused build/SDK/digest checks PASS. The source-side
 budgets remain 100 diagnostics + 900 important frontend events per rolling 32 days
 per portal. This limits repeated software noise even on self-hosted storage.
+
+Final source `31a65eb866b172b05fcbe231da98dc804da39713` is deployed on both
+servers. [Final live receipt](../../../pwa_tests/reports/glitchtip-20261011/final-live-verification.json)
+confirms backend locals/PII/client reports disabled and zero trace sampling in
+both SDKs, plus 25 HTTP checks per portal. Existing verified frontend releases
+remain unchanged. TLF final before/after backups
+`20261011T103552.227047Z` / `20261011T103556.381239Z` PASS; schema, canonical
+configuration and NATS unchanged. Delivery is confirmed for all four Telegram
+project routes. Temporary public-DSN/options probes are removed after checking.

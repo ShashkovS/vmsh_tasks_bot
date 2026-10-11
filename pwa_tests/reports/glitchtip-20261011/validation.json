@@ -31,7 +31,7 @@
     "Unified gate stopped on known private-input failures. Infrastructure files were added during the first run; that summary is not a release receipt.",
     "Remaining frontend/Storybook/E2E phases ran unchanged source (matching before/after digest). Focused final Python configuration/maps/digest tests pass."
   ],
-  "production_build_followup_tests": 8,
+  "production_build_followup_tests": 7,
   "production_artifacts_verified": 402,
   "final_build_sdk_digest_tests": 11,
   "frontend_original_typescript_locations": "PASS",
@@ -41,5 +41,7 @@
   "frontend_releases": {
     "vmsh": "99552697e6d4-20261011094249",
     "tlf": "tlfprep-20261011-glitchtip-99552697e6d4-093337"
-  }
+  },
+  "final_deployed_source": "31a65eb866b172b05fcbe231da98dc804da39713",
+  "final_live_verification": "final-live-verification.json"
 }
