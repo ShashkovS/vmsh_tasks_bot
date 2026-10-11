@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { packTextOrigin, TextOriginHistory } from './text-origin'
 
 import {
   preparedImageSchema,
@@ -9,6 +10,8 @@ import {
   runtimeInstanceSchema,
   writtenPasteEvidenceSchema,
   type BrowserStorageNamespace,
+  type SolutionTextEdit,
+  type WrittenPasteEvidence,
 } from '@vmsh/contracts'
 
 import {
@@ -148,6 +151,16 @@ export const writtenSubmissionDraftSchema = z
   })
   .strict()
   .superRefine((draft, context) => {
+    if (
+      draft.pasteEvidence.textOrigin &&
+      draft.pasteEvidence.textOrigin.utf16Length !== draft.text.length
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Text origin length must match draft text',
+        path: ['pasteEvidence', 'textOrigin'],
+      })
+    }
     const [, , namespaceAudience] = draft.namespace.split(':')
     if (namespaceAudience !== draft.audience) {
       context.addIssue({
@@ -218,7 +231,16 @@ export interface WrittenSubmissionDraftStore {
   readonly namespace: BrowserStorageNamespace
   key(descriptor: WrittenDraftDescriptor): string
   load(descriptor: WrittenDraftDescriptor): Promise<WrittenSubmissionDraftLoadResult>
-  saveText(descriptor: WrittenDraftDescriptor, text: string): WrittenSubmissionDraft
+  saveText(
+    descriptor: WrittenDraftDescriptor,
+    text: string,
+    edit?: SolutionTextEdit,
+  ): WrittenSubmissionDraft
+  restoreText(
+    descriptor: WrittenDraftDescriptor,
+    text: string,
+    evidence: WrittenPasteEvidence,
+  ): WrittenSubmissionDraft
   recordPaste(descriptor: WrittenDraftDescriptor, characterCount: number): WrittenSubmissionDraft
   saveServerState(
     descriptor: WrittenDraftDescriptor,
@@ -332,7 +354,18 @@ function parseStoredDraft(
     removeRaw(storage, key)
     return null
   }
-  const parsed = writtenSubmissionDraftSchema.safeParse(payload)
+  let parsed = writtenSubmissionDraftSchema.safeParse(payload)
+  // docs/paste-evidence.md: damaged telemetry must not discard solution text.
+  if (!parsed.success && payload && typeof payload === 'object' && 'pasteEvidence' in payload) {
+    const evidence = payload.pasteEvidence
+    if (evidence && typeof evidence === 'object' && 'textOrigin' in evidence) {
+      parsed = writtenSubmissionDraftSchema.safeParse({
+        ...payload,
+        pasteEvidence: { ...evidence, textOrigin: null },
+      })
+      if (parsed.success) writeDraft(storage, key, parsed.data)
+    }
+  }
   if (
     !parsed.success ||
     parsed.data.namespace !== namespace ||
@@ -356,6 +389,7 @@ function emptyDraft(
     ...descriptor(value),
     text: '',
     pasteEvidence: {
+      textOrigin: packTextOrigin(new Uint8Array()),
       pasteCount: 0,
       pastedCharacterCount: 0,
       lastPastedAt: null,
@@ -449,6 +483,8 @@ export function createWrittenSubmissionDraftStore(
   const prefix = storagePrefix(namespace)
   const now = options.now ?? (() => new Date())
   const randomUUID = options.randomUUID ?? (() => globalThis.crypto.randomUUID())
+
+  const originHistories = new Map<string, TextOriginHistory>()
 
   function current(value: WrittenDraftDescriptor): WrittenSubmissionDraft {
     const parsedDescriptor = descriptor(value)
@@ -550,9 +586,37 @@ export function createWrittenSubmissionDraftStore(
       }
     },
 
-    saveText(value, text) {
+    saveText(value, text, edit) {
       const parsedDescriptor = descriptor(value)
-      return save(parsedDescriptor, withTimestamp(current(parsedDescriptor), now(), { text }))
+      const draft = current(parsedDescriptor)
+      const key = draftKey(namespace, parsedDescriptor)
+      const history = originHistories.get(key) ?? new TextOriginHistory()
+      originHistories.set(key, history)
+      const timestamp = now()
+      const pasted = edit?.pasted || edit?.inputType === 'insertFromPaste'
+      const inserted = edit ? text.length - draft.text.length + edit.end - edit.start : 0
+      const count = pasted ? Math.max(0, inserted) : 0
+      const pasteEvidence = {
+        ...draft.pasteEvidence,
+        textOrigin: history.edit(draft.text, text, draft.pasteEvidence.textOrigin ?? null, edit),
+        ...(count > 0
+          ? {
+              pasteCount: draft.pasteEvidence.pasteCount + 1,
+              pastedCharacterCount: draft.pasteEvidence.pastedCharacterCount + count,
+              lastPastedAt: timestamp.toISOString(),
+            }
+          : {}),
+      }
+      return save(parsedDescriptor, withTimestamp(draft, timestamp, { text, pasteEvidence }))
+    },
+
+    restoreText(value, text, pasteEvidence) {
+      const parsedDescriptor = descriptor(value)
+      originHistories.delete(draftKey(namespace, parsedDescriptor))
+      return save(
+        parsedDescriptor,
+        withTimestamp(current(parsedDescriptor), now(), { text, pasteEvidence }),
+      )
     },
 
     recordPaste(value, characterCount) {
@@ -566,6 +630,7 @@ export function createWrittenSubmissionDraftStore(
         parsedDescriptor,
         withTimestamp(draft, timestamp, {
           pasteEvidence: {
+            textOrigin: null,
             pasteCount: draft.pasteEvidence.pasteCount + 1,
             pastedCharacterCount: draft.pasteEvidence.pastedCharacterCount + characterCount,
             lastPastedAt: timestamp.toISOString(),

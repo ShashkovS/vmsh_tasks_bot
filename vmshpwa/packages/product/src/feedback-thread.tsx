@@ -21,6 +21,8 @@ export interface ThreadMessageView {
   channel?: ThreadChannel
   /** Concrete source retained when synonymous task branches are shown together. */
   origin?: { courseName: string; groupName: string; taskNumber: string }
+  /** Audience supplies optional message metadata; see docs/paste-evidence.md. */
+  metadata?: ReactNode
   body: ReactNode
   /** True for the viewer's own message (aligned to the trailing edge). */
   own?: boolean
@@ -102,6 +104,7 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
             {name}
           </span>
           <time className="font-num text-caption text-muted-foreground">{message.at}</time>
+          {message.metadata}
           {message.channel && message.channel !== 'staff' ? (
             <ChannelBadge channel={message.channel} />
           ) : null}

@@ -37,7 +37,7 @@ describe('composer keyboard submission', () => {
     expect(onSubmit).toHaveBeenCalledOnce()
   })
 
-  it('reports only the pasted character count', () => {
+  it('reports only the pasted character count after the actual insertion', () => {
     const onTextPaste = vi.fn()
     render(
       <SubmissionComposer
@@ -53,6 +53,11 @@ describe('composer keyboard submission', () => {
       clipboardData: { getData: () => 'Скопированный текст' },
     })
 
+    expect(onTextPaste).not.toHaveBeenCalled()
+    fireEvent.input(screen.getByLabelText('Ваше решение'), {
+      target: { value: 'Скопированный текст' },
+      inputType: 'insertFromPaste',
+    })
     expect(onTextPaste).toHaveBeenCalledOnce()
     expect(onTextPaste).toHaveBeenCalledWith('Скопированный текст'.length)
   })

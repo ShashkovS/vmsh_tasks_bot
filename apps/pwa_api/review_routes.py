@@ -23,6 +23,7 @@ from apps.pwa_api.student_results_routes import (
     legacy_attachment_response,
     legacy_solutions_root,
 )
+from models.pwa.paste_evidence import paste_estimate, project_detail
 from db_methods.pwa.review_telegram import read_review_telegram_delivery
 from db_methods.pwa.course_catalog import find_course
 from db_methods.pwa.course_runtime_settings import find_course_runtime_settings
@@ -538,6 +539,12 @@ def _reaction_inbox_payload(item: ReviewReactionInboxItem) -> dict[str, object]:
                 "entryVersion": entry.entry_version,
                 "entryKind": entry.entry_kind,
                 "text": entry.text,
+                "pasteEstimate": paste_estimate(
+                    text=entry.text, channel=entry.channel,
+                    author_kind=getattr(entry, "author_kind", "student"),
+                    text_origin_json=entry.text_origin_json,
+                    pasted_character_count=entry.pasted_character_count,
+                ),
                 "submittedAt": _timestamp(entry.server_received_at),
                 "attachments": [
                     {
@@ -579,6 +586,12 @@ def _lease_payload(lease: ReviewLease) -> dict[str, object]:
                                 "entryVersion": entry.entry_version,
                                 "entryKind": entry.entry_kind,
                                 "text": entry.text,
+                                "pasteEstimate": paste_estimate(
+                                    text=entry.text, channel=entry.channel,
+                                    author_kind=getattr(entry, "author_kind", "student"),
+                                    text_origin_json=entry.text_origin_json,
+                                    pasted_character_count=entry.pasted_character_count,
+                                ),
                                 "submittedAt": _timestamp(entry.server_received_at),
                                 "attachments": [
                                     {
@@ -596,6 +609,12 @@ def _lease_payload(lease: ReviewLease) -> dict[str, object]:
                                 "authorKind": entry.author_kind,
                                 "entryKind": entry.entry_kind,
                                 "text": entry.text,
+                                "pasteEstimate": paste_estimate(
+                                    text=entry.text, channel=entry.channel,
+                                    author_kind=getattr(entry, "author_kind", "student"),
+                                    text_origin_json=entry.text_origin_json,
+                                    pasted_character_count=entry.pasted_character_count,
+                                ),
                                 "submittedAt": _timestamp(entry.server_received_at),
                                 "attachments": [
                                     {
@@ -1415,7 +1434,7 @@ async def completed_review_history(request: web.Request) -> web.Response:
                     code="review_not_found",
                     message="Проверка не найдена или недоступна",
                 )
-            return {"schemaVersion": 1, "detail": detail}
+            return {"schemaVersion": 1, "detail": project_detail(detail)}
         options = history_options(
             connection,
             scope,
@@ -1596,7 +1615,7 @@ async def serial_review_projection(request):
                 c, scope, actor, request.query.get("review")
             )
             if detail is not None:
-                return {"schemaVersion": 1, "detail": detail}
+                return {"schemaVersion": 1, "detail": project_detail(detail)}
         else:
             result = review_series.condition(
                 c, scope, problem, request.query.get("entry")

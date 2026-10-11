@@ -827,6 +827,10 @@ msgstr "All rows completed"
 msgid "Все формулировки"
 msgstr "All statements"
 
+#: packages/product/src/paste-evidence-badge.tsx
+msgid "Вставлено ≈ {percentage}%"
+msgstr "Pasted ≈ {percentage}%"
+
 #: packages/product/src/problem-matching.tsx
 msgid "Выберите действие…"
 msgstr "Choose an action…"
@@ -2105,6 +2109,10 @@ msgstr "Sending…"
 msgid "Отправляется"
 msgstr "Sending"
 
+#: packages/product/src/paste-evidence-badge.tsx
+msgid "Оценка не учитывает последующие удаления."
+msgstr "This estimate does not account for subsequent deletions."
+
 #: packages/product/src/review-annotation-editor.tsx
 msgid "Очистить разметку"
 msgstr "Clear annotations"
@@ -2541,6 +2549,10 @@ msgstr "The child's previous room is no longer valid. A new one will appear afte
 #: packages/product/src/task-chat.tsx
 msgid "Преподаватель"
 msgstr "Teacher"
+
+#: packages/product/src/paste-evidence-badge.tsx
+msgid "Приблизительная доля текста, вставленного из буфера обмена. Не определяет использование ИИ."
+msgstr "Approximate share of text pasted from the clipboard. Does not identify AI use."
 
 #: packages/product/src/course-admin.tsx
 msgid "Приём до"

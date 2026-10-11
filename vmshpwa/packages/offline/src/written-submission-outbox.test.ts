@@ -610,3 +610,17 @@ describe('written-submission outbox', () => {
     expect(reopened.compatible?.photos).toHaveLength(1)
   })
 })
+
+it('freezes remaining paste provenance in the offline snapshot', async () => {
+  const { draft, outbox } = stores('paste-outbox')
+  draft.saveText(descriptor(), 'abcd', { start: 0, end: 0, pasted: true })
+  draft.saveText(descriptor(), 'abEF', { start: 2, end: 4 })
+  const queued = await outbox.enqueue(descriptor())
+  draft.saveText(descriptor(), 'typed')
+  expect(queued.payload.pasteEvidence.textOrigin).toEqual({
+    version: 1,
+    utf16Length: 4,
+    bits: 'Aw==',
+  })
+  expect(queued.payload.text).toBe('abEF')
+})

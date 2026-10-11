@@ -2439,3 +2439,7 @@ PASS: 2925 Python / 7 SKIP, 1090 frontend, 372 Storybook, все static gates.
 копии PASS; production не изменён.
 [Квитанции и снимки](../../../pwa_tests/reports/teacher-work-20261011/README.md).
 Новая design phase не начинается, визуальная приёмка владельцем не заявляется.
+
+## Доля вставленного текста — 11 октября 2026
+
+Реализация добавлена: [учёт и критерии проверки](../../docs/paste-evidence.md). Черновик/outbox, миграция 0119, замена и оба переноса сохраняют происхождение; плашки только в Staff. Проверено: 2965 Python, 1106 frontend, 376 Storybook, 6 Chromium E2E; format/types/lint/i18n/build прошли. [Receipt и скриншот](../../../pwa_tests/reports/paste-evidence-20261011/README.md). Шесть baseline-проверок private reference corpus исключены: локальные копии требуют разрешения владельца; повтор после нехватки временного диска продолжен штатными шагами. Production не изменялся.

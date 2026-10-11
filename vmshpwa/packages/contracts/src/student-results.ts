@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pasteEstimateSchema } from './paste-evidence'
 import { publicIdSchema as id } from './auth'
 import { webContentDocumentSchema } from './content'
 import { reviewAnnotationManifestSchema } from './review-queue'
@@ -48,6 +49,17 @@ export const studentResultEventSchema = z.object({
   authorKind: z.enum(['student', 'teacher', 'admin', 'ai', 'system']),
   source: z.string(),
   text: z.string().nullable(),
+  pasteEstimate: pasteEstimateSchema.nullable().optional(),
+  materialReason: z.string().nullable().optional(),
+  textMaterials: z
+    .array(
+      z.object({
+        entryId: id,
+        text: z.string().nullable(),
+        pasteEstimate: pasteEstimateSchema.nullable(),
+      }),
+    )
+    .optional(),
   verdict: z.number().int().nullable(),
   symbol: z.string(),
   revisionId: id.nullable(),

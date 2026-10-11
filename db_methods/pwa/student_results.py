@@ -273,7 +273,8 @@ def legacy_attachment(c, student_id, discussion_id):
 def reassigned_materials(c, reassignment_id):
     return rows(
         c,
-        """SELECT i.item_kind,e.text,a.public_id attachment_id,a.upload_status
+        """SELECT i.item_kind,e.public_id,e.text,e.author_kind,e.channel,e.text_origin_json,
+      e.pasted_character_count,a.public_id attachment_id,a.upload_status
       FROM submission_material_reassignment_items i JOIN submission_entries e ON e.id=i.source_entry_id
       LEFT JOIN submission_attachments a ON a.id=i.attachment_id
       WHERE i.reassignment_id=? ORDER BY i.ordinal""",

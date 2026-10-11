@@ -310,3 +310,7 @@ Proof: 30 связанных HTTP / 1053 frontend / 363 Storybook / 6 Chromium E
 PASS; типы/lint/i18n/build PASS, light/dark осмотрены. Полный fast gate остаётся
 красным на незатронутых Python fixtures/production-profile/clock failures.
 [Подробности и снимки](../../../pwa_tests/reports/review-conversation-20261008/README.md).
+
+## Доля вставленного текста — 11 октября 2026
+
+Готово локально; static/build и behavioral gates прошли (2965 Python, 1106 frontend, 376 Storybook, 6 Chromium E2E; шесть baseline corpus-проверок исключены): [учёт вставок, сохранение и плашки Staff](../../docs/paste-evidence.md). Новые данные учитывают удаления; прежние счётчики дают явно обозначенную грубую оценку.

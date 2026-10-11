@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import sqlite3
 import json
 import apps.pwa_api.review_routes as review_routes_module
 from dataclasses import dataclass
@@ -1720,3 +1721,43 @@ def test_annotation_coordinate_space_rejects_unknown_request_values(coordinate_s
     payload["marks"][0]["coordinateSpace"] = coordinate_space
     with pytest.raises(review_routes_module.PwaApiError):
         review_routes_module._complete_annotations([payload])
+
+
+async def test_paste_estimate_reaches_staff_lease_history_and_conversation(review_http):
+    # docs/paste-evidence.md: message-scoped, stable after review completion.
+    import json
+
+    fixture = review_http
+    origin = {"version": 1, "utf16Length": 4, "bits": "Aw=="}
+    fixture.factory.run_write(lambda c: c.execute(
+        "UPDATE submission_entries SET version=version+1,text='abEF',text_origin_json=?,paste_count=1,"
+        "pasted_character_count=4,last_pasted_at=? WHERE public_id=?",
+        (json.dumps(origin), _timestamp(), ENTRY_PUBLIC_IDS[0]),
+    ))
+    queue = fixture.queue_public_ids[0]
+    claimed = await fixture.client.post(f"/staff/api/v1/review/items/{queue}/claim",
+        json={"schemaVersion": 1}, cookies=_cookie(fixture, "full"), headers=_headers(unsafe=True))
+    assert claimed.status == 200, await claimed.text()
+    lease = (await claimed.json())["lease"]
+    branch = lease["evidenceBranches"][0]["thread"]
+    expected = {"percentage": 50, "method": "remaining_text"}
+    assert branch["entries"][0]["pasteEstimate"] == expected
+    assert branch["timelineEntries"][0]["pasteEstimate"] == expected
+    completed = await fixture.client.post(f"/staff/api/v1/review/items/{queue}/complete",
+        json=_complete_payload(lease), cookies=_cookie(fixture, "full"), headers=_headers(unsafe=True))
+    assert completed.status == 200, await completed.text()
+    review = (await completed.json())["review"]["reviewId"]
+    history = await fixture.client.get(f"/staff/api/v1/review/history?review={review}",
+        cookies=_cookie(fixture, "full"), headers=_headers())
+    assert history.status == 200, await history.text()
+    assert (await history.json())["detail"]["entries"][0]["pasteEstimate"] == expected
+    conversation = await fixture.client.get(f"/staff/api/v1/review/history/{review}/conversation",
+        cookies=_cookie(fixture, "full"), headers=_headers())
+    assert conversation.status == 200, await conversation.text()
+    events = (await conversation.json())["events"]
+    assert next(e for e in events if e["id"] == "entry:1")["pasteEstimate"] == expected
+    with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+        fixture.factory.run_write(lambda c: c.execute(
+            "UPDATE submission_entries SET version=version+1,text_origin_json=NULL WHERE public_id=?",
+            (ENTRY_PUBLIC_IDS[0],),
+        ))

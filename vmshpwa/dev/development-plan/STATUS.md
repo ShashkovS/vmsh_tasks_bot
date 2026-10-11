@@ -4319,3 +4319,7 @@ TLF disposable S3 probe прошёл, объект удалён; на VMSH та�
 из-за доступа SSH-пользователя к production-конфигурации. После rebase:
 38 backend tests и оба i18n — PASS. Параллельный fresh-problem-set исключён.
 [Release proof](../../../pwa_tests/reports/rich-file-attachments/production-proof.json).
+
+## Доля вставленного текста — 11 октября 2026
+
+Реализация добавлена: [учёт и критерии проверки](../../docs/paste-evidence.md). Черновик/outbox, миграция 0119, замена и оба переноса сохраняют происхождение; плашки только в Staff. Проверено: 2965 Python, 1106 frontend, 376 Storybook, 6 Chromium E2E; format/types/lint/i18n/build прошли. [Receipt и скриншот](../../../pwa_tests/reports/paste-evidence-20261011/README.md). Шесть baseline-проверок private reference corpus исключены: локальные копии требуют разрешения владельца; повтор после нехватки временного диска продолжен штатными шагами. Production не изменялся.

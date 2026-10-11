@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pasteEstimateSchema } from './paste-evidence'
 import { publicIdSchema } from './auth'
 import { webContentDocumentSchema } from './content'
 import { reviewAnnotationManifestSchema, writtenReviewVerdictSchema } from './review-queue'
@@ -88,6 +89,7 @@ export const reviewHistoryDetailResponseSchema = z
             .object({
               entryId: publicIdSchema,
               text: z.string().nullable(),
+              pasteEstimate: pasteEstimateSchema.nullable().optional(),
               attachments: z.array(
                 z
                   .object({

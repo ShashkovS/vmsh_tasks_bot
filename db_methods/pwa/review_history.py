@@ -234,7 +234,7 @@ def history_detail(connection, scope, reviewer_id, is_admin, review_id):
     )
     entries = []
     for entry in connection.execute(
-        "SELECT e.id, e.public_id, e.text, evidence.entry_version FROM submission_review_evidence_entries evidence "
+        "SELECT e.*, evidence.entry_version FROM submission_review_evidence_entries evidence "
         "JOIN submission_entries e ON e.id = evidence.entry_id WHERE evidence.review_id = ? "
         "ORDER BY evidence.server_received_at, e.id",
         (row["id"],),
@@ -250,6 +250,11 @@ def history_detail(connection, scope, reviewer_id, is_admin, review_id):
             {
                 "entryId": entry["public_id"],
                 "text": entry["text"],
+                "_pasteSource": {
+                    key: entry[key] for key in (
+                        "text", "channel", "author_kind", "text_origin_json", "pasted_character_count"
+                    )
+                },
                 "attachments": [
                     {
                         "attachmentId": a["attachment_id"],

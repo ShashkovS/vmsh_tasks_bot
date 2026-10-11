@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 6968d647bed82f5e5dabc08ff3f75060a8051ddb459ed06184dbefcb297fa880
+-- Product schema SHA-256: f0d262305c954586463d44cde2bf640971ec62fe819b21687de9144d26391e64
 
 CREATE TABLE achievement_definitions
 (
@@ -2244,7 +2244,7 @@ CREATE TABLE submission_entries
     locked_at            text,
     deleted_at           text, problem_revision_id integer references problem_revisions (id), paste_count integer not null default 0
         check (paste_count >= 0), pasted_character_count integer not null default 0
-        check (pasted_character_count >= 0), last_pasted_at text,
+        check (pasted_character_count >= 0), last_pasted_at text, text_origin_json TEXT CHECK (text_origin_json IS NULL OR (length(text_origin_json) <= 17000 AND json_valid(text_origin_json))),
     check ((idempotency_key is null) = (payload_sha256 is null)),
     check (channel_group_key is null or channel = 'telegram'),
     check (

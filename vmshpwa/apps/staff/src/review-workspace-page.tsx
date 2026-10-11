@@ -1,3 +1,4 @@
+import { PasteEvidenceBadge } from '@vmsh/product'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
@@ -492,6 +493,7 @@ function timelineMessages(
                 ? { name: t`Система` }
                 : {}),
           },
+          metadata: <PasteEvidenceBadge estimate={entry.pasteEstimate} />,
           at: formatMessageTime(entry.submittedAt),
           channel: 'pwa' as const,
           origin: {

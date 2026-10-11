@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 from db_methods.pwa import student_results as db
 from helpers.consts import VERDICT_DECODER
+from models.pwa.paste_evidence import estimate_row
 
 
 class ArchiveNotFound(Exception):
@@ -207,6 +208,7 @@ def event_payload(c, index, s, p, root, *, media_base=None):
     if kind == "entry":
         event.update(
             text=r["text"],
+            pasteEstimate=estimate_row(r),
             source=r["channel"],
             revisionId=r["revision_id"],
             author=author or None,
@@ -331,6 +333,12 @@ def event_payload(c, index, s, p, root, *, media_base=None):
             ),
         )
         materials = db.reassigned_materials(c, r["id"])
+        event["materialReason"] = r["reason"]
+        event["textMaterials"] = [
+            {"entryId": m["public_id"], "text": m["text"], "pasteEstimate": estimate_row(m)}
+            for m in materials if m["item_kind"] == "entry_text"
+        ]
+
         event["text"] = (
             "\n".join(
                 filter(

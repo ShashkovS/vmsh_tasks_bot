@@ -77,6 +77,10 @@
       {
         "id": "0118.teacher_work",
         "sha256": "bc8c8fe24c07bd235601105a191f9be6fc0ee4e89f8f2e603d143b330c0f119a"
+      },
+      {
+        "id": "0119.text_origin",
+        "sha256": "533097a611e54d09255a4a8d1c747cb8efdf282f8f1f00ed1cb43f14d6b20481"
       }
     ],
     "repository_head_status": {
@@ -22757,6 +22761,15 @@
             "name": "last_pasted_at",
             "not_null": false,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 22,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "text_origin_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -22972,8 +22985,8 @@
           }
         ],
         "name": "submission_entries",
-        "object_sha256": "84ca746e0be06f30575df443826dd2d22f829f8bf5d4deec60862908bf8c6737",
-        "sql": "CREATE TABLE submission_entries\n(\n    id                   integer primary key,\n    public_id text generated always as ('se-' || id) virtual,\n    thread_id            integer not null references submission_threads (id),\n    author_kind          text    not null\n        check (author_kind in ('student', 'teacher', 'admin', 'ai', 'system')),\n    author_user_id       integer references users (id),\n    channel              text    not null\n        check (channel in ('pwa', 'telegram', 'staff', 'system')),\n    channel_group_key    text\n        check (\n            channel_group_key is null\n            or (\n                length(channel_group_key) between 1 and 200\n                and channel_group_key = trim(channel_group_key)\n            )\n        ),\n    entry_kind           text    not null\n        check (entry_kind in ('text', 'submission', 'teacher_comment', 'ai_comment', 'system_event')),\n    state                text    not null\n        check (state in ('draft', 'uploading', 'submitted', 'deleted', 'locked')),\n    text                 text    check (text is null or length(text) <= 100000),\n    client_created_at    text,\n    server_received_at   text    not null,\n    idempotency_key      text\n        check (\n            idempotency_key is null\n            or (\n                length(idempotency_key) between 1 and 200\n                and idempotency_key = trim(idempotency_key)\n            )\n        ),\n    payload_sha256       text\n        check (\n            payload_sha256 is null\n            or (\n                length(payload_sha256) = 64\n                and payload_sha256 not glob '*[^0-9a-f]*'\n            )\n        ),\n    legacy_discussion_id integer unique references written_tasks_discussions (id),\n    version              integer not null default 1 check (version > 0),\n    locked_at            text,\n    deleted_at           text, problem_revision_id integer references problem_revisions (id), paste_count integer not null default 0\n        check (paste_count >= 0), pasted_character_count integer not null default 0\n        check (pasted_character_count >= 0), last_pasted_at text,\n    check ((idempotency_key is null) = (payload_sha256 is null)),\n    check (channel_group_key is null or channel = 'telegram'),\n    check (\n        (author_kind in ('student', 'teacher', 'admin') and author_user_id is not null)\n        or (author_kind in ('ai', 'system') and author_user_id is null)\n    ),\n    check (\n        (author_kind = 'student' and entry_kind in ('text', 'submission'))\n        or (author_kind in ('teacher', 'admin') and entry_kind = 'teacher_comment')\n        or (author_kind = 'ai' and entry_kind = 'ai_comment')\n        or (author_kind = 'system' and entry_kind = 'system_event')\n    ),\n    check (\n        (state = 'locked' and locked_at is not null and deleted_at is null)\n        or (state = 'deleted' and deleted_at is not null and locked_at is null)\n        or (state not in ('locked', 'deleted') and locked_at is null and deleted_at is null)\n    ),\n    check (locked_at is null or locked_at >= server_received_at),\n    check (deleted_at is null or deleted_at >= server_received_at)\n);",
+        "object_sha256": "108be7fc3fca9a6d534d253b8b083882157c6fb66e2cf55e16673b7b8ae40fc9",
+        "sql": "CREATE TABLE submission_entries\n(\n    id                   integer primary key,\n    public_id text generated always as ('se-' || id) virtual,\n    thread_id            integer not null references submission_threads (id),\n    author_kind          text    not null\n        check (author_kind in ('student', 'teacher', 'admin', 'ai', 'system')),\n    author_user_id       integer references users (id),\n    channel              text    not null\n        check (channel in ('pwa', 'telegram', 'staff', 'system')),\n    channel_group_key    text\n        check (\n            channel_group_key is null\n            or (\n                length(channel_group_key) between 1 and 200\n                and channel_group_key = trim(channel_group_key)\n            )\n        ),\n    entry_kind           text    not null\n        check (entry_kind in ('text', 'submission', 'teacher_comment', 'ai_comment', 'system_event')),\n    state                text    not null\n        check (state in ('draft', 'uploading', 'submitted', 'deleted', 'locked')),\n    text                 text    check (text is null or length(text) <= 100000),\n    client_created_at    text,\n    server_received_at   text    not null,\n    idempotency_key      text\n        check (\n            idempotency_key is null\n            or (\n                length(idempotency_key) between 1 and 200\n                and idempotency_key = trim(idempotency_key)\n            )\n        ),\n    payload_sha256       text\n        check (\n            payload_sha256 is null\n            or (\n                length(payload_sha256) = 64\n                and payload_sha256 not glob '*[^0-9a-f]*'\n            )\n        ),\n    legacy_discussion_id integer unique references written_tasks_discussions (id),\n    version              integer not null default 1 check (version > 0),\n    locked_at            text,\n    deleted_at           text, problem_revision_id integer references problem_revisions (id), paste_count integer not null default 0\n        check (paste_count >= 0), pasted_character_count integer not null default 0\n        check (pasted_character_count >= 0), last_pasted_at text, text_origin_json TEXT CHECK (text_origin_json IS NULL OR (length(text_origin_json) <= 17000 AND json_valid(text_origin_json))),\n    check ((idempotency_key is null) = (payload_sha256 is null)),\n    check (channel_group_key is null or channel = 'telegram'),\n    check (\n        (author_kind in ('student', 'teacher', 'admin') and author_user_id is not null)\n        or (author_kind in ('ai', 'system') and author_user_id is null)\n    ),\n    check (\n        (author_kind = 'student' and entry_kind in ('text', 'submission'))\n        or (author_kind in ('teacher', 'admin') and entry_kind = 'teacher_comment')\n        or (author_kind = 'ai' and entry_kind = 'ai_comment')\n        or (author_kind = 'system' and entry_kind = 'system_event')\n    ),\n    check (\n        (state = 'locked' and locked_at is not null and deleted_at is null)\n        or (state = 'deleted' and deleted_at is not null and locked_at is null)\n        or (state not in ('locked', 'deleted') and locked_at is null and deleted_at is null)\n    ),\n    check (locked_at is null or locked_at >= server_received_at),\n    check (deleted_at is null or deleted_at >= server_received_at)\n);",
         "table_name": "submission_entries",
         "type": "table"
       },
@@ -33554,8 +33567,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "490a5c25eccf2b8e2ea713f107e0bcebfc44f540e2c32c0f17dd4230d39b157f",
-    "sha256": "6968d647bed82f5e5dabc08ff3f75060a8051ddb459ed06184dbefcb297fa880"
+    "pragma_structure_sha256": "f7934a81cb33ffe0a361560a522004f0186ae9a8df3158b83c827231e6ff0f20",
+    "sha256": "f0d262305c954586463d44cde2bf640971ec62fe819b21687de9144d26391e64"
   },
   "source_kind": "repository-migration-head"
 }

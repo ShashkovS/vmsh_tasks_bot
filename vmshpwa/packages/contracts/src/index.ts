@@ -358,3 +358,5 @@ export * from './problem-release'
 export * from './image-uploads'
 export * from './sentry-admission'
 export * from './teacher-work'
+
+export * from './paste-evidence'

@@ -180,3 +180,7 @@ written/organizer drafts. Prepared proxy WebP is not encoded twice. Direct
 formats/dimensions/EXIF are browser-validated. Migration 0114, atomic receipts
 and pending-intent-only cleanup preserve existing locks/versions/offline semantics.
 Implementation and release/provider proof status live in the linked decision.
+
+## Доля вставленного текста — 11 октября 2026
+
+Готово локально; static/build и behavioral gates прошли (2965 Python, 1106 frontend, 376 Storybook, 6 Chromium E2E; шесть baseline corpus-проверок исключены): [учёт вставок, сохранение и плашки Staff](../../docs/paste-evidence.md). Новые данные учитывают удаления; прежние счётчики дают явно обозначенную грубую оценку.

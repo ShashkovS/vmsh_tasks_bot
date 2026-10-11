@@ -827,6 +827,10 @@ msgstr "Все строки заполнены"
 msgid "Все формулировки"
 msgstr "Все формулировки"
 
+#: packages/product/src/paste-evidence-badge.tsx
+msgid "Вставлено ≈ {percentage}%"
+msgstr "Вставлено ≈ {percentage}%"
+
 #: packages/product/src/problem-matching.tsx
 msgid "Выберите действие…"
 msgstr "Выберите действие…"
@@ -2105,6 +2109,10 @@ msgstr "Отправляем…"
 msgid "Отправляется"
 msgstr "Отправляется"
 
+#: packages/product/src/paste-evidence-badge.tsx
+msgid "Оценка не учитывает последующие удаления."
+msgstr "Оценка не учитывает последующие удаления."
+
 #: packages/product/src/review-annotation-editor.tsx
 msgid "Очистить разметку"
 msgstr "Очистить разметку"
@@ -2541,6 +2549,10 @@ msgstr "Прежняя аудитория ребёнка больше не де�
 #: packages/product/src/task-chat.tsx
 msgid "Преподаватель"
 msgstr "Преподаватель"
+
+#: packages/product/src/paste-evidence-badge.tsx
+msgid "Приблизительная доля текста, вставленного из буфера обмена. Не определяет использование ИИ."
+msgstr "Приблизительная доля текста, вставленного из буфера обмена. Не определяет использование ИИ."
 
 #: packages/product/src/course-admin.tsx
 msgid "Приём до"
