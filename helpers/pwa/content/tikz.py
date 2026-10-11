@@ -131,11 +131,63 @@ def _replace_chess_graphics(source: str) -> tuple[str, bool]:
 
 
 _LEGACY_PART_CONTEXT = r"""
-\newcounter{vmshpart}
 \newcommand{\vmshPartLabel}{%
-  \stepcounter{vmshpart}\textbf{\alph{vmshpart})}%
+  \stepcounter{itemnum}\textbf{%
+    \ifcase\value{itemnum}%
+    \or а\or б\or в\or г\or д\or е\or ж\or з\or и\or к\or л%
+    \or м\or н\or о\or п\or р\or с\or т\or у\or ф\or х\or ц%
+    \or ч\or ш\or щ\or ъ\or ы\or ь\or э\or ю\or я%
+    \else\arabic{itemnum}\fi)}%
 }
 """.strip()
+
+
+def _replace_legacy_part_labels(source: str) -> tuple[str, tuple[str, ...]]:
+    """Preserve itemnum/reset semantics; vmshpwa/docs/latex-content-pipeline.md."""
+    replacements: list[tuple[int, int]] = []
+    counter_used = False
+    counter_declared = False
+    label_declared = False
+    limits = ParserLimits()
+    cursor = 0
+    while cursor < len(source):
+        if source[cursor] == "%" and not is_escaped(source, cursor):
+            cursor = skip_comment(source, cursor, len(source))
+            continue
+        command = read_command(source, cursor, len(source))
+        cursor = command.end if command else cursor + 1
+        if command is None:
+            continue
+        if command.name == "пункт":
+            replacements.append((command.start, command.end))
+        elif command.name in _COMMAND_DECLARATIONS | _DEF_DECLARATIONS:
+            declared, _ = _declared_identity(source, command, len(source), limits)
+            if (
+                declared in {"пункт", "vmshPartLabel"}
+                and command.name != "renewcommand"
+            ):
+                label_declared = True
+        elif command.name in {
+            "newcounter",
+            "setcounter",
+            "addtocounter",
+            "stepcounter",
+            "refstepcounter",
+            "value",
+        }:
+            if _group_text(source, command.end, len(source), limits) == "itemnum":
+                counter_used = True
+                counter_declared |= command.name == "newcounter"
+    if not replacements and not counter_used:
+        return source, ()
+    for start, end in reversed(replacements):
+        source = source[:start] + r"\vmshPartLabel" + source[end:]
+    context: list[str] = []
+    if not counter_declared:
+        context.append(r"\newcounter{itemnum}")
+    if replacements and not label_declared:
+        context.append(_LEGACY_PART_CONTEXT)
+    return source, tuple(context)
 
 
 @dataclass(frozen=True)
@@ -477,17 +529,15 @@ def _compose_source(
         compat.append(_chess_piece_context().split(r"\newcommand{\ChessPiece}", 1)[0])
     if chess_graphics:
         compat.append(_chess_graphics_context())
-    # pdfLaTeX cannot reliably tokenize a UTF-8 Cyrillic control-sequence
-    # name in the isolated document.  Preserve the legacy semantics while
-    # compiling a portable ASCII command.  This transformation belongs only
-    # to the generated TikZ source; the uploaded LaTeX remains untouched.
-    if "\\пункт" in combined:
-        combined = combined.replace("\\пункт", "\\vmshPartLabel")
-        if "\\newcommand{\\vmshPartLabel}" not in combined:
-            compat.append(_LEGACY_PART_CONTEXT)
     if compat:
         combined = "\n".join((*compat, combined))
         kinds.insert(0, "chess-compat")
+    # ASCII control names avoid pdfLaTeX's UTF-8 tokenization problem. Counter
+    # compatibility and Russian labels follow docs/latex-content-pipeline.md.
+    combined, part_context = _replace_legacy_part_labels(combined)
+    if part_context:
+        combined = "\n".join((*part_context, combined))
+        kinds.insert(0, "legacy-part-compat")
     return combined.strip(), tuple(kinds)
 
 

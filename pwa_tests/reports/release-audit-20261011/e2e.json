@@ -1,0 +1,42 @@
+{
+  "modes": [
+    "content",
+    "offline-current"
+  ],
+  "browser": "chromium",
+  "seconds": 29.633,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 4.567,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/content-publication.spec.ts",
+        "e2e/offline-current-lessons.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 24.728,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 0.48,
+        "key": "3873769fe58b61949cdd1a464f936fa418cf2fe5df8a87facc6debbd62866e9b"
+      }
+    }
+  ]
+}

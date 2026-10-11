@@ -1,0 +1,12 @@
+{
+  "CORSRules": [
+    {
+      "ID": "tlfprep-offline-reading",
+      "AllowedOrigins": ["https://prep.leaders.tech"],
+      "AllowedMethods": ["GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}

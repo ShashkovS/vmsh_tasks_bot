@@ -1,0 +1,37 @@
+{
+  "applications": {
+    "family": {
+      "bytes": 5074959,
+      "files": 181,
+      "sha256": "76311e03ba100d7597106d7bc4cf339638e69f9f2b6b247129edf08f34017083"
+    },
+    "landing": {
+      "bytes": 1621077,
+      "files": 63,
+      "sha256": "f1f280e8c91a57b2165c4b2b9e83d31631e2886b6908a36ddc6e9995629e6b90"
+    },
+    "staff": {
+      "bytes": 6585117,
+      "files": 311,
+      "sha256": "c3e8c2b96ec222315954c1d25f7742580ee75f06fc0a9308799c509d725b03a7"
+    },
+    "student": {
+      "bytes": 5357392,
+      "files": 202,
+      "sha256": "4e781fa1d71e42ff50ab57dac7bc054653ac9a46956d9efefdb36a036985fbb9"
+    }
+  },
+  "build": {
+    "msw": false,
+    "profile": "production",
+    "prototype": false,
+    "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+    "releaseId": "623d1663d405-20261011130343",
+    "sentryConfigured": true,
+    "sentryOrigin": "https://glitch.leaders.tech"
+  },
+  "operation": "static-release-verify",
+  "recordedAt": "2026-10-11T13:08:23.256721Z",
+  "releaseId": "623d1663d405-20261011130343",
+  "schemaVersion": 1
+}

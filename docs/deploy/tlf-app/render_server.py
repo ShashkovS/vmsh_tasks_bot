@@ -150,6 +150,11 @@ def main():
         "include /etc/letsencrypt/options-ssl-nginx.conf;\n"
         "ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;\n",
     )
+    # Cross-backup/README.md: keep the owner's installed daily archive timers
+    # and never regenerate the retired eight-hour SQLite backup schedule.
+    if Path("/etc/vmsh-cross-backup/config.json").is_file():
+        print("Static release and host artifacts rendered; cross-backup schedule preserved")
+        return
     write(
         RUNTIME / "vmsh-backup.service",
         """[Unit]

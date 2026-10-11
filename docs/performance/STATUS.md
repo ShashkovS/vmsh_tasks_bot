@@ -1,5 +1,26 @@
 # Анализ производительности
 
+- 2026-10-08, Telegram alerts: проверены live Prometheus 3.13.2/Grafana 13.1.1.
+  Все 5 targets UP, Prometheus rules/Alertmanager отсутствуют. После 5 октября
+  CPU p95 19.6%, выше 80% нет непрерывных двух минут; RAM available 64%,
+  root disk available 22.5% (минимум 18.1%). p95 интерактивных routes повторно
+  достигает 3–4.5 с при невысоком CPU. Через административный API включены
+  [13 правил](../deploy/vmsh-alerting/rules.yml), [Grafana config](../deploy/vmsh-alerting/grafana.json)
+  и Telegram contact point `vmsh-telegram`:
+  CPU 80/95% 2m, web/monitoring 1m, 5xx 5+ и 5%/5m, p95 1s/3m при 30+ GET,
+  read/write queue 20/5 на 30s, loop 5 stalls/5m, RAM 10%/5m, OOM,
+  disk 15%/10m и 5%/2m. `promtool check/test` PASS; изолированная Grafana 13.1
+  приняла provisioning и API import, routing, проверку сохранённого секрета
+  и rollback при неудачной доставке. [Применение](../deploy/vmsh-alerting/apply_api.py)
+  создаёт paused rules, тестирует receiver и включает после успешного теста;
+  существующие policy tree/resources сохраняются, совпадения UID требуют проверки.
+  Production API test Telegram: SUCCESS; в 13:03 UTC все 13 rules enabled,
+  health=ok, state=inactive, interval=30s. Группировка instance/severity,
+  повторы critical 1h / warning 4h, resolved включены. Grafana и backend
+  не перезапускались. Секреты вне Git, исходный env защищён правами 600;
+  [helper](../deploy/vmsh-alerting/save_credentials.py) сохраняет новые credentials
+  через скрытый ввод. Agent SSH не имеет sudo; использован Grafana API. Полный
+  отказ VPS требует внешнего monitor: локальная Grafana не переживёт отказ хоста.
 
 ## 2026-10-11 — Переключение GlitchTip
 

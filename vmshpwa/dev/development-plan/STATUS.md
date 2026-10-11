@@ -1,5 +1,15 @@
 # Статус плана разработки
 
+## 2026-10-11 — Выпуск TikZ и сверка оставшихся работ
+
+Владелец разрешил выпуск на оба сайта и аудит всех доработок. Интегрированы
+TikZ compiler 11, потерянный в последующих сборках offline image reload,
+исходники уже работающих кросс-бекапов и мониторинга. GlitchTip `a926dc61`
+сохранён. Учёт преподавателей завершён отдельно в `bbbdd1a3` с миграцией 0118; ещё не выпущен.
+Gate PASS: 2944 Python, 1088 frontend, 364 Storybook, 4 Chromium;
+source unchanged. Оба production обновлены: `623d1663`, по 25 HTTP checks и реальный
+TikZ→SVG PASS. TLF vector fonts исправлены, preview осмотрен. [Состав и проверка](../../../docs/deploy/release-audit-20261011.md).
+
 ## 2026-10-11 — Переключение GlitchTip
 
 Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
@@ -45,7 +55,7 @@ Production не менялся.
 
 Реализована согласованная admin-only вкладка Staff/Участников: отчёт,
 письменные серии, Zoom-алиасы/интервалы, очные смены, ручные часы и TSV.
-Ветка `codex/teacher-work-accounting` синхронизирована с `a926dc61`;
+Ветка `codex/teacher-work-accounting` синхронизирована с `ec8788ff`;
 миграция 0118 сохраняет текущую 0117 мониторинга. Release gate PASS:
 2925 Python / 7 SKIP, 1090 frontend, 372 Storybook, types/lint/format/i18n/builds.
 Финальные 9 E2E PASS в Chromium/WebKit/Firefox, включая подтверждение смены,
@@ -53,7 +63,20 @@ Production не менялся.
 160 прежних таблиц без изменений, новых FK нарушений нет, расчёт около 1 с.
 [Правила и production test plan](../../docs/teacher-work.md),
 [proof и снимки](../../../pwa_tests/reports/teacher-work-20261011/README.md).
-Production не изменён; owner acceptance не заявляется.
+Владелец разрешил merge в production-ветку `vmshpwa` и выпуск на оба портала.
+Повторный gate объединённого кода и выпуск начаты; owner acceptance не заявляется.
+
+## 2026-10-10 — Legacy-счётчик пунктов в TikZ
+
+Сбой `gl-16` воспроизведён: `No counter 'itemnum' defined`. Compatibility
+`\пункт` теперь использует legacy `itemnum`, сохраняет объявление/сброс и
+русские метки. Compiler generation 11 позволяет повторную загрузку того же
+файла. Финальные content/compiler/HTTP проверки: **202 PASS / 1 SKIP**.
+Format/types/lint/i18n PASS; общий Python 2880 PASS / 7 SKIP / 7 FAIL.
+Stale characterization обновлена и проверена, шесть отсутствующих архивных
+fixtures остаются ограничением полного gate. Production не обновлён.
+[Отчёт и SVG](../../../pwa_tests/reports/tikz-itemnum-20261010/README.md).
+[Контракт и проверки](../../docs/latex-content-pipeline.md#legacy-пункты-внутри-tikz--10-октября-2026).
 
 ## 2026-10-08 — Объединённый выпуск
 

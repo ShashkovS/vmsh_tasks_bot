@@ -1,5 +1,17 @@
 # TLF Prep Clubs deployment
 
+## Backup update — 2026-10-10
+
+Encrypted daily main/analytics + host configuration/secrets archives are installed
+on prep; 14 daily days and 24 calendar months. Initial archive is 5 MB and its
+decryption/SQLite restore and config inventory passed. Cross-transfer awaits the
+owner's manual VMSH installation; retries preserve local archives. Legacy
+deployment snapshots stay separate, with their automatic deletion removed; the
+old eight-hour timer is retired after the first successful cross-transfer.
+See [cross-backup runbook](../cross-backup/README.md),
+[status](../cross-backup/STATUS.md) and
+[proof](../../../pwa_tests/reports/cross-backup-20261010/verification.json).
+
 Owner-approved 2026-09-30: current vmshpwa code plus TLF identity, empty database
 and first admin, two PWA workers, one separate Zoom archive worker, no automatic
 deployment. All signed Zoom events from every meeting must be durably archived
@@ -30,8 +42,21 @@ adapter. The legacy JSON `apps` value does not start the old Zoom parser.
 
 Webhook URL: https://prep.leaders.tech/zoomevents. Ordinary receipts go to
 `zoom_webhook_receipts`; CRC is handled separately. The owner's Zoom app still
-needs subscriptions pointed at this URL. Only synthetic deliveries are proven;
-queue/lesson interpretation is deferred.
+needed subscriptions pointed at this URL at initial rollout. Initial verification
+covered synthetic deliveries; queue/lesson interpretation is deferred.
+
+Current verification, 2026-10-08: `vmshzoom` is active and `/health` is ready.
+The public CRC response matches `zoom_secret_token` from the host's canonical
+`/web/vmsh_tasks_bot/vmsh_tasks_bot/creds_prod/vmsh_bot_config_prod.json`;
+unsigned events return 401. The archive had 1933 receipts, most recently
+2026-10-07 17:10:40 UTC. One signed `diagnostic.webhook_check` returned 200 and
+its exact bytes were verified in receipt 1934; the queue was unchanged. The
+VMSh endpoint `https://vmsh.shashkovs.ru/zoomevents` also passed a persistence
+probe, but uses the legacy participant/meeting filter and accepts unsigned
+events. Each host retains one diagnostic record. See the
+[production check report](../../../pwa_tests/reports/zoom-webhook-check-20261008.json)
+for evidence and the legacy signature follow-up. After replacing the TLF token,
+restart `vmshzoom.service` and validate the URL in Zoom.
 
 Shared NATS stays on `127.0.0.1:4222`, unchanged PID. The clone uses subject
 prefix `production_prep_hetzner`. NATS HTTP monitoring remains disabled because
@@ -39,7 +64,8 @@ enabling it requires restarting the shared service. Prometheus discovers PWA
 metrics on loopback 8000; aiohttp, nginx, node and prometheus targets are `up`.
 Public `/metrics` returns 404. [Monitoring runbook](../tlf-monitoring/README.md).
 
-`vmsh-backup.timer` runs at 00:15/08:15/16:15 Europe/Moscow, retains 14 days.
+At initial deployment, `vmsh-backup.timer` ran at 00:15/08:15/16:15 Europe/Moscow
+and retained 14 days (superseded by the backup update above).
 Online SQLite backups include the main DB/Zoom archive and independent analytics
 store. Each snapshot is copied to a temporary directory and verified using
 `PRAGMA integrity_check`; the rehearsal passed with all three synthetic receipts.
@@ -70,6 +96,57 @@ schema/first-admin regression checks.
 PostgreSQL/uploads volumes and backup timer. Portal releases/DSNs are unchanged;
 25 read-only prep HTTP checks passed after installation. PWA/Zoom/NATS main PIDs
 were preserved.
+
+### Public media CORS — 2026-10-01
+
+Student offline preparation fetches the public figures and validates their image
+type and byte budget before committing the saved copy. A public `200` without
+CORS headers therefore still prevents saving. The original `tlfprepimages` bucket
+had no CORS rules; the reported SVG reproduced `200` without
+`Access-Control-Allow-Origin` and an OPTIONS request returned `403`.
+
+[`public-media-cors.json`](public-media-cors.json) permits only GET/HEAD from
+`https://prep.leaders.tech`. Apply it to `tlfprepimages` through the S3 API at
+`https://nbg1.your-objectstorage.com`, using the host's existing storage credentials.
+Read and save the previous CORS configuration first. Preserve unrelated rules
+when adding or replacing the `tlfprep-offline-reading` rule: S3 PutBucketCors
+replaces the whole policy. Restore that saved policy to roll back, or use
+DeleteBucketCors if the original policy was absent. Allow for provider policy
+propagation and verify the public responses as well as the S3 policy readback.
+The bucket change needs no object ACL changes or service restart.
+
+[`prepare-offline-lessons.ts`](../../../vmshpwa/apps/student/src/prepare-offline-lessons.ts)
+also fetches missing images with `cache: 'reload'` so browser HTTP responses
+cached before CORS was enabled do not keep retries broken. Previously validated
+offline/staging image copies are still reused. This small Student frontend
+update was necessary for the existing live browser session to recover.
+
+The deployment [`s3_probe.py`](s3_probe.py) now sends the application Origin with
+its disposable object's public GET and requires a matching allow-origin header.
+[`test_tlf_public_media_cors.py`](../../../pwa_tests/test_tlf_public_media_cors.py)
+checks allowed, wildcard, absent and wrong-origin responses against local HTTP
+servers without credentials. See also
+[`offline-current-lessons.md`](../../../vmshpwa/docs/offline-current-lessons.md).
+
+Applied and verified: GET/HEAD/OPTIONS allow the application origin and return
+`Vary: Origin`; the reported SVG's 10,380 bytes and SHA256 are unchanged.
+Previous/applied policies and public response proofs are retained on the host
+under `deploy/reports/offline-cors/20261001T153532Z/`.
+
+Student static release `tlfprep-20261001-offline-cors` was built from deployed
+source `6e4b82f7` plus the tested cache-recovery patch, with frozen locks and
+production provenance. Its source, patch, build logs, activation record and
+previous static path are retained under `deploy/releases/tlfprep-20261001-offline-cors/`.
+Landing/Family/Staff bytes and backend source are unchanged. The static symlink
+can be restored to the recorded previous release to roll back the frontend.
+After activating the offered app update, the existing live Student page showed
+“Problems for all levels are saved”. All 25 read-only production HTTP checks pass.
+
+Local verification: 84 focused backend/storage tests, 10 focused offline frontend
+tests, Student TypeScript, changed-file ESLint/Prettier, Ruff and whitespace
+checks pass. The full frontend run passed 985/986 tests; the unchanged Staff test
+`staff-testing-page.test.tsx:94` expects Russian text while the alert is English,
+also reproduced when run alone. No unrelated Staff change was included.
 
 All paths below are relative to `/web/vmsh_tasks_bot`. Use SSH alias
 `tlfprepagent` and `sudo`; the service account has no interactive login.
@@ -384,3 +461,16 @@ Credentials/NATS PID unchanged, PWA/Zoom/analytics active, maintenance cleared.
 Compatible code rollback `43b7d2f` retains 0112; never restore an older DB after
 writers reopen or remove migration history. Record and safe proof:
 [production-proof.json](../../../pwa_tests/reports/content-recovery-20261004/production-proof.json).
+
+## Cyrillic TikZ vector fonts — 2026-10-11
+
+The legacy part-counter fix is deployed in compiler 11 on both portals.
+TLF's OS pdfLaTeX also requires `cm-super` for scalable T2A Cyrillic fonts;
+`texlive-lang-cyrillic` alone produced bitmap glyphs (`<image>`), rejected by
+the existing safe SVG filter. Install `cm-super` without unrelated upgrades,
+let the package triggers rebuild font maps, and verify the full
+[`triangle-dissection.tex`](../../../pwa_tests/fixtures/content/triangle-dissection.tex)
+with the actual service PATH. Font/config/maps/tool links and the installation
+record are under `/web/vmsh_tasks_bot/toolchains/cm-super/`.
+[Release evidence](../../../pwa_tests/reports/release-audit-20261011/README.md):
+609×235 SVG PASS on both; labels «а)»/«б)» visually verified, security policy unchanged.

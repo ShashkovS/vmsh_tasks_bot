@@ -1,5 +1,15 @@
 # Design-system status
 
+## 2026-10-11 — Выпуск TikZ и восстановление offline fix
+
+Разрешён выпуск на оба портала: TikZ подписи и исходный `cache: reload` для
+недостающих offline-картинок. UI/copy/stories не меняются. Уже выложенный
+GlitchTip и готовые operations artifacts сохраняются; отдельно завершённая страница
+учёта преподавателей пока вне выпуска. Gate PASS: 2944 Python, 1088 frontend, 364 Storybook, 4 Chromium;
+source unchanged. Оба production обновлены: `623d1663`, по 25 HTTP checks и реальный
+TikZ→SVG PASS. TLF vector fonts исправлены, preview осмотрен.
+[Аудит](../../../docs/deploy/release-audit-20261011.md).
+
 ## 2026-10-11 — Переключение GlitchTip
 
 Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
@@ -27,6 +37,17 @@ Storybook 363+1 и Chromium 12/12 PASS. Approved corpus восстановлен
 не зелёный. Metadata follow-up query family/stack: focused static checks,
 23 unit и 4 Chromium E2E PASS, все приложения пересобраны.
 Production не менялся.
+
+## 2026-10-10 — Legacy-подписи в TikZ
+
+Исправлена standalone-конвертация рисунка `gl-16` с `\пункт` и сбросом
+`itemnum`. Реальный SVG 609×235 осмотрен на белом фоне; оба треугольника и
+русские подписи `а)`, `б)` сохранены. Финальные content/HTTP проверки:
+202 PASS / 1 SKIP; format/types/lint/i18n PASS. Общий gate ограничен
+отсутствующими архивными fixtures; frontend/Storybook/E2E не начинались.
+Компоненты UI не меняются, production не обновлён.
+[Отчёт и рисунок](../../../pwa_tests/reports/tikz-itemnum-20261010/README.md).
+[Контракт и реализация](../../docs/latex-content-pipeline.md#legacy-пункты-внутри-tikz--10-октября-2026).
 
 ## 2026-10-08 — Объединённый выпуск
 
