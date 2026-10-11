@@ -32,6 +32,7 @@ from apps.pwa_api.statistics_recalculation_routes import (
     SERVICE as STATISTICS_RECALCULATION,
 )
 from apps.pwa_api.product_analytics_routes import product_analytics_routes
+from apps.pwa_api.sentry_admission_routes import sentry_admission_routes
 from apps.pwa_api.problem_import_routes import problem_import_routes
 from apps.pwa_api.problem_synonym_routes import (
     PWA_PROBLEM_SYNONYM_INVALIDATOR,
@@ -1946,6 +1947,7 @@ def configure(
         app.on_shutdown.append(close_statistics_recalculation)
         app.add_routes(whiteboard_export_routes)
         app.add_routes(product_analytics_routes)
+        app.add_routes(sentry_admission_routes)
         app.add_routes(problem_import_routes)
         app.add_routes(problem_synonym_routes)
         app.add_routes(course_routes)

@@ -42,9 +42,29 @@ const families = new Set([
   'news',
   'support',
   'statistics',
+  'offline',
+  'review',
+  'classrooms',
+])
+
+// Actual contracts keys, not IDs; docs/performance/2026-10-10-sentry-noise.md.
+const familyAliases = new Map([
+  ['home', 'courses'],
+  ['family-child-home', 'courses'],
+  ['family-child-courses', 'courses'],
+  ['banners', 'courses'],
+  ['group-banners', 'courses'],
+  ['course-progress', 'statistics'],
+  ['offline-lessons', 'offline'],
+  ['oral-windows', 'oral'],
+  ['oral-results', 'oral'],
+  ['review-queue', 'review'],
+  ['review-lease', 'review'],
+  ['review-reactions', 'review'],
 ])
 
 export function queryFamily(queryKey: readonly unknown[]): string {
   const family = queryKey[0] === 'principal' ? queryKey[3] : queryKey[0]
-  return typeof family === 'string' && families.has(family) ? family : 'other'
+  if (typeof family !== 'string') return 'other'
+  return familyAliases.get(family) ?? (families.has(family) ? family : 'other')
 }

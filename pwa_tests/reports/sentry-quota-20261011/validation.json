@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 1,
+  "revision": "3af9ffb0ac8a2831c247ef4345a0a456b28f9b92",
+  "finalSourceDigest": "a736dc06366859aa3a5628b5642f7a5414d628fe3da9ad91a9a6f0156a78ddde",
+  "applicationReleasesChanged": false,
+  "glitchtipDeployed": true,
+  "deploymentProof": "../../../docs/deploy/glitchtip/deployment-proof.json",
+  "overallGate": "not-green: six pre-existing Python tests need absent private _external_pipelines inputs",
+  "initialGate": {
+    "profile": "fast",
+    "modes": [
+      "submissions",
+      "redeploy",
+      "offline-current"
+    ],
+    "started_at": "2026-10-11T07:51:46.055528+00:00",
+    "steps": [
+      {
+        "name": "python-dependencies",
+        "command": [
+          "uv",
+          "sync",
+          "--frozen",
+          "--check"
+        ],
+        "seconds": 0.103,
+        "exit_code": 0
+      },
+      {
+        "name": "format",
+        "command": [
+          "pnpm",
+          "format:check"
+        ],
+        "seconds": 23.012,
+        "exit_code": 0
+      },
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "typecheck"
+        ],
+        "seconds": 57.51,
+        "exit_code": 0
+      },
+      {
+        "name": "lint-js",
+        "command": [
+          "pnpm",
+          "exec",
+          "eslint",
+          ".",
+          "--max-warnings=0",
+          "--cache",
+          "--cache-strategy",
+          "content",
+          "--cache-location",
+          "/Users/sergeyshashkov/.codex/worktrees/c996/vmsh_tasks_bot/.runtime/vmshpwa/checks/lint/2d472ae0ea71a3e534e40a518f4e49d417d86816a49e73c12dc7192efee02f54"
+        ],
+        "seconds": 106.1,
+        "exit_code": 1
+      }
+    ],
+    "exit_code": 1,
+    "revision": "3af9ffb0ac8a2831c247ef4345a0a456b28f9b92",
+    "source_digest": "bd25431b960ed16fb3ca9432050308880b1154ad58f0ca4f465f99ba0824cb1f",
+    "source_changed": false,
+    "seconds": 189.411
+  },
+  "resumedGate": {
+    "continued_from": "summary.json",
+    "source_digest": "229b50d5393eeb07105d53cbf27a68d630f4905de22f22d8fb40f020dd1c998c",
+    "steps": [
+      {
+        "name": "repaired-format",
+        "exit_code": 0,
+        "seconds": 0.277,
+        "command": [
+          "node",
+          "node_modules/prettier/bin/prettier.cjs",
+          "--check",
+          "packages/app-shell/src/sentry-admission.test.ts"
+        ]
+      },
+      {
+        "name": "repaired-types",
+        "exit_code": 0,
+        "seconds": 4.264,
+        "command": [
+          "pnpm",
+          "--filter",
+          "@vmsh/app-shell",
+          "typecheck"
+        ]
+      },
+      {
+        "name": "repaired-lint",
+        "exit_code": 0,
+        "seconds": 7.341,
+        "command": [
+          "pnpm",
+          "exec",
+          "eslint",
+          "--max-warnings=0",
+          "packages/app-shell/src/sentry-admission.test.ts"
+        ]
+      },
+      {
+        "name": "lint-css",
+        "exit_code": 0,
+        "seconds": 3.06,
+        "command": [
+          "pnpm",
+          "lint:css"
+        ]
+      },
+      {
+        "name": "i18n-frontend",
+        "exit_code": 0,
+        "seconds": 10.086,
+        "command": [
+          "pnpm",
+          "i18n:check"
+        ]
+      },
+      {
+        "name": "i18n-backend",
+        "exit_code": 0,
+        "seconds": 2.042,
+        "command": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "python",
+          "-m",
+          "vmshpwa.scripts.backend_i18n",
+          "check"
+        ]
+      },
+      {
+        "name": "python",
+        "exit_code": 1,
+        "seconds": 207.16,
+        "command": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "pytest",
+          "-q",
+          "-n4",
+          "--durations=20",
+          "tests",
+          "pwa_tests"
+        ]
+      },
+      {
+        "name": "frontend",
+        "exit_code": 0,
+        "seconds": 136.643,
+        "command": [
+          "pnpm",
+          "test"
+        ]
+      },
+      {
+        "name": "storybook",
+        "exit_code": 0,
+        "seconds": 152.317,
+        "command": [
+          "pnpm",
+          "storybook:test"
+        ]
+      },
+      {
+        "name": "e2e",
+        "exit_code": 0,
+        "seconds": 188.64,
+        "command": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "python",
+          "-m",
+          "vmshpwa.scripts.e2e_runner",
+          "--browser",
+          "chromium",
+          "--report",
+          "/Users/sergeyshashkov/.codex/worktrees/c996/vmsh_tasks_bot/.runtime/vmshpwa/checks/20261011T075146.054556Z/e2e.json",
+          "--mode",
+          "submissions",
+          "--mode",
+          "redeploy",
+          "--mode",
+          "offline-current"
+        ]
+      }
+    ],
+    "source_changed": true
+  },
+  "finalTargetedChecks": {
+    "source_digest": "5a72a4495e911cc9ece6b6c2c93119624cac618c5b9a170f6b7b5ee483fce817",
+    "steps": [
+      {
+        "name": "final-python",
+        "command": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "pytest",
+          "-q",
+          "pwa_tests/integration/test_sentry_budget.py",
+          "pwa_tests/integration/test_sentry_admission_http.py",
+          "pwa_tests/integration/test_runtime_schema.py",
+          "pwa_tests/test_schema_inventory.py"
+        ],
+        "exit_code": 0,
+        "seconds": 14.738
+      },
+      {
+        "name": "final-format",
+        "command": [
+          "node",
+          "node_modules/prettier/bin/prettier.cjs",
+          "--check",
+          "packages/app-shell/src/observability.ts",
+          "packages/app-shell/src/query-errors.test.ts",
+          "packages/app-shell/src/sentry-noise.ts"
+        ],
+        "exit_code": 0,
+        "seconds": 0.195
+      },
+      {
+        "name": "final-types",
+        "command": [
+          "pnpm",
+          "--filter",
+          "@vmsh/app-shell",
+          "typecheck"
+        ],
+        "exit_code": 0,
+        "seconds": 2.171
+      },
+      {
+        "name": "final-lint",
+        "command": [
+          "pnpm",
+          "exec",
+          "eslint",
+          "--max-warnings=0",
+          "packages/app-shell/src/observability.ts",
+          "packages/app-shell/src/query-errors.test.ts",
+          "packages/app-shell/src/sentry-noise.ts"
+        ],
+        "exit_code": 0,
+        "seconds": 3.574
+      }
+    ]
+  },
+  "pythonInitial": {
+    "passed": 2877,
+    "skipped": 8,
+    "failed": 19
+  },
+  "repairedFailures": 13,
+  "targetedPythonPassed": 43,
+  "remainingFailures": [
+    "FAILED pwa_tests/domain/test_lesson_statistics.py::test_one_iteration_matches_original_numpy_calc",
+    "FAILED pwa_tests/domain/test_problem_import.py::test_reference_workbook_remains_a_clean_characterization_input",
+    "FAILED pwa_tests/test_external_process_register.py::test_register_has_complete_typed_process_records_and_valid_links",
+    "FAILED pwa_tests/test_external_process_register.py::test_every_external_script_or_reference_artifact_is_classified_once",
+    "FAILED pwa_tests/test_external_process_register.py::test_runbooks_are_ordered_and_reference_registered_processes",
+    "FAILED pwa_tests/integration/test_phase8_news_mirror.py::test_historical_export_is_fully_partitioned_without_copying_content"
+  ],
+  "frontendPassed": 1088,
+  "storybookPassed": 364,
+  "chromiumPassed": 12,
+  "applicationBuildsPassed": 4,
+  "sourceChangesDuringRun": "WeakSet breadcrumb correction preceded frontend/Storybook/E2E; dict-row and head assertions fixed after Python, then all 43 relevant Python tests passed. Later additions are isolated GlitchTip deployment files and documentation.",
+  "productFilesSHA256": {
+    "apps/pwa_api/middleware.py": "8ec68917eb7da63da4a1171e952e50a94d9d48980952969b6150c30df50b8c48",
+    "apps/pwa_app.py": "86702c0686256939e3edfdfb7c8abdceb7ad374669e9e610ef440f039f30c019",
+    "helpers/prometheus_metrics.py": "4faab804f0a151a3bf9c7cb60486407d5590728aa897a54a6dece4e8cf40f08d",
+    "pwa_tests/fixtures/schema_inventory.v1.json": "1e71ccb1309acf49071ad69664e4c38fbdc65b1a7e500d3f31b3e78a4d0095da",
+    "pwa_tests/fixtures/schema_snapshot.sql": "81a256cdb3bbda93304fe46b0d778a50bed9ebd42b7ffe9b1ffbd1992f2fc88f",
+    "pwa_tests/integration/test_runtime_schema.py": "ebea31202a7f99f6a44bcf54c92778f587ed1e3f2a164b7c5f166ff09450b7a5",
+    "vmshpwa/packages/app-shell/src/observability.ts": "194b85b6fa4533a92390e71bd88cf967819cd9766bf9457ad7ae030518d39159",
+    "vmshpwa/packages/app-shell/src/query-errors.test.ts": "a10fdfc22441bb34dd9f04292913b7f807c479b37bd85c3a634d5cac504c4382",
+    "vmshpwa/packages/app-shell/src/query-errors.ts": "4c8fe7f6c306955b98d4d9f20844de7a26713808998d82cd3305707f2b03358f",
+    "vmshpwa/packages/contracts/src/index.ts": "444351308873e81f51fbd7b85cdf36bdc3e29b75947b9d5a34b4d8273450e9e2",
+    "apps/pwa_api/sentry_admission_routes.py": "f1b80b97a75f22a9345d2e276d6c1a5ac352ff8324f0e5e99591d2c1a2c52cbd",
+    "db_methods/pwa/sentry_budget.py": "b9b01c73125251d4bee3f4355c6e9b9175b7bb47195a2a9ede825b49078c1438",
+    "helpers/pwa/sentry_budget.py": "a635c4b0521c1b286c891ef1ee88ceffbed23392aa48fe9d859b8a4bce690d30",
+    "migrations/0117.frontend_sentry_budget.py": "92db5e097be75fefd0c282484f8ad524b318a4f7f577ee93bfa4b43f537bd9ca",
+    "pwa_tests/integration/test_sentry_admission_http.py": "3ad9a566e34330c5940daeb4523aca9f1201fea2c2081cdcb883cc2359cefc32",
+    "pwa_tests/integration/test_sentry_budget.py": "5679971b42cf568e1d5bc0d4f51f7d9fdae372e602dc01c8d90147c979592bc4",
+    "vmshpwa/packages/app-shell/src/observability-init.test.ts": "80af3074153dc8487b787ad6a2c14e9f63ac4059ca64dbd5cb913181419ef57e",
+    "vmshpwa/packages/app-shell/src/sentry-admission.test.ts": "afa15a0a499969a1f5a397f43b5ba321511425f1028f9a7d283571c23188f710",
+    "vmshpwa/packages/app-shell/src/sentry-admission.ts": "8b319d8a543aef10718372a33c3107a466396f13d374774d51d34906faa0680d",
+    "vmshpwa/packages/app-shell/src/sentry-noise.test.ts": "c656dfebd19cfca6f2e53e9fc2b0c80ef0061c8a049f00971e4a1965493a77e6",
+    "vmshpwa/packages/app-shell/src/sentry-noise.ts": "e63157e0510b170fb9fce303bad6b3afe4ddf0bd67dfd2f0e6b254c81e26e1e8",
+    "vmshpwa/packages/contracts/src/sentry-admission.test.ts": "e18cd0137cec956e72a7a22e270bae6eb3979f1b5d12d3e2ee49e29ee38d27a0",
+    "vmshpwa/packages/contracts/src/sentry-admission.ts": "1d189b6888eae7e801a16d4da22ebab551dc4ee9ab516771979776c1aa0d8ccf"
+  }
+}

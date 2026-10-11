@@ -38,6 +38,7 @@ def test_schema_bootstrap_is_explicit_and_repeatable(tmp_path):
         "0114.browser_image_uploads",
         "0115.vmsh_public_media_domain",
         "0116.notification_push_candidate_index",
+        "0117.frontend_sentry_budget",
     ]
     assert inspect_migration_state(database_path).is_current
     with sqlite3.connect(database_path) as connection:
@@ -83,6 +84,7 @@ def test_previous_current_schema_adopts_baseline_and_applies_pending_migration(
         "0114.browser_image_uploads",
         "0115.vmsh_public_media_domain",
         "0116.notification_push_candidate_index",
+        "0117.frontend_sentry_budget",
     )
     with pytest.raises(SchemaMismatchError, match="0112"):
         PwaConnectionFactory(path)
@@ -99,7 +101,7 @@ def test_previous_current_schema_adopts_baseline_and_applies_pending_migration(
         )
         assert (
             connection.execute("SELECT count(*) FROM _yoyo_migration").fetchone()[0]
-            == 7
+            == 8
         )
         assert (
             connection.execute(

@@ -65,6 +65,12 @@ schema/first-admin regression checks.
 
 ## Host layout and operation
 
+2026-10-11: [GlitchTip](../glitchtip/README.md) is installed separately under
+`/opt/glitchtip` at https://glitch.leaders.tech, loopback 8011, with its own
+PostgreSQL/uploads volumes and backup timer. Portal releases/DSNs are unchanged;
+25 read-only prep HTTP checks passed after installation. PWA/Zoom/NATS main PIDs
+were preserved.
+
 All paths below are relative to `/web/vmsh_tasks_bot`. Use SSH alias
 `tlfprepagent` and `sudo`; the service account has no interactive login.
 

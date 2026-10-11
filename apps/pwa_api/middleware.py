@@ -45,6 +45,8 @@ _PUBLIC_ROUTES = frozenset(
         ("POST", "auth/login"),
         ("POST", "auth/refresh"),
         ("POST", "auth/logout"),
+        # Content-free, same-origin telemetry admission; 2026-10-11 quota decision.
+        ("POST", "observability/sentry-admission"),
     }
 )
 _AUTH_JSON_MUTATIONS = frozenset(

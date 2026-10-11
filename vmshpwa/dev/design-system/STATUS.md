@@ -1,5 +1,26 @@
 # Design-system status
 
+## 2026-10-11 — Квота frontend Sentry
+
+[Усиление telemetry](../../../docs/performance/2026-10-11-sentry-quota.md)
+реализовано; UI/copy/stories не меняются, новая design phase не начинается.
+Static checks, 1088 frontend, 364 Storybook, четыре builds, 12 Chromium и
+43 targeted quota/HTTP/schema tests PASS. Общий gate не зелёный из-за 6
+отсутствующих private inputs. Код порталов не выпущен.
+[GlitchTip service](../../../docs/deploy/glitchtip/README.md) отдельно развёрнут
+на https://glitch.leaders.tech; DSN приложений ещё прежние.
+
+## 2026-10-10 — Шум frontend Sentry
+
+Реализован correction общего app-shell observability; product UI/copy/stories
+не меняются. [Scope и gate](../../../docs/performance/2026-10-10-sentry-noise.md).
+Новая design phase не начинается; все static checks и 1078 frontend PASS.
+Storybook 363+1 и Chromium 12/12 PASS. Approved corpus восстановлен по SHA,
+остаются 6 Python failures отсутствующего `_external_pipelines`; общий gate
+не зелёный. Metadata follow-up query family/stack: focused static checks,
+23 unit и 4 Chromium E2E PASS, все приложения пересобраны.
+Production не менялся.
+
 ## 2026-10-08 — Объединённый выпуск
 
 Оба production обновлены 8 октября до `d4bf4a30`: все четыре работы,

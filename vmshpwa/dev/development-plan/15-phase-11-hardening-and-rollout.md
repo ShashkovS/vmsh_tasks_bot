@@ -59,6 +59,14 @@ optional staging получает отдельный утверждённый FQ
 
 - Sentry frontend/backend releases share revision; environment and audience tags.
 - Error sampling/redaction removes cookies, tokens, answers/photos/comments and push secrets.
+- Frontend noise correction: expected status/code filters, recovery breadcrumbs,
+  semantic grouping and separate client budgets in app-shell; see
+  [2026-10-10 decision and verification](../../../docs/performance/2026-10-10-sentry-noise.md).
+- Free-plan quota: durable frontend admission (migration 0117) and safe SDK
+  filtering; [2026-10-11 decision](../../../docs/performance/2026-10-11-sentry-quota.md).
+- Self-hosted alternative: [GlitchTip deployment and proof](../../../docs/deploy/glitchtip/README.md)
+  at glitch.leaders.tech (2026-10-11), separate VMSH/TLF organizations, 30-day
+  retention, verified ingestion/restart/restore. Portal DSN migration is pending.
 - Structured logs: request ID, route template, status, latency, principal type/pseudonymous ID, DB busy/retry, WS count, outbox lag.
 - Metrics/alerts: login failures, HTTP 5xx, SQLite busy, queue claim conflicts, media failures, delivery backlog, WS reconnect, SW release adoption.
 - Audit covers writes from data model, not every read.
