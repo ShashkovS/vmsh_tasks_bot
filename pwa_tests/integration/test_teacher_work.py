@@ -207,7 +207,7 @@ def test_roster_parser_keeps_notes_initials_and_time_groups():
     assert preview["rows"][1]["name"] == "Ёж И"
     assert preview["preliminary"]
     assert "308 -- резерв." in preview["notes"]
-    assert all(r["teacherId"] is None for r in preview["rows"])
+    assert all(r["teacherId"] == "u-1" and r["matchKind"] == "exact" for r in preview["rows"])
 
 
 @pytest.mark.parametrize("heading", ["14 сентября", "21 сентября", "28 сентября"])
@@ -246,6 +246,12 @@ async def request(fixture, path, body=None, persona="admin"):
     )
 
 
+async def recalculate_and_wait(fixture, key):
+    response = await request(fixture, "/recalculate", {"courseId": "c-1", "idempotencyKey": key})
+    assert response.status in (200, 202), await response.text()
+    return await wait_run(fixture)
+
+
 async def wait_run(fixture):
     for _ in range(100):
         response = await request(fixture, "/recalculate?courseId=c-1")
@@ -280,7 +286,7 @@ async def test_admin_http_settings_alias_replay_permissions_and_atomic_snapshot(
     assert response.status == 200, await response.text()
     assert (await request(f, "/command", body)).status == 200
     assert (await request(f, "/command", {**body, "normHours": 3})).status == 409
-    await wait_run(f)
+    assert (await (await request(f, "/recalculate?courseId=c-1")).json())["operation"] is None
     response = await request(
         f,
         "/command",
@@ -295,7 +301,10 @@ async def test_admin_http_settings_alias_replay_permissions_and_atomic_snapshot(
         },
     )
     assert response.status == 200, await response.text()
-    await wait_run(f)
+    receipt = await response.json()
+    assert receipt["alias"] == {"normalized_name": "принимающий мария", "teacher_id": TEACHER_ID, "state": "mapped", "version": 1}
+    assert (await (await request(f, "/recalculate?courseId=c-1")).json())["operation"] is None
+    await recalculate_and_wait(f, "inputs-explicit")
     response = await request(f, "/report?courseId=c-1")
     report = await response.json()
     assert report["run"]["state"] == "completed"
@@ -353,7 +362,7 @@ async def test_confirm_merge_norm_snapshot_override_stale(classroom_http):
     }
     response = await request(f, "/command", body)
     assert response.status == 200, await response.text()
-    await wait_run(f)
+    await recalculate_and_wait(f, "confirmed-input-0")
     shifts = f.factory.run_read(
         lambda c: [dict(r) for r in c.execute("SELECT * FROM teacher_work_shifts")]
     )
@@ -393,7 +402,7 @@ async def test_confirm_merge_norm_snapshot_override_stale(classroom_http):
         },
     )
     assert response.status == 200
-    await wait_run(f)
+    await recalculate_and_wait(f, "confirmed-input-1")
     assert (
         f.factory.run_read(
             lambda c: c.execute(
@@ -408,7 +417,7 @@ async def test_confirm_merge_norm_snapshot_override_stale(classroom_http):
         {**body, "rows": [row], "expectedVersion": 1, "idempotencyKey": "roster2"},
     )
     assert response.status == 200
-    await wait_run(f)
+    await recalculate_and_wait(f, "confirmed-input-2")
     response = await request(f, "/details?courseId=c-1&cellKey=" + cell["key"])
     detail = await response.json()
     assert detail["override"]["hours"] == 2

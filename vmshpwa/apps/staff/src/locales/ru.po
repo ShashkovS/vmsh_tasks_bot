@@ -1405,14 +1405,30 @@ msgstr "Выбранная группа — нет работ"
 msgid "Выбранный курс — нет работ"
 msgstr "Выбранный курс — нет работ"
 
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Выбрано вручную"
+msgstr "Выбрано вручную"
+
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Выбрано занятие"
 msgstr "Выбрано занятие"
+
+#. placeholder {0}: preview.rows.filter((r) => r.teacherId).length
+#. placeholder {1}: preview.rows.length
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Выбрано: {0} из {1}."
+msgstr "Выбрано: {0} из {1}."
 
 #. placeholder {0}: selectedCandidates.length
 #: apps/staff/src/student-account-batch-panel.tsx
 msgid "Выбрано: {0}. Выбор хранится на этом устройстве до создания аккаунтов или явной отмены."
 msgstr "Выбрано: {0}. Выбор хранится на этом устройстве до создания аккаунтов или явной отмены."
+
+#. placeholder {0}: candidate.label
+#. placeholder {1}: row.name
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Выбрать {0} для {1}"
+msgstr "Выбрать {0} для {1}"
 
 #. placeholder {0}: matches.length
 #: apps/staff/src/student-account-batch-panel.tsx
@@ -2365,6 +2381,10 @@ msgstr "Изменения и ошибки"
 msgid "Изменения применены"
 msgstr "Изменения применены"
 
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Изменения сохраняются сразу. Отчёт обновится по кнопке пересчёта или по расписанию."
+msgstr "Изменения сохраняются сразу. Отчёт обновится по кнопке пересчёта или по расписанию."
+
 #: apps/staff/src/staff-audit-page.tsx
 msgid "Изменено задач"
 msgstr "Изменено задач"
@@ -2472,6 +2492,15 @@ msgstr "Искать только по фамилии"
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Исключить"
 msgstr "Исключить"
+
+#. placeholder {0}: row.name
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Исключить {0}"
+msgstr "Исключить {0}"
+
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Исключить все без совпадений ({unmatchedCount})"
+msgstr "Исключить все без совпадений ({unmatchedCount})"
 
 #: apps/staff/src/staff-news-page.tsx
 msgid "Исправить опубликованную новость"
@@ -3226,6 +3255,10 @@ msgstr "Не закрывайте страницу и скопируйте ко�
 msgid "Не использовать"
 msgstr "Не использовать"
 
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Не найден — выберите или исключите"
+msgstr "Не найден — выберите или исключите"
+
 #: apps/staff/src/staff-worksheet-preview.tsx
 msgid "Не начата"
 msgstr "Не начата"
@@ -3572,6 +3605,10 @@ msgstr "Неподтверждённых совпадений на этом за
 #: apps/staff/src/family-account-manager.tsx
 msgid "Несекретный черновик формы не сохраняется в этом браузере."
 msgstr "Несекретный черновик формы не сохраняется в этом браузере."
+
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Несколько совпадений — выберите преподавателя"
+msgstr "Несколько совпадений — выберите преподавателя"
 
 #: apps/staff/src/content-page.tsx
 msgid "Несовместимый предпросмотр материала"
@@ -3977,6 +4014,10 @@ msgstr "одна из групп находится в архиве"
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "одна из групп не найдена в этом курсе"
 msgstr "одна из групп не найдена в этом курсе"
+
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Однозначные соответствия заполнены. Подтвердите состав после проверки."
+msgstr "Однозначные соответствия заполнены. Подтвердите состав после проверки."
 
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Ожидает"
@@ -5238,6 +5279,10 @@ msgstr "Похвалить ученика"
 msgid "Похоже на ИИ"
 msgstr "Похоже на ИИ"
 
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Похожее имя — проверьте подсказку"
+msgstr "Похожее имя — проверьте подсказку"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Правильный ответ"
 msgstr "Правильный ответ"
@@ -5886,6 +5931,10 @@ msgstr "Разрывы и оценки Zoom"
 #: apps/staff/src/teacher-work-page.tsx
 msgid "РазСум"
 msgstr "РазСум"
+
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Ранее подтверждено"
+msgstr "Ранее подтверждено"
 
 #: apps/staff/src/whiteboard-export-page.tsx
 msgid "Распакуйте архив и перетащите PNG на доску Zoom Whiteboard."
@@ -7185,6 +7234,10 @@ msgstr "Только родитель"
 msgid "Только родителям"
 msgstr "Только родителям"
 
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Только требуют выбора"
+msgstr "Только требуют выбора"
+
 #: apps/staff/src/staff-group-banners-page.tsx
 msgid "Только школьник"
 msgstr "Только школьник"
@@ -7197,6 +7250,10 @@ msgstr "Только школьнику"
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Точная причина и имена рисунков показаны рядом с каждым файлом. По кнопке «Открыть исправление» доступны сохранённая версия, рисунки и повторная сборка. TikZ обрабатывается автоматически; заново создавать занятие не нужно."
 msgstr "Точная причина и имена рисунков показаны рядом с каждым файлом. По кнопке «Открыть исправление» доступны сохранённая версия, рисунки и повторная сборка. TikZ обрабатывается автоматически; заново создавать занятие не нужно."
+
+#: apps/staff/src/teacher-work-page.tsx
+msgid "Точное соответствие"
+msgstr "Точное соответствие"
 
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Требует внимания"

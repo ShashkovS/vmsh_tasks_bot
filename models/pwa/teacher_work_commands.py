@@ -286,6 +286,11 @@ def execute_command(connection, course_id, actor, body):
                 (course_id, entity),
             ).fetchone()
         )
+        # docs/teacher-work.md: canonical receipt updates all equivalent signatures.
+        after["alias"] = {
+            key: state[key]
+            for key in ("normalized_name", "teacher_id", "state", "version")
+        }
     elif action == "override":
         row = connection.execute(
             "SELECT * FROM teacher_work_overrides WHERE course_id=? AND cell_key=?",

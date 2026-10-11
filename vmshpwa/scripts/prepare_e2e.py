@@ -34,6 +34,7 @@ SEEDS = (
     ("seed_e2e_family_progress", "seed_e2e_family_progress"),
     ("seed_e2e_oral", "seed_e2e_oral"),
     ("seed_e2e_live_marking", "seed"),
+    ("seed_e2e_teacher_work", "seed"),
     ("seed_e2e_news", "seed_e2e_news"),
     ("seed_e2e_statistics", "seed_e2e_statistics"),
     ("seed_e2e_student_results", "seed"),

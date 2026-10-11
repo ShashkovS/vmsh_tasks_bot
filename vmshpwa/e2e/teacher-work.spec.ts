@@ -101,6 +101,8 @@ test('Admin confirms school work and a written override survives recalculation',
   await expect(page.getByLabel('Преподаватель для Учитель')).toHaveValue(`u-${fixtureId}`)
   await page.getByRole('tab', { name: 'Отчёт', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Пересчитать учёт', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'Пересчитать учёт', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Пересчитать учёт', exact: true })).toBeEnabled()
   const writtenCell = page.getByRole('button', {
     name: new RegExp(`Преподаватель Тестовый, занятие ${writtenLesson}, ✏,`),
   })
@@ -120,4 +122,93 @@ test('Admin confirms school work and a written override survives recalculation',
   await page.getByRole('button', { name: 'Вернуть расчётное время' }).click()
   expect((await reset).status()).toBe(200)
   await expect(page.getByRole('button', { name: 'Вернуть расчётное время' })).toHaveCount(0)
+})
+
+test('Zoom saves locally without calculation; school import only asks for ambiguous names', async ({
+  page,
+}, info) => {
+  const surnames: Record<string, [string, string]> = {
+    chromium: ['Ероховец', 'u-29101'],
+    webkit: ['Зиненко', 'u-29102'],
+    firefox: ['Фетисова', 'u-29103'],
+  }
+  const [surname, teacherId] = surnames[info.project.name]!
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.admin,
+    '/staff/users?tab=work&workSection=zoom&course=c-1',
+  )
+  const select = page.getByLabel(`Преподаватель для Принимающий ${surname}`, { exact: true })
+  await select.selectOption(teacherId)
+  const before = (await (
+    await page.request.get('/staff/api/v1/teacher-work/recalculate?courseId=c-1')
+  ).json()) as { operation: unknown }
+  const calls: string[] = []
+  page.on('request', (r) => {
+    if (r.url().includes('/teacher-work/')) calls.push(`${r.method()} ${new URL(r.url()).pathname}`)
+  })
+  const saved = page.waitForResponse(
+    (r) => r.url().endsWith('/teacher-work/command') && r.request().method() === 'POST',
+  )
+  const started = Date.now()
+  await select
+    .locator('xpath=ancestor::tr')
+    .getByRole('button', { name: 'Сопоставить', exact: true })
+    .click()
+  expect((await saved).status()).toBe(200)
+  await expect(select).toHaveCount(0)
+  await expect(
+    page.getByLabel(`Преподаватель для принимающий ${surname.toLowerCase()}`, { exact: true }),
+  ).toHaveCount(0)
+  await page.getByRole('checkbox', { name: 'Только несопоставленные' }).uncheck()
+  await expect(
+    page.getByLabel(`Преподаватель для Принимающий ${surname}`, { exact: true }),
+  ).toHaveValue(teacherId)
+  expect(calls).not.toContain('GET /staff/api/v1/teacher-work/inputs')
+  expect(calls).not.toContain('POST /staff/api/v1/teacher-work/recalculate')
+  const after = (await (
+    await page.request.get('/staff/api/v1/teacher-work/recalculate?courseId=c-1')
+  ).json()) as { operation: unknown }
+  expect(after.operation).toEqual(before.operation)
+  await info.attach('zoom-save-latency', {
+    body: JSON.stringify({ milliseconds: Date.now() - started, calls }),
+    contentType: 'application/json',
+  })
+  await page.getByRole('tab', { name: 'Очные смены', exact: true }).click()
+  await page
+    .getByLabel('Распределение из оргчата')
+    .fill(
+      `Распределение:\n201: ${surname}, Агеев, Левчук\n202: Агеев Н. (до 18:30)\n308 -- резерв.`,
+    )
+  await page.getByRole('button', { name: 'Предварительный просмотр' }).click()
+  await expect(page.getByLabel(`Преподаватель для ${surname}`, { exact: true })).toHaveValue(
+    teacherId,
+  )
+  await expect(page.getByLabel('Преподаватель для Агеев Н.', { exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('Преподаватель для Агеев Н', { exact: true })).toHaveValue('u-29202')
+  await expect(page.getByLabel('Окончание для Агеев Н')).toHaveValue('18:30')
+  await expect(page.getByLabel('Преподаватель для Агеев', { exact: true })).toHaveValue('')
+  await page.getByRole('checkbox', { name: 'Только требуют выбора' }).check()
+  await expect(page.getByLabel(`Преподаватель для ${surname}`, { exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Выбрать Агеев Юрий для Агеев', exact: true }).click()
+  await expect(page.getByLabel('Преподаватель для Агеев', { exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Исключить Левчук', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'Только требуют выбора' }).uncheck()
+  await expect(page.getByText(/^Выбрано: 3 из 3\./)).toBeVisible()
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.screenshot({
+      path: info.outputPath(`school-prefilled-${width}.png`),
+      animations: 'disabled',
+    })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    )
+  }
+  await page.reload()
+  await expect(page.getByLabel(`Преподаватель для ${surname}`, { exact: true })).toHaveValue(
+    teacherId,
+  )
+  await expect(page.getByLabel('Преподаватель для Агеев', { exact: true })).toHaveValue('u-29201')
+  await expect(page.getByRole('button', { name: 'Подтвердить фактические смены' })).toBeDisabled()
 })
