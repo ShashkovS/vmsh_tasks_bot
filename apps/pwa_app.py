@@ -26,6 +26,9 @@ from apps.pwa_api.staff_access_routes import staff_access_routes
 from apps.pwa_api.staff_dashboard_routes import staff_dashboard_routes
 from apps.pwa_api.whiteboard_export_routes import routes as whiteboard_export_routes
 from apps.pwa_api.staff_statistics_routes import staff_statistics_routes
+from apps.pwa_api.teacher_work_routes import (
+    teacher_work_routes, SERVICE as TEACHER_WORK, close_teacher_work, start_teacher_work,
+)
 from apps.pwa_api.statistics_recalculation_routes import (
     statistics_recalculation_routes,
     close_statistics_recalculation,
@@ -1945,6 +1948,10 @@ def configure(
         app[STATISTICS_RECALCULATION] = {}
         app.add_routes(statistics_recalculation_routes)
         app.on_shutdown.append(close_statistics_recalculation)
+        app[TEACHER_WORK] = {}
+        app.add_routes(teacher_work_routes)
+        app.on_startup.append(start_teacher_work)
+        app.on_shutdown.append(close_teacher_work)
         app.add_routes(whiteboard_export_routes)
         app.add_routes(product_analytics_routes)
         app.add_routes(sentry_admission_routes)

@@ -41,6 +41,20 @@ checks, 23 unit и 4 Chromium E2E PASS, все приложения пересо
 Причина historical TypeError требует representative event после выпуска.
 Production не менялся.
 
+## 2026-10-11 — Учёт работы преподавателей готов к выпуску
+
+Реализована согласованная admin-only вкладка Staff/Участников: отчёт,
+письменные серии, Zoom-алиасы/интервалы, очные смены, ручные часы и TSV.
+Ветка `codex/teacher-work-accounting` синхронизирована с `a926dc61`;
+миграция 0118 сохраняет текущую 0117 мониторинга. Release gate PASS:
+2925 Python / 7 SKIP, 1090 frontend, 372 Storybook, types/lint/format/i18n/builds.
+Финальные 9 E2E PASS в Chromium/WebKit/Firefox, включая подтверждение смены,
+ручную поправку, пересчёт и сброс. Up/down/up на свежей серверной копии PASS:
+160 прежних таблиц без изменений, новых FK нарушений нет, расчёт около 1 с.
+[Правила и production test plan](../../docs/teacher-work.md),
+[proof и снимки](../../../pwa_tests/reports/teacher-work-20261011/README.md).
+Production не изменён; owner acceptance не заявляется.
+
 ## 2026-10-08 — Объединённый выпуск
 
 Оба production обновлены 8 октября до `d4bf4a30`: все четыре работы,

@@ -1,12 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
+import { TeacherWorkPage } from '../teacher-work-page'
 import { StaffStudentDirectoryPage } from '../staff-student-directory-page'
 import { StaffAccessPage } from '../staff-access-page'
 import { StaffAccountProvisioningPage } from '../account-provisioning-page'
 
 const searchSchema = z.object({
-  tab: z.enum(['students', 'teachers', 'imports']).optional().catch(undefined),
+  tab: z.enum(['students', 'teachers', 'imports', 'work']).optional().catch(undefined),
+  workSection: z.enum(['report', 'school', 'zoom', 'settings']).optional().catch(undefined),
+  first: z.coerce.number().int().min(0).max(10000).optional().catch(undefined),
+  last: z.coerce.number().int().min(0).max(10000).optional().catch(undefined),
   q: z.string().trim().max(100).optional().catch(undefined),
   student: z.string().trim().min(1).optional(),
   course: z.string().trim().min(1).optional(),
@@ -21,11 +25,38 @@ function UsersRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const section = search.tab ?? 'students'
-  const changeSection = (tab: 'students' | 'teachers' | 'imports') =>
+  const changeSection = (tab: 'students' | 'teachers' | 'imports' | 'work') =>
     void navigate({
       replace: true,
       search: tab === 'students' ? {} : { tab },
     })
+  if (section === 'work') {
+    return (
+      <TeacherWorkPage
+        onSectionChange={changeSection}
+        search={{
+          section: search.workSection,
+          course: search.course,
+          first: search.first,
+          last: search.last,
+          q: search.q,
+        }}
+        onSearchChange={(next) =>
+          void navigate({
+            replace: true,
+            search: {
+              tab: 'work',
+              workSection: next.section,
+              course: next.course,
+              first: next.first,
+              last: next.last,
+              q: next.q,
+            },
+          })
+        }
+      />
+    )
+  }
   if (section === 'teachers') {
     return <StaffAccessPage onSectionChange={changeSection} />
   }

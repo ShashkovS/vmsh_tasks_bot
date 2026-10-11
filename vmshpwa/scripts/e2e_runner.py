@@ -101,6 +101,8 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         )
     if mode == "authentication":
         playwright.append("e2e/authentication.spec.ts")
+    elif mode == "teacher-work":
+        playwright.append("e2e/teacher-work.spec.ts")
     elif mode == "statistics":
         playwright.extend(["--config", "playwright.statistics.config.ts"])
     elif mode == "figure-layout":
@@ -379,6 +381,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "offline-current",
             "figure-layout",
             "statistics",
+            "teacher-work",
             "family",
             "i18n",
             "nonvisual",

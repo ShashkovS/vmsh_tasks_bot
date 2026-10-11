@@ -59,3 +59,4 @@ export { fetchBranding } from '@vmsh/branding'
 
 export * from './image-compression'
 export * from './image-upload-client'
+export * from './teacher-work-client'
