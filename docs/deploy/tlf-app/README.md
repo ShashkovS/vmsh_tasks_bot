@@ -461,3 +461,16 @@ Credentials/NATS PID unchanged, PWA/Zoom/analytics active, maintenance cleared.
 Compatible code rollback `43b7d2f` retains 0112; never restore an older DB after
 writers reopen or remove migration history. Record and safe proof:
 [production-proof.json](../../../pwa_tests/reports/content-recovery-20261004/production-proof.json).
+
+## Cyrillic TikZ vector fonts — 2026-10-11
+
+The legacy part-counter fix is deployed in compiler 11 on both portals.
+TLF's OS pdfLaTeX also requires `cm-super` for scalable T2A Cyrillic fonts;
+`texlive-lang-cyrillic` alone produced bitmap glyphs (`<image>`), rejected by
+the existing safe SVG filter. Install `cm-super` without unrelated upgrades,
+let the package triggers rebuild font maps, and verify the full
+[`triangle-dissection.tex`](../../../pwa_tests/fixtures/content/triangle-dissection.tex)
+with the actual service PATH. Font/config/maps/tool links and the installation
+record are under `/web/vmsh_tasks_bot/toolchains/cm-super/`.
+[Release evidence](../../../pwa_tests/reports/release-audit-20261011/README.md):
+609×235 SVG PASS on both; labels «а)»/«б)» visually verified, security policy unchanged.

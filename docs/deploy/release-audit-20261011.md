@@ -14,7 +14,7 @@ GlitchTip уже обновлены. Исходные worktree сохранен�
 | Кросс-бекапы | Installed tool hashes совпадают на обоих хостах, три timers active; prep daily capture и cross-transfer успешны 11 октября | Зафиксировать готовые исходники и защиту расписания/старых архивов в основной ветке |
 | Правила мониторинга ВМШ | 13 правил установлены через Grafana API 8 октября; исходники оставались untracked | Зафиксировать проверенные исходники/runbook; не повторять установку или тестовую отправку |
 | Импорт Zoom и проверка webhook | Выполнены владельцем/проверены 8 октября; исходники и обезличенные отчёты сохранены только в stash | Восстановить операционные исходники/подтверждения в основной ветке; импорт/diagnostic deliveries не повторять |
-| Учёт работы преподавателей | Dirty `codex/teacher-work-accounting`, статус «реализация начата», checks/rehearsal не выполнены | Не включать незавершённый код; новая 0117 конфликтует с уже выпущенной 0117 и требует rebase/перенумерации |
+| Учёт работы преподавателей | Во время аудита завершён в `bbbdd1a3`: release gate, 9 E2E в трёх браузерах и up/down/up server-copy rehearsal PASS; миграция перенесена на 0118 | Готов к отдельному выпуску, пока не входит в deploy-ветку/production; в исходном чате владелец запросил проверку готовности, production не менялся |
 
 Остальные активные Git worktree либо чистые и уже включены в основную ветку,
 либо содержат сохранённые операционные записи. Исходная локальная `vmshpwa`
@@ -49,11 +49,18 @@ course/group моделью, вторая содержит незавершён�
 [Квитанции](../../pwa_tests/reports/release-audit-20261011/).
 Source digest `ba42caee96980c245aef430e088be52cb14fa71e9d61017c2f1e19bee7660c72`,
 `source_changed=false`. Пять изолированных Zoom importer regressions PASS.
-Production cutover в работе.
+Production source `623d1663` выпущен на оба сайта; 25 HTTP checks на каждом PASS.
+ВМШ: реальный triangle SVG PASS, 609×235 / 6008 bytes. TLF: обнаружена
+нехватка векторных T2A-шрифтов: pdfLaTeX создавал bitmap glyphs и `<image>`,
+которые штатный SVG sanitizer правильно отклоняет. Установлены `cm-super`,
+`cm-super-minimal` и `pfb2t1c2pfb`, без других package upgrades/restarts.
+Повторная конвертация точным service PATH PASS: SVG 609×235 / 6011 bytes;
+preview осмотрен. Tooling/config/maps/installation record связаны через
+`/web/vmsh_tasks_bot/toolchains/cm-super/`.
 Локальные reference inputs восстановлены из основного checkout в игнорируемый
 `_external_pipelines`; production credentials в tests не загружаются.
 Перед restart — verified SQLite backup, frozen build и private maps upload;
-после — exact source/static SHA, 25 HTTP checks на каждом сайте, реальный
+после — подтверждены exact source/static SHA, 25 HTTP checks на каждом сайте, реальный
 TikZ→SVG из production toolchain, неизменность данных/настроек/NATS и backup timers.
 Grafana API 11 октября: все 13 правил enabled, health=ok, state=inactive;
 изменений/тестовых уведомлений нет. На ВМШ создан свежий verified online backup
@@ -61,3 +68,8 @@ Grafana API 11 октября: все 13 правил enabled, health=ok, state=
 При неудаче TLF guarded script восстанавливает прежний source/static/config.
 
 Локальные snapshots/logs: `.runtime/release-audit-20261011/`.
+
+Итог **PASS**: [production receipts и оставшаяся работа](../../pwa_tests/reports/release-audit-20261011/README.md).
+Code source `623d1663`, current schema 0117. Учёт преподавателей `bbbdd1a3`
+готов, но отдельно не выложен; прежнее описание «незавершён/конфликт 0117»
+обновлено после завершения соседнего чата.

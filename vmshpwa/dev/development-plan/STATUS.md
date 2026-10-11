@@ -5,9 +5,10 @@
 Владелец разрешил выпуск на оба сайта и аудит всех доработок. Интегрированы
 TikZ compiler 11, потерянный в последующих сборках offline image reload,
 исходники уже работающих кросс-бекапов и мониторинга. GlitchTip `a926dc61`
-сохранён. Учёт преподавателей остаётся незавершённым и требует rebase 0117.
+сохранён. Учёт преподавателей завершён отдельно в `bbbdd1a3` с миграцией 0118; ещё не выпущен.
 Gate PASS: 2944 Python, 1088 frontend, 364 Storybook, 4 Chromium;
-source unchanged. Production cutover в работе. [Состав и проверка](../../../docs/deploy/release-audit-20261011.md).
+source unchanged. Оба production обновлены: `623d1663`, по 25 HTTP checks и реальный
+TikZ→SVG PASS. TLF vector fonts исправлены, preview осмотрен. [Состав и проверка](../../../docs/deploy/release-audit-20261011.md).
 
 ## 2026-10-11 — Переключение GlitchTip
 

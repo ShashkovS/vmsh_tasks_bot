@@ -52,6 +52,8 @@ Frontend unit, Storybook и Chromium E2E не начинались, общий g
 
 Полные логи: `.runtime/vmshpwa/tikz-itemnum-20261010/focused.log` и
 `.runtime/vmshpwa/checks/20261010T181033.701576Z/`.
-Production не обновлён.
+11 октября: [выпущено на оба production и проверено реальным server toolchain](../release-audit-20261011/README.md).
+Полный общий gate после восстановления reference inputs PASS; на TLF
+добавлены недостающие векторные T2A-шрифты.
 
 [Контракт](../../../vmshpwa/docs/latex-content-pipeline.md#legacy-пункты-внутри-tikz--10-октября-2026).
