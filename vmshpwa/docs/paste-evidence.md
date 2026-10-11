@@ -60,3 +60,5 @@ aiohttp; gate: `make pwa-check-fast PWA_E2E_MODES="review submissions"`.
 [private check](../../docs/deploy/tlf-app/paste_evidence_check.py): backup, up/down/up
 на серверной копии, остановка writers, сравнение существующих строк и сохранение
 конфигурации/NATS. Владелец разрешил оба production-выпуска 11 октября 2026.
+
+Выпущено на оба production: `bef85d3c8d5e`, schema 0119; [проверка и сохранность данных](../../pwa_tests/reports/paste-evidence-20261011/production-proof.json).

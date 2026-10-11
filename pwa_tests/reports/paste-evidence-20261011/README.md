@@ -79,3 +79,26 @@ Deployment обоих production и cleanup worktree разрешены влад
 `.runtime/paste-evidence-worktree-archive-20261011/validation-logs.tar.gz`
 в основном checkout. Два завершённых чистых worktree и исходный checkout удалены;
 временный integration checkout удаляется после выпуска.
+
+## Выпуск на оба production
+
+`bef85d3c8d5e` отправлен в `origin/vmshpwa` и развёрнут на ВМШ штатным webhook,
+на TLF — [guarded script](../../../docs/deploy/tlf-app/deploy_paste_evidence.sh).
+[Production proof](production-proof.json): на каждом 25 read-only HTTP checks,
+4 HTML и 116 Staff JS/CSS SHA256 совпали с production-сборками. Schema head
+`0119.text_origin`, службы active, maintenance off, MSW/prototype отключены,
+публичных sourcemap нет; по 406 private artifacts uploaded.
+[ВМШ static](production-vmsh-static.json), [TLF static](production-tlf-static.json).
+
+TLF: private server-only up/down/up и stopped-writer comparison сохранили
+168 таблиц / 37 052 строки. Canonical settings (кроме release label) и NATS PID
+сохранены: assertions guarded script прошли. Backup before/after integrity ok,
+2714 raw Zoom receipts до/после. ВМШ: pre-push backup integrity_check ok;
+штатные migration rehearsal/performance guard и before/after backup quick_check
+прошли. Private databases/configuration не копировались в Git.
+
+Код проверен настоящими Student/Staff E2E на синтетических данных;
+authenticated production browser acceptance не заявляется. Последующее
+документирование выпуска не требует rebuild/restart. Три исходных лишних
+worktree удалены; временный integration checkout удаляется после сохранения
+этой квитанции. Незакоммиченные изменения восстановимы через указанный выше ref.
