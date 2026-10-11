@@ -1,5 +1,20 @@
 # Статус плана разработки
 
+## 2026-10-11 — Учёт преподавателей выпущен на оба портала
+
+PR #103 влит в production-ветку `vmshpwa`: `33f6c950`. Повторный merged release
+gate PASS: 2955 Python / 12 SKIP, 1090 frontend, 372 Storybook, 9 E2E в трёх
+браузерах. ВМШ webhook и TLF manual release завершены, миграция 0118 и backups
+проверены. На каждом 25 HTTP checks, пять anonymous 401, 48 Staff asset hashes
+и production provenance четырёх приложений PASS; сервисы/timers active.
+На TLF все прежние product rows и настройки сохранены; initial proof-file
+permission failure восстановлен compatible rollback/resume без отката БД.
+На ВМШ расчёт/TSV проверен на свежей серверной копии; первый live snapshot —
+по admin кнопке или следующему timer. Первичные алиасы/смены подтверждает admin.
+[Операционный record](../../../docs/deploy/teacher-work/README.md),
+[proof](../../../pwa_tests/reports/teacher-work-20261011/production-proof.json).
+Owner UI acceptance не заявляется.
+
 ## 2026-10-11 — Выпуск TikZ и сверка оставшихся работ
 
 Владелец разрешил выпуск на оба сайта и аудит всех доработок. Интегрированы

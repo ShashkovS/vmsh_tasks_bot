@@ -1,5 +1,16 @@
 # Design-system status
 
+## 2026-10-11 — Учёт преподавателей выпущен на оба портала
+
+Согласованная admin-only вкладка Staff/Участников выпущена в `33f6c950` на
+ВМШ и TLF. Финальный merged gate: 1090 frontend, 372 Storybook, 9 E2E в трёх
+браузерах; format/types/lint/i18n/builds PASS. Снимки light/dark, 1280/390 и
+проверка 200% сохраняются. Production HTTP/static checks обоих порталов PASS.
+[Record](../../../docs/deploy/teacher-work/README.md),
+[proof](../../../pwa_tests/reports/teacher-work-20261011/production-proof.json).
+Первичные сопоставления и фактические смены подтверждает admin; production UI
+acceptance владельцем не заявляется. Новая design phase не начинается.
+
 ## 2026-10-11 — Выпуск TikZ и восстановление offline fix
 
 Разрешён выпуск на оба портала: TikZ подписи и исходный `cache: reload` для

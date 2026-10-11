@@ -1,4 +1,18 @@
-# Учёт работы: готовность к выпуску, 11 октября 2026
+# Учёт работы: выпуск на оба портала, 11 октября 2026
+
+[PR #103](https://github.com/ShashkovS/vmsh_tasks_bot/pull/103) влит в `vmshpwa`,
+оба production выпущены в `33f6c950`. Повторный merged gate PASS: 2955 Python /
+12 SKIP, 1090 frontend, 372 Storybook и 9 E2E. [Квитанция](merged-release-gate.json).
+На обоих по 25 HTTP checks, пять защищённых новых API, 48 Staff asset hashes
+совпадают со сборкой, четыре production provenance корректны. Миграция 0118,
+backups, активные сервисы/timers проверены. [Production proof](production-proof.json),
+[record и TLF recovery](../../../docs/deploy/teacher-work/README.md).
+
+Первый live snapshot ВМШ — по admin кнопке или timer; расчёт проверен на свежей
+закрытой серверной копии. TLF получил снимки обоих активных курсов в рабочей
+БД. Первичные алиасы/смены подтверждает admin; production UI acceptance не заявляется.
+
+Ниже сохранены доказательства первоначальной готовности до финального merge.
 
 Ветка `codex/teacher-work-accounting` синхронизирована с `origin/vmshpwa`
 (`a926dc61`). [Требования и план проверки на проде](../../../vmshpwa/docs/teacher-work.md).

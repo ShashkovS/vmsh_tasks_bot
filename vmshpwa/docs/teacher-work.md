@@ -71,19 +71,22 @@ HTTP: `apps/pwa_api/teacher_work_routes.py`; UI:
 i18n extraction и release gate. Перед выпуском — свежая копия prod, backup,
 up/down/up rehearsal; первичные сопоставления и очные факты подтверждает admin.
 
-Статус 11 октября: готово к выпуску и проверке на ВМШ, база синхронизирована
-с `a926dc61`. Release gate PASS: 2925 Python / 7 SKIP, 1090 frontend,
-372 Storybook, types/lint/format/i18n/builds. Расширенный окончательный E2E —
-9 PASS в Chromium/WebKit/Firefox. Up/down/up миграции 0118 на свежей серверной
-копии PASS, старые таблицы и Zoom-очередь сохранены. Рабочая production-БД не
-изменена. [Квитанции и снимки](../../pwa_tests/reports/teacher-work-20261011/README.md).
+Статус 11 октября: PR #103 влит в `vmshpwa`, выпуск `33f6c950` завершён на
+ВМШ и TLF. Merged release gate PASS: 2955 Python / 12 SKIP, 1090 frontend,
+372 Storybook, types/lint/format/i18n/builds, 9 E2E в Chromium/WebKit/Firefox.
+Up/down/up миграции 0118 на серверных копиях PASS, старые таблицы и Zoom
+сохранены. На обоих по 25 HTTP checks, новые API защищены, Staff bytes и
+production provenance совпадают со сборкой. [Квитанции и снимки](../../pwa_tests/reports/teacher-work-20261011/README.md),
+[операционный record](../../docs/deploy/teacher-work/README.md).
 
-## Выпуск и проверка на ВМШ
+## Выпуск и проверка на обоих порталах
 
 Новых секретов или зависимостей нет. Штатный deploy должен сделать свежий
 SQLite backup, применить 0118 и обновить API/Staff вместе. Репетиционный
 backup не использовать вместо актуального. После ввода новых смен и алиасов
-откат выполнять через сохранённую копию, поскольку down удаляет таблицы учёта.
+при откате адаптера сохранять ту же 0118 в compatible source: down или замена
+БД старой копией удаляет новые данные. На TLF рабочие снимки уже рассчитаны;
+на ВМШ первый live snapshot — по кнопке или очередному analytics timer.
 
 1. Под admin открыть `/staff/users?tab=work`, выбрать активный курс и пересчитать.
    Проверить письменные часы и подробности нескольких проверок; историческое
