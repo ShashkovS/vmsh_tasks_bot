@@ -67,3 +67,37 @@ def test_private_maps_match_original_js_without_mutating_bytes(tmp_path):
             assert manifest['files'][name]['headers']['sourcemap'] == 'bundle-hash.js.map'
             assert manifest['files'][name]['url'] == '~/' + name
             assert maps[0].is_file()  # Assembly alone must not remove upload inputs.
+
+
+def test_release_files_follow_lowercase_asgi_pagination_header(monkeypatch):
+    from vmshpwa.scripts import production_frontend_build as build
+    calls = []
+
+    def fake_api(metadata, endpoint, headers):
+        calls.append(endpoint)
+        if len(calls) == 1:
+            headers['link'] = '<https://glitch.leaders.tech/api/0/organizations/vmsh/releases/r/files/?cursor=next>; rel="next"; results="true"'
+            return [{'name': 'first.js'}]
+        headers['link'] = '<https://glitch.leaders.tech/api/0/organizations/vmsh/releases/r/files/>; rel="next"; results="false"'
+        return [{'name': 'last.js.map'}]
+
+    monkeypatch.setattr(build, 'api', fake_api)
+    assert build.release_files(portal(), 'organizations/vmsh/releases/r/files/') == [
+        {'name': 'first.js'}, {'name': 'last.js.map'},
+    ]
+    assert len(calls) == 2
+
+
+def test_telegram_credentials_require_one_time_operator_request(tmp_path):
+    from vmshpwa.scripts.production_frontend_build import prepare_telegram_handoff
+    config = dict(telegram_bot_token='fake-token', exceptions_channel=-1234, unrelated_secret='never-export')
+    prepare_telegram_handoff(tmp_path, config)
+    handoff = tmp_path / '.runtime/glitchtip-telegram-handoff.json'
+    assert not handoff.exists()
+    request = tmp_path / '.runtime/glitchtip-telegram.request'
+    request.parent.mkdir()
+    request.touch()
+    prepare_telegram_handoff(tmp_path, config)
+    assert json.loads(handoff.read_text()) == {'telegram_bot_token': 'fake-token', 'chat_id': -1234}
+    assert handoff.stat().st_mode & 0o777 == 0o640
+    assert not request.exists()

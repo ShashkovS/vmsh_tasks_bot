@@ -3,12 +3,12 @@
     "Makefile": "3eec1ceda249e5b5d809395c69ae1821c426e336c7382c5bcda6a01f6ad6f49a",
     "helpers/config.py": "91fbe1c0d49ffa15889fbbaf0d8f0dd8725a0f15106c78f798a7becf684a28ab",
     "docs/deploy/tlf-app/build_source.sh": "c0d8889a1ea37ae13e8f845ed7b901ced9491964a409b45a43741f5812646220",
-    "vmshpwa/scripts/production_frontend_build.py": "6ea55fc9d67115af1a1528cad036909c8f2d4be986f873f8acb2364a584a7855",
+    "vmshpwa/scripts/production_frontend_build.py": "d97592dae9ef3765f352212bfa9f5a271dbaec56a7f19e67a070d25479070c35",
     "vmshpwa/scripts/static_release.py": "0c43fb14b8fd3c11633683b5471488f0e24b9650468ef7b664a3d19c21174efd",
     "vmshpwa/vite-production-guard.ts": "80b697c4f8fa00479bbf43379cd1f7579374c92a7e9d5c43076b1197d45b633e",
     "vmshpwa/packages/app-shell/src/observability.ts": "d9be0ac196d1298755770a742367b0435d3f552d9f3cb9f6df747bf9090bc484",
     "vmshpwa/packages/app-shell/src/observability-init.test.ts": "66379e149ff172ab842685069f6a0f63c724df0fd1cc51be554b38b6a95940d0",
-    "tests/test_glitchtip_production_build.py": "7769ff2f2fe5509f8e2bd527f2cf91a918a7a538bf3b25305861cb1c4ca33a62",
+    "tests/test_glitchtip_production_build.py": "549b2e1fafcf609e7e01da475ffcb0b0a4946121bef1acccd92a0e6262b058e4",
     "tests/test_glitchtip_telegram.py": "41a0728dd7e10b636891600656590a9ccb176be6b4763f591061a27b9fbff9bf",
     "pwa_tests/test_static_release.py": "ef49e7b68fc37aa1013552d036943ff74b19c99f4d0f2dccc5d09a290f3432fa",
     "docs/deploy/glitchtip/telegram-webhook.py": "3df781ff61e376dea9a58ac4ecb49a0828aabbd6452d5d9ee9a60ffe22ad067b"
@@ -29,5 +29,7 @@
   "notes": [
     "Unified gate stopped on known private-input failures. Infrastructure files were added during the first run; that summary is not a release receipt.",
     "Remaining frontend/Storybook/E2E phases ran unchanged source (matching before/after digest). Focused final Python configuration/maps/digest tests pass."
-  ]
+  ],
+  "production_build_followup_tests": 8,
+  "production_artifacts_verified": 402
 }

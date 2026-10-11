@@ -131,7 +131,7 @@ def api(metadata, endpoint, value=None, content_type='application/json', headers
     try:
         with opener.open(request, timeout=60) as response:
             if headers is not None:
-                headers.update(response.headers)
+                headers.update({key.lower(): value for key, value in response.headers.items()})
             payload = response.read()
             return json.loads(payload) if payload else None
     except urllib.error.HTTPError as error:
@@ -148,7 +148,7 @@ def release_files(metadata, endpoint):
     for _ in range(100):
         headers = {}
         files.extend(api(metadata, endpoint, headers=headers))
-        next_page = re.search(r'<([^>]+)>; rel="next"; results="true"', headers.get('Link', ''))
+        next_page = re.search(r'<([^>]+)>; rel="next"; results="true"', headers.get('link', ''))
         if not next_page:
             return files
         url = urllib.parse.urlsplit(next_page[1])
@@ -192,6 +192,20 @@ def upload(metadata, release, bundle, manifest):
     raise RuntimeError('Sourcemap assembly was not confirmed; release must not publish')
 
 
+def prepare_telegram_handoff(root, config):
+    request = root / '.runtime/glitchtip-telegram.request'
+    if not request.exists():
+        return
+    if not config.get('telegram_bot_token') or not config.get('exceptions_channel'):
+        raise ValueError('Existing operator Telegram configuration missing')
+    handoff = root / '.runtime/glitchtip-telegram-handoff.json'
+    private_json(handoff, {'telegram_bot_token': config['telegram_bot_token'],
+                           'chat_id': config['exceptions_channel']})
+    handoff.chmod(0o640)
+    request.unlink()
+    print('Approved temporary Telegram handoff prepared')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--release', required=True)
@@ -216,6 +230,10 @@ def main():
     # Maps may never reach immutable public roots, including fallback deployments.
     for source_map in maps:
         source_map.unlink()
+    # Explicit owner approval on 2026-10-11; one temporary operator-group read
+    # for SSH transfer to root-only GlitchTip credentials, then remove the file.
+    if metadata and metadata['organization'] == 'vmsh':
+        prepare_telegram_handoff(ROOT, config)
 
 
 if __name__ == '__main__':

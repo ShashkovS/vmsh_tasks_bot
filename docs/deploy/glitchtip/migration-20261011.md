@@ -55,6 +55,13 @@ TypeScript resolution in GlitchTip PASS.
 [TLF switch script](deploy-tlf-switch.sh) builds an isolated Git archive, preserves
 unrelated canonical settings, backs up databases and switches only after private
 map upload and public packaging checks. Schema is unchanged from stage 1.
-Telegram adapter/unit are installed but inactive pending explicit approval to
-reuse/transfer the existing bot credential or provision a separate bot. Automatic
-approval review rejected an unapproved credential-sharing flag; it was removed.
+Telegram adapter/unit are installed. The owner explicitly approved the existing
+VMSH operator group and a temporary deploy-agent read/SSH transfer of its bot token
+to a root-only file on prep; the temporary handoff will be removed after transfer.
+The earlier automatic approval rejection was resolved by this explicit approval.
+
+Full production uploads stored 402 artifacts per release. Initial confirmation
+failed before publication because ASGI header names were lowercase and the client
+looked for `Link`, so it read only the first 100 files. Header normalization and
+a pagination regression now verify all 402. Eight focused production-build
+tests PASS, including the explicit one-time Telegram credential handoff.

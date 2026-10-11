@@ -17,7 +17,22 @@ tar -C "$uploads" -czf "$temporary/uploads.tar.gz" .
 tar -tzf "$temporary/uploads.tar.gz" > /dev/null
 cp compose.yml "$temporary/compose.yml"
 cp .env "$temporary/environment.env"
-(cd "$temporary" && sha256sum database.dump uploads.tar.gz compose.yml environment.env > SHA256SUMS)
+if [[ -f telegram.json ]]; then
+    cp telegram.json "$temporary/telegram.json"
+    cp /usr/local/libexec/glitchtip-telegram.py "$temporary/telegram-webhook.py"
+    cp /etc/systemd/system/glitchtip-telegram.service "$temporary/glitchtip-telegram.service"
+    python3 - "$temporary/telegram-state.sqlite3" <<'PY'
+import sqlite3, sys
+from pathlib import Path
+state = Path('/var/lib/glitchtip-telegram/state.sqlite3')
+if state.exists():
+    with sqlite3.connect('file:' + str(state) + '?mode=ro', uri=True) as source:
+        with sqlite3.connect(sys.argv[1]) as destination:
+            source.backup(destination)
+PY
+fi
+(cd "$temporary" && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 |
+    sort -z | xargs -0 sha256sum > SHA256SUMS)
 mv "$temporary" "$destination"
 find /var/backups/glitchtip -mindepth 1 -maxdepth 1 -type d -name '20*T*Z' -mtime +6 -exec rm -rf -- {} +
 echo "GlitchTip backup completed: $stamp"
