@@ -8,7 +8,10 @@
 Ветка `codex/teacher-work-inputs-20261012` от свежей `vmshpwa` (`aecd2d51`).
 Правки не меняют схему и первичные данные. Fast gate PASS: 3001 Python /
 12 SKIP, 1119 frontend, 380 Storybook, 4 Chromium E2E, types/lint/i18n/builds.
-Снимки 1280/390 и light/dark осмотрены, 200% проверены. Выпуск подготовлен.
+Снимки 1280/390 и light/dark осмотрены, 200% проверены. PR #104 влит в
+`vmshpwa`; `278515d1` выпущен на ВМШ/TLF: по 25 HTTP checks и 116 Staff
+asset hashes PASS, API protected, службы active, maintenance off. Данные и
+настройки TLF сохранены; backups и целостность БД ВМШ PASS.
 [Квитанции](../../../pwa_tests/reports/teacher-work-inputs-20261012/README.md).
 [Правила и реализация](../../docs/teacher-work.md).
 

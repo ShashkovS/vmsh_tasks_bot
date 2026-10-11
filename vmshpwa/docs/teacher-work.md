@@ -121,3 +121,7 @@ backup не использовать вместо актуального. Пос
 подтверждение применяет весь проверенный состав и исключения времени.
 Автовыбор существует только в предварительном просмотре и не пишет смены.
 Matcher/parser: `models/pwa/teacher_work.py`; UI: `TeacherWorkRosterView`.
+
+Исправление выпущено в PR #104 (`278515d1`) на ВМШ и TLF.
+[Проверки и снимки](../../pwa_tests/reports/teacher-work-inputs-20261012/README.md),
+[выпуск](../../docs/deploy/teacher-inputs-20261012.md).
