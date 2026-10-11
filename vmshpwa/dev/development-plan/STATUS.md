@@ -6,7 +6,8 @@
 TikZ compiler 11, потерянный в последующих сборках offline image reload,
 исходники уже работающих кросс-бекапов и мониторинга. GlitchTip `a926dc61`
 сохранён. Учёт преподавателей остаётся незавершённым и требует rebase 0117.
-Gate и cutover в работе. [Состав и проверка](../../../docs/deploy/release-audit-20261011.md).
+Gate PASS: 2944 Python, 1088 frontend, 364 Storybook, 4 Chromium;
+source unchanged. Production cutover в работе. [Состав и проверка](../../../docs/deploy/release-audit-20261011.md).
 
 ## 2026-10-11 — Переключение GlitchTip
 

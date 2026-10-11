@@ -5,7 +5,8 @@
 Разрешён выпуск на оба портала: TikZ подписи и исходный `cache: reload` для
 недостающих offline-картинок. UI/copy/stories не меняются. Уже выложенный
 GlitchTip и готовые operations artifacts сохраняются; незавершённая страница
-учёта преподавателей вне выпуска. Gate в работе.
+учёта преподавателей вне выпуска. Gate PASS: 2944 Python, 1088 frontend, 364 Storybook, 4 Chromium;
+source unchanged. Production cutover в работе.
 [Аудит](../../../docs/deploy/release-audit-20261011.md).
 
 ## 2026-10-11 — Переключение GlitchTip

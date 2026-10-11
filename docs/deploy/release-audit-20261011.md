@@ -26,6 +26,14 @@ Git stash проверен по неизменным SHA, исходные snaps
 исторические migrations намеренно заменены baseline 0111. Новая
 `45bad0df` принадлежит текущей работе teacher accounting и не применяется.
 
+Старые ветки без активного worktree также сохранены: rollback sources
+`43b7d2f4`/`cd18511e` намеренно содержат только совместимые старые runtime;
+`webapp` имеет patch-equivalent commit, уже включённый в основную ветку.
+`groups_to_db` (январь–февраль 2026) и `stripe_integration` (сентябрь–октябрь
+2025) не являются текущими release candidates: первая заменена современной
+course/group моделью, вторая содержит незавершённую legacy payments integration.
+Они не сливаются автоматически в production; старые snapshots не удалены.
+
 Ссылки: [TikZ](../../pwa_tests/reports/tikz-itemnum-20261010/README.md),
 [GlitchTip](glitchtip/migration-20261011.md),
 [offline CORS](tlf-app/README.md#public-media-cors--2026-10-01),
@@ -35,12 +43,21 @@ Git stash проверен по неизменным SHA, исходные snaps
 
 ## Проверка и выпуск
 
-Интеграция, gate `content offline-current` и production cutover в работе.
+Интеграция завершена. Gate `content offline-current` PASS на `04badd23`:
+2944 Python PASS / 7 SKIP, 1088 frontend, 364 Storybook, 4 Chromium E2E
+без retries; format/types/lint/i18n и четыре app builds PASS.
+[Квитанции](../../pwa_tests/reports/release-audit-20261011/).
+Source digest `ba42caee96980c245aef430e088be52cb14fa71e9d61017c2f1e19bee7660c72`,
+`source_changed=false`. Пять изолированных Zoom importer regressions PASS.
+Production cutover в работе.
 Локальные reference inputs восстановлены из основного checkout в игнорируемый
 `_external_pipelines`; production credentials в tests не загружаются.
 Перед restart — verified SQLite backup, frozen build и private maps upload;
 после — exact source/static SHA, 25 HTTP checks на каждом сайте, реальный
 TikZ→SVG из production toolchain, неизменность данных/настроек/NATS и backup timers.
+Grafana API 11 октября: все 13 правил enabled, health=ok, state=inactive;
+изменений/тестовых уведомлений нет. На ВМШ создан свежий verified online backup
+`deploy/runtime/release-audit-20261011/production-before.sqlite3`, 372101120 bytes.
 При неудаче TLF guarded script восстанавливает прежний source/static/config.
 
 Локальные snapshots/logs: `.runtime/release-audit-20261011/`.
