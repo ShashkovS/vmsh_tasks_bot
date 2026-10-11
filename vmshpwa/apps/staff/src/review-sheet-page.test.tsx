@@ -301,6 +301,15 @@ it('shows each submission once with transfer controls and keeps earlier replies 
     action: null,
     transfer: null,
     checkStatus: null,
+    pasteEstimate: entryId === 'se-st-1' ? { percentage: 63, method: 'remaining_text' } : null,
+  })
+  mocks.client.sheetDetail.mockImplementation((id: string) => {
+    const value = detail(id)
+    value.workspace.evidenceBranches[0]!.thread!.timelineEntries[0]!.pasteEstimate = {
+      percentage: 63,
+      method: 'remaining_text',
+    }
+    return Promise.resolve(value)
   })
   let finishPage!: (page: {
     events: ReviewSheetConversation['events']
@@ -327,6 +336,7 @@ it('shows each submission once with transfer controls and keeps earlier replies 
   const anna = await screen.findByRole('article', { name: 'Проверка работы: Анна' })
   await within(anna).findByText('Предыдущее решение')
   expect(within(anna).getAllByText('Анна: решение')).toHaveLength(1)
+  expect(within(anna).getAllByText('Вставлено ≈ 63%')).toHaveLength(1)
   const move = within(anna).getByRole('button', { name: 'Перенести в другую задачу' })
   expect(move.closest('li')?.textContent).toContain('Анна: решение')
   expect(within(anna).queryByText('Материалы оценки')).toBeNull()
@@ -347,6 +357,7 @@ it('shows each submission once with transfer controls and keeps earlier replies 
   )
   expect(within(anna).getAllByText('Анна: решение')).toHaveLength(1)
   expect(within(anna).getByRole('button', { name: 'Перенести в другую задачу' })).toBe(move)
+  expect(within(anna).getAllByText('Вставлено ≈ 63%')).toHaveLength(1)
   expect(
     within(anna)
       .getAllByRole('listitem')

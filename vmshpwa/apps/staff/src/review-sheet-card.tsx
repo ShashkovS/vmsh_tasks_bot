@@ -229,6 +229,7 @@ function LoadedSheetCard({
           authorKind: entry.authorKind,
           source: 'pwa',
           text: entry.text,
+          pasteEstimate: entry.pasteEstimate,
           attachments: [],
           problemNumber: origin?.problemNumber ?? '',
           verdict: null,
