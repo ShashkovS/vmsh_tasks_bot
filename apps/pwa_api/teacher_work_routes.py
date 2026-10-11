@@ -16,9 +16,10 @@ from db_methods.pwa import teacher_work as records
 from models.pwa.auth import AuthAudience
 from models.pwa.teacher_work import (
     fingerprint,
-    name_candidates,
     normalize_name,
     parse_roster,
+    TeacherNameMatcher,
+    teacher_name_key,
 )
 from models.pwa.teacher_work_commands import (
     execute_command,
@@ -251,17 +252,23 @@ async def inputs(request):
     course_id = await course(request, request.query.get("courseId"), principal)
 
     def read(connection):
-        facts = records.source_facts(connection, course_id)
+        facts = records.input_facts(connection, course_id)
         signatures = defaultdict(list)
         for row in facts["zoom"]:
             signatures[row["zoom_user_name"] or ""].append(row)
         aliases = {r["normalized_name"]: r for r in facts["aliases"]}
+        matcher = TeacherNameMatcher(facts["teachers"])
+        candidates_by_name = {}
         names = []
         for name, events in signatures.items():
             alias = aliases.get(normalize_name(name))
+            key = teacher_name_key(name)
+            if key not in candidates_by_name:
+                candidates_by_name[key] = matcher.candidates(name)
             names.append(
                 {
                     "name": name,
+                    "normalizedName": normalize_name(name),
                     "count": len(events),
                     "firstAt": events[0]["event_ts"],
                     "lastAt": events[-1]["event_ts"],
@@ -270,7 +277,7 @@ async def inputs(request):
                     ),
                     "alias": alias,
                     "examples": events[:3],
-                    "candidates": name_candidates(name, facts["teachers"]),
+                    "candidates": candidates_by_name[key],
                 }
             )
         return {
@@ -315,7 +322,8 @@ async def preview(request):
         )
 
     def read(connection):
-        facts = records.source_facts(connection, course_id)
+        facts = records.roster_facts(connection, course_id)
+        matcher = TeacherNameMatcher(facts["teachers"])
         parsed = parse_roster(
             body["rawText"],
             facts["events"],
@@ -331,11 +339,16 @@ async def preview(request):
         ):
             for row in json.loads(roster["rows_json"]):
                 if row["teacherId"] in allowed:
-                    mappings[normalize_name(row["name"])].add(row["teacherId"])
+                    mappings[teacher_name_key(row["name"])].add(row["teacherId"])
         for row in parsed["rows"]:
-            confirmed = mappings[normalize_name(row["name"])]
+            confirmed = mappings[teacher_name_key(row["name"])]
             if len(confirmed) == 1:
                 row["teacherId"] = next(iter(confirmed))
+                row["matchKind"] = "remembered"
+            elif len(confirmed) > 1:
+                row["teacherId"] = None
+                row["matchKind"] = "ambiguous"
+                row["candidates"] = [matcher.candidate(t, 1) for t in sorted(confirmed)]
         return parsed
 
     return response(await _factory(request).run_read_async(read))
@@ -352,13 +365,7 @@ async def command(request):
         )
     except (ValueError, KeyError, TypeError) as exc:
         raise bad_request(exc)
-    if body.get("action") != "override":
-        await asyncio.to_thread(
-            service(request).start,
-            course_id,
-            principal.linked_user_id,
-            "edit:" + body["idempotencyKey"],
-        )
+    # docs/teacher-work.md, input correction: save is independent of calculation.
     return response(result)
 
 

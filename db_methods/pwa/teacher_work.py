@@ -7,6 +7,57 @@ def rows(connection, sql, params=()):
     return [dict(row) for row in connection.execute(sql, params)]
 
 
+def roster_facts(connection, course_id):
+    """Import context without the result ledger; docs/teacher-work.md, input correction."""
+    return {
+        "course": dict(
+            connection.execute(
+                "SELECT s.timezone,s.starts_on,s.ends_on FROM courses c "
+                "JOIN seasons s ON s.id=c.season_id WHERE c.id=?",
+                (course_id,),
+            ).fetchone()
+        ),
+        "teachers": rows(
+            connection,
+            "SELECT id,public_id,surname,name,middlename FROM users "
+            "WHERE type IN (2,128) ORDER BY id",
+        ),
+        "events": rows(
+            connection,
+            """SELECT DISTINCT e.* FROM in_person_events e
+            JOIN in_person_event_group_lessons eg ON eg.in_person_event_id=e.id
+            JOIN group_lessons gl ON gl.id=eg.group_lesson_id
+            WHERE gl.course_id=? AND e.status!='cancelled' ORDER BY e.starts_at""",
+            (course_id,),
+        ),
+        "settings": settings(connection, course_id),
+    }
+
+
+def input_facts(connection, course_id):
+    facts = roster_facts(connection, course_id)
+    facts.update({
+        "zoom": rows(
+            connection,
+            "SELECT id,event_ts,event,zoom_user_name,zoom_user_id FROM zoom_events "
+            "WHERE substr(event_ts,1,10) BETWEEN ? AND ? ORDER BY id",
+            (facts["course"]["starts_on"], facts["course"]["ends_on"]),
+        ),
+        "aliases": rows(
+            connection,
+            "SELECT * FROM teacher_work_aliases WHERE course_id=? ORDER BY normalized_name",
+            (course_id,),
+        ),
+        "shifts": rows(
+            connection,
+            """SELECT sh.* FROM teacher_work_shifts sh JOIN in_person_events e ON e.id=sh.event_id
+            WHERE sh.course_id=? AND e.status!='cancelled' ORDER BY sh.event_id,sh.teacher_id""",
+            (course_id,),
+        ),
+    })
+    return facts
+
+
 def source_facts(connection, course_id):
     course = dict(
         connection.execute(

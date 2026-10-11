@@ -78,10 +78,15 @@ const rosterRow = z.object({
   startsTime: z.string().nullable(),
   endsTime: z.string().nullable(),
   teacherId: publicIdSchema.nullable(),
+  matchKind: z
+    .enum(['exact', 'remembered', 'manual', 'ambiguous', 'suggested', 'unresolved'])
+    .optional(),
   source: z.string(),
   candidates: z.array(candidate),
 })
-export const teacherWorkStoredRowsSchema = z.array(rosterRow.omit({ candidates: true }))
+export const teacherWorkStoredRowsSchema = z.array(
+  rosterRow.omit({ candidates: true, matchKind: true }),
+)
 export const teacherWorkRosterBaseSchema = z.object({
   eventId: publicIdSchema,
   eventVersion: count,
@@ -125,6 +130,7 @@ export const teacherWorkInputsSchema = z.object({
   signatures: z.array(
     z.object({
       name: z.string(),
+      normalizedName: z.string().optional(),
       count,
       firstAt: z.string(),
       lastAt: z.string(),
@@ -212,10 +218,14 @@ export const teacherWorkCommandSchema = z.discriminatedUnion('action', [
     rawText: z.string().min(1).max(100000),
     state: z.enum(['draft', 'confirmed']),
     replace: z.boolean(),
-    rows: z.array(rosterRow.omit({ candidates: true })),
+    rows: teacherWorkStoredRowsSchema,
   }),
 ])
-export const teacherWorkReceiptSchema = z.object({ version: count })
+export const teacherWorkReceiptSchema = z.object({
+  version: count,
+  alias: alias.unwrap().extend({ normalized_name: z.string() }).optional(),
+})
+export type TeacherWorkReceipt = z.infer<typeof teacherWorkReceiptSchema>
 export type TeacherWorkReport = z.infer<typeof teacherWorkReportSchema>
 export type TeacherWorkCatalog = z.infer<typeof teacherWorkCatalogSchema>
 export type TeacherWorkInputs = z.infer<typeof teacherWorkInputsSchema>

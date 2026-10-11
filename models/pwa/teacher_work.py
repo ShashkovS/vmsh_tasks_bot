@@ -1,6 +1,6 @@
 """Pure teacher-work calculations and roster parsing; docs/teacher-work.md."""
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import UTC, datetime, timedelta
 from difflib import SequenceMatcher
 import hashlib
@@ -301,34 +301,93 @@ MONTHS = {
 }
 
 
-def name_candidates(value, teachers):
-    name = re.sub(
+def teacher_name_key(value):
+    value = re.sub(
         r"\b(?:принима\w*|провер\w*|модератор)\b", "", normalize_name(value)
-    ).strip()
-    ranked = []
-    for teacher in teachers:
-        variants = [
-            teacher["surname"],
-            f"{teacher['surname']} {teacher['name']}",
-            f"{teacher['name']} {teacher['surname']}",
-            f"{teacher['surname']} {teacher['name'][:1]}.",
-        ]
-        score = max(
-            SequenceMatcher(None, name, normalize_name(v)).ratio() for v in variants
-        )
-        if score >= 0.45:
-            ranked.append(
-                {
-                    "teacherId": teacher["public_id"],
-                    "label": f"{teacher['surname']} {teacher['name']}",
-                    "score": round(score, 3),
-                }
-            )
-    return sorted(ranked, key=lambda r: (-r["score"], r["teacherId"]))[:5]
+    )
+    return " ".join(re.findall(r"[^\W\d_]+", value))
+
+
+class TeacherNameMatcher:
+    """Exact names/initials first; typos require a choice. docs/teacher-work.md."""
+
+    def __init__(self, teachers):
+        self.teachers = {t["public_id"]: t for t in teachers}
+        self.exact = defaultdict(set)
+        self.variants = {}
+        for teacher in teachers:
+            surname = teacher_name_key(teacher["surname"])
+            name = teacher_name_key(teacher["name"])
+            middle = teacher_name_key(teacher.get("middlename") or "")
+            variants = {surname, name, f"{surname} {name}", f"{name} {surname}"}
+            if name:
+                variants.update((f"{surname} {name[0]}", f"{name[0]} {surname}"))
+            if surname:
+                variants.update((f"{name} {surname[0]}", f"{surname[0]} {name}"))
+            if middle:
+                variants.update(
+                    (
+                        f"{surname} {name} {middle}", f"{name} {middle} {surname}",
+                        f"{surname} {name[:1]} {middle[:1]}",
+                    )
+                )
+            variants = {v.strip() for v in variants if v.strip()}
+            self.variants[teacher["public_id"]] = [
+                (variant, Counter(variant)) for variant in variants
+            ]
+            for variant in variants:
+                self.exact[variant].add(teacher["public_id"])
+
+    def candidate(self, teacher_id, score):
+        teacher = self.teachers[teacher_id]
+        return {
+            "teacherId": teacher_id,
+            "label": f"{teacher['surname']} {teacher['name']}",
+            "score": round(score, 3),
+        }
+
+    def candidates(self, value):
+        key = teacher_name_key(value)
+        if not key:
+            return []
+        exact = self.exact.get(key, set())
+        if exact:
+            return [self.candidate(t, 1) for t in sorted(exact)]
+        threshold = 0.9 if len(key) < 4 else 0.78
+        counts = Counter(key)
+        ranked = []
+        for teacher_id, variants in self.variants.items():
+            score = 0
+            for variant, letters in variants:
+                total_length = len(key) + len(variant)
+                if 2 * min(len(key), len(variant)) < threshold * total_length:
+                    continue
+                # Upper bounds cannot discard any acceptable fuzzy suggestion.
+                common = sum(min(counts[letter], count) for letter, count in letters.items())
+                if 2 * common < threshold * total_length:
+                    continue
+                score = max(score, SequenceMatcher(None, key, variant).ratio())
+            if score >= threshold:
+                ranked.append(self.candidate(teacher_id, score))
+        return sorted(ranked, key=lambda r: (-r["score"], r["teacherId"]))[:5]
+
+    def roster_match(self, value):
+        exact = self.exact.get(teacher_name_key(value), set())
+        candidates = self.candidates(value)
+        if len(exact) == 1:
+            return next(iter(exact)), "exact", candidates
+        if exact:
+            return None, "ambiguous", candidates
+        return None, "suggested" if candidates else "unresolved", candidates
+
+
+def name_candidates(value, teachers):
+    return TeacherNameMatcher(teachers).candidates(value)
 
 
 def parse_roster(text, events, teachers, zone):
     rows, notes = [], []
+    matcher = TeacherNameMatcher(teachers)
     date_match = re.search(r"\b(\d{1,2})\s+([а-яё]+)(?:\s+(20\d{2}))?", text, re.I)
     event_candidates = []
     if date_match:
@@ -370,16 +429,18 @@ def parse_roster(text, events, teachers, zone):
                 continue
             start = re.search(r"\bс\s*(\d{1,2}:\d{2})", chunk, re.I)
             end = re.search(r"\bдо\s*(\d{1,2}:\d{2})", chunk, re.I)
+            teacher_id, match_kind, candidates = matcher.roster_match(name)
             rows.append(
                 {
                     "rowId": f"{line_number}-{index}",
                     "name": name,
                     "room": room[1],
-                    "startsTime": start[1] if start else None,
-                    "endsTime": end[1] if end else None,
-                    "teacherId": None,
+                    "startsTime": start[1].zfill(5) if start else None,
+                    "endsTime": end[1].zfill(5) if end else None,
+                    "teacherId": teacher_id,
+                    "matchKind": match_kind,
                     "source": line.strip(),
-                    "candidates": name_candidates(name, teachers),
+                    "candidates": candidates,
                 }
             )
     return {

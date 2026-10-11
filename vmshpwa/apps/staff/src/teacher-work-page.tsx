@@ -38,6 +38,7 @@ import {
   Textarea,
 } from '@vmsh/ui'
 import { UsersSectionTabs, type UsersSection } from './users-section-tabs'
+import { acceptAliasReceipt } from './teacher-work-inputs'
 import './teacher-work.css'
 
 // design-system/05-pages-and-flows.md, Staff; authoritative rules: docs/teacher-work.md.
@@ -414,6 +415,9 @@ function ZoomView({
         <Trans>
           Сопоставления относятся только к выбранному курсу и сезону. Подсказка имени требует вашего
           подтверждения.
+        </Trans>{' '}
+        <Trans>
+          Изменения сохраняются сразу. Отчёт обновится по кнопке пересчёта или по расписанию.
         </Trans>
       </p>
       <div className="flex flex-wrap gap-4">
@@ -498,7 +502,7 @@ function readRosterPreview(key: string): TeacherWorkPreview | null {
   }
 }
 
-function RosterView({
+export function TeacherWorkRosterView({
   inputs,
   teachers,
   saving,
@@ -540,6 +544,7 @@ function RosterView({
   })
   const [error, setError] = useState<string | null>(null),
     [previewing, setPreviewing] = useState(false),
+    [needsChoiceOnly, setNeedsChoiceOnly] = useState(false),
     [replace, setReplace] = useState(false)
   useEffect(() => {
     try {
@@ -552,6 +557,8 @@ function RosterView({
   }, [draftKey, preview, eventId, base])
   const event = inputs.events.find((e) => e.public_id === eventId)
   const existing = inputs.rosters.find((r) => r.eventPublicId === eventId)
+  const unmatchedCount =
+    preview?.rows.filter((r) => !r.teacherId && r.candidates.length === 0).length ?? 0
   const conflict = Boolean(
     base &&
     event &&
@@ -612,6 +619,7 @@ function RosterView({
     try {
       const p = await onPreview(raw)
       setPreview(p)
+      setNeedsChoiceOnly(false)
       if (p.eventCandidates.length === 1) bindEvent(p.eventCandidates[0]!)
       else if (eventId) bindEvent(eventId)
     } catch {
@@ -732,6 +740,33 @@ function RosterView({
               ? t`Предварительное распределение: сохраните черновик либо подтвердите фактические смены.`
               : t`Проверьте преподавателей и исключения времени перед подтверждением.`}
           </p>
+          <p className="text-small" role="status">
+            <Trans>
+              Выбрано: {preview.rows.filter((r) => r.teacherId).length} из {preview.rows.length}.
+            </Trans>{' '}
+            <Trans>Однозначные соответствия заполнены. Подтвердите состав после проверки.</Trans>
+          </p>
+          <Label className="flex items-center gap-2">
+            <Checkbox
+              checked={needsChoiceOnly}
+              onCheckedChange={(v) => setNeedsChoiceOnly(v === true)}
+            />
+            <Trans>Только требуют выбора</Trans>
+          </Label>
+          {unmatchedCount > 0 ? (
+            <Button
+              onClick={() =>
+                setPreview({
+                  ...preview,
+                  rows: preview.rows.filter((r) => r.teacherId || r.candidates.length > 0),
+                })
+              }
+              size="sm"
+              variant="outline"
+            >
+              <Trans>Исключить все без совпадений ({unmatchedCount})</Trans>
+            </Button>
+          ) : null}
           <div className="overflow-x-auto">
             <table className="teacher-work-inputs">
               <caption className="sr-only">
@@ -763,56 +798,96 @@ function RosterView({
                 </tr>
               </thead>
               <tbody>
-                {preview.rows.map((row) => (
-                  <tr key={row.rowId}>
-                    <th scope="row">
-                      {row.room} · {row.name}
-                    </th>
-                    <td>
-                      <TeacherSelect
-                        label={t`Преподаватель для ${row.name}`}
-                        onChange={(id) => update(row.rowId, { teacherId: id })}
-                        teachers={teachers}
-                        value={row.teacherId}
-                      />
-                      <div className="text-caption text-muted-foreground">
-                        {row.candidates.map((c) => c.label).join(' · ')}
-                      </div>
-                    </td>
-                    <td>
-                      <Input
-                        aria-label={t`Начало для ${row.name}`}
-                        onChange={(e) => update(row.rowId, { startsTime: e.target.value || null })}
-                        type="time"
-                        value={row.startsTime ?? ''}
-                      />
-                    </td>
-                    <td>
-                      <Input
-                        aria-label={t`Окончание для ${row.name}`}
-                        onChange={(e) => update(row.rowId, { endsTime: e.target.value || null })}
-                        type="time"
-                        value={row.endsTime ?? ''}
-                      />
-                    </td>
-                    <td>{h(credited(row))}</td>
-                    <td className="max-w-64 break-words">{row.source}</td>
-                    <td>
-                      <Button
-                        onClick={() =>
-                          setPreview({
-                            ...preview,
-                            rows: preview.rows.filter((r) => r.rowId !== row.rowId),
-                          })
-                        }
-                        size="sm"
-                        variant="ghost"
-                      >
-                        <Trans>Исключить</Trans>
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {preview.rows
+                  .filter((row) => !needsChoiceOnly || !row.teacherId)
+                  .map((row) => (
+                    <tr key={row.rowId}>
+                      <th scope="row">
+                        {row.room} · {row.name}
+                      </th>
+                      <td>
+                        <TeacherSelect
+                          label={t`Преподаватель для ${row.name}`}
+                          onChange={(id) =>
+                            update(row.rowId, {
+                              teacherId: id,
+                              matchKind: id ? 'manual' : 'unresolved',
+                            })
+                          }
+                          teachers={teachers}
+                          value={row.teacherId}
+                        />
+                        <div className="text-caption text-muted-foreground">
+                          {row.teacherId
+                            ? row.matchKind === 'exact'
+                              ? t`Точное соответствие`
+                              : row.matchKind === 'remembered'
+                                ? t`Ранее подтверждено`
+                                : t`Выбрано вручную`
+                            : row.matchKind === 'ambiguous'
+                              ? t`Несколько совпадений — выберите преподавателя`
+                              : row.candidates.length
+                                ? t`Похожее имя — проверьте подсказку`
+                                : t`Не найден — выберите или исключите`}
+                        </div>
+                        {!row.teacherId ? (
+                          <div className="flex flex-wrap gap-1">
+                            {row.candidates.map((candidate) => (
+                              <Button
+                                key={candidate.teacherId}
+                                aria-label={t`Выбрать ${candidate.label} для ${row.name}`}
+                                onClick={() =>
+                                  update(row.rowId, {
+                                    teacherId: candidate.teacherId,
+                                    matchKind: 'manual',
+                                  })
+                                }
+                                size="sm"
+                                variant="outline"
+                              >
+                                {candidate.label}
+                              </Button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td>
+                        <Input
+                          aria-label={t`Начало для ${row.name}`}
+                          onChange={(e) =>
+                            update(row.rowId, { startsTime: e.target.value || null })
+                          }
+                          type="time"
+                          value={row.startsTime ?? ''}
+                        />
+                      </td>
+                      <td>
+                        <Input
+                          aria-label={t`Окончание для ${row.name}`}
+                          onChange={(e) => update(row.rowId, { endsTime: e.target.value || null })}
+                          type="time"
+                          value={row.endsTime ?? ''}
+                        />
+                      </td>
+                      <td>{h(credited(row))}</td>
+                      <td className="max-w-64 break-words">{row.source}</td>
+                      <td>
+                        <Button
+                          aria-label={t`Исключить ${row.name}`}
+                          onClick={() =>
+                            setPreview({
+                              ...preview,
+                              rows: preview.rows.filter((r) => r.rowId !== row.rowId),
+                            })
+                          }
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Trans>Исключить</Trans>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -1141,9 +1216,21 @@ export function TeacherWorkPage({
       lastCommand.current = { payload, key }
       return client.command({ ...input, courseId, idempotencyKey: key })
     },
-    onSuccess: () => {
+    onSuccess: async (receipt, input) => {
       lastCommand.current = null
-      void queryClient.invalidateQueries({ queryKey: scope })
+      if (input.action === 'alias' && receipt.alias) {
+        // A background read begun before the write must not restore an older alias.
+        await queryClient.cancelQueries({ queryKey: [...scope, 'inputs', courseId] })
+        queryClient.setQueryData<TeacherWorkInputs>([...scope, 'inputs', courseId], (current) =>
+          acceptAliasReceipt(current, receipt, input.name),
+        )
+      } else {
+        void queryClient.invalidateQueries({ queryKey: [...scope, 'inputs', courseId] })
+        if (input.action === 'override') {
+          void queryClient.invalidateQueries({ queryKey: [...scope, 'report', courseId] })
+          void queryClient.invalidateQueries({ queryKey: [...scope, 'details', courseId] })
+        }
+      }
     },
     onError: (error) => auth.handleApiError(error),
   })
@@ -1204,7 +1291,7 @@ export function TeacherWorkPage({
           teachers={catalog.data.teachers}
         />
       ) : section === 'school' ? (
-        <RosterView
+        <TeacherWorkRosterView
           draftKey={`${auth.client.runtime.instance}:${principal.accountId}:${courseId}:teacher-work-roster`}
           inputs={inputs.data}
           key={courseId}
