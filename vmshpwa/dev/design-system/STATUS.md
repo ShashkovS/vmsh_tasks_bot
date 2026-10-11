@@ -2496,5 +2496,6 @@ Student visual 3 FAIL из-за существующих подсказок по
 сообщение один раз, перенос/клонирование/разметка непосредственно при нём.
 Evidence и CAS сохраняются. Fast gate PASS: 2981 Python / 12 SKIP,
 1102 frontend, 375 Storybook, 10 Chromium E2E (review/submissions/student-results).
-Выпуск ожидается; [proof](../../../pwa_tests/reports/review-sheet-conversation-20261011/README.md).
+Исправление `9e98e282` выпущено на оба production: 25 HTTP checks / 116 Staff hashes PASS
+на каждом, службы active, maintenance off; [proof](../../../pwa_tests/reports/review-sheet-conversation-20261011/README.md).
 [Решение и компоненты](../../docs/review-sheet.md#11-октября--единая-переписка-без-повторов).

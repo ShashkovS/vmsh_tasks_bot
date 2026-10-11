@@ -57,5 +57,21 @@ webhook, TLF — fast-forward без пересборки/перезапуска
 [Проверки и новые снимки](../../pwa_tests/reports/review-sheet-conversation-20261011/README.md):
 fast gate PASS (2981 Python / 12 SKIP, 1102 frontend, 375 Storybook,
 10 Chromium E2E), дополнительный review для сохранения снимков 4 PASS.
-Выпуск исправления начат в ранее авторизованном scope; используется тот же
-webhook ВМШ и [TLF script](tlf-app/deploy_review_sheet.sh).
+Коммит `9e98e28288087fd212781efe78bdb6cb0ec0551c` запушен в `vmshpwa` и
+выпущен штатным webhook ВМШ и тем же [TLF script](tlf-app/deploy_review_sheet.sh).
+
+| Сервер | Static release | HTTP | Staff asset hashes |
+| --- | --- | --- | --- |
+| ВМШ | `9e98e2828808-20261011185432` | 25 PASS | 116 PASS |
+| TLF | `tlfprep-20261011-review-sheet-9e98e2828808` | 25 PASS | 116 PASS |
+
+Четыре HTML/production provenance совпадают, 406 private artifacts uploaded
+на каждом, public maps отсутствуют; службы/timers active, maintenance off.
+TLF: все 168 таблиц / 36989 строк неизменны при остановленных writers,
+canonical settings/NATS сохранены; backups `20261011T185438.753575Z` /
+`20261011T185508.479736Z`, integrity ok. ВМШ: server-only post-deploy backup
+`db/review-sheet-release-20261011/post-deploy-20261011T185632Z.sqlite3`,
+391454720 bytes, integrity ok, schema 0118. Production rows не выгружались.
+[Квитанция исправления](../../pwa_tests/reports/review-sheet-conversation-20261011/production-proof.json).
+Итоговый docs-only commit синхронизируется на оба checkout без пересборки
+или рестарта; проверенные static releases остаются на `9e98e282`.

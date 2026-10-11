@@ -65,4 +65,4 @@ write-транзакции проверяет snapshot результата, м�
 
 Исправление реализовано, fast gate PASS: 2981 Python / 12 SKIP, 1102 frontend,
 375 Storybook и 10 Chromium E2E. [Проверки](../../pwa_tests/reports/review-sheet-conversation-20261011/README.md).
-Выпуск исправления ожидается.
+Исправление `9e98e282` выпущено на оба production: по 25 HTTP checks и 116 Staff hashes PASS; службы active, maintenance off.

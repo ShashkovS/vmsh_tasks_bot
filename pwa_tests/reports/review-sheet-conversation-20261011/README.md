@@ -27,4 +27,11 @@ Source digest `9b82f1d1bae1f5e1aca23b6607d5395009688411062c0f16bc33f8f2a315b83d`
 исходников ([квитанция](visual-e2e.json)). Сохранены 6 [снимков](screenshots);
 просмотрены карточка конфликта light и 390 px dark. Дубля нет, разметка и
 действия при решении сохранены, форма и мобильный экран помещаются.
-Выпуск исправления начат в ранее авторизованном владельцем scope фичи.
+Исправление `9e98e282` запушено в `vmshpwa` и выпущено на оба сервера.
+На каждом: 25 HTTP checks PASS, 116 Staff JS/CSS hashes PASS, четыре
+production HTML/provenance совпадают; службы active, maintenance off,
+406 private artifacts uploaded, public maps отсутствуют. TLF сохранил 168
+таблиц / 36989 строк, настройки/NATS и backups integrity ok. ВМШ server-only
+post-deploy backup 391454720 bytes, integrity ok, schema 0118.
+[Production proof](production-proof.json), [операционный record](../../../docs/deploy/review-sheet-20261011.md).
+Authenticated production browser acceptance не заявляется.
