@@ -270,3 +270,11 @@ def test_release_id_is_a_single_safe_lowercase_label(
 ) -> None:
     with pytest.raises(ValueError, match="lowercase revision label"):
         static_release.activate_release(release_id, RECORDED_AT)
+
+
+def test_private_sourcemaps_cannot_be_published(tmp_path: Path, release_root: Path) -> None:
+    sources = _bundles(tmp_path / 'bundles', 'first')
+    (sources['student'] / 'private.js.map').write_text('private source content')
+    with pytest.raises(ValueError, match='Private sourcemaps'):
+        static_release.package_release('revision-a', RECORDED_AT, sources=sources)
+    assert not (release_root / 'revision-a').exists()

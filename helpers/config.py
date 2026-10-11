@@ -73,6 +73,7 @@ class Config:
     sos_channel: Union[str, int] = ""
     exceptions_channel: Union[str, int] = ""
     sentry_dsn: Optional[str] = field(default="", repr=False)
+    frontend_sentry_dsn: str = field(default="", repr=False)
     sentry_release: str = ""
     nats_server: Optional[str] = "nats://127.0.0.1:4222"
     pwa_vapid_public_key: str = ""
@@ -371,7 +372,14 @@ def _init_sentry(dsn: str, environment: str, release: str = ""):
                     AsyncioIntegration(),
                     logging_integration,
                 ],
-                traces_sampler=sample_sentry_trace,
+                # GlitchTip migration (docs/deploy/glitchtip/migration-20261011.md)
+                # sends errors only; latency metrics remain in Prometheus.
+                traces_sampler=(
+                    (lambda _: 0.0)
+                    if "@glitch.leaders.tech/" in dsn else sample_sentry_trace
+                ),
+                send_client_reports=False,
+                include_local_variables=False,
                 environment=environment,
                 release=release or None,
                 send_default_pii=False,

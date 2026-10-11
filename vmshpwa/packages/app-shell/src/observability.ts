@@ -7,6 +7,8 @@ import {
   serviceAvailabilitySnapshot,
 } from '@vmsh/contracts'
 import { queryFailure, queryFamily } from './query-errors'
+import { createSentryEventFilter, expectedHandledFailure } from './sentry-noise'
+import { createSentryAdmission } from './sentry-admission'
 
 export interface FrontendObservabilityOptions {
   audience: 'student' | 'family' | 'staff'
@@ -83,14 +85,28 @@ export function sanitizeSentryEvent<T extends Event>(event: T): T {
 export function initFrontendObservability(options: FrontendObservabilityOptions) {
   if (initialized || !options.enabled || !options.dsn) return
 
+  const filterEvent = createSentryEventFilter()
+  const admitEvent = createSentryAdmission(options.audience)
   Sentry.init({
     dsn: options.dsn,
     enabled: true,
     environment: options.environment,
     ...(options.release ? { release: options.release } : {}),
     sendDefaultPii: false,
+    sendClientReports: false,
+    tracesSampleRate: 0,
+    enableLogs: false,
     attachStacktrace: true,
-    beforeSend: sanitizeSentryEvent,
+    // SDK Dedupe has no time window and runs before sampling; our filter owns repeats.
+    // GlitchTip receives errors only; migration-20261011.md excludes session telemetry.
+    integrations: (defaults) =>
+      defaults.filter((integration) => !['Dedupe', 'BrowserSession'].includes(integration.name)),
+    beforeSend: async (event) => {
+      const filtered = filterEvent(event)
+      if (!filtered) return null
+      const sanitized = sanitizeSentryEvent(filtered)
+      return (await admitEvent(sanitized)) ? sanitized : null
+    },
     beforeBreadcrumb: sanitizeSentryBreadcrumb,
     initialScope: {
       tags: { audience: options.audience },
@@ -99,8 +115,7 @@ export function initFrontendObservability(options: FrontendObservabilityOptions)
   initialized = true
   setServiceEpisodeReporter((event) => {
     Sentry.addBreadcrumb({ category: 'service.recovery', level: 'info', data: event })
-    if (event.prolonged || event.state === 'reconnecting')
-      Sentry.captureMessage('PWA service recovery', { level: 'warning', extra: event })
+    // Recovery is diagnostic context, not an event; 2026-10-11 Sentry quota decision.
   })
 }
 
@@ -109,6 +124,48 @@ export function setObservabilityUser(accountId: string | null) {
 }
 
 const reportedErrors = new WeakSet<object>()
+const breadcrumbErrors = new WeakSet<object>()
+
+/** Public build locations only; docs/performance/2026-10-10-sentry-noise.md. */
+function handledDiagnosticError(
+  error: unknown,
+  message: string,
+): { error: Error; location?: string } {
+  const safeError = new Error(message)
+  let originalLocation: string | undefined
+  // Keep the application's original failure location without its message,
+  // function names, arbitrary URLs, or private data in a wrapped cause.
+  try {
+    let cause = error
+    let frames: string[] = []
+    for (let depth = 0; depth < 5 && cause instanceof Error; depth++) {
+      const locations = (cause.stack ?? '')
+        .split('\n')
+        .slice(0, 21)
+        .flatMap((line) => {
+          const match = /(https?:\/\/[^\s)]+):(\d+):(\d+)\)?$/.exec(line)
+          if (!match) return []
+          const url = new URL(match[1]!)
+          if (
+            typeof location === 'undefined' ||
+            url.origin !== location.origin ||
+            !/^\/(student|family|staff)\/assets\/[\w.-]+\.js$/.test(url.pathname)
+          )
+            return []
+          return [`    at ${url.origin}${url.pathname}:${match[2]}:${match[3]}`]
+        })
+      if (locations.length) frames = locations
+      cause = cause.cause
+    }
+    if (frames.length) {
+      safeError.stack = `Error: ${message}\n${frames.join('\n')}`
+      originalLocation = frames[0]?.replace(/^ {4}at https?:\/\/[^/]+/, '')
+    }
+  } catch {
+    // A malformed stack must not prevent the safe synthetic diagnostic.
+  }
+  return { error: safeError, ...(originalLocation ? { location: originalLocation } : {}) }
+}
 
 /** Allowlisted diagnostics only; see docs/submission-error-diagnostics.md. */
 export function reportHandledError(
@@ -124,34 +181,56 @@ export function reportHandledError(
 ) {
   const failure = queryFailure(error)
   const family = queryFamily([context.queryFamily])
-  if (operation === 'query' && failure.expected) return
-  if (error !== null && typeof error === 'object') {
-    if (reportedErrors.has(error)) return
-    reportedErrors.add(error)
-  }
+  if (expectedHandledFailure(failure, operation, family)) return
+  if (error !== null && typeof error === 'object' && reportedErrors.has(error)) return
   const api = failure.api ?? null
-  if (api?.code === 'service_updating' || api?.code === 'request_not_confirmed') return
+  const errorType = api ? 'API failure' : error instanceof Error ? error.name : 'Unknown failure'
   // Do not forward original messages, causes, details or mutation variables: these can contain answers.
   try {
-    Sentry.captureException(
-      new Error(
-        `PWA ${operation}: ${api ? 'API failure' : error instanceof Error ? error.name : 'Unknown failure'}`,
-      ),
-      {
-        ...(context.accountId ? { user: { id: context.accountId } } : {}),
-        tags: {
-          operation,
-          ...(operation === 'query' ? { query_family: family, transport_kind: failure.kind } : {}),
-          ...(api ? { http_status: String(api.status), api_code: api.code } : {}),
-        },
-        extra: {
-          ...context,
-          ...(context.queryFamily ? { queryFamily: family } : {}),
-          requestId: api?.requestId,
-          online: typeof navigator === 'undefined' ? null : navigator.onLine,
-        },
+    const diagnostic = handledDiagnosticError(error, `PWA ${operation}: ${errorType}`)
+    if (
+      operation === 'query' &&
+      (['network', 'deadline'].includes(failure.kind) ||
+        (failure.kind === 'unknown' && errorType === 'TypeError' && !diagnostic.location))
+    ) {
+      if (error !== null && typeof error === 'object') {
+        if (breadcrumbErrors.has(error)) return
+        breadcrumbErrors.add(error)
+      }
+      Sentry.addBreadcrumb({
+        category: 'query.failure',
+        level: 'info',
+        message: diagnostic.error.message,
+        data: { queryFamily: family, transportKind: failure.kind },
+      })
+      return
+    }
+    if (error !== null && typeof error === 'object') reportedErrors.add(error)
+    Sentry.captureException(diagnostic.error, {
+      ...(context.accountId ? { user: { id: context.accountId } } : {}),
+      // Semantic groups survive minification; see docs/performance/2026-10-10-sentry-noise.md.
+      fingerprint: [
+        'pwa-handled-v1',
+        operation,
+        operation === 'query' ? family : 'write',
+        failure.kind,
+        errorType,
+        ...(api ? [String(api.status), api.code] : []),
+        ...(failure.kind === 'unknown' && diagnostic.location ? [diagnostic.location] : []),
+      ],
+      tags: {
+        operation,
+        diagnostic_source: diagnostic.location ? 'original' : 'synthetic',
+        ...(operation === 'query' ? { query_family: family, transport_kind: failure.kind } : {}),
+        ...(api ? { http_status: String(api.status), api_code: api.code } : {}),
       },
-    )
+      extra: {
+        ...context,
+        ...(context.queryFamily ? { queryFamily: family } : {}),
+        requestId: api?.requestId,
+        online: typeof navigator === 'undefined' ? null : navigator.onLine,
+      },
+    })
   } catch {
     // Diagnostics must not change delivery or prevent an error from being shown.
   }

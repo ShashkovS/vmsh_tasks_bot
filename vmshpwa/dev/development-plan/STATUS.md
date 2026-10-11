@@ -1,5 +1,46 @@
 # Статус плана разработки
 
+## 2026-10-11 — Переключение GlitchTip
+
+Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
+на каждом PASS. Stage 2 выпущен: canonical frontend/backend DSN GlitchTip, private release
+sourcemaps/CSP и Telegram `@vmsh179bot` в группу ошибок ВМШ. UI/copy/stories не меняются.
+[Операционный record](../../../docs/deploy/glitchtip/migration-20261011.md).
+
+## 2026-10-11 — Квота frontend Sentry
+
+Владелец разрешил commit/push и выпуск текущего correction на оба production,
+затем GlitchTip DSN/CSP/sourcemaps. [Операционный план](../../../docs/deploy/glitchtip/migration-20261011.md),
+stage 1 и GlitchTip switch выпущены; live SDK и original stacks подтверждены.
+
+[Усиление бюджета 5 000](../../../docs/performance/2026-10-11-sentry-quota.md)
+реализовано: общий SQLite admission для workers/вкладок, 100 diagnostics + 900
+важных событий/32 дня/портал; source-less query TypeError и read transport
+остаются breadcrumbs. Migration 0117; static, 1088 frontend, 364 Storybook,
+четыре app builds, 12 Chromium и 43 targeted quota/HTTP/schema checks PASS.
+Общий gate не зелёный: 6 прежних private `_external_pipelines` inputs отсутствуют.
+Product UI/outbox/retry не меняются; correction выпущен на оба портала.
+
+Владелец запросил и получил [GlitchTip на prep](../../../docs/deploy/glitchtip/README.md):
+https://glitch.leaders.tech, две организации/четыре проекта, real HTTPS login,
+frontend/SDK ingestion/stacks, restart, actual backup restore и TLS renewal PASS.
+Retention 30 дней, daily local snapshots 7 дней, регистрация закрыта, MCP с auth.
+DSN/source maps/CSP и Telegram delivery завершены; SMTP выключен по решению владельца.
+
+## 2026-10-10 — Шум frontend Sentry
+
+Реализован correction observability всех аудиторий: ожидаемые status/code,
+короткие recovery breadcrumbs, semantic grouping и раздельные client budgets.
+[Решение, implementation и проверка](../../../docs/performance/2026-10-10-sentry-noise.md).
+UI/outbox не меняются; static checks, 1078 frontend, 364 Storybook и 12
+Chromium E2E PASS. После восстановления corpus 8 Python failures PASS;
+остаются 6 missing `_external_pipelines` inputs, общий gate не зелёный.
+Sentry MCP подключён: 27 357 events/7 дней, 3 528/сутки. Metadata follow-up
+реальных query families и safe original stack locations: focused static
+checks, 23 unit и 4 Chromium E2E PASS, все приложения пересобраны.
+Причина historical TypeError требует representative event после выпуска.
+Production не менялся.
+
 ## 2026-10-10 — Legacy-счётчик пунктов в TikZ
 
 Сбой `gl-16` воспроизведён: `No counter 'itemnum' defined`. Compatibility

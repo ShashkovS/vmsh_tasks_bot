@@ -31,6 +31,12 @@ CLIENT_MEDIA_FAILURES = Counter(
     ("audience",),
 )
 
+CLIENT_SENTRY_ADMISSIONS = Counter(
+    "vmsh_client_sentry_admissions",
+    "Frontend event reservations/denials, not delivered Sentry event counts.",
+    ("lane", "outcome"),
+)
+
 HTTP_REQUESTS = Counter(
     "vmsh_http_requests",
     "Total number of HTTP requests handled by aiohttp.",

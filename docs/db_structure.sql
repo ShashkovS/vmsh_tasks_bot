@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 48763043b6595824c90fb9d1e145a4d3e7ec5cd78bc697e73d139e91739a0f45
+-- Product schema SHA-256: fcbf7090f4436df67e7b952bb569b726e6bfffb0f90ac7ccc26bf7d4f5b438df
 
 CREATE TABLE achievement_definitions
 (
@@ -1985,6 +1985,8 @@ CREATE TABLE pwa_image_uploads (
             CHECK((state='completed') = (response IS NOT NULL))
         );
 
+CREATE TABLE pwa_sentry_admissions (id INTEGER PRIMARY KEY, occurred_at TEXT NOT NULL, lane TEXT NOT NULL CHECK (lane IN ('query', 'error')), signature TEXT NOT NULL CHECK (length(signature) = 8 AND signature NOT GLOB '*[^0-9a-f]*'));
+
 CREATE TABLE questions
 (
     id                   INTEGER primary key,
@@ -3304,6 +3306,8 @@ CREATE INDEX push_subscriptions_account_idx
     on push_subscriptions (account_id, updated_at desc);
 
 CREATE INDEX pwa_image_uploads_cleanup ON pwa_image_uploads(state, expires_at);
+
+CREATE INDEX pwa_sentry_admissions_budget_idx ON pwa_sentry_admissions (lane, occurred_at, signature);
 
 CREATE INDEX results_by_student_problem
     on results (student_id, problem_id);

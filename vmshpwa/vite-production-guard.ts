@@ -141,6 +141,9 @@ export function buildProvenancePlugin(
   return {
     name: `vmsh-build-provenance-${application}`,
     apply: 'build',
+    // Private upload/removal is owned by production_frontend_build.py;
+    // docs/deploy/glitchtip/migration-20261011.md. Preserve hashed JS bytes.
+    config: () => (provenance.profile === 'production' ? { build: { sourcemap: 'hidden' } } : {}),
     generateBundle() {
       this.emitFile({
         type: 'asset',

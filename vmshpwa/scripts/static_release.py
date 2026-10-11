@@ -191,6 +191,10 @@ def package_release(
         source = source_directories[app_name]
         if not source.is_dir():
             raise ValueError(f"Missing {app_name} production bundle")
+        # GlitchTip private maps are uploaded/removed by production_frontend_build.
+        # docs/deploy/glitchtip/migration-20261011.md: never publish source content.
+        if any(source.rglob("*.map")):
+            raise ValueError(f"Private sourcemaps remain in {app_name} production bundle")
         for relative_path in required_files:
             if not (source / relative_path).is_file():
                 raise ValueError(f"Missing {app_name}/{relative_path}")

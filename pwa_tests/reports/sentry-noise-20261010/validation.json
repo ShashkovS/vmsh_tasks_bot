@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "revision": "3af9ffb0ac8a2831c247ef4345a0a456b28f9b92",
+  "finalSourceDigest": "9d01220713ff7fb19d6bb7d1b43c78977784b5ebe6444a78e604ed486c7bbe68",
+  "sourceChangedDuringFinalChecks": false,
+  "productionChanged": false,
+  "overallGate": "not-green: six Python tests require absent _external_pipelines inputs",
+  "initialGate": {
+    "command": "make pwa-check-fast PWA_E2E_MODES=\"submissions redeploy offline-current\"",
+    "staticSteps": [
+      {
+        "name": "python-dependencies",
+        "command": [
+          "uv",
+          "sync",
+          "--frozen",
+          "--check"
+        ],
+        "seconds": 0.027,
+        "exit_code": 0
+      },
+      {
+        "name": "format",
+        "command": [
+          "pnpm",
+          "format:check"
+        ],
+        "seconds": 10.242,
+        "exit_code": 0
+      },
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "typecheck"
+        ],
+        "seconds": 29.176,
+        "exit_code": 0
+      },
+      {
+        "name": "lint-js",
+        "command": [
+          "pnpm",
+          "exec",
+          "eslint",
+          ".",
+          "--max-warnings=0",
+          "--cache",
+          "--cache-strategy",
+          "content",
+          "--cache-location",
+          "/Users/sergeyshashkov/.codex/worktrees/c996/vmsh_tasks_bot/.runtime/vmshpwa/checks/lint/ef3f8d6e4dfb6470996e0779f17763391db6ab2e03b7ba0d6800919eb2a791a9"
+        ],
+        "seconds": 97.778,
+        "exit_code": 0
+      },
+      {
+        "name": "lint-css",
+        "command": [
+          "pnpm",
+          "lint:css"
+        ],
+        "seconds": 1.592,
+        "exit_code": 0
+      },
+      {
+        "name": "i18n-frontend",
+        "command": [
+          "pnpm",
+          "i18n:check"
+        ],
+        "seconds": 4.344,
+        "exit_code": 0
+      },
+      {
+        "name": "i18n-backend",
+        "command": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "python",
+          "-m",
+          "vmshpwa.scripts.backend_i18n",
+          "check"
+        ],
+        "seconds": 1.012,
+        "exit_code": 0
+      }
+    ],
+    "python": {
+      "passed": 2867,
+      "skipped": 8,
+      "initialFailed": 14,
+      "corpusFailuresRetestedPassed": 8,
+      "remainingFailures": [
+        "pwa_tests/domain/test_problem_import.py::test_reference_workbook_remains_a_clean_characterization_input",
+        "pwa_tests/domain/test_lesson_statistics.py::test_one_iteration_matches_original_numpy_calc",
+        "pwa_tests/integration/test_phase8_news_mirror.py::test_historical_export_is_fully_partitioned_without_copying_content",
+        "pwa_tests/test_external_process_register.py::test_register_has_complete_typed_process_records_and_valid_links",
+        "pwa_tests/test_external_process_register.py::test_every_external_script_or_reference_artifact_is_classified_once",
+        "pwa_tests/test_external_process_register.py::test_runbooks_are_ordered_and_reference_registered_processes"
+      ]
+    },
+    "frontend": {
+      "testFilesPassed": 213,
+      "testsPassed": 1078
+    },
+    "storybook": {
+      "initialTestsPassed": 363,
+      "missingCorpusStoryRetestedPassed": 1
+    },
+    "chromium": {
+      "modes": [
+        "submissions",
+        "redeploy",
+        "offline-current"
+      ],
+      "passed": 12
+    }
+  },
+  "finalFollowUp": {
+    "scope": "Final Sentry metadata: safe original locations distinguish unknown bugs, including Firefox/Safari stack syntax",
+    "steps": [
+      {
+        "name": "metadata-final-format",
+        "exit_code": 0,
+        "seconds": 0.128,
+        "command": [
+          "node",
+          "node_modules/prettier/bin/prettier.cjs",
+          "--check",
+          "packages/app-shell/src/observability.ts",
+          "packages/app-shell/src/query-errors.ts",
+          "packages/app-shell/src/query-errors.test.ts"
+        ]
+      },
+      {
+        "name": "metadata-final-types",
+        "exit_code": 0,
+        "seconds": 1.42,
+        "command": [
+          "pnpm",
+          "--filter",
+          "@vmsh/app-shell",
+          "typecheck"
+        ]
+      },
+      {
+        "name": "metadata-final-lint",
+        "exit_code": 0,
+        "seconds": 2.449,
+        "command": [
+          "pnpm",
+          "exec",
+          "eslint",
+          "--max-warnings=0",
+          "packages/app-shell/src/observability.ts",
+          "packages/app-shell/src/query-errors.ts",
+          "packages/app-shell/src/query-errors.test.ts"
+        ]
+      },
+      {
+        "name": "metadata-final-unit",
+        "exit_code": 0,
+        "seconds": 1.953,
+        "command": [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "packages/app-shell/src/query-errors.test.ts",
+          "packages/app-shell/src/sentry-noise.test.ts",
+          "packages/app-shell/src/observability-init.test.ts",
+          "packages/app-shell/src/observability.test.ts",
+          "packages/app-shell/src/submission-error-diagnostics.test.ts"
+        ]
+      },
+      {
+        "name": "metadata-final-e2e",
+        "exit_code": 0,
+        "seconds": 28.895,
+        "command": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "python",
+          "-m",
+          "vmshpwa.scripts.e2e_runner",
+          "--mode",
+          "offline-current",
+          "--browser",
+          "chromium",
+          "--report",
+          "/Users/sergeyshashkov/.codex/worktrees/c996/vmsh_tasks_bot/.runtime/vmshpwa/checks/20261010T183207.199632Z/metadata-final-e2e.json"
+        ]
+      }
+    ],
+    "unitTestsPassed": 23,
+    "chromiumTestsPassed": 4,
+    "e2e": {
+      "modes": [
+        "offline-current"
+      ],
+      "browser": "chromium",
+      "seconds": 28.853,
+      "exit_code": 0,
+      "phases": [
+        {
+          "command": [
+            "pnpm",
+            "build"
+          ],
+          "seconds": 3.793,
+          "cache_hit": false,
+          "exit_code": 0
+        },
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/offline-current-lessons.spec.ts",
+            "e2e/content-publication.spec.ts",
+            "--project",
+            "chromium",
+            "--retries",
+            "0"
+          ],
+          "seconds": 24.709,
+          "cache_hit": false,
+          "exit_code": 0,
+          "preparation": {
+            "seed_cache_hit": true,
+            "seconds": 0.032,
+            "key": "4bc5674a624f3f707bbc2d2c95f43d417c54ca6d094fd65c9644cd9504411e80"
+          }
+        }
+      ]
+    }
+  },
+  "localReceiptsDirectory": ".runtime/vmshpwa/checks/20261010T183207.199632Z",
+  "limits": [
+    "Full gate retains unrelated missing-input failures; backend source unchanged.",
+    "Later query family/stack corrections verified with focused checks; unaffected full suites not repeated.",
+    "Frontend limits are per document; production volume and underlying historical TypeError cause remain unverified until release.",
+    "Firefox/Safari stack syntax has unit coverage; browser acceptance used Chromium."
+  ]
+}

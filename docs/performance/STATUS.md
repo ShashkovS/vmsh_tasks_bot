@@ -1,5 +1,49 @@
 # Анализ производительности
 
+
+## 2026-10-11 — Переключение GlitchTip
+
+Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
+на каждом PASS. Stage 2 выпущен: canonical frontend/backend DSN GlitchTip, private release
+sourcemaps/CSP и Telegram `@vmsh179bot` в группу ошибок ВМШ. UI/copy/stories не меняются.
+[Операционный record](../deploy/glitchtip/migration-20261011.md).
+
+## 2026-10-11 — Квота Sentry 5 000
+
+Владелец разрешил commit/push текущих проверенных правок и выпуск на оба портала,
+затем переключение на GlitchTip. [Rollout record](../deploy/glitchtip/migration-20261011.md)
+ведёт обе стадии; рабочие серверные данные сохраняются.
+
+[Усиление защиты квоты](2026-10-11-sentry-quota.md) реализовано: бессодержательные
+query TypeError, read transport и recovery — breadcrumbs; остальные события
+получают общий durable backend admission с отдельными reserves. Custom DSN
+caps/error-message filters недоступны в бесплатном Sentry. План: 100 diagnostics
++ 900 важных событий на портал за скользящие 32 дня. Static, 1088 frontend,
+364 Storybook, четыре builds и 12 Chromium PASS; после repair 43 quota/HTTP/
+schema checks PASS. Остались 6 отсутствующих `_external_pipelines` inputs;
+общий gate не зелёный. Correction выпущен на оба портала.
+
+По запросу владельца [GlitchTip 6.2.6](../deploy/glitchtip/README.md) развёрнут
+на prep.leaders.tech, https://glitch.leaders.tech. Отдельные VMSH/TLF организации;
+HTTPS/IPv4/IPv6, real login, stacks/SDK ingest, restart, backup/restore и renewal
+PASS. MCP требует авторизации; retention 30 дней, daily local backups 7 дней.
+DSN переключены; Telegram delivery PASS, SMTP выключен по решению владельца.
+
+## 2026-10-10 — Шум frontend Sentry
+
+Реализован [инкремент нормализации](2026-10-10-sentry-noise.md): подтверждённые
+штатные отказы, recovery breadcrumbs, semantic grouping и отдельные
+client budgets для повторных diagnostics/ошибок.
+Sentry MCP подключён: последние 7 дней — 27 357 events, сутки — 3 528.
+Все static checks и 1078 frontend PASS; Storybook 363+1 PASS,
+Chromium submissions/redeploy/offline-current 12/12 PASS. Approved corpus
+восстановлен по SHA; 8 прежних Python failures PASS, остаются 6 missing
+`_external_pipelines` inputs. Общий gate не зелёный. По свежим данным добавлен
+metadata correction реальных query families и безопасных original stack
+locations: focused static checks, 23 unit и 4 Chromium E2E PASS;
+все приложения пересобраны. Причина historical TypeError ещё требует нового
+representative event после выпуска. Production не менялся.
+
 ## 2026-10-08 — Объединённый выпуск
 
 Оба production обновлены 8 октября до `d4bf4a30`: все четыре работы,

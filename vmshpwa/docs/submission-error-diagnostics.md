@@ -12,8 +12,23 @@
 `reportHandledError` передаёт только operation, ID аккаунта/задачи/очереди,
 число попыток, HTTP status/code/requestId и navigator.onLine (не доказательство
 доступности сервера). Исходные message/cause/details/variables не передаются.
-Один объект ошибки отправляется один раз. Отдельные повторные неудачные
-попытки могут давать отдельные события. Сохраняется существующая настройка DSN.
+Original stack с 10 октября сохраняет только same-origin public app `.js`
+locations без сообщений/имён функций/URL parameters; остальные URL исключены.
+Это даёт место исходного сбоя без передачи приватного cause.
+Один объект ошибки отправляется один раз. С 10 октября повторные объекты
+одинаковой сигнатуры дополнительно ограничиваются общим SDK `beforeSend`;
+ошибки отправки/хранения имеют отдельный от query/recovery бюджет.
+Подтверждённые отказы по сроку/лимиту попыток остаются в UI/outbox без Sentry.
+[Численные лимиты, sampling и регрессии](../../docs/performance/2026-10-10-sentry-noise.md).
+Сохраняется существующая настройка DSN.
+
+С 11 октября перед SDK transport требуется общий backend admission;
+ошибкам отправки/хранения и автоматическим crashes выделены 900 reservations
+за скользящие 32 дня на портал, отдельно от 100 read diagnostics.
+Отказ/timeout admission влияет только на telemetry и не меняет outbox.
+Anonymous endpoint передаёт только lane/hash, без ID/сообщений/payload;
+worker/reload/release не обнуляют ledger. Бюджеты двух Sentry аккаунтов независимы.
+[Политика 5 000, migration 0117 и проверки](../../docs/performance/2026-10-11-sentry-quota.md).
 
 Auth provider выставляет Sentry user.id=accountId и очищает его при выходе.
 Sanitizer сохраняет только user.id, удаляет остальные поля пользователя.

@@ -347,14 +347,9 @@ pwa-production-build:
 	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
 	@test -n "$(VITE_PUBLIC_MEDIA_ORIGIN)" || (echo "Set VITE_PUBLIC_MEDIA_ORIGIN"; exit 2)
 	@test -n "$(VITE_SENTRY_DSN)" || (echo "Set VITE_SENTRY_DSN"; exit 2)
-	@cd $(PWA_DIR) && CI=true \
-		VMSH_FRONTEND_BUILD_PROFILE=production \
-		VITE_ENABLE_MSW=false \
-		VITE_PROTOTYPE=false \
-		VITE_PUBLIC_MEDIA_ORIGIN="$(VITE_PUBLIC_MEDIA_ORIGIN)" \
-		VITE_SENTRY_DSN="$(VITE_SENTRY_DSN)" \
-		VITE_SENTRY_RELEASE="$(PWA_RELEASE_ID)" \
-		pnpm build
+	@python3 -m vmshpwa.scripts.production_frontend_build \
+		--release "$(PWA_RELEASE_ID)" --media-origin "$(VITE_PUBLIC_MEDIA_ORIGIN)" \
+		--fallback-dsn "$(VITE_SENTRY_DSN)"
 
 pwa-e2e:
 	cd $(PWA_DIR) && CI=true pnpm e2e
