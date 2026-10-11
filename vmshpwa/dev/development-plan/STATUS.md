@@ -4365,5 +4365,7 @@ Student visual 3 FAIL из-за существующих подсказок по
 [Квитанции, ограничения и снимки](../../../pwa_tests/reports/review-sheet-20261011/README.md).
 
 Владелец разрешил commit/push в основную production-ветку `vmshpwa` и выпуск
-на оба сервера после сообщения об ограничениях gate. Выпуск начат;
+на оба сервера после сообщения об ограничениях gate. Выпуск завершён: `08d4926d`,
+по 25 HTTP checks и 116 Staff asset hashes PASS; службы active, maintenance off.
+Данные/настройки/backup integrity сохранены;
 [операционный record](../../../docs/deploy/review-sheet-20261011.md).

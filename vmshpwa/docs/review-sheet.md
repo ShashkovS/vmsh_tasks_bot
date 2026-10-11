@@ -47,3 +47,7 @@ write-транзакции проверяет snapshot результата, м�
 прогон на чистых фазах — 48 + 12 + 9 PASS, Staff visual 3 PASS. Остаются
 нестабильный offline problem-release и три старых Student visual baselines.
 [Квитанции и снимки](../../pwa_tests/reports/review-sheet-20261011/README.md).
+
+Выпущено `08d4926d` на оба production с разрешения владельца после сообщения
+об ограничениях gate: по 25 HTTP checks и 116 Staff hashes PASS.
+[Выпуск и квитанции](../../docs/deploy/review-sheet-20261011.md).

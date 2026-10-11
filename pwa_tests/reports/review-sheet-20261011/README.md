@@ -95,3 +95,13 @@ Student «Сейчас»: 3 visual FAIL. Diff показывает сущест�
 Telegram polling и Google credentials не использовались. Для Python corpus
 подготовлены отдельные локальные копии ignored `_vmsh_examples` и
 `_external_pipelines`; системные `.DS_Store` в копиях исключены.
+
+## Production-выпуск
+
+Владелец разрешил выпуск после сообщения об ограничениях gate. `08d4926d`
+интегрирован в основную ветку `vmshpwa`, запушен и развёрнут на обоих серверах.
+По 25 HTTP checks и 116 Staff asset hashes PASS, все четыре HTML/provenance
+совпадают, службы active, maintenance off, backups integrity ok.
+[Операционный record](../../../docs/deploy/review-sheet-20261011.md),
+[proof](production-proof.json). Production browser acceptance под Staff-сессией
+не заявляется; общий gate не стал зелёным от production smoke.
