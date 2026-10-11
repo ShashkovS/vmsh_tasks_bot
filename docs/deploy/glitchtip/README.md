@@ -22,8 +22,8 @@ startup. The embedded worker uses PostgreSQL for its queue/cache, without Valkey
 Error/file retention is 30 days, release retention 90 days. Logs, uptime and cold
 storage are disabled. Hosted billing is disabled. MCP is available at
 **https://glitch.leaders.tech/mcp** and rejects unauthenticated requests.
-Email transport is not configured: notifications/password-reset email require
-SMTP configuration later. Public and social registration are disabled.
+Email transport is disabled at the owner's request. Error notifications use
+Telegram; password-reset email is unavailable. Public/social registration are disabled.
 
 The administrator is **sergey.shashkov@leaders.tech**. Retrieve the generated
 initial password over the existing SSH connection:
@@ -46,12 +46,18 @@ stale after a user changes their password.
 | TLF (`tlf`) | `tlfpwa` | 3 | `backend` | 4 |
 
 The administrator owns both organizations. Each has its own team and project keys.
-DSNs are available in the project's Settings and `/opt/glitchtip/projects.json`
-(0600). Existing portals still use their existing Sentry DSNs. Migration requires
-separate frontend/backend config, sourcemap upload and CSP changes; the prepared
-[source-side protection](../../performance/2026-10-11-sentry-quota.md) has not been
-released to those portals. Its hosted-Sentry budget should be reconsidered for
-the self-hosted storage/retention policy.
+DSNs are available in project Settings and `/opt/glitchtip/projects.json` (0600).
+Both portals now use GlitchTip frontend/backend DSNs, with private release maps,
+persistent build configuration, CSP and bounded source-side reporting.
+[Rollout, checks and activated versions](migration-20261011.md).
+
+[Telegram transport](telegram-webhook.py) uses the existing `@vmsh179bot` and its
+VMSH operator group for both portals, with separate labels. Four native new-issue
+rules feed authenticated webhooks; only counts and issue links are sent. Durable
+digests deduplicate and limit delivery to once per 15 minutes/project. The
+[systemd unit](glitchtip-telegram.service) runs as DynamicUser with LoadCredential,
+loopback port 8012 and its own state directory. `/opt/glitchtip/telegram.json` is
+0600 root-only; registration and email transport stay disabled.
 
 ## Verification
 
@@ -81,7 +87,8 @@ checks. These belong to `deployment-check`, with no real user data.
 [timer](glitchtip-backup.timer) run daily at 02:35 UTC plus 0–10 minutes, retain
 seven days, and store snapshots under `/var/backups/glitchtip/<UTC timestamp>/`.
 Each contains a PostgreSQL custom dump, uploads archive, pinned Compose file,
-private environment and SHA256 manifest. Files/directories are root-only.
+private environment and SHA256 manifest. New snapshots also include Telegram
+configuration/source/unit and a consistent digest-state copy. Files/directories are root-only.
 These backups are on the same host; no off-host copy was configured.
 
 The fresh snapshot `20261011T082010Z` restored successfully into a separate
@@ -92,7 +99,7 @@ the dump, then removes only its temporary database. The live database stays inta
 As root on the server:
 
 ```sh
-systemctl status glitchtip glitchtip-backup.timer
+systemctl status glitchtip glitchtip-telegram glitchtip-backup.timer
 docker compose --project-directory /opt/glitchtip ps
 docker compose --project-directory /opt/glitchtip logs --tail=100
 systemctl start glitchtip-backup.service

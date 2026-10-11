@@ -3,8 +3,8 @@
 ## 2026-10-11 — Переключение GlitchTip
 
 Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
-на каждом PASS. Stage 2 в работе: отдельные canonical DSN, private release
-sourcemaps/CSP и Telegram вместо SMTP. UI/copy/stories не меняются.
+на каждом PASS. Stage 2 выпущен: canonical frontend/backend DSN GlitchTip, private release
+sourcemaps/CSP и Telegram `@vmsh179bot` в группу ошибок ВМШ. UI/copy/stories не меняются.
 [Операционный record](../../../docs/deploy/glitchtip/migration-20261011.md).
 
 ## 2026-10-11 — Квота frontend Sentry
@@ -13,9 +13,9 @@ sourcemaps/CSP и Telegram вместо SMTP. UI/copy/stories не меняют�
 реализовано; UI/copy/stories не меняются, новая design phase не начинается.
 Static checks, 1088 frontend, 364 Storybook, четыре builds, 12 Chromium и
 43 targeted quota/HTTP/schema tests PASS. Общий gate не зелёный из-за 6
-отсутствующих private inputs. Код порталов не выпущен.
+отсутствующих private inputs. Correction выпущен на оба портала.
 [GlitchTip service](../../../docs/deploy/glitchtip/README.md) отдельно развёрнут
-на https://glitch.leaders.tech; DSN приложений ещё прежние.
+на https://glitch.leaders.tech; DSN приложений переключены; private original stacks и Telegram delivery PASS.
 
 ## 2026-10-10 — Шум frontend Sentry
 

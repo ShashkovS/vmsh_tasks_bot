@@ -4,8 +4,8 @@
 ## 2026-10-11 — Переключение GlitchTip
 
 Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
-на каждом PASS. Stage 2 в работе: отдельные canonical DSN, private release
-sourcemaps/CSP и Telegram вместо SMTP. UI/copy/stories не меняются.
+на каждом PASS. Stage 2 выпущен: canonical frontend/backend DSN GlitchTip, private release
+sourcemaps/CSP и Telegram `@vmsh179bot` в группу ошибок ВМШ. UI/copy/stories не меняются.
 [Операционный record](../deploy/glitchtip/migration-20261011.md).
 
 ## 2026-10-11 — Квота Sentry 5 000
@@ -21,13 +21,13 @@ caps/error-message filters недоступны в бесплатном Sentry. 
 + 900 важных событий на портал за скользящие 32 дня. Static, 1088 frontend,
 364 Storybook, четыре builds и 12 Chromium PASS; после repair 43 quota/HTTP/
 schema checks PASS. Остались 6 отсутствующих `_external_pipelines` inputs;
-общий gate не зелёный. Код порталов не выпущен.
+общий gate не зелёный. Correction выпущен на оба портала.
 
 По запросу владельца [GlitchTip 6.2.6](../deploy/glitchtip/README.md) развёрнут
 на prep.leaders.tech, https://glitch.leaders.tech. Отдельные VMSH/TLF организации;
 HTTPS/IPv4/IPv6, real login, stacks/SDK ingest, restart, backup/restore и renewal
 PASS. MCP требует авторизации; retention 30 дней, daily local backups 7 дней.
-DSN порталов ещё не переключены, SMTP не настроен.
+DSN переключены; Telegram delivery PASS, SMTP выключен по решению владельца.
 
 ## 2026-10-10 — Шум frontend Sentry
 

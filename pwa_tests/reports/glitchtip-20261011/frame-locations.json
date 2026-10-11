@@ -1,0 +1,26 @@
+[
+  {
+    "lineno": 10,
+    "colno": 37505,
+    "expected_source": "../../../../packages/i18n/src/catalog-failure.ts",
+    "expected_line": 7,
+    "organization": "vmsh",
+    "release": "99552697e6d4-20261011094249",
+    "filename": "index-CC2r2mlr.js",
+    "origin": "https://vmsh.shashkovs.ru",
+    "project": 1,
+    "asset": "https://vmsh.shashkovs.ru/student/assets/index-CC2r2mlr.js"
+  },
+  {
+    "lineno": 10,
+    "colno": 37505,
+    "expected_source": "../../../../packages/i18n/src/catalog-failure.ts",
+    "expected_line": 7,
+    "organization": "tlf",
+    "release": "tlfprep-20261011-glitchtip-99552697e6d4-093337",
+    "filename": "index-DBYqPKSg.js",
+    "origin": "https://prep.leaders.tech",
+    "project": 3,
+    "asset": "https://prep.leaders.tech/student/assets/index-DBYqPKSg.js"
+  }
+]

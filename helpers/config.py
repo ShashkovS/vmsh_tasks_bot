@@ -379,6 +379,7 @@ def _init_sentry(dsn: str, environment: str, release: str = ""):
                     if "@glitch.leaders.tech/" in dsn else sample_sentry_trace
                 ),
                 send_client_reports=False,
+                include_local_variables=False,
                 environment=environment,
                 release=release or None,
                 send_default_pii=False,

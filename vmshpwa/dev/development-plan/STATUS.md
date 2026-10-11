@@ -3,15 +3,15 @@
 ## 2026-10-11 — Переключение GlitchTip
 
 Stage 1 выпущен на оба портала: `e0324272`, миграция 0117 и 25 HTTP checks
-на каждом PASS. Stage 2 в работе: отдельные canonical DSN, private release
-sourcemaps/CSP и Telegram вместо SMTP. UI/copy/stories не меняются.
+на каждом PASS. Stage 2 выпущен: canonical frontend/backend DSN GlitchTip, private release
+sourcemaps/CSP и Telegram `@vmsh179bot` в группу ошибок ВМШ. UI/copy/stories не меняются.
 [Операционный record](../../../docs/deploy/glitchtip/migration-20261011.md).
 
 ## 2026-10-11 — Квота frontend Sentry
 
 Владелец разрешил commit/push и выпуск текущего correction на оба production,
 затем GlitchTip DSN/CSP/sourcemaps. [Операционный план](../../../docs/deploy/glitchtip/migration-20261011.md),
-stage 1 начат; проверенные product hashes совпадают с квитанцией.
+stage 1 и GlitchTip switch выпущены; live SDK и original stacks подтверждены.
 
 [Усиление бюджета 5 000](../../../docs/performance/2026-10-11-sentry-quota.md)
 реализовано: общий SQLite admission для workers/вкладок, 100 diagnostics + 900
@@ -19,13 +19,13 @@ stage 1 начат; проверенные product hashes совпадают с 
 остаются breadcrumbs. Migration 0117; static, 1088 frontend, 364 Storybook,
 четыре app builds, 12 Chromium и 43 targeted quota/HTTP/schema checks PASS.
 Общий gate не зелёный: 6 прежних private `_external_pipelines` inputs отсутствуют.
-Product UI/outbox/retry не меняются; код порталов не выпущен.
+Product UI/outbox/retry не меняются; correction выпущен на оба портала.
 
 Владелец запросил и получил [GlitchTip на prep](../../../docs/deploy/glitchtip/README.md):
 https://glitch.leaders.tech, две организации/четыре проекта, real HTTPS login,
 frontend/SDK ingestion/stacks, restart, actual backup restore и TLS renewal PASS.
 Retention 30 дней, daily local snapshots 7 дней, регистрация закрыта, MCP с auth.
-Переключение DSN порталов/source maps/CSP и SMTP — отдельный следующий шаг.
+DSN/source maps/CSP и Telegram delivery завершены; SMTP выключен по решению владельца.
 
 ## 2026-10-10 — Шум frontend Sentry
 

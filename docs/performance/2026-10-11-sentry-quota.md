@@ -78,3 +78,13 @@ VMSH/TLF имеют отдельные организации и проекты.
 нового DSN, source-map upload и CSP origin; masking/breadcrumbs/diagnostic
 location остаются полезными. Quota-specific budget 1 000 потребуется отдельно
 пересмотреть под retention/ресурсы собственного сервера.
+
+
+## Выпуск и перенос приёма ошибок
+
+11 октября correction выпущен (`e0324272`), затем оба портала переключены на
+[GlitchTip](../deploy/glitchtip/migration-20261011.md) (`99552697`): отдельные
+frontend/backend проекты, private maps с original TS locations, native Python
+SDK, 25 HTTP checks на каждом и Telegram delivery PASS. Исторический hosted
+Sentry сохраняется; старым вкладкам нужно обновиться. Frontend budgets и
+фильтрация сохраняются для ограничения шума и собственного хранения.
