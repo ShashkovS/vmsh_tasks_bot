@@ -6,6 +6,8 @@ import { useId, type KeyboardEvent } from 'react'
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button, Textarea, cn } from '@vmsh/ui'
 
 import { AttachmentList, type AttachmentView } from './attachment'
+import { useSolutionTextInput } from './use-solution-text-input'
+import type { SolutionTextEdit } from '@vmsh/contracts'
 import type { TaskType } from './types'
 
 /*
@@ -16,7 +18,7 @@ import type { TaskType } from './types'
 export interface SubmissionComposerProps {
   taskType: TaskType
   text: string
-  onTextChange: (value: string) => void
+  onTextChange: (value: string, edit?: SolutionTextEdit) => void
   onTextPaste?: (characterCount: number) => void
   attachments: AttachmentView[]
   onAddPhotos?: () => void
@@ -57,6 +59,7 @@ export function SubmissionComposer({
   submitting,
   className,
 }: SubmissionComposerProps) {
+  const textInput = useSolutionTextInput(onTextChange, onTextPaste)
   const textId = useId()
   const oralNoteId = useId()
   const photosId = useId()
@@ -65,6 +68,7 @@ export function SubmissionComposer({
   const atLimit = attachments.length >= maxPhotos
   const editingDisabled = closed || queued || submitting
   const submitFromKeyboard = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    textInput.onKeyDown(event)
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault()
       if (!editingDisabled && !empty) onSubmit?.()
@@ -80,12 +84,8 @@ export function SubmissionComposer({
           className="min-h-36 text-base sm:text-[1.0625rem]"
           disabled={editingDisabled}
           id={textId}
-          onChange={(event) => onTextChange(event.target.value)}
+          {...textInput}
           onKeyDown={submitFromKeyboard}
-          onPaste={(event) => {
-            const characterCount = event.clipboardData.getData('text').length
-            if (characterCount > 0) onTextPaste?.(characterCount)
-          }}
           placeholder={t`Опишите решение. Формулы можно приложить фотографией.`}
           value={text}
         />

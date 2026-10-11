@@ -425,7 +425,30 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
   const problemId = await publishedProblemId(page, target, sourceItem)
 
   const solutionText = 'Провёл дополнительную диагональ и получил два равных треугольника.'
-  await page.getByLabel('Ваше решение').fill(solutionText)
+  // docs/paste-evidence.md: native paste -> partial deletion -> reload/offline.
+  const solutionField = page.getByLabel('Ваше решение')
+  await solutionField.focus()
+  if (testInfo.project.name === 'chromium') {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.evaluate((value) => navigator.clipboard.writeText(value), `${solutionText}REMOVE`)
+    await solutionField.press('ControlOrMeta+V')
+    await expect(solutionField).toHaveValue(`${solutionText}REMOVE`)
+    for (let index = 0; index < 6; index += 1) await solutionField.press('Backspace')
+  } else {
+    // Other engines have no portable OS clipboard permission in this harness.
+    await solutionField.evaluate((element, value) => {
+      const field = element as HTMLTextAreaElement
+      const clipboardData = new DataTransfer()
+      clipboardData.setData('text/plain', value)
+      field.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, clipboardData }))
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(
+        field,
+        value,
+      )
+      field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertFromPaste' }))
+    }, solutionText)
+  }
+  await expect(solutionField).toHaveValue(solutionText)
   await page.locator('input[type="file"][multiple]').setInputFiles({
     name: 'page.png',
     mimeType: 'image/png',
@@ -533,7 +556,8 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
   ).toBeVisible()
 
   const replacementText = `${solutionText} Исправил обоснование равенства углов.`
-  await page.getByLabel('Ваше решение').fill(replacementText)
+  await page.getByLabel('Ваше решение').press('ControlOrMeta+End')
+  await page.getByLabel('Ваше решение').pressSequentially(' Исправил обоснование равенства углов.')
   await page.reload()
   await expect(
     page.getByText('Изменяете отправленное решение — оно заменится одной операцией.'),
@@ -601,6 +625,12 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
   await expect(reviewRow).toHaveCount(1)
   await expect(reviewRow.getByRole('button', { name: 'Открыть' })).toBeVisible()
   await reviewRow.getByRole('button', { name: 'Открыть' }).click()
+  const pastePercentage = Math.round((solutionText.length * 100) / replacementText.length)
+  await expect(page.getByText(`Вставлено ≈ ${pastePercentage}%`, { exact: true })).toBeVisible()
+  await testInfo.attach('paste-evidence-staff', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  })
   await page.getByLabel('Комментарий').fill('Проверка во время подготовки исправления')
   await page.getByRole('button', { name: /В целом верно/ }).click()
   const completed = page.waitForResponse(

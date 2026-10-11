@@ -524,7 +524,14 @@ export function createWrittenSubmissionOutbox(
         descriptor: parsedDescriptor,
         problemRevision,
         text,
-        pasteEvidence: draft.pasteEvidence,
+        pasteEvidence: {
+          ...draft.pasteEvidence,
+          ...(text === null && draft.pasteEvidence.textOrigin
+            ? {
+                textOrigin: { version: 1 as const, utf16Length: 0, bits: '' },
+              }
+            : {}),
+        },
         clientCreatedAt: timestamp,
         createIdempotencyKey: randomUUID(),
         reorderIdempotencyKey: randomUUID(),

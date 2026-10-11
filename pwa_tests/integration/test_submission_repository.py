@@ -3306,3 +3306,31 @@ async def test_staff_material_reassignment_after_review_keeps_verdict_evidence(
     assert source_row == {"status": "accepted", "latest_result_id": result_id}
     assert entry_row == {"state": "locked", "locked_at": reviewed_at}
     assert result_row == {"verdict": 18, "problem_id": fixture.written_problem_id}
+
+
+async def test_written_origin_is_durable_replayed_and_owner_only(submission_fixture):
+    from dataclasses import replace
+    from models.pwa.paste_evidence import estimate_row
+
+    fixture = submission_fixture
+    command = replace(written_entry_command(fixture, text="😀ab", paste_count=1,
+                      pasted_character_count=2, last_pasted_at=NOW),
+                      text_origin={"version": 1, "utf16Length": 4, "bits": "Aw=="})
+    created = await fixture.written_repository.create_entry(command)
+    replayed = await fixture.written_repository.create_entry(command)
+    assert replayed.entry == created.entry
+    assert created.entry.payload()["textOrigin"] == command.text_origin
+    assert "textOrigin" not in created.entry.payload(media_audience="family", family_student_public_id="u-1")
+    assert "pasteEvidence" not in created.entry.payload(media_audience="family", family_student_public_id="u-1")
+    submitted = await fixture.written_repository.submit_entry(submit_written_entry_command(
+        fixture, entry_public_id=created.entry.public_id, thread_version=created.thread_version,
+    ))
+    assert submitted.entry.text_origin == command.text_origin
+    estimate = fixture.factory.run_read(lambda c: estimate_row(c.execute(
+        "SELECT * FROM submission_entries WHERE public_id=?", (created.entry.public_id,),
+    ).fetchone()))
+    assert estimate == {"percentage": 50, "method": "remaining_text"}
+    with pytest.raises(WrittenIdempotencyPayloadMismatch):
+        await fixture.written_repository.create_entry(replace(command, text_origin={
+            "version": 1, "utf16Length": 4, "bits": "Dw==",
+        }))

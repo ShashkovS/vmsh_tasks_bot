@@ -1,3 +1,4 @@
+import { PasteEvidenceBadge } from '@vmsh/product'
 import { t as translate } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { formatDateTime } from '@vmsh/i18n'
@@ -409,6 +410,7 @@ function ReadOnlyReview({
       </h2>
       {detail.entries.map((entry) => (
         <article key={entry.entryId} className="space-y-2">
+          <PasteEvidenceBadge estimate={entry.pasteEstimate} />
           {entry.text && <p className="whitespace-pre-wrap">{entry.text}</p>}
           {entry.attachments.map((a) => (
             <ReviewAttachmentImage
@@ -603,6 +605,7 @@ function CorrectionEditor({
         </h3>
         {detail.entries.map((entry) => (
           <article className="space-y-2" key={entry.entryId}>
+            <PasteEvidenceBadge estimate={entry.pasteEstimate} />
             {entry.text && <p className="whitespace-pre-wrap">{entry.text}</p>}
             {entry.attachments.map((a) => (
               <ReviewAttachmentImage

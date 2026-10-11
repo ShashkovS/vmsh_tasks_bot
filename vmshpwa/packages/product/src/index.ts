@@ -78,3 +78,6 @@ export * from './question-attention'
 
 export * from './review-annotation-viewer'
 export * from './review-photo-preview'
+
+export * from './use-solution-text-input'
+export * from './paste-evidence-badge'

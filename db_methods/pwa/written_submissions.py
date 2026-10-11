@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 
 from helpers.consts import WRITTEN_STATUS
 from helpers.pwa.i18n import N_
+from models.pwa.paste_evidence import stored_origin, validate_text_origin
 from models.pwa.submissions import assess_submission_clock
 
 from .connection import PwaConnectionFactory
@@ -124,6 +125,7 @@ class CreateWrittenEntryCommand:
     last_pasted_at: datetime | None
     client_created_at: datetime
     idempotency_key: str
+    text_origin: dict | None = None
 
     def __post_init__(self) -> None:
         _validate_common_command(
@@ -144,6 +146,7 @@ class CreateWrittenEntryCommand:
             or self.pasted_character_count < 0
         ):
             raise ValueError("written entry paste counts are invalid")
+        validate_text_origin(self.text_origin, self.text)
         empty_paste_evidence = (
             self.paste_count == 0
             and self.pasted_character_count == 0
@@ -557,6 +560,8 @@ class WrittenEntryRecord:
     server_received_at: str
     attachments: tuple[WrittenAttachmentRecord, ...]
     projection: WrittenMaterialProjection | None = None
+    text_origin: dict | None = None
+    paste_evidence: dict | None = None
 
     def payload(
         self,
@@ -586,6 +591,9 @@ class WrittenEntryRecord:
                 for item in self.attachments
             ],
         }
+        if media_audience == "student" and self.author_kind == "student":
+            payload["textOrigin"] = self.text_origin
+            payload["pasteEvidence"] = self.paste_evidence
         if self.projection is not None:
             payload["projection"] = self.projection.payload()
         return payload
@@ -1667,6 +1675,8 @@ def _entry_from_payload(value: object) -> WrittenEntryRecord:
         ),
         server_received_at=str(value["serverReceivedAt"]),
         attachments=attachments,
+        text_origin=value.get("textOrigin"),
+        paste_evidence=value.get("pasteEvidence"),
     )
 
 
@@ -1704,6 +1714,12 @@ def _entry_record(
         entry_kind=str(row["entry_kind"]),
         state=str(row["state"]),
         text=None if row["text"] is None else str(row["text"]),
+        text_origin=stored_origin(row["text_origin_json"]),
+        paste_evidence={
+            "pasteCount": row["paste_count"],
+            "pastedCharacterCount": row["pasted_character_count"],
+            "lastPastedAt": row["last_pasted_at"],
+        },
         problem_revision=revision,
         version=int(row["version"]),
         client_created_at=(
@@ -2090,6 +2106,8 @@ def _project_thread_entries(
                     server_received_at=base.server_received_at,
                     attachments=tuple(visible_attachments),
                     projection=projection,
+                    text_origin=base.text_origin if visible_text is not None else None,
+                    paste_evidence=base.paste_evidence,
                 ),
             )
         )
@@ -2274,6 +2292,8 @@ class PwaWrittenSubmissionRepository:
             },
             "clientCreatedAt": _timestamp(command.client_created_at),
         }
+        if command.text_origin is not None:
+            request["pasteEvidence"]["textOrigin"] = command.text_origin
         payload_sha256 = _payload_hash(request)
         replay = await self._factory.run_read_async(
             lambda connection: _read_idempotency(
@@ -2382,10 +2402,10 @@ class PwaWrittenSubmissionRepository:
                     "INSERT INTO submission_entries "
                     "(thread_id, problem_revision_id, author_kind, "
                     "author_user_id, channel, entry_kind, state, text, "
-                    "paste_count, pasted_character_count, last_pasted_at, "
+                    "paste_count, pasted_character_count, last_pasted_at, text_origin_json, "
                     "client_created_at, server_received_at, idempotency_key, "
                     "payload_sha256) VALUES (?, ?, 'student', ?, 'pwa', "
-                    "'submission', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                    "'submission', 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
                     (
                         thread_id,
                         context.problem_revision_id,
@@ -2398,6 +2418,7 @@ class PwaWrittenSubmissionRepository:
                             if command.last_pasted_at is not None
                             else None
                         ),
+                        json.dumps(command.text_origin, separators=(",", ":")) if command.text_origin is not None else None,
                         _timestamp(command.client_created_at),
                         received_at,
                         command.idempotency_key,

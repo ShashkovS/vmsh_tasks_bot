@@ -23,6 +23,7 @@ import {
   ApiResponseError,
   type StudentProblemType,
   type WrittenEntry,
+  type SolutionTextEdit,
   type WrittenReviewProjection,
   type WrittenThread,
 } from '@vmsh/contracts'
@@ -38,6 +39,7 @@ import {
 } from '@vmsh/offline'
 import {
   ChatComposer,
+  useSolutionTextInput,
   ReactionChip,
   ReactionPicker,
   ReviewAnnotationViewer,
@@ -387,6 +389,7 @@ export function StudentWrittenSubmission({
   const [replacementTarget, setReplacementTarget] = useState<WrittenDraftReplacementTarget | null>(
     null,
   )
+  const textInput = useSolutionTextInput(saveText)
   const [replacementLoading, setReplacementLoading] = useState(false)
   const [storageError, setStorageError] = useState<unknown>(draftStore.error)
   useEffect(() => {
@@ -675,19 +678,10 @@ export function StudentWrittenSubmission({
     )
   }
 
-  const saveText = (value: string) => {
+  function saveText(value: string, edit?: SolutionTextEdit) {
     setText(value)
     try {
-      draftStore.value.saveText(descriptor, value)
-      setStorageError(null)
-    } catch (error) {
-      setStorageError(error)
-    }
-  }
-
-  const recordPaste = (characterCount: number) => {
-    try {
-      draftStore.value.recordPaste(descriptor, characterCount)
+      draftStore.value!.saveText(descriptor, value, edit)
       setStorageError(null)
     } catch (error) {
       setStorageError(error)
@@ -868,7 +862,13 @@ export function StudentWrittenSubmission({
       setReplacementTarget(target)
       if (text.trim() || photos.length > 0) return
       setReplacementLoading(true)
-      draftStore.value.saveText(descriptor, replaceableEntry.text ?? '')
+      draftStore.value.restoreText(descriptor, replaceableEntry.text ?? '', {
+        pasteCount: 0,
+        pastedCharacterCount: 0,
+        lastPastedAt: null,
+        ...replaceableEntry.pasteEvidence,
+        textOrigin: replaceableEntry.textOrigin ?? null,
+      })
       for (const [index, attachment] of replaceableEntry.attachments.entries()) {
         const blob = await client.attachmentMedia(replaceableEntry.entryId, attachment.attachmentId)
         await draftStore.value.addPhoto(descriptor, {
@@ -1109,16 +1109,13 @@ export function StudentWrittenSubmission({
               aria-label={t`Ваше решение`}
               className="field-sizing-content max-h-56 min-h-11 py-2 text-base sm:text-[1.0625rem]"
               disabled={replacementLoading}
-              onChange={(event) => saveText(event.target.value)}
+              {...textInput}
               onKeyDown={(event) => {
+                textInput.onKeyDown(event)
                 if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
                   event.preventDefault()
                   if (!composerEmpty && !replacementLoading) void submit()
                 }
-              }}
-              onPaste={(event) => {
-                const characterCount = event.clipboardData.getData('text').length
-                if (characterCount > 0) recordPaste(characterCount)
               }}
               placeholder={t`Решение или пояснение. Формулы можно приложить фотографией.`}
               value={text}

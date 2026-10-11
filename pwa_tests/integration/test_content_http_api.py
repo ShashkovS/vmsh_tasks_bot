@@ -6543,3 +6543,27 @@ async def test_missing_hint_and_solution_are_unavailable_without_reveal_audit(
     )
     assert answer_only.status == 200, await answer_only.text()
     assert "42" in json.dumps(await answer_only.json())
+
+
+async def test_student_origin_http_rejects_mismatch_and_preserves_owner_state(content_http):
+    fixture = content_http
+    problem, revision = await _prepare_published_test_problem(fixture, problem_type=2)
+    route = f"/student/api/v1/problems/{problem}/thread/entries"
+    payload = {
+        "schemaVersion": 1, "idempotencyKey": "451090d6-7f31-4079-b519-754fe537ab26",
+        "problemRevision": {"conditionRevisionId": revision, "configVersion": 1},
+        "text": "😀ab", "clientCreatedAt": _timestamp(),
+        "pasteEvidence": {"pasteCount": 1, "pastedCharacterCount": 2, "lastPastedAt": _timestamp(),
+                          "textOrigin": {"version": 1, "utf16Length": 3, "bits": "Aw=="}},
+    }
+    invalid = await fixture.client.post(route, json=payload, cookies=_cookie(fixture, "student"), headers=_headers(unsafe=True))
+    assert invalid.status == 422
+    payload["pasteEvidence"]["textOrigin"]["utf16Length"] = 4
+    created = await fixture.client.post(route, json=payload, cookies=_cookie(fixture, "student"), headers=_headers(unsafe=True))
+    assert created.status == 201, await created.text()
+    entry = (await created.json())["entry"]
+    assert entry["textOrigin"] == payload["pasteEvidence"]["textOrigin"]
+    assert entry["pasteEvidence"]["pastedCharacterCount"] == 2
+    replay = await fixture.client.post(route, json=payload, cookies=_cookie(fixture, "student"), headers=_headers(unsafe=True))
+    assert replay.status == 201, await replay.text()
+    assert (await replay.json())["entry"]["textOrigin"] == entry["textOrigin"]

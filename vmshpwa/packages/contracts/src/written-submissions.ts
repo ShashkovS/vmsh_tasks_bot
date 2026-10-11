@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { textOriginSchema } from './paste-evidence'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 import { reviewAnnotationManifestSchema, writtenReviewVerdictSchema } from './review-queue'
@@ -94,6 +95,30 @@ export const writtenMaterialProjectionSchema = z
   })
 export type WrittenMaterialProjection = z.infer<typeof writtenMaterialProjectionSchema>
 
+export const writtenPasteEvidenceSchema = z
+  .object({
+    textOrigin: textOriginSchema.nullable().optional(),
+    pasteCount: z.number().int().nonnegative(),
+    pastedCharacterCount: z.number().int().nonnegative(),
+    lastPastedAt: z.iso.datetime().nullable(),
+  })
+  .strip()
+  .superRefine((evidence, context) => {
+    const empty =
+      evidence.pasteCount === 0 &&
+      evidence.pastedCharacterCount === 0 &&
+      evidence.lastPastedAt === null
+    const populated =
+      evidence.pasteCount > 0 && evidence.pastedCharacterCount > 0 && evidence.lastPastedAt !== null
+    if (!empty && !populated) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Paste evidence must be either empty or fully populated',
+      })
+    }
+  })
+export type WrittenPasteEvidence = z.infer<typeof writtenPasteEvidenceSchema>
+
 export const writtenEntrySchema = z
   .object({
     entryId: publicIdSchema,
@@ -107,6 +132,8 @@ export const writtenEntrySchema = z
     serverReceivedAt: z.iso.datetime(),
     attachments: z.array(writtenAttachmentSchema).max(10),
     projection: writtenMaterialProjectionSchema.optional(),
+    textOrigin: textOriginSchema.nullable().optional(),
+    pasteEvidence: writtenPasteEvidenceSchema.nullable().optional(),
   })
   .strip()
   .superRefine((entry, context) => {
@@ -115,6 +142,13 @@ export const writtenEntrySchema = z
         code: 'custom',
         message: 'Student material must keep exact problem-revision provenance',
         path: ['problemRevision'],
+      })
+    }
+    if (entry.textOrigin && entry.textOrigin.utf16Length !== (entry.text?.length ?? 0)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Text origin length must match text',
+        path: ['textOrigin'],
       })
     }
     const ordinals = entry.attachments.map((attachment) => attachment.ordinal)
@@ -305,29 +339,6 @@ export const familyWrittenThreadSchema = writtenThreadSchema.safeExtend({
 })
 export type FamilyWrittenThread = z.infer<typeof familyWrittenThreadSchema>
 
-export const writtenPasteEvidenceSchema = z
-  .object({
-    pasteCount: z.number().int().nonnegative(),
-    pastedCharacterCount: z.number().int().nonnegative(),
-    lastPastedAt: z.iso.datetime().nullable(),
-  })
-  .strip()
-  .superRefine((evidence, context) => {
-    const empty =
-      evidence.pasteCount === 0 &&
-      evidence.pastedCharacterCount === 0 &&
-      evidence.lastPastedAt === null
-    const populated =
-      evidence.pasteCount > 0 && evidence.pastedCharacterCount > 0 && evidence.lastPastedAt !== null
-    if (!empty && !populated) {
-      context.addIssue({
-        code: 'custom',
-        message: 'Paste evidence must be either empty or fully populated',
-      })
-    }
-  })
-export type WrittenPasteEvidence = z.infer<typeof writtenPasteEvidenceSchema>
-
 export const createWrittenEntryRequestSchema = z
   .object({
     schemaVersion: contractVersionSchema,
@@ -338,6 +349,18 @@ export const createWrittenEntryRequestSchema = z
     clientCreatedAt: utcClientTimeSchema,
   })
   .strict()
+  .superRefine((request, context) => {
+    if (
+      request.pasteEvidence.textOrigin &&
+      request.pasteEvidence.textOrigin.utf16Length !== (request.text?.length ?? 0)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Text origin length must match text',
+        path: ['pasteEvidence', 'textOrigin'],
+      })
+    }
+  })
 export type CreateWrittenEntryRequest = z.infer<typeof createWrittenEntryRequestSchema>
 
 const writtenEntryMutationShape = {

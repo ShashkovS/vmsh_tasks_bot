@@ -422,6 +422,9 @@ class ReviewEvidenceEntry:
     text: str | None
     server_received_at: datetime
     attachments: tuple[ReviewEvidenceAttachment, ...]
+    channel: str = "pwa"
+    text_origin_json: str | None = None
+    pasted_character_count: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -432,6 +435,9 @@ class ReviewTimelineEntry:
     text: str | None
     server_received_at: datetime
     attachments: tuple[ReviewEvidenceAttachment, ...]
+    channel: str = "pwa"
+    text_origin_json: str | None = None
+    pasted_character_count: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -1087,7 +1093,7 @@ def _evidence_branches(
             continue
         timeline_rows = connection.execute(
             "SELECT entry.id, entry.public_id, entry.author_kind, entry.entry_kind, "
-            "entry.text, entry.server_received_at FROM submission_entries AS entry "
+            "entry.text, entry.channel, entry.text_origin_json, entry.pasted_character_count, entry.server_received_at FROM submission_entries AS entry "
             "WHERE entry.thread_id = ? AND entry.state IN ('submitted', 'locked') "
             "ORDER BY entry.server_received_at, entry.id",
             (thread["id"],),
@@ -1109,7 +1115,7 @@ def _evidence_branches(
             )
         entry_rows = connection.execute(
             "SELECT entry.id, entry.public_id, entry.version, entry.entry_kind, "
-            "entry.text, entry.server_received_at FROM submission_entries AS entry "
+            "entry.text, entry.channel, entry.text_origin_json, entry.pasted_character_count, entry.server_received_at FROM submission_entries AS entry "
             "WHERE entry.thread_id = ? AND entry.author_kind = 'student' "
             "AND entry.state = 'submitted' AND NOT EXISTS ("
             "SELECT 1 FROM submission_review_evidence_entries AS evidence "
@@ -1124,6 +1130,9 @@ def _evidence_branches(
                     entry_public_id=str(entry["public_id"]),
                     entry_version=int(entry["version"]),
                     entry_kind=str(entry["entry_kind"]),
+                    channel=str(entry["channel"]),
+                    text_origin_json=entry["text_origin_json"],
+                    pasted_character_count=int(entry["pasted_character_count"]),
                     text=None if entry["text"] is None else str(entry["text"]),
                     server_received_at=_parse_timestamp(
                         entry["server_received_at"], label="evidence receive time"
@@ -1142,6 +1151,9 @@ def _evidence_branches(
                         entry_public_id=str(entry["public_id"]),
                         author_kind=str(entry["author_kind"]),
                         entry_kind=str(entry["entry_kind"]),
+                        channel=str(entry["channel"]),
+                        text_origin_json=entry["text_origin_json"],
+                        pasted_character_count=int(entry["pasted_character_count"]),
                         text=None if entry["text"] is None else str(entry["text"]),
                         server_received_at=_parse_timestamp(
                             entry["server_received_at"], label="timeline entry time"
@@ -1525,7 +1537,7 @@ class PwaWrittenReviewQueueRepository:
                 evidence_entries = []
                 for evidence in connection.execute(
                     "SELECT entry.id, entry.public_id, entry.version, entry.entry_kind, "
-                    "entry.text, entry.server_received_at "
+                    "entry.text, entry.channel, entry.text_origin_json, entry.pasted_character_count, entry.server_received_at "
                     "FROM submission_review_evidence_entries AS snapshot "
                     "JOIN submission_entries AS entry ON entry.id = snapshot.entry_id "
                     "WHERE snapshot.review_id = ? "
@@ -1546,6 +1558,9 @@ class PwaWrittenReviewQueueRepository:
                             entry_public_id=str(evidence["public_id"]),
                             entry_version=int(evidence["version"]),
                             entry_kind=str(evidence["entry_kind"]),
+                            channel=str(evidence["channel"]),
+                            text_origin_json=evidence["text_origin_json"],
+                            pasted_character_count=int(evidence["pasted_character_count"]),
                             text=(
                                 None
                                 if evidence["text"] is None

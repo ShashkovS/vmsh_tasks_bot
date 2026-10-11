@@ -359,3 +359,6 @@ export * from './image-uploads'
 export * from './sentry-admission'
 export * from './teacher-work'
 export * from './review-sheet'
+
+
+export * from './paste-evidence'

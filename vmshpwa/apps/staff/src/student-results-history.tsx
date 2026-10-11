@@ -1,3 +1,4 @@
+import { PasteEvidenceBadge } from '@vmsh/product'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { formatDateTime } from '@vmsh/i18n'
@@ -224,6 +225,7 @@ export function HistoryEvents<T extends StudentResultEvent & { problemNumber?: s
               kind: e.authorKind,
               name: e.author ?? sources[e.source] ?? t`Архив`,
             },
+            metadata: <PasteEvidenceBadge estimate={e.pasteEstimate} />,
             at: date(e.at),
             body: renderBody?.(e) ?? (
               <>
@@ -244,7 +246,21 @@ export function HistoryEvents<T extends StudentResultEvent & { problemNumber?: s
                   )}
                   {e.verdict !== null && <ResultMark value={e.verdict} symbol={e.symbol} />}
                 </div>
-                {e.text && <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{e.text}</p>}
+                {e.textMaterials?.length ? (
+                  <>
+                    {e.materialReason ? <p>{e.materialReason}</p> : null}
+                    {e.textMaterials.map((material) => (
+                      <div key={material.entryId}>
+                        <PasteEvidenceBadge estimate={material.pasteEstimate} />
+                        <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+                          {material.text}
+                        </p>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  e.text && <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{e.text}</p>
+                )}
                 {e.checkStatus && (
                   <p className="text-caption text-muted-foreground">
                     {checks[e.checkStatus] ?? t`Статус проверки неизвестен`}

@@ -4379,3 +4379,11 @@ Evidence и CAS сохраняются. Fast gate PASS: 2981 Python / 12 SKIP,
 Исправление `9e98e282` выпущено на оба production: 25 HTTP checks / 116 Staff hashes PASS
 на каждом, службы active, maintenance off; [proof](../../../pwa_tests/reports/review-sheet-conversation-20261011/README.md).
 [Решение и компоненты](../../docs/review-sheet.md#11-октября--единая-переписка-без-повторов).
+
+## Доля вставленного текста — 11 октября 2026
+
+Реализация добавлена: [учёт и критерии проверки](../../docs/paste-evidence.md). Черновик/outbox, миграция 0119, замена и оба переноса сохраняют происхождение; плашки только в Staff. Проверено: 2965 Python, 1106 frontend, 376 Storybook, 6 Chromium E2E; format/types/lint/i18n/build прошли. [Receipt и скриншот](../../../pwa_tests/reports/paste-evidence-20261011/README.md). Шесть baseline-проверок private reference corpus исключены: локальные копии требуют разрешения владельца; повтор после нехватки временного диска продолжен штатными шагами. Production не изменялся.
+
+## Интеграция и выпуск доли вставок — 11 октября 2026
+
+Владелец разрешил merge в `vmshpwa`, очистку лишних worktree и deployment обоих production. Сохраняем новую проверку простынёй и просмотр фото; проверяем объединённый source перед push. Миграция 0119 требует backup и rehearsal; TLF получает отдельный ручной release. Справочные корпуса не копируем. [План и доказательства](../../../pwa_tests/reports/paste-evidence-20261011/README.md).

@@ -1,3 +1,4 @@
+import { PasteEvidenceBadge } from '@vmsh/product'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { useMemo, useState } from 'react'
@@ -232,6 +233,7 @@ function CorrectionPanel({
           </h3>
           {item.evidenceEntries.map((entry) => (
             <article className="space-y-2 rounded-md border border-border p-2" key={entry.entryId}>
+              <PasteEvidenceBadge estimate={entry.pasteEstimate} />
               {entry.text ? (
                 <p className="whitespace-pre-wrap text-small text-foreground">{entry.text}</p>
               ) : null}

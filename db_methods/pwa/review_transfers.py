@@ -131,8 +131,8 @@ def commit(
     entry = connection.execute(
         """INSERT INTO submission_entries
       (thread_id,problem_revision_id,author_kind,author_user_id,channel,entry_kind,state,text,
-       client_created_at,server_received_at)
-      VALUES(?,?,'student',?,'staff','submission','draft',?,?,?) RETURNING id,public_id""",
+       client_created_at,server_received_at,paste_count,pasted_character_count,last_pasted_at,text_origin_json)
+      VALUES(?,?,'student',?,'staff','submission','draft',?,?,?,?,?,?,?) RETURNING id,public_id""",
         (
             target_thread,
             target["revision_id"],
@@ -140,6 +140,10 @@ def commit(
             src["text"],
             src["client_created_at"],
             now,
+            src["paste_count"],
+            src["pasted_character_count"],
+            src["last_pasted_at"],
+            src["text_origin_json"],
         ),
     ).fetchone()
     for photo in photos:

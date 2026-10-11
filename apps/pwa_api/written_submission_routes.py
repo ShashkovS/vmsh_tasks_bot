@@ -26,6 +26,7 @@ from apps.pwa_api.image_upload_routes import (
 from helpers.pwa.image_uploads import ImageUploadRejected
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from models.pwa.paste_evidence import validate_text_origin
 from db_methods.pwa.written_submissions import (
     CreateWrittenEntryCommand,
     DeleteWrittenAttachmentCommand,
@@ -62,7 +63,7 @@ from helpers.pwa.permissions import (
 from models.pwa.auth import AuthAudience
 
 
-WRITTEN_SUBMISSION_BODY_LIMIT_BYTES = 128 * 1024
+WRITTEN_SUBMISSION_BODY_LIMIT_BYTES = 160 * 1024
 WRITTEN_ATTACHMENT_REQUEST_LIMIT_BYTES = MAX_WRITTEN_SOURCE_BYTES + 64 * 1024
 WRITTEN_MEDIA_URL_TTL_SECONDS = 24 * 60 * 60
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
@@ -326,7 +327,7 @@ def _client_created_at(value: object) -> datetime:
 
 def _paste_evidence(value: object) -> tuple[int, int, datetime | None]:
     fields = {"pasteCount", "pastedCharacterCount", "lastPastedAt"}
-    if not isinstance(value, dict) or set(value) != fields:
+    if not isinstance(value, dict) or not fields <= set(value) <= fields | {"textOrigin"}:
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -875,12 +876,20 @@ async def create_written_entry(request: web.Request) -> web.Response:
     paste_count, pasted_character_count, last_pasted_at = _paste_evidence(
         payload["pasteEvidence"]
     )
+    try:
+        text_origin = validate_text_origin(payload["pasteEvidence"].get("textOrigin"), text)
+    except ValueError as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте сведения о вставке текста",
+            details={"field": "pasteEvidence.textOrigin"},
+        ) from error
     receipt = await _repository(request).create_entry(
         CreateWrittenEntryCommand(
             account_id=account_id,
             problem_public_id=problem_public_id,
             problem_revision=_problem_revision(payload["problemRevision"]),
             text=text,
+            text_origin=text_origin,
             paste_count=paste_count,
             pasted_character_count=pasted_character_count,
             last_pasted_at=last_pasted_at,

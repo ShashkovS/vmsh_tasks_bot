@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pasteEstimateSchema } from './paste-evidence'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 
@@ -60,6 +61,7 @@ export const reviewEvidenceEntrySchema = z
     entryVersion: z.number().int().positive(),
     entryKind: z.enum(['text', 'submission']),
     text: z.string().max(100_000).nullable(),
+    pasteEstimate: pasteEstimateSchema.nullable().optional(),
     submittedAt: z.iso.datetime(),
     attachments: z.array(reviewEvidenceAttachmentSchema).max(10),
   })
@@ -72,6 +74,7 @@ export const reviewTimelineEntrySchema = z
     authorKind: z.enum(['student', 'teacher', 'admin', 'ai', 'system']),
     entryKind: z.enum(['text', 'submission', 'teacher_comment', 'ai_comment', 'system_event']),
     text: z.string().max(100_000).nullable(),
+    pasteEstimate: pasteEstimateSchema.nullable().optional(),
     submittedAt: z.iso.datetime(),
     attachments: z.array(reviewEvidenceAttachmentSchema).max(10),
   })

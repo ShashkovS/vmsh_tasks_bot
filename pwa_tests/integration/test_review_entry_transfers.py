@@ -247,6 +247,13 @@ async def test_whole_entry_is_atomic_and_replay_safe(
                 "UPDATE submission_entries SET text=NULL,version=version+1 WHERE public_id='se-2'"
             )
         )
+    else:
+        # docs/paste-evidence.md: whole-entry move/clone retains original input.
+        f.factory.run_write(lambda c: c.execute(
+            "UPDATE submission_entries SET version=version+1,text='abEF',paste_count=1,"
+            "pasted_character_count=4,last_pasted_at=?,text_origin_json=? WHERE public_id='se-2'",
+            (NOW.isoformat(), '{"version":1,"utf16Length":4,"bits":"Aw=="}'),
+        ))
     target = f.factory.run_write(add_target)
     lease = await f.repository.claim(
         queue_public_id=f.queue_public_ids[0],
@@ -290,6 +297,12 @@ async def test_whole_entry_is_atomic_and_replay_safe(
         ).fetchone()
         assert original["state"] == ("deleted" if mode == "move" else "submitted")
         assert new["state"] == "submitted" and new["text"] == original["text"]
+        assert new["text_origin_json"] == original["text_origin_json"]
+        assert new["pasted_character_count"] == original["pasted_character_count"]
+        if not photo_only:
+            from models.pwa.paste_evidence import estimate_row
+            assert estimate_row(new) == {"percentage": 50, "method": "remaining_text"}
+
         assert (
             c.execute(
                 "SELECT asset_id FROM submission_attachments WHERE entry_id=?",

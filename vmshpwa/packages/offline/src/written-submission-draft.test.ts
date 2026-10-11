@@ -373,3 +373,42 @@ describe('written-submission local draft store', () => {
     expect(storage.length).toBe(0)
   })
 })
+
+it('restores remaining paste provenance with text and replacement metadata', async () => {
+  const storage = new MemoryStorage()
+  const target = database('paste-reload')
+  const first = store(storage, target, 'paste-reload')
+  first.saveText(descriptor(), 'abcd', { start: 0, end: 0, pasted: true })
+  first.saveText(descriptor(), 'abEF', { start: 2, end: 4 })
+  const restored = await store(storage, target, 'paste-reload').load(descriptor())
+  expect(restored.compatible?.pasteEvidence).toMatchObject({
+    pasteCount: 1,
+    pastedCharacterCount: 4,
+    textOrigin: { version: 1, utf16Length: 4, bits: 'Aw==' },
+  })
+  first.restoreText(descriptor(), 'abEF', restored.compatible!.pasteEvidence)
+  expect(
+    first.saveText(descriptor(), 'aEF', { start: 1, end: 2 }).pasteEvidence.textOrigin?.bits,
+  ).toBe('AQ==')
+})
+
+it('keeps valid solution text when only provenance is corrupted', async () => {
+  const storage = new MemoryStorage()
+  const target = database('paste-corruption')
+  const draft = store(storage, target, 'paste-corruption')
+  const saved = draft.saveText(descriptor(), 'abcd', { start: 0, end: 0, pasted: true })
+  storage.setItem(
+    draft.key(descriptor()),
+    JSON.stringify({
+      ...saved,
+      pasteEvidence: {
+        ...saved.pasteEvidence,
+        textOrigin: { version: 1, utf16Length: 400, bits: '!' },
+      },
+    }),
+  )
+  const restored = await draft.load(descriptor())
+  expect(restored.compatible?.text).toBe('abcd')
+  expect(restored.compatible?.pasteEvidence.textOrigin).toBeNull()
+  expect(restored.compatible?.pasteEvidence.pastedCharacterCount).toBe(4)
+})
