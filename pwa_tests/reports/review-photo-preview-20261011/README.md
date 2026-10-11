@@ -47,3 +47,16 @@ Firefox выявил старую повреждённую 1px WebP fixture. Rev
 меню не вызывается в E2E: его обработка следующих кликов различается между движками.
 Встроенный браузер дополнительно использован для осмотра синтетического примера;
 временный агентский Storybook и созданная вкладка после осмотра закрыты.
+
+## Production release
+
+Коммит `4584392b` отправлен в production-ветку `vmshpwa` и выпущен на ВМШ/TLF.
+На каждом 25 read-only HTTP checks, все 114 Staff JS/CSS по SHA-256, HTML четырёх
+приложений и production provenance PASS. Private maps: 402 artifacts uploaded
+на каждом; public maps отсутствуют. Media endpoint сохраняет anonymous 401.
+Службы active, maintenance off; миграций нет.
+TLF сохраняет все 168 таблиц / 36784 строки, canonical settings и NATS; backups
+до/после integrity ok. ВМШ: server-only post-deploy backup integrity ok.
+[Операционный record](../../../docs/deploy/review-photo-20261011.md),
+[квитанция](production-proof.json), [read-only verifier](verify-deployment.py).
+Ручная native clipboard-проверка остаётся указанным выше follow-up.

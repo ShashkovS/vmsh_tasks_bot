@@ -10,9 +10,12 @@ Release gate `review submissions` PASS: 2955 Python / 12 SKIP, 1091 frontend,
 373 Storybook, 18 E2E в Chromium/WebKit/Firefox; source unchanged.
 Firefox seed исправлен: существующая валидная синтетическая WebP 640×360.
 Осталось вручную проверить системное копирование/вставку в графредактор:
-Mac заблокирован, native apps недоступны. Владелец разрешил commit/push в
-production-ветку `vmshpwa` и выпуск на ВМШ/TLF; выпуск начат.
-[Порядок выпуска](../../../docs/deploy/review-photo-20261011.md).
+Mac заблокирован, native apps недоступны. Коммит `4584392b` отправлен в
+production-ветку `vmshpwa` и выпущен на ВМШ/TLF: по 25 HTTP checks, 114
+Staff asset hashes, четыре production provenance PASS; службы active, maintenance off.
+TLF: 168 таблиц / 36784 строки сохранены; backups integrity ok. ВМШ: server-only
+post-deploy backup integrity ok, schema 0118.
+[Выпуск и квитанции](../../../docs/deploy/review-photo-20261011.md).
 
 ## 2026-10-11 — Финальная сверка worktree и обоих production
 
