@@ -1,0 +1,15 @@
+version: 1
+max_payload_bytes: 1048576
+log_file: /web/vmsh_tasks_bot/deploy/logs/webhook/webhook.log
+launch_log: /web/vmsh_tasks_bot/deploy/logs/webhook/deploy-launch.log
+
+# To add another project, add one repository entry, install its fixed deploy
+# script and allow exactly that script in sudoers. HTTP payloads never supply a
+# command, path, target user or revision.
+projects:
+  ShashkovS/vmsh_tasks_bot:
+    secret_file: /web/vmsh_tasks_bot/deploy/secrets/github-vmsh-tasks-bot.secret
+    refs:
+      refs/heads/vmshpwa:
+        run_as: vmsh_tasks_bot
+        deploy_script: /web/vmsh_tasks_bot/deploy/bin/deploy-vmsh-tasks-bot.sh

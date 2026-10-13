@@ -1,12 +1,16 @@
-from helpers.config import config
+from helpers.config import config, logger
 
 # Должен быть порядок, в котором всё инициируется
 all_apps = []
 
 if 'tg_bot' in config.apps:
-    import apps.tg_bot
+    # See docs/optional-telegram-bot.md: skip before import-time bot wiring.
+    if config.telegram_bot_token:
+        import apps.tg_bot
 
-    all_apps.append(tg_bot)
+        all_apps.append(tg_bot)
+    else:
+        logger.info("Legacy Telegram bot disabled: telegram_bot_token is empty")
 
 if 'game_web_app' in config.apps:
     import apps.game_web_app

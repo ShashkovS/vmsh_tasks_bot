@@ -1,0 +1,58 @@
+{
+  "modes": ["figure-layout", "review"],
+  "browser": "chromium",
+  "seconds": 37.033,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": ["pnpm", "build"],
+      "seconds": 0.215,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/figure-layout.spec.ts",
+        "e2e/whiteboard-export.spec.ts",
+        "e2e/worksheet-print.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 25.588,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.099,
+        "key": "21633e41cb8c21d12f2cdc2d62d843c6681f1d1f463d0780b1ca5acd6c3a3609"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 10.944,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.016,
+        "key": "21633e41cb8c21d12f2cdc2d62d843c6681f1d1f463d0780b1ca5acd6c3a3609"
+      }
+    }
+  ]
+}

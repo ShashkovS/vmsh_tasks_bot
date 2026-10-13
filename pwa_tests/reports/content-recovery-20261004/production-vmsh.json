@@ -1,0 +1,119 @@
+{
+  "host": "vmsh",
+  "source_revision": "9a14443fbc231617929536af3d5f17c3124eb7b9",
+  "release": "9a14443fbc23-20261004093414",
+  "backup_before": "vmsh-before-deploy-20261004093528.sqlite3",
+  "backup_after": "vmsh-after-deploy-20261004093549.sqlite3",
+  "product_tables": 158,
+  "product_rows_before": 607904,
+  "product_rows_after": 607906,
+  "product_rows_identical": false,
+  "changed_product_tables": {
+    "auth_events": {
+      "before_count": 63532,
+      "after_count": 63533
+    },
+    "auth_refresh_consumed_secrets": {
+      "before_count": 52608,
+      "after_count": 52609
+    },
+    "auth_sessions": {
+      "before_count": 4088,
+      "after_count": 4088
+    }
+  },
+  "concurrent_writer_change": {
+    "event_type": "session.rotated",
+    "event_count": 1,
+    "occurred_at": "2026-10-04T09:35:50.107402Z",
+    "exact_atomic_refresh_contract": true,
+    "existing_auth_history_identical": true,
+    "all_other_155_product_tables_identical": true,
+    "exported_credentials_or_session_identifiers": false
+  },
+  "schema_current": true,
+  "ddl_sha256": "060c7793ffb80ea8ea4b2f570c8d15107032230cfd1d02468bf29d00b7a12932",
+  "integrity": "ok",
+  "existing_fk_errors": 627,
+  "migration_ids": [
+    "0111.current_schema",
+    "0112.scheduled_publication_lifecycle"
+  ],
+  "publications": [
+    [
+      13,
+      "condition",
+      51,
+      46,
+      "published",
+      1,
+      48
+    ],
+    [
+      13,
+      "hint",
+      60,
+      68,
+      "published",
+      1,
+      null
+    ],
+    [
+      13,
+      "solution",
+      59,
+      64,
+      "scheduled",
+      1,
+      null
+    ],
+    [
+      14,
+      "condition",
+      52,
+      47,
+      "published",
+      1,
+      49
+    ],
+    [
+      14,
+      "hint",
+      62,
+      76,
+      "published",
+      1,
+      null
+    ]
+  ],
+  "gl14_latest_hint": [
+    "cr-76",
+    6,
+    "ready",
+    3
+  ],
+  "cr75": [
+    "cr-75",
+    "invalid",
+    7
+  ],
+  "production_build": {
+    "schemaVersion": 1,
+    "profile": "production",
+    "releaseId": "9a14443fbc23-20261004093414",
+    "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+    "sentryConfigured": true,
+    "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+    "msw": false,
+    "prototype": false,
+    "application": "staff"
+  },
+  "old_immutable_assets_retained": 708,
+  "services": {
+    "vmshpwa.service": "active",
+    "gunicorn.vmsh_tasks_bot.service": "active",
+    "vmsh-analytics.timer": "active"
+  },
+  "maintenance_cleared": true,
+  "data_export": "Product rows stayed on server; only counts and digests exported."
+}

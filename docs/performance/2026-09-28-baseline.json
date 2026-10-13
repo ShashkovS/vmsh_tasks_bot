@@ -1,0 +1,6963 @@
+{
+  "window": "18h",
+  "collected_at_utc": "2026-09-28T08:41:27Z",
+  "prometheus": {
+    "http_count": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "method": "DELETE",
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction"
+            },
+            "value": [
+              1790584887.561,
+              "7.001620745542951"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "142.03287798101414"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/children/{student_public_id}/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "142.03287798101414"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/children/{student_public_id}/courses"
+            },
+            "value": [
+              1790584887.561,
+              "141.03264644593656"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/lessons/{lesson_number}"
+            },
+            "value": [
+              1790584887.561,
+              "147.03403565640195"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/children/{student_public_id}/home"
+            },
+            "value": [
+              1790584887.561,
+              "194.04491780504748"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "55.01273442926604"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "44.01018754341283"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/family/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "407.09423477656867"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "8.001296285190739"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/analytics/summary"
+            },
+            "value": [
+              1790584887.561,
+              "8.001296285190739"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/classroom-assignment-plans/{plan_public_id}/delivery-latest"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/classrooms"
+            },
+            "value": [
+              1790584887.561,
+              "6.001278186596584"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets"
+            },
+            "value": [
+              1790584887.561,
+              "8.002799640223062"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/content/revisions/{revision_id}/previews/{preview}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
+            },
+            "value": [
+              1790584887.561,
+              "1.0001775161967332"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/content/uploads/{revision_id}/diagnostics"
+            },
+            "value": [
+              1790584887.561,
+              "3.0010498650836483"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "5.000809571369121"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/dashboard"
+            },
+            "value": [
+              1790584887.561,
+              "921.2132438064368"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/group-banners"
+            },
+            "value": [
+              1790584887.561,
+              "1.0001592892819127"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/blocks"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-title"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
+            },
+            "value": [
+              1790584887.561,
+              "2.0003550323934665"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/group-lessons/{group_lesson_public_id}/family-digest"
+            },
+            "value": [
+              1790584887.561,
+              "2.0003550323934665"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/in-person-events"
+            },
+            "value": [
+              1790584887.561,
+              "5.0010651554971535"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan"
+            },
+            "value": [
+              1790584887.561,
+              "9.001917279894876"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-layout"
+            },
+            "value": [
+              1790584887.561,
+              "2.000749239360678"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/live-marking/catalog"
+            },
+            "value": [
+              1790584887.561,
+              "33.00764065755963"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/live-marking/condition"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/live-marking/directory"
+            },
+            "value": [
+              1790584887.561,
+              "20.004630701551285"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/live-marking/sessions/{session_id}/visits"
+            },
+            "value": [
+              1790584887.561,
+              "29.006714517249367"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/live-marking/{resource}"
+            },
+            "value": [
+              1790584887.561,
+              "139.03218337578144"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/publications"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "47.01088214864552"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "34.00787219263719"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/review/history"
+            },
+            "value": [
+              1790584887.561,
+              "1816.4204677008568"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/review/items"
+            },
+            "value": [
+              1790584887.561,
+              "38410.89141004863"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/review/reactions"
+            },
+            "value": [
+              1790584887.561,
+              "3.000502557478687"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/review/series/{problem_id}/{projection}"
+            },
+            "value": [
+              1790584887.561,
+              "15000.472331558232"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/statistics"
+            },
+            "value": [
+              1790584887.561,
+              "855.1365613300493"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/statistics/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "662.107214019314"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/student-enrollments"
+            },
+            "value": [
+              1790584887.561,
+              "9.00143819615574"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/student-results/directory"
+            },
+            "value": [
+              1790584887.561,
+              "9.001527001569858"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/student-results/{student}/attachments/{attachment}"
+            },
+            "value": [
+              1790584887.561,
+              "4.000679022687609"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/student-results/{student}/lessons/{course}/{number}"
+            },
+            "value": [
+              1790584887.561,
+              "10.001697112448749"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/student-results/{student}/overview"
+            },
+            "value": [
+              1790584887.561,
+              "15.002545668673124"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/student-results/{student}/problems/{problem}/history"
+            },
+            "value": [
+              1790584887.561,
+              "20.003394224897498"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/telegram-binding-owners"
+            },
+            "value": [
+              1790584887.561,
+              "140.02230049946778"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/testing/courses"
+            },
+            "value": [
+              1790584887.561,
+              "14.002241613168724"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "2304.533456818708"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/whiteboard-export"
+            },
+            "value": [
+              1790584887.561,
+              "10.001614707835325"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}/assets/{asset_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "502.1162306089373"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "500.11576753878217"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "6488.50196804816"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/courses/{course_id}/lessons"
+            },
+            "value": [
+              1790584887.561,
+              "13004.010187543414"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems"
+            },
+            "value": [
+              1790584887.561,
+              "17651.08589951378"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/courses/{course_id}/progress"
+            },
+            "value": [
+              1790584887.561,
+              "139.03218337578144"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/courses/{course_public_id}/lessons/{group_lesson_public_id}/oral-windows"
+            },
+            "value": [
+              1790584887.561,
+              "852.1972678860848"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/courses/{course_public_id}/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "42.009724473257705"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "17075.952766844177"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/home"
+            },
+            "value": [
+              1790584887.561,
+              "3268.7566566334804"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "114.02639499884233"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "25.00578837693911"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/notification-events"
+            },
+            "value": [
+              1790584887.561,
+              "39.00902986802501"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "60.01389210465386"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/offline-lessons"
+            },
+            "value": [
+              1790584887.561,
+              "2761.6392683491554"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts"
+            },
+            "value": [
+              1790584887.561,
+              "2330.539476730725"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/problems/{problem_public_id}/test-input"
+            },
+            "value": [
+              1790584887.561,
+              "2072.4797406807133"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/problems/{problem_public_id}/thread"
+            },
+            "value": [
+              1790584887.561,
+              "3323.7693910627463"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "3105.718916415837"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "2102.48668673304"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "27.006251447094236"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "491.1136837230841"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/{audience}/api/v1/auth/me"
+            },
+            "value": [
+              1790584887.561,
+              "20094.65153970827"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/{audience}/api/v1/auth/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "180.04167631396157"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/{audience}/api/v1/organizer-questions"
+            },
+            "value": [
+              1790584887.561,
+              "1038.2403334105118"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/{audience}/api/v1/organizer-questions/{question}"
+            },
+            "value": [
+              1790584887.561,
+              "14.002147748600269"
+            ]
+          },
+          {
+            "metric": {
+              "method": "GET",
+              "route": "/{audience}/api/v1/runtime"
+            },
+            "value": [
+              1790584887.561,
+              "1803.4174577448484"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PATCH",
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "9.002083815698079"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PATCH",
+              "route": "/staff/api/v1/in-person-events/{event_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PATCH",
+              "route": "/student/api/v1/courses/{course_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "17.003936096318593"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PATCH",
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/order"
+            },
+            "value": [
+              1790584887.561,
+              "3.000694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/family/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "174.04028710349618"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets"
+            },
+            "value": [
+              1790584887.561,
+              "3.0010515675675675"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets/resolve"
+            },
+            "value": [
+              1790584887.561,
+              "4.001399820111531"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/content/revisions/{revision_id}/compile"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/content/uploads"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid/generate"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "1.000378998636275"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/live-marking/operations"
+            },
+            "value": [
+              1790584887.561,
+              "8.00163857654243"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/live-marking/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "1.000161269999171"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/live-marking/visits"
+            },
+            "value": [
+              1790584887.561,
+              "3.0004838099975135"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/publications"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "14.003241491085902"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/review/items/{queue_public_id}/claim"
+            },
+            "value": [
+              1790584887.561,
+              "763.1766612641816"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/review/items/{queue_public_id}/complete"
+            },
+            "value": [
+              1790584887.561,
+              "726.1680944663117"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/review/items/{queue_public_id}/heartbeat"
+            },
+            "value": [
+              1790584887.561,
+              "350.0810372771475"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/review/items/{queue_public_id}/release"
+            },
+            "value": [
+              1790584887.561,
+              "60.01389210465386"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer"
+            },
+            "value": [
+              1790584887.561,
+              "22.003542653753826"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer-preview"
+            },
+            "value": [
+              1790584887.561,
+              "22.003541774246937"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/reviews/{review_public_id}/correction"
+            },
+            "value": [
+              1790584887.561,
+              "16.00370456124103"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/staff/api/v1/testing/session"
+            },
+            "value": [
+              1790584887.561,
+              "1.0001601152263375"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/reveal/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "249.05765223431354"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/notification-events/{event_public_id}/read"
+            },
+            "value": [
+              1790584887.561,
+              "31.005926434748428"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts"
+            },
+            "value": [
+              1790584887.561,
+              "300.0694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/problems/{problem_public_id}/thread/entries"
+            },
+            "value": [
+              1790584887.561,
+              "296.06853438295906"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "1022.2366288492708"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "11.002546885853208"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "4.000926140310257"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments"
+            },
+            "value": [
+              1790584887.561,
+              "139.03218337578144"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/replace"
+            },
+            "value": [
+              1790584887.561,
+              "13.003009956008336"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/submit"
+            },
+            "value": [
+              1790584887.561,
+              "256.0592729798565"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/{audience}/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "4891.13220652929"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/{audience}/api/v1/auth/login"
+            },
+            "value": [
+              1790584887.561,
+              "114.02639499884233"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/{audience}/api/v1/auth/logout"
+            },
+            "value": [
+              1790584887.561,
+              "9.002083815698079"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/{audience}/api/v1/auth/refresh"
+            },
+            "value": [
+              1790584887.561,
+              "1810.4190784903915"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/{audience}/api/v1/organizer-questions"
+            },
+            "value": [
+              1790584887.561,
+              "1.001858070678128"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/{audience}/api/v1/organizer-questions/{question}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "POST",
+              "route": "/{audience}/api/v1/organizer-questions/{question}/read"
+            },
+            "value": [
+              1790584887.561,
+              "1.001858070678128"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PUT",
+              "route": "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PUT",
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
+            },
+            "value": [
+              1790584887.561,
+              "2.0007060061694792"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PUT",
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/{plan_public_id}/assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PUT",
+              "route": "/student/api/v1/courses/{course_public_id}/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PUT",
+              "route": "/student/api/v1/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "20.003573803618995"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PUT",
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction"
+            },
+            "value": [
+              1790584887.561,
+              "25.00578837693911"
+            ]
+          },
+          {
+            "metric": {
+              "method": "PUT",
+              "route": "/{audience}/api/v1/auth/locale"
+            },
+            "value": [
+              1790584887.561,
+              "2.0004630701551287"
+            ]
+          }
+        ]
+      }
+    },
+    "http_avg": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction"
+            },
+            "value": [
+              1790584887.561,
+              "0.008275618019979447"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "0.015253362049099424"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0.01892951834605823"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.006997430228119624"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/lessons/{lesson_number}"
+            },
+            "value": [
+              1790584887.561,
+              "0.027735753149605125"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/home"
+            },
+            "value": [
+              1790584887.561,
+              "0.023383868238936685"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "0.011118864589794115"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.008009271759709174"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "0.008544632126130988"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "0.08604789210949093"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/summary"
+            },
+            "value": [
+              1790584887.561,
+              "0.25223780795931816"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classroom-assignment-plans/{plan_public_id}/delivery-latest"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classrooms"
+            },
+            "value": [
+              1790584887.561,
+              "0.010653111307571333"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets"
+            },
+            "value": [
+              1790584887.561,
+              "0.1275266613981876"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/previews/{preview}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
+            },
+            "value": [
+              1790584887.561,
+              "0.007145395502448082"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads/{revision_id}/diagnostics"
+            },
+            "value": [
+              1790584887.561,
+              "0.00649632140994072"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.0802204143255949"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/dashboard"
+            },
+            "value": [
+              1790584887.561,
+              "0.09904232410457182"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-banners"
+            },
+            "value": [
+              1790584887.561,
+              "0.013646181672811508"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/blocks"
+            },
+            "value": [
+              1790584887.561,
+              "0.0855126838820676"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-title"
+            },
+            "value": [
+              1790584887.561,
+              "0.09877759823575617"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window"
+            },
+            "value": [
+              1790584887.561,
+              "0.08975770371034741"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
+            },
+            "value": [
+              1790584887.561,
+              "0.02412984998700101"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_public_id}/family-digest"
+            },
+            "value": [
+              1790584887.561,
+              "0.02983672544360161"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events"
+            },
+            "value": [
+              1790584887.561,
+              "0.013212224096059799"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan"
+            },
+            "value": [
+              1790584887.561,
+              "0.017020218798683748"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-layout"
+            },
+            "value": [
+              1790584887.561,
+              "0.00565491383895278"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/catalog"
+            },
+            "value": [
+              1790584887.561,
+              "0.019910494655822262"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/condition"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/directory"
+            },
+            "value": [
+              1790584887.561,
+              "0.0712750704959035"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions/{session_id}/visits"
+            },
+            "value": [
+              1790584887.561,
+              "0.05645389292902987"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/{resource}"
+            },
+            "value": [
+              1790584887.561,
+              "0.05728074216129754"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/publications"
+            },
+            "value": [
+              1790584887.561,
+              "0.0692896475084126"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "0.014651071557656247"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.009359517737346537"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/history"
+            },
+            "value": [
+              1790584887.561,
+              "0.030970736660087886"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items"
+            },
+            "value": [
+              1790584887.561,
+              "0.04695387320408879"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/reactions"
+            },
+            "value": [
+              1790584887.561,
+              "0.07020720280706884"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/series/{problem_id}/{projection}"
+            },
+            "value": [
+              1790584887.561,
+              "0.10376851874849351"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics"
+            },
+            "value": [
+              1790584887.561,
+              "0.615124843688954"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "0.05551462441688443"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-enrollments"
+            },
+            "value": [
+              1790584887.561,
+              "0.14009814926733574"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/directory"
+            },
+            "value": [
+              1790584887.561,
+              "0.05560095587538348"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/attachments/{attachment}"
+            },
+            "value": [
+              1790584887.561,
+              "0.15342253888957202"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/lessons/{course}/{number}"
+            },
+            "value": [
+              1790584887.561,
+              "0.10420808186754585"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/overview"
+            },
+            "value": [
+              1790584887.561,
+              "0.03381628512094419"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/problems/{problem}/history"
+            },
+            "value": [
+              1790584887.561,
+              "0.04687231802381575"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/telegram-binding-owners"
+            },
+            "value": [
+              1790584887.561,
+              "0.04340980237882052"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.04491281043738127"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "0.2810086047377101"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export"
+            },
+            "value": [
+              1790584887.561,
+              "0.11376131176948548"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}/assets/{asset_id}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "0.017110998562325636"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0.024319580847397448"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.014008693944324564"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons"
+            },
+            "value": [
+              1790584887.561,
+              "0.015137602831647126"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems"
+            },
+            "value": [
+              1790584887.561,
+              "0.03972796138598497"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/progress"
+            },
+            "value": [
+              1790584887.561,
+              "0.02287313273752765"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/lessons/{group_lesson_public_id}/oral-windows"
+            },
+            "value": [
+              1790584887.561,
+              "0.017348111357907176"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "0.007878730295314674"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "0.03377358359666568"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/home"
+            },
+            "value": [
+              1790584887.561,
+              "0.01994222932554453"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "0.009781944835068364"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.019739747382700443"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events"
+            },
+            "value": [
+              1790584887.561,
+              "0.015438352138377154"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "0.010443563143408566"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/offline-lessons"
+            },
+            "value": [
+              1790584887.561,
+              "0.014574919912622743"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts"
+            },
+            "value": [
+              1790584887.561,
+              "0.039626606779718354"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-input"
+            },
+            "value": [
+              1790584887.561,
+              "0.038869431877462016"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread"
+            },
+            "value": [
+              1790584887.561,
+              "0.04979142549428377"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "0.014722437500329793"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "0.01246006557496659"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.03531503860183336"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "0.15409368574202"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/me"
+            },
+            "value": [
+              1790584887.561,
+              "0.01725399383877331"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "0.010283194192581708"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions"
+            },
+            "value": [
+              1790584887.561,
+              "0.015187654874201323"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}"
+            },
+            "value": [
+              1790584887.561,
+              "0.009652863655771528"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/runtime"
+            },
+            "value": [
+              1790584887.561,
+              "0.0007521431010859051"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "0.012329679913818838"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "0.017949292984078914"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/order"
+            },
+            "value": [
+              1790584887.561,
+              "0.010898901460071404"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "0.011484857172244924"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets/resolve"
+            },
+            "value": [
+              1790584887.561,
+              "0.09505278407596052"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/compile"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid/generate"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "0.0444229943677783"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/operations"
+            },
+            "value": [
+              1790584887.561,
+              "0.13526238896884024"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "0.005842236801981926"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/visits"
+            },
+            "value": [
+              1790584887.561,
+              "0.021025258116424084"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0.013700034801981278"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/claim"
+            },
+            "value": [
+              1790584887.561,
+              "0.017464232746985293"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/complete"
+            },
+            "value": [
+              1790584887.561,
+              "0.02088235621917839"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/heartbeat"
+            },
+            "value": [
+              1790584887.561,
+              "0.019070528085742677"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/release"
+            },
+            "value": [
+              1790584887.561,
+              "0.026480897205571334"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer"
+            },
+            "value": [
+              1790584887.561,
+              "0.03482593054121191"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer-preview"
+            },
+            "value": [
+              1790584887.561,
+              "0.013561491727490316"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/reviews/{review_public_id}/correction"
+            },
+            "value": [
+              1790584887.561,
+              "0.019794763124082237"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/session"
+            },
+            "value": [
+              1790584887.561,
+              "0.013941891491413116"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/reveal/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "0.015216495856702567"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events/{event_public_id}/read"
+            },
+            "value": [
+              1790584887.561,
+              "0.00479796901345253"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0.017053087027995167"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "0.01123809168997372"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0.010550240753218532"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments"
+            },
+            "value": [
+              1790584887.561,
+              "2.2303907191983874"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/replace"
+            },
+            "value": [
+              1790584887.561,
+              "0.024141476489603523"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/submit"
+            },
+            "value": [
+              1790584887.561,
+              "0.02325544980703853"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "0.017779137381944796"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/login"
+            },
+            "value": [
+              1790584887.561,
+              "0.2554055945457597"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/logout"
+            },
+            "value": [
+              1790584887.561,
+              "0.021663995045754645"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/refresh"
+            },
+            "value": [
+              1790584887.561,
+              "0.01117105702843867"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/read"
+            },
+            "value": [
+              1790584887.561,
+              "0.010364506393671036"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/{plan_public_id}/assignments"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/locale"
+            },
+            "value": [
+              1790584887.561,
+              "0.006307108793407679"
+            ]
+          }
+        ]
+      }
+    },
+    "http_p95": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
+            },
+            "value": [
+              1790584887.561,
+              "0.047506463509159436"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/lessons/{course}/{number}"
+            },
+            "value": [
+              1790584887.561,
+              "0.23928631501852862"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "0.04109375000000002"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "0.024381578947368414"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/summary"
+            },
+            "value": [
+              1790584887.561,
+              "0.47505934312581805"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-enrollments"
+            },
+            "value": [
+              1790584887.561,
+              "0.24156262992887503"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/blocks"
+            },
+            "value": [
+              1790584887.561,
+              "0.22749999999999998"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid/generate"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer-preview"
+            },
+            "value": [
+              1790584887.561,
+              "0.024916668390396315"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-layout"
+            },
+            "value": [
+              1790584887.561,
+              "0.00975"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "0.1581108312342565"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
+            },
+            "value": [
+              1790584887.561,
+              "0.00975"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window"
+            },
+            "value": [
+              1790584887.561,
+              "0.42499999999999993"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/condition"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "0.04901442307692301"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events/{event_public_id}/read"
+            },
+            "value": [
+              1790584887.561,
+              "0.009224999999999999"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/{plan_public_id}/assignments"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classroom-assignment-plans/{plan_public_id}/delivery-latest"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.23124999999999998"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/reviews/{review_public_id}/correction"
+            },
+            "value": [
+              1790584887.561,
+              "0.029999999999999985"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/logout"
+            },
+            "value": [
+              1790584887.561,
+              "0.1825"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/publications"
+            },
+            "value": [
+              1790584887.561,
+              "0.22749999999999998"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "0.02400020012243617"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "0.05249999999999981"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/compile"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0.04267857142857143"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "0.37767857142857114"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/complete"
+            },
+            "value": [
+              1790584887.561,
+              "0.053269230769230805"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/claim"
+            },
+            "value": [
+              1790584887.561,
+              "0.07141666666666649"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/reveal/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "0.06593749999999997"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/attachments/{attachment}"
+            },
+            "value": [
+              1790584887.561,
+              "0.2425"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/progress"
+            },
+            "value": [
+              1790584887.561,
+              "0.04646428571428571"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/operations"
+            },
+            "value": [
+              1790584887.561,
+              "0.24"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.21499999999999997"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0.024000065700415685"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/series/{problem_id}/{projection}"
+            },
+            "value": [
+              1790584887.561,
+              "0.3405970483005365"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "0.022937500000000006"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/refresh"
+            },
+            "value": [
+              1790584887.561,
+              "0.042678571428571385"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/read"
+            },
+            "value": [
+              1790584887.561,
+              "0.02425"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/previews/{preview}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads/{revision_id}/diagnostics"
+            },
+            "value": [
+              1790584887.561,
+              "0.02275"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/history"
+            },
+            "value": [
+              1790584887.561,
+              "0.1551785714285711"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/runtime"
+            },
+            "value": [
+              1790584887.561,
+              "0.004752635960044395"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events"
+            },
+            "value": [
+              1790584887.561,
+              "0.02425"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan"
+            },
+            "value": [
+              1790584887.561,
+              "0.04437500000000001"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/heartbeat"
+            },
+            "value": [
+              1790584887.561,
+              "0.06805555555555554"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "0.05416666666666671"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "0.4002373725032723"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/overview"
+            },
+            "value": [
+              1790584887.561,
+              "0.13750000000000012"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.19749999999999968"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/visits"
+            },
+            "value": [
+              1790584887.561,
+              "0.02425177188185392"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/locale"
+            },
+            "value": [
+              1790584887.561,
+              "0.0095"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "0.04149999999999998"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/lessons/{lesson_number}"
+            },
+            "value": [
+              1790584887.561,
+              "0.054062499999999965"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets"
+            },
+            "value": [
+              1790584887.561,
+              "0.7250001134591579"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/me"
+            },
+            "value": [
+              1790584887.561,
+              "0.08751415628539069"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "0.03875"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.057499999999999975"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons"
+            },
+            "value": [
+              1790584887.561,
+              "0.06520940170940161"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/dashboard"
+            },
+            "value": [
+              1790584887.561,
+              "0.4319293478260871"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics"
+            },
+            "value": [
+              1790584887.561,
+              "1.5706521739130426"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.04887233096085408"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread"
+            },
+            "value": [
+              1790584887.561,
+              "0.19564453124999986"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0.06615384615384605"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/offline-lessons"
+            },
+            "value": [
+              1790584887.561,
+              "0.06487980769230778"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts"
+            },
+            "value": [
+              1790584887.561,
+              "0.15751533742331236"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}"
+            },
+            "value": [
+              1790584887.561,
+              "0.02325"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.02476933219762031"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "0.23082278481012647"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}/assets/{asset_id}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "0.07874999999999999"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/{resource}"
+            },
+            "value": [
+              1790584887.561,
+              "0.3262499999999997"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export"
+            },
+            "value": [
+              1790584887.561,
+              "0.3749999999999998"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "0.045111940298507465"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems"
+            },
+            "value": [
+              1790584887.561,
+              "0.16462109672505712"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments"
+            },
+            "value": [
+              1790584887.561,
+              "5.035714285714273"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions/{session_id}/visits"
+            },
+            "value": [
+              1790584887.561,
+              "0.22281249999999997"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0.024374999999999994"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "0.04124999999999991"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/home"
+            },
+            "value": [
+              1790584887.561,
+              "0.048855932203389824"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_public_id}/family-digest"
+            },
+            "value": [
+              1790584887.561,
+              "0.048753250620692905"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "0.04875"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/order"
+            },
+            "value": [
+              1790584887.561,
+              "0.02275"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0.02425"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/submit"
+            },
+            "value": [
+              1790584887.561,
+              "0.098"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "0.04638157894736843"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items"
+            },
+            "value": [
+              1790584887.561,
+              "0.17504703832752627"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/reactions"
+            },
+            "value": [
+              1790584887.561,
+              "0.09625024212928311"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/directory"
+            },
+            "value": [
+              1790584887.561,
+              "0.21624999999999997"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events"
+            },
+            "value": [
+              1790584887.561,
+              "0.025624999999999953"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "0.04860549132947972"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions"
+            },
+            "value": [
+              1790584887.561,
+              "0.038832210096067576"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/release"
+            },
+            "value": [
+              1790584887.561,
+              "0.175"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0.021426470588235297"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classrooms"
+            },
+            "value": [
+              1790584887.561,
+              "0.04249999999999998"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-banners"
+            },
+            "value": [
+              1790584887.561,
+              "0.02425"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/problems/{problem}/history"
+            },
+            "value": [
+              1790584887.561,
+              "0.09444533267865757"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0.04867647058823529"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/lessons/{group_lesson_public_id}/oral-windows"
+            },
+            "value": [
+              1790584887.561,
+              "0.08299999999999988"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer"
+            },
+            "value": [
+              1790584887.561,
+              "0.049861113984707134"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/telegram-binding-owners"
+            },
+            "value": [
+              1790584887.561,
+              "0.19705882352941184"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "0.023583333333333335"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-input"
+            },
+            "value": [
+              1790584887.561,
+              "0.14"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "0.00975"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/login"
+            },
+            "value": [
+              1790584887.561,
+              "0.47890625000000003"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction"
+            },
+            "value": [
+              1790584887.561,
+              "0.020499999999999997"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-title"
+            },
+            "value": [
+              1790584887.561,
+              "0.42499999999999993"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/catalog"
+            },
+            "value": [
+              1790584887.561,
+              "0.08375000000000006"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/directory"
+            },
+            "value": [
+              1790584887.561,
+              "0.25"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/home"
+            },
+            "value": [
+              1790584887.561,
+              "0.09180555555555549"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/session"
+            },
+            "value": [
+              1790584887.561,
+              "0.02425"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "0.6028571428571431"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "0.02916666666666659"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads"
+            },
+            "value": [
+              1790584887.561,
+              "NaN"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/replace"
+            },
+            "value": [
+              1790584887.561,
+              "0.08374999999999996"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets/resolve"
+            },
+            "value": [
+              1790584887.561,
+              "0.09751281602657705"
+            ]
+          }
+        ]
+      }
+    },
+    "http_over1": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/lessons/{lesson_number}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/home"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/summary"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classroom-assignment-plans/{plan_public_id}/delivery-latest"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classrooms"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/previews/{preview}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads/{revision_id}/diagnostics"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/dashboard"
+            },
+            "value": [
+              1790584887.561,
+              "1.0002315350776598"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-banners"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/blocks"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-title"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_public_id}/family-digest"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-layout"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/catalog"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/condition"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/directory"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions/{session_id}/visits"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/{resource}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/publications"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/history"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/reactions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/series/{problem_id}/{projection}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics"
+            },
+            "value": [
+              1790584887.561,
+              "69.01102073891627"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-enrollments"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/directory"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/attachments/{attachment}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/lessons/{course}/{number}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/overview"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/problems/{problem}/history"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/telegram-binding-owners"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "4.000926140310185"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}/assets/{asset_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/banners/active"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/classroom-assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/progress"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/lessons/{group_lesson_public_id}/oral-windows"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/home"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news/{post_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notifications/preferences"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/offline-lessons"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-input"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions/config"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media"
+            },
+            "value": [
+              1790584887.561,
+              "3.0006946052326953"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/me"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/runtime"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/enrollment"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/order"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets/resolve"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/compile"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid/generate"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/recalculate"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/operations"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/visits"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/claim"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/complete"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/heartbeat"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/release"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer-preview"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/reviews/{review_public_id}/correction"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/session"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/reveal/{kind}"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events/{event_public_id}/read"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments"
+            },
+            "value": [
+              1790584887.561,
+              "109.02523732345452"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/replace"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/submit"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/analytics/events"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/login"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/logout"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/refresh"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/entries"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/read"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/{plan_public_id}/assignments"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/locale"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          }
+        ]
+      }
+    },
+    "http_status": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "31.007177587404495"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/banners/active",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "134.03102570039363"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/banners/active",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "8.001852280620515"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/classroom-assignments",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "134.03102570039363"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/classroom-assignments",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "8.001852280620515"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "125.02894188469554"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "15.002282797465385"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/lessons/{lesson_number}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "132.0305626302385"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/lessons/{lesson_number}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "14.002130610967694"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/home",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "188.04352859458209"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/home",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "6.001389210465386"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "47.01088214864552"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "6.000910341600374"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news/{post_id}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "10.002315350775643"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news/{post_id}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "16.002538030006523"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/news/{post_id}",
+              "status": "404"
+            },
+            "value": [
+              1790584887.561,
+              "12.001903522504893"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions/config",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "341.07895346144943"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions/config",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "66.01528131511925"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/events",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "7.001134249541896"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/events",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/summary",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "7.001134249541896"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/analytics/summary",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classroom-assignment-plans/{plan_public_id}/delivery-latest",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/classrooms",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "6.001278186596584"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "8.002799640223062"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/previews/{preview}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/previews/{preview}",
+              "status": "404"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/problem-matches",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1.0001775161967332"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads/{revision_id}/diagnostics",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3.0010498650836483"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/courses",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "5.000809571369121"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/dashboard",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "910.2106969205836"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/dashboard",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "10.001590548606"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-banners",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1.0001592892819127"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/blocks",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-title",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3.000708035478206"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_public_id}/family-digest",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "2.0003550323934665"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "5.0010651554971535"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "9.001917279894876"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-layout",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "2.000749239360678"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/catalog",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "30.00694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/catalog",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "3.000694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/condition",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/directory",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "17.003936096318593"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/directory",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "3.000694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions/{session_id}/visits",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "26.006019912016672"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions/{session_id}/visits",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "3.000694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/{resource}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "63.01458670988655"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/{resource}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "8.001852280620515"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/{resource}",
+              "status": "409"
+            },
+            "value": [
+              1790584887.561,
+              "65.01047213250519"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/publications",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "6.001065097180399"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "47.01088214864552"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "34.00787219263719"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/history",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1801.4169946746933"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/history",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "14.002276462721499"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "38384.88539013661"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "26.006019912016672"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/reactions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3.000502557478687"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/series/{problem_id}/{projection}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "14979.467469321604"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/series/{problem_id}/{projection}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "21.004862236628853"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "833.1330474712644"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "21.003430176322418"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics/recalculate",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "649.1051086080586"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/statistics/recalculate",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "12.002123799126638"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-enrollments",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "9.00143819615574"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/directory",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "9.001527001569858"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/attachments/{attachment}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "4.000679022687609"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/lessons/{course}/{number}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "10.001697112448749"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/overview",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "15.002545668673124"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/student-results/{student}/problems/{problem}/history",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "20.003394224897498"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/telegram-binding-owners",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "139.02214121018585"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/telegram-binding-owners",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/courses",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "14.002241613168724"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "2303.5332252836306"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "10.001614707835325"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/whiteboard-export/{group_lesson}/assets/{asset_id}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/banners/active",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "470.10882148645527"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/banners/active",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "32.00740912248206"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/classroom-assignments",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "468.1083584163001"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/classroom-assignments",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "32.00740912248206"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "5872.359342440381"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "616.1426256077797"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "12444.880759435056"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "559.1294281083585"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "16966.927529520723"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "684.1583699930541"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/progress",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "135.03125723547117"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/progress",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "4.000926140310257"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/lessons/{group_lesson_public_id}/oral-windows",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "487.11275758277384"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/lessons/{group_lesson_public_id}/oral-windows",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "64.01481824496412"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/lessons/{group_lesson_public_id}/oral-windows",
+              "status": "404"
+            },
+            "value": [
+              1790584887.561,
+              "301.06969205834685"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_public_id}/notifications/preferences",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "42.009724473257705"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "16388.793702245894"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "687.1590645982867"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/home",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3242.7506367214637"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/home",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "26.006019912016672"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "105.02431118314426"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "8.001275881292015"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news/{post_id}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "15.003473026163466"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news/{post_id}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "2.0003256172064607"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/news/{post_id}",
+              "status": "404"
+            },
+            "value": [
+              1790584887.561,
+              "6.000976851619383"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "39.00902986802501"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notifications/preferences",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "80.01746590827285"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/offline-lessons",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "2761.6392683491554"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "2120.4908543644365"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "218.05047464690904"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-input",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1872.4334336652005"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-input",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "200.04630701551287"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3011.6971521185465"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "312.0722389442001"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions/config",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "2811.6508451030336"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions/config",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "294.0680713128039"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1857.429960639037"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "255.0590414447789"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "26.006019912016672"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "402.0930771011809"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media",
+              "status": "302"
+            },
+            "value": [
+              1790584887.561,
+              "80.01852280620514"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/{attachment_public_id}/media",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "9.002083815698079"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/me",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "16475.81384579764"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/me",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "3618.837693910628"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/sessions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "171.03959249826352"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/sessions",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "9.002083815698079"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "949.2213533242092"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "90.02083815698079"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "13.001994337985963"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/runtime",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1803.4174577448484"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/enrollment",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "9.002083815698079"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/courses/{course_id}/enrollment",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "17.003936096318593"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments/order",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3.000694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "129.0298680250058"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/family/api/v1/push-subscriptions",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "45.01041907849039"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets",
+              "status": "201"
+            },
+            "value": [
+              1790584887.561,
+              "3.0010515675675675"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/assets/resolve",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "4.001399820111531"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/revisions/{revision_id}/compile",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/content/uploads",
+              "status": "201"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid/generate",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/recalculate",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1.000378998636275"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/operations",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "8.00163857654243"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/sessions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1.000161269999171"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/live-marking/visits",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3.0004838099975135"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/publications",
+              "status": "201"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/questions/{thread_public_id}/entries",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "14.003241491085902"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/claim",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "763.1766612641816"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/claim",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/complete",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "718.1662421856912"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/complete",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "8.001852280620515"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/heartbeat",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "337.0780273211392"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/heartbeat",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "11.001887072310405"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/release",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "44.01018754341283"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/release",
+              "status": "409"
+            },
+            "value": [
+              1790584887.561,
+              "16.00370456124103"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "21.003381624037743"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/review/items/{queue_public_id}/transfer-preview",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "22.003541774246937"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/reviews/{review_public_id}/correction",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "16.00370456124103"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/testing/session",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1.0001601152263375"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/reveal/{kind}",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "183.04237091919427"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/reveal/{kind}",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "7.001620745542951"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/reveal/{kind}",
+              "status": "500"
+            },
+            "value": [
+              1790584887.561,
+              "59.013660569576295"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/notification-events/{event_public_id}/read",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "31.005926434748428"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts",
+              "status": "201"
+            },
+            "value": [
+              1790584887.561,
+              "251.05811530446866"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts",
+              "status": "409"
+            },
+            "value": [
+              1790584887.561,
+              "4.000615243516761"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/test-attempts",
+              "status": "422"
+            },
+            "value": [
+              1790584887.561,
+              "36.008335262792315"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread/entries",
+              "status": "201"
+            },
+            "value": [
+              1790584887.561,
+              "275.0636721463302"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/problems/{problem_public_id}/thread/entries",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "21.004862236628853"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "845.1956471405418"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "161.03727714748786"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/push-subscriptions",
+              "status": "500"
+            },
+            "value": [
+              1790584887.561,
+              "16.00370456124103"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}/entries",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "3.000694605232693"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/questions/{thread_public_id}/entries",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+              "status": "201"
+            },
+            "value": [
+              1790584887.561,
+              "139.03218337578144"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/replace",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "13.003009956008336"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/submit",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "242.05603148877057"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/thread-entries/{entry_public_id}/submit",
+              "status": "409"
+            },
+            "value": [
+              1790584887.561,
+              "13.002090271923299"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/analytics/events",
+              "status": "204"
+            },
+            "value": [
+              1790584887.561,
+              "4855.123871266497"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/analytics/events",
+              "status": "400"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/analytics/events",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "36.008335262792315"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/login",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "85.01968048159297"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/login",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "28.006482982171804"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/login",
+              "status": "429"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/logout",
+              "status": "204"
+            },
+            "value": [
+              1790584887.561,
+              "9.002083815698079"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/refresh",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1400.32414910859"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/refresh",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "410.09492938180136"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/entries",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/organizer-questions/{question}/read",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "1.001858070678128"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/{plan_public_id}/assignments",
+              "status": "422"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction",
+              "status": "401"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/student/api/v1/reviews/{review_public_id}/reaction",
+              "status": "409"
+            },
+            "value": [
+              1790584887.561,
+              "1.0002315350775643"
+            ]
+          },
+          {
+            "metric": {
+              "route": "/{audience}/api/v1/auth/locale",
+              "status": "200"
+            },
+            "value": [
+              1790584887.561,
+              "2.0004630701551287"
+            ]
+          }
+        ]
+      }
+    },
+    "db_wait_avg": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "role": "analytics"
+            },
+            "value": [
+              1790584887.561,
+              "0.006050065147251359"
+            ]
+          },
+          {
+            "metric": {
+              "role": "read"
+            },
+            "value": [
+              1790584887.561,
+              "0.008352876466489325"
+            ]
+          },
+          {
+            "metric": {
+              "role": "write"
+            },
+            "value": [
+              1790584887.561,
+              "0.014256083098600887"
+            ]
+          }
+        ]
+      }
+    },
+    "db_hold_avg": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "role": "analytics"
+            },
+            "value": [
+              1790584887.561,
+              "0.46434674986793534"
+            ]
+          },
+          {
+            "metric": {
+              "role": "read"
+            },
+            "value": [
+              1790584887.561,
+              "0.0033087320464141126"
+            ]
+          },
+          {
+            "metric": {
+              "role": "write"
+            },
+            "value": [
+              1790584887.561,
+              "0.025974792763706015"
+            ]
+          }
+        ]
+      }
+    },
+    "db_wait_p95": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "role": "read"
+            },
+            "value": [
+              1790584887.561,
+              "0.042929470649332085"
+            ]
+          },
+          {
+            "metric": {
+              "role": "write"
+            },
+            "value": [
+              1790584887.561,
+              "0.09288138633754306"
+            ]
+          },
+          {
+            "metric": {
+              "role": "analytics"
+            },
+            "value": [
+              1790584887.561,
+              "0.000960376213592233"
+            ]
+          }
+        ]
+      }
+    },
+    "db_hold_p95": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "role": "write"
+            },
+            "value": [
+              1790584887.561,
+              "0.12449849273773633"
+            ]
+          },
+          {
+            "metric": {
+              "role": "analytics"
+            },
+            "value": [
+              1790584887.561,
+              "0.9568119127429835"
+            ]
+          },
+          {
+            "metric": {
+              "role": "read"
+            },
+            "value": [
+              1790584887.561,
+              "0.020043032180311254"
+            ]
+          }
+        ]
+      }
+    },
+    "db_count": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "role": "analytics"
+            },
+            "value": [
+              1790584887.561,
+              "833.1330474712644"
+            ]
+          },
+          {
+            "metric": {
+              "role": "read"
+            },
+            "value": [
+              1790584887.561,
+              "610994.4338967354"
+            ]
+          },
+          {
+            "metric": {
+              "role": "write"
+            },
+            "value": [
+              1790584887.561,
+              "113848.35378559853"
+            ]
+          }
+        ]
+      }
+    },
+    "db_max_queue": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "aiohttp",
+              "pid": "968485",
+              "role": "analytics"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "aiohttp",
+              "pid": "968485",
+              "role": "read"
+            },
+            "value": [
+              1790584887.561,
+              "23"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "aiohttp",
+              "pid": "968485",
+              "role": "write"
+            },
+            "value": [
+              1790584887.561,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "aiohttp",
+              "pid": "968487",
+              "role": "analytics"
+            },
+            "value": [
+              1790584887.561,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "aiohttp",
+              "pid": "968487",
+              "role": "read"
+            },
+            "value": [
+              1790584887.561,
+              "23"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "aiohttp",
+              "pid": "968487",
+              "role": "write"
+            },
+            "value": [
+              1790584887.561,
+              "1"
+            ]
+          }
+        ]
+      }
+    },
+    "cpu_max": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {},
+            "value": [
+              1790584887.561,
+              "31.79444444452033"
+            ]
+          }
+        ]
+      }
+    },
+    "cpu_avg": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {},
+            "value": [
+              1790584887.561,
+              "7.27912379972255"
+            ]
+          }
+        ]
+      }
+    },
+    "iowait_max": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {},
+            "value": [
+              1790584887.561,
+              "0.2592592592592761"
+            ]
+          }
+        ]
+      }
+    },
+    "mem_available_min": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "node"
+            },
+            "value": [
+              1790584887.561,
+              "1157308416"
+            ]
+          }
+        ]
+      }
+    },
+    "disk_busy_max": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "device": "vda",
+              "instance": "vmsh.shashkovs.ru",
+              "job": "node"
+            },
+            "value": [
+              1790584887.561,
+              "0.01091851851851802"
+            ]
+          }
+        ]
+      }
+    },
+    "up_min": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "aiohttp"
+            },
+            "value": [
+              1790584887.561,
+              "1"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "nats"
+            },
+            "value": [
+              1790584887.561,
+              "1"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "nginx"
+            },
+            "value": [
+              1790584887.561,
+              "1"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "node"
+            },
+            "value": [
+              1790584887.561,
+              "1"
+            ]
+          },
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "prometheus"
+            },
+            "value": [
+              1790584887.561,
+              "1"
+            ]
+          }
+        ]
+      }
+    },
+    "cpu_pressure_max": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "node"
+            },
+            "value": [
+              1790584887.561,
+              "0.08660122222225053"
+            ]
+          }
+        ]
+      }
+    },
+    "io_pressure_max": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "node"
+            },
+            "value": [
+              1790584887.561,
+              "0.006194270370370861"
+            ]
+          }
+        ]
+      }
+    },
+    "nginx_rps_max": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "instance": "vmsh.shashkovs.ru",
+              "job": "nginx"
+            },
+            "value": [
+              1790584887.561,
+              "26.466666666666665"
+            ]
+          }
+        ]
+      }
+    },
+    "backend_rps_max": {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {},
+            "value": [
+              1790584887.561,
+              "25.45633018479532"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,202 @@
+"""Phase-8 proof for Student notifications after a Staff support reply."""
+
+from __future__ import annotations
+
+import json
+
+from db_methods.pwa.support import AppendStaffSupportEntryCommand
+from models.pwa.support_notifications import create_staff_reply_notifications
+from pwa_tests.integration import test_support_thread_repository as support_repository
+
+
+support_fixture = support_repository.support_fixture
+
+
+def _seed_student_account(fixture: support_repository.SupportFixture) -> None:
+    now = support_repository._timestamp(support_repository.NOW)
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO auth_accounts "
+            "(audience, username, username_normalized, "
+            "username_algorithm_version, provisioning_source, credential_kind, "
+            "credential_hash, linked_user_id, status, created_at, updated_at) "
+            "VALUES ('student', 'support-student', "
+            "'support-student', 1, 'synthetic-test', 'telegram_token', 'hash', ?, "
+            "'active', ?, ?)",
+            (support_repository.STUDENT_ID, now, now),
+        )
+    )
+
+
+async def test_staff_reply_creates_one_idempotent_student_event(support_fixture):
+    fixture = support_fixture
+    _seed_student_account(fixture)
+    thread = await fixture.repository.create_student_thread(
+        support_repository._create_problem_command()
+    )
+
+    # A Student-authored entry is not a notification source.
+    assert (
+        fixture.factory.run_write(
+            lambda connection: create_staff_reply_notifications(
+                connection,
+                student_account_public_ids=("a-1",),
+                thread_public_id=thread.thread_public_id,
+            )
+        )
+        == 0
+    )
+
+    fixture.clock.value = support_repository.NOW
+    command = AppendStaffSupportEntryCommand(
+        staff_user_id=support_repository.TEACHER_ID,
+        author_kind="teacher",
+        thread_public_id=thread.thread_public_id,
+        text="Посмотрите на перестановку двух случаев.",
+        client_created_at=fixture.clock.value,
+        idempotency_key="support-notification-teacher-reply",
+        scope=support_repository.GROUP_A_SCOPE,
+    )
+    reply = await fixture.repository.append_staff_entry(command)
+    assert reply.entries[-1].author_kind == "teacher"
+
+    def record_notification(connection):
+        return create_staff_reply_notifications(
+            connection,
+            student_account_public_ids=(
+                "a-1",
+                "a-1",
+                "missing-account",
+            ),
+            thread_public_id=thread.thread_public_id,
+        )
+
+    assert fixture.factory.run_write(record_notification) == 1
+    assert fixture.factory.run_write(record_notification) == 0
+
+    row = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT category, dedupe_key, route, payload_json, occurred_at, "
+            "deliver_after FROM notification_events"
+        ).fetchone()
+    )
+    assert row["category"] == "thread_updated"
+    assert row["dedupe_key"] == reply.entries[-1].entry_public_id
+    assert row["route"] == f"/student/questions/{thread.thread_public_id}"
+    assert json.loads(row["payload_json"]) == {
+        "threadId": thread.thread_public_id,
+        "entryId": reply.entries[-1].entry_public_id,
+    }
+    assert row["deliver_after"] == row["occurred_at"]
+
+
+async def test_notification_created_after_answer_read_starts_read(support_fixture):
+    from models.pwa.support_attention import acknowledge
+
+    fixture = support_fixture
+    _seed_student_account(fixture)
+    thread = await fixture.repository.create_student_thread(
+        support_repository._create_problem_command()
+    )
+    reply = await fixture.repository.append_staff_entry(
+        AppendStaffSupportEntryCommand(
+            staff_user_id=support_repository.TEACHER_ID,
+            author_kind="teacher",
+            thread_public_id=thread.thread_public_id,
+            text="Ответ",
+            client_created_at=support_repository.NOW,
+            idempotency_key="read-before-notification",
+            scope=support_repository.GROUP_A_SCOPE,
+        )
+    )
+    entry_id = reply.entries[-1].entry_public_id
+    now = support_repository._timestamp(support_repository.NOW)
+    fixture.factory.run_write(
+        lambda c: acknowledge(
+            c,
+            student_user_id=support_repository.STUDENT_ID,
+            thread_public_id=thread.thread_public_id,
+            entry_ids=(entry_id,),
+            session_id=None,
+            now=now,
+        )
+    )
+    assert (
+        fixture.factory.run_write(
+            lambda c: create_staff_reply_notifications(
+                c,
+                student_account_public_ids=("a-1",),
+                thread_public_id=thread.thread_public_id,
+            )
+        )
+        == 1
+    )
+    assert (
+        fixture.factory.run_read(
+            lambda c: c.execute("SELECT read_at FROM notification_events").fetchone()[
+                "read_at"
+            ]
+        )
+        == now
+    )
+
+
+async def test_reading_notification_does_not_read_answer_but_answer_clears_event(
+    support_fixture,
+):
+    from models.pwa.support_attention import acknowledge
+
+    fixture = support_fixture
+    _seed_student_account(fixture)
+    thread = await fixture.repository.create_student_thread(
+        support_repository._create_problem_command()
+    )
+    reply = await fixture.repository.append_staff_entry(
+        AppendStaffSupportEntryCommand(
+            staff_user_id=support_repository.ADMIN_ID,
+            author_kind="admin",
+            thread_public_id=thread.thread_public_id,
+            text="Ответ администратора",
+            client_created_at=support_repository.NOW,
+            idempotency_key="notification-read-independent",
+            scope=support_repository.GROUP_A_SCOPE,
+        )
+    )
+    entry_id = reply.entries[-1].entry_public_id
+    now = support_repository._timestamp(support_repository.NOW)
+    fixture.factory.run_write(
+        lambda c: create_staff_reply_notifications(
+            c,
+            student_account_public_ids=("a-1",),
+            thread_public_id=thread.thread_public_id,
+        )
+    )
+    fixture.factory.run_write(
+        lambda c: c.execute("UPDATE notification_events SET read_at=?", (now,))
+    )
+    loaded = await fixture.repository.get_student_thread(
+        student_user_id=support_repository.STUDENT_ID,
+        thread_public_id=thread.thread_public_id,
+    )
+    assert loaded.entries[-1].read_at is None
+    fixture.factory.run_write(
+        lambda c: c.execute("UPDATE notification_events SET read_at=NULL")
+    )
+    receipts = fixture.factory.run_write(
+        lambda c: acknowledge(
+            c,
+            student_user_id=support_repository.STUDENT_ID,
+            thread_public_id=thread.thread_public_id,
+            entry_ids=(entry_id,),
+            session_id=None,
+            now=now,
+        )
+    )
+    assert (
+        fixture.factory.run_read(
+            lambda c: c.execute("SELECT read_at FROM notification_events").fetchone()[
+                "read_at"
+            ]
+        )
+        == receipts[0]["readAt"]
+    )

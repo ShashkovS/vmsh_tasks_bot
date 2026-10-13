@@ -1,0 +1,63 @@
+{
+  "teacher_count": 71,
+  "examples": [
+    {
+      "example": 1,
+      "rows": 45,
+      "selected": 22,
+      "match_kinds": {
+        "exact": 22,
+        "unresolved": 21,
+        "suggested": 2
+      },
+      "seconds": 0.0346
+    },
+    {
+      "example": 2,
+      "rows": 38,
+      "selected": 17,
+      "match_kinds": {
+        "exact": 17,
+        "suggested": 1,
+        "unresolved": 20
+      },
+      "seconds": 0.0388
+    },
+    {
+      "example": 3,
+      "rows": 40,
+      "selected": 20,
+      "match_kinds": {
+        "exact": 20,
+        "unresolved": 16,
+        "ambiguous": 2,
+        "suggested": 2
+      },
+      "seconds": 0.0314
+    },
+    {
+      "example": 4,
+      "rows": 38,
+      "selected": 17,
+      "match_kinds": {
+        "exact": 17,
+        "unresolved": 17,
+        "ambiguous": 2,
+        "suggested": 2
+      },
+      "seconds": 0.042
+    },
+    {
+      "example": 5,
+      "rows": 33,
+      "selected": 15,
+      "match_kinds": {
+        "exact": 15,
+        "suggested": 2,
+        "unresolved": 14,
+        "ambiguous": 2
+      },
+      "seconds": 0.0453
+    }
+  ]
+}

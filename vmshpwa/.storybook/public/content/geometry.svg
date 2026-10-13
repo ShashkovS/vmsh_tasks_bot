@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect width="800" height="480" fill="#fff"/>
+  <g fill="none" stroke="#23292f" stroke-width="5">
+    <circle cx="230" cy="240" r="150"/>
+    <circle cx="570" cy="240" r="150"/>
+    <path d="M230 90 570 390M230 390 570 90"/>
+  </g>
+  <g fill="#23292f" font-family="serif" font-size="34">
+    <text x="205" y="245">A</text>
+    <text x="548" y="245">B</text>
+    <text x="385" y="232">O</text>
+  </g>
+</svg>

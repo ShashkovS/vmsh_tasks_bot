@@ -1,0 +1,166 @@
+{
+  "profile": "release",
+  "modes": [
+    "support",
+    "organizers",
+    "submissions",
+    "review",
+    "figure-layout",
+    "statistics",
+    "visual"
+  ],
+  "started_at": "2026-10-08T10:25:33.574923+00:00",
+  "steps": [
+    {
+      "name": "python-dependencies",
+      "command": [
+        "uv",
+        "sync",
+        "--frozen",
+        "--check"
+      ],
+      "seconds": 0.064,
+      "exit_code": 0
+    },
+    {
+      "name": "format",
+      "command": [
+        "pnpm",
+        "format:check"
+      ],
+      "seconds": 5.672,
+      "exit_code": 0
+    },
+    {
+      "name": "types",
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "seconds": 8.125,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-js",
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        ".",
+        "--max-warnings=0",
+        "--cache",
+        "--cache-strategy",
+        "content",
+        "--cache-location",
+        "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmshpwa/checks/lint/afeec48beb7d30b43278bf1107625fdfb930bd5247cb5d401dd3e23e0391a971"
+      ],
+      "seconds": 1.427,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-css",
+      "command": [
+        "pnpm",
+        "lint:css"
+      ],
+      "seconds": 0.782,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-frontend",
+      "command": [
+        "pnpm",
+        "i18n:check"
+      ],
+      "seconds": 1.604,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-backend",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.backend_i18n",
+        "check"
+      ],
+      "seconds": 0.446,
+      "exit_code": 0
+    },
+    {
+      "name": "python",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "-n4",
+        "--durations=20",
+        "tests",
+        "pwa_tests"
+      ],
+      "seconds": 55.259,
+      "exit_code": 0
+    },
+    {
+      "name": "frontend",
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "seconds": 50.037,
+      "exit_code": 0
+    },
+    {
+      "name": "storybook",
+      "command": [
+        "pnpm",
+        "storybook:test"
+      ],
+      "seconds": 61.932,
+      "exit_code": 0
+    },
+    {
+      "name": "e2e",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.e2e_runner",
+        "--browser",
+        "all",
+        "--report",
+        "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmshpwa/checks/20261008T102533.573581Z/e2e.json",
+        "--mode",
+        "support",
+        "--mode",
+        "organizers",
+        "--mode",
+        "submissions",
+        "--mode",
+        "review",
+        "--mode",
+        "figure-layout",
+        "--mode",
+        "statistics",
+        "--mode",
+        "visual"
+      ],
+      "seconds": 355.276,
+      "exit_code": 1
+    }
+  ],
+  "exit_code": 1,
+  "revision": "55ed5e9c7e9c6b050a889e8e59a42dfe4c73e2d9",
+  "source_digest": "8ca2e1d43edc9640d581dfcad35ec62c51b23d4a5a08fc0b8788f7dce68384bc",
+  "source_changed": false,
+  "seconds": 541.932
+}

@@ -1,0 +1,9 @@
+[Unit]
+Description=GlitchTip database and uploads backup
+Requires=glitchtip.service
+After=glitchtip.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/glitchtip/backup.sh
+TimeoutStartSec=600

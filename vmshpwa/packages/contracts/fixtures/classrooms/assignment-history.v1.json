@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "eventPublicId": "event-40",
+      "eventName": "Очное занятие 40",
+      "startsAt": "2026-01-25T13:00:00Z",
+      "planPublicId": "classroom-plan.40",
+      "confirmedAt": "2026-01-24T18:00:00Z",
+      "classroomPublicId": "room-202",
+      "classroomName": "202",
+      "coursePublicId": "course-math-5-7",
+      "courseName": "Математика 5–7",
+      "groupPublicId": "group-beginner",
+      "groupName": "Начинающие",
+      "groupLessonPublicId": "group-lesson-40-beginner"
+    }
+  ],
+  "requestId": "fixture.classroom.assignment-history"
+}

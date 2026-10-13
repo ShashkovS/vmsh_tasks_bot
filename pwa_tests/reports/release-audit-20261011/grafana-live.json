@@ -1,0 +1,75 @@
+{
+  "checkedAt": "2026-10-11T12:59:42.942674+00:00",
+  "organization": 1,
+  "expectedRules": 13,
+  "enabledRules": 13,
+  "states": [
+    {
+      "name": "VmshWebUnavailable",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshMonitoringUnavailable",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshExporterUnavailable",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshCpuHigh",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshCpuCritical",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshApiErrors",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshInteractiveSlow",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshDbQueue",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshEventLoopStalls",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshMemoryLow",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshOomKill",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshDiskLow",
+      "health": "ok",
+      "state": "inactive"
+    },
+    {
+      "name": "VmshDiskCritical",
+      "health": "ok",
+      "state": "inactive"
+    }
+  ],
+  "changesPerformed": false,
+  "testNotificationsSent": false
+}

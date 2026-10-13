@@ -1,78 +1,28 @@
-"""
-Это — заготовка для теста.
-Она пока ничего не тестирует.
-"""
+"""Exercise Telegram /start through the isolated recording adapter."""
 
-import os
-from unittest import TestCase, IsolatedAsyncioTestCase
-import logging
+import pytest
 
-
-from helpers import consts
-import db_methods as db
-from models import *
-
-from .initial_test_data import test_students, test_teachers
-from .dataset import *
-from helpers.bot import bot
 from handlers import main_handlers
-from aiogram.exceptions import ClientDecodeError
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)-8s: %(levelname)-8s %(message)s', datefmt='%Y-%d-%m %H:%M:%S')
-logging.getLogger('aiogram').setLevel(logging.DEBUG)
-
-
-def _get_worker_id():
-    return os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+from helpers.consts import STATE
+from helpers.features import FEATURES
+from helpers.msg_texts import msgs
+from models import State
+from tests.telegram_harness import make_message
 
 
-class UserMethodsTest(IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.db = db
-        test_db_filename = f'db/unittest_{_get_worker_id()}.db'
-        # ensure there is no trash file from previous incorrectly handled tests present
-        try:
-            os.unlink(test_db_filename)
-        except FileNotFoundError:
-            pass
-        # create shiny new db instance from scratch and connect
-        self.db.sql.setup(test_db_filename)
-        self.insert_dummy_users()
-        # fake telegram
-        # self._bot = Bot(TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
+@pytest.mark.asyncio
+async def test_start_requests_registration_without_external_telegram(
+    scenario_env, monkeypatch
+):
+    # PWA/Telegram parallel-adapter boundary: test wiring never needs bot creds.
+    monkeypatch.setattr(main_handlers, "REG_MODE", FEATURES.REG_NEEDED)
+    data = scenario_env["data"]
+    student = data.bind_chat(data.get_user("qwerty1"), 1230)
+    message = make_message(1230, text="/start")
+    await main_handlers.start(message)
 
-
-    def insert_dummy_users(self):
-        for row in test_students + test_teachers:
-            real_id = self.db.user.insert(row)
-            row['id'] = real_id
-
-    def tearDown(self) -> None:
-        self.db.sql.disconnect()
-        os.unlink(self.db.sql.db_file)
-
-    async def test_something(self):
-        MESSAGE = {
-            "message_id": 11223,
-            "from": USER,
-            "chat": CHAT,
-            "date": 1508709711,
-            "text": "/start",
-        }
-        msg = types.Message(**MESSAGE)
-
-        try:
-            async with FakeTelegram(message_data=MESSAGE):
-                await main_handlers.start(msg)
-        except PermissionError:
-            self.skipTest("Socket binding is not permitted in this environment.")
-        except ClientDecodeError:
-            self.skipTest("Telegram response stub does not match aiogram schema.")
-        user = User.get_by_chat_id(msg.chat.id)
-        if user:
-            self.assertTrue(hasattr(user, 'group_id'))
-            self.assertTrue(hasattr(user, 'allowed_groups'))
-        # print(msg)
-        # print(_message)
-        # print(MESSAGE)
-        # a = 1/0
+    assert State.get_by_user_id(student.id)["state"] == STATE.GET_USER_INFO
+    sent = scenario_env["bot"].sent_messages
+    assert len(sent) == 1
+    assert sent[0].chat.id == message.chat.id
+    assert sent[0].text == msgs.start_if_reg_needed

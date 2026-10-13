@@ -1,0 +1,30 @@
+{
+  "profile": "fast",
+  "modes": [
+    "content"
+  ],
+  "started_at": "2026-10-04T10:46:42.415027+00:00",
+  "steps": [
+    {
+      "name": "storybook-performance-retry",
+      "command": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "vitest.storybook.config.ts",
+        "apps/staff/src/live-marking-grid.stories.tsx",
+        "-t",
+        "Large Classroom"
+      ],
+      "seconds": 19.238,
+      "exit_code": 1
+    }
+  ],
+  "exit_code": 1,
+  "revision": "c502cd4fa3b721e7de78b904f42bc6dca070f4b2",
+  "source_digest": "d43185f46d1251edb4a0dbdca8780f390f35ea6e391527bee474458dd123061b",
+  "source_changed": false,
+  "seconds": 22.003
+}

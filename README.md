@@ -28,6 +28,12 @@ A deeper breakdown of components, data flow, and external dependencies is availa
 3. The configuration loader automatically runs yoyo migrations and resolves the SQLite path before returning a `Config` dataclass instance to the rest of the codebase.
 4. The only environment flag is `PROD`. Set `PROD=true` to switch into production mode, otherwise omit it (or set any other value) to load the development credentials.
 
+An empty `telegram_bot_token` disables the legacy Telegram bot even when `apps`
+includes `tg_bot`: neither polling nor webhooks start. The other configured web
+applications remain enabled. Independently, an empty `google_sheets_key` disables
+all Google Sheets import commands and removes the Google service-account
+credentials requirement at startup. See [optional legacy integrations](docs/optional-telegram-bot.md).
+
 ## Installation
 ```bash
 python3 -m venv .venv

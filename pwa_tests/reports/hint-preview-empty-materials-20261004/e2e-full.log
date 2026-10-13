@@ -1,0 +1,786 @@
+Toolchain: v26.9.0, pnpm@11.15.1, installed lockfile matches
+$ pnpm --recursive --if-present build
+Scope: 13 of 14 workspace projects
+apps/landing build$ vite build
+apps/landing build: vite v8.1.5 building client environment for production...
+apps/landing build: [2K
+apps/landing build: transforming...✓ 2285 modules transformed.
+apps/landing build: rendering chunks...
+apps/landing build: computing gzip size...
+apps/landing build: dist/build-provenance.json                                            0.22 kB │ gzip:   0.15 kB
+apps/landing build: dist/index.html                                                       0.64 kB │ gzip:   0.34 kB
+apps/landing build: dist/brands/tlf-prep-clubs/v1/icon.svg                                0.92 kB │ gzip:   0.43 kB
+apps/landing build: dist/brands/tlf-prep-clubs/v1/icon-192.png                            5.79 kB
+apps/landing build: dist/assets/ibm-plex-sans-vietnamese-400-normal-fK1oJ5dG.woff         6.39 kB
+apps/landing build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DgdngZtN.woff         6.58 kB
+apps/landing build: dist/assets/ibm-plex-sans-vietnamese-500-normal-BEb3_waV.woff         6.58 kB
+apps/landing build: dist/assets/ibm-plex-sans-vietnamese-400-normal-DG4YqDda.woff2        8.20 kB
+apps/landing build: dist/assets/ibm-plex-sans-vietnamese-500-normal-e4dixQRQ.woff2        8.41 kB
+apps/landing build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DpPYBSTl.woff2        8.46 kB
+apps/landing build: dist/assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff              8.76 kB
+apps/landing build: dist/assets/ibm-plex-sans-greek-500-normal-CuWXN6rf.woff              9.14 kB
+apps/landing build: dist/assets/ibm-plex-sans-greek-600-normal-D-CqTdkO.woff              9.22 kB
+apps/landing build: dist/assets/ibm-plex-sans-greek-400-normal-_efipK4i.woff2             9.94 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-Dsrv2Tcn.woff      10.28 kB
+apps/landing build: dist/assets/ibm-plex-sans-greek-600-normal-DzTrcv_p.woff2            10.36 kB
+apps/landing build: dist/assets/ibm-plex-sans-greek-500-normal-JMMifIXV.woff2            10.37 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-DB5PtV2g.woff      10.59 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-Bz0x94Yp.woff      10.61 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-g30qAdWV.woff2     12.14 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-DUMzJB7m.woff2     12.30 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-Cs5J6C77.woff2     12.30 kB
+apps/landing build: dist/assets/source-serif-4-vietnamese-wght-normal-D-yuW59g.woff2     13.44 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-400-normal-BTotfTJu.woff          13.51 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-500-normal-ByOcLdNv.woff          13.85 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-600-normal-BGq0mW3O.woff          13.88 kB
+apps/landing build: dist/assets/source-serif-4-vietnamese-wght-italic-C3q834ic.woff2     13.93 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-ext-400-normal-RBey6euL.woff         14.36 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-ext-500-normal-D0aIdm-b.woff         14.73 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DIrixKbi.woff         14.77 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-400-normal-DZqxrq2p.woff2         14.80 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-500-normal-CocWQlwt.woff2         15.00 kB
+apps/landing build: dist/assets/ibm-plex-sans-cyrillic-600-normal-71GNu3SW.woff2         15.04 kB
+apps/landing build: dist/brands/tlf-prep-clubs/v1/icon-maskable-512.png                  15.15 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-ext-400-normal-C5H60-Va.woff2        15.98 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DOrvGEcy.woff2        16.44 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-ext-500-normal-DakdToA3.woff2        16.45 kB
+apps/landing build: dist/brands/tlf-prep-clubs/v1/icon-512.png                           16.53 kB
+apps/landing build: dist/assets/source-serif-4-cyrillic-ext-wght-normal-cHuGMAiY.woff2   18.06 kB
+apps/landing build: dist/assets/source-serif-4-cyrillic-ext-wght-italic-BXuSHrjR.woff2   18.33 kB
+apps/landing build: dist/assets/source-serif-4-greek-wght-normal-ece1310W.woff2          20.22 kB
+apps/landing build: dist/assets/source-serif-4-greek-wght-italic-F2ziEGcb.woff2          20.53 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-400-normal-CYLoc0-x.woff             22.10 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-400-normal-CDDApCn2.woff2            22.58 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-600-normal-Cu4Hd6ag.woff             23.87 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-500-normal-BgVn5rGT.woff             23.91 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-500-normal-6ng42L7E.woff2            24.18 kB
+apps/landing build: dist/assets/ibm-plex-sans-latin-600-normal-CuJfVYMP.woff2            24.25 kB
+apps/landing build: dist/assets/source-serif-4-cyrillic-wght-italic-RLIThRd4.woff2       35.04 kB
+apps/landing build: dist/assets/source-serif-4-cyrillic-wght-normal-DwHjdM4S.woff2       36.46 kB
+apps/landing build: dist/assets/source-serif-4-latin-ext-wght-normal-CxNHBx-q.woff2      42.04 kB
+apps/landing build: dist/assets/source-serif-4-latin-ext-wght-italic-CpkvI5hy.woff2      44.26 kB
+apps/landing build: dist/assets/source-serif-4-latin-wght-normal-D9elroTD.woff2          50.82 kB
+apps/landing build: dist/assets/source-serif-4-latin-wght-italic-D2yaqPoE.woff2          51.51 kB
+apps/landing build: dist/assets/index-D1ZQMnse.css                                      134.06 kB │ gzip:  22.61 kB
+apps/landing build: dist/assets/catalog-en-DMBE8Itl.js                                    1.06 kB │ gzip:   0.59 kB
+apps/landing build: dist/assets/catalog-ru-CchBP1R-.js                                    1.78 kB │ gzip:   0.77 kB
+apps/landing build: dist/assets/index-DEgOTbvx.js                                       457.71 kB │ gzip: 128.35 kB
+apps/landing build: ✓ built in 770ms
+apps/landing build: Done
+apps/staff build$ tsr generate && vite build
+apps/family build$ tsr generate && vite build
+apps/student build$ tsr generate && vite build
+apps/family build: vite v8.1.5 building client environment for production...
+apps/student build: vite v8.1.5 building client environment for production...
+apps/family build: [2K
+apps/student build: [2K
+apps/staff build: vite v8.1.5 building client environment for production...
+apps/staff build: [2K
+apps/family build: transforming...✓ 3196 modules transformed.
+apps/family build: rendering chunks...
+apps/student build: transforming...✓ 3232 modules transformed.
+apps/family build: computing gzip size...
+apps/family build: dist/build-provenance.json                                              0.22 kB │ gzip:   0.15 kB
+apps/family build: dist/manifest.webmanifest                                               0.70 kB
+apps/family build: dist/brands/tlf-prep-clubs/v1/icon.svg                                  0.92 kB │ gzip:   0.43 kB
+apps/family build: dist/index.html                                                         2.02 kB │ gzip:   0.64 kB
+apps/family build: dist/assets/KaTeX_Size3-Regular-CTq5MqoE.woff                           4.42 kB
+apps/family build: dist/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2                          4.92 kB
+apps/family build: dist/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2                          5.20 kB
+apps/family build: dist/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2                          5.46 kB
+apps/family build: dist/brands/tlf-prep-clubs/v1/icon-192.png                              5.79 kB
+apps/family build: dist/assets/KaTeX_Size4-Regular-BF-4gkZK.woff                           5.98 kB
+apps/family build: dist/assets/KaTeX_Size2-Regular-oD1tc_U0.woff                           6.18 kB
+apps/family build: dist/assets/ibm-plex-sans-vietnamese-400-normal-fK1oJ5dG.woff           6.39 kB
+apps/family build: dist/assets/KaTeX_Size1-Regular-C195tn64.woff                           6.49 kB
+apps/family build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DgdngZtN.woff           6.58 kB
+apps/family build: dist/assets/ibm-plex-sans-vietnamese-500-normal-BEb3_waV.woff           6.58 kB
+apps/family build: dist/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2                    6.90 kB
+apps/family build: dist/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2                       6.91 kB
+apps/family build: dist/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf                            7.58 kB
+apps/family build: dist/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff                     7.65 kB
+apps/family build: dist/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff                        7.71 kB
+apps/family build: dist/assets/ibm-plex-sans-vietnamese-400-normal-DG4YqDda.woff2          8.20 kB
+apps/family build: dist/assets/ibm-plex-sans-vietnamese-500-normal-e4dixQRQ.woff2          8.41 kB
+apps/family build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DpPYBSTl.woff2          8.46 kB
+apps/family build: dist/assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff                8.76 kB
+apps/family build: dist/assets/ibm-plex-sans-greek-500-normal-CuWXN6rf.woff                9.14 kB
+apps/family build: dist/assets/ibm-plex-sans-greek-600-normal-D-CqTdkO.woff                9.22 kB
+apps/family build: dist/assets/KaTeX_Script-Regular-D3wIWfF6.woff2                         9.64 kB
+apps/family build: dist/assets/ibm-plex-sans-greek-400-normal-_efipK4i.woff2               9.94 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-Dsrv2Tcn.woff        10.28 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2                     10.34 kB
+apps/family build: dist/assets/KaTeX_Size4-Regular-DWFBv043.ttf                           10.36 kB
+apps/family build: dist/assets/ibm-plex-sans-greek-600-normal-DzTrcv_p.woff2              10.36 kB
+apps/family build: dist/assets/ibm-plex-sans-greek-500-normal-JMMifIXV.woff2              10.37 kB
+apps/family build: dist/assets/KaTeX_Script-Regular-D5yQViql.woff                         10.58 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-DB5PtV2g.woff        10.59 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-Bz0x94Yp.woff        10.61 kB
+apps/family build: dist/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2                       11.31 kB
+apps/family build: dist/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2                          11.34 kB
+apps/family build: dist/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf                           11.50 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2                      12.02 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-g30qAdWV.woff2       12.14 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2                        12.21 kB
+apps/family build: dist/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf                           12.22 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-DUMzJB7m.woff2       12.30 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-Cs5J6C77.woff2       12.30 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff                      12.31 kB
+apps/family build: dist/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf                     12.34 kB
+apps/family build: dist/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf                        12.36 kB
+apps/family build: dist/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff                        13.20 kB
+apps/family build: dist/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff                           13.29 kB
+apps/family build: dist/assets/source-serif-4-vietnamese-wght-normal-D-yuW59g.woff2       13.44 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-400-normal-BTotfTJu.woff            13.51 kB
+apps/family build: dist/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2                    13.56 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-500-normal-ByOcLdNv.woff            13.85 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-600-normal-BGq0mW3O.woff            13.88 kB
+apps/family build: dist/assets/source-serif-4-vietnamese-wght-italic-C3q834ic.woff2       13.93 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff                       14.11 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-ext-400-normal-RBey6euL.woff           14.36 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff                         14.40 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-ext-500-normal-D0aIdm-b.woff           14.73 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DIrixKbi.woff           14.77 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-400-normal-DZqxrq2p.woff2           14.80 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-500-normal-CocWQlwt.woff2           15.00 kB
+apps/family build: dist/assets/ibm-plex-sans-cyrillic-600-normal-71GNu3SW.woff2           15.04 kB
+apps/family build: dist/brands/tlf-prep-clubs/v1/icon-maskable-512.png                    15.15 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-ext-400-normal-C5H60-Va.woff2          15.98 kB
+apps/family build: dist/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff                     16.02 kB
+apps/family build: dist/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2                       16.40 kB
+apps/family build: dist/assets/KaTeX_Math-Italic-t53AETM-.woff2                           16.44 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DOrvGEcy.woff2          16.44 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-ext-500-normal-DakdToA3.woff2          16.45 kB
+apps/family build: dist/brands/tlf-prep-clubs/v1/icon-512.png                             16.53 kB
+apps/family build: dist/assets/KaTeX_Script-Regular-C5JkGWo-.ttf                          16.64 kB
+apps/family build: dist/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2                       16.78 kB
+apps/family build: dist/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2                           16.98 kB
+apps/family build: dist/assets/source-serif-4-cyrillic-ext-wght-normal-cHuGMAiY.woff2     18.06 kB
+apps/family build: dist/assets/source-serif-4-cyrillic-ext-wght-italic-BXuSHrjR.woff2     18.33 kB
+apps/family build: dist/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff                        18.66 kB
+apps/family build: dist/assets/KaTeX_Math-Italic-DA0__PXp.woff                            18.74 kB
+apps/family build: dist/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff                        19.41 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf                       19.43 kB
+apps/family build: dist/assets/KaTeX_Fraktur-Regular-CB_wures.ttf                         19.57 kB
+apps/family build: dist/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf                            19.58 kB
+apps/family build: dist/assets/KaTeX_Main-Italic-BMLOBm91.woff                            19.67 kB
+apps/family build: dist/assets/source-serif-4-greek-wght-normal-ece1310W.woff2            20.22 kB
+apps/family build: dist/assets/source-serif-4-greek-wght-italic-F2ziEGcb.woff2            20.53 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-400-normal-CYLoc0-x.woff               22.10 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf                        22.36 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-400-normal-CDDApCn2.woff2              22.58 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-600-normal-Cu4Hd6ag.woff               23.87 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-500-normal-BgVn5rGT.woff               23.91 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-500-normal-6ng42L7E.woff2              24.18 kB
+apps/family build: dist/assets/ibm-plex-sans-latin-600-normal-CuJfVYMP.woff2              24.25 kB
+apps/family build: dist/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf                          24.50 kB
+apps/family build: dist/assets/KaTeX_Main-Bold-Cx986IdX.woff2                             25.32 kB
+apps/family build: dist/assets/KaTeX_Main-Regular-B22Nviop.woff2                          26.27 kB
+apps/family build: dist/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf                      27.55 kB
+apps/family build: dist/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2                           28.07 kB
+apps/family build: dist/assets/KaTeX_Main-Bold-Jm3AIy58.woff                              29.91 kB
+apps/family build: dist/assets/KaTeX_Main-Regular-Dr94JaBh.woff                           30.77 kB
+apps/family build: dist/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf                         31.19 kB
+apps/family build: dist/assets/KaTeX_Math-Italic-flOr_0UB.ttf                             31.30 kB
+apps/family build: dist/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf                         32.96 kB
+apps/family build: dist/assets/KaTeX_AMS-Regular-DMm9YOAa.woff                            33.51 kB
+apps/family build: dist/assets/KaTeX_Main-Italic-3WenGoN9.ttf                             33.58 kB
+apps/family build: dist/assets/source-serif-4-cyrillic-wght-italic-RLIThRd4.woff2         35.04 kB
+apps/family build: dist/assets/source-serif-4-cyrillic-wght-normal-DwHjdM4S.woff2         36.46 kB
+apps/family build: dist/assets/source-serif-4-latin-ext-wght-normal-CxNHBx-q.woff2        42.04 kB
+apps/family build: dist/assets/source-serif-4-latin-ext-wght-italic-CpkvI5hy.woff2        44.26 kB
+apps/family build: dist/assets/source-serif-4-latin-wght-normal-D9elroTD.woff2            50.82 kB
+apps/family build: dist/assets/KaTeX_Main-Bold-waoOVXN0.ttf                               51.33 kB
+apps/family build: dist/assets/source-serif-4-latin-wght-italic-D2yaqPoE.woff2            51.51 kB
+apps/family build: dist/assets/KaTeX_Main-Regular-ypZvNtVU.ttf                            53.58 kB
+apps/family build: dist/assets/KaTeX_AMS-Regular-DRggAlZN.ttf                             63.63 kB
+apps/family build: dist/assets/CMUSerif-Bold-DFZ9q3Yr.woff2                               87.02 kB
+apps/family build: dist/assets/CMUSerif-BoldItalic-DuJXe0cN.woff2                         93.96 kB
+apps/family build: dist/assets/CMUSerif-Italic-CjNol_SG.woff2                             99.01 kB
+apps/family build: dist/assets/CMUSerif-Roman-DD6q0VJ7.woff2                             126.55 kB
+apps/family build: dist/assets/src-_JI6vdSD.css                                           30.34 kB │ gzip:   8.30 kB
+apps/family build: dist/assets/index-L3L2hEqJ.css                                        172.94 kB │ gzip:  32.89 kB
+apps/family build: dist/assets/children-__prhKY7.js                                        0.07 kB │ gzip:   0.08 kB
+apps/family build: dist/assets/news-__prhKY7.js                                            0.07 kB │ gzip:   0.08 kB
+apps/family build: dist/assets/organizers-__prhKY7.js                                      0.07 kB │ gzip:   0.08 kB
+apps/family build: dist/assets/profile-__prhKY7.js                                         0.07 kB │ gzip:   0.08 kB
+apps/family build: dist/assets/news.index-CS1KSqrp.js                                      0.08 kB │ gzip:   0.09 kB
+apps/family build: dist/assets/children.index-BH8m5kO-.js                                  0.08 kB │ gzip:   0.10 kB
+apps/family build: dist/assets/useNavigate-_scT50Kp.js                                     0.18 kB │ gzip:   0.16 kB
+apps/family build: dist/assets/news._postId-CxgsNP01.js                                    0.23 kB │ gzip:   0.19 kB
+apps/family build: dist/assets/children._childId-BOeGKvvW.js                               0.24 kB │ gzip:   0.19 kB
+apps/family build: dist/assets/organizers.new-DUVrQE4l.js                                  0.38 kB │ gzip:   0.26 kB
+apps/family build: dist/assets/organizers.index-C_U0x6A2.js                                0.40 kB │ gzip:   0.27 kB
+apps/family build: dist/assets/organizers.new-BQnx9PAe.js                                  0.40 kB │ gzip:   0.28 kB
+apps/family build: dist/assets/organizers._threadId-B-hvuDxu.js                            0.41 kB │ gzip:   0.27 kB
+apps/family build: dist/assets/organizers._threadId-CaeHnCd4.js                            0.42 kB │ gzip:   0.28 kB
+apps/family build: dist/assets/news._postId-_HviZdRU.js                                    0.43 kB │ gzip:   0.30 kB
+apps/family build: dist/assets/children._childId-J7hm_Jg6.js                               0.49 kB │ gzip:   0.32 kB
+apps/family build: dist/assets/login-C7TLhiL1.js                                           0.52 kB │ gzip:   0.34 kB
+apps/family build: dist/assets/organizers.index-Ccb-5_Pr.js                                0.52 kB │ gzip:   0.34 kB
+apps/family build: dist/assets/matchContext-DrrnSWJl.js                                    0.58 kB │ gzip:   0.36 kB
+apps/family build: dist/assets/login-B664Uv8M.js                                           0.60 kB │ gzip:   0.42 kB
+apps/family build: dist/assets/tasks._courseCode._groupCode._lessonNumber-BvHdxNpU.js      0.68 kB │ gzip:   0.41 kB
+apps/family build: dist/assets/profile.index-Cd-wArcY.js                                   0.72 kB │ gzip:   0.42 kB
+apps/family build: dist/assets/family-news-page-bL92P8ej.js                                2.96 kB │ gzip:   1.25 kB
+apps/family build: dist/assets/routes-BW7CcLLp.js                                          3.41 kB │ gzip:   1.63 kB
+apps/family build: dist/assets/preload-helper-BYCQbhDe.js                                  5.64 kB │ gzip:   2.13 kB
+apps/family build: dist/assets/workbox-window.prod.es5-Bd17z0YL.js                         5.65 kB │ gzip:   2.20 kB
+apps/family build: dist/assets/pages-BB_ooyJZ.js                                           7.52 kB │ gzip:   3.26 kB
+apps/family build: dist/assets/family-children-page-Bj6I516p.js                            9.63 kB │ gzip:   3.18 kB
+apps/family build: dist/assets/profile.notifications-hs2SwjQx.js                          10.90 kB │ gzip:   4.47 kB
+apps/family build: dist/assets/tasks._courseCode._groupCode._lessonNumber-CKRRVl6m.js     14.84 kB │ gzip:   5.11 kB
+apps/family build: dist/assets/useStore-CcKO72-p.js                                       27.52 kB │ gzip:   9.76 kB
+apps/family build: dist/assets/catalog-en-Nz5EIDS6.js                                     47.41 kB │ gzip:  18.98 kB
+apps/family build: dist/assets/Match-DezLPr3A.js                                          48.50 kB │ gzip:  15.74 kB
+apps/family build: dist/assets/catalog-ru-CDdmLJyH.js                                     73.74 kB │ gzip:  22.57 kB
+apps/family build: dist/assets/index-DEZT0028.js                                         196.77 kB │ gzip:  63.34 kB
+apps/family build: dist/assets/src-CbA7J-t-.js                                         1,102.77 kB │ gzip: 327.44 kB
+apps/family build: ✓ built in 1.22s
+apps/family build: [plugin builtin:vite-reporter] 
+apps/family build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/family build: - Using dynamic import() to code-split the application
+apps/family build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+apps/family build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+apps/student build: rendering chunks...
+apps/student build: computing gzip size...
+apps/student build: dist/build-provenance.json                                              0.22 kB │ gzip:   0.15 kB
+apps/student build: dist/manifest.webmanifest                                               0.68 kB
+apps/student build: dist/brands/tlf-prep-clubs/v1/icon.svg                                  0.92 kB │ gzip:   0.43 kB
+apps/student build: dist/assets/image-compression.worker-BO5nMA6c.js                        1.18 kB
+apps/student build: dist/index.html                                                         2.61 kB │ gzip:   0.73 kB
+apps/student build: dist/assets/KaTeX_Size3-Regular-CTq5MqoE.woff                           4.42 kB
+apps/student build: dist/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2                          4.92 kB
+apps/student build: dist/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2                          5.20 kB
+apps/student build: dist/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2                          5.46 kB
+apps/student build: dist/brands/tlf-prep-clubs/v1/icon-192.png                              5.79 kB
+apps/student build: dist/assets/KaTeX_Size4-Regular-BF-4gkZK.woff                           5.98 kB
+apps/student build: dist/assets/KaTeX_Size2-Regular-oD1tc_U0.woff                           6.18 kB
+apps/student build: dist/assets/ibm-plex-sans-vietnamese-400-normal-fK1oJ5dG.woff           6.39 kB
+apps/student build: dist/assets/KaTeX_Size1-Regular-C195tn64.woff                           6.49 kB
+apps/student build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DgdngZtN.woff           6.58 kB
+apps/student build: dist/assets/ibm-plex-sans-vietnamese-500-normal-BEb3_waV.woff           6.58 kB
+apps/student build: dist/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2                    6.90 kB
+apps/student build: dist/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2                       6.91 kB
+apps/student build: dist/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf                            7.58 kB
+apps/student build: dist/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff                     7.65 kB
+apps/student build: dist/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff                        7.71 kB
+apps/student build: dist/assets/ibm-plex-sans-vietnamese-400-normal-DG4YqDda.woff2          8.20 kB
+apps/student build: dist/assets/ibm-plex-sans-vietnamese-500-normal-e4dixQRQ.woff2          8.41 kB
+apps/student build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DpPYBSTl.woff2          8.46 kB
+apps/student build: dist/assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff                8.76 kB
+apps/student build: dist/assets/ibm-plex-sans-greek-500-normal-CuWXN6rf.woff                9.14 kB
+apps/student build: dist/assets/ibm-plex-sans-greek-600-normal-D-CqTdkO.woff                9.22 kB
+apps/student build: dist/assets/KaTeX_Script-Regular-D3wIWfF6.woff2                         9.64 kB
+apps/student build: dist/assets/ibm-plex-sans-greek-400-normal-_efipK4i.woff2               9.94 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-Dsrv2Tcn.woff        10.28 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2                     10.34 kB
+apps/student build: dist/assets/KaTeX_Size4-Regular-DWFBv043.ttf                           10.36 kB
+apps/student build: dist/assets/ibm-plex-sans-greek-600-normal-DzTrcv_p.woff2              10.36 kB
+apps/student build: dist/assets/ibm-plex-sans-greek-500-normal-JMMifIXV.woff2              10.37 kB
+apps/student build: dist/assets/KaTeX_Script-Regular-D5yQViql.woff                         10.58 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-DB5PtV2g.woff        10.59 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-Bz0x94Yp.woff        10.61 kB
+apps/student build: dist/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2                       11.31 kB
+apps/student build: dist/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2                          11.34 kB
+apps/student build: dist/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf                           11.50 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2                      12.02 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-g30qAdWV.woff2       12.14 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2                        12.21 kB
+apps/student build: dist/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf                           12.22 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-DUMzJB7m.woff2       12.30 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-Cs5J6C77.woff2       12.30 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff                      12.31 kB
+apps/student build: dist/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf                     12.34 kB
+apps/student build: dist/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf                        12.36 kB
+apps/student build: dist/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff                        13.20 kB
+apps/student build: dist/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff                           13.29 kB
+apps/student build: dist/assets/source-serif-4-vietnamese-wght-normal-D-yuW59g.woff2       13.44 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-400-normal-BTotfTJu.woff            13.51 kB
+apps/student build: dist/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2                    13.56 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-500-normal-ByOcLdNv.woff            13.85 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-600-normal-BGq0mW3O.woff            13.88 kB
+apps/student build: dist/assets/source-serif-4-vietnamese-wght-italic-C3q834ic.woff2       13.93 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff                       14.11 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-ext-400-normal-RBey6euL.woff           14.36 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff                         14.40 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-ext-500-normal-D0aIdm-b.woff           14.73 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DIrixKbi.woff           14.77 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-400-normal-DZqxrq2p.woff2           14.80 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-500-normal-CocWQlwt.woff2           15.00 kB
+apps/student build: dist/assets/ibm-plex-sans-cyrillic-600-normal-71GNu3SW.woff2           15.04 kB
+apps/student build: dist/brands/tlf-prep-clubs/v1/icon-maskable-512.png                    15.15 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-ext-400-normal-C5H60-Va.woff2          15.98 kB
+apps/student build: dist/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff                     16.02 kB
+apps/student build: dist/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2                       16.40 kB
+apps/student build: dist/assets/KaTeX_Math-Italic-t53AETM-.woff2                           16.44 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DOrvGEcy.woff2          16.44 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-ext-500-normal-DakdToA3.woff2          16.45 kB
+apps/student build: dist/brands/tlf-prep-clubs/v1/icon-512.png                             16.53 kB
+apps/student build: dist/assets/KaTeX_Script-Regular-C5JkGWo-.ttf                          16.64 kB
+apps/student build: dist/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2                       16.78 kB
+apps/student build: dist/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2                           16.98 kB
+apps/student build: dist/assets/source-serif-4-cyrillic-ext-wght-normal-cHuGMAiY.woff2     18.06 kB
+apps/student build: dist/assets/source-serif-4-cyrillic-ext-wght-italic-BXuSHrjR.woff2     18.33 kB
+apps/student build: dist/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff                        18.66 kB
+apps/student build: dist/assets/KaTeX_Math-Italic-DA0__PXp.woff                            18.74 kB
+apps/student build: dist/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff                        19.41 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf                       19.43 kB
+apps/student build: dist/assets/KaTeX_Fraktur-Regular-CB_wures.ttf                         19.57 kB
+apps/student build: dist/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf                            19.58 kB
+apps/student build: dist/assets/KaTeX_Main-Italic-BMLOBm91.woff                            19.67 kB
+apps/student build: dist/assets/source-serif-4-greek-wght-normal-ece1310W.woff2            20.22 kB
+apps/student build: dist/assets/source-serif-4-greek-wght-italic-F2ziEGcb.woff2            20.53 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-400-normal-CYLoc0-x.woff               22.10 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf                        22.36 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-400-normal-CDDApCn2.woff2              22.58 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-600-normal-Cu4Hd6ag.woff               23.87 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-500-normal-BgVn5rGT.woff               23.91 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-500-normal-6ng42L7E.woff2              24.18 kB
+apps/student build: dist/assets/ibm-plex-sans-latin-600-normal-CuJfVYMP.woff2              24.25 kB
+apps/student build: dist/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf                          24.50 kB
+apps/student build: dist/assets/KaTeX_Main-Bold-Cx986IdX.woff2                             25.32 kB
+apps/student build: dist/assets/KaTeX_Main-Regular-B22Nviop.woff2                          26.27 kB
+apps/student build: dist/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf                      27.55 kB
+apps/student build: dist/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2                           28.07 kB
+apps/student build: dist/assets/KaTeX_Main-Bold-Jm3AIy58.woff                              29.91 kB
+apps/student build: dist/assets/KaTeX_Main-Regular-Dr94JaBh.woff                           30.77 kB
+apps/student build: dist/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf                         31.19 kB
+apps/student build: dist/assets/KaTeX_Math-Italic-flOr_0UB.ttf                             31.30 kB
+apps/student build: dist/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf                         32.96 kB
+apps/student build: dist/assets/KaTeX_AMS-Regular-DMm9YOAa.woff                            33.51 kB
+apps/student build: dist/assets/KaTeX_Main-Italic-3WenGoN9.ttf                             33.58 kB
+apps/student build: dist/assets/source-serif-4-cyrillic-wght-italic-RLIThRd4.woff2         35.04 kB
+apps/student build: dist/assets/source-serif-4-cyrillic-wght-normal-DwHjdM4S.woff2         36.46 kB
+apps/student build: dist/assets/source-serif-4-latin-ext-wght-normal-CxNHBx-q.woff2        42.04 kB
+apps/student build: dist/assets/source-serif-4-latin-ext-wght-italic-CpkvI5hy.woff2        44.26 kB
+apps/student build: dist/assets/source-serif-4-latin-wght-normal-D9elroTD.woff2            50.82 kB
+apps/student build: dist/assets/KaTeX_Main-Bold-waoOVXN0.ttf                               51.33 kB
+apps/student build: dist/assets/source-serif-4-latin-wght-italic-D2yaqPoE.woff2            51.51 kB
+apps/student build: dist/assets/KaTeX_Main-Regular-ypZvNtVU.ttf                            53.58 kB
+apps/student build: dist/assets/KaTeX_AMS-Regular-DRggAlZN.ttf                             63.63 kB
+apps/student build: dist/assets/CMUSerif-Bold-DFZ9q3Yr.woff2                               87.02 kB
+apps/student build: dist/assets/CMUSerif-BoldItalic-DuJXe0cN.woff2                         93.96 kB
+apps/student build: dist/assets/CMUSerif-Italic-CjNol_SG.woff2                             99.01 kB
+apps/student build: dist/assets/CMUSerif-Roman-DD6q0VJ7.woff2                             126.55 kB
+apps/student build: dist/assets/src-Dmm8mtms.css                                           30.40 kB │ gzip:   8.30 kB
+apps/student build: dist/assets/index-BKCzeziI.css                                        178.03 kB │ gzip:  33.56 kB
+apps/student build: dist/assets/news-__prhKY7.js                                            0.07 kB │ gzip:   0.08 kB
+apps/student build: dist/assets/organizers-__prhKY7.js                                      0.07 kB │ gzip:   0.08 kB
+apps/student build: dist/assets/profile-__prhKY7.js                                         0.07 kB │ gzip:   0.08 kB
+apps/student build: dist/assets/questions-__prhKY7.js                                       0.07 kB │ gzip:   0.08 kB
+apps/student build: dist/assets/tasks-__prhKY7.js                                           0.07 kB │ gzip:   0.08 kB
+apps/student build: dist/assets/news.index-ze3ZLsih.js                                      0.08 kB │ gzip:   0.09 kB
+apps/student build: dist/assets/questions.index-cg0EEFTH.js                                 0.08 kB │ gzip:   0.09 kB
+apps/student build: dist/assets/useNavigate-_scT50Kp.js                                     0.18 kB │ gzip:   0.16 kB
+apps/student build: dist/assets/tasks2.index-CdshnPKz.js                                    0.23 kB │ gzip:   0.18 kB
+apps/student build: dist/assets/news._postId-CcgI2fL8.js                                    0.23 kB │ gzip:   0.19 kB
+apps/student build: dist/assets/student-read-state-panel-AtD9BFcN.js                        0.23 kB │ gzip:   0.21 kB
+apps/student build: dist/assets/submissions._submissionId-FHOo7LIi.js                       0.24 kB │ gzip:   0.18 kB
+apps/student build: dist/assets/questions._threadId-CrgEwgdU.js                             0.25 kB │ gzip:   0.20 kB
+apps/student build: dist/assets/questions.new-Cr9wLRFd.js                                   0.33 kB │ gzip:   0.24 kB
+apps/student build: dist/assets/message-circle-question-mark-BqNezF1N.js                    0.34 kB │ gzip:   0.25 kB
+apps/student build: dist/assets/organizers.new-CRzgmkOv.js                                  0.38 kB │ gzip:   0.27 kB
+apps/student build: dist/assets/organizers.index-B6YRhL2I.js                                0.40 kB │ gzip:   0.27 kB
+apps/student build: dist/assets/organizers.new-C9sJvsP9.js                                  0.40 kB │ gzip:   0.27 kB
+apps/student build: dist/assets/organizers._threadId-DeTPqlGD.js                            0.41 kB │ gzip:   0.27 kB
+apps/student build: dist/assets/organizers._threadId-_4m5EL9w.js                            0.42 kB │ gzip:   0.28 kB
+apps/student build: dist/assets/news._postId-Bkv8GsxO.js                                    0.44 kB │ gzip:   0.30 kB
+apps/student build: dist/assets/submissions._submissionId-RW82wny_.js                       0.46 kB │ gzip:   0.29 kB
+apps/student build: dist/assets/organizers.index-BOX1gkH9.js                                0.52 kB │ gzip:   0.34 kB
+apps/student build: dist/assets/questions._threadId-omxJ2zVq.js                             0.55 kB │ gzip:   0.35 kB
+apps/student build: dist/assets/login-C5obHRms.js                                           0.57 kB │ gzip:   0.37 kB
+apps/student build: dist/assets/matchContext-DrrnSWJl.js                                    0.58 kB │ gzip:   0.36 kB
+apps/student build: dist/assets/progress-CvXi33OZ.js                                        0.61 kB │ gzip:   0.39 kB
+apps/student build: dist/assets/questions.new-Cye0kVzg.js                                   0.63 kB │ gzip:   0.40 kB
+apps/student build: dist/assets/login-Cr8CB-WD.js                                           0.64 kB │ gzip:   0.44 kB
+apps/student build: dist/assets/tasks.index-DI53VL-M.js                                     0.81 kB │ gzip:   0.46 kB
+apps/student build: dist/assets/tasks._courseCode._groupCode._lessonNumber-BJ38xfhQ.js      0.96 kB │ gzip:   0.54 kB
+apps/student build: dist/assets/pwa-update-events-ClpmSitE.js                               1.39 kB │ gzip:   0.72 kB
+apps/student build: dist/assets/student-home-view-CGIipJW-.js                               1.59 kB │ gzip:   0.80 kB
+apps/student build: dist/assets/student-news-page-BULYq3My.js                               3.03 kB │ gzip:   1.27 kB
+apps/student build: dist/assets/tasks._courseCode._groupCode._lessonNumber-BnZnYFpZ.js      3.84 kB │ gzip:   1.38 kB
+apps/student build: dist/assets/progress-B5CqLaGq2.js                                       3.91 kB │ gzip:   1.54 kB
+apps/student build: dist/assets/profile.index-Bohr996s.js                                   4.89 kB │ gzip:   1.86 kB
+apps/student build: dist/assets/routes-FHI6aB6W.js                                          5.34 kB │ gzip:   2.05 kB
+apps/student build: dist/assets/pages-DFU217Bj.js                                           5.42 kB │ gzip:   2.39 kB
+apps/student build: dist/assets/preload-helper-Cs-yjwJo.js                                  5.65 kB │ gzip:   2.13 kB
+apps/student build: dist/assets/workbox-window.prod.es5-Bd17z0YL.js                         5.65 kB │ gzip:   2.20 kB
+apps/student build: dist/assets/profile.notifications-DtZw6KUf.js                           7.69 kB │ gzip:   2.93 kB
+apps/student build: dist/assets/student-support-pages-evLqlfwG.js                          12.45 kB │ gzip:   3.93 kB
+apps/student build: dist/assets/offline-student-data-CAIBKVMG.js                           16.31 kB │ gzip:   4.68 kB
+apps/student build: dist/assets/useStore-CcKO72-p.js                                       27.52 kB │ gzip:   9.76 kB
+apps/student build: dist/assets/Match-DezLPr3A.js                                          48.50 kB │ gzip:  15.74 kB
+apps/student build: dist/assets/catalog-en-JXB1EoT1.js                                     56.54 kB │ gzip:  22.21 kB
+apps/student build: dist/assets/student-tasks-page-C5p9eer8.js                             64.35 kB │ gzip:  19.64 kB
+apps/student build: dist/assets/catalog-ru-CnljJ1qc.js                                     87.63 kB │ gzip:  26.38 kB
+apps/student build: dist/assets/index-Biur-Xf6.js                                         204.88 kB │ gzip:  66.15 kB
+apps/student build: dist/assets/src-BXZWKEdl.js                                         1,211.96 kB │ gzip: 355.08 kB
+apps/student build: ✓ built in 1.38s
+apps/student build: [plugin builtin:vite-reporter] 
+apps/student build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/student build: - Using dynamic import() to code-split the application
+apps/student build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+apps/student build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+apps/staff build: transforming...✓ 3354 modules transformed.
+apps/staff build: rendering chunks...
+apps/staff build: computing gzip size...
+apps/staff build: dist/build-provenance.json                                            0.22 kB │ gzip:   0.15 kB
+apps/staff build: dist/brands/tlf-prep-clubs/v1/icon.svg                                0.92 kB │ gzip:   0.43 kB
+apps/staff build: dist/assets/KaTeX_Size3-Regular-CTq5MqoE.woff                         4.42 kB
+apps/staff build: dist/index.html                                                       4.61 kB │ gzip:   1.03 kB
+apps/staff build: dist/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2                        4.92 kB
+apps/staff build: dist/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2                        5.20 kB
+apps/staff build: dist/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2                        5.46 kB
+apps/staff build: dist/brands/tlf-prep-clubs/v1/icon-192.png                            5.79 kB
+apps/staff build: dist/assets/KaTeX_Size4-Regular-BF-4gkZK.woff                         5.98 kB
+apps/staff build: dist/assets/KaTeX_Size2-Regular-oD1tc_U0.woff                         6.18 kB
+apps/staff build: dist/assets/ibm-plex-sans-vietnamese-400-normal-fK1oJ5dG.woff         6.39 kB
+apps/staff build: dist/assets/KaTeX_Size1-Regular-C195tn64.woff                         6.49 kB
+apps/staff build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DgdngZtN.woff         6.58 kB
+apps/staff build: dist/assets/ibm-plex-sans-vietnamese-500-normal-BEb3_waV.woff         6.58 kB
+apps/staff build: dist/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2                  6.90 kB
+apps/staff build: dist/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2                     6.91 kB
+apps/staff build: dist/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf                          7.58 kB
+apps/staff build: dist/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff                   7.65 kB
+apps/staff build: dist/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff                      7.71 kB
+apps/staff build: dist/assets/ibm-plex-sans-vietnamese-400-normal-DG4YqDda.woff2        8.20 kB
+apps/staff build: dist/assets/ibm-plex-sans-vietnamese-500-normal-e4dixQRQ.woff2        8.41 kB
+apps/staff build: dist/assets/ibm-plex-sans-vietnamese-600-normal-DpPYBSTl.woff2        8.46 kB
+apps/staff build: dist/assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff              8.76 kB
+apps/staff build: dist/assets/whiteboard-zip.worker-DRSLUkWP.js                         8.85 kB
+apps/staff build: dist/assets/ibm-plex-sans-greek-500-normal-CuWXN6rf.woff              9.14 kB
+apps/staff build: dist/assets/ibm-plex-sans-greek-600-normal-D-CqTdkO.woff              9.22 kB
+apps/staff build: dist/assets/KaTeX_Script-Regular-D3wIWfF6.woff2                       9.64 kB
+apps/staff build: dist/assets/ibm-plex-sans-greek-400-normal-_efipK4i.woff2             9.94 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-Dsrv2Tcn.woff      10.28 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2                   10.34 kB
+apps/staff build: dist/assets/KaTeX_Size4-Regular-DWFBv043.ttf                         10.36 kB
+apps/staff build: dist/assets/ibm-plex-sans-greek-600-normal-DzTrcv_p.woff2            10.36 kB
+apps/staff build: dist/assets/ibm-plex-sans-greek-500-normal-JMMifIXV.woff2            10.37 kB
+apps/staff build: dist/assets/KaTeX_Script-Regular-D5yQViql.woff                       10.58 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-DB5PtV2g.woff      10.59 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-Bz0x94Yp.woff      10.61 kB
+apps/staff build: dist/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2                     11.31 kB
+apps/staff build: dist/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2                        11.34 kB
+apps/staff build: dist/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf                         11.50 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2                    12.02 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-ext-400-normal-g30qAdWV.woff2     12.14 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2                      12.21 kB
+apps/staff build: dist/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf                         12.22 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-ext-600-normal-DUMzJB7m.woff2     12.30 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-ext-500-normal-Cs5J6C77.woff2     12.30 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff                    12.31 kB
+apps/staff build: dist/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf                   12.34 kB
+apps/staff build: dist/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf                      12.36 kB
+apps/staff build: dist/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff                      13.20 kB
+apps/staff build: dist/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff                         13.29 kB
+apps/staff build: dist/assets/source-serif-4-vietnamese-wght-normal-D-yuW59g.woff2     13.44 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-400-normal-BTotfTJu.woff          13.51 kB
+apps/staff build: dist/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2                  13.56 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-500-normal-ByOcLdNv.woff          13.85 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-600-normal-BGq0mW3O.woff          13.88 kB
+apps/staff build: dist/assets/source-serif-4-vietnamese-wght-italic-C3q834ic.woff2     13.93 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff                     14.11 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-ext-400-normal-RBey6euL.woff         14.36 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff                       14.40 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-ext-500-normal-D0aIdm-b.woff         14.73 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DIrixKbi.woff         14.77 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-400-normal-DZqxrq2p.woff2         14.80 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-500-normal-CocWQlwt.woff2         15.00 kB
+apps/staff build: dist/assets/ibm-plex-sans-cyrillic-600-normal-71GNu3SW.woff2         15.04 kB
+apps/staff build: dist/brands/tlf-prep-clubs/v1/icon-maskable-512.png                  15.15 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-ext-400-normal-C5H60-Va.woff2        15.98 kB
+apps/staff build: dist/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff                   16.02 kB
+apps/staff build: dist/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2                     16.40 kB
+apps/staff build: dist/assets/KaTeX_Math-Italic-t53AETM-.woff2                         16.44 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-ext-600-normal-DOrvGEcy.woff2        16.44 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-ext-500-normal-DakdToA3.woff2        16.45 kB
+apps/staff build: dist/brands/tlf-prep-clubs/v1/icon-512.png                           16.53 kB
+apps/staff build: dist/assets/KaTeX_Script-Regular-C5JkGWo-.ttf                        16.64 kB
+apps/staff build: dist/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2                     16.78 kB
+apps/staff build: dist/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2                         16.98 kB
+apps/staff build: dist/assets/source-serif-4-cyrillic-ext-wght-normal-cHuGMAiY.woff2   18.06 kB
+apps/staff build: dist/assets/source-serif-4-cyrillic-ext-wght-italic-BXuSHrjR.woff2   18.33 kB
+apps/staff build: dist/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff                      18.66 kB
+apps/staff build: dist/assets/KaTeX_Math-Italic-DA0__PXp.woff                          18.74 kB
+apps/staff build: dist/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff                      19.41 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf                     19.43 kB
+apps/staff build: dist/assets/KaTeX_Fraktur-Regular-CB_wures.ttf                       19.57 kB
+apps/staff build: dist/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf                          19.58 kB
+apps/staff build: dist/assets/KaTeX_Main-Italic-BMLOBm91.woff                          19.67 kB
+apps/staff build: dist/assets/source-serif-4-greek-wght-normal-ece1310W.woff2          20.22 kB
+apps/staff build: dist/assets/source-serif-4-greek-wght-italic-F2ziEGcb.woff2          20.53 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-400-normal-CYLoc0-x.woff             22.10 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf                      22.36 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-400-normal-CDDApCn2.woff2            22.58 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-600-normal-Cu4Hd6ag.woff             23.87 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-500-normal-BgVn5rGT.woff             23.91 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-500-normal-6ng42L7E.woff2            24.18 kB
+apps/staff build: dist/assets/ibm-plex-sans-latin-600-normal-CuJfVYMP.woff2            24.25 kB
+apps/staff build: dist/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf                        24.50 kB
+apps/staff build: dist/assets/KaTeX_Main-Bold-Cx986IdX.woff2                           25.32 kB
+apps/staff build: dist/assets/KaTeX_Main-Regular-B22Nviop.woff2                        26.27 kB
+apps/staff build: dist/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf                    27.55 kB
+apps/staff build: dist/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2                         28.07 kB
+apps/staff build: dist/assets/KaTeX_Main-Bold-Jm3AIy58.woff                            29.91 kB
+apps/staff build: dist/assets/KaTeX_Main-Regular-Dr94JaBh.woff                         30.77 kB
+apps/staff build: dist/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf                       31.19 kB
+apps/staff build: dist/assets/KaTeX_Math-Italic-flOr_0UB.ttf                           31.30 kB
+apps/staff build: dist/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf                       32.96 kB
+apps/staff build: dist/assets/KaTeX_AMS-Regular-DMm9YOAa.woff                          33.51 kB
+apps/staff build: dist/assets/KaTeX_Main-Italic-3WenGoN9.ttf                           33.58 kB
+apps/staff build: dist/assets/source-serif-4-cyrillic-wght-italic-RLIThRd4.woff2       35.04 kB
+apps/staff build: dist/assets/source-serif-4-cyrillic-wght-normal-DwHjdM4S.woff2       36.46 kB
+apps/staff build: dist/assets/source-serif-4-latin-ext-wght-normal-CxNHBx-q.woff2      42.04 kB
+apps/staff build: dist/assets/source-serif-4-latin-ext-wght-italic-CpkvI5hy.woff2      44.26 kB
+apps/staff build: dist/assets/source-serif-4-latin-wght-normal-D9elroTD.woff2          50.82 kB
+apps/staff build: dist/assets/KaTeX_Main-Bold-waoOVXN0.ttf                             51.33 kB
+apps/staff build: dist/assets/source-serif-4-latin-wght-italic-D2yaqPoE.woff2          51.51 kB
+apps/staff build: dist/assets/KaTeX_Main-Regular-ypZvNtVU.ttf                          53.58 kB
+apps/staff build: dist/assets/KaTeX_AMS-Regular-DRggAlZN.ttf                           63.63 kB
+apps/staff build: dist/assets/CMUSerif-Bold-DFZ9q3Yr.woff2                             87.02 kB
+apps/staff build: dist/assets/CMUSerif-BoldItalic-DuJXe0cN.woff2                       93.96 kB
+apps/staff build: dist/assets/CMUSerif-Italic-CjNol_SG.woff2                           99.01 kB
+apps/staff build: dist/assets/CMUSerif-Roman-DD6q0VJ7.woff2                           126.55 kB
+apps/staff build: dist/assets/statistics-Bm0Xec0m.css                                   1.75 kB │ gzip:   0.58 kB
+apps/staff build: dist/assets/whiteboard-export-generator-QFzcD3Ip.css                  3.82 kB │ gzip:   0.87 kB
+apps/staff build: dist/assets/src-BiSw-3T6.css                                         30.28 kB │ gzip:   8.30 kB
+apps/staff build: dist/assets/src-BmpHyh1D.css                                         38.86 kB │ gzip:  10.13 kB
+apps/staff build: dist/assets/index-Db5yKM9C.css                                      134.00 kB │ gzip:  22.62 kB
+apps/staff build: dist/assets/lessons-C9U4uIbB.js                                       0.07 kB │ gzip:   0.08 kB
+apps/staff build: dist/assets/problems-C9U4uIbB.js                                      0.07 kB │ gzip:   0.08 kB
+apps/staff build: dist/assets/questions.organizers-C9U4uIbB.js                          0.07 kB │ gzip:   0.08 kB
+apps/staff build: dist/assets/testing-iJnOtPst.js                                       0.08 kB │ gzip:   0.09 kB
+apps/staff build: dist/assets/chevron-right-QvKzxwZH.js                                 0.11 kB │ gzip:   0.13 kB
+apps/staff build: dist/assets/whiteboard-zip.worker-BNuNgy9I.js                         0.11 kB │ gzip:   0.12 kB
+apps/staff build: dist/assets/coerce-C27_QgVP.js                                        0.14 kB │ gzip:   0.12 kB
+apps/staff build: dist/assets/useRouterState-zoSFJqDx.js                                0.19 kB │ gzip:   0.17 kB
+apps/staff build: dist/assets/mic-C9_I27A9.js                                           0.22 kB │ gzip:   0.19 kB
+apps/staff build: dist/assets/users-round-D2wgmYjj.js                                   0.24 kB │ gzip:   0.20 kB
+apps/staff build: dist/assets/questions._threadId-ClHeNjdG.js                           0.24 kB │ gzip:   0.19 kB
+apps/staff build: dist/assets/review._submissionId-DVIb47Cs.js                          0.24 kB │ gzip:   0.19 kB
+apps/staff build: dist/assets/last-completed-review-BybL0zaA.js                         0.25 kB │ gzip:   0.17 kB
+apps/staff build: dist/assets/in-person-BKRgeGno.js                                     0.28 kB │ gzip:   0.22 kB
+apps/staff build: dist/assets/clipboard-check-iPXOG57C.js                               0.29 kB │ gzip:   0.22 kB
+apps/staff build: dist/assets/review.history-CJycXzz0.js                                0.30 kB │ gzip:   0.23 kB
+apps/staff build: dist/assets/messages-square-3qU-nhRi.js                               0.35 kB │ gzip:   0.24 kB
+apps/staff build: dist/assets/review-errors-CsnKReHc.js                                 0.35 kB │ gzip:   0.25 kB
+apps/staff build: dist/assets/questions.index-BlTe8VGr.js                               0.37 kB │ gzip:   0.26 kB
+apps/staff build: dist/assets/questions.organizers.index-BGM_4-pj.js                    0.40 kB │ gzip:   0.27 kB
+apps/staff build: dist/assets/questions.organizers._threadId-CJEmaG9-.js                0.41 kB │ gzip:   0.27 kB
+apps/staff build: dist/assets/lazyRouteComponent-BoGBjV5P.js                            0.56 kB │ gzip:   0.38 kB
+apps/staff build: dist/assets/matchContext-IcQ_MhI9.js                                  0.57 kB │ gzip:   0.35 kB
+apps/staff build: dist/assets/useMatch-jX9jBjqw.js                                      0.64 kB │ gzip:   0.40 kB
+apps/staff build: dist/assets/login-C45aJFSe.js                                         0.70 kB │ gzip:   0.46 kB
+apps/staff build: dist/assets/whiteboard-export-D6sjYYDM.js                             0.72 kB │ gzip:   0.40 kB
+apps/staff build: dist/assets/review-series-model-CbFJ_WhV.js                           0.77 kB │ gzip:   0.46 kB
+apps/staff build: dist/assets/student-directory-search-5LHdagWK.js                      0.77 kB │ gzip:   0.45 kB
+apps/staff build: dist/assets/problems.synonyms-KnoI6Cui.js                             0.82 kB │ gzip:   0.47 kB
+apps/staff build: dist/assets/with-selector-CZAIagi8.js                                 0.90 kB │ gzip:   0.50 kB
+apps/staff build: dist/assets/live-marking-state-Cdcd2Xuw.js                            0.95 kB │ gzip:   0.50 kB
+apps/staff build: dist/assets/problems._problemId-CUCs3YqY.js                           0.98 kB │ gzip:   0.50 kB
+apps/staff build: dist/assets/whiteboard-export-C3jcuQYc.js                             0.99 kB │ gzip:   0.52 kB
+apps/staff build: dist/assets/questions.organizers._threadId-pgePqEBA.js                1.01 kB │ gzip:   0.52 kB
+apps/staff build: dist/assets/questions._threadId-6saCb7RS.js                           1.08 kB │ gzip:   0.55 kB
+apps/staff build: dist/assets/review._submissionId-BFFw63al.js                          1.11 kB │ gzip:   0.57 kB
+apps/staff build: dist/assets/questions.organizers.index-DR0WUw-A.js                    1.12 kB │ gzip:   0.58 kB
+apps/staff build: dist/assets/login-DfDYMX4y.js                                         1.12 kB │ gzip:   0.57 kB
+apps/staff build: dist/assets/news-ByCesSeL.js                                          1.13 kB │ gzip:   0.60 kB
+apps/staff build: dist/assets/audit-CvwZoa_c.js                                         1.16 kB │ gzip:   0.61 kB
+apps/staff build: dist/assets/shim-Ds6aH16P.js                                          1.18 kB │ gzip:   0.60 kB
+apps/staff build: dist/assets/preload-helper-DHPNwG7e.js                                1.20 kB │ gzip:   0.68 kB
+apps/staff build: dist/assets/in-person-JgCWbKkI.js                                     1.20 kB │ gzip:   0.61 kB
+apps/staff build: dist/assets/courses-CGEdB4yE.js                                       1.23 kB │ gzip:   0.63 kB
+apps/staff build: dist/assets/student-results-xAI2Z029.js                               1.25 kB │ gzip:   0.62 kB
+apps/staff build: dist/assets/classrooms-CYbiUFvz.js                                    1.29 kB │ gzip:   0.64 kB
+apps/staff build: dist/assets/users-BwPzy9mf.js                                         1.32 kB │ gzip:   0.66 kB
+apps/staff build: dist/assets/oral-DN8X7tqN.js                                          1.33 kB │ gzip:   0.67 kB
+apps/staff build: dist/assets/questions.index-DcUOxvc5.js                               1.33 kB │ gzip:   0.66 kB
+apps/staff build: dist/assets/review.series._problemId-Cgkl3J0U.js                      1.37 kB │ gzip:   0.69 kB
+apps/staff build: dist/assets/statistics-student-search-BJjCPdlM.js                     1.44 kB │ gzip:   0.76 kB
+apps/staff build: dist/assets/review-BfeQVVG4.js                                        1.47 kB │ gzip:   0.73 kB
+apps/staff build: dist/assets/lessons._lessonId-Cqlw7Z6S.js                             1.58 kB │ gzip:   0.82 kB
+apps/staff build: dist/assets/review.history-CzmC4-yK.js                                1.61 kB │ gzip:   0.78 kB
+apps/staff build: dist/assets/statistics-BBPKBtFb.js                                    1.71 kB │ gzip:   0.82 kB
+apps/staff build: dist/assets/staff-file-upload-Cyh_495M.js                             1.78 kB │ gzip:   1.00 kB
+apps/staff build: dist/assets/questions-DtBTxndN.js                                     1.92 kB │ gzip:   0.93 kB
+apps/staff build: dist/assets/staff-testing-page-Bw9c9EEG.js                            2.13 kB │ gzip:   1.02 kB
+apps/staff build: dist/assets/problems._problemId-BxPohs7R.js                           2.40 kB │ gzip:   1.08 kB
+apps/staff build: dist/assets/branding-CaJIp25E.js                                      2.71 kB │ gzip:   1.27 kB
+apps/staff build: dist/assets/review-z1E4eAvY.js                                        3.00 kB │ gzip:   1.42 kB
+apps/staff build: dist/assets/react-dom-DwDvjPh7.js                                     3.53 kB │ gzip:   1.33 kB
+apps/staff build: dist/assets/fileRoute-B8GvwnLR.js                                     3.70 kB │ gzip:   1.21 kB
+apps/staff build: dist/assets/utils-CLNeIYXQ.js                                         3.97 kB │ gzip:   1.78 kB
+apps/staff build: dist/assets/switch-Dne31Qp9.js                                        4.32 kB │ gzip:   1.95 kB
+apps/staff build: dist/assets/reactions-Md-LA5Bm.js                                     4.61 kB │ gzip:   2.05 kB
+apps/staff build: dist/assets/routes-BgOBtVFV.js                                        5.11 kB │ gzip:   1.89 kB
+apps/staff build: dist/assets/analytics-DGtmkTPT.js                                     5.13 kB │ gzip:   1.96 kB
+apps/staff build: dist/assets/whiteboard-export-generator-BZ0AUeqG.js                   5.38 kB │ gzip:   2.50 kB
+apps/staff build: dist/assets/whiteboard-export-page-CjshhP3x.js                        5.43 kB │ gzip:   2.10 kB
+apps/staff build: dist/assets/pages-C12sKBZb.js                                         5.58 kB │ gzip:   2.33 kB
+apps/staff build: dist/assets/staff-support-pages-CqmsEFiF.js                           6.19 kB │ gzip:   2.44 kB
+apps/staff build: dist/assets/review.index-CD3IgAOO.js                                  7.29 kB │ gzip:   2.85 kB
+apps/staff build: dist/assets/react-mKr9-DnF.js                                         8.16 kB │ gzip:   3.15 kB
+apps/staff build: dist/assets/review.series._problemId-D-TVREb9.js                      8.81 kB │ gzip:   3.37 kB
+apps/staff build: dist/assets/audit-JHesOd_r2.js                                        9.26 kB │ gzip:   3.20 kB
+apps/staff build: dist/assets/lessons.index-B4Lbvkdi.js                                 9.57 kB │ gzip:   3.15 kB
+apps/staff build: dist/assets/broadcasts-D53DKhQr.js                                   10.27 kB │ gzip:   3.41 kB
+apps/staff build: dist/assets/problems.index-DsyO1hbV.js                               10.29 kB │ gzip:   3.26 kB
+apps/staff build: dist/assets/problems.synonyms-BorVA0AV.js                            10.45 kB │ gzip:   3.49 kB
+apps/staff build: dist/assets/review-history-page-Bd4DXKa4.js                          11.72 kB │ gzip:   3.70 kB
+apps/staff build: dist/assets/es-pPAXcxYC.js                                           12.51 kB │ gzip:   4.98 kB
+apps/staff build: dist/assets/useStore-A5sfJPwP.js                                     13.58 kB │ gzip:   4.75 kB
+apps/staff build: dist/assets/review-workspace-page-BfAjQNSv.js                        13.58 kB │ gzip:   4.98 kB
+apps/staff build: dist/assets/tabs-1TfuTAay.js                                         13.80 kB │ gzip:   5.04 kB
+apps/staff build: dist/assets/news-DojIywk2.js                                         14.49 kB │ gzip:   4.64 kB
+apps/staff build: dist/assets/student-results-Ddu_Nzhn.js                              17.08 kB │ gzip:   5.31 kB
+apps/staff build: dist/assets/oral-CpINDY_X.js                                         18.08 kB │ gzip:   5.26 kB
+apps/staff build: dist/assets/statistics-DiLUpzO0.js                                   19.83 kB │ gzip:   5.70 kB
+apps/staff build: dist/assets/esm-D6B2rE71.js                                          23.31 kB │ gzip:   7.05 kB
+apps/staff build: dist/assets/index-DWRVXRen.js                                        24.71 kB │ gzip:   8.54 kB
+apps/staff build: dist/assets/classrooms-D24g4CpC.js                                   27.82 kB │ gzip:   7.86 kB
+apps/staff build: dist/assets/courses-ChBSofpp.js                                      30.02 kB │ gzip:   7.62 kB
+apps/staff build: dist/assets/live-marking-page-D3emngoT.js                            36.69 kB │ gzip:  10.95 kB
+apps/staff build: dist/assets/src-CjR0NWQW.js                                          44.81 kB │ gzip:  16.54 kB
+apps/staff build: dist/assets/Match-BkpI4yKZ.js                                        48.59 kB │ gzip:  15.75 kB
+apps/staff build: dist/assets/users-C5AmbVO7.js                                        67.35 kB │ gzip:  15.27 kB
+apps/staff build: dist/assets/catalog-en-BuBW0QHK.js                                  113.67 kB │ gzip:  44.32 kB
+apps/staff build: dist/assets/lessons._lessonId-CxqVyFLd.js                           114.71 kB │ gzip:  31.55 kB
+apps/staff build: dist/assets/catalog-ru-DX8Bbtd6.js                                  177.13 kB │ gzip:  52.63 kB
+apps/staff build: dist/assets/client-B4rcP9Xu.js                                      178.30 kB │ gzip:  56.32 kB
+apps/staff build: dist/assets/src-DX-uXt4L.js                                         396.83 kB │ gzip: 123.90 kB
+apps/staff build: dist/assets/src-DzGjU1P8.js                                         442.49 kB │ gzip: 135.92 kB
+apps/staff build: dist/assets/katex-DTbN150k.js                                       518.07 kB │ gzip: 143.91 kB
+apps/staff build: dist/assets/rich-markdown-editor-C0iyUPqC.js                        524.95 kB │ gzip: 182.07 kB
+apps/staff build: ✓ built in 1.79s
+apps/staff build: [plugin builtin:vite-reporter] 
+apps/staff build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/staff build: - Using dynamic import() to code-split the application
+apps/staff build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+apps/staff build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+apps/staff build: Done
+apps/family build: PWA v1.3.0
+apps/family build: Building src/sw.ts service worker ("es" format)...
+apps/student build: PWA v1.3.0
+apps/student build: Building src/sw.ts service worker ("es" format)...
+apps/student build: vite v8.1.5 building client environment for production...
+apps/family build: vite v8.1.5 building client environment for production...
+apps/student build: [warn] `inlineDynamicImports` option is deprecated, please use `codeSplitting: false` instead.
+apps/family build: [warn] `inlineDynamicImports` option is deprecated, please use `codeSplitting: false` instead.
+apps/student build: [2K
+apps/family build: [2K
+apps/student build: transforming...✓ 243 modules transformed.
+apps/family build: transforming...✓ 243 modules transformed.
+apps/student build: rendering chunks...
+apps/family build: rendering chunks...
+apps/student build: computing gzip size...
+apps/family build: computing gzip size...
+apps/student build: dist/sw.mjs  343.71 kB │ gzip: 92.02 kB
+apps/student build: ✓ built in 54ms
+apps/family build: dist/sw.mjs  343.36 kB │ gzip: 91.92 kB
+apps/family build: ✓ built in 57ms
+apps/student build: PWA v1.3.0
+apps/student build: mode      injectManifest
+apps/student build: format:   es
+apps/student build: precache  127 entries (3358.23 KiB)
+apps/student build: files generated
+apps/student build:   dist/sw.js
+apps/family build: PWA v1.3.0
+apps/family build: mode      injectManifest
+apps/family build: format:   es
+apps/family build: precache  111 entries (3131.74 KiB)
+apps/family build: files generated
+apps/family build:   dist/sw.js
+apps/family build: Done
+apps/student build: Done
+[WebServer] /Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning: 
+[WebServer] 
+[WebServer] gcd is deprecated in Rational, use nsimplify instead
+[WebServer] 
+[WebServer] See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+[WebServer] for details.
+[WebServer] 
+[WebServer] This has been deprecated since SymPy version 1.11. It
+[WebServer] will be removed in a future version of SymPy.
+[WebServer] 
+[WebServer]   dummy_two = sympy.core.Rational(2, 1, 1)
+[WebServer] 2026-04-10 14:50:21 MathBot : WARNING  MainApp Start up!
+
+Running 2 tests using 1 worker
+
+(node:99845) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/content-publication.spec.ts:186:1 › Deploy-first: Admin creates a lesson, changes its phases, publishes a solution and closes submissions (5.7s)
+  ✓  2 [chromium] › e2e/content-publication.spec.ts:313:1 › Phase 2: Staff publishes two real revisions, Student reads them, then rollback restores the first (11.8s)
+
+  2 passed (20.1s)
+[WebServer] /Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning: 
+[WebServer] 
+[WebServer] gcd is deprecated in Rational, use nsimplify instead
+[WebServer] 
+[WebServer] See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+[WebServer] for details.
+[WebServer] 
+[WebServer] This has been deprecated since SymPy version 1.11. It
+[WebServer] will be removed in a future version of SymPy.
+[WebServer] 
+[WebServer]   dummy_two = sympy.core.Rational(2, 1, 1)
+[WebServer] 2026-04-10 14:50:40 MathBot : WARNING  MainApp Start up!
+
+Running 4 tests using 1 worker
+
+(node:99893) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › e2e/figure-layout.spec.ts:38:1 › figure placement survives reload and publishes only after confirmation (18.6s)
+(node:99911) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 [chromium] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (ru) (9.9s)
+  ✓  3 [chromium] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (en) (3.4s)
+  ✓  4 [chromium] › e2e/worksheet-print.spec.ts:5:1 › worksheets print only mounted conditions and expanded learning materials (2.5s)
+
+
+  1) [chromium] › e2e/figure-layout.spec.ts:38:1 › figure placement survives reload and publishes only after confirmation 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('content-workflow-hint').getByRole('region', { name: 'Сопоставление задач', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByTestId('content-workflow-hint').getByRole('region', { name: 'Сопоставление задач', exact: true })
+
+
+      306 |     exact: true,
+      307 |   })
+    > 308 |   await expect(hintMatching).toBeVisible()
+          |                              ^
+      309 |   for (const select of await hintMatching.getByRole('combobox').all()) {
+      310 |     await select.selectOption({ index: 1 })
+      311 |   }
+        at /Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/e2e/figure-layout.spec.ts:308:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/figure-layout-figure-place-47b78-hes-only-after-confirmation-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/figure-layout-figure-place-47b78-hes-only-after-confirmation-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/figure-layout-figure-place-47b78-hes-only-after-confirmation-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/figure-layout-figure-place-47b78-hes-only-after-confirmation-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/figure-layout-figure-place-47b78-hes-only-after-confirmation-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/figure-layout.spec.ts:38:1 › figure placement survives reload and publishes only after confirmation 
+  3 passed (36.6s)

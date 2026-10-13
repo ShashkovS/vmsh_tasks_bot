@@ -1,0 +1,55 @@
+{
+  "checked_at_utc": "2026-10-11T20:40:33.219983+00:00",
+  "origin": "https://vmsh.shashkovs.ru",
+  "static_release": "bef85d3c8d5e-20261011203834",
+  "html_sha256_matched": 4,
+  "staff_assets_sha256_matched": 116,
+  "production_provenance": {
+    "landing": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "bef85d3c8d5e-20261011203834",
+      "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "landing"
+    },
+    "student": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "bef85d3c8d5e-20261011203834",
+      "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "student"
+    },
+    "family": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "bef85d3c8d5e-20261011203834",
+      "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "family"
+    },
+    "staff": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "bef85d3c8d5e-20261011203834",
+      "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "staff"
+    }
+  },
+  "public_sourcemaps": false,
+  "maintenance": false
+}

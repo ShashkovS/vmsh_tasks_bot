@@ -59,3 +59,8 @@ This folder contains Telegram interaction flows: commands, callbacks, message pr
   - take from queue
   - send feedback/verdict
   - return to action menu.
+
+## Traceability And Progress
+
+- State-transition and protocol changes cite the governing user story/decision and related model/test; documentation links to exact handler functions or files.
+- Record partial progress, compatibility notes, and verification evidence in the affected development phase and status files.

@@ -1,0 +1,30 @@
+{
+  "fixture": "answer-types-v1",
+  "schemaVersion": 1,
+  "contract": "legacy answer format validation: ANS_REGEX.fullmatch(student_answer.strip()), with SELECT_ONE membership validated against visible options",
+  "answerTypes": [
+    {"name": "DIGIT", "value": 1, "valid": ["0", "7"], "invalid": ["17", "x"]},
+    {"name": "NATURAL", "value": 2, "valid": ["1", "179"], "invalid": ["-1", "1.5"]},
+    {"name": "INTEGER", "value": 3, "valid": ["-179", "+7"], "invalid": ["1.5", "семь"]},
+    {"name": "RATIO", "value": 4, "valid": ["5/3", "-179/1"], "invalid": ["1.5", "пять"]},
+    {"name": "FLOAT", "value": 5, "valid": ["3.14", "179", "7/3"], "invalid": ["3,14", "три"]},
+    {"name": "FRACTION", "value": 6, "valid": ["7/3", "-3.14", "179"], "invalid": ["семь третьих"]},
+    {"name": "INT_SEQ", "value": 7, "valid": ["1, 7, 9", "-2; +4", "1.5"], "invalid": ["нет чисел"]},
+    {"name": "INT_2", "value": 8, "valid": ["1, 7"], "invalid": ["1", "1, 7, 9"]},
+    {"name": "INT_3", "value": 9, "valid": ["1, 7, 9"], "invalid": ["1, 7", "1, 7, 9, 10"]},
+    {"name": "INT_4", "value": 10, "valid": ["0, 1, 7, 9"], "invalid": ["1, 7, 9", "0, 1, 7, 9, 10"]},
+    {"name": "INT_SET", "value": 11, "valid": ["1, 7, 9", "{9; 1; 7}", "1.5"], "invalid": ["пусто"]},
+    {"name": "POLYNOMIAL", "value": 12, "valid": ["2n^2 + n(n+1)/2"], "invalid": ["два n"]},
+    {"name": "FLOAT_EPS", "value": 13, "valid": ["3.14", "179", "7/3"], "invalid": ["3,14", "пи"]},
+    {"name": "TIME", "value": 14, "valid": ["12:08", "3:15:24"], "invalid": ["12", "полдень"]},
+    {"name": "DATE", "value": 15, "valid": ["31.12", "2025-02-16", "11.02.1986"], "invalid": ["31", "завтра"]},
+    {"name": "WEEKDAY", "value": 16, "valid": ["Суббота", "пн"], "invalid": ["завтра"]},
+    {"name": "FRAC_SEQ", "value": 17, "valid": ["2/5, 3.75, -1"], "invalid": ["одна вторая"]},
+    {"name": "MULTISET", "value": 18, "valid": ["1, 1, 2, 5, 2/5, -1.2"], "invalid": ["один, два"]},
+    {"name": "MIXED_FRACTION", "value": 19, "valid": ["1 2/3", "-4/5"], "invalid": ["одна целая"]},
+    {"name": "SYMB_EXPRESSION", "value": 20, "valid": ["a + b^2", ""], "invalid": []},
+    {"name": "SYMB_EQUIV", "value": 21, "valid": ["a + b^2 === 1 - 1 + b * b + a", ""], "invalid": []},
+    {"name": "SELECT_ONE", "value": 98, "valid": ["Нечётное"], "invalid": ["Нет такого варианта"], "options": ["Чётное", "Нечётное"]},
+    {"name": "STRING", "value": 99, "valid": ["Любая тестовая строка", ""], "invalid": []}
+  ]
+}

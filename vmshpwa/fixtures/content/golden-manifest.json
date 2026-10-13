@@ -1,0 +1,1076 @@
+{
+  "schemaVersion": 1,
+  "sourceRoot": "_vmsh_examples",
+  "generator": "vmshpwa/scripts/golden_corpus.py",
+  "entryCount": 54,
+  "entries": [
+    {
+      "path": "_vmsh_examples/usl-21-n-sol.json",
+      "sha256": "6d953afcd30d87f2a7ffafac398257bd882378843ef9b05a92adef732ac30889",
+      "sizeBytes": 3711,
+      "mediaType": "application/json",
+      "encoding": "utf-8",
+      "lesson": 21,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "json",
+      "structure": {
+        "topLevelKeys": [
+          "results"
+        ],
+        "resultCount": 16,
+        "topicAssignmentCount": 58
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-n-sol.tex",
+      "sha256": "0ecf255852b7e6d8281139b106cb2ca938eb0bc1d764960c8c197980e98bc122",
+      "sizeBytes": 27811,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 21,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 680,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 15,
+        "answerCount": 12,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 8,
+        "includedGraphicCount": 21
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-n.tex",
+      "sha256": "2ad17a26cfa557ee67e411364faa07430986ff74261627f213c72a2fd97e9b07",
+      "sizeBytes": 10321,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 21,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 276,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 13,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 4,
+        "includedGraphicCount": 2
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-p-sol.json",
+      "sha256": "20deeaabeb9691169615e79eabfa798c280bc4797234866f52ec624e66389bb1",
+      "sizeBytes": 5178,
+      "mediaType": "application/json",
+      "encoding": "utf-8",
+      "lesson": 21,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "json",
+      "structure": {
+        "topLevelKeys": [
+          "results"
+        ],
+        "resultCount": 21,
+        "topicAssignmentCount": 77
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-p-sol.tex",
+      "sha256": "7ad835b6d307d15dba775dab64859f8d235a3bd94d05cb397063340a638cb24b",
+      "sizeBytes": 24489,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 21,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 632,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 14,
+        "answerCount": 13,
+        "hintCount": 0,
+        "solutionCount": 14,
+        "tikzPictureCount": 6,
+        "includedGraphicCount": 3
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-p.tex",
+      "sha256": "20fd482416b505e41161c00765d9d6af086017a9ceee080e3591faba5ff86a68",
+      "sizeBytes": 15099,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 21,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 429,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 14,
+        "answerCount": 14,
+        "hintCount": 0,
+        "solutionCount": 13,
+        "tikzPictureCount": 2,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-x-sol.json",
+      "sha256": "a5f1b8245de1a0a546fd279e664d23b1c53019217f6b4b33790605dfcdb3691b",
+      "sizeBytes": 4260,
+      "mediaType": "application/json",
+      "encoding": "utf-8",
+      "lesson": 21,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "json",
+      "structure": {
+        "topLevelKeys": [
+          "results"
+        ],
+        "resultCount": 17,
+        "topicAssignmentCount": 63
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-x-sol.tex",
+      "sha256": "72257e2d5b27054302110cd58b66fc737f4a36eb5236a668ee909021ae3dbb33",
+      "sizeBytes": 17262,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 21,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 434,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 13,
+        "answerCount": 12,
+        "hintCount": 0,
+        "solutionCount": 9,
+        "tikzPictureCount": 5,
+        "includedGraphicCount": 4
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-21-x.tex",
+      "sha256": "6745f6943fecdf8cd91675bf377c6045f623ed2eccc355fe0b486c4f2a386b28",
+      "sizeBytes": 12190,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 21,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 261,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 13,
+        "answerCount": 10,
+        "hintCount": 0,
+        "solutionCount": 6,
+        "tikzPictureCount": 1,
+        "includedGraphicCount": 4
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-n-sol.json",
+      "sha256": "05705bc75d00f23e04819fca4cc7a08ade465e0037b035c0afa67d8cbf802b11",
+      "sizeBytes": 3401,
+      "mediaType": "application/json",
+      "encoding": "utf-8",
+      "lesson": 27,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "json",
+      "structure": {
+        "topLevelKeys": [
+          "results"
+        ],
+        "resultCount": 16,
+        "topicAssignmentCount": 47
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-n-sol.tex",
+      "sha256": "823a5a44ec1d3bd1a445489aacc1a10804742b60658b174f7827d5a782f0cdab",
+      "sizeBytes": 15853,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 27,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 399,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 12,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 3,
+        "includedGraphicCount": 2
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-n.tex",
+      "sha256": "23c017d1715fc4e8882c065a413685500e0197860c454e820e5945279487bb88",
+      "sizeBytes": 8725,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 27,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 226,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 14,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 4,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-p-sol.json",
+      "sha256": "0847a303ab8742076f7da7d2b0765b31dc508f994a7dd3a0deb4b6a02cfb0cb7",
+      "sizeBytes": 4384,
+      "mediaType": "application/json",
+      "encoding": "utf-8",
+      "lesson": 27,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "json",
+      "structure": {
+        "topLevelKeys": [
+          "results"
+        ],
+        "resultCount": 17,
+        "topicAssignmentCount": 71
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-p-sol.tex",
+      "sha256": "f3ec8c9f6493b065a84619e22652d94e75144c464fb697ce9f451ca30f291bf8",
+      "sizeBytes": 29602,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 27,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 464,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 8,
+        "hintCount": 0,
+        "solutionCount": 10,
+        "tikzPictureCount": 12,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-p.tex",
+      "sha256": "487e0f582be01a3f505556cb39ed888314cf3937b1654efd2d686208007bb718",
+      "sizeBytes": 9070,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 27,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 177,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 5,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-x-sol.json",
+      "sha256": "11b4f3e5fd00d5b5789ad624c4b1b13c02d3a8ebad9c627b6b7f8adf050b5936",
+      "sizeBytes": 2696,
+      "mediaType": "application/json",
+      "encoding": "utf-8",
+      "lesson": 27,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "json",
+      "structure": {
+        "topLevelKeys": [
+          "results"
+        ],
+        "resultCount": 13,
+        "topicAssignmentCount": 37
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-x-sol.tex",
+      "sha256": "061e1296816bd7d42360c9aa0ee6aa21a252f13b10a66003872cbc340b20f25a",
+      "sizeBytes": 25304,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 27,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 562,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 12,
+        "answerCount": 8,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 6,
+        "includedGraphicCount": 4
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-27-x.tex",
+      "sha256": "934591ffdaa7ac998d21706a10866631be521fdf7b9e603f576e2b570cebc038",
+      "sizeBytes": 10941,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 27,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 335,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 12,
+        "answerCount": 7,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 5
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-n-sol.pdf",
+      "sha256": "257b6763ed3cabfb995c090036da5dbf17b49d24136a0bf2266e09ee059dc45f",
+      "sizeBytes": 124544,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 39,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-n-sol.tex",
+      "sha256": "54802651088b3e3f050a2b36c00c3caedd5e1d29356170f129d7de04633cbf0f",
+      "sizeBytes": 4714,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 39,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 182,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-n.pdf",
+      "sha256": "78e05053206f416fc4a938891b57243af807fe07d8707ff46ec18b3a530cb287",
+      "sizeBytes": 99565,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 39,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-n.tex",
+      "sha256": "2f25890bf428b46fb156e4bf2d2a723899c285642a3201e324db7fb47d6f1115",
+      "sizeBytes": 2188,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 39,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-p-sol.pdf",
+      "sha256": "0f938a8f7dc15619300f8027785bbc08d67a0e12f4fa022e7bce4f44ced98ffc",
+      "sizeBytes": 126328,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 39,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-p-sol.tex",
+      "sha256": "693a42b75946e96eff57af80ed799879a3bb9ad9e9de8aa096f08d37b6bf110c",
+      "sizeBytes": 5840,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 39,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-p.pdf",
+      "sha256": "c0a414ec55685c9875b02be6d0337186e8704369ed10930d9950f992dd10350a",
+      "sizeBytes": 99125,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 39,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-p.tex",
+      "sha256": "baf41f4d77862b02c36b152cf12191a4546fb6d8a141a176a043685772b4b7d1",
+      "sizeBytes": 2676,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 39,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-x-sol.pdf",
+      "sha256": "63f3db77f4435ecf2abc83ad7bffda92f1818f865255a19b4a833745803d6659",
+      "sizeBytes": 114315,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 39,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-x-sol.tex",
+      "sha256": "174d8437221aac31dc56560f8765bd2d80110742e1d00e12ea45b78562cbc502",
+      "sizeBytes": 4990,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 39,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-x.pdf",
+      "sha256": "168a16ca8bb575e0dccfaebad41c08616817afec3624bc09c0d3ff422e2efd53",
+      "sizeBytes": 97924,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 39,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-39-x.tex",
+      "sha256": "919e7da90491325786ef3e8cc6ecb6c1f6c64bda561ecd698015f101e6c999b5",
+      "sizeBytes": 2441,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 39,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-n-sol.pdf",
+      "sha256": "8b5672d78190bd94581072c580522366e5a1cb2b9eee7a5765807d76e4903229",
+      "sizeBytes": 126712,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 40,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-n-sol.tex",
+      "sha256": "8f034701a6d145843f11bcf48f413d2e5b21068844fc993f5e8289ee53d54b99",
+      "sizeBytes": 4511,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 40,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-n.pdf",
+      "sha256": "48b39f77d0c75445f846e55db52535d349426b7e496b25ce16d080bd46a3977d",
+      "sizeBytes": 99417,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 40,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-n.tex",
+      "sha256": "2d25df743bdef95fd937053f6ee4cb791b8569517ffdd22ab9e2fff522970f63",
+      "sizeBytes": 2265,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 40,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-p-sol.pdf",
+      "sha256": "182ed7354dee9bebca512de945c81d6e99ee87b6747515faf0d007c9067ab3ca",
+      "sizeBytes": 118127,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 40,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-p-sol.tex",
+      "sha256": "dd9ce8b0660bd9cd38873dbc0143627e3784da7e06de627571c42db3345d25b7",
+      "sizeBytes": 6330,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 40,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-p.pdf",
+      "sha256": "1bcc39a3ed4dc5837c069c9363c2620f0e38d6132758c547d3ff9dc08a43657a",
+      "sizeBytes": 97480,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 40,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-p.tex",
+      "sha256": "e70e8a94b5c4539c1b9c5fcd61bfff3ac6fd5b8ca584ef3473ac6673d0110a45",
+      "sizeBytes": 2578,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 40,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-x-sol.pdf",
+      "sha256": "8929c485492ce628413ee164b631c3467de5c51059792ad515d5055862bab94f",
+      "sizeBytes": 106539,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 40,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-x-sol.tex",
+      "sha256": "04b51cc56a45f3654fe40fa6075cba439083dca107f346d4dbd410c24b7fac3e",
+      "sizeBytes": 5554,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 40,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-x.pdf",
+      "sha256": "20fd56b670f11e5b918029fd4236e09b8ed862f38c89773f7d8b75cfa39f225f",
+      "sizeBytes": 68380,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 40,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-40-x.tex",
+      "sha256": "5487423b833ade103585ab7c4ee901b10e46bc257a0643d999ba05d6e8ecad81",
+      "sizeBytes": 2209,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 40,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-n-sol.pdf",
+      "sha256": "8e476aa569b33acdc9babbe5a7e1e7c8e115e65181bea3efdfea2403adf5c463",
+      "sizeBytes": 116298,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 41,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-n-sol.tex",
+      "sha256": "784491187eb827e74f1655a4c37929a156154267052c463310fef95cb00357db",
+      "sizeBytes": 6002,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 41,
+      "groupCode": "n",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-n.pdf",
+      "sha256": "f339472f4187a412c01c47d60b35592aaf1c3dfbd959289ab240e3d94254d72a",
+      "sizeBytes": 89657,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 41,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-n.tex",
+      "sha256": "33f1639504047da3df1562ac85a292f0759d306777d7cd0db0f5585649787e8c",
+      "sizeBytes": 2714,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 41,
+      "groupCode": "n",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-p-sol.pdf",
+      "sha256": "ecf3b0b165b907fd2d02a81202ba17d88c2eef08134fb2b4a83e8bb5b9097821",
+      "sizeBytes": 119691,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 41,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-p-sol.tex",
+      "sha256": "c6c78be4f53d8aa12c29e0fbf3b2ff408617e5825f8564b3ea57defb85327c28",
+      "sizeBytes": 6276,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 41,
+      "groupCode": "p",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-p.pdf",
+      "sha256": "7e0ecff8243ad1fc58cb4f124bc54b148d2027e81bc79c06745fe2188319ada6",
+      "sizeBytes": 98538,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 41,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-p.tex",
+      "sha256": "ccedc477920992c079c379b0ffd38946d78bba90afc98a93bfb19a8b4b3dae46",
+      "sizeBytes": 2839,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 41,
+      "groupCode": "p",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-x-sol.pdf",
+      "sha256": "abf279e1b0ff3f2bfef1466ae34713930efef66391eae0a483c7c032208cbe9a",
+      "sizeBytes": 133855,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 41,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-x-sol.tex",
+      "sha256": "13dbb68610c5dbed531a6ca738487400243249ad10a3c62d8ceac44ceec1208c",
+      "sizeBytes": 5556,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 41,
+      "groupCode": "x",
+      "role": "solution",
+      "format": "tex",
+      "structure": {
+        "lineCount": 180,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 11,
+        "hintCount": 0,
+        "solutionCount": 11,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-x.pdf",
+      "sha256": "43bb2c4d136e7edc88feb92238e084218c0dd9df7e41ef138194e0f141f0fc56",
+      "sizeBytes": 121399,
+      "mediaType": "application/pdf",
+      "encoding": null,
+      "lesson": 41,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "pdf",
+      "structure": {
+        "pdfVersion": "1.5",
+        "hasEofMarker": true
+      }
+    },
+    {
+      "path": "_vmsh_examples/usl-41-x.tex",
+      "sha256": "d916bf4d976b550a7fba39e5de71bf976c0bf9ed9e7bdfeee7c8135c3c2862eb",
+      "sizeBytes": 2372,
+      "mediaType": "application/x-tex",
+      "encoding": "windows-1251",
+      "lesson": 41,
+      "groupCode": "x",
+      "role": "condition",
+      "format": "tex",
+      "structure": {
+        "lineCount": 70,
+        "hasDocumentClass": true,
+        "hasBeginDocument": true,
+        "hasEndDocument": true,
+        "problemCount": 11,
+        "answerCount": 0,
+        "hintCount": 0,
+        "solutionCount": 0,
+        "tikzPictureCount": 0,
+        "includedGraphicCount": 0
+      }
+    }
+  ]
+}

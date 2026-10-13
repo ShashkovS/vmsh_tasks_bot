@@ -194,10 +194,13 @@ async def on_shutdown(app):
     logger.warning('zoom Bye!')
 
 
-def configue(app):
+def configure(app):
     app.add_routes(routes)
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
+
+
+configue = configure
 
 
 # import json
@@ -222,5 +225,5 @@ def configue(app):
 if __name__ == "__main__":
     # Включаем все отладочные сообщения
     app = web.Application()
-    configue(app)
+    configure(app)
     web.run_app(app)

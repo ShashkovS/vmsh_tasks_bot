@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-04",
+  "git_revision": "dc80817329b81c405a86d83a05eb4d9b3fd5d74d",
+  "working_tree": "uncommitted, includes prior check optimization and concurrent unrelated UI edits",
+  "migration_count": {
+    "before": 82,
+    "after": 1
+  },
+  "migration_files": {
+    "before": 155,
+    "after": 1
+  },
+  "product_objects": 510,
+  "product_ddl_unchanged": true,
+  "historical_test_functions_removed": 66,
+  "bootstrap": {
+    "runs": 5,
+    "seconds": {
+      "old": [0.686086, 0.6092, 0.612496, 0.607826, 0.582315],
+      "baseline": [0.305549, 0.306188, 0.311292, 0.305064, 0.288257],
+      "median_seconds": {
+        "old": 0.6092,
+        "baseline": 0.305549
+      }
+    },
+    "method": "Same process, fresh SQLite files; old archived chain versus baseline; WAL enabled in both. Archived old chain is ignored local evidence, not an ongoing test."
+  },
+  "python": {
+    "before_seconds": 79.489,
+    "after_seconds": 49.294,
+    "before_passed": 2846,
+    "after_passed": 2782,
+    "skipped": 7,
+    "command": "pytest tests pwa_tests -n4 -q --tb=short",
+    "pytest_seconds": 46.59,
+    "exit_code": 0,
+    "comparison": "Existing optimized template cache and four workers in both runs; historical tests removed. Earlier pre-optimization 693.768s run failed and is not a green baseline."
+  },
+  "chromium": {
+    "modes": ["content", "review", "submissions"],
+    "browser": "chromium",
+    "seconds": 44.508,
+    "exit_code": 0,
+    "phases": [
+      {
+        "command": ["pnpm", "build"],
+        "seconds": 0.186,
+        "cache_hit": true,
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "pnpm",
+          "exec",
+          "playwright",
+          "test",
+          "e2e/content-publication.spec.ts",
+          "e2e/review-workspace.spec.ts",
+          "e2e/test-submission.spec.ts",
+          "--project",
+          "chromium",
+          "--retries",
+          "0"
+        ],
+        "seconds": 43.99,
+        "cache_hit": false,
+        "exit_code": 0,
+        "preparation": {
+          "seed_cache_hit": false,
+          "seconds": 0.509,
+          "key": "21633e41cb8c21d12f2cdc2d62d843c6681f1d1f463d0780b1ca5acd6c3a3609"
+        }
+      }
+    ]
+  },
+  "adoption_rehearsal": {
+    "source": "previous-production-rehearsal-vmsh-0110",
+    "source_unchanged": true,
+    "product_tables_unchanged": 158,
+    "product_rows_unchanged": true,
+    "product_ddl_unchanged": true,
+    "existing_fk_violations": 627,
+    "baseline_seconds": 0.023904,
+    "previous_history_rows": 82,
+    "new_history_rows": 83
+  },
+  "production": {
+    "changed": false,
+    "vmsh": "Live readonly DDL + old head metadata verified: 510 objects, exact baseline product fingerprint, 0110 head.",
+    "tlf": "Live readonly DDL + old head metadata verified: 510 objects, exact baseline product fingerprint, 0110 head. Used configured serge SSH alias to read as the DB owner, without changes."
+  },
+  "checks": [
+    "Full Python: 2782 PASS, 7 prior skips",
+    "Chromium content/review/submissions: 8 PASS, retries=0",
+    "Current schema inventory + historical read-only report: PASS",
+    "Scoped Ruff and git diff --check: PASS",
+    "Both live production DDL/head hashes read-only: PASS",
+    "Workspace Prettier format:check: PASS"
+  ],
+  "limitations": [
+    "No frontend implementation changed; frontend unit/Storybook/full browser suites were not repeated.",
+    "First full Python attempt lacked localhost bind permission; its failures are excluded from benchmark. Successful rerun used localhost access.",
+    "Backend and remaining tests received formatting-only cleanup after the full Python run; behavior was unchanged."
+  ]
+}

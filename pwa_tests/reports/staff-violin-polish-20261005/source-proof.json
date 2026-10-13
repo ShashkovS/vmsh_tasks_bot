@@ -1,0 +1,15 @@
+{
+  "source_digest": "0bad899c3e32ce2f5716e4abcaf8c49ed708deaf30f0426f8d912fae9def687f",
+  "gate_source_digest": "9f8c06d6efe957cdbe2976a3fb2d72cb0e999a629a7b03def42f0a16dd3f6e67",
+  "gate_exit_code": 1,
+  "statistics_e2e_exit_code": 0,
+  "note": "The post-gate change uses the quartile rectangle in the E2E colour assertion so constant samples are covered; production code is unchanged since the gate. Owner authorized the release with the disclosed journal performance failure.",
+  "release_commit": "0d2d88e3127e1e0937c3043346d3a96c3160bd89",
+  "production_source_sha256": {
+    "vmshpwa/packages/product/src/progress-charts.tsx": "26b3352809e4f473e79f86b4e4441adf87fda199848a8624f0336eb86a4d8754",
+    "vmshpwa/apps/staff/src/staff-distribution-colors.ts": "6dba6f3eeabeeaf8b301ad758d369cd551436cefb7d58e98e7b2a3405e32ee20",
+    "vmshpwa/apps/staff/src/lesson-statistics.tsx": "27684aaf80b6354ef60480ef355580ffa120f60c6c3cfdabb163650df68d7a14",
+    "vmshpwa/apps/staff/src/staff-statistics-page.tsx": "5b0c96c5c669fa94d8a7f2ac802b83ba96b5aa5899aab9f11b980aed56b75eb4"
+  },
+  "both_production_sources_match_commit": true
+}

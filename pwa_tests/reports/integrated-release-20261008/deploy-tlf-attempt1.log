@@ -1,0 +1,10 @@
+From https://github.com/ShashkovS/vmsh_tasks_bot
+ * branch              vmshpwa    -> FETCH_HEAD
+   0d2d88e3..d4bf4a30  vmshpwa    -> origin/vmshpwa
+2026-10-08T15:56:53Z Verified main and analytics backups before release
+2026-10-08T15:56:55Z Building isolated production bundles using frozen dependencies
+2026-10-08T15:57:15Z Checking production provenance and publishing immutable static assets
+2026-10-08T15:57:15Z Rehearsing all three migrations on a consistent online copy
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+PermissionError: [Errno 13] Permission denied: '/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261008-integrated-d4bf4a30ce9d/rehearsal-before.json'
