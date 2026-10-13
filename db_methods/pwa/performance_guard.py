@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import sqlite3
 import time
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
@@ -21,6 +23,7 @@ class CriticalQueryProbe:
     sql: str
     required_plan_fragments: tuple[str, ...] = ()
     time_budget_seconds: float = 2.0
+    parameters: Mapping[str, object] | None = None
 
 
 # Keep this deliberately small and based on read-model fan-out, not individual
@@ -36,6 +39,41 @@ CRITICAL_QUERY_PROBES: Final[tuple[CriticalQueryProbe, ...]] = (
 )
 
 
+def scoped_query_probes(connection):
+    """Real bound callbacks rather than only views; scoped-reads-20261013.md."""
+    from db_methods.pwa.live_marking import LIVE_CELLS_SQL, LIVE_VISITS_SQL
+
+    pair = connection.execute(
+        """SELECT r.student_id,r.problem_id,p.group_id,p.lesson FROM results r
+        JOIN problems p ON p.id=r.problem_id JOIN users u ON u.id=r.student_id
+        WHERE u.type IN (1,-2) AND p.prob>0 ORDER BY r.id DESC LIMIT 1"""
+    ).fetchone()
+    student_ids, problem_ids = [], []
+    if pair is not None:
+        student_ids, problem_ids = [pair[0]], [pair[1]]
+    exact = {"student_ids": json.dumps(student_ids), "problem_ids": json.dumps(problem_ids), "after": None}
+    if pair is not None:
+        student_ids = [row[0] for row in connection.execute(
+            "SELECT student_user_id FROM course_enrollments WHERE active_group_id=? AND status='active' ORDER BY student_user_id LIMIT 60",
+            (pair[2],),
+        )] or student_ids
+        problem_ids = [row[0] for row in connection.execute(
+            "SELECT id FROM problems WHERE group_id=? AND lesson=? AND prob>0 ORDER BY id LIMIT 20",
+            (pair[2], pair[3]),
+        )] or problem_ids
+    board = {"student_ids": json.dumps(student_ids), "problem_ids": json.dumps(problem_ids), "after": None}
+    session = connection.execute(
+        "SELECT session_id FROM live_mark_visits ORDER BY updated_at DESC LIMIT 1"
+    ).fetchone()
+    return (
+        CriticalQueryProbe("live-cell-scoped", LIVE_CELLS_SQL, parameters=exact),
+        CriticalQueryProbe("live-board-scoped", LIVE_CELLS_SQL, parameters=board),
+        CriticalQueryProbe("live-visits-scoped", LIVE_VISITS_SQL,
+                           required_plan_fragments=("live_mark_operations_active_context",),
+                           parameters={"session_id": session[0] if session else "performance-empty"}),
+    )
+
+
 def _quoted_identifier(identifier: str) -> str:
     return '"' + identifier.replace('"', '""') + '"'
 
@@ -43,10 +81,11 @@ def _quoted_identifier(identifier: str) -> str:
 def _query_plan(
     connection: sqlite3.Connection,
     sql: str,
+    parameters=None,
 ) -> list[tuple[int, int, int, str]]:
     return [
         (int(row[0]), int(row[1]), int(row[2]), str(row[3]))
-        for row in connection.execute("EXPLAIN QUERY PLAN " + sql)
+        for row in connection.execute("EXPLAIN QUERY PLAN " + sql, parameters or {})
     ]
 
 
@@ -97,7 +136,7 @@ def _run_bounded_probe(
     connection.set_progress_handler(interrupt_after_deadline, 1_000)
     started = time.monotonic()
     try:
-        connection.execute(probe.sql).fetchone()
+        connection.execute(probe.sql, probe.parameters or {}).fetchall()
     except sqlite3.OperationalError as error:
         if interrupted:
             raise DatabasePerformanceGuardError(
@@ -129,6 +168,8 @@ def check_database_performance(
     uri = resolved_path.as_uri() + "?mode=ro"
     with sqlite3.connect(uri, uri=True, timeout=0.1) as connection:
         connection.execute("PRAGMA query_only = ON")
+        if probes is CRITICAL_QUERY_PROBES:
+            probes = (*probes, *scoped_query_probes(connection))
         view_names = [
             str(row[0])
             for row in connection.execute(
@@ -147,8 +188,14 @@ def check_database_performance(
 
         probe_reports: list[dict[str, object]] = []
         for probe in probes:
-            plan = _query_plan(connection, probe.sql)
+            plan = _query_plan(connection, probe.sql, probe.parameters)
             details = [row[3] for row in plan]
+            violations = _correlated_full_scans(plan)
+            if violations:
+                raise DatabasePerformanceGuardError(
+                    f"critical query {probe.name!r} contains correlated full scan: "
+                    + "; ".join(violations)
+                )
             missing = [
                 fragment
                 for fragment in probe.required_plan_fragments

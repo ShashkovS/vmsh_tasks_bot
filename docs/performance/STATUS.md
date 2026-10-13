@@ -5,7 +5,8 @@
 [Утверждённый план](scoped-reads-20261013.md): resource routing/общая очередь refetch,
 scoped отметки/visits и статистика с RAM TTL до 60 секунд. Три коммита,
 общий release gate, один выпуск на ВМШ/TLF. Направление 1 реализовано,
-focused Python 94 / realtime unit 25 PASS; начат scoped SQL отметок;
+focused Python 94 / realtime unit 25 PASS. Scoped SQL отметок и migration
+0120 реализованы: precedence/live HTTP 155 и parity/guard 7 PASS; начата статистика;
 production пока `aae27430`, фото/LLM исключены.
 
 ## 2026-10-12 — RAM-кеш общих чтений и auth

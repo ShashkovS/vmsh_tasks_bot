@@ -183,3 +183,13 @@ WebSocket подключён через Staff shell. После транзакц
 Очередь остаётся общей: переход запускает flush без ожидания, команды сохраняют
 исходный context. Общий статус учитывает скрытые уровни. Очный режим не меняется.
 Проверки: `live-marking-state.test.ts`, `e2e/live-marking.spec.ts`.
+
+## Scoped reads — 13 October 2026
+
+[Owner-approved performance increment](../../docs/performance/scoped-reads-20261013.md):
+`db_methods/pwa/live_marking.py` restricts the shared effective-result winner
+to requested students and logical aliases before aggregation. Visits aggregate
+active session marks once. Migration 0120 adds problem/session lookup indexes;
+`db_methods/pwa/performance_guard.py` probes actual cell/board/visits callbacks.
+Before/after reads, ledger, undo and delta versions remain authoritative.
+Production deployment awaits the combined release gate.

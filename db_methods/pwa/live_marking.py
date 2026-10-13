@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 
+from db_methods.pwa.effective_results import scoped_effective_results_ctes
+from helpers.prometheus_metrics import PROJECTION_DURATION
+
 
 def rows(connection, query, args=()):
     return [dict(row) for row in connection.execute(query, args)]
@@ -55,32 +58,23 @@ def lesson(connection, public_id):
     )
 
 
+STUDENT_SELECT = """
+    SELECT u.id student_id,u.public_id student_public_id,u.surname,u.name,u.middlename,
+           u.grade,e.id enrollment_id,e.public_id enrollment_public_id,e.version,
+           e.attendance_mode,e.active_group_id,e.course_id,g.public_id group_public_id,
+           g.public_name group_name
+    FROM course_enrollments e JOIN users u ON u.id=e.student_user_id
+    JOIN groups g ON g.course_id=e.course_id AND g.group_id=e.active_group_id
+    WHERE e.course_id=? AND e.status='active' AND u.public_id IS NOT NULL
+"""
+
+
 def students(connection, course_id):
-    return rows(
-        connection,
-        """
-        SELECT u.id student_id,u.public_id student_public_id,u.surname,u.name,u.middlename,
-               u.grade,e.id enrollment_id,e.public_id enrollment_public_id,e.version,
-               e.attendance_mode,e.active_group_id,e.course_id,g.public_id group_public_id,
-               g.public_name group_name
-        FROM course_enrollments e JOIN users u ON u.id=e.student_user_id
-        JOIN groups g ON g.course_id=e.course_id AND g.group_id=e.active_group_id
-        WHERE e.course_id=? AND e.status='active' AND u.public_id IS NOT NULL
-        ORDER BY u.surname COLLATE NOCASE,u.name COLLATE NOCASE,u.id
-    """,
-        (course_id,),
-    )
+    return rows(connection, STUDENT_SELECT + " ORDER BY u.surname COLLATE NOCASE,u.name COLLATE NOCASE,u.id", (course_id,))
 
 
 def student(connection, course_id, public_id):
-    return next(
-        (
-            r
-            for r in students(connection, course_id)
-            if r["student_public_id"] == public_id
-        ),
-        None,
-    )
+    return one(connection, STUDENT_SELECT + " AND u.public_id=?", (course_id, public_id))
 
 
 def events(connection):
@@ -173,42 +167,48 @@ def problems(connection, lesson_id):
     )
 
 
+LIVE_CELLS_SQL = """
+WITH requested_student_ids AS MATERIALIZED (
+    SELECT value student_id FROM json_each(:student_ids)
+), requested_problem_ids AS MATERIALIZED (
+    SELECT value problem_id FROM json_each(:problem_ids)
+), """ + scoped_effective_results_ctes(students=True) + """,
+scope AS (
+  SELECT student.id student_id,problem.id problem_id,
+         coalesce(c.version,0) version,c.result_id,c.change_seq,
+         c.student_id IS NOT NULL has_cell
+  FROM users student CROSS JOIN problems problem
+  LEFT JOIN live_mark_cells c ON c.student_id=student.id AND c.problem_id=problem.id
+  WHERE student.id IN (SELECT student_id FROM requested_student_ids)
+    AND problem.id IN (SELECT problem_id FROM requested_problem_ids)
+    AND (:after IS NULL OR c.change_seq>:after)
+), ranked AS (
+  SELECT scope.student_id,scope.problem_id,scope.version,scope.result_id,
+         r.verdict,r.teacher_id,r.ts,u.public_id teacher_public_id,
+         row_number() OVER (
+           PARTITION BY scope.student_id,scope.problem_id ORDER BY v.val DESC,r.id DESC
+         ) priority
+  FROM scope
+  JOIN scoped_problem_members target ON target.problem_id=scope.problem_id
+  JOIN scoped_problem_members member ON member.logical_key=target.logical_key
+  LEFT JOIN scoped_effective_results r ON r.student_id=scope.student_id AND r.problem_id=member.problem_id
+  LEFT JOIN verdicts v ON v.id=r.verdict
+  LEFT JOIN users u ON u.id=r.teacher_id
+  WHERE scope.has_cell OR r.id IS NOT NULL
+)
+SELECT student_id,problem_id,version,result_id,verdict,teacher_id,ts,teacher_public_id
+FROM ranked WHERE priority=1
+"""
+
+
 def cells(connection, student_ids, problem_ids, after=None):
     if not student_ids or not problem_ids:
         return []
-    # Bound IN lists come only from server-authorized rosters/publications.
-    ss, pp = ",".join("?" for _ in student_ids), ",".join("?" for _ in problem_ids)
-    return rows(
-        connection,
-        f"""
-        WITH scope AS (
-          SELECT student.id student_id,problem.id problem_id,
-                 coalesce(c.version,0) version,c.result_id,c.change_seq,
-                 c.student_id IS NOT NULL has_cell
-          FROM users student CROSS JOIN problems problem
-          LEFT JOIN live_mark_cells c ON c.student_id=student.id AND c.problem_id=problem.id
-          WHERE student.id IN ({ss}) AND problem.id IN ({pp})
-            AND (? IS NULL OR c.change_seq>?)
-        ), ranked AS (
-          SELECT scope.student_id,scope.problem_id,scope.version,scope.result_id,
-                 r.verdict,r.teacher_id,r.ts,u.public_id teacher_public_id,
-                 row_number() OVER (
-                   PARTITION BY scope.student_id,scope.problem_id
-                   ORDER BY v.val DESC,r.id DESC
-                 ) priority
-          FROM scope
-          JOIN result_problem_groups target ON target.problem_id=scope.problem_id
-          JOIN result_problem_groups member ON member.logical_key=target.logical_key
-          LEFT JOIN effective_results r ON r.student_id=scope.student_id AND r.problem_id=member.problem_id
-          LEFT JOIN verdicts v ON v.id=r.verdict
-          LEFT JOIN users u ON u.id=r.teacher_id
-          WHERE scope.has_cell OR r.id IS NOT NULL
-        )
-        SELECT student_id,problem_id,version,result_id,verdict,teacher_id,ts,teacher_public_id
-        FROM ranked WHERE priority=1
-    """,
-        (*student_ids, *problem_ids, after, after),
-    )
+    with PROJECTION_DURATION.labels("live_cells").time():
+        return rows(connection, LIVE_CELLS_SQL, {
+            "student_ids": json.dumps(list(student_ids)),
+            "problem_ids": json.dumps(list(problem_ids)), "after": after,
+        })
 
 
 def cell(connection, student_id, problem_id):
@@ -354,21 +354,26 @@ def visit(connection, session_id, student_id, lesson_id):
     )
 
 
+LIVE_VISITS_SQL = """
+WITH marks AS MATERIALIZED (
+    SELECT json_extract(after_json,'$.studentId') student_public_id,
+           json_extract(after_json,'$.lessonId') lesson_public_id, count(*) changed_count
+    FROM live_mark_operations
+    WHERE context_id=:session_id AND kind='mark' AND undone_at IS NULL
+    GROUP BY student_public_id,lesson_public_id
+)
+SELECT v.*,u.public_id student_public_id,u.surname,u.name,gl.public_id lesson_public_id,
+       coalesce(marks.changed_count,0) changed_count
+FROM live_mark_visits v JOIN users u ON u.id=v.student_id
+JOIN group_lessons gl ON gl.id=v.group_lesson_id
+LEFT JOIN marks ON marks.student_public_id=u.public_id AND marks.lesson_public_id=gl.public_id
+WHERE v.session_id=:session_id ORDER BY v.updated_at DESC
+"""
+
+
 def visits(connection, session_id):
-    return rows(
-        connection,
-        """
-        SELECT v.*,u.public_id student_public_id,u.surname,u.name,gl.public_id lesson_public_id,
-          (SELECT count(*) FROM live_mark_operations op WHERE op.context_id=v.session_id
-           AND op.kind='mark' AND op.undone_at IS NULL
-           AND json_extract(op.after_json,'$.studentId')=u.public_id
-           AND json_extract(op.after_json,'$.lessonId')=gl.public_id) changed_count
-        FROM live_mark_visits v JOIN users u ON u.id=v.student_id
-        JOIN group_lessons gl ON gl.id=v.group_lesson_id
-        WHERE session_id=? ORDER BY updated_at DESC
-    """,
-        (session_id,),
-    )
+    with PROJECTION_DURATION.labels("live_visits").time():
+        return rows(connection, LIVE_VISITS_SQL, {"session_id": session_id})
 
 
 def insert_visit(connection, session_id, student_id, lesson, teacher_id, now):

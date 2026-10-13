@@ -66,4 +66,7 @@ services/NATS/HTTP/assets/journals, source/static rollback без data rollback.
 - Направление 1 реализовано: scope routing, очередь 4/trailing, targeted pending
   fences и bounded metrics. Focused backend 94 PASS, realtime unit 25 PASS.
   Общий gate остаётся впереди; production пока на `aae27430`.
-- Начато направление 2; статистика, final gate, rehearsal и выпуск pending.
+- Направление 2 реализовано: scoped winner/cells, прямой student lookup,
+  grouped visits, migration 0120 и реальные callback probes. Precedence/live
+  HTTP 155 PASS; scoped parity/index lifecycle/guard 7 PASS, yoyo up/down/up
+  отдельно PASS. Начата статистика; final gate/rehearsal/release pending.

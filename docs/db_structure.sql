@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: f0d262305c954586463d44cde2bf640971ec62fe819b21687de9144d26391e64
+-- Product schema SHA-256: e29873ba460eca6819e0b03f3d3fac12501ddaae14f2baede8807dee685cca18
 
 CREATE TABLE achievement_definitions
 (
@@ -3284,6 +3284,8 @@ CREATE INDEX lesson_window_schedule_sources_rule_idx
 CREATE INDEX lesson_windows_close_idx
     on lesson_windows (submission_closes_at, group_lesson_id);
 
+CREATE INDEX live_mark_operations_active_context ON live_mark_operations(context_id) WHERE kind='mark' AND undone_at IS NULL;
+
 CREATE INDEX live_mark_operations_history
     ON live_mark_operations(teacher_id, context_id, created_at DESC);
 
@@ -3380,6 +3382,8 @@ CREATE INDEX push_subscriptions_account_idx
 CREATE INDEX pwa_image_uploads_cleanup ON pwa_image_uploads(state, expires_at);
 
 CREATE INDEX pwa_sentry_admissions_budget_idx ON pwa_sentry_admissions (lane, occurred_at, signature);
+
+CREATE INDEX results_by_problem_student ON results(problem_id, student_id, id);
 
 CREATE INDEX results_by_student_problem
     on results (student_id, problem_id);
