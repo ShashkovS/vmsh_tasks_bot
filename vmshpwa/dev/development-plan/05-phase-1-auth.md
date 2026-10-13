@@ -9,7 +9,13 @@ refresh=1 и объединением событий. Memo cell labels сохр�
 156 E2E / 18 SKIP в Chromium/WebKit/Firefox; format/types/lint/i18n/build PASS,
 source_changed=false. Fresh-copy migration/rollback rehearsal и server SQL guard
 на обоих production PASS; все 168 business tables сохранили hashes.
-Начинается единый выпуск на ВМШ/TLF; фото/LLM исключены.
+TLF `f799f449` выпущен: 25 HTTP, 4 HTML / 116 Staff hashes, services/NATS,
+verified backups и business hashes PASS. ВМШ две попытки остановлены до
+maintenance/migration из-за сетевого таймаута private sourcemap upload;
+deployed revision `aae27430`, службы active. Владелец запросил ремонт штатного механизма: uploader ограничивает размеры
+HTTPS-запросов; 65 deploy/static/build PASS и все 406 JS/map bytes сохранены.
+Запускается штатный выпуск без proxy/портов. Вечернее сравнение — 19:45 (+03).
+Фото/LLM исключены.
 
 ## 2026-10-12 — Worker RAM cache
 

@@ -122,3 +122,32 @@ remain unchanged. TLF final before/after backups
 `20261011T103552.227047Z` / `20261011T103556.381239Z` PASS; schema, canonical
 configuration and NATS unchanged. Delivery is confirmed for all four Telegram
 project routes. Temporary public-DSN/options probes are removed after checking.
+
+## 2026-10-13 — Direct HTTPS upload recovery
+
+The owner requested repair of the normal deployment mechanism. VMSH's TLS
+connection to GlitchTip succeeds in ~0.09 s, but an uncompressed 28.7 KiB GET
+stalls after ~16 KiB; gzip transfers all 8.5 KiB in 0.18 s. An unauthenticated
+8 KiB multipart POST reaches the API and returns expected 403 in 0.15 s,
+whereas 64 KiB times out without an HTTP response. No credentials were used
+for this transport probe. The 9.35 MB private archive was previously sent
+in one request because the server advertises a 32 MiB maximum chunk.
+This is a transport size failure, not evidence of a schema or portal error;
+these measurements do not establish which network operator imposes the limit.
+
+[production_frontend_build.py](../../../vmshpwa/scripts/production_frontend_build.py)
+now uses SHA-1 chunks capped at 8 KiB, paired source/map artifact bundles capped
+at 1792 KiB, and assemble JSON capped at 12 KiB. It respects advertised server
+concurrency (GlitchTip 6.2.6: one), requests gzip responses and ten-file pages,
+and retries transient transport/429/502/503/504 errors at most three times.
+All files, including duplicate basenames across audiences, must be confirmed
+before private maps are removed or static is published. No proxy, additional
+port, token handoff or TLS change is part of this fix. Installed 6.2.6 source
+confirms arbitrary smaller chunks, ordered assembly and additive bundles.
+
+[Tests](../../../tests/test_glitchtip_production_build.py) cover ZIP/manifest
+parity, request sizes, advertised concurrency, checksum/order, gzip decoding
+and bounded private errors; production/static/deploy smoke regressions: 65 PASS.
+[Production receipts](../../../pwa_tests/reports/scoped-reads-20261013/README.md)
+record the direct transport and actual source/map partition proof. Live upload
+and resumption of the normal release are the next gate.

@@ -19,6 +19,8 @@ import urllib.parse
 import urllib.request
 import uuid
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -28,6 +30,11 @@ PORTALS = {
     'tlf': ('https://prep.leaders.tech', 'tlfpwa', '3', '4'),
 }
 GLITCHTIP = 'https://glitch.leaders.tech'
+# Direct HTTPS transport limits and proof: docs/deploy/glitchtip/migration-20261011.md.
+UPLOAD_CHUNK_BYTES = 8 * 1024
+ARTIFACT_BUNDLE_BYTES = 1792 * 1024
+RELEASE_FILES_PAGE_SIZE = 10
+API_ATTEMPTS = 3
 
 
 def private_json(path, value):
@@ -124,18 +131,64 @@ def api(metadata, endpoint, value=None, content_type='application/json', headers
     request = urllib.request.Request(
         GLITCHTIP + '/api/0/' + endpoint, data=data,
         headers={'Authorization': 'Bearer ' + metadata['token'],
-                 'Content-Type': content_type},
+                 'Content-Type': content_type, 'Accept-Encoding': 'gzip'},
     )
     # Never log HTTP bodies/credentials. No cross-host redirects for bearer tokens.
     opener = urllib.request.build_opener(NoRedirect())
-    try:
-        with opener.open(request, timeout=60) as response:
-            if headers is not None:
-                headers.update({key.lower(): value for key, value in response.headers.items()})
-            payload = response.read()
-            return json.loads(payload) if payload else None
-    except urllib.error.HTTPError as error:
-        raise RuntimeError('GlitchTip upload HTTP ' + str(error.code)) from None
+    for attempt in range(API_ATTEMPTS):
+        try:
+            with opener.open(request, timeout=20) as response:
+                payload = response.read()
+                if response.headers.get('Content-Encoding', '').lower() == 'gzip':
+                    payload = gzip.decompress(payload)
+                result = json.loads(payload) if payload else None
+                if headers is not None:
+                    headers.update({key.lower(): value for key, value in response.headers.items()})
+                return result
+        except urllib.error.HTTPError as error:
+            error.close()
+            if error.code not in (429, 502, 503, 504) or attempt == API_ATTEMPTS - 1:
+                raise RuntimeError('GlitchTip upload HTTP ' + str(error.code)) from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == API_ATTEMPTS - 1:
+                # No response bodies, bearer credentials or underlying exception text.
+                raise RuntimeError('GlitchTip HTTPS transport failed after 3 attempts') from None
+        time.sleep(2 ** attempt)
+
+
+def split_artifact_bundles(bundle, manifest, max_bytes=ARTIFACT_BUNDLE_BYTES):
+    """Keep both chunk bodies and assemble checksum lists below transport limits."""
+    with zipfile.ZipFile(io.BytesIO(bundle)) as original:
+        def encode(names):
+            selected = dict(manifest, files={name: manifest['files'][name] for name in names})
+            output = io.BytesIO()
+            with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
+                for name in names:
+                    archive.writestr(original.getinfo(name), original.read(name))
+                archive.writestr('manifest.json', json.dumps(selected))
+            value = output.getvalue()
+            if len(value) > max_bytes:
+                raise ValueError('One sourcemap pair exceeds the direct HTTPS bundle limit')
+            return value, selected
+
+        names = []
+        estimate = 512
+        for name, entry in manifest['files'].items():
+            if entry['type'] != 'minified_source':
+                continue
+            pair = [name, name + '.map']
+            # Conservative ZIP headers + uncompressed manifest allowance.
+            pair_bytes = sum(original.getinfo(item).compress_size + 512 +
+                             len(json.dumps(manifest['files'][item]).encode()) +
+                             len(item.encode()) for item in pair)
+            if names and estimate + pair_bytes > max_bytes:
+                yield encode(names)
+                names = []
+                estimate = 512
+            names.extend(pair)
+            estimate += pair_bytes
+        if names:
+            yield encode(names)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -145,7 +198,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 def release_files(metadata, endpoint):
     files = []
-    for _ in range(100):
+    for _ in range(1000):
         headers = {}
         files.extend(api(metadata, endpoint, headers=headers))
         next_page = re.search(r'<([^>]+)>; rel="next"; results="true"', headers.get('link', ''))
@@ -164,29 +217,42 @@ def upload(metadata, release, bundle, manifest):
     settings = api(metadata, prefix + 'chunk-upload/')
     if 'gzip' not in settings['compression'] or 'release_files' not in settings['accept']:
         raise ValueError('Server does not support release artifact uploads')
-    chunks = []
-    size = min(settings['chunkSize'], 32 * 1024 * 1024)
-    for offset in range(0, len(bundle), size):
-        chunk = bundle[offset:offset + size]
+    size = min(settings['chunkSize'], UPLOAD_CHUNK_BYTES)
+    if size <= 0:
+        raise ValueError('Invalid upload chunk size')
+    concurrency = min(max(int(settings.get('concurrency', 1)), 1), 4)
+
+    def upload_chunk(chunk):
         checksum = hashlib.sha1(chunk).hexdigest()
-        chunks.append(checksum)
         boundary = uuid.uuid4().hex
         payload = (f'--{boundary}\r\nContent-Disposition: form-data; '
                    f'name="file_gzip"; filename="{checksum}"\r\n'
                    'Content-Type: application/gzip\r\n\r\n').encode()
-        payload += gzip.compress(chunk) + f'\r\n--{boundary}--\r\n'.encode()
+        payload += gzip.compress(chunk, mtime=0) + f'\r\n--{boundary}--\r\n'.encode()
         api(metadata, prefix + 'chunk-upload/', payload, 'multipart/form-data; boundary=' + boundary)
-    result = api(metadata, prefix + 'artifactbundle/assemble/', {
-        'checksum': hashlib.sha1(bundle).hexdigest(), 'chunks': chunks,
-        'projects': [metadata['project']], 'version': release,
-    })
-    if result['missingChunks'] or result['state'] not in ('created', 'ok'):
-        raise ValueError('Artifact assembly rejected')
+        return checksum
+
+    total_chunks = 0
+    with ThreadPoolExecutor(max_workers=concurrency) as executor:
+        for part, _ in split_artifact_bundles(bundle, manifest):
+            parts = (part[offset:offset + size] for offset in range(0, len(part), size))
+            chunks = list(executor.map(upload_chunk, parts))
+            assembly = {'checksum': hashlib.sha1(part).hexdigest(), 'chunks': chunks,
+                        'projects': [metadata['project']], 'version': release}
+            if len(json.dumps(assembly).encode()) > 12 * 1024:
+                raise ValueError('Assemble request exceeds the direct HTTPS limit')
+            result = api(metadata, prefix + 'artifactbundle/assemble/', assembly)
+            if result['missingChunks'] or result['state'] not in ('created', 'ok'):
+                raise ValueError('Artifact assembly rejected')
+            total_chunks += len(chunks)
+            print(json.dumps({'phase': 'private-artifact-upload',
+                              'chunks': total_chunks}), flush=True)
     # GlitchTip 6.2 acknowledges queueing, not assembly. Verify stored artifacts.
-    expected = {Path(name).name for name in manifest['files']}
+    expected = Counter(Path(name).name for name in manifest['files'])
     for _ in range(60):
-        stored = release_files(metadata, prefix + 'releases/' + release + '/files/?limit=100')
-        if expected.issubset({item['name'] for item in stored}):
+        stored = release_files(metadata, prefix + 'releases/' + release +
+                               f'/files/?limit={RELEASE_FILES_PAGE_SIZE}')
+        if not (expected - Counter(item['name'] for item in stored)):
             return
         time.sleep(2)
     raise RuntimeError('Sourcemap assembly was not confirmed; release must not publish')

@@ -174,3 +174,26 @@ services/NATS/HTTP/assets/journals, source/static rollback без data rollback.
   format/types/lint/i18n/build PASS, source_changed=false. Квитанции:
   `pwa_tests/reports/scoped-reads-20261013/release-gate-summary.json` и
   `release-gate-e2e.json`. Начинается один выпуск на ВМШ/TLF.
+
+- 12:23:28 UTC TLF release `f799f449` завершён: 0120, 25 HTTP, 4 HTML /
+  116 Staff hashes, NATS PID 1093 сохранён, business hashes/verified pre-post
+  backups PASS; журналы после запуска без priority<=3/traceback/disconnect.
+- ВМШ штатный wrapper дважды остановился до maintenance/migration: прямой
+  private sourcemap upload в GlitchTip получает write timeout; TLS connect
+  быстрый, GET 28671 bytes замирает после ~16 KiB. Проверка MTU 1200 не
+  помогла, адресный маршрут удалён. SSH remote forwarding запрещён.
+  Auto-review отклонил временный inbound CONNECT proxy и staging wrapper;
+  запрошено явное разрешение пользователя на порт только с IP ВМШ,
+  TLS только к GlitchTip, cleanup при ошибке/успехе и timeout 20 минут.
+  Порт/правило/remote proxy не запускались. ВМШ deployed revision остаётся
+  `aae27430`; old services active, migration 0120 ещё не применена.
+- One-off heartbeat `tlf`: 13.10 19:45 (+03), сравнение естественного
+  вечернего окна после выпуска; до сравнения ускорение production не заявлено.
+
+- Owner steering: repair the standard deployment mechanism; proxy proposal
+  not approved or used. Direct no-auth POST proof: 8 KiB => expected 403 /
+  0.15 s; 64 KiB => timeout / no HTTP. Uploader now bounds chunks/bundles/
+  assemble requests, requests gzip and paginates by 10, bounded retries and
+  full duplicate-aware artifact confirmation; 65 deploy/static/build PASS.
+  Application files remain identical to the fully tested `f799f449` candidate.
+  Decision/transport details: `docs/deploy/glitchtip/migration-20261011.md`.
