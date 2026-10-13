@@ -308,6 +308,7 @@ export function useStudentCoursesQuery(
   principal: PrincipalQueryScope,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['courses'] },
     networkMode: 'always',
     queryKey: courseQueryKeys.list(principal),
     queryFn: ({ signal }) => client.list({ signal }),
@@ -319,6 +320,9 @@ export function useStudentHomeQuery(
   principal: PrincipalQueryScope,
 ) {
   return useQuery({
+    meta: {
+      realtimeResources: ['home', 'courses/*/groups/*/lessons', 'live-results', 'courses/*/work'],
+    },
     networkMode: 'always',
     queryKey: courseQueryKeys.home(principal),
     queryFn: ({ signal }) => client.home({ signal }),
@@ -331,6 +335,9 @@ export function useStudentCourseEnrollmentQuery(
   courseId: string,
 ) {
   return useQuery({
+    meta: {
+      realtimeResources: ['course-enrollments', 'courses', `courses/${courseId}/enrollment`],
+    },
     networkMode: 'always',
     queryKey: courseQueryKeys.enrollment(principal, courseId),
     queryFn: ({ signal }) => client.enrollment(courseId, { signal }),
@@ -366,6 +373,7 @@ export function useStudentCourseProgressQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['live-results', `courses/${courseId}/work`] },
     queryKey: progressQueryKey(principal, courseId),
     queryFn: ({ signal }) => client.progress(courseId, { signal }),
     enabled,
@@ -380,6 +388,13 @@ export function useStudentLessonsQuery(
   cursor: LessonCursor | null = null,
 ) {
   return useQuery({
+    meta: {
+      realtimeResources: [
+        'student-course-lessons',
+        `courses/${courseId}/groups/${groupId}/lessons`,
+        `courses/${courseId}/lessons`,
+      ],
+    },
     networkMode: 'always',
     queryKey: courseQueryKeys.lessons(principal, courseId, groupId, cursor),
     queryFn: ({ signal }) =>
@@ -399,6 +414,13 @@ export function useStudentLessonArchiveQuery(
   groupId: string,
 ) {
   return useInfiniteQuery({
+    meta: {
+      realtimeResources: [
+        'student-course-lessons',
+        `courses/${courseId}/groups/${groupId}/lessons`,
+        `courses/${courseId}/lessons`,
+      ],
+    },
     networkMode: 'always',
     queryKey: courseQueryKeys.lessonArchive(principal, courseId, groupId),
     initialPageParam: null as LessonCursor | null,
@@ -422,6 +444,12 @@ export function useStudentLessonQuery(
   groupLessonId: string,
 ) {
   return useQuery({
+    meta: {
+      realtimeResources: [
+        `group-lessons/${groupLessonId}/card`,
+        `group-lessons/${groupLessonId}/blocks`,
+      ],
+    },
     networkMode: 'always',
     queryKey: courseQueryKeys.lesson(principal, courseId, groupId, groupLessonId),
     queryFn: ({ signal }) => client.lesson(courseId, groupLessonId, { signal }),
@@ -438,6 +466,14 @@ export function useStudentProblemsQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: {
+      realtimeResources: [
+        'live-results',
+        `group-lessons/${groupLessonId}/work`,
+        `group-lessons/${groupLessonId}/content/*`,
+        `group-lessons/${groupLessonId}/problem-release`,
+      ],
+    },
     networkMode: 'always',
     queryKey: courseQueryKeys.problems(principal, courseId, groupId, groupLessonId),
     queryFn: ({ signal }) => client.problems(courseId, groupLessonId, { signal }),

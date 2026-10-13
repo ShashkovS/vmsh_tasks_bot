@@ -66,6 +66,58 @@ async def test_old_inflight_fill_is_never_served_after_publication():
 
 
 @pytest.mark.asyncio
+async def test_addressed_invalidation_does_not_restart_unrelated_inflight_read():
+    cache = WorkerReadCache()
+    started, release = asyncio.Event(), asyncio.Event()
+    calls = 0
+
+    async def load():
+        nonlocal calls
+        calls += 1
+        started.set()
+        await release.wait()
+        return "other lesson"
+
+    reader = asyncio.create_task(cache.get("unrelated", load))
+    await started.wait()
+    cache.invalidate(lambda key: key == "changed")
+    release.set()
+    assert await reader == "other lesson"
+    assert await cache.get("unrelated", load) == "other lesson"
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_course_group_list_invalidation_preserves_other_groups_and_work_events():
+    cache = CachedContentRepository(SimpleNamespace())
+    keys = [("lessons", "c1", "g1"), ("lessons", "c1", "g2"), ("lessons", "c2", "g1")]
+    for key in keys:
+        await cache.cache.get(key, AsyncMock(return_value="list"))
+    cache.invalidate(["courses/c1/work", "courses/c1/statistics"])
+    assert set(cache.cache.entries) == set(keys)
+    cache.invalidate(["courses/c1/groups/g1/lessons", "student-course-lessons"])
+    assert set(cache.cache.entries) == set(keys[1:])
+
+
+@pytest.mark.asyncio
+async def test_invalidated_statistics_fill_can_be_returned_but_never_retained():
+    cache = WorkerReadCache()
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def load():
+        started.set()
+        await release.wait()
+        return "snapshot"
+
+    reader = asyncio.create_task(cache.get("statistics", load, retry_invalidated=False))
+    await started.wait()
+    cache.invalidate(lambda key: key == "statistics")
+    release.set()
+    assert await reader == "snapshot"
+    assert not cache.entries
+
+
+@pytest.mark.asyncio
 async def test_cancelled_waiter_does_not_cancel_shared_read():
     cache = WorkerReadCache()
     started, release = asyncio.Event(), asyncio.Event()

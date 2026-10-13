@@ -243,8 +243,8 @@ describe('RealtimeConnection', () => {
     expect(querySpies.invalidateActiveQueries).toHaveBeenCalledWith(['lesson.current', 'news'])
   })
 
-  it('routes ordinary invalidations by resource while preserving conservative queries', () => {
-    expect(shouldInvalidateRealtimeQuery(undefined, ['review-queue'])).toBe(true)
+  it('routes ordinary invalidations only to explicit resource dependencies', () => {
+    expect(shouldInvalidateRealtimeQuery(undefined, ['review-queue'])).toBe(false)
     expect(
       shouldInvalidateRealtimeQuery({ realtimeResources: ['review-queue'] }, ['review-queue']),
     ).toBe(true)
@@ -252,6 +252,30 @@ describe('RealtimeConnection', () => {
       shouldInvalidateRealtimeQuery({ realtimeResources: ['review-lease'] }, ['review-queue']),
     ).toBe(false)
     expect(shouldInvalidateRealtimeQuery({ realtimeResources: [] }, ['review-queue'])).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['group-lessons/one/content/*'] }, [
+        'banners',
+      ]),
+    ).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['group-lessons/one/content/*'] }, [
+        'group-lessons/two/content/condition',
+      ]),
+    ).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['group-lessons/one/content/*'] }, [
+        'group-lessons/one/content/condition',
+      ]),
+    ).toBe(true)
+    expect(
+      shouldInvalidateRealtimeQuery(
+        { realtimeResources: ['student-course-lessons', 'courses/one/groups/g1/lessons'] },
+        ['student-course-lessons', 'courses/two/groups/g1/lessons'],
+      ),
+    ).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['live-results'] }, ['live-results']),
+    ).toBe(true)
   })
 
   it('fails closed on malformed frames and reconnects with only the in-memory cursor', async () => {

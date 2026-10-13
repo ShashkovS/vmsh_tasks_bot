@@ -201,6 +201,7 @@ export function useTestAttemptRecheckPreviewQuery(
   problemId: string,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['test-rechecks'] },
     queryKey: testSubmissionQueryKeys.recheck(principal, problemId),
     queryFn: ({ signal }) => client.preview(problemId, { signal }),
   })

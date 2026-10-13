@@ -75,6 +75,7 @@ export function useAuditQuery(
   filter: AuditFilter,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['audit'] },
     queryKey: auditQueryKeys.list(principal, filter),
     queryFn: ({ signal }) => client.list(filter, signal),
   })

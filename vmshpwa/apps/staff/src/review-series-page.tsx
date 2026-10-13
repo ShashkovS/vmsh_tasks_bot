@@ -126,6 +126,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
   const conditionEntry = works[0]?.lease.evidenceBranches.find((b) => b.queueId === conditionQueue)
     ?.thread?.entries[0]?.entryId
   const condition = useQuery({
+    meta: { realtimeResources: ['review-queue'] },
     queryKey: ['series-condition', principal.accountId, problemId, conditionEntry],
     queryFn: () => client.seriesCondition(problemId, conditionEntry),
   })

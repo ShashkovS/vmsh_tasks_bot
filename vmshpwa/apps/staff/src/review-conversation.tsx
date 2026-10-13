@@ -20,6 +20,7 @@ export function ReviewConversation({
   threadVersion: number
 }) {
   const query = useInfiniteQuery({
+    meta: { realtimeResources: ['review-queue', 'problems/*/thread'] },
     queryKey: ['review-conversation', namespace, accountId, reviewId, threadVersion],
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam, signal }) => client.conversation(reviewId, pageParam, { signal }),

@@ -1,5 +1,13 @@
 # Этап 1. Вход, сессии, principal и права
 
+## 2026-10-13 — Адресные обновления и scoped SQL
+
+[Утверждённый план](../../../docs/performance/scoped-reads-20261013.md): resource routing/общая очередь refetch,
+scoped отметки/visits и статистика с RAM TTL до 60 секунд. Три коммита,
+общий release gate, один выпуск на ВМШ/TLF. Направление 1 реализовано,
+focused Python 94 / realtime unit 25 PASS; начат scoped SQL отметок;
+production пока `aae27430`, фото/LLM исключены.
+
 ## 2026-10-12 — Worker RAM cache
 
 По решению владельца auth/grants допускают отставание до 15 минут.

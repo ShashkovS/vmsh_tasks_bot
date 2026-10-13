@@ -970,6 +970,28 @@ async def on_written_attachment_startup(app: web.Application) -> None:
     )
 
 
+async def lesson_dependency_resources(app, public_id):
+    from db_methods.pwa.realtime_resources import lesson_resources
+
+    database = app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        return []
+    return await database.factory.run_read_async(
+        lambda connection: lesson_resources(connection, public_id)
+    )
+
+
+async def work_dependency_resources(app, public_ids):
+    from db_methods.pwa.realtime_resources import problem_work_resources
+
+    database = app.get(PWA_DATABASE)
+    if database is None or database.factory is None or not public_ids:
+        return []
+    return await database.factory.run_read_async(
+        lambda connection: problem_work_resources(connection, public_ids)
+    )
+
+
 async def publish_content_invalidation(
     app: web.Application,
     scope: GroupLessonContentScope,
@@ -978,7 +1000,11 @@ async def publish_content_invalidation(
 ) -> None:
     """Best-effort realtime fan-out after an authoritative content commit."""
 
-    resources = [f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}"]
+    resources = [
+        f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}",
+        f"courses/{scope.course_public_id}/groups/{scope.group_public_id}/lessons",
+        *await lesson_dependency_resources(app, scope.group_lesson_public_id),
+    ]
     if reason == "lesson-title-changed":
         # Titles belong to course lessons shared across group lesson cards.
         resources.append(f"courses/{scope.course_public_id}/lessons")
@@ -1047,6 +1073,7 @@ async def publish_test_submission_invalidation(
     resources = [f"problems/{problem_public_id}/test-attempts"]
     if include_live_results:
         resources.append("live-results")
+        resources.extend(await work_dependency_resources(app, (problem_public_id,)))
     payload: dict[str, object] = {
         "resources": resources,
         "reason": reason,
@@ -1206,9 +1233,15 @@ async def publish_problem_synonym_invalidation(
 ) -> None:
     """Tell affected audiences to refetch SQLite-backed synonym projections."""
 
+    from db_methods.pwa.realtime_resources import course_lesson_dependencies
+    database = app.get(PWA_DATABASE)
+    dependencies = [] if database is None or database.factory is None else await database.factory.run_read_async(
+        lambda connection: course_lesson_dependencies(connection, course_lesson_public_id)
+    )
     messages = (
         {
             "resources": [
+                *dependencies,
                 f"course-lessons/{course_lesson_public_id}/problem-synonyms",
                 "review-queue",
             ],
@@ -1217,6 +1250,7 @@ async def publish_problem_synonym_invalidation(
         },
         {
             "resources": [
+                *dependencies,
                 f"courses/{course_public_id}/lessons/{course_lesson_public_id}/problems",
                 f"courses/{course_public_id}/progress",
             ],
@@ -1225,6 +1259,7 @@ async def publish_problem_synonym_invalidation(
         },
         {
             "resources": [
+                *dependencies,
                 f"courses/{course_public_id}/lessons/{course_lesson_public_id}/problems",
                 f"courses/{course_public_id}/progress",
             ],
@@ -1261,7 +1296,10 @@ async def publish_written_submission_invalidation(
     await app[PWA_BROKER].publish(
         NATS_PWA_INVALIDATE,
         {
-            "resources": [f"problems/{problem_public_id}/thread"],
+            "resources": [
+                f"problems/{problem_public_id}/thread",
+                *await work_dependency_resources(app, (problem_public_id,)),
+            ],
             "reason": reason,
             "audience": AuthAudience.STUDENT.value,
             "accountId": account_public_id,
@@ -1314,6 +1352,7 @@ async def publish_review_owner_invalidation(
         f"problems/{problem_public_id}/thread"
         for problem_public_id in problem_public_ids
     ]
+    resources.extend(await work_dependency_resources(app, problem_public_ids))
     student_resources = (
         [*resources, "notification-events"]
         if include_notification_events
@@ -1511,6 +1550,7 @@ async def publish_lesson_block_invalidation(
                 "resources": [
                     f"group-lessons/{group_lesson_public_id}/blocks",
                     f"group-lessons/{group_lesson_public_id}/blocks/staff",
+                    *await lesson_dependency_resources(app, group_lesson_public_id),
                     "student-course-lessons",
                     "family-worksheets",
                 ],
@@ -1868,7 +1908,7 @@ def configure(
     app.middlewares.append(pwa_error_middleware)
     app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
-    app[PWA_BRANDING_CACHE] = WorkerReadCache(ttl_seconds=900, max_entries=1, max_bytes=32768)
+    app[PWA_BRANDING_CACHE] = WorkerReadCache(ttl_seconds=900, max_entries=1, max_bytes=32768, metric_name="branding")
     if classroom_telegram_sender is None and any(
         getattr(adapter, "__name__", "") == "apps.tg_bot"
         for adapter in app.get(ENABLED_ADAPTERS, ())

@@ -31,6 +31,7 @@ export function StaffTestingPage({ view = 'tasks' }: { view?: 'tasks' | 'news' |
     return payload
   }
   const courses = useQuery({
+    meta: { realtimeResources: ['courses', 'group-lessons/*/content/*', 'test-rechecks'] },
     queryKey: ['staff-testing-courses', principal.accountId],
     queryFn: async () => staffTestingCoursesSchema.parse(await request('courses')),
   })

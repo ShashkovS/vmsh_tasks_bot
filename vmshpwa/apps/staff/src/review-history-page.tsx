@@ -77,6 +77,7 @@ export function StaffReviewHistoryPage({
       .map(([key, value]) => [key, String(value)]),
   ) as Record<string, string>
   const history = useQuery({
+    meta: { realtimeResources: ['review-queue'] },
     queryKey: ['review-history', principal.accountId, query],
     queryFn: ({ signal }) => client.history(query, { signal }),
   })
@@ -340,6 +341,7 @@ export function CompletedReviewCard({
     [auth],
   )
   const query = useQuery({
+    meta: { realtimeResources: ['review-queue'] },
     queryKey: [
       'review-history-detail',
       principal.accountId,

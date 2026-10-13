@@ -175,6 +175,7 @@ export function AuthenticationProvider({
   }, [offlineStore])
 
   const currentSessionQuery = useQuery({
+    meta: { realtimeResources: ['auth', 'courses', 'course-enrollments'] },
     networkMode: offlineStore ? 'always' : 'online',
     queryKey,
     queryFn: async ({ signal }) => {

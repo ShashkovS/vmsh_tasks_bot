@@ -127,11 +127,13 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
   const scrollRequested = useRef(false)
   const scope = principal.accountId
   const directory = useQuery({
+    meta: { realtimeResources: ['live-results', 'problems/*/thread'] },
     queryKey: ['student-results', scope, 'directory'],
     queryFn: client.directory,
     staleTime: 60_000,
   })
   const overview = useQuery({
+    meta: { realtimeResources: ['live-results', 'problems/*/thread'] },
     queryKey: ['student-results', scope, 'overview', search.student, search.course],
     queryFn: () => client.overview(search.student!, search.course),
     enabled: Boolean(search.student),
@@ -141,6 +143,7 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
   const number =
     search.lesson ?? data?.lessons.find((l) => l.hasActivity)?.number ?? data?.lessons[0]?.number
   const lesson = useQuery({
+    meta: { realtimeResources: ['live-results', 'problems/*/thread'] },
     queryKey: ['student-results', scope, 'lesson', search.student, course, number],
     queryFn: () => client.lesson(search.student!, course!, number!),
     enabled: Boolean(search.student && course && number !== undefined),

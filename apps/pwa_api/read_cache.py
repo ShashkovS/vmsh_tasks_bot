@@ -13,7 +13,7 @@ class CachedContentRepository:
     def __init__(self, repository, *, available=lambda: True):
         self.repository = repository
         self.available = available
-        self.cache = WorkerReadCache()
+        self.cache = WorkerReadCache(metric_name="content")
 
     def __getattr__(self, name):
         return getattr(self.repository, name)
@@ -21,7 +21,6 @@ class CachedContentRepository:
     def invalidate(self, resources=None):
         if resources is None or any(
             item == "courses"
-            or item.startswith("courses/")
             or item.startswith("problems/")
             and not item.endswith(("/test-attempts", "/thread"))
             for item in resources
@@ -36,12 +35,28 @@ class CachedContentRepository:
             and item.split("/")[2]
             in {"content", "blocks", "problem-release", "oral-window"}
         }
-        if lessons or "student-course-lessons" in resources:
+        courses = {
+            item.split("/")[1] for item in resources
+            if item.startswith("courses/") and len(item.split("/")) >= 3
+            and item.split("/")[-1] in {"lessons", "problems", "settings", "schedule"}
+        }
+        groups = {
+            (parts[1], parts[3]) for item in resources
+            if len(parts := item.split("/")) == 5
+            and parts[0] == "courses" and parts[2] == "groups"
+            and parts[4] == "lessons"
+        }
+        course_wide = courses - {course for course, _ in groups}
+        broad_lists = "student-course-lessons" in resources and not courses
+        if lessons or courses or broad_lists:
             self.cache.invalidate(
                 lambda key: (
-                    key[0] == "lessons"
+                    key[0] == "lessons" and (
+                        broad_lists or key[1] in course_wide
+                        or (key[1], key[2]) in groups
+                    )
                     or key[0] in {"lesson", "problems"}
-                    and key[-1] in lessons
+                    and (key[-1] in lessons or key[1] in course_wide)
                     or key[0] in {"scope", "content"}
                     and key[1] in lessons
                 )
@@ -131,4 +146,9 @@ class InvalidatingBroker:
 
     async def publish(self, topic, payload):
         self.invalidate(topic, payload)
-        await self.broker.publish(topic, payload)
+        resources = payload.get("resources") if isinstance(payload, dict) else None
+        if topic == "pwa_invalidate" and isinstance(resources, list) and len(resources) > 128:
+            for offset in range(0, len(resources), 128):
+                await self.broker.publish(topic, {**payload, "resources": resources[offset:offset + 128]})
+        else:
+            await self.broker.publish(topic, payload)

@@ -165,6 +165,7 @@ export function useFamilyChildCoursesQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['courses', 'course-enrollments'] },
     queryKey: familyCourseQueryKeys.child(principal, studentId),
     queryFn: ({ signal }) => client.childCourses(studentId, signal),
     enabled,
@@ -178,6 +179,9 @@ export function useFamilyChildHomeQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: {
+      realtimeResources: ['home', 'courses/*/groups/*/lessons', 'live-results', 'courses/*/work'],
+    },
     queryKey: familyCourseQueryKeys.home(principal, studentId),
     queryFn: ({ signal }) => client.childHome(studentId, signal),
     enabled,
@@ -215,6 +219,12 @@ export function useFamilyWorksheetQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: {
+      realtimeResources: [
+        'family-worksheets',
+        `courses/${courseId}/groups/${groupId}/lesson-numbers/${lessonNumber}/*`,
+      ],
+    },
     queryKey: [
       ...familyCourseQueryKeys.home(principal, studentId),
       'worksheet',

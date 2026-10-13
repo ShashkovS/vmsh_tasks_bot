@@ -110,6 +110,7 @@ export function useProblemSynonymCandidatesQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: { realtimeResources: [`course-lessons/${courseLessonId}/synonyms`] },
     queryKey: problemSynonymQueryKeys.lesson(principal, courseLessonId),
     queryFn: ({ signal }) => client.candidates(courseLessonId, { signal }),
     enabled,

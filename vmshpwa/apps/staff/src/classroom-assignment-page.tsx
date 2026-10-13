@@ -54,6 +54,7 @@ function AssignmentDelivery({
   const queryClient = useQueryClient()
   const latestQueryKey = classroomQueryKeys.latestDelivery(principal, plan.publicId)
   const latestDelivery = useQuery({
+    meta: { realtimeResources: ['classroom-assignments', 'classroom-assignment-plans'] },
     queryKey: latestQueryKey,
     queryFn: ({ signal }) => client.getLatestAssignmentDelivery(plan.publicId, { signal }),
   })
@@ -243,6 +244,7 @@ function AssignmentEditor({
     'history',
   ] as const
   const historyQuery = useQuery({
+    meta: { realtimeResources: ['classroom-assignments', 'classroom-assignment-plans'] },
     queryKey:
       historyStudent === null
         ? [...historyQueryRoot, 'closed']

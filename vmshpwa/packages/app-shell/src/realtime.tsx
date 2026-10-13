@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, type Query } from '@tanstack/react-query'
 import {
   authQueryKeys,
   parseRuntimeConfigForAudience,
@@ -20,7 +20,7 @@ import {
 } from 'react'
 
 import { useAuthentication } from './auth-context'
-import { resyncActiveQueries, waitForQueryResync } from './query-resync'
+import { enqueueQueryRefetches, resyncActiveQueries } from './query-resync'
 
 const SOCKET_OPEN = 1
 const CLOSE_NORMAL = 1000
@@ -108,21 +108,35 @@ export interface RealtimeConnectionOptions {
 }
 
 /**
- * Unlabelled queries retain the conservative Phase-1 behaviour. Queries that
- * opt into resource routing are invalidated only by matching live resources;
- * an empty list deliberately means reconnect-only refetching.
+ * Explicit dependencies only; scoped-reads-20261013.md. Broad legacy tokens
+ * are domain fallbacks when an event carries no more precise resource.
  */
 export function shouldInvalidateRealtimeQuery(
   meta: Record<string, unknown> | undefined,
   resources: readonly string[],
 ): boolean {
-  if (resources.includes('live-results')) return true
   const configured = meta?.realtimeResources
   if (!Array.isArray(configured) || !configured.every((resource) => typeof resource === 'string')) {
-    return true
+    return false
   }
-  const changed = new Set(resources)
-  return configured.some((resource) => changed.has(resource))
+  const fallbacks: Record<string, (resource: string) => boolean> = {
+    'student-course-lessons': (resource) =>
+      /^courses\/[^/]+\/(?:groups\/[^/]+\/)?lessons$/.test(resource),
+    'family-worksheets': (resource) => resource.includes('/lesson-numbers/'),
+    'live-results': (resource) => resource.endsWith('/work'),
+  }
+  const changed = resources.filter(
+    (resource) => !fallbacks[resource] || !resources.some(fallbacks[resource]!),
+  )
+  return configured.some((resource: string) => {
+    const pattern = new RegExp(
+      `^${resource
+        .split('*')
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*')}$`,
+    )
+    return changed.some((item) => pattern.test(item))
+  })
 }
 
 const RealtimeConnectionContext = createContext<RealtimeConnectionValue | null>(null)
@@ -729,13 +743,24 @@ export function RealtimeProvider({
           await resyncActiveQueries(queryClient)
         },
         invalidateActiveQueries: async (resources) => {
-          // Changes arriving during a full resync still require a newer read.
-          await waitForQueryResync(queryClient)
+          const predicate = (query: Query) => shouldInvalidateRealtimeQuery(query.meta, resources)
           await queryClient.invalidateQueries({
-            predicate: (query) => shouldInvalidateRealtimeQuery(query.meta, resources),
-            refetchType: 'active',
-            type: 'active',
+            predicate,
+            refetchType: 'none',
           })
+          const massPublication = resources.some(
+            (resource) => resource === 'banners' || resource.includes('/content/'),
+          )
+          await enqueueQueryRefetches(
+            queryClient,
+            queryClient.getQueryCache().findAll({ type: 'active', predicate }),
+            {
+              invalidation: true,
+              delay: massPublication
+                ? Math.floor((environment?.random() ?? Math.random()) * 251)
+                : 0,
+            },
+          )
         },
         refetchAuthentication: async () => {
           try {

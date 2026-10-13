@@ -59,6 +59,7 @@ export function useStaffDashboardQuery(
   view: StaffDashboardView = 'current',
 ) {
   return useQuery({
+    meta: { realtimeResources: ['courses', 'home', 'review-queue'] },
     queryKey: [...staffDashboardQueryKey(principal), view],
     queryFn: ({ signal }) => client.get(view, signal),
   })

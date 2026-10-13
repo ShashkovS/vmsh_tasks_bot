@@ -29,6 +29,7 @@ export function BrandingPage() {
 
 function BrandingSettings() {
   const query = useQuery({
+    meta: { realtimeResources: ['branding'] },
     queryKey: ['instance-branding'],
     queryFn: ({ signal }) => fetchBranding('staff', signal),
   })

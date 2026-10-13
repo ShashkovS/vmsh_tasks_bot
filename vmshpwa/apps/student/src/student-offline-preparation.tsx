@@ -55,6 +55,14 @@ function Preparation({ ownerId }: { ownerId: string }) {
   const principal = authenticationStatePrincipal(authentication.state)!
   const verified = authentication.state.status === 'authenticated'
   const query = useQuery({
+    meta: {
+      realtimeResources: [
+        'student-course-lessons',
+        'courses/*/groups/*/lessons',
+        'live-results',
+        'courses/*/work',
+      ],
+    },
     queryKey: [...courseQueryKeys.offlineLessons(principal), verified],
     networkMode: 'always',
     retry: false,

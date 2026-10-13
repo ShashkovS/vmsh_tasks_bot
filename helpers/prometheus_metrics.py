@@ -25,6 +25,21 @@ METRICS_PATH = "/metrics"
 UNMATCHED_ROUTE = "unmatched"
 _WEBSOCKET_HANDLER_ATTRIBUTE = "__vmsh_websocket_handler__"
 
+# Fixed cache/query categories only; scoped-reads-20261013.md governs callers.
+READ_CACHE_REQUESTS = Counter(
+    "vmsh_read_cache_requests", "Worker projection cache operations.",
+    ("cache", "outcome"),
+)
+READ_CACHE_BYTES = Gauge(
+    "vmsh_read_cache_bytes", "Estimated retained worker projection bytes.",
+    ("cache",), multiprocess_mode="livesum",
+)
+PROJECTION_DURATION = Histogram(
+    "vmsh_projection_duration_seconds", "Scoped SQL and report computation time.",
+    ("projection",),
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5),
+)
+
 CLIENT_MEDIA_FAILURES = Counter(
     "vmsh_client_media_load_failures",
     "Rate-limited browser photo load failure reports, not all failed images.",

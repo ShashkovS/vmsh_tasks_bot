@@ -315,6 +315,7 @@ export function ResultHistory({
 }) {
   const [revision, setRevision] = useState<string | null>(null)
   const query = useInfiniteQuery({
+    meta: { realtimeResources: ['live-results', 'problems/*/thread'] },
     queryKey: ['student-results', scope, 'history', student, problem],
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => client.history(student, problem, pageParam),
@@ -323,6 +324,7 @@ export function ResultHistory({
     staleTime: 30_000,
   })
   const condition = useQuery({
+    meta: { realtimeResources: ['live-results', 'problems/*/thread'] },
     queryKey: ['student-results', scope, 'condition', student, problem, revision],
     queryFn: () => client.condition(student, problem, revision!),
     enabled: revision !== null,

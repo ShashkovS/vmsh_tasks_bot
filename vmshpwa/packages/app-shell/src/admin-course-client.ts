@@ -630,6 +630,7 @@ export function useAdminCourseCatalogQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['courses'] },
     queryKey: adminCourseCatalogQueryKey(principal, seasonId),
     queryFn: ({ signal }) => client.list({ ...(seasonId ? { seasonId } : {}), signal }),
     enabled,
@@ -642,6 +643,7 @@ export function useAdminCourseScheduleQuery(
   courseId: string | null,
 ) {
   return useQuery({
+    meta: { realtimeResources: [`courses/${courseId}/schedule`] },
     queryKey:
       courseId === null
         ? ['admin-course-schedule', 'disabled']
@@ -657,6 +659,7 @@ export function useCourseRuntimeSettingsQuery(
   courseId: string,
 ) {
   return useQuery({
+    meta: { realtimeResources: [`courses/${courseId}/settings`] },
     queryKey: courseRuntimeSettingsQueryKey(principal, courseId),
     queryFn: ({ signal }) => client.getCourseRuntimeSettings(courseId, signal),
   })
@@ -668,6 +671,7 @@ export function useAdminGroupScheduleQuery(
   groupId: string | null,
 ) {
   return useQuery({
+    meta: { realtimeResources: [`groups/${groupId}/schedule`] },
     queryKey:
       groupId === null
         ? ['admin-group-schedule', 'disabled']
@@ -682,6 +686,7 @@ export function useAdminStudentEnrollmentsQuery(
   principal: PrincipalQueryScope,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['admin-student-enrollments'] },
     queryKey: adminStudentEnrollmentsQueryKey(principal),
     queryFn: ({ signal }) => client.listStudentEnrollments(signal),
   })
@@ -693,6 +698,7 @@ export function useStaffAccessQuery(
   enabled = true,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['auth', 'staff-access'] },
     queryKey: staffAccessQueryKey(principal),
     queryFn: ({ signal }) => client.listStaffAccess(signal),
     enabled,

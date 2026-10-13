@@ -525,6 +525,7 @@ export function useWrittenThreadQuery(
   problemId: string,
 ) {
   return useQuery({
+    meta: { realtimeResources: [`problems/${problemId}/thread`] },
     queryKey: writtenSubmissionQueryKeys.thread(principal, problemId),
     queryFn: ({ signal }) => client.thread(problemId, { signal }),
   })
