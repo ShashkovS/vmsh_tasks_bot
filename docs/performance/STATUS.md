@@ -2,12 +2,14 @@
 
 ## 2026-10-13 — Адресные обновления и scoped SQL
 
-[Утверждённый план](scoped-reads-20261013.md): resource routing/общая очередь refetch,
-scoped отметки/visits и статистика с RAM TTL до 60 секунд. Три коммита,
-общий release gate, один выпуск на ВМШ/TLF. Направление 1 реализовано,
-focused Python 94 / realtime unit 25 PASS. Scoped SQL отметок и migration
-0120 реализованы: precedence/live HTTP 155 и parity/guard 7 PASS; начата статистика;
-production пока `aae27430`, фото/LLM исключены.
+[Утверждённый план](scoped-reads-20261013.md) реализован: адресные ресурсы и очередь refetch ≤4,
+scoped отметки/visits, migration 0120 и статистика с RAM TTL ≤60 секунд,
+refresh=1 и объединением событий. Memo cell labels сохраняют прежние пороги.
+Полный release gate PASS: 3031 Python / 12 SKIP, 1128 frontend, 380 Storybook,
+156 E2E / 18 SKIP в Chromium/WebKit/Firefox; format/types/lint/i18n/build PASS,
+source_changed=false. Fresh-copy migration/rollback rehearsal и server SQL guard
+на обоих production PASS; все 168 business tables сохранили hashes.
+Начинается единый выпуск на ВМШ/TLF; фото/LLM исключены.
 
 ## 2026-10-12 — RAM-кеш общих чтений и auth
 

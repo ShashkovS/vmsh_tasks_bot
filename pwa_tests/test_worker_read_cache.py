@@ -332,3 +332,84 @@ async def test_auth_session_expiry_missing_session_and_logout_control():
     assert await authenticate(service, cookie) is None
     assert await authenticate(service, cookie) is None
     assert repository.get_current_session.await_count == 4
+
+
+@pytest.mark.asyncio
+async def test_card_title_invalidation_keeps_other_lessons_and_immutable_materials():
+    repository = CachedContentRepository(SimpleNamespace())
+    keys = [
+        ("lesson", "c", "g", "one"),
+        ("lesson", "c", "g", "two"),
+        ("content", "one", "condition"),
+        ("scope", "one"),
+    ]
+    for key in keys:
+        await repository.cache.get(key, AsyncMock(return_value="cached"))
+    repository.invalidate(["group-lessons/one/card"])
+    assert set(repository.cache.entries) == set(keys[1:])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("owner_count", [1, 130])
+async def test_chunked_owner_events_preserve_every_dependency_and_fence_before_send(
+    owner_count,
+):
+    owners = [f"students/u-{index}/work" for index in range(owner_count)]
+    dependent = [f"group-lessons/gl-{index}/work" for index in range(257)]
+    invalidated, sent = [], []
+
+    async def publish(topic, payload):
+        assert set(dependent).issubset(
+            {r for event in invalidated for r in event["resources"]}
+        )
+        sent.append(payload)
+
+    sender = InvalidatingBroker(
+        SimpleNamespace(publish=publish),
+        lambda topic, payload: invalidated.append(payload),
+    )
+    payload = {
+        "audience": "family",
+        "accountId": "a-2",
+        "resources": owners + dependent,
+    }
+    await sender.publish("pwa_invalidate", payload)
+    assert invalidated == sent
+    for owner in owners:
+        packets = [event for event in sent if owner in event["resources"]]
+        assert set(dependent).issubset(
+            {r for event in packets for r in event["resources"]}
+        )
+    assert all(len(event["resources"]) <= 128 for event in sent)
+    assert all(any(owner in event["resources"] for owner in owners) for event in sent)
+    assert all(
+        event["accountId"] == "a-2" and event["audience"] == "family" for event in sent
+    )
+
+
+@pytest.mark.asyncio
+async def test_review_reaction_keeps_statistics_and_work_views_cached(monkeypatch):
+    work = AsyncMock(return_value=["courses/c-1/statistics", "group-lessons/gl-1/work"])
+    monkeypatch.setattr(pwa_app, "work_dependency_resources", work)
+    monkeypatch.setattr(
+        pwa_app,
+        "owner_work_resources",
+        AsyncMock(return_value=(["students/u-101/work"], ())),
+    )
+    broker = SimpleNamespace(publish=AsyncMock())
+    app = web.Application()
+    app[pwa_app.PWA_BROKER] = broker
+    await pwa_app.publish_review_owner_invalidation(
+        app,
+        account_public_ids=("a-1",),
+        family_account_public_ids=("a-2",),
+        problem_public_ids=("p-1",),
+        reason="written-review-student-reaction-changed",
+    )
+    work.assert_not_awaited()
+    events = [call.args[1] for call in broker.publish.await_args_list]
+    assert [event["accountId"] for event in events] == ["a-1", "a-2"]
+    assert all(
+        event["resources"] == ["problems/p-1/thread", "students/u-101/work"]
+        for event in events
+    )

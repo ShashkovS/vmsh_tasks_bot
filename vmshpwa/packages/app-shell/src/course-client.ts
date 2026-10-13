@@ -1,3 +1,4 @@
+import { homeRealtimeResources } from './realtime-resources'
 import { pwaOfflineReadFetch } from '@vmsh/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -319,9 +320,13 @@ export function useStudentHomeQuery(
   client: Pick<StudentCourseClient, 'home'>,
   principal: PrincipalQueryScope,
 ) {
+  const previous = useQueryClient().getQueryData<StudentHomeResponse>(
+    courseQueryKeys.home(principal),
+  )
   return useQuery({
     meta: {
-      realtimeResources: ['home', 'courses/*/groups/*/lessons', 'live-results', 'courses/*/work'],
+      realtimeResources: homeRealtimeResources(previous?.courses),
+      realtimeStudentId: previous?.studentId,
     },
     networkMode: 'always',
     queryKey: courseQueryKeys.home(principal),

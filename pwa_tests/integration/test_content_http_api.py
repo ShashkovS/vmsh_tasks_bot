@@ -1179,6 +1179,8 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
     assert cursors_after_created == {
         **cursors_before,
         "student": cursors_before["student"] + 1,
+        "family": cursors_before["family"] + 1,
+        "staff": cursors_before["staff"] + 1,
     }
 
     replay = await fixture.client.post(
@@ -1220,6 +1222,8 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
     assert fixture.client.app[pwa_app.PWA_STATE]["cursors"] == {
         **cursors_after_created,
         "student": cursors_after_created["student"] + 1,
+        "family": cursors_after_created["family"] + 1,
+        "staff": cursors_after_created["staff"] + 1,
     }
 
     history_response = await fixture.client.get(
@@ -1463,6 +1467,7 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
     assert cursors_after_submit == {
         **cursors_after_create,
         "student": cursors_after_create["student"] + 1,
+        "family": cursors_after_create["family"] + 1,
         "staff": cursors_after_create["staff"] + 1,
     }
 

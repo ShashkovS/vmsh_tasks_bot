@@ -19,7 +19,7 @@ def course_lesson_dependencies(connection, public_id):
 
 def lesson_resources(connection, public_id):
     row = connection.execute(
-        """SELECT c.public_id course, g.public_id level, cl.lesson_number number
+        """SELECT c.public_id course, g.public_id group_public_id, cl.lesson_number number
         FROM group_lessons gl JOIN courses c ON c.id=gl.course_id
         JOIN groups g ON g.course_id=gl.course_id AND g.group_id=gl.group_id
         JOIN course_lessons cl ON cl.id=gl.course_lesson_id WHERE gl.public_id=?""",
@@ -29,8 +29,8 @@ def lesson_resources(connection, public_id):
         return []
     return [
         f"group-lessons/{public_id}/card",
-        f"courses/{row['course']}/groups/{row['level']}/lessons",
-        f"courses/{row['course']}/groups/{row['level']}/lesson-numbers/{row['number']}/content",
+        f"courses/{row['course']}/groups/{row['group_public_id']}/lessons",
+        f"courses/{row['course']}/groups/{row['group_public_id']}/lesson-numbers/{row['number']}/content",
     ]
 
 
@@ -43,7 +43,7 @@ def problem_work_resources(connection, public_ids):
           WHERE p.public_id IN (SELECT value FROM json_each(?))
         )
         SELECT DISTINCT gl.public_id lesson, c.public_id course,
-               g.public_id level, cl.lesson_number number
+               g.public_id group_public_id, cl.lesson_number number
         FROM logical JOIN result_problem_groups member USING(logical_key)
         JOIN problems p ON p.id=member.problem_id
         JOIN groups g ON g.group_id=p.group_id
@@ -59,6 +59,19 @@ def problem_work_resources(connection, public_ids):
             f"live-cells/{row['lesson']}",
             f"courses/{row['course']}/work",
             f"courses/{row['course']}/statistics",
-            f"courses/{row['course']}/groups/{row['level']}/lesson-numbers/{row['number']}/work",
+            f"courses/{row['course']}/groups/{row['group_public_id']}/lesson-numbers/{row['number']}/work",
         )
+    ))
+
+
+def lesson_title_resources(connection, public_id):
+    """Course-lesson titles are shared by its group cards, never other lessons."""
+    lessons = connection.execute(
+        "SELECT public_id FROM group_lessons WHERE course_lesson_id=("
+        "SELECT course_lesson_id FROM group_lessons WHERE public_id=?)",
+        (public_id,),
+    ).fetchall()
+    return list(dict.fromkeys(
+        resource for lesson in lessons
+        for resource in lesson_resources(connection, lesson["public_id"])
     ))

@@ -59,4 +59,4 @@ def test_new_indexes_are_lossless_and_actual_callback_guard_runs(tmp_path):
         assert list(connection.execute("SELECT * FROM results")) == results_before
     proof = check_database_performance(path)
     names = {probe["name"] for probe in proof["probes"]}
-    assert {"live-cell-scoped", "live-board-scoped", "live-visits-scoped"} <= names
+    assert {"live-cell-scoped", "live-board-scoped", "live-visits-scoped", "statistics-results-scoped", "statistics-attempts-scoped", "statistics-pending-scoped", "statistics-reviews-scoped"} <= names

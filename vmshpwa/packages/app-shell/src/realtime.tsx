@@ -119,15 +119,28 @@ export function shouldInvalidateRealtimeQuery(
   if (!Array.isArray(configured) || !configured.every((resource) => typeof resource === 'string')) {
     return false
   }
+  // A Family account can own several children in the same lesson. Resource
+  // matching alone is insufficient; scoped-reads-20261013.md requires both.
+  const student = meta?.realtimeStudentId
+  const students = resources.filter((resource) => /^students\/[^/]+\/work$/.test(resource))
+  if (
+    typeof student === 'string' &&
+    students.length &&
+    !students.includes(`students/${student}/work`)
+  )
+    return false
   const fallbacks: Record<string, (resource: string) => boolean> = {
     'student-course-lessons': (resource) =>
       /^courses\/[^/]+\/(?:groups\/[^/]+\/)?lessons$/.test(resource),
     'family-worksheets': (resource) => resource.includes('/lesson-numbers/'),
-    'live-results': (resource) => resource.endsWith('/work'),
+    'live-results': (resource) =>
+      (resource.startsWith('courses/') || resource.startsWith('group-lessons/')) &&
+      resource.endsWith('/work'),
   }
-  const changed = resources.filter(
-    (resource) => !fallbacks[resource] || !resources.some(fallbacks[resource]!),
-  )
+  const changed = resources.filter((resource) => {
+    const fallback = fallbacks[resource]
+    return !fallback || !resources.some(fallback)
+  })
   return configured.some((resource: string) => {
     const pattern = new RegExp(
       `^${resource
@@ -698,6 +711,7 @@ export function RealtimeProvider({
     authenticationRef.current = authentication
   }, [authentication])
   const queryClient = useQueryClient()
+  const offlineSinceLastRecovery = useRef(!window.navigator.onLine)
   const [state, setState] = useState<RealtimeConnectionState>({ status: 'idle' })
   const sessionId =
     authentication.state.status === 'authenticated'
@@ -705,32 +719,30 @@ export function RealtimeProvider({
       : null
 
   useEffect(() => {
-    let wasOffline = !window.navigator.onLine
     const wentOffline = () => {
-      wasOffline = true
+      offlineSinceLastRecovery.current = true
     }
     const resyncAfterNetworkRecovery = () => {
       if (!window.navigator.onLine) return
       const authority = authenticationRef.current.state
-      if (
-        authority.status !== 'authenticated' &&
-        !(authority.status === 'offline-unverified' && authority.context)
-      )
-        return
+      if (authority.status !== 'authenticated' && authority.status !== 'offline-unverified') return
       // docs/problem-release.md: an offline cache read can be fresh in Query,
       // while a failed authority refetch has stopped the socket. Cancel older
       // reads and recheck HTTP authority/data even before WS is mounted again.
-      const restart = wasOffline
-      wasOffline = false
+      const restart = offlineSinceLastRecovery.current
+      offlineSinceLastRecovery.current = false
       void resyncActiveQueries(queryClient, { restart })
     }
     window.addEventListener('offline', wentOffline)
     window.addEventListener('online', resyncAfterNetworkRecovery)
+    // scoped-reads-20261013.md: a cold auth failure can arrive after online.
+    // Retry on this state transition once; no polling or optimistic authority.
+    if (authentication.state.status === 'offline-unverified') resyncAfterNetworkRecovery()
     return () => {
       window.removeEventListener('offline', wentOffline)
       window.removeEventListener('online', resyncAfterNetworkRecovery)
     }
-  }, [queryClient])
+  }, [authentication.state.status, queryClient])
 
   useEffect(() => {
     if (sessionId === null) return

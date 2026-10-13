@@ -474,3 +474,47 @@ describe('RealtimeConnection', () => {
     expect(second.sockets[0]!.closes).toEqual([])
   })
 })
+
+it('keeps a sibling worksheet cached while routing results for the right child', () => {
+  const dependencies = ['family-worksheets', 'courses/c/groups/g/lesson-numbers/1/*']
+  const changed = ['students/child-a/work', 'courses/c/groups/g/lesson-numbers/1/work']
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-a' },
+      changed,
+    ),
+  ).toBe(true)
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-b' },
+      changed,
+    ),
+  ).toBe(false)
+  const publication = ['courses/c/groups/g/lesson-numbers/1/content']
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-b' },
+      publication,
+    ),
+  ).toBe(true)
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-a' },
+      ['students/child-a/work', 'courses/c/groups/g/lesson-numbers/2/work'],
+    ),
+  ).toBe(false)
+})
+
+it('retains the work-domain fallback when only an owner identity is available', () => {
+  const meta = {
+    realtimeResources: ['live-results', 'courses/*/work'],
+    realtimeStudentId: 'child-a',
+  }
+  expect(shouldInvalidateRealtimeQuery(meta, ['live-results', 'students/child-a/work'])).toBe(true)
+  expect(
+    shouldInvalidateRealtimeQuery({ ...meta, realtimeStudentId: 'child-b' }, [
+      'live-results',
+      'students/child-a/work',
+    ]),
+  ).toBe(false)
+})

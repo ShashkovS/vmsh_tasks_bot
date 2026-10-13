@@ -65,7 +65,17 @@ def scoped_query_probes(connection):
     session = connection.execute(
         "SELECT session_id FROM live_mark_visits ORDER BY updated_at DESC LIMIT 1"
     ).fetchone()
+    from db_methods.pwa.lesson_statistics import PUBLISHED_PROBLEMS_SQL, CURRENT_RESULTS_SQL, CURRENT_ATTEMPTS_SQL, PENDING_SQL
+    from db_methods.pwa.statistics_reports import REVIEWS_SQL
+    course = connection.execute("SELECT course_id FROM group_lessons ORDER BY id DESC LIMIT 1").fetchone()
+    publication = {"course_id": course[0] if course else -1, "group_ids": None, "lesson_number": None}
+    published_ids = [row[0] for row in connection.execute(PUBLISHED_PROBLEMS_SQL, publication)]
+    facts = {"problem_ids": json.dumps(published_ids), "exclude_reviewed": 1}
     return (
+        CriticalQueryProbe("statistics-results-scoped", CURRENT_RESULTS_SQL, parameters=facts),
+        CriticalQueryProbe("statistics-attempts-scoped", CURRENT_ATTEMPTS_SQL, parameters=facts),
+        CriticalQueryProbe("statistics-pending-scoped", PENDING_SQL, parameters=facts),
+        CriticalQueryProbe("statistics-reviews-scoped", REVIEWS_SQL, parameters=facts),
         CriticalQueryProbe("live-cell-scoped", LIVE_CELLS_SQL, parameters=exact),
         CriticalQueryProbe("live-board-scoped", LIVE_CELLS_SQL, parameters=board),
         CriticalQueryProbe("live-visits-scoped", LIVE_VISITS_SQL,

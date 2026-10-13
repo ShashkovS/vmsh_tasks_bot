@@ -23,12 +23,38 @@ async def close_statistics_recalculation(app):
     service = app.get(SERVICE, {}).get("service")
     if service is not None:
         await asyncio.to_thread(service.close)
+        await asyncio.sleep(0)
+        await asyncio.gather(*app[SERVICE].get("tasks", ()))
 
 
 def service(request):
     holder = request.app[SERVICE]
     if "service" not in holder:
-        holder["service"] = StatisticsRecalculation(_factory(request).database_path)
+        loop = asyncio.get_running_loop()
+        app = request.app
+        tasks = holder.setdefault("tasks", set())
+
+        async def publish(course_public_id):
+            from apps.pwa_app import PWA_BROKER, NATS_PWA_INVALIDATE
+            # InvalidatingBroker clears local state even if NATS is unavailable.
+            try:
+                await app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, {
+                    "resources": [f"courses/{course_public_id}/statistics"],
+                    "audience": "staff", "reason": "statistics-recalculated",
+                })
+            except Exception:
+                import logging
+                logging.getLogger(__name__).warning("Analytics completion publish failed", exc_info=True)
+
+        def schedule(course_public_id):
+            task = loop.create_task(publish(course_public_id))
+            tasks.add(task)
+            task.add_done_callback(tasks.discard)
+
+        holder["service"] = StatisticsRecalculation(
+            _factory(request).database_path,
+            on_complete=lambda value: loop.call_soon_threadsafe(schedule, value),
+        )
     return holder["service"]
 
 

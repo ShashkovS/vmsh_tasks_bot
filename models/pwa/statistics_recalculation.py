@@ -15,8 +15,9 @@ class RecalculationConflict(ValueError):
 
 
 class StatisticsRecalculation:
-    def __init__(self, database_path):
+    def __init__(self, database_path, *, on_complete=None):
         self.database_path = str(database_path)
+        self.on_complete = on_complete
         self.executor = ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="course-analytics"
         )
@@ -114,6 +115,9 @@ class StatisticsRecalculation:
         try:
             with self.connection() as connection:
                 calculate_course(connection, course_id, operation_id=operation_id)
+                course_public_id = connection.execute(
+                    "SELECT public_id FROM courses WHERE id=?", (course_id,)
+                ).fetchone()["public_id"]
         except Exception:
             logging.getLogger(__name__).exception(
                 "Manual analytics failed operation=%s course=%s",
@@ -124,6 +128,13 @@ class StatisticsRecalculation:
                 records.fail_operation(
                     connection, operation_id, timestamp(), "calculation_failed"
                 )
+        else:
+            if self.on_complete is not None:
+                # The committed run is visible before this cross-worker hint.
+                try:
+                    self.on_complete(course_public_id)
+                except Exception:
+                    logging.getLogger(__name__).exception("Analytics completion hint failed")
         finally:
             lock.close()
 

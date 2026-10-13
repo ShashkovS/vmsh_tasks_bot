@@ -251,7 +251,11 @@ test('Written precedence: Student and Family follow review, reload and reconnect
   await secondaryContext.setOffline(true)
   await saveWritten(false, true)
   await secondaryContext.setOffline(false)
+  // realtime-offline-and-notifications.md: hidden tabs pause reconnect. Bring
+  // each reader back to the foreground before checking its recovered screen.
+  await student.bringToFront()
   await expect(studentGrade('🟥−')).toBeVisible()
+  await family.bringToFront()
   await expect(familyGrade('🟥−')).toBeVisible()
   await saveWritten(true, true)
   await expect(studentGrade('✅\\+')).toBeVisible()
@@ -665,7 +669,15 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     )
     .toEqual({
       audience: 'family',
-      resources: [`problems/${problemId}/thread`],
+      resources: [
+        `problems/${problemId}/thread`,
+        'students/u-101/work',
+        `group-lessons/gl-${fixtureId}/work`,
+        `live-cells/gl-${fixtureId}`,
+        'courses/c-1/work',
+        'courses/c-1/statistics',
+        `courses/c-1/groups/g-1/lesson-numbers/${fixtureId}/work`,
+      ],
       accountId: null,
     })
 
@@ -741,7 +753,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     )
     .toEqual({
       audience: 'family',
-      resources: [`problems/${problemId}/thread`],
+      resources: [`problems/${problemId}/thread`, 'students/u-101/work'],
     })
 
   const familyAuth = await familyPage.evaluate(async () => {

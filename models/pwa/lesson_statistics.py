@@ -24,6 +24,9 @@ def summarize_lessons(problems, results, pending, allowed_groups):
         scores[(student, problem["problem_id"])] = max(
             scores[(student, problem["problem_id"])], score
         )
+    ids_by_group = defaultdict(list)
+    for problem in problems:
+        ids_by_group[(problem["lesson_number"], problem["group_public_id"])].append(problem["problem_id"])
     lessons = {}
     for problem in problems:
         number, group_id = problem["lesson_number"], problem["group_public_id"]
@@ -56,11 +59,7 @@ def summarize_lessons(problems, results, pending, allowed_groups):
         )
     for number, groups in lessons.items():
         for group_id, group in groups.items():
-            ids = [
-                p["problem_id"]
-                for p in problems
-                if p["lesson_number"] == number and p["group_public_id"] == group_id
-            ]
+            ids = ids_by_group[(number, group_id)]
             group["distribution"] = sorted(
                 sum(scores[(student, pid)] for pid in ids)
                 for student in participants[(number, group_id)]

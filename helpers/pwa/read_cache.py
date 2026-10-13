@@ -52,6 +52,7 @@ class WorkerReadCache:
         self.clock = clock
         self.entries = OrderedDict()
         self._pending = {}
+        self._fresh_pending = {}
         self.bytes = 0
         if metric_name not in {None, "content", "auth", "branding", "statistics"}:
             raise ValueError("Unknown cache metric category")
@@ -72,6 +73,7 @@ class WorkerReadCache:
         for key in list(self._pending):
             if predicate is None or predicate(key):
                 self._pending.pop(key)
+                self._fresh_pending.pop(key, None)
         self._measure("invalidate")
 
     async def get(
@@ -81,6 +83,10 @@ class WorkerReadCache:
         if force_refresh and key in self.entries:
             self.bytes -= self.entries.pop(key)[2]
             self._measure()
+        if force_refresh:
+            old = self._pending.get(key)
+            if old is not None and self._fresh_pending.get(key) is not old:
+                self._pending.pop(key)
         while True:
             now = self.clock()
             entry = self.entries.get(key)
@@ -98,6 +104,8 @@ class WorkerReadCache:
                 continue
             pending = asyncio.get_running_loop().create_future()
             self._pending[key] = pending
+            if force_refresh:
+                self._fresh_pending[key] = pending
             self._measure("miss")
             try:
                 value = await load()
@@ -125,4 +133,6 @@ class WorkerReadCache:
             finally:
                 if self._pending.get(key) is pending:
                     self._pending.pop(key)
+                if self._fresh_pending.get(key) is pending:
+                    self._fresh_pending.pop(key)
                 pending.set_result(None)

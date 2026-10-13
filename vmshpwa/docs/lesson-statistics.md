@@ -270,3 +270,22 @@ Acceptance coverage: `pwa_tests/domain/test_statistics_reports.py`,
 before acquiring the runtime DB lock; the fixture is restricted to the E2E profile.
 
 [Final verification and reviewed screenshots](../dev/statistics-reports-report.md).
+
+## Scoped reads и RAM snapshots — 2026-10-13
+
+[Утверждённое решение](../../docs/performance/scoped-reads-20261013.md):
+`db_methods/pwa/lesson_statistics.py` ограничивает SQL до winner aggregation;
+`statistics_reports.py` загружает только участников и выбранное занятие для
+plus-table. `models/pwa/statistics_reports.py` индексирует history по занятиям.
+Исторические default facts для scheduled/CLI jobs остаются свежими; HTTP
+snapshot завершается до pure computation в analytics worker.
+`apps/pwa_api/statistics_cache.py` хранит компактные представления на 60 секунд
+от начала чтения, до 128 записей/64 MiB, с single-flight и копиями. Scope keys
+содержат разрешённые группы/вид/занятие; requestId и catalog формируются заново,
+права проверяются на каждом GET. Event/reconnect очищают course/all; при
+недоступном NATS кеш обходится. Invalidated fill не сохраняется.
+Все три GET принимают optional `refresh=1`; clients/buttons и completion
+пересчёта запрашивают fresh read. Focus обновляет stale query, event refetch
+ограничен 1/s общей очередью; нового polling нет.
+Проверки: `test_statistics_read_cache.py`, `test_statistics_reports_http.py`,
+`query-resync.test.ts`; [benchmark и rehearsal](../../pwa_tests/reports/scoped-reads-20261013/).

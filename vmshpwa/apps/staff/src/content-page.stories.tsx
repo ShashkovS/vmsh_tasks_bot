@@ -582,7 +582,7 @@ export const UploadPreviewPublish: Story = {
     await expect(uploadButton).toBeEnabled()
     await userEvent.click(uploadButton)
 
-    await expect(canvas.getByText(/3:1 · Команда вертикального отступа/)).toBeVisible()
+    await expect(await canvas.findByText(/3:1 · Команда вертикального отступа/)).toBeVisible()
     await expect(canvas.getByRole('tab', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
     await userEvent.click(canvas.getByRole('tab', { name: 'PDF' }))

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   ApiResponseError,
@@ -29,12 +30,14 @@ export function createStatisticsReportsClient(
       lessonNumber: number | null
     },
     signal?: AbortSignal,
+    readOptions?: { refresh?: boolean },
   ) => {
     const search = new URLSearchParams()
     if (filter.courseId) search.set('courseId', publicIdSchema.parse(filter.courseId))
     if (filter.groupId) search.set('groupId', publicIdSchema.parse(filter.groupId))
     if (kind === 'plus-table' && filter.lessonNumber !== null)
       search.set('lessonNumber', String(filter.lessonNumber))
+    if (readOptions?.refresh) search.set('refresh', '1')
     const request = () =>
       (options.fetchImplementation ?? pwaFetch)(
         `${configured.apiBase}/statistics/${kind}?${search}`,
@@ -67,7 +70,8 @@ export function useStatisticsReportQuery(
   kind: 'summary' | 'plus-table',
   filter: { courseId: string | null; groupId: string | null; lessonNumber: number | null },
 ) {
-  return useQuery({
+  const refreshNext = useRef(false)
+  const query = useQuery({
     queryKey: [
       ...principalQueryKey(principal),
       'statistics-report',
@@ -76,7 +80,23 @@ export function useStatisticsReportQuery(
       filter.groupId,
       kind === 'plus-table' ? filter.lessonNumber : null,
     ],
-    queryFn: ({ signal }) => client(kind, filter, signal),
-    refetchOnWindowFocus: 'always',
+    queryFn: ({ signal }) => {
+      const refresh = refreshNext.current
+      refreshNext.current = false
+      return client(kind, filter, signal, { refresh })
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    meta: {
+      realtimeResources: [`courses/${filter.courseId ?? '*'}/statistics`, 'courses'],
+      realtimeStatistics: true,
+    },
   })
+  return {
+    ...query,
+    refresh: () => {
+      refreshNext.current = true
+      return query.refetch()
+    },
+  }
 }

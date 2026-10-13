@@ -35,6 +35,12 @@ class CachedContentRepository:
             and item.split("/")[2]
             in {"content", "blocks", "problem-release", "oral-window"}
         }
+        cards = {
+            item.split("/")[1] for item in resources
+            if item.startswith("group-lessons/") and item.endswith("/card")
+        }
+        if cards:
+            self.cache.invalidate(lambda key: key[0] == "lesson" and key[-1] in cards)
         courses = {
             item.split("/")[1] for item in resources
             if item.startswith("courses/") and len(item.split("/")) >= 3
@@ -145,10 +151,34 @@ class InvalidatingBroker:
         return getattr(self.broker, name)
 
     async def publish(self, topic, payload):
-        self.invalidate(topic, payload)
         resources = payload.get("resources") if isinstance(payload, dict) else None
         if topic == "pwa_invalidate" and isinstance(resources, list) and len(resources) > 128:
-            for offset in range(0, len(resources), 128):
-                await self.broker.publish(topic, {**payload, "resources": resources[offset:offset + 128]})
+            # scoped-reads-20261013.md: retain owner AND selectors in every
+            # dependent resource packet, including bulk rechecks with aliases.
+            owners = [item for item in resources if (
+                isinstance(item, str) and item.startswith("students/")
+                and item.endswith("/work") and len(item.split("/")) == 3
+            )]
+            dependent = [item for item in resources if item not in owners]
+            if owners and dependent:
+                chunks = []
+                for offset in range(0, len(owners), 64):
+                    selectors = owners[offset:offset + 64]
+                    width = 128 - len(selectors)
+                    chunks.extend(
+                        {**payload, "resources": selectors + dependent[index:index + width]}
+                        for index in range(0, len(dependent), width)
+                    )
+            else:
+                chunks = [
+                    {**payload, "resources": resources[offset:offset + 128]}
+                    for offset in range(0, len(resources), 128)
+                ]
+            # Fence every local resource before the first network await/failure.
+            for chunk in chunks:
+                self.invalidate(topic, chunk)
+            for chunk in chunks:
+                await self.broker.publish(topic, chunk)
         else:
+            self.invalidate(topic, payload)
             await self.broker.publish(topic, payload)

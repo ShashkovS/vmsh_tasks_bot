@@ -202,7 +202,7 @@ def find_latest_completed_course_run(
 
 
 def list_course_run_metrics(
-    connection: sqlite3.Connection, *, run_id: int
+    connection: sqlite3.Connection, *, run_id: int, allowed_group_public_ids=None
 ) -> list[dict[str, object]]:
     """Return one completed snapshot; aggregation belongs to the domain layer."""
     rows = connection.execute(
@@ -222,11 +222,12 @@ def list_course_run_metrics(
                metric.simple_smooth, metric.complex_smooth
         FROM student_lesson_metrics AS metric
         JOIN groups AS group_record ON group_record.group_id = metric.group_id
-        WHERE metric.run_id = ?
+        WHERE metric.run_id = ? AND (? IS NULL OR group_record.public_id IN (SELECT value FROM json_each(?)))
         ORDER BY metric.lesson_number, group_record.sort_order,
                  group_record.group_id, metric.student_user_id
         """,
-        (run_id,),
+        (run_id, None if allowed_group_public_ids is None else json.dumps(sorted(allowed_group_public_ids)),
+         None if allowed_group_public_ids is None else json.dumps(sorted(allowed_group_public_ids))),
     ).fetchall()
     return [dict(row) for row in rows]
 

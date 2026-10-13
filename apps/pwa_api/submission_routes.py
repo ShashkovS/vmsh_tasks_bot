@@ -472,17 +472,20 @@ async def _invalidate_after_commit(
     reason: str = "test-attempt-created",
     audience: str = "student",
     include_live_results: bool = False,
+    student_account_public_ids: tuple[str, ...] = (),
 ) -> None:
     invalidator = request.app.get(PWA_TEST_SUBMISSION_INVALIDATOR)
     if invalidator is None:
         return
     try:
+        owner_options = {"student_account_public_ids": student_account_public_ids} if student_account_public_ids else {}
         await invalidator(
             account_public_id,
             problem_public_id,
             reason,
             audience=audience,
             include_live_results=include_live_results,
+            **owner_options,
         )
     except Exception:
         # SQLite is authoritative; reconnect performs a full refetch. A NATS
@@ -509,6 +512,7 @@ async def _invalidate_rechecked_owners(
                 reason="test-attempt-rechecked",
                 audience=audience,
                 include_live_results=True,
+                student_account_public_ids=receipt.owner_account_public_ids,
             )
 
     await asyncio.gather(
@@ -527,6 +531,7 @@ async def _invalidate_rechecked_owners(
             reason="test-attempt-rechecked",
             audience="staff",
             include_live_results=True,
+            student_account_public_ids=receipt.owner_account_public_ids,
         ),
     )
 

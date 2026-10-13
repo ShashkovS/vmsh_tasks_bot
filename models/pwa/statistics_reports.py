@@ -49,9 +49,23 @@ def build_reports(facts, allowed_groups, lesson_number=None, *, include_table=Tr
         if r["problem_id"] in by_id
     }
     numbers = sorted({p["lesson_number"] for p in problems})
+    # Index once; scoped-reads-20261013.md removes lesson × history scans.
+    columns_by_lesson = defaultdict(list)
+    reviews_by_lesson = defaultdict(set)
+    pending_by_lesson = defaultdict(int)
+    credit_by_lesson = defaultdict(list)
+    for problem in problems:
+        columns_by_lesson[problem["lesson_number"]].append(problem)
+    for review in reviews:
+        problem = by_id.get(review["problem_id"])
+        if problem is not None:
+            reviews_by_lesson[problem["lesson_number"]].add(review["result_id"])
+    for _, pid in pending_pairs:
+        pending_by_lesson[by_id[pid]["lesson_number"]] += 1
+    for (student, pid), (_, cell) in current.items():
+        credit_by_lesson[by_id[pid]["lesson_number"]].append((student, pid, cell))
     summaries = []
     for number in numbers:
-        ids = {p["problem_id"] for p in problems if p["lesson_number"] == number}
         row = dict(
             lessonNumber=number,
             students=len(participants[number]),
@@ -62,15 +76,13 @@ def build_reports(facts, allowed_groups, lesson_number=None, *, include_table=Tr
             writtenOralPlus=0,
             zoomPlus=0,
             schoolPlus=0,
-            writtenChecked=len(
-                {r["result_id"] for r in reviews if r["problem_id"] in ids}
-            ),
-            writtenPending=sum(pid in ids for _, pid in pending_pairs),
+            writtenChecked=len(reviews_by_lesson[number]),
+            writtenPending=pending_by_lesson[number],
         )
         row["writtenTotal"] = row["writtenChecked"] + row["writtenPending"]
         channel_students = defaultdict(set)
-        for (student, pid), (_, cell) in current.items():
-            if pid not in ids or cell["score"] == 0:
+        for student, pid, cell in credit_by_lesson[number]:
+            if cell["score"] == 0:
                 continue
             score, source = cell["score"], cell["source"]
             row["allPlus"] += score
@@ -87,7 +99,7 @@ def build_reports(facts, allowed_groups, lesson_number=None, *, include_table=Tr
     selected = (
         lesson_number if lesson_number is not None else max(numbers, default=None)
     )
-    columns = [p for p in problems if p["lesson_number"] == selected]
+    columns = columns_by_lesson[selected]
     rows = []
     for sid in sorted(
         participants[selected] if include_table else [],

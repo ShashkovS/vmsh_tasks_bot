@@ -26,6 +26,7 @@ from apps.pwa_api.staff_access_routes import staff_access_routes
 from apps.pwa_api.staff_dashboard_routes import staff_dashboard_routes
 from apps.pwa_api.whiteboard_export_routes import routes as whiteboard_export_routes
 from apps.pwa_api.staff_statistics_routes import staff_statistics_routes
+from apps.pwa_api.statistics_cache import PWA_STATISTICS_CACHE, StatisticsReadCache
 from apps.pwa_api.teacher_work_routes import (
     teacher_work_routes, SERVICE as TEACHER_WORK, close_teacher_work, start_teacher_work,
 )
@@ -698,6 +699,8 @@ def invalidate_worker_reads(app, topic=None, payload=None):
     repository = app.get(PWA_CONTENT_REPOSITORY)
     state = app.get(PWA_AUTH_STATE)
     if topic is None:
+        if PWA_STATISTICS_CACHE in app:
+            app[PWA_STATISTICS_CACHE].invalidate()
         if PWA_BRANDING_CACHE in app:
             app[PWA_BRANDING_CACHE].invalidate()
         if isinstance(repository, CachedContentRepository):
@@ -724,6 +727,8 @@ def invalidate_worker_reads(app, topic=None, payload=None):
             return
         if isinstance(repository, CachedContentRepository):
             repository.invalidate(resources)
+        if PWA_STATISTICS_CACHE in app:
+            app[PWA_STATISTICS_CACHE].invalidate(resources)
         if "branding" in resources and PWA_BRANDING_CACHE in app:
             app[PWA_BRANDING_CACHE].invalidate()
         if (
@@ -992,6 +997,29 @@ async def work_dependency_resources(app, public_ids):
     )
 
 
+async def owner_work_resources(app, account_public_ids, *, recipient=None):
+    database = app.get(PWA_DATABASE)
+    if database is None or database.factory is None or not account_public_ids:
+        return [], []
+    from db_methods.pwa.live_marking import owner_accounts
+
+    def read(connection):
+        students = connection.execute(
+            "SELECT DISTINCT u.public_id FROM users u JOIN auth_accounts a ON a.linked_user_id=u.id "
+            "WHERE a.public_id IN (SELECT value FROM json_each(:accounts)) "
+            "AND (:recipient IS NULL OR a.public_id=:recipient OR EXISTS ("
+            "SELECT 1 FROM family_student_links link JOIN auth_accounts family ON family.id=link.family_account_id "
+            "WHERE link.student_user_id=u.id AND family.public_id=:recipient "
+            "AND link.revoked_at IS NULL AND family.status='active')) ORDER BY u.public_id",
+            {"accounts": json.dumps(list(account_public_ids)), "recipient": recipient},
+        ).fetchall()
+        return ([f"students/{row['public_id']}/work" for row in students],
+                [owner for row in students for owner in owner_accounts(connection, row['public_id'])
+                 if owner['audience'] == 'family'])
+
+    return await database.factory.run_read_async(read)
+
+
 async def publish_content_invalidation(
     app: web.Application,
     scope: GroupLessonContentScope,
@@ -1003,11 +1031,18 @@ async def publish_content_invalidation(
     resources = [
         f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}",
         f"courses/{scope.course_public_id}/groups/{scope.group_public_id}/lessons",
+        f"courses/{scope.course_public_id}/statistics",
         *await lesson_dependency_resources(app, scope.group_lesson_public_id),
     ]
     if reason == "lesson-title-changed":
         # Titles belong to course lessons shared across group lesson cards.
         resources.append(f"courses/{scope.course_public_id}/lessons")
+        from db_methods.pwa.realtime_resources import lesson_title_resources
+        database = app.get(PWA_DATABASE)
+        if database is not None and database.factory is not None:
+            resources.extend(await database.factory.run_read_async(
+                lambda connection: lesson_title_resources(connection, scope.group_lesson_public_id)
+            ))
     # A condition transition can atomically activate a block armed "with the
     # lesson".  Readers must refetch that projection even though this helper
     # deliberately keeps block changes out of notification production.
@@ -1067,13 +1102,16 @@ async def publish_test_submission_invalidation(
     reason: str,
     audience: str = AuthAudience.STUDENT.value,
     include_live_results: bool = False,
+    student_account_public_ids: tuple[str, ...] = (),
 ) -> None:
     """Publish one owner-scoped refetch hint after an attempt commit."""
 
-    resources = [f"problems/{problem_public_id}/test-attempts"]
+    dependencies = await work_dependency_resources(app, (problem_public_id,))
+    candidates = student_account_public_ids or ((account_public_id,) if account_public_id else ())
+    owner_resources, families = await owner_work_resources(app, candidates, recipient=account_public_id)
+    resources = [f"problems/{problem_public_id}/test-attempts", *dependencies, *owner_resources]
     if include_live_results:
         resources.append("live-results")
-        resources.extend(await work_dependency_resources(app, (problem_public_id,)))
     payload: dict[str, object] = {
         "resources": resources,
         "reason": reason,
@@ -1081,10 +1119,16 @@ async def publish_test_submission_invalidation(
     }
     if account_public_id is not None:
         payload["accountId"] = account_public_id
-    await app[PWA_BROKER].publish(
-        NATS_PWA_INVALIDATE,
-        payload,
-    )
+    await app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, payload)
+    if reason == "test-attempt-created" and audience == "student":
+        await app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, {
+            "resources": resources, "reason": reason, "audience": "staff",
+        })
+        for owner in families:
+            await app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, {
+                "resources": [*dependencies, *owner_resources], "reason": reason, "audience": "family",
+                "accountId": owner["public_id"],
+            })
 
 
 async def _send_news_invalidation(app: web.Application, *, reason: str) -> None:
@@ -1242,6 +1286,7 @@ async def publish_problem_synonym_invalidation(
         {
             "resources": [
                 *dependencies,
+                f"courses/{course_public_id}/statistics",
                 f"course-lessons/{course_lesson_public_id}/problem-synonyms",
                 "review-queue",
             ],
@@ -1251,6 +1296,7 @@ async def publish_problem_synonym_invalidation(
         {
             "resources": [
                 *dependencies,
+                f"courses/{course_public_id}/work",
                 f"courses/{course_public_id}/lessons/{course_lesson_public_id}/problems",
                 f"courses/{course_public_id}/progress",
             ],
@@ -1260,6 +1306,7 @@ async def publish_problem_synonym_invalidation(
         {
             "resources": [
                 *dependencies,
+                f"courses/{course_public_id}/work",
                 f"courses/{course_public_id}/lessons/{course_lesson_public_id}/problems",
                 f"courses/{course_public_id}/progress",
             ],
@@ -1291,29 +1338,21 @@ async def publish_written_submission_invalidation(
     problem_public_id: str,
     reason: str,
 ) -> None:
-    """Publish owner-thread and, for queue handoff, Staff refetch hints."""
-
-    await app[PWA_BROKER].publish(
-        NATS_PWA_INVALIDATE,
-        {
-            "resources": [
-                f"problems/{problem_public_id}/thread",
-                *await work_dependency_resources(app, (problem_public_id,)),
-            ],
-            "reason": reason,
-            "audience": AuthAudience.STUDENT.value,
-            "accountId": account_public_id,
-        },
-    )
-    if reason in {"written-entry-submitted", "written-entry-replaced"}:
-        await app[PWA_BROKER].publish(
-            NATS_PWA_INVALIDATE,
-            {
-                "resources": ["review-queue"],
-                "reason": reason,
-                "audience": AuthAudience.STAFF.value,
-            },
-        )
+    """Thread edits stay local; submission changes also refresh work consumers."""
+    submitted = reason in {"written-entry-submitted", "written-entry-replaced"}
+    work = await work_dependency_resources(app, (problem_public_id,)) if submitted else []
+    owners, families = await owner_work_resources(app, (account_public_id,)) if submitted else ([], [])
+    await app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, {
+        "resources": [f"problems/{problem_public_id}/thread", *work, *owners],
+        "reason": reason, "audience": "student", "accountId": account_public_id,
+    })
+    if submitted:
+        await publish_review_queue_invalidation(app, reason=reason, resources=[*work, *owners])
+        for owner in families:
+            await app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, {
+                "resources": [*work, *owners], "reason": reason, "audience": "family",
+                "accountId": owner["public_id"],
+            })
 
 
 async def publish_review_completion_invalidation(
@@ -1333,8 +1372,12 @@ async def publish_review_completion_invalidation(
         problem_public_ids=problem_public_ids,
         reason=reason,
         include_notification_events=True,
+        include_work=True,
     )
-    await publish_review_queue_invalidation(app, reason=reason)
+    owners, _ = await owner_work_resources(app, account_public_ids)
+    await publish_review_queue_invalidation(
+        app, reason=reason, resources=[*owners, *await work_dependency_resources(app, problem_public_ids)]
+    )
 
 
 async def publish_review_owner_invalidation(
@@ -1345,6 +1388,7 @@ async def publish_review_owner_invalidation(
     problem_public_ids: tuple[str, ...],
     reason: str,
     include_notification_events: bool = False,
+    include_work: bool = False,
 ) -> None:
     """Refetch only the reviewed Student's thread and linked Family views."""
 
@@ -1352,13 +1396,12 @@ async def publish_review_owner_invalidation(
         f"problems/{problem_public_id}/thread"
         for problem_public_id in problem_public_ids
     ]
-    resources.extend(await work_dependency_resources(app, problem_public_ids))
-    student_resources = (
-        [*resources, "notification-events"]
-        if include_notification_events
-        else resources
-    )
+    work = await work_dependency_resources(app, problem_public_ids) if include_work else []
     for account_public_id in account_public_ids:
+        owners, _ = await owner_work_resources(app, account_public_ids, recipient=account_public_id)
+        student_resources = [*resources, *owners, *work]
+        if include_notification_events:
+            student_resources.append("notification-events")
         await app[PWA_BROKER].publish(
             NATS_PWA_INVALIDATE,
             {
@@ -1369,10 +1412,11 @@ async def publish_review_owner_invalidation(
             },
         )
     for account_public_id in family_account_public_ids:
+        owners, _ = await owner_work_resources(app, account_public_ids, recipient=account_public_id)
         await app[PWA_BROKER].publish(
             NATS_PWA_INVALIDATE,
             {
-                "resources": resources,
+                "resources": [*resources, *owners, *work],
                 "reason": reason,
                 "audience": AuthAudience.FAMILY.value,
                 "accountId": account_public_id,
@@ -1429,13 +1473,14 @@ async def publish_review_queue_invalidation(
     app: web.Application,
     *,
     reason: str,
+    resources=(),
 ) -> None:
     """Publish one Staff-wide refetch hint after a queue mutation commits."""
 
     await app[PWA_BROKER].publish(
         NATS_PWA_INVALIDATE,
         {
-            "resources": ["review-queue"],
+            "resources": ["review-queue", *resources],
             "reason": reason,
             "audience": AuthAudience.STAFF.value,
         },
@@ -1908,6 +1953,9 @@ def configure(
     app.middlewares.append(pwa_error_middleware)
     app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
+    app[PWA_STATISTICS_CACHE] = StatisticsReadCache(
+        available=lambda: getattr(broker, "active", broker.nats_is_working)
+    )
     app[PWA_BRANDING_CACHE] = WorkerReadCache(ttl_seconds=900, max_entries=1, max_bytes=32768, metric_name="branding")
     if classroom_telegram_sender is None and any(
         getattr(adapter, "__name__", "") == "apps.tg_bot"
@@ -2152,6 +2200,7 @@ def configure(
                 *,
                 audience: str = AuthAudience.STUDENT.value,
                 include_live_results: bool = False,
+                student_account_public_ids: tuple[str, ...] = (),
             ) -> None:
                 await publish_test_submission_invalidation(
                     app,
@@ -2160,6 +2209,7 @@ def configure(
                     reason=reason,
                     audience=audience,
                     include_live_results=include_live_results,
+                    student_account_public_ids=student_account_public_ids,
                 )
 
             app[PWA_TEST_SUBMISSION_INVALIDATOR] = invalidate_test_submission

@@ -195,3 +195,32 @@ it('ordinary events join the four-slot scheduler and request one trailing read',
   unsubscribes.forEach((unsubscribe) => unsubscribe())
   client.clear()
 })
+
+it('coalesces statistics events to at most one automatic read per second', async () => {
+  vi.useFakeTimers()
+  const client = createAppQueryClient()
+  const read = vi.fn().mockResolvedValue('fresh')
+  const unsubscribe = new QueryObserver(client, {
+    queryKey: ['statistics'],
+    queryFn: read,
+    initialData: 'old',
+    staleTime: Infinity,
+    meta: { realtimeStatistics: true },
+  }).subscribe(() => undefined)
+  try {
+    const queries = client.getQueryCache().getAll()
+    await enqueueQueryRefetches(client, queries, { invalidation: true })
+    expect(read).toHaveBeenCalledTimes(1)
+    const next = enqueueQueryRefetches(client, queries, { invalidation: true })
+    void enqueueQueryRefetches(client, queries, { invalidation: true })
+    await vi.advanceTimersByTimeAsync(999)
+    expect(read).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    await next
+    expect(read).toHaveBeenCalledTimes(2)
+  } finally {
+    unsubscribe()
+    client.clear()
+    vi.useRealTimers()
+  }
+})

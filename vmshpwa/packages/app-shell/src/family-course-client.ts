@@ -1,3 +1,4 @@
+import { homeRealtimeResources } from './realtime-resources'
 import { pwaFetch } from '@vmsh/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -165,7 +166,7 @@ export function useFamilyChildCoursesQuery(
   enabled = true,
 ) {
   return useQuery({
-    meta: { realtimeResources: ['courses', 'course-enrollments'] },
+    meta: { realtimeResources: ['courses', 'course-enrollments'], realtimeStudentId: studentId },
     queryKey: familyCourseQueryKeys.child(principal, studentId),
     queryFn: ({ signal }) => client.childCourses(studentId, signal),
     enabled,
@@ -178,9 +179,13 @@ export function useFamilyChildHomeQuery(
   studentId: string,
   enabled = true,
 ) {
+  const previous = useQueryClient().getQueryData<FamilyChildHomeResponse>(
+    familyCourseQueryKeys.home(principal, studentId),
+  )
   return useQuery({
     meta: {
-      realtimeResources: ['home', 'courses/*/groups/*/lessons', 'live-results', 'courses/*/work'],
+      realtimeResources: homeRealtimeResources(previous?.courses),
+      realtimeStudentId: studentId,
     },
     queryKey: familyCourseQueryKeys.home(principal, studentId),
     queryFn: ({ signal }) => client.childHome(studentId, signal),
@@ -224,6 +229,7 @@ export function useFamilyWorksheetQuery(
         'family-worksheets',
         `courses/${courseId}/groups/${groupId}/lesson-numbers/${lessonNumber}/*`,
       ],
+      realtimeStudentId: studentId,
     },
     queryKey: [
       ...familyCourseQueryKeys.home(principal, studentId),

@@ -975,7 +975,8 @@ async def test_invalid_invalidation_payload_is_ignored_without_cursor_change(
     websocket = await _ws_connect(client, "student")
     assert (await websocket.receive_json())["cursor"] == 0
 
-    await client.app[pwa_app.PWA_BROKER].publish("pwa_invalidate", payload)
+    # Inject the incoming wire payload, bypassing the outbound batch splitter.
+    await client.app[pwa_app.PWA_BROKER].broker.publish("pwa_invalidate", payload)
     await websocket.send_json({"type": "ping"})
     pong = await websocket.receive_json()
     assert pong["type"] == "pong"

@@ -74,7 +74,7 @@ function pump(client: QueryClient, state: Scheduler): void {
   for (const job of jobs) {
     if (state.running.size >= 4) break
     const due = statistics(job.query)
-      ? Math.max(job.due, (lastStatisticsRead.get(job.query) ?? 0) + 1000)
+      ? Math.max(job.due, (lastStatisticsRead.get(job.query) ?? -Infinity) + 1000)
       : job.due
     if (due > now) continue
     state.queued.delete(job.query)
@@ -101,7 +101,7 @@ function pump(client: QueryClient, state: Scheduler): void {
     const due = Math.min(
       ...[...state.queued.values()].map((job) =>
         statistics(job.query)
-          ? Math.max(job.due, (lastStatisticsRead.get(job.query) ?? 0) + 1000)
+          ? Math.max(job.due, (lastStatisticsRead.get(job.query) ?? -Infinity) + 1000)
           : job.due,
       ),
     )
@@ -136,6 +136,9 @@ export function resyncActiveQueries(
       await current?.promise
     }
     next.replacing = false
+    // Inactive/disabled readers must become stale too: auth recovery can enable
+    // a previously cached offline snapshot after this wave has already begun.
+    void client.invalidateQueries({ refetchType: 'none' })
     await enqueueQueryRefetches(client, client.getQueryCache().findAll({ type: 'active' }))
   }
   next.promise = run()

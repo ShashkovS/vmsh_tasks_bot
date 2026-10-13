@@ -53,7 +53,7 @@ class DueRepository:
 
 
 @pytest.mark.asyncio
-async def test_content_invalidator_publishes_one_general_material_resource():
+async def test_content_invalidator_publishes_one_scoped_event():
     class RecordingBroker:
         def __init__(self):
             self.messages = []
@@ -76,7 +76,11 @@ async def test_content_invalidator_publishes_one_general_material_resource():
         (
             pwa_app.NATS_PWA_INVALIDATE,
             {
-                "resources": ["group-lessons/group-lesson-scheduler/content/solution"],
+                "resources": [
+                    "group-lessons/group-lesson-scheduler/content/solution",
+                    "courses/course-scheduler/groups/group-scheduler/lessons",
+                    "courses/course-scheduler/statistics",
+                ],
                 "reason": "content-published",
             },
         )

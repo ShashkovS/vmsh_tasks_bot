@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { pwaFetch } from '@vmsh/contracts'
 import { useQuery } from '@tanstack/react-query'
 
@@ -23,7 +24,11 @@ export interface StaffStatisticsFilter {
 }
 
 export interface StaffStatisticsClient {
-  get(filter: StaffStatisticsFilter, signal?: AbortSignal): Promise<StaffStatisticsResponse>
+  get(
+    filter: StaffStatisticsFilter,
+    signal?: AbortSignal,
+    options?: { refresh?: boolean },
+  ): Promise<StaffStatisticsResponse>
 }
 
 export function createStaffStatisticsClient(
@@ -37,12 +42,13 @@ export function createStaffStatisticsClient(
   const fetchImplementation = options.fetchImplementation ?? pwaFetch
 
   return {
-    async get(filter, signal) {
+    async get(filter, signal, readOptions) {
       const search = new URLSearchParams()
       if (filter.courseId !== null) search.set('courseId', publicIdSchema.parse(filter.courseId))
       if (filter.groupId !== null) search.set('groupId', publicIdSchema.parse(filter.groupId))
       if (filter.lessonNumber != null) search.set('lessonNumber', String(filter.lessonNumber))
       if (filter.studentId) search.set('studentId', publicIdSchema.parse(filter.studentId))
+      if (readOptions?.refresh) search.set('refresh', '1')
       const path = `/statistics${search.size === 0 ? '' : `?${search}`}`
       const request = () =>
         fetchImplementation(`${configured.apiBase}${path}`, {
@@ -71,15 +77,32 @@ export function useStaffStatisticsQuery(
   principal: PrincipalQueryScope,
   filter: StaffStatisticsFilter,
 ) {
-  return useQuery({
+  const refreshNext = useRef(false)
+  const query = useQuery({
     queryKey: [
       ...staffStatisticsQueryKey(principal, filter.courseId, filter.groupId),
       filter.lessonNumber ?? null,
       filter.studentId ?? null,
     ],
-    refetchOnWindowFocus: 'always',
-    queryFn: ({ signal }) => client.get(filter, signal),
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    meta: {
+      realtimeResources: [`courses/${filter.courseId ?? '*'}/statistics`, 'courses'],
+      realtimeStatistics: true,
+    },
+    queryFn: ({ signal }) => {
+      const refresh = refreshNext.current
+      refreshNext.current = false
+      return client.get(filter, signal, { refresh })
+    },
   })
+  return {
+    ...query,
+    refresh: () => {
+      refreshNext.current = true
+      return query.refetch()
+    },
+  }
 }
 
 /** Admin calculation transport; shares the regular same-origin CSRF boundary. */
