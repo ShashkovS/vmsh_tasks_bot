@@ -8,7 +8,8 @@ NATS broadcast сбрасывает dictionaries во всех workers. Logout, 
 подпись и expiry cookie сохраняют проверки. Реализация и fast gate PASS:
 3012 Python / 12 SKIP, 1119 frontend, 380 Storybook, 43 Chromium E2E.
 [решение и компоненты](../../../docs/performance/worker-read-cache.md),
-[текущий статус](STATUS.md). 13.10 разрешён выпуск на ВМШ/TLF;
+[текущий статус](STATUS.md). 13.10 `f0003fff` выпущен на ВМШ/TLF;
+по 25 HTTP checks PASS, службы active, p95/p99 под нагрузкой ещё не измерены;
 [операционный record](../../../docs/performance/worker-read-cache-release.md).
 
 2026-10-10: сбой legacy `\пункт`/`itemnum` в TikZ из `gl-16` воспроизведён

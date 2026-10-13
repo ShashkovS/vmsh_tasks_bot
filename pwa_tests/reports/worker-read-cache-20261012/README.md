@@ -1,7 +1,9 @@
 # Worker RAM cache — 12 октября 2026
 
 [Решение владельца и компоненты](../../../docs/performance/worker-read-cache.md).
-Изменения без migrations. Владелец разрешил 13.10 выпуск на оба портала;
+13.10 `f0003fff` выпущен на оба портала без migrations;
+[production proof](production-proof.json): по 25 HTTP checks, 4 HTML и
+116 Staff hashes PASS, службы active, NRestarts=0, maintenance off.
 [операционный record](../../../docs/performance/worker-read-cache-release.md).
 
 Финальный `make pwa-check-fast PWA_E2E_MODES="authentication content realtime"`:
@@ -39,6 +41,6 @@ Scope-boundary fixtures с прямым SQL отзывом/добавление�
 локальные копии существующих `_vmsh_examples` и `_external_pipelines`; inputs
 не менялись и остаются вне Git. Старые прогоны не выдаются за PASS квитанции.
 
-Следующие шаги: завершение разрешённого backend release и измерение HTTP/read queue/cache
+Следующие шаги: измерение HTTP/read queue/cache
 memory под реальной нагрузкой. Общий RAM cache не исправляет тяжёлый live-board
 SQL и широкое frontend refetch; они остаются отдельными задачами аудита.
