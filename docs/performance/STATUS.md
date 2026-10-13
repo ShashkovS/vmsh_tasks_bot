@@ -1,5 +1,17 @@
 # Анализ производительности
 
+## 2026-10-12 — RAM-кеш общих чтений и auth
+
+[Реализовано по решению владельца](worker-read-cache.md): dictionaries в каждом worker,
+NATS invalidation, auth TTL до 15 минут и свежие персональные результаты.
+HTTP proof: warm auth/me, материалы и список занятий — 0 SQL; задачи — 1 SQL.
+Final fast gate PASS: 3012 Python / 12 SKIP, 1119 frontend, 380 Storybook,
+43 Chromium auth/content/realtime, types/lint/i18n/build; source unchanged.
+[Квитанции и границы проверки](../../pwa_tests/reports/worker-read-cache-20261012/README.md).
+13.10 владелец разрешил выпуск на оба production: backend без migrations,
+frontend сохраняется. [Выпуск и проверки](worker-read-cache-release.md) в работе;
+новые p95/p99 требуют измерения под реальной нагрузкой.
+
 - 2026-10-08, Telegram alerts: проверены live Prometheus 3.13.2/Grafana 13.1.1.
   Все 5 targets UP, Prometheus rules/Alertmanager отсутствуют. После 5 октября
   CPU p95 19.6%, выше 80% нет непрерывных двух минут; RAM available 64%,

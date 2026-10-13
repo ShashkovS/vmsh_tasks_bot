@@ -11,9 +11,11 @@ from db_methods.pwa.branding import get_branding, update_branding
 from db_methods.pwa.audit import insert_audit_event
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.branding import PROFILES, brand_manifest
+from helpers.pwa.read_cache import WorkerReadCache
 from models.pwa.auth import AuthAudience
 
 branding_routes = web.RouteTableDef()
+PWA_BRANDING_CACHE = web.AppKey("pwa_branding_cache", WorkerReadCache)
 
 
 def _factory(request):
@@ -29,7 +31,15 @@ def _factory(request):
 
 async def selected_branding(request):
     if "branding_selection" not in request:
-        request["branding_selection"] = await _factory(request).run_read_async(get_branding)
+        cache = request.app.get(PWA_BRANDING_CACHE)
+
+        async def load():
+            return await _factory(request).run_read_async(get_branding)
+
+        # Shared by locale middleware and auth/me; worker-read-cache.md.
+        request["branding_selection"] = dict(
+            await load() if cache is None else await cache.get("branding", load)
+        )
     return request["branding_selection"]
 
 
@@ -116,4 +126,21 @@ async def change_branding(request):
             code="version_conflict",
             message="Оформление уже изменено. Обновите страницу.",
         )
+    cache = request.app.get(PWA_BRANDING_CACHE)
+    if cache is not None:
+        cache.invalidate()
+    from apps.pwa_app import NATS_PWA_INVALIDATE, PWA_BROKER
+    from helpers.config import logger
+
+    try:
+        if PWA_BROKER not in request.app:
+            return web.json_response(
+                _payload(row), headers={"Cache-Control": "no-store"}
+            )
+        await request.app[PWA_BROKER].publish(
+            NATS_PWA_INVALIDATE,
+            {"resources": ["branding"], "reason": "branding-changed"},
+        )
+    except Exception:
+        logger.warning("Branding cache invalidation failed after commit", exc_info=True)
     return web.json_response(_payload(row), headers={"Cache-Control": "no-store"})

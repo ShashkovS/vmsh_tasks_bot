@@ -247,6 +247,15 @@ class NatsBroker:
         self._subscriptions: list[nats.aio.subscription.Subscription] = []
         self._server_url: str | None = None
         self._lifecycle_lock = asyncio.Lock()
+        self._reconnect_callback = None
+
+    def set_reconnect_callback(self, callback) -> None:
+        """Drop worker projections after a Core NATS event gap; worker-read-cache.md."""
+        self._reconnect_callback = callback
+
+    async def _on_reconnect(self) -> None:
+        if self._reconnect_callback is not None:
+            await self._reconnect_callback()
 
     @property
     def nats_is_working(self) -> bool:
@@ -288,6 +297,7 @@ class NatsBroker:
                 max_reconnect_attempts=100,
                 name=f"vmsh:{self.topic_prefix}",
                 pedantic=True,
+                reconnected_cb=self._on_reconnect,
             )
             self._client = client
             self._server_url = server_url

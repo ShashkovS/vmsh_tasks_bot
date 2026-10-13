@@ -1,5 +1,7 @@
 """Full Teacher/Admin dialogue regression; vmshpwa/docs/review-history.md."""
 
+from pwa_tests.auth_cache_support import miss_auth_cache
+
 import hashlib
 
 from apps.pwa_api.student_results_routes import LEGACY_SOLUTIONS_ROOT
@@ -217,6 +219,7 @@ async def test_conversation_media_and_ownership_are_review_scoped(
         )
 
     f.factory.run_write(revoke)
+    miss_auth_cache(f.client)
     for path in ("/conversation", "/attachments/" + attachment):
         response, _ = await get(f, base + path)
         assert response.status == 404

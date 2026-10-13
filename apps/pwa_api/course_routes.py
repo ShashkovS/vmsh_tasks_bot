@@ -456,6 +456,8 @@ async def update_student_course_enrollment(request: web.Request) -> web.Response
             code="version_conflict",
             message="Настройки уже изменились. Обновите страницу.",
         )
+    from apps.pwa_api.admin_enrollment_routes import invalidate_self_enrollment
+    await invalidate_self_enrollment(request, student_user_id=student_user_id)
     response = course_enrollment_payload(enrollment)
     response["activeGroupId"] = group.group_public_id
     response["attendanceMode"] = attendance_mode or enrollment.attendance_mode

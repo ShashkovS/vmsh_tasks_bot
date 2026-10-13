@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.auth_cache_support import miss_auth_cache
+
 from pwa_tests.integration import test_content_http_api as content_support
 
 
@@ -478,6 +480,7 @@ async def test_family_worksheet_matches_student_marks_and_enforces_child_group(
             "FROM course_enrollments WHERE public_id='en-1'"
         )
     )
+    miss_auth_cache(fixture.client)
     other = await fixture.client.get(
         url + "?group=g-2", headers=headers, cookies=cookies
     )

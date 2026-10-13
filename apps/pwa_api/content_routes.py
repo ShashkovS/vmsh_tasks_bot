@@ -2384,7 +2384,7 @@ async def put_metadata_grid(request: web.Request) -> web.Response:
             message="Укажите revision для таблицы метаданных",
             details={"field": "revisionId"},
         )
-    repository, _context, actor_user_id = await _authorized_metadata_grid(
+    repository, context, actor_user_id = await _authorized_metadata_grid(
         request, revision_public_id=revision_public_id
     )
     current = await repository.get_problem_metadata_grid(
@@ -2400,6 +2400,15 @@ async def put_metadata_grid(request: web.Request) -> web.Response:
         drafts=_metadata_drafts(payload["rows"]),
         actor_user_id=actor_user_id,
     )
+    current_publication = await repository.get_current_publication(
+        group_lesson_id=context.scope.group_lesson_id, kind=context.source.kind,
+        state=PublicationState.PUBLISHED,
+    )
+    if current_publication is not None and current_publication.revision_id == context.revision.id:
+        await _invalidate_after_commit(
+            request, scope=context.scope, kind=context.source.kind,
+            reason="content-metadata-changed",
+        )
     response = web.json_response(
         _metadata_grid_payload(grid, request_id=_request_id(request))
     )
@@ -2885,6 +2894,12 @@ async def update_lesson_title(request: web.Request) -> web.Response:
         title=None if raw_title is None else raw_title.strip(),
         actor_user_id=actor_user_id,
     )
+    # RAM readers in all workers must see edits outside publication as well.
+    # See docs/performance/worker-read-cache.md.
+    await _invalidate_after_commit(
+        request, scope=scope, kind=ContentKind.CONDITION,
+        reason="lesson-title-changed",
+    )
     response = web.json_response(
         {
             **_lesson_title_payload(lesson, group_lesson_public_id=scope.group_lesson_public_id),
@@ -2963,6 +2978,12 @@ async def create_lesson_window(request: web.Request) -> web.Response:
         actor_user_id=actor_user_id,
         request_id=_request_id(request),
     )
+    # RAM readers in all workers must see edits outside publication as well.
+    # See docs/performance/worker-read-cache.md.
+    await _invalidate_after_commit(
+        request, scope=scope, kind=ContentKind.CONDITION,
+        reason="lesson-window-changed",
+    )
     response = web.json_response(
         {
             **_lesson_window_payload(
@@ -3013,6 +3034,12 @@ async def update_lesson_window_schedule(request: web.Request) -> web.Response:
         actor_user_id=actor_user_id,
         request_id=_request_id(request),
     )
+    # RAM readers in all workers must see edits outside publication as well.
+    # See docs/performance/worker-read-cache.md.
+    await _invalidate_after_commit(
+        request, scope=scope, kind=ContentKind.CONDITION,
+        reason="lesson-window-changed",
+    )
     response = web.json_response(
         {
             **_lesson_window_payload(
@@ -3055,6 +3082,12 @@ async def update_submission_cutoff(request: web.Request) -> web.Response:
         ),
         actor_user_id=actor_user_id,
         request_id=_request_id(request),
+    )
+    # RAM readers in all workers must see edits outside publication as well.
+    # See docs/performance/worker-read-cache.md.
+    await _invalidate_after_commit(
+        request, scope=scope, kind=ContentKind.CONDITION,
+        reason="lesson-window-changed",
     )
     response = web.json_response(
         {

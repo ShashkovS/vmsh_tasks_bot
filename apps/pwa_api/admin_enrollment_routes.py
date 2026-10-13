@@ -50,6 +50,41 @@ EnrollmentInvalidator = Callable[
 PWA_ENROLLMENT_INVALIDATOR = web.AppKey(
     "pwa_enrollment_invalidator", EnrollmentInvalidator
 )
+
+
+async def invalidate_self_enrollment(request, *, student_user_id):
+    """Refresh Student/Family auth after self-switch; worker-read-cache.md."""
+    from apps.pwa_api.middleware import auth_service
+
+    auth_service(request).invalidate_read_cache()
+    invalidator = request.app.get(PWA_ENROLLMENT_INVALIDATOR)
+    if invalidator is None:
+        return
+    try:
+        owners = await _factory(request).run_read_async(
+            lambda connection: list_owner_accounts(
+                connection, student_user_id=student_user_id
+            )
+        )
+        await invalidator(
+            tuple(
+                str(owner["public_id"])
+                for owner in owners
+                if owner["audience"] == "student"
+            ),
+            tuple(
+                str(owner["public_id"])
+                for owner in owners
+                if owner["audience"] == "family"
+            ),
+            "enrollment-self-changed",
+        )
+    except Exception:
+        logger.warning(
+            "Enrollment cache invalidation failed after commit", exc_info=True
+        )
+
+
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _ETAG = re.compile(r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):v([1-9]\d*)"$')
 _UPDATE_FIELDS = {

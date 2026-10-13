@@ -1,5 +1,16 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+## 2026-10-12 — Worker RAM cache
+
+По решению владельца auth/grants допускают отставание до 15 минут.
+Общие занятия/публикации кешируются отдельно от свежих персональных результатов;
+NATS broadcast сбрасывает dictionaries во всех workers. Logout, refresh,
+подпись и expiry cookie сохраняют проверки. Реализация и fast gate PASS:
+3012 Python / 12 SKIP, 1119 frontend, 380 Storybook, 43 Chromium E2E.
+[решение и компоненты](../../../docs/performance/worker-read-cache.md),
+[текущий статус](STATUS.md). 13.10 разрешён выпуск на ВМШ/TLF;
+[операционный record](../../../docs/performance/worker-read-cache-release.md).
+
 2026-10-10: сбой legacy `\пункт`/`itemnum` в TikZ из `gl-16` воспроизведён
 и исправлен локально. Полный исходник закреплён fixture; UTF-8/CP1251,
 структура пунктов и реальный TeX→SVG с русскими `а)`, `б)` проходят.

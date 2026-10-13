@@ -1,5 +1,17 @@
 # Статус плана разработки
 
+## 2026-10-12 — RAM-кеш общих чтений и auth
+
+[Реализовано по решению владельца](../../../docs/performance/worker-read-cache.md): dictionaries в каждом worker,
+NATS invalidation, auth TTL до 15 минут и свежие персональные результаты.
+HTTP proof: warm auth/me, материалы и список занятий — 0 SQL; задачи — 1 SQL.
+Final fast gate PASS: 3012 Python / 12 SKIP, 1119 frontend, 380 Storybook,
+43 Chromium auth/content/realtime, types/lint/i18n/build; source unchanged.
+[Квитанции и границы проверки](../../../pwa_tests/reports/worker-read-cache-20261012/README.md).
+13.10 владелец разрешил выпуск на ВМШ/TLF: backend без migrations,
+frontend сохраняется. [Выпуск и проверки](../../../docs/performance/worker-read-cache-release.md)
+в работе; новые p95/p99 требуют измерения под реальной нагрузкой.
+
 ## 2026-10-12 — Быстрое сопоставление и импорт очных смен
 
 По замечаниям владельца исправляются сохранение Zoom без автоматического

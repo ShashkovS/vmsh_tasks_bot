@@ -1,5 +1,7 @@
 """Question photos: atomic ownership, HTTP access and existing text compatibility."""
 
+from pwa_tests.auth_cache_support import miss_auth_cache
+
 from pathlib import Path
 import pytest
 
@@ -168,6 +170,7 @@ async def test_staff_photo_reply_ownership_replay_and_student_read(content_http,
             (support.TEACHER_USER_ID,),
         )
     )
+    miss_auth_cache(f.client)
     assert (await request(f, "teacher", "get", f"/photos/{photo}")).status == 403
     r = await request(f, "teacher", "post", f"/{thread_id}/entries", json=payload)
     assert r.status == 403, await r.text()

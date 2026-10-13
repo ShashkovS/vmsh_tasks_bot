@@ -1,5 +1,12 @@
 # Design-system status
 
+## 2026-10-13 — Backend RAM cache release
+
+Владелец разрешил выпуск кеша на ВМШ/TLF. UI и static releases сохраняются;
+frontend 1119 / Storybook 380 / Chromium 43 PASS в общем gate.
+[Решение](../../../docs/performance/worker-read-cache.md),
+[выпуск](../../../docs/performance/worker-read-cache-release.md).
+
 ## 2026-10-12 — Быстрое сопоставление и импорт очных смен
 
 По замечаниям владельца исправляются сохранение Zoom без автоматического

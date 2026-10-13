@@ -296,6 +296,8 @@ async def test_teacher_changes_only_active_group_inside_scope(
     assert forbidden.status == 403
 
     _allow_second_group_for_teacher(classroom_http)
+    from pwa_tests.auth_cache_support import miss_auth_cache
+    miss_auth_cache(classroom_http.client)
 
     response = await classroom_http.client.put(
         "/staff/api/v1/course-enrollments/en-1",

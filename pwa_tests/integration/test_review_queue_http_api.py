@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.auth_cache_support import miss_auth_cache
+
 import itertools
 import sqlite3
 import json
@@ -1360,6 +1362,7 @@ async def test_review_history_cursor_pages_have_no_duplicates(
             (review_id, FULL_TEACHER_ID),
         )
     )
+    miss_auth_cache(fixture.client)
     revoked = await fixture.client.get(
         f"/staff/api/v1/review/history?review={review_id}",
         cookies=_cookie(fixture, "full"),

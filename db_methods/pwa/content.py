@@ -1698,6 +1698,95 @@ _STUDENT_LESSON_VISIBLE = (
 )
 
 
+# Shared personal-state SQL: both uncached and RAM-backed reads use the same
+# precedence and answer rules; docs/performance/worker-read-cache.md.
+_STUDENT_PROBLEM_WORK_CTES = """
+-- written-result-precedence.md: membership and the winner share migration 0110.
+logical_member AS MATERIALIZED (
+    SELECT visible.problem_id AS visible_problem_id, peer.problem_id AS member_problem_id
+    FROM visible_problem AS visible
+    JOIN result_problem_groups AS own ON own.problem_id=visible.problem_id
+    JOIN result_problem_groups AS peer ON peer.logical_key=own.logical_key
+),
+queue_state AS (
+    SELECT logical_member.visible_problem_id,
+           max(CASE WHEN queue.cur_status > 0 THEN 1 ELSE 0 END) AS checking,
+           max(queue.ts) AS latest_queue_at
+    FROM logical_member
+    JOIN written_tasks_queue AS queue
+      ON queue.problem_id = logical_member.member_problem_id
+     AND queue.student_id = :student_user_id
+    GROUP BY logical_member.visible_problem_id
+),
+ranked_result AS (
+    SELECT logical_member.visible_problem_id,
+           result.verdict AS verdict_id,
+           result.ts AS verdict_at,
+           manual.result_id IS NOT NULL AS manual_override,
+           verdict.tick AS verdict_symbol,
+           verdict.val AS verdict_weight,
+           row_number() OVER (
+               PARTITION BY logical_member.visible_problem_id
+               ORDER BY CASE WHEN EXISTS (
+                            SELECT 1 FROM test_attempts AS current_attempt
+                            WHERE current_attempt.student_user_id = result.student_id
+                              AND current_attempt.problem_id = result.problem_id
+                        ) THEN verdict.val END DESC,
+                        result.id DESC
+           ) AS result_rank
+    FROM logical_member
+    JOIN student_effective_results AS result
+      ON result.problem_id = logical_member.member_problem_id
+     AND result.student_id = :student_user_id
+    JOIN verdicts AS verdict ON verdict.id = result.verdict
+    LEFT JOIN live_mark_cells AS manual ON manual.result_id = result.id
+),
+discussion_state AS (
+    SELECT logical_member.visible_problem_id,
+           1 AS has_discussion
+    FROM logical_member
+    JOIN written_tasks_discussions AS discussion
+      ON discussion.problem_id = logical_member.member_problem_id
+     AND discussion.student_id = :student_user_id
+    GROUP BY logical_member.visible_problem_id
+)
+"""
+
+_STUDENT_PROBLEM_WORK_COLUMNS = """
+       queue_state.checking AS queue_checking,
+       queue_state.latest_queue_at,
+       ranked_result.verdict_id,
+       ranked_result.verdict_at,
+       ranked_result.manual_override,
+       ranked_result.verdict_symbol,
+       ranked_result.verdict_weight,
+       discussion_state.has_discussion,
+       (discussion_state.has_discussion IS NOT NULL OR EXISTS (
+           SELECT 1 FROM logical_member member
+           JOIN test_attempts attempt ON attempt.problem_id = member.member_problem_id
+           WHERE member.visible_problem_id = visible_problem.problem_id
+             AND attempt.student_user_id = :student_user_id
+       ) OR EXISTS (
+           SELECT 1 FROM logical_member member
+           JOIN submission_threads thread ON thread.problem_id = member.member_problem_id
+           JOIN submission_entries entry ON entry.thread_id = thread.id
+           WHERE member.visible_problem_id = visible_problem.problem_id
+             AND thread.student_user_id = :student_user_id
+             AND entry.author_kind = 'student' AND entry.state IN ('submitted', 'locked')
+       ) OR EXISTS (
+           SELECT 1 FROM logical_member member
+           JOIN results result ON result.problem_id = member.member_problem_id
+           WHERE member.visible_problem_id = visible_problem.problem_id
+             AND result.student_id = :student_user_id AND result.res_type = 1
+             AND result.answer IS NOT NULL AND trim(result.answer) <> ''
+       )) AS has_answer,
+       NOT EXISTS (
+           SELECT 1 FROM hint_reveals AS previous_hint
+           WHERE previous_hint.student_user_id = :student_user_id
+             AND previous_hint.problem_id = visible_problem.problem_id
+       ) AS hint_confirmation_required
+"""
+
 # Bound the repeated lesson projection; docs/sqlite-admission-performance.md.
 _STUDENT_PROBLEM_LIST_SELECT = f"""
 WITH {STUDENT_EFFECTIVE_RESULTS_CTES}, published_scope AS MATERIALIZED (
@@ -1825,93 +1914,14 @@ solution_state AS (
      AND reveal.publication_id = publication.id
     GROUP BY visible.problem_id, publication.id, reveal.id
 ),
--- written-result-precedence.md: membership and the winner share migration 0110.
-logical_member AS MATERIALIZED (
-    SELECT visible.problem_id AS visible_problem_id, peer.problem_id AS member_problem_id
-    FROM visible_problem AS visible
-    JOIN result_problem_groups AS own ON own.problem_id=visible.problem_id
-    JOIN result_problem_groups AS peer ON peer.logical_key=own.logical_key
-),
-queue_state AS (
-    SELECT logical_member.visible_problem_id,
-           max(CASE WHEN queue.cur_status > 0 THEN 1 ELSE 0 END) AS checking,
-           max(queue.ts) AS latest_queue_at
-    FROM logical_member
-    JOIN written_tasks_queue AS queue
-      ON queue.problem_id = logical_member.member_problem_id
-     AND queue.student_id = :student_user_id
-    GROUP BY logical_member.visible_problem_id
-),
-ranked_result AS (
-    SELECT logical_member.visible_problem_id,
-           result.verdict AS verdict_id,
-           result.ts AS verdict_at,
-           manual.result_id IS NOT NULL AS manual_override,
-           verdict.tick AS verdict_symbol,
-           verdict.val AS verdict_weight,
-           row_number() OVER (
-               PARTITION BY logical_member.visible_problem_id
-               ORDER BY CASE WHEN EXISTS (
-                            SELECT 1 FROM test_attempts AS current_attempt
-                            WHERE current_attempt.student_user_id = result.student_id
-                              AND current_attempt.problem_id = result.problem_id
-                        ) THEN verdict.val END DESC,
-                        result.id DESC
-           ) AS result_rank
-    FROM logical_member
-    JOIN student_effective_results AS result
-      ON result.problem_id = logical_member.member_problem_id
-     AND result.student_id = :student_user_id
-    JOIN verdicts AS verdict ON verdict.id = result.verdict
-    LEFT JOIN live_mark_cells AS manual ON manual.result_id = result.id
-),
-discussion_state AS (
-    SELECT logical_member.visible_problem_id,
-           1 AS has_discussion
-    FROM logical_member
-    JOIN written_tasks_discussions AS discussion
-      ON discussion.problem_id = logical_member.member_problem_id
-     AND discussion.student_id = :student_user_id
-    GROUP BY logical_member.visible_problem_id
-)
+{_STUDENT_PROBLEM_WORK_CTES}
 SELECT published_scope.group_lesson_public_id,
        published_scope.course_public_id,
        published_scope.group_public_id,
        published_scope.condition_revision_public_id,
        published_scope.problem_release_version,
        visible_problem.*,
-       queue_state.checking AS queue_checking,
-       queue_state.latest_queue_at,
-       ranked_result.verdict_id,
-       ranked_result.verdict_at,
-       ranked_result.manual_override,
-       ranked_result.verdict_symbol,
-       ranked_result.verdict_weight,
-       discussion_state.has_discussion,
-       (discussion_state.has_discussion IS NOT NULL OR EXISTS (
-           SELECT 1 FROM logical_member member
-           JOIN test_attempts attempt ON attempt.problem_id = member.member_problem_id
-           WHERE member.visible_problem_id = visible_problem.problem_id
-             AND attempt.student_user_id = :student_user_id
-       ) OR EXISTS (
-           SELECT 1 FROM logical_member member
-           JOIN submission_threads thread ON thread.problem_id = member.member_problem_id
-           JOIN submission_entries entry ON entry.thread_id = thread.id
-           WHERE member.visible_problem_id = visible_problem.problem_id
-             AND thread.student_user_id = :student_user_id
-             AND entry.author_kind = 'student' AND entry.state IN ('submitted', 'locked')
-       ) OR EXISTS (
-           SELECT 1 FROM logical_member member
-           JOIN results result ON result.problem_id = member.member_problem_id
-           WHERE member.visible_problem_id = visible_problem.problem_id
-             AND result.student_id = :student_user_id AND result.res_type = 1
-             AND result.answer IS NOT NULL AND trim(result.answer) <> ''
-       )) AS has_answer,
-       NOT EXISTS (
-           SELECT 1 FROM hint_reveals AS previous_hint
-           WHERE previous_hint.student_user_id = :student_user_id
-             AND previous_hint.problem_id = visible_problem.problem_id
-       ) AS hint_confirmation_required,
+{_STUDENT_PROBLEM_WORK_COLUMNS},
        hint_state.hint_publication_id,
        hint_state.hint_source_ordinal,
        solution_state.solution_publication_id,
@@ -1934,6 +1944,33 @@ LEFT JOIN discussion_state
 ORDER BY visible_problem.source_ordinal,
          visible_problem.source_item,
          visible_problem.problem_id
+"""
+
+
+_STUDENT_CACHED_WORK_SELECT = f"""
+WITH {STUDENT_EFFECTIVE_RESULTS_CTES}, visible_problem AS MATERIALIZED (
+    SELECT problem.id AS problem_id, item.key AS cache_index, item.value AS cached_problem
+    FROM json_each(:cached_problems) AS item
+    JOIN problems AS problem ON problem.public_id = json_extract(item.value, '$.problem_public_id')
+), {_STUDENT_PROBLEM_WORK_CTES}
+SELECT visible_problem.cached_problem,
+{_STUDENT_PROBLEM_WORK_COLUMNS},
+       EXISTS (SELECT 1 FROM hint_reveals reveal
+               JOIN lesson_publications publication ON publication.id = reveal.publication_id
+               WHERE reveal.student_user_id = :student_user_id
+                 AND reveal.problem_id = visible_problem.problem_id
+                 AND publication.public_id = json_extract(visible_problem.cached_problem, '$.hint_publication_id')) AS hint_revealed,
+       EXISTS (SELECT 1 FROM solution_reveals reveal
+               JOIN lesson_publications publication ON publication.id = reveal.publication_id
+               WHERE reveal.student_user_id = :student_user_id
+                 AND reveal.problem_id = visible_problem.problem_id
+                 AND publication.public_id = json_extract(visible_problem.cached_problem, '$.solution_publication_id')) AS solution_revealed
+FROM visible_problem
+LEFT JOIN queue_state ON queue_state.visible_problem_id = visible_problem.problem_id
+LEFT JOIN ranked_result ON ranked_result.visible_problem_id = visible_problem.problem_id
+ AND ranked_result.result_rank = 1
+LEFT JOIN discussion_state ON discussion_state.visible_problem_id = visible_problem.problem_id
+ORDER BY visible_problem.cache_index
 """
 
 
@@ -2469,16 +2506,28 @@ class PwaContentRepository:
         group_public_id: str,
         group_lesson_public_id: str,
     ) -> StudentProblemListRecord:
-        """Read the exact published problem list and one logical work status each.
-
-        Source rows remain tied to their concrete ``problem_id``. Status reads
-        may span an explicitly active synonym group; the old semicolon
-        projection is a compatibility fallback only until the Phase-11
-        synonym rehearsal has materialized current memberships.
-        """
-
+        """Read publication and current personal state without a worker cache."""
         if student_user_id < 1:
             raise ContentInvariantError("student user ID must be positive")
+        return await self._read_student_problems(
+            student_user_id=student_user_id,
+            course_public_id=course_public_id,
+            group_public_id=group_public_id,
+            group_lesson_public_id=group_lesson_public_id,
+        )
+
+    async def list_lesson_problems(self, **scope) -> StudentProblemListRecord:
+        """Read the common publication with no student's state attached."""
+        return await self._read_student_problems(student_user_id=0, **scope)
+
+    async def _read_student_problems(
+        self,
+        *,
+        student_user_id: int,
+        course_public_id: str,
+        group_public_id: str,
+        group_lesson_public_id: str,
+    ) -> StudentProblemListRecord:
         _require_public_id(course_public_id)
         _require_public_id(group_public_id)
         _require_public_id(group_lesson_public_id)
@@ -2559,6 +2608,72 @@ class PwaContentRepository:
                 problems=problems,
                 problem_release_version=int(first["problem_release_version"]),
             )
+
+        return await self._factory.run_read_async(read)
+
+    async def get_student_problem_work(
+        self,
+        *,
+        student_user_id: int,
+        lesson: StudentProblemListRecord,
+    ) -> StudentProblemListRecord:
+        """Overlay fresh results/reveals on the cached common lesson projection.
+
+        Same shared SQL precedence as list_student_problems; see
+        docs/performance/worker-read-cache.md. No publication AST parsing here.
+        """
+        if student_user_id < 1:
+            raise ContentInvariantError("student user ID must be positive")
+        if not lesson.problems:
+            return lesson
+        prepared = []
+        for problem in lesson.problems:
+            prepared.append(
+                {
+                    "problem_public_id": problem.problem_public_id,
+                    "config_version": problem.config_version,
+                    "source_ordinal": problem.source_ordinal,
+                    "display_number": problem.display_number,
+                    "title": problem.title,
+                    "problem_type": problem.problem_type,
+                    "answer_type": problem.answer_type,
+                    "hint_publication_id": problem.hint_publication_id,
+                    "solution_publication_id": problem.solution_publication_id,
+                    "hint_available": None
+                    if problem.hint_state == "unavailable"
+                    else 1,
+                    "solution_available": None
+                    if problem.solution_state == "unavailable"
+                    else 1,
+                }
+            )
+
+        def read(connection):
+            rows = connection.execute(
+                _STUDENT_CACHED_WORK_SELECT,
+                {
+                    "student_user_id": student_user_id,
+                    "cached_problems": json.dumps(prepared, ensure_ascii=False),
+                },
+            ).fetchall()
+            records = []
+            for row in rows:
+                values = json.loads(row["cached_problem"])
+                values.update(dict(row))
+                values["hint_state"] = (
+                    "revealed" if row["hint_revealed"] else "available"
+                )
+                values["solution_state"] = (
+                    "revealed" if row["solution_revealed"] else "available"
+                )
+                if values["hint_available"] is None:
+                    values["hint_confirmation_required"] = False
+                records.append(_student_problem_summary(values))
+            if len(records) != len(lesson.problems):
+                raise ContentRepositoryError(
+                    "cached problem identity is no longer available"
+                )
+            return replace(lesson, problems=tuple(records))
 
         return await self._factory.run_read_async(read)
 

@@ -38,6 +38,7 @@ from db_methods.pwa.auth import (
     make_throttle_bucket_key,
 )
 from helpers.pwa.auth_config import AuthRuntimeConfig
+from helpers.pwa.read_cache import WorkerReadCache
 from helpers.pwa.permissions import (
     AuthorizationPrincipal,
     PrincipalIntegrityError,
@@ -170,6 +171,20 @@ class PwaAuthService:
         self._dummy_credential_hash = dummy_credential_hash
         self._clock = clock or (lambda: datetime.now(UTC))
         self._access_codec = runtime_config.access_codec()
+        self._read_cache = None
+
+    def enable_read_cache(self) -> None:
+        """Opt in at worker composition; docs/performance/worker-read-cache.md."""
+        self._read_cache = WorkerReadCache(
+            ttl_seconds=900,
+            max_entries=8192,
+            max_bytes=32 * 1024**2,
+            clock=lambda: self._now().timestamp(),
+        )
+
+    def invalidate_read_cache(self) -> None:
+        if self._read_cache is not None:
+            self._read_cache.invalidate()
 
     @classmethod
     async def create(
@@ -327,6 +342,42 @@ class PwaAuthService:
         if loaded is None:
             return None
         claims, signed_at = loaded
+        key = (audience, claims["aid"], claims["sid"], claims["cv"], claims["sv"], signed_at)
+
+        async def load():
+            return await self._load_authenticated_access(
+                audience,
+                claims,
+                signed_at,
+                request_id,
+                client_address,
+            )
+
+        if self._read_cache is None:
+            return await load()
+        cookie_expiry = signed_at + timedelta(
+            seconds=self.runtime_config.access_ttl_seconds
+        )
+        ttl = min(900, (cookie_expiry - self._now()).total_seconds())
+        if ttl <= 0:
+            return None
+        authenticated = await self._read_cache.get(key, load, ttl_seconds=ttl)
+        if authenticated is not None and (
+            not authenticated.current.session.active_at(self._now())
+            or authenticated.access_expires_at <= self._now()
+        ):
+            self._read_cache.invalidate(lambda candidate: candidate == key)
+            return None
+        return authenticated
+
+    async def _load_authenticated_access(
+        self,
+        audience,
+        claims,
+        signed_at,
+        request_id,
+        client_address,
+    ) -> AuthenticatedSession | None:
         current = await self.repository.get_current_session(
             audience=audience,
             account_public_id=str(claims["aid"]),
@@ -404,6 +455,7 @@ class PwaAuthService:
         request_id: str,
         client_address: str,
     ) -> IssuedSession:
+        self.invalidate_read_cache()
         presented = parse_refresh_cookie(refresh_cookie_value)
         if presented is None:
             raise AuthServiceError(AuthFailureCode.AUTHENTICATION_REQUIRED)
@@ -426,6 +478,7 @@ class PwaAuthService:
             request_id=request_id,
             ip_prefix=ip_prefix,
         )
+        self.invalidate_read_cache()
         if rotated.outcome is not RefreshRotationOutcome.ROTATED:
             raise AuthServiceError(self._refresh_failure_code(rotated.outcome))
         if rotated.session is None or rotated.account_public_id is None:
@@ -466,7 +519,8 @@ class PwaAuthService:
         presented = parse_refresh_cookie(refresh_cookie_value)
         if presented is None:
             return None
-        return await self.repository.revoke_session_with_refresh_secret(
+        self.invalidate_read_cache()
+        result = await self.repository.revoke_session_with_refresh_secret(
             audience=audience,
             session_public_id=presented.public_id,
             presented_secret_hash=hash_refresh_secret(
@@ -476,6 +530,8 @@ class PwaAuthService:
             request_id=request_id,
             ip_prefix=coarse_ip_prefix(client_address),
         )
+        self.invalidate_read_cache()
+        return result
 
     async def list_active_sessions(
         self,
@@ -501,21 +557,27 @@ class PwaAuthService:
         request_id: str,
         client_address: str,
     ) -> bool:
-        return await self.repository.revoke_session(
+        self.invalidate_read_cache()
+        result = await self.repository.revoke_session(
             account_id=authenticated.current.session.account_id,
             session_public_id=session_public_id,
             reason=SessionRevokeReason.MANUAL,
             request_id=request_id,
             ip_prefix=coarse_ip_prefix(client_address),
         )
+        self.invalidate_read_cache()
+        return result
 
     async def update_locale(
         self, authenticated: AuthenticatedSession, *, locale: str
     ) -> bool:
-        return await self.repository.update_account_locale(
+        self.invalidate_read_cache()
+        result = await self.repository.update_account_locale(
             account_id=authenticated.current.session.account_id,
             locale=locale,
         )
+        self.invalidate_read_cache()
+        return result
 
     async def logout_all(
         self,
@@ -524,12 +586,15 @@ class PwaAuthService:
         request_id: str,
         client_address: str,
     ) -> int:
-        return await self.repository.revoke_all_sessions(
+        self.invalidate_read_cache()
+        result = await self.repository.revoke_all_sessions(
             account_id=authenticated.current.session.account_id,
             reason=SessionRevokeReason.LOGOUT_ALL,
             request_id=request_id,
             ip_prefix=coarse_ip_prefix(client_address),
         )
+        self.invalidate_read_cache()
+        return result
 
     async def _create_verified_session(
         self,

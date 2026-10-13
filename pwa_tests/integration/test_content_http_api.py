@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pwa_tests.auth_cache_support import miss_auth_cache
+
 import hashlib
 import json
 import sqlite3
@@ -2115,6 +2117,7 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
             "DELETE FROM staff_scopes WHERE staff_user_id = ?", (TEACHER_USER_ID,)
         )
     )
+    miss_auth_cache(fixture.client)
     forbidden_media = await fixture.client.get(
         staff_media_path,
         cookies=_cookie(fixture, "teacher"),
@@ -5622,6 +5625,21 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
     )
     assert publication_a.status == 201, await publication_a.text()
 
+    # Warm before legacy writes; worker-read-cache.md requires personal state
+    # to stay current even when a Telegram/SQL writer emits no cache event.
+    cached_repository = fixture.client.app[pwa_app.PWA_CONTENT_REPOSITORY]
+    problem_scope = dict(
+        student_user_id=STUDENT_USER_ID,
+        course_public_id="c-1",
+        group_public_id="g-1",
+        group_lesson_public_id=fixture.group_lesson_a,
+    )
+    # The fixture's public group identity is resolved from the same authority.
+    scope = await cached_repository.get_group_lesson_scope(fixture.group_lesson_a)
+    problem_scope["group_public_id"] = scope.group_public_id
+    warm = await cached_repository.list_student_problems(**problem_scope)
+    assert all(problem.status == "not-started" for problem in warm.problems)
+
     revision_b, _ = await _upload_and_compile(
         fixture,
         group_lesson=fixture.group_lesson_b,
@@ -5740,6 +5758,13 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
         actor_user_id=ADMIN_USER_ID,
     )
 
+    assert await cached_repository.list_student_problems(
+        **problem_scope
+    ) == await repository.list_student_problems(**problem_scope)
+    other_student = dict(problem_scope, student_user_id=STUDENT_USER_ID + 100)
+    other = await cached_repository.list_student_problems(**other_student)
+    assert all(problem.status == "not-started" for problem in other.problems)
+
     response = await fixture.client.get(
         "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
@@ -5793,6 +5818,9 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
             (STUDENT_USER_ID, problems_a[1]["id"], TEACHER_USER_ID),
         )
     )
+    assert await cached_repository.list_student_problems(
+        **problem_scope
+    ) == await repository.list_student_problems(**problem_scope)
     rechecked = await fixture.client.get(
         "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
@@ -5803,6 +5831,49 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
     rechecked_payload = await rechecked.json()
     assert rechecked_payload["problems"][1]["status"] == "rejected"
     assert rechecked_payload["problems"][1]["verdict"]["verdictId"] == 14
+
+
+async def test_worker_cache_avoids_sql_on_warm_me_content_and_lesson_reads(
+    content_http: ContentHttpFixture, monkeypatch,
+):
+    fixture = content_http
+    await _prepare_published_test_problem(fixture)
+    paths = (
+        "/student/api/v1/auth/me",
+        f"/student/api/v1/group-lessons/{fixture.group_lesson_a}/content/condition",
+        "/student/api/v1/courses/c-1/lessons",
+    )
+    for path in paths:
+        response = await fixture.client.get(path, cookies=_cookie(fixture, "student"), headers=_headers())
+        assert response.status == 200, await response.text()
+        await response.read()
+    reads = []
+    original = fixture.factory.run_read_async
+
+    async def counted_read(callback, *args, **kwargs):
+        reads.append(callback)
+        return await original(callback, *args, **kwargs)
+
+    monkeypatch.setattr(fixture.factory, "run_read_async", counted_read)
+    for path in paths:
+        response = await fixture.client.get(path, cookies=_cookie(fixture, "student"), headers=_headers())
+        assert response.status == 200, await response.text()
+        await response.read()
+    assert reads == []
+    response = await fixture.client.get(
+        f"/student/api/v1/courses/c-1/lessons/{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"), headers=_headers(),
+    )
+    assert response.status == 200, await response.text()
+    await response.read()
+    reads.clear()
+    response = await fixture.client.get(
+        f"/student/api/v1/courses/c-1/lessons/{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"), headers=_headers(),
+    )
+    assert response.status == 200, await response.text()
+    await response.read()
+    assert len(reads) == 1  # Fresh personal work; common publication is in RAM.
 
 
 async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
@@ -6226,6 +6297,7 @@ async def test_student_offline_lessons_include_allowed_groups_without_switching(
         )
 
     await fixture.factory.run_write_async(grant)
+    miss_auth_cache(fixture.client)
     before = await student_get("/student/api/v1/courses")
     response = await student_get("/student/api/v1/offline-lessons")
     assert response.status == 200, await response.text()

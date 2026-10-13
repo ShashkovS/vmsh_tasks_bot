@@ -42,6 +42,7 @@ from apps.pwa_api.problem_synonym_routes import (
     problem_synonym_routes,
 )
 from apps.pwa_api.auth_service import PwaAuthService
+from apps.pwa_api.read_cache import CachedContentRepository, InvalidatingBroker
 from apps.pwa_api.first_admin import ensure_first_global_admin
 from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
@@ -173,7 +174,8 @@ from helpers.pwa.content.metadata_generation import (
     OpenRouterMetadataGenerator,
 )
 from helpers.pwa.i18n import _, current_locale, locale_from_cookies, translate
-from apps.pwa_api.branding_routes import branding_routes, selected_branding
+from apps.pwa_api.branding_routes import PWA_BRANDING_CACHE, branding_routes, selected_branding
+from helpers.pwa.read_cache import WorkerReadCache
 from helpers.pwa.push_delivery import PushSender, deliver_web_push_once
 from helpers.pwa.live_news import ingest_live_news
 from helpers.pwa.storage_config import load_storage_config
@@ -691,6 +693,47 @@ async def _revalidate_websocket_identity(
     )
 
 
+def invalidate_worker_reads(app, topic=None, payload=None):
+    """Apply cache control before client fan-out; worker-read-cache.md."""
+    repository = app.get(PWA_CONTENT_REPOSITORY)
+    state = app.get(PWA_AUTH_STATE)
+    if topic is None:
+        if PWA_BRANDING_CACHE in app:
+            app[PWA_BRANDING_CACHE].invalidate()
+        if isinstance(repository, CachedContentRepository):
+            repository.invalidate()
+        if state is not None and isinstance(state.service, PwaAuthService):
+            state.service.invalidate_read_cache()
+        return
+    if not isinstance(payload, dict):
+        return
+    if topic == NATS_PWA_SESSION_CONTROL:
+        from apps.pwa_api.realtime_control import parse_realtime_control_event
+
+        if (
+            parse_realtime_control_event(payload) is not None
+            and state is not None
+            and isinstance(state.service, PwaAuthService)
+        ):
+            state.service.invalidate_read_cache()
+    elif topic == NATS_PWA_INVALIDATE:
+        resources = payload.get("resources")
+        if not isinstance(resources, list) or not all(
+            isinstance(item, str) for item in resources
+        ):
+            return
+        if isinstance(repository, CachedContentRepository):
+            repository.invalidate(resources)
+        if "branding" in resources and PWA_BRANDING_CACHE in app:
+            app[PWA_BRANDING_CACHE].invalidate()
+        if (
+            state is not None
+            and isinstance(state.service, PwaAuthService)
+            and any(item in {"courses", "home", "auth"} for item in resources)
+        ):
+            state.service.invalidate_read_cache()
+
+
 async def on_startup(app: web.Application):
     runtime_config = _runtime_config(app)
     broker = app[PWA_BROKER]
@@ -737,6 +780,7 @@ async def on_startup(app: web.Application):
         ):
             logger.warning("Ignoring invalid PWA invalidation reason")
             return
+        invalidate_worker_reads(app, NATS_PWA_INVALIDATE, payload)
         await _broadcast(
             app,
             resources,
@@ -748,10 +792,11 @@ async def on_startup(app: web.Application):
     try:
         await broker.setup(runtime_config.nats_server)
         await broker.subscribe(NATS_PWA_INVALIDATE, handle_invalidation)
-        await broker.subscribe(
-            NATS_PWA_SESSION_CONTROL,
-            app[PWA_REALTIME_SESSION_CONTROLLER].handle_broker_payload,
-        )
+        async def handle_session_control(payload):
+            invalidate_worker_reads(app, NATS_PWA_SESSION_CONTROL, payload)
+            await app[PWA_REALTIME_SESSION_CONTROLLER].handle_broker_payload(payload)
+
+        await broker.subscribe(NATS_PWA_SESSION_CONTROL, handle_session_control)
         await broker.ready()
         if app.get(PWA_AUTH_STATE) is not None:
             app[PWA_WEBSOCKET_REGISTRY].start_revalidation(
@@ -783,6 +828,8 @@ async def on_auth_startup(app: web.Application) -> None:
 
     state = app[PWA_AUTH_STATE]
     if state.service is not None:
+        if isinstance(state.service, PwaAuthService):
+            state.service.enable_read_cache()
         return
     if PWA_DATABASE not in app:
         # Small broker/protocol unit tests compose the adapter directly without
@@ -804,6 +851,8 @@ async def on_auth_startup(app: web.Application) -> None:
         state.runtime_config,
         credential_hasher=credential_hasher,
     )
+    if isinstance(state.service, PwaAuthService):
+        state.service.enable_read_cache()
 
 
 async def on_content_startup(app: web.Application) -> None:
@@ -816,6 +865,11 @@ async def on_content_startup(app: web.Application) -> None:
                 "PWA content startup requires a verified database factory"
             )
         app[PWA_CONTENT_REPOSITORY] = PwaContentRepository(factory)
+    if not isinstance(app[PWA_CONTENT_REPOSITORY], CachedContentRepository):
+        app[PWA_CONTENT_REPOSITORY] = CachedContentRepository(
+            app[PWA_CONTENT_REPOSITORY],
+            available=lambda: getattr(app[PWA_BROKER], "active", app[PWA_BROKER].nats_is_working),
+        )
     if PWA_CONTENT_METADATA_GENERATOR not in app:
         app[PWA_CONTENT_METADATA_GENERATOR] = OpenRouterMetadataGenerator(
             api_key=_runtime_config(app).openrouter_api_key,
@@ -925,6 +979,9 @@ async def publish_content_invalidation(
     """Best-effort realtime fan-out after an authoritative content commit."""
 
     resources = [f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}"]
+    if reason == "lesson-title-changed":
+        # Titles belong to course lessons shared across group lesson cards.
+        resources.append(f"courses/{scope.course_public_id}/lessons")
     # A condition transition can atomically activate a block armed "with the
     # lesson".  Readers must refetch that projection even though this helper
     # deliberately keeps block changes out of notification production.
@@ -1796,6 +1853,11 @@ def configure(
             broker = NatsBroker(runtime_config.config_name)
         else:
             broker = InProcessBroker(runtime_config.config_name)
+    if isinstance(broker, NatsBroker):
+        async def clear_reconnected_reads():
+            invalidate_worker_reads(app)
+        broker.set_reconnect_callback(clear_reconnected_reads)
+    broker = InvalidatingBroker(broker, lambda topic, payload: invalidate_worker_reads(app, topic, payload))
     from helpers.pwa.request_trace import (
         event_loop_trace_lifecycle,
         request_trace_middleware,
@@ -1806,6 +1868,7 @@ def configure(
     app.middlewares.append(pwa_error_middleware)
     app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
+    app[PWA_BRANDING_CACHE] = WorkerReadCache(ttl_seconds=900, max_entries=1, max_bytes=32768)
     if classroom_telegram_sender is None and any(
         getattr(adapter, "__name__", "") == "apps.tg_bot"
         for adapter in app.get(ENABLED_ADAPTERS, ())

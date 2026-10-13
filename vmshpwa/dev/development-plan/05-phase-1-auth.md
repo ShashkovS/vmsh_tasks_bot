@@ -1,5 +1,16 @@
 # Этап 1. Вход, сессии, principal и права
 
+## 2026-10-12 — Worker RAM cache
+
+По решению владельца auth/grants допускают отставание до 15 минут.
+Общие занятия/публикации кешируются отдельно от свежих персональных результатов;
+NATS broadcast сбрасывает dictionaries во всех workers. Logout, refresh,
+подпись и expiry cookie сохраняют проверки. Реализация и fast gate PASS:
+3012 Python / 12 SKIP, 1119 frontend, 380 Storybook, 43 Chromium E2E.
+[решение и компоненты](../../../docs/performance/worker-read-cache.md),
+[текущий статус](STATUS.md). 13.10 разрешён выпуск на ВМШ/TLF;
+[операционный record](../../../docs/performance/worker-read-cache-release.md).
+
 ## Восстановление после offline — 2 октября 2026
 
 [Позадачная публикация](../../docs/problem-release.md#выпуск--2-октября-2026)

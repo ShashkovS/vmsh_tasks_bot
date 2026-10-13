@@ -1,4 +1,6 @@
 # ruff: noqa: F811 -- pytest fixtures imported for registration
+
+from pwa_tests.auth_cache_support import miss_auth_cache
 import pytest
 from aiohttp import FormData
 
@@ -110,6 +112,7 @@ async def test_staff_testing_identity_reuse_and_scope_revocation(content_http, w
                 "DELETE FROM staff_scopes WHERE staff_user_id=?", (TEACHER_USER_ID,)
             )
         )
+        miss_auth_cache(f.client)
         revoked = await f.client.get(
             "/student/api/v1/auth/me", cookies=cookie, headers=_headers()
         )
@@ -304,6 +307,7 @@ async def test_testing_catalog_group_scope_and_owner_deactivation(content_http):
             (TEACHER_USER_ID,),
         )
     )
+    miss_auth_cache(f.client)
     catalog = await f.client.get(
         "/staff/api/v1/testing/courses",
         cookies=_cookie(f, "teacher"),

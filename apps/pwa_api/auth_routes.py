@@ -131,14 +131,14 @@ def _principal_payload(authenticated: AuthenticatedSession) -> dict[str, object]
 
 
 async def _support_email(request: web.Request) -> str:
-    from db_methods.pwa.branding import get_branding
+    from apps.pwa_api.branding_routes import selected_branding
     from helpers.pwa.app_keys import PWA_DATABASE
     from helpers.pwa.branding import PROFILES
 
     state = request.app.get(PWA_DATABASE)
     if state is None or state.factory is None:
         return SUPPORT_EMAIL
-    branding = await state.factory.run_read_async(get_branding)
+    branding = await selected_branding(request)
     return PROFILES[branding["profile_id"]]["supportEmail"]
 
 
